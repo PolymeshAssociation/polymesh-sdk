@@ -1,0 +1,9 @@
+.DS_STORE
+node_modules/
+dist/
+yarn-error.log
+npm-package/
+.idea/
+coverage/
+test.ts
+docs/

@@ -1,0 +1,46 @@
+{
+  "name": "typescript-repo-template",
+  "version": "0.0.0",
+  "description": "Template repository for typescript projects",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "Polymath Studios Inc.",
+  "license": "ISC",
+  "scripts": {
+    "test": "jest --coverage",
+    "build:ts": "ttsc -b --watch",
+    "build:docs": "typedoc --out docs src",
+    "commit": "npx git-cz",
+    "semantic-release": "semantic-release",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^7.6.1",
+    "@commitlint/config-conventional": "^7.6.0",
+    "@semantic-release/git": "^8.0.0",
+    "@types/jest": "^23.3.10",
+    "@types/node": "^13.1.8",
+    "@zerollup/ts-transform-paths": "^1.7.11",
+    "cz-conventional-changelog": "^3.0.2",
+    "eslint": "^6.8.0",
+    "husky": "^4.1.0",
+    "jest": "^24.1.0",
+    "lint-staged": "^8.1.5",
+    "prettier": "^1.19.1",
+    "prettier-eslint": "^9.0.1",
+    "prettier-eslint-cli": "^5.0.0",
+    "semantic-release-cli": "^5.1.1",
+    "ts-jest": "^24.3.0",
+    "ttypescript": "^1.5.10",
+    "typedoc": "^0.15.6",
+    "typescript": "3.7.5"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
