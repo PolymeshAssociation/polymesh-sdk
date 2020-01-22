@@ -1,6 +1,6 @@
-# Polymath Typescript Template Repo
+# Polymesh SDK
 
-This is a template repository for typescript projects. It includes some initial typescript config and tooling to make our lives easier
+(Insert description here)
 
 **NOTE**: This repo uses `yarn` instead of `npm` for dependencies
 
@@ -10,8 +10,8 @@ Things included in the repo:
 - Absolute imports (allow you to `import { foo } from ~/bar;` instead of `import { foo } from ../../../../bar;`. The default character is `~` but it can be changed in `tsconfig.json`)
 - Eslint to enforce code style rules
 - Prettier to format code on save
-- Semantic release for automatic versioning (coming soon)
-- Commitizen (coming soon)
+- Semantic release for automatic versioning
+- Commitizen
 - Husky to enforce conventional commits and format the code using prettier before committing
 
 ## Scripts
