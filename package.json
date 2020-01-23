@@ -40,7 +40,17 @@
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
+  "release": {
+    "branches": [
+      "master",
+      "beta"
+    ]
+  },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "commitizen": "^4.0.3",
+    "semantic-release": "^16.0.3"
   }
 }
