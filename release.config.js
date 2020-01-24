@@ -2,8 +2,6 @@ module.exports = {
   repositoryUrl: "https://github.com/PolymathNetwork/polymesh-sdk.git",
   branches: [
     "master",
-    "next",
-    "next-major",
     {
       name: "beta",
       prerelease: true
