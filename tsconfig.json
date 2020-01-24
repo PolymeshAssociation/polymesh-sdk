@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "normalTypeScriptOptions": "here",
     "outDir": "dist",
     "rootDir": "src",
     "baseUrl": ".",
