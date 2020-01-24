@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "normalTypeScriptOptions": "here",
     "outDir": "dist",
     "rootDir": "src",
     "baseUrl": ".",
@@ -22,6 +23,10 @@
     "resolveJsonModule": true,
     "lib": ["es2017", "dom"],
     "typeRoots": ["./node_modules/@types", "./src/typings"]
+  },
+  "typedocOptions": {
+    "mode": "modules",
+    "out": "docs"
   },
   "exclude": ["dist", "node_modules", "test.ts"]
 }
