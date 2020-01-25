@@ -9,7 +9,7 @@
   "scripts": {
     "test": "jest --coverage",
     "build:ts": "ttsc -b --watch",
-    "build:docs": "typedoc --out docs src",
+    "build:docs": "typedoc src",
     "commit": "npx git-cz",
     "semantic-release": "semantic-release",
     "lint": "eslint src --ext .ts"
