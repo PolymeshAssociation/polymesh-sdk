@@ -29,7 +29,7 @@
     "prettier": "^1.19.1",
     "prettier-eslint": "^9.0.1",
     "prettier-eslint-cli": "^5.0.0",
-    "semantic-release-cli": "^5.1.1",
+    "semantic-release": "^16.0.3",
     "ts-jest": "^24.3.0",
     "ttypescript": "^1.5.10",
     "typedoc": "^0.16.8",
