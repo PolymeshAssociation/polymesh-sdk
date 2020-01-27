@@ -9,7 +9,7 @@
   "scripts": {
     "test": "jest --coverage",
     "build:ts": "ttsc -b --watch",
-    "build:docs": "typedoc --out docs src",
+    "build:docs": "typedoc src",
     "commit": "npx git-cz",
     "semantic-release": "semantic-release",
     "lint": "eslint src --ext .ts"
@@ -42,7 +42,7 @@
     "semantic-release": "^16.0.3",
     "ts-jest": "^24.3.0",
     "ttypescript": "^1.5.10",
-    "typedoc": "^0.15.6",
+    "typedoc": "^0.16.8",
     "typescript": "3.7.5"
   },
   "config": {
