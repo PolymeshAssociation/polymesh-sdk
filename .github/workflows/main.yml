@@ -1,0 +1,30 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Compile and Install depedencies
+        run: yarn install
+      - name: Run Linting for project code standards
+        run: yarn lint
+      - name: Run the testing script
+        run: yarn jest
+      - name: Semantic Versioning Release
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn semantic-release
+      - name: Autogenerate Typescript Docs
+        run: yarn build:docs
+      - name: Greenkeeper
+        run: echo "We need to add Greenkeeper to the project!"
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
