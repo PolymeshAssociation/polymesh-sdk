@@ -21,10 +21,4 @@ jobs:
         run: yarn semantic-release
       - name: Autogenerate Typescript Docs
         run: yarn build:docs
-      - name: Greenkeeper
-        run: echo "We need to add Greenkeeper to the project!"
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
