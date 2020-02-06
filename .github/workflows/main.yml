@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-node@v1
         with:
             node-version: '10.x'
-      - name: Compile and Install depedencies
+      - name: Compile and Install Dependencies
         run: yarn install
       - name: Run Linting for project code standards
         run: yarn lint
@@ -21,7 +21,7 @@ jobs:
       - name: Semantic Versioning Release
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: yarn semantic-release
       - name: Autogenerate Typescript Docs
         run: yarn build:docs
-
