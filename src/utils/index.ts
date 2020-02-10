@@ -1,3 +1,6 @@
+import stringify from 'json-stable-stringify';
+import { Pojo } from '../types';
+
 /**
  * Check the length of a given string to ensure it meets correct bounds
  *
@@ -19,5 +22,35 @@ export function checkStringLength(
           : `up to ${maxLength}`
       } characters long`
     );
+  }
+}
+
+/**
+ * Convert an entity type and its unique Identifiers to a base64 string
+ */
+export function serialize(entityType: string, uniqueIdentifiers: Pojo) {
+  return Buffer.from(`${entityType}:${stringify(uniqueIdentifiers)}`).toString('base64');
+}
+
+/**
+ * Convert a uuid string to an Identifier object
+ */
+export function unserialize(id: string) {
+  const unserialized = Buffer.from(id, 'base64').toString('utf8');
+
+  const matched = unserialized.match(/^.*?:(.*)/);
+
+  const errorMsg = 'Wrong ID format';
+
+  if (!matched) {
+    throw new Error(errorMsg);
+  }
+
+  const [, jsonString] = matched;
+
+  try {
+    return JSON.parse(jsonString);
+  } catch (err) {
+    throw new Error(errorMsg);
   }
 }
