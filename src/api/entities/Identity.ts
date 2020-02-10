@@ -13,7 +13,7 @@ export interface UniqueIdentifiers {
 /**
  * Constructor parameters
  */
-export type Params = UniqueIdentifiers
+export type Params = UniqueIdentifiers;
 
 function isUniqueIdentifiers(identifier: any): identifier is UniqueIdentifiers {
   const { did } = identifier;
@@ -80,6 +80,6 @@ export class Identity extends Entity {
    */
   public getPolyBalance = async (): Promise<Balance> => {
     const { context, did } = this;
-    return context.api.query.balances.identityBalance(did);
+    return context.polymeshApi.query.balances.identityBalance(did);
   };
 }
