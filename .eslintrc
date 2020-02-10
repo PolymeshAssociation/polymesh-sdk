@@ -19,8 +19,7 @@
           "FunctionExpression": true
         }
       }
-    ],
-    "tsdoc/syntax": "warn"
+    ]
   },
   "plugins": ["@typescript-eslint"],
   "parserOptions": {
