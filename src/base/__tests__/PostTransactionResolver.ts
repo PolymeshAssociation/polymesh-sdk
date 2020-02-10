@@ -10,6 +10,7 @@ describe('Post Transaction Resolver class', () => {
 
     await p.run(receipt);
 
+    expect(fakeResolverFunction).toHaveBeenCalledWith(receipt);
     expect(p.result).toBe(receipt);
   });
 });
