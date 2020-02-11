@@ -19,13 +19,12 @@
           "FunctionExpression": true
         }
       }
-    ],
-    "tsdoc/syntax": "warn"
+    ]
   },
-  "plugins": ["@typescript-eslint", "eslint-plugin-tsdoc"],
+  "plugins": ["@typescript-eslint"],
   "parserOptions": {
     "sourceType": "module",
     "project": "./tsconfig.json"
   },
-  "extends": [ "standard", "semistandard", "plugin:@typescript-eslint/recommended", "prettier"]
+  "extends": ["standard", "semistandard", "plugin:@typescript-eslint/recommended", "prettier"]
 }
