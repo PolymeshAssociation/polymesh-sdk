@@ -1,6 +1,6 @@
 import { Entity } from './Entity';
-import { serialize, unserialize } from '../../utils';
-import { Context } from '../../Context';
+import { serialize, unserialize } from '~/utils';
+import { Context } from '~/Context';
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
 
 /**
@@ -13,7 +13,7 @@ export interface UniqueIdentifiers {
 /**
  * Constructor parameters
  */
-export type Params = UniqueIdentifiers
+export type Params = UniqueIdentifiers;
 
 function isUniqueIdentifiers(identifier: any): identifier is UniqueIdentifiers {
   const { did } = identifier;
