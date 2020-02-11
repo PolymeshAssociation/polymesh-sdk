@@ -1,0 +1,27 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+            node-version: '10.x'
+      - name: Compile and Install Dependencies
+        run: yarn install
+      - name: Run Linting for project code standards
+        run: yarn lint
+      - name: Run the testing script
+        run: yarn jest
+      - name: Semantic Versioning Release
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: yarn semantic-release
+      - name: Autogenerate Typescript Docs
+        run: yarn build:docs

@@ -37,6 +37,7 @@ export class Context {
 
   public currentIdentity: Identity | undefined;
 
+  // eslint-disable-next-line require-jsdoc
   private constructor(params: ConstructorParams) {
     const { polymeshApi, currentPair, did } = params;
 
@@ -48,11 +49,15 @@ export class Context {
     }
   }
 
-  static async create(params: BuildParams) {
+  /**
+   * Create the Context instance
+   */
+  static async create(params: BuildParams): Promise<Context> {
     const { polymeshApi, seed } = params;
 
     if (seed) {
-      if (seed.length != 32) {
+      if (seed.length !== 32) {
+        // TODO it should uses polymath error class
         throw new Error('Seed must be 32 length size');
       }
 
@@ -70,11 +75,12 @@ export class Context {
     });
   };
 
-  public setPair = (address: string) => {
+  public setPair = (address: string): void => {
     const { keyring } = Context;
     try {
       this.currentPair = keyring.getPair(address);
-    } catch ({}) {
+    } catch (e) {
+      // TODO it should uses polymath error class
       throw new Error('The address is not present in the keyring set');
     }
   };
