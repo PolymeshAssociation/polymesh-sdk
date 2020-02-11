@@ -28,14 +28,14 @@ export function checkStringLength(
 /**
  * Convert an entity type and its unique Identifiers to a base64 string
  */
-export function serialize(entityType: string, uniqueIdentifiers: Pojo) {
+export function serialize(entityType: string, uniqueIdentifiers: Pojo): string {
   return Buffer.from(`${entityType}:${stringify(uniqueIdentifiers)}`).toString('base64');
 }
 
 /**
  * Convert a uuid string to an Identifier object
  */
-export function unserialize(id: string) {
+export function unserialize(id: string): Pojo {
   const unserialized = Buffer.from(id, 'base64').toString('utf8');
 
   const matched = unserialized.match(/^.*?:(.*)/);
