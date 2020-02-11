@@ -80,6 +80,7 @@ export class Identity extends Entity {
    */
   public getPolyBalance = async (): Promise<Balance> => {
     const { context, did } = this;
+    // TODO return a human readable value
     return context.api.query.balances.identityBalance(did);
   };
 }
