@@ -11,7 +11,7 @@ interface Connect {
 }
 
 /**
- * Main entry point of the Polymash SDK
+ * Main entry point of the Polymesh SDK
  */
 export class Polymesh {
   public isConnected = false;
@@ -27,6 +27,7 @@ export class Polymesh {
         provider: new WsProvider(node),
       });
     } catch (e) {
+      // TODO polymesh error class
       throw new Error('Connection error');
     }
 
