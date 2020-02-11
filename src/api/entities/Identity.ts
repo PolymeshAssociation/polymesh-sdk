@@ -1,6 +1,6 @@
 import { Entity } from './Entity';
-import { serialize, unserialize } from '../../utils';
-import { Context } from '../../Context';
+import { serialize, unserialize } from '~/utils';
+import { Context } from '~/Context';
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
 
 /**
@@ -15,6 +15,10 @@ export interface UniqueIdentifiers {
  */
 export type Params = UniqueIdentifiers;
 
+/**
+ * @hidden
+ * Checks if a value is of type [[UniqueIdentifiers]]
+ */
 function isUniqueIdentifiers(identifier: any): identifier is UniqueIdentifiers {
   const { did } = identifier;
 
@@ -25,6 +29,9 @@ function isUniqueIdentifiers(identifier: any): identifier is UniqueIdentifiers {
  * Used to manage an Identity
  */
 export class Identity extends Entity {
+  /**
+   * Generate the Identity's UUID from its identifying properties
+   */
   public static generateUuid({ did }: UniqueIdentifiers): string {
     return serialize('identity', {
       did,
@@ -34,9 +41,9 @@ export class Identity extends Entity {
   /**
    * Unserialize a serialized entity
    *
-   * @param serialized string with entity information
+   * @param serialized - string with entity information
    */
-  public static unserialize(serialized: string) {
+  public static unserialize(serialized: string): string {
     const unserialized = unserialize(serialized);
 
     if (!isUniqueIdentifiers(unserialized)) {
@@ -80,6 +87,7 @@ export class Identity extends Entity {
    */
   public getPolyBalance = async (): Promise<Balance> => {
     const { context, did } = this;
+    // TODO return a human readable value
     return context.polymeshApi.query.balances.identityBalance(did);
   };
 }
