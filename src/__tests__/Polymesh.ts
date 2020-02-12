@@ -40,4 +40,15 @@ describe('Polymesh Class', () => {
 
     await expect(polymeshApi).rejects.toThrow(new Error('Connection error'));
   });
+
+  test('should throw if Context create method fails', async () => {
+    mockContext.mock('create').throws();
+
+    const polymeshApi = Polymesh.connect({
+      nodeUrl: '',
+      accountSeed: '',
+    });
+
+    await expect(polymeshApi).rejects.toThrow(new Error('Connection error'));
+  });
 });
