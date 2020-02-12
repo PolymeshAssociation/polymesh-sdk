@@ -2,42 +2,42 @@ import { ApiPromise, WsProvider } from '@polymathnetwork/polkadot/api';
 import { Context } from './Context';
 
 interface ConnectParams {
-  node: string;
-  seed?: string;
-}
-
-interface Connect {
-  (params: ConnectParams): Promise<Polymesh>;
+  nodeUrl: string;
+  accountSeed?: string;
 }
 
 /**
  * Main entry point of the Polymesh SDK
  */
 export class Polymesh {
-  public isConnected = false;
-  private context: Context = {} as Context;
+  public context: Context = {} as Context;
 
-  public connect: Connect = async ({
-    node,
-    seed = undefined,
-  }: ConnectParams): Promise<Polymesh> => {
+  // eslint-disable-next-line require-jsdoc
+  private constructor(context: Context) {
+    this.context = context;
+  }
+
+  /**
+   * Create the instance and connect to the Polymesh node
+   */
+  static async connect(params: ConnectParams): Promise<Polymesh> {
+    const { nodeUrl, accountSeed } = params;
     let polymeshApi: ApiPromise;
+
     try {
       polymeshApi = await ApiPromise.create({
-        provider: new WsProvider(node),
+        provider: new WsProvider(nodeUrl),
       });
+
+      const context = await Context.create({
+        polymeshApi,
+        accountSeed,
+      });
+
+      return new Polymesh(context);
     } catch (e) {
       // TODO polymesh error class
       throw new Error('Connection error');
     }
-
-    this.isConnected = true;
-
-    this.context = await Context.create({
-      polymeshApi,
-      seed,
-    });
-
-    return this;
-  };
+  }
 }
