@@ -2,14 +2,11 @@ import { ImportMock } from 'ts-mock-imports';
 import { Polymesh } from '~/Polymesh';
 import sinon from 'sinon';
 import * as contextModule from '~/Context';
-// eslint-disable-next-line import/no-duplicates
-import * as wsProviderModule from '@polymathnetwork/polkadot/api';
-// eslint-disable-next-line import/no-duplicates
-import * as apiPromiseModule from '@polymathnetwork/polkadot/api';
+import * as pokadotModule from '@polymathnetwork/polkadot/api';
 
 describe('Polymesh Class', () => {
-  const mockApiPromise = ImportMock.mockStaticClass(apiPromiseModule, 'ApiPromise');
-  const mockWsProvider = ImportMock.mockClass(wsProviderModule, 'WsProvider');
+  const mockApiPromise = ImportMock.mockStaticClass(pokadotModule, 'ApiPromise');
+  const mockWsProvider = ImportMock.mockClass(pokadotModule, 'WsProvider');
   const mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
 
   afterEach(() => {
