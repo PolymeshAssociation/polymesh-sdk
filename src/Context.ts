@@ -7,11 +7,12 @@ import { Option } from '@polymathnetwork/polkadot/types/codec';
 
 interface BuildParams {
   polymeshApi: ApiPromise;
-  seed: string | undefined;
+  accountSeed?: string | undefined;
 }
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
+  keyring: Keyring;
   currentPair?: KeyringPair;
   did?: Option<LinkedKeyInfo>;
 }
@@ -29,7 +30,7 @@ interface AddressPair {
  * - Holds the current Identity
  */
 export class Context {
-  private static keyring: Keyring = new Keyring({ type: 'sr25519' });
+  private keyring: Keyring;
 
   public polymeshApi: ApiPromise;
 
@@ -39,9 +40,10 @@ export class Context {
 
   // eslint-disable-next-line require-jsdoc
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, currentPair, did } = params;
+    const { polymeshApi, keyring, currentPair, did } = params;
 
     this.polymeshApi = polymeshApi;
+    this.keyring = keyring;
 
     if (currentPair && did) {
       this.currentPair = currentPair;
@@ -53,30 +55,32 @@ export class Context {
    * Create the Context instance
    */
   static async create(params: BuildParams): Promise<Context> {
-    const { polymeshApi, seed } = params;
+    const { polymeshApi, accountSeed } = params;
 
-    if (seed) {
-      if (seed.length !== 32) {
+    const keyring = new Keyring({ type: 'sr25519' });
+
+    if (accountSeed) {
+      if (accountSeed.length !== 32) {
         // TODO it should uses polymath error class
         throw new Error('Seed must be 32 length size');
       }
 
-      const currentPair = Context.keyring.addFromSeed(stringToU8a(seed));
+      const currentPair = keyring.addFromSeed(stringToU8a(accountSeed));
       const did = await polymeshApi.query.identity.keyToIdentityIds(currentPair.publicKey);
-      return new Context({ polymeshApi, currentPair, did });
+      return new Context({ polymeshApi, keyring, currentPair, did });
     }
-    return new Context({ polymeshApi });
+    return new Context({ polymeshApi, keyring });
   }
 
   public getAddresses = (): Array<AddressPair> => {
-    const { keyring } = Context;
+    const { keyring } = this;
     return keyring.getPairs().map(({ address, meta }) => {
       return { address, meta };
     });
   };
 
   public setPair = (address: string): void => {
-    const { keyring } = Context;
+    const { keyring } = this;
     try {
       this.currentPair = keyring.getPair(address);
     } catch (e) {
