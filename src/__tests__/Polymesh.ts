@@ -15,37 +15,39 @@ describe('Polymesh Class', () => {
     mockContext.restore();
   });
 
-  test('should instantiate ApiPromise lib and Context class and returns a Polymesh instance', async () => {
-    const apiPromiseCreateMock = mockApiPromise.mock('create', Promise.resolve(true));
-    const contextCreateMock = mockContext.mock('create', Promise.resolve(false));
+  describe('method: create', () => {
+    test('should instantiate ApiPromise lib and Context class and returns a Polymesh instance', async () => {
+      const apiPromiseCreateMock = mockApiPromise.mock('create', Promise.resolve(true));
+      const contextCreateMock = mockContext.mock('create', Promise.resolve(false));
 
-    const polymesh = await Polymesh.connect({
-      nodeUrl: '',
+      const polymesh = await Polymesh.connect({
+        nodeUrl: '',
+      });
+
+      sinon.assert.calledOnce(apiPromiseCreateMock);
+      sinon.assert.calledOnce(contextCreateMock);
+      sinon.assert.match(polymesh instanceof Polymesh, true);
     });
 
-    sinon.assert.calledOnce(apiPromiseCreateMock);
-    sinon.assert.calledOnce(contextCreateMock);
-    sinon.assert.match(polymesh instanceof Polymesh, true);
-  });
+    test('should throw if ApiPromise fails in the connection process', async () => {
+      mockApiPromise.mock('create').throws();
 
-  test('should throw if ApiPromise fails in the connection process', async () => {
-    mockApiPromise.mock('create').throws();
+      const polymeshApi = Polymesh.connect({
+        nodeUrl: 'wss',
+      });
 
-    const polymeshApi = Polymesh.connect({
-      nodeUrl: '',
+      await expect(polymeshApi).rejects.toThrow('Connection error');
     });
 
-    await expect(polymeshApi).rejects.toThrow(new Error('Connection error'));
-  });
+    test('should throw if Context create method fails', async () => {
+      mockContext.mock('create').throws();
 
-  test('should throw if Context create method fails', async () => {
-    mockContext.mock('create').throws();
+      const polymeshApi = Polymesh.connect({
+        nodeUrl: 'wss',
+        accountSeed: '',
+      });
 
-    const polymeshApi = Polymesh.connect({
-      nodeUrl: '',
-      accountSeed: '',
+      await expect(polymeshApi).rejects.toThrow('Connection error');
     });
-
-    await expect(polymeshApi).rejects.toThrow(new Error('Connection error'));
   });
 });
