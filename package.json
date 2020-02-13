@@ -33,7 +33,6 @@
     "eslint-plugin-node": "^11.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
-    "eslint-plugin-tsdoc": "^0.2.1",
     "husky": "^4.1.0",
     "jest": "^24.1.0",
     "lint-staged": "^8.1.5",
@@ -57,7 +56,10 @@
     "access": "public"
   },
   "dependencies": {
-    "@polymathnetwork/polkadot": "^0.101.0-beta.9",
+    "@polkadot/keyring": "^2.2.1",
+    "@polkadot/ui-keyring": "^0.49.1",
+    "@polkadot/ui-settings": "^0.49.1",
+    "@polymathnetwork/polkadot": "0.101.0-beta.9",
     "@types/sinon": "^7.5.1",
     "bn.js": "^5.1.1",
     "json-stable-stringify": "^1.0.1"

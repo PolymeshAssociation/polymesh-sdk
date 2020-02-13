@@ -1,5 +1,5 @@
 import stringify from 'json-stable-stringify';
-import { Pojo } from '../types';
+import { Pojo } from '~/types';
 
 /**
  * Check the length of a given string to ensure it meets correct bounds
