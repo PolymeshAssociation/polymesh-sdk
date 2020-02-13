@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Entity } from './Entity';
 import { serialize, unserialize } from '~/utils';
 import { Context } from '~/Context';
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
+import { Pojo } from '~/types';
 
 /**
  * Properties that uniquely identify an Identity
@@ -43,7 +45,7 @@ export class Identity extends Entity {
    *
    * @param serialized - string with entity information
    */
-  public static unserialize(serialized: string): string {
+  public static unserialize(serialized: string): Pojo {
     const unserialized = unserialize(serialized);
 
     if (!isUniqueIdentifiers(unserialized)) {
