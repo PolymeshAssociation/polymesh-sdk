@@ -119,7 +119,11 @@ describe('Context Class', () => {
       polymeshApi: apiPromise.getMockInstance(),
     });
 
-    context.setPair('012');
-    sinon.assert.calledOnce(keyringGetPairMock);
+    try {
+      context.setPair('012');
+      sinon.assert.calledOnce(keyringGetPairMock);
+    } catch (e) {
+      sinon.assert.fail();
+    }
   });
 });
