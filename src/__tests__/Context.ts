@@ -3,19 +3,18 @@ import { Context } from '~/Context';
 import { ImportMock } from 'ts-mock-imports';
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
 import * as identityModule from '~/api/entities/Identity';
+import { QueryableStorage } from '@polymathnetwork/polkadot/api/types';
 
-describe('Context Class', () => {
+describe('Context class', () => {
   const mockKeyring = ImportMock.mockClass(polkadotModule, 'Keyring');
-  const mockApiPromise = ImportMock.mockStaticClass<polkadotModule.ApiPromise>(
+  const mockApiPromise = ImportMock.mockClass<polkadotModule.ApiPromise>(
     polkadotModule,
     'ApiPromise'
   );
-  const mockIdentity = ImportMock.mockClass(identityModule, 'Identity');
 
   afterAll(() => {
     mockKeyring.restore();
     mockApiPromise.restore();
-    mockIdentity.restore();
   });
 
   describe('method: create', () => {
@@ -35,11 +34,11 @@ describe('Context Class', () => {
         },
       });
       const keyringAddFromSeedStub = mockKeyring.mock('addFromSeed', 'currentPair');
-      mockApiPromise.set('query', {
+      mockApiPromise.set('query', ({
         identity: {
           keyToIdentityIds: keyToIdentityIdsStub,
         },
-      });
+      } as unknown) as QueryableStorage<'promise'>);
 
       const context = await Context.create({
         polymeshApi: mockApiPromise.getMockInstance(),
@@ -55,11 +54,11 @@ describe('Context Class', () => {
     test('should create a Context class without Pair and Identity attached', async () => {
       const keyToIdentityIdsStub = sinon.stub().returns('identityId');
       const keyringAddFromSeedMock = mockKeyring.mock('addFromSeed', true);
-      mockApiPromise.set('query', {
+      mockApiPromise.set('query', ({
         identity: {
           keyToIdentityIds: keyToIdentityIdsStub,
         },
-      });
+      } as unknown) as QueryableStorage<'promise'>);
 
       const context = await Context.create({
         polymeshApi: mockApiPromise.getMockInstance(),
@@ -76,11 +75,11 @@ describe('Context Class', () => {
         unwrap: sinon.stub().throws(),
       });
       mockKeyring.mock('addFromSeed', 'currentPair');
-      mockApiPromise.set('query', {
+      mockApiPromise.set('query', ({
         identity: {
           keyToIdentityIds: keyToIdentityIdsStub,
         },
-      });
+      } as unknown) as QueryableStorage<'promise'>);
 
       const context = Context.create({
         polymeshApi: mockApiPromise.getMockInstance(),
