@@ -40,7 +40,9 @@
     "prettier-eslint": "^9.0.1",
     "prettier-eslint-cli": "^5.0.0",
     "semantic-release": "^16.0.3",
+    "sinon": "^8.1.1",
     "ts-jest": "^24.3.0",
+    "ts-mock-imports": "^1.2.6",
     "ttypescript": "^1.5.10",
     "typedoc": "^0.16.8",
     "typescript": "3.7.5"
@@ -57,7 +59,8 @@
     "@polkadot/keyring": "^2.2.1",
     "@polkadot/ui-keyring": "^0.49.1",
     "@polkadot/ui-settings": "^0.49.1",
-    "@polymathnetwork/polkadot": "0.101.0-beta.8",
+    "@polymathnetwork/polkadot": "0.101.0-beta.9",
+    "@types/sinon": "^7.5.1",
     "json-stable-stringify": "^1.0.1"
   }
 }

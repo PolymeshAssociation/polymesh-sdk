@@ -49,7 +49,8 @@ export class Identity extends Entity {
     const unserialized = unserialize(serialized);
 
     if (!isUniqueIdentifiers(unserialized)) {
-      // throw error
+      // TODO - MSDK-49 Create Polymesh Error class
+      throw new Error('The string is not related to an Identity Unique Identifiers Pojo');
     }
 
     return unserialized;
@@ -90,6 +91,6 @@ export class Identity extends Entity {
   public getPolyBalance = async (): Promise<Balance> => {
     const { context, did } = this;
     // TODO MSDK-48 - Create an human readable value conversion
-    return context.api.query.balances.identityBalance(did);
+    return context.polymeshApi.query.balances.identityBalance(did);
   };
 }
