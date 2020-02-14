@@ -1,24 +1,23 @@
 import { Identity } from './api/entities/Identity';
 import { ApiPromise, Keyring } from '@polymathnetwork/polkadot/api';
-import { KeyringPair, KeyringPair$Meta } from '@polkadot/keyring/types';
+import { KeyringPair } from '@polkadot/keyring/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
-import { LinkedKeyInfo } from '@polymathnetwork/polkadot/types/interfaces';
-import { Option } from '@polymathnetwork/polkadot/types/codec';
+import { IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
 
 interface BuildParams {
   polymeshApi: ApiPromise;
   accountSeed?: string | undefined;
 }
 
-interface Pair {
-  current: KeyringPair;
-  did: Option<LinkedKeyInfo>;
+interface SignerData {
+  currentPair: KeyringPair;
+  did: IdentityId;
 }
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
   keyring: Keyring;
-  pair?: Pair;
+  pair?: SignerData;
 }
 
 interface AccountData {
@@ -42,7 +41,9 @@ export class Context {
 
   public currentIdentity?: Identity;
 
-  // eslint-disable-next-line require-jsdoc
+  /**
+   * @hidden
+   */
   private constructor(params: ConstructorParams) {
     const { polymeshApi, keyring, pair } = params;
 
@@ -50,7 +51,7 @@ export class Context {
     this.keyring = keyring;
 
     if (pair) {
-      this.currentPair = pair.current;
+      this.currentPair = pair.currentPair;
       this.currentIdentity = new Identity({ did: pair.did.toString() }, this);
     }
   }
@@ -66,12 +67,22 @@ export class Context {
     if (accountSeed) {
       if (accountSeed.length !== 32) {
         // TODO - MSDK-49 Create Polymesh Error class
-        throw new Error('Seed must be 32 length size');
+        throw new Error('Seed must be 32 characters in length');
       }
 
-      const current = keyring.addFromSeed(stringToU8a(accountSeed));
-      const did = await polymeshApi.query.identity.keyToIdentityIds(current.publicKey);
-      return new Context({ polymeshApi, keyring, pair: { current, did } });
+      const currentPair = keyring.addFromSeed(stringToU8a(accountSeed));
+      const keyToIdentityIds = await await polymeshApi.query.identity.keyToIdentityIds(
+        currentPair.publicKey
+      );
+      let did: IdentityId;
+      try {
+        did = keyToIdentityIds.unwrap().asUnique;
+      } catch (e) {
+        // TODO - MSDK-49 Create Polymesh Error class
+        throw new Error('Identity ID does not exist');
+      }
+
+      return new Context({ polymeshApi, keyring, pair: { currentPair, did } });
     }
     return new Context({ polymeshApi, keyring });
   }
