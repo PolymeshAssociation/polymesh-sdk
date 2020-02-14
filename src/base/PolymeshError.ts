@@ -15,7 +15,9 @@ export const ErrorMessagesPerCode: {
 export class PolymeshError extends Error {
   public code: ErrorCode;
 
-  // eslint-disable-next-line require-jsdoc
+  /**
+   * @hidden
+   */
   constructor({ message, code }: { message?: string; code: ErrorCode }) {
     super(message || ErrorMessagesPerCode[code] || `Unknown error, code: ${code}`);
 
