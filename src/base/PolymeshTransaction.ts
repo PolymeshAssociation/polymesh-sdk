@@ -225,6 +225,7 @@ export class PolymeshTransaction<
               resolve(receipt);
             }
           } else {
+            // this means receipt.isError === true
             reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
           }
         }
