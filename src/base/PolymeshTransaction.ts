@@ -96,7 +96,7 @@ export class PolymeshTransaction<
   private signer: AddressOrPair;
 
   /**
-   * Creates a polymesh transaction
+   * @hidden
    */
   constructor(transactionSpec: TransactionSpec<ModuleName, TransactionName, Values>) {
     const { postTransactionValues, tag, tx, args, signer, isCritical } = transactionSpec;
