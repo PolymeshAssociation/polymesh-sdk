@@ -157,6 +157,7 @@ export class PolkadotMockFactory {
       and use the methods in the class to fetch/manipulate different parts of the API as required
      */
 
+    this.apiMockManager.restore();
     this.txMocksData.clear();
     this.initTx();
     this.initQuery();
