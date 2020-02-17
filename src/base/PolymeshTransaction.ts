@@ -1,17 +1,19 @@
+import { AddressOrPair, TxTag } from '@polymathnetwork/polkadot/api/types';
+import { DispatchError } from '@polymathnetwork/polkadot/types/interfaces';
+import { ISubmittableResult, RegistryError } from '@polymathnetwork/polkadot/types/types';
 import { EventEmitter } from 'events';
-import { PostTransactionValue } from './PostTransactionValue';
+
+import { PolymeshError } from '~/base/PolymeshError';
+import { ErrorCode, TransactionStatus } from '~/types';
 import {
-  TransactionSpec,
+  Extrinsics,
+  MapMaybePostTransactionValue,
   PolymeshTx,
   PostTransactionValueArray,
-  MapMaybePostTransactionValue,
-  Extrinsics,
+  TransactionSpec,
 } from '~/types/internal';
-import { TransactionStatus, ErrorCode } from '~/types';
-import { PolymeshError } from '~/base/PolymeshError';
-import { TxTag, AddressOrPair } from '@polymathnetwork/polkadot/api/types';
-import { DispatchError } from '@polymathnetwork/polkadot/types/interfaces';
-import { RegistryError, ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+
+import { PostTransactionValue } from './PostTransactionValue';
 
 enum Event {
   StatusChange = 'StatusChange',

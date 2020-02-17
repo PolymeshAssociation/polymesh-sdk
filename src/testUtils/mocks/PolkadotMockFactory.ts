@@ -1,16 +1,17 @@
 /* istanbul ignore file */
-import { ImportMock } from 'ts-mock-imports';
-import { merge } from 'lodash';
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
-import { SubmittableExtrinsics, QueryableStorage } from '@polymathnetwork/polkadot/api/types';
-import sinon, { SinonStub } from 'sinon';
+import { QueryableStorage, SubmittableExtrinsics } from '@polymathnetwork/polkadot/api/types';
 import {
-  ExtrinsicStatus,
   DispatchError,
   DispatchErrorModule,
+  ExtrinsicStatus,
 } from '@polymathnetwork/polkadot/types/interfaces';
-import { Extrinsics, Queries, PolymeshTx } from '~/types/internal';
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { merge } from 'lodash';
+import sinon, { SinonStub } from 'sinon';
+import { ImportMock } from 'ts-mock-imports';
+
+import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
 
 type StatusCallback = (receipt: ISubmittableResult) => void;
 type UnsubCallback = () => void;
