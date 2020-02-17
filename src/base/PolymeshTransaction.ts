@@ -282,23 +282,15 @@ export class PolymeshTransaction<
 
   /**
    * @hidden
+   *
+   * Unwrap Post Transaction Values if present in the tuple
    */
   private unwrapArgs<T extends unknown[]>(args: MapMaybePostTransactionValue<T>): T {
     return args.map(arg => {
       if (arg instanceof PostTransactionValue) {
-        const { value } = arg;
-
-        /* istanbul ignore if: this should never happen unless we're doing something horribly wrong */
-        if (!value) {
-          throw new PolymeshError({
-            code: ErrorCode.FatalError,
-            message:
-              'Post Transaction Value accessed before the corresponding transaction was executed',
-          });
-        }
-
-        return value;
+        return arg.value;
       }
+
       return arg;
     }) as T;
   }
