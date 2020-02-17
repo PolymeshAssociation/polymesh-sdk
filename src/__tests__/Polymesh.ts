@@ -1,14 +1,20 @@
 import * as pokadotModule from '@polymathnetwork/polkadot/api';
 import sinon from 'sinon';
-import { ImportMock } from 'ts-mock-imports';
+import { ImportMock, MockManager, StaticMockManager } from 'ts-mock-imports';
 
 import * as contextModule from '~/Context';
 import { Polymesh } from '~/Polymesh';
 
 describe('Polymesh Class', () => {
-  const mockApiPromise = ImportMock.mockStaticClass(pokadotModule, 'ApiPromise');
-  const mockWsProvider = ImportMock.mockClass(pokadotModule, 'WsProvider');
-  const mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
+  let mockApiPromise: StaticMockManager<pokadotModule.Keyring>;
+  let mockWsProvider: MockManager<pokadotModule.Keyring>;
+  let mockContext: StaticMockManager<contextModule.Context>;
+
+  beforeEach(() => {
+    mockApiPromise = ImportMock.mockStaticClass(pokadotModule, 'ApiPromise');
+    mockWsProvider = ImportMock.mockClass(pokadotModule, 'WsProvider');
+    mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
+  });
 
   afterEach(() => {
     mockApiPromise.restore();
@@ -37,7 +43,7 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wss',
       });
 
-      await expect(polymeshApi).rejects.toThrow('Connection error');
+      await expect(polymeshApi).rejects.toThrow(`Error while connecting to "wss": "Error"`);
     });
 
     test('should throw if Context create method fails', async () => {
@@ -48,7 +54,7 @@ describe('Polymesh Class', () => {
         accountSeed: '',
       });
 
-      await expect(polymeshApi).rejects.toThrow('Connection error');
+      await expect(polymeshApi).rejects.toThrow(`Error while connecting to "wss": "Error"`);
     });
   });
 });
