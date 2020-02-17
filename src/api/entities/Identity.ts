@@ -3,6 +3,8 @@ import { Entity } from './Entity';
 import { serialize, unserialize } from '~/utils';
 import { Context } from '~/Context';
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
+import { ErrorCode } from '~/types';
+import { PolymeshError } from '~/base/PolymeshError';
 
 /**
  * Properties that uniquely identify an Identity
@@ -48,8 +50,10 @@ export class Identity extends Entity {
     const unserialized = unserialize(serialized);
 
     if (!isUniqueIdentifiers(unserialized)) {
-      // TODO - MSDK-49 Create Polymesh Error class
-      throw new Error('The string is not related to an Identity Unique Identifier');
+      throw new PolymeshError({
+        code: ErrorCode.InvalidUuid,
+        message: 'The string is not related to an Identity Unique Identifier',
+      });
     }
 
     return unserialized;
