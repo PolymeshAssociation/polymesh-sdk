@@ -14,7 +14,9 @@ interface ConnectParams {
 export class Polymesh {
   public context: Context = {} as Context;
 
-  // eslint-disable-next-line require-jsdoc
+  /**
+   * @hidden
+   */
   private constructor(context: Context) {
     this.context = context;
   }
