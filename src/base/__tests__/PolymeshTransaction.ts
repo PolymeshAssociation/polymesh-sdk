@@ -1,5 +1,5 @@
 import { PolymeshTransaction } from '~/base/PolymeshTransaction';
-import { TxTags, SubmittableResultImpl } from '@polymathnetwork/polkadot/api/types';
+import { TxTags } from '@polymathnetwork/polkadot/api/types';
 import sinon from 'sinon';
 import { PostTransactionValueArray, MaybePostTransactionValue } from '~/types/internal';
 import {
@@ -10,6 +10,7 @@ import {
 import { TransactionStatus } from '~/types';
 import { delay } from '~/utils';
 import { PostTransactionValue } from '~/base/PostTransactionValue';
+import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 
 describe('Polymesh Transaction class', () => {
   const mockFactory = new PolkadotMockFactory();
@@ -43,7 +44,7 @@ describe('Polymesh Transaction class', () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker');
       const ticker = 'A_DIFFERENT_TICKER';
       const postTransactionTicker = new PostTransactionValue(async () => ticker);
-      await postTransactionTicker.run({} as SubmittableResultImpl);
+      await postTransactionTicker.run({} as ISubmittableResult);
       const args: [MaybePostTransactionValue<string>] = [postTransactionTicker];
 
       const transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
