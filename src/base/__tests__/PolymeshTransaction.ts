@@ -22,6 +22,10 @@ describe('Polymesh Transaction class', () => {
     isCritical: false,
   };
 
+  afterEach(() => {
+    mockFactory.reset();
+  });
+
   describe('method: run', () => {
     test('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker');
