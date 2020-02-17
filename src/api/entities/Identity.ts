@@ -1,10 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Entity } from './Entity';
-import { serialize, unserialize } from '~/utils';
-import { Context } from '~/Context';
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
-import { ErrorCode } from '~/types';
+
 import { PolymeshError } from '~/base/PolymeshError';
+import { Context } from '~/Context';
+import { ErrorCode } from '~/types';
+import { serialize, unserialize } from '~/utils';
+
+import { Entity } from './Entity';
 
 /**
  * Properties that uniquely identify an Identity
@@ -22,8 +23,8 @@ export type Params = UniqueIdentifiers;
  * @hidden
  * Checks if a value is of type [[UniqueIdentifiers]]
  */
-function isUniqueIdentifiers(identifier: any): identifier is UniqueIdentifiers {
-  const { did } = identifier;
+function isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  const { did } = identifier as UniqueIdentifiers;
 
   return typeof did === 'string';
 }

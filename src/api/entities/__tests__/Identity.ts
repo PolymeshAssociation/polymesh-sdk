@@ -1,14 +1,19 @@
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
-import { ImportMock } from 'ts-mock-imports';
-import { Identity } from '~/api/entities/Identity';
+import { ImportMock, StaticMockManager } from 'ts-mock-imports';
+
 import { Entity } from '~/api/entities/Entity';
+import { Identity } from '~/api/entities/Identity';
 import * as contextModule from '~/Context';
 import * as utils from '~/utils';
 
 describe('Identity class', () => {
-  const mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
+  let mockContext: StaticMockManager<contextModule.Context>;
 
-  afterAll(() => {
+  beforeEach(() => {
+    mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
+  });
+
+  afterEach(() => {
     mockContext.restore();
   });
 
@@ -28,10 +33,14 @@ describe('Identity class', () => {
   });
 
   describe('method: generateUuid', () => {
-    test('should retrieve a non empty string', async () => {
+    test("should generate the Identity's UUID", async () => {
+      ImportMock.mockFunction(utils, 'serialize')
+        .withArgs('identity', {
+          did: 'abc',
+        })
+        .returns('uuid');
       const result = Identity.generateUuid({ did: 'abc' });
-      expect(result).not.toBe('');
-      expect(typeof result).toBe(typeof 'string');
+      expect(result).toBe('uuid');
     });
   });
 
@@ -46,25 +55,29 @@ describe('Identity class', () => {
     });
 
     test('should return an Identity Unique Identifier object', async () => {
-      mockUnserialize.returns({ did: 'abc' });
-      expect(Identity.unserialize('def')).toEqual({ did: 'abc' });
+      const fakeReturn = { did: 'abc' };
+      mockUnserialize.returns(fakeReturn);
+      expect(Identity.unserialize('def')).toEqual(fakeReturn);
     });
   });
 
   describe('method: getPolyBalance', () => {
-    test('should return the account identity poly balance', async () => {
+    test("should return the identity's POLY balance", async () => {
+      const fn = jest.fn(
+        async (): Promise<Balance> => {
+          return (1 as unknown) as Balance;
+        }
+      );
       mockContext.set('polymeshApi', {
         query: {
           balances: {
-            identityBalance: async (): Promise<Balance> => {
-              return (1 as unknown) as Balance;
-            },
+            identityBalance: fn,
           },
         },
       });
       const identity = new Identity({ did: 'abc' }, mockContext.getMockInstance());
-      const balance = await identity.getPolyBalance();
-      expect(balance).toEqual(1);
+      await identity.getPolyBalance();
+      expect(fn).toHaveBeenCalledWith('abc');
     });
   });
 });

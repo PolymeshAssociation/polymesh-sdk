@@ -1,9 +1,10 @@
-import sinon from 'sinon';
-import { Context } from '~/Context';
-import { ImportMock } from 'ts-mock-imports';
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
-import * as identityModule from '~/api/entities/Identity';
 import { QueryableStorage } from '@polymathnetwork/polkadot/api/types';
+import sinon from 'sinon';
+import { ImportMock } from 'ts-mock-imports';
+
+import * as identityModule from '~/api/entities/Identity';
+import { Context } from '~/Context';
 
 describe('Context class', () => {
   const mockKeyring = ImportMock.mockClass(polkadotModule, 'Keyring');
