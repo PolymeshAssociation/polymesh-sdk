@@ -19,9 +19,12 @@
           "FunctionExpression": false
         }
       }
-    ]
+    ],
+    "simple-import-sort/sort": "error",
+    "sort-imports": "off",
+    "import/order": "off"
   },
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["@typescript-eslint", "simple-import-sort"],
   "parserOptions": {
     "sourceType": "module",
     "project": "./tsconfig.json"
