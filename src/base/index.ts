@@ -1,1 +1,1 @@
-export { PostTransactionResolver } from './PostTransactionResolver';
+export { PostTransactionValue } from './PostTransactionValue';
