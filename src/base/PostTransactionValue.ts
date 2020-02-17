@@ -1,4 +1,4 @@
-import { SubmittableResultImpl } from '@polymathnetwork/polkadot/api/types';
+import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 
 /**
  * @hidden
@@ -8,17 +8,17 @@ import { SubmittableResultImpl } from '@polymathnetwork/polkadot/api/types';
 export class PostTransactionValue<Value> {
   public value?: Value;
 
-  private resolver: (receipt: SubmittableResultImpl) => Promise<Value | undefined>;
+  private resolver: (receipt: ISubmittableResult) => Promise<Value | undefined>;
 
   // eslint-disable-next-line require-jsdoc
-  constructor(resolver: (receipt: SubmittableResultImpl) => Promise<Value>) {
+  constructor(resolver: (receipt: ISubmittableResult) => Promise<Value>) {
     this.resolver = resolver;
   }
 
   /**
    * Run the resolver function and assign its result to this object
    */
-  public async run(receipt: SubmittableResultImpl): Promise<void> {
+  public async run(receipt: ISubmittableResult): Promise<void> {
     const result = await this.resolver(receipt);
 
     this.value = result;

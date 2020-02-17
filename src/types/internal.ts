@@ -1,11 +1,12 @@
 import {
-  SubmittableExtrinsics,
-  AugmentedSubmittable,
-  SubmittableExtrinsic,
-  TxTag,
   AddressOrPair,
+  AugmentedSubmittable,
   QueryableStorage,
+  SubmittableExtrinsic,
+  SubmittableExtrinsics,
+  TxTag,
 } from '@polymathnetwork/polkadot/api/types';
+
 import { PostTransactionValue } from '~/base';
 
 /**
