@@ -3,6 +3,8 @@ import { Entity } from './Entity';
 import { serialize, unserialize } from '~/utils';
 import { Context } from '~/Context';
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
+import { ErrorCode } from '~/types';
+import { PolymeshError } from '~/base/PolymeshError';
 
 /**
  * Properties that uniquely identify an Identity
@@ -48,7 +50,10 @@ export class Identity extends Entity {
     const unserialized = unserialize(serialized);
 
     if (!isUniqueIdentifiers(unserialized)) {
-      // throw error
+      throw new PolymeshError({
+        code: ErrorCode.InvalidUuid,
+        message: 'The string is not related to an Identity Unique Identifier',
+      });
     }
 
     return unserialized;
@@ -88,7 +93,7 @@ export class Identity extends Entity {
    */
   public getPolyBalance = async (): Promise<Balance> => {
     const { context, did } = this;
-    // TODO return a human readable value
+    // TODO MSDK-48 - Create an human readable value conversion
     return context.polymeshApi.query.balances.identityBalance(did);
   };
 }
