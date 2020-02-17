@@ -3,7 +3,6 @@ import { Entity } from './Entity';
 import { serialize, unserialize } from '~/utils';
 import { Context } from '~/Context';
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
-import { Pojo } from '~/types';
 
 /**
  * Properties that uniquely identify an Identity
@@ -45,12 +44,12 @@ export class Identity extends Entity {
    *
    * @param serialized - string with entity information
    */
-  public static unserialize(serialized: string): Pojo {
+  public static unserialize(serialized: string): Record<string, unknown> {
     const unserialized = unserialize(serialized);
 
     if (!isUniqueIdentifiers(unserialized)) {
       // TODO - MSDK-49 Create Polymesh Error class
-      throw new Error('The string is not related to an Identity Unique Identifiers Pojo');
+      throw new Error('The string is not related to an Identity Unique Identifier');
     }
 
     return unserialized;

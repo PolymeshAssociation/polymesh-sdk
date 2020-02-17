@@ -41,7 +41,7 @@ describe('Identity class', () => {
     test('should throw error if the string is not related to an Identity Unique Identifier', async () => {
       mockUnserialize.returns({ token: 'abc' });
       expect(() => Identity.unserialize('def')).toThrow(
-        'The string is not related to an Identity Unique Identifiers Pojo'
+        'The string is not related to an Identity Unique Identifier'
       );
     });
 
