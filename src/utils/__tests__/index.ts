@@ -42,4 +42,15 @@ describe('serialize and unserialize', () => {
     expect(unserialize(serialize(entityType, pojo1))).toEqual(pojo1);
     expect(unserialize(serialize(entityType, inversePojo1))).toEqual(pojo1);
   });
+
+  const errorMsg = 'Wrong ID format';
+
+  test('unserialize throws an error if the argument has an incorrect format', () => {
+    expect(() => unserialize('unformatted')).toThrowError(errorMsg);
+  });
+
+  test('unserialize throws an error if the serialized string is not valid JSON', () => {
+    const fakeSerialized = Buffer.from('someEntity:nonJsonString').toString('base64');
+    expect(() => unserialize(fakeSerialized)).toThrowError(errorMsg);
+  });
 });
