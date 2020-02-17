@@ -1,5 +1,7 @@
 import { ApiPromise, WsProvider } from '@polymathnetwork/polkadot/api';
 import { Context } from './Context';
+import { ErrorCode } from './types';
+import { PolymeshError } from './base/PolymeshError';
 
 interface ConnectParams {
   nodeUrl: string;
@@ -36,8 +38,7 @@ export class Polymesh {
 
       return new Polymesh(context);
     } catch (e) {
-      // TODO polymesh error class
-      throw new Error('Connection error');
+      throw new PolymeshError({ code: ErrorCode.FatalError, message: 'Connection error' });
     }
   }
 }
