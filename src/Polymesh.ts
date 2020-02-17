@@ -38,7 +38,10 @@ export class Polymesh {
 
       return new Polymesh(context);
     } catch (e) {
-      throw new PolymeshError({ code: ErrorCode.FatalError, message: 'Connection error' });
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `Error while connecting to "${nodeUrl}": "${e.message}"`,
+      });
     }
   }
 }

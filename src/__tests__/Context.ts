@@ -1,18 +1,20 @@
 import sinon from 'sinon';
 import { Context } from '~/Context';
-import { ImportMock } from 'ts-mock-imports';
+import { ImportMock, MockManager } from 'ts-mock-imports';
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
 import * as identityModule from '~/api/entities/Identity';
 import { QueryableStorage } from '@polymathnetwork/polkadot/api/types';
 
 describe('Context class', () => {
-  const mockKeyring = ImportMock.mockClass(polkadotModule, 'Keyring');
-  const mockApiPromise = ImportMock.mockClass<polkadotModule.ApiPromise>(
-    polkadotModule,
-    'ApiPromise'
-  );
+  let mockKeyring: MockManager<polkadotModule.Keyring>;
+  let mockApiPromise: MockManager<polkadotModule.ApiPromise>;
 
-  afterAll(() => {
+  beforeEach(() => {
+    mockKeyring = ImportMock.mockClass(polkadotModule, 'Keyring');
+    mockApiPromise = ImportMock.mockClass<polkadotModule.ApiPromise>(polkadotModule, 'ApiPromise');
+  });
+
+  afterEach(() => {
     mockKeyring.restore();
     mockApiPromise.restore();
   });
@@ -91,19 +93,19 @@ describe('Context class', () => {
   });
 
   describe('method: getAccounts', () => {
-    test('should getAccounts method retrieve an array of address and meta data', async () => {
+    test('should retrieve an array of address and meta data', async () => {
       const addresses = [
         {
           address: '01',
           meta: {
             name: 'name 01',
           },
-          somethingelse: false,
+          somethingElse: false,
         },
         {
           address: '02',
           meta: {},
-          somethingelse: false,
+          somethingElse: false,
         },
       ];
       const keyringGetAccountsStub = mockKeyring.mock('getPairs', addresses);
