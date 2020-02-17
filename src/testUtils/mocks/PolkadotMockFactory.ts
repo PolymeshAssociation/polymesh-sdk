@@ -1,21 +1,19 @@
 /* istanbul ignore file */
-import { ImportMock } from 'ts-mock-imports';
-import { merge } from 'lodash';
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
+import { QueryableStorage, SubmittableExtrinsics } from '@polymathnetwork/polkadot/api/types';
 import {
-  SubmittableExtrinsics,
-  SubmittableResultImpl,
-  QueryableStorage,
-} from '@polymathnetwork/polkadot/api/types';
-import sinon, { SinonStub } from 'sinon';
-import {
-  ExtrinsicStatus,
   DispatchError,
   DispatchErrorModule,
+  ExtrinsicStatus,
 } from '@polymathnetwork/polkadot/types/interfaces';
-import { Extrinsics, Queries, PolymeshTx } from '~/types/internal';
+import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { merge } from 'lodash';
+import sinon, { SinonStub } from 'sinon';
+import { ImportMock } from 'ts-mock-imports';
 
-type StatusCallback = (receipt: SubmittableResultImpl) => void;
+import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
+
+type StatusCallback = (receipt: ISubmittableResult) => void;
 type UnsubCallback = () => void;
 
 interface TxMockData {
@@ -40,26 +38,27 @@ export enum TxFailReason {
   Other = 'Other',
 }
 
-const defaultReceipt: SubmittableResultImpl = {
+const defaultReceipt: ISubmittableResult = {
   status: { isReady: true } as ExtrinsicStatus,
   findRecord: () => undefined,
   filterRecords: () => [],
   isCompleted: false,
   isError: false,
   isFinalized: false,
+  isInBlock: false,
   events: [],
 };
 
-const successReceipt: SubmittableResultImpl = merge({}, defaultReceipt, {
-  status: { isReady: false, isFinalized: true, asFinalized: 'blockHash' },
+const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
+  status: { isReady: false, isInBlock: true, asInBlock: 'blockHash' },
   isCompleted: true,
-  isFinalized: true,
+  isInBlock: true,
 });
 
 /**
  * @hidden
  */
-const createFailReceipt = (err: Partial<DispatchError>): SubmittableResultImpl =>
+const createFailReceipt = (err: Partial<DispatchError>): ISubmittableResult =>
   merge({}, successReceipt, {
     findRecord: () => ({ event: { data: [err] } }),
   });
@@ -85,7 +84,7 @@ const moduleFailReceipt = createFailReceipt({
   } as unknown) as DispatchErrorModule,
 });
 
-const abortReceipt: SubmittableResultImpl = merge({}, defaultReceipt, {
+const abortReceipt: ISubmittableResult = merge({}, defaultReceipt, {
   status: { isInvalid: true, isReady: false },
   isError: true,
   isCompleted: true,
@@ -94,10 +93,7 @@ const abortReceipt: SubmittableResultImpl = merge({}, defaultReceipt, {
 /**
  * @hidden
  */
-const statusToReceipt = (
-  status: MockTxStatus,
-  failReason?: TxFailReason
-): SubmittableResultImpl => {
+const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubmittableResult => {
   if (status === MockTxStatus.Aborted) {
     return abortReceipt;
   }
@@ -161,6 +157,7 @@ export class PolkadotMockFactory {
       and use the methods in the class to fetch/manipulate different parts of the API as required
      */
 
+    this.apiMockManager.restore();
     this.txMocksData.clear();
     this.initTx();
     this.initQuery();

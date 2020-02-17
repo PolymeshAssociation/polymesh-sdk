@@ -1,15 +1,17 @@
-import { PolymeshTransaction } from '~/base/PolymeshTransaction';
-import { TxTags, SubmittableResultImpl } from '@polymathnetwork/polkadot/api/types';
+import { TxTags } from '@polymathnetwork/polkadot/api/types';
+import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import sinon from 'sinon';
-import { PostTransactionValueArray, MaybePostTransactionValue } from '~/types/internal';
+
+import { PolymeshTransaction } from '~/base/PolymeshTransaction';
+import { PostTransactionValue } from '~/base/PostTransactionValue';
 import {
-  PolkadotMockFactory,
   MockTxStatus,
+  PolkadotMockFactory,
   TxFailReason,
 } from '~/testUtils/mocks/PolkadotMockFactory';
 import { TransactionStatus } from '~/types';
+import { MaybePostTransactionValue, PostTransactionValueArray } from '~/types/internal';
 import { delay } from '~/utils';
-import { PostTransactionValue } from '~/base/PostTransactionValue';
 
 describe('Polymesh Transaction class', () => {
   const mockFactory = new PolkadotMockFactory();
@@ -19,6 +21,10 @@ describe('Polymesh Transaction class', () => {
     signer: 'signer',
     isCritical: false,
   };
+
+  afterEach(() => {
+    mockFactory.reset();
+  });
 
   describe('method: run', () => {
     test('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
@@ -43,7 +49,7 @@ describe('Polymesh Transaction class', () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker');
       const ticker = 'A_DIFFERENT_TICKER';
       const postTransactionTicker = new PostTransactionValue(async () => ticker);
-      await postTransactionTicker.run({} as SubmittableResultImpl);
+      await postTransactionTicker.run({} as ISubmittableResult);
       const args: [MaybePostTransactionValue<string>] = [postTransactionTicker];
 
       const transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
