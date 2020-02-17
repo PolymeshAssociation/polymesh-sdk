@@ -5,8 +5,8 @@ import { SubmittableResultImpl } from '@polymathnetwork/polkadot/api/types';
  * Represents a value or method that doesn't exist at the moment, but will exist once a certain transaction
  * has been run
  */
-export class PostTransactionResolver<Value> {
-  public result?: Value;
+export class PostTransactionValue<Value> {
+  public value?: Value;
 
   private resolver: (receipt: SubmittableResultImpl) => Promise<Value | undefined>;
 
@@ -21,6 +21,6 @@ export class PostTransactionResolver<Value> {
   public async run(receipt: SubmittableResultImpl): Promise<void> {
     const result = await this.resolver(receipt);
 
-    this.result = result;
+    this.value = result;
   }
 }
