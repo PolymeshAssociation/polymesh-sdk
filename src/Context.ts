@@ -1,25 +1,28 @@
 import { Identity } from './api/entities/Identity';
 import { ApiPromise, Keyring } from '@polymathnetwork/polkadot/api';
-import { KeyringPair, KeyringPair$Meta } from '@polkadot/keyring/types';
+import { KeyringPair } from '@polkadot/keyring/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
-import { LinkedKeyInfo } from '@polymathnetwork/polkadot/types/interfaces';
-import { Option } from '@polymathnetwork/polkadot/types/codec';
+import { IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
 
 interface BuildParams {
   polymeshApi: ApiPromise;
   accountSeed?: string | undefined;
 }
 
+interface SignerData {
+  currentPair: KeyringPair;
+  did: IdentityId;
+}
+
 interface ConstructorParams {
   polymeshApi: ApiPromise;
   keyring: Keyring;
-  currentPair?: KeyringPair;
-  did?: Option<LinkedKeyInfo>;
+  pair?: SignerData;
 }
 
-interface AddressPair {
+interface AccountData {
   address: string;
-  meta: KeyringPair$Meta;
+  name?: string;
 }
 
 /**
@@ -34,20 +37,22 @@ export class Context {
 
   public polymeshApi: ApiPromise;
 
-  public currentPair: KeyringPair | undefined;
+  public currentPair?: KeyringPair;
 
-  public currentIdentity: Identity | undefined;
+  public currentIdentity?: Identity;
 
-  // eslint-disable-next-line require-jsdoc
+  /**
+   * @hidden
+   */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, keyring, currentPair, did } = params;
+    const { polymeshApi, keyring, pair } = params;
 
     this.polymeshApi = polymeshApi;
     this.keyring = keyring;
 
-    if (currentPair && did) {
-      this.currentPair = currentPair;
-      this.currentIdentity = new Identity({ did: did.toString() }, this);
+    if (pair) {
+      this.currentPair = pair.currentPair;
+      this.currentIdentity = new Identity({ did: pair.did.toString() }, this);
     }
   }
 
@@ -61,30 +66,46 @@ export class Context {
 
     if (accountSeed) {
       if (accountSeed.length !== 32) {
-        // TODO it should uses polymath error class
-        throw new Error('Seed must be 32 length size');
+        // TODO - MSDK-49 Create Polymesh Error class
+        throw new Error('Seed must be 32 characters in length');
       }
 
       const currentPair = keyring.addFromSeed(stringToU8a(accountSeed));
-      const did = await polymeshApi.query.identity.keyToIdentityIds(currentPair.publicKey);
-      return new Context({ polymeshApi, keyring, currentPair, did });
+      const keyToIdentityIds = await await polymeshApi.query.identity.keyToIdentityIds(
+        currentPair.publicKey
+      );
+      let did: IdentityId;
+      try {
+        did = keyToIdentityIds.unwrap().asUnique;
+      } catch (e) {
+        // TODO - MSDK-49 Create Polymesh Error class
+        throw new Error('Identity ID does not exist');
+      }
+
+      return new Context({ polymeshApi, keyring, pair: { currentPair, did } });
     }
     return new Context({ polymeshApi, keyring });
   }
 
-  public getAddresses = (): Array<AddressPair> => {
+  /**
+   * Retrieve a list of addresses associated with the account
+   */
+  public getAccounts = (): Array<AccountData> => {
     const { keyring } = this;
     return keyring.getPairs().map(({ address, meta }) => {
-      return { address, meta };
+      return { address, name: meta.name };
     });
   };
 
+  /**
+   * Set a pair as a current account keyring pair
+   */
   public setPair = (address: string): void => {
     const { keyring } = this;
     try {
       this.currentPair = keyring.getPair(address);
     } catch (e) {
-      // TODO it should uses polymath error class
+      // TODO - MSDK-49 Create Polymesh Error class
       throw new Error('The address is not present in the keyring set');
     }
   };

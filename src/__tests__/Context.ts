@@ -2,128 +2,147 @@ import sinon from 'sinon';
 import { Context } from '~/Context';
 import { ImportMock } from 'ts-mock-imports';
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
-import * as apiPromiseModule from '@polymathnetwork/polkadot/api/promise';
 import * as identityModule from '~/api/entities/Identity';
+import { QueryableStorage } from '@polymathnetwork/polkadot/api/types';
 
-describe('Context Class', () => {
+describe('Context class', () => {
   const mockKeyring = ImportMock.mockClass(polkadotModule, 'Keyring');
-  const mockApiPromise = ImportMock.mockClass(polkadotModule, 'ApiPromise');
-  const apiPromise = ImportMock.mockStaticClass(apiPromiseModule, 'default');
-  const mockIdentity = ImportMock.mockClass(identityModule, 'Identity');
+  const mockApiPromise = ImportMock.mockClass<polkadotModule.ApiPromise>(
+    polkadotModule,
+    'ApiPromise'
+  );
 
   afterAll(() => {
     mockKeyring.restore();
     mockApiPromise.restore();
-    apiPromise.restore();
-    mockIdentity.restore();
   });
 
-  test('should throw if accountSeed parameter is not a 32 lenght string', async () => {
-    const context = Context.create({
-      polymeshApi: apiPromise.getMockInstance(),
-      accountSeed: 'abc',
+  describe('method: create', () => {
+    test('should throw if accountSeed parameter is not a 32 length string', async () => {
+      const context = Context.create({
+        polymeshApi: mockApiPromise.getMockInstance(),
+        accountSeed: 'abc',
+      });
+
+      await expect(context).rejects.toThrow(new Error('Seed must be 32 characters in length'));
     });
 
-    await expect(context).rejects.toThrow(new Error('Seed must be 32 length size'));
-  });
-
-  test('should create a Context class with Pair and Identity attached', async () => {
-    const keyToIdentityIds = jest.fn(() => true);
-    const keyringAddFromSeedMock = mockKeyring.mock('addFromSeed', true);
-    apiPromise.set('query', {
-      identity: {
-        keyToIdentityIds: keyToIdentityIds,
-      },
-    });
-
-    const context = await Context.create({
-      polymeshApi: apiPromise.getMockInstance(),
-      accountSeed: 'Alice'.padEnd(32, ' '),
-    });
-
-    sinon.assert.calledOnce(keyringAddFromSeedMock);
-    expect(keyToIdentityIds).toBeCalled();
-    expect(context.currentPair).toBe(true);
-    sinon.assert.match(context.currentIdentity instanceof identityModule.Identity, true);
-  });
-
-  test('should create a Context class without Pair and Identity attached', async () => {
-    const keyToIdentityIds = jest.fn(() => true);
-    const keyringAddFromSeedMock = mockKeyring.mock('addFromSeed', true);
-    apiPromise.set('query', {
-      identity: {
-        keyToIdentityIds: keyToIdentityIds,
-      },
-    });
-
-    const context = await Context.create({
-      polymeshApi: apiPromise.getMockInstance(),
-    });
-
-    sinon.assert.notCalled(keyringAddFromSeedMock);
-    expect(keyToIdentityIds).not.toBeCalled();
-    expect(context.currentPair).toBe(undefined);
-    expect(context.currentIdentity).toBe(undefined);
-  });
-
-  test('should getAddresses method retrieve an array of address and meta data', async () => {
-    const addresses = [
-      {
-        address: '01',
-        meta: {
-          name: 'name 01',
+    test('should create a Context class with Pair and Identity attached', async () => {
+      const keyToIdentityIdsStub = sinon.stub().returns({
+        unwrap: () => {
+          return { asUnique: '012abc' };
         },
-        somethingelse: false,
-      },
-      {
-        address: '02',
-        meta: {
-          name: 'name 02',
+      });
+      const keyringAddFromSeedStub = mockKeyring.mock('addFromSeed', 'currentPair');
+      mockApiPromise.set('query', ({
+        identity: {
+          keyToIdentityIds: keyToIdentityIdsStub,
         },
-        somethingelse: false,
-      },
-    ];
-    const keyringGetAddressesMock = mockKeyring.mock('getPairs', addresses);
+      } as unknown) as QueryableStorage<'promise'>);
 
-    const context = await Context.create({
-      polymeshApi: apiPromise.getMockInstance(),
+      const context = await Context.create({
+        polymeshApi: mockApiPromise.getMockInstance(),
+        accountSeed: 'Alice'.padEnd(32, ' '),
+      });
+
+      sinon.assert.calledOnce(keyringAddFromSeedStub);
+      sinon.assert.calledOnce(keyToIdentityIdsStub);
+      expect(context.currentPair).toEqual('currentPair');
+      sinon.assert.match(context.currentIdentity instanceof identityModule.Identity, true);
     });
 
-    const result = context.getAddresses();
-    sinon.assert.calledOnce(keyringGetAddressesMock);
-    expect(result[0].address).toBe('01');
-    expect(result[1].address).toBe('02');
-    expect(result[0].meta.name).toBe('name 01');
-    expect(result[1].meta.name).toBe('name 02');
+    test('should create a Context class without Pair and Identity attached', async () => {
+      const keyToIdentityIdsStub = sinon.stub().returns('identityId');
+      const keyringAddFromSeedMock = mockKeyring.mock('addFromSeed', true);
+      mockApiPromise.set('query', ({
+        identity: {
+          keyToIdentityIds: keyToIdentityIdsStub,
+        },
+      } as unknown) as QueryableStorage<'promise'>);
+
+      const context = await Context.create({
+        polymeshApi: mockApiPromise.getMockInstance(),
+      });
+
+      sinon.assert.notCalled(keyringAddFromSeedMock);
+      sinon.assert.notCalled(keyToIdentityIdsStub);
+      expect(context.currentPair).toBe(undefined);
+      expect(context.currentIdentity).toBe(undefined);
+    });
+
+    test('should throw if the account seed is not assotiated with an IdentityId ', async () => {
+      const keyToIdentityIdsStub = sinon.stub().returns({
+        unwrap: sinon.stub().throws(),
+      });
+      mockKeyring.mock('addFromSeed', 'currentPair');
+      mockApiPromise.set('query', ({
+        identity: {
+          keyToIdentityIds: keyToIdentityIdsStub,
+        },
+      } as unknown) as QueryableStorage<'promise'>);
+
+      const context = Context.create({
+        polymeshApi: mockApiPromise.getMockInstance(),
+        accountSeed: 'Alice'.padEnd(32, ' '),
+      });
+
+      await expect(context).rejects.toThrow(new Error('Identity ID does not exist'));
+    });
   });
 
-  test('throw error if the pair does not exist in the keyrign set', async () => {
-    mockKeyring
-      .mock('getPair')
-      .withArgs('012')
-      .throws();
-    const context = await Context.create({
-      polymeshApi: apiPromise.getMockInstance(),
-    });
+  describe('method: getAccounts', () => {
+    test('should getAccounts method retrieve an array of address and meta data', async () => {
+      const addresses = [
+        {
+          address: '01',
+          meta: {
+            name: 'name 01',
+          },
+          somethingelse: false,
+        },
+        {
+          address: '02',
+          meta: {},
+          somethingelse: false,
+        },
+      ];
+      const keyringGetAccountsStub = mockKeyring.mock('getPairs', addresses);
 
-    try {
-      context.setPair('012');
-      sinon.assert.fail();
-    } catch (e) {}
+      const context = await Context.create({
+        polymeshApi: mockApiPromise.getMockInstance(),
+      });
+
+      const result = context.getAccounts();
+      sinon.assert.calledOnce(keyringGetAccountsStub);
+      expect(result[0].address).toBe('01');
+      expect(result[1].address).toBe('02');
+      expect(result[0].name).toBe('name 01');
+      expect(result[1].name).toBe(undefined);
+    });
   });
 
-  test('should set a new currentPair', async () => {
-    const keyringGetPairMock = mockKeyring.mock('getPair', true).withArgs('012');
+  describe('method: getPair', () => {
+    test('should throw error if the pair does not exist in the keyring set', async () => {
+      mockKeyring
+        .mock('getPair')
+        .withArgs('012')
+        .throws();
+      const context = await Context.create({
+        polymeshApi: mockApiPromise.getMockInstance(),
+      });
 
-    const context = await Context.create({
-      polymeshApi: apiPromise.getMockInstance(),
+      expect(() => context.setPair('012')).toThrow('The address is not present in the keyring set');
     });
 
-    try {
+    test('should expect currentPair to be set to the new value', async () => {
+      const keyringGetPairStub = mockKeyring.mock('getPair', true);
+
+      const context = await Context.create({
+        polymeshApi: mockApiPromise.getMockInstance(),
+      });
+
       context.setPair('012');
-      sinon.assert.calledOnce(keyringGetPairMock);
-    } catch (e) {
-      sinon.assert.fail();
-    }
+      sinon.assert.calledOnce(keyringGetPairStub);
+    });
   });
 });
