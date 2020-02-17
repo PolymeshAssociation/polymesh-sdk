@@ -1,8 +1,9 @@
-import { ImportMock } from 'ts-mock-imports';
-import { Polymesh } from '~/Polymesh';
-import sinon from 'sinon';
-import * as contextModule from '~/Context';
 import * as pokadotModule from '@polymathnetwork/polkadot/api';
+import sinon from 'sinon';
+import { ImportMock } from 'ts-mock-imports';
+
+import * as contextModule from '~/Context';
+import { Polymesh } from '~/Polymesh';
 
 describe('Polymesh Class', () => {
   const mockApiPromise = ImportMock.mockStaticClass(pokadotModule, 'ApiPromise');

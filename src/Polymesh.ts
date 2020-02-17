@@ -1,7 +1,8 @@
 import { ApiPromise, WsProvider } from '@polymathnetwork/polkadot/api';
+
+import { PolymeshError } from './base/PolymeshError';
 import { Context } from './Context';
 import { ErrorCode } from './types';
-import { PolymeshError } from './base/PolymeshError';
 
 interface ConnectParams {
   nodeUrl: string;

@@ -1,8 +1,9 @@
-import { Identity } from './api/entities/Identity';
-import { ApiPromise, Keyring } from '@polymathnetwork/polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
+import { ApiPromise, Keyring } from '@polymathnetwork/polkadot/api';
 import { IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
+
+import { Identity } from './api/entities/Identity';
 
 interface BuildParams {
   polymeshApi: ApiPromise;
