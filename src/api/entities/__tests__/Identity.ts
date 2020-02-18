@@ -1,20 +1,24 @@
-import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
+import sinon from 'sinon';
 import { ImportMock, StaticMockManager } from 'ts-mock-imports';
 
 import { Entity } from '~/api/entities/Entity';
 import { Identity } from '~/api/entities/Identity';
 import * as contextModule from '~/Context';
+import { PolkadotMockFactory } from '~/testUtils/mocks/PolkadotMockFactory';
 import * as utils from '~/utils';
 
 describe('Identity class', () => {
   let mockContext: StaticMockManager<contextModule.Context>;
+  let polkadotMockFactory: PolkadotMockFactory;
 
   beforeEach(() => {
     mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
+    polkadotMockFactory = new PolkadotMockFactory();
   });
 
   afterEach(() => {
     mockContext.restore();
+    polkadotMockFactory.reset();
   });
 
   test('should extend entity', () => {
@@ -63,21 +67,11 @@ describe('Identity class', () => {
 
   describe('method: getPolyBalance', () => {
     test("should return the identity's POLY balance", async () => {
-      const fn = jest.fn(
-        async (): Promise<Balance> => {
-          return (1 as unknown) as Balance;
-        }
-      );
-      mockContext.set('polymeshApi', {
-        query: {
-          balances: {
-            identityBalance: fn,
-          },
-        },
-      });
+      const stub = polkadotMockFactory.createQueryStub('balances', 'identityBalance');
+      mockContext.set('polymeshApi', polkadotMockFactory.getInstance());
       const identity = new Identity({ did: 'abc' }, mockContext.getMockInstance());
       await identity.getPolyBalance();
-      expect(fn).toHaveBeenCalledWith('abc');
+      sinon.assert.calledOnce(stub);
     });
   });
 });
