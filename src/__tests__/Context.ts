@@ -90,19 +90,19 @@ describe('Context class', () => {
   });
 
   describe('method: getAccounts', () => {
-    test('should getAccounts method retrieve an array of address and meta data', async () => {
+    test('should retrieve an array of addresses and metadata', async () => {
       const addresses = [
         {
           address: '01',
           meta: {
             name: 'name 01',
           },
-          somethingelse: false,
+          somethingElse: false,
         },
         {
           address: '02',
           meta: {},
-          somethingelse: false,
+          somethingElse: false,
         },
       ];
       const keyringGetAccountsStub = mockKeyring.mock('getPairs', addresses);

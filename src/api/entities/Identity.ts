@@ -66,7 +66,7 @@ export class Identity extends Entity {
   public uuid: string;
 
   /**
-   * Unique identifier for an Identity
+   * Identity ID as stored in the blockchain
    */
   public did: string;
 
