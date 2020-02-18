@@ -1,4 +1,4 @@
-import * as pokadotModule from '@polymathnetwork/polkadot/api';
+import * as polkadotModule from '@polymathnetwork/polkadot/api';
 import sinon from 'sinon';
 import { ImportMock, MockManager, StaticMockManager } from 'ts-mock-imports';
 
@@ -6,13 +6,13 @@ import * as contextModule from '~/Context';
 import { Polymesh } from '~/Polymesh';
 
 describe('Polymesh Class', () => {
-  let mockApiPromise: StaticMockManager<pokadotModule.Keyring>;
-  let mockWsProvider: MockManager<pokadotModule.Keyring>;
+  let mockApiPromise: StaticMockManager<polkadotModule.Keyring>;
+  let mockWsProvider: MockManager<polkadotModule.Keyring>;
   let mockContext: StaticMockManager<contextModule.Context>;
 
   beforeEach(() => {
-    mockApiPromise = ImportMock.mockStaticClass(pokadotModule, 'ApiPromise');
-    mockWsProvider = ImportMock.mockClass(pokadotModule, 'WsProvider');
+    mockApiPromise = ImportMock.mockStaticClass(polkadotModule, 'ApiPromise');
+    mockWsProvider = ImportMock.mockClass(polkadotModule, 'WsProvider');
     mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
   });
 
