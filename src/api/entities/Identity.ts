@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
 
 import { PolymeshError } from '~/base/PolymeshError';
@@ -24,8 +23,8 @@ export type Params = UniqueIdentifiers;
  * @hidden
  * Checks if a value is of type [[UniqueIdentifiers]]
  */
-function isUniqueIdentifiers(identifier: any): identifier is UniqueIdentifiers {
-  const { did } = identifier;
+function isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  const { did } = identifier as UniqueIdentifiers;
 
   return typeof did === 'string';
 }
