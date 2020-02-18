@@ -60,4 +60,5 @@ export enum ErrorCode {
   TransactionRejectedByUser = 'TransactionRejectedByUser',
   TransactionReverted = 'TransactionReverted',
   FatalError = 'FatalError',
+  InvalidUuid = 'InvalidUuid',
 }
