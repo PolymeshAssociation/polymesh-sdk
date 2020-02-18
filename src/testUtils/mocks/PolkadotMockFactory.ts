@@ -1,6 +1,6 @@
 /* istanbul ignore file */
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
-import { QueryableStorage, SubmittableExtrinsics } from '@polymathnetwork/polkadot/api/types';
+import { QueryableStorage } from '@polymathnetwork/polkadot/api/types';
 import {
   DispatchError,
   DispatchErrorModule,
@@ -9,7 +9,7 @@ import {
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
-import { ImportMock } from 'ts-mock-imports';
+import { ImportMock, MockManager } from 'ts-mock-imports';
 
 import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
 
@@ -128,10 +128,7 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
  * Produces relevant mocks of different parts of the polkadot lib for testing
  */
 export class PolkadotMockFactory {
-  private apiMockManager = ImportMock.mockClass<polkadotModule.ApiPromise>(
-    polkadotModule,
-    'ApiPromise'
-  );
+  private apiMockManager = {} as MockManager<polkadotModule.ApiPromise>;
 
   private txMocksData = new Map<unknown, TxMockData>();
 
@@ -157,7 +154,10 @@ export class PolkadotMockFactory {
       and use the methods in the class to fetch/manipulate different parts of the API as required
      */
 
-    this.apiMockManager.restore();
+    this.apiMockManager = ImportMock.mockClass<polkadotModule.ApiPromise>(
+      polkadotModule,
+      'ApiPromise'
+    );
     this.txMocksData.clear();
     this.initTx();
     this.initQuery();
@@ -169,7 +169,7 @@ export class PolkadotMockFactory {
    * Mock the tx module
    */
   private initTx(): void {
-    const txModule = {} as SubmittableExtrinsics<'promise'>;
+    const txModule = {} as Extrinsics;
     this.txModule = txModule;
     this.apiMockManager.set('tx', txModule);
   }
@@ -186,14 +186,24 @@ export class PolkadotMockFactory {
   }
 
   /**
-   * Resets the factory to the default, empty mocks
+   * Reset the factory to the default, empty mocks
    */
   public reset(): void {
+    this.cleanup();
     this.init();
   }
 
   /**
-   * Creates and returns a mocked transaction. Each call will create a new version of the stub
+   * Restore imports to their original state. While [[reset]] simply clears all stubs,
+   * this method makes it so that next import that targets polkadot will resolve to the real
+   * library
+   */
+  public cleanup(): void {
+    this.apiMockManager.restore();
+  }
+
+  /**
+   * Create and returns a mocked transaction. Each call will create a new version of the stub
    *
    * @param mod - name of the module
    * @param tx - name of the transaction function
@@ -253,7 +263,7 @@ export class PolkadotMockFactory {
   }
 
   /**
-   * Creates and returns a query stub
+   * Create and return a query stub
    *
    * @param mod - name of the module
    * @param query - name of the query function
