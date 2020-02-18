@@ -1,6 +1,5 @@
 /* istanbul ignore file */
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
-import { QueryableStorage } from '@polymathnetwork/polkadot/api/types';
 import {
   DispatchError,
   DispatchErrorModule,
@@ -9,9 +8,10 @@ import {
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
-import { ImportMock, MockManager } from 'ts-mock-imports';
+import { ImportMock } from 'ts-mock-imports';
 
 import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
+import { Mutable } from '~/types/utils';
 
 type StatusCallback = (receipt: ISubmittableResult) => void;
 type UnsubCallback = () => void;
@@ -128,13 +128,15 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
  * Produces relevant mocks of different parts of the polkadot lib for testing
  */
 export class PolkadotMockFactory {
-  private apiMockManager = {} as MockManager<polkadotModule.ApiPromise>;
+  private polkadotConstructorStub = {} as SinonStub<unknown[], polkadotModule.ApiPromise>;
 
   private txMocksData = new Map<unknown, TxMockData>();
 
   private txModule = {} as Extrinsics;
 
-  private queryModule = {} as QueryableStorage<'promise'>;
+  private queryModule = {} as Queries;
+
+  private apiInstance = {} as Mutable<polkadotModule.ApiPromise>;
 
   /**
    * @hidden
@@ -154,13 +156,19 @@ export class PolkadotMockFactory {
       and use the methods in the class to fetch/manipulate different parts of the API as required
      */
 
-    this.apiMockManager = ImportMock.mockClass<polkadotModule.ApiPromise>(
-      polkadotModule,
-      'ApiPromise'
-    );
     this.txMocksData.clear();
+
+    this.polkadotConstructorStub = ImportMock.mockFunction(polkadotModule, 'ApiPromise');
+    this.apiInstance = {} as polkadotModule.ApiPromise;
     this.initTx();
     this.initQuery();
+  }
+
+  /**
+   * @hidden
+   */
+  private updatePolkadotConstructor(): void {
+    this.polkadotConstructorStub.returns(this.apiInstance as polkadotModule.ApiPromise);
   }
 
   /**
@@ -170,8 +178,21 @@ export class PolkadotMockFactory {
    */
   private initTx(): void {
     const txModule = {} as Extrinsics;
-    this.txModule = txModule;
-    this.apiMockManager.set('tx', txModule);
+
+    this.updateTx(txModule);
+  }
+
+  /**
+   * @hidden
+   */
+  private updateTx(txModule?: Extrinsics): void {
+    const updateTo = txModule || this.txModule;
+
+    this.txModule = updateTo;
+
+    this.apiInstance.tx = this.txModule;
+
+    this.updatePolkadotConstructor();
   }
 
   /**
@@ -180,9 +201,21 @@ export class PolkadotMockFactory {
    * Mock the query module
    */
   private initQuery(): void {
-    const queryModule = {} as QueryableStorage<'promise'>;
-    this.queryModule = queryModule;
-    this.apiMockManager.set('query', queryModule);
+    const queryModule = {} as Queries;
+    this.updateQuery(queryModule);
+  }
+
+  /**
+   * @hidden
+   */
+  private updateQuery(queryModule?: Queries): void {
+    const updateTo = queryModule || this.queryModule;
+
+    this.queryModule = updateTo;
+
+    this.apiInstance.query = this.queryModule;
+
+    this.updatePolkadotConstructor();
   }
 
   /**
@@ -199,7 +232,7 @@ export class PolkadotMockFactory {
    * library
    */
   public cleanup(): void {
-    this.apiMockManager.restore();
+    this.polkadotConstructorStub.restore();
   }
 
   /**
@@ -249,9 +282,9 @@ export class PolkadotMockFactory {
       }),
     }) as unknown) as Extrinsics[ModuleName][TransactionName];
 
-    this.apiMockManager.set('tx', this.txModule);
+    this.updateTx();
 
-    const instance = this.apiMockManager.getMockInstance();
+    const instance = this.apiInstance;
 
     const transactionMock = (instance.tx[mod][tx] as unknown) as PolymeshTx<
       ModuleName,
@@ -287,10 +320,10 @@ export class PolkadotMockFactory {
     if (!runtimeModule[query]) {
       runtimeModule[query] = (sinon.stub() as unknown) as Queries[ModuleName][QueryName];
 
-      this.apiMockManager.set('query', this.queryModule);
+      this.updateQuery();
     }
 
-    const instance = this.apiMockManager.getMockInstance();
+    const instance = this.apiInstance;
 
     const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] & SinonStub;
 
@@ -342,6 +375,6 @@ export class PolkadotMockFactory {
    * Retrieve an instance of the mocked Polkadot
    */
   public getInstance(): polkadotModule.ApiPromise {
-    return this.apiMockManager.getMockInstance();
+    return this.apiInstance as polkadotModule.ApiPromise;
   }
 }
