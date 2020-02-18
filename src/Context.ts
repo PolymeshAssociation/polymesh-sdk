@@ -72,7 +72,7 @@ export class Context {
       }
 
       const currentPair = keyring.addFromSeed(stringToU8a(accountSeed));
-      const keyToIdentityIds = await await polymeshApi.query.identity.keyToIdentityIds(
+      const keyToIdentityIds = await polymeshApi.query.identity.keyToIdentityIds(
         currentPair.publicKey
       );
       let did: IdentityId;

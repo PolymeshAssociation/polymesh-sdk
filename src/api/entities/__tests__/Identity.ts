@@ -67,11 +67,14 @@ describe('Identity class', () => {
 
   describe('method: getPolyBalance', () => {
     test("should return the identity's POLY balance", async () => {
-      const stub = polkadotMockFactory.createQueryStub('balances', 'identityBalance');
+      const identityBalanceStub = polkadotMockFactory.createQueryStub(
+        'balances',
+        'identityBalance'
+      );
       mockContext.set('polymeshApi', polkadotMockFactory.getInstance());
       const identity = new Identity({ did: 'abc' }, mockContext.getMockInstance());
       await identity.getPolyBalance();
-      sinon.assert.calledOnce(stub);
+      sinon.assert.calledOnce(identityBalanceStub);
     });
   });
 });
