@@ -1,8 +1,8 @@
 import sinon from 'sinon';
 import { ImportMock, StaticMockManager } from 'ts-mock-imports';
 
-import { Entity } from '~/api/entities/Entity';
 import { Identity } from '~/api/entities/Identity';
+import { Entity } from '~/base/Entity';
 import * as contextModule from '~/Context';
 import { PolkadotMockFactory } from '~/testUtils/mocks/PolkadotMockFactory';
 import * as utils from '~/utils';
