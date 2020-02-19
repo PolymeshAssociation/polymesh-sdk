@@ -49,28 +49,28 @@ export function unserialize(id: string): Record<string, unknown> {
 }
 
 /**
- * Convert an Identity id string to an IdentityId object
+ * Convert an string to an IdentityId representation
  */
 export function stringToIdentityId(identityId: string, context: Context): IdentityId {
   return createType<'IdentityId'>(context.polymeshApi.registry, 'IdentityId', identityId);
 }
 
 /**
- * Convert an IdentityId object to an Identity id string
+ * Convert an IdentityId representation to an string
  */
 export function identityIdToString(identityId: IdentityId): string {
   return identityId.toString();
 }
 
 /**
- * Convert an human readable number to a Balance object
+ * Convert an human readable number to a Balance representation
  */
 export function numberToBalance(value: number, context: Context): Balance {
   return createType<'Balance'>(context.polymeshApi.registry, 'Balance', value * Math.pow(10, 6));
 }
 
 /**
- * Convert a Balance object to a BigNumber
+ * Convert a Balance representation to a BigNumber
  */
 export function balanceToBigNumber(balance: Balance): BigNumber {
   return new BigNumber(Number(balance.toString()) / Math.pow(10, 6));
