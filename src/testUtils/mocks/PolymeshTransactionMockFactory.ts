@@ -3,8 +3,8 @@ import sinon, { SinonStub } from 'sinon';
 import { ImportMock } from 'ts-mock-imports';
 
 import * as polymeshTransactionModule from '~/base';
+import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
-import { Mocked } from '~/types/utils';
 
 interface MockTransactionSpec {
   isCritical: boolean;

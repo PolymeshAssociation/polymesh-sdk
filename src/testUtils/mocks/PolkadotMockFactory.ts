@@ -11,8 +11,9 @@ import sinon, { SinonStub } from 'sinon';
 import { ImportMock, StaticMockManager } from 'ts-mock-imports';
 
 import * as contextModule from '~/base';
+import { Mocked } from '~/testUtils/types';
 import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
-import { Mocked, Mutable } from '~/types/utils';
+import { Mutable } from '~/types/utils';
 
 type StatusCallback = (receipt: ISubmittableResult) => void;
 type UnsubCallback = () => void;

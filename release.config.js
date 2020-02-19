@@ -1,15 +1,15 @@
 module.exports = {
-  repositoryUrl: "https://github.com/PolymathNetwork/polymesh-sdk.git",
+  repositoryUrl: 'https://github.com/PolymathNetwork/polymesh-sdk.git',
   branches: [
-    "master",
+    'master',
     {
-      name: "beta",
-      prerelease: true
-    }
+      name: 'beta',
+      prerelease: true,
+    },
   ],
   /*
    * In this order the **prepare** step of @semantic-release/npm will run first
-   * followed by @semantic-release/git:
+   * followed by @semantic-release/github:
    *  - Update the package.json version and create the npm package tarball
    *  - Push a release commit and tag, including configurable files
    *
@@ -18,15 +18,14 @@ module.exports = {
    *  - https://github.com/semantic-release/semantic-release/blob/beta/docs/extending/plugins-list.md
    */
   plugins: [
-    "@semantic-release/commit-analyzer",
-    "@semantic-release/release-notes-generator",
+    '@semantic-release/commit-analyzer',
+    '@semantic-release/release-notes-generator',
     [
-      "@semantic-release/npm",
+      '@semantic-release/npm',
       {
-        tarballDir: "npm-package/"
-      }
+        tarballDir: 'npm-package/',
+      },
     ],
-    "@semantic-release/git",
-    "@semantic-release/github"
-  ]
+    '@semantic-release/github',
+  ],
 };
