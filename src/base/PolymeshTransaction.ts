@@ -3,7 +3,7 @@ import { DispatchError } from '@polymathnetwork/polkadot/types/interfaces';
 import { ISubmittableResult, RegistryError } from '@polymathnetwork/polkadot/types/types';
 import { EventEmitter } from 'events';
 
-import { PolymeshError } from '~/base/PolymeshError';
+import { PolymeshError } from '~/base';
 import { ErrorCode, TransactionStatus } from '~/types';
 import {
   MapMaybePostTransactionValue,

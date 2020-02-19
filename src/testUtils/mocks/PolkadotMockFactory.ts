@@ -10,7 +10,7 @@ import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 import { ImportMock, StaticMockManager } from 'ts-mock-imports';
 
-import * as contextModule from '~/Context';
+import * as contextModule from '~/base';
 import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
 import { Mocked, Mutable } from '~/types/utils';
 

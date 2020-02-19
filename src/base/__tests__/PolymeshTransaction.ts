@@ -1,23 +1,12 @@
-import { SubmittableExtrinsic, TxTags } from '@polymathnetwork/polkadot/api/types';
-import { CallBase, ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
-import sinon, { SinonStub } from 'sinon';
+import { TxTags } from '@polymathnetwork/polkadot/api/types';
+import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import sinon from 'sinon';
 
-import { PolymeshTransaction } from '~/base/PolymeshTransaction';
-import { PostTransactionValue } from '~/base/PostTransactionValue';
-import {
-  MockTxStatus,
-  PolkadotMockFactory,
-  TxFailReason,
-} from '~/testUtils/mocks/PolkadotMockFactory';
+import { PolymeshTransaction, PostTransactionValue } from '~/base';
+import { MockTxStatus, PolkadotMockFactory, TxFailReason } from '~/testUtils/mocks';
 import { TransactionStatus } from '~/types';
 import { MaybePostTransactionValue, PostTransactionValueArray } from '~/types/internal';
 import { delay } from '~/utils';
-
-type ExtractTxArgs<T> = T extends ((...args: infer A) => SubmittableExtrinsic<'promise'>) &
-  CallBase &
-  SinonStub
-  ? A
-  : never;
 
 describe('Polymesh Transaction class', () => {
   const mockFactory = new PolkadotMockFactory();

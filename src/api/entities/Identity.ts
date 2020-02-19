@@ -1,7 +1,6 @@
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
 
-import { PolymeshError } from '~/base/PolymeshError';
-import { Context } from '~/Context';
+import { Context, PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
 import { serialize, unserialize } from '~/utils';
 

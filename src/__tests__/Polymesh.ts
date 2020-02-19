@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { ImportMock, MockManager } from 'ts-mock-imports';
 
 import { Polymesh } from '~/Polymesh';
-import { PolkadotMockFactory } from '~/testUtils/mocks/PolkadotMockFactory';
+import { PolkadotMockFactory } from '~/testUtils/mocks';
 
 describe('Polymesh Class', () => {
   const polkadotMockFactory = new PolkadotMockFactory();

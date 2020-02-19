@@ -3,7 +3,7 @@ import { ApiPromise, Keyring } from '@polymathnetwork/polkadot/api';
 import { IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
 import { IKeyringPair } from '@polymathnetwork/polkadot/types/types';
 
-import { Identity } from './api/entities/Identity';
+import { Identity } from '~/api/entities';
 
 interface BuildParams {
   polymeshApi: ApiPromise;

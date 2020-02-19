@@ -113,6 +113,7 @@ export class PolymeshTransactionMockFactory {
       instance.onStatusChange = (sinon.stub().callsFake(listener => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const mockData = this.transactionMocksData.get(instance)!;
+
         this.transactionMocksData.set(instance, {
           ...mockData,
           statusChangeListener: listener,

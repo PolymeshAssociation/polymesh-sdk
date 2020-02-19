@@ -2,9 +2,9 @@ import * as polkadotModule from '@polymathnetwork/polkadot/api';
 import sinon from 'sinon';
 import { ImportMock, MockManager } from 'ts-mock-imports';
 
-import * as identityModule from '~/api/entities/Identity';
-import { Context } from '~/Context';
-import { PolkadotMockFactory } from '~/testUtils/mocks/PolkadotMockFactory';
+import * as identityModule from '~/api/entities';
+import { Context } from '~/base';
+import { PolkadotMockFactory } from '~/testUtils/mocks';
 
 describe('Context class', () => {
   let mockKeyring: MockManager<polkadotModule.Keyring>;

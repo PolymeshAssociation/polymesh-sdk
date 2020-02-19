@@ -1,13 +1,12 @@
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import BN from 'bn.js';
 import sinon from 'sinon';
 
-import { PostTransactionValue } from '~/base/PostTransactionValue';
-import { TransactionQueue } from '~/base/TransactionQueue';
-import { PolymeshTransactionMockFactory } from '~/testUtils/mocks/PolymeshTransactionMockFactory';
+import { PostTransactionValue, TransactionQueue } from '~/base';
+import { PolymeshTransactionMockFactory } from '~/testUtils/mocks';
 import { TransactionQueueStatus, TransactionStatus } from '~/types';
 import { TransactionSpec } from '~/types/internal';
 import { delay } from '~/utils';
-import BN = require('bn.js');
 
 describe('Transaction Queue class', () => {
   const mockTransactionFactory = new PolymeshTransactionMockFactory();

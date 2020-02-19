@@ -1,9 +1,7 @@
 import BN from 'bn.js';
 import { EventEmitter } from 'events';
 
-import { PolymeshError } from '~/base/PolymeshError';
-import { PolymeshTransaction } from '~/base/PolymeshTransaction';
-import { PostTransactionValue } from '~/base/PostTransactionValue';
+import { PolymeshError, PolymeshTransaction, PostTransactionValue } from '~/base';
 import { TransactionQueueStatus } from '~/types';
 import { MaybePostTransactionValue, TransactionSpec } from '~/types/internal';
 
