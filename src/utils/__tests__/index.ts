@@ -1,12 +1,13 @@
 import * as createTypeModule from '@polymathnetwork/polkadot/types/create/createType';
 import * as registryModule from '@polymathnetwork/polkadot/types/create/registry';
 import { Balance, IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
+import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 import { ImportMock, MockManager, StaticMockManager } from 'ts-mock-imports';
 
 import * as contextModule from '~/base/Context';
 import {
-  balanceToNumber,
+  balanceToBigNumber,
   delay,
   identityIdToString,
   numberToBalance,
@@ -109,7 +110,7 @@ describe('stringToIdentityId and identityIdToString', () => {
   });
 });
 
-describe('numberToBalance and balanceToNumber', () => {
+describe('numberToBalance and balanceToBigNumber', () => {
   let mockContext: StaticMockManager<contextModule.Context>;
   let mockRegistry: MockManager<registryModule.TypeRegistry>;
   let mockCreateType: SinonStub;
@@ -131,21 +132,25 @@ describe('numberToBalance and balanceToNumber', () => {
       registry: mockRegistry.getMockInstance(),
     });
 
-    const value = 100;
+    const balance = 100;
     const context = mockContext.getMockInstance();
-    numberToBalance(value, context);
-    sinon.assert.calledWith(mockCreateType, context.polymeshApi.registry, 'Balance', value);
+    numberToBalance(balance, context);
+    sinon.assert.calledWith(
+      mockCreateType,
+      context.polymeshApi.registry,
+      'Balance',
+      balance * Math.pow(10, 6)
+    );
   });
 
-  test('should balanceToNumber returns a base 6 number', () => {
+  test('should balanceToBigNumber returns a big number', () => {
     const toStringStub = sinon.stub().returns('100');
     const balance = ({
       toString: toStringStub,
     } as unknown) as Balance;
 
-    const result = balanceToNumber(balance);
+    const result = balanceToBigNumber(balance);
     sinon.assert.calledOnce(toStringStub);
-    sinon.assert.match(typeof result === 'number', true);
-    sinon.assert.match(result === 100 / Math.pow(10, 6), true);
+    sinon.assert.match(result.eq(new BigNumber(100 / Math.pow(10, 6))), true);
   });
 });

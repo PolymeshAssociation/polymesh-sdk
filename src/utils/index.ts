@@ -1,5 +1,6 @@
 import { createType } from '@polymathnetwork/polkadot/types/create/createType';
 import { Balance, IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
+import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 
 import { Context } from '~/base/Context';
@@ -65,12 +66,12 @@ export function identityIdToString(identityId: IdentityId): string {
  * Convert an human readable number to a Balance object
  */
 export function numberToBalance(value: number, context: Context): Balance {
-  return createType<'Balance'>(context.polymeshApi.registry, 'Balance', value);
+  return createType<'Balance'>(context.polymeshApi.registry, 'Balance', value * Math.pow(10, 6));
 }
 
 /**
- * Convert a Balance object to an human readable number
+ * Convert a Balance object to a BigNumber
  */
-export function balanceToNumber(balance: Balance): number {
-  return Number(balance.toString()) / Math.pow(10, 6);
+export function balanceToBigNumber(balance: Balance): BigNumber {
+  return new BigNumber(Number(balance.toString()) / Math.pow(10, 6));
 }
