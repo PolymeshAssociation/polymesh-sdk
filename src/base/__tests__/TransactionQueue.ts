@@ -1,5 +1,6 @@
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import BN from 'bn.js';
+import { noop } from 'lodash';
 import sinon from 'sinon';
 
 import { PostTransactionValue, TransactionQueue } from '~/base';
@@ -141,11 +142,10 @@ describe('Transaction Queue class', () => {
         returnValue
       );
 
-      const runPromise = queue.run();
+      queue.run().catch(noop);
 
       transactionMockFactory.updateTransactionStatus(transactions[0], TransactionStatus.Failed);
-
-      await expect(runPromise).rejects.toThrow();
+      await delay(0);
 
       expect(queue.status).toBe(TransactionQueueStatus.Failed);
     });
