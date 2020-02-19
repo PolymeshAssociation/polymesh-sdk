@@ -5,7 +5,6 @@ import sinon from 'sinon';
 import { ImportMock, MockManager, StaticMockManager } from 'ts-mock-imports';
 
 import * as contextModule from '~/Context';
-import { PolkadotMockFactory } from '~/testUtils/mocks/PolkadotMockFactory';
 import {
   balanceToNumber,
   delay,
