@@ -1,23 +1,17 @@
 import sinon from 'sinon';
-import { ImportMock, StaticMockManager } from 'ts-mock-imports';
+import { ImportMock } from 'ts-mock-imports';
 
 import { Entity } from '~/api/entities/Entity';
 import { Identity } from '~/api/entities/Identity';
-import * as contextModule from '~/Context';
 import { PolkadotMockFactory } from '~/testUtils/mocks/PolkadotMockFactory';
 import * as utils from '~/utils';
 
 describe('Identity class', () => {
-  let mockContext: StaticMockManager<contextModule.Context>;
-  let polkadotMockFactory: PolkadotMockFactory;
+  const polkadotMockFactory = new PolkadotMockFactory();
 
-  beforeEach(() => {
-    mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
-    polkadotMockFactory = new PolkadotMockFactory();
-  });
+  polkadotMockFactory.initMocks({ mockContext: true });
 
   afterEach(() => {
-    mockContext.restore();
     polkadotMockFactory.reset();
   });
 
@@ -28,7 +22,7 @@ describe('Identity class', () => {
   describe('constructor', () => {
     test('should assign did and uuid to instance', () => {
       const did = 'abc';
-      const context = mockContext.getMockInstance();
+      const context = polkadotMockFactory.getContextInstance();
       const identity = new Identity({ did }, context);
 
       expect(identity.did).toBe(did);
@@ -71,8 +65,7 @@ describe('Identity class', () => {
         'balances',
         'identityBalance'
       );
-      mockContext.set('polymeshApi', polkadotMockFactory.getInstance());
-      const identity = new Identity({ did: 'abc' }, mockContext.getMockInstance());
+      const identity = new Identity({ did: 'abc' }, polkadotMockFactory.getContextInstance());
       await identity.getPolyBalance();
       sinon.assert.calledOnce(identityBalanceStub);
     });

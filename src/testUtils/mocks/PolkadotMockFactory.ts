@@ -5,13 +5,14 @@ import {
   DispatchErrorModule,
   ExtrinsicStatus,
 } from '@polymathnetwork/polkadot/types/interfaces';
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { IKeyringPair, ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
-import { ImportMock } from 'ts-mock-imports';
+import { ImportMock, StaticMockManager } from 'ts-mock-imports';
 
+import * as contextModule from '~/Context';
 import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
-import { Mutable } from '~/types/utils';
+import { Mocked, Mutable } from '~/types/utils';
 
 type StatusCallback = (receipt: ISubmittableResult) => void;
 type UnsubCallback = () => void;
@@ -22,6 +23,8 @@ interface TxMockData {
   status: MockTxStatus;
   resolved: boolean;
 }
+
+type MockContext = Mocked<contextModule.Context>;
 
 export enum MockTxStatus {
   Ready = 'Ready',
@@ -125,10 +128,12 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
 };
 
 /**
- * Produces relevant mocks of different parts of the polkadot lib for testing
+ * Produces relevant mocks of different parts of the polkadot lib for testing. In order for mocks to work, [[initMocks]] **MUST** be explicitly called
  */
 export class PolkadotMockFactory {
-  private polkadotConstructorStub = {} as SinonStub<unknown[], polkadotModule.ApiPromise>;
+  private polkadotCreateMockManager = {} as StaticMockManager<polkadotModule.ApiPromise>;
+
+  private contextCreateMockManager = {} as StaticMockManager<MockContext>;
 
   private txMocksData = new Map<unknown, TxMockData>();
 
@@ -138,27 +143,46 @@ export class PolkadotMockFactory {
 
   private apiInstance = {} as Mutable<polkadotModule.ApiPromise>;
 
-  /**
-   * @hidden
-   */
-  constructor() {
-    this.init();
-  }
+  private contextInstance = {} as MockContext;
+
+  private isMockingContext = false;
 
   /**
-   * @hidden
-   *
    * Initialize the factory by adding default all-purpose functionality to the mock manager
+   *
+   * @param opts.mockContext - if true, the internal [[Context]] class will also be mocked
    */
-  private init(): void {
+  public initMocks(opts?: { mockContext?: boolean }): void {
     /*
       NOTE: the idea is to expand this function to mock things as we need them
       and use the methods in the class to fetch/manipulate different parts of the API as required
      */
 
+    // Context
+    if (opts?.mockContext) {
+      this.isMockingContext = true;
+
+      this.contextCreateMockManager = ImportMock.mockStaticClass<MockContext>(
+        contextModule,
+        'Context'
+      );
+      this.initContext();
+    }
+
     this.txMocksData.clear();
 
-    this.polkadotConstructorStub = ImportMock.mockFunction(polkadotModule, 'ApiPromise');
+    // Polkadot
+    this.polkadotCreateMockManager = ImportMock.mockStaticClass<polkadotModule.ApiPromise>(
+      polkadotModule,
+      'ApiPromise'
+    );
+    this.initApi();
+  }
+
+  /**
+   * @hidden
+   */
+  private initApi(): void {
     this.apiInstance = {} as polkadotModule.ApiPromise;
     this.initTx();
     this.initQuery();
@@ -167,8 +191,20 @@ export class PolkadotMockFactory {
   /**
    * @hidden
    */
-  private updatePolkadotConstructor(): void {
-    this.polkadotConstructorStub.returns(this.apiInstance as polkadotModule.ApiPromise);
+  private initContext(): void {
+    const contextInstance = ({
+      getAccounts: sinon.stub().returns([]),
+      setPair: sinon.stub().callsFake(address => {
+        contextInstance.currentPair = { address } as IKeyringPair;
+      }),
+      currentPair: {
+        address: '0xdummy',
+      } as IKeyringPair,
+    } as unknown) as MockContext;
+
+    this.contextInstance = contextInstance;
+
+    this.updateContext();
   }
 
   /**
@@ -192,7 +228,7 @@ export class PolkadotMockFactory {
 
     this.apiInstance.tx = this.txModule;
 
-    this.updatePolkadotConstructor();
+    this.updateInstances();
   }
 
   /**
@@ -215,7 +251,39 @@ export class PolkadotMockFactory {
 
     this.apiInstance.query = this.queryModule;
 
+    this.updateInstances();
+  }
+
+  /**
+   * @hidden
+   */
+  private updateContext(): void {
+    this.contextInstance.polymeshApi = this.apiInstance as polkadotModule.ApiPromise;
+  }
+
+  /**
+   * @hidden
+   */
+  private updateInstances(): void {
+    if (this.isMockingContext) {
+      this.updateContext();
+      this.updateContextConstructor();
+    }
     this.updatePolkadotConstructor();
+  }
+
+  /**
+   * @hidden
+   */
+  private updatePolkadotConstructor(): void {
+    this.polkadotCreateMockManager.mock('create', this.apiInstance);
+  }
+
+  /**
+   * @hidden
+   */
+  private updateContextConstructor(): void {
+    this.contextCreateMockManager.mock('create', this.contextInstance);
   }
 
   /**
@@ -223,7 +291,7 @@ export class PolkadotMockFactory {
    */
   public reset(): void {
     this.cleanup();
-    this.init();
+    this.initMocks({ mockContext: this.isMockingContext });
   }
 
   /**
@@ -232,7 +300,11 @@ export class PolkadotMockFactory {
    * library
    */
   public cleanup(): void {
-    this.polkadotConstructorStub.restore();
+    this.polkadotCreateMockManager.restore();
+
+    if (this.isMockingContext) {
+      this.contextCreateMockManager.restore();
+    }
   }
 
   /**
@@ -250,7 +322,8 @@ export class PolkadotMockFactory {
     mod: ModuleName,
     tx: TransactionName,
     autoresolve: MockTxStatus | false = MockTxStatus.Succeeded
-  ): PolymeshTx<ModuleName, TransactionName> & SinonStub {
+  ): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> &
+    SinonStub<ArgsType<Extrinsics[ModuleName][TransactionName]>> {
     let runtimeModule = this.txModule[mod];
 
     if (!runtimeModule) {
@@ -287,10 +360,9 @@ export class PolkadotMockFactory {
     const instance = this.apiInstance;
 
     const transactionMock = (instance.tx[mod][tx] as unknown) as PolymeshTx<
-      ModuleName,
-      TransactionName
+      ArgsType<Extrinsics[ModuleName][TransactionName]>
     > &
-      SinonStub;
+      SinonStub<ArgsType<Extrinsics[ModuleName][TransactionName]>>;
 
     return transactionMock;
   }
@@ -309,7 +381,7 @@ export class PolkadotMockFactory {
     mod: ModuleName,
     query: QueryName,
     returnValue?: ReturnValue
-  ): Queries[ModuleName][QueryName] & SinonStub {
+  ): Queries[ModuleName][QueryName] & SinonStub<ArgsType<Queries[ModuleName][QueryName]>> {
     let runtimeModule = this.queryModule[mod];
 
     if (!runtimeModule) {
@@ -325,7 +397,8 @@ export class PolkadotMockFactory {
 
     const instance = this.apiInstance;
 
-    const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] & SinonStub;
+    const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] &
+      SinonStub<ArgsType<Queries[ModuleName][QueryName]>>;
 
     if (returnValue) {
       stub.returns(returnValue);
@@ -338,12 +411,13 @@ export class PolkadotMockFactory {
    * Update the status of an existing mock transaction. Will throw an error if the transaction has already been resolved
    *
    * @param tx - transaction to update
+   * @param status - new status
    */
   public updateTxStatus<
     ModuleName extends keyof Extrinsics,
     TransactionName extends keyof Extrinsics[ModuleName]
   >(
-    tx: PolymeshTx<ModuleName, TransactionName>,
+    tx: PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>>,
     status: MockTxStatus,
     failReason?: TxFailReason
   ): void {
@@ -364,6 +438,7 @@ export class PolkadotMockFactory {
     if ([MockTxStatus.Aborted, MockTxStatus.Failed, MockTxStatus.Succeeded].includes(status)) {
       this.txMocksData.set(tx, {
         ...txMockData,
+        status,
         resolved: true,
       });
     }
@@ -372,9 +447,36 @@ export class PolkadotMockFactory {
   }
 
   /**
-   * Retrieve an instance of the mocked Polkadot
+   * Make the next call to `Context.create` throw an error
    */
-  public getInstance(): polkadotModule.ApiPromise {
+  public throwOnContextCreation(error?: Error): void {
+    this.contextCreateMockManager
+      .mock('create')
+      .onFirstCall()
+      .throws(error);
+  }
+
+  /**
+   * Make the next call to `ApiPromise.create` throw an error
+   */
+  public throwOnApiCreation(error?: Error): void {
+    this.polkadotCreateMockManager
+      .mock('create')
+      .onFirstCall()
+      .throws(error);
+  }
+
+  /**
+   * Retrieve an instance of the mocked Polkadot API
+   */
+  public getApiInstance(): polkadotModule.ApiPromise {
     return this.apiInstance as polkadotModule.ApiPromise;
+  }
+
+  /**
+   * Retrieve an instance  of the mocked Context
+   */
+  public getContextInstance(): MockContext {
+    return this.contextInstance;
   }
 }

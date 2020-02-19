@@ -1,60 +1,57 @@
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
 import sinon from 'sinon';
-import { ImportMock, MockManager, StaticMockManager } from 'ts-mock-imports';
+import { ImportMock, MockManager } from 'ts-mock-imports';
 
-import * as contextModule from '~/Context';
 import { Polymesh } from '~/Polymesh';
+import { PolkadotMockFactory } from '~/testUtils/mocks/PolkadotMockFactory';
 
 describe('Polymesh Class', () => {
-  let mockApiPromise: StaticMockManager<polkadotModule.Keyring>;
+  const polkadotMockFactory = new PolkadotMockFactory();
+  polkadotMockFactory.initMocks({ mockContext: true });
+
   let mockWsProvider: MockManager<polkadotModule.Keyring>;
-  let mockContext: StaticMockManager<contextModule.Context>;
 
   beforeEach(() => {
-    mockApiPromise = ImportMock.mockStaticClass(polkadotModule, 'ApiPromise');
     mockWsProvider = ImportMock.mockClass(polkadotModule, 'WsProvider');
-    mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
   });
 
   afterEach(() => {
-    mockApiPromise.restore();
+    polkadotMockFactory.reset();
     mockWsProvider.restore();
-    mockContext.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockFactory.cleanup();
   });
 
   describe('method: create', () => {
     test('should instantiate ApiPromise lib and Context class and returns a Polymesh instance', async () => {
-      const apiPromiseCreateMock = mockApiPromise.mock('create', Promise.resolve(true));
-      const contextCreateMock = mockContext.mock('create', Promise.resolve(false));
-
       const polymesh = await Polymesh.connect({
         nodeUrl: '',
       });
 
-      sinon.assert.calledOnce(apiPromiseCreateMock);
-      sinon.assert.calledOnce(contextCreateMock);
+      expect(polymesh.context).toBeDefined();
+      expect(polymesh.context.polymeshApi).toBeDefined();
       sinon.assert.match(polymesh instanceof Polymesh, true);
     });
 
     test('should throw if ApiPromise fails in the connection process', async () => {
-      mockApiPromise.mock('create').throws();
-
-      const polymeshApi = Polymesh.connect({
+      polkadotMockFactory.throwOnApiCreation();
+      const polymeshApiPromise = Polymesh.connect({
         nodeUrl: 'wss',
       });
 
-      await expect(polymeshApi).rejects.toThrow(`Error while connecting to "wss": "Error"`);
+      await expect(polymeshApiPromise).rejects.toThrow(`Error while connecting to "wss": "Error"`);
     });
 
     test('should throw if Context create method fails', async () => {
-      mockContext.mock('create').throws();
-
-      const polymeshApi = Polymesh.connect({
+      polkadotMockFactory.throwOnContextCreation();
+      const polymeshApiPromise = Polymesh.connect({
         nodeUrl: 'wss',
         accountSeed: '',
       });
 
-      await expect(polymeshApi).rejects.toThrow(`Error while connecting to "wss": "Error"`);
+      await expect(polymeshApiPromise).rejects.toThrow(`Error while connecting to "wss": "Error"`);
     });
   });
 });

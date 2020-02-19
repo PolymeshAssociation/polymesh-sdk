@@ -5,65 +5,37 @@ import { PolymeshError } from '~/base/PolymeshError';
 import { PolymeshTransaction } from '~/base/PolymeshTransaction';
 import { PostTransactionValue } from '~/base/PostTransactionValue';
 import { TransactionQueueStatus } from '~/types';
-import {
-  Extrinsics,
-  MaybePostTransactionValue,
-  PolymeshTx,
-  TransactionSpec,
-} from '~/types/internal';
+import { MaybePostTransactionValue, TransactionSpec } from '~/types/internal';
 
 enum Events {
   StatusChange = 'StatusChange',
   TransactionStatusChange = 'TransactionStatusChange',
 }
 
-type TransactionNamesFromModuleNames<ModuleNames extends (keyof Extrinsics)[]> = {
-  [K in keyof ModuleNames]: ModuleNames[K] extends ModuleNames[number]
-    ? keyof Extrinsics[ModuleNames[K]]
+type PolymeshTransactionArray<TransactionArgs extends unknown[][]> = {
+  [K in keyof TransactionArgs]: TransactionArgs[K] extends TransactionArgs[number]
+    ? PolymeshTransaction<TransactionArgs[K]>
     : never;
 };
 
-type PolymeshTransactionArray<
-  ModuleNames extends (keyof Extrinsics)[],
-  TransactionNames extends TransactionNamesFromModuleNames<ModuleNames>
-> = {
-  [K in keyof ModuleNames]: ModuleNames[K] extends ModuleNames[number]
-    ? TransactionNames[K] extends TransactionNames[number]
-      ? PolymeshTransaction<ModuleNames[K], TransactionNames[K]>
-      : never
+type TransactionSpecArray<TransactionArgs extends unknown[][]> = {
+  [K in keyof TransactionArgs]: TransactionArgs[K] extends TransactionArgs[number]
+    ? TransactionSpec<TransactionArgs[K]>
     : never;
 };
-
-type TransactionSpecArray<
-  ModuleNames extends (keyof Extrinsics)[],
-  TransactionNames extends TransactionNamesFromModuleNames<ModuleNames>
-> = {
-  [K in keyof ModuleNames]: ModuleNames[K] extends ModuleNames[number]
-    ? TransactionNames[K] extends TransactionNames[number]
-      ? TransactionSpec<ModuleNames[K], TransactionNames[K]>
-      : never
-    : never;
-};
-
-type GetModuleName<Tx> = Tx extends PolymeshTx<infer ModuleName, infer _> ? ModuleName : never;
-
-type GetTransactionName<Tx> = Tx extends PolymeshTx<infer _, infer TransactionName>
-  ? TransactionName
-  : never;
 
 /**
  * Class to manage procedural transaction queues
  */
 export class TransactionQueue<
-  ModuleNames extends (keyof Extrinsics)[],
-  TransactionNames extends TransactionNamesFromModuleNames<ModuleNames>,
-  Args extends unknown = unknown,
+  TransactionArgs extends unknown[][],
+  Args extends unknown[] = unknown[],
   ReturnType extends unknown = void
 > {
   /**
    * transactions that will be run in the queue
    */
-  public transactions: PolymeshTransactionArray<ModuleNames, TransactionNames>;
+  public transactions: PolymeshTransactionArray<TransactionArgs>;
 
   /**
    * status of the queue
@@ -88,7 +60,7 @@ export class TransactionQueue<
   /**
    * @hidden
    */
-  private queue = ([] as unknown) as PolymeshTransactionArray<ModuleNames, TransactionNames>;
+  private queue = ([] as unknown) as PolymeshTransactionArray<TransactionArgs>;
 
   /**
    * @hidden
@@ -108,10 +80,10 @@ export class TransactionQueue<
    * @param args - arguments with which the Procedure that generated this queue was instanced
    */
   constructor(
-    transactions: TransactionSpecArray<ModuleNames, TransactionNames>,
+    transactions: TransactionSpecArray<TransactionArgs>,
     fees: BN,
-    returnValue: MaybePostTransactionValue<ReturnType>,
-    args: Args
+    args: Args,
+    returnValue: MaybePostTransactionValue<ReturnType>
   ) {
     this.emitter = new EventEmitter();
     this.args = args;
@@ -119,17 +91,14 @@ export class TransactionQueue<
     this.returnValue = returnValue;
 
     this.transactions = transactions.map(transaction => {
-      const txn = new PolymeshTransaction<
-        GetModuleName<typeof transaction>,
-        GetTransactionName<typeof transaction>
-      >(transaction);
+      const txn = new PolymeshTransaction(transaction);
 
       txn.onStatusChange(updatedTransaction => {
         this.emitter.emit(Events.TransactionStatusChange, updatedTransaction, this);
       });
 
       return txn;
-    }) as PolymeshTransactionArray<ModuleNames, TransactionNames>;
+    }) as PolymeshTransactionArray<TransactionArgs>;
   }
 
   /**
@@ -139,7 +108,7 @@ export class TransactionQueue<
    * 2) Otherwise, the queue continues executing and the error is stored in `transaction.error`
    */
   public async run(): Promise<ReturnType> {
-    this.queue = [...this.transactions] as PolymeshTransactionArray<ModuleNames, TransactionNames>;
+    this.queue = [...this.transactions] as PolymeshTransactionArray<TransactionArgs>;
     this.updateStatus(TransactionQueueStatus.Running);
 
     let res: ReturnType | undefined;
@@ -185,15 +154,8 @@ export class TransactionQueue<
    *
    * @returns unsubscribe function
    */
-  public onTransactionStatusChange<
-    ModuleName extends keyof Extrinsics,
-    TransactionName extends keyof Extrinsics[ModuleName],
-    Values extends unknown[]
-  >(
-    listener: (
-      transaction: PolymeshTransaction<ModuleName, TransactionName, Values>,
-      transactionQueue: this
-    ) => void
+  public onTransactionStatusChange<TxArgs extends unknown[], Values extends unknown[]>(
+    listener: (transaction: PolymeshTransaction<TxArgs, Values>, transactionQueue: this) => void
   ): () => void {
     this.emitter.on(Events.TransactionStatusChange, listener);
 

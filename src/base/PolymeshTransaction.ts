@@ -6,7 +6,6 @@ import { EventEmitter } from 'events';
 import { PolymeshError } from '~/base/PolymeshError';
 import { ErrorCode, TransactionStatus } from '~/types';
 import {
-  Extrinsics,
   MapMaybePostTransactionValue,
   PolymeshTx,
   PostTransactionValueArray,
@@ -22,11 +21,7 @@ enum Event {
 /**
  * Wrapper class for a Polymesh Transaction
  */
-export class PolymeshTransaction<
-  ModuleName extends keyof Extrinsics,
-  TransactionName extends keyof Extrinsics[ModuleName],
-  Values extends unknown[] = unknown[]
-> {
+export class PolymeshTransaction<Args extends unknown[], Values extends unknown[] = unknown[]> {
   /**
    * current status of the transaction
    */
@@ -60,7 +55,7 @@ export class PolymeshTransaction<
   /**
    * arguments with which the transaction will be called
    */
-  public args: MapMaybePostTransactionValue<ArgsType<PolymeshTx<ModuleName, TransactionName>>>;
+  public args: MapMaybePostTransactionValue<Args>;
 
   /**
    * whether this tx failing makes the entire tx queue fail or not
@@ -72,7 +67,7 @@ export class PolymeshTransaction<
    *
    * underlying transaction to be executed
    */
-  protected tx: PolymeshTx<ModuleName, TransactionName>;
+  protected tx: PolymeshTx<Args>;
 
   /**
    * @hidden
@@ -100,7 +95,7 @@ export class PolymeshTransaction<
   /**
    * @hidden
    */
-  constructor(transactionSpec: TransactionSpec<ModuleName, TransactionName, Values>) {
+  constructor(transactionSpec: TransactionSpec<Args, Values>) {
     const { postTransactionValues, tag, tx, args, signer, isCritical } = transactionSpec;
 
     if (postTransactionValues) {
@@ -244,13 +239,13 @@ export class PolymeshTransaction<
           /* istanbul ignore else */
           if (err.message.indexOf('Cancelled') > -1) {
             // tx rejected by signer
-            error = new PolymeshError({ code: ErrorCode.TransactionRejectedByUser });
+            error = { code: ErrorCode.TransactionRejectedByUser };
           } else {
             // unexpected error
-            error = new PolymeshError({ code: ErrorCode.FatalError, message: err.message });
+            error = { code: ErrorCode.FatalError, message: err.message };
           }
 
-          reject(error);
+          reject(new PolymeshError(error));
         });
     });
 
