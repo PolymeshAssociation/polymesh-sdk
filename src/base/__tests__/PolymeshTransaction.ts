@@ -2,19 +2,16 @@ import { TxTags } from '@polymathnetwork/polkadot/api/types';
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import sinon from 'sinon';
 
-import { PolymeshTransaction } from '~/base/PolymeshTransaction';
-import { PostTransactionValue } from '~/base/PostTransactionValue';
-import {
-  MockTxStatus,
-  PolkadotMockFactory,
-  TxFailReason,
-} from '~/testUtils/mocks/PolkadotMockFactory';
+import { PolymeshTransaction, PostTransactionValue } from '~/base';
+import { MockTxStatus, PolkadotMockFactory, TxFailReason } from '~/testUtils/mocks';
 import { TransactionStatus } from '~/types';
 import { MaybePostTransactionValue, PostTransactionValueArray } from '~/types/internal';
 import { delay } from '~/utils';
 
 describe('Polymesh Transaction class', () => {
   const mockFactory = new PolkadotMockFactory();
+
+  mockFactory.initMocks();
 
   const txSpec = {
     tag: TxTags.asset.RegisterTicker,
@@ -31,7 +28,7 @@ describe('Polymesh Transaction class', () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker');
       const args: [string] = ['A_TICKER'];
 
-      const transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      const transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,
@@ -52,7 +49,7 @@ describe('Polymesh Transaction class', () => {
       await postTransactionTicker.run({} as ISubmittableResult);
       const args: [MaybePostTransactionValue<string>] = [postTransactionTicker];
 
-      const transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      const transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,
@@ -70,7 +67,7 @@ describe('Polymesh Transaction class', () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker', false);
       const args: [string] = ['ANOTHER_TICKER'];
 
-      const transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      const transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,
@@ -105,7 +102,7 @@ describe('Polymesh Transaction class', () => {
         { run: secondStub },
       ] as unknown) as PostTransactionValueArray<[number, string]>;
 
-      const transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      const transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,
@@ -122,7 +119,7 @@ describe('Polymesh Transaction class', () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker', MockTxStatus.Aborted);
       const args: [string] = ['IT_HURTS'];
 
-      const transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      const transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,
@@ -138,7 +135,7 @@ describe('Polymesh Transaction class', () => {
       let tx = mockFactory.createTxStub('asset', 'registerTicker', false);
       const args: [string] = ['PLEASE_MAKE_IT_STOP'];
 
-      let transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      let transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,
@@ -151,7 +148,7 @@ describe('Polymesh Transaction class', () => {
       expect(transaction.status).toBe(TransactionStatus.Failed);
 
       tx = mockFactory.createTxStub('asset', 'registerTicker', false);
-      transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,
@@ -166,7 +163,7 @@ describe('Polymesh Transaction class', () => {
       expect(transaction.status).toBe(TransactionStatus.Failed);
 
       tx = mockFactory.createTxStub('asset', 'registerTicker', false);
-      transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,
@@ -179,7 +176,7 @@ describe('Polymesh Transaction class', () => {
       expect(transaction.status).toBe(TransactionStatus.Failed);
 
       tx = mockFactory.createTxStub('asset', 'registerTicker', false);
-      transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,
@@ -196,7 +193,7 @@ describe('Polymesh Transaction class', () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker', MockTxStatus.Rejected);
       const args: [string] = ['THIS_IS_THE_LAST_ONE_I_SWEAR'];
 
-      const transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      const transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,
@@ -214,7 +211,7 @@ describe('Polymesh Transaction class', () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker');
       const args: [string] = ['I_HAVE_LOST_THE_WILL_TO_LIVE'];
 
-      const transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      const transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,
@@ -235,7 +232,7 @@ describe('Polymesh Transaction class', () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker', false);
       const args: [string] = ['THE_ONLY_THING_THAT_KEEPS_ME_GOING_IS_THE_HOPE_OF_FULL_COVERAGE'];
 
-      const transaction = new PolymeshTransaction<'asset', 'registerTicker'>({
+      const transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
         args,

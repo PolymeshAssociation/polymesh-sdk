@@ -1,12 +1,11 @@
-import { KeyringPair } from '@polkadot/keyring/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
 import { ApiPromise, Keyring } from '@polymathnetwork/polkadot/api';
 import { IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
+import { IKeyringPair } from '@polymathnetwork/polkadot/types/types';
 
-import { PolymeshError } from '~/base/PolymeshError';
+import { Identity } from '~/api/entities';
+import { PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
-
-import { Identity } from './api/entities/Identity';
 
 interface BuildParams {
   polymeshApi: ApiPromise;
@@ -14,7 +13,7 @@ interface BuildParams {
 }
 
 interface SignerData {
-  currentPair: KeyringPair;
+  currentPair: IKeyringPair;
   did: IdentityId;
 }
 
@@ -41,7 +40,7 @@ export class Context {
 
   public polymeshApi: ApiPromise;
 
-  public currentPair?: KeyringPair;
+  public currentPair?: IKeyringPair;
 
   public currentIdentity?: Identity;
 
@@ -106,7 +105,7 @@ export class Context {
   };
 
   /**
-   * Set a pair as a current account keyring pair
+   * Set a pair as the current account keyring pair
    */
   public setPair = (address: string): void => {
     const { keyring } = this;

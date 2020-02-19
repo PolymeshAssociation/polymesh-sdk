@@ -1,1 +1,1 @@
-export { Entity } from '~/base/Entity';
+export { Identity } from './Identity';
