@@ -1,10 +1,8 @@
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
 
-import { Context, PolymeshError } from '~/base';
+import { Context, Entity, PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
 import { serialize, unserialize } from '~/utils';
-
-import { Entity } from './Entity';
 
 /**
  * Properties that uniquely identify an Identity
