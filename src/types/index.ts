@@ -30,6 +30,28 @@ export enum TransactionStatus {
   Aborted = 'Aborted',
 }
 
+export enum TransactionQueueStatus {
+  /**
+   * the queue is prepped to run
+   */
+  Idle = 'Idle',
+  /**
+   * transactions in the queue are being executed
+   */
+  Running = 'Running',
+  /**
+   * a critical transaction's execution failed.
+   * This might mean the transaction was rejected,
+   * failed due to a revert or never entered a block
+   */
+  Failed = 'Failed',
+  /**
+   * the queue finished running all of its transactions. Non-critical transactions
+   * might still have failed
+   */
+  Succeeded = 'Succeeded',
+}
+
 /**
  * Specifies possible types of errors in the SDK
  */
@@ -38,4 +60,6 @@ export enum ErrorCode {
   TransactionRejectedByUser = 'TransactionRejectedByUser',
   TransactionReverted = 'TransactionReverted',
   FatalError = 'FatalError',
+  InvalidUuid = 'InvalidUuid',
+  ValidationError = 'ValidationError',
 }
