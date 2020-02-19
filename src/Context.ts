@@ -3,6 +3,9 @@ import stringToU8a from '@polkadot/util/string/toU8a';
 import { ApiPromise, Keyring } from '@polymathnetwork/polkadot/api';
 import { IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
 
+import { PolymeshError } from '~/base/PolymeshError';
+import { ErrorCode } from '~/types';
+
 import { Identity } from './api/entities/Identity';
 
 interface BuildParams {
@@ -67,8 +70,10 @@ export class Context {
 
     if (accountSeed) {
       if (accountSeed.length !== 32) {
-        // TODO - MSDK-49 Create Polymesh Error class
-        throw new Error('Seed must be 32 characters in length');
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'Seed must be 32 characters in length',
+        });
       }
 
       const currentPair = keyring.addFromSeed(stringToU8a(accountSeed));
@@ -79,8 +84,10 @@ export class Context {
       try {
         did = keyToIdentityIds.unwrap().asUnique;
       } catch (e) {
-        // TODO - MSDK-49 Create Polymesh Error class
-        throw new Error('Identity ID does not exist');
+        throw new PolymeshError({
+          code: ErrorCode.FatalError,
+          message: 'Identity ID does not exist',
+        });
       }
 
       return new Context({ polymeshApi, keyring, pair: { currentPair, did } });
@@ -106,8 +113,10 @@ export class Context {
     try {
       this.currentPair = keyring.getPair(address);
     } catch (e) {
-      // TODO - MSDK-49 Create Polymesh Error class
-      throw new Error('The address is not present in the keyring set');
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'The address is not present in the keyring set',
+      });
     }
   };
 }
