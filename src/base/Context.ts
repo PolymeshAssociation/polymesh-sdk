@@ -1,9 +1,11 @@
-import { KeyringPair } from '@polkadot/keyring/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
 import { ApiPromise, Keyring } from '@polymathnetwork/polkadot/api';
 import { IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
+import { IKeyringPair } from '@polymathnetwork/polkadot/types/types';
 
-import { Identity } from './api/entities/Identity';
+import { Identity } from '~/api/entities';
+import { PolymeshError } from '~/base';
+import { ErrorCode } from '~/types';
 
 interface BuildParams {
   polymeshApi: ApiPromise;
@@ -11,7 +13,7 @@ interface BuildParams {
 }
 
 interface SignerData {
-  currentPair: KeyringPair;
+  currentPair: IKeyringPair;
   did: IdentityId;
 }
 
@@ -38,7 +40,7 @@ export class Context {
 
   public polymeshApi: ApiPromise;
 
-  public currentPair?: KeyringPair;
+  public currentPair?: IKeyringPair;
 
   public currentIdentity?: Identity;
 
@@ -67,8 +69,10 @@ export class Context {
 
     if (accountSeed) {
       if (accountSeed.length !== 32) {
-        // TODO - MSDK-49 Create Polymesh Error class
-        throw new Error('Seed must be 32 characters in length');
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'Seed must be 32 characters in length',
+        });
       }
 
       const currentPair = keyring.addFromSeed(stringToU8a(accountSeed));
@@ -79,8 +83,10 @@ export class Context {
       try {
         did = keyToIdentityIds.unwrap().asUnique;
       } catch (e) {
-        // TODO - MSDK-49 Create Polymesh Error class
-        throw new Error('Identity ID does not exist');
+        throw new PolymeshError({
+          code: ErrorCode.FatalError,
+          message: 'Identity ID does not exist',
+        });
       }
 
       return new Context({ polymeshApi, keyring, pair: { currentPair, did } });
@@ -99,15 +105,17 @@ export class Context {
   };
 
   /**
-   * Set a pair as a current account keyring pair
+   * Set a pair as the current account keyring pair
    */
   public setPair = (address: string): void => {
     const { keyring } = this;
     try {
       this.currentPair = keyring.getPair(address);
     } catch (e) {
-      // TODO - MSDK-49 Create Polymesh Error class
-      throw new Error('The address is not present in the keyring set');
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'The address is not present in the keyring set',
+      });
     }
   };
 }

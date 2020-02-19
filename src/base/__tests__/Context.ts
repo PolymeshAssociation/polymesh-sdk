@@ -1,33 +1,34 @@
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
-import { QueryableStorage } from '@polymathnetwork/polkadot/api/types';
 import sinon from 'sinon';
 import { ImportMock, MockManager } from 'ts-mock-imports';
 
-import * as identityModule from '~/api/entities/Identity';
-import { Context } from '~/Context';
-import { PolkadotMockFactory } from '~/testUtils/mocks/PolkadotMockFactory';
+import * as identityModule from '~/api/entities';
+import { Context } from '~/base';
+import { PolkadotMockFactory } from '~/testUtils/mocks';
 
 describe('Context class', () => {
   let mockKeyring: MockManager<polkadotModule.Keyring>;
-  let mockApiPromise: MockManager<polkadotModule.ApiPromise>;
-  let polkadotMockFactory: PolkadotMockFactory;
+  const polkadotMockFactory = new PolkadotMockFactory();
+
+  polkadotMockFactory.initMocks();
 
   beforeEach(() => {
     mockKeyring = ImportMock.mockClass(polkadotModule, 'Keyring');
-    mockApiPromise = ImportMock.mockClass<polkadotModule.ApiPromise>(polkadotModule, 'ApiPromise');
-    polkadotMockFactory = new PolkadotMockFactory();
   });
 
   afterEach(() => {
     mockKeyring.restore();
-    mockApiPromise.restore();
     polkadotMockFactory.reset();
+  });
+
+  afterAll(() => {
+    polkadotMockFactory.cleanup();
   });
 
   describe('method: create', () => {
     test('should throw if accountSeed parameter is not a 32 length string', async () => {
       const context = Context.create({
-        polymeshApi: mockApiPromise.getMockInstance(),
+        polymeshApi: polkadotMockFactory.getApiInstance(),
         accountSeed: 'abc',
       });
 
@@ -35,20 +36,15 @@ describe('Context class', () => {
     });
 
     test('should create a Context class with Pair and Identity attached', async () => {
-      const keyToIdentityIdsStub = sinon.stub().returns({
-        unwrap: () => {
-          return { asUnique: '012abc' };
-        },
-      });
+      const keyToIdentityIdsStub = polkadotMockFactory.createQueryStub(
+        'identity',
+        'keyToIdentityIds',
+        { unwrap: () => ({ asUnique: '012abc' }) }
+      );
       const keyringAddFromSeedStub = mockKeyring.mock('addFromSeed', 'currentPair');
-      mockApiPromise.set('query', ({
-        identity: {
-          keyToIdentityIds: keyToIdentityIdsStub,
-        },
-      } as unknown) as QueryableStorage<'promise'>);
 
       const context = await Context.create({
-        polymeshApi: mockApiPromise.getMockInstance(),
+        polymeshApi: polkadotMockFactory.getApiInstance(),
         accountSeed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -62,12 +58,12 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockFactory.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        { asUnique: '012abc' }
+        { unwrap: () => ({ asUnique: '012abc' }) }
       );
       const keyringAddFromSeedStub = mockKeyring.mock('addFromSeed', 'currentPair');
 
       const context = await Context.create({
-        polymeshApi: polkadotMockFactory.getInstance(),
+        polymeshApi: polkadotMockFactory.getApiInstance(),
       });
 
       sinon.assert.notCalled(keyToIdentityIdsStub);
@@ -81,7 +77,7 @@ describe('Context class', () => {
       polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds');
 
       const context = Context.create({
-        polymeshApi: polkadotMockFactory.getInstance(),
+        polymeshApi: polkadotMockFactory.getApiInstance(),
         accountSeed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -108,7 +104,7 @@ describe('Context class', () => {
       const keyringGetAccountsStub = mockKeyring.mock('getPairs', addresses);
 
       const context = await Context.create({
-        polymeshApi: mockApiPromise.getMockInstance(),
+        polymeshApi: polkadotMockFactory.getApiInstance(),
       });
 
       const result = context.getAccounts();
@@ -120,28 +116,30 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: getPair', () => {
+  describe('method: setPair', () => {
     test('should throw error if the pair does not exist in the keyring set', async () => {
       mockKeyring
         .mock('getPair')
         .withArgs('012')
         .throws();
       const context = await Context.create({
-        polymeshApi: mockApiPromise.getMockInstance(),
+        polymeshApi: polkadotMockFactory.getApiInstance(),
       });
 
       expect(() => context.setPair('012')).toThrow('The address is not present in the keyring set');
     });
 
-    test('should expect currentPair to be set to the new value', async () => {
-      const keyringGetPairStub = mockKeyring.mock('getPair', true);
+    test('should set currentPair to the new value', async () => {
+      const newPair = { address: 'newAddress' };
+      const keyringGetPairStub = mockKeyring.mock('getPair', newPair);
 
       const context = await Context.create({
-        polymeshApi: mockApiPromise.getMockInstance(),
+        polymeshApi: polkadotMockFactory.getApiInstance(),
       });
 
       context.setPair('012');
       sinon.assert.calledOnce(keyringGetPairStub);
+      expect(context.currentPair).toEqual(newPair);
     });
   });
 });

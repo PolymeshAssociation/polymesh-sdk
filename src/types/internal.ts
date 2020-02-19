@@ -22,14 +22,10 @@ export type Queries = QueryableStorage<'promise'>;
 /**
  * Low level transaction method in the polkadot API
  *
- * @param ModuleName - name of the runtime module in which the transaction resides
- * @param TransactionName - name of the transaction
+ * @param Args - arguments of the transaction
  */
-export type PolymeshTx<
-  ModuleName extends keyof Extrinsics,
-  TransactionName extends keyof Extrinsics[ModuleName]
-> = AugmentedSubmittable<
-  (...args: ArgsType<Extrinsics[ModuleName][TransactionName]>) => SubmittableExtrinsic<'promise'>
+export type PolymeshTx<Args extends unknown[]> = AugmentedSubmittable<
+  (...args: Args) => SubmittableExtrinsic<'promise'>
 >;
 
 /**
@@ -57,23 +53,18 @@ export type MapMaybePostTransactionValue<T extends unknown[]> = {
 /**
  * Schema of a specific transaction
  *
- * @param ModuleName - name of the runtime module in which the transaction resides
- * @param TransactionName - name of the transaction
+ * @param Args - arguments of the transaction
  * @param Values - values that will be returned wrapped in [[PostTransactionValue]] after the transaction runs
  */
-export interface TransactionSpec<
-  ModuleName extends keyof Extrinsics,
-  TransactionName extends keyof Extrinsics[ModuleName],
-  Values extends unknown[] = unknown[]
-> {
+export interface TransactionSpec<Args extends unknown[], Values extends unknown[] = unknown[]> {
   /**
    * underlying polkadot transaction object
    */
-  tx: PolymeshTx<ModuleName, TransactionName>;
+  tx: PolymeshTx<Args>;
   /**
    * arguments that the transaction will receive (some of them can be [[PostTransactionValue]] from an earlier transaction)
    */
-  args: MapMaybePostTransactionValue<ArgsType<PolymeshTx<ModuleName, TransactionName>>>;
+  args: MapMaybePostTransactionValue<Args>;
   /**
    * wrapped values that will be returned after this transaction is run
    */
