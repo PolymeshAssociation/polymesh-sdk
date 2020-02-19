@@ -1,4 +1,20 @@
-import { delay, serialize, unserialize } from '~/utils';
+import * as createTypeModule from '@polymathnetwork/polkadot/types/create/createType';
+import * as registryModule from '@polymathnetwork/polkadot/types/create/registry';
+import { Balance, IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
+import sinon from 'sinon';
+import { ImportMock, MockManager, StaticMockManager } from 'ts-mock-imports';
+
+import * as contextModule from '~/Context';
+import { PolkadotMockFactory } from '~/testUtils/mocks/PolkadotMockFactory';
+import {
+  balanceToNumber,
+  delay,
+  identityIdToString,
+  numberToBalance,
+  serialize,
+  stringToIdentityId,
+  unserialize,
+} from '~/utils';
 
 describe('delay', () => {
   jest.useFakeTimers();
@@ -52,5 +68,87 @@ describe('serialize and unserialize', () => {
   test('unserialize throws an error if the serialized string is not valid JSON', () => {
     const fakeSerialized = Buffer.from('someEntity:nonJsonString').toString('base64');
     expect(() => unserialize(fakeSerialized)).toThrowError(errorMsg);
+  });
+});
+
+describe('stringToIdentityId and identityIdToString', () => {
+  let mockContext: StaticMockManager<contextModule.Context>;
+  let mockRegistry: MockManager<registryModule.TypeRegistry>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockCreateType: sinon.SinonStub<any[], any>;
+
+  beforeEach(() => {
+    mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
+    mockRegistry = ImportMock.mockClass(registryModule, 'TypeRegistry');
+    mockCreateType = ImportMock.mockFunction(createTypeModule, 'createType', 'type');
+  });
+
+  afterEach(() => {
+    mockContext.restore();
+    mockRegistry.restore();
+    mockCreateType.restore();
+  });
+
+  test('should stringToIdentityId being called with provided arguments', () => {
+    mockContext.set('polymeshApi', {
+      registry: mockRegistry.getMockInstance(),
+    });
+    const identity = 'IdentityObject';
+    const context = mockContext.getMockInstance();
+    stringToIdentityId(identity, context);
+    sinon.assert.calledWith(mockCreateType, context.polymeshApi.registry, 'IdentityId', identity);
+  });
+
+  test('should identityIdToString returns an string', () => {
+    const toStringStub = sinon.stub().returns('IdentityString');
+    const identityId = ({
+      toString: toStringStub,
+    } as unknown) as IdentityId;
+
+    const result = identityIdToString(identityId);
+    sinon.assert.calledOnce(toStringStub);
+    sinon.assert.match(typeof result === 'string', true);
+  });
+});
+
+describe('numberToBalance and balanceToNumber', () => {
+  let mockContext: StaticMockManager<contextModule.Context>;
+  let mockRegistry: MockManager<registryModule.TypeRegistry>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockCreateType: sinon.SinonStub<any[], any>;
+
+  beforeEach(() => {
+    mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
+    mockRegistry = ImportMock.mockClass(registryModule, 'TypeRegistry');
+    mockCreateType = ImportMock.mockFunction(createTypeModule, 'createType', 'type');
+  });
+
+  afterEach(() => {
+    mockContext.restore();
+    mockRegistry.restore();
+    mockCreateType.restore();
+  });
+
+  test('should numberToBalance being called with provided arguments', () => {
+    mockContext.set('polymeshApi', {
+      registry: mockRegistry.getMockInstance(),
+    });
+
+    const value = 100;
+    const context = mockContext.getMockInstance();
+    numberToBalance(value, context);
+    sinon.assert.calledWith(mockCreateType, context.polymeshApi.registry, 'Balance', value);
+  });
+
+  test('should balanceToNumber returns a base 6 number', () => {
+    const toStringStub = sinon.stub().returns('100');
+    const balance = ({
+      toString: toStringStub,
+    } as unknown) as Balance;
+
+    const result = balanceToNumber(balance);
+    sinon.assert.calledOnce(toStringStub);
+    sinon.assert.match(typeof result === 'number', true);
+    sinon.assert.match(result === 100 / Math.pow(10, 6), true);
   });
 });
