@@ -2,7 +2,7 @@ import { createType } from '@polymathnetwork/polkadot/types/create/createType';
 import { Balance, IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
 import stringify from 'json-stable-stringify';
 
-import { Context } from '~/Context';
+import { Context } from '~/base/Context';
 
 /**
  * Promisified version of a timeout

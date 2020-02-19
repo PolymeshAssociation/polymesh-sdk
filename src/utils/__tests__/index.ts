@@ -1,10 +1,10 @@
 import * as createTypeModule from '@polymathnetwork/polkadot/types/create/createType';
 import * as registryModule from '@polymathnetwork/polkadot/types/create/registry';
 import { Balance, IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 import { ImportMock, MockManager, StaticMockManager } from 'ts-mock-imports';
 
-import * as contextModule from '~/Context';
+import * as contextModule from '~/base/Context';
 import {
   balanceToNumber,
   delay,
@@ -73,8 +73,7 @@ describe('serialize and unserialize', () => {
 describe('stringToIdentityId and identityIdToString', () => {
   let mockContext: StaticMockManager<contextModule.Context>;
   let mockRegistry: MockManager<registryModule.TypeRegistry>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockCreateType: sinon.SinonStub<any[], any>;
+  let mockCreateType: SinonStub;
 
   beforeEach(() => {
     mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
@@ -113,8 +112,7 @@ describe('stringToIdentityId and identityIdToString', () => {
 describe('numberToBalance and balanceToNumber', () => {
   let mockContext: StaticMockManager<contextModule.Context>;
   let mockRegistry: MockManager<registryModule.TypeRegistry>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockCreateType: sinon.SinonStub<any[], any>;
+  let mockCreateType: SinonStub;
 
   beforeEach(() => {
     mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
