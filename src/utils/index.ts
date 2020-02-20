@@ -65,13 +65,17 @@ export function identityIdToString(identityId: IdentityId): string {
 /**
  * Convert an human readable number to a Balance representation
  */
-export function numberToBalance(value: number, context: Context): Balance {
-  return createType<'Balance'>(context.polymeshApi.registry, 'Balance', value * Math.pow(10, 6));
+export function numberToBalance(value: number | BigNumber, context: Context): Balance {
+  return createType<'Balance'>(
+    context.polymeshApi.registry,
+    'Balance',
+    new BigNumber(value).pow(Math.pow(10, 6))
+  );
 }
 
 /**
  * Convert a Balance representation to a BigNumber
  */
 export function balanceToBigNumber(balance: Balance): BigNumber {
-  return new BigNumber(Number(balance.toString()) / Math.pow(10, 6));
+  return new BigNumber(balance.toString()).div(Math.pow(10, 6));
 }

@@ -1,11 +1,10 @@
 import * as createTypeModule from '@polymathnetwork/polkadot/types/create/createType';
-import * as registryModule from '@polymathnetwork/polkadot/types/create/registry';
 import { Balance, IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
-import { ImportMock, MockManager, StaticMockManager } from 'ts-mock-imports';
+import { ImportMock } from 'ts-mock-imports';
 
-import * as contextModule from '~/base/Context';
+import { PolkadotMockFactory } from '~/testUtils/mocks';
 import {
   balanceToBigNumber,
   delay,
@@ -72,85 +71,89 @@ describe('serialize and unserialize', () => {
 });
 
 describe('stringToIdentityId and identityIdToString', () => {
-  let mockContext: StaticMockManager<contextModule.Context>;
-  let mockRegistry: MockManager<registryModule.TypeRegistry>;
+  const polkadotMockFactory = new PolkadotMockFactory();
+  polkadotMockFactory.initMocks({ mockContext: true });
+
   let mockCreateType: SinonStub;
 
   beforeEach(() => {
-    mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
-    mockRegistry = ImportMock.mockClass(registryModule, 'TypeRegistry');
     mockCreateType = ImportMock.mockFunction(createTypeModule, 'createType', 'type');
   });
 
   afterEach(() => {
-    mockContext.restore();
-    mockRegistry.restore();
+    polkadotMockFactory.reset();
     mockCreateType.restore();
   });
 
-  test('should stringToIdentityId being called with provided arguments', () => {
-    mockContext.set('polymeshApi', {
-      registry: mockRegistry.getMockInstance(),
-    });
-    const identity = 'IdentityObject';
-    const context = mockContext.getMockInstance();
-    stringToIdentityId(identity, context);
-    sinon.assert.calledWith(mockCreateType, context.polymeshApi.registry, 'IdentityId', identity);
+  afterAll(() => {
+    polkadotMockFactory.cleanup();
   });
 
-  test('should identityIdToString returns an string', () => {
-    const toStringStub = sinon.stub().returns('IdentityString');
+  test('stringToIdentityId should convert a did string into an IdentityId', () => {
+    const identity = 'IdentityObject';
+    const fakeResult = ('type' as unknown) as IdentityId;
+    const context = polkadotMockFactory.getContextInstance();
+
+    mockCreateType
+      .returns(fakeResult)
+      .withArgs(context.polymeshApi.registry, 'IdentityId', identity);
+
+    const result = stringToIdentityId(identity, context);
+
+    sinon.assert.match(result === fakeResult, true);
+  });
+
+  test('identityIdToString should convert an IdentityId to a did string', () => {
+    const fakeResult = 'IdentityString';
+    const toStringStub = sinon.stub().returns(fakeResult);
     const identityId = ({
       toString: toStringStub,
     } as unknown) as IdentityId;
 
     const result = identityIdToString(identityId);
-    sinon.assert.calledOnce(toStringStub);
-    sinon.assert.match(typeof result === 'string', true);
+    sinon.assert.match(result === fakeResult, true);
   });
 });
 
 describe('numberToBalance and balanceToBigNumber', () => {
-  let mockContext: StaticMockManager<contextModule.Context>;
-  let mockRegistry: MockManager<registryModule.TypeRegistry>;
+  const polkadotMockFactory = new PolkadotMockFactory();
+  polkadotMockFactory.initMocks({ mockContext: true });
+
   let mockCreateType: SinonStub;
 
   beforeEach(() => {
-    mockContext = ImportMock.mockStaticClass(contextModule, 'Context');
-    mockRegistry = ImportMock.mockClass(registryModule, 'TypeRegistry');
     mockCreateType = ImportMock.mockFunction(createTypeModule, 'createType', 'type');
   });
 
   afterEach(() => {
-    mockContext.restore();
-    mockRegistry.restore();
+    polkadotMockFactory.reset();
     mockCreateType.restore();
   });
 
-  test('should numberToBalance being called with provided arguments', () => {
-    mockContext.set('polymeshApi', {
-      registry: mockRegistry.getMockInstance(),
-    });
-
-    const balance = 100;
-    const context = mockContext.getMockInstance();
-    numberToBalance(balance, context);
-    sinon.assert.calledWith(
-      mockCreateType,
-      context.polymeshApi.registry,
-      'Balance',
-      balance * Math.pow(10, 6)
-    );
+  afterAll(() => {
+    polkadotMockFactory.cleanup();
   });
 
-  test('should balanceToBigNumber returns a big number', () => {
-    const toStringStub = sinon.stub().returns('100');
+  test('numberToBalance should convert a number or BigNumber to a polkadot Balance object', () => {
+    const value = new BigNumber(100);
+    const fakeResult = ('100' as unknown) as Balance;
+    const context = polkadotMockFactory.getContextInstance();
+
+    mockCreateType.returns(fakeResult).withArgs(context.polymeshApi.registry, 'Balance', value);
+
+    const result = numberToBalance(value, context);
+
+    sinon.assert.match(result === fakeResult, true);
+  });
+
+  test('balanceToBigNumber should convert a polkadot Balance object to a BigNumber', () => {
+    const fakeResult = new BigNumber(100);
+    const toStringStub = sinon.stub().returns(fakeResult);
     const balance = ({
       toString: toStringStub,
     } as unknown) as Balance;
 
     const result = balanceToBigNumber(balance);
-    sinon.assert.calledOnce(toStringStub);
-    sinon.assert.match(result.eq(new BigNumber(100 / Math.pow(10, 6))), true);
+    sinon.assert.match(result.isEqualTo(fakeResult.div(Math.pow(10, 6))), true);
   });
 });
