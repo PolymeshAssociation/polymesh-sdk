@@ -1,4 +1,5 @@
 import { ApiPromise, WsProvider } from '@polymathnetwork/polkadot/api';
+import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
 
 import { Context, PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
@@ -12,7 +13,7 @@ interface ConnectParams {
  * Main entry point of the Polymesh SDK
  */
 export class Polymesh {
-  public context: Context = {} as Context;
+  private context: Context = {} as Context;
 
   /**
    * @hidden
@@ -46,4 +47,13 @@ export class Polymesh {
       });
     }
   }
+
+  /**
+   * Get the POLY balance of the current account
+   */
+  public getPolyBalance = async (): Promise<Balance | undefined> => {
+    const { context } = this;
+    const balance = await context.currentIdentity?.getIdentityBalance();
+    return balance;
+  };
 }

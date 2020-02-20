@@ -9,7 +9,7 @@ import * as utils from '~/utils';
 describe('Identity class', () => {
   const polkadotMockFactory = new PolkadotMockFactory();
 
-  polkadotMockFactory.initMocks({ mockContext: true });
+  polkadotMockFactory.initMocks({ mockContext: {} });
 
   afterEach(() => {
     polkadotMockFactory.reset();
@@ -59,14 +59,14 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getPolyBalance', () => {
+  describe('method: getIdentityBalance', () => {
     test("should return the identity's POLY balance", async () => {
       const identityBalanceStub = polkadotMockFactory.createQueryStub(
         'balances',
         'identityBalance'
       );
       const identity = new Identity({ did: 'abc' }, polkadotMockFactory.getContextInstance());
-      await identity.getPolyBalance();
+      await identity.getIdentityBalance();
       sinon.assert.calledOnce(identityBalanceStub);
     });
   });

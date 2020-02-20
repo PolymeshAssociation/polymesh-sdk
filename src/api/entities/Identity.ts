@@ -90,7 +90,7 @@ export class Identity extends Entity {
   /**
    * Retrieve the POLY balance of this particular Identity
    */
-  public getPolyBalance = async (): Promise<Balance> => {
+  public getIdentityBalance = async (): Promise<Balance> => {
     const { context, did } = this;
     // TODO MSDK-48 - Create an human readable value conversion
     return context.polymeshApi.query.balances.identityBalance(did);

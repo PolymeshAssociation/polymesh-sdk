@@ -7,8 +7,7 @@ import { PolkadotMockFactory } from '~/testUtils/mocks';
 
 describe('Polymesh Class', () => {
   const polkadotMockFactory = new PolkadotMockFactory();
-  polkadotMockFactory.initMocks({ mockContext: true });
-
+  polkadotMockFactory.initMocks({ mockContext: {} });
   let mockWsProvider: MockManager<polkadotModule.Keyring>;
 
   beforeEach(() => {
@@ -25,13 +24,11 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: create', () => {
-    test('should instantiate ApiPromise lib and Context class and returns a Polymesh instance', async () => {
+    test('should instantiate ApiPromise and returns a Polymesh instance', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: '',
       });
 
-      expect(polymesh.context).toBeDefined();
-      expect(polymesh.context.polymeshApi).toBeDefined();
       sinon.assert.match(polymesh instanceof Polymesh, true);
     });
 
@@ -52,6 +49,31 @@ describe('Polymesh Class', () => {
       });
 
       await expect(polymeshApiPromise).rejects.toThrow(`Error while connecting to "wss": "Error"`);
+    });
+  });
+
+  describe('method: getPolyBalance', () => {
+    test('should return undefined if the identity was not instantiated', async () => {
+      polkadotMockFactory.initMocks({ mockContext: {} });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wws',
+      });
+
+      const balance = await polymesh.getPolyBalance();
+      expect(balance).toBeUndefined();
+    });
+
+    test('should return the identity Poly balance', async () => {
+      polkadotMockFactory.initMocks({ mockContext: { seed: true } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wws',
+        accountSeed: 'seed',
+      });
+
+      const balance = await polymesh.getPolyBalance();
+      expect(balance).toBeDefined();
     });
   });
 });
