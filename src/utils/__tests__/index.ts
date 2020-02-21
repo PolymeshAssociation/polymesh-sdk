@@ -100,7 +100,7 @@ describe('stringToIdentityId and identityIdToString', () => {
 
     const result = stringToIdentityId(identity, context);
 
-    sinon.assert.match(result === fakeResult, true);
+    expect(result).toBe(fakeResult);
   });
 
   test('identityIdToString should convert an IdentityId to a did string', () => {
@@ -111,7 +111,7 @@ describe('stringToIdentityId and identityIdToString', () => {
     } as unknown) as IdentityId;
 
     const result = identityIdToString(identityId);
-    sinon.assert.match(result === fakeResult, true);
+    expect(result).toBe(fakeResult);
   });
 });
 
@@ -134,7 +134,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
     polkadotMockFactory.cleanup();
   });
 
-  test('numberToBalance should convert a number or BigNumber to a polkadot Balance object', () => {
+  test('numberToBalance should convert a BigNumber to a polkadot Balance object', () => {
     const value = new BigNumber(100);
     const fakeResult = ('100' as unknown) as Balance;
     const context = polkadotMockFactory.getContextInstance();
@@ -143,17 +143,28 @@ describe('numberToBalance and balanceToBigNumber', () => {
 
     const result = numberToBalance(value, context);
 
-    sinon.assert.match(result === fakeResult, true);
+    expect(result).toBe(fakeResult);
+  });
+
+  test('numberToBalance should convert a number to a polkadot Balance object', () => {
+    const value = 100;
+    const fakeResult = ('100' as unknown) as Balance;
+    const context = polkadotMockFactory.getContextInstance();
+
+    mockCreateType.returns(fakeResult).withArgs(context.polymeshApi.registry, 'Balance', value);
+
+    const result = numberToBalance(value, context);
+
+    expect(result).toBe(fakeResult);
   });
 
   test('balanceToBigNumber should convert a polkadot Balance object to a BigNumber', () => {
     const fakeResult = new BigNumber(100);
-    const toStringStub = sinon.stub().returns(fakeResult);
     const balance = ({
-      toString: toStringStub,
+      toString: sinon.stub().returns(fakeResult.toString()),
     } as unknown) as Balance;
 
     const result = balanceToBigNumber(balance);
-    sinon.assert.match(result.isEqualTo(fakeResult.div(Math.pow(10, 6))), true);
+    expect(result).toEqual(fakeResult.div(Math.pow(10, 6)));
   });
 });
