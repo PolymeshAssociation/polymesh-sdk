@@ -1,6 +1,6 @@
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
 
-import { Entity } from '~/base'; // this import is kept separate to avoid circular dependencies
+import { Entity } from '~/base';
 import { Context } from '~/context';
 
 /**
