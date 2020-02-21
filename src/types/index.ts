@@ -52,6 +52,10 @@ export enum TransactionQueueStatus {
   Succeeded = 'Succeeded',
 }
 
+export enum Role {
+  Owner = 'Owner',
+}
+
 /**
  * Specifies possible types of errors in the SDK
  */
@@ -62,4 +66,5 @@ export enum ErrorCode {
   FatalError = 'FatalError',
   InvalidUuid = 'InvalidUuid',
   ValidationError = 'ValidationError',
+  NotAuthorized = 'NotAuthorized',
 }
