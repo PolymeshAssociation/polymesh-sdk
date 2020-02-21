@@ -1,9 +1,11 @@
 import * as createTypeModule from '@polymathnetwork/polkadot/types/create/createType';
 import { Balance, IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
+import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 import { ImportMock } from 'ts-mock-imports';
 
+import { PostTransactionValue } from '~/base';
 import { PolkadotMockFactory } from '~/testUtils/mocks';
 import {
   balanceToBigNumber,
@@ -13,11 +15,8 @@ import {
   serialize,
   stringToIdentityId,
   unserialize,
-  unwrapValues
+  unwrapValues,
 } from '~/utils';
-
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
-import { PostTransactionValue } from '~/base';
 
 describe('delay', () => {
   jest.useFakeTimers();

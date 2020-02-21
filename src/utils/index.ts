@@ -2,8 +2,9 @@ import { createType } from '@polymathnetwork/polkadot/types/create/createType';
 import { Balance, IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { Context } from '~/base/Context';
+
 import { PostTransactionValue } from '~/base';
+import { Context } from '~/base/Context';
 import { MapMaybePostTransactionValue, MaybePostTransactionValue } from '~/types/internal';
 
 /**
