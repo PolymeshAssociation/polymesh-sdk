@@ -1,3 +1,4 @@
+import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 import { ImportMock } from 'ts-mock-imports';
 
@@ -9,7 +10,7 @@ import * as utils from '~/utils';
 describe('Identity class', () => {
   const polkadotMockFactory = new PolkadotMockFactory();
 
-  polkadotMockFactory.initMocks({ mockContext: {} });
+  polkadotMockFactory.initMocks({ mockContext: true });
 
   afterEach(() => {
     polkadotMockFactory.reset();
@@ -61,13 +62,11 @@ describe('Identity class', () => {
 
   describe('method: getIdentityBalance', () => {
     test("should return the identity's POLY balance", async () => {
-      const identityBalanceStub = polkadotMockFactory.createQueryStub(
-        'balances',
-        'identityBalance'
-      );
+      const fakeResult = new BigNumber(100);
+      polkadotMockFactory.createQueryStub('balances', 'identityBalance').resolves(fakeResult);
       const identity = new Identity({ did: 'abc' }, polkadotMockFactory.getContextInstance());
-      await identity.getIdentityBalance();
-      sinon.assert.calledOnce(identityBalanceStub);
+      const result = await identity.getIdentityBalance();
+      expect(result).toEqual(fakeResult);
     });
   });
 });

@@ -1,5 +1,6 @@
 import { ApiPromise, WsProvider } from '@polymathnetwork/polkadot/api';
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
+import { BigNumber } from 'bignumber.js';
 
 import { Context, PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
@@ -51,9 +52,16 @@ export class Polymesh {
   /**
    * Get the POLY balance of the current account
    */
-  public getPolyBalance = async (): Promise<Balance | undefined> => {
-    const { context } = this;
-    const balance = await context.currentIdentity?.getIdentityBalance();
-    return balance;
+  public getPolyBalance = async (): Promise<BigNumber> => {
+    const { currentIdentity } = this.context;
+    if (currentIdentity) {
+      const balance = await currentIdentity.getIdentityBalance();
+      return balance;
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `You don't have an attached identity`,
+      });
+    }
   };
 }

@@ -1,4 +1,5 @@
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
+import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 import { ImportMock, MockManager } from 'ts-mock-imports';
 
@@ -7,7 +8,7 @@ import { PolkadotMockFactory } from '~/testUtils/mocks';
 
 describe('Polymesh Class', () => {
   const polkadotMockFactory = new PolkadotMockFactory();
-  polkadotMockFactory.initMocks({ mockContext: {} });
+  polkadotMockFactory.initMocks({ mockContext: true });
   let mockWsProvider: MockManager<polkadotModule.Keyring>;
 
   beforeEach(() => {
@@ -24,7 +25,7 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: create', () => {
-    test('should instantiate ApiPromise and returns a Polymesh instance', async () => {
+    test('should instantiate ApiPromise and return a Polymesh instance', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: '',
       });
@@ -53,27 +54,29 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getPolyBalance', () => {
-    test('should return undefined if the identity was not instantiated', async () => {
-      polkadotMockFactory.initMocks({ mockContext: {} });
+    test('should throw if identity was not instantiated', async () => {
+      polkadotMockFactory.initMocks({ mockContext: { withSeed: false } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wws',
       });
 
-      const balance = await polymesh.getPolyBalance();
-      expect(balance).toBeUndefined();
+      await expect(polymesh.getPolyBalance()).rejects.toThrow(
+        `You don't have an attached identity`
+      );
     });
 
-    test('should return the identity Poly balance', async () => {
-      polkadotMockFactory.initMocks({ mockContext: { seed: true } });
+    test(`should return the identity's POLY balance`, async () => {
+      const fakeBalance = new BigNumber(20);
+      polkadotMockFactory.initMocks({ mockContext: { withSeed: true, balance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wws',
         accountSeed: 'seed',
       });
 
-      const balance = await polymesh.getPolyBalance();
-      expect(balance).toBeDefined();
+      const result = await polymesh.getPolyBalance();
+      expect(result).toEqual(fakeBalance);
     });
   });
 });
