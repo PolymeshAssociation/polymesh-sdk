@@ -82,6 +82,9 @@ export function balanceToBigNumber(balance: Balance): BigNumber {
   return new BigNumber(balance.toString()).div(Math.pow(10, 6));
 }
 
+/**
+ * Unwrap Post Transaction Value
+ */
 export function unwrapValue<T extends unknown>(value: MaybePostTransactionValue<T>): T {
   if (value instanceof PostTransactionValue) {
     return value.value;
