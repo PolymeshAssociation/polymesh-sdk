@@ -7,12 +7,12 @@ import { PolymeshError } from '~/base';
 import { ErrorCode, TransactionStatus } from '~/types';
 import {
   MapMaybePostTransactionValue,
+  MaybePostTransactionValue,
   PolymeshTx,
   PostTransactionValueArray,
   TransactionSpec,
 } from '~/types/internal';
-
-import { PostTransactionValue } from './PostTransactionValue';
+import { unwrapValue, unwrapValues } from '~/utils';
 
 enum Event {
   StatusChange = 'StatusChange',
@@ -53,21 +53,22 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
   public blockHash?: string;
 
   /**
-   * arguments with which the transaction will be called
-   */
-  public args: MapMaybePostTransactionValue<Args>;
-
-  /**
    * whether this tx failing makes the entire tx queue fail or not
    */
   public isCritical: boolean;
+
+  /**
+   * arguments arguments for the transaction. Available after the transaction starts running
+   * (may be Post Transaction Values from a previous transaction in the queue that haven't resolved yet)
+   */
+  public args: MapMaybePostTransactionValue<Args>;
 
   /**
    * @hidden
    *
    * underlying transaction to be executed
    */
-  protected tx: PolymeshTx<Args>;
+  private tx: MaybePostTransactionValue<PolymeshTx<Args>>;
 
   /**
    * @hidden
@@ -171,9 +172,10 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
   private async internalRun(): Promise<ISubmittableResult> {
     this.updateStatus(TransactionStatus.Unapproved);
 
-    const unwrappedArgs = this.unwrapArgs(this.args);
-
-    const { tx } = this;
+    const { tx: wrappedTx } = this;
+    const unwrappedArgs = unwrapValues(this.args);
+    const tx = unwrapValue(wrappedTx);
+    this.args = unwrappedArgs;
 
     const gettingReceipt: Promise<ISubmittableResult> = new Promise((resolve, reject) => {
       const txWithArgs = tx(...unwrappedArgs);
@@ -273,20 +275,5 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
       }
     }
     /* eslint-enable default-case */
-  }
-
-  /**
-   * @hidden
-   *
-   * Unwrap Post Transaction Values if present in the tuple
-   */
-  private unwrapArgs<T extends unknown[]>(args: MapMaybePostTransactionValue<T>): T {
-    return args.map(arg => {
-      if (arg instanceof PostTransactionValue) {
-        return arg.value;
-      }
-
-      return arg;
-    }) as T;
   }
 }
