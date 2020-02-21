@@ -5,7 +5,8 @@ import sinon from 'sinon';
 import { PolymeshTransaction, PostTransactionValue } from '~/base';
 import { MockTxStatus, PolkadotMockFactory, TxFailReason } from '~/testUtils/mocks';
 import { TransactionStatus } from '~/types';
-import { MaybePostTransactionValue, PostTransactionValueArray } from '~/types/internal';
+import { PostTransactionValueArray } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import { delay } from '~/utils';
 
 describe('Polymesh Transaction class', () => {
@@ -26,7 +27,7 @@ describe('Polymesh Transaction class', () => {
   describe('method: run', () => {
     test('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker');
-      const args: [string] = ['A_TICKER'];
+      const args = tuple('A_TICKER');
 
       const transaction = new PolymeshTransaction({
         ...txSpec,
@@ -47,7 +48,7 @@ describe('Polymesh Transaction class', () => {
       const ticker = 'A_DIFFERENT_TICKER';
       const postTransactionTicker = new PostTransactionValue(async () => ticker);
       await postTransactionTicker.run({} as ISubmittableResult);
-      const args: [MaybePostTransactionValue<string>] = [postTransactionTicker];
+      const args = tuple(postTransactionTicker);
 
       const transaction = new PolymeshTransaction({
         ...txSpec,
@@ -65,7 +66,7 @@ describe('Polymesh Transaction class', () => {
 
     test('should update the transaction status', async () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker', false);
-      const args: [string] = ['ANOTHER_TICKER'];
+      const args = tuple('ANOTHER_TICKER');
 
       const transaction = new PolymeshTransaction({
         ...txSpec,
@@ -94,7 +95,7 @@ describe('Polymesh Transaction class', () => {
 
     test('should resolve all postValues', async () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker');
-      const args: [string] = ['YET_ANOTHER_TICKER'];
+      const args = tuple('YET_ANOTHER_TICKER');
       const firstStub = sinon.stub().resolves(1);
       const secondStub = sinon.stub().resolves('someString');
       const postTransactionValues = ([
@@ -117,7 +118,7 @@ describe('Polymesh Transaction class', () => {
 
     test('should throw an error when the transaction is aborted', async () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker', MockTxStatus.Aborted);
-      const args: [string] = ['IT_HURTS'];
+      const args = tuple('IT_HURTS');
 
       const transaction = new PolymeshTransaction({
         ...txSpec,
@@ -133,7 +134,7 @@ describe('Polymesh Transaction class', () => {
 
     test('should throw an error when the transaction fails', async () => {
       let tx = mockFactory.createTxStub('asset', 'registerTicker', false);
-      const args: [string] = ['PLEASE_MAKE_IT_STOP'];
+      const args = tuple('PLEASE_MAKE_IT_STOP');
 
       let transaction = new PolymeshTransaction({
         ...txSpec,
@@ -191,7 +192,7 @@ describe('Polymesh Transaction class', () => {
 
     test('should throw an error when the transaction is rejected', async () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker', MockTxStatus.Rejected);
-      const args: [string] = ['THIS_IS_THE_LAST_ONE_I_SWEAR'];
+      const args = tuple('THIS_IS_THE_LAST_ONE_I_SWEAR');
 
       const transaction = new PolymeshTransaction({
         ...txSpec,
@@ -209,7 +210,7 @@ describe('Polymesh Transaction class', () => {
   describe('method: onStatusChange', () => {
     test("should execute a callback when the transaction's status changes", async () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker');
-      const args: [string] = ['I_HAVE_LOST_THE_WILL_TO_LIVE'];
+      const args = tuple('I_HAVE_LOST_THE_WILL_TO_LIVE');
 
       const transaction = new PolymeshTransaction({
         ...txSpec,
@@ -230,7 +231,7 @@ describe('Polymesh Transaction class', () => {
 
     test('should return an unsubscribe function', async () => {
       const tx = mockFactory.createTxStub('asset', 'registerTicker', false);
-      const args: [string] = ['THE_ONLY_THING_THAT_KEEPS_ME_GOING_IS_THE_HOPE_OF_FULL_COVERAGE'];
+      const args = tuple('THE_ONLY_THING_THAT_KEEPS_ME_GOING_IS_THE_HOPE_OF_FULL_COVERAGE');
 
       const transaction = new PolymeshTransaction({
         ...txSpec,

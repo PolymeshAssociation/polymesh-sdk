@@ -1,4 +1,7 @@
-import { delay, serialize, unserialize } from '~/utils';
+import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+
+import { PostTransactionValue } from '~/base';
+import { delay, serialize, unserialize, unwrapValues } from '~/utils';
 
 describe('delay', () => {
   jest.useFakeTimers();
@@ -52,5 +55,17 @@ describe('serialize and unserialize', () => {
   test('unserialize throws an error if the serialized string is not valid JSON', () => {
     const fakeSerialized = Buffer.from('someEntity:nonJsonString').toString('base64');
     expect(() => unserialize(fakeSerialized)).toThrowError(errorMsg);
+  });
+});
+
+describe('unwrapValues', () => {
+  test('should unwrap all Post Transaction Values in the array', async () => {
+    const values = [1, 2, 3, 4, 5];
+    const wrapped = values.map(value => new PostTransactionValue(async () => value));
+    await Promise.all(wrapped.map(postValue => postValue.run({} as ISubmittableResult)));
+
+    const unwrapped = unwrapValues(wrapped);
+
+    expect(unwrapped).toEqual(values);
   });
 });

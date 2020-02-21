@@ -1,4 +1,4 @@
-import { BigNumber } from 'bignumber.js';
+import BigNumber from 'bignumber.js';
 import { ImportMock } from 'ts-mock-imports';
 
 import { Identity } from '~/api/entities';
@@ -13,6 +13,10 @@ describe('Identity class', () => {
 
   afterEach(() => {
     polkadotMockFactory.reset();
+  });
+
+  afterAll(() => {
+    polkadotMockFactory.cleanup();
   });
 
   test('should extend entity', () => {
