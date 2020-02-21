@@ -13,7 +13,11 @@ import {
   serialize,
   stringToIdentityId,
   unserialize,
+  unwrapValues
 } from '~/utils';
+
+import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { PostTransactionValue } from '~/base';
 
 describe('delay', () => {
   jest.useFakeTimers();
@@ -166,5 +170,17 @@ describe('numberToBalance and balanceToBigNumber', () => {
 
     const result = balanceToBigNumber(balance);
     expect(result).toEqual(fakeResult.div(Math.pow(10, 6)));
+  });
+});
+
+describe('unwrapValues', () => {
+  test('should unwrap all Post Transaction Values in the array', async () => {
+    const values = [1, 2, 3, 4, 5];
+    const wrapped = values.map(value => new PostTransactionValue(async () => value));
+    await Promise.all(wrapped.map(postValue => postValue.run({} as ISubmittableResult)));
+
+    const unwrapped = unwrapValues(wrapped);
+
+    expect(unwrapped).toEqual(values);
   });
 });
