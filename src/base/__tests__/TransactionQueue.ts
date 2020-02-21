@@ -1,5 +1,5 @@
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
-import BN from 'bn.js';
+import BigNumber from 'bignumber.js';
 import { noop } from 'lodash';
 import sinon from 'sinon';
 
@@ -32,16 +32,13 @@ describe('Transaction Queue class', () => {
         },
       ];
       const transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
-      const args: [string] = ['someArgs'];
-      const fees = new BN(3);
+      const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,
-        args,
         returnValue
       );
-      expect(queue.args).toBe(args);
       expect(queue.fees).toBe(fees);
       expect(queue.transactions).toEqual(transactions);
     });
@@ -64,13 +61,11 @@ describe('Transaction Queue class', () => {
 
       const transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
 
-      const args: [string] = ['someArgs'];
-      const fees = new BN(3);
+      const fees = new BigNumber(3);
       const returnValue = 3;
       let queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
         fees,
-        args,
         returnValue
       );
 
@@ -91,7 +86,6 @@ describe('Transaction Queue class', () => {
       queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
         fees,
-        args,
         returnPostTransactionValue
       );
 
@@ -109,13 +103,11 @@ describe('Transaction Queue class', () => {
         },
       ];
       let transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
-      const args: [string] = ['someArgs'];
-      const fees = new BN(3);
+      const fees = new BigNumber(3);
       const returnValue = 3;
       let queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,
-        args,
         returnValue
       );
 
@@ -138,7 +130,6 @@ describe('Transaction Queue class', () => {
       queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,
-        args,
         returnValue
       );
 
@@ -166,13 +157,11 @@ describe('Transaction Queue class', () => {
 
       transactionMockFactory.setupNextTransactions(transactionSpecs);
 
-      const args: [string] = ['someArgs'];
-      const fees = new BN(3);
+      const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
         fees,
-        args,
         returnValue
       );
 
@@ -197,19 +186,46 @@ describe('Transaction Queue class', () => {
 
       transactionMockFactory.setupNextTransactions(transactionSpecs);
 
-      const args: [string] = ['someArgs'];
-      const fees = new BN(3);
+      const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
         fees,
-        args,
         returnValue
       );
 
       const runPromise = queue.run();
 
       expect(runPromise).resolves.not.toThrow();
+    });
+
+    test('should throw an error if attempting to run a queue that has already run', async () => {
+      const transactionSpecs = [
+        {
+          args: [1],
+          isCritical: false,
+          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+        },
+        {
+          args: ['someArg'],
+          isCritical: true,
+          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+        },
+      ];
+
+      transactionMockFactory.setupNextTransactions(transactionSpecs);
+
+      const fees = new BigNumber(3);
+      const returnValue = 3;
+      const queue = new TransactionQueue(
+        (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
+        fees,
+        returnValue
+      );
+
+      await queue.run();
+
+      return expect(queue.run()).rejects.toThrow('Cannot re-run a Transaction Queue');
     });
   });
 
@@ -223,13 +239,11 @@ describe('Transaction Queue class', () => {
         },
       ];
       transactionMockFactory.setupNextTransactions(transactionSpecs);
-      const args: [string] = ['someArgs'];
-      const fees = new BN(3);
+      const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,
-        args,
         returnValue
       );
 
@@ -251,13 +265,11 @@ describe('Transaction Queue class', () => {
         },
       ];
       const transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
-      const args: [string] = ['someArgs'];
-      const fees = new BN(3);
+      const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,
-        args,
         returnValue
       );
 
@@ -287,13 +299,11 @@ describe('Transaction Queue class', () => {
         },
       ];
       const transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
-      const args: [string] = ['someArgs'];
-      const fees = new BN(3);
+      const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,
-        args,
         returnValue
       );
 
@@ -322,13 +332,11 @@ describe('Transaction Queue class', () => {
         },
       ];
       const transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
-      const args: [string] = ['someArgs'];
-      const fees = new BN(3);
+      const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,
-        args,
         returnValue
       );
 

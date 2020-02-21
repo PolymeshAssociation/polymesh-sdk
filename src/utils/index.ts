@@ -1,5 +1,8 @@
 import stringify from 'json-stable-stringify';
 
+import { PostTransactionValue } from '~/base';
+import { MapMaybePostTransactionValue, MaybePostTransactionValue } from '~/types/internal';
+
 /**
  * Promisified version of a timeout
  *
@@ -41,4 +44,22 @@ export function unserialize(id: string): Record<string, unknown> {
   } catch (err) {
     throw new Error(errorMsg);
   }
+}
+
+/**
+ * Unwrap Post Transaction Value
+ */
+export function unwrapValue<T extends unknown>(value: MaybePostTransactionValue<T>): T {
+  if (value instanceof PostTransactionValue) {
+    return value.value;
+  }
+
+  return value;
+}
+
+/**
+ * Unwrap Post Transaction Values if present in the tuple
+ */
+export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactionValue<T>): T {
+  return values.map(unwrapValue) as T;
 }
