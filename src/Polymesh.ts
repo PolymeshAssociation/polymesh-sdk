@@ -1,6 +1,7 @@
 import { ApiPromise, WsProvider } from '@polymathnetwork/polkadot/api';
 
-import { Context, PolymeshError } from '~/base';
+import { PolymeshError } from '~/base';
+import { Context } from '~/context';
 import { ErrorCode } from '~/types';
 
 interface ConnectParams {

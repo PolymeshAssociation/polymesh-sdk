@@ -19,14 +19,17 @@ export const delay = async (amount: number): Promise<void> => {
 /**
  * Convert an entity type and its unique Identifiers to a base64 string
  */
-export function serialize(entityType: string, uniqueIdentifiers: Record<string, unknown>): string {
+export function serialize<UniqueIdentifiers extends object>(
+  entityType: string,
+  uniqueIdentifiers: UniqueIdentifiers
+): string {
   return Buffer.from(`${entityType}:${stringify(uniqueIdentifiers)}`).toString('base64');
 }
 
 /**
  * Convert a uuid string to an Identifier object
  */
-export function unserialize(id: string): Record<string, unknown> {
+export function unserialize<UniqueIdentifiers extends object>(id: string): UniqueIdentifiers {
   const unserialized = Buffer.from(id, 'base64').toString('utf8');
 
   const matched = unserialized.match(/^.*?:(.*)/);

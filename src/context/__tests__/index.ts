@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { ImportMock, MockManager } from 'ts-mock-imports';
 
 import * as identityModule from '~/api/entities';
-import { Context } from '~/base';
+import { Context } from '~/context';
 import { PolkadotMockFactory } from '~/testUtils/mocks';
 
 describe('Context class', () => {

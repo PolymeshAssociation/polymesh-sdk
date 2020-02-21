@@ -1,9 +1,7 @@
 import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
 
-import { Context, PolymeshError } from '~/base';
-import { Entity } from '~/base/Entity'; // this import is kept separate to avoid circular dependencies
-import { ErrorCode } from '~/types';
-import { serialize, unserialize } from '~/utils';
+import { Entity } from '~/base'; // this import is kept separate to avoid circular dependencies
+import { Context } from '~/context';
 
 /**
  * Properties that uniquely identify an Identity
@@ -18,73 +16,33 @@ export interface UniqueIdentifiers {
 export type Params = UniqueIdentifiers;
 
 /**
- * @hidden
- * Checks if a value is of type [[UniqueIdentifiers]]
- */
-function isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-  const { did } = identifier as UniqueIdentifiers;
-
-  return typeof did === 'string';
-}
-
-/**
  * Used to manage an Identity
  */
-export class Identity extends Entity {
+export class Identity extends Entity<UniqueIdentifiers> {
   /**
-   * Generate the Identity's UUID from its identifying properties
+   * @hidden
+   * Checks if a value is of type [[UniqueIdentifiers]]
    */
-  public static generateUuid({ did }: UniqueIdentifiers): string {
-    return serialize('identity', {
-      did,
-    });
+  public static isUniqueIdentifiers(identifier: object): identifier is UniqueIdentifiers {
+    const { did } = identifier as UniqueIdentifiers;
+
+    return typeof did === 'string';
   }
-
-  /**
-   * Unserialize a serialized entity
-   *
-   * @param serialized - string with entity information
-   */
-  public static unserialize(serialized: string): Record<string, unknown> {
-    const unserialized = unserialize(serialized);
-
-    if (!isUniqueIdentifiers(unserialized)) {
-      throw new PolymeshError({
-        code: ErrorCode.InvalidUuid,
-        message: 'The string is not related to an Identity Unique Identifier',
-      });
-    }
-
-    return unserialized;
-  }
-
-  /**
-   * Universal unique identifier for entity Identity
-   */
-  public uuid: string;
 
   /**
    * Identity ID as stored in the blockchain
    */
   public did: string;
 
-  protected context: Context;
-
   /**
    * Create an Identity entity
    */
-  constructor(params: Params, context: Context) {
-    super();
+  constructor(identifiers: UniqueIdentifiers, context: Context) {
+    super(identifiers, context);
 
-    const { did } = params;
+    const { did } = identifiers;
 
     this.did = did;
-
-    this.context = context;
-
-    this.uuid = Identity.generateUuid({
-      did,
-    });
   }
 
   /**

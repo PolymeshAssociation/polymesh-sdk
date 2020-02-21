@@ -2,9 +2,9 @@ import { AddressOrPair, TxTag } from '@polymathnetwork/polkadot/api/types';
 import BigNumber from 'bignumber.js';
 
 import { TransactionQueue } from '~/base';
-import { Context } from '~/base/Context';
 import { PolymeshError } from '~/base/PolymeshError';
 import { PostTransactionValue } from '~/base/PostTransactionValue';
+import { Context } from '~/context';
 import { ErrorCode, Role } from '~/types';
 import {
   MapMaybePostTransactionValue,
