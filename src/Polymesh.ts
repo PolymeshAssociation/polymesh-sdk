@@ -1,5 +1,4 @@
 import { ApiPromise, WsProvider } from '@polymathnetwork/polkadot/api';
-import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
 import { BigNumber } from 'bignumber.js';
 
 import { Context, PolymeshError } from '~/base';

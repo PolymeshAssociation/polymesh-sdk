@@ -1,5 +1,4 @@
 import { BigNumber } from 'bignumber.js';
-import sinon from 'sinon';
 import { ImportMock } from 'ts-mock-imports';
 
 import { Identity } from '~/api/entities';
