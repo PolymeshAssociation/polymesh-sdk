@@ -63,13 +63,13 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getPolyBalance', () => {
+  describe('method: getIdentityBalance', () => {
     test("should return the identity's POLY balance", async () => {
-      const balance = new BigNumber(3);
-      polkadotMockFactory.createQueryStub('balances', 'identityBalance').returns(balance);
+      const fakeResult = new BigNumber(100);
+      polkadotMockFactory.createQueryStub('balances', 'identityBalance').resolves(fakeResult);
       const identity = new Identity({ did: 'abc' }, polkadotMockFactory.getContextInstance());
-      const result = await identity.getPolyBalance();
-      expect(result).toEqual(balance);
+      const result = await identity.getIdentityBalance();
+      expect(result).toEqual(fakeResult);
     });
   });
 });

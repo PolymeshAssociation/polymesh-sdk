@@ -6,6 +6,7 @@ import {
   ExtrinsicStatus,
 } from '@polymathnetwork/polkadot/types/interfaces';
 import { IKeyringPair, ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { BigNumber } from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 import { ImportMock, StaticMockManager } from 'ts-mock-imports';
@@ -23,6 +24,11 @@ interface TxMockData {
   unsubCallback: UnsubCallback;
   status: MockTxStatus;
   resolved: boolean;
+}
+
+interface ContextOptions {
+  withSeed?: boolean;
+  balance?: BigNumber;
 }
 
 type MockContext = Mocked<contextModule.Context>;
@@ -148,12 +154,17 @@ export class PolkadotMockFactory {
 
   private isMockingContext = false;
 
+  private mockingContextOptions: ContextOptions = {
+    withSeed: true,
+    balance: new BigNumber(100),
+  };
+
   /**
    * Initialize the factory by adding default all-purpose functionality to the mock manager
    *
-   * @param opts.mockContext - if true, the internal [[Context]] class will also be mocked
+   * @param opts.mockContext - if defined, the internal [[Context]] class will also be mocked with custom properties
    */
-  public initMocks(opts?: { mockContext?: boolean }): void {
+  public initMocks(opts?: { mockContext?: ContextOptions | true }): void {
     /*
       NOTE: the idea is to expand this function to mock things as we need them
       and use the methods in the class to fetch/manipulate different parts of the API as required
@@ -162,12 +173,15 @@ export class PolkadotMockFactory {
     // Context
     if (opts?.mockContext) {
       this.isMockingContext = true;
+      if (opts.mockContext !== true) {
+        this.mockingContextOptions = { ...this.mockingContextOptions, ...opts.mockContext };
+      }
 
       this.contextCreateMockManager = ImportMock.mockStaticClass<MockContext>(
         contextModule,
         'Context'
       );
-      this.initContext();
+      this.initContext(this.mockingContextOptions);
     }
 
     this.txMocksData.clear();
@@ -192,15 +206,23 @@ export class PolkadotMockFactory {
   /**
    * @hidden
    */
-  private initContext(): void {
+  private initContext(opts: ContextOptions): void {
+    const currentIdentity = opts.withSeed
+      ? { getIdentityBalance: sinon.stub().resolves(opts.balance) }
+      : undefined;
+    const currentPair = opts.withSeed
+      ? ({
+          address: '0xdummy',
+        } as IKeyringPair)
+      : undefined;
+
     const contextInstance = ({
       getAccounts: sinon.stub().returns([]),
       setPair: sinon.stub().callsFake(address => {
         contextInstance.currentPair = { address } as IKeyringPair;
       }),
-      currentPair: {
-        address: '0xdummy',
-      } as IKeyringPair,
+      currentPair,
+      currentIdentity,
     } as unknown) as MockContext;
 
     this.contextInstance = contextInstance;
@@ -292,7 +314,11 @@ export class PolkadotMockFactory {
    */
   public reset(): void {
     this.cleanup();
-    this.initMocks({ mockContext: this.isMockingContext });
+    if (this.isMockingContext) {
+      this.initMocks({ mockContext: this.mockingContextOptions });
+    } else {
+      this.initMocks();
+    }
   }
 
   /**
