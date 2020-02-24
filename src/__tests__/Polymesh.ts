@@ -62,7 +62,7 @@ describe('Polymesh Class', () => {
       });
 
       await expect(polymesh.getPolyBalance()).rejects.toThrow(
-        `You don't have an attached identity`
+        'The current account does not have an associated identity'
       );
     });
 
