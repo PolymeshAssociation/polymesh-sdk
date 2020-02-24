@@ -1,4 +1,4 @@
-import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
+import { BigNumber } from 'bignumber.js';
 
 import { Context, PolymeshError } from '~/base';
 import { Entity } from '~/base/Entity'; // this import is kept separate to avoid circular dependencies
@@ -90,9 +90,11 @@ export class Identity extends Entity {
   /**
    * Retrieve the POLY balance of this particular Identity
    */
-  public getPolyBalance = async (): Promise<Balance> => {
+  public getIdentityBalance = async (): Promise<BigNumber> => {
     const { context, did } = this;
-    // TODO MSDK-48 - Create an human readable value conversion
-    return context.polymeshApi.query.balances.identityBalance(did);
+    // TODO remove this line when MSDK-29 is done
+    const balance = await context.polymeshApi.query.balances.identityBalance(did);
+    const result = new BigNumber(balance.toString());
+    return result;
   };
 }
