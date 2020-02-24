@@ -137,18 +137,6 @@ describe('numberToBalance and balanceToBigNumber', () => {
     polkadotMockFactory.cleanup();
   });
 
-  test('numberToBalance should convert a BigNumber to a polkadot Balance object', () => {
-    const value = new BigNumber(100);
-    const fakeResult = ('100' as unknown) as Balance;
-    const context = polkadotMockFactory.getContextInstance();
-
-    mockCreateType.returns(fakeResult).withArgs(context.polymeshApi.registry, 'Balance', value);
-
-    const result = numberToBalance(value, context);
-
-    expect(result).toBe(fakeResult);
-  });
-
   test('numberToBalance should convert a number to a polkadot Balance object', () => {
     const value = 100;
     const fakeResult = ('100' as unknown) as Balance;
