@@ -98,8 +98,8 @@ describe('stringToIdentityId and identityIdToString', () => {
     const context = polkadotMockFactory.getContextInstance();
 
     mockCreateType
-      .returns(fakeResult)
-      .withArgs(context.polymeshApi.registry, 'IdentityId', identity);
+      .withArgs(context.polymeshApi.registry, 'IdentityId', identity)
+      .returns(fakeResult);
 
     const result = stringToIdentityId(identity, context);
 
@@ -138,11 +138,13 @@ describe('numberToBalance and balanceToBigNumber', () => {
   });
 
   test('numberToBalance should convert a number to a polkadot Balance object', () => {
-    const value = 100;
+    const value = new BigNumber(100);
     const fakeResult = ('100' as unknown) as Balance;
     const context = polkadotMockFactory.getContextInstance();
 
-    mockCreateType.returns(fakeResult).withArgs(context.polymeshApi.registry, 'Balance', value);
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'Balance', value.pow(Math.pow(10, 6)))
+      .returns(fakeResult);
 
     const result = numberToBalance(value, context);
 
