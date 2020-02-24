@@ -154,10 +154,10 @@ export class PolkadotMockFactory {
 
   private isMockingContext = false;
 
-  private mockingContextOptions = {
+  private mockingContextOptions: ContextOptions = {
     withSeed: true,
     balance: new BigNumber(100),
-  } as ContextOptions;
+  };
 
   /**
    * Initialize the factory by adding default all-purpose functionality to the mock manager
@@ -173,7 +173,7 @@ export class PolkadotMockFactory {
     // Context
     if (opts?.mockContext) {
       this.isMockingContext = true;
-      if (typeof opts.mockContext !== 'boolean') {
+      if (opts.mockContext !== true) {
         this.mockingContextOptions = { ...this.mockingContextOptions, ...opts.mockContext };
       }
 

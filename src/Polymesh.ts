@@ -59,7 +59,7 @@ export class Polymesh {
     } else {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: `You don't have an attached identity`,
+        message: 'The current account does not have an associated identity',
       });
     }
   };
