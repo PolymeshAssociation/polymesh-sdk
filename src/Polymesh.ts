@@ -63,4 +63,13 @@ export class Polymesh {
       });
     }
   };
+
+  /**
+   * Get the free POLY balance of the current account
+   */
+  public getFreeBalance = (): Promise<BigNumber> => {
+    const { context } = this;
+
+    return context.freeBalance();
+  };
 }

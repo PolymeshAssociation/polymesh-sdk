@@ -217,12 +217,13 @@ export class PolkadotMockFactory {
       : undefined;
 
     const contextInstance = ({
+      currentPair,
+      currentIdentity,
+      freeBalance: sinon.stub().resolves(opts.balance),
       getAccounts: sinon.stub().returns([]),
       setPair: sinon.stub().callsFake(address => {
         contextInstance.currentPair = { address } as IKeyringPair;
       }),
-      currentPair,
-      currentIdentity,
     } as unknown) as MockContext;
 
     this.contextInstance = contextInstance;

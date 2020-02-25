@@ -79,4 +79,18 @@ describe('Polymesh Class', () => {
       expect(result).toEqual(fakeBalance);
     });
   });
+
+  describe('method: getFreeBalance', () => {
+    test('should return the free POLY balance', async () => {
+      const fakeBalance = new BigNumber(100);
+      polkadotMockFactory.initMocks({ mockContext: { balance: fakeBalance } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wws',
+      });
+
+      const result = await polymesh.getFreeBalance();
+      expect(result).toEqual(fakeBalance);
+    });
+  });
 });

@@ -2,10 +2,12 @@ import stringToU8a from '@polkadot/util/string/toU8a';
 import { ApiPromise, Keyring } from '@polymathnetwork/polkadot/api';
 import { IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
 import { IKeyringPair } from '@polymathnetwork/polkadot/types/types';
+import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
+import { balanceToBigNumber } from '~/utils';
 
 interface BuildParams {
   polymeshApi: ApiPromise;
@@ -115,6 +117,23 @@ export class Context {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'The address is not present in the keyring set',
+      });
+    }
+  };
+
+  /**
+   * Retrieve the account level POLY balance
+   */
+  public freeBalance = async (): Promise<BigNumber> => {
+    const { currentPair } = this;
+    if (currentPair) {
+      const address = await currentPair.address;
+      const balance = await this.polymeshApi.query.balances.freeBalance(address);
+      return balanceToBigNumber(balance);
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'The context does not have an associated account',
       });
     }
   };
