@@ -670,10 +670,10 @@
   resolved "https://registry.yarnpkg.com/@polkadot/wasm-crypto/-/wasm-crypto-1.0.1.tgz#80a2a6e8d63a7decdd1163cc49b263ccef4ad36d"
   integrity sha512-l6izEdPXl4V8SBU9m3ct5PkHcdKZVDJMb10CFPNuNXT5OXMRaDs+Rlt/EHKjh8wbv8s9EOqy42BSHO8Qqrcg/g==
 
-"@polymathnetwork/polkadot@0.101.0-beta.14":
-  version "0.101.0-beta.14"
-  resolved "https://registry.yarnpkg.com/@polymathnetwork/polkadot/-/polkadot-0.101.0-beta.14.tgz#1905bd3842e93772598d508b59edceaa9dbfeda4"
-  integrity sha512-/Y+HnwlFbEKfGvr3kIhEp83kUtAQ60ub4ZToPPbVgpwzLBURQW5mRlPVXm4c4mnD4/EyaOfUqmcJISwNNCMtEA==
+"@polymathnetwork/polkadot@0.101.0-beta.15":
+  version "0.101.0-beta.15"
+  resolved "https://registry.yarnpkg.com/@polymathnetwork/polkadot/-/polkadot-0.101.0-beta.15.tgz#f224130e60b93163adfd555bbd643e5272be51a6"
+  integrity sha512-a9cKRLphBYtKhyiXkt1r0LGttCTXh71sUCC8SEmPGevXEakH/i1YnJlcfl6+UN1G2kvBymesd9IhOvNVUBWYqA==
   dependencies:
     "@babel/core" "7.8.4"
     "@babel/register" "7.8.3"
@@ -906,6 +906,11 @@
   version "1.0.32"
   resolved "https://registry.yarnpkg.com/@types/json-stable-stringify/-/json-stable-stringify-1.0.32.tgz#121f6917c4389db3923640b2e68de5fa64dda88e"
   integrity sha512-q9Q6+eUEGwQkv4Sbst3J4PNgDOvpuVuKj79Hl/qnmBMEIPzB5QoFRUtjcgcg2xNUZyYUGXBk5wYIBKHt0A+Mxw==
+
+"@types/json5@^0.0.29":
+  version "0.0.29"
+  resolved "https://registry.yarnpkg.com/@types/json5/-/json5-0.0.29.tgz#ee28707ae94e11d2b827bcbe5270bcea7f3e71ee"
+  integrity sha1-7ihweulOEdK4J7y+UnC86n8+ce4=
 
 "@types/lodash@^4.14.149":
   version "4.14.149"
@@ -5141,6 +5146,13 @@ json5@2.x, json5@^2.1.0:
   dependencies:
     minimist "^1.2.0"
 
+json5@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/json5/-/json5-1.0.1.tgz#779fb0018604fa854eacbf6252180d83543e3dbe"
+  integrity sha512-aKS4WQjPenRxiQsC93MNfjx+nbF4PAdYzmd/1JIj8HYzqfbu86beTuNgXDzPknWk0n0uARlyewZo4s++ES36Ow==
+  dependencies:
+    minimist "^1.2.0"
+
 jsonfile@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/jsonfile/-/jsonfile-4.0.0.tgz#8771aae0799b64076b76640fca058f9c10e33ecb"
@@ -8759,6 +8771,16 @@ ts-mock-imports@^1.2.6:
   version "1.2.6"
   resolved "https://registry.yarnpkg.com/ts-mock-imports/-/ts-mock-imports-1.2.6.tgz#5a98a398c3eadb7f75b6904984bb0ba5f3fbb912"
   integrity sha512-rZjsIEBWx9a3RGUo4Rhj/hzEGB4GPWJx46fls9EJf4UBsf5SxS2qiozf6dQp0Ym/9LC5MArlXZbZ+93wJzAmjA==
+
+tsconfig-paths@^3.9.0:
+  version "3.9.0"
+  resolved "https://registry.yarnpkg.com/tsconfig-paths/-/tsconfig-paths-3.9.0.tgz#098547a6c4448807e8fcb8eae081064ee9a3c90b"
+  integrity sha512-dRcuzokWhajtZWkQsDVKbWyY+jgcLC5sqJhg2PSgf4ZkH2aHPvaOY8YWGhmjb68b5qqTfasSsDO9k7RUiEmZAw==
+  dependencies:
+    "@types/json5" "^0.0.29"
+    json5 "^1.0.1"
+    minimist "^1.2.0"
+    strip-bom "^3.0.0"
 
 tslib@^1.8.1, tslib@^1.9.0:
   version "1.10.0"
