@@ -39,7 +39,7 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wss',
       });
 
-      await expect(polymeshApiPromise).rejects.toThrow(`Error while connecting to "wss": "Error"`);
+      await expect(polymeshApiPromise).rejects.toThrow('Error while connecting to "wss": "Error"');
     });
 
     test('should throw if Context create method fails', async () => {
@@ -49,7 +49,7 @@ describe('Polymesh Class', () => {
         accountSeed: '',
       });
 
-      await expect(polymeshApiPromise).rejects.toThrow(`Error while connecting to "wss": "Error"`);
+      await expect(polymeshApiPromise).rejects.toThrow('Error while connecting to "wss": "Error"');
     });
   });
 
@@ -66,7 +66,7 @@ describe('Polymesh Class', () => {
       );
     });
 
-    test(`should return the identity's POLY balance`, async () => {
+    test("should return the identity's POLY balance", async () => {
       const fakeBalance = new BigNumber(20);
       polkadotMockFactory.initMocks({ mockContext: { withSeed: true, balance: fakeBalance } });
 

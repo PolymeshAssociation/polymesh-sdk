@@ -19,7 +19,6 @@
   "devDependencies": {
     "@commitlint/cli": "^7.6.1",
     "@commitlint/config-conventional": "^7.6.0",
-    "@types/bn.js": "^4.11.6",
     "@types/jest": "^23.3.10",
     "@types/json-stable-stringify": "^1.0.32",
     "@types/lodash": "^4.14.149",
