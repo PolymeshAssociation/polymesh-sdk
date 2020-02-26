@@ -219,7 +219,7 @@ export class PolkadotMockFactory {
     const contextInstance = ({
       currentPair,
       currentIdentity,
-      freeBalance: sinon.stub().resolves(opts.balance),
+      accountBalance: sinon.stub().resolves(opts.balance),
       getAccounts: sinon.stub().returns([]),
       setPair: sinon.stub().callsFake(address => {
         contextInstance.currentPair = { address } as IKeyringPair;

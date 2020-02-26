@@ -145,14 +145,14 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: freeBalance', () => {
-    test('should throw if currentPair is not setted', async () => {
+  describe('method: accountBalance', () => {
+    test('should throw if currentPair is not set', async () => {
       const context = await Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
       });
 
-      expect(context.freeBalance()).rejects.toThrow(
-        'The context does not have an associated account'
+      expect(context.accountBalance()).rejects.toThrow(
+        'There is no account associated with the SDK'
       );
     });
 
@@ -171,7 +171,7 @@ describe('Context class', () => {
         accountSeed: 'Alice'.padEnd(32, ' '),
       });
 
-      const result = await context.freeBalance();
+      const result = await context.accountBalance();
       expect(result).toEqual(balanceToBigNumber(fakeResult));
     });
   });

@@ -124,16 +124,16 @@ export class Context {
   /**
    * Retrieve the account level POLY balance
    */
-  public freeBalance = async (): Promise<BigNumber> => {
+  public accountBalance = async (accountId?: string): Promise<BigNumber> => {
     const { currentPair } = this;
     if (currentPair) {
-      const address = await currentPair.address;
+      const address = accountId || (await currentPair.address);
       const balance = await this.polymeshApi.query.balances.freeBalance(address);
       return balanceToBigNumber(balance);
     } else {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: 'The context does not have an associated account',
+        message: 'There is no account associated with the SDK',
       });
     }
   };

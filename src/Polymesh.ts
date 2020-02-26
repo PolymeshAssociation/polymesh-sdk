@@ -51,7 +51,7 @@ export class Polymesh {
   /**
    * Get the POLY balance of the current account
    */
-  public getPolyBalance = async (): Promise<BigNumber> => {
+  public getIdentityBalance = async (): Promise<BigNumber> => {
     const { currentIdentity } = this.context;
     if (currentIdentity) {
       const balance = await currentIdentity.getIdentityBalance();
@@ -67,9 +67,9 @@ export class Polymesh {
   /**
    * Get the free POLY balance of the current account
    */
-  public getFreeBalance = (): Promise<BigNumber> => {
+  public getAccountBalance = (accountId?: string): Promise<BigNumber> => {
     const { context } = this;
 
-    return context.freeBalance();
+    return context.accountBalance(accountId);
   };
 }
