@@ -1,4 +1,5 @@
 import { ApiPromise, WsProvider } from '@polymathnetwork/polkadot/api';
+import { BigNumber } from 'bignumber.js';
 
 import { PolymeshError } from '~/base';
 import { Context } from '~/context';
@@ -13,7 +14,7 @@ interface ConnectParams {
  * Main entry point of the Polymesh SDK
  */
 export class Polymesh {
-  public context: Context = {} as Context;
+  private context: Context = {} as Context;
 
   /**
    * @hidden
@@ -47,4 +48,20 @@ export class Polymesh {
       });
     }
   }
+
+  /**
+   * Get the POLY balance of the current account
+   */
+  public getPolyBalance = async (): Promise<BigNumber> => {
+    const { currentIdentity } = this.context;
+    if (currentIdentity) {
+      const balance = await currentIdentity.getIdentityBalance();
+      return balance;
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'The current account does not have an associated identity',
+      });
+    }
+  };
 }

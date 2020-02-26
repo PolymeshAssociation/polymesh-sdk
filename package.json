@@ -13,7 +13,8 @@
     "commit": "npx git-cz",
     "semantic-release": "semantic-release",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
-    "format": "cross-env prettier-eslint $PWD\"/src/**/*.{ts,tsx,js,jsx}\" --write"
+    "format": "cross-env prettier-eslint $PWD\"/src/**/*.{ts,tsx,js,jsx}\" --write",
+    "ts-node": "ts-node -r tsconfig-paths/register"
   },
   "devDependencies": {
     "@commitlint/cli": "^7.6.1",
@@ -48,6 +49,7 @@
     "sinon": "^8.1.1",
     "ts-jest": "^24.3.0",
     "ts-mock-imports": "^1.2.6",
+    "tsconfig-paths": "^3.9.0",
     "ttypescript": "^1.5.10",
     "typedoc": "^0.16.8",
     "typescript": "3.7.5"
@@ -61,7 +63,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@polymathnetwork/polkadot": "0.101.0-beta.14",
+    "@polymathnetwork/polkadot": "0.101.0-beta.15",
+    "@types/bn.js": "^4.11.6",
     "@types/bignumber.js": "^5.0.0",
     "bignumber.js": "^9.0.0",
     "json-stable-stringify": "^1.0.1",
