@@ -51,7 +51,7 @@ export class Polymesh {
   /**
    * Get the POLY balance of the current account
    */
-  public getPolyBalance = async (): Promise<BigNumber> => {
+  public getIdentityBalance = async (): Promise<BigNumber> => {
     const { currentIdentity } = this.context;
     if (currentIdentity) {
       const balance = await currentIdentity.getIdentityBalance();
@@ -62,5 +62,14 @@ export class Polymesh {
         message: 'The current account does not have an associated identity',
       });
     }
+  };
+
+  /**
+   * Get the free POLY balance of the current account
+   */
+  public getAccountBalance = (accountId?: string): Promise<BigNumber> => {
+    const { context } = this;
+
+    return context.accountBalance(accountId);
   };
 }

@@ -1,10 +1,12 @@
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
+import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
 import sinon from 'sinon';
 import { ImportMock, MockManager } from 'ts-mock-imports';
 
 import * as identityModule from '~/api/entities';
 import { Context } from '~/base';
 import { PolkadotMockFactory } from '~/testUtils/mocks';
+import { balanceToBigNumber } from '~/utils';
 
 describe('Context class', () => {
   let mockKeyring: MockManager<polkadotModule.Keyring>;
@@ -140,6 +142,56 @@ describe('Context class', () => {
       context.setPair('012');
       sinon.assert.calledOnce(keyringGetPairStub);
       expect(context.currentPair).toEqual(newPair);
+    });
+  });
+
+  describe('method: accountBalance', () => {
+    test('should throw if accountId or currentPair is not set', async () => {
+      const context = await Context.create({
+        polymeshApi: polkadotMockFactory.getApiInstance(),
+      });
+
+      expect(context.accountBalance()).rejects.toThrow(
+        'There is no account associated with the SDK'
+      );
+    });
+
+    test(`should return the account POLY balance if currentPair is set`, async () => {
+      const fakeResult = (100 as unknown) as Balance;
+      polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds', {
+        unwrap: () => ({ asUnique: '012abc' }),
+      });
+      mockKeyring.mock('addFromSeed', 'currentPair').returns({
+        address: 'address',
+      });
+      polkadotMockFactory.createQueryStub('balances', 'freeBalance', fakeResult);
+
+      const context = await Context.create({
+        polymeshApi: polkadotMockFactory.getApiInstance(),
+        accountSeed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = await context.accountBalance();
+      expect(result).toEqual(balanceToBigNumber(fakeResult));
+    });
+
+    test(`should return the account POLY balance if accountId is set`, async () => {
+      const fakeResult = (100 as unknown) as Balance;
+      polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds', {
+        unwrap: () => ({ asUnique: '012abc' }),
+      });
+      mockKeyring.mock('addFromSeed', 'currentPair').returns({
+        address: undefined,
+      });
+      polkadotMockFactory.createQueryStub('balances', 'freeBalance', fakeResult);
+
+      const context = await Context.create({
+        polymeshApi: polkadotMockFactory.getApiInstance(),
+        accountSeed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = await context.accountBalance('accountId');
+      expect(result).toEqual(balanceToBigNumber(fakeResult));
     });
   });
 });

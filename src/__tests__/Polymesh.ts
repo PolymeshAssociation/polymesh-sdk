@@ -53,7 +53,7 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getPolyBalance', () => {
+  describe('method: getIdentityBalance', () => {
     test('should throw if identity was not instantiated', async () => {
       polkadotMockFactory.initMocks({ mockContext: { withSeed: false } });
 
@@ -61,7 +61,7 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wws',
       });
 
-      await expect(polymesh.getPolyBalance()).rejects.toThrow(
+      await expect(polymesh.getIdentityBalance()).rejects.toThrow(
         'The current account does not have an associated identity'
       );
     });
@@ -75,7 +75,21 @@ describe('Polymesh Class', () => {
         accountSeed: 'seed',
       });
 
-      const result = await polymesh.getPolyBalance();
+      const result = await polymesh.getIdentityBalance();
+      expect(result).toEqual(fakeBalance);
+    });
+  });
+
+  describe('method: getAccountBalance', () => {
+    test('should return the free POLY balance', async () => {
+      const fakeBalance = new BigNumber(100);
+      polkadotMockFactory.initMocks({ mockContext: { balance: fakeBalance } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wws',
+      });
+
+      const result = await polymesh.getAccountBalance();
       expect(result).toEqual(fakeBalance);
     });
   });
