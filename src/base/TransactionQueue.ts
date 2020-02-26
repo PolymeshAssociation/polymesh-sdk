@@ -1,8 +1,8 @@
-import BN from 'bn.js';
+import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
 
 import { PolymeshError, PolymeshTransaction, PostTransactionValue } from '~/base';
-import { TransactionQueueStatus } from '~/types';
+import { ErrorCode, TransactionQueueStatus } from '~/types';
 import { MaybePostTransactionValue, TransactionSpec } from '~/types/internal';
 
 enum Events {
@@ -27,7 +27,6 @@ type TransactionSpecArray<TransactionArgs extends unknown[][]> = {
  */
 export class TransactionQueue<
   TransactionArgs extends unknown[][],
-  Args extends unknown[] = unknown[],
   ReturnType extends unknown = void
 > {
   /**
@@ -41,11 +40,6 @@ export class TransactionQueue<
   public status: TransactionQueueStatus = TransactionQueueStatus.Idle;
 
   /**
-   * arguments provided to the procedure that generated the queue
-   */
-  public args: Args;
-
-  /**
    * optional error information
    */
   public error?: PolymeshError;
@@ -53,22 +47,31 @@ export class TransactionQueue<
   /**
    * total cost of running the transactions in the queue (in POLY). This does not include gas
    */
-  public fees: BN;
+  public fees: BigNumber;
 
   /**
    * @hidden
+   * internal queue of transactions to be run
    */
   private queue = ([] as unknown) as PolymeshTransactionArray<TransactionArgs>;
 
   /**
    * @hidden
+   * value that will be returned by the queue after running
    */
   private returnValue: MaybePostTransactionValue<ReturnType>;
 
   /**
    * @hidden
+   * internal event emitter to listen for status changes
    */
   private emitter: EventEmitter;
+
+  /**
+   * @hidden
+   * whether the queue has run or not (prevents re-running)
+   */
+  private hasRun: boolean;
 
   /**
    * Create a transaction queue
@@ -79,14 +82,13 @@ export class TransactionQueue<
    */
   constructor(
     transactions: TransactionSpecArray<TransactionArgs>,
-    fees: BN,
-    args: Args,
+    fees: BigNumber,
     returnValue: MaybePostTransactionValue<ReturnType>
   ) {
     this.emitter = new EventEmitter();
-    this.args = args;
     this.fees = fees;
     this.returnValue = returnValue;
+    this.hasRun = false;
 
     this.transactions = transactions.map(transaction => {
       const txn = new PolymeshTransaction(transaction);
@@ -106,6 +108,13 @@ export class TransactionQueue<
    * 2) Otherwise, the queue continues executing and the error is stored in `transaction.error`
    */
   public async run(): Promise<ReturnType> {
+    if (this.hasRun) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Cannot re-run a Transaction Queue',
+      });
+    }
+
     this.queue = [...this.transactions] as PolymeshTransactionArray<TransactionArgs>;
     this.updateStatus(TransactionQueueStatus.Running);
 
@@ -125,6 +134,8 @@ export class TransactionQueue<
       this.error = err;
       this.updateStatus(TransactionQueueStatus.Failed);
       throw err;
+    } finally {
+      this.hasRun = true;
     }
 
     return res;

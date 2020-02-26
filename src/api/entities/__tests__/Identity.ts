@@ -1,4 +1,4 @@
-import sinon from 'sinon';
+import BigNumber from 'bignumber.js';
 import { ImportMock } from 'ts-mock-imports';
 
 import { Identity } from '~/api/entities';
@@ -13,6 +13,10 @@ describe('Identity class', () => {
 
   afterEach(() => {
     polkadotMockFactory.reset();
+  });
+
+  afterAll(() => {
+    polkadotMockFactory.cleanup();
   });
 
   test('should extend entity', () => {
@@ -59,15 +63,13 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getPolyBalance', () => {
+  describe('method: getIdentityBalance', () => {
     test("should return the identity's POLY balance", async () => {
-      const identityBalanceStub = polkadotMockFactory.createQueryStub(
-        'balances',
-        'identityBalance'
-      );
+      const fakeResult = new BigNumber(100);
+      polkadotMockFactory.createQueryStub('balances', 'identityBalance').resolves(fakeResult);
       const identity = new Identity({ did: 'abc' }, polkadotMockFactory.getContextInstance());
-      await identity.getPolyBalance();
-      sinon.assert.calledOnce(identityBalanceStub);
+      const result = await identity.getIdentityBalance();
+      expect(result).toEqual(fakeResult);
     });
   });
 });

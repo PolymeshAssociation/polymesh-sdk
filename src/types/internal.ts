@@ -6,6 +6,7 @@ import {
   SubmittableExtrinsics,
   TxTag,
 } from '@polymathnetwork/polkadot/api/types';
+import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 
 import { PostTransactionValue } from '~/base';
 
@@ -27,6 +28,13 @@ export type Queries = QueryableStorage<'promise'>;
 export type PolymeshTx<Args extends unknown[]> = AugmentedSubmittable<
   (...args: Args) => SubmittableExtrinsic<'promise'>
 >;
+
+/**
+ * Transforms a tuple of types into an array of resolver functions. For each type in the tuple, the corresponding resolver function returns that type wrapped in a promise
+ */
+export type ResolverFunctionArray<Values extends unknown[]> = {
+  [K in keyof Values]: (receipt: ISubmittableResult) => Promise<Values[K]>;
+};
 
 /**
  * Transforms a tuple of types into an array of [[PostTransactionValue]].
@@ -56,11 +64,14 @@ export type MapMaybePostTransactionValue<T extends unknown[]> = {
  * @param Args - arguments of the transaction
  * @param Values - values that will be returned wrapped in [[PostTransactionValue]] after the transaction runs
  */
-export interface TransactionSpec<Args extends unknown[], Values extends unknown[] = unknown[]> {
+export interface TransactionSpec<
+  Args extends unknown[] = unknown[],
+  Values extends unknown[] = unknown[]
+> {
   /**
    * underlying polkadot transaction object
    */
-  tx: PolymeshTx<Args>;
+  tx: MaybePostTransactionValue<PolymeshTx<Args>>;
   /**
    * arguments that the transaction will receive (some of them can be [[PostTransactionValue]] from an earlier transaction)
    */

@@ -22,7 +22,8 @@
     ],
     "simple-import-sort/sort": "error",
     "sort-imports": "off",
-    "import/order": "off"
+    "import/order": "off",
+    "no-dupe-class-members": "off"
   },
   "plugins": ["@typescript-eslint", "simple-import-sort"],
   "parserOptions": {
