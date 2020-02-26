@@ -57,6 +57,7 @@ const defaultReceipt: ISubmittableResult = {
   isFinalized: false,
   isInBlock: false,
   events: [],
+  toHuman: () => ({}),
 };
 
 const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
