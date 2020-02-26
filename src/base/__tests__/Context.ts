@@ -146,7 +146,7 @@ describe('Context class', () => {
   });
 
   describe('method: accountBalance', () => {
-    test('should throw if currentPair is not set', async () => {
+    test('should throw if accountId or currentPair is not set', async () => {
       const context = await Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
       });
@@ -156,7 +156,7 @@ describe('Context class', () => {
       );
     });
 
-    test(`should return the free POLY balance`, async () => {
+    test(`should return the account POLY balance if currentPair is set`, async () => {
       const fakeResult = (100 as unknown) as Balance;
       polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds', {
         unwrap: () => ({ asUnique: '012abc' }),
@@ -172,6 +172,25 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance();
+      expect(result).toEqual(balanceToBigNumber(fakeResult));
+    });
+
+    test(`should return the account POLY balance if accountId is set`, async () => {
+      const fakeResult = (100 as unknown) as Balance;
+      polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds', {
+        unwrap: () => ({ asUnique: '012abc' }),
+      });
+      mockKeyring.mock('addFromSeed', 'currentPair').returns({
+        address: undefined,
+      });
+      polkadotMockFactory.createQueryStub('balances', 'freeBalance', fakeResult);
+
+      const context = await Context.create({
+        polymeshApi: polkadotMockFactory.getApiInstance(),
+        accountSeed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = await context.accountBalance('accountId');
       expect(result).toEqual(balanceToBigNumber(fakeResult));
     });
   });

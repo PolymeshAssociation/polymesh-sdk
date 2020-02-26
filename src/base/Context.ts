@@ -126,8 +126,13 @@ export class Context {
    */
   public accountBalance = async (accountId?: string): Promise<BigNumber> => {
     const { currentPair } = this;
-    if (currentPair) {
-      const address = accountId || (await currentPair.address);
+    if (accountId || currentPair) {
+      let address = '';
+      if (accountId) {
+        address = accountId;
+      } else {
+        address = (currentPair as IKeyringPair).address;
+      }
       const balance = await this.polymeshApi.query.balances.freeBalance(address);
       return balanceToBigNumber(balance);
     } else {
