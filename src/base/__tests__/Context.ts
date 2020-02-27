@@ -205,7 +205,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
-        accountSeed: 'Alice'.padEnd(32, ' '),
+        seed: 'Alice'.padEnd(32, ' '),
       });
 
       const result = await context.accountBalance();
@@ -224,7 +224,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
-        accountSeed: 'Alice'.padEnd(32, ' '),
+        seed: 'Alice'.padEnd(32, ' '),
       });
 
       const result = await context.accountBalance('accountId');
