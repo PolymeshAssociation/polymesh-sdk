@@ -146,6 +146,9 @@ export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactio
 // TODO @monitz87: use event enum instead of string when it exists
 /**
  * @hidden
+ * Find a specific event inside a receipt
+ *
+ * @throws If the event is not found
  */
 export function findEventRecord(
   receipt: ISubmittableResult,

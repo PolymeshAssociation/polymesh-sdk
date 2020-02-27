@@ -2,6 +2,7 @@ import { BigNumber } from 'bignumber.js';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
+import { balanceToBigNumber } from '~/utils';
 
 /**
  * Properties that uniquely identify an Identity
@@ -11,12 +12,7 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Constructor parameters
- */
-export type Params = UniqueIdentifiers;
-
-/**
- * Used to manage an Identity
+ * Represents an identity in the Polymesh blockchain
  */
 export class Identity extends Entity<UniqueIdentifiers> {
   /**
@@ -30,7 +26,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Identity ID as stored in the blockchain
+   * identity ID as stored in the blockchain
    */
   public did: string;
 
@@ -50,9 +46,8 @@ export class Identity extends Entity<UniqueIdentifiers> {
    */
   public getIdentityBalance = async (): Promise<BigNumber> => {
     const { context, did } = this;
-    // TODO remove this line when MSDK-29 is done
     const balance = await context.polymeshApi.query.balances.identityBalance(did);
-    const result = new BigNumber(balance.toString());
-    return result;
+
+    return balanceToBigNumber(balance);
   };
 }

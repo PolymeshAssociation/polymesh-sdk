@@ -34,6 +34,7 @@ export class Entity<UniqueIdentifiers extends object> {
     return unserialized;
   }
 
+  /* istanbul ignore next: this function should always be overridden */
   /**
    * Typeguard that checks whether the object passed corresponds to the unique identifiers of the class. Must be overridden
    *

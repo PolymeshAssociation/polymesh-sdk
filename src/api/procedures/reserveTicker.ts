@@ -4,18 +4,27 @@ import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 
 import { TickerReservation } from '~/api/entities';
 import { PolymeshError, PostTransactionValue, Procedure } from '~/base';
-import { ErrorCode } from '~/types';
-import {
-  balanceToBigNumber,
-  findEventRecord,
-  momentToDate,
-  stringToTicker,
-  tickerToString,
-} from '~/utils';
+import { Context } from '~/context';
+import { ErrorCode, TickerReservationStatus } from '~/types';
+import { balanceToBigNumber, findEventRecord, stringToTicker, tickerToString } from '~/utils';
 
 export interface ReserveTickerParams {
   ticker: string;
 }
+
+/**
+ * @hidden
+ * NOTE: this might seem redundant but it's done in case some mutation is done on the ticker on chain (e.g. upper case or truncating)
+ */
+export const createTickerReservationResolver = (context: Context) => (
+  receipt: ISubmittableResult
+): TickerReservation => {
+  const eventRecord = findEventRecord(receipt, 'asset', 'TickerRegistered');
+  const data = eventRecord.event.data;
+  const newTicker = tickerToString(data[0] as Ticker);
+
+  return new TickerReservation({ ticker: newTicker }, context);
+};
 
 /**
  * @hidden
@@ -27,7 +36,6 @@ export async function prepareReserveTicker(
   const {
     context: {
       polymeshApi: { query, tx },
-      currentPair,
     },
     context,
   } = this;
@@ -35,36 +43,35 @@ export async function prepareReserveTicker(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  // TODO @monitz87: use accountBalance when MSDK-74 is implemented
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const reservation = new TickerReservation({ ticker }, context);
+
   const [
     rawFee,
-    rawBalance,
-    { owner, expiry: rawExpiry },
-    token,
+    balance,
     { max_ticker_length: rawMaxTickerLength },
+    { expiryDate, status },
   ] = await Promise.all([
     query.asset.tickerRegistrationFee(),
-    query.balances.freeBalance(currentPair?.address!),
-    query.asset.tickers(rawTicker),
-    query.asset.tokens(rawTicker),
+    context.accountBalance(),
     query.asset.tickerConfig(),
+    reservation.details(),
   ]);
 
-  if (!owner.isEmpty) {
-    const expiry = momentToDate(rawExpiry.unwrap());
-    if (expiry > new Date()) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: `Ticker "${ticker}" already reserved. The current reservation will expire at ${expiry}`,
-      });
-    }
-  }
-
-  if (!token.owner_did.isEmpty) {
+  if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: `A Security Token with ticker "${ticker} already exists`,
+    });
+  }
+
+  if (status === TickerReservationStatus.Reserved) {
+    const isPermanent = expiryDate === null;
+
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `Ticker "${ticker}" already reserved. The current reservation will ${
+        !isPermanent ? '' : 'not '
+      }expire${!isPermanent ? ` at ${expiryDate}` : ''}`,
     });
   }
 
@@ -78,7 +85,6 @@ export async function prepareReserveTicker(
   }
 
   const fee = balanceToBigNumber(rawFee);
-  const balance = balanceToBigNumber(rawBalance);
 
   if (balance.lt(fee)) {
     throw new PolymeshError({
@@ -87,25 +93,17 @@ export async function prepareReserveTicker(
     });
   }
 
-  const [reservation] = this.addTransaction(
+  const [newReservation] = this.addTransaction(
     tx.asset.registerTicker,
     {
       tag: TxTags.asset.RegisterTicker,
       fee,
-      resolvers: [
-        async (receipt: ISubmittableResult): Promise<TickerReservation> => {
-          const eventRecord = findEventRecord(receipt, 'asset', 'TickerRegistered');
-          const data = eventRecord.event.data;
-          const newTicker = tickerToString(data[0] as Ticker);
-
-          return new TickerReservation({ ticker: newTicker }, context);
-        },
-      ],
+      resolvers: [createTickerReservationResolver(context)],
     },
     rawTicker
   );
 
-  return reservation;
+  return newReservation;
 }
 
 export const reserveTicker = new Procedure(prepareReserveTicker);

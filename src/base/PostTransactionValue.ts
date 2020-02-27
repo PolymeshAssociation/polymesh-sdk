@@ -11,10 +11,10 @@ import { ErrorCode } from '~/types';
 export class PostTransactionValue<Value> {
   private _value?: Value;
 
-  private resolver: (receipt: ISubmittableResult) => Promise<Value | undefined>;
+  private resolver: (receipt: ISubmittableResult) => Promise<Value> | Value;
 
   // eslint-disable-next-line require-jsdoc
-  constructor(resolver: (receipt: ISubmittableResult) => Promise<Value>) {
+  constructor(resolver: (receipt: ISubmittableResult) => Promise<Value> | Value) {
     this.resolver = resolver;
   }
 
