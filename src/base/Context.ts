@@ -73,49 +73,44 @@ export class Context {
     keyring?: Keyring;
     uri?: string;
   }): Promise<Context> {
-    const { polymeshApi, seed, keyring, uri } = params;
+    const { polymeshApi, seed, keyring: passedKeyring, uri } = params;
 
-    let keyringManagement = new Keyring({ type: 'sr25519' });
-    let currentPair = {} as IKeyringPair;
-    let keyToIdentityIds;
+    let keyring = new Keyring({ type: 'sr25519' });
+    let currentPair: IKeyringPair | undefined;
 
-    if (seed || keyring || uri) {
-      if (keyring) {
-        keyringManagement = keyring;
-
-        keyToIdentityIds = await polymeshApi.query.identity.keyToIdentityIds(
-          keyring.getPairs()[0].publicKey
-        );
-      } else {
-        if (seed) {
-          if (seed.length !== 32) {
-            throw new PolymeshError({
-              code: ErrorCode.ValidationError,
-              message: 'Seed must be 32 characters in length',
-            });
-          }
-
-          currentPair = keyringManagement.addFromSeed(stringToU8a(seed));
-        } else {
-          currentPair = keyringManagement.addFromUri(uri as string);
-        }
-
-        keyToIdentityIds = await polymeshApi.query.identity.keyToIdentityIds(currentPair.publicKey);
-      }
-
-      let did: IdentityId;
-      try {
-        did = keyToIdentityIds.unwrap().asUnique;
-      } catch (e) {
+    if (passedKeyring) {
+      keyring = passedKeyring;
+      currentPair = keyring.getPairs()[0];
+    } else if (seed) {
+      if (seed.length !== 32) {
         throw new PolymeshError({
-          code: ErrorCode.FatalError,
-          message: 'Identity ID does not exist',
+          code: ErrorCode.ValidationError,
+          message: 'Seed must be 32 characters in length',
         });
       }
 
-      return new Context({ polymeshApi, keyring: keyringManagement, pair: { currentPair, did } });
+      currentPair = keyring.addFromSeed(stringToU8a(seed));
+    } else if (uri) {
+      currentPair = keyring.addFromUri(uri);
     }
-    return new Context({ polymeshApi, keyring: keyringManagement });
+
+    if (currentPair) {
+      try {
+        const identityIds = await polymeshApi.query.identity.keyToIdentityIds(
+          currentPair.publicKey
+        );
+        const did = identityIds.unwrap().asUnique;
+
+        return new Context({ polymeshApi, keyring, pair: { currentPair, did } });
+      } catch (err) {
+        throw new PolymeshError({
+          code: ErrorCode.FatalError,
+          message: 'There is no Identity associated to this account',
+        });
+      }
+    } else {
+      return new Context({ polymeshApi, keyring });
+    }
   }
 
   /**

@@ -120,7 +120,9 @@ describe('Context class', () => {
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      await expect(context).rejects.toThrow(new Error('Identity ID does not exist'));
+      await expect(context).rejects.toThrow(
+        new Error('There is no Identity associated to this account')
+      );
     });
   });
 
