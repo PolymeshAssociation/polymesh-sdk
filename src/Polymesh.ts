@@ -52,7 +52,7 @@ export class Polymesh {
       } else if (keyring) {
         context = await Context.create({
           polymeshApi,
-          keyring: keyring,
+          keyring,
         });
       } else if (accountUri) {
         context = await Context.create({
