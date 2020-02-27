@@ -12,10 +12,10 @@ import { PolkadotMockFactory } from '~/testUtils/mocks';
 describe('Polymesh Class', () => {
   const polkadotMockFactory = new PolkadotMockFactory();
   polkadotMockFactory.initMocks({ mockContext: true });
-  let mockWsProvider: MockManager<polkadotModule.Keyring>;
+  let mockWsProvider: MockManager<polkadotModule.WsProvider>;
 
   beforeEach(() => {
-    mockWsProvider = ImportMock.mockClass(polkadotModule, 'WsProvider');
+    mockWsProvider = ImportMock.mockClass<polkadotModule.WsProvider>(polkadotModule, 'WsProvider');
   });
 
   afterEach(() => {
@@ -36,26 +36,26 @@ describe('Polymesh Class', () => {
       sinon.assert.match(polymesh instanceof Polymesh, true);
     });
 
-    test('should throw if ApiPromise fails in the connection process', async () => {
+    test('should throw if ApiPromise fails in the connection process', () => {
       polkadotMockFactory.throwOnApiCreation();
       const nodeUrl = 'wss://some.url';
       const polymeshApiPromise = Polymesh.connect({
         nodeUrl,
       });
 
-      await expect(polymeshApiPromise).rejects.toThrow(
+      return expect(polymeshApiPromise).rejects.toThrow(
         `Error while connecting to "${nodeUrl}": "Error"`
       );
     });
 
-    test('should throw if Context create method fails', async () => {
+    test('should throw if Context create method fails', () => {
       polkadotMockFactory.throwOnContextCreation();
       const nodeUrl = 'wss://some.url';
       const polymeshApiPromise = Polymesh.connect({
         nodeUrl,
       });
 
-      await expect(polymeshApiPromise).rejects.toThrow(
+      return expect(polymeshApiPromise).rejects.toThrow(
         `Error while connecting to "${nodeUrl}": "Error"`
       );
     });
@@ -69,7 +69,7 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wss://some.url',
       });
 
-      await expect(polymesh.getIdentityBalance()).rejects.toThrow(
+      return expect(polymesh.getIdentityBalance()).rejects.toThrow(
         'The current account does not have an associated identity'
       );
     });
