@@ -2,9 +2,9 @@ import { AddressOrPair, TxTag } from '@polymathnetwork/polkadot/api/types';
 import BigNumber from 'bignumber.js';
 
 import { TransactionQueue } from '~/base';
-import { Context } from '~/base/Context';
 import { PolymeshError } from '~/base/PolymeshError';
 import { PostTransactionValue } from '~/base/PostTransactionValue';
+import { Context } from '~/context';
 import { ErrorCode, Role } from '~/types';
 import {
   MapMaybePostTransactionValue,
@@ -74,10 +74,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    * @param args - arguments required to prepare the queue
    * @param context - context in which the resulting queue will run
    */
-  public async prepare(
-    args: Args,
-    context: Context
-  ): Promise<TransactionQueue<unknown[][], ReturnValue>> {
+  public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
     this.context = context;
 
     const allowed = await this.checkRoles(args);
@@ -157,13 +154,13 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     return postTransactionValues;
   }
 
-  public async addProcedure<ReturnValue extends unknown>(
-    procedure: Procedure<void, ReturnValue>
-  ): Promise<MaybePostTransactionValue<ReturnValue>>;
-
   public async addProcedure<ProcArgs extends unknown, ReturnValue extends unknown>(
     procedure: Procedure<ProcArgs, ReturnValue>,
     args: ProcArgs
+  ): Promise<MaybePostTransactionValue<ReturnValue>>;
+
+  public async addProcedure<ReturnValue extends unknown>(
+    procedure: Procedure<void, ReturnValue>
   ): Promise<MaybePostTransactionValue<ReturnValue>>;
 
   /**
@@ -175,12 +172,10 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    *
    * @returns whichever value is returned by the passed Procedure
    */
-  public async addProcedure<ReturnValue extends unknown>(
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    procedure: Procedure<any, ReturnValue>,
-    args: unknown = {}
-  ): Promise<any> {
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+  public async addProcedure<ProcArgs extends unknown, ReturnValue extends unknown>(
+    procedure: Procedure<void | ProcArgs, ReturnValue>,
+    args: ProcArgs = {} as ProcArgs
+  ): Promise<MaybePostTransactionValue<ReturnValue>> {
     try {
       procedure.context = this.context;
       const returnValue = await procedure.prepareTransactions(args);

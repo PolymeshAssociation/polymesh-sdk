@@ -2,12 +2,14 @@ import { TxTags } from '@polymathnetwork/polkadot/api/types';
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import sinon from 'sinon';
 
-import { PolymeshTransaction, PostTransactionValue } from '~/base';
+import { PostTransactionValue } from '~/base';
 import { MockTxStatus, PolkadotMockFactory, TxFailReason } from '~/testUtils/mocks';
 import { TransactionStatus } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { delay } from '~/utils';
+
+import { PolymeshTransaction } from '../PolymeshTransaction';
 
 describe('Polymesh Transaction class', () => {
   const mockFactory = new PolkadotMockFactory();

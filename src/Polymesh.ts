@@ -1,7 +1,10 @@
 import { ApiPromise, WsProvider } from '@polymathnetwork/polkadot/api';
 import { BigNumber } from 'bignumber.js';
 
-import { Context, PolymeshError } from '~/base';
+import { TickerReservation } from '~/api/entities';
+import { reserveTicker, ReserveTickerParams } from '~/api/procedures';
+import { PolymeshError, TransactionQueue } from '~/base';
+import { Context } from '~/context';
 import { ErrorCode } from '~/types';
 
 interface ConnectParams {
@@ -72,4 +75,16 @@ export class Polymesh {
 
     return context.accountBalance(accountId);
   };
+
+  /**
+   * Reserve a ticker symbol to later use in the creation of a Security Token.
+   * The ticker will expire after a set amount of time, after which other users can reserve it
+   *
+   * @param args.ticker - ticker symbol to reserve
+   */
+  public async reserveTicker(
+    args: ReserveTickerParams
+  ): Promise<TransactionQueue<TickerReservation>> {
+    return reserveTicker.prepare(args, this.context);
+  }
 }

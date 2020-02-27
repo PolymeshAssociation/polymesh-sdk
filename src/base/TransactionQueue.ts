@@ -26,8 +26,8 @@ type TransactionSpecArray<TransactionArgs extends unknown[][]> = {
  * Class to manage procedural transaction queues
  */
 export class TransactionQueue<
-  TransactionArgs extends unknown[][],
-  ReturnType extends unknown = void
+  ReturnType = void,
+  TransactionArgs extends unknown[][] = unknown[][]
 > {
   /**
    * transactions that will be run in the queue

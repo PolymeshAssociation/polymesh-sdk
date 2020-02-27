@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { ImportMock, MockManager } from 'ts-mock-imports';
 
 import * as identityModule from '~/api/entities';
-import { Context } from '~/base';
+import { Context } from '~/context';
 import { PolkadotMockFactory } from '~/testUtils/mocks';
 import { balanceToBigNumber } from '~/utils';
 
@@ -156,7 +156,7 @@ describe('Context class', () => {
       );
     });
 
-    test(`should return the account POLY balance if currentPair is set`, async () => {
+    test('should return the account POLY balance if currentPair is set', async () => {
       const fakeResult = (100 as unknown) as Balance;
       polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds', {
         unwrap: () => ({ asUnique: '012abc' }),
@@ -175,7 +175,7 @@ describe('Context class', () => {
       expect(result).toEqual(balanceToBigNumber(fakeResult));
     });
 
-    test(`should return the account POLY balance if accountId is set`, async () => {
+    test('should return the account POLY balance if accountId is set', async () => {
       const fakeResult = (100 as unknown) as Balance;
       polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds', {
         unwrap: () => ({ asUnique: '012abc' }),

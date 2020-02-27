@@ -4,11 +4,12 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import * as baseModule from '~/base';
-import { Procedure } from '~/base/Procedure';
 import { PolkadotMockFactory } from '~/testUtils/mocks';
 import { Role } from '~/types';
 import { MaybePostTransactionValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
+
+import { Procedure } from '../Procedure';
 
 describe('Procedure class', () => {
   const polkadotMockFactory = new PolkadotMockFactory();

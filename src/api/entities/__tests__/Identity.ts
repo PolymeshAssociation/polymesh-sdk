@@ -1,10 +1,9 @@
 import BigNumber from 'bignumber.js';
-import { ImportMock } from 'ts-mock-imports';
 
-import { Identity } from '~/api/entities';
 import { Entity } from '~/base';
 import { PolkadotMockFactory } from '~/testUtils/mocks';
-import * as utils from '~/utils';
+
+import { Identity } from '../Identity';
 
 describe('Identity class', () => {
   const polkadotMockFactory = new PolkadotMockFactory();
@@ -24,52 +23,32 @@ describe('Identity class', () => {
   });
 
   describe('constructor', () => {
-    test('should assign did and uuid to instance', () => {
+    test('should assign did to instance', () => {
       const did = 'abc';
       const context = polkadotMockFactory.getContextInstance();
       const identity = new Identity({ did }, context);
 
       expect(identity.did).toBe(did);
-      expect(identity.uuid).toBeDefined();
     });
   });
 
-  describe('method: generateUuid', () => {
-    test("should generate the Identity's UUID", async () => {
-      ImportMock.mockFunction(utils, 'serialize')
-        .withArgs('identity', {
-          did: 'abc',
-        })
-        .returns('uuid');
-      const result = Identity.generateUuid({ did: 'abc' });
-      expect(result).toBe('uuid');
-    });
-  });
-
-  describe('method: unserialize', () => {
-    const mockUnserialize = ImportMock.mockFunction(utils, 'unserialize');
-
-    test('should throw error if the string is not related to an Identity Unique Identifier', async () => {
-      mockUnserialize.returns({ token: 'abc' });
-      expect(() => Identity.unserialize('def')).toThrow(
-        'The string is not related to an Identity Unique Identifier'
-      );
-    });
-
-    test('should return an Identity Unique Identifier object', async () => {
-      const fakeReturn = { did: 'abc' };
-      mockUnserialize.returns(fakeReturn);
-      expect(Identity.unserialize('def')).toEqual(fakeReturn);
+  describe('method: isUniqueIdentifiers', () => {
+    test('should return true if the object conforms to the interface', () => {
+      expect(Identity.isUniqueIdentifiers({ did: 'someDid' })).toBe(true);
+      expect(Identity.isUniqueIdentifiers({})).toBe(false);
+      expect(Identity.isUniqueIdentifiers({ did: 3 })).toBe(false);
     });
   });
 
   describe('method: getIdentityBalance', () => {
     test("should return the identity's POLY balance", async () => {
-      const fakeResult = new BigNumber(100);
-      polkadotMockFactory.createQueryStub('balances', 'identityBalance').resolves(fakeResult);
+      const fakeBalance = new BigNumber(100);
+      polkadotMockFactory
+        .createQueryStub('balances', 'identityBalance')
+        .resolves(fakeBalance.times(Math.pow(10, 6)));
       const identity = new Identity({ did: 'abc' }, polkadotMockFactory.getContextInstance());
       const result = await identity.getIdentityBalance();
-      expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeBalance);
     });
   });
 });

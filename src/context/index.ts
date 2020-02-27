@@ -126,20 +126,20 @@ export class Context {
    */
   public accountBalance = async (accountId?: string): Promise<BigNumber> => {
     const { currentPair } = this;
-    if (accountId || currentPair) {
-      let address = '';
-      if (accountId) {
-        address = accountId;
-      } else {
-        address = (currentPair as IKeyringPair).address;
-      }
-      const balance = await this.polymeshApi.query.balances.freeBalance(address);
-      return balanceToBigNumber(balance);
+    let address: string;
+
+    if (accountId) {
+      address = accountId;
+    } else if (currentPair) {
+      address = currentPair.address;
     } else {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'There is no account associated with the SDK',
       });
     }
+
+    const balance = await this.polymeshApi.query.balances.freeBalance(address);
+    return balanceToBigNumber(balance);
   };
 }
