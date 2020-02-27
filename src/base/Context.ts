@@ -108,9 +108,9 @@ export class Context {
           message: 'There is no Identity associated to this account',
         });
       }
-    } else {
-      return new Context({ polymeshApi, keyring });
     }
+
+    return new Context({ polymeshApi, keyring });
   }
 
   /**
