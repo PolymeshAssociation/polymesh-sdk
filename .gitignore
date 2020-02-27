@@ -6,4 +6,5 @@ npm-package/
 .idea/
 coverage/
 test.ts
+sandbox.ts
 docs/
