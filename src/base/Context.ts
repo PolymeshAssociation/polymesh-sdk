@@ -7,11 +7,6 @@ import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
 
-interface BuildParams {
-  polymeshApi: ApiPromise;
-  accountSeed?: string | undefined;
-}
-
 interface SignerData {
   currentPair: IKeyringPair;
   did: IdentityId;
@@ -59,26 +54,53 @@ export class Context {
     }
   }
 
+  static async create(params: { polymeshApi: ApiPromise; seed: string }): Promise<Context>;
+
+  static async create(params: { polymeshApi: ApiPromise; keyring: Keyring }): Promise<Context>;
+
+  static async create(params: { polymeshApi: ApiPromise; uri: string }): Promise<Context>;
+
+  static async create(params: { polymeshApi: ApiPromise }): Promise<Context>;
+
   /**
    * Create the Context instance
    */
-  static async create(params: BuildParams): Promise<Context> {
-    const { polymeshApi, accountSeed } = params;
+  static async create(params: {
+    polymeshApi: ApiPromise;
+    seed?: string;
+    keyring?: Keyring;
+    uri?: string;
+  }): Promise<Context> {
+    const { polymeshApi, seed, keyring, uri } = params;
 
-    const keyring = new Keyring({ type: 'sr25519' });
+    let keyringManagement = new Keyring({ type: 'sr25519' });
+    let currentPair = {} as IKeyringPair;
+    let keyToIdentityIds;
 
-    if (accountSeed) {
-      if (accountSeed.length !== 32) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'Seed must be 32 characters in length',
-        });
+    if (seed || keyring || uri) {
+      if (keyring) {
+        keyringManagement = keyring;
+
+        keyToIdentityIds = await polymeshApi.query.identity.keyToIdentityIds(
+          keyring.getPairs()[0].publicKey
+        );
+      } else {
+        if (seed) {
+          if (seed.length !== 32) {
+            throw new PolymeshError({
+              code: ErrorCode.ValidationError,
+              message: 'Seed must be 32 characters in length',
+            });
+          }
+
+          currentPair = keyringManagement.addFromSeed(stringToU8a(seed));
+        } else {
+          currentPair = keyringManagement.addFromUri(uri as string);
+        }
+
+        keyToIdentityIds = await polymeshApi.query.identity.keyToIdentityIds(currentPair.publicKey);
       }
 
-      const currentPair = keyring.addFromSeed(stringToU8a(accountSeed));
-      const keyToIdentityIds = await polymeshApi.query.identity.keyToIdentityIds(
-        currentPair.publicKey
-      );
       let did: IdentityId;
       try {
         did = keyToIdentityIds.unwrap().asUnique;
@@ -89,9 +111,9 @@ export class Context {
         });
       }
 
-      return new Context({ polymeshApi, keyring, pair: { currentPair, did } });
+      return new Context({ polymeshApi, keyring: keyringManagement, pair: { currentPair, did } });
     }
-    return new Context({ polymeshApi, keyring });
+    return new Context({ polymeshApi, keyring: keyringManagement });
   }
 
   /**

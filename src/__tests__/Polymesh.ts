@@ -33,6 +33,33 @@ describe('Polymesh Class', () => {
       sinon.assert.match(polymesh instanceof Polymesh, true);
     });
 
+    test('should instantiate ApiPromise with a seed and return a Polymesh instance', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: '',
+        accountSeed: 'Alice'.padEnd(32, ' '),
+      });
+
+      sinon.assert.match(polymesh instanceof Polymesh, true);
+    });
+
+    test('should instantiate ApiPromise with a keyring and return a Polymesh instance', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: '',
+        keyring: {} as polkadotModule.Keyring,
+      });
+
+      sinon.assert.match(polymesh instanceof Polymesh, true);
+    });
+
+    test('should instantiate ApiPromise with a uri and return a Polymesh instance', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: '',
+        accountUri: '//uri',
+      });
+
+      sinon.assert.match(polymesh instanceof Polymesh, true);
+    });
+
     test('should throw if ApiPromise fails in the connection process', async () => {
       polkadotMockFactory.throwOnApiCreation();
       const polymeshApiPromise = Polymesh.connect({
