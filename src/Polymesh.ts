@@ -42,7 +42,7 @@ export class Polymesh {
         provider: new WsProvider(nodeUrl),
       });
 
-      let context: Context = {} as Context;
+      let context: Context;
 
       if (accountSeed) {
         context = await Context.create({

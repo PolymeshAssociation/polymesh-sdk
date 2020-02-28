@@ -160,6 +160,8 @@ export class PolkadotMockFactory {
     balance: new BigNumber(100),
   };
 
+  private contextCreateStub = {} as SinonStub;
+
   /**
    * Initialize the factory by adding default all-purpose functionality to the mock manager
    *
@@ -182,6 +184,7 @@ export class PolkadotMockFactory {
         contextModule,
         'Context'
       );
+      this.contextCreateStub = this.contextCreateMockManager.mock('create');
       this.initContext(this.mockingContextOptions);
     }
 
@@ -308,7 +311,7 @@ export class PolkadotMockFactory {
    * @hidden
    */
   private updateContextConstructor(): void {
-    this.contextCreateMockManager.mock('create', this.contextInstance);
+    this.contextCreateStub = this.contextCreateStub.returns(this.contextInstance);
   }
 
   /**
@@ -476,23 +479,17 @@ export class PolkadotMockFactory {
   }
 
   /**
-   * Make the next call to `Context.create` throw an error
+   * Make calls to `Context.create` throw an error
    */
   public throwOnContextCreation(error?: Error): void {
-    this.contextCreateMockManager
-      .mock('create')
-      .onFirstCall()
-      .throws(error);
+    this.contextCreateStub.throws(error);
   }
 
   /**
-   * Make the next call to `ApiPromise.create` throw an error
+   * Make calls to `ApiPromise.create` throw an error
    */
   public throwOnApiCreation(error?: Error): void {
-    this.polkadotCreateMockManager
-      .mock('create')
-      .onFirstCall()
-      .throws(error);
+    this.polkadotCreateMockManager.mock('create').throws(error);
   }
 
   /**
@@ -503,9 +500,16 @@ export class PolkadotMockFactory {
   }
 
   /**
-   * Retrieve an instance  of the mocked Context
+   * Retrieve an instance of the mocked Context
    */
   public getContextInstance(): MockContext {
     return this.contextInstance;
+  }
+
+  /**
+   * Retrieve the stub of the `Context.create` method
+   */
+  public getContextCreateStub(): SinonStub {
+    return this.contextCreateStub;
   }
 }

@@ -25,7 +25,7 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: create', () => {
-    test('should instantiate ApiPromise and return a Polymesh instance', async () => {
+    test('should instantiate Context and return a Polymesh instance', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: '',
       });
@@ -33,34 +33,55 @@ describe('Polymesh Class', () => {
       sinon.assert.match(polymesh instanceof Polymesh, true);
     });
 
-    test('should instantiate ApiPromise with a seed and return a Polymesh instance', async () => {
-      const polymesh = await Polymesh.connect({
+    test('should instantiate Context with a seed and return a Polymesh instance', async () => {
+      const accountSeed = 'Alice'.padEnd(32, ' ');
+      const createStub = polkadotMockFactory.getContextCreateStub();
+
+      await Polymesh.connect({
         nodeUrl: '',
-        accountSeed: 'Alice'.padEnd(32, ' '),
+        accountSeed,
       });
 
-      sinon.assert.match(polymesh instanceof Polymesh, true);
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledWith(createStub, {
+        polymeshApi: polkadotMockFactory.getApiInstance(),
+        seed: accountSeed,
+      });
     });
 
-    test('should instantiate ApiPromise with a keyring and return a Polymesh instance', async () => {
-      const polymesh = await Polymesh.connect({
+    test('should instantiate Context with a keyring and return a Polymesh instance', async () => {
+      const keyring = {} as polkadotModule.Keyring;
+      const createStub = polkadotMockFactory.getContextCreateStub();
+
+      await Polymesh.connect({
         nodeUrl: '',
-        keyring: {} as polkadotModule.Keyring,
+        keyring,
       });
 
-      sinon.assert.match(polymesh instanceof Polymesh, true);
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledWith(createStub, {
+        polymeshApi: polkadotMockFactory.getApiInstance(),
+        keyring,
+      });
     });
 
-    test('should instantiate ApiPromise with a uri and return a Polymesh instance', async () => {
-      const polymesh = await Polymesh.connect({
+    test('should instantiate Context with a uri and return a Polymesh instance', async () => {
+      const accountUri = '//uri';
+      const createStub = polkadotMockFactory.getContextCreateStub();
+
+      await Polymesh.connect({
         nodeUrl: '',
-        accountUri: '//uri',
+        accountUri,
       });
 
-      sinon.assert.match(polymesh instanceof Polymesh, true);
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledWith(createStub, {
+        polymeshApi: polkadotMockFactory.getApiInstance(),
+        uri: accountUri,
+      });
     });
 
-    test('should throw if ApiPromise fails in the connection process', async () => {
+    test('should throw if Context fails in the connection process', async () => {
       polkadotMockFactory.throwOnApiCreation();
       const polymeshApiPromise = Polymesh.connect({
         nodeUrl: 'wss',
