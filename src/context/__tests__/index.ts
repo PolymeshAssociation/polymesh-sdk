@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { ImportMock, MockManager } from 'ts-mock-imports';
 
 import * as identityModule from '~/api/entities';
-import { Context } from '~/base';
+import { Context } from '~/context';
 import { PolkadotMockFactory } from '~/testUtils/mocks';
 import { balanceToBigNumber } from '~/utils';
 
@@ -15,7 +15,7 @@ describe('Context class', () => {
   polkadotMockFactory.initMocks();
 
   beforeEach(() => {
-    mockKeyring = ImportMock.mockClass(polkadotModule, 'Keyring');
+    mockKeyring = ImportMock.mockClass<polkadotModule.Keyring>(polkadotModule, 'Keyring');
   });
 
   afterEach(() => {
@@ -27,6 +27,16 @@ describe('Context class', () => {
     polkadotMockFactory.cleanup();
   });
 
+  test('should throw an error if accessing the transaction submodule without an active account', async () => {
+    const context = await Context.create({
+      polymeshApi: polkadotMockFactory.getApiInstance(),
+    });
+
+    expect(() => context.polymeshApi.tx).toThrow(
+      'Cannot perform transactions without an active account'
+    );
+  });
+
   describe('method: create', () => {
     test('should throw if seed parameter is not a 32 length string', async () => {
       const context = Context.create({
@@ -34,7 +44,7 @@ describe('Context class', () => {
         seed: 'abc',
       });
 
-      await expect(context).rejects.toThrow(new Error('Seed must be 32 characters in length'));
+      return expect(context).rejects.toThrow(new Error('Seed must be 32 characters in length'));
     });
 
     test('should create a Context class from a seed with Pair and Identity attached', async () => {
@@ -111,7 +121,7 @@ describe('Context class', () => {
       expect(context.currentIdentity).toBe(undefined);
     });
 
-    test('should throw if the account seed is not assotiated with an IdentityId ', async () => {
+    test('should throw if the account seed is not assotiated with an IdentityId ', () => {
       mockKeyring.mock('addFromSeed', 'currentPair');
       polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds');
 
@@ -120,9 +130,7 @@ describe('Context class', () => {
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      await expect(context).rejects.toThrow(
-        new Error('There is no Identity associated to this account')
-      );
+      expect(context).rejects.toThrow(new Error('There is no Identity associated to this account'));
     });
   });
 
@@ -195,7 +203,7 @@ describe('Context class', () => {
       );
     });
 
-    test(`should return the account POLY balance if currentPair is set`, async () => {
+    test('should return the account POLY balance if currentPair is set', async () => {
       const fakeResult = (100 as unknown) as Balance;
       polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds', {
         unwrap: () => ({ asUnique: '012abc' }),
@@ -214,7 +222,7 @@ describe('Context class', () => {
       expect(result).toEqual(balanceToBigNumber(fakeResult));
     });
 
-    test(`should return the account POLY balance if accountId is set`, async () => {
+    test('should return the account POLY balance if accountId is set', async () => {
       const fakeResult = (100 as unknown) as Balance;
       polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds', {
         unwrap: () => ({ asUnique: '012abc' }),

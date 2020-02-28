@@ -1,5 +1,6 @@
-import { PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
+
+import { PolymeshError } from '../PolymeshError';
 
 describe('Polymesh Error class', () => {
   test('should extend error', () => {

@@ -1,5 +1,5 @@
 import * as createTypeModule from '@polymathnetwork/polkadot/types/create/createType';
-import { Balance, IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
+import { Balance, IdentityId, Moment, Ticker } from '@polymathnetwork/polkadot/types/interfaces';
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
@@ -7,16 +7,22 @@ import { ImportMock } from 'ts-mock-imports';
 
 import { PostTransactionValue } from '~/base';
 import { PolkadotMockFactory } from '~/testUtils/mocks';
+
 import {
   balanceToBigNumber,
+  dateToMoment,
   delay,
+  findEventRecord,
   identityIdToString,
+  momentToDate,
   numberToBalance,
   serialize,
   stringToIdentityId,
+  stringToTicker,
+  tickerToString,
   unserialize,
   unwrapValues,
-} from '~/utils';
+} from '../';
 
 describe('delay', () => {
   jest.useFakeTimers();
@@ -162,6 +168,92 @@ describe('numberToBalance and balanceToBigNumber', () => {
   });
 });
 
+describe('stringToTicker and tickerToString', () => {
+  const polkadotMockFactory = new PolkadotMockFactory();
+  polkadotMockFactory.initMocks({ mockContext: true });
+
+  let mockCreateType: SinonStub;
+
+  beforeEach(() => {
+    mockCreateType = ImportMock.mockFunction(createTypeModule, 'createType', 'type');
+  });
+
+  afterEach(() => {
+    polkadotMockFactory.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockFactory.cleanup();
+  });
+
+  test('stringToTicker should convert a string to a polkadot Ticker object', () => {
+    const value = 'someTicker';
+    const fakeResult = ('someTicker' as unknown) as Ticker;
+    const context = polkadotMockFactory.getContextInstance();
+
+    mockCreateType.withArgs(context.polymeshApi.registry, 'Ticker', value).returns(fakeResult);
+
+    const result = stringToTicker(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('tickerToString should convert a polkadot Ticker object to a string', () => {
+    const fakeResult = 'someTicker';
+    const ticker = ({
+      toString: sinon.stub().returns(fakeResult),
+    } as unknown) as Ticker;
+
+    const result = tickerToString(ticker);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('dateToMoment and momentToDate', () => {
+  const polkadotMockFactory = new PolkadotMockFactory();
+  polkadotMockFactory.initMocks({ mockContext: true });
+
+  let mockCreateType: SinonStub;
+
+  beforeEach(() => {
+    mockCreateType = ImportMock.mockFunction(createTypeModule, 'createType', 'type');
+  });
+
+  afterEach(() => {
+    polkadotMockFactory.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockFactory.cleanup();
+  });
+
+  test('dateToMoment should convert a Date to a polkadot Moment object', () => {
+    const value = new Date();
+    const fakeResult = (10000 as unknown) as Moment;
+    const context = polkadotMockFactory.getContextInstance();
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'Moment', Math.round(value.getTime()))
+      .returns(fakeResult);
+
+    const result = dateToMoment(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('momentToDate should convert a polkadot Moment object to a Date', () => {
+    const fakeResult = 10000;
+    const moment = ({
+      toNumber: sinon.stub().returns(fakeResult),
+    } as unknown) as Moment;
+
+    const result = momentToDate(moment);
+    expect(result).toEqual(new Date(fakeResult));
+  });
+});
+
 describe('unwrapValues', () => {
   test('should unwrap all Post Transaction Values in the array', async () => {
     const values = [1, 2, 3, 4, 5];
@@ -171,5 +263,37 @@ describe('unwrapValues', () => {
     const unwrapped = unwrapValues(wrapped);
 
     expect(unwrapped).toEqual(values);
+  });
+});
+
+describe('findEventRecord', () => {
+  const findRecordStub = sinon.stub();
+  const mockReceipt = ({
+    findRecord: findRecordStub,
+  } as unknown) as ISubmittableResult;
+
+  afterEach(() => {
+    findRecordStub.reset();
+  });
+
+  test('returns the corresponding Event Record', () => {
+    const mod = 'asset';
+    const eventName = 'TickerRegistered';
+    const fakeResult = 'event';
+    findRecordStub.withArgs(mod, eventName).returns(fakeResult);
+
+    const eventRecord = findEventRecord(mockReceipt, mod, eventName);
+
+    expect(eventRecord).toBe(fakeResult);
+  });
+
+  test("throws if the Event wasn't fired", () => {
+    const mod = 'asset';
+    const eventName = 'TickerRegistered';
+    findRecordStub.withArgs(mod, eventName).returns(undefined);
+
+    expect(() => findEventRecord(mockReceipt, mod, eventName)).toThrow(
+      `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`
+    );
   });
 });

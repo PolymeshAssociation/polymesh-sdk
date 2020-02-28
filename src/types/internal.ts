@@ -33,7 +33,7 @@ export type PolymeshTx<Args extends unknown[]> = AugmentedSubmittable<
  * Transforms a tuple of types into an array of resolver functions. For each type in the tuple, the corresponding resolver function returns that type wrapped in a promise
  */
 export type ResolverFunctionArray<Values extends unknown[]> = {
-  [K in keyof Values]: (receipt: ISubmittableResult) => Promise<Values[K]>;
+  [K in keyof Values]: (receipt: ISubmittableResult) => Promise<Values[K]> | Values[K];
 };
 
 /**

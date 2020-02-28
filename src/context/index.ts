@@ -47,7 +47,18 @@ export class Context {
   private constructor(params: ConstructorParams) {
     const { polymeshApi, keyring, pair } = params;
 
-    this.polymeshApi = polymeshApi;
+    this.polymeshApi = new Proxy(polymeshApi, {
+      get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
+        if (prop === 'tx' && !this.currentPair) {
+          throw new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Cannot perform transactions without an active account',
+          });
+        }
+
+        return target[prop];
+      },
+    });
     this.keyring = keyring;
 
     if (pair) {
@@ -143,20 +154,21 @@ export class Context {
    */
   public accountBalance = async (accountId?: string): Promise<BigNumber> => {
     const { currentPair } = this;
-    if (accountId || currentPair) {
-      let address = '';
-      if (accountId) {
-        address = accountId;
-      } else {
-        address = (currentPair as IKeyringPair).address;
-      }
-      const balance = await this.polymeshApi.query.balances.freeBalance(address);
-      return balanceToBigNumber(balance);
+    let address: string;
+
+    if (accountId) {
+      address = accountId;
+    } else if (currentPair) {
+      address = currentPair.address;
     } else {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'There is no account associated with the SDK',
       });
     }
+
+    const balance = await this.polymeshApi.query.balances.freeBalance(address);
+
+    return balanceToBigNumber(balance);
   };
 }

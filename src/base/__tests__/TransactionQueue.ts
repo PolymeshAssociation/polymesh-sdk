@@ -3,11 +3,13 @@ import BigNumber from 'bignumber.js';
 import { noop } from 'lodash';
 import sinon from 'sinon';
 
-import { PostTransactionValue, TransactionQueue } from '~/base';
+import { PostTransactionValue } from '~/base';
 import { PolymeshTransactionMockFactory } from '~/testUtils/mocks';
 import { TransactionQueueStatus, TransactionStatus } from '~/types';
 import { TransactionSpec } from '~/types/internal';
 import { delay } from '~/utils';
+
+import { TransactionQueue } from '../TransactionQueue';
 
 describe('Transaction Queue class', () => {
   const transactionMockFactory = new PolymeshTransactionMockFactory();
