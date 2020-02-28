@@ -15,7 +15,7 @@ describe('Context class', () => {
   polkadotMockFactory.initMocks();
 
   beforeEach(() => {
-    mockKeyring = ImportMock.mockClass(polkadotModule, 'Keyring');
+    mockKeyring = ImportMock.mockClass<polkadotModule.Keyring>(polkadotModule, 'Keyring');
   });
 
   afterEach(() => {
@@ -27,14 +27,24 @@ describe('Context class', () => {
     polkadotMockFactory.cleanup();
   });
 
+  test('should throw an error if accessing the transaction submodule without an active account', async () => {
+    const context = await Context.create({
+      polymeshApi: polkadotMockFactory.getApiInstance(),
+    });
+
+    expect(() => context.polymeshApi.tx).toThrow(
+      'Cannot perform transactions without an active account'
+    );
+  });
+
   describe('method: create', () => {
-    test('should throw if accountSeed parameter is not a 32 length string', async () => {
+    test('should throw if accountSeed parameter is not a 32 length string', () => {
       const context = Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
         accountSeed: 'abc',
       });
 
-      await expect(context).rejects.toThrow(new Error('Seed must be 32 characters in length'));
+      return expect(context).rejects.toThrow(new Error('Seed must be 32 characters in length'));
     });
 
     test('should create a Context class with Pair and Identity attached', async () => {
@@ -74,16 +84,16 @@ describe('Context class', () => {
       expect(context.currentIdentity).toBe(undefined);
     });
 
-    test('should throw if the account seed is not assotiated with an IdentityId ', async () => {
+    test('should throw if the account seed is not assotiated with an IdentityId ', () => {
       mockKeyring.mock('addFromSeed', 'currentPair');
       polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds');
 
-      const context = Context.create({
+      const contextPromise = Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
         accountSeed: 'Alice'.padEnd(32, ' '),
       });
 
-      await expect(context).rejects.toThrow(new Error('Identity ID does not exist'));
+      return expect(contextPromise).rejects.toThrow(new Error('Identity ID does not exist'));
     });
   });
 

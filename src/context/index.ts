@@ -52,7 +52,18 @@ export class Context {
   private constructor(params: ConstructorParams) {
     const { polymeshApi, keyring, pair } = params;
 
-    this.polymeshApi = polymeshApi;
+    this.polymeshApi = new Proxy(polymeshApi, {
+      get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
+        if (prop === 'tx' && !this.currentPair) {
+          throw new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Cannot perform transactions without an active account',
+          });
+        }
+
+        return target[prop];
+      },
+    });
     this.keyring = keyring;
 
     if (pair) {
@@ -140,6 +151,7 @@ export class Context {
     }
 
     const balance = await this.polymeshApi.query.balances.freeBalance(address);
+
     return balanceToBigNumber(balance);
   };
 }
