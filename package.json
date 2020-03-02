@@ -7,7 +7,7 @@
   "author": "Polymath Studios Inc.",
   "license": "ISC",
   "scripts": {
-    "start": "cross-env NODE_OPTIONS=--max_old_space_size=4096 webpack-dev-server --config=webpack.config.dev.js",
+    "start": "cross-env webpack-dev-server --config=webpack.config.dev.js",
     "test": "jest --coverage",
     "build:ts": "ttsc -b",
     "build:docs": "typedoc src",
