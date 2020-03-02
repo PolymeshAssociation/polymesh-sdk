@@ -1,4 +1,4 @@
-import { ApiPromise, WsProvider } from '@polymathnetwork/polkadot/api';
+import { ApiPromise, Keyring, WsProvider } from '@polymathnetwork/polkadot/api';
 import { BigNumber } from 'bignumber.js';
 
 import { TickerReservation } from '~/api/entities';
@@ -6,11 +6,6 @@ import { reserveTicker, ReserveTickerParams } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
-
-interface ConnectParams {
-  nodeUrl: string;
-  accountSeed?: string;
-}
 
 /**
  * Main entry point of the Polymesh SDK
@@ -25,11 +20,24 @@ export class Polymesh {
     this.context = context;
   }
 
+  static async connect(params: { nodeUrl: string; accountSeed: string }): Promise<Polymesh>;
+
+  static async connect(params: { nodeUrl: string; keyring: Keyring }): Promise<Polymesh>;
+
+  static async connect(params: { nodeUrl: string; accountUri: string }): Promise<Polymesh>;
+
+  static async connect(params: { nodeUrl: string }): Promise<Polymesh>;
+
   /**
    * Create the instance and connect to the Polymesh node
    */
-  static async connect(params: ConnectParams): Promise<Polymesh> {
-    const { nodeUrl, accountSeed } = params;
+  static async connect(params: {
+    nodeUrl: string;
+    accountSeed?: string;
+    keyring?: Keyring;
+    accountUri?: string;
+  }): Promise<Polymesh> {
+    const { nodeUrl, accountSeed, keyring, accountUri } = params;
     let polymeshApi: ApiPromise;
 
     try {
@@ -37,10 +45,28 @@ export class Polymesh {
         provider: new WsProvider(nodeUrl),
       });
 
-      const context = await Context.create({
-        polymeshApi,
-        accountSeed,
-      });
+      let context: Context;
+
+      if (accountSeed) {
+        context = await Context.create({
+          polymeshApi,
+          seed: accountSeed,
+        });
+      } else if (keyring) {
+        context = await Context.create({
+          polymeshApi,
+          keyring,
+        });
+      } else if (accountUri) {
+        context = await Context.create({
+          polymeshApi,
+          uri: accountUri,
+        });
+      } else {
+        context = await Context.create({
+          polymeshApi,
+        });
+      }
 
       return new Polymesh(context);
     } catch (e) {

@@ -9,11 +9,6 @@ import { PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
 import { balanceToBigNumber } from '~/utils';
 
-interface BuildParams {
-  polymeshApi: ApiPromise;
-  accountSeed?: string | undefined;
-}
-
 interface SignerData {
   currentPair: IKeyringPair;
   did: IdentityId;
@@ -72,38 +67,60 @@ export class Context {
     }
   }
 
+  static async create(params: { polymeshApi: ApiPromise; seed: string }): Promise<Context>;
+
+  static async create(params: { polymeshApi: ApiPromise; keyring: Keyring }): Promise<Context>;
+
+  static async create(params: { polymeshApi: ApiPromise; uri: string }): Promise<Context>;
+
+  static async create(params: { polymeshApi: ApiPromise }): Promise<Context>;
+
   /**
    * Create the Context instance
    */
-  static async create(params: BuildParams): Promise<Context> {
-    const { polymeshApi, accountSeed } = params;
+  static async create(params: {
+    polymeshApi: ApiPromise;
+    seed?: string;
+    keyring?: Keyring;
+    uri?: string;
+  }): Promise<Context> {
+    const { polymeshApi, seed, keyring: passedKeyring, uri } = params;
 
-    const keyring = new Keyring({ type: 'sr25519' });
+    let keyring = new Keyring({ type: 'sr25519' });
+    let currentPair: IKeyringPair | undefined;
 
-    if (accountSeed) {
-      if (accountSeed.length !== 32) {
+    if (passedKeyring) {
+      keyring = passedKeyring;
+      currentPair = keyring.getPairs()[0];
+    } else if (seed) {
+      if (seed.length !== 32) {
         throw new PolymeshError({
           code: ErrorCode.ValidationError,
           message: 'Seed must be 32 characters in length',
         });
       }
 
-      const currentPair = keyring.addFromSeed(stringToU8a(accountSeed));
-      const keyToIdentityIds = await polymeshApi.query.identity.keyToIdentityIds(
-        currentPair.publicKey
-      );
-      let did: IdentityId;
+      currentPair = keyring.addFromSeed(stringToU8a(seed));
+    } else if (uri) {
+      currentPair = keyring.addFromUri(uri);
+    }
+
+    if (currentPair) {
       try {
-        did = keyToIdentityIds.unwrap().asUnique;
-      } catch (e) {
+        const identityIds = await polymeshApi.query.identity.keyToIdentityIds(
+          currentPair.publicKey
+        );
+        const did = identityIds.unwrap().asUnique;
+
+        return new Context({ polymeshApi, keyring, pair: { currentPair, did } });
+      } catch (err) {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
-          message: 'Identity ID does not exist',
+          message: 'There is no Identity associated to this account',
         });
       }
-
-      return new Context({ polymeshApi, keyring, pair: { currentPair, did } });
     }
+
     return new Context({ polymeshApi, keyring });
   }
 

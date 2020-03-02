@@ -38,16 +38,16 @@ describe('Context class', () => {
   });
 
   describe('method: create', () => {
-    test('should throw if accountSeed parameter is not a 32 length string', () => {
+    test('should throw if seed parameter is not a 32 length string', async () => {
       const context = Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
-        accountSeed: 'abc',
+        seed: 'abc',
       });
 
       return expect(context).rejects.toThrow(new Error('Seed must be 32 characters in length'));
     });
 
-    test('should create a Context class with Pair and Identity attached', async () => {
+    test('should create a Context class from a seed with Pair and Identity attached', async () => {
       const keyToIdentityIdsStub = polkadotMockFactory.createQueryStub(
         'identity',
         'keyToIdentityIds',
@@ -57,10 +57,47 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
-        accountSeed: 'Alice'.padEnd(32, ' '),
+        seed: 'Alice'.padEnd(32, ' '),
       });
 
       sinon.assert.calledOnce(keyringAddFromSeedStub);
+      sinon.assert.calledOnce(keyToIdentityIdsStub);
+      expect(context.currentPair).toEqual('currentPair');
+      sinon.assert.match(context.currentIdentity instanceof identityModule.Identity, true);
+    });
+
+    test('should create a Context class from a keyring with Pair and Identity attached', async () => {
+      const keyToIdentityIdsStub = polkadotMockFactory.createQueryStub(
+        'identity',
+        'keyToIdentityIds',
+        { unwrap: () => ({ asUnique: '012abc' }) }
+      );
+      const keyringGetPairsStub = mockKeyring.mock('getPairs', [{ publicKey: 'address' }]);
+
+      const context = await Context.create({
+        polymeshApi: polkadotMockFactory.getApiInstance(),
+        keyring: mockKeyring.getMockInstance(),
+      });
+
+      sinon.assert.calledOnce(keyringGetPairsStub);
+      sinon.assert.calledOnce(keyToIdentityIdsStub);
+      sinon.assert.match(context.currentIdentity instanceof identityModule.Identity, true);
+    });
+
+    test('should create a Context class from a uri with Pair and Identity attached', async () => {
+      const keyToIdentityIdsStub = polkadotMockFactory.createQueryStub(
+        'identity',
+        'keyToIdentityIds',
+        { unwrap: () => ({ asUnique: '012abc' }) }
+      );
+      const keyringAddFromUriStub = mockKeyring.mock('addFromUri', 'currentPair');
+
+      const context = await Context.create({
+        polymeshApi: polkadotMockFactory.getApiInstance(),
+        uri: '//Alice',
+      });
+
+      sinon.assert.calledOnce(keyringAddFromUriStub);
       sinon.assert.calledOnce(keyToIdentityIdsStub);
       expect(context.currentPair).toEqual('currentPair');
       sinon.assert.match(context.currentIdentity instanceof identityModule.Identity, true);
@@ -88,12 +125,12 @@ describe('Context class', () => {
       mockKeyring.mock('addFromSeed', 'currentPair');
       polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds');
 
-      const contextPromise = Context.create({
+      const context = Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
-        accountSeed: 'Alice'.padEnd(32, ' '),
+        seed: 'Alice'.padEnd(32, ' '),
       });
 
-      return expect(contextPromise).rejects.toThrow(new Error('Identity ID does not exist'));
+      expect(context).rejects.toThrow(new Error('There is no Identity associated to this account'));
     });
   });
 
@@ -178,7 +215,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
-        accountSeed: 'Alice'.padEnd(32, ' '),
+        seed: 'Alice'.padEnd(32, ' '),
       });
 
       const result = await context.accountBalance();
@@ -197,7 +234,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
-        accountSeed: 'Alice'.padEnd(32, ' '),
+        seed: 'Alice'.padEnd(32, ' '),
       });
 
       const result = await context.accountBalance('accountId');
