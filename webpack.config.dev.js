@@ -13,7 +13,7 @@ const sandboxFilePath = path.resolve(`./${SANDBOX_FILE_NAME}`);
 if (!fs.existsSync(sandboxFilePath)) {
   fs.writeFileSync(
     sandboxFilePath,
-    "import { Polymesh } from './src/Polymesh';\n\n// Your code start here...\n"
+    "import { Polymesh } from './src/Polymesh';\r\n\r\n/**\r\n * Polymesh SDK connection\r\n */\r\nasync function run(): Promise<void> {\r\n  await Polymesh.connect({\r\n    nodeUrl: 'ws://78.47.38.110:9944',\r\n  });\r\n}\r\n\r\nrun();"
   );
 }
 
