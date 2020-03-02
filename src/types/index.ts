@@ -68,3 +68,5 @@ export enum ErrorCode {
   ValidationError = 'ValidationError',
   NotAuthorized = 'NotAuthorized',
 }
+
+export * from '~/api/entities/types';

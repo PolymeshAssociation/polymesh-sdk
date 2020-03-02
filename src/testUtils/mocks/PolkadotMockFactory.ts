@@ -1,17 +1,28 @@
 /* istanbul ignore file */
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
+import { bool, Bytes, Enum, Option, u8, u64 } from '@polymathnetwork/polkadot/types';
 import {
+  AssetType,
+  Balance,
   DispatchError,
   DispatchErrorModule,
+  EventRecord,
   ExtrinsicStatus,
+  IdentityId,
+  Moment,
+  SecurityToken,
+  Ticker,
+  TickerRegistration,
+  TickerRegistrationConfig,
+  TokenName,
 } from '@polymathnetwork/polkadot/types/interfaces';
-import { IKeyringPair, ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { Codec, IKeyringPair, ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import { BigNumber } from 'bignumber.js';
-import { merge } from 'lodash';
+import { every, merge, startCase } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 import { ImportMock, StaticMockManager } from 'ts-mock-imports';
 
-import * as contextModule from '~/base';
+import * as contextModule from '~/context';
 import { Mocked } from '~/testUtils/types';
 import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
@@ -160,6 +171,8 @@ export class PolkadotMockFactory {
     balance: new BigNumber(100),
   };
 
+  private contextCreateStub = {} as SinonStub;
+
   /**
    * Initialize the factory by adding default all-purpose functionality to the mock manager
    *
@@ -182,6 +195,7 @@ export class PolkadotMockFactory {
         contextModule,
         'Context'
       );
+      this.contextCreateStub = this.contextCreateMockManager.mock('create');
       this.initContext(this.mockingContextOptions);
     }
 
@@ -308,7 +322,7 @@ export class PolkadotMockFactory {
    * @hidden
    */
   private updateContextConstructor(): void {
-    this.contextCreateMockManager.mock('create', this.contextInstance);
+    this.contextCreateStub = this.contextCreateStub.returns(this.contextInstance);
   }
 
   /**
@@ -476,23 +490,26 @@ export class PolkadotMockFactory {
   }
 
   /**
-   * Make the next call to `Context.create` throw an error
+   * Make calls to `Context.create` throw an error
    */
   public throwOnContextCreation(error?: Error): void {
-    this.contextCreateMockManager
-      .mock('create')
-      .onFirstCall()
-      .throws(error);
+    this.contextCreateStub.throws(error);
   }
 
   /**
-   * Make the next call to `ApiPromise.create` throw an error
+   * Make calls to `ApiPromise.create` throw an error
    */
   public throwOnApiCreation(error?: Error): void {
-    this.polkadotCreateMockManager
-      .mock('create')
-      .onFirstCall()
-      .throws(error);
+    this.polkadotCreateMockManager.mock('create').throws(error);
+  }
+
+  /**
+   * Sets the `accountBalance` function in the mocked Context to return the specified amount
+   *
+   * @param balance - new account balance
+   */
+  public setContextAccountBalance(balance: BigNumber): void {
+    this.contextInstance.accountBalance.returns(balance);
   }
 
   /**
@@ -503,9 +520,222 @@ export class PolkadotMockFactory {
   }
 
   /**
-   * Retrieve an instance  of the mocked Context
+   * Retrieve an instance of the mocked Context
    */
   public getContextInstance(): MockContext {
     return this.contextInstance;
   }
+
+  /**
+   * Retrieve the stub of the `Context.create` method
+   */
+  public getContextCreateStub(): SinonStub {
+    return this.contextCreateStub;
+  }
 }
+
+/**
+ * @hidden
+ */
+const createMockCodec = (codec: object, isEmpty: boolean): Codec =>
+  ({
+    ...codec,
+    isEmpty,
+  } as Codec);
+
+/**
+ * @hidden
+ */
+const createMockStringCodec = (value?: string): Codec =>
+  createMockCodec(
+    {
+      toString: () => value,
+    },
+    !value
+  );
+
+/**
+ * @hidden
+ */
+const createMockNumberCodec = (value?: number): Codec =>
+  createMockCodec(
+    {
+      toNumber: () => value,
+      toString: () => `${value}`,
+    },
+    !value
+  );
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockIdentityId = (did?: string): IdentityId =>
+  createMockStringCodec(did) as IdentityId;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockTicker = (ticker?: string): Ticker =>
+  createMockStringCodec(ticker) as Ticker;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBalance = (balance?: number): Balance =>
+  createMockNumberCodec(balance) as Balance;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockOption = <T extends Codec>(wrapped?: T): Option<T> =>
+  createMockCodec(
+    {
+      unwrap: () => wrapped as T,
+      isNone: !wrapped,
+      isSome: !!wrapped,
+    },
+    !wrapped
+  ) as Option<T>;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockMoment = (millis?: number): Moment =>
+  createMockNumberCodec(millis) as Moment;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockTickerRegistration = (
+  reg: { owner: IdentityId; expiry: Option<Moment> } = {
+    owner: createMockIdentityId(),
+    expiry: createMockOption(),
+  }
+): TickerRegistration =>
+  createMockCodec(
+    {
+      owner: reg.owner,
+      expiry: reg.expiry,
+    },
+    reg.owner.isEmpty && reg.expiry.isEmpty
+  ) as TickerRegistration;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockU8 = (value?: number): u8 => createMockNumberCodec(value) as u8;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockU64 = (value?: number): u64 => createMockNumberCodec(value) as u64;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockTokenName = (name?: string): TokenName =>
+  createMockStringCodec(name) as TokenName;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBool = (value?: boolean): bool =>
+  createMockCodec(
+    {
+      isTrue: () => value,
+      isFalse: () => !value,
+    },
+    !value
+  ) as bool;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+const createMockEnum = (enumValue?: string | Record<string, Codec>): Enum => {
+  const codec: Record<string, unknown> = {};
+
+  if (typeof enumValue === 'string') {
+    codec[`is${startCase(enumValue)}`] = true;
+  } else if (typeof enumValue === 'object') {
+    const key = Object.keys(enumValue)[0];
+
+    codec[`is${startCase(key)}`] = true;
+    codec[`as${startCase(key)}`] = enumValue[key];
+  }
+
+  return createMockCodec(codec, false) as Enum;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetType = (
+  assetType?: 'equity' | 'debt' | 'commodity' | 'structuredProduct' | { custom: Bytes }
+): AssetType => {
+  return createMockEnum(assetType) as AssetType;
+};
+
+/* eslint-disable @typescript-eslint/camelcase */
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockTickerRegistrationConfig = (
+  regConfig: { max_ticker_length: u8; registration_length: Option<Moment> } = {
+    max_ticker_length: createMockU8(),
+    registration_length: createMockOption(),
+  }
+): TickerRegistrationConfig =>
+  createMockCodec(
+    regConfig,
+    regConfig.max_ticker_length.isEmpty && regConfig.registration_length.isEmpty
+  ) as TickerRegistrationConfig;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSecurityToken = (
+  token: {
+    name: TokenName;
+    total_supply: Balance;
+    owner_did: IdentityId;
+    divisible: bool;
+    asset_type: AssetType;
+    link_id: u64;
+  } = {
+    name: createMockTokenName(),
+    total_supply: createMockBalance(),
+    owner_did: createMockIdentityId(),
+    divisible: createMockBool(),
+    asset_type: createMockAssetType(),
+    link_id: createMockU64(),
+  }
+): SecurityToken =>
+  createMockCodec(
+    token,
+    every(token, val => val.isEmpty)
+  ) as SecurityToken;
+/* eslint-enable @typescript-eslint/camelcase */
+
+/**
+ * @hidden
+ */
+export const createMockEventRecord = (data: unknown[]): EventRecord =>
+  (({
+    event: {
+      data,
+    },
+  } as unknown) as EventRecord);
