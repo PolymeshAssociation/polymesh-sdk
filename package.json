@@ -7,6 +7,7 @@
   "author": "Polymath Studios Inc.",
   "license": "ISC",
   "scripts": {
+    "start": "cross-env webpack-dev-server --config=webpack.config.dev.js",
     "test": "jest --coverage",
     "build:ts": "ttsc -b",
     "build:docs": "typedoc src",
@@ -27,6 +28,8 @@
     "@typescript-eslint/eslint-plugin": "^2.17.0",
     "@typescript-eslint/parser": "^2.17.0",
     "@zerollup/ts-transform-paths": "^1.7.11",
+    "awesome-typescript-loader": "^5.2.1",
+    "case-sensitive-paths-webpack-plugin": "^2.3.0",
     "cross-env": "^7.0.0",
     "cz-conventional-changelog": "^3.0.2",
     "eslint": "^6.8.0",
@@ -38,6 +41,7 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-simple-import-sort": "^5.0.1",
     "eslint-plugin-standard": "^4.0.1",
+    "html-webpack-plugin": "^3.2.0",
     "husky": "^4.1.0",
     "jest": "25.1.0",
     "lint-staged": "^8.1.5",
@@ -49,9 +53,14 @@
     "ts-jest": "^25.2.1",
     "ts-mock-imports": "^1.2.6",
     "tsconfig-paths": "^3.9.0",
+    "tsconfig-paths-webpack-plugin": "^3.2.0",
     "ttypescript": "^1.5.10",
     "typedoc": "^0.16.8",
-    "typescript": "3.7.5"
+    "typescript": "3.7.5",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3",
+    "webpack-merge": "^4.2.2"
   },
   "config": {
     "commitizen": {

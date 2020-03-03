@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "baseUrl": ".",
     "paths": {
       "~/*": ["src/*"]
@@ -22,6 +22,5 @@
     "resolveJsonModule": true,
     "lib": ["es2017", "dom"],
     "typeRoots": ["./node_modules/@types", "./src/typings"]
-  },
-  "exclude": ["dist", "node_modules", "sandbox.ts"]
+  }
 }
