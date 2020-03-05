@@ -1,4 +1,7 @@
+import { u8aToString } from '@polkadot/util';
 import { ApiPromise, Keyring, WsProvider } from '@polymathnetwork/polkadot/api';
+import { Option } from '@polymathnetwork/polkadot/types';
+import { Link } from '@polymathnetwork/polkadot/types/interfaces';
 import { BigNumber } from 'bignumber.js';
 
 import { TickerReservation } from '~/api/entities';
@@ -112,5 +115,60 @@ export class Polymesh {
     args: ReserveTickerParams
   ): Promise<TransactionQueue<TickerReservation>> {
     return reserveTicker.prepare(args, this.context);
+  }
+
+  /**
+   * Retrieve all the ticker reservations currently owned by an identity. This includes
+   * Security Tokens that have already been launched
+   */
+  public async getTickerReservations(): Promise<TickerReservation[]> {
+    const { context } = this;
+    const { currentIdentity } = context;
+
+    if (currentIdentity) {
+      const {
+        context: {
+          polymeshApi: {
+            query: {
+              identity: { links },
+            },
+          },
+        },
+        context,
+      } = this;
+
+      const tickers = await links.entries({ identity: currentIdentity.did });
+      const tickerReservations = tickers
+        .filter(([, data]) => ((data as unknown) as Option<Link>).unwrap().link_data.isTickerOwned)
+        .map(([, data]) => {
+          const ticker = ((data as unknown) as Option<Link>).unwrap().link_data.asTickerOwned;
+          return new TickerReservation(
+            // eslint-disable-next-line no-control-regex
+            { ticker: u8aToString(ticker).replace(/\u0000/g, '') },
+            context
+          );
+        });
+      return tickerReservations;
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'The current account does not have an associated identity',
+      });
+    }
+  }
+
+  /**
+   * Retrieve a Ticker by symbol
+   *
+   * @param symbol - Security Token symbol
+   */
+  public async getTickerReservation(args: { symbol: string }): Promise<TickerReservation> {
+    const { symbol } = args;
+    const tickerReservations = await this.getTickerReservations();
+    const ticker = tickerReservations.filter(
+      tickerReservation => tickerReservation.ticker === symbol
+    );
+
+    return ticker[0];
   }
 }

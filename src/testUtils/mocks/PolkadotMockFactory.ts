@@ -9,6 +9,7 @@ import {
   EventRecord,
   ExtrinsicStatus,
   IdentityId,
+  Link,
   Moment,
   SecurityToken,
   Ticker,
@@ -451,6 +452,42 @@ export class PolkadotMockFactory {
   }
 
   /**
+   * Create and return a query stub
+   *
+   * @param mod - name of the module
+   * @param query - name of the query function
+   * @param subQuery - representation of what will be assigned as a query function value
+   */
+  public createDeeperQueryStub<
+    ModuleName extends keyof Queries,
+    QueryName extends keyof Queries[ModuleName],
+    SubQuery extends unknown
+  >(
+    mod: ModuleName,
+    query: QueryName,
+    subQuery: SubQuery
+  ): Queries[ModuleName][QueryName] & SinonStub<ArgsType<Queries[ModuleName][QueryName]>> {
+    let runtimeModule = this.queryModule[mod];
+
+    const instance = this.apiInstance;
+
+    if (!runtimeModule) {
+      runtimeModule = {} as Queries[ModuleName];
+      this.queryModule[mod] = runtimeModule;
+    }
+
+    if (!runtimeModule[query]) {
+      runtimeModule[query] = subQuery as Queries[ModuleName][QueryName];
+      this.updateQuery();
+    }
+
+    const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] &
+      SinonStub<ArgsType<Queries[ModuleName][QueryName]>>;
+
+    return stub;
+  }
+
+  /**
    * Update the status of an existing mock transaction. Will throw an error if the transaction has already been resolved
    *
    * @param tx - transaction to update
@@ -728,6 +765,18 @@ export const createMockSecurityToken = (
     token,
     every(token, val => val.isEmpty)
   ) as SecurityToken;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockLink = (reg: { data: unknown } = { data: {} }): Link =>
+  createMockCodec(
+    {
+      link_data: reg.data,
+    },
+    false
+  ) as Link;
 /* eslint-enable @typescript-eslint/camelcase */
 
 /**
