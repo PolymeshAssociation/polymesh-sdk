@@ -88,6 +88,12 @@ describe('Polymesh Transaction class', () => {
 
       expect(transaction.status).toBe(TransactionStatus.Running);
 
+      mockFactory.updateTxStatus(tx, MockTxStatus.InBlock);
+
+      await delay(0);
+
+      expect(transaction.status).toBe(TransactionStatus.Running);
+
       mockFactory.updateTxStatus(tx, MockTxStatus.Succeeded);
 
       await delay(0);
