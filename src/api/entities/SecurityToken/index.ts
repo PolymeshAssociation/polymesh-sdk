@@ -25,6 +25,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     return typeof ticker === 'string';
   }
 
+  /**
+   * ticker of the Security Token
+   */
   public ticker: string;
 
   /**

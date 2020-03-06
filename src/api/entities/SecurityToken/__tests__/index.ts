@@ -21,7 +21,7 @@ describe('SecurityToken class', () => {
   });
 
   describe('constructor', () => {
-    test('should assign ticker instance', () => {
+    test('should assign ticker to instance', () => {
       const ticker = 'test';
       const context = polkadotMockFactory.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
