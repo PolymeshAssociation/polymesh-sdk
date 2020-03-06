@@ -1,7 +1,7 @@
 import { Entity } from '~/base';
 import { PolkadotMockFactory } from '~/testUtils/mocks';
 
-import { SecurityToken } from '../SecurityToken';
+import { SecurityToken } from '../';
 
 describe('SecurityToken class', () => {
   const polkadotMockFactory = new PolkadotMockFactory();
@@ -21,20 +21,20 @@ describe('SecurityToken class', () => {
   });
 
   describe('constructor', () => {
-    test('should assign symbol instance', () => {
-      const symbol = 'test';
+    test('should assign ticker instance', () => {
+      const ticker = 'test';
       const context = polkadotMockFactory.getContextInstance();
-      const securityToken = new SecurityToken({ symbol }, context);
+      const securityToken = new SecurityToken({ ticker }, context);
 
-      expect(securityToken.symbol).toBe(symbol);
+      expect(securityToken.ticker).toBe(ticker);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(SecurityToken.isUniqueIdentifiers({ symbol: 'someToken' })).toBe(true);
+      expect(SecurityToken.isUniqueIdentifiers({ ticker: 'someToken' })).toBe(true);
       expect(SecurityToken.isUniqueIdentifiers({})).toBe(false);
-      expect(SecurityToken.isUniqueIdentifiers({ symbol: 3 })).toBe(false);
+      expect(SecurityToken.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
     });
   });
 });

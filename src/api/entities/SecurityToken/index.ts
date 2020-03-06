@@ -6,9 +6,9 @@ import { Context } from '~/context';
  */
 export interface UniqueIdentifiers {
   /**
-   * symbol of the security token
+   * ticker of the security token
    */
-  symbol: string;
+  ticker: string;
 }
 
 /**
@@ -20,12 +20,12 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * Check if a value is of type [[UniqueIdentifiers]]
    */
   public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { symbol } = identifier as UniqueIdentifiers;
+    const { ticker } = identifier as UniqueIdentifiers;
 
-    return typeof symbol === 'string';
+    return typeof ticker === 'string';
   }
 
-  public symbol: string;
+  public ticker: string;
 
   /**
    * @hidden
@@ -33,8 +33,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { symbol } = identifiers;
+    const { ticker } = identifiers;
 
-    this.symbol = symbol;
+    this.ticker = ticker;
   }
 }
