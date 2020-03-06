@@ -173,6 +173,49 @@ describe('reserveTicker procedure', () => {
     );
   });
 
+  test('should throw an error if extendPeriod property is set to true and the ticker has already been launched', async () => {
+    const expiryDate = null;
+    mockTickerReservation.mock('details', {
+      ownerDid: 'someDid',
+      expiryDate,
+    });
+    const proc = mockProcedure.getMockInstance();
+    proc.context = mockContext;
+
+    return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
+      'Ticker has already been launched'
+    );
+  });
+
+  test('should throw an error if extendPeriod property is set to true and the ticker has already expired', async () => {
+    const expiryDate = new Date(2019, 1, 1);
+    mockTickerReservation.mock('details', {
+      ownerDid: 'someDid',
+      expiryDate,
+    });
+    const proc = mockProcedure.getMockInstance();
+    proc.context = mockContext;
+
+    return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
+      'Ticker has already expired'
+    );
+  });
+
+  test("should throw an error if extendPeriod property is set to true and the signing account doesn't have enough balance", () => {
+    const expiryDate = new Date(new Date().getTime() + 1000);
+    mockTickerReservation.mock('details', {
+      ownerDid: 'someDid',
+      expiryDate,
+    });
+    mockFactory.createQueryStub('asset', 'tickerRegistrationFee', createMockBalance(600000000));
+    const proc = mockProcedure.getMockInstance();
+    proc.context = mockContext;
+
+    return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
+      'Not enough POLY balance to pay for ticker period extension'
+    );
+  });
+
   test('should add a register ticker transaction to the queue', async () => {
     const proc = mockProcedure.getMockInstance();
     proc.context = mockContext;

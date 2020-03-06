@@ -10,6 +10,7 @@ import { balanceToBigNumber, findEventRecord, stringToTicker, tickerToString } f
 
 export interface ReserveTickerParams {
   ticker: string;
+  extendPeriod?: boolean;
 }
 
 /**
@@ -39,7 +40,7 @@ export async function prepareReserveTicker(
     },
     context,
   } = this;
-  const { ticker } = args;
+  const { ticker, extendPeriod = false } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
@@ -57,31 +58,47 @@ export async function prepareReserveTicker(
     reservation.details(),
   ]);
 
-  if (status === TickerReservationStatus.TokenCreated) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `A Security Token with ticker "${ticker} already exists`,
-    });
-  }
+  if (!extendPeriod) {
+    if (status === TickerReservationStatus.TokenCreated) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: `A Security Token with ticker "${ticker} already exists`,
+      });
+    }
 
-  if (status === TickerReservationStatus.Reserved) {
-    const isPermanent = expiryDate === null;
+    if (status === TickerReservationStatus.Reserved) {
+      const isPermanent = expiryDate === null;
 
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `Ticker "${ticker}" already reserved. The current reservation will ${
-        !isPermanent ? '' : 'not '
-      }expire${!isPermanent ? ` at ${expiryDate}` : ''}`,
-    });
-  }
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: `Ticker "${ticker}" already reserved. The current reservation will ${
+          !isPermanent ? '' : 'not '
+        }expire${!isPermanent ? ` at ${expiryDate}` : ''}`,
+      });
+    }
 
-  const maxTickerLength = rawMaxTickerLength.toNumber();
+    const maxTickerLength = rawMaxTickerLength.toNumber();
 
-  if (ticker.length > maxTickerLength) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `Ticker length cannot exceed ${maxTickerLength}`,
-    });
+    if (ticker.length > maxTickerLength) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: `Ticker length cannot exceed ${maxTickerLength}`,
+      });
+    }
+  } else {
+    if (expiryDate === null) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Ticker has already been launched',
+      });
+    }
+
+    if (expiryDate < new Date()) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Ticker has already expired',
+      });
+    }
   }
 
   const fee = balanceToBigNumber(rawFee);
@@ -89,7 +106,9 @@ export async function prepareReserveTicker(
   if (balance.lt(fee)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Not enough POLY balance to pay for ticker reservation',
+      message: `Not enough POLY balance to pay for ticker ${
+        extendPeriod ? 'period extension' : 'reservation'
+      }`,
     });
   }
 
