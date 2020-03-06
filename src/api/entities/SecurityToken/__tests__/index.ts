@@ -32,7 +32,7 @@ describe('SecurityToken class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(SecurityToken.isUniqueIdentifiers({ ticker: 'someToken' })).toBe(true);
+      expect(SecurityToken.isUniqueIdentifiers({ ticker: 'someTicker' })).toBe(true);
       expect(SecurityToken.isUniqueIdentifiers({})).toBe(false);
       expect(SecurityToken.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
     });
