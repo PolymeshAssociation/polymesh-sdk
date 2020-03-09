@@ -8,7 +8,14 @@ import { TickerReservation } from '~/api/entities';
 import { reserveTicker } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Polymesh } from '~/Polymesh';
-import { createMockLink, createMockOption, PolkadotMockFactory } from '~/testUtils/mocks';
+import {
+  createMockIdentityId,
+  createMockLink,
+  createMockOption,
+  createMockTickerRegistration,
+  createMockU64,
+  PolkadotMockFactory,
+} from '~/testUtils/mocks';
 
 describe('Polymesh Class', () => {
   const polkadotMockFactory = new PolkadotMockFactory();
@@ -193,20 +200,21 @@ describe('Polymesh Class', () => {
       const fakeTicker = 'TEST';
 
       polkadotMockFactory.initMocks({ mockContext: { withSeed: true } });
-      polkadotMockFactory.createDeeperQueryStub('identity', 'links', {
-        entries: sinon.stub().returns([
-          [
-            {},
-            createMockOption(
-              createMockLink({
-                data: {
-                  isTickerOwned: true,
-                  asTickerOwned: stringToU8a(fakeTicker),
-                },
-              })
-            ),
-          ],
-        ]),
+
+      polkadotMockFactory.createQueryStub('identity', 'links', {
+        entries: [
+          createMockOption(
+            createMockLink({
+              link: {
+                isTickerOwned: true,
+                asTickerOwned: stringToU8a(fakeTicker),
+              },
+              expiry: createMockOption(),
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_id: createMockU64(),
+            })
+          ),
+        ],
       });
 
       const polymesh = await Polymesh.connect({
@@ -222,23 +230,14 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getTickerReservation', () => {
-    test('should return an specific ticker reservation owned by the identity', async () => {
-      const fakeTicker = 'TEST';
+    test('should return a specific ticker reservation owned by the identity', async () => {
+      const ticker = 'TEST';
 
-      polkadotMockFactory.createDeeperQueryStub('identity', 'links', {
-        entries: sinon.stub().returns([
-          [
-            {},
-            createMockOption(
-              createMockLink({
-                data: {
-                  isTickerOwned: true,
-                  asTickerOwned: stringToU8a(fakeTicker),
-                },
-              })
-            ),
-          ],
-        ]),
+      polkadotMockFactory.createQueryStub('asset', 'tickers', {
+        returnValue: createMockTickerRegistration({
+          owner: createMockIdentityId('someDid'),
+          expiry: createMockOption(),
+        }),
       });
 
       const polymesh = await Polymesh.connect({
@@ -246,8 +245,28 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      const tickerReservation = await polymesh.getTickerReservation({ symbol: fakeTicker });
-      expect(tickerReservation.ticker).toBe(fakeTicker);
+      const tickerReservation = await polymesh.getTickerReservation({ ticker });
+      expect(tickerReservation.ticker).toBe(ticker);
+    });
+
+    test('should throw if ticker reservation does not exist', async () => {
+      const ticker = 'TEST';
+
+      polkadotMockFactory.createQueryStub('asset', 'tickers', {
+        returnValue: createMockTickerRegistration({
+          owner: createMockIdentityId(),
+          expiry: createMockOption(),
+        }),
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      return expect(polymesh.getTickerReservation({ ticker })).rejects.toThrow(
+        `There is no reservation for ${ticker} ticker`
+      );
     });
   });
 });

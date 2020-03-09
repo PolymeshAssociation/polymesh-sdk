@@ -138,6 +138,9 @@ export class Polymesh {
       } = this;
 
       const tickers = await links.entries({ identity: currentIdentity.did });
+      /*
+        NOTE: we have cast to Option<Link> to get access of link_data properties despite what the types say.
+      */
       const tickerReservations = tickers
         .filter(([, data]) => ((data as unknown) as Option<Link>).unwrap().link_data.isTickerOwned)
         .map(([, data]) => {
@@ -158,17 +161,30 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve a Ticker by symbol
+   * Retrieve a Ticker Reservation
    *
-   * @param symbol - Security Token symbol
+   * @param ticker - Security Token ticker
    */
-  public async getTickerReservation(args: { symbol: string }): Promise<TickerReservation> {
-    const { symbol } = args;
-    const tickerReservations = await this.getTickerReservations();
-    const ticker = tickerReservations.filter(
-      tickerReservation => tickerReservation.ticker === symbol
-    );
+  public async getTickerReservation(args: { ticker: string }): Promise<TickerReservation> {
+    const { ticker } = args;
+    const {
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      context,
+    } = this;
 
-    return ticker[0];
+    const tickerReservation = await asset.tickers(ticker);
+
+    if (!tickerReservation.owner.isEmpty) {
+      return new TickerReservation({ ticker }, context);
+    }
+
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: `There is no reservation for ${ticker} ticker`,
+    });
   }
 }

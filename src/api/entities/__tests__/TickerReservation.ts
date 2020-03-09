@@ -59,16 +59,12 @@ describe('TickerReservation class', () => {
     let tokensStub: sinon.SinonStub<[string | Uint8Array | Ticker, Callback<Codec | Codec[]>]>;
 
     beforeEach(() => {
-      tickersStub = polkadotMockFactory.createQueryStub(
-        'asset',
-        'tickers',
-        createMockTickerRegistration()
-      );
-      tokensStub = polkadotMockFactory.createQueryStub(
-        'asset',
-        'tokens',
-        createMockSecurityToken()
-      );
+      tickersStub = polkadotMockFactory.createQueryStub('asset', 'tickers', {
+        returnValue: createMockTickerRegistration(),
+      });
+      tokensStub = polkadotMockFactory.createQueryStub('asset', 'tokens', {
+        returnValue: createMockSecurityToken(),
+      });
     });
 
     test('should return details for a free ticker', async () => {

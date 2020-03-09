@@ -73,14 +73,16 @@ describe('reserveTicker procedure', () => {
       status: TickerReservationStatus.Free,
     });
 
-    mockFactory.createQueryStub(
-      'asset',
-      'tickerRegistrationFee',
-      createMockBalance(fee * Math.pow(10, 6))
-    );
-    mockFactory.createQueryStub('asset', 'tickers', createMockTickerRegistration());
-    mockFactory.createQueryStub('asset', 'tokens', createMockSecurityToken());
-    mockFactory.createQueryStub('asset', 'tickerConfig', createMockTickerRegistrationConfig());
+    mockFactory.createQueryStub('asset', 'tickerRegistrationFee', {
+      returnValue: createMockBalance(fee * Math.pow(10, 6)),
+    });
+    mockFactory.createQueryStub('asset', 'tickers', {
+      returnValue: createMockTickerRegistration(),
+    });
+    mockFactory.createQueryStub('asset', 'tokens', { returnValue: createMockSecurityToken() });
+    mockFactory.createQueryStub('asset', 'tickerConfig', {
+      returnValue: createMockTickerRegistrationConfig(),
+    });
 
     transaction = mockFactory.createTxStub('asset', 'registerTicker');
 
@@ -145,16 +147,14 @@ describe('reserveTicker procedure', () => {
 
   test('should throw an error if the ticker length exceeds the maximum', () => {
     const maxTickerLength = 3;
-    mockFactory.createQueryStub(
-      'asset',
-      'tickerConfig',
-      createMockTickerRegistrationConfig({
+    mockFactory.createQueryStub('asset', 'tickerConfig', {
+      returnValue: createMockTickerRegistrationConfig({
         /* eslint-disable @typescript-eslint/camelcase */
         max_ticker_length: createMockU8(maxTickerLength),
         registration_length: createMockOption(createMockMoment(10000)),
         /* eslint-enable @typescript-eslint/camelcase */
-      })
-    );
+      }),
+    });
     const proc = mockProcedure.getMockInstance();
     proc.context = mockContext;
 
@@ -164,7 +164,9 @@ describe('reserveTicker procedure', () => {
   });
 
   test("should throw an error if the signing account doesn't have enough balance", () => {
-    mockFactory.createQueryStub('asset', 'tickerRegistrationFee', createMockBalance(600000000));
+    mockFactory.createQueryStub('asset', 'tickerRegistrationFee', {
+      returnValue: createMockBalance(600000000),
+    });
     const proc = mockProcedure.getMockInstance();
     proc.context = mockContext;
 

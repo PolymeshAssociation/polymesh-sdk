@@ -419,12 +419,14 @@ export class PolkadotMockFactory {
    */
   public createQueryStub<
     ModuleName extends keyof Queries,
-    QueryName extends keyof Queries[ModuleName],
-    ReturnValue extends unknown
+    QueryName extends keyof Queries[ModuleName]
   >(
     mod: ModuleName,
     query: QueryName,
-    returnValue?: ReturnValue
+    opts?: {
+      returnValue?: unknown;
+      entries?: unknown[];
+    }
   ): Queries[ModuleName][QueryName] & SinonStub<ArgsType<Queries[ModuleName][QueryName]>> {
     let runtimeModule = this.queryModule[mod];
 
@@ -434,7 +436,13 @@ export class PolkadotMockFactory {
     }
 
     if (!runtimeModule[query]) {
-      runtimeModule[query] = (sinon.stub() as unknown) as Queries[ModuleName][QueryName];
+      if (opts && opts.entries) {
+        runtimeModule[query] = ({
+          entries: sinon.stub().resolves(opts.entries.map(entry => ['someKey', entry])),
+        } as unknown) as Queries[ModuleName][QueryName];
+      } else {
+        runtimeModule[query] = (sinon.stub() as unknown) as Queries[ModuleName][QueryName];
+      }
 
       this.updateQuery();
     }
@@ -444,45 +452,9 @@ export class PolkadotMockFactory {
     const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] &
       SinonStub<ArgsType<Queries[ModuleName][QueryName]>>;
 
-    if (returnValue) {
-      stub.returns(returnValue);
+    if (opts && opts.returnValue) {
+      stub.returns(opts.returnValue);
     }
-
-    return stub;
-  }
-
-  /**
-   * Create and return a query stub
-   *
-   * @param mod - name of the module
-   * @param query - name of the query function
-   * @param subQuery - representation of what will be assigned as a query function value
-   */
-  public createDeeperQueryStub<
-    ModuleName extends keyof Queries,
-    QueryName extends keyof Queries[ModuleName],
-    SubQuery extends unknown
-  >(
-    mod: ModuleName,
-    query: QueryName,
-    subQuery: SubQuery
-  ): Queries[ModuleName][QueryName] & SinonStub<ArgsType<Queries[ModuleName][QueryName]>> {
-    let runtimeModule = this.queryModule[mod];
-
-    const instance = this.apiInstance;
-
-    if (!runtimeModule) {
-      runtimeModule = {} as Queries[ModuleName];
-      this.queryModule[mod] = runtimeModule;
-    }
-
-    if (!runtimeModule[query]) {
-      runtimeModule[query] = subQuery as Queries[ModuleName][QueryName];
-      this.updateQuery();
-    }
-
-    const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] &
-      SinonStub<ArgsType<Queries[ModuleName][QueryName]>>;
 
     return stub;
   }
@@ -770,10 +742,18 @@ export const createMockSecurityToken = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockLink = (reg: { data: unknown } = { data: {} }): Link =>
+export const createMockLink = (
+  reg: { link: unknown; expiry: Option<Moment>; link_id: u64 } = {
+    link: {},
+    expiry: createMockOption(),
+    link_id: createMockU64(),
+  }
+): Link =>
   createMockCodec(
     {
-      link_data: reg.data,
+      link_data: reg.link,
+      expiry: reg.expiry,
+      link_id: reg.link_id,
     },
     false
   ) as Link;
