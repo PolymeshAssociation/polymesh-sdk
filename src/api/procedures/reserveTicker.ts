@@ -1,6 +1,5 @@
-import { TxTags } from '@polymathnetwork/polkadot/api/types';
-import { Ticker } from '@polymathnetwork/polkadot/types/interfaces';
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { ISubmittableResult } from '@polkadot/types/types';
+import { Ticker } from 'polymesh-types/types';
 
 import { TickerReservation } from '~/api/entities';
 import { PolymeshError, PostTransactionValue, Procedure } from '~/base';
@@ -96,7 +95,6 @@ export async function prepareReserveTicker(
   const [newReservation] = this.addTransaction(
     tx.asset.registerTicker,
     {
-      tag: TxTags.asset.RegisterTicker,
       fee,
       resolvers: [createTickerReservationResolver(context)],
     },

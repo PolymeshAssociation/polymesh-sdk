@@ -1,27 +1,30 @@
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { noop } from 'lodash';
 import sinon from 'sinon';
 
 import { PostTransactionValue } from '~/base';
-import { PolymeshTransactionMockFactory } from '~/testUtils/mocks';
+import { polymeshTransactionMockUtils } from '~/testUtils/mocks';
 import { TransactionQueueStatus, TransactionStatus } from '~/types';
 import { TransactionSpec } from '~/types/internal';
 import { delay } from '~/utils';
 
 import { TransactionQueue } from '../TransactionQueue';
 
+jest.mock(
+  '~/base/PolymeshTransaction',
+  require('~/testUtils/mocks/polymeshTransaction').mockPolymeshTransactionModule(
+    '~/base/PolymeshTransaction'
+  )
+);
+
 describe('Transaction Queue class', () => {
-  const transactionMockFactory = new PolymeshTransactionMockFactory();
-
-  transactionMockFactory.initMocks();
-
-  afterEach(() => {
-    transactionMockFactory.reset();
+  beforeAll(() => {
+    polymeshTransactionMockUtils.initMocks();
   });
 
-  afterAll(() => {
-    transactionMockFactory.cleanup();
+  afterEach(() => {
+    polymeshTransactionMockUtils.reset();
   });
 
   describe('constructor', () => {
@@ -33,7 +36,7 @@ describe('Transaction Queue class', () => {
           autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
-      const transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
@@ -61,7 +64,7 @@ describe('Transaction Queue class', () => {
         },
       ];
 
-      const transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const fees = new BigNumber(3);
       const returnValue = 3;
@@ -78,7 +81,7 @@ describe('Transaction Queue class', () => {
         sinon.assert.calledOnce(transaction.run);
       });
 
-      transactionMockFactory.setupNextTransactions(transactionSpecs);
+      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const returnPostTransactionValue = new PostTransactionValue(() =>
         Promise.resolve(returnValue)
@@ -104,7 +107,7 @@ describe('Transaction Queue class', () => {
           autoresolve: false as false,
         },
       ];
-      let transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
+      let transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const fees = new BigNumber(3);
       const returnValue = 3;
       let queue = new TransactionQueue(
@@ -120,13 +123,16 @@ describe('Transaction Queue class', () => {
 
       expect(queue.status).toBe(TransactionQueueStatus.Running);
 
-      transactionMockFactory.updateTransactionStatus(transactions[0], TransactionStatus.Succeeded);
+      polymeshTransactionMockUtils.updateTransactionStatus(
+        transactions[0],
+        TransactionStatus.Succeeded
+      );
 
       await delay(0);
 
       expect(queue.status).toBe(TransactionQueueStatus.Succeeded);
 
-      transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
+      transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       // Idle -> Running -> Failed
       queue = new TransactionQueue(
@@ -137,7 +143,10 @@ describe('Transaction Queue class', () => {
 
       queue.run().catch(noop);
 
-      transactionMockFactory.updateTransactionStatus(transactions[0], TransactionStatus.Failed);
+      polymeshTransactionMockUtils.updateTransactionStatus(
+        transactions[0],
+        TransactionStatus.Failed
+      );
       await delay(0);
 
       expect(queue.status).toBe(TransactionQueueStatus.Failed);
@@ -157,7 +166,7 @@ describe('Transaction Queue class', () => {
         },
       ];
 
-      transactionMockFactory.setupNextTransactions(transactionSpecs);
+      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const fees = new BigNumber(3);
       const returnValue = 3;
@@ -186,7 +195,7 @@ describe('Transaction Queue class', () => {
         },
       ];
 
-      transactionMockFactory.setupNextTransactions(transactionSpecs);
+      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const fees = new BigNumber(3);
       const returnValue = 3;
@@ -215,7 +224,7 @@ describe('Transaction Queue class', () => {
         },
       ];
 
-      transactionMockFactory.setupNextTransactions(transactionSpecs);
+      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const fees = new BigNumber(3);
       const returnValue = 3;
@@ -240,7 +249,7 @@ describe('Transaction Queue class', () => {
           autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
-      transactionMockFactory.setupNextTransactions(transactionSpecs);
+      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
@@ -266,7 +275,7 @@ describe('Transaction Queue class', () => {
           autoresolve: false as false,
         },
       ];
-      const transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
@@ -284,7 +293,10 @@ describe('Transaction Queue class', () => {
 
       unsub();
 
-      transactionMockFactory.updateTransactionStatus(transactions[0], TransactionStatus.Succeeded);
+      polymeshTransactionMockUtils.updateTransactionStatus(
+        transactions[0],
+        TransactionStatus.Succeeded
+      );
 
       sinon.assert.calledWith(listenerStub.firstCall, TransactionQueueStatus.Running);
       sinon.assert.callCount(listenerStub, 1);
@@ -300,7 +312,7 @@ describe('Transaction Queue class', () => {
           autoresolve: false as false,
         },
       ];
-      const transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
@@ -316,8 +328,14 @@ describe('Transaction Queue class', () => {
 
       const runPromise = queue.run();
 
-      transactionMockFactory.updateTransactionStatus(transactions[0], TransactionStatus.Running);
-      transactionMockFactory.updateTransactionStatus(transactions[0], TransactionStatus.Succeeded);
+      polymeshTransactionMockUtils.updateTransactionStatus(
+        transactions[0],
+        TransactionStatus.Running
+      );
+      polymeshTransactionMockUtils.updateTransactionStatus(
+        transactions[0],
+        TransactionStatus.Succeeded
+      );
 
       await runPromise;
 
@@ -333,7 +351,7 @@ describe('Transaction Queue class', () => {
           autoresolve: false as false,
         },
       ];
-      const transactions = transactionMockFactory.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
@@ -349,12 +367,18 @@ describe('Transaction Queue class', () => {
 
       const runPromise = queue.run();
 
-      transactionMockFactory.updateTransactionStatus(transactions[0], TransactionStatus.Running);
+      polymeshTransactionMockUtils.updateTransactionStatus(
+        transactions[0],
+        TransactionStatus.Running
+      );
       await delay(0);
 
       unsub();
 
-      transactionMockFactory.updateTransactionStatus(transactions[0], TransactionStatus.Succeeded);
+      polymeshTransactionMockUtils.updateTransactionStatus(
+        transactions[0],
+        TransactionStatus.Succeeded
+      );
 
       await runPromise;
 

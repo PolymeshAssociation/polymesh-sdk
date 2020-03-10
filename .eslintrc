@@ -31,5 +31,6 @@
     "sourceType": "module",
     "project": "./tsconfig.json"
   },
-  "extends": ["standard", "semistandard", "plugin:@typescript-eslint/recommended", "prettier"]
+  "extends": ["standard", "semistandard", "plugin:@typescript-eslint/recommended", "prettier"],
+  "ignorePatterns": ["src/polkadot/"]
 }

@@ -1,14 +1,9 @@
-import { createType } from '@polymathnetwork/polkadot/types/create/createType';
-import {
-  Balance,
-  EventRecord,
-  IdentityId,
-  Moment,
-  Ticker,
-} from '@polymathnetwork/polkadot/types/interfaces';
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { createType } from '@polkadot/types/create/createType';
+import { Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';

@@ -44,7 +44,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve the POLY balance of this particular Identity
    */
-  public getIdentityBalance = async (): Promise<BigNumber> => {
+  public getPolyBalance = async (): Promise<BigNumber> => {
     const { context, did } = this;
     const balance = await context.polymeshApi.query.balances.identityBalance(did);
 

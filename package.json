@@ -8,6 +8,11 @@
   "license": "ISC",
   "scripts": {
     "start": "cross-env webpack-dev-server --config=webpack.config.dev.js",
+    "generate:polkadot-types": "yarn fetch-schema && yarn generate:defs && yarn generate:meta && yarn generate:tags",
+    "fetch-schema": "node scripts/fetchSchema.js",
+    "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package polymesh-types --input ./src/polkadot",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://pme.polymath.network --output ./src/polkadot --strict",
+    "generate:tags": "node scripts/generateTxTags.js",
     "test": "jest --coverage",
     "build:ts": "ttsc -b",
     "build:docs": "typedoc src",
@@ -20,11 +25,13 @@
   "devDependencies": {
     "@commitlint/cli": "^7.6.1",
     "@commitlint/config-conventional": "^7.6.0",
+    "@polkadot/typegen": "1.6.0-beta.10",
     "@types/jest": "^23.3.10",
     "@types/json-stable-stringify": "^1.0.32",
     "@types/lodash": "^4.14.149",
     "@types/node": "^13.1.8",
     "@types/sinon": "^7.5.1",
+    "@types/websocket": "^1.0.0",
     "@typescript-eslint/eslint-plugin": "^2.17.0",
     "@typescript-eslint/parser": "^2.17.0",
     "@zerollup/ts-transform-paths": "^1.7.11",
@@ -51,16 +58,16 @@
     "semantic-release": "^16.0.3",
     "sinon": "^8.1.1",
     "ts-jest": "^25.2.1",
-    "ts-mock-imports": "^1.2.6",
     "tsconfig-paths": "^3.9.0",
     "tsconfig-paths-webpack-plugin": "^3.2.0",
     "ttypescript": "^1.5.10",
     "typedoc": "^0.16.8",
-    "typescript": "3.7.5",
+    "typescript": "3.8.2",
     "webpack": "^4.41.6",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.10.3",
-    "webpack-merge": "^4.2.2"
+    "webpack-merge": "^4.2.2",
+    "websocket": "^1.0.31"
   },
   "config": {
     "commitizen": {
@@ -71,7 +78,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@polymathnetwork/polkadot": "0.101.0-beta.18",
+    "@polkadot/api": "1.6.0-beta.10",
     "@types/bignumber.js": "^5.0.0",
     "bignumber.js": "^9.0.0",
     "json-stable-stringify": "^1.0.1",

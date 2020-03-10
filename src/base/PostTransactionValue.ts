@@ -1,4 +1,4 @@
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { ISubmittableResult } from '@polkadot/types/types';
 
 import { PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
@@ -10,6 +10,8 @@ import { ErrorCode } from '~/types';
  */
 export class PostTransactionValue<Value> {
   private _value?: Value;
+
+  private resolved = false;
 
   private resolver: (receipt: ISubmittableResult) => Promise<Value> | Value;
 
@@ -23,7 +25,7 @@ export class PostTransactionValue<Value> {
    */
   public async run(receipt: ISubmittableResult): Promise<void> {
     const result = await this.resolver(receipt);
-
+    this.resolved = true;
     this._value = result;
   }
 
@@ -33,10 +35,9 @@ export class PostTransactionValue<Value> {
    * @throws if the value is being accessed before the resolver function has run (should NEVER happen)
    */
   get value(): Value {
-    const { _value } = this;
+    const { _value, resolved } = this;
 
-    /* istanbul ignore if: this should never happen unless we're doing something horribly wrong */
-    if (!_value) {
+    if (!resolved) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message:
@@ -44,6 +45,7 @@ export class PostTransactionValue<Value> {
       });
     }
 
-    return _value;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return _value!;
   }
 }
