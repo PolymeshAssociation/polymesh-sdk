@@ -664,6 +664,7 @@ export const createMockBool = (value?: boolean): bool =>
     {
       isTrue: () => value,
       isFalse: () => !value,
+      valueOf: () => value,
     },
     !value
   ) as bool;
