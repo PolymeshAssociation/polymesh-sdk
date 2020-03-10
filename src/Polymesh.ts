@@ -121,43 +121,50 @@ export class Polymesh {
    * Retrieve all the ticker reservations currently owned by an identity. This includes
    * Security Tokens that have already been launched
    */
-  public async getTickerReservations(): Promise<TickerReservation[]> {
-    const { context } = this;
-    const { currentIdentity } = context;
-
-    if (currentIdentity) {
-      const {
-        context: {
-          polymeshApi: {
-            query: {
-              identity: { links },
-            },
+  public async getTickerReservations(did?: string): Promise<TickerReservation[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            identity: { links },
           },
         },
-        context,
-      } = this;
+      },
+      context,
+    } = this;
 
-      const tickers = await links.entries({ identity: currentIdentity.did });
-      /*
-        NOTE: we have cast to Option<Link> to get access of link_data properties despite what the types say.
-      */
-      const tickerReservations = tickers
-        .filter(([, data]) => ((data as unknown) as Option<Link>).unwrap().link_data.isTickerOwned)
-        .map(([, data]) => {
-          const ticker = ((data as unknown) as Option<Link>).unwrap().link_data.asTickerOwned;
-          return new TickerReservation(
-            // eslint-disable-next-line no-control-regex
-            { ticker: u8aToString(ticker).replace(/\u0000/g, '') },
-            context
-          );
-        });
-      return tickerReservations;
+    const { currentIdentity } = context;
+
+    let identity: string;
+
+    if (did) {
+      identity = did;
+    } else if (currentIdentity) {
+      identity = currentIdentity.did;
     } else {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'The current account does not have an associated identity',
       });
     }
+
+    const tickers = await links.entries({ identity });
+
+    /*
+      NOTE: we have cast to Option<Link> to get access of link_data properties despite what the types say.
+    */
+    const tickerReservations = tickers
+      .filter(([, data]) => ((data as unknown) as Option<Link>).unwrap().link_data.isTickerOwned)
+      .map(([, data]) => {
+        const ticker = ((data as unknown) as Option<Link>).unwrap().link_data.asTickerOwned;
+        return new TickerReservation(
+          // eslint-disable-next-line no-control-regex
+          { ticker: u8aToString(ticker).replace(/\u0000/g, '') },
+          context
+        );
+      });
+
+    return tickerReservations;
   }
 
   /**

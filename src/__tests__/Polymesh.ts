@@ -1,5 +1,6 @@
 import { stringToU8a } from '@polkadot/util';
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
+import { Ticker } from '@polymathnetwork/polkadot/types/interfaces';
 import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 import { ImportMock, MockManager } from 'ts-mock-imports';
@@ -11,7 +12,9 @@ import { Polymesh } from '~/Polymesh';
 import {
   createMockIdentityId,
   createMockLink,
+  createMockLinkData,
   createMockOption,
+  createMockTicker,
   createMockTickerRegistration,
   createMockU64,
   PolkadotMockFactory,
@@ -187,6 +190,8 @@ describe('Polymesh Class', () => {
     test('should throw if identity was not instantiated', async () => {
       polkadotMockFactory.initMocks({ mockContext: { withSeed: false } });
 
+      polkadotMockFactory.createQueryStub('identity', 'links');
+
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
       });
@@ -194,6 +199,38 @@ describe('Polymesh Class', () => {
       return expect(polymesh.getTickerReservations()).rejects.toThrow(
         'The current account does not have an associated identity'
       );
+    });
+
+    test('should return a list of ticker reservations if did parameter is set', async () => {
+      const fakeTicker = 'TEST';
+
+      polkadotMockFactory.initMocks({ mockContext: { withSeed: true } });
+
+      polkadotMockFactory.createQueryStub('identity', 'links', {
+        entries: [
+          createMockOption(
+            createMockLink({
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_data: createMockLinkData({
+                tickerOwned: (stringToU8a(fakeTicker) as unknown) as Ticker,
+              }),
+              expiry: createMockOption(),
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_id: createMockU64(),
+            })
+          ),
+        ],
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const tickerReservations = await polymesh.getTickerReservations('did');
+
+      expect(tickerReservations).toHaveLength(1);
+      expect(tickerReservations[0].ticker).toBe(fakeTicker);
     });
 
     test('should return a list of ticker reservations owned by the identity', async () => {
@@ -205,10 +242,10 @@ describe('Polymesh Class', () => {
         entries: [
           createMockOption(
             createMockLink({
-              link: {
-                isTickerOwned: true,
-                asTickerOwned: stringToU8a(fakeTicker),
-              },
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_data: createMockLinkData({
+                tickerOwned: (stringToU8a(fakeTicker) as unknown) as Ticker,
+              }),
               expiry: createMockOption(),
               // eslint-disable-next-line @typescript-eslint/camelcase
               link_id: createMockU64(),
