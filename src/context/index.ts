@@ -1,8 +1,8 @@
+import { ApiPromise, Keyring } from '@polkadot/api';
+import { IKeyringPair } from '@polkadot/types/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
-import { ApiPromise, Keyring } from '@polymathnetwork/polkadot/api';
-import { IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
-import { IKeyringPair } from '@polymathnetwork/polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';

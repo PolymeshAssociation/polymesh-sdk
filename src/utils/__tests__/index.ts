@@ -1,12 +1,12 @@
-import * as createTypeModule from '@polymathnetwork/polkadot/types/create/createType';
-import { Balance, IdentityId, Moment, Ticker } from '@polymathnetwork/polkadot/types/interfaces';
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import * as createTypeModule from '@polkadot/types/create/createType';
+import { Balance, Moment } from '@polkadot/types/interfaces';
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
-import { ImportMock } from 'ts-mock-imports';
 
 import { PostTransactionValue } from '~/base';
-import { PolkadotMockFactory } from '~/testUtils/mocks';
+import { polkadotMockUtils } from '~/testUtils/mocks';
 
 import {
   balanceToBigNumber,
@@ -23,6 +23,12 @@ import {
   unserialize,
   unwrapValues,
 } from '../';
+
+jest.mock(
+  '@polkadot/api',
+  require('~/testUtils/mocks/polkadot').mockPolkadotModule('@polkadot/api')
+);
+jest.mock('~/context', require('~/testUtils/mocks/polkadot').mockContextModule('~/context'));
 
 describe('delay', () => {
   jest.useFakeTimers();
@@ -80,28 +86,29 @@ describe('serialize and unserialize', () => {
 });
 
 describe('stringToIdentityId and identityIdToString', () => {
-  const polkadotMockFactory = new PolkadotMockFactory();
-  polkadotMockFactory.initMocks({ mockContext: true });
-
   let mockCreateType: SinonStub;
 
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
   beforeEach(() => {
-    mockCreateType = ImportMock.mockFunction(createTypeModule, 'createType', 'type');
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
   });
 
   afterEach(() => {
-    polkadotMockFactory.reset();
+    polkadotMockUtils.reset();
     mockCreateType.restore();
   });
 
   afterAll(() => {
-    polkadotMockFactory.cleanup();
+    polkadotMockUtils.cleanup();
   });
 
   test('stringToIdentityId should convert a did string into an IdentityId', () => {
     const identity = 'IdentityObject';
     const fakeResult = ('type' as unknown) as IdentityId;
-    const context = polkadotMockFactory.getContextInstance();
+    const context = polkadotMockUtils.getContextInstance();
 
     mockCreateType
       .withArgs(context.polymeshApi.registry, 'IdentityId', identity)
@@ -125,28 +132,29 @@ describe('stringToIdentityId and identityIdToString', () => {
 });
 
 describe('numberToBalance and balanceToBigNumber', () => {
-  const polkadotMockFactory = new PolkadotMockFactory();
-  polkadotMockFactory.initMocks({ mockContext: true });
-
   let mockCreateType: SinonStub;
 
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
   beforeEach(() => {
-    mockCreateType = ImportMock.mockFunction(createTypeModule, 'createType', 'type');
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
   });
 
   afterEach(() => {
-    polkadotMockFactory.reset();
+    polkadotMockUtils.reset();
     mockCreateType.restore();
   });
 
   afterAll(() => {
-    polkadotMockFactory.cleanup();
+    polkadotMockUtils.cleanup();
   });
 
   test('numberToBalance should convert a number to a polkadot Balance object', () => {
     const value = new BigNumber(100);
     const fakeResult = ('100' as unknown) as Balance;
-    const context = polkadotMockFactory.getContextInstance();
+    const context = polkadotMockUtils.getContextInstance();
 
     mockCreateType
       .withArgs(context.polymeshApi.registry, 'Balance', value.pow(Math.pow(10, 6)))
@@ -169,28 +177,29 @@ describe('numberToBalance and balanceToBigNumber', () => {
 });
 
 describe('stringToTicker and tickerToString', () => {
-  const polkadotMockFactory = new PolkadotMockFactory();
-  polkadotMockFactory.initMocks({ mockContext: true });
-
   let mockCreateType: SinonStub;
 
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
   beforeEach(() => {
-    mockCreateType = ImportMock.mockFunction(createTypeModule, 'createType', 'type');
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
   });
 
   afterEach(() => {
-    polkadotMockFactory.reset();
+    polkadotMockUtils.reset();
     mockCreateType.restore();
   });
 
   afterAll(() => {
-    polkadotMockFactory.cleanup();
+    polkadotMockUtils.cleanup();
   });
 
   test('stringToTicker should convert a string to a polkadot Ticker object', () => {
     const value = 'someTicker';
     const fakeResult = ('someTicker' as unknown) as Ticker;
-    const context = polkadotMockFactory.getContextInstance();
+    const context = polkadotMockUtils.getContextInstance();
 
     mockCreateType.withArgs(context.polymeshApi.registry, 'Ticker', value).returns(fakeResult);
 
@@ -211,28 +220,29 @@ describe('stringToTicker and tickerToString', () => {
 });
 
 describe('dateToMoment and momentToDate', () => {
-  const polkadotMockFactory = new PolkadotMockFactory();
-  polkadotMockFactory.initMocks({ mockContext: true });
-
   let mockCreateType: SinonStub;
 
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
   beforeEach(() => {
-    mockCreateType = ImportMock.mockFunction(createTypeModule, 'createType', 'type');
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
   });
 
   afterEach(() => {
-    polkadotMockFactory.reset();
+    polkadotMockUtils.reset();
     mockCreateType.restore();
   });
 
   afterAll(() => {
-    polkadotMockFactory.cleanup();
+    polkadotMockUtils.cleanup();
   });
 
   test('dateToMoment should convert a Date to a polkadot Moment object', () => {
     const value = new Date();
     const fakeResult = (10000 as unknown) as Moment;
-    const context = polkadotMockFactory.getContextInstance();
+    const context = polkadotMockUtils.getContextInstance();
 
     mockCreateType
       .withArgs(context.polymeshApi.registry, 'Moment', Math.round(value.getTime()))

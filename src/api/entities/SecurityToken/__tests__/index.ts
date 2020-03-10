@@ -1,19 +1,19 @@
 import { Entity } from '~/base';
-import { PolkadotMockFactory } from '~/testUtils/mocks';
+import { polkadotMockUtils } from '~/testUtils/mocks';
 
 import { SecurityToken } from '../';
 
 describe('SecurityToken class', () => {
-  const polkadotMockFactory = new PolkadotMockFactory();
-
-  polkadotMockFactory.initMocks({ mockContext: true });
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
 
   afterEach(() => {
-    polkadotMockFactory.reset();
+    polkadotMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockFactory.cleanup();
+    polkadotMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -23,7 +23,7 @@ describe('SecurityToken class', () => {
   describe('constructor', () => {
     test('should assign ticker to instance', () => {
       const ticker = 'test';
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
       expect(securityToken.ticker).toBe(ticker);

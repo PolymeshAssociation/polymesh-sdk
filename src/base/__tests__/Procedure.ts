@@ -1,10 +1,9 @@
-import { TxTags } from '@polymathnetwork/polkadot/api/types';
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import * as baseModule from '~/base';
-import { PolkadotMockFactory } from '~/testUtils/mocks';
+import { polkadotMockUtils } from '~/testUtils/mocks';
 import { Role } from '~/types';
 import { MaybePostTransactionValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -12,11 +11,12 @@ import { tuple } from '~/types/utils';
 import { Procedure } from '../Procedure';
 
 describe('Procedure class', () => {
-  const polkadotMockFactory = new PolkadotMockFactory();
-  polkadotMockFactory.initMocks({ mockContext: true });
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
 
   afterEach(() => {
-    polkadotMockFactory.reset();
+    polkadotMockUtils.reset();
   });
 
   describe('method: prepare', () => {
@@ -27,8 +27,8 @@ describe('Procedure class', () => {
         ticker,
         signingItems,
       };
-      const tx1 = polkadotMockFactory.createTxStub('asset', 'registerTicker');
-      const tx2 = polkadotMockFactory.createTxStub('identity', 'registerDid');
+      const tx1 = polkadotMockUtils.createTxStub('asset', 'registerTicker');
+      const tx2 = polkadotMockUtils.createTxStub('identity', 'registerDid');
       const fee1 = new BigNumber(20);
       const fee2 = new BigNumber(30);
 
@@ -43,7 +43,6 @@ describe('Procedure class', () => {
         this.addTransaction(
           tx1,
           {
-            tag: TxTags.asset.RegisterTicker,
             fee: fee1,
           },
           args.ticker
@@ -52,7 +51,6 @@ describe('Procedure class', () => {
         this.addTransaction(
           tx2,
           {
-            tag: TxTags.asset.CreateToken,
             fee: fee2,
           },
           args.signingItems
@@ -62,7 +60,7 @@ describe('Procedure class', () => {
       };
 
       const proc1 = new Procedure(func1);
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
 
       const constructorSpy = sinon.spy(baseModule, 'TransactionQueue');
 
@@ -116,7 +114,7 @@ describe('Procedure class', () => {
       };
 
       const proc = new Procedure(func);
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
 
       return expect(proc.prepare(procArgs, context)).rejects.toThrow(errorMsg);
     });
@@ -133,7 +131,7 @@ describe('Procedure class', () => {
       };
 
       let proc = new Procedure(func, [Role.Owner]);
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
 
       await expect(proc.prepare(procArgs, context)).rejects.toThrow(
         'Current account is not authorized to execute this procedure'
@@ -152,16 +150,15 @@ describe('Procedure class', () => {
       const ticker = 'MY_TOKEN';
       const resolvedNum = 1;
       const resolvedStr = 'something';
-      const tx = polkadotMockFactory.createTxStub('asset', 'registerTicker');
+      const tx = polkadotMockUtils.createTxStub('asset', 'registerTicker');
 
       const proc = new Procedure(async () => undefined);
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       proc.context = context;
 
       const values = proc.addTransaction(
         tx,
         {
-          tag: TxTags.asset.RegisterTicker,
           resolvers: tuple(
             async (): Promise<number> => resolvedNum,
             async (): Promise<string> => resolvedStr
@@ -184,7 +181,7 @@ describe('Procedure class', () => {
 
       const proc1 = new Procedure(async () => returnValue);
       const proc2 = new Procedure(async () => undefined);
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       proc2.context = context;
       const result = await proc2.addProcedure(proc1);
 
@@ -198,7 +195,7 @@ describe('Procedure class', () => {
         throw new Error(errorMsg);
       });
       const proc2 = new Procedure(async () => undefined);
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       proc2.context = context;
       const result = proc2.addProcedure(proc1);
 

@@ -1,8 +1,10 @@
+import { Identity } from '~/api/entities/Identity';
+
 export interface TickerReservationDetails {
   /**
    * identity ID of the owner of the ticker, null if it hasn't been reserved
    */
-  ownerDid: string | null;
+  owner: Identity | null;
   /**
    * date at which the reservation expires, null if it never expires (permanent reservation or token already launched)
    */

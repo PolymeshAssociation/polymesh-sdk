@@ -4,9 +4,8 @@ import {
   QueryableStorage,
   SubmittableExtrinsic,
   SubmittableExtrinsics,
-  TxTag,
-} from '@polymathnetwork/polkadot/api/types';
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+} from '@polkadot/api/types';
+import { ISubmittableResult } from '@polkadot/types/types';
 
 import { PostTransactionValue } from '~/base';
 
@@ -80,10 +79,6 @@ export interface TransactionSpec<
    * wrapped values that will be returned after this transaction is run
    */
   postTransactionValues?: PostTransactionValueArray<Values>;
-  /**
-   * type of transaction for display and comparison
-   */
-  tag: TxTag;
   /**
    * account that will sign the transaction
    */

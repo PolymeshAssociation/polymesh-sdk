@@ -1,9 +1,11 @@
-import { AddressOrPair, TxTag } from '@polymathnetwork/polkadot/api/types';
-import { DispatchError } from '@polymathnetwork/polkadot/types/interfaces';
-import { ISubmittableResult, RegistryError } from '@polymathnetwork/polkadot/types/types';
+import { AddressOrPair } from '@polkadot/api/types';
+import { DispatchError } from '@polkadot/types/interfaces';
+import { ISubmittableResult, RegistryError } from '@polkadot/types/types';
 import { EventEmitter } from 'events';
+import { TxTag } from 'polymesh-types/types';
 
 import { PolymeshError } from '~/base';
+import { PostTransactionValue } from '~/base/PostTransactionValue';
 import { ErrorCode, TransactionStatus } from '~/types';
 import {
   MapMaybePostTransactionValue,
@@ -38,9 +40,10 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
   public receipt?: ISubmittableResult;
 
   /**
-   * type of transaction represented by this instance for display purposes
+   * type of transaction represented by this instance for display purposes.
+   * If the transaction isn't defined at design time, the tag won't be set (will be empty string) until the transaction is about to be run
    */
-  public tag: TxTag;
+  public tag = '' as TxTag;
 
   /**
    * transaction hash (status: `Running`, `Succeeded`, `Failed`)
@@ -97,18 +100,19 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
    * @hidden
    */
   constructor(transactionSpec: TransactionSpec<Args, Values>) {
-    const { postTransactionValues, tag, tx, args, signer, isCritical } = transactionSpec;
+    const { postTransactionValues, tx, args, signer, isCritical } = transactionSpec;
 
     if (postTransactionValues) {
       this.postValues = postTransactionValues;
     }
 
     this.emitter = new EventEmitter();
-    this.tag = tag;
     this.tx = tx;
     this.args = args;
     this.signer = signer;
     this.isCritical = isCritical;
+
+    this.setTag();
   }
 
   /**
@@ -166,6 +170,31 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
   /**
    * @hidden
    *
+   * Set transaction tag if available and it hasn't been set yet
+   */
+  private setTag(): void {
+    if (this.tag) {
+      return;
+    }
+
+    const { tx } = this;
+    let transaction;
+    if (tx instanceof PostTransactionValue) {
+      try {
+        transaction = tx.value;
+      } catch (err) {
+        return;
+      }
+    } else {
+      transaction = tx;
+    }
+
+    this.tag = `${transaction.section}.${transaction.method}` as TxTag;
+  }
+
+  /**
+   * @hidden
+   *
    * Execute the underlying transaction, updating the status where applicable and
    * throwing any pertinent errors
    */
@@ -175,6 +204,8 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
     const { tx: wrappedTx } = this;
     const unwrappedArgs = unwrapValues(this.args);
     const tx = unwrapValue(wrappedTx);
+
+    this.setTag();
     this.args = unwrappedArgs;
 
     const gettingReceipt: Promise<ISubmittableResult> = new Promise((resolve, reject) => {

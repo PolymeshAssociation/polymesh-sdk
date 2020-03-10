@@ -1,5 +1,6 @@
-import { ApiPromise, Keyring, WsProvider } from '@polymathnetwork/polkadot/api';
+import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { BigNumber } from 'bignumber.js';
+import { polymesh } from 'polymesh-types/definitions';
 
 import { TickerReservation } from '~/api/entities';
 import { reserveTicker, ReserveTickerParams } from '~/api/procedures';
@@ -43,6 +44,7 @@ export class Polymesh {
     try {
       polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
+        types: polymesh.types,
       });
 
       let context: Context;
@@ -83,7 +85,7 @@ export class Polymesh {
   public getIdentityBalance = async (): Promise<BigNumber> => {
     const { currentIdentity } = this.context;
     if (currentIdentity) {
-      const balance = await currentIdentity.getIdentityBalance();
+      const balance = await currentIdentity.getPolyBalance();
       return balance;
     } else {
       throw new PolymeshError({

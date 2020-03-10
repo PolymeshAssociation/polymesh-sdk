@@ -1,3 +1,4 @@
+import { Identity } from '~/api/entities/Identity';
 import { Entity } from '~/base';
 import { Context } from '~/context';
 import { identityIdToString, momentToDate } from '~/utils';
@@ -54,19 +55,22 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
         },
       },
       ticker,
+      context,
     } = this;
 
-    const [{ owner, expiry }, { owner_did: tokenOwner }] = await Promise.all([
+    const [{ owner: tickerOwner, expiry }, { owner_did: tokenOwner }] = await Promise.all([
       asset.tickers(ticker),
       asset.tokens(ticker),
     ]);
 
-    const tickerOwned = !owner.isEmpty;
+    const tickerOwned = !tickerOwner.isEmpty;
     const tokenOwned = !tokenOwner.isEmpty;
 
     let status: TickerReservationStatus;
     let expiryDate: Date | null = null;
-    const ownerDid = tickerOwned ? identityIdToString(owner) : null;
+    const owner = tickerOwned
+      ? new Identity({ did: identityIdToString(tickerOwner) }, context)
+      : null;
 
     if (tokenOwned) {
       status = TickerReservationStatus.TokenCreated;
@@ -84,7 +88,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
     }
 
     return {
-      ownerDid,
+      owner,
       expiryDate,
       status,
     };

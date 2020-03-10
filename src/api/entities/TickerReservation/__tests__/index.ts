@@ -1,35 +1,23 @@
-import { Ticker } from '@polymathnetwork/polkadot/types/interfaces';
-import { Callback, Codec } from '@polymathnetwork/polkadot/types/types';
+import { Callback, Codec } from '@polkadot/types/types';
+import { Ticker } from 'polymesh-types/types';
 
 import { Entity } from '~/base';
-import {
-  createMockAssetType,
-  createMockBalance,
-  createMockBool,
-  createMockIdentityId,
-  createMockMoment,
-  createMockOption,
-  createMockSecurityToken,
-  createMockTickerRegistration,
-  createMockTokenName,
-  createMockU64,
-  PolkadotMockFactory,
-} from '~/testUtils/mocks';
+import { polkadotMockUtils } from '~/testUtils/mocks';
 import { TickerReservationStatus } from '~/types';
 
 import { TickerReservation } from '../';
 
 describe('TickerReservation class', () => {
-  const polkadotMockFactory = new PolkadotMockFactory();
-
-  polkadotMockFactory.initMocks({ mockContext: true });
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
 
   afterEach(() => {
-    polkadotMockFactory.reset();
+    polkadotMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockFactory.cleanup();
+    polkadotMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -39,7 +27,7 @@ describe('TickerReservation class', () => {
   describe('constructor', () => {
     test('should assign ticker instance', () => {
       const ticker = 'abc';
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       expect(tickerReservation.ticker).toBe(ticker);
@@ -59,27 +47,27 @@ describe('TickerReservation class', () => {
     let tokensStub: sinon.SinonStub<[string | Uint8Array | Ticker, Callback<Codec | Codec[]>]>;
 
     beforeEach(() => {
-      tickersStub = polkadotMockFactory.createQueryStub(
+      tickersStub = polkadotMockUtils.createQueryStub(
         'asset',
         'tickers',
-        createMockTickerRegistration()
+        polkadotMockUtils.createMockTickerRegistration()
       );
-      tokensStub = polkadotMockFactory.createQueryStub(
+      tokensStub = polkadotMockUtils.createQueryStub(
         'asset',
         'tokens',
-        createMockSecurityToken()
+        polkadotMockUtils.createMockSecurityToken()
       );
     });
 
     test('should return details for a free ticker', async () => {
       const ticker = 'abc';
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       const details = await tickerReservation.details();
 
-      expect(details).toEqual({
-        ownerDid: null,
+      expect(details).toMatchObject({
+        owner: null,
         expiryDate: null,
         status: TickerReservationStatus.Free,
       });
@@ -89,20 +77,22 @@ describe('TickerReservation class', () => {
       const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = new Date(new Date().getTime() + 100000);
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       tickersStub.returns(
-        createMockTickerRegistration({
-          owner: createMockIdentityId(ownerDid),
-          expiry: createMockOption(createMockMoment(expiryDate.getTime())),
+        polkadotMockUtils.createMockTickerRegistration({
+          owner: polkadotMockUtils.createMockIdentityId(ownerDid),
+          expiry: polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockMoment(expiryDate.getTime())
+          ),
         })
       );
 
       const details = await tickerReservation.details();
 
-      expect(details).toEqual({
-        ownerDid,
+      expect(details).toMatchObject({
+        owner: { did: ownerDid },
         expiryDate,
         status: TickerReservationStatus.Reserved,
       });
@@ -112,20 +102,20 @@ describe('TickerReservation class', () => {
       const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = null;
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       tickersStub.returns(
-        createMockTickerRegistration({
-          owner: createMockIdentityId(ownerDid),
-          expiry: createMockOption(), // null expiry
+        polkadotMockUtils.createMockTickerRegistration({
+          owner: polkadotMockUtils.createMockIdentityId(ownerDid),
+          expiry: polkadotMockUtils.createMockOption(), // null expiry
         })
       );
 
       const details = await tickerReservation.details();
 
-      expect(details).toEqual({
-        ownerDid,
+      expect(details).toMatchObject({
+        owner: { did: ownerDid },
         expiryDate,
         status: TickerReservationStatus.Reserved,
       });
@@ -135,20 +125,22 @@ describe('TickerReservation class', () => {
       const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = new Date(new Date().getTime() - 100000);
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       tickersStub.returns(
-        createMockTickerRegistration({
-          owner: createMockIdentityId(ownerDid),
-          expiry: createMockOption(createMockMoment(expiryDate.getTime())),
+        polkadotMockUtils.createMockTickerRegistration({
+          owner: polkadotMockUtils.createMockIdentityId(ownerDid),
+          expiry: polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockMoment(expiryDate.getTime())
+          ),
         })
       );
 
       const details = await tickerReservation.details();
 
-      expect(details).toEqual({
-        ownerDid,
+      expect(details).toMatchObject({
+        owner: { did: ownerDid },
         expiryDate,
         status: TickerReservationStatus.Free,
       });
@@ -158,32 +150,32 @@ describe('TickerReservation class', () => {
       const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = null;
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       tickersStub.returns(
-        createMockTickerRegistration({
-          owner: createMockIdentityId(ownerDid),
-          expiry: createMockOption(),
+        polkadotMockUtils.createMockTickerRegistration({
+          owner: polkadotMockUtils.createMockIdentityId(ownerDid),
+          expiry: polkadotMockUtils.createMockOption(),
         })
       );
       tokensStub.returns(
-        createMockSecurityToken({
+        polkadotMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
-          owner_did: createMockIdentityId(ownerDid),
-          name: createMockTokenName('someToken'),
-          asset_type: createMockAssetType('equity'),
-          divisible: createMockBool(true),
-          link_id: createMockU64(3),
-          total_supply: createMockBalance(1000),
+          owner_did: polkadotMockUtils.createMockIdentityId(ownerDid),
+          name: polkadotMockUtils.createMockTokenName('someToken'),
+          asset_type: polkadotMockUtils.createMockAssetType('equity'),
+          divisible: polkadotMockUtils.createMockBool(true),
+          link_id: polkadotMockUtils.createMockU64(3),
+          total_supply: polkadotMockUtils.createMockBalance(1000),
           /* eslint-enable @typescript-eslint/camelcase */
         })
       );
 
       const details = await tickerReservation.details();
 
-      expect(details).toEqual({
-        ownerDid,
+      expect(details).toMatchObject({
+        owner: { did: ownerDid },
         expiryDate,
         status: TickerReservationStatus.TokenCreated,
       });
