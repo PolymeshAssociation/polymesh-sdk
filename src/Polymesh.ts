@@ -100,10 +100,10 @@ export class Polymesh {
    *
    * @param args.accountId - defaults to the current account
    */
-  public getAccountBalance(args: { accountId?: string } = {}): Promise<BigNumber> {
+  public getAccountBalance(args?: { accountId: string }): Promise<BigNumber> {
     const { context } = this;
 
-    return context.accountBalance(args.accountId);
+    return context.accountBalance(args?.accountId);
   }
 
   /**
