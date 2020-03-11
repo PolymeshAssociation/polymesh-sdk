@@ -1,9 +1,9 @@
-import BigNumber from 'bignumber.js';
-
 import { Identity } from '~/api/entities/Identity';
 import { Entity } from '~/base';
 import { Context } from '~/context';
 import { balanceToBigNumber } from '~/utils';
+
+import { SecurityTokenDetails } from './types';
 
 /**
  * Properties that uniquely identify a Security Token
@@ -46,64 +46,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the name of the Security Token
+   * Retrieve the security token's name, total supply, whether is divisible or not and the identity owner
    */
-  public async name(): Promise<string> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      ticker,
-    } = this;
-
-    const { name } = await asset.tokens(ticker);
-
-    return name.toString();
-  }
-
-  /**
-   * Retrieve the total supply of the Security Token
-   */
-  public async totalSupply(): Promise<BigNumber> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      ticker,
-    } = this;
-
-    // eslint-disable-next-line @typescript-eslint/camelcase
-    const { total_supply } = await asset.tokens(ticker);
-
-    return balanceToBigNumber(total_supply);
-  }
-
-  /**
-   * Retrieve whether or not the Security Token is divisible
-   */
-  public async isDivisible(): Promise<boolean> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      ticker,
-    } = this;
-
-    const { divisible } = await asset.tokens(ticker);
-
-    return divisible.valueOf();
-  }
-
-  /**
-   * Retrieve the identity owner of the Security Token
-   */
-  public async owner(): Promise<Identity> {
+  public async details(): Promise<SecurityTokenDetails> {
     const {
       context: {
         polymeshApi: {
@@ -115,9 +60,14 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     } = this;
 
     /* eslint-disable @typescript-eslint/camelcase */
-    const { owner_did } = await asset.tokens(ticker);
+    const { name, total_supply, divisible, owner_did } = await asset.tokens(ticker);
 
-    return new Identity({ did: owner_did.toString() }, context);
+    return {
+      name: name.toString(),
+      totalSupply: balanceToBigNumber(total_supply),
+      isDivisible: divisible.valueOf(),
+      owner: new Identity({ did: owner_did.toString() }, context),
+    };
     /* eslint-enable @typescript-eslint/camelcase */
   }
 }
