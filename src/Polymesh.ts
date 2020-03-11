@@ -120,8 +120,10 @@ export class Polymesh {
   /**
    * Retrieve all the ticker reservations currently owned by an identity. This includes
    * Security Tokens that have already been launched
+   *
+   * @param args.did - identity ID as stored in the blockchain
    */
-  public async getTickerReservations(did?: string): Promise<TickerReservation[]> {
+  public async getTickerReservations(args?: { did: string }): Promise<TickerReservation[]> {
     const {
       context: {
         polymeshApi: {
@@ -130,15 +132,14 @@ export class Polymesh {
           },
         },
       },
+      context: { currentIdentity },
       context,
     } = this;
 
-    const { currentIdentity } = context;
-
     let identity: string;
 
-    if (did) {
-      identity = did;
+    if (args?.did) {
+      identity = args.did;
     } else if (currentIdentity) {
       identity = currentIdentity.did;
     } else {

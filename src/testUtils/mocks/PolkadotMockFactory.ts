@@ -707,7 +707,6 @@ const createMockEnum = (enumValue?: string | Record<string, Codec>): Enum => {
   const codec: Record<string, unknown> = {};
 
   if (typeof enumValue === 'string') {
-    console.log(enumValue);
     codec[`is${upperFirst(enumValue)}`] = true;
   } else if (typeof enumValue === 'object') {
     const key = Object.keys(enumValue)[0];
@@ -784,7 +783,7 @@ export const createMockSecurityToken = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockLink = (
-  reg: { link_data: LinkData; expiry: Option<Moment>; link_id: u64 } = {
+  link: { link_data: LinkData; expiry: Option<Moment>; link_id: u64 } = {
     link_data: createMockLinkData(),
     expiry: createMockOption(),
     link_id: createMockU64(),
@@ -792,9 +791,9 @@ export const createMockLink = (
 ): Link =>
   createMockCodec(
     {
-      link_data: reg.link_data,
-      expiry: reg.expiry,
-      link_id: reg.link_id,
+      link_data: link.link_data,
+      expiry: link.expiry,
+      link_id: link.link_id,
     },
     false
   ) as Link;
@@ -803,7 +802,7 @@ export const createMockLink = (
  * @hidden
  */
 export const createMockDocument = (
-  reg: { name: DocumentName; uri: DocumentUri; content_hash: DocumentHash } = {
+  document: { name: DocumentName; uri: DocumentUri; content_hash: DocumentHash } = {
     name: createMockDocumentName(),
     uri: createMockDocumentUri(),
     content_hash: createMockDocumentHash(),
@@ -811,9 +810,9 @@ export const createMockDocument = (
 ): Document =>
   createMockCodec(
     {
-      name: reg.name,
-      uri: reg.uri,
-      content_hash: reg.content_hash,
+      name: document.name,
+      uri: document.uri,
+      content_hash: document.content_hash,
     },
     false
   ) as Document;

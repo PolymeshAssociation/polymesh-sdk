@@ -227,7 +227,7 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      const tickerReservations = await polymesh.getTickerReservations('did');
+      const tickerReservations = await polymesh.getTickerReservations({ did: 'someDid' });
 
       expect(tickerReservations).toHaveLength(1);
       expect(tickerReservations[0].ticker).toBe(fakeTicker);
