@@ -19,7 +19,7 @@ import {
 } from '~/testUtils/mocks';
 import { TickerReservationStatus } from '~/types';
 
-import { TickerReservation } from '../TickerReservation';
+import { TickerReservation } from '../';
 
 describe('TickerReservation class', () => {
   const polkadotMockFactory = new PolkadotMockFactory();

@@ -50,6 +50,7 @@ export enum MockTxStatus {
   Failed = 'Failed',
   Aborted = 'Aborted',
   Rejected = 'Rejected',
+  InBlock = 'InBlock',
 }
 
 export enum TxFailReason {
@@ -71,10 +72,16 @@ const defaultReceipt: ISubmittableResult = {
   toHuman: () => ({}),
 };
 
-const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
-  status: { isReady: false, isInBlock: true, asInBlock: 'blockHash' },
+const inBlockReceipt: ISubmittableResult = merge({}, defaultReceipt, {
+  status: { isReady: false, isInBlock: false, asInBlock: 'blockHash' },
   isCompleted: true,
   isInBlock: true,
+});
+
+const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
+  status: { isReady: false, isFinalized: true, asFinalized: 'blockHash' },
+  isCompleted: true,
+  isFinalized: true,
 });
 
 /**
@@ -141,6 +148,9 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
   }
   if (status === MockTxStatus.Ready) {
     return defaultReceipt;
+  }
+  if (status === MockTxStatus.InBlock) {
+    return inBlockReceipt;
   }
 
   throw new Error(`There is no receipt associated with status ${status}`);
