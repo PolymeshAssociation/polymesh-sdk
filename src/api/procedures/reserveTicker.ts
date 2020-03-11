@@ -93,10 +93,10 @@ export async function prepareReserveTicker(
       });
     }
 
-    if (expiryDate < new Date()) {
+    if (status === TickerReservationStatus.Free) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'Ticker has already expired',
+        message: 'Ticker not reserved or the reservation has expired',
       });
     }
   }

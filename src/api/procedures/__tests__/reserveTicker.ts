@@ -173,7 +173,7 @@ describe('reserveTicker procedure', () => {
     );
   });
 
-  test('should throw an error if extendPeriod property is set to true and the ticker has already been launched', async () => {
+  test('should throw an error if extendPeriod property is set to true and the token has already been launched', async () => {
     const expiryDate = null;
     mockTickerReservation.mock('details', {
       ownerDid: 'someDid',
@@ -187,17 +187,18 @@ describe('reserveTicker procedure', () => {
     );
   });
 
-  test('should throw an error if extendPeriod property is set to true and the ticker has already expired', async () => {
+  test('should throw an error if extendPeriod property is set to true and the ticker has not reserved or the reservation has expired', async () => {
     const expiryDate = new Date(2019, 1, 1);
     mockTickerReservation.mock('details', {
       ownerDid: 'someDid',
       expiryDate,
+      status: TickerReservationStatus.Free,
     });
     const proc = mockProcedure.getMockInstance();
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
-      'Ticker has already expired'
+      'Ticker not reserved or the reservation has expired'
     );
   });
 
