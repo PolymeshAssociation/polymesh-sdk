@@ -1,3 +1,4 @@
+import { bool } from '@polymathnetwork/polkadot/types';
 import { createType } from '@polymathnetwork/polkadot/types/create/createType';
 import {
   Balance,
@@ -5,6 +6,7 @@ import {
   IdentityId,
   Moment,
   Ticker,
+  TokenName,
 } from '@polymathnetwork/polkadot/types/interfaces';
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -63,6 +65,20 @@ export function unserialize<UniqueIdentifiers extends object>(id: string): Uniqu
   } catch (err) {
     throw new Error(errorMsg);
   }
+}
+
+/**
+ * @hidden
+ */
+export function tokenNameToString(name: TokenName): string {
+  return name.toString();
+}
+
+/**
+ * @hidden
+ */
+export function boolToBoolean(value: bool): boolean {
+  return value.valueOf();
 }
 
 /**

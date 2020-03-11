@@ -1,5 +1,12 @@
+import { bool } from '@polymathnetwork/polkadot/types';
 import * as createTypeModule from '@polymathnetwork/polkadot/types/create/createType';
-import { Balance, IdentityId, Moment, Ticker } from '@polymathnetwork/polkadot/types/interfaces';
+import {
+  Balance,
+  IdentityId,
+  Moment,
+  Ticker,
+  TokenName,
+} from '@polymathnetwork/polkadot/types/interfaces';
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
@@ -10,6 +17,7 @@ import { PolkadotMockFactory } from '~/testUtils/mocks';
 
 import {
   balanceToBigNumber,
+  boolToBoolean,
   dateToMoment,
   delay,
   findEventRecord,
@@ -20,6 +28,7 @@ import {
   stringToIdentityId,
   stringToTicker,
   tickerToString,
+  tokenNameToString,
   unserialize,
   unwrapValues,
 } from '../';
@@ -206,6 +215,30 @@ describe('stringToTicker and tickerToString', () => {
     } as unknown) as Ticker;
 
     const result = tickerToString(ticker);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('tokenNameToString', () => {
+  test('tokenNameToString should convert a TokenName object to a string', () => {
+    const fakeResult = 'someTokenName';
+    const tokenName = ({
+      toString: sinon.stub().returns(fakeResult),
+    } as unknown) as TokenName;
+
+    const result = tokenNameToString(tokenName);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('boolToBoolean', () => {
+  test('boolToBoolean should convert a bool object to a boolean', () => {
+    const fakeResult = true;
+    const bool = ({
+      valueOf: sinon.stub().returns(fakeResult),
+    } as unknown) as bool;
+
+    const result = boolToBoolean(bool);
     expect(result).toEqual(fakeResult);
   });
 });

@@ -1,7 +1,7 @@
 import { Identity } from '~/api/entities/Identity';
 import { Entity } from '~/base';
 import { Context } from '~/context';
-import { balanceToBigNumber } from '~/utils';
+import { balanceToBigNumber, boolToBoolean, identityIdToString, tokenNameToString } from '~/utils';
 
 import { SecurityTokenDetails } from './types';
 
@@ -46,7 +46,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the security token's name, total supply, whether is divisible or not and the identity owner
+   * Retrieve the Security Token's name, total supply, whether it is divisible or not and the identity of the owner
    */
   public async details(): Promise<SecurityTokenDetails> {
     const {
@@ -63,10 +63,10 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const { name, total_supply, divisible, owner_did } = await asset.tokens(ticker);
 
     return {
-      name: name.toString(),
+      name: tokenNameToString(name),
       totalSupply: balanceToBigNumber(total_supply),
-      isDivisible: divisible.valueOf(),
-      owner: new Identity({ did: owner_did.toString() }, context),
+      isDivisible: boolToBoolean(divisible),
+      owner: new Identity({ did: identityIdToString(owner_did) }, context),
     };
     /* eslint-enable @typescript-eslint/camelcase */
   }
