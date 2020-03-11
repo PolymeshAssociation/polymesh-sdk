@@ -19,7 +19,7 @@ type MockSecurityToken = Mocked<SecurityToken>;
 
 interface IdentityOptions {
   did?: string;
-  getPolyBalance?: BigNumber;
+  getPolyXBalance?: BigNumber;
 }
 
 interface TickerReservationOptions {
@@ -35,7 +35,7 @@ let identityConstructorStub: SinonStub;
 let tickerReservationConstructorStub: SinonStub;
 let securityTokenConstructorStub: SinonStub;
 
-let identityGetPolyBalanceStub: SinonStub;
+let identityGetPolyXBalanceStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
@@ -82,7 +82,7 @@ export const mockSecurityTokenModule = (path: string) => (): object => ({
 
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
-  getPolyBalance: new BigNumber(100),
+  getPolyXBalance: new BigNumber(100),
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultTickerReservationOptions: TickerReservationOptions = {
@@ -137,11 +137,11 @@ function initTickerReservation(opts: TickerReservationOptions): void {
  */
 function initIdentity(opts: IdentityOptions): void {
   identityConstructorStub = sinon.stub();
-  identityGetPolyBalanceStub = sinon.stub();
+  identityGetPolyXBalanceStub = sinon.stub();
 
   const identity = ({
     did: opts.did,
-    getPolyBalance: identityGetPolyBalanceStub.resolves(opts.getPolyBalance),
+    getPolyXBalance: identityGetPolyXBalanceStub.resolves(opts.getPolyXBalance),
   } as unknown) as MockIdentity;
 
   mockInstanceContainer.identity = identity;
@@ -203,10 +203,10 @@ export function getIdentityInstance(): MockIdentity {
 
 /**
  * @hidden
- * Retrieve the stub of the `Identity.getPolyBalance` method
+ * Retrieve the stub of the `Identity.getPolyXBalance` method
  */
-export function getIdentityGetPolyBalanceStub(): SinonStub {
-  return identityGetPolyBalanceStub;
+export function getIdentityGetPolyXBalanceStub(): SinonStub {
+  return identityGetPolyXBalanceStub;
 }
 
 /**

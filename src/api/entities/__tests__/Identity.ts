@@ -40,14 +40,14 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getPolyBalance', () => {
+  describe('method: getPolyXBalance', () => {
     test("should return the identity's POLY balance", async () => {
       const fakeBalance = new BigNumber(100);
       polkadotMockUtils
         .createQueryStub('balances', 'identityBalance')
         .resolves(fakeBalance.times(Math.pow(10, 6)));
       const identity = new Identity({ did: 'abc' }, polkadotMockUtils.getContextInstance());
-      const result = await identity.getPolyBalance();
+      const result = await identity.getPolyXBalance();
       expect(result).toEqual(fakeBalance);
     });
   });

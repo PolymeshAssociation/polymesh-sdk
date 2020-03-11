@@ -198,7 +198,7 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
    * Execute the underlying transaction, updating the status where applicable and
    * throwing any pertinent errors
    */
-  private async internalRun(): Promise<ISubmittableResult> {
+  private internalRun(): Promise<ISubmittableResult> {
     this.updateStatus(TransactionStatus.Unapproved);
 
     const { tx: wrappedTx } = this;

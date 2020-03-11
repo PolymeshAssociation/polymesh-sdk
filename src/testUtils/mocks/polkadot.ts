@@ -249,7 +249,7 @@ function initContext(opts: ContextOptions): void {
   contextCreateStub = sinon.stub();
 
   const currentIdentity = opts.withSeed
-    ? { getPolyBalance: sinon.stub().resolves(opts.balance) }
+    ? { getPolyXBalance: sinon.stub().resolves(opts.balance) }
     : undefined;
   const currentPair = opts.withSeed
     ? ({

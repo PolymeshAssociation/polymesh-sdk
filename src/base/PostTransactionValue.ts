@@ -34,7 +34,7 @@ export class PostTransactionValue<Value> {
    *
    * @throws if the value is being accessed before the resolver function has run (should NEVER happen)
    */
-  get value(): Value {
+  public get value(): Value {
     const { _value, resolved } = this;
 
     if (!resolved) {

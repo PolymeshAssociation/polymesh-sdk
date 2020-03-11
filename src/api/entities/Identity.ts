@@ -42,12 +42,12 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the POLY balance of this particular Identity
+   * Retrieve the POLYX balance of this particular Identity
    */
-  public getPolyBalance = async (): Promise<BigNumber> => {
+  public async getPolyXBalance(): Promise<BigNumber> {
     const { context, did } = this;
     const balance = await context.polymeshApi.query.balances.identityBalance(did);
 
     return balanceToBigNumber(balance);
-  };
+  }
 }
