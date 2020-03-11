@@ -14,7 +14,6 @@ import {
   createMockLink,
   createMockLinkData,
   createMockOption,
-  createMockTicker,
   createMockTickerRegistration,
   createMockU64,
   PolkadotMockFactory,
