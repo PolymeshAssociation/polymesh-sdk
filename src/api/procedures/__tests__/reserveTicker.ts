@@ -173,7 +173,7 @@ describe('reserveTicker procedure', () => {
     );
   });
 
-  test('should throw an error if extendPeriod property is set to true and the ticker has not reserved or the reservation has expired', async () => {
+  test('should throw an error if extendPeriod property is set to true and the ticker has not been reserved or the reservation has expired', async () => {
     const expiryDate = new Date(2019, 1, 1);
     mockTickerReservation.mock('details', {
       ownerDid: 'someDid',
@@ -214,7 +214,7 @@ describe('reserveTicker procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
-      'You must be the owner of the ticker to extend its registration period'
+      'You must be the owner of the ticker to extend its reservation period'
     );
   });
 

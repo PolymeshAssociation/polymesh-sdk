@@ -38,6 +38,7 @@ interface TxMockData {
 }
 
 interface ContextOptions {
+  did?: string;
   withSeed?: boolean;
   balance?: BigNumber;
 }
@@ -233,7 +234,7 @@ export class PolkadotMockFactory {
    */
   private initContext(opts: ContextOptions): void {
     const currentIdentity = opts.withSeed
-      ? { getIdentityBalance: sinon.stub().resolves(opts.balance), did: 'someDid' }
+      ? { getIdentityBalance: sinon.stub().resolves(opts.balance), did: opts.did || 'someDid' }
       : undefined;
     const currentPair = opts.withSeed
       ? ({

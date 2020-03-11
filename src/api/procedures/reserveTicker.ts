@@ -78,7 +78,7 @@ export async function prepareReserveTicker(
     } else if (ownerDid !== context.currentIdentity?.did) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'You must be the owner of the ticker to extend its registration period',
+        message: 'You must be the owner of the ticker to extend its reservation period',
       });
     }
   }
