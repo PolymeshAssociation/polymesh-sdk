@@ -223,7 +223,7 @@ export class PolkadotMockFactory {
    */
   private initContext(opts: ContextOptions): void {
     const currentIdentity = opts.withSeed
-      ? { getIdentityBalance: sinon.stub().resolves(opts.balance) }
+      ? { getIdentityBalance: sinon.stub().resolves(opts.balance), did: 'someDid' }
       : undefined;
     const currentPair = opts.withSeed
       ? ({

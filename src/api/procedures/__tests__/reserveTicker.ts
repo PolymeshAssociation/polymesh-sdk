@@ -173,20 +173,6 @@ describe('reserveTicker procedure', () => {
     );
   });
 
-  test('should throw an error if extendPeriod property is set to true and the token has already been launched', async () => {
-    const expiryDate = null;
-    mockTickerReservation.mock('details', {
-      ownerDid: 'someDid',
-      expiryDate,
-    });
-    const proc = mockProcedure.getMockInstance();
-    proc.context = mockContext;
-
-    return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
-      'Ticker has already been launched'
-    );
-  });
-
   test('should throw an error if extendPeriod property is set to true and the ticker has not reserved or the reservation has expired', async () => {
     const expiryDate = new Date(2019, 1, 1);
     mockTickerReservation.mock('details', {
@@ -214,6 +200,21 @@ describe('reserveTicker procedure', () => {
 
     return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
       'Not enough POLY balance to pay for ticker period extension'
+    );
+  });
+
+  test('should throw an error if extendPeriod property is set to true and the signing account is not the ticker owner', () => {
+    const expiryDate = new Date(new Date().getTime() + 1000);
+    mockTickerReservation.mock('details', {
+      ownerDid: 'anotherDid',
+      expiryDate,
+      status: TickerReservationStatus.Reserved,
+    });
+    const proc = mockProcedure.getMockInstance();
+    proc.context = mockContext;
+
+    return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
+      'You must be the owner of the ticker to extend its registration period'
     );
   });
 

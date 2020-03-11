@@ -50,7 +50,7 @@ export async function prepareReserveTicker(
     rawFee,
     balance,
     { max_ticker_length: rawMaxTickerLength },
-    { expiryDate, status },
+    { ownerDid, expiryDate, status },
   ] = await Promise.all([
     query.asset.tickerRegistrationFee(),
     context.accountBalance(),
@@ -58,15 +58,15 @@ export async function prepareReserveTicker(
     reservation.details(),
   ]);
 
-  if (!extendPeriod) {
-    if (status === TickerReservationStatus.TokenCreated) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: `A Security Token with ticker "${ticker} already exists`,
-      });
-    }
+  if (status === TickerReservationStatus.TokenCreated) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `A Security Token with ticker "${ticker} already exists`,
+    });
+  }
 
-    if (status === TickerReservationStatus.Reserved) {
+  if (status === TickerReservationStatus.Reserved) {
+    if (!extendPeriod) {
       const isPermanent = expiryDate === null;
 
       throw new PolymeshError({
@@ -75,8 +75,15 @@ export async function prepareReserveTicker(
           !isPermanent ? '' : 'not '
         }expire${!isPermanent ? ` at ${expiryDate}` : ''}`,
       });
+    } else if (ownerDid !== context.currentIdentity?.did) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'You must be the owner of the ticker to extend its registration period',
+      });
     }
+  }
 
+  if (!extendPeriod) {
     const maxTickerLength = rawMaxTickerLength.toNumber();
 
     if (ticker.length > maxTickerLength) {
@@ -86,13 +93,6 @@ export async function prepareReserveTicker(
       });
     }
   } else {
-    if (expiryDate === null) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Ticker has already been launched',
-      });
-    }
-
     if (status === TickerReservationStatus.Free) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
