@@ -78,7 +78,7 @@ export function tokenNameToString(name: TokenName): string {
  * @hidden
  */
 export function boolToBoolean(value: bool): boolean {
-  return value.valueOf();
+  return value.isTrue;
 }
 
 /**

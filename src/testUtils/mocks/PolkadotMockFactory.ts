@@ -664,8 +664,8 @@ export const createMockTokenName = (name?: string): TokenName =>
 export const createMockBool = (value?: boolean): bool =>
   createMockCodec(
     {
-      isTrue: () => value,
-      isFalse: () => !value,
+      isTrue: value,
+      isFalse: !value,
       valueOf: () => value,
     },
     !value

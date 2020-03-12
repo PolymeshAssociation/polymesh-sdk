@@ -1,4 +1,3 @@
-import { bool } from '@polymathnetwork/polkadot/types';
 import * as createTypeModule from '@polymathnetwork/polkadot/types/create/createType';
 import {
   Balance,
@@ -13,7 +12,7 @@ import sinon, { SinonStub } from 'sinon';
 import { ImportMock } from 'ts-mock-imports';
 
 import { PostTransactionValue } from '~/base';
-import { PolkadotMockFactory } from '~/testUtils/mocks';
+import { createMockBool, PolkadotMockFactory } from '~/testUtils/mocks';
 
 import {
   balanceToBigNumber,
@@ -234,9 +233,7 @@ describe('tokenNameToString', () => {
 describe('boolToBoolean', () => {
   test('boolToBoolean should convert a bool object to a boolean', () => {
     const fakeResult = true;
-    const mockBool = ({
-      valueOf: sinon.stub().returns(fakeResult),
-    } as unknown) as bool;
+    const mockBool = createMockBool(fakeResult);
 
     const result = boolToBoolean(mockBool);
     expect(result).toEqual(fakeResult);
