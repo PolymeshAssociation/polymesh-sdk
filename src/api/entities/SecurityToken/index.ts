@@ -1,4 +1,5 @@
-import { Entity } from '~/base';
+import { modifyToken, ModifyTokenParams } from '~/api/procedures';
+import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 
 /**
@@ -39,5 +40,22 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const { ticker } = identifiers;
 
     this.ticker = ticker;
+  }
+
+  /**
+   * Modify some properties of the Security Token
+   *
+   * @param args.makeDivisible - makes an indivisible token divisible. Only called by the token owner
+   */
+  public async modify(
+    args: Omit<ModifyTokenParams, 'ticker'>
+  ): Promise<TransactionQueue<SecurityToken>> {
+    // pedir details() de security token y obtener el owner y si ya es divisible.
+    /*
+    VALIDAR: si es divisible tirar error: 
+    VALIDAR: si el usuario no es el owner, tirar error: You must be the owner of the token to make it divisible
+    */
+    const { ticker } = this;
+    return modifyToken.prepare({ ...args, ticker }, this.context);
   }
 }
