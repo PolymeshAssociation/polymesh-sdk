@@ -199,7 +199,9 @@ describe('reserveTicker procedure', () => {
       ownerDid: 'someDid',
       expiryDate,
     });
-    mockFactory.createQueryStub('asset', 'tickerRegistrationFee', createMockBalance(600000000));
+    mockFactory.createQueryStub('asset', 'tickerRegistrationFee', {
+      returnValue: createMockBalance(600000000),
+    });
     const proc = mockProcedure.getMockInstance();
     proc.context = mockContext;
 
