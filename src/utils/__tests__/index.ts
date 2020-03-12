@@ -234,11 +234,11 @@ describe('tokenNameToString', () => {
 describe('boolToBoolean', () => {
   test('boolToBoolean should convert a bool object to a boolean', () => {
     const fakeResult = true;
-    const boolStub = ({
+    const mockBool = ({
       valueOf: sinon.stub().returns(fakeResult),
     } as unknown) as bool;
 
-    const result = boolToBoolean(boolStub);
+    const result = boolToBoolean(mockBool);
     expect(result).toEqual(fakeResult);
   });
 });
