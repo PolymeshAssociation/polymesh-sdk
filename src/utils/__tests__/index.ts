@@ -1,15 +1,22 @@
 import * as createTypeModule from '@polymathnetwork/polkadot/types/create/createType';
-import { Balance, IdentityId, Moment, Ticker } from '@polymathnetwork/polkadot/types/interfaces';
+import {
+  Balance,
+  IdentityId,
+  Moment,
+  Ticker,
+  TokenName,
+} from '@polymathnetwork/polkadot/types/interfaces';
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 import { ImportMock } from 'ts-mock-imports';
 
 import { PostTransactionValue } from '~/base';
-import { PolkadotMockFactory } from '~/testUtils/mocks';
+import { createMockBool, createMockTicker, PolkadotMockFactory } from '~/testUtils/mocks';
 
 import {
   balanceToBigNumber,
+  boolToBoolean,
   dateToMoment,
   delay,
   findEventRecord,
@@ -20,6 +27,7 @@ import {
   stringToIdentityId,
   stringToTicker,
   tickerToString,
+  tokenNameToString,
   unserialize,
   unwrapValues,
 } from '../';
@@ -201,11 +209,31 @@ describe('stringToTicker and tickerToString', () => {
 
   test('tickerToString should convert a polkadot Ticker object to a string', () => {
     const fakeResult = 'someTicker';
-    const ticker = ({
-      toString: sinon.stub().returns(fakeResult),
-    } as unknown) as Ticker;
+    const ticker = createMockTicker(fakeResult);
 
     const result = tickerToString(ticker);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('tokenNameToString', () => {
+  test('tokenNameToString should convert a TokenName object to a string', () => {
+    const fakeResult = 'someTokenName';
+    const tokenName = ({
+      toString: sinon.stub().returns(fakeResult),
+    } as unknown) as TokenName;
+
+    const result = tokenNameToString(tokenName);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('boolToBoolean', () => {
+  test('boolToBoolean should convert a bool object to a boolean', () => {
+    const fakeResult = true;
+    const mockBool = createMockBool(fakeResult);
+
+    const result = boolToBoolean(mockBool);
     expect(result).toEqual(fakeResult);
   });
 });

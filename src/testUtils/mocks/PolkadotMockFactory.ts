@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+import { stringToU8a } from '@polkadot/util';
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
 import { bool, Bytes, Enum, Option, u8, u64 } from '@polymathnetwork/polkadot/types';
 import {
@@ -6,9 +7,15 @@ import {
   Balance,
   DispatchError,
   DispatchErrorModule,
+  Document,
+  DocumentHash,
+  DocumentName,
+  DocumentUri,
   EventRecord,
   ExtrinsicStatus,
   IdentityId,
+  Link,
+  LinkData,
   Moment,
   SecurityToken,
   Ticker,
@@ -18,7 +25,7 @@ import {
 } from '@polymathnetwork/polkadot/types/interfaces';
 import { Codec, IKeyringPair, ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import { BigNumber } from 'bignumber.js';
-import { every, merge, startCase } from 'lodash';
+import { cloneDeep, every, merge, upperFirst } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 import { ImportMock, StaticMockManager } from 'ts-mock-imports';
 
@@ -430,12 +437,14 @@ export class PolkadotMockFactory {
    */
   public createQueryStub<
     ModuleName extends keyof Queries,
-    QueryName extends keyof Queries[ModuleName],
-    ReturnValue extends unknown
+    QueryName extends keyof Queries[ModuleName]
   >(
     mod: ModuleName,
     query: QueryName,
-    returnValue?: ReturnValue
+    opts?: {
+      returnValue?: unknown;
+      entries?: unknown[];
+    }
   ): Queries[ModuleName][QueryName] & SinonStub<ArgsType<Queries[ModuleName][QueryName]>> {
     let runtimeModule = this.queryModule[mod];
 
@@ -446,6 +455,12 @@ export class PolkadotMockFactory {
 
     if (!runtimeModule[query]) {
       runtimeModule[query] = (sinon.stub() as unknown) as Queries[ModuleName][QueryName];
+      if (opts?.entries) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (runtimeModule[query] as any).entries = sinon
+          .stub()
+          .resolves(opts.entries.map(entry => ['someKey', entry]));
+      }
 
       this.updateQuery();
     }
@@ -455,8 +470,8 @@ export class PolkadotMockFactory {
     const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] &
       SinonStub<ArgsType<Queries[ModuleName][QueryName]>>;
 
-    if (returnValue) {
-      stub.returns(returnValue);
+    if (opts?.returnValue) {
+      stub.returns(opts.returnValue);
     }
 
     return stub;
@@ -549,11 +564,11 @@ export class PolkadotMockFactory {
 /**
  * @hidden
  */
-const createMockCodec = (codec: object, isEmpty: boolean): Codec =>
-  ({
-    ...codec,
-    isEmpty,
-  } as Codec);
+const createMockCodec = (codec: object, isEmpty: boolean): Codec => {
+  const clone = cloneDeep(codec) as Mutable<Codec>;
+  clone.isEmpty = isEmpty;
+  return clone;
+};
 
 /**
  * @hidden
@@ -565,6 +580,11 @@ const createMockStringCodec = (value?: string): Codec =>
     },
     !value
   );
+
+/**
+ * @hidden
+ */
+const createMockU8ACodec = (value?: string): Codec => createMockCodec(stringToU8a(value), !value);
 
 /**
  * @hidden
@@ -589,8 +609,7 @@ export const createMockIdentityId = (did?: string): IdentityId =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockTicker = (ticker?: string): Ticker =>
-  createMockStringCodec(ticker) as Ticker;
+export const createMockTicker = (ticker?: string): Ticker => createMockU8ACodec(ticker) as Ticker;
 
 /**
  * @hidden
@@ -598,6 +617,24 @@ export const createMockTicker = (ticker?: string): Ticker =>
  */
 export const createMockBalance = (balance?: number): Balance =>
   createMockNumberCodec(balance) as Balance;
+
+/**
+ * @hidden
+ */
+export const createMockDocumentName = (name?: string): DocumentName =>
+  createMockStringCodec(name) as DocumentName;
+
+/**
+ * @hidden
+ */
+export const createMockDocumentUri = (uri?: string): DocumentUri =>
+  createMockStringCodec(uri) as DocumentUri;
+
+/**
+ * @hidden
+ */
+export const createMockDocumentHash = (hash?: string): DocumentHash =>
+  createMockStringCodec(hash) as DocumentHash;
 
 /**
  * @hidden
@@ -664,26 +701,26 @@ export const createMockTokenName = (name?: string): TokenName =>
 export const createMockBool = (value?: boolean): bool =>
   createMockCodec(
     {
-      isTrue: () => value,
-      isFalse: () => !value,
+      isTrue: value,
+      isFalse: !value,
+      valueOf: () => value,
     },
     !value
   ) as bool;
 
 /**
  * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
  */
 const createMockEnum = (enumValue?: string | Record<string, Codec>): Enum => {
   const codec: Record<string, unknown> = {};
 
   if (typeof enumValue === 'string') {
-    codec[`is${startCase(enumValue)}`] = true;
+    codec[`is${upperFirst(enumValue)}`] = true;
   } else if (typeof enumValue === 'object') {
     const key = Object.keys(enumValue)[0];
 
-    codec[`is${startCase(key)}`] = true;
-    codec[`as${startCase(key)}`] = enumValue[key];
+    codec[`is${upperFirst(key)}`] = true;
+    codec[`as${upperFirst(key)}`] = enumValue[key];
   }
 
   return createMockCodec(codec, false) as Enum;
@@ -691,12 +728,20 @@ const createMockEnum = (enumValue?: string | Record<string, Codec>): Enum => {
 
 /**
  * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAssetType = (
   assetType?: 'equity' | 'debt' | 'commodity' | 'structuredProduct' | { custom: Bytes }
 ): AssetType => {
   return createMockEnum(assetType) as AssetType;
+};
+
+/**
+ * @hidden
+ */
+export const createMockLinkData = (
+  linkData?: { documentOwned: Document } | { tickerOwned: Ticker } | { tokenOwned: Ticker }
+): LinkData => {
+  return createMockEnum(linkData) as LinkData;
 };
 
 /* eslint-disable @typescript-eslint/camelcase */
@@ -740,6 +785,45 @@ export const createMockSecurityToken = (
     token,
     every(token, val => val.isEmpty)
   ) as SecurityToken;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockLink = (
+  link: { link_data: LinkData; expiry: Option<Moment>; link_id: u64 } = {
+    link_data: createMockLinkData(),
+    expiry: createMockOption(),
+    link_id: createMockU64(),
+  }
+): Link =>
+  createMockCodec(
+    {
+      link_data: link.link_data,
+      expiry: link.expiry,
+      link_id: link.link_id,
+    },
+    false
+  ) as Link;
+
+/**
+ * @hidden
+ */
+export const createMockDocument = (
+  document: { name: DocumentName; uri: DocumentUri; content_hash: DocumentHash } = {
+    name: createMockDocumentName(),
+    uri: createMockDocumentUri(),
+    content_hash: createMockDocumentHash(),
+  }
+): Document =>
+  createMockCodec(
+    {
+      name: document.name,
+      uri: document.uri,
+      content_hash: document.content_hash,
+    },
+    false
+  ) as Document;
 /* eslint-enable @typescript-eslint/camelcase */
 
 /**

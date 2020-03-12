@@ -1,3 +1,5 @@
+import { u8aToString } from '@polkadot/util';
+import { bool } from '@polymathnetwork/polkadot/types';
 import { createType } from '@polymathnetwork/polkadot/types/create/createType';
 import {
   Balance,
@@ -5,6 +7,7 @@ import {
   IdentityId,
   Moment,
   Ticker,
+  TokenName,
 } from '@polymathnetwork/polkadot/types/interfaces';
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -68,6 +71,20 @@ export function unserialize<UniqueIdentifiers extends object>(id: string): Uniqu
 /**
  * @hidden
  */
+export function tokenNameToString(name: TokenName): string {
+  return name.toString();
+}
+
+/**
+ * @hidden
+ */
+export function boolToBoolean(value: bool): boolean {
+  return value.isTrue;
+}
+
+/**
+ * @hidden
+ */
 export function stringToTicker(ticker: string, context: Context): Ticker {
   return createType<'Ticker'>(context.polymeshApi.registry, 'Ticker', ticker);
 }
@@ -76,7 +93,7 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
  * @hidden
  */
 export function tickerToString(ticker: Ticker): string {
-  return ticker.toString();
+  return u8aToString(ticker);
 }
 
 /**

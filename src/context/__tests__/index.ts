@@ -51,7 +51,8 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockFactory.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        { unwrap: () => ({ asUnique: '012abc' }) }
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
       );
       const keyringAddFromSeedStub = mockKeyring.mock('addFromSeed', 'currentPair');
 
@@ -70,7 +71,8 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockFactory.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        { unwrap: () => ({ asUnique: '012abc' }) }
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
       );
       const keyringGetPairsStub = mockKeyring.mock('getPairs', [{ publicKey: 'address' }]);
 
@@ -88,7 +90,8 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockFactory.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        { unwrap: () => ({ asUnique: '012abc' }) }
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
       );
       const keyringAddFromUriStub = mockKeyring.mock('addFromUri', 'currentPair');
 
@@ -107,7 +110,8 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockFactory.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        { unwrap: () => ({ asUnique: '012abc' }) }
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
       );
       const keyringAddFromSeedStub = mockKeyring.mock('addFromSeed', 'currentPair');
 
@@ -204,14 +208,17 @@ describe('Context class', () => {
     });
 
     test('should return the account POLY balance if currentPair is set', async () => {
-      const fakeResult = (100 as unknown) as Balance;
-      polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds', {
-        unwrap: () => ({ asUnique: '012abc' }),
-      });
+      const returnValue = (100 as unknown) as Balance;
+      polkadotMockFactory.createQueryStub(
+        'identity',
+        'keyToIdentityIds',
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
+      );
       mockKeyring.mock('addFromSeed', 'currentPair').returns({
         address: 'address',
       });
-      polkadotMockFactory.createQueryStub('balances', 'freeBalance', fakeResult);
+      polkadotMockFactory.createQueryStub('balances', 'freeBalance', { returnValue });
 
       const context = await Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
@@ -219,18 +226,21 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance();
-      expect(result).toEqual(balanceToBigNumber(fakeResult));
+      expect(result).toEqual(balanceToBigNumber(returnValue));
     });
 
     test('should return the account POLY balance if accountId is set', async () => {
-      const fakeResult = (100 as unknown) as Balance;
+      const returnValue = (100 as unknown) as Balance;
       polkadotMockFactory.createQueryStub('identity', 'keyToIdentityIds', {
-        unwrap: () => ({ asUnique: '012abc' }),
+        returnValue: {
+          // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+          unwrap: () => ({ asUnique: '012abc' }),
+        },
       });
       mockKeyring.mock('addFromSeed', 'currentPair').returns({
         address: undefined,
       });
-      polkadotMockFactory.createQueryStub('balances', 'freeBalance', fakeResult);
+      polkadotMockFactory.createQueryStub('balances', 'freeBalance', { returnValue });
 
       const context = await Context.create({
         polymeshApi: polkadotMockFactory.getApiInstance(),
@@ -238,7 +248,7 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance('accountId');
-      expect(result).toEqual(balanceToBigNumber(fakeResult));
+      expect(result).toEqual(balanceToBigNumber(returnValue));
     });
   });
 });

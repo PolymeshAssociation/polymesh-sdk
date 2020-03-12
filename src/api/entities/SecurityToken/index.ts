@@ -1,6 +1,10 @@
+import { Identity } from '~/api/entities/Identity';
 import { modifyToken, ModifyTokenParams } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
+import { balanceToBigNumber, boolToBoolean, identityIdToString, tokenNameToString } from '~/utils';
+
+import { SecurityTokenDetails } from './types';
 
 /**
  * Properties that uniquely identify a Security Token
@@ -57,5 +61,31 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     */
     const { ticker } = this;
     return modifyToken.prepare({ ...args, ticker }, this.context);
+  }
+
+  /**
+   * Retrieve the Security Token's name, total supply, whether it is divisible or not and the identity of the owner
+   */
+  public async details(): Promise<SecurityTokenDetails> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      ticker,
+      context,
+    } = this;
+
+    /* eslint-disable @typescript-eslint/camelcase */
+    const { name, total_supply, divisible, owner_did } = await asset.tokens(ticker);
+
+    return {
+      name: tokenNameToString(name),
+      totalSupply: balanceToBigNumber(total_supply),
+      isDivisible: boolToBoolean(divisible),
+      owner: new Identity({ did: identityIdToString(owner_did) }, context),
+    };
+    /* eslint-enable @typescript-eslint/camelcase */
   }
 }
