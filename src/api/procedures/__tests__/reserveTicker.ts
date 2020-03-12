@@ -1,3 +1,4 @@
+import { u8aToString } from '@polkadot/util';
 import { TxTags } from '@polymathnetwork/polkadot/api/types';
 import { Ticker } from '@polymathnetwork/polkadot/types/interfaces';
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
@@ -197,7 +198,7 @@ describe('reserveTicker procedure', () => {
 
 describe('tickerReservationResolver', () => {
   const findEventRecordStub = sinon.stub(utilsModule, 'findEventRecord');
-  const ticker = 'someTicker';
+  const ticker = createMockTicker('someTicker');
 
   beforeEach(() => {
     findEventRecordStub.returns(createMockEventRecord([ticker]));
@@ -212,6 +213,6 @@ describe('tickerReservationResolver', () => {
 
     const result = createTickerReservationResolver(fakeContext)({} as ISubmittableResult);
 
-    expect(result.ticker).toBe(ticker);
+    expect(result.ticker).toBe(u8aToString(ticker));
   });
 });
