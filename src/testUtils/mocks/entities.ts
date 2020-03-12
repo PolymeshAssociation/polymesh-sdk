@@ -197,7 +197,11 @@ export function reset(): void {
  * @hidden
  * Retrieve an Identity instance
  */
-export function getIdentityInstance(): MockIdentity {
+export function getIdentityInstance(opts?: IdentityOptions): MockIdentity {
+  if (opts) {
+    initIdentity(opts);
+  }
+
   return mockInstanceContainer.identity;
 }
 
@@ -211,9 +215,15 @@ export function getIdentityGetPolyXBalanceStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve an Identity instance
+ * Retrieve a Ticker Reservation instance
  */
-export function getTickerReservationInstance(): MockTickerReservation {
+export function getTickerReservationInstance(
+  opts: TickerReservationOptions
+): MockTickerReservation {
+  if (opts) {
+    initTickerReservation(opts);
+  }
+
   return mockInstanceContainer.tickerReservation;
 }
 
@@ -223,4 +233,16 @@ export function getTickerReservationInstance(): MockTickerReservation {
  */
 export function getTickerReservationDetailsStub(): SinonStub {
   return tickerReservationDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a Security Token instance
+ */
+export function getSecurityTokenInstance(opts?: SecurityTokenOptions): MockSecurityToken {
+  if (opts) {
+    initSecurityToken(opts);
+  }
+
+  return mockInstanceContainer.securityToken;
 }

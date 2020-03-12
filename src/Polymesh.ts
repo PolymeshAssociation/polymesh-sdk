@@ -1,6 +1,9 @@
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
+import { Option } from '@polkadot/types';
+import { u8aToString } from '@polkadot/util';
 import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
+import { Link } from 'polymesh-types/types';
 
 import { TickerReservation } from '~/api/entities';
 import { reserveTicker, ReserveTickerParams } from '~/api/procedures';
@@ -116,5 +119,84 @@ export class Polymesh {
     args: ReserveTickerParams
   ): Promise<TransactionQueue<TickerReservation>> {
     return reserveTicker.prepare(args, this.context);
+  }
+
+  /**
+   * Retrieve all the ticker reservations currently owned by an identity. This includes
+   * Security Tokens that have already been launched
+   *
+   * @param args.did - identity ID as stored in the blockchain
+   */
+  public async getTickerReservations(args?: { did: string }): Promise<TickerReservation[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            identity: { links },
+          },
+        },
+      },
+      context: { currentIdentity },
+      context,
+    } = this;
+
+    let identity: string;
+
+    if (args) {
+      identity = args.did;
+    } else if (currentIdentity) {
+      identity = currentIdentity.did;
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'The current account does not have an associated identity',
+      });
+    }
+
+    const tickers = await links.entries({ identity });
+
+    /*
+      NOTE: we have cast to Option<Link> to get access of link_data properties despite what the types say.
+    */
+    const tickerReservations = tickers
+      .filter(([, data]) => ((data as unknown) as Option<Link>).unwrap().link_data.isTickerOwned)
+      .map(([, data]) => {
+        const ticker = ((data as unknown) as Option<Link>).unwrap().link_data.asTickerOwned;
+        return new TickerReservation(
+          // eslint-disable-next-line no-control-regex
+          { ticker: u8aToString(ticker).replace(/\u0000/g, '') },
+          context
+        );
+      });
+
+    return tickerReservations;
+  }
+
+  /**
+   * Retrieve a Ticker Reservation
+   *
+   * @param ticker - Security Token ticker
+   */
+  public async getTickerReservation(args: { ticker: string }): Promise<TickerReservation> {
+    const { ticker } = args;
+    const {
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      context,
+    } = this;
+
+    const tickerReservation = await asset.tickers(ticker);
+
+    if (!tickerReservation.owner.isEmpty) {
+      return new TickerReservation({ ticker }, context);
+    }
+
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: `There is no reservation for ${ticker} ticker`,
+    });
   }
 }

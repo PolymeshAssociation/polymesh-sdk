@@ -186,4 +186,125 @@ describe('Polymesh Class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: getTickerReservations', () => {
+    test('should throw if identity was not instantiated', async () => {
+      polkadotMockUtils.initMocks({ contextOptions: { withSeed: false } });
+
+      polkadotMockUtils.createQueryStub('identity', 'links');
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      return expect(polymesh.getTickerReservations()).rejects.toThrow(
+        'The current account does not have an associated identity'
+      );
+    });
+
+    test('should return a list of ticker reservations if did parameter is set', async () => {
+      const fakeTicker = 'TEST';
+
+      polkadotMockUtils.initMocks({ contextOptions: { withSeed: true } });
+
+      polkadotMockUtils.createQueryStub('identity', 'links', {
+        entries: [
+          polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLink({
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_data: polkadotMockUtils.createMockLinkData({
+                tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+              }),
+              expiry: polkadotMockUtils.createMockOption(),
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_id: polkadotMockUtils.createMockU64(),
+            })
+          ),
+        ],
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const tickerReservations = await polymesh.getTickerReservations({ did: 'someDid' });
+
+      expect(tickerReservations).toHaveLength(1);
+      expect(tickerReservations[0].ticker).toBe(fakeTicker);
+    });
+
+    test('should return a list of ticker reservations owned by the identity', async () => {
+      const fakeTicker = 'TEST';
+
+      polkadotMockUtils.initMocks({ contextOptions: { withSeed: true } });
+
+      polkadotMockUtils.createQueryStub('identity', 'links', {
+        entries: [
+          polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLink({
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_data: polkadotMockUtils.createMockLinkData({
+                tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+              }),
+              expiry: polkadotMockUtils.createMockOption(),
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_id: polkadotMockUtils.createMockU64(),
+            })
+          ),
+        ],
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const tickerReservations = await polymesh.getTickerReservations();
+
+      expect(tickerReservations).toHaveLength(1);
+      expect(tickerReservations[0].ticker).toBe(fakeTicker);
+    });
+  });
+
+  describe('method: getTickerReservation', () => {
+    test('should return a specific ticker reservation owned by the identity', async () => {
+      const ticker = 'TEST';
+
+      polkadotMockUtils.createQueryStub('asset', 'tickers', {
+        returnValue: polkadotMockUtils.createMockTickerRegistration({
+          owner: polkadotMockUtils.createMockIdentityId('someDid'),
+          expiry: polkadotMockUtils.createMockOption(),
+        }),
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const tickerReservation = await polymesh.getTickerReservation({ ticker });
+      expect(tickerReservation.ticker).toBe(ticker);
+    });
+
+    test('should throw if ticker reservation does not exist', async () => {
+      const ticker = 'TEST';
+
+      polkadotMockUtils.createQueryStub('asset', 'tickers', {
+        returnValue: polkadotMockUtils.createMockTickerRegistration({
+          owner: polkadotMockUtils.createMockIdentityId(),
+          expiry: polkadotMockUtils.createMockOption(),
+        }),
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      return expect(polymesh.getTickerReservation({ ticker })).rejects.toThrow(
+        `There is no reservation for ${ticker} ticker`
+      );
+    });
+  });
 });

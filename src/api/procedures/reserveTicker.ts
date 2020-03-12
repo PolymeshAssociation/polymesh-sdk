@@ -9,6 +9,7 @@ import { balanceToBigNumber, findEventRecord, stringToTicker, tickerToString } f
 
 export interface ReserveTickerParams {
   ticker: string;
+  extendPeriod?: boolean;
 }
 
 /**
@@ -38,7 +39,7 @@ export async function prepareReserveTicker(
     },
     context,
   } = this;
-  const { ticker } = args;
+  const { ticker, extendPeriod = false } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
@@ -48,7 +49,7 @@ export async function prepareReserveTicker(
     rawFee,
     balance,
     { max_ticker_length: rawMaxTickerLength },
-    { expiryDate, status },
+    { owner, expiryDate, status },
   ] = await Promise.all([
     query.asset.tickerRegistrationFee(),
     context.accountBalance(),
@@ -64,23 +65,40 @@ export async function prepareReserveTicker(
   }
 
   if (status === TickerReservationStatus.Reserved) {
-    const isPermanent = expiryDate === null;
+    if (!extendPeriod) {
+      const isPermanent = expiryDate === null;
 
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `Ticker "${ticker}" already reserved. The current reservation will ${
-        !isPermanent ? '' : 'not '
-      }expire${!isPermanent ? ` at ${expiryDate}` : ''}`,
-    });
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: `Ticker "${ticker}" already reserved. The current reservation will ${
+          !isPermanent ? '' : 'not '
+        }expire${!isPermanent ? ` at ${expiryDate}` : ''}`,
+      });
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    } else if (owner!.did !== context.currentIdentity!.did) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'You must be the owner of the ticker to extend its reservation period',
+      });
+    }
   }
 
-  const maxTickerLength = rawMaxTickerLength.toNumber();
+  if (!extendPeriod) {
+    const maxTickerLength = rawMaxTickerLength.toNumber();
 
-  if (ticker.length > maxTickerLength) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `Ticker length cannot exceed ${maxTickerLength}`,
-    });
+    if (ticker.length > maxTickerLength) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: `Ticker length cannot exceed ${maxTickerLength}`,
+      });
+    }
+  } else {
+    if (status === TickerReservationStatus.Free) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Ticker not reserved or the reservation has expired',
+      });
+    }
   }
 
   const fee = balanceToBigNumber(rawFee);
@@ -88,7 +106,9 @@ export async function prepareReserveTicker(
   if (balance.lt(fee)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Not enough POLY balance to pay for ticker reservation',
+      message: `Not enough POLY balance to pay for ticker ${
+        extendPeriod ? 'period extension' : 'reservation'
+      }`,
     });
   }
 

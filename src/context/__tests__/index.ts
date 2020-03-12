@@ -57,7 +57,8 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        { unwrap: () => ({ asUnique: '012abc' }) }
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
       );
 
       const context = await Context.create({
@@ -80,7 +81,8 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        { unwrap: () => ({ asUnique: '012abc' }) }
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
       );
 
       const context = await Context.create({
@@ -106,7 +108,8 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        { unwrap: () => ({ asUnique: '012abc' }) }
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
       );
 
       const context = await Context.create({
@@ -132,7 +135,8 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        { unwrap: () => ({ asUnique: '012abc' }) }
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
       );
 
       const context = await Context.create({
@@ -245,11 +249,14 @@ describe('Context class', () => {
     });
 
     test('should return the account POLY balance if currentPair is set', async () => {
-      const fakeResult = (100 as unknown) as Balance;
-      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        unwrap: () => ({ asUnique: '012abc' }),
-      });
-      polkadotMockUtils.createQueryStub('balances', 'freeBalance', fakeResult);
+      const returnValue = (100 as unknown) as Balance;
+      polkadotMockUtils.createQueryStub(
+        'identity',
+        'keyToIdentityIds',
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
+      );
+      polkadotMockUtils.createQueryStub('balances', 'freeBalance', { returnValue });
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
@@ -257,15 +264,18 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance();
-      expect(result).toEqual(balanceToBigNumber(fakeResult));
+      expect(result).toEqual(balanceToBigNumber(returnValue));
     });
 
     test('should return the account POLY balance if accountId is set', async () => {
-      const fakeResult = (100 as unknown) as Balance;
+      const returnValue = (100 as unknown) as Balance;
       polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        unwrap: () => ({ asUnique: '012abc' }),
+        returnValue: {
+          // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+          unwrap: () => ({ asUnique: '012abc' }),
+        },
       });
-      polkadotMockUtils.createQueryStub('balances', 'freeBalance', fakeResult);
+      polkadotMockUtils.createQueryStub('balances', 'freeBalance', { returnValue });
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
@@ -273,7 +283,7 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance('accountId');
-      expect(result).toEqual(balanceToBigNumber(fakeResult));
+      expect(result).toEqual(balanceToBigNumber(returnValue));
     });
   });
 });

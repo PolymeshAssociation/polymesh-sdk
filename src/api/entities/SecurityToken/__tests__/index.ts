@@ -1,5 +1,8 @@
+import { Balance } from '@polkadot/types/interfaces';
+
 import { Entity } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
+import { balanceToBigNumber } from '~/utils';
 
 import { SecurityToken } from '../';
 
@@ -35,6 +38,38 @@ describe('SecurityToken class', () => {
       expect(SecurityToken.isUniqueIdentifiers({ ticker: 'someTicker' })).toBe(true);
       expect(SecurityToken.isUniqueIdentifiers({})).toBe(false);
       expect(SecurityToken.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
+    });
+  });
+
+  describe('method: details', () => {
+    test('should return details for a security token', async () => {
+      const ticker = 'test';
+      const totalSupply = 1000;
+      const isDivisible = true;
+      const owner = '0x0wn3r';
+
+      const context = polkadotMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      polkadotMockUtils.createQueryStub('asset', 'tokens', {
+        returnValue: polkadotMockUtils.createMockSecurityToken({
+          /* eslint-disable @typescript-eslint/camelcase */
+          owner_did: polkadotMockUtils.createMockIdentityId(owner),
+          name: polkadotMockUtils.createMockTokenName(ticker),
+          asset_type: polkadotMockUtils.createMockAssetType('equity'),
+          divisible: polkadotMockUtils.createMockBool(isDivisible),
+          link_id: polkadotMockUtils.createMockU64(3),
+          total_supply: polkadotMockUtils.createMockBalance(totalSupply),
+          /* eslint-enable @typescript-eslint/camelcase */
+        }),
+      });
+
+      const details = await securityToken.details();
+
+      expect(details.name).toBe(ticker);
+      expect(details.totalSupply).toEqual(balanceToBigNumber((totalSupply as unknown) as Balance));
+      expect(details.isDivisible).toBe(isDivisible);
+      expect(details.owner.did).toBe(owner);
     });
   });
 });

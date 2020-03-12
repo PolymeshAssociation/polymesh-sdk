@@ -1,7 +1,9 @@
 import { Callback, Codec } from '@polkadot/types/types';
 import { Ticker } from 'polymesh-types/types';
+import sinon from 'sinon';
 
-import { Entity } from '~/base';
+import { reserveTicker } from '~/api/procedures';
+import { Entity, TransactionQueue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
 import { TickerReservationStatus } from '~/types';
 
@@ -47,16 +49,12 @@ describe('TickerReservation class', () => {
     let tokensStub: sinon.SinonStub<[string | Uint8Array | Ticker, Callback<Codec | Codec[]>]>;
 
     beforeEach(() => {
-      tickersStub = polkadotMockUtils.createQueryStub(
-        'asset',
-        'tickers',
-        polkadotMockUtils.createMockTickerRegistration()
-      );
-      tokensStub = polkadotMockUtils.createQueryStub(
-        'asset',
-        'tokens',
-        polkadotMockUtils.createMockSecurityToken()
-      );
+      tickersStub = polkadotMockUtils.createQueryStub('asset', 'tickers', {
+        returnValue: polkadotMockUtils.createMockTickerRegistration(),
+      });
+      tokensStub = polkadotMockUtils.createQueryStub('asset', 'tokens', {
+        returnValue: polkadotMockUtils.createMockSecurityToken(),
+      });
     });
 
     test('should return details for a free ticker', async () => {
@@ -179,6 +177,30 @@ describe('TickerReservation class', () => {
         expiryDate,
         status: TickerReservationStatus.TokenCreated,
       });
+    });
+  });
+
+  describe('method: extend', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'TEST';
+      const context = polkadotMockUtils.getContextInstance();
+      const tickerReservation = new TickerReservation({ ticker }, context);
+
+      const args = {
+        ticker,
+        extendPeriod: true,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
+
+      sinon
+        .stub(reserveTicker, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await tickerReservation.extend();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });
