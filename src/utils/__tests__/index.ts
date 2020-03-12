@@ -12,7 +12,7 @@ import sinon, { SinonStub } from 'sinon';
 import { ImportMock } from 'ts-mock-imports';
 
 import { PostTransactionValue } from '~/base';
-import { createMockBool, PolkadotMockFactory } from '~/testUtils/mocks';
+import { createMockBool, createMockTicker, PolkadotMockFactory } from '~/testUtils/mocks';
 
 import {
   balanceToBigNumber,
@@ -209,9 +209,7 @@ describe('stringToTicker and tickerToString', () => {
 
   test('tickerToString should convert a polkadot Ticker object to a string', () => {
     const fakeResult = 'someTicker';
-    const ticker = ({
-      toString: sinon.stub().returns(fakeResult),
-    } as unknown) as Ticker;
+    const ticker = createMockTicker(fakeResult);
 
     const result = tickerToString(ticker);
     expect(result).toEqual(fakeResult);

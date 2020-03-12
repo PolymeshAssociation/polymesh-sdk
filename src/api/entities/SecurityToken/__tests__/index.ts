@@ -60,10 +60,8 @@ describe('SecurityToken class', () => {
       const context = polkadotMockFactory.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      polkadotMockFactory.createQueryStub(
-        'asset',
-        'tokens',
-        createMockSecurityToken({
+      polkadotMockFactory.createQueryStub('asset', 'tokens', {
+        returnValue: createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
           owner_did: createMockIdentityId(owner),
           name: createMockTokenName(ticker),
@@ -72,8 +70,8 @@ describe('SecurityToken class', () => {
           link_id: createMockU64(3),
           total_supply: createMockBalance(totalSupply),
           /* eslint-enable @typescript-eslint/camelcase */
-        })
-      );
+        }),
+      });
 
       const details = await securityToken.details();
 

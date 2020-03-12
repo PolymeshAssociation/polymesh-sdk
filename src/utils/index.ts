@@ -1,3 +1,4 @@
+import { u8aToString } from '@polkadot/util';
 import { bool } from '@polymathnetwork/polkadot/types';
 import { createType } from '@polymathnetwork/polkadot/types/create/createType';
 import {
@@ -92,7 +93,7 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
  * @hidden
  */
 export function tickerToString(ticker: Ticker): string {
-  return ticker.toString();
+  return u8aToString(ticker);
 }
 
 /**
