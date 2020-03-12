@@ -173,6 +173,51 @@ describe('reserveTicker procedure', () => {
     );
   });
 
+  test('should throw an error if extendPeriod property is set to true and the ticker has not been reserved or the reservation has expired', async () => {
+    const expiryDate = new Date(2019, 1, 1);
+    mockTickerReservation.mock('details', {
+      ownerDid: 'someDid',
+      expiryDate,
+      status: TickerReservationStatus.Free,
+    });
+    const proc = mockProcedure.getMockInstance();
+    proc.context = mockContext;
+
+    return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
+      'Ticker not reserved or the reservation has expired'
+    );
+  });
+
+  test("should throw an error if extendPeriod property is set to true and the signing account doesn't have enough balance", () => {
+    const expiryDate = new Date(new Date().getTime() + 1000);
+    mockTickerReservation.mock('details', {
+      ownerDid: 'someDid',
+      expiryDate,
+    });
+    mockFactory.createQueryStub('asset', 'tickerRegistrationFee', createMockBalance(600000000));
+    const proc = mockProcedure.getMockInstance();
+    proc.context = mockContext;
+
+    return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
+      'Not enough POLY balance to pay for ticker period extension'
+    );
+  });
+
+  test('should throw an error if extendPeriod property is set to true and the signing account is not the ticker owner', () => {
+    const expiryDate = new Date(new Date().getTime() + 1000);
+    mockTickerReservation.mock('details', {
+      ownerDid: 'anotherDid',
+      expiryDate,
+      status: TickerReservationStatus.Reserved,
+    });
+    const proc = mockProcedure.getMockInstance();
+    proc.context = mockContext;
+
+    return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
+      'You must be the owner of the ticker to extend its reservation period'
+    );
+  });
+
   test('should add a register ticker transaction to the queue', async () => {
     const proc = mockProcedure.getMockInstance();
     proc.context = mockContext;
