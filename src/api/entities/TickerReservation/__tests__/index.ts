@@ -1,7 +1,9 @@
 import { Ticker } from '@polymathnetwork/polkadot/types/interfaces';
 import { Callback, Codec } from '@polymathnetwork/polkadot/types/types';
+import sinon from 'sinon';
 
-import { Entity } from '~/base';
+import { reserveTicker } from '~/api/procedures';
+import { Entity, TransactionQueue } from '~/base';
 import {
   createMockAssetType,
   createMockBalance,
@@ -187,6 +189,30 @@ describe('TickerReservation class', () => {
         expiryDate,
         status: TickerReservationStatus.TokenCreated,
       });
+    });
+  });
+
+  describe('method: extend', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'TEST';
+      const context = polkadotMockFactory.getContextInstance();
+      const tickerReservation = new TickerReservation({ ticker }, context);
+
+      const args = {
+        ticker,
+        extendPeriod: true,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
+
+      sinon
+        .stub(reserveTicker, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await tickerReservation.extend();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

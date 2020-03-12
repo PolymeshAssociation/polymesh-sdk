@@ -1,4 +1,5 @@
-import { Entity } from '~/base';
+import { reserveTicker } from '~/api/procedures';
+import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { identityIdToString, momentToDate } from '~/utils';
 
@@ -88,5 +89,21 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
       expiryDate,
       status,
     };
+  }
+
+  /**
+   * Extend the reservation time period of the ticker for 60 days from now
+   * to later use it in the creation of a Security Token.
+   */
+  public async extend(): Promise<TransactionQueue<TickerReservation>> {
+    const { ticker, context } = this;
+    const extendPeriod = true;
+    return reserveTicker.prepare(
+      {
+        ticker,
+        extendPeriod,
+      },
+      context
+    );
   }
 }
