@@ -1,6 +1,4 @@
-import { stringToU8a } from '@polkadot/util';
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
-import { Ticker } from '@polymathnetwork/polkadot/types/interfaces';
 import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 import { ImportMock, MockManager } from 'ts-mock-imports';
@@ -14,6 +12,7 @@ import {
   createMockLink,
   createMockLinkData,
   createMockOption,
+  createMockTicker,
   createMockTickerRegistration,
   createMockU64,
   PolkadotMockFactory,
@@ -211,7 +210,7 @@ describe('Polymesh Class', () => {
             createMockLink({
               // eslint-disable-next-line @typescript-eslint/camelcase
               link_data: createMockLinkData({
-                tickerOwned: (stringToU8a(fakeTicker) as unknown) as Ticker,
+                tickerOwned: createMockTicker(fakeTicker),
               }),
               expiry: createMockOption(),
               // eslint-disable-next-line @typescript-eslint/camelcase
@@ -243,7 +242,7 @@ describe('Polymesh Class', () => {
             createMockLink({
               // eslint-disable-next-line @typescript-eslint/camelcase
               link_data: createMockLinkData({
-                tickerOwned: (stringToU8a(fakeTicker) as unknown) as Ticker,
+                tickerOwned: createMockTicker(fakeTicker),
               }),
               expiry: createMockOption(),
               // eslint-disable-next-line @typescript-eslint/camelcase

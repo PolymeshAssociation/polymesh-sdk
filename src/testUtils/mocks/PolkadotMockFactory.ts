@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+import { stringToU8a } from '@polkadot/util';
 import * as polkadotModule from '@polymathnetwork/polkadot/api';
 import { bool, Bytes, Enum, Option, u8, u64 } from '@polymathnetwork/polkadot/types';
 import {
@@ -24,7 +25,7 @@ import {
 } from '@polymathnetwork/polkadot/types/interfaces';
 import { Codec, IKeyringPair, ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import { BigNumber } from 'bignumber.js';
-import { every, merge, upperFirst } from 'lodash';
+import { cloneDeep, every, merge, upperFirst } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 import { ImportMock, StaticMockManager } from 'ts-mock-imports';
 
@@ -561,11 +562,11 @@ export class PolkadotMockFactory {
 /**
  * @hidden
  */
-const createMockCodec = (codec: object, isEmpty: boolean): Codec =>
-  ({
-    ...codec,
-    isEmpty,
-  } as Codec);
+const createMockCodec = (codec: object, isEmpty: boolean): Codec => {
+  const clone = cloneDeep(codec) as Mutable<Codec>;
+  clone.isEmpty = isEmpty;
+  return clone;
+};
 
 /**
  * @hidden
@@ -577,6 +578,11 @@ const createMockStringCodec = (value?: string): Codec =>
     },
     !value
   );
+
+/**
+ * @hidden
+ */
+const createMockU8ACodec = (value?: string): Codec => createMockCodec(stringToU8a(value), !value);
 
 /**
  * @hidden
@@ -601,8 +607,7 @@ export const createMockIdentityId = (did?: string): IdentityId =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockTicker = (ticker?: string): Ticker =>
-  createMockStringCodec(ticker) as Ticker;
+export const createMockTicker = (ticker?: string): Ticker => createMockU8ACodec(ticker) as Ticker;
 
 /**
  * @hidden

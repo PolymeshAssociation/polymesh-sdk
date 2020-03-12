@@ -138,7 +138,7 @@ export class Polymesh {
 
     let identity: string;
 
-    if (args?.did) {
+    if (args) {
       identity = args.did;
     } else if (currentIdentity) {
       identity = currentIdentity.did;
