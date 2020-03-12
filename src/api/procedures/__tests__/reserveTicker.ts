@@ -1,4 +1,3 @@
-import { u8aToString } from '@polkadot/util';
 import { TxTags } from '@polymathnetwork/polkadot/api/types';
 import { Ticker } from '@polymathnetwork/polkadot/types/interfaces';
 import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
@@ -33,7 +32,10 @@ import {
 import { Mocked } from '~/testUtils/types';
 import { TickerReservationStatus } from '~/types';
 import { PolymeshTx } from '~/types/internal';
+/* eslint-disable import/no-duplicates */
+import { tickerToString } from '~/utils';
 import * as utilsModule from '~/utils';
+/* eslint-enable import/no-duplicates */
 
 describe('reserveTicker procedure', () => {
   let mockProcedure: MockManager<procedureModule.Procedure<ReserveTickerParams, TickerReservation>>;
@@ -213,6 +215,6 @@ describe('tickerReservationResolver', () => {
 
     const result = createTickerReservationResolver(fakeContext)({} as ISubmittableResult);
 
-    expect(result.ticker).toBe(u8aToString(ticker));
+    expect(result.ticker).toBe(tickerToString(ticker));
   });
 });
