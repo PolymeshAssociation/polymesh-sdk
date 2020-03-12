@@ -178,6 +178,7 @@ export class PolkadotMockFactory {
   private isMockingContext = false;
 
   private mockingContextOptions: ContextOptions = {
+    did: 'someDid',
     withSeed: true,
     balance: new BigNumber(100),
   };
@@ -234,7 +235,7 @@ export class PolkadotMockFactory {
    */
   private initContext(opts: ContextOptions): void {
     const currentIdentity = opts.withSeed
-      ? { getIdentityBalance: sinon.stub().resolves(opts.balance), did: opts.did || 'someDid' }
+      ? { getIdentityBalance: sinon.stub().resolves(opts.balance), did: opts.did }
       : undefined;
     const currentPair = opts.withSeed
       ? ({
