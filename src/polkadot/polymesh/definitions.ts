@@ -1,0 +1,318 @@
+/* eslint-disable @typescript-eslint/camelcase */
+export default {
+  types: {
+    IdentityId: 'H256',
+    Ticker: '[u8; 12]',
+    DocumentName: 'Text',
+    DocumentUri: 'Text',
+    DocumentHash: 'Text',
+    Document: {
+      name: 'DocumentName',
+      uri: 'DocumentUri',
+      content_hash: 'DocumentHash',
+    },
+    AssetType: {
+      _enum: {
+        Equity: '',
+        Debt: '',
+        Commodity: '',
+        StructuredProduct: '',
+        Custom: 'Vec<u8>',
+      },
+    },
+    IdentifierType: {
+      _enum: {
+        Isin: '',
+        Cusip: '',
+        Custom: 'Vec<u8>',
+      },
+    },
+    TokenName: 'Text',
+    AssetIdentifier: 'Text',
+    FundingRoundName: 'Text',
+    SecurityToken: {
+      name: 'TokenName',
+      total_supply: 'Balance',
+      owner_did: 'IdentityId',
+      divisible: 'bool',
+      asset_type: 'AssetType',
+      link_id: 'u64',
+    },
+    LinkedKeyInfo: {
+      _enum: {
+        Unique: 'IdentityId',
+        Group: 'Vec<IdentityId>',
+      },
+    },
+    AccountKey: '[u8;32]',
+    Permission: {
+      _enum: ['Full', 'Admin', 'Operator', 'SpendFunds'],
+    },
+    Link: {
+      link_data: 'LinkData',
+      expiry: 'Option<Moment>',
+      link_id: 'u64',
+    },
+    LinkData: {
+      _enum: {
+        DocumentOwned: 'Document',
+        TickerOwned: 'Ticker',
+        TokenOwned: 'Ticker',
+      },
+    },
+    SignatoryType: {
+      _enum: ['External', 'Identity', 'MultiSig', 'Relayer'],
+    },
+    Signatory: {
+      _enum: {
+        Identity: 'IdentityId',
+        AccountKey: 'AccountKey',
+      },
+    },
+    SigningItem: {
+      signer: 'Signatory',
+      signer_type: 'SignatoryType',
+      permissions: 'Vec<Permission>',
+    },
+    SigningItemWithAuth: {
+      signing_item: 'SigningItem',
+      auth_signature: 'Signature',
+    },
+    IdentityRole: {
+      _enum: [
+        'Issuer',
+        'SimpleTokenIssuer',
+        'Validator',
+        'ClaimIssuer',
+        'Investor',
+        'NodeRunner',
+        'PM',
+        'CDDAMLClaimIssuer',
+        'AccreditedInvestorClaimIssuer',
+        'VerifiedIdentityClaimIssuer',
+      ],
+    },
+    PreAuthorizedKeyInfo: {
+      target_id: 'IdentityId',
+      signing_item: 'SigningItem',
+    },
+    DidRecord: {
+      roles: 'Vec<IdentityRole>',
+      master_key: 'AccountKey',
+      signing_items: 'Vec<SigningItem>',
+    },
+    JurisdictionName: 'Text',
+    IdentityClaimData: {
+      _enum: {
+        Accredited: 'IdentityId',
+        Affiliate: 'IdentityId',
+        BuyLockup: 'IdentityId',
+        SellLockup: 'IdentityId',
+        CustomerDueDiligence: '',
+        KnowYourCustomer: 'IdentityId',
+        Jurisdiction: '(JurisdictionName, IdentityId)',
+        Whitelisted: 'IdentityId',
+        Blacklisted: 'IdentityId',
+        NoData: '',
+      },
+    },
+    IdentityClaim: {
+      claim_issuer: 'IdentityId',
+      issuance_date: 'Moment',
+      last_update_date: 'Moment',
+      expiry: 'Option<Moment>',
+      claim: 'IdentityClaimData',
+    },
+    ClaimIdentifier: {
+      claim: 'IdentityClaimData',
+      claim_issuer: 'IdentityId',
+    },
+    AssetRule: {
+      sender_rules: 'Vec<RuleData>',
+      receiver_rules: 'Vec<RuleData>',
+    },
+    RuleType: {
+      _enum: ['ClaimIsPresent', 'ClaimIsAbsent'],
+    },
+    RuleData: {
+      claim: 'IdentityClaimData',
+      trusted_issuers: 'Vec<IdentityId>',
+      rule_type: 'RuleType',
+    },
+    STO: {
+      beneficiary_did: 'IdentityId',
+      cap: 'Balance',
+      sold: 'Balance',
+      rate: 'u64',
+      start_date: 'Moment',
+      end_date: 'Moment',
+      active: 'bool',
+    },
+    Investment: {
+      investor_did: 'IdentityId',
+      amount_paid: 'Balance',
+      tokens_purchased: 'Balance',
+      last_purchase_date: 'Moment',
+    },
+    SimpleTokenRecord: {
+      ticker: 'Ticker',
+      total_supply: 'Balance',
+      owner_did: 'IdentityId',
+    },
+    FeeOf: 'Balance',
+    Dividend: {
+      amount: 'Balance',
+      active: 'bool',
+      maturates_at: 'Option<u64>',
+      expires_at: 'Option<u64>',
+      payout_currency: 'Option<Ticker>',
+      checkpoint_id: 'u64',
+    },
+    TargetIdAuthorization: {
+      target_id: 'IdentityId',
+      nonce: 'u64',
+      expires_at: 'Moment',
+    },
+    TickerRegistration: {
+      owner: 'IdentityId',
+      expiry: 'Option<Moment>',
+      link_id: 'u64',
+    },
+    TickerRegistrationConfig: {
+      max_ticker_length: 'u8',
+      registration_length: 'Option<Moment>',
+    },
+    SignData: {
+      custodian_did: 'IdentityId',
+      holder_did: 'IdentityId',
+      ticker: 'Ticker',
+      value: 'Balance',
+      nonce: 'u16',
+    },
+    MotionTitle: 'Text',
+    MotionInfoLink: 'Text',
+    Motion: {
+      title: 'MotionTitle',
+      info_link: 'MotionInfoLink',
+      choices: 'Vec<MotionTitle>',
+    },
+    Ballot: {
+      checkpoint_id: 'u64',
+      voting_start: 'Moment',
+      voting_end: 'Moment',
+      motions: 'Vec<Motion>',
+    },
+    Url: 'Text',
+    MipsMetadata: {
+      index: 'u32',
+      end: 'u64',
+      proposal_hash: 'Hash',
+      url: 'Option<Url>',
+    },
+    PolymeshVotes: {
+      index: 'u32',
+      ayes: 'Vec<(IdentityId, Balance)>',
+      nays: 'Vec<(IdentityId, Balance)>',
+    },
+    MipsIndex: 'u32',
+    MipsPriority: {
+      _enum: ['High', 'Normal'],
+    },
+    MIP: {
+      index: 'MipsIndex',
+      proposal: 'Call',
+    },
+    PolymeshReferendumInfo: {
+      index: 'MipsIndex',
+      priority: 'MipsPriority',
+      proposal_hash: 'Hash',
+    },
+    TickerTransferApproval: {
+      authorized_by: 'IdentityId',
+      next_ticker: 'Option<Ticker>',
+      previous_ticker: 'Option<Ticker>',
+    },
+    OffChainSignature: 'H512',
+    PermissionedValidator: {
+      compliance: 'Compliance',
+    },
+    Authorization: {
+      authorization_data: 'AuthorizationData',
+      authorized_by: 'Signatory',
+      expiry: 'Option<Moment>',
+      auth_id: 'u64',
+    },
+    AuthorizationData: {
+      _enum: {
+        AttestMasterKeyRotation: 'IdentityId',
+        RotateMasterKey: 'IdentityId',
+        TransferTicker: 'Ticker',
+        AddMultiSigSigner: '',
+        TransferTokenOwnership: 'Ticker',
+        Custom: 'Vec<u8>',
+        NoData: '',
+      },
+    },
+    AuthIdentifier: {
+      signatory: 'Signatory',
+      auth_id: 'u64',
+    },
+    Compliance: {
+      _enum: ['Pending', 'Active'],
+    },
+    SmartExtensionType: {
+      _enum: {
+        TransferManager: '',
+        Offerings: '',
+        Custom: 'Vec<u8>',
+      },
+    },
+    SmartExtensionName: 'Text',
+    SmartExtension: {
+      extension_type: 'SmartExtensionType',
+      extension_name: 'SmartExtensionName',
+      extension_id: 'IdentityId',
+      is_archive: 'bool',
+    },
+    ProportionMatch: {
+      _enum: ['AtLeast', 'MoreThan'],
+    },
+    AuthorizationNonce: 'u64',
+    Counter: 'u64',
+    Commission: {
+      _enum: {
+        Individual: '',
+        Global: 'u32',
+      },
+    },
+    RestrictionResult: {
+      _enum: ['Valid', 'Invalid', 'ForceValid'],
+    },
+    Memo: '[u8;32]',
+    IssueRecipient: {
+      _enum: {
+        Account: 'AccountKey',
+        Identity: 'IdentityId',
+      },
+    },
+    BridgeTx: {
+      nonce: 'u64',
+      recipient: 'IssueRecipient',
+      value: 'u128',
+      tx_hash: 'H256',
+    },
+    PendingTx: {
+      did: 'IdentityId',
+      bridge_tx: 'BridgeTx',
+    },
+    OfflineSlashingParams: {
+      max_offline_percent: 'u32',
+      constant: 'u32',
+      max_slash_percent: 'u32',
+    },
+    AssetRules: {
+      is_paused: 'bool',
+      rules: 'Vec<AssetRule>',
+    },
+  },
+};

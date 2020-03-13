@@ -1,6 +1,5 @@
-import { TxTags } from '@polymathnetwork/polkadot/api/types';
-import { Ticker } from '@polymathnetwork/polkadot/types/interfaces';
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { ISubmittableResult } from '@polkadot/types/types';
+import { Ticker } from 'polymesh-types/types';
 
 import { TickerReservation } from '~/api/entities';
 import { PolymeshError, PostTransactionValue, Procedure } from '~/base';
@@ -50,7 +49,7 @@ export async function prepareReserveTicker(
     rawFee,
     balance,
     { max_ticker_length: rawMaxTickerLength },
-    { ownerDid, expiryDate, status },
+    { owner, expiryDate, status },
   ] = await Promise.all([
     query.asset.tickerRegistrationFee(),
     context.accountBalance(),
@@ -75,7 +74,8 @@ export async function prepareReserveTicker(
           !isPermanent ? '' : 'not '
         }expire${!isPermanent ? ` at ${expiryDate}` : ''}`,
       });
-    } else if (ownerDid !== context.currentIdentity?.did) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    } else if (owner!.did !== context.currentIdentity!.did) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'You must be the owner of the ticker to extend its reservation period',
@@ -115,7 +115,6 @@ export async function prepareReserveTicker(
   const [newReservation] = this.addTransaction(
     tx.asset.registerTicker,
     {
-      tag: TxTags.asset.RegisterTicker,
       fee,
       resolvers: [createTickerReservationResolver(context)],
     },

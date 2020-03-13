@@ -1,8 +1,9 @@
+import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
+import { Option } from '@polkadot/types';
 import { u8aToString } from '@polkadot/util';
-import { ApiPromise, Keyring, WsProvider } from '@polymathnetwork/polkadot/api';
-import { Option } from '@polymathnetwork/polkadot/types';
-import { Link } from '@polymathnetwork/polkadot/types/interfaces';
 import { BigNumber } from 'bignumber.js';
+import { polymesh } from 'polymesh-types/definitions';
+import { Link } from 'polymesh-types/types';
 
 import { TickerReservation } from '~/api/entities';
 import { reserveTicker, ReserveTickerParams } from '~/api/procedures';
@@ -46,6 +47,7 @@ export class Polymesh {
     try {
       polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
+        types: polymesh.types,
       });
 
       let context: Context;
@@ -83,10 +85,10 @@ export class Polymesh {
   /**
    * Get the POLY balance of the current account
    */
-  public getIdentityBalance = async (): Promise<BigNumber> => {
+  public async getIdentityBalance(): Promise<BigNumber> {
     const { currentIdentity } = this.context;
     if (currentIdentity) {
-      const balance = await currentIdentity.getIdentityBalance();
+      const balance = await currentIdentity.getPolyXBalance();
       return balance;
     } else {
       throw new PolymeshError({
@@ -94,16 +96,18 @@ export class Polymesh {
         message: 'The current account does not have an associated identity',
       });
     }
-  };
+  }
 
   /**
-   * Get the free POLY balance of the current account
+   * Get the free POLY balance of an account
+   *
+   * @param args.accountId - defaults to the current account
    */
-  public getAccountBalance = (accountId?: string): Promise<BigNumber> => {
+  public getAccountBalance(args?: { accountId: string }): Promise<BigNumber> {
     const { context } = this;
 
-    return context.accountBalance(accountId);
-  };
+    return context.accountBalance(args?.accountId);
+  }
 
   /**
    * Reserve a ticker symbol to later use in the creation of a Security Token.

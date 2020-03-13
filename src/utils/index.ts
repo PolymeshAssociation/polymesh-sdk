@@ -1,17 +1,11 @@
+import { bool } from '@polkadot/types';
+import { createType } from '@polkadot/types/create/createType';
+import { Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
+import { ISubmittableResult } from '@polkadot/types/types';
 import { u8aToString } from '@polkadot/util';
-import { bool } from '@polymathnetwork/polkadot/types';
-import { createType } from '@polymathnetwork/polkadot/types/create/createType';
-import {
-  Balance,
-  EventRecord,
-  IdentityId,
-  Moment,
-  Ticker,
-  TokenName,
-} from '@polymathnetwork/polkadot/types/interfaces';
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
+import { IdentityId, Ticker, TokenName } from 'polymesh-types/types';
 
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';

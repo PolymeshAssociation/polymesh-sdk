@@ -1,4 +1,4 @@
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { ISubmittableResult } from '@polkadot/types/types';
 import sinon from 'sinon';
 
 import { PostTransactionValue } from '../PostTransactionValue';

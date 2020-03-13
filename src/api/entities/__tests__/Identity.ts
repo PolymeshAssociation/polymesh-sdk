@@ -1,21 +1,21 @@
 import BigNumber from 'bignumber.js';
 
 import { Entity } from '~/base';
-import { PolkadotMockFactory } from '~/testUtils/mocks';
+import { polkadotMockUtils } from '~/testUtils/mocks';
 
 import { Identity } from '../Identity';
 
 describe('Identity class', () => {
-  const polkadotMockFactory = new PolkadotMockFactory();
-
-  polkadotMockFactory.initMocks({ mockContext: true });
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
 
   afterEach(() => {
-    polkadotMockFactory.reset();
+    polkadotMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockFactory.cleanup();
+    polkadotMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -25,7 +25,7 @@ describe('Identity class', () => {
   describe('constructor', () => {
     test('should assign did to instance', () => {
       const did = 'abc';
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       const identity = new Identity({ did }, context);
 
       expect(identity.did).toBe(did);
@@ -40,14 +40,14 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getIdentityBalance', () => {
+  describe('method: getPolyXBalance', () => {
     test("should return the identity's POLY balance", async () => {
       const fakeBalance = new BigNumber(100);
-      polkadotMockFactory
+      polkadotMockUtils
         .createQueryStub('balances', 'identityBalance')
         .resolves(fakeBalance.times(Math.pow(10, 6)));
-      const identity = new Identity({ did: 'abc' }, polkadotMockFactory.getContextInstance());
-      const result = await identity.getIdentityBalance();
+      const identity = new Identity({ did: 'abc' }, polkadotMockUtils.getContextInstance());
+      const result = await identity.getPolyXBalance();
       expect(result).toEqual(fakeBalance);
     });
   });
