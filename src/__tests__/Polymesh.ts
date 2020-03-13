@@ -1,39 +1,30 @@
-import * as polkadotModule from '@polymathnetwork/polkadot/api';
+import { Keyring } from '@polkadot/api';
 import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
-import { ImportMock, MockManager } from 'ts-mock-imports';
 
 import { TickerReservation } from '~/api/entities';
 import { reserveTicker } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Polymesh } from '~/Polymesh';
-import {
-  createMockIdentityId,
-  createMockLink,
-  createMockLinkData,
-  createMockOption,
-  createMockTicker,
-  createMockTickerRegistration,
-  createMockU64,
-  PolkadotMockFactory,
-} from '~/testUtils/mocks';
+import { polkadotMockUtils } from '~/testUtils/mocks';
+
+jest.mock(
+  '@polkadot/api',
+  require('~/testUtils/mocks/polkadot').mockPolkadotModule('@polkadot/api')
+);
+jest.mock('~/context', require('~/testUtils/mocks/polkadot').mockContextModule('~/context'));
 
 describe('Polymesh Class', () => {
-  const polkadotMockFactory = new PolkadotMockFactory();
-  polkadotMockFactory.initMocks({ mockContext: true });
-  let mockWsProvider: MockManager<polkadotModule.WsProvider>;
-
-  beforeEach(() => {
-    mockWsProvider = ImportMock.mockClass<polkadotModule.WsProvider>(polkadotModule, 'WsProvider');
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockFactory.reset();
-    mockWsProvider.restore();
+    polkadotMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockFactory.cleanup();
+    polkadotMockUtils.cleanup();
   });
 
   describe('method: create', () => {
@@ -42,12 +33,12 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wss://some.url',
       });
 
-      sinon.assert.match(polymesh instanceof Polymesh, true);
+      expect(polymesh instanceof Polymesh).toBe(true);
     });
 
     test('should instantiate Context with a seed and return a Polymesh instance', async () => {
       const accountSeed = 'Alice'.padEnd(32, ' ');
-      const createStub = polkadotMockFactory.getContextCreateStub();
+      const createStub = polkadotMockUtils.getContextCreateStub();
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -56,14 +47,14 @@ describe('Polymesh Class', () => {
 
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
-        polymeshApi: polkadotMockFactory.getApiInstance(),
+        polymeshApi: polkadotMockUtils.getApiInstance(),
         seed: accountSeed,
       });
     });
 
     test('should instantiate Context with a keyring and return a Polymesh instance', async () => {
-      const keyring = {} as polkadotModule.Keyring;
-      const createStub = polkadotMockFactory.getContextCreateStub();
+      const keyring = {} as Keyring;
+      const createStub = polkadotMockUtils.getContextCreateStub();
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -72,14 +63,14 @@ describe('Polymesh Class', () => {
 
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
-        polymeshApi: polkadotMockFactory.getApiInstance(),
+        polymeshApi: polkadotMockUtils.getApiInstance(),
         keyring,
       });
     });
 
     test('should instantiate Context with a uri and return a Polymesh instance', async () => {
       const accountUri = '//uri';
-      const createStub = polkadotMockFactory.getContextCreateStub();
+      const createStub = polkadotMockUtils.getContextCreateStub();
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -88,13 +79,13 @@ describe('Polymesh Class', () => {
 
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
-        polymeshApi: polkadotMockFactory.getApiInstance(),
+        polymeshApi: polkadotMockUtils.getApiInstance(),
         uri: accountUri,
       });
     });
 
     test('should throw if Context fails in the connection process', async () => {
-      polkadotMockFactory.throwOnApiCreation();
+      polkadotMockUtils.throwOnApiCreation();
       const nodeUrl = 'wss://some.url';
       const polymeshApiPromise = Polymesh.connect({
         nodeUrl,
@@ -106,7 +97,7 @@ describe('Polymesh Class', () => {
     });
 
     test('should throw if Context create method fails', () => {
-      polkadotMockFactory.throwOnContextCreation();
+      polkadotMockUtils.throwOnContextCreation();
       const nodeUrl = 'wss://some.url';
       const polymeshApiPromise = Polymesh.connect({
         nodeUrl,
@@ -120,7 +111,7 @@ describe('Polymesh Class', () => {
 
   describe('method: getIdentityBalance', () => {
     test('should throw if identity was not instantiated', async () => {
-      polkadotMockFactory.initMocks({ mockContext: { withSeed: false } });
+      polkadotMockUtils.initMocks({ contextOptions: { withSeed: false } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -133,7 +124,7 @@ describe('Polymesh Class', () => {
 
     test("should return the identity's POLY balance", async () => {
       const fakeBalance = new BigNumber(20);
-      polkadotMockFactory.initMocks({ mockContext: { withSeed: true, balance: fakeBalance } });
+      polkadotMockUtils.initMocks({ contextOptions: { withSeed: true, balance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -146,9 +137,9 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getAccountBalance', () => {
-    test('should return the free POLY balance', async () => {
+    test('should return the free POLY balance of the current account', async () => {
       const fakeBalance = new BigNumber(100);
-      polkadotMockFactory.initMocks({ mockContext: { balance: fakeBalance } });
+      polkadotMockUtils.initMocks({ contextOptions: { balance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -157,11 +148,23 @@ describe('Polymesh Class', () => {
       const result = await polymesh.getAccountBalance();
       expect(result).toEqual(fakeBalance);
     });
+
+    test('should return the free POLY balance of the supplied account', async () => {
+      const fakeBalance = new BigNumber(100);
+      polkadotMockUtils.initMocks({ contextOptions: { balance: fakeBalance } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const result = await polymesh.getAccountBalance({ accountId: 'someId' });
+      expect(result).toEqual(fakeBalance);
+    });
   });
 
   describe('method: reserveTicker', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -186,9 +189,9 @@ describe('Polymesh Class', () => {
 
   describe('method: getTickerReservations', () => {
     test('should throw if identity was not instantiated', async () => {
-      polkadotMockFactory.initMocks({ mockContext: { withSeed: false } });
+      polkadotMockUtils.initMocks({ contextOptions: { withSeed: false } });
 
-      polkadotMockFactory.createQueryStub('identity', 'links');
+      polkadotMockUtils.createQueryStub('identity', 'links');
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -202,19 +205,19 @@ describe('Polymesh Class', () => {
     test('should return a list of ticker reservations if did parameter is set', async () => {
       const fakeTicker = 'TEST';
 
-      polkadotMockFactory.initMocks({ mockContext: { withSeed: true } });
+      polkadotMockUtils.initMocks({ contextOptions: { withSeed: true } });
 
-      polkadotMockFactory.createQueryStub('identity', 'links', {
+      polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
-          createMockOption(
-            createMockLink({
+          polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLink({
               // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: createMockLinkData({
-                tickerOwned: createMockTicker(fakeTicker),
+              link_data: polkadotMockUtils.createMockLinkData({
+                tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
               }),
-              expiry: createMockOption(),
+              expiry: polkadotMockUtils.createMockOption(),
               // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: createMockU64(),
+              link_id: polkadotMockUtils.createMockU64(),
             })
           ),
         ],
@@ -234,19 +237,19 @@ describe('Polymesh Class', () => {
     test('should return a list of ticker reservations owned by the identity', async () => {
       const fakeTicker = 'TEST';
 
-      polkadotMockFactory.initMocks({ mockContext: { withSeed: true } });
+      polkadotMockUtils.initMocks({ contextOptions: { withSeed: true } });
 
-      polkadotMockFactory.createQueryStub('identity', 'links', {
+      polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
-          createMockOption(
-            createMockLink({
+          polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLink({
               // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: createMockLinkData({
-                tickerOwned: createMockTicker(fakeTicker),
+              link_data: polkadotMockUtils.createMockLinkData({
+                tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
               }),
-              expiry: createMockOption(),
+              expiry: polkadotMockUtils.createMockOption(),
               // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: createMockU64(),
+              link_id: polkadotMockUtils.createMockU64(),
             })
           ),
         ],
@@ -268,10 +271,10 @@ describe('Polymesh Class', () => {
     test('should return a specific ticker reservation owned by the identity', async () => {
       const ticker = 'TEST';
 
-      polkadotMockFactory.createQueryStub('asset', 'tickers', {
-        returnValue: createMockTickerRegistration({
-          owner: createMockIdentityId('someDid'),
-          expiry: createMockOption(),
+      polkadotMockUtils.createQueryStub('asset', 'tickers', {
+        returnValue: polkadotMockUtils.createMockTickerRegistration({
+          owner: polkadotMockUtils.createMockIdentityId('someDid'),
+          expiry: polkadotMockUtils.createMockOption(),
         }),
       });
 
@@ -287,10 +290,10 @@ describe('Polymesh Class', () => {
     test('should throw if ticker reservation does not exist', async () => {
       const ticker = 'TEST';
 
-      polkadotMockFactory.createQueryStub('asset', 'tickers', {
-        returnValue: createMockTickerRegistration({
-          owner: createMockIdentityId(),
-          expiry: createMockOption(),
+      polkadotMockUtils.createQueryStub('asset', 'tickers', {
+        returnValue: polkadotMockUtils.createMockTickerRegistration({
+          owner: polkadotMockUtils.createMockIdentityId(),
+          expiry: polkadotMockUtils.createMockOption(),
         }),
       });
 

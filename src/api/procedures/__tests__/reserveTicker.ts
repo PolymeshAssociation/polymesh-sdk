@@ -1,118 +1,105 @@
-import { TxTags } from '@polymathnetwork/polkadot/api/types';
-import { Ticker } from '@polymathnetwork/polkadot/types/interfaces';
-import { ISubmittableResult } from '@polymathnetwork/polkadot/types/types';
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
-import { ImportMock, MockManager } from 'ts-mock-imports';
 
-/* eslint-disable import/no-duplicates */
 import { TickerReservation } from '~/api/entities';
-import * as entitiesModule from '~/api/entities';
-/* eslint-enable import/no-duplicates */
 import {
   createTickerReservationResolver,
   prepareReserveTicker,
   ReserveTickerParams,
 } from '~/api/procedures/reserveTicker';
 import { PostTransactionValue } from '~/base';
-import * as procedureModule from '~/base/Procedure';
 import { Context } from '~/context';
-import {
-  createMockBalance,
-  createMockEventRecord,
-  createMockMoment,
-  createMockOption,
-  createMockSecurityToken,
-  createMockTicker,
-  createMockTickerRegistration,
-  createMockTickerRegistrationConfig,
-  createMockU8,
-  PolkadotMockFactory,
-} from '~/testUtils/mocks';
+import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TickerReservationStatus } from '~/types';
 import { PolymeshTx } from '~/types/internal';
-/* eslint-disable import/no-duplicates */
-import { tickerToString } from '~/utils';
 import * as utilsModule from '~/utils';
-/* eslint-enable import/no-duplicates */
+
+jest.mock(
+  '~/api/entities/TickerReservation',
+  require('~/testUtils/mocks/entities').mockTickerReservationModule(
+    '~/api/entities/TickerReservation'
+  )
+);
 
 describe('reserveTicker procedure', () => {
-  let mockProcedure: MockManager<procedureModule.Procedure<ReserveTickerParams, TickerReservation>>;
-  let mockTickerReservation: MockManager<entitiesModule.TickerReservation>;
-  const mockFactory = new PolkadotMockFactory();
   let mockContext: Mocked<Context>;
+  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let ticker: string;
+  let rawTicker: Ticker;
+  let args: ReserveTickerParams;
+  let fee: number;
+  let reservation: PostTransactionValue<TickerReservation>;
 
-  mockFactory.initMocks({ mockContext: { balance: new BigNumber(500) } });
-
-  const stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-
-  const ticker = 'someTicker';
-  const rawTicker = createMockTicker(ticker);
-  const args: ReserveTickerParams = {
-    ticker,
-  };
-  const fee = 250;
+  beforeAll(() => {
+    polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(500) } });
+    procedureMockUtils.initMocks();
+    entityMockUtils.initMocks({ identityOptions: { did: 'someOtherDid' } });
+    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    ticker = 'someTicker';
+    rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    args = {
+      ticker,
+    };
+    fee = 250;
+    reservation = ('reservation' as unknown) as PostTransactionValue<TickerReservation>;
+  });
 
   let addTransactionStub: sinon.SinonStub;
-
-  const reservation = ('reservation' as unknown) as PostTransactionValue<TickerReservation>;
 
   let transaction: PolymeshTx<[string | Ticker | Uint8Array]>;
 
   beforeEach(() => {
-    mockProcedure = ImportMock.mockClass<
-      procedureModule.Procedure<ReserveTickerParams, TickerReservation>
-    >(procedureModule, 'Procedure');
-    addTransactionStub = mockProcedure.mock('addTransaction').returns([reservation]);
+    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([reservation]);
 
-    mockTickerReservation = ImportMock.mockClass<entitiesModule.TickerReservation>(
-      entitiesModule,
-      'TickerReservation'
-    );
-    mockTickerReservation.mock('details', {
-      ownerDid: null,
+    entityMockUtils.getTickerReservationDetailsStub().resolves({
+      owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
       status: TickerReservationStatus.Free,
     });
 
-    mockFactory.createQueryStub('asset', 'tickerRegistrationFee', {
-      returnValue: createMockBalance(fee * Math.pow(10, 6)),
+    polkadotMockUtils.createQueryStub('asset', 'tickerRegistrationFee', {
+      returnValue: polkadotMockUtils.createMockBalance(fee * Math.pow(10, 6)),
     });
-    mockFactory.createQueryStub('asset', 'tickers', {
-      returnValue: createMockTickerRegistration(),
+    polkadotMockUtils.createQueryStub('asset', 'tickers', {
+      returnValue: polkadotMockUtils.createMockTickerRegistration(),
     });
-    mockFactory.createQueryStub('asset', 'tokens', { returnValue: createMockSecurityToken() });
-    mockFactory.createQueryStub('asset', 'tickerConfig', {
-      returnValue: createMockTickerRegistrationConfig(),
+    polkadotMockUtils.createQueryStub('asset', 'tokens', {
+      returnValue: polkadotMockUtils.createMockSecurityToken(),
+    });
+    polkadotMockUtils.createQueryStub('asset', 'tickerConfig', {
+      returnValue: polkadotMockUtils.createMockTickerRegistrationConfig(),
     });
 
-    transaction = mockFactory.createTxStub('asset', 'registerTicker');
+    transaction = polkadotMockUtils.createTxStub('asset', 'registerTicker');
 
-    mockContext = mockFactory.getContextInstance();
+    mockContext = polkadotMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
 
   afterEach(() => {
-    mockProcedure.restore();
-    mockTickerReservation.restore();
-    mockFactory.reset();
-    stringToTickerStub.reset();
+    entityMockUtils.reset();
+    procedureMockUtils.reset();
+    polkadotMockUtils.reset();
   });
 
   afterAll(() => {
-    mockFactory.cleanup();
+    entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
+    polkadotMockUtils.cleanup();
   });
 
   test('should throw an error if the ticker is already reserved', () => {
     const expiryDate = new Date(new Date().getTime() + 1000);
-    mockTickerReservation.mock('details', {
-      ownerDid: 'someDid',
+    entityMockUtils.getTickerReservationDetailsStub().resolves({
+      owner: entityMockUtils.getIdentityInstance(),
       expiryDate,
       status: TickerReservationStatus.Reserved,
     });
-    const proc = mockProcedure.getMockInstance();
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
@@ -121,12 +108,12 @@ describe('reserveTicker procedure', () => {
   });
 
   test('should throw an error if the current reservation is permanent', () => {
-    mockTickerReservation.mock('details', {
-      ownerDid: 'someDid',
+    entityMockUtils.getTickerReservationDetailsStub().resolves({
+      owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
       status: TickerReservationStatus.Reserved,
     });
-    const proc = mockProcedure.getMockInstance();
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
@@ -135,12 +122,12 @@ describe('reserveTicker procedure', () => {
   });
 
   test('should throw an error if a token with that ticker has already been launched', () => {
-    mockTickerReservation.mock('details', {
-      ownerDid: 'someDid',
+    entityMockUtils.getTickerReservationDetailsStub().resolves({
+      owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
       status: TickerReservationStatus.TokenCreated,
     });
-    const proc = mockProcedure.getMockInstance();
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
@@ -150,15 +137,17 @@ describe('reserveTicker procedure', () => {
 
   test('should throw an error if the ticker length exceeds the maximum', () => {
     const maxTickerLength = 3;
-    mockFactory.createQueryStub('asset', 'tickerConfig', {
-      returnValue: createMockTickerRegistrationConfig({
+    polkadotMockUtils.createQueryStub('asset', 'tickerConfig', {
+      returnValue: polkadotMockUtils.createMockTickerRegistrationConfig({
         /* eslint-disable @typescript-eslint/camelcase */
-        max_ticker_length: createMockU8(maxTickerLength),
-        registration_length: createMockOption(createMockMoment(10000)),
+        max_ticker_length: polkadotMockUtils.createMockU8(maxTickerLength),
+        registration_length: polkadotMockUtils.createMockOption(
+          polkadotMockUtils.createMockMoment(10000)
+        ),
         /* eslint-enable @typescript-eslint/camelcase */
       }),
     });
-    const proc = mockProcedure.getMockInstance();
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
@@ -167,10 +156,10 @@ describe('reserveTicker procedure', () => {
   });
 
   test("should throw an error if the signing account doesn't have enough balance", () => {
-    mockFactory.createQueryStub('asset', 'tickerRegistrationFee', {
-      returnValue: createMockBalance(600000000),
+    polkadotMockUtils.createQueryStub('asset', 'tickerRegistrationFee', {
+      returnValue: polkadotMockUtils.createMockBalance(600000000),
     });
-    const proc = mockProcedure.getMockInstance();
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
@@ -180,12 +169,12 @@ describe('reserveTicker procedure', () => {
 
   test('should throw an error if extendPeriod property is set to true and the ticker has not been reserved or the reservation has expired', async () => {
     const expiryDate = new Date(2019, 1, 1);
-    mockTickerReservation.mock('details', {
-      ownerDid: 'someDid',
+    entityMockUtils.getTickerReservationDetailsStub().resolves({
+      owner: entityMockUtils.getIdentityInstance(),
       expiryDate,
       status: TickerReservationStatus.Free,
     });
-    const proc = mockProcedure.getMockInstance();
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
@@ -195,14 +184,15 @@ describe('reserveTicker procedure', () => {
 
   test("should throw an error if extendPeriod property is set to true and the signing account doesn't have enough balance", () => {
     const expiryDate = new Date(new Date().getTime() + 1000);
-    mockTickerReservation.mock('details', {
-      ownerDid: 'someDid',
+    entityMockUtils.getTickerReservationDetailsStub().resolves({
+      owner: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       expiryDate,
+      status: TickerReservationStatus.Reserved,
     });
-    mockFactory.createQueryStub('asset', 'tickerRegistrationFee', {
-      returnValue: createMockBalance(600000000),
+    polkadotMockUtils.createQueryStub('asset', 'tickerRegistrationFee', {
+      returnValue: polkadotMockUtils.createMockBalance(600000000),
     });
-    const proc = mockProcedure.getMockInstance();
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
@@ -212,12 +202,12 @@ describe('reserveTicker procedure', () => {
 
   test('should throw an error if extendPeriod property is set to true and the signing account is not the ticker owner', () => {
     const expiryDate = new Date(new Date().getTime() + 1000);
-    mockTickerReservation.mock('details', {
-      ownerDid: 'anotherDid',
+    entityMockUtils.getTickerReservationDetailsStub().resolves({
+      owner: entityMockUtils.getIdentityInstance(),
       expiryDate,
       status: TickerReservationStatus.Reserved,
     });
-    const proc = mockProcedure.getMockInstance();
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
@@ -226,7 +216,7 @@ describe('reserveTicker procedure', () => {
   });
 
   test('should add a register ticker transaction to the queue', async () => {
-    const proc = mockProcedure.getMockInstance();
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
     const result = await prepareReserveTicker.call(proc, args);
@@ -235,7 +225,6 @@ describe('reserveTicker procedure', () => {
       addTransactionStub,
       transaction,
       sinon.match({
-        tag: TxTags.asset.RegisterTicker,
         fee: new BigNumber(fee),
         resolvers: sinon.match.array,
       }),
@@ -247,10 +236,15 @@ describe('reserveTicker procedure', () => {
 
 describe('tickerReservationResolver', () => {
   const findEventRecordStub = sinon.stub(utilsModule, 'findEventRecord');
-  const ticker = createMockTicker('someTicker');
+  const tickerString = 'someTicker';
+  const ticker = polkadotMockUtils.createMockTicker(tickerString);
+
+  beforeAll(() => {
+    entityMockUtils.initMocks({ tickerReservationOptions: { ticker: tickerString } });
+  });
 
   beforeEach(() => {
-    findEventRecordStub.returns(createMockEventRecord([ticker]));
+    findEventRecordStub.returns(polkadotMockUtils.createMockEventRecord([ticker]));
   });
 
   afterEach(() => {
@@ -262,6 +256,6 @@ describe('tickerReservationResolver', () => {
 
     const result = createTickerReservationResolver(fakeContext)({} as ISubmittableResult);
 
-    expect(result.ticker).toBe(tickerToString(ticker));
+    expect(result.ticker).toBe(tickerString);
   });
 });

@@ -1,8 +1,8 @@
+import { ApiPromise, Keyring } from '@polkadot/api';
+import { IKeyringPair } from '@polkadot/types/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
-import { ApiPromise, Keyring } from '@polymathnetwork/polkadot/api';
-import { IdentityId } from '@polymathnetwork/polkadot/types/interfaces';
-import { IKeyringPair } from '@polymathnetwork/polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
@@ -127,17 +127,17 @@ export class Context {
   /**
    * Retrieve a list of addresses associated with the account
    */
-  public getAccounts = (): Array<AccountData> => {
+  public getAccounts(): Array<AccountData> {
     const { keyring } = this;
     return keyring.getPairs().map(({ address, meta }) => {
       return { address, name: meta.name };
     });
-  };
+  }
 
   /**
    * Set a pair as the current account keyring pair
    */
-  public setPair = (address: string): void => {
+  public setPair(address: string): void {
     const { keyring } = this;
     try {
       this.currentPair = keyring.getPair(address);
@@ -147,12 +147,12 @@ export class Context {
         message: 'The address is not present in the keyring set',
       });
     }
-  };
+  }
 
   /**
    * Retrieve the account level POLY balance
    */
-  public accountBalance = async (accountId?: string): Promise<BigNumber> => {
+  public async accountBalance(accountId?: string): Promise<BigNumber> {
     const { currentPair } = this;
     let address: string;
 
@@ -170,5 +170,5 @@ export class Context {
     const balance = await this.polymeshApi.query.balances.freeBalance(address);
 
     return balanceToBigNumber(balance);
-  };
+  }
 }

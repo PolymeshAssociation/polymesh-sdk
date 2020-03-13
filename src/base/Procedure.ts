@@ -1,4 +1,4 @@
-import { AddressOrPair, TxTag } from '@polymathnetwork/polkadot/api/types';
+import { AddressOrPair } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 
 import { TransactionQueue } from '~/base';
@@ -105,8 +105,6 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    * @param method - a method that will be run in the Procedure's TransactionQueue.
    * A future method is a transaction that doesn't exist at prepare time
    * (for example a transaction on a module that hasn't been attached but will be by the time the previous transactions are run)
-   * @param options.tag - a tag for SDK users to identify this transaction, this
-   * can be used for doing things such as mapping descriptions to tags in the UI
    * @param options.fee - value in POLY of the transaction (defaults to 0)
    * @param options.resolvers - asynchronous callbacks used to return runtime data after
    * the added transaction has finished successfully
@@ -119,7 +117,6 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
   public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
     tx: MaybePostTransactionValue<PolymeshTx<TxArgs>>,
     options: {
-      tag: TxTag;
       fee?: BigNumber;
       resolvers?: ResolverFunctionArray<Values>;
       isCritical?: boolean;
@@ -128,7 +125,6 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     ...args: MapMaybePostTransactionValue<TxArgs>
   ): PostTransactionValueArray<Values> {
     const {
-      tag,
       fee = new BigNumber(0),
       resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
       isCritical = true,
@@ -144,7 +140,6 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       tx,
       args,
       postTransactionValues,
-      tag,
       isCritical,
       signer,
     };

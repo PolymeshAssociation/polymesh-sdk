@@ -1,31 +1,22 @@
-import { Balance } from '@polymathnetwork/polkadot/types/interfaces';
+import { Balance } from '@polkadot/types/interfaces';
 
 import { Entity } from '~/base';
-import {
-  createMockAssetType,
-  createMockBalance,
-  createMockBool,
-  createMockIdentityId,
-  createMockSecurityToken,
-  createMockTokenName,
-  createMockU64,
-  PolkadotMockFactory,
-} from '~/testUtils/mocks';
+import { polkadotMockUtils } from '~/testUtils/mocks';
 import { balanceToBigNumber } from '~/utils';
 
 import { SecurityToken } from '../';
 
 describe('SecurityToken class', () => {
-  const polkadotMockFactory = new PolkadotMockFactory();
-
-  polkadotMockFactory.initMocks({ mockContext: true });
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
 
   afterEach(() => {
-    polkadotMockFactory.reset();
+    polkadotMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockFactory.cleanup();
+    polkadotMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -35,7 +26,7 @@ describe('SecurityToken class', () => {
   describe('constructor', () => {
     test('should assign ticker to instance', () => {
       const ticker = 'test';
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
       expect(securityToken.ticker).toBe(ticker);
@@ -57,18 +48,18 @@ describe('SecurityToken class', () => {
       const isDivisible = true;
       const owner = '0x0wn3r';
 
-      const context = polkadotMockFactory.getContextInstance();
+      const context = polkadotMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      polkadotMockFactory.createQueryStub('asset', 'tokens', {
-        returnValue: createMockSecurityToken({
+      polkadotMockUtils.createQueryStub('asset', 'tokens', {
+        returnValue: polkadotMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
-          owner_did: createMockIdentityId(owner),
-          name: createMockTokenName(ticker),
-          asset_type: createMockAssetType('equity'),
-          divisible: createMockBool(isDivisible),
-          link_id: createMockU64(3),
-          total_supply: createMockBalance(totalSupply),
+          owner_did: polkadotMockUtils.createMockIdentityId(owner),
+          name: polkadotMockUtils.createMockTokenName(ticker),
+          asset_type: polkadotMockUtils.createMockAssetType('equity'),
+          divisible: polkadotMockUtils.createMockBool(isDivisible),
+          link_id: polkadotMockUtils.createMockU64(3),
+          total_supply: polkadotMockUtils.createMockBalance(totalSupply),
           /* eslint-enable @typescript-eslint/camelcase */
         }),
       });
