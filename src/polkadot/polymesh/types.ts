@@ -4,7 +4,7 @@
 import { Enum, Option, Struct, U8aFixed, Vec } from '@polkadot/types/codec';
 import { Signature } from '@polkadot/types/interfaces/extrinsics';
 import { Balance, Call, H256, H512, Hash, Moment } from '@polkadot/types/interfaces/runtime';
-import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types/primitive';
+import { bool, Bytes, Text, u8,u16, u32, u64, u128 } from '@polkadot/types/primitive';
 import { ITuple } from '@polkadot/types/types';
 
 /** @name AccountKey */
@@ -17,12 +17,13 @@ export interface AssetIdentifier extends Text {}
 export interface AssetRule extends Struct {
   readonly sender_rules: Vec<RuleData>;
   readonly receiver_rules: Vec<RuleData>;
+  readonly rule_id: u32;
 }
 
 /** @name AssetRules */
 export interface AssetRules extends Struct {
   readonly is_paused: bool;
-  readonly rules: Vec<AssetRule>;
+  readonly rules: Vec<AssetRules>;
 }
 
 /** @name AssetType */
@@ -60,6 +61,8 @@ export interface AuthorizationData extends Enum {
   readonly isAddMultiSigSigner: boolean;
   readonly isTransferTokenOwnership: boolean;
   readonly asTransferTokenOwnership: Ticker;
+  readonly isJoinIdentity: boolean;
+  readonly asJoinIdentity: IdentityId;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
   readonly isNoData: boolean;
@@ -253,6 +256,9 @@ export interface MIP extends Struct {
   readonly index: MipsIndex;
   readonly proposal: Call;
 }
+
+/** @name MipDescription */
+export interface MipDescription extends Text {}
 
 /** @name MipsIndex */
 export interface MipsIndex extends u32 {}

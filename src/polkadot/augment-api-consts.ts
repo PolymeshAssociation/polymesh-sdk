@@ -190,5 +190,9 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
        **/
       burn: AugmentedConst<Permill>;
     };
+    bridge: {
+      maxTimelockedTxsPerBlock: AugmentedConst<u32>;
+      blockRangeForTimelock: AugmentedConst<BlockNumber>;
+    };
   }
 }

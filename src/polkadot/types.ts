@@ -94,6 +94,7 @@ export enum MultiSigTx {
   AddMultisigSigner = 'multiSig.addMultisigSigner',
   RemoveMultisigSigner = 'multiSig.removeMultisigSigner',
   ChangeSigsRequired = 'multiSig.changeSigsRequired',
+  ChangeAllSignersAndSigsRequired = 'multiSig.changeAllSignersAndSigsRequired',
 }
 
 export enum ContractsTx {
@@ -132,7 +133,7 @@ export enum MipsTx {
   Vote = 'mips.vote',
   KillProposal = 'mips.killProposal',
   FastTrackProposal = 'mips.fastTrackProposal',
-  EmergencyReferendum = 'mips.emergencyReferendum',
+  SubmitReferendum = 'mips.submitReferendum',
   EnactReferendum = 'mips.enactReferendum',
 }
 
@@ -175,6 +176,7 @@ export enum AssetTx {
 export enum BridgeTx {
   ChangeController = 'bridge.changeController',
   ChangeAdminKey = 'bridge.changeAdminKey',
+  ChangeTimelock = 'bridge.changeTimelock',
   Freeze = 'bridge.freeze',
   Unfreeze = 'bridge.unfreeze',
   ProposeBridgeTx = 'bridge.proposeBridgeTx',
@@ -195,11 +197,12 @@ export enum DividendTx {
 export enum IdentityTx {
   RegisterDid = 'identity.registerDid',
   CddRegisterDid = 'identity.cddRegisterDid',
-  AddSigningItems = 'identity.addSigningItems',
   RemoveSigningItems = 'identity.removeSigningItems',
   SetMasterKey = 'identity.setMasterKey',
   AcceptMasterKey = 'identity.acceptMasterKey',
   ChangeCddRequirementForMkRotation = 'identity.changeCddRequirementForMkRotation',
+  JoinIdentityAsKey = 'identity.joinIdentityAsKey',
+  JoinIdentityAsIdentity = 'identity.joinIdentityAsIdentity',
   AddClaim = 'identity.addClaim',
   AddClaimsBatch = 'identity.addClaimsBatch',
   ForwardedCall = 'identity.forwardedCall',
@@ -216,8 +219,6 @@ export enum IdentityTx {
   BatchRemoveAuthorization = 'identity.batchRemoveAuthorization',
   AcceptAuthorization = 'identity.acceptAuthorization',
   BatchAcceptAuthorization = 'identity.batchAcceptAuthorization',
-  AuthorizeJoinToIdentity = 'identity.authorizeJoinToIdentity',
-  UnauthorizedJoinToIdentity = 'identity.unauthorizedJoinToIdentity',
   AddSigningItemsWithAuthorization = 'identity.addSigningItemsWithAuthorization',
   RevokeOffchainAuthorization = 'identity.revokeOffchainAuthorization',
 }
@@ -228,6 +229,12 @@ export enum GeneralTmTx {
   ResetActiveRules = 'generalTm.resetActiveRules',
   PauseAssetRules = 'generalTm.pauseAssetRules',
   ResumeAssetRules = 'generalTm.resumeAssetRules',
+  AddDefaultTrustedClaimIssuer = 'generalTm.addDefaultTrustedClaimIssuer',
+  RemoveDefaultTrustedClaimIssuer = 'generalTm.removeDefaultTrustedClaimIssuer',
+  AddDefaultTrustedClaimIssuersBatch = 'generalTm.addDefaultTrustedClaimIssuersBatch',
+  RemoveDefaultTrustedClaimIssuersBatch = 'generalTm.removeDefaultTrustedClaimIssuersBatch',
+  ChangeAssetRule = 'generalTm.changeAssetRule',
+  ChangeAssetRuleBatch = 'generalTm.changeAssetRuleBatch',
 }
 
 export enum VotingTx {
