@@ -56,6 +56,27 @@ export enum Role {
   Owner = 'Owner',
 }
 
+export enum KnownTokenType {
+  Equity = 'Equity',
+  Debt = 'Debt',
+  Commodity = 'Commodity',
+  StructuredProduct = 'StructuredProduct',
+}
+
+export type TokenType = KnownTokenType | { custom: string };
+
+export enum KnownTokenIdentifierType {
+  Isin = 'Isin',
+  Cusip = 'Cusip',
+}
+
+export type TokenIdentifierType = KnownTokenIdentifierType | { custom: string };
+
+export interface TokenIdentifier {
+  type: TokenIdentifierType;
+  value: string;
+}
+
 /**
  * Specifies possible types of errors in the SDK
  */

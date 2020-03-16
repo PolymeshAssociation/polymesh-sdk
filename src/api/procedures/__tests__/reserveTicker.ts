@@ -131,7 +131,7 @@ describe('reserveTicker procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
-      `A Security Token with ticker "${ticker} already exists`
+      `A Security Token with ticker "${ticker}" already exists`
     );
   });
 

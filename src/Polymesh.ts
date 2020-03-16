@@ -85,11 +85,10 @@ export class Polymesh {
   /**
    * Get the POLY balance of the current account
    */
-  public async getIdentityBalance(): Promise<BigNumber> {
+  public getIdentityBalance(): Promise<BigNumber> {
     const { currentIdentity } = this.context;
     if (currentIdentity) {
-      const balance = await currentIdentity.getPolyXBalance();
-      return balance;
+      return currentIdentity.getPolyXBalance();
     } else {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
@@ -115,9 +114,7 @@ export class Polymesh {
    *
    * @param args.ticker - ticker symbol to reserve
    */
-  public async reserveTicker(
-    args: ReserveTickerParams
-  ): Promise<TransactionQueue<TickerReservation>> {
+  public reserveTicker(args: ReserveTickerParams): Promise<TransactionQueue<TickerReservation>> {
     return reserveTicker.prepare(args, this.context);
   }
 

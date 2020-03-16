@@ -60,7 +60,7 @@ export async function prepareReserveTicker(
   if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `A Security Token with ticker "${ticker} already exists`,
+      message: `A Security Token with ticker "${ticker}" already exists`,
     });
   }
 

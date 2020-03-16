@@ -1,3 +1,4 @@
+import { bool } from '@polkadot/types';
 import * as createTypeModule from '@polkadot/types/create/createType';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
@@ -10,6 +11,7 @@ import { polkadotMockUtils } from '~/testUtils/mocks';
 
 import {
   balanceToBigNumber,
+  booleanToBool,
   boolToBoolean,
   dateToMoment,
   delay,
@@ -20,6 +22,7 @@ import {
   serialize,
   stringToIdentityId,
   stringToTicker,
+  stringToTokenName,
   tickerToString,
   tokenNameToString,
   unserialize,
@@ -200,7 +203,7 @@ describe('stringToTicker and tickerToString', () => {
 
   test('stringToTicker should convert a string to a polkadot Ticker object', () => {
     const value = 'someTicker';
-    const fakeResult = ('someTicker' as unknown) as Ticker;
+    const fakeResult = ('convertedTicker' as unknown) as Ticker;
     const context = polkadotMockUtils.getContextInstance();
 
     mockCreateType.withArgs(context.polymeshApi.registry, 'Ticker', value).returns(fakeResult);
@@ -219,8 +222,39 @@ describe('stringToTicker and tickerToString', () => {
   });
 });
 
-describe('tokenNameToString', () => {
-  test('tokenNameToString should convert a TokenName object to a string', () => {
+describe('stringToTokenName and tokenNameToString', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToTokenName should convert a string to a polkadot TokenName object', () => {
+    const value = 'someName';
+    const fakeResult = ('convertedName' as unknown) as TokenName;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType.withArgs(context.polymeshApi.registry, 'TokenName', value).returns(fakeResult);
+
+    const result = stringToTokenName(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('tokenNameToString should convert a polkadot TokenName object to a string', () => {
     const fakeResult = 'someTokenName';
     const tokenName = ({
       toString: sinon.stub().returns(fakeResult),
@@ -231,8 +265,39 @@ describe('tokenNameToString', () => {
   });
 });
 
-describe('boolToBoolean', () => {
-  test('boolToBoolean should convert a bool object to a boolean', () => {
+describe('booleanToBool and boolToBoolean', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('booleanToBool should convert a boolean to a polkadot bool object', () => {
+    const value = true;
+    const fakeResult = ('true' as unknown) as bool;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType.withArgs(context.polymeshApi.registry, 'bool', value).returns(fakeResult);
+
+    const result = booleanToBool(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('boolToBoolean should convert a polkadot bool object to a boolean', () => {
     const fakeResult = true;
     const mockBool = polkadotMockUtils.createMockBool(fakeResult);
 

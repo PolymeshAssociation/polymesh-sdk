@@ -5,11 +5,25 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import { u8aToString } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { IdentityId, Ticker, TokenName } from 'polymesh-types/types';
+import {
+  AssetIdentifier,
+  AssetType,
+  FundingRoundName,
+  IdentifierType,
+  IdentityId,
+  Ticker,
+  TokenName,
+} from 'polymesh-types/types';
 
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode } from '~/types';
+import {
+  ErrorCode,
+  KnownTokenIdentifierType,
+  KnownTokenType,
+  TokenIdentifierType,
+  TokenType,
+} from '~/types';
 import {
   Extrinsics,
   MapMaybePostTransactionValue,
@@ -21,13 +35,13 @@ import {
  *
  * @param amount - time to wait
  */
-export const delay = async (amount: number): Promise<void> => {
+export async function delay(amount: number): Promise<void> {
   return new Promise(resolve => {
     setTimeout(() => {
       resolve();
     }, amount);
   });
-};
+}
 
 /**
  * Convert an entity type and its unique Identifiers to a base64 string
@@ -65,8 +79,22 @@ export function unserialize<UniqueIdentifiers extends object>(id: string): Uniqu
 /**
  * @hidden
  */
+export function stringToTokenName(name: string, context: Context): TokenName {
+  return createType<'TokenName'>(context.polymeshApi.registry, 'TokenName', name);
+}
+
+/**
+ * @hidden
+ */
 export function tokenNameToString(name: TokenName): string {
   return name.toString();
+}
+
+/**
+ * @hidden
+ */
+export function booleanToBool(value: boolean, context: Context): bool {
+  return createType<'bool'>(context.polymeshApi.registry, 'bool', value);
 }
 
 /**
@@ -134,6 +162,89 @@ export function numberToBalance(value: number | BigNumber, context: Context): Ba
  */
 export function balanceToBigNumber(balance: Balance): BigNumber {
   return new BigNumber(balance.toString()).div(Math.pow(10, 6));
+}
+
+/**
+ * @hidden
+ */
+export function tokenTypeToAssetType(type: TokenType, context: Context): AssetType {
+  return createType<'AssetType'>(context.polymeshApi.registry, 'AssetType', type);
+}
+
+/**
+ * @hidden
+ */
+export function assetTypeToString(assetType: AssetType): string {
+  if (assetType.isCommodity) {
+    return KnownTokenType.Commodity;
+  }
+  if (assetType.isDebt) {
+    return KnownTokenType.Debt;
+  }
+  if (assetType.isEquity) {
+    return KnownTokenType.Equity;
+  }
+  if (assetType.isStructuredProduct) {
+    return KnownTokenType.StructuredProduct;
+  }
+
+  return u8aToString(assetType.asCustom);
+}
+
+/**
+ * @hidden
+ */
+export function tokenIdentifierTypeToIdentifierType(
+  type: TokenIdentifierType,
+  context: Context
+): IdentifierType {
+  return createType<'IdentifierType'>(context.polymeshApi.registry, 'IdentifierType', type);
+}
+
+/**
+ * @hidden
+ */
+export function identifierTypeToTokenIdentifierType(type: IdentifierType): string {
+  if (type.isCusip) {
+    return KnownTokenIdentifierType.Cusip;
+  }
+  if (type.isIsin) {
+    return KnownTokenIdentifierType.Isin;
+  }
+
+  return u8aToString(type.asCustom);
+}
+
+/**
+ * @hidden
+ */
+export function stringToAssetIdentifier(id: string, context: Context): AssetIdentifier {
+  return createType<'AssetIdentifier'>(context.polymeshApi.registry, 'AssetIdentifier', id);
+}
+
+/**
+ * @hidden
+ */
+export function assetIdentifierToString(id: AssetIdentifier): string {
+  return id.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToFundingRoundName(roundName: string, context: Context): FundingRoundName {
+  return createType<'FundingRoundName'>(
+    context.polymeshApi.registry,
+    'FundingRoundName',
+    roundName
+  );
+}
+
+/**
+ * @hidden
+ */
+export function fundingRoundNameToString(roundName: FundingRoundName): string {
+  return roundName.toString();
 }
 
 /**
