@@ -130,6 +130,7 @@ export default {
     AssetRule: {
       sender_rules: 'Vec<RuleData>',
       receiver_rules: 'Vec<RuleData>',
+      rule_id: 'u32',
     },
     RuleType: {
       _enum: ['ClaimIsPresent', 'ClaimIsAbsent'],
@@ -222,6 +223,7 @@ export default {
       index: 'MipsIndex',
       proposal: 'Call',
     },
+    MipDescription: 'Text',
     PolymeshReferendumInfo: {
       index: 'MipsIndex',
       priority: 'MipsPriority',
@@ -249,6 +251,7 @@ export default {
         TransferTicker: 'Ticker',
         AddMultiSigSigner: '',
         TransferTokenOwnership: 'Ticker',
+        JoinIdentity: 'IdentityId',
         Custom: 'Vec<u8>',
         NoData: '',
       },
@@ -312,7 +315,7 @@ export default {
     },
     AssetRules: {
       is_paused: 'bool',
-      rules: 'Vec<AssetRule>',
+      rules: 'Vec<AssetRules>',
     },
   },
 };

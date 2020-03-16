@@ -572,6 +572,7 @@ import {
   LinkedKeyInfo,
   Memo,
   MIP,
+  MipDescription,
   MipsIndex,
   MipsMetadata,
   MipsPriority,
@@ -2287,6 +2288,9 @@ declare module '@polkadot/types/types/registry' {
     MIP: MIP;
     'Option<MIP>': Option<MIP>;
     'Vec<MIP>': Vec<MIP>;
+    MipDescription: MipDescription;
+    'Option<MipDescription>': Option<MipDescription>;
+    'Vec<MipDescription>': Vec<MipDescription>;
     PolymeshReferendumInfo: PolymeshReferendumInfo;
     'Option<PolymeshReferendumInfo>': Option<PolymeshReferendumInfo>;
     'Vec<PolymeshReferendumInfo>': Vec<PolymeshReferendumInfo>;
