@@ -92,7 +92,6 @@ import {
   PolymeshReferendumInfo,
   PolymeshVotes,
   PreAuthorizedKeyInfo,
-  ProportionMatch,
   SecurityToken,
   Signatory,
   SimpleTokenRecord,
@@ -853,7 +852,7 @@ declare module '@polkadot/api/types/storage' {
       /**
        * Vote threshold for an approval.
        **/
-      voteThreshold: AugmentedQuery<ApiType, () => Observable<ITuple<[ProportionMatch, u32, u32]>>>;
+      voteThreshold: AugmentedQuery<ApiType, () => Observable<ITuple<[u32, u32]>>>;
     };
     committeeMembership: {
       /**
@@ -1206,6 +1205,19 @@ declare module '@polkadot/api/types/storage' {
        * Whether or not the bridge operation is frozen.
        **/
       frozen: AugmentedQuery<ApiType, () => Observable<bool>>;
+      /**
+       * The bridge transaction timelock period, in blocks, since the acceptance of the
+       * transaction proposal during which the admin key can freeze the transaction.
+       **/
+      timelock: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+      /**
+       * The list of timelocked transactions with the block numbers in which those transactions
+       * become unlocked.
+       **/
+      timelockedTxs: AugmentedQuery<
+        ApiType,
+        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<BridgeTx>>
+      >;
     };
     dividend: {
       /**
@@ -1361,6 +1373,13 @@ declare module '@polkadot/api/types/storage' {
       assetRulesMap: AugmentedQuery<
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<AssetRules>
+      >;
+      /**
+       * List of trusted claim issuer Ticker -> Issuer Identity
+       **/
+      trustedClaimIssuer: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<Vec<IdentityId>>
       >;
     };
     voting: {

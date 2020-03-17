@@ -26,7 +26,7 @@ import {
 import { Keys } from '@polkadot/types/interfaces/session';
 import { EraIndex, RewardDestination, ValidatorPrefs } from '@polkadot/types/interfaces/staking';
 import { Key } from '@polkadot/types/interfaces/system';
-import { bool, Bytes, u16, u32, u64, u128 } from '@polkadot/types/primitive';
+import { bool, Bytes, u16, u32, u64,u128 } from '@polkadot/types/primitive';
 import { AnyNumber, ITuple } from '@polkadot/types/types';
 import {
   AccountKey,
@@ -43,11 +43,12 @@ import {
   IdentityClaimData,
   IdentityId,
   Memo,
+  MipDescription,
   MipsIndex,
   OffChainSignature,
   OfflineSlashingParams,
   Permission,
-  ProportionMatch,
+  RuleData,
   Signatory,
   SigningItem,
   SigningItemWithAuth,
@@ -739,6 +740,22 @@ declare module '@polkadot/api/types/submittable' {
       changeSigsRequired: AugmentedSubmittable<
         (sigsRequired: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
+      /**
+       * This function allows to replace all existing signers of the given multisig & also change no. of signature required
+       * NOTE - Once this function get executed no other function of the multisig is allowed to execute until unless
+       * potential signers accept the authorization and there count should be greater than or equal to the signature required
+       * # Arguments
+       * * signers - Vector of signers for a given multisig
+       * * sigs_required - Number of signature required for a given multisig
+       **/
+      changeAllSignersAndSigsRequired: AugmentedSubmittable<
+        (
+          signers:
+            | Vec<Signatory>
+            | (Signatory | { identity: any } | { accountKey: any } | string | Uint8Array)[],
+          sigsRequired: u64 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
     };
     contracts: {
       /**
@@ -876,16 +893,14 @@ declare module '@polkadot/api/types/submittable' {
     polymeshCommittee: {
       /**
        * Change the vote threshold the determines the winning proposal. For e.g., for a simple
-       * majority use (ProportionMatch.AtLeast, 1, 2) which represents the inequation ">= 1/2"
+       * majority use (1, 2) which represents the inequation ">= 1/2"
        * # Arguments
        * * `match_criteria` One of {AtLeast, MoreThan}
        * * `n` Numerator of the fraction representing vote threshold
        * * `d` Denominator of the fraction representing vote threshold
-       * * `match_criteria` One of {AtLeast, MoreThan}
        **/
       setVoteThreshold: AugmentedSubmittable<
         (
-          matchCriteria: ProportionMatch | ('AtLeast' | 'MoreThan') | number | Uint8Array,
           n: u32 | AnyNumber | Uint8Array,
           d: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
@@ -1012,7 +1027,8 @@ declare module '@polkadot/api/types/submittable' {
         (
           proposal: Proposal | { callIndex?: any; args?: any } | string | Uint8Array,
           deposit: BalanceOf | AnyNumber | Uint8Array,
-          url: Option<Url> | null | object | string | Uint8Array
+          url: Option<Url> | null | object | string | Uint8Array,
+          description: Option<MipDescription> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -1043,8 +1059,8 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * An emergency stop measure to kill a proposal. Governance committee can kill
-       * a proposal at any time.
+       * Any governance committee member can fast track a proposal and turn it into a referendum
+       * that will be voted on by the committee.
        **/
       fastTrackProposal: AugmentedSubmittable<
         (
@@ -1053,10 +1069,10 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * An emergency proposal that bypasses network voting process. Governance committee can make
-       * a proposal that automatically becomes a referendum on which the committee can vote on.
+       * Governance committee can make a proposal that automatically becomes a referendum on
+       * which the committee can vote on.
        **/
-      emergencyReferendum: AugmentedSubmittable<
+      submitReferendum: AugmentedSubmittable<
         (
           proposal: Proposal | { callIndex?: any; args?: any } | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
@@ -1623,10 +1639,17 @@ declare module '@polkadot/api/types/submittable' {
         (accountKey: AccountKey | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
+       * Change the timelock period.
+       **/
+      changeTimelock: AugmentedSubmittable<
+        (timelock: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * Freezes the entire operation of the bridge module if it is not already frozen. The only
        * available operations in the frozen state are the following admin methods:
        * * `change_controller`,
        * * `change_admin_key`,
+       * * `change_timelock`,
        * * `unfreeze`,
        * * `freeze_bridge_txs`,
        * * `unfreeze_bridge_txs`.
@@ -1659,8 +1682,6 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Handles an approved bridge transaction proposal.
-       * NOTE: Extrinsics without `pub` are exported too. This function is declared as `pub` only
-       * to test that it cannot be called from a wrong `origin`.
        **/
       handleBridgeTx: AugmentedSubmittable<
         (
@@ -1791,25 +1812,6 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Adds new signing keys for a DID. Only called by master key owner.
-       * # Failure
-       * - It can only called by master key owner.
-       * - If any signing key is already linked to any identity, it will fail.
-       * - If any signing key is already
-       **/
-      addSigningItems: AugmentedSubmittable<
-        (
-          signingItems:
-            | Vec<SigningItem>
-            | (
-                | SigningItem
-                | { signer?: any; signer_type?: any; permissions?: any }
-                | string
-                | Uint8Array
-              )[]
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
        * Removes specified signing keys of a DID if present.
        * # Failure
        * It can only called by master key owner.
@@ -1851,6 +1853,18 @@ declare module '@polkadot/api/types/submittable' {
        **/
       changeCddRequirementForMkRotation: AugmentedSubmittable<
         (authRequired: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Join an identity as a signing key
+       **/
+      joinIdentityAsKey: AugmentedSubmittable<
+        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Join an identity as a signing identity
+       **/
+      joinIdentityAsIdentity: AugmentedSubmittable<
+        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * Adds new claim record or edits an existing one. Only called by did_issuer's signing key
@@ -1994,6 +2008,7 @@ declare module '@polkadot/api/types/submittable' {
             | { transferTicker: any }
             | { addMultiSigSigner: any }
             | { transferTokenOwnership: any }
+            | { joinIdentity: any }
             | { custom: any }
             | { noData: any }
             | string
@@ -2015,6 +2030,7 @@ declare module '@polkadot/api/types/submittable' {
             | { transferTicker: any }
             | { addMultiSigSigner: any }
             | { transferTokenOwnership: any }
+            | { joinIdentity: any }
             | { custom: any }
             | { noData: any }
             | string
@@ -2038,6 +2054,7 @@ declare module '@polkadot/api/types/submittable' {
                   | { transferTicker: any }
                   | { addMultiSigSigner: any }
                   | { transferTokenOwnership: any }
+                  | { joinIdentity: any }
                   | { custom: any }
                   | { noData: any }
                   | string
@@ -2077,27 +2094,6 @@ declare module '@polkadot/api/types/submittable' {
        **/
       batchAcceptAuthorization: AugmentedSubmittable<
         (authIds: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * The key designated by `origin` accepts the authorization to join to `target_id`
-       * Identity.
-       * # Errors
-       * - AccountKey should be authorized previously to join to that target identity.
-       * - AccountKey is not linked to any other identity.
-       **/
-      authorizeJoinToIdentity: AugmentedSubmittable<
-        (targetId: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Identity's master key or target key are allowed to reject a pre authorization to join.
-       * It only affects the authorization: if key accepted it previously, then this transaction
-       * shall have no effect.
-       **/
-      unauthorizedJoinToIdentity: AugmentedSubmittable<
-        (
-          signer: Signatory | { identity: any } | { accountKey: any } | string | Uint8Array,
-          targetId: IdentityId | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * It adds signing keys to target identity `id`.
@@ -2142,39 +2138,165 @@ declare module '@polkadot/api/types/submittable' {
     generalTm: {
       /**
        * Adds an asset rule to active rules for a ticker
+       * # Arguments
+       * * origin - Signer of the dispatchable. It should be the owner of the ticker
+       * * ticker - Symbol of the asset
+       * * sender_rules - Sender transfer rule.
+       * * receiver_rules - Receiver transfer rule.
        **/
       addActiveRule: AugmentedSubmittable<
         (
           ticker: Ticker | string | Uint8Array,
-          assetRule: AssetRule | { sender_rules?: any; receiver_rules?: any } | string | Uint8Array
+          senderRules:
+            | Vec<RuleData>
+            | (
+                | RuleData
+                | { claim?: any; trusted_issuers?: any; rule_type?: any }
+                | string
+                | Uint8Array
+              )[],
+          receiverRules:
+            | Vec<RuleData>
+            | (
+                | RuleData
+                | { claim?: any; trusted_issuers?: any; rule_type?: any }
+                | string
+                | Uint8Array
+              )[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * Removes a rule from active asset rules
+       * # Arguments
+       * * origin - Signer of the dispatchable. It should be the owner of the ticker
+       * * ticker - Symbol of the asset
+       * * asset_rule_id - Rule id which is need to be removed
        **/
       removeActiveRule: AugmentedSubmittable<
         (
           ticker: Ticker | string | Uint8Array,
-          assetRule: AssetRule | { sender_rules?: any; receiver_rules?: any } | string | Uint8Array
+          assetRuleId: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Removes all active rules of a ticker
+       * Removes all active rules of a given ticker
+       * # Arguments
+       * * origin - Signer of the dispatchable. It should be the owner of the ticker
+       * * ticker - Symbol of the asset
        **/
       resetActiveRules: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * It pauses the verification of rules for `ticker` during transfers.
+       * # Arguments
+       * * origin - Signer of the dispatchable. It should be the owner of the ticker
+       * * ticker - Symbol of the asset
        **/
       pauseAssetRules: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * It resumes the verification of rules for `ticker` during transfers.
+       * # Arguments
+       * * origin - Signer of the dispatchable. It should be the owner of the ticker
+       * * ticker - Symbol of the asset
        **/
       resumeAssetRules: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * To add the default trusted claim issuer for a given asset
+       * Addition - When the given element is not exist
+       * # Arguments
+       * * origin - Signer of the dispatchable. It should be the owner of the ticker.
+       * * ticker - Symbol of the asset.
+       * * trusted_issuer - IdentityId of the trusted claim issuer.
+       **/
+      addDefaultTrustedClaimIssuer: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          trustedIssuer: IdentityId | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * To remove the default trusted claim issuer for a given asset
+       * Removal - When the given element is already present
+       * # Arguments
+       * * origin - Signer of the dispatchable. It should be the owner of the ticker.
+       * * ticker - Symbol of the asset.
+       * * trusted_issuer - IdentityId of the trusted claim issuer.
+       **/
+      removeDefaultTrustedClaimIssuer: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          trustedIssuer: IdentityId | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * To add the default trusted claim issuer for a given asset
+       * Addition - When the given element is not exist
+       * # Arguments
+       * * origin - Signer of the dispatchable. It should be the owner of the ticker.
+       * * ticker - Symbol of the asset.
+       * * trusted_issuers - Vector of IdentityId of the trusted claim issuers.
+       **/
+      addDefaultTrustedClaimIssuersBatch: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          trustedIssuers: Vec<IdentityId> | (IdentityId | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * To remove the default trusted claim issuer for a given asset
+       * Removal - When the given element is already present
+       * # Arguments
+       * * origin - Signer of the dispatchable. It should be the owner of the ticker.
+       * * ticker - Symbol of the asset.
+       * * trusted_issuers - Vector of IdentityId of the trusted claim issuers.
+       **/
+      removeDefaultTrustedClaimIssuersBatch: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          trustedIssuers: Vec<IdentityId> | (IdentityId | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Change/Modify the existing asset rule of a given ticker
+       * # Arguments
+       * * origin - Signer of the dispatchable. It should be the owner of the ticker.
+       * * ticker - Symbol of the asset.
+       * * asset_rule - Asset rule.
+       **/
+      changeAssetRule: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          assetRule:
+            | AssetRule
+            | { sender_rules?: any; receiver_rules?: any; rule_id?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Change/Modify the existing asset rule of a given ticker in batch
+       * # Arguments
+       * * origin - Signer of the dispatchable. It should be the owner of the ticker.
+       * * ticker - Symbol of the asset.
+       * * asset_rules - Vector of asset rule.
+       **/
+      changeAssetRuleBatch: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          assetRules:
+            | Vec<AssetRule>
+            | (
+                | AssetRule
+                | { sender_rules?: any; receiver_rules?: any; rule_id?: any }
+                | string
+                | Uint8Array
+              )[]
+        ) => SubmittableExtrinsic<ApiType>
       >;
     };
     voting: {
