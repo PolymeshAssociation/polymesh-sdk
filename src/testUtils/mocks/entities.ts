@@ -110,7 +110,7 @@ function initSecurityToken(opts: SecurityTokenOptions): void {
     ticker: opts.ticker,
   } as unknown) as MockSecurityToken;
 
-  mockInstanceContainer.securityToken = securityToken;
+  Object.assign(mockInstanceContainer.securityToken, securityToken);
   securityTokenConstructorStub.returns(securityToken);
 }
 
@@ -127,7 +127,7 @@ function initTickerReservation(opts: TickerReservationOptions): void {
     details: tickerReservationDetailsStub.resolves(opts.details),
   } as unknown) as MockTickerReservation;
 
-  mockInstanceContainer.tickerReservation = tickerReservation;
+  Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
   tickerReservationConstructorStub.returns(tickerReservation);
 }
 
@@ -144,7 +144,7 @@ function initIdentity(opts: IdentityOptions): void {
     getPolyXBalance: identityGetPolyXBalanceStub.resolves(opts.getPolyXBalance),
   } as unknown) as MockIdentity;
 
-  mockInstanceContainer.identity = identity;
+  Object.assign(mockInstanceContainer.identity, identity);
   identityConstructorStub.returns(identity);
 }
 

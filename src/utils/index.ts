@@ -204,7 +204,7 @@ export function tokenIdentifierTypeToIdentifierType(
 /**
  * @hidden
  */
-export function identifierTypeToTokenIdentifierType(type: IdentifierType): string {
+export function identifierTypeToString(type: IdentifierType): string {
   if (type.isCusip) {
     return KnownTokenIdentifierType.Cusip;
   }

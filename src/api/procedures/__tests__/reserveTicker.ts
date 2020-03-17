@@ -63,12 +63,6 @@ describe('reserveTicker procedure', () => {
     polkadotMockUtils.createQueryStub('asset', 'tickerRegistrationFee', {
       returnValue: polkadotMockUtils.createMockBalance(fee * Math.pow(10, 6)),
     });
-    polkadotMockUtils.createQueryStub('asset', 'tickers', {
-      returnValue: polkadotMockUtils.createMockTickerRegistration(),
-    });
-    polkadotMockUtils.createQueryStub('asset', 'tokens', {
-      returnValue: polkadotMockUtils.createMockSecurityToken(),
-    });
     polkadotMockUtils.createQueryStub('asset', 'tickerConfig', {
       returnValue: polkadotMockUtils.createMockTickerRegistrationConfig(),
     });

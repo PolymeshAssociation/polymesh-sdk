@@ -57,17 +57,17 @@ export enum Role {
 }
 
 export enum KnownTokenType {
-  Equity = 'Equity',
-  Debt = 'Debt',
-  Commodity = 'Commodity',
-  StructuredProduct = 'StructuredProduct',
+  Equity = 'equity',
+  Debt = 'debt',
+  Commodity = 'commodity',
+  StructuredProduct = 'structuredProduct',
 }
 
 export type TokenType = KnownTokenType | { custom: string };
 
 export enum KnownTokenIdentifierType {
-  Isin = 'Isin',
-  Cusip = 'Cusip',
+  Isin = 'isin',
+  Cusip = 'cusip',
 }
 
 export type TokenIdentifierType = KnownTokenIdentifierType | { custom: string };

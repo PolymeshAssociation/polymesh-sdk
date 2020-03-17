@@ -22,10 +22,10 @@ export interface CreateSecurityTokenParams {
   isDivisible: boolean;
   tokenType: TokenType;
   tokenIdentifiers: TokenIdentifier[];
-  fundingRound: string;
+  fundingRound?: string;
 }
 
-type Params = CreateSecurityTokenParams & {
+export type Params = CreateSecurityTokenParams & {
   ticker: string;
 };
 
@@ -104,7 +104,7 @@ export async function prepareCreateSecurityToken(
       ];
     }
   );
-  const rawFundingRound = stringToFundingRoundName(fundingRound, context);
+  const rawFundingRound = fundingRound ? stringToFundingRoundName(fundingRound, context) : null;
 
   this.addTransaction(
     tx.asset.createToken,

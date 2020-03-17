@@ -117,7 +117,7 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wss://some.url',
       });
 
-      return expect(polymesh.getIdentityBalance()).rejects.toThrow(
+      return expect(() => polymesh.getIdentityBalance()).toThrow(
         'The current account does not have an associated identity'
       );
     });

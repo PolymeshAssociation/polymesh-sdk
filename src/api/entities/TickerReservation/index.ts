@@ -123,7 +123,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
    * @param args.isDivisible - whether a single token can be divided into decimal parts
    * @param args.tokenType - type of security that the token represents (i.e. Equity, Debt, Commodity, etc)
    * @param args.tokenIdentifiers - domestic or international alphanumeric security identifiers for the token (ISIN, CUSIP, etc)
-   * @param args.fundingRound - funding round in which the token currently is (Series A, Series B, etc)
+   * @param args.fundingRound - (optional) funding round in which the token currently is (Series A, Series B, etc)
    */
   public createToken(args: CreateSecurityTokenParams): Promise<TransactionQueue<SecurityToken>> {
     const { ticker, context } = this;
