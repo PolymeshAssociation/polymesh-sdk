@@ -37,6 +37,7 @@ export async function prepareModifyToken(
 
   const { isDivisible, owner } = await securityToken.details();
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (owner.did !== context.currentIdentity?.did) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
