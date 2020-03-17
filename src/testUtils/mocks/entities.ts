@@ -1,6 +1,7 @@
 /* istanbul ignore file */
 
 import BigNumber from 'bignumber.js';
+import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
@@ -181,7 +182,7 @@ export function initMocks(opts?: {
   initTickerReservation(tickerReservationOptions);
 
   // Security Token
-  securityTokenOptions = { ...defaultSecurityTokenOptions, ...opts?.securityTokenOptions };
+  securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts?.securityTokenOptions);
   initSecurityToken(securityTokenOptions);
 }
 
@@ -262,9 +263,12 @@ export function getSecurityTokenInstance(opts?: SecurityTokenOptions): MockSecur
  * @hidden
  * Retrieve the stub of the `SecurityToken.details` method
  */
-export function getSecurityTokenDetailsStub(opts?: Partial<SecurityTokenDetails>): SinonStub {
-  if (opts) {
-    return securityTokenDetailsStub.resolves({ ...defaultSecurityTokenOptions.details, ...opts });
+export function getSecurityTokenDetailsStub(details?: Partial<SecurityTokenDetails>): SinonStub {
+  if (details) {
+    return securityTokenDetailsStub.resolves({
+      ...defaultSecurityTokenOptions.details,
+      ...details,
+    });
   }
   return securityTokenDetailsStub;
 }

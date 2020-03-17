@@ -23,13 +23,7 @@ describe('modifyToken procedure', () => {
   beforeAll(() => {
     polkadotMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    entityMockUtils.initMocks({
-      securityTokenOptions: {
-        details: {
-          owner: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
-        },
-      },
-    });
+    entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     ticker = 'someTicker';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
