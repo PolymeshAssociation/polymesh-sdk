@@ -9,12 +9,12 @@ const configDevFile = path.resolve(__dirname, '../tsconfig.dev.json');
 rimraf.sync(configDevFile);
 
 let rawdata = fs.readFileSync(configFile);
-let student = JSON.parse(rawdata);
+let tsConfigJson = JSON.parse(rawdata);
 
-student.compilerOptions.rootDir = '.';
+tsConfigJson.compilerOptions.rootDir = '.';
 
 let tsConfigDev = JSON.stringify({
-  compilerOptions: student.compilerOptions,
+  compilerOptions: tsConfigJson.compilerOptions,
 });
 
 fs.writeFileSync(configDevFile, tsConfigDev);
