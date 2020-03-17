@@ -41,7 +41,7 @@ describe('Identity class', () => {
   });
 
   describe('method: getPolyXBalance', () => {
-    test("should return the identity's POLY balance", async () => {
+    test("should return the identity's POLYX balance", async () => {
       const fakeBalance = new BigNumber(100);
       polkadotMockUtils
         .createQueryStub('balances', 'identityBalance')

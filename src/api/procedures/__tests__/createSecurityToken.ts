@@ -238,7 +238,7 @@ describe('createSecurityToken procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareCreateSecurityToken.call(proc, args)).rejects.toThrow(
-      'Not enough POLY balance to pay for token creation'
+      'Not enough POLYX balance to pay for token creation'
     );
   });
 

@@ -45,7 +45,7 @@ export class TransactionQueue<
   public error?: PolymeshError;
 
   /**
-   * total cost of running the transactions in the queue (in POLY). This does not include gas
+   * total cost of running the transactions in the queue (in POLYX). This does not include gas
    */
   public fees: BigNumber;
 

@@ -122,7 +122,7 @@ describe('Polymesh Class', () => {
       );
     });
 
-    test("should return the identity's POLY balance", async () => {
+    test("should return the identity's POLYX balance", async () => {
       const fakeBalance = new BigNumber(20);
       polkadotMockUtils.initMocks({ contextOptions: { withSeed: true, balance: fakeBalance } });
 
@@ -137,7 +137,7 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getAccountBalance', () => {
-    test('should return the free POLY balance of the current account', async () => {
+    test('should return the free POLYX balance of the current account', async () => {
       const fakeBalance = new BigNumber(100);
       polkadotMockUtils.initMocks({ contextOptions: { balance: fakeBalance } });
 
@@ -149,7 +149,7 @@ describe('Polymesh Class', () => {
       expect(result).toEqual(fakeBalance);
     });
 
-    test('should return the free POLY balance of the supplied account', async () => {
+    test('should return the free POLYX balance of the supplied account', async () => {
       const fakeBalance = new BigNumber(100);
       polkadotMockUtils.initMocks({ contextOptions: { balance: fakeBalance } });
 

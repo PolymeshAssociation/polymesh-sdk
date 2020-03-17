@@ -87,7 +87,7 @@ export async function prepareCreateSecurityToken(
   if (balance.lt(fee)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Not enough POLY balance to pay for token creation',
+      message: 'Not enough POLYX balance to pay for token creation',
     });
   }
 

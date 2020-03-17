@@ -248,7 +248,7 @@ describe('Context class', () => {
       );
     });
 
-    test('should return the account POLY balance if currentPair is set', async () => {
+    test('should return the account POLYX balance if currentPair is set', async () => {
       const returnValue = (100 as unknown) as Balance;
       polkadotMockUtils.createQueryStub(
         'identity',
@@ -267,7 +267,7 @@ describe('Context class', () => {
       expect(result).toEqual(balanceToBigNumber(returnValue));
     });
 
-    test('should return the account POLY balance if accountId is set', async () => {
+    test('should return the account POLYX balance if accountId is set', async () => {
       const returnValue = (100 as unknown) as Balance;
       polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
         returnValue: {
