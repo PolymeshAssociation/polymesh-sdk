@@ -2,7 +2,7 @@ import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
-import { ModifyTokenInternalParams, prepareModifyToken } from '~/api/procedures/modifyToken';
+import { Params, prepareModifyToken } from '~/api/procedures/modifyToken';
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -23,7 +23,13 @@ describe('modifyToken procedure', () => {
   beforeAll(() => {
     polkadotMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    entityMockUtils.initMocks({ identityOptions: { did: 'someOtherDid' } });
+    entityMockUtils.initMocks({
+      securityTokenOptions: {
+        details: {
+          owner: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+        },
+      },
+    });
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     ticker = 'someTicker';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
@@ -50,22 +56,21 @@ describe('modifyToken procedure', () => {
     polkadotMockUtils.cleanup();
   });
 
-  test('should throw an error if the user is not set any argument to modify the security token', () => {
-    const proc = procedureMockUtils.getInstance<ModifyTokenInternalParams, SecurityToken>();
+  test('should throw an error if the user has not passed any arguments', () => {
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    return expect(
-      prepareModifyToken.call(proc, ({} as unknown) as ModifyTokenInternalParams)
-    ).rejects.toThrow('You should set at least one argument to perform this action');
+    return expect(prepareModifyToken.call(proc, ({} as unknown) as Params)).rejects.toThrow(
+      'Nothing to modify'
+    );
   });
 
   test('should throw an error if the user is not the owner of the token', () => {
-    entityMockUtils.getSecurityTokenDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      isDivisible: false,
+    entityMockUtils.getSecurityTokenDetailsStub({
+      owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
     });
 
-    const proc = procedureMockUtils.getInstance<ModifyTokenInternalParams, SecurityToken>();
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
     return expect(
@@ -73,18 +78,17 @@ describe('modifyToken procedure', () => {
         ticker,
         makeDivisible: true,
       })
-    ).rejects.toThrow('You must be the owner of the token to modify any property of it');
+    ).rejects.toThrow(
+      'You must be the owner of the Security Token to modify any of its properties'
+    );
   });
 
   test('should throw an error if makeDivisible is set to true and the security token is already divisible', () => {
-    entityMockUtils.initMocks({ identityOptions: { did: 'someDid' } });
-
-    entityMockUtils.getSecurityTokenDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
+    entityMockUtils.getSecurityTokenDetailsStub({
       isDivisible: true,
     });
 
-    const proc = procedureMockUtils.getInstance<ModifyTokenInternalParams, SecurityToken>();
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
     return expect(
@@ -96,33 +100,19 @@ describe('modifyToken procedure', () => {
   });
 
   test('should throw an error if makeDivisible is set to false', () => {
-    entityMockUtils.initMocks({ identityOptions: { did: 'someDid' } });
-
-    entityMockUtils.getSecurityTokenDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      isDivisible: false,
-    });
-
-    const proc = procedureMockUtils.getInstance<ModifyTokenInternalParams, SecurityToken>();
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
     return expect(
       prepareModifyToken.call(proc, {
         ticker,
-        makeDivisible: false,
+        makeDivisible: (false as unknown) as true,
       })
-    ).rejects.toThrow('You can not make the token indivisible');
+    ).rejects.toThrow('You cannot make the token indivisible');
   });
 
-  test('should add a make divisble transaction to the queue', async () => {
-    entityMockUtils.initMocks({ identityOptions: { did: 'someDid' } });
-
-    entityMockUtils.getSecurityTokenDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      isDivisible: false,
-    });
-
-    const proc = procedureMockUtils.getInstance<ModifyTokenInternalParams, SecurityToken>();
+  test('should add a make divisible transaction to the queue', async () => {
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
     const transaction = polkadotMockUtils.createTxStub('asset', 'makeDivisible');

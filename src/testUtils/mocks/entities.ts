@@ -30,7 +30,7 @@ interface TickerReservationOptions {
 
 interface SecurityTokenOptions {
   ticker?: string;
-  details?: SecurityTokenDetails;
+  details?: Partial<SecurityTokenDetails>;
 }
 
 let identityConstructorStub: SinonStub;
@@ -102,7 +102,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   details: {
     name: 'TOKEN_NAME',
     totalSupply: new BigNumber(1000000),
-    isDivisible: true,
+    isDivisible: false,
     owner: mockInstanceContainer.identity,
   },
 };
@@ -121,7 +121,7 @@ function initSecurityToken(opts: SecurityTokenOptions): void {
     details: securityTokenDetailsStub.resolves(opts.details),
   } as unknown) as MockSecurityToken;
 
-  mockInstanceContainer.securityToken = securityToken;
+  Object.assign(mockInstanceContainer.securityToken, securityToken);
   securityTokenConstructorStub.returns(securityToken);
 }
 
@@ -138,7 +138,7 @@ function initTickerReservation(opts: TickerReservationOptions): void {
     details: tickerReservationDetailsStub.resolves(opts.details),
   } as unknown) as MockTickerReservation;
 
-  mockInstanceContainer.tickerReservation = tickerReservation;
+  Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
   tickerReservationConstructorStub.returns(tickerReservation);
 }
 
@@ -155,7 +155,7 @@ function initIdentity(opts: IdentityOptions): void {
     getPolyXBalance: identityGetPolyXBalanceStub.resolves(opts.getPolyXBalance),
   } as unknown) as MockIdentity;
 
-  mockInstanceContainer.identity = identity;
+  Object.assign(mockInstanceContainer.identity, identity);
   identityConstructorStub.returns(identity);
 }
 
@@ -262,6 +262,9 @@ export function getSecurityTokenInstance(opts?: SecurityTokenOptions): MockSecur
  * @hidden
  * Retrieve the stub of the `SecurityToken.details` method
  */
-export function getSecurityTokenDetailsStub(): SinonStub {
+export function getSecurityTokenDetailsStub(opts?: Partial<SecurityTokenDetails>): SinonStub {
+  if (opts) {
+    return securityTokenDetailsStub.resolves({ ...defaultSecurityTokenOptions.details, ...opts });
+  }
   return securityTokenDetailsStub;
 }

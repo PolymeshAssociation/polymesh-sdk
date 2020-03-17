@@ -50,6 +50,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * Modify some properties of the Security Token
    *
    * @param args.makeDivisible - makes an indivisible token divisible
+   * @throws if the passed values result in no changes being made to the token
    */
   public modify(args: ModifyTokenParams): Promise<TransactionQueue<SecurityToken>> {
     const { ticker } = this;

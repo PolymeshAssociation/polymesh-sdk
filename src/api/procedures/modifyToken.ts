@@ -4,17 +4,17 @@ import { ErrorCode } from '~/types';
 import { stringToTicker } from '~/utils';
 
 export type ModifyTokenParams =
-  | { makeDivisible?: boolean; name: string }
-  | { makeDivisible: boolean; name?: string };
+  | { makeDivisible?: true; name: string }
+  | { makeDivisible: true; name?: string };
 
-export type ModifyTokenInternalParams = { ticker: string } & ModifyTokenParams;
+export type Params = { ticker: string } & ModifyTokenParams;
 
 /**
  * @hidden
  */
 export async function prepareModifyToken(
-  this: Procedure<ModifyTokenInternalParams, SecurityToken>,
-  args: ModifyTokenInternalParams
+  this: Procedure<Params, SecurityToken>,
+  args: Params
 ): Promise<SecurityToken> {
   const {
     context: {
@@ -24,10 +24,10 @@ export async function prepareModifyToken(
   } = this;
   const { ticker, makeDivisible } = args;
 
-  if (!ticker && !makeDivisible) {
+  if (makeDivisible === undefined) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You should set at least one argument to perform this action',
+      message: 'Nothing to modify',
     });
   }
 
@@ -40,7 +40,7 @@ export async function prepareModifyToken(
   if (owner.did !== context.currentIdentity?.did) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You must be the owner of the token to modify any property of it',
+      message: 'You must be the owner of the Security Token to modify any of its properties',
     });
   }
 
@@ -54,10 +54,13 @@ export async function prepareModifyToken(
 
     this.addTransaction(tx.asset.makeDivisible, {}, rawTicker);
   } else {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You can not make the token indivisible',
-    });
+    /* istanbul ignore else: it does not apply to our business logic. this line will be remove in future task */
+    if (makeDivisible === false) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'You cannot make the token indivisible',
+      });
+    }
   }
 
   return securityToken;

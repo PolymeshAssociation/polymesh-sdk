@@ -80,9 +80,10 @@ describe('SecurityToken class', () => {
       const ticker = 'TEST';
       const context = polkadotMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
+      const makeDivisible: true = true;
 
       const args = {
-        makeDivisible: true,
+        makeDivisible,
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;

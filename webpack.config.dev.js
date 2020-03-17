@@ -26,7 +26,7 @@ const devConfig = {
         test: /\.ts$/,
         loader: 'awesome-typescript-loader',
         options: {
-          configFileName: 'tsconfig-dev.json',
+          configFileName: 'tsconfig.dev.json',
         },
       },
     ],
