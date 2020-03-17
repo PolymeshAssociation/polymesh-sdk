@@ -2,7 +2,7 @@ import { Balance } from '@polkadot/types/interfaces';
 
 import { Entity } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
-import { balanceToBigNumber } from '~/utils';
+import { balanceToBigNumber, tickerToDid } from '~/utils';
 
 import { SecurityToken } from '../';
 
@@ -24,12 +24,13 @@ describe('SecurityToken class', () => {
   });
 
   describe('constructor', () => {
-    test('should assign ticker to instance', () => {
+    test('should assign ticker and did to instance', () => {
       const ticker = 'test';
       const context = polkadotMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
       expect(securityToken.ticker).toBe(ticker);
+      expect(securityToken.did).toBe(tickerToDid(ticker));
     });
   });
 

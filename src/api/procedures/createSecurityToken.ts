@@ -3,7 +3,13 @@ import { AssetIdentifier, IdentifierType } from 'polymesh-types/types';
 
 import { SecurityToken, TickerReservation } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode, TickerReservationStatus, TokenIdentifier, TokenType } from '~/types';
+import {
+  ErrorCode,
+  TickerReservationStatus,
+  TokenDocument,
+  TokenIdentifier,
+  TokenType,
+} from '~/types';
 import {
   balanceToBigNumber,
   booleanToBool,
@@ -12,6 +18,7 @@ import {
   stringToFundingRoundName,
   stringToTicker,
   stringToTokenName,
+  tokenDocumentToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
 } from '~/utils';
@@ -21,8 +28,9 @@ export interface CreateSecurityTokenParams {
   totalSupply: BigNumber;
   isDivisible: boolean;
   tokenType: TokenType;
-  tokenIdentifiers: TokenIdentifier[];
+  tokenIdentifiers?: TokenIdentifier[];
   fundingRound?: string;
+  documents?: TokenDocument[];
 }
 
 export type Params = CreateSecurityTokenParams & {
@@ -48,8 +56,9 @@ export async function prepareCreateSecurityToken(
     totalSupply,
     isDivisible,
     tokenType,
-    tokenIdentifiers,
+    tokenIdentifiers = [],
     fundingRound,
+    documents,
   } = args;
 
   const reservation = new TickerReservation({ ticker }, context);
@@ -119,6 +128,12 @@ export async function prepareCreateSecurityToken(
     rawIdentifiers,
     rawFundingRound
   );
+
+  if (documents) {
+    const rawDocuments = documents.map(document => tokenDocumentToDocument(document, context));
+
+    this.addTransaction(tx.asset.addDocuments, {}, rawTicker, rawDocuments);
+  }
 
   return new SecurityToken({ ticker }, context);
 }

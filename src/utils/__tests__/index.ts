@@ -6,6 +6,9 @@ import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
   AssetType,
+  DocumentHash,
+  DocumentName,
+  DocumentUri,
   FundingRoundName,
   IdentifierType,
   IdentityId,
@@ -26,6 +29,10 @@ import {
   boolToBoolean,
   dateToMoment,
   delay,
+  documentHashToString,
+  documentNameToString,
+  documentToTokenDocument,
+  documentUriToString,
   findEventRecord,
   fundingRoundNameToString,
   identifierTypeToString,
@@ -34,11 +41,16 @@ import {
   numberToBalance,
   serialize,
   stringToAssetIdentifier,
+  stringToDocumentHash,
+  stringToDocumentName,
+  stringToDocumentUri,
   stringToFundingRoundName,
   stringToIdentityId,
   stringToTicker,
   stringToTokenName,
+  tickerToDid,
   tickerToString,
+  tokenDocumentToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenNameToString,
   tokenTypeToAssetType,
@@ -104,6 +116,25 @@ describe('serialize and unserialize', () => {
   test('unserialize throws an error if the serialized string is not valid JSON', () => {
     const fakeSerialized = Buffer.from('someEntity:nonJsonString').toString('base64');
     expect(() => unserialize(fakeSerialized)).toThrowError(errorMsg);
+  });
+});
+
+describe('tickerToDid', () => {
+  test('should generate the ticker did', () => {
+    let ticker = 'someTicker';
+    let result = tickerToDid(ticker);
+
+    expect(result).toBe('0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c');
+
+    ticker = 'otherTicker';
+    result = tickerToDid(ticker);
+
+    expect(result).toBe('0xae37fa10f763fa5d302c5999ac06897f1fcf383dcc9787f1ede189ba161d06a5');
+
+    ticker = 'lastTicker';
+    result = tickerToDid(ticker);
+
+    expect(result).toBe('0xa643b102d0c58adb3d13a28ab260644f2d0b010dc73aab99a3802b843868ab64');
   });
 });
 
@@ -176,7 +207,11 @@ describe('numberToBalance and balanceToBigNumber', () => {
     const context = polkadotMockUtils.getContextInstance();
 
     mockCreateType
-      .withArgs(context.polymeshApi.registry, 'Balance', value.pow(Math.pow(10, 6)))
+      .withArgs(
+        context.polymeshApi.registry,
+        'Balance',
+        value.multipliedBy(Math.pow(10, 6)).toString()
+      )
       .returns(fakeResult);
 
     const result = numberToBalance(value, context);
@@ -562,9 +597,204 @@ describe('stringToFundingRoundName and fundingRoundNameToString', () => {
 
   test('fundingRoundNameToString should convert a polkadot FundingRoundName object to a string', () => {
     const fakeResult = 'someFundingRoundName';
-    const tokenName = polkadotMockUtils.createMockFundingRoundName(fakeResult);
+    const roundName = polkadotMockUtils.createMockFundingRoundName(fakeResult);
 
-    const result = fundingRoundNameToString(tokenName);
+    const result = fundingRoundNameToString(roundName);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToDocumentName and documentNameToString', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToDocumentName should convert a string to a polkadot DocumentName object', () => {
+    const value = 'someName';
+    const fakeResult = ('convertedName' as unknown) as DocumentName;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'DocumentName', value)
+      .returns(fakeResult);
+
+    const result = stringToDocumentName(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('documentNameToString should convert a polkadot DocumentName object to a string', () => {
+    const fakeResult = 'someDocumentName';
+    const docName = polkadotMockUtils.createMockDocumentName(fakeResult);
+
+    const result = documentNameToString(docName);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToDocumentUri and documentUriToString', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToDocumentUri should convert a string to a polkadot DocumentUri object', () => {
+    const value = 'someUri';
+    const fakeResult = ('convertedUri' as unknown) as DocumentUri;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType.withArgs(context.polymeshApi.registry, 'DocumentUri', value).returns(fakeResult);
+
+    const result = stringToDocumentUri(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('documentUriToString should convert a polkadot DocumentUri object to a string', () => {
+    const fakeResult = 'someDocumentUri';
+    const docUri = polkadotMockUtils.createMockDocumentUri(fakeResult);
+
+    const result = documentUriToString(docUri);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToDocumentHash and documentHashToString', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToDocumentHash should convert a string to a polkadot DocumentHash object', () => {
+    const value = 'someHash';
+    const fakeResult = ('convertedHash' as unknown) as DocumentHash;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'DocumentHash', value)
+      .returns(fakeResult);
+
+    const result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('documentHashToString should convert a polkadot DocumentHash object to a string', () => {
+    const fakeResult = 'someDocumentHash';
+    const docHash = polkadotMockUtils.createMockDocumentHash(fakeResult);
+
+    const result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('tokenDocumentToDocument and documentToTokenDocument', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('tokenDocumentToDocument should convert a TokenDocument to a polkadot Document object', () => {
+    const name = 'someName';
+    const uri = 'someUri';
+    const contentHash = 'someHash';
+    const value = {
+      name,
+      uri,
+      contentHash,
+    };
+    const fakeResult = ('convertedDocument' as unknown) as Document;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'Document', {
+        name: stringToDocumentName(name, context),
+        uri: stringToDocumentUri(uri, context),
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        content_hash: stringToDocumentHash(contentHash, context),
+      })
+      .returns(fakeResult);
+
+    const result = tokenDocumentToDocument(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('documentToTokenDocument should convert a polkadot Document object to a TokenDocument', () => {
+    const name = 'someName';
+    const uri = 'someUri';
+    const contentHash = 'someHash';
+    const fakeResult = {
+      name,
+      uri,
+      contentHash,
+    };
+    const mockDocument = {
+      name: polkadotMockUtils.createMockDocumentName(name),
+      uri: polkadotMockUtils.createMockDocumentUri(uri),
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      content_hash: polkadotMockUtils.createMockDocumentHash(contentHash),
+    };
+    const doc = polkadotMockUtils.createMockDocument(mockDocument);
+
+    const result = documentToTokenDocument(doc);
     expect(result).toEqual(fakeResult);
   });
 });
