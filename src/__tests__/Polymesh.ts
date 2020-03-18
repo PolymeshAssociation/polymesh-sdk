@@ -110,18 +110,6 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getIdentityBalance', () => {
-    test('should throw if identity was not instantiated', async () => {
-      polkadotMockUtils.initMocks({ contextOptions: { withSeed: false } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-      });
-
-      return expect(() => polymesh.getIdentityBalance()).toThrow(
-        'The current account does not have an associated identity'
-      );
-    });
-
     test("should return the identity's POLYX balance", async () => {
       const fakeBalance = new BigNumber(20);
       polkadotMockUtils.initMocks({ contextOptions: { withSeed: true, balance: fakeBalance } });
@@ -188,20 +176,6 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getTickerReservations', () => {
-    test('should throw if identity was not instantiated', async () => {
-      polkadotMockUtils.initMocks({ contextOptions: { withSeed: false } });
-
-      polkadotMockUtils.createQueryStub('identity', 'links');
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-      });
-
-      return expect(polymesh.getTickerReservations()).rejects.toThrow(
-        'The current account does not have an associated identity'
-      );
-    });
-
     test('should return a list of ticker reservations if did parameter is set', async () => {
       const fakeTicker = 'TEST';
 

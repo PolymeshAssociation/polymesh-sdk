@@ -84,7 +84,7 @@ export async function prepareCreateSecurityToken(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  if (owner!.did !== context.currentIdentity!.did) {
+  if (owner!.did !== context.getCurrentIdentity().did) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: `You are not the owner of ticker "${ticker}", so you cannot create a Security Token with it`,

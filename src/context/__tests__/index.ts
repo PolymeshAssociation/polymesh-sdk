@@ -68,7 +68,7 @@ describe('Context class', () => {
 
       sinon.assert.calledOnce(keyToIdentityIdsStub);
       expect(context.currentPair).toEqual(newPair);
-      sinon.assert.match(context.currentIdentity instanceof Identity, true);
+      sinon.assert.match(context.getCurrentIdentity() instanceof Identity, true);
     });
 
     test('should create a Context class from a keyring with Pair and Identity attached', async () => {
@@ -92,7 +92,7 @@ describe('Context class', () => {
 
       sinon.assert.calledOnce(keyToIdentityIdsStub);
       expect(context.currentPair).toEqual(pairs[0]);
-      sinon.assert.match(context.currentIdentity instanceof Identity, true);
+      sinon.assert.match(context.getCurrentIdentity() instanceof Identity, true);
     });
 
     test('should create a Context class from a uri with Pair and Identity attached', async () => {
@@ -119,7 +119,7 @@ describe('Context class', () => {
 
       sinon.assert.calledOnce(keyToIdentityIdsStub);
       expect(context.currentPair).toEqual(newPair);
-      sinon.assert.match(context.currentIdentity instanceof Identity, true);
+      sinon.assert.match(context.getCurrentIdentity() instanceof Identity, true);
     });
 
     test('should create a Context class without Pair and Identity attached', async () => {
@@ -145,7 +145,7 @@ describe('Context class', () => {
 
       sinon.assert.notCalled(keyToIdentityIdsStub);
       expect(context.currentPair).toBe(undefined);
-      expect(context.currentIdentity).toBe(undefined);
+      expect(() => context.getCurrentIdentity()).toThrow();
     });
 
     test('should throw if the account seed is not assotiated with an IdentityId ', () => {
@@ -284,6 +284,36 @@ describe('Context class', () => {
 
       const result = await context.accountBalance('accountId');
       expect(result).toEqual(balanceToBigNumber(returnValue));
+    });
+  });
+
+  describe('method: getCurrentIdentity', () => {
+    test('should return the current identity', async () => {
+      const did = '012abc';
+      polkadotMockUtils.createQueryStub(
+        'identity',
+        'keyToIdentityIds',
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: did }) } }
+      );
+
+      const context = await Context.create({
+        polymeshApi: polkadotMockUtils.getApiInstance(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = context.getCurrentIdentity();
+      expect(result.did).toBe(did);
+    });
+
+    test("should throw an error if the current identity isn't defined", async () => {
+      const context = await Context.create({
+        polymeshApi: polkadotMockUtils.getApiInstance(),
+      });
+
+      expect(() => context.getCurrentIdentity()).toThrow(
+        'The current account does not have an associated identity'
+      );
     });
   });
 });
