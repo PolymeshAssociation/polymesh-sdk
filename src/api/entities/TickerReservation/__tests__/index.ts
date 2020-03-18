@@ -1,11 +1,14 @@
 import { Callback, Codec } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { SecurityToken } from '~/api/entities/SecurityToken';
 import { reserveTicker } from '~/api/procedures';
+import { createSecurityToken } from '~/api/procedures/createSecurityToken';
 import { Entity, TransactionQueue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
-import { TickerReservationStatus } from '~/types';
+import { KnownTokenIdentifierType, KnownTokenType, TickerReservationStatus } from '~/types';
 
 import { TickerReservation } from '../';
 
@@ -199,6 +202,35 @@ describe('TickerReservation class', () => {
         .resolves(expectedQueue);
 
       const queue = await tickerReservation.extend();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: createToken', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'TEST';
+      const context = polkadotMockUtils.getContextInstance();
+      const tickerReservation = new TickerReservation({ ticker }, context);
+
+      const args = {
+        ticker,
+        name: 'TEST',
+        totalSupply: new BigNumber(100),
+        isDivisible: true,
+        tokenType: KnownTokenType.Equity,
+        tokenIdentifiers: [{ type: KnownTokenIdentifierType.Isin, value: '12345' }],
+        fundingRound: 'Series A',
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      sinon
+        .stub(createSecurityToken, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await tickerReservation.createToken(args);
 
       expect(queue).toBe(expectedQueue);
     });

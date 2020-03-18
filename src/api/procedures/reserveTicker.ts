@@ -60,7 +60,7 @@ export async function prepareReserveTicker(
   if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `A Security Token with ticker "${ticker} already exists`,
+      message: `A Security Token with ticker "${ticker}" already exists`,
     });
   }
 
@@ -106,7 +106,7 @@ export async function prepareReserveTicker(
   if (balance.lt(fee)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Not enough POLY balance to pay for ticker ${
+      message: `Not enough POLYX balance to pay for ticker ${
         extendPeriod ? 'period extension' : 'reservation'
       }`,
     });

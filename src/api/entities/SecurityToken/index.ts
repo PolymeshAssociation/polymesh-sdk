@@ -2,7 +2,13 @@ import { Identity } from '~/api/entities/Identity';
 import { modifyToken, ModifyTokenParams } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { balanceToBigNumber, boolToBoolean, identityIdToString, tokenNameToString } from '~/utils';
+import {
+  balanceToBigNumber,
+  boolToBoolean,
+  identityIdToString,
+  tickerToDid,
+  tokenNameToString,
+} from '~/utils';
 
 import { SecurityTokenDetails } from './types';
 
@@ -31,6 +37,11 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * identity id of the Security Token
+   */
+  public did: string;
+
+  /**
    * ticker of the Security Token
    */
   public ticker: string;
@@ -44,6 +55,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const { ticker } = identifiers;
 
     this.ticker = ticker;
+    this.did = tickerToDid(ticker);
   }
 
   /**

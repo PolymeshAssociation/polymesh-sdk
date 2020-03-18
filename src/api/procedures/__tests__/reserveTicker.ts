@@ -63,12 +63,6 @@ describe('reserveTicker procedure', () => {
     polkadotMockUtils.createQueryStub('asset', 'tickerRegistrationFee', {
       returnValue: polkadotMockUtils.createMockBalance(fee * Math.pow(10, 6)),
     });
-    polkadotMockUtils.createQueryStub('asset', 'tickers', {
-      returnValue: polkadotMockUtils.createMockTickerRegistration(),
-    });
-    polkadotMockUtils.createQueryStub('asset', 'tokens', {
-      returnValue: polkadotMockUtils.createMockSecurityToken(),
-    });
     polkadotMockUtils.createQueryStub('asset', 'tickerConfig', {
       returnValue: polkadotMockUtils.createMockTickerRegistrationConfig(),
     });
@@ -131,7 +125,7 @@ describe('reserveTicker procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
-      `A Security Token with ticker "${ticker} already exists`
+      `A Security Token with ticker "${ticker}" already exists`
     );
   });
 
@@ -163,7 +157,7 @@ describe('reserveTicker procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
-      'Not enough POLY balance to pay for ticker reservation'
+      'Not enough POLYX balance to pay for ticker reservation'
     );
   });
 
@@ -196,7 +190,7 @@ describe('reserveTicker procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
-      'Not enough POLY balance to pay for ticker period extension'
+      'Not enough POLYX balance to pay for ticker period extension'
     );
   });
 

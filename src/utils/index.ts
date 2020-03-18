@@ -2,14 +2,34 @@ import { bool } from '@polkadot/types';
 import { createType } from '@polkadot/types/create/createType';
 import { Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
-import { u8aToString } from '@polkadot/util';
+import { stringToU8a, u8aConcat, u8aFixLength, u8aToString } from '@polkadot/util';
+import { blake2AsHex } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { IdentityId, Ticker, TokenName } from 'polymesh-types/types';
+import {
+  AssetIdentifier,
+  AssetType,
+  Document,
+  DocumentHash,
+  DocumentName,
+  DocumentUri,
+  FundingRoundName,
+  IdentifierType,
+  IdentityId,
+  Ticker,
+  TokenName,
+} from 'polymesh-types/types';
 
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode } from '~/types';
+import {
+  ErrorCode,
+  KnownTokenIdentifierType,
+  KnownTokenType,
+  TokenDocument,
+  TokenIdentifierType,
+  TokenType,
+} from '~/types';
 import {
   Extrinsics,
   MapMaybePostTransactionValue,
@@ -17,19 +37,21 @@ import {
 } from '~/types/internal';
 
 /**
+ * @hidden
  * Promisified version of a timeout
  *
  * @param amount - time to wait
  */
-export const delay = async (amount: number): Promise<void> => {
+export async function delay(amount: number): Promise<void> {
   return new Promise(resolve => {
     setTimeout(() => {
       resolve();
     }, amount);
   });
-};
+}
 
 /**
+ * @hidden
  * Convert an entity type and its unique Identifiers to a base64 string
  */
 export function serialize<UniqueIdentifiers extends object>(
@@ -40,6 +62,7 @@ export function serialize<UniqueIdentifiers extends object>(
 }
 
 /**
+ * @hidden
  * Convert a uuid string to an Identifier object
  */
 export function unserialize<UniqueIdentifiers extends object>(id: string): UniqueIdentifiers {
@@ -64,9 +87,33 @@ export function unserialize<UniqueIdentifiers extends object>(id: string): Uniqu
 
 /**
  * @hidden
+ * Generate a Security Token's DID from a ticker
+ */
+export function tickerToDid(ticker: string): string {
+  return blake2AsHex(
+    u8aConcat(stringToU8a('SECURITY_TOKEN:'), u8aFixLength(stringToU8a(ticker), 96, true))
+  );
+}
+
+/**
+ * @hidden
+ */
+export function stringToTokenName(name: string, context: Context): TokenName {
+  return createType<'TokenName'>(context.polymeshApi.registry, 'TokenName', name);
+}
+
+/**
+ * @hidden
  */
 export function tokenNameToString(name: TokenName): string {
   return name.toString();
+}
+
+/**
+ * @hidden
+ */
+export function booleanToBool(value: boolean, context: Context): bool {
+  return createType<'bool'>(context.polymeshApi.registry, 'bool', value);
 }
 
 /**
@@ -125,7 +172,7 @@ export function numberToBalance(value: number | BigNumber, context: Context): Ba
   return createType<'Balance'>(
     context.polymeshApi.registry,
     'Balance',
-    new BigNumber(value).pow(Math.pow(10, 6))
+    new BigNumber(value).multipliedBy(Math.pow(10, 6)).toString()
   );
 }
 
@@ -134,6 +181,160 @@ export function numberToBalance(value: number | BigNumber, context: Context): Ba
  */
 export function balanceToBigNumber(balance: Balance): BigNumber {
   return new BigNumber(balance.toString()).div(Math.pow(10, 6));
+}
+
+/**
+ * @hidden
+ */
+export function tokenTypeToAssetType(type: TokenType, context: Context): AssetType {
+  return createType<'AssetType'>(context.polymeshApi.registry, 'AssetType', type);
+}
+
+/**
+ * @hidden
+ */
+export function assetTypeToString(assetType: AssetType): string {
+  if (assetType.isCommodity) {
+    return KnownTokenType.Commodity;
+  }
+  if (assetType.isDebt) {
+    return KnownTokenType.Debt;
+  }
+  if (assetType.isEquity) {
+    return KnownTokenType.Equity;
+  }
+  if (assetType.isStructuredProduct) {
+    return KnownTokenType.StructuredProduct;
+  }
+
+  return u8aToString(assetType.asCustom);
+}
+
+/**
+ * @hidden
+ */
+export function tokenIdentifierTypeToIdentifierType(
+  type: TokenIdentifierType,
+  context: Context
+): IdentifierType {
+  return createType<'IdentifierType'>(context.polymeshApi.registry, 'IdentifierType', type);
+}
+
+/**
+ * @hidden
+ */
+export function identifierTypeToString(type: IdentifierType): string {
+  if (type.isCusip) {
+    return KnownTokenIdentifierType.Cusip;
+  }
+  if (type.isIsin) {
+    return KnownTokenIdentifierType.Isin;
+  }
+
+  return u8aToString(type.asCustom);
+}
+
+/**
+ * @hidden
+ */
+export function stringToAssetIdentifier(id: string, context: Context): AssetIdentifier {
+  return createType<'AssetIdentifier'>(context.polymeshApi.registry, 'AssetIdentifier', id);
+}
+
+/**
+ * @hidden
+ */
+export function assetIdentifierToString(id: AssetIdentifier): string {
+  return id.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToFundingRoundName(roundName: string, context: Context): FundingRoundName {
+  return createType<'FundingRoundName'>(
+    context.polymeshApi.registry,
+    'FundingRoundName',
+    roundName
+  );
+}
+
+/**
+ * @hidden
+ */
+export function fundingRoundNameToString(roundName: FundingRoundName): string {
+  return roundName.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToDocumentName(docName: string, context: Context): DocumentName {
+  return createType<'DocumentName'>(context.polymeshApi.registry, 'DocumentName', docName);
+}
+
+/**
+ * @hidden
+ */
+export function documentNameToString(docName: DocumentName): string {
+  return docName.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToDocumentUri(docUri: string, context: Context): DocumentUri {
+  return createType<'DocumentUri'>(context.polymeshApi.registry, 'DocumentUri', docUri);
+}
+
+/**
+ * @hidden
+ */
+export function documentUriToString(docUri: DocumentUri): string {
+  return docUri.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToDocumentHash(docHash: string, context: Context): DocumentHash {
+  return createType<'DocumentHash'>(context.polymeshApi.registry, 'DocumentHash', docHash);
+}
+
+/**
+ * @hidden
+ */
+export function documentHashToString(docHash: DocumentHash): string {
+  return docHash.toString();
+}
+
+/**
+ * @hidden
+ */
+export function tokenDocumentToDocument(
+  { name, uri, contentHash }: TokenDocument,
+  context: Context
+): Document {
+  return createType<'Document'>(context.polymeshApi.registry, 'Document', {
+    name: stringToDocumentName(name, context),
+    uri: stringToDocumentUri(uri, context),
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    content_hash: stringToDocumentHash(contentHash, context),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function documentToTokenDocument(
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  { name, uri, content_hash }: Document
+): TokenDocument {
+  return {
+    name: documentNameToString(name),
+    uri: documentUriToString(uri),
+    contentHash: documentHashToString(content_hash),
+  };
 }
 
 /**

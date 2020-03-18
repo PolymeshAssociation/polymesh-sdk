@@ -56,6 +56,42 @@ export enum Role {
   Owner = 'Owner',
 }
 
+export enum KnownTokenType {
+  Equity = 'equity',
+  Debt = 'debt',
+  Commodity = 'commodity',
+  StructuredProduct = 'structuredProduct',
+}
+
+/**
+ * Type of security that the token represents
+ */
+export type TokenType = KnownTokenType | { custom: string };
+
+export enum KnownTokenIdentifierType {
+  Isin = 'isin',
+  Cusip = 'cusip',
+}
+
+export type TokenIdentifierType = KnownTokenIdentifierType | { custom: string };
+
+/**
+ * Alphanumeric standardized security identifier
+ */
+export interface TokenIdentifier {
+  type: TokenIdentifierType;
+  value: string;
+}
+
+/**
+ * Document attached to a token
+ */
+export interface TokenDocument {
+  name: string;
+  uri: string;
+  contentHash: string;
+}
+
 /**
  * Specifies possible types of errors in the SDK
  */
