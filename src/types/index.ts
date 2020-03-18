@@ -63,6 +63,9 @@ export enum KnownTokenType {
   StructuredProduct = 'structuredProduct',
 }
 
+/**
+ * Type of security that the token represents
+ */
 export type TokenType = KnownTokenType | { custom: string };
 
 export enum KnownTokenIdentifierType {
@@ -72,9 +75,21 @@ export enum KnownTokenIdentifierType {
 
 export type TokenIdentifierType = KnownTokenIdentifierType | { custom: string };
 
+/**
+ * Alphanumeric standardized security identifier
+ */
 export interface TokenIdentifier {
   type: TokenIdentifierType;
   value: string;
+}
+
+/**
+ * Document attached to a token
+ */
+export interface TokenDocument {
+  name: string;
+  uri: string;
+  contentHash: string;
 }
 
 /**

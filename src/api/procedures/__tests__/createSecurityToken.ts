@@ -5,6 +5,7 @@ import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
   AssetType,
+  Document,
   FundingRoundName,
   IdentifierType,
   Ticker,
@@ -21,6 +22,7 @@ import {
   KnownTokenIdentifierType,
   KnownTokenType,
   TickerReservationStatus,
+  TokenDocument,
   TokenIdentifier,
   TokenIdentifierType,
   TokenType,
@@ -48,6 +50,7 @@ describe('createSecurityToken procedure', () => {
   >;
   let stringToAssetIdentifierStub: sinon.SinonStub<[string, Context], AssetIdentifier>;
   let stringToFundingRoundNameStub: sinon.SinonStub<[string, Context], FundingRoundName>;
+  let tokenDocumentToDocumentStub: sinon.SinonStub<[TokenDocument, Context], Document>;
   let ticker: string;
   let name: string;
   let totalSupply: BigNumber;
@@ -55,6 +58,7 @@ describe('createSecurityToken procedure', () => {
   let tokenType: TokenType;
   let tokenIdentifiers: TokenIdentifier[];
   let fundingRound: string;
+  let documents: TokenDocument[];
   let rawTicker: Ticker;
   let rawName: TokenName;
   let rawTotalSupply: Balance;
@@ -62,6 +66,7 @@ describe('createSecurityToken procedure', () => {
   let rawType: AssetType;
   let rawIdentifiers: [IdentifierType, AssetIdentifier][];
   let rawFundingRound: FundingRoundName;
+  let rawDocuments: Document[];
   let args: Params;
   let fee: number;
 
@@ -80,6 +85,7 @@ describe('createSecurityToken procedure', () => {
     );
     stringToAssetIdentifierStub = sinon.stub(utilsModule, 'stringToAssetIdentifier');
     stringToFundingRoundNameStub = sinon.stub(utilsModule, 'stringToFundingRoundName');
+    tokenDocumentToDocumentStub = sinon.stub(utilsModule, 'tokenDocumentToDocument');
     ticker = 'someTicker';
     name = 'someName';
     totalSupply = new BigNumber(100);
@@ -92,6 +98,13 @@ describe('createSecurityToken procedure', () => {
       },
     ];
     fundingRound = 'Series A';
+    documents = [
+      {
+        name: 'someDocument',
+        uri: 'someUri',
+        contentHash: 'someHash',
+      },
+    ];
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
     rawName = polkadotMockUtils.createMockTokenName(name);
     rawTotalSupply = polkadotMockUtils.createMockBalance(totalSupply.toNumber());
@@ -103,6 +116,14 @@ describe('createSecurityToken procedure', () => {
         polkadotMockUtils.createMockAssetIdentifier(value),
       ];
     });
+    rawDocuments = documents.map(({ name, uri, contentHash }) =>
+      polkadotMockUtils.createMockDocument({
+        name: polkadotMockUtils.createMockDocumentName(name),
+        uri: polkadotMockUtils.createMockDocumentUri(uri),
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        content_hash: polkadotMockUtils.createMockDocumentHash(contentHash),
+      })
+    );
     rawFundingRound = polkadotMockUtils.createMockFundingRoundName(fundingRound);
     args = {
       ticker,
@@ -171,6 +192,7 @@ describe('createSecurityToken procedure', () => {
       .withArgs(tokenIdentifiers[0].value, mockContext)
       .returns(rawIdentifiers[0][1]);
     stringToFundingRoundNameStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
+    tokenDocumentToDocumentStub.withArgs(documents[0], mockContext).returns(rawDocuments[0]);
   });
 
   afterEach(() => {
@@ -249,7 +271,7 @@ describe('createSecurityToken procedure', () => {
     const result = await prepareCreateSecurityToken.call(proc, args);
 
     sinon.assert.calledWith(
-      addTransactionStub,
+      addTransactionStub.firstCall,
       transaction,
       sinon.match({
         fee: new BigNumber(fee),
@@ -264,10 +286,14 @@ describe('createSecurityToken procedure', () => {
     );
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
 
-    await prepareCreateSecurityToken.call(proc, { ...args, fundingRound: undefined });
+    await prepareCreateSecurityToken.call(proc, {
+      ...args,
+      tokenIdentifiers: undefined,
+      fundingRound: undefined,
+    });
 
     sinon.assert.calledWith(
-      addTransactionStub,
+      addTransactionStub.secondCall,
       transaction,
       sinon.match({
         fee: new BigNumber(fee),
@@ -277,8 +303,20 @@ describe('createSecurityToken procedure', () => {
       rawTotalSupply,
       rawIsDivisible,
       rawType,
-      rawIdentifiers,
+      [],
       null
     );
+  });
+
+  test('should add a document add transaction to the queue', async () => {
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
+    proc.context = mockContext;
+    const tx = polkadotMockUtils.createTxStub('asset', 'addDocuments');
+
+    const result = await prepareCreateSecurityToken.call(proc, { ...args, documents });
+
+    sinon.assert.calledWith(addTransactionStub, tx, {}, rawTicker, rawDocuments);
+
+    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
 });
