@@ -1,5 +1,6 @@
 import { Identity } from '~/api/entities/Identity';
-import { Entity } from '~/base';
+import { modifyToken, ModifyTokenParams } from '~/api/procedures';
+import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { balanceToBigNumber, boolToBoolean, identityIdToString, tokenNameToString } from '~/utils';
 
@@ -43,6 +44,17 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const { ticker } = identifiers;
 
     this.ticker = ticker;
+  }
+
+  /**
+   * Modify some properties of the Security Token
+   *
+   * @param args.makeDivisible - makes an indivisible token divisible
+   * @throws if the passed values result in no changes being made to the token
+   */
+  public modify(args: ModifyTokenParams): Promise<TransactionQueue<SecurityToken>> {
+    const { ticker } = this;
+    return modifyToken.prepare({ ticker, ...args }, this.context);
   }
 
   /**

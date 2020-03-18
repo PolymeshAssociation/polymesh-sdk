@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path');
 const fs = require('fs');
-const merge = require('webpack-merge');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-
-const baseConfig = require('./webpack.base');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
 
 const SANDBOX_FILE_NAME = 'sandbox.ts';
 
@@ -17,15 +16,17 @@ if (!fs.existsSync(sandboxFilePath)) {
   );
 }
 
-const devConfig = merge.smart(baseConfig, {
+const devConfig = {
+  devtool: 'cheap-module-source-map',
   entry: path.resolve(__dirname, SANDBOX_FILE_NAME),
+  mode: 'development',
   module: {
     rules: [
       {
         test: /\.ts$/,
         loader: 'awesome-typescript-loader',
         options: {
-          configFileName: 'tsconfig-dev.json',
+          configFileName: 'tsconfig.dev.json',
         },
       },
     ],
@@ -45,6 +46,7 @@ const devConfig = merge.smart(baseConfig, {
     new HtmlWebpackPlugin({
       title: 'Polymesh SDK - Sandbox',
     }),
+    new CaseSensitivePathsPlugin(),
   ],
   output: {
     pathinfo: true,
@@ -55,6 +57,10 @@ const devConfig = merge.smart(baseConfig, {
   node: {
     fs: 'empty',
   },
-});
+  resolve: {
+    extensions: ['.ts', '.js'],
+    plugins: [new TsconfigPathsPlugin()],
+  },
+};
 
 module.exports = devConfig;

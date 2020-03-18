@@ -1,9 +1,11 @@
 /* istanbul ignore file */
 
 import BigNumber from 'bignumber.js';
+import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
+import { SecurityTokenDetails } from '~/api/entities/SecurityToken/types';
 import { Mocked } from '~/testUtils/types';
 import { TickerReservationDetails, TickerReservationStatus } from '~/types';
 
@@ -29,11 +31,13 @@ interface TickerReservationOptions {
 
 interface SecurityTokenOptions {
   ticker?: string;
+  details?: Partial<SecurityTokenDetails>;
 }
 
 let identityConstructorStub: SinonStub;
 let tickerReservationConstructorStub: SinonStub;
 let securityTokenConstructorStub: SinonStub;
+let securityTokenDetailsStub: SinonStub;
 
 let identityGetPolyXBalanceStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
@@ -96,6 +100,12 @@ const defaultTickerReservationOptions: TickerReservationOptions = {
 let tickerReservationOptions = defaultTickerReservationOptions;
 const defaultSecurityTokenOptions: SecurityTokenOptions = {
   ticker: 'SOME_TICKER',
+  details: {
+    name: 'TOKEN_NAME',
+    totalSupply: new BigNumber(1000000),
+    isDivisible: false,
+    owner: mockInstanceContainer.identity,
+  },
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 
@@ -105,9 +115,11 @@ let securityTokenOptions = defaultSecurityTokenOptions;
  */
 function initSecurityToken(opts: SecurityTokenOptions): void {
   securityTokenConstructorStub = sinon.stub();
+  securityTokenDetailsStub = sinon.stub();
 
   const securityToken = ({
     ticker: opts.ticker,
+    details: securityTokenDetailsStub.resolves(opts.details),
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -170,7 +182,7 @@ export function initMocks(opts?: {
   initTickerReservation(tickerReservationOptions);
 
   // Security Token
-  securityTokenOptions = { ...defaultSecurityTokenOptions, ...opts?.securityTokenOptions };
+  securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts?.securityTokenOptions);
   initSecurityToken(securityTokenOptions);
 }
 
@@ -245,4 +257,18 @@ export function getSecurityTokenInstance(opts?: SecurityTokenOptions): MockSecur
   }
 
   return mockInstanceContainer.securityToken;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.details` method
+ */
+export function getSecurityTokenDetailsStub(details?: Partial<SecurityTokenDetails>): SinonStub {
+  if (details) {
+    return securityTokenDetailsStub.resolves({
+      ...defaultSecurityTokenOptions.details,
+      ...details,
+    });
+  }
+  return securityTokenDetailsStub;
 }

@@ -4,7 +4,7 @@
 import { Enum, Option, Struct, U8aFixed, Vec } from '@polkadot/types/codec';
 import { Signature } from '@polkadot/types/interfaces/extrinsics';
 import { Balance, Call, H256, H512, Hash, Moment } from '@polkadot/types/interfaces/runtime';
-import { bool, Bytes, Text, u8,u16, u32, u64, u128 } from '@polkadot/types/primitive';
+import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types/primitive';
 import { ITuple } from '@polkadot/types/types';
 
 /** @name AccountKey */

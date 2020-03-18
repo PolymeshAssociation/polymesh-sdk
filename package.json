@@ -7,7 +7,7 @@
   "author": "Polymath Studios Inc.",
   "license": "ISC",
   "scripts": {
-    "start": "cross-env webpack-dev-server --config=webpack.config.dev.js",
+    "start": "node scripts/generateTsconfigDev.js && cross-env webpack-dev-server --config=webpack.config.dev.js",
     "generate:polkadot-types": "yarn fetch-schema && yarn generate:defs && yarn generate:meta && yarn generate:tags",
     "fetch-schema": "node scripts/fetchSchema.js",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package polymesh-types --input ./src/polkadot",
@@ -66,7 +66,6 @@
     "webpack": "^4.41.6",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.10.3",
-    "webpack-merge": "^4.2.2",
     "websocket": "^1.0.31"
   },
   "config": {
