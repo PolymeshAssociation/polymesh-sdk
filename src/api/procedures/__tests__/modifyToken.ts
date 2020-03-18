@@ -19,7 +19,6 @@ describe('modifyToken procedure', () => {
   let stringToTokenNameStub: sinon.SinonStub<[string, Context], TokenName>;
   let ticker: string;
   let rawTicker: Ticker;
-  let rawTokenName: TokenName;
   let procedureResult: SecurityToken;
 
   beforeAll(() => {
@@ -30,7 +29,6 @@ describe('modifyToken procedure', () => {
     stringToTokenNameStub = sinon.stub(utilsModule, 'stringToTokenName');
     ticker = 'someTicker';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
-    rawTokenName = polkadotMockUtils.createMockTokenName(ticker);
     procedureResult = entityMockUtils.getSecurityTokenInstance();
   });
 
@@ -139,7 +137,7 @@ describe('modifyToken procedure', () => {
 
   test('should add a rename token transaction to the queue', async () => {
     const newName = 'NEW_NAME';
-
+    const rawTokenName = polkadotMockUtils.createMockTokenName(newName);
     stringToTokenNameStub.withArgs(newName, mockContext).returns(rawTokenName);
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
