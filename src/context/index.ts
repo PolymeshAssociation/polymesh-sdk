@@ -39,7 +39,7 @@ export class Context {
 
   public currentPair?: IKeyringPair;
 
-  public currentIdentity?: Identity;
+  private currentIdentity?: Identity;
 
   /**
    * @hidden
@@ -170,5 +170,23 @@ export class Context {
     const balance = await this.polymeshApi.query.balances.freeBalance(address);
 
     return balanceToBigNumber(balance);
+  }
+
+  /**
+   * Retrieve current Identity
+   *
+   * @throws if there is no identity associated to the current account (or there is no current account associated to the SDK instance)
+   */
+  public getCurrentIdentity(): Identity {
+    const { currentIdentity } = this;
+
+    if (!currentIdentity) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'The current account does not have an associated identity',
+      });
+    }
+
+    return currentIdentity;
   }
 }
