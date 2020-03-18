@@ -1,6 +1,8 @@
 import { Balance } from '@polkadot/types/interfaces';
+import sinon from 'sinon';
 
-import { Entity } from '~/base';
+import { modifyToken } from '~/api/procedures';
+import { Entity, TransactionQueue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
 import { balanceToBigNumber, tickerToDid } from '~/utils';
 
@@ -71,6 +73,30 @@ describe('SecurityToken class', () => {
       expect(details.totalSupply).toEqual(balanceToBigNumber((totalSupply as unknown) as Balance));
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
+    });
+  });
+
+  describe('method: modify', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'TEST';
+      const context = polkadotMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+      const makeDivisible: true = true;
+
+      const args = {
+        makeDivisible,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      sinon
+        .stub(modifyToken, 'prepare')
+        .withArgs({ ticker, ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await securityToken.modify(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

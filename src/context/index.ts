@@ -150,7 +150,7 @@ export class Context {
   }
 
   /**
-   * Retrieve the account level POLY balance
+   * Retrieve the account level POLYX balance
    */
   public async accountBalance(accountId?: string): Promise<BigNumber> {
     const { currentPair } = this;

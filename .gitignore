@@ -8,3 +8,4 @@ coverage/
 test.ts
 sandbox.ts
 docs/
+tsconfig.dev.json

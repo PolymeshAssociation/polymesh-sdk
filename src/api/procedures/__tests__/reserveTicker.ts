@@ -157,7 +157,7 @@ describe('reserveTicker procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
-      'Not enough POLY balance to pay for ticker reservation'
+      'Not enough POLYX balance to pay for ticker reservation'
     );
   });
 
@@ -190,7 +190,7 @@ describe('reserveTicker procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
-      'Not enough POLY balance to pay for ticker period extension'
+      'Not enough POLYX balance to pay for ticker period extension'
     );
   });
 

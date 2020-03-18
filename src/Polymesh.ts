@@ -83,7 +83,7 @@ export class Polymesh {
   }
 
   /**
-   * Get the POLY balance of the current account
+   * Get the POLYX balance of the current account
    */
   public getIdentityBalance(): Promise<BigNumber> {
     const { currentIdentity } = this.context;
@@ -98,7 +98,7 @@ export class Polymesh {
   }
 
   /**
-   * Get the free POLY balance of an account
+   * Get the free POLYX balance of an account
    *
    * @param args.accountId - defaults to the current account
    */

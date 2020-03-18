@@ -105,7 +105,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    * @param method - a method that will be run in the Procedure's TransactionQueue.
    * A future method is a transaction that doesn't exist at prepare time
    * (for example a transaction on a module that hasn't been attached but will be by the time the previous transactions are run)
-   * @param options.fee - value in POLY of the transaction (defaults to 0)
+   * @param options.fee - value in POLYX of the transaction (defaults to 0)
    * @param options.resolvers - asynchronous callbacks used to return runtime data after
    * the added transaction has finished successfully
    * @param options.isCritical - whether this transaction failing should make the entire queue fail or not. Defaults to true
