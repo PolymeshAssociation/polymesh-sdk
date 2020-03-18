@@ -1,27 +1,47 @@
+import { bool } from '@polkadot/types';
 import * as createTypeModule from '@polkadot/types/create/createType';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId, Ticker, TokenName } from 'polymesh-types/types';
+import {
+  AssetIdentifier,
+  AssetType,
+  FundingRoundName,
+  IdentifierType,
+  IdentityId,
+  Ticker,
+  TokenName,
+} from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
 import { PostTransactionValue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
+import { KnownTokenIdentifierType, KnownTokenType } from '~/types';
 
 import {
+  assetIdentifierToString,
+  assetTypeToString,
   balanceToBigNumber,
+  booleanToBool,
   boolToBoolean,
   dateToMoment,
   delay,
   findEventRecord,
+  fundingRoundNameToString,
+  identifierTypeToString,
   identityIdToString,
   momentToDate,
   numberToBalance,
   serialize,
+  stringToAssetIdentifier,
+  stringToFundingRoundName,
   stringToIdentityId,
   stringToTicker,
+  stringToTokenName,
   tickerToString,
+  tokenIdentifierTypeToIdentifierType,
   tokenNameToString,
+  tokenTypeToAssetType,
   unserialize,
   unwrapValues,
 } from '../';
@@ -123,10 +143,7 @@ describe('stringToIdentityId and identityIdToString', () => {
 
   test('identityIdToString should convert an IdentityId to a did string', () => {
     const fakeResult = 'IdentityString';
-    const toStringStub = sinon.stub().returns(fakeResult);
-    const identityId = ({
-      toString: toStringStub,
-    } as unknown) as IdentityId;
+    const identityId = polkadotMockUtils.createMockIdentityId(fakeResult);
 
     const result = identityIdToString(identityId);
     expect(result).toBe(fakeResult);
@@ -168,13 +185,11 @@ describe('numberToBalance and balanceToBigNumber', () => {
   });
 
   test('balanceToBigNumber should convert a polkadot Balance object to a BigNumber', () => {
-    const fakeResult = new BigNumber(100);
-    const balance = ({
-      toString: sinon.stub().returns(fakeResult.toString()),
-    } as unknown) as Balance;
+    const fakeResult = 100;
+    const balance = polkadotMockUtils.createMockBalance(fakeResult);
 
     const result = balanceToBigNumber(balance);
-    expect(result).toEqual(fakeResult.div(Math.pow(10, 6)));
+    expect(result).toEqual(new BigNumber(fakeResult).div(Math.pow(10, 6)));
   });
 });
 
@@ -200,7 +215,7 @@ describe('stringToTicker and tickerToString', () => {
 
   test('stringToTicker should convert a string to a polkadot Ticker object', () => {
     const value = 'someTicker';
-    const fakeResult = ('someTicker' as unknown) as Ticker;
+    const fakeResult = ('convertedTicker' as unknown) as Ticker;
     const context = polkadotMockUtils.getContextInstance();
 
     mockCreateType.withArgs(context.polymeshApi.registry, 'Ticker', value).returns(fakeResult);
@@ -219,20 +234,80 @@ describe('stringToTicker and tickerToString', () => {
   });
 });
 
-describe('tokenNameToString', () => {
-  test('tokenNameToString should convert a TokenName object to a string', () => {
+describe('stringToTokenName and tokenNameToString', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToTokenName should convert a string to a polkadot TokenName object', () => {
+    const value = 'someName';
+    const fakeResult = ('convertedName' as unknown) as TokenName;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType.withArgs(context.polymeshApi.registry, 'TokenName', value).returns(fakeResult);
+
+    const result = stringToTokenName(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('tokenNameToString should convert a polkadot TokenName object to a string', () => {
     const fakeResult = 'someTokenName';
-    const tokenName = ({
-      toString: sinon.stub().returns(fakeResult),
-    } as unknown) as TokenName;
+    const tokenName = polkadotMockUtils.createMockTokenName(fakeResult);
 
     const result = tokenNameToString(tokenName);
     expect(result).toEqual(fakeResult);
   });
 });
 
-describe('boolToBoolean', () => {
-  test('boolToBoolean should convert a bool object to a boolean', () => {
+describe('booleanToBool and boolToBoolean', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('booleanToBool should convert a boolean to a polkadot bool object', () => {
+    const value = true;
+    const fakeResult = ('true' as unknown) as bool;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType.withArgs(context.polymeshApi.registry, 'bool', value).returns(fakeResult);
+
+    const result = booleanToBool(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('boolToBoolean should convert a polkadot bool object to a boolean', () => {
     const fakeResult = true;
     const mockBool = polkadotMockUtils.createMockBool(fakeResult);
 
@@ -277,12 +352,220 @@ describe('dateToMoment and momentToDate', () => {
 
   test('momentToDate should convert a polkadot Moment object to a Date', () => {
     const fakeResult = 10000;
-    const moment = ({
-      toNumber: sinon.stub().returns(fakeResult),
-    } as unknown) as Moment;
+    const moment = polkadotMockUtils.createMockMoment(fakeResult);
 
     const result = momentToDate(moment);
     expect(result).toEqual(new Date(fakeResult));
+  });
+});
+
+describe('tokenTypeToAssetType and assetTypeToString', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('tokenTypeToAssetType should convert a TokenType to a polkadot AssetType object', () => {
+    const value = KnownTokenType.Commodity;
+    const fakeResult = ('CommodityEnum' as unknown) as AssetType;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType.withArgs(context.polymeshApi.registry, 'AssetType', value).returns(fakeResult);
+
+    const result = tokenTypeToAssetType(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('assetTypeToString should convert a polkadot AssetType object to a string', () => {
+    let fakeResult = KnownTokenType.Commodity;
+    let assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+
+    let result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = KnownTokenType.Equity;
+    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = KnownTokenType.Debt;
+    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = KnownTokenType.StructuredProduct;
+    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
+    const fakeType = 'otherType';
+    assetType = polkadotMockUtils.createMockAssetType({
+      custom: polkadotMockUtils.createMockBytes(fakeType),
+    });
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeType);
+  });
+});
+
+describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('tokenIdentifierTypeToIdentifierType should convert a TokenIdentifierType to a polkadot IdentifierType object', () => {
+    const value = KnownTokenIdentifierType.Isin;
+    const fakeResult = ('IsinEnum' as unknown) as IdentifierType;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'IdentifierType', value)
+      .returns(fakeResult);
+
+    const result = tokenIdentifierTypeToIdentifierType(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('identifierTypeToString should convert a polkadot IdentifierType object to a string', () => {
+    let fakeResult = KnownTokenIdentifierType.Isin;
+    let identifierType = polkadotMockUtils.createMockIdentifierType(fakeResult);
+
+    let result = identifierTypeToString(identifierType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = KnownTokenIdentifierType.Cusip;
+    identifierType = polkadotMockUtils.createMockIdentifierType(fakeResult);
+
+    result = identifierTypeToString(identifierType);
+    expect(result).toEqual(fakeResult);
+
+    const fakeType = 'otherType';
+    identifierType = polkadotMockUtils.createMockIdentifierType({
+      custom: polkadotMockUtils.createMockBytes(fakeType),
+    });
+
+    result = identifierTypeToString(identifierType);
+    expect(result).toEqual(fakeType);
+  });
+});
+
+describe('stringToAssetIdentifier and assetIdentifierToString', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToAssetIdentifier should convert a string to a polkadot AssetIdentifier object', () => {
+    const value = 'someIdentifier';
+    const fakeResult = ('convertedIdentifier' as unknown) as AssetIdentifier;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'AssetIdentifier', value)
+      .returns(fakeResult);
+
+    const result = stringToAssetIdentifier(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('assetIdentifierToString should convert a polkadot AssetIdentifier object to a string', () => {
+    const fakeResult = 'someIdentifier';
+    const identifierType = polkadotMockUtils.createMockAssetIdentifier(fakeResult);
+
+    const result = assetIdentifierToString(identifierType);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToFundingRoundName and fundingRoundNameToString', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToFundingRoundName should convert a string to a polkadot FundingRoundName object', () => {
+    const value = 'someName';
+    const fakeResult = ('convertedName' as unknown) as FundingRoundName;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'FundingRoundName', value)
+      .returns(fakeResult);
+
+    const result = stringToFundingRoundName(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('fundingRoundNameToString should convert a polkadot FundingRoundName object to a string', () => {
+    const fakeResult = 'someFundingRoundName';
+    const tokenName = polkadotMockUtils.createMockFundingRoundName(fakeResult);
+
+    const result = fundingRoundNameToString(tokenName);
+    expect(result).toEqual(fakeResult);
   });
 });
 

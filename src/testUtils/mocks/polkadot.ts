@@ -15,11 +15,14 @@ import { stringToU8a } from '@polkadot/util';
 import { BigNumber } from 'bignumber.js';
 import { cloneDeep, every, merge, upperFirst } from 'lodash';
 import {
+  AssetIdentifier,
   AssetType,
   Document,
   DocumentHash,
   DocumentName,
   DocumentUri,
+  FundingRoundName,
+  IdentifierType,
   IdentityId,
   Link,
   LinkData,
@@ -363,7 +366,7 @@ function initKeyring(opts: KeyringOptions): void {
     keyringInstance.addFromUri.throws(err);
   }
 
-  mockInstanceContainer.keyringInstance = (keyringInstance as unknown) as Keyring;
+  Object.assign(mockInstanceContainer.keyringInstance, (keyringInstance as unknown) as Keyring);
 
   keyringConstructorStub.returns(keyringInstance);
 }
@@ -761,6 +764,12 @@ export const createMockU64 = (value?: number): u64 => createMockNumberCodec(valu
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockBytes = (value?: string): Bytes => createMockU8ACodec(value) as Bytes;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockTokenName = (name?: string): TokenName =>
   createMockStringCodec(name) as TokenName;
 
@@ -809,6 +818,7 @@ export const createMockAssetType = (
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockLinkData = (
   linkData?: { documentOwned: Document } | { tickerOwned: Ticker } | { tokenOwned: Ticker }
@@ -898,6 +908,30 @@ export const createMockDocument = (
     false
   ) as Document;
 /* eslint-enable @typescript-eslint/camelcase */
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockIdentifierType = (
+  identifierType?: 'isin' | 'cusip' | { custom: Bytes }
+): IdentifierType => {
+  return createMockEnum(identifierType) as IdentifierType;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetIdentifier = (identifier?: string): AssetIdentifier =>
+  createMockStringCodec(identifier) as AssetIdentifier;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockFundingRoundName = (roundName?: string): FundingRoundName =>
+  createMockStringCodec(roundName) as FundingRoundName;
 
 /**
  * @hidden

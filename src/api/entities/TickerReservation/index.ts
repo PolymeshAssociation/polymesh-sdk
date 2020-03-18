@@ -1,5 +1,10 @@
 import { Identity } from '~/api/entities/Identity';
+import { SecurityToken } from '~/api/entities/SecurityToken';
 import { reserveTicker } from '~/api/procedures';
+import {
+  createSecurityToken,
+  CreateSecurityTokenParams,
+} from '~/api/procedures/createSecurityToken';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { identityIdToString, momentToDate } from '~/utils';
@@ -99,7 +104,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
    * Extend the reservation time period of the ticker for 60 days from now
    * to later use it in the creation of a Security Token.
    */
-  public async extend(): Promise<TransactionQueue<TickerReservation>> {
+  public extend(): Promise<TransactionQueue<TickerReservation>> {
     const { ticker, context } = this;
     const extendPeriod = true;
     return reserveTicker.prepare(
@@ -109,5 +114,19 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
       },
       context
     );
+  }
+
+  /**
+   * Create a Security Token using the reserved ticker
+   *
+   * @param args.totalSupply - amount of tokens that will be minted on creation
+   * @param args.isDivisible - whether a single token can be divided into decimal parts
+   * @param args.tokenType - type of security that the token represents (i.e. Equity, Debt, Commodity, etc)
+   * @param args.tokenIdentifiers - domestic or international alphanumeric security identifiers for the token (ISIN, CUSIP, etc)
+   * @param args.fundingRound - (optional) funding round in which the token currently is (Series A, Series B, etc)
+   */
+  public createToken(args: CreateSecurityTokenParams): Promise<TransactionQueue<SecurityToken>> {
+    const { ticker, context } = this;
+    return createSecurityToken.prepare({ ticker, ...args }, context);
   }
 }
