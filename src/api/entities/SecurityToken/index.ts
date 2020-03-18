@@ -3,6 +3,7 @@ import { modifyToken, ModifyTokenParams } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import {
+  assetTypeToString,
   balanceToBigNumber,
   boolToBoolean,
   identityIdToString,
@@ -84,13 +85,14 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     } = this;
 
     /* eslint-disable @typescript-eslint/camelcase */
-    const { name, total_supply, divisible, owner_did } = await asset.tokens(ticker);
+    const { name, total_supply, divisible, owner_did, asset_type } = await asset.tokens(ticker);
 
     return {
-      name: tokenNameToString(name),
-      totalSupply: balanceToBigNumber(total_supply),
+      assetType: assetTypeToString(asset_type),
       isDivisible: boolToBoolean(divisible),
+      name: tokenNameToString(name),
       owner: new Identity({ did: identityIdToString(owner_did) }, context),
+      totalSupply: balanceToBigNumber(total_supply),
     };
     /* eslint-enable @typescript-eslint/camelcase */
   }

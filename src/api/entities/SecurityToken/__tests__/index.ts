@@ -50,6 +50,7 @@ describe('SecurityToken class', () => {
       const totalSupply = 1000;
       const isDivisible = true;
       const owner = '0x0wn3r';
+      const assetType = 'equity';
 
       const context = polkadotMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
@@ -59,7 +60,7 @@ describe('SecurityToken class', () => {
           /* eslint-disable @typescript-eslint/camelcase */
           owner_did: polkadotMockUtils.createMockIdentityId(owner),
           name: polkadotMockUtils.createMockTokenName(ticker),
-          asset_type: polkadotMockUtils.createMockAssetType('equity'),
+          asset_type: polkadotMockUtils.createMockAssetType(assetType),
           divisible: polkadotMockUtils.createMockBool(isDivisible),
           link_id: polkadotMockUtils.createMockU64(3),
           total_supply: polkadotMockUtils.createMockBalance(totalSupply),
@@ -73,6 +74,7 @@ describe('SecurityToken class', () => {
       expect(details.totalSupply).toEqual(balanceToBigNumber((totalSupply as unknown) as Balance));
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
+      expect(details.assetType).toBe(assetType);
     });
   });
 
