@@ -86,15 +86,7 @@ export class Polymesh {
    * Get the POLYX balance of the current account
    */
   public getIdentityBalance(): Promise<BigNumber> {
-    const { currentIdentity } = this.context;
-    if (currentIdentity) {
-      return currentIdentity.getPolyXBalance();
-    } else {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'The current account does not have an associated identity',
-      });
-    }
+    return this.context.getCurrentIdentity().getPolyXBalance();
   }
 
   /**
@@ -133,7 +125,6 @@ export class Polymesh {
           },
         },
       },
-      context: { currentIdentity },
       context,
     } = this;
 
@@ -141,13 +132,8 @@ export class Polymesh {
 
     if (args) {
       identity = args.did;
-    } else if (currentIdentity) {
-      identity = currentIdentity.did;
     } else {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'The current account does not have an associated identity',
-      });
+      identity = context.getCurrentIdentity().did;
     }
 
     const tickers = await links.entries({ identity });

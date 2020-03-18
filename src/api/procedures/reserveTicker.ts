@@ -75,7 +75,7 @@ export async function prepareReserveTicker(
         }expire${!isPermanent ? ` at ${expiryDate}` : ''}`,
       });
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    } else if (owner!.did !== context.currentIdentity!.did) {
+    } else if (owner!.did !== context.getCurrentIdentity().did) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'You must be the owner of the ticker to extend its reservation period',

@@ -260,9 +260,15 @@ let keyringOptions: KeyringOptions = defaultKeyringOptions;
 function initContext(opts: ContextOptions): void {
   contextCreateStub = sinon.stub();
 
-  const currentIdentity = opts.withSeed
-    ? { getPolyXBalance: sinon.stub().resolves(opts.balance), did: opts.did }
-    : undefined;
+  const getCurrentIdentity = sinon.stub();
+  opts.withSeed
+    ? getCurrentIdentity.returns({
+        getPolyXBalance: sinon.stub().resolves(opts.balance),
+        did: opts.did,
+      })
+    : getCurrentIdentity.throws(
+        new Error('The current account does not have an associated identity')
+      );
   const currentPair = opts.withSeed
     ? ({
         address: '0xdummy',
@@ -271,7 +277,7 @@ function initContext(opts: ContextOptions): void {
 
   const contextInstance = ({
     currentPair,
-    currentIdentity,
+    getCurrentIdentity,
     accountBalance: sinon.stub().resolves(opts.balance),
     getAccounts: sinon.stub().returns([]),
     setPair: sinon.stub().callsFake(address => {
