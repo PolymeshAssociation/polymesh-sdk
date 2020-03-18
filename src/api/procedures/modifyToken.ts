@@ -1,7 +1,7 @@
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
-import { stringToTicker } from '~/utils';
+import { stringToTicker, stringToTokenName } from '~/utils';
 
 export type ModifyTokenParams =
   | { makeDivisible?: true; name: string }
@@ -54,26 +54,22 @@ export async function prepareModifyToken(
     }
 
     this.addTransaction(tx.asset.makeDivisible, {}, rawTicker);
-  } else {
-    /* istanbul ignore else: makeDivisible can't be undefined */
-    if (makeDivisible === false) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'You cannot make the token indivisible',
-      });
-    }
+  } else if (makeDivisible === false) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'You cannot make the token indivisible',
+    });
   }
 
-  /* istanbul ignore else: newName can't be undefined */
   if (newName) {
     if (newName === name) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'New name passed is the same name currently in the Security Token',
+        message: 'New name is the same as current name',
       });
     }
 
-    this.addTransaction(tx.asset.renameToken, {}, rawTicker, newName);
+    this.addTransaction(tx.asset.renameToken, {}, rawTicker, stringToTokenName(newName, context));
   }
 
   return securityToken;

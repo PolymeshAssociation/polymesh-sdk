@@ -1,4 +1,4 @@
-import { Ticker } from 'polymesh-types/types';
+import { Ticker, TokenName } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -16,8 +16,10 @@ jest.mock(
 describe('modifyToken procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTokenNameStub: sinon.SinonStub<[string, Context], TokenName>;
   let ticker: string;
   let rawTicker: Ticker;
+  let rawTokenName: TokenName;
   let procedureResult: SecurityToken;
 
   beforeAll(() => {
@@ -25,8 +27,10 @@ describe('modifyToken procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    stringToTokenNameStub = sinon.stub(utilsModule, 'stringToTokenName');
     ticker = 'someTicker';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    rawTokenName = polkadotMockUtils.createMockTokenName(ticker);
     procedureResult = entityMockUtils.getSecurityTokenInstance();
   });
 
@@ -106,10 +110,6 @@ describe('modifyToken procedure', () => {
   });
 
   test('should throw an error if newName is the same name currently in the Security Token', () => {
-    entityMockUtils.getSecurityTokenDetailsStub({
-      name: 'TOKEN_NAME',
-    });
-
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
@@ -118,7 +118,7 @@ describe('modifyToken procedure', () => {
         ticker,
         name: 'TOKEN_NAME',
       })
-    ).rejects.toThrow('New name passed is the same name currently in the Security Token');
+    ).rejects.toThrow('New name is the same as current name');
   });
 
   test('should add a make divisible transaction to the queue', async () => {
@@ -139,6 +139,9 @@ describe('modifyToken procedure', () => {
 
   test('should add a rename token transaction to the queue', async () => {
     const newName = 'NEW_NAME';
+
+    stringToTokenNameStub.withArgs(newName, mockContext).returns(rawTokenName);
+
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
@@ -149,7 +152,7 @@ describe('modifyToken procedure', () => {
       name: newName,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, sinon.match({}), rawTicker, newName);
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawTokenName);
 
     expect(result.ticker).toBe(procedureResult.ticker);
   });
