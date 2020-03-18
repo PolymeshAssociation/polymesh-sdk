@@ -22,9 +22,9 @@ export async function prepareModifyToken(
     },
     context,
   } = this;
-  const { ticker, makeDivisible } = args;
+  const { ticker, makeDivisible, name: newName } = args;
 
-  if (makeDivisible === undefined) {
+  if (makeDivisible === undefined && newName === undefined) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Nothing to modify',
@@ -35,7 +35,7 @@ export async function prepareModifyToken(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const { isDivisible, owner } = await securityToken.details();
+  const { isDivisible, owner, name } = await securityToken.details();
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (owner.did !== context.currentIdentity!.did) {
@@ -55,13 +55,25 @@ export async function prepareModifyToken(
 
     this.addTransaction(tx.asset.makeDivisible, {}, rawTicker);
   } else {
-    /* istanbul ignore else: it does not apply to our business logic. this line will be remove in future task */
+    /* istanbul ignore else: makeDivisible can't be undefined */
     if (makeDivisible === false) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'You cannot make the token indivisible',
       });
     }
+  }
+
+  /* istanbul ignore else: newName can't be undefined */
+  if (newName) {
+    if (newName === name) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'New name passed is the same name currently in the Security Token',
+      });
+    }
+
+    this.addTransaction(tx.asset.renameToken, {}, rawTicker, newName);
   }
 
   return securityToken;

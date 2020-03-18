@@ -105,6 +105,22 @@ describe('modifyToken procedure', () => {
     ).rejects.toThrow('You cannot make the token indivisible');
   });
 
+  test('should throw an error if newName is the same name currently in the Security Token', () => {
+    entityMockUtils.getSecurityTokenDetailsStub({
+      name: 'TOKEN_NAME',
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
+    proc.context = mockContext;
+
+    return expect(
+      prepareModifyToken.call(proc, {
+        ticker,
+        name: 'TOKEN_NAME',
+      })
+    ).rejects.toThrow('New name passed is the same name currently in the Security Token');
+  });
+
   test('should add a make divisible transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
@@ -117,6 +133,23 @@ describe('modifyToken procedure', () => {
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, sinon.match({}), rawTicker);
+
+    expect(result.ticker).toBe(procedureResult.ticker);
+  });
+
+  test('should add a rename token transaction to the queue', async () => {
+    const newName = 'NEW_NAME';
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
+    proc.context = mockContext;
+
+    const transaction = polkadotMockUtils.createTxStub('asset', 'renameToken');
+
+    const result = await prepareModifyToken.call(proc, {
+      ticker,
+      name: newName,
+    });
+
+    sinon.assert.calledWith(addTransactionStub, transaction, sinon.match({}), rawTicker, newName);
 
     expect(result.ticker).toBe(procedureResult.ticker);
   });
