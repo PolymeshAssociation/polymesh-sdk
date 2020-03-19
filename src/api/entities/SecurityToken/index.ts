@@ -6,6 +6,7 @@ import {
   assetTypeToString,
   balanceToBigNumber,
   boolToBoolean,
+  fundingRoundNameToString,
   identityIdToString,
   tickerToDid,
   tokenNameToString,
@@ -95,5 +96,22 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       totalSupply: balanceToBigNumber(total_supply),
     };
     /* eslint-enable @typescript-eslint/camelcase */
+  }
+
+  /**
+   * Retrieve the Security Token's funding round
+   */
+  public async currentFundingRound(): Promise<string> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      ticker,
+    } = this;
+
+    const fundingRound = await asset.fundingRound(ticker);
+    return fundingRoundNameToString(fundingRound);
   }
 }
