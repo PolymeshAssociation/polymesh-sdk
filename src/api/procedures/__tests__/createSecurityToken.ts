@@ -14,13 +14,18 @@ import {
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
-import { Params, prepareCreateSecurityToken } from '~/api/procedures/createSecurityToken';
+import {
+  getRequiredRoles,
+  Params,
+  prepareCreateSecurityToken,
+} from '~/api/procedures/createSecurityToken';
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   KnownTokenIdentifierType,
   KnownTokenType,
+  RoleType,
   TickerReservationStatus,
   TokenDocument,
   TokenIdentifier,
@@ -235,23 +240,6 @@ describe('createSecurityToken procedure', () => {
     );
   });
 
-  test('should throw an error if the signing account is not the ticker owner', () => {
-    const expiryDate = new Date(new Date().getTime() + 1000);
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
-      expiryDate,
-      status: TickerReservationStatus.Reserved,
-    });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
-
-    return expect(
-      prepareCreateSecurityToken.call(proc, { ...args, extendPeriod: true })
-    ).rejects.toThrow(
-      `You are not the owner of ticker "${ticker}", so you cannot create a Security Token with it`
-    );
-  });
-
   test("should throw an error if the signing account doesn't have enough balance", () => {
     polkadotMockUtils.createQueryStub('asset', 'assetCreationFee', {
       returnValue: polkadotMockUtils.createMockBalance(600000000),
@@ -318,5 +306,16 @@ describe('createSecurityToken procedure', () => {
     sinon.assert.calledWith(addTransactionStub, tx, {}, rawTicker, rawDocuments);
 
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+  });
+});
+
+describe('getRequiredRoles', () => {
+  test('should return a ticker owner role', () => {
+    const ticker = 'someTicker';
+    const args = {
+      ticker,
+    } as Params;
+
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TickerOwner, ticker }]);
   });
 });

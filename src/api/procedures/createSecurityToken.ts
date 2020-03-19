@@ -5,6 +5,8 @@ import { SecurityToken, TickerReservation } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import {
   ErrorCode,
+  Role,
+  RoleType,
   TickerReservationStatus,
   TokenDocument,
   TokenIdentifier,
@@ -63,7 +65,7 @@ export async function prepareCreateSecurityToken(
 
   const reservation = new TickerReservation({ ticker }, context);
 
-  const [rawFee, balance, { owner, status }] = await Promise.all([
+  const [rawFee, balance, { status }] = await Promise.all([
     query.asset.assetCreationFee(),
     context.accountBalance(),
     reservation.details(),
@@ -80,14 +82,6 @@ export async function prepareCreateSecurityToken(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: `You must first reserve ticker "${ticker}" in order to create a Security Token with it`,
-    });
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  if (owner!.did !== context.getCurrentIdentity().did) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `You are not the owner of ticker "${ticker}", so you cannot create a Security Token with it`,
     });
   }
 
@@ -138,4 +132,11 @@ export async function prepareCreateSecurityToken(
   return new SecurityToken({ ticker }, context);
 }
 
-export const createSecurityToken = new Procedure(prepareCreateSecurityToken);
+/**
+ * @hidden
+ */
+export function getRequiredRoles({ ticker }: Params): Role[] {
+  return [{ type: RoleType.TickerOwner, ticker }];
+}
+
+export const createSecurityToken = new Procedure(prepareCreateSecurityToken, getRequiredRoles);

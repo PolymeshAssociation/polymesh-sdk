@@ -130,8 +130,8 @@ describe('Procedure class', () => {
         return 'success';
       };
 
-      let proc = new Procedure(func, [Role.Owner]);
-      const context = polkadotMockUtils.getContextInstance();
+      let proc = new Procedure(func, [({ type: 'FakeRole' } as unknown) as Role]);
+      const context = polkadotMockUtils.getContextInstance({ hasRoles: false });
 
       await expect(proc.prepare(procArgs, context)).rejects.toThrow(
         'Current account is not authorized to execute this procedure'

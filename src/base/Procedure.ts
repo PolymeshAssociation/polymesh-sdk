@@ -26,7 +26,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     args: Args
   ) => Promise<MaybePostTransactionValue<ReturnValue>>;
 
-  private checkRoles: (this: Procedure<Args, ReturnValue>, args: Args) => Promise<boolean>;
+  private checkRoles: (this: Procedure<Args, ReturnValue>, args: Args) => Promise<boolean> | Role[];
 
   private transactions: TransactionSpec[] = [];
 
@@ -36,6 +36,9 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
 
   /**
    * @hidden
+   *
+   * @param prepareTransactions - function that prepares the transaction queue
+   * @param checkRoles - can be an array of roles, a function that returns an array of roles, or a function that returns a boolean that determines whether the procedure can be executed by the current user
    */
   constructor(
     prepareTransactions: (
@@ -44,15 +47,15 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     ) => Promise<MaybePostTransactionValue<ReturnValue>>,
     checkRoles:
       | Role[]
-      | ((this: Procedure<Args, ReturnValue>, args: Args) => Promise<boolean>) = async (): Promise<
-      boolean
-    > => true
+      | ((
+          this: Procedure<Args, ReturnValue>,
+          args: Args
+        ) => Promise<boolean> | Role[]) = async (): Promise<boolean> => true
   ) {
     this.prepareTransactions = prepareTransactions;
 
     if (Array.isArray(checkRoles)) {
-      // TODO @monitz87: implement this for real when we have actual role-checking logic
-      this.checkRoles = async (): Promise<boolean> => false;
+      this.checkRoles = (): Role[] => checkRoles;
     } else {
       this.checkRoles = checkRoles;
     }
@@ -77,7 +80,16 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
   public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
     this.context = context;
 
-    const allowed = await this.checkRoles(args);
+    const checkRolesResult = await this.checkRoles(args);
+    let allowed: boolean;
+
+    if (typeof checkRolesResult !== 'boolean') {
+      const { context } = this;
+
+      allowed = await context.getCurrentIdentity().hasRoles(checkRolesResult);
+    } else {
+      allowed = checkRolesResult;
+    }
 
     if (!allowed) {
       throw new PolymeshError({
