@@ -14,7 +14,11 @@ import {
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
-import { getRoles, Params, prepareCreateSecurityToken } from '~/api/procedures/createSecurityToken';
+import {
+  getRequiredRoles,
+  Params,
+  prepareCreateSecurityToken,
+} from '~/api/procedures/createSecurityToken';
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -305,13 +309,13 @@ describe('createSecurityToken procedure', () => {
   });
 });
 
-describe('getRoles', () => {
+describe('getRequiredRoles', () => {
   test('should return a ticker owner role', () => {
     const ticker = 'someTicker';
     const args = {
       ticker,
     } as Params;
 
-    expect(getRoles(args)).toEqual([{ type: RoleType.TickerOwner, ticker }]);
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TickerOwner, ticker }]);
   });
 });

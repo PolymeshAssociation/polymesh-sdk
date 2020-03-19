@@ -135,8 +135,8 @@ export async function prepareCreateSecurityToken(
 /**
  * @hidden
  */
-export function getRoles({ ticker }: Params): Role[] {
+export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TickerOwner, ticker }];
 }
 
-export const createSecurityToken = new Procedure(prepareCreateSecurityToken, getRoles);
+export const createSecurityToken = new Procedure(prepareCreateSecurityToken, getRequiredRoles);

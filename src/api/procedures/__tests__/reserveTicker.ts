@@ -6,7 +6,7 @@ import sinon from 'sinon';
 import { TickerReservation } from '~/api/entities';
 import {
   createTickerReservationResolver,
-  getRoles,
+  getRequiredRoles,
   prepareReserveTicker,
   ReserveTickerParams,
 } from '~/api/procedures/reserveTicker';
@@ -240,7 +240,7 @@ describe('tickerReservationResolver', () => {
   });
 });
 
-describe('getRoles', () => {
+describe('getRequiredRoles', () => {
   test('should return a ticker owner role if extending a reservation', () => {
     const ticker = 'someTicker';
     const args = {
@@ -248,7 +248,7 @@ describe('getRoles', () => {
       extendPeriod: true,
     };
 
-    expect(getRoles(args)).toEqual([{ type: RoleType.TickerOwner, ticker }]);
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TickerOwner, ticker }]);
   });
 
   test('should return an empty array if not extending a reservation', () => {
@@ -257,6 +257,6 @@ describe('getRoles', () => {
       ticker,
     };
 
-    expect(getRoles(args)).toEqual([]);
+    expect(getRequiredRoles(args)).toEqual([]);
   });
 });

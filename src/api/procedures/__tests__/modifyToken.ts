@@ -2,7 +2,7 @@ import { Ticker, TokenName } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
-import { getRoles, Params, prepareModifyToken } from '~/api/procedures/modifyToken';
+import { getRequiredRoles, Params, prepareModifyToken } from '~/api/procedures/modifyToken';
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -139,13 +139,13 @@ describe('modifyToken procedure', () => {
   });
 });
 
-describe('getRoles', () => {
+describe('getRequiredRoles', () => {
   test('should return a token owner role', () => {
     const ticker = 'someTicker';
     const args = {
       ticker,
     } as Params;
 
-    expect(getRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
   });
 });

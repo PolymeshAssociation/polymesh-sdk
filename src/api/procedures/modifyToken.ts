@@ -70,8 +70,8 @@ export async function prepareModifyToken(
 /**
  * @hidden
  */
-export function getRoles({ ticker }: Params): Role[] {
+export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 
-export const modifyToken = new Procedure(prepareModifyToken, getRoles);
+export const modifyToken = new Procedure(prepareModifyToken, getRequiredRoles);

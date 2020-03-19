@@ -122,8 +122,8 @@ export async function prepareReserveTicker(
  * @hidden
  * If extending a reservation, the user must be the ticker owner
  */
-export function getRoles({ ticker, extendPeriod }: ReserveTickerParams): Role[] {
+export function getRequiredRoles({ ticker, extendPeriod }: ReserveTickerParams): Role[] {
   return extendPeriod ? [{ type: RoleType.TickerOwner, ticker }] : [];
 }
 
-export const reserveTicker = new Procedure(prepareReserveTicker, getRoles);
+export const reserveTicker = new Procedure(prepareReserveTicker, getRequiredRoles);
