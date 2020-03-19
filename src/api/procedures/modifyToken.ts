@@ -1,7 +1,7 @@
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType } from '~/types';
-import { stringToTicker } from '~/utils';
+import { stringToTicker, stringToTokenName } from '~/utils';
 
 export type ModifyTokenParams =
   | { makeDivisible?: true; name: string }
@@ -22,9 +22,9 @@ export async function prepareModifyToken(
     },
     context,
   } = this;
-  const { ticker, makeDivisible } = args;
+  const { ticker, makeDivisible, name: newName } = args;
 
-  if (makeDivisible === undefined) {
+  if (makeDivisible === undefined && newName === undefined) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Nothing to modify',
@@ -35,7 +35,7 @@ export async function prepareModifyToken(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const { isDivisible } = await securityToken.details();
+  const { isDivisible, name } = await securityToken.details();
 
   if (makeDivisible) {
     if (isDivisible) {
@@ -46,14 +46,22 @@ export async function prepareModifyToken(
     }
 
     this.addTransaction(tx.asset.makeDivisible, {}, rawTicker);
-  } else {
-    /* istanbul ignore else: it does not apply to our business logic. this line will be remove in future task */
-    if (makeDivisible === false) {
+  } else if (makeDivisible === false) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'You cannot make the token indivisible',
+    });
+  }
+
+  if (newName) {
+    if (newName === name) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'You cannot make the token indivisible',
+        message: 'New name is the same as current name',
       });
     }
+
+    this.addTransaction(tx.asset.renameToken, {}, rawTicker, stringToTokenName(newName, context));
   }
 
   return securityToken;

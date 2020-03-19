@@ -1,4 +1,4 @@
-import { Ticker } from 'polymesh-types/types';
+import { Ticker, TokenName } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -17,6 +17,7 @@ jest.mock(
 describe('modifyToken procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTokenNameStub: sinon.SinonStub<[string, Context], TokenName>;
   let ticker: string;
   let rawTicker: Ticker;
   let procedureResult: SecurityToken;
@@ -26,6 +27,7 @@ describe('modifyToken procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    stringToTokenNameStub = sinon.stub(utilsModule, 'stringToTokenName');
     ticker = 'someTicker';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
     procedureResult = entityMockUtils.getSecurityTokenInstance();
@@ -88,6 +90,18 @@ describe('modifyToken procedure', () => {
     ).rejects.toThrow('You cannot make the token indivisible');
   });
 
+  test('should throw an error if newName is the same name currently in the Security Token', () => {
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
+    proc.context = mockContext;
+
+    return expect(
+      prepareModifyToken.call(proc, {
+        ticker,
+        name: 'TOKEN_NAME',
+      })
+    ).rejects.toThrow('New name is the same as current name');
+  });
+
   test('should add a make divisible transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
@@ -100,6 +114,26 @@ describe('modifyToken procedure', () => {
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, sinon.match({}), rawTicker);
+
+    expect(result.ticker).toBe(procedureResult.ticker);
+  });
+
+  test('should add a rename token transaction to the queue', async () => {
+    const newName = 'NEW_NAME';
+    const rawTokenName = polkadotMockUtils.createMockTokenName(newName);
+    stringToTokenNameStub.withArgs(newName, mockContext).returns(rawTokenName);
+
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
+    proc.context = mockContext;
+
+    const transaction = polkadotMockUtils.createTxStub('asset', 'renameToken');
+
+    const result = await prepareModifyToken.call(proc, {
+      ticker,
+      name: newName,
+    });
+
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawTokenName);
 
     expect(result.ticker).toBe(procedureResult.ticker);
   });
