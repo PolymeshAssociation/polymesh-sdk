@@ -1,11 +1,17 @@
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
-import { stringToTicker, stringToTokenName } from '~/utils';
+import {
+  fundingRoundNameToString,
+  stringToFundingRoundName,
+  stringToTicker,
+  stringToTokenName,
+} from '~/utils';
 
 export type ModifyTokenParams =
-  | { makeDivisible?: true; name: string }
-  | { makeDivisible: true; name?: string };
+  | { makeDivisible?: true; name: string; fundingRound?: string }
+  | { makeDivisible: true; name?: string; fundingRound?: string }
+  | { makeDivisible?: true; name?: string; fundingRound: string };
 
 export type Params = { ticker: string } & ModifyTokenParams;
 
@@ -18,13 +24,13 @@ export async function prepareModifyToken(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { tx },
+      polymeshApi: { query, tx },
     },
     context,
   } = this;
-  const { ticker, makeDivisible, name: newName } = args;
+  const { ticker, makeDivisible, name: newName, fundingRound: newFundingRound } = args;
 
-  if (makeDivisible === undefined && newName === undefined) {
+  if (makeDivisible === undefined && newName === undefined && newFundingRound === undefined) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Nothing to modify',
@@ -35,7 +41,10 @@ export async function prepareModifyToken(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const { isDivisible, owner, name } = await securityToken.details();
+  const [{ isDivisible, owner, name }, fundingRound] = await Promise.all([
+    securityToken.details(),
+    query.asset.fundingRound(ticker),
+  ]);
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (owner.did !== context.getCurrentIdentity().did) {
@@ -70,6 +79,22 @@ export async function prepareModifyToken(
     }
 
     this.addTransaction(tx.asset.renameToken, {}, rawTicker, stringToTokenName(newName, context));
+  }
+
+  if (newFundingRound) {
+    if (newFundingRound === fundingRoundNameToString(fundingRound)) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'New funding round name is the same as current funding round',
+      });
+    }
+
+    this.addTransaction(
+      tx.asset.setFundingRound,
+      {},
+      rawTicker,
+      stringToFundingRoundName(newFundingRound, context)
+    );
   }
 
   return securityToken;
