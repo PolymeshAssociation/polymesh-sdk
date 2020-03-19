@@ -1,23 +1,10 @@
 import sinon from 'sinon';
 
-import { polkadotMockUtils } from '~/testUtils/mocks';
 import * as utils from '~/utils';
 
 import { Entity } from '../Entity';
 
 describe('Entity class', () => {
-  beforeAll(() => {
-    polkadotMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    polkadotMockUtils.reset();
-  });
-
-  afterAll(() => {
-    polkadotMockUtils.cleanup();
-  });
-
   describe('method: generateUuid', () => {
     test("should generate the Entity's UUID", async () => {
       sinon

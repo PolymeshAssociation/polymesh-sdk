@@ -30,7 +30,7 @@ describe('TickerReservation class', () => {
   });
 
   describe('constructor', () => {
-    test('should assign ticker instance', () => {
+    test('should assign ticker to instance', () => {
       const ticker = 'abc';
       const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
