@@ -1,6 +1,6 @@
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode } from '~/types';
+import { ErrorCode, Role, RoleType } from '~/types';
 import { stringToTicker } from '~/utils';
 
 export type ModifyTokenParams =
@@ -35,15 +35,7 @@ export async function prepareModifyToken(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const { isDivisible, owner } = await securityToken.details();
-
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  if (owner.did !== context.getCurrentIdentity().did) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You must be the owner of the Security Token to modify any of its properties',
-    });
-  }
+  const { isDivisible } = await securityToken.details();
 
   if (makeDivisible) {
     if (isDivisible) {
@@ -67,4 +59,11 @@ export async function prepareModifyToken(
   return securityToken;
 }
 
-export const modifyToken = new Procedure(prepareModifyToken);
+/**
+ * @hidden
+ */
+export function getRoles({ ticker }: Params): Role[] {
+  return [{ type: RoleType.TokenOwner, ticker }];
+}
+
+export const modifyToken = new Procedure(prepareModifyToken, getRoles);

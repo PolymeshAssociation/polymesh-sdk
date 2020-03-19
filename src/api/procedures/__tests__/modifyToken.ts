@@ -2,10 +2,11 @@ import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
-import { Params, prepareModifyToken } from '~/api/procedures/modifyToken';
+import { getRoles, Params, prepareModifyToken } from '~/api/procedures/modifyToken';
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { RoleType } from '~/types';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -59,24 +60,6 @@ describe('modifyToken procedure', () => {
     );
   });
 
-  test('should throw an error if the user is not the owner of the token', () => {
-    entityMockUtils.getSecurityTokenDetailsStub({
-      owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
-
-    return expect(
-      prepareModifyToken.call(proc, {
-        ticker,
-        makeDivisible: true,
-      })
-    ).rejects.toThrow(
-      'You must be the owner of the Security Token to modify any of its properties'
-    );
-  });
-
   test('should throw an error if makeDivisible is set to true and the security token is already divisible', () => {
     entityMockUtils.getSecurityTokenDetailsStub({
       isDivisible: true,
@@ -119,5 +102,16 @@ describe('modifyToken procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, sinon.match({}), rawTicker);
 
     expect(result.ticker).toBe(procedureResult.ticker);
+  });
+});
+
+describe('getRoles', () => {
+  test('should return a token owner role', () => {
+    const ticker = 'someTicker';
+    const args = {
+      ticker,
+    } as Params;
+
+    expect(getRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
   });
 });

@@ -6,6 +6,7 @@ import sinon from 'sinon';
 import { TickerReservation } from '~/api/entities';
 import {
   createTickerReservationResolver,
+  getRoles,
   prepareReserveTicker,
   ReserveTickerParams,
 } from '~/api/procedures/reserveTicker';
@@ -13,7 +14,7 @@ import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TickerReservationStatus } from '~/types';
+import { RoleType, TickerReservationStatus } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -194,21 +195,6 @@ describe('reserveTicker procedure', () => {
     );
   });
 
-  test('should throw an error if extendPeriod property is set to true and the signing account is not the ticker owner', () => {
-    const expiryDate = new Date(new Date().getTime() + 1000);
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate,
-      status: TickerReservationStatus.Reserved,
-    });
-    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
-    proc.context = mockContext;
-
-    return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
-      'You must be the owner of the ticker to extend its reservation period'
-    );
-  });
-
   test('should add a register ticker transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
@@ -251,5 +237,26 @@ describe('tickerReservationResolver', () => {
     const result = createTickerReservationResolver(fakeContext)({} as ISubmittableResult);
 
     expect(result.ticker).toBe(tickerString);
+  });
+});
+
+describe('getRoles', () => {
+  test('should return a ticker owner role if extending a reservation', () => {
+    const ticker = 'someTicker';
+    const args = {
+      ticker,
+      extendPeriod: true,
+    };
+
+    expect(getRoles(args)).toEqual([{ type: RoleType.TickerOwner, ticker }]);
+  });
+
+  test('should return an empty array if not extending a reservation', () => {
+    const ticker = 'someTicker';
+    const args = {
+      ticker,
+    };
+
+    expect(getRoles(args)).toEqual([]);
   });
 });

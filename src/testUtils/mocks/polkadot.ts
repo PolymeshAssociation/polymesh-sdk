@@ -92,6 +92,7 @@ interface ContextOptions {
   did?: string;
   withSeed?: boolean;
   balance?: BigNumber;
+  hasRoles?: boolean;
 }
 
 interface Pair {
@@ -244,6 +245,7 @@ const defaultContextOptions: ContextOptions = {
   did: 'someDid',
   withSeed: true,
   balance: new BigNumber(100),
+  hasRoles: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -257,19 +259,22 @@ let keyringOptions: KeyringOptions = defaultKeyringOptions;
 /**
  * @hidden
  */
-function initContext(opts: ContextOptions): void {
+function initContext(opts?: ContextOptions): void {
   contextCreateStub = sinon.stub();
 
+  contextOptions = { ...defaultContextOptions, ...opts };
+
   const getCurrentIdentity = sinon.stub();
-  opts.withSeed
+  contextOptions.withSeed
     ? getCurrentIdentity.returns({
-        getPolyXBalance: sinon.stub().resolves(opts.balance),
-        did: opts.did,
+        getPolyXBalance: sinon.stub().resolves(contextOptions.balance),
+        did: contextOptions.did,
+        hasRoles: sinon.stub().resolves(contextOptions.hasRoles),
       })
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')
       );
-  const currentPair = opts.withSeed
+  const currentPair = contextOptions.withSeed
     ? ({
         address: '0xdummy',
       } as IKeyringPair)
@@ -278,7 +283,7 @@ function initContext(opts: ContextOptions): void {
   const contextInstance = ({
     currentPair,
     getCurrentIdentity,
-    accountBalance: sinon.stub().resolves(opts.balance),
+    accountBalance: sinon.stub().resolves(contextOptions.balance),
     getAccounts: sinon.stub().returns([]),
     setPair: sinon.stub().callsFake(address => {
       contextInstance.currentPair = { address } as IKeyringPair;
@@ -286,7 +291,7 @@ function initContext(opts: ContextOptions): void {
     polymeshApi: mockInstanceContainer.apiInstance,
   } as unknown) as MockContext;
 
-  mockInstanceContainer.contextInstance = contextInstance;
+  Object.assign(mockInstanceContainer.contextInstance, contextInstance);
 
   MockContextClass.create = contextCreateStub.resolves(contextInstance);
 }
@@ -351,10 +356,11 @@ function initApi(): void {
 /**
  * @hidden
  */
-function initKeyring(opts: KeyringOptions): void {
+function initKeyring(opts?: KeyringOptions): void {
   keyringConstructorStub = sinon.stub();
 
-  const { error, getPair, getPairs, addFromUri, addFromSeed } = opts;
+  keyringOptions = { ...defaultKeyringOptions, ...opts };
+  const { error, getPair, getPairs, addFromUri, addFromSeed } = keyringOptions;
 
   const err = new Error('Error');
 
@@ -393,15 +399,13 @@ export function initMocks(opts?: {
    */
 
   // Context
-  contextOptions = { ...defaultContextOptions, ...opts?.contextOptions };
-  initContext(contextOptions);
+  initContext(opts?.contextOptions);
 
   // Api
   initApi();
 
   // Keyring
-  keyringOptions = { ...defaultKeyringOptions, ...opts?.keyringOptions };
-  initKeyring(keyringOptions);
+  initKeyring(opts?.keyringOptions);
 
   txMocksData.clear();
   createErrStub = sinon.stub().throws(new Error('Error'));
@@ -617,7 +621,10 @@ export function getApiInstance(): ApiPromise {
  * @hidden
  * Retrieve an instance of the mocked Context
  */
-export function getContextInstance(): MockContext {
+export function getContextInstance(opts?: ContextOptions): MockContext {
+  if (opts) {
+    initContext(opts);
+  }
   return mockInstanceContainer.contextInstance;
 }
 
@@ -633,7 +640,10 @@ export function getContextCreateStub(): SinonStub {
  * @hidden
  * Retrieve an instance of the mocked Keyring
  */
-export function getKeyringInstance(): Keyring {
+export function getKeyringInstance(opts?: KeyringOptions): Keyring {
+  if (opts) {
+    initKeyring(opts);
+  }
   return mockInstanceContainer.keyringInstance as Keyring;
 }
 

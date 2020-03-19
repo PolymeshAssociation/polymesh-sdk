@@ -52,9 +52,38 @@ export enum TransactionQueueStatus {
   Succeeded = 'Succeeded',
 }
 
-export enum Role {
-  Owner = 'Owner',
+// Roles
+
+export enum RoleType {
+  TickerOwner = 'TickerOwner',
+  TokenOwner = 'TokenOwner',
 }
+
+export interface TickerOwnerRole {
+  type: RoleType.TickerOwner;
+  ticker: string;
+}
+
+/**
+ * @hidden
+ */
+export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
+  return role.type === RoleType.TickerOwner;
+}
+
+export interface TokenOwnerRole {
+  type: RoleType.TokenOwner;
+  ticker: string;
+}
+
+/**
+ * @hidden
+ */
+export function isTokenOwnerRole(role: Role): role is TokenOwnerRole {
+  return role.type === RoleType.TokenOwner;
+}
+
+export type Role = TickerOwnerRole | TokenOwnerRole;
 
 export enum KnownTokenType {
   Equity = 'equity',

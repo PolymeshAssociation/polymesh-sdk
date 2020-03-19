@@ -158,7 +158,7 @@ export class Polymesh {
   /**
    * Retrieve a Ticker Reservation
    *
-   * @param ticker - Security Token ticker
+   * @param args.ticker - Security Token ticker
    */
   public async getTickerReservation(args: { ticker: string }): Promise<TickerReservation> {
     const { ticker } = args;
