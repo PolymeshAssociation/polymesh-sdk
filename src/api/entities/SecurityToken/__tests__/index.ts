@@ -101,4 +101,21 @@ describe('SecurityToken class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: currentFundingRound', () => {
+    test('should return the funding round for a security token', async () => {
+      const ticker = 'test';
+      const fundingRound = 'Series A';
+      const context = polkadotMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      polkadotMockUtils.createQueryStub('asset', 'fundingRound', {
+        returnValue: polkadotMockUtils.createMockFundingRoundName(fundingRound),
+      });
+
+      const result = await securityToken.currentFundingRound();
+
+      expect(result).toBe(fundingRound);
+    });
+  });
 });
