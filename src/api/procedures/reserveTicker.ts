@@ -4,7 +4,7 @@ import { Ticker } from 'polymesh-types/types';
 import { TickerReservation } from '~/api/entities';
 import { PolymeshError, PostTransactionValue, Procedure } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode, TickerReservationStatus } from '~/types';
+import { ErrorCode, Role, RoleType, TickerReservationStatus } from '~/types';
 import { balanceToBigNumber, findEventRecord, stringToTicker, tickerToString } from '~/utils';
 
 export interface ReserveTickerParams {
@@ -49,7 +49,7 @@ export async function prepareReserveTicker(
     rawFee,
     balance,
     { max_ticker_length: rawMaxTickerLength },
-    { owner, expiryDate, status },
+    { expiryDate, status },
   ] = await Promise.all([
     query.asset.tickerRegistrationFee(),
     context.accountBalance(),
@@ -73,12 +73,6 @@ export async function prepareReserveTicker(
         message: `Ticker "${ticker}" already reserved. The current reservation will ${
           !isPermanent ? '' : 'not '
         }expire${!isPermanent ? ` at ${expiryDate}` : ''}`,
-      });
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    } else if (owner!.did !== context.getCurrentIdentity().did) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'You must be the owner of the ticker to extend its reservation period',
       });
     }
   }
@@ -124,4 +118,12 @@ export async function prepareReserveTicker(
   return newReservation;
 }
 
-export const reserveTicker = new Procedure(prepareReserveTicker);
+/**
+ * @hidden
+ * If extending a reservation, the user must be the ticker owner
+ */
+export function getRequiredRoles({ ticker, extendPeriod }: ReserveTickerParams): Role[] {
+  return extendPeriod ? [{ type: RoleType.TickerOwner, ticker }] : [];
+}
+
+export const reserveTicker = new Procedure(prepareReserveTicker, getRequiredRoles);
