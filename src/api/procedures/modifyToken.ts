@@ -1,12 +1,7 @@
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType } from '~/types';
-import {
-  fundingRoundNameToString,
-  stringToFundingRoundName,
-  stringToTicker,
-  stringToTokenName,
-} from '~/utils';
+import { stringToFundingRoundName, stringToTicker, stringToTokenName } from '~/utils';
 
 export type ModifyTokenParams =
   | { makeDivisible?: true; name: string; fundingRound?: string }
@@ -24,7 +19,7 @@ export async function prepareModifyToken(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { query, tx },
+      polymeshApi: { tx },
     },
     context,
   } = this;
@@ -43,7 +38,7 @@ export async function prepareModifyToken(
 
   const [{ isDivisible, name }, fundingRound] = await Promise.all([
     securityToken.details(),
-    query.asset.fundingRound(ticker),
+    securityToken.currentFundingRound(),
   ]);
 
   if (makeDivisible) {
@@ -74,7 +69,7 @@ export async function prepareModifyToken(
   }
 
   if (newFundingRound) {
-    if (newFundingRound === fundingRoundNameToString(fundingRound)) {
+    if (newFundingRound === fundingRound) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'New funding round name is the same as current funding round',

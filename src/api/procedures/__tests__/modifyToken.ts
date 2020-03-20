@@ -43,9 +43,6 @@ describe('modifyToken procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([procedureResult]);
     mockContext = polkadotMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    polkadotMockUtils.createQueryStub('asset', 'fundingRound', {
-      returnValue: polkadotMockUtils.createMockFundingRoundName(fundingRound),
-    });
   });
 
   afterEach(() => {
