@@ -93,8 +93,12 @@ export enum MultiSigTx {
   AcceptMultisigSignerAsKey = 'multiSig.acceptMultisigSignerAsKey',
   AddMultisigSigner = 'multiSig.addMultisigSigner',
   RemoveMultisigSigner = 'multiSig.removeMultisigSigner',
+  AddMultisigSignersViaCreator = 'multiSig.addMultisigSignersViaCreator',
+  RemoveMultisigSignersViaCreator = 'multiSig.removeMultisigSignersViaCreator',
   ChangeSigsRequired = 'multiSig.changeSigsRequired',
   ChangeAllSignersAndSigsRequired = 'multiSig.changeAllSignersAndSigsRequired',
+  MakeMultisigSigner = 'multiSig.makeMultisigSigner',
+  MakeMultisigMaster = 'multiSig.makeMultisigMaster',
 }
 
 export enum ContractsTx {
@@ -118,6 +122,7 @@ export enum PolymeshCommitteeTx {
 }
 
 export enum CommitteeMembershipTx {
+  DisableMember = 'committeeMembership.disableMember',
   AddMember = 'committeeMembership.addMember',
   RemoveMember = 'committeeMembership.removeMember',
   SwapMember = 'committeeMembership.swapMember',
@@ -197,6 +202,7 @@ export enum DividendTx {
 export enum IdentityTx {
   RegisterDid = 'identity.registerDid',
   CddRegisterDid = 'identity.cddRegisterDid',
+  InvalidateCddClaims = 'identity.invalidateCddClaims',
   RemoveSigningItems = 'identity.removeSigningItems',
   SetMasterKey = 'identity.setMasterKey',
   AcceptMasterKey = 'identity.acceptMasterKey',
@@ -268,6 +274,7 @@ export enum SimpleTokenTx {
 }
 
 export enum CddServiceProvidersTx {
+  DisableMember = 'cddServiceProviders.disableMember',
   AddMember = 'cddServiceProviders.addMember',
   RemoveMember = 'cddServiceProviders.removeMember',
   SwapMember = 'cddServiceProviders.swapMember',

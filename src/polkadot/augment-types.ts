@@ -538,16 +538,21 @@ import {
 import {
   AccountKey,
   AssetIdentifier,
-  AssetRule,
-  AssetRules,
+  AssetTransferRule,
+  AssetTransferRules,
   AssetType,
   AuthIdentifier,
   Authorization,
   AuthorizationData,
   AuthorizationNonce,
   Ballot,
+  BatchAddClaimItem,
+  BatchRevokeClaimItem,
   BridgeTx,
-  ClaimIdentifier,
+  Claim,
+  Claim1stKey,
+  Claim2ndKey,
+  ClaimType,
   Commission,
   Compliance,
   Counter,
@@ -561,9 +566,10 @@ import {
   FundingRoundName,
   IdentifierType,
   IdentityClaim,
-  IdentityClaimData,
+  IdentityClaimKey,
   IdentityId,
   IdentityRole,
+  InactiveMember,
   Investment,
   IssueRecipient,
   JurisdictionName,
@@ -589,8 +595,9 @@ import {
   PreAuthorizedKeyInfo,
   ProportionMatch,
   RestrictionResult,
-  RuleData,
+  Rule,
   RuleType,
+  Scope,
   SecurityToken,
   Signatory,
   SignatoryType,
@@ -2212,24 +2219,30 @@ declare module '@polkadot/types/types/registry' {
     JurisdictionName: JurisdictionName;
     'Option<JurisdictionName>': Option<JurisdictionName>;
     'Vec<JurisdictionName>': Vec<JurisdictionName>;
-    IdentityClaimData: IdentityClaimData;
-    'Option<IdentityClaimData>': Option<IdentityClaimData>;
-    'Vec<IdentityClaimData>': Vec<IdentityClaimData>;
+    Scope: Scope;
+    'Option<Scope>': Option<Scope>;
+    'Vec<Scope>': Vec<Scope>;
+    Claim: Claim;
+    'Option<Claim>': Option<Claim>;
+    'Vec<Claim>': Vec<Claim>;
+    ClaimType: ClaimType;
+    'Option<ClaimType>': Option<ClaimType>;
+    'Vec<ClaimType>': Vec<ClaimType>;
     IdentityClaim: IdentityClaim;
     'Option<IdentityClaim>': Option<IdentityClaim>;
     'Vec<IdentityClaim>': Vec<IdentityClaim>;
-    ClaimIdentifier: ClaimIdentifier;
-    'Option<ClaimIdentifier>': Option<ClaimIdentifier>;
-    'Vec<ClaimIdentifier>': Vec<ClaimIdentifier>;
-    AssetRule: AssetRule;
-    'Option<AssetRule>': Option<AssetRule>;
-    'Vec<AssetRule>': Vec<AssetRule>;
+    IdentityClaimKey: IdentityClaimKey;
+    'Option<IdentityClaimKey>': Option<IdentityClaimKey>;
+    'Vec<IdentityClaimKey>': Vec<IdentityClaimKey>;
+    AssetTransferRule: AssetTransferRule;
+    'Option<AssetTransferRule>': Option<AssetTransferRule>;
+    'Vec<AssetTransferRule>': Vec<AssetTransferRule>;
     RuleType: RuleType;
     'Option<RuleType>': Option<RuleType>;
     'Vec<RuleType>': Vec<RuleType>;
-    RuleData: RuleData;
-    'Option<RuleData>': Option<RuleData>;
-    'Vec<RuleData>': Vec<RuleData>;
+    Rule: Rule;
+    'Option<Rule>': Option<Rule>;
+    'Vec<Rule>': Vec<Rule>;
     STO: STO;
     'Option<STO>': Option<STO>;
     'Vec<STO>': Vec<STO>;
@@ -2272,6 +2285,9 @@ declare module '@polkadot/types/types/registry' {
     Url: Url;
     'Option<Url>': Option<Url>;
     'Vec<Url>': Vec<Url>;
+    MipDescription: MipDescription;
+    'Option<MipDescription>': Option<MipDescription>;
+    'Vec<MipDescription>': Vec<MipDescription>;
     MipsMetadata: MipsMetadata;
     'Option<MipsMetadata>': Option<MipsMetadata>;
     'Vec<MipsMetadata>': Vec<MipsMetadata>;
@@ -2288,9 +2304,6 @@ declare module '@polkadot/types/types/registry' {
     MIP: MIP;
     'Option<MIP>': Option<MIP>;
     'Vec<MIP>': Vec<MIP>;
-    MipDescription: MipDescription;
-    'Option<MipDescription>': Option<MipDescription>;
-    'Vec<MipDescription>': Vec<MipDescription>;
     PolymeshReferendumInfo: PolymeshReferendumInfo;
     'Option<PolymeshReferendumInfo>': Option<PolymeshReferendumInfo>;
     'Vec<PolymeshReferendumInfo>': Vec<PolymeshReferendumInfo>;
@@ -2356,8 +2369,23 @@ declare module '@polkadot/types/types/registry' {
     OfflineSlashingParams: OfflineSlashingParams;
     'Option<OfflineSlashingParams>': Option<OfflineSlashingParams>;
     'Vec<OfflineSlashingParams>': Vec<OfflineSlashingParams>;
-    AssetRules: AssetRules;
-    'Option<AssetRules>': Option<AssetRules>;
-    'Vec<AssetRules>': Vec<AssetRules>;
+    AssetTransferRules: AssetTransferRules;
+    'Option<AssetTransferRules>': Option<AssetTransferRules>;
+    'Vec<AssetTransferRules>': Vec<AssetTransferRules>;
+    Claim1stKey: Claim1stKey;
+    'Option<Claim1stKey>': Option<Claim1stKey>;
+    'Vec<Claim1stKey>': Vec<Claim1stKey>;
+    Claim2ndKey: Claim2ndKey;
+    'Option<Claim2ndKey>': Option<Claim2ndKey>;
+    'Vec<Claim2ndKey>': Vec<Claim2ndKey>;
+    BatchAddClaimItem: BatchAddClaimItem;
+    'Option<BatchAddClaimItem>': Option<BatchAddClaimItem>;
+    'Vec<BatchAddClaimItem>': Vec<BatchAddClaimItem>;
+    BatchRevokeClaimItem: BatchRevokeClaimItem;
+    'Option<BatchRevokeClaimItem>': Option<BatchRevokeClaimItem>;
+    'Vec<BatchRevokeClaimItem>': Vec<BatchRevokeClaimItem>;
+    InactiveMember: InactiveMember;
+    'Option<InactiveMember>': Option<InactiveMember>;
+    'Vec<InactiveMember>': Vec<InactiveMember>;
   }
 }

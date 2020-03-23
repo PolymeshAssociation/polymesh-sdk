@@ -4,7 +4,7 @@
 import { Enum, Option, Struct, U8aFixed, Vec } from '@polkadot/types/codec';
 import { Signature } from '@polkadot/types/interfaces/extrinsics';
 import { Balance, Call, H256, H512, Hash, Moment } from '@polkadot/types/interfaces/runtime';
-import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types/primitive';
+import { bool, Bytes, Text, u8,u16, u32, u64, u128 } from '@polkadot/types/primitive';
 import { ITuple } from '@polkadot/types/types';
 
 /** @name AccountKey */
@@ -13,17 +13,17 @@ export interface AccountKey extends U8aFixed {}
 /** @name AssetIdentifier */
 export interface AssetIdentifier extends Text {}
 
-/** @name AssetRule */
-export interface AssetRule extends Struct {
-  readonly sender_rules: Vec<RuleData>;
-  readonly receiver_rules: Vec<RuleData>;
+/** @name AssetTransferRule */
+export interface AssetTransferRule extends Struct {
+  readonly sender_rules: Vec<Rule>;
+  readonly receiver_rules: Vec<Rule>;
   readonly rule_id: u32;
 }
 
-/** @name AssetRules */
-export interface AssetRules extends Struct {
+/** @name AssetTransferRules */
+export interface AssetTransferRules extends Struct {
   readonly is_paused: bool;
-  readonly rules: Vec<AssetRules>;
+  readonly rules: Vec<AssetTransferRule>;
 }
 
 /** @name AssetType */
@@ -79,6 +79,19 @@ export interface Ballot extends Struct {
   readonly motions: Vec<Motion>;
 }
 
+/** @name BatchAddClaimItem */
+export interface BatchAddClaimItem extends Struct {
+  readonly target: IdentityId;
+  readonly claim: Claim;
+  readonly expiry: Option<u64>;
+}
+
+/** @name BatchRevokeClaimItem */
+export interface BatchRevokeClaimItem extends Struct {
+  readonly target: IdentityId;
+  readonly claim: Claim;
+}
+
 /** @name BridgeTx */
 export interface BridgeTx extends Struct {
   readonly nonce: u64;
@@ -87,10 +100,52 @@ export interface BridgeTx extends Struct {
   readonly tx_hash: H256;
 }
 
-/** @name ClaimIdentifier */
-export interface ClaimIdentifier extends Struct {
-  readonly claim: IdentityClaimData;
-  readonly claim_issuer: IdentityId;
+/** @name Claim */
+export interface Claim extends Enum {
+  readonly isAccredited: boolean;
+  readonly asAccredited: Scope;
+  readonly isAffiliate: boolean;
+  readonly asAffiliate: Scope;
+  readonly isBuyLockup: boolean;
+  readonly asBuyLockup: Scope;
+  readonly isSellLockup: boolean;
+  readonly asSellLockup: Scope;
+  readonly isCustomerDueDiligence: boolean;
+  readonly isKnowYourCustomer: boolean;
+  readonly asKnowYourCustomer: Scope;
+  readonly isJurisdiction: boolean;
+  readonly asJurisdiction: ITuple<[JurisdictionName, Scope]>;
+  readonly isWhitelisted: boolean;
+  readonly asWhitelisted: Scope;
+  readonly isBlacklisted: boolean;
+  readonly asBlacklisted: Scope;
+  readonly isNoData: boolean;
+}
+
+/** @name Claim1stKey */
+export interface Claim1stKey extends Struct {
+  readonly target: IdentityId;
+  readonly claim_type: ClaimType;
+}
+
+/** @name Claim2ndKey */
+export interface Claim2ndKey extends Struct {
+  readonly issuer: IdentityId;
+  readonly scope: Option<Scope>;
+}
+
+/** @name ClaimType */
+export interface ClaimType extends Enum {
+  readonly isAccredited: boolean;
+  readonly isAffiliate: boolean;
+  readonly isBuyLockup: boolean;
+  readonly isSellLockup: boolean;
+  readonly isCustomerDueDiligence: boolean;
+  readonly isKnowYourCustomer: boolean;
+  readonly isJurisdiction: boolean;
+  readonly isWhitelisted: boolean;
+  readonly isBlacklisted: boolean;
+  readonly isNoType: boolean;
 }
 
 /** @name Commission */
@@ -162,29 +217,13 @@ export interface IdentityClaim extends Struct {
   readonly issuance_date: Moment;
   readonly last_update_date: Moment;
   readonly expiry: Option<Moment>;
-  readonly claim: IdentityClaimData;
+  readonly claim: Claim;
 }
 
-/** @name IdentityClaimData */
-export interface IdentityClaimData extends Enum {
-  readonly isAccredited: boolean;
-  readonly asAccredited: IdentityId;
-  readonly isAffiliate: boolean;
-  readonly asAffiliate: IdentityId;
-  readonly isBuyLockup: boolean;
-  readonly asBuyLockup: IdentityId;
-  readonly isSellLockup: boolean;
-  readonly asSellLockup: IdentityId;
-  readonly isCustomerDueDiligence: boolean;
-  readonly isKnowYourCustomer: boolean;
-  readonly asKnowYourCustomer: IdentityId;
-  readonly isJurisdiction: boolean;
-  readonly asJurisdiction: ITuple<[JurisdictionName, IdentityId]>;
-  readonly isWhitelisted: boolean;
-  readonly asWhitelisted: IdentityId;
-  readonly isBlacklisted: boolean;
-  readonly asBlacklisted: IdentityId;
-  readonly isNoData: boolean;
+/** @name IdentityClaimKey */
+export interface IdentityClaimKey extends Struct {
+  readonly id: IdentityId;
+  readonly claim_type: ClaimType;
 }
 
 /** @name IdentityId */
@@ -202,6 +241,13 @@ export interface IdentityRole extends Enum {
   readonly isCddamlClaimIssuer: boolean;
   readonly isAccreditedInvestorClaimIssuer: boolean;
   readonly isVerifiedIdentityClaimIssuer: boolean;
+}
+
+/** @name InactiveMember */
+export interface InactiveMember extends Struct {
+  readonly id: IdentityId;
+  readonly deactivated_at: Moment;
+  readonly expiry: Option<Moment>;
 }
 
 /** @name Investment */
@@ -265,10 +311,12 @@ export interface MipsIndex extends u32 {}
 
 /** @name MipsMetadata */
 export interface MipsMetadata extends Struct {
+  readonly proposer: AccountKey;
   readonly index: u32;
-  readonly end: u64;
+  readonly end: u32;
   readonly proposal_hash: Hash;
   readonly url: Option<Url>;
+  readonly description: Option<MipDescription>;
 }
 
 /** @name MipsPriority */
@@ -352,18 +400,26 @@ export interface RestrictionResult extends Enum {
   readonly isForceValid: boolean;
 }
 
-/** @name RuleData */
-export interface RuleData extends Struct {
-  readonly claim: IdentityClaimData;
-  readonly trusted_issuers: Vec<IdentityId>;
+/** @name Rule */
+export interface Rule extends Struct {
   readonly rule_type: RuleType;
+  readonly issuers: Vec<IdentityId>;
 }
 
 /** @name RuleType */
 export interface RuleType extends Enum {
-  readonly isClaimIsPresent: boolean;
-  readonly isClaimIsAbsent: boolean;
+  readonly isIsPresent: boolean;
+  readonly asIsPresent: Claim;
+  readonly isIsAbsent: boolean;
+  readonly asIsAbsent: Claim;
+  readonly isIsAnyOf: boolean;
+  readonly asIsAnyOf: Vec<Claim>;
+  readonly isIsNoneOf: boolean;
+  readonly asIsNoneOf: Vec<Claim>;
 }
+
+/** @name Scope */
+export interface Scope extends IdentityId {}
 
 /** @name SecurityToken */
 export interface SecurityToken extends Struct {
