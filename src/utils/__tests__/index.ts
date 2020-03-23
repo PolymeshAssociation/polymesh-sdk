@@ -19,7 +19,7 @@ import sinon, { SinonStub } from 'sinon';
 
 import { PostTransactionValue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
-import { KnownTokenIdentifierType, KnownTokenType } from '~/types';
+import { KnownTokenType, TokenIdentifierType } from '~/types';
 
 import {
   assetIdentifierToString,
@@ -482,7 +482,7 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
   });
 
   test('tokenIdentifierTypeToIdentifierType should convert a TokenIdentifierType to a polkadot IdentifierType object', () => {
-    const value = KnownTokenIdentifierType.Isin;
+    const value = TokenIdentifierType.Isin;
     const fakeResult = ('IsinEnum' as unknown) as IdentifierType;
     const context = polkadotMockUtils.getContextInstance();
 
@@ -496,13 +496,13 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
   });
 
   test('identifierTypeToString should convert a polkadot IdentifierType object to a string', () => {
-    let fakeResult = KnownTokenIdentifierType.Isin;
+    let fakeResult = TokenIdentifierType.Isin;
     let identifierType = polkadotMockUtils.createMockIdentifierType(fakeResult);
 
     let result = identifierTypeToString(identifierType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenIdentifierType.Cusip;
+    fakeResult = TokenIdentifierType.Cusip;
     identifierType = polkadotMockUtils.createMockIdentifierType(fakeResult);
 
     result = identifierTypeToString(identifierType);

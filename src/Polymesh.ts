@@ -5,7 +5,7 @@ import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { Link } from 'polymesh-types/types';
 
-import { TickerReservation } from '~/api/entities';
+import { SecurityToken, TickerReservation } from '~/api/entities';
 import { reserveTicker, ReserveTickerParams } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
@@ -181,5 +181,12 @@ export class Polymesh {
       code: ErrorCode.FatalError,
       message: `There is no reservation for ${ticker} ticker`,
     });
+  }
+
+  /**
+   *
+   */
+  public getToken(): SecurityToken {
+    return new SecurityToken({ ticker: 'MAIA' }, this.context);
   }
 }

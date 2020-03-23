@@ -22,14 +22,7 @@ import {
 
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
-import {
-  ErrorCode,
-  KnownTokenIdentifierType,
-  KnownTokenType,
-  TokenDocument,
-  TokenIdentifierType,
-  TokenType,
-} from '~/types';
+import { ErrorCode, KnownTokenType, TokenDocument, TokenIdentifierType, TokenType } from '~/types';
 import {
   Extrinsics,
   MapMaybePostTransactionValue,
@@ -225,10 +218,10 @@ export function tokenIdentifierTypeToIdentifierType(
  */
 export function identifierTypeToString(type: IdentifierType): string {
   if (type.isCusip) {
-    return KnownTokenIdentifierType.Cusip;
+    return TokenIdentifierType.Cusip;
   }
   if (type.isIsin) {
-    return KnownTokenIdentifierType.Isin;
+    return TokenIdentifierType.Isin;
   }
 
   return u8aToString(type.asCustom);

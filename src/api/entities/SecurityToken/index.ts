@@ -2,6 +2,7 @@ import { Identity } from '~/api/entities/Identity';
 import { modifyToken, ModifyTokenParams } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
+import { TokenIdentifier, TokenIdentifierType } from '~/types';
 import {
   assetTypeToString,
   balanceToBigNumber,
@@ -113,5 +114,34 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
     const fundingRound = await asset.fundingRound(ticker);
     return fundingRoundNameToString(fundingRound);
+  }
+
+  /**
+   * Retrive the Security Token's asset identifiers list
+   */
+  public async getIdentifiers(): Promise<TokenIdentifier[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      ticker,
+    } = this;
+
+    const identifierTypes = Object.keys(TokenIdentifierType);
+    console.log(identifierTypes);
+
+    // Object.keys(TokenIdentifierType).map(type => )
+
+    /*
+    const assetIdentifiers = await asset.identifiers.multi([
+      [ticker, ''],
+      [ticker, ''],
+    ]);
+    */
+
+    const result = [] as TokenIdentifier[];
+    return result;
   }
 }
