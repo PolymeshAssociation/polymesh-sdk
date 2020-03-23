@@ -26,21 +26,23 @@ import {
 import { Keys } from '@polkadot/types/interfaces/session';
 import { EraIndex, RewardDestination, ValidatorPrefs } from '@polkadot/types/interfaces/staking';
 import { Key } from '@polkadot/types/interfaces/system';
-import { bool, Bytes, u16, u32, u64, u128 } from '@polkadot/types/primitive';
+import { bool, Bytes, u16, u32, u64,u128 } from '@polkadot/types/primitive';
 import { AnyNumber, ITuple } from '@polkadot/types/types';
 import {
   AccountKey,
   AssetIdentifier,
-  AssetRule,
+  AssetTransferRule,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
   Ballot,
+  BatchAddClaimItem,
+  BatchRevokeClaimItem,
   BridgeTx,
+  Claim,
   Document,
   FundingRoundName,
   IdentifierType,
-  IdentityClaimData,
   IdentityId,
   Memo,
   MipDescription,
@@ -48,7 +50,7 @@ import {
   OffChainSignature,
   OfflineSlashingParams,
   Permission,
-  RuleData,
+  Rule,
   Signatory,
   SigningItem,
   SigningItemWithAuth,
@@ -733,6 +735,36 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
+       * Add a signer to the multisig.
+       * This must be called by the creator identity of the multisig.
+       * # Arguments
+       * * `multisig` - Address of the multi sig
+       * * `signers` - Signatories to add.
+       **/
+      addMultisigSignersViaCreator: AugmentedSubmittable<
+        (
+          multisig: AccountId | string | Uint8Array,
+          signers:
+            | Vec<Signatory>
+            | (Signatory | { identity: any } | { accountKey: any } | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Remove a signer from the multisig.
+       * This must be called by the creator identity of the multisig.
+       * # Arguments
+       * * `multisig` - Address of the multi sig
+       * * `signers` - Signatories to remove.
+       **/
+      removeMultisigSignersViaCreator: AugmentedSubmittable<
+        (
+          multisig: AccountId | string | Uint8Array,
+          signers:
+            | Vec<Signatory>
+            | (Signatory | { identity: any } | { accountKey: any } | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * Change number of sigs required by a multisig. This must be called by the multisig itself.
        * # Arguments
        * * `sigs_required` - New number of sigs required.
@@ -754,6 +786,25 @@ declare module '@polkadot/api/types/submittable' {
             | Vec<Signatory>
             | (Signatory | { identity: any } | { accountKey: any } | string | Uint8Array)[],
           sigsRequired: u64 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Adds a multisig as a signer of current did if the current did is the creator of the multisig
+       * # Arguments
+       * * `multi_sig` - multi sig address
+       **/
+      makeMultisigSigner: AugmentedSubmittable<
+        (multiSig: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Adds a multisig as the master key of the current did if the current did is the creator of the multisig
+       * # Arguments
+       * * `multi_sig` - multi sig address
+       **/
+      makeMultisigMaster: AugmentedSubmittable<
+        (
+          multiSig: AccountId | string | Uint8Array,
+          optionalCddAuthId: Option<u64> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
     };
@@ -932,6 +983,27 @@ declare module '@polkadot/api/types/submittable' {
     };
     committeeMembership: {
       /**
+       * It disables a member at specific moment.
+       * Please note that if member is already revoked (a "valid member"), its revocation
+       * time-stamp will be updated.
+       * Any disabled member should NOT allow to act like an active member of the group. For
+       * instance, a disabled CDD member should NOT be able to generate a CDD claim. However any
+       * generated claim issued before `at` would be considered as a valid one.
+       * If you want to invalidate any generated claim, you should use `Self::remove_member`.
+       * # Arguments
+       * * `at` Revocation time-stamp.
+       * * `who` Target member of the group.
+       * * `expiry` Time-stamp when `who` is removed from CDD. As soon as it is expired, the
+       * generated claims will be "invalid" as `who` is not considered a member of the group.
+       **/
+      disableMember: AugmentedSubmittable<
+        (
+          who: IdentityId | string | Uint8Array,
+          expiry: Option<Moment> | null | object | string | Uint8Array,
+          at: Option<Moment> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * Add a member `who` to the set. May only be called from `AddOrigin` or root.
        * # Arguments
        * * `origin` Origin representing `AddOrigin` or root
@@ -942,6 +1014,10 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Remove a member `who` from the set. May only be called from `RemoveOrigin` or root.
+       * Any claim previously generated by this member is not valid as a group claim. For
+       * instance, if a CDD member group generated a claim for a target identity and then it is
+       * removed, that claim will be invalid.
+       * In case you want to keep the validity of generated claims, you have to use `Self::disable_member` function
        * # Arguments
        * * `origin` Origin representing `RemoveOrigin` or root
        * * `who` IdentityId to be removed from the group.
@@ -1787,7 +1863,8 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Register `target_account` with a new Identity.
        * # Failure
-       * - `origin` has to be a trusted CDD provider.
+       * - `origin` has to be a active CDD provider. Inactive CDD providers cannot add new
+       * claims.
        * - `target_account` (master key of the new Identity) can be linked to just one and only
        * one identity.
        * - External signing keys can be linked to just one identity.
@@ -1809,6 +1886,18 @@ declare module '@polkadot/api/types/submittable' {
                 | string
                 | Uint8Array
               )[]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * It invalidates any claim generated by `cdd` from `disable_from` timestamps.
+       * You can also define an expiration time, which will invalidate all claims generated by
+       * that `cdd` and remove it as CDD member group.
+       **/
+      invalidateCddClaims: AugmentedSubmittable<
+        (
+          cdd: IdentityId | string | Uint8Array,
+          disableFrom: Moment | AnyNumber | Uint8Array,
+          expiry: Option<Moment> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -1871,9 +1960,9 @@ declare module '@polkadot/api/types/submittable' {
        **/
       addClaim: AugmentedSubmittable<
         (
-          did: IdentityId | string | Uint8Array,
-          claimData:
-            | IdentityClaimData
+          target: IdentityId | string | Uint8Array,
+          claim:
+            | Claim
             | { accredited: any }
             | { affiliate: any }
             | { buyLockup: any }
@@ -1896,26 +1985,13 @@ declare module '@polkadot/api/types/submittable' {
       addClaimsBatch: AugmentedSubmittable<
         (
           claims:
-            | Vec<ITuple<[IdentityId, Option<Moment>, IdentityClaimData]>>
-            | [
-                IdentityId | string | Uint8Array,
-                Option<Moment> | null | object | string | Uint8Array,
-                (
-                  | IdentityClaimData
-                  | { accredited: any }
-                  | { affiliate: any }
-                  | { buyLockup: any }
-                  | { sellLockup: any }
-                  | { customerDueDiligence: any }
-                  | { knowYourCustomer: any }
-                  | { jurisdiction: any }
-                  | { whitelisted: any }
-                  | { blacklisted: any }
-                  | { noData: any }
-                  | string
-                  | Uint8Array
-                )
-              ][]
+            | Vec<BatchAddClaimItem>
+            | (
+                | BatchAddClaimItem
+                | { target?: any; claim?: any; expiry?: any }
+                | string
+                | Uint8Array
+              )[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       forwardedCall: AugmentedSubmittable<
@@ -1929,9 +2005,9 @@ declare module '@polkadot/api/types/submittable' {
        **/
       revokeClaim: AugmentedSubmittable<
         (
-          did: IdentityId | string | Uint8Array,
-          claimData:
-            | IdentityClaimData
+          target: IdentityId | string | Uint8Array,
+          claim:
+            | Claim
             | { accredited: any }
             | { affiliate: any }
             | { buyLockup: any }
@@ -1954,26 +2030,9 @@ declare module '@polkadot/api/types/submittable' {
        **/
       revokeClaimsBatch: AugmentedSubmittable<
         (
-          didAndClaimData:
-            | Vec<ITuple<[IdentityId, IdentityClaimData]>>
-            | [
-                IdentityId | string | Uint8Array,
-                (
-                  | IdentityClaimData
-                  | { accredited: any }
-                  | { affiliate: any }
-                  | { buyLockup: any }
-                  | { sellLockup: any }
-                  | { customerDueDiligence: any }
-                  | { knowYourCustomer: any }
-                  | { jurisdiction: any }
-                  | { whitelisted: any }
-                  | { blacklisted: any }
-                  | { noData: any }
-                  | string
-                  | Uint8Array
-                )
-              ][]
+          claims:
+            | Vec<BatchRevokeClaimItem>
+            | (BatchRevokeClaimItem | { target?: any; claim?: any } | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2148,21 +2207,11 @@ declare module '@polkadot/api/types/submittable' {
         (
           ticker: Ticker | string | Uint8Array,
           senderRules:
-            | Vec<RuleData>
-            | (
-                | RuleData
-                | { claim?: any; trusted_issuers?: any; rule_type?: any }
-                | string
-                | Uint8Array
-              )[],
+            | Vec<Rule>
+            | (Rule | { rule_type?: any; issuers?: any } | string | Uint8Array)[],
           receiverRules:
-            | Vec<RuleData>
-            | (
-                | RuleData
-                | { claim?: any; trusted_issuers?: any; rule_type?: any }
-                | string
-                | Uint8Array
-              )[]
+            | Vec<Rule>
+            | (Rule | { rule_type?: any; issuers?: any } | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2272,7 +2321,7 @@ declare module '@polkadot/api/types/submittable' {
         (
           ticker: Ticker | string | Uint8Array,
           assetRule:
-            | AssetRule
+            | AssetTransferRule
             | { sender_rules?: any; receiver_rules?: any; rule_id?: any }
             | string
             | Uint8Array
@@ -2289,9 +2338,9 @@ declare module '@polkadot/api/types/submittable' {
         (
           ticker: Ticker | string | Uint8Array,
           assetRules:
-            | Vec<AssetRule>
+            | Vec<AssetTransferRule>
             | (
-                | AssetRule
+                | AssetTransferRule
                 | { sender_rules?: any; receiver_rules?: any; rule_id?: any }
                 | string
                 | Uint8Array
@@ -2513,6 +2562,27 @@ declare module '@polkadot/api/types/submittable' {
     };
     cddServiceProviders: {
       /**
+       * It disables a member at specific moment.
+       * Please note that if member is already revoked (a "valid member"), its revocation
+       * time-stamp will be updated.
+       * Any disabled member should NOT allow to act like an active member of the group. For
+       * instance, a disabled CDD member should NOT be able to generate a CDD claim. However any
+       * generated claim issued before `at` would be considered as a valid one.
+       * If you want to invalidate any generated claim, you should use `Self::remove_member`.
+       * # Arguments
+       * * `at` Revocation time-stamp.
+       * * `who` Target member of the group.
+       * * `expiry` Time-stamp when `who` is removed from CDD. As soon as it is expired, the
+       * generated claims will be "invalid" as `who` is not considered a member of the group.
+       **/
+      disableMember: AugmentedSubmittable<
+        (
+          who: IdentityId | string | Uint8Array,
+          expiry: Option<Moment> | null | object | string | Uint8Array,
+          at: Option<Moment> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * Add a member `who` to the set. May only be called from `AddOrigin` or root.
        * # Arguments
        * * `origin` Origin representing `AddOrigin` or root
@@ -2523,6 +2593,10 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Remove a member `who` from the set. May only be called from `RemoveOrigin` or root.
+       * Any claim previously generated by this member is not valid as a group claim. For
+       * instance, if a CDD member group generated a claim for a target identity and then it is
+       * removed, that claim will be invalid.
+       * In case you want to keep the validity of generated claims, you have to use `Self::disable_member` function
        * # Arguments
        * * `origin` Origin representing `RemoveOrigin` or root
        * * `who` IdentityId to be removed from the group.
