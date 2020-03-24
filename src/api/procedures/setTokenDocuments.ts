@@ -52,7 +52,7 @@ export async function prepareSetTokenDocuments(
 
   if (
     !differenceWith(currentDocs, rawDocuments, comparator).length &&
-    !differenceWith(rawDocuments, currentDocs, comparator).length
+    currentDocs.length === rawDocuments.length
   ) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,

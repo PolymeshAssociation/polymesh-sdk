@@ -50,6 +50,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public ticker: string;
 
   // Namespaces
+
   public documents: Documents;
 
   /**
