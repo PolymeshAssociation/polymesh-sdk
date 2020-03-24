@@ -12,6 +12,7 @@ import {
   tokenNameToString,
 } from '~/utils';
 
+import { Documents } from './Documents';
 import { SecurityTokenDetails } from './types';
 
 /**
@@ -48,6 +49,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    */
   public ticker: string;
 
+  // Namespaces
+  public documents: Documents;
+
   /**
    * @hidden
    */
@@ -58,6 +62,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
     this.ticker = ticker;
     this.did = tickerToDid(ticker);
+
+    this.documents = new Documents(this, context);
   }
 
   /**

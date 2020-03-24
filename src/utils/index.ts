@@ -7,6 +7,7 @@ import { blake2AsHex } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import {
+  AccountKey,
   AssetIdentifier,
   AssetType,
   Document,
@@ -16,6 +17,7 @@ import {
   FundingRoundName,
   IdentifierType,
   IdentityId,
+  Signatory,
   Ticker,
   TokenName,
 } from 'polymesh-types/types';
@@ -34,6 +36,8 @@ import {
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
+  Signer,
+  SignerType,
 } from '~/types/internal';
 
 /**
@@ -163,6 +167,46 @@ export function stringToIdentityId(identityId: string, context: Context): Identi
  */
 export function identityIdToString(identityId: IdentityId): string {
   return identityId.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToAccountKey(accountKey: string, context: Context): AccountKey {
+  return createType<'AccountKey'>(context.polymeshApi.registry, 'AccountKey', accountKey);
+}
+
+/**
+ * @hidden
+ */
+export function accountKeyToString(accountKey: AccountKey): string {
+  return u8aToString(accountKey);
+}
+
+/**
+ * @hidden
+ */
+export function signerToSignatory(signer: Signer, context: Context): Signatory {
+  return createType<'Signatory'>(context.polymeshApi.registry, 'Signatory', {
+    [signer.type]: signer.value,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function signatoryToSigner(signatory: Signatory): Signer {
+  if (signatory.isAccountKey) {
+    return {
+      type: SignerType.AccountKey,
+      value: accountKeyToString(signatory.asAccountKey),
+    };
+  }
+
+  return {
+    type: SignerType.Identity,
+    value: identityIdToString(signatory.asIdentity),
+  };
 }
 
 /**
