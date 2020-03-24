@@ -66,7 +66,9 @@ export async function prepareSetTokenDocuments(
     this.addTransaction(tx.asset.removeDocuments, {}, rawTicker, currentDocIds);
   }
 
-  this.addTransaction(tx.asset.addDocuments, {}, rawTicker, rawDocuments);
+  if (rawDocuments.length) {
+    this.addTransaction(tx.asset.addDocuments, {}, rawTicker, rawDocuments);
+  }
 
   return new SecurityToken({ ticker }, context);
 }
