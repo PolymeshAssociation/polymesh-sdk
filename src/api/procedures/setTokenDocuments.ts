@@ -6,7 +6,13 @@ import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType, TokenDocument } from '~/types';
 import { SignerType } from '~/types/internal';
-import { signerToSignatory, stringToTicker, tickerToDid, tokenDocumentToDocument } from '~/utils';
+import {
+  documentToTokenDocument,
+  signerToSignatory,
+  stringToTicker,
+  tickerToDid,
+  tokenDocumentToDocument,
+} from '~/utils';
 
 export interface SetTokenDocumentsParams {
   documents: TokenDocument[];
@@ -36,29 +42,31 @@ export async function prepareSetTokenDocuments(
   );
 
   const currentDocLinks = links.filter(([, { link_data: linkData }]) => linkData.isDocumentOwned);
-  const currentDocs: Document[] = [];
+  const rawCurrentDocs: Document[] = [];
   const currentDocIds: u64[] = [];
 
   currentDocLinks.forEach(([, { link_id: linkId, link_data: linkData }]) => {
-    currentDocs.push(linkData.asDocumentOwned);
+    rawCurrentDocs.push(linkData.asDocumentOwned);
     currentDocIds.push(linkId);
   });
 
-  const rawDocuments = documents.map(document => tokenDocumentToDocument(document, context));
+  const currentDocs = rawCurrentDocs.map(rawDoc => documentToTokenDocument(rawDoc));
 
-  const comparator = (a: Document, b: Document): boolean => {
-    return a.name === b.name && a.uri && b.uri && a.content_hash === b.content_hash;
+  const comparator = (a: TokenDocument, b: TokenDocument): boolean => {
+    return a.name === b.name && a.uri === b.uri && a.contentHash === b.contentHash;
   };
 
   if (
-    !differenceWith(currentDocs, rawDocuments, comparator).length &&
-    currentDocs.length === rawDocuments.length
+    !differenceWith(currentDocs, documents, comparator).length &&
+    currentDocs.length === documents.length
   ) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The supplied document list is equal to the current one',
     });
   }
+
+  const rawDocuments = documents.map(document => tokenDocumentToDocument(document, context));
 
   const rawTicker = stringToTicker(ticker, context);
 
