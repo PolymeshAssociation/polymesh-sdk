@@ -34,7 +34,7 @@ interface TickerReservationOptions {
 interface SecurityTokenOptions {
   ticker?: string;
   details?: Partial<SecurityTokenDetails>;
-  fundingRound?: string;
+  currentFundingRound?: string;
 }
 
 let identityConstructorStub: SinonStub;
@@ -112,7 +112,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     isDivisible: false,
     owner: mockInstanceContainer.identity,
   },
-  fundingRound: 'Series A',
+  currentFundingRound: 'Series A',
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 
@@ -131,7 +131,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
     ticker: securityTokenOptions.ticker,
     details: securityTokenDetailsStub.resolves(securityTokenOptions.details),
     currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(
-      securityTokenOptions.fundingRound
+      securityTokenOptions.currentFundingRound
     ),
   } as unknown) as MockSecurityToken;
 
@@ -313,4 +313,16 @@ export function getSecurityTokenDetailsStub(details?: Partial<SecurityTokenDetai
     });
   }
   return securityTokenDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.currentFundingRound` method
+ */
+export function getSecurityTokenCurrentFundingRoundStub(currentFundingRound?: string): SinonStub {
+  if (currentFundingRound) {
+    return securityTokenCurrentFundingRoundStub.resolves(currentFundingRound);
+  }
+
+  return securityTokenCurrentFundingRoundStub;
 }
