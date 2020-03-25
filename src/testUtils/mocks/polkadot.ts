@@ -510,6 +510,7 @@ export function createQueryStub<
   opts?: {
     returnValue?: unknown;
     entries?: unknown[];
+    multi?: unknown;
   }
 ): Queries[ModuleName][QueryName] & SinonStub<ArgsType<Queries[ModuleName][QueryName]>> {
   let runtimeModule = queryModule[mod];
@@ -519,14 +520,17 @@ export function createQueryStub<
     queryModule[mod] = runtimeModule;
   }
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   if (!runtimeModule[query]) {
     runtimeModule[query] = (sinon.stub() as unknown) as Queries[ModuleName][QueryName];
     if (opts?.entries) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (runtimeModule[query] as any).entries = sinon
         .stub()
         .resolves(opts.entries.map(entry => ['someKey', entry]));
+    } else if (opts?.multi) {
+      (runtimeModule[query] as any).multi = sinon.stub().resolves(opts.multi);
     }
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     updateQuery();
   }

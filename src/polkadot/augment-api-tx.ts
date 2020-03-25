@@ -26,7 +26,7 @@ import {
 import { Keys } from '@polkadot/types/interfaces/session';
 import { EraIndex, RewardDestination, ValidatorPrefs } from '@polkadot/types/interfaces/staking';
 import { Key } from '@polkadot/types/interfaces/system';
-import { bool, Bytes, u16, u32, u64,u128 } from '@polkadot/types/primitive';
+import { bool, Bytes, u16, u32, u64, u128 } from '@polkadot/types/primitive';
 import { AnyNumber, ITuple } from '@polkadot/types/types';
 import {
   AccountKey,

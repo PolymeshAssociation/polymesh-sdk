@@ -1,15 +1,19 @@
+import { AssetIdentifier } from 'polymesh-types/types';
+
 import { Identity } from '~/api/entities/Identity';
 import { modifyToken, ModifyTokenParams } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
 import {
+  assetIdentifierToString,
   assetTypeToString,
   balanceToBigNumber,
   boolToBoolean,
   fundingRoundNameToString,
   identityIdToString,
   tickerToDid,
+  tokenIdentifierTypeToIdentifierType,
   tokenNameToString,
 } from '~/utils';
 
@@ -127,21 +131,22 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
         },
       },
       ticker,
+      context,
     } = this;
 
-    const identifierTypes = Object.keys(TokenIdentifierType);
-    console.log(identifierTypes);
-
-    // Object.keys(TokenIdentifierType).map(type => )
-
-    /*
-    const assetIdentifiers = await asset.identifiers.multi([
-      [ticker, ''],
-      [ticker, ''],
+    const tokenIdentifierTypes = Object.values(TokenIdentifierType);
+    const identifierTypes = tokenIdentifierTypes.map(type => [
+      ticker,
+      tokenIdentifierTypeToIdentifierType(type, context),
     ]);
-    */
 
-    const result = [] as TokenIdentifier[];
-    return result;
+    const assetIdentifiers = await asset.identifiers.multi<AssetIdentifier>(identifierTypes);
+
+    const tokenIdentifiers = tokenIdentifierTypes.map((type, i) => ({
+      type,
+      value: assetIdentifierToString(assetIdentifiers[i]),
+    }));
+
+    return tokenIdentifiers;
   }
 }
