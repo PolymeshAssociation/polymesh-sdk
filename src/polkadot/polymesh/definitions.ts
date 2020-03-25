@@ -102,18 +102,33 @@ export default {
       signing_items: 'Vec<SigningItem>',
     },
     JurisdictionName: 'Text',
-    IdentityClaimData: {
+    Scope: 'IdentityId',
+    Claim: {
       _enum: {
-        Accredited: 'IdentityId',
-        Affiliate: 'IdentityId',
-        BuyLockup: 'IdentityId',
-        SellLockup: 'IdentityId',
+        Accredited: 'Scope',
+        Affiliate: 'Scope',
+        BuyLockup: 'Scope',
+        SellLockup: 'Scope',
         CustomerDueDiligence: '',
-        KnowYourCustomer: 'IdentityId',
-        Jurisdiction: '(JurisdictionName, IdentityId)',
-        Whitelisted: 'IdentityId',
-        Blacklisted: 'IdentityId',
+        KnowYourCustomer: 'Scope',
+        Jurisdiction: '(JurisdictionName, Scope)',
+        Whitelisted: 'Scope',
+        Blacklisted: 'Scope',
         NoData: '',
+      },
+    },
+    ClaimType: {
+      _enum: {
+        Accredited: '',
+        Affiliate: '',
+        BuyLockup: '',
+        SellLockup: '',
+        CustomerDueDiligence: '',
+        KnowYourCustomer: '',
+        Jurisdiction: '',
+        Whitelisted: '',
+        Blacklisted: '',
+        NoType: '',
       },
     },
     IdentityClaim: {
@@ -121,24 +136,28 @@ export default {
       issuance_date: 'Moment',
       last_update_date: 'Moment',
       expiry: 'Option<Moment>',
-      claim: 'IdentityClaimData',
+      claim: 'Claim',
     },
-    ClaimIdentifier: {
-      claim: 'IdentityClaimData',
-      claim_issuer: 'IdentityId',
+    IdentityClaimKey: {
+      id: 'IdentityId',
+      claim_type: 'ClaimType',
     },
-    AssetRule: {
-      sender_rules: 'Vec<RuleData>',
-      receiver_rules: 'Vec<RuleData>',
+    AssetTransferRule: {
+      sender_rules: 'Vec<Rule>',
+      receiver_rules: 'Vec<Rule>',
       rule_id: 'u32',
     },
     RuleType: {
-      _enum: ['ClaimIsPresent', 'ClaimIsAbsent'],
+      _enum: {
+        IsPresent: 'Claim',
+        IsAbsent: 'Claim',
+        IsAnyOf: 'Vec<Claim>',
+        IsNoneOf: 'Vec<Claim>',
+      },
     },
-    RuleData: {
-      claim: 'IdentityClaimData',
-      trusted_issuers: 'Vec<IdentityId>',
+    Rule: {
       rule_type: 'RuleType',
+      issuers: 'Vec<IdentityId>',
     },
     STO: {
       beneficiary_did: 'IdentityId',
@@ -204,11 +223,14 @@ export default {
       motions: 'Vec<Motion>',
     },
     Url: 'Text',
+    MipDescription: 'Text',
     MipsMetadata: {
+      proposer: 'AccountKey',
       index: 'u32',
-      end: 'u64',
+      end: 'u32',
       proposal_hash: 'Hash',
       url: 'Option<Url>',
+      description: 'Option<MipDescription>',
     },
     PolymeshVotes: {
       index: 'u32',
@@ -223,7 +245,6 @@ export default {
       index: 'MipsIndex',
       proposal: 'Call',
     },
-    MipDescription: 'Text',
     PolymeshReferendumInfo: {
       index: 'MipsIndex',
       priority: 'MipsPriority',
@@ -313,9 +334,31 @@ export default {
       constant: 'u32',
       max_slash_percent: 'u32',
     },
-    AssetRules: {
+    AssetTransferRules: {
       is_paused: 'bool',
-      rules: 'Vec<AssetRules>',
+      rules: 'Vec<AssetTransferRule>',
+    },
+    Claim1stKey: {
+      target: 'IdentityId',
+      claim_type: 'ClaimType',
+    },
+    Claim2ndKey: {
+      issuer: 'IdentityId',
+      scope: 'Option<Scope>',
+    },
+    BatchAddClaimItem: {
+      target: 'IdentityId',
+      claim: 'Claim',
+      expiry: 'Option<u64>',
+    },
+    BatchRevokeClaimItem: {
+      target: 'IdentityId',
+      claim: 'Claim',
+    },
+    InactiveMember: {
+      id: 'IdentityId',
+      deactivated_at: 'Moment',
+      expiry: 'Option<Moment>',
     },
   },
 };

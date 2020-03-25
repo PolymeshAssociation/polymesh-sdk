@@ -67,12 +67,13 @@ import { AnyNumber, ITuple } from '@polkadot/types/types';
 import {
   AccountKey,
   AssetIdentifier,
-  AssetRules,
+  AssetTransferRules,
   Authorization,
   AuthorizationNonce,
   Ballot,
   BridgeTx,
-  ClaimIdentifier,
+  Claim1stKey,
+  Claim2ndKey,
   Commission,
   Counter,
   DidRecord,
@@ -81,6 +82,7 @@ import {
   IdentifierType,
   IdentityClaim,
   IdentityId,
+  InactiveMember,
   Investment,
   Link,
   LinkedKeyInfo,
@@ -751,7 +753,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<u64>
       >;
       /**
-       * Individual multisig signer votes. (multi sig, signer, )
+       * Individual multisig signer votes. (multi sig, signer, proposal) => vote
        **/
       votes: AugmentedQuery<
         ApiType,
@@ -764,6 +766,13 @@ declare module '@polkadot/api/types/storage' {
                 u64 | AnyNumber | Uint8Array
               ]
         ) => Observable<bool>
+      >;
+      /**
+       * Maps a multisig to its creator's identity
+       **/
+      multiSigCreator: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<IdentityId>
       >;
     };
     contracts: {
@@ -856,9 +865,10 @@ declare module '@polkadot/api/types/storage' {
     };
     committeeMembership: {
       /**
-       * Identities that are part of this group
+       * Identities that are part of this group, known as "Active members".
        **/
-      members: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
     };
     mips: {
       /**
@@ -1278,13 +1288,13 @@ declare module '@polkadot/api/types/storage' {
        **/
       currentDid: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
       /**
-       * (DID, claim_data, claim_issuer) -> Associated claims
+       * (Target ID, claim type) (issuer,scope) -> Associated claims
        **/
       claims: AugmentedQueryDoubleMap<
         ApiType,
         (
-          key1: IdentityId | string | Uint8Array,
-          key2: ClaimIdentifier | { claim?: any; claim_issuer?: any } | string | Uint8Array
+          key1: Claim1stKey | { target?: any; claim_type?: any } | string | Uint8Array,
+          key2: Claim2ndKey | { issuer?: any; scope?: any } | string | Uint8Array
         ) => Observable<IdentityClaim>
       >;
       keyToIdentityIds: AugmentedQuery<
@@ -1368,11 +1378,11 @@ declare module '@polkadot/api/types/storage' {
     };
     generalTM: {
       /**
-       * List of active rules for a ticker (Ticker -> Array of AssetRules)
+       * List of active rules for a ticker (Ticker -> Array of AssetTransferRules)
        **/
       assetRulesMap: AugmentedQuery<
         ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<AssetRules>
+        (arg: Ticker | string | Uint8Array) => Observable<AssetTransferRules>
       >;
       /**
        * List of trusted claim issuer Ticker -> Issuer Identity
@@ -1585,9 +1595,10 @@ declare module '@polkadot/api/types/storage' {
     };
     cddServiceProviders: {
       /**
-       * Identities that are part of this group
+       * Identities that are part of this group, known as "Active members".
        **/
-      members: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
     };
     statistic: {
       investorCountPerAsset: AugmentedQuery<
