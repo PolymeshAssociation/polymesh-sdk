@@ -34,6 +34,7 @@ interface TickerReservationOptions {
 interface SecurityTokenOptions {
   ticker?: string;
   details?: Partial<SecurityTokenDetails>;
+  currentFundingRound?: string;
 }
 
 let identityConstructorStub: SinonStub;
@@ -45,6 +46,7 @@ let identityGetPolyXBalanceStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
+let securityTokenCurrentFundingRoundStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -110,6 +112,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     isDivisible: false,
     owner: mockInstanceContainer.identity,
   },
+  currentFundingRound: 'Series A',
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 
@@ -120,12 +123,16 @@ let securityTokenOptions = defaultSecurityTokenOptions;
 function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenConstructorStub = sinon.stub();
   securityTokenDetailsStub = sinon.stub();
+  securityTokenCurrentFundingRoundStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
   const securityToken = ({
     ticker: securityTokenOptions.ticker,
     details: securityTokenDetailsStub.resolves(securityTokenOptions.details),
+    currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(
+      securityTokenOptions.currentFundingRound
+    ),
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -306,4 +313,16 @@ export function getSecurityTokenDetailsStub(details?: Partial<SecurityTokenDetai
     });
   }
   return securityTokenDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.currentFundingRound` method
+ */
+export function getSecurityTokenCurrentFundingRoundStub(currentFundingRound?: string): SinonStub {
+  if (currentFundingRound) {
+    return securityTokenCurrentFundingRoundStub.resolves(currentFundingRound);
+  }
+
+  return securityTokenCurrentFundingRoundStub;
 }
