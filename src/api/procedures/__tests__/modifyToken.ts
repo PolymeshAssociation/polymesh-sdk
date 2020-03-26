@@ -1,4 +1,4 @@
-import { Ticker, TokenName } from 'polymesh-types/types';
+import { FundingRoundName, Ticker, TokenName } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -18,8 +18,10 @@ describe('modifyToken procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let stringToTokenNameStub: sinon.SinonStub<[string, Context], TokenName>;
+  let stringToFundingRoundNameStub: sinon.SinonStub<[string, Context], FundingRoundName>;
   let ticker: string;
   let rawTicker: Ticker;
+  let fundingRound: string;
   let procedureResult: SecurityToken;
 
   beforeAll(() => {
@@ -28,8 +30,10 @@ describe('modifyToken procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     stringToTokenNameStub = sinon.stub(utilsModule, 'stringToTokenName');
+    stringToFundingRoundNameStub = sinon.stub(utilsModule, 'stringToFundingRoundName');
     ticker = 'someTicker';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    fundingRound = 'Series A';
     procedureResult = entityMockUtils.getSecurityTokenInstance();
   });
 
@@ -102,6 +106,18 @@ describe('modifyToken procedure', () => {
     ).rejects.toThrow('New name is the same as current name');
   });
 
+  test('should throw an error if newFundingRound is the same funding round name currently in the Security Token', () => {
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
+    proc.context = mockContext;
+
+    return expect(
+      prepareModifyToken.call(proc, {
+        ticker,
+        fundingRound,
+      })
+    ).rejects.toThrow('New funding round name is the same as current funding round');
+  });
+
   test('should add a make divisible transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
@@ -134,6 +150,26 @@ describe('modifyToken procedure', () => {
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawTokenName);
+
+    expect(result.ticker).toBe(procedureResult.ticker);
+  });
+
+  test('should add a set funding round transaction to the queue', async () => {
+    const newFundingRound = 'Series B';
+    const rawFundingRound = polkadotMockUtils.createMockFundingRoundName(newFundingRound);
+    stringToFundingRoundNameStub.withArgs(newFundingRound, mockContext).returns(rawFundingRound);
+
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
+    proc.context = mockContext;
+
+    const transaction = polkadotMockUtils.createTxStub('asset', 'setFundingRound');
+
+    const result = await prepareModifyToken.call(proc, {
+      ticker,
+      fundingRound: newFundingRound,
+    });
+
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawFundingRound);
 
     expect(result.ticker).toBe(procedureResult.ticker);
   });
