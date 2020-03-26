@@ -50,7 +50,7 @@ describe('reserveTicker procedure', () => {
 
   let addTransactionStub: sinon.SinonStub;
 
-  let transaction: PolymeshTx<[string | Ticker | Uint8Array]>;
+  let transaction: PolymeshTx<[Ticker]>;
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([reservation]);
