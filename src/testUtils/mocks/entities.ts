@@ -35,6 +35,7 @@ interface SecurityTokenOptions {
   ticker?: string;
   details?: Partial<SecurityTokenDetails>;
   currentFundingRound?: string;
+  transfersAreFrozen?: boolean;
 }
 
 let identityConstructorStub: SinonStub;
@@ -47,6 +48,7 @@ let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
+let securityTokenTransfersAreFrozenStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -113,6 +115,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     owner: mockInstanceContainer.identity,
   },
   currentFundingRound: 'Series A',
+  transfersAreFrozen: true,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 
@@ -124,6 +127,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenConstructorStub = sinon.stub();
   securityTokenDetailsStub = sinon.stub();
   securityTokenCurrentFundingRoundStub = sinon.stub();
+  securityTokenTransfersAreFrozenStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -133,6 +137,11 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
     currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(
       securityTokenOptions.currentFundingRound
     ),
+    transfers: {
+      areFrozen: securityTokenTransfersAreFrozenStub.resolves(
+        securityTokenOptions.transfersAreFrozen
+      ),
+    },
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -325,4 +334,16 @@ export function getSecurityTokenCurrentFundingRoundStub(currentFundingRound?: st
   }
 
   return securityTokenCurrentFundingRoundStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.Transfers.areFrozen` method
+ */
+export function getSecurityTokenTransfersAreFrozenStub(currentAreFrozen: boolean): SinonStub {
+  if (currentAreFrozen) {
+    return securityTokenTransfersAreFrozenStub.resolves({ areFrozen: currentAreFrozen });
+  }
+
+  return securityTokenTransfersAreFrozenStub;
 }
