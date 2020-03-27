@@ -88,3 +88,13 @@ export interface TransactionSpec<
    */
   isCritical: boolean;
 }
+
+export enum SignerType {
+  Identity = 'identity',
+  AccountKey = 'accountKey',
+}
+
+export interface Signer {
+  type: SignerType;
+  value: string;
+}

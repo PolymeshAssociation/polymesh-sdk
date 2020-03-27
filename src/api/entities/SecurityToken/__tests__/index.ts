@@ -6,6 +6,7 @@ import { modifyToken } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifierType } from '~/types';
+import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
 import { SecurityToken } from '../';
@@ -133,21 +134,22 @@ describe('SecurityToken class', () => {
       const tokenIdentifiers = [
         {
           type: TokenIdentifierType.Isin,
-          value: 'Fake Isin value',
+          value: isinValue,
         },
         {
           type: TokenIdentifierType.Cusip,
-          value: 'Fake Cusip value',
+          value: cusipValue,
         },
       ];
 
-      const rawIdentifiers: [IdentifierType, AssetIdentifier][] = tokenIdentifiers.map(
-        ({ type, value }) => {
-          return [
-            polkadotMockUtils.createMockIdentifierType(type as TokenIdentifierType),
-            polkadotMockUtils.createMockAssetIdentifier(value),
-          ];
-        }
+      const rawIdentifiers: [
+        IdentifierType,
+        AssetIdentifier
+      ][] = tokenIdentifiers.map(({ type, value }) =>
+        tuple(
+          polkadotMockUtils.createMockIdentifierType(type),
+          polkadotMockUtils.createMockAssetIdentifier(value)
+        )
       );
 
       const context = polkadotMockUtils.getContextInstance();
@@ -168,11 +170,6 @@ describe('SecurityToken class', () => {
       polkadotMockUtils.createQueryStub('asset', 'identifiers', {
         multi: [isinMock, cusipMock],
       });
-
-      const assetIdentifierToStringStub = sinon.stub(utilsModule, 'assetIdentifierToString');
-
-      assetIdentifierToStringStub.withArgs(isinMock).returns(isinValue);
-      assetIdentifierToStringStub.withArgs(cusipMock).returns(cusipValue);
 
       const securityToken = new SecurityToken({ ticker }, context);
 

@@ -1,6 +1,6 @@
 import { bool, Option, Vec } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
-import { AnyNumber, ITuple } from '@polkadot/types/types';
+import { ITuple } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
@@ -145,28 +145,13 @@ describe('createSecurityToken procedure', () => {
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   let transaction: PolymeshTx<[
-    TokenName | string,
-    string | Ticker | Uint8Array,
-    Balance | AnyNumber | Uint8Array,
-    bool | boolean | Uint8Array,
-    (
-      | AssetType
-      | { equity: any }
-      | { debt: any }
-      | { commodity: any }
-      | { structuredProduct: any }
-      | { custom: any }
-      | string
-      | Uint8Array
-    ),
-    (
-      | Vec<ITuple<[IdentifierType, AssetIdentifier]>>
-      | [
-          IdentifierType | { isin: any } | { cusip: any } | { custom: any } | string | Uint8Array,
-          AssetIdentifier | string
-        ][]
-    ),
-    Option<FundingRoundName> | null | object | string | Uint8Array
+    TokenName,
+    Ticker,
+    Balance,
+    bool,
+    AssetType,
+    Vec<ITuple<[IdentifierType, AssetIdentifier]>>,
+    Option<FundingRoundName>
   ]>;
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
