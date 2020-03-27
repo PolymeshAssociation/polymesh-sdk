@@ -4,6 +4,7 @@ import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import {
+  AccountKey,
   AssetIdentifier,
   AssetType,
   DocumentHash,
@@ -12,6 +13,7 @@ import {
   FundingRoundName,
   IdentifierType,
   IdentityId,
+  Signatory,
   Ticker,
   TokenName,
 } from 'polymesh-types/types';
@@ -20,8 +22,10 @@ import sinon, { SinonStub } from 'sinon';
 import { PostTransactionValue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
 import { KnownTokenIdentifierType, KnownTokenType } from '~/types';
+import { SignerType } from '~/types/internal';
 
 import {
+  accountKeyToString,
   assetIdentifierToString,
   assetTypeToString,
   balanceToBigNumber,
@@ -40,6 +44,9 @@ import {
   momentToDate,
   numberToBalance,
   serialize,
+  signatoryToSigner,
+  signerToSignatory,
+  stringToAccountKey,
   stringToAssetIdentifier,
   stringToDocumentHash,
   stringToDocumentName,
@@ -178,6 +185,47 @@ describe('stringToIdentityId and identityIdToString', () => {
 
     const result = identityIdToString(identityId);
     expect(result).toBe(fakeResult);
+  });
+});
+
+describe('stringToAccountKey and accountKeyToString', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToAccountKey should convert a string to a polkadot AccountKey object', () => {
+    const value = 'someAccountKey';
+    const fakeResult = ('convertedAccountKey' as unknown) as AccountKey;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType.withArgs(context.polymeshApi.registry, 'AccountKey', value).returns(fakeResult);
+
+    const result = stringToAccountKey(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('accountKeyToString should convert a polkadot AccountKey object to a string', () => {
+    const fakeResult = 'someAccountKey';
+    const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult);
+
+    const result = accountKeyToString(accountKey);
+    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -840,5 +888,67 @@ describe('findEventRecord', () => {
     expect(() => findEventRecord(mockReceipt, mod, eventName)).toThrow(
       `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`
     );
+  });
+});
+
+describe('signerToSignatory and signatoryToSigner', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('signerToSignatory should convert a Signer to a polkadot Signatory object', () => {
+    const value = {
+      type: SignerType.Identity,
+      value: 'someIdentity',
+    };
+    const fakeResult = ('SignatoryEnum' as unknown) as Signatory;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'Signatory', { [value.type]: value.value })
+      .returns(fakeResult);
+
+    const result = signerToSignatory(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('signatoryToSigner should convert a polkadot Signatory object to a Signer', () => {
+    let fakeResult = {
+      type: SignerType.Identity,
+      value: 'someIdentity',
+    };
+    let signatory = polkadotMockUtils.createMockSignatory({
+      identity: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+    });
+
+    let result = signatoryToSigner(signatory);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: SignerType.AccountKey,
+      value: 'someAccountKey',
+    };
+    signatory = polkadotMockUtils.createMockSignatory({
+      accountKey: polkadotMockUtils.createMockAccountKey(fakeResult.value),
+    });
+
+    result = signatoryToSigner(signatory);
+    expect(result).toEqual(fakeResult);
   });
 });

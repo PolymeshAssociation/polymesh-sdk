@@ -15,6 +15,7 @@ import { stringToU8a } from '@polkadot/util';
 import { BigNumber } from 'bignumber.js';
 import { cloneDeep, every, merge, upperFirst } from 'lodash';
 import {
+  AccountKey,
   AssetIdentifier,
   AssetType,
   Document,
@@ -27,6 +28,7 @@ import {
   Link,
   LinkData,
   SecurityToken,
+  Signatory,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
@@ -521,12 +523,6 @@ export function createQueryStub<
 
   if (!runtimeModule[query]) {
     runtimeModule[query] = (sinon.stub() as unknown) as Queries[ModuleName][QueryName];
-    if (opts?.entries) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (runtimeModule[query] as any).entries = sinon
-        .stub()
-        .resolves(opts.entries.map(entry => ['someKey', entry]));
-    }
 
     updateQuery();
   }
@@ -535,6 +531,11 @@ export function createQueryStub<
 
   const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] &
     SinonStub<ArgsType<Queries[ModuleName][QueryName]>>;
+
+  if (opts?.entries) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (stub as any).entries = sinon.stub().resolves(opts.entries.map(entry => ['someKey', entry]));
+  }
 
   if (opts?.returnValue) {
     stub.returns(opts.returnValue);
@@ -696,6 +697,13 @@ export const createMockIdentityId = (did?: string): IdentityId =>
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTicker = (ticker?: string): Ticker => createMockU8ACodec(ticker) as Ticker;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAccountKey = (accountKey?: string): AccountKey =>
+  createMockU8ACodec(accountKey) as AccountKey;
 
 /**
  * @hidden
@@ -948,6 +956,16 @@ export const createMockAssetIdentifier = (identifier?: string): AssetIdentifier 
  */
 export const createMockFundingRoundName = (roundName?: string): FundingRoundName =>
   createMockStringCodec(roundName) as FundingRoundName;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSignatory = (
+  signatory?: { identity: IdentityId } | { accountKey: AccountKey }
+): Signatory => {
+  return createMockEnum(signatory) as Signatory;
+};
 
 /**
  * @hidden
