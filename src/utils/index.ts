@@ -162,7 +162,7 @@ export function tickerToString(ticker: Ticker): string {
  * @hidden
  */
 export function dateToMoment(date: Date, context: Context): Moment {
-  return createType<'Moment'>(context.polymeshApi.registry, 'Moment', Math.round(date.getTime()));
+  return createType<'Moment'>(context.polymeshApi.registry, 'Moment', date.getTime());
 }
 
 /**
@@ -274,7 +274,7 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
   if (auth.isTransferTokenOwnership) {
     return {
       type: AuthorizationType.TransferTokenOwnership,
-      value: tickerToString(auth.asTransferTicker),
+      value: tickerToString(auth.asTransferTokenOwnership),
     };
   }
 

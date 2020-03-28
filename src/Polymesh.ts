@@ -89,14 +89,6 @@ export class Polymesh {
     return this.context.getCurrentIdentity().getPolyXBalance();
   }
 
-  public get polkadot() {
-    return this.context.polymeshApi;
-  }
-
-  public get identity() {
-    return this.context.getCurrentIdentity();
-  }
-
   /**
    * Get the free POLYX balance of an account
    *
