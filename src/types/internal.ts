@@ -98,3 +98,24 @@ export interface Signer {
   type: SignerType;
   value: string;
 }
+
+export enum AuthorizationType {
+  AttestMasterKeyRotation = 'attestMasterKeyRotation',
+  RotateMasterKey = 'rotateMasterKey',
+  TransferTicker = 'transferTicker',
+  AddMultiSigSigner = 'addMultiSigSigner',
+  TransferTokenOwnership = 'transferTokenOwnership',
+  JoinIdentity = 'joinIdentity',
+  Custom = 'custom',
+  NoData = 'noData',
+}
+
+export type Authorization =
+  | { type: AuthorizationType.NoData | AuthorizationType.AddMultiSigSigner }
+  | {
+      type: Exclude<
+        AuthorizationType,
+        AuthorizationType.NoData | AuthorizationType.AddMultiSigSigner
+      >;
+      value: string;
+    };
