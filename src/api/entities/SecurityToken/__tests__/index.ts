@@ -1,5 +1,4 @@
 import { Balance } from '@polkadot/types/interfaces';
-import { AssetIdentifier, IdentifierType } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { modifyToken } from '~/api/procedures';
@@ -142,10 +141,7 @@ describe('SecurityToken class', () => {
         },
       ];
 
-      const rawIdentifiers: [
-        IdentifierType,
-        AssetIdentifier
-      ][] = tokenIdentifiers.map(({ type, value }) =>
+      const rawIdentifiers = tokenIdentifiers.map(({ type, value }) =>
         tuple(
           polkadotMockUtils.createMockIdentifierType(type),
           polkadotMockUtils.createMockAssetIdentifier(value)
