@@ -22,7 +22,6 @@ describe('modifyToken procedure', () => {
   let ticker: string;
   let rawTicker: Ticker;
   let fundingRound: string;
-  let procedureResult: SecurityToken;
 
   beforeAll(() => {
     polkadotMockUtils.initMocks();
@@ -34,15 +33,12 @@ describe('modifyToken procedure', () => {
     ticker = 'someTicker';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
     fundingRound = 'Series A';
-    procedureResult = entityMockUtils.getSecurityTokenInstance({
-      ticker,
-    });
   });
 
   let addTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([procedureResult]);
+    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = polkadotMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
@@ -132,8 +128,7 @@ describe('modifyToken procedure', () => {
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, sinon.match({}), rawTicker);
-
-    expect(result.ticker).toBe(procedureResult.ticker);
+    expect(result.ticker).toBe(ticker);
   });
 
   test('should add a rename token transaction to the queue', async () => {
@@ -152,8 +147,7 @@ describe('modifyToken procedure', () => {
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawTokenName);
-
-    expect(result.ticker).toBe(procedureResult.ticker);
+    expect(result.ticker).toBe(ticker);
   });
 
   test('should add a set funding round transaction to the queue', async () => {
@@ -172,8 +166,7 @@ describe('modifyToken procedure', () => {
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawFundingRound);
-
-    expect(result.ticker).toBe(procedureResult.ticker);
+    expect(result.ticker).toBe(ticker);
   });
 });
 

@@ -77,7 +77,6 @@ describe('toggleFreezeTransfers procedure', () => {
   test('should throw an error if freeze is set to false and the security token is already unfrozen', () => {
     entityMockUtils.initMocks({
       securityTokenOptions: {
-        transfersAreFrozen: false,
         ticker,
       },
     });
