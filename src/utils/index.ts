@@ -1,4 +1,4 @@
-import { bool } from '@polkadot/types';
+import { bool, Bytes } from '@polkadot/types';
 import { createType } from '@polkadot/types/create/createType';
 import { Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
@@ -10,6 +10,7 @@ import {
   AccountKey,
   AssetIdentifier,
   AssetType,
+  AuthorizationData,
   Document,
   DocumentHash,
   DocumentName,
@@ -26,6 +27,8 @@ import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode, KnownTokenType, TokenDocument, TokenIdentifierType, TokenType } from '~/types';
 import {
+  Authorization,
+  AuthorizationType,
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -123,6 +126,20 @@ export function boolToBoolean(value: bool): boolean {
 /**
  * @hidden
  */
+export function stringToBytes(bytes: string, context: Context): Bytes {
+  return createType<'Bytes'>(context.polymeshApi.registry, 'Bytes', bytes);
+}
+
+/**
+ * @hidden
+ */
+export function bytesToString(bytes: Bytes): string {
+  return u8aToString(bytes);
+}
+
+/**
+ * @hidden
+ */
 export function stringToTicker(ticker: string, context: Context): Ticker {
   return createType<'Ticker'>(context.polymeshApi.registry, 'Ticker', ticker);
 }
@@ -138,7 +155,7 @@ export function tickerToString(ticker: Ticker): string {
  * @hidden
  */
 export function dateToMoment(date: Date, context: Context): Moment {
-  return createType<'Moment'>(context.polymeshApi.registry, 'Moment', Math.round(date.getTime()));
+  return createType<'Moment'>(context.polymeshApi.registry, 'Moment', date.getTime());
 }
 
 /**
@@ -199,6 +216,77 @@ export function signatoryToSigner(signatory: Signatory): Signer {
   return {
     type: SignerType.Identity,
     value: identityIdToString(signatory.asIdentity),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function authorizationToAuthorizationData(
+  auth: Authorization,
+  context: Context
+): AuthorizationData {
+  const { type, value = null } = auth as { type: AuthorizationType; value?: string };
+
+  return createType<'AuthorizationData'>(context.polymeshApi.registry, 'AuthorizationData', {
+    [type]: value,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function authorizationDataToAuthorization(auth: AuthorizationData): Authorization {
+  if (auth.isAttestMasterKeyRotation) {
+    return {
+      type: AuthorizationType.AttestMasterKeyRotation,
+      value: identityIdToString(auth.asAttestMasterKeyRotation),
+    };
+  }
+
+  if (auth.isRotateMasterKey) {
+    return {
+      type: AuthorizationType.RotateMasterKey,
+      value: identityIdToString(auth.asRotateMasterKey),
+    };
+  }
+
+  if (auth.isTransferTicker) {
+    return {
+      type: AuthorizationType.TransferTicker,
+      value: tickerToString(auth.asTransferTicker),
+    };
+  }
+
+  if (auth.isAddMultiSigSigner) {
+    return {
+      type: AuthorizationType.AddMultiSigSigner,
+    };
+  }
+
+  if (auth.isTransferTokenOwnership) {
+    return {
+      type: AuthorizationType.TransferTokenOwnership,
+      value: tickerToString(auth.asTransferTokenOwnership),
+    };
+  }
+
+  if (auth.isJoinIdentity) {
+    return {
+      type: AuthorizationType.JoinIdentity,
+      value: identityIdToString(auth.asJoinIdentity),
+    };
+  }
+
+  if (auth.isCustom) {
+    return {
+      type: AuthorizationType.Custom,
+      value: bytesToString(auth.asCustom),
+    };
+  }
+
+  return {
+    type: AuthorizationType.NoData,
   };
 }
 
