@@ -137,10 +137,29 @@ export class Context {
   /**
    * Set a pair as the current account keyring pair
    */
-  public setPair(address: string): void {
-    const { keyring } = this;
+  public async setPair(address: string): Promise<void> {
+    const {
+      keyring,
+      polymeshApi: {
+        query: { identity },
+      },
+    } = this;
     try {
-      this.currentPair = keyring.getPair(address);
+      const newCurrentPair = keyring.getPair(address);
+
+      const identityIds = await identity.keyToIdentityIds(newCurrentPair.publicKey);
+
+      const did = identityIds.unwrap().asUnique;
+
+      if (!did) {
+        throw new PolymeshError({
+          code: ErrorCode.FatalError,
+          message: 'The address is not present in the keyring set',
+        });
+      }
+
+      this.currentPair = newCurrentPair;
+      this.currentIdentity = new Identity({ did: did.toString() }, this);
     } catch (e) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
