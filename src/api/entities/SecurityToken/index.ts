@@ -1,7 +1,12 @@
 import { AssetIdentifier } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
-import { modifyToken, ModifyTokenParams } from '~/api/procedures';
+import {
+  modifyToken,
+  ModifyTokenParams,
+  transferTokenOwnership,
+  TransferTokenOwnershipParams,
+} from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
@@ -72,6 +77,19 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
     this.documents = new Documents(this, context);
     this.transfers = new Transfers(this, context);
+  }
+
+  /**
+   * Transfer ownership of the Security Token to another identity. This generates an authorization request that must be accepted
+   * by the destinatary
+   *
+   * @param args.expiry - date at which the authorization request for transfer expires (optional)
+   */
+  public transferOwnership(
+    args: TransferTokenOwnershipParams
+  ): Promise<TransactionQueue<SecurityToken>> {
+    const { ticker } = this;
+    return transferTokenOwnership.prepare({ ticker, ...args }, this.context);
   }
 
   /**
