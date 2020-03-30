@@ -23,7 +23,6 @@ import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
-  KnownTokenIdentifierType,
   KnownTokenType,
   RoleType,
   TickerReservationStatus,
@@ -98,7 +97,7 @@ describe('createSecurityToken procedure', () => {
     tokenType = KnownTokenType.Equity;
     tokenIdentifiers = [
       {
-        type: KnownTokenIdentifierType.Isin,
+        type: TokenIdentifierType.Isin,
         value: '12345',
       },
     ];
@@ -117,7 +116,7 @@ describe('createSecurityToken procedure', () => {
     rawType = polkadotMockUtils.createMockAssetType(tokenType);
     rawIdentifiers = tokenIdentifiers.map(({ type, value }) => {
       return [
-        polkadotMockUtils.createMockIdentifierType(type as KnownTokenIdentifierType),
+        polkadotMockUtils.createMockIdentifierType(type as TokenIdentifierType),
         polkadotMockUtils.createMockAssetIdentifier(value),
       ];
     });

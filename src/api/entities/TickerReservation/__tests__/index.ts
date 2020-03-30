@@ -8,7 +8,7 @@ import { reserveTicker } from '~/api/procedures';
 import { createSecurityToken } from '~/api/procedures/createSecurityToken';
 import { Entity, TransactionQueue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
-import { KnownTokenIdentifierType, KnownTokenType, TickerReservationStatus } from '~/types';
+import { KnownTokenType, TickerReservationStatus, TokenIdentifierType } from '~/types';
 
 import { TickerReservation } from '../';
 
@@ -219,7 +219,7 @@ describe('TickerReservation class', () => {
         totalSupply: new BigNumber(100),
         isDivisible: true,
         tokenType: KnownTokenType.Equity,
-        tokenIdentifiers: [{ type: KnownTokenIdentifierType.Isin, value: '12345' }],
+        tokenIdentifiers: [{ type: TokenIdentifierType.Isin, value: '12345' }],
         fundingRound: 'Series A',
       };
 

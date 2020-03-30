@@ -4,7 +4,9 @@ import sinon from 'sinon';
 import { modifyToken, transferTokenOwnership } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
-import { balanceToBigNumber, tickerToDid } from '~/utils';
+import { TokenIdentifierType } from '~/types';
+import { tuple } from '~/types/utils';
+import * as utilsModule from '~/utils';
 
 import { SecurityToken } from '../';
 
@@ -32,7 +34,7 @@ describe('SecurityToken class', () => {
       const securityToken = new SecurityToken({ ticker }, context);
 
       expect(securityToken.ticker).toBe(ticker);
-      expect(securityToken.did).toBe(tickerToDid(ticker));
+      expect(securityToken.did).toBe(utilsModule.tickerToDid(ticker));
     });
   });
 
@@ -71,7 +73,9 @@ describe('SecurityToken class', () => {
       const details = await securityToken.details();
 
       expect(details.name).toBe(ticker);
-      expect(details.totalSupply).toEqual(balanceToBigNumber((totalSupply as unknown) as Balance));
+      expect(details.totalSupply).toEqual(
+        utilsModule.balanceToBigNumber((totalSupply as unknown) as Balance)
+      );
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
@@ -142,6 +146,59 @@ describe('SecurityToken class', () => {
       const result = await securityToken.currentFundingRound();
 
       expect(result).toBe(fundingRound);
+    });
+  });
+
+  describe('method: getIdentifiers', () => {
+    test('should return the list of token identifiers for a security token', async () => {
+      const ticker = 'TEST';
+      const isinValue = 'FAKE ISIN';
+      const cusipValue = 'FAKE CUSIP';
+      const isinMock = polkadotMockUtils.createMockAssetIdentifier(isinValue);
+      const cusipMock = polkadotMockUtils.createMockAssetIdentifier(cusipValue);
+      const tokenIdentifiers = [
+        {
+          type: TokenIdentifierType.Isin,
+          value: isinValue,
+        },
+        {
+          type: TokenIdentifierType.Cusip,
+          value: cusipValue,
+        },
+      ];
+
+      const rawIdentifiers = tokenIdentifiers.map(({ type, value }) =>
+        tuple(
+          polkadotMockUtils.createMockIdentifierType(type),
+          polkadotMockUtils.createMockAssetIdentifier(value)
+        )
+      );
+
+      const context = polkadotMockUtils.getContextInstance();
+
+      const tokenIdentifierTypeToIdentifierTypeStub = sinon.stub(
+        utilsModule,
+        'tokenIdentifierTypeToIdentifierType'
+      );
+
+      tokenIdentifierTypeToIdentifierTypeStub
+        .withArgs(tokenIdentifiers[0].type, context)
+        .returns(rawIdentifiers[0][0]);
+
+      tokenIdentifierTypeToIdentifierTypeStub
+        .withArgs(tokenIdentifiers[1].type, context)
+        .returns(rawIdentifiers[1][0]);
+
+      polkadotMockUtils.createQueryStub('asset', 'identifiers', {
+        multi: [isinMock, cusipMock],
+      });
+
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      const result = await securityToken.getIdentifiers();
+
+      expect(result[0].value).toBe(isinValue);
+      expect(result[1].value).toBe(cusipValue);
     });
   });
 });
