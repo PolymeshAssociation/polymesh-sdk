@@ -52,7 +52,7 @@ export async function prepareToggleFreezeTransfers(
     this.addTransaction(tx.asset.unfreeze, {}, rawTicker);
   }
 
-  return new SecurityToken({ ticker }, context);
+  return securityToken;
 }
 
 /**

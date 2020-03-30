@@ -31,7 +31,7 @@ export class Transfers extends Namespace<SecurityToken> {
   }
 
   /**
-   * Returns whether the Security Token is frozen or not
+   * Check whether transfers are frozen for the Security Token
    */
   public async areFrozen(): Promise<boolean> {
     const {

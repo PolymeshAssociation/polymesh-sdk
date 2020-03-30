@@ -72,8 +72,8 @@ const MockSecurityTokenClass = class {
   /**
    * @hidden
    */
-  constructor() {
-    return securityTokenConstructorStub();
+  constructor(...args: unknown[]) {
+    return securityTokenConstructorStub(...args);
   }
 };
 
@@ -115,7 +115,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     owner: mockInstanceContainer.identity,
   },
   currentFundingRound: 'Series A',
-  transfersAreFrozen: true,
+  transfersAreFrozen: false,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 
@@ -145,7 +145,10 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
-  securityTokenConstructorStub.returns(securityToken);
+
+  securityTokenConstructorStub.callsFake(args => {
+    return merge({}, securityToken, args);
+  });
 }
 
 /**
@@ -340,9 +343,9 @@ export function getSecurityTokenCurrentFundingRoundStub(currentFundingRound?: st
  * @hidden
  * Retrieve the stub of the `SecurityToken.Transfers.areFrozen` method
  */
-export function getSecurityTokenTransfersAreFrozenStub(currentAreFrozen: boolean): SinonStub {
-  if (currentAreFrozen) {
-    return securityTokenTransfersAreFrozenStub.resolves({ areFrozen: currentAreFrozen });
+export function getSecurityTokenTransfersAreFrozenStub(frozen: boolean): SinonStub {
+  if (frozen) {
+    return securityTokenTransfersAreFrozenStub.resolves(frozen);
   }
 
   return securityTokenTransfersAreFrozenStub;

@@ -34,7 +34,9 @@ describe('modifyToken procedure', () => {
     ticker = 'someTicker';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
     fundingRound = 'Series A';
-    procedureResult = entityMockUtils.getSecurityTokenInstance();
+    procedureResult = entityMockUtils.getSecurityTokenInstance({
+      ticker,
+    });
   });
 
   let addTransactionStub: sinon.SinonStub;

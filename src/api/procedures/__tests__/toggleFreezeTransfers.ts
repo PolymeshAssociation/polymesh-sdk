@@ -56,6 +56,13 @@ describe('toggleFreezeTransfers procedure', () => {
   });
 
   test('should throw an error if freeze is set to true and the security token is already frozen', () => {
+    entityMockUtils.initMocks({
+      securityTokenOptions: {
+        transfersAreFrozen: true,
+        ticker,
+      },
+    });
+
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
@@ -71,6 +78,7 @@ describe('toggleFreezeTransfers procedure', () => {
     entityMockUtils.initMocks({
       securityTokenOptions: {
         transfersAreFrozen: false,
+        ticker,
       },
     });
 
@@ -105,6 +113,7 @@ describe('toggleFreezeTransfers procedure', () => {
     entityMockUtils.initMocks({
       securityTokenOptions: {
         transfersAreFrozen: true,
+        ticker,
       },
     });
 

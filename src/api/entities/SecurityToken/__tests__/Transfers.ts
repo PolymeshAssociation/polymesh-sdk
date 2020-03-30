@@ -5,11 +5,15 @@ import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import { Namespace, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import { Mocked } from '~/testUtils/types';
 
 import { SecurityToken } from '../';
 import { Transfers } from '../Transfers';
 
 describe('Transfers class', () => {
+  let mockContext: Mocked<Context>;
+  let mockSecurityToken: Mocked<SecurityToken>;
+  let transfers: Transfers;
   let prepareStub: sinon.SinonStub<
     [Params, Context],
     Promise<TransactionQueue<SecurityToken, unknown[][]>>
@@ -20,6 +24,12 @@ describe('Transfers class', () => {
     polkadotMockUtils.initMocks();
 
     prepareStub = sinon.stub(toggleFreezeTransfers, 'prepare');
+  });
+
+  beforeEach(() => {
+    mockContext = polkadotMockUtils.getContextInstance();
+    mockSecurityToken = entityMockUtils.getSecurityTokenInstance();
+    transfers = new Transfers(mockSecurityToken, mockContext);
   });
 
   afterEach(() => {
@@ -36,13 +46,11 @@ describe('Transfers class', () => {
 
   describe('method: freeze', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const context = polkadotMockUtils.getContextInstance();
-      const token = entityMockUtils.getSecurityTokenInstance();
-      const transfers = new Transfers(token, context);
-
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      prepareStub.withArgs({ ticker: token.ticker, freeze: true }, context).resolves(expectedQueue);
+      prepareStub
+        .withArgs({ ticker: mockSecurityToken.ticker, freeze: true }, mockContext)
+        .resolves(expectedQueue);
 
       const queue = await transfers.freeze();
 
@@ -52,14 +60,10 @@ describe('Transfers class', () => {
 
   describe('method: unfreeze', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const context = polkadotMockUtils.getContextInstance();
-      const token = entityMockUtils.getSecurityTokenInstance();
-      const transfers = new Transfers(token, context);
-
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
       prepareStub
-        .withArgs({ ticker: token.ticker, freeze: false }, context)
+        .withArgs({ ticker: mockSecurityToken.ticker, freeze: false }, mockContext)
         .resolves(expectedQueue);
 
       const queue = await transfers.unfreeze();
@@ -70,17 +74,15 @@ describe('Transfers class', () => {
 
   describe('method: areFrozen', () => {
     test('should return whether the security token is frozen or not', async () => {
-      const context = polkadotMockUtils.getContextInstance();
-      const token = entityMockUtils.getSecurityTokenInstance();
-      const transfers = new Transfers(token, context);
+      const boolValue = true;
 
       polkadotMockUtils.createQueryStub('asset', 'frozen', {
-        returnValue: polkadotMockUtils.createMockBool(true),
+        returnValue: polkadotMockUtils.createMockBool(boolValue),
       });
 
       const result = await transfers.areFrozen();
 
-      expect(result).toBe(true);
+      expect(result).toBe(boolValue);
     });
   });
 });
