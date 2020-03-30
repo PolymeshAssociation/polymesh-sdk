@@ -97,12 +97,13 @@ export enum KnownTokenType {
  */
 export type TokenType = KnownTokenType | { custom: string };
 
-export enum KnownTokenIdentifierType {
+export enum TokenIdentifierType {
   Isin = 'isin',
   Cusip = 'cusip',
 }
 
-export type TokenIdentifierType = KnownTokenIdentifierType | { custom: string };
+// NOTE: query.asset.identifiers doesn’t support custom identifier types properly for now
+// export type TokenIdentifierType = KnownTokenIdentifierType | { custom: string };
 
 /**
  * Alphanumeric standardized security identifier
