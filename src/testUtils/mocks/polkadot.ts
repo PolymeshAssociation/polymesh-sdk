@@ -279,8 +279,6 @@ function configureContext(opts: ContextOptions): void {
       } as IKeyringPair)
     : undefined;
 
-  console.log('BALANCE', opts.balance);
-
   const contextInstance = ({
     currentPair,
     getCurrentIdentity,
