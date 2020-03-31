@@ -35,6 +35,7 @@ interface SecurityTokenOptions {
   ticker?: string;
   details?: Partial<SecurityTokenDetails>;
   currentFundingRound?: string;
+  transfersAreFrozen?: boolean;
 }
 
 let identityConstructorStub: SinonStub;
@@ -47,13 +48,14 @@ let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
+let securityTokenTransfersAreFrozenStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
    * @hidden
    */
-  constructor() {
-    return identityConstructorStub();
+  constructor(...args: unknown[]) {
+    return identityConstructorStub(...args);
   }
 };
 
@@ -61,8 +63,8 @@ const MockTickerReservationClass = class {
   /**
    * @hidden
    */
-  constructor() {
-    return tickerReservationConstructorStub();
+  constructor(...args: unknown[]) {
+    return tickerReservationConstructorStub(...args);
   }
 };
 
@@ -70,8 +72,8 @@ const MockSecurityTokenClass = class {
   /**
    * @hidden
    */
-  constructor() {
-    return securityTokenConstructorStub();
+  constructor(...args: unknown[]) {
+    return securityTokenConstructorStub(...args);
   }
 };
 
@@ -113,6 +115,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     owner: mockInstanceContainer.identity,
   },
   currentFundingRound: 'Series A',
+  transfersAreFrozen: false,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 
@@ -124,6 +127,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenConstructorStub = sinon.stub();
   securityTokenDetailsStub = sinon.stub();
   securityTokenCurrentFundingRoundStub = sinon.stub();
+  securityTokenTransfersAreFrozenStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -133,10 +137,18 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
     currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(
       securityTokenOptions.currentFundingRound
     ),
+    transfers: {
+      areFrozen: securityTokenTransfersAreFrozenStub.resolves(
+        securityTokenOptions.transfersAreFrozen
+      ),
+    },
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
-  securityTokenConstructorStub.returns(securityToken);
+
+  securityTokenConstructorStub.callsFake(args => {
+    return merge({}, securityToken, args);
+  });
 }
 
 /**
@@ -158,7 +170,9 @@ function initTickerReservation(opts?: TickerReservationOptions): void {
   } as unknown) as MockTickerReservation;
 
   Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
-  tickerReservationConstructorStub.returns(tickerReservation);
+  tickerReservationConstructorStub.callsFake(args => {
+    return merge({}, tickerReservation, args);
+  });
 }
 
 /**
@@ -181,7 +195,9 @@ function initIdentity(opts?: IdentityOptions): void {
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
-  identityConstructorStub.returns(identity);
+  identityConstructorStub.callsFake(args => {
+    return merge({}, identity, args);
+  });
 }
 
 /**
@@ -325,4 +341,16 @@ export function getSecurityTokenCurrentFundingRoundStub(currentFundingRound?: st
   }
 
   return securityTokenCurrentFundingRoundStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.Transfers.areFrozen` method
+ */
+export function getSecurityTokenTransfersAreFrozenStub(frozen: boolean): SinonStub {
+  if (frozen) {
+    return securityTokenTransfersAreFrozenStub.resolves(frozen);
+  }
+
+  return securityTokenTransfersAreFrozenStub;
 }
