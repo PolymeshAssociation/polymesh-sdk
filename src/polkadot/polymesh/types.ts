@@ -381,6 +381,9 @@ export interface PolymeshVotes extends Struct {
   readonly nays: Vec<ITuple<[IdentityId, Balance]>>;
 }
 
+/** @name PosRatio */
+export interface PosRatio extends ITuple<[u32, u32]> {}
+
 /** @name PreAuthorizedKeyInfo */
 export interface PreAuthorizedKeyInfo extends Struct {
   readonly target_id: IdentityId;

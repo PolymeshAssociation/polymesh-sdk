@@ -3,6 +3,7 @@ export default {
   types: {
     IdentityId: 'H256',
     Ticker: '[u8; 12]',
+    PosRatio: '(u32, u32)',
     DocumentName: 'Text',
     DocumentUri: 'Text',
     DocumentHash: 'Text',

@@ -93,6 +93,7 @@ import {
   PermissionedValidator,
   PolymeshReferendumInfo,
   PolymeshVotes,
+  PosRatio,
   PreAuthorizedKeyInfo,
   ProtocolOp,
   SecurityToken,

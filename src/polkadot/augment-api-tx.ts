@@ -50,6 +50,7 @@ import {
   OffChainSignature,
   OfflineSlashingParams,
   Permission,
+  PosRatio,
   ProtocolOp,
   Rule,
   Signatory,
@@ -2642,7 +2643,7 @@ declare module '@polkadot/api/types/submittable' {
        * Changes the fee coefficient for the root origin.
        **/
       changeCoefficient: AugmentedSubmittable<
-        (coefficient: PosRatio | null) => SubmittableExtrinsic<ApiType>
+        (coefficient: PosRatio) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * Changes the a base fee for the root origin.
