@@ -93,7 +93,9 @@ import {
   PermissionedValidator,
   PolymeshReferendumInfo,
   PolymeshVotes,
+  PosRatio,
   PreAuthorizedKeyInfo,
+  ProtocolOp,
   SecurityToken,
   Signatory,
   SimpleTokenRecord,
@@ -774,6 +776,13 @@ declare module '@polkadot/api/types/storage' {
         ApiType,
         (arg: AccountId | string | Uint8Array) => Observable<IdentityId>
       >;
+      /**
+       * Maps a key to a multisig address
+       **/
+      keyToMultiSig: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<AccountId>
+      >;
     };
     contracts: {
       /**
@@ -1210,7 +1219,7 @@ declare module '@polkadot/api/types/storage' {
       /**
        * The admin key.
        **/
-      adminKey: AugmentedQuery<ApiType, () => Observable<AccountKey>>;
+      admin: AugmentedQuery<ApiType, () => Observable<AccountId>>;
       /**
        * Whether or not the bridge operation is frozen.
        **/
@@ -1288,6 +1297,10 @@ declare module '@polkadot/api/types/storage' {
        **/
       currentDid: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
       /**
+       * It stores the current gas fee payer for the current transaction
+       **/
+      currentPayer: AugmentedQuery<ApiType, () => Observable<Option<Signatory>>>;
+      /**
        * (Target ID, claim type) (issuer,scope) -> Associated claims
        **/
       claims: AugmentedQueryDoubleMap<
@@ -1301,10 +1314,6 @@ declare module '@polkadot/api/types/storage' {
         ApiType,
         (arg: AccountKey | string | Uint8Array) => Observable<Option<LinkedKeyInfo>>
       >;
-      /**
-       * How much does creating a DID cost
-       **/
-      didCreationFee: AugmentedQuery<ApiType, () => Observable<Balance>>;
       /**
        * Nonce to ensure unique actions. starts from 1.
        **/
@@ -1374,6 +1383,9 @@ declare module '@polkadot/api/types/storage' {
           key2: u64 | AnyNumber | Uint8Array
         ) => Observable<Signatory>
       >;
+      /**
+       * It defines if authorization from a CDD provider is needed to change master key of an identity
+       **/
       cddAuthForMasterKeyRotation: AugmentedQuery<ApiType, () => Observable<bool>>;
     };
     generalTM: {
@@ -1605,6 +1617,39 @@ declare module '@polkadot/api/types/storage' {
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<Counter>
       >;
+    };
+    protocolFee: {
+      /**
+       * The mapping of operation names to the base fees of those operations.
+       **/
+      baseFees: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ProtocolOp
+            | (
+                | 'AssetRegisterTicker'
+                | 'AssetIssue'
+                | 'AssetAddDocument'
+                | 'AssetCreateToken'
+                | 'DividendNew'
+                | 'GeneralTmAddActiveRule'
+                | 'IdentityRegisterDid'
+                | 'IdentityCddRegisterDid'
+                | 'IdentityAddClaim'
+                | 'IdentitySetMasterKey'
+                | 'IdentityAddSigningItem'
+                | 'MipsPropose'
+                | 'VotingAddBallot'
+              )
+            | number
+            | Uint8Array
+        ) => Observable<BalanceOf>
+      >;
+      /**
+       * The fee coefficient as a positive rational (numerator, denominator).
+       **/
+      coefficient: AugmentedQuery<ApiType, () => Observable<PosRatio>>;
     };
   }
 

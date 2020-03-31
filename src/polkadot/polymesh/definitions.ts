@@ -3,6 +3,7 @@ export default {
   types: {
     IdentityId: 'H256',
     Ticker: '[u8; 12]',
+    PosRatio: '(u32, u32)',
     DocumentName: 'Text',
     DocumentUri: 'Text',
     DocumentHash: 'Text',
@@ -359,6 +360,23 @@ export default {
       id: 'IdentityId',
       deactivated_at: 'Moment',
       expiry: 'Option<Moment>',
+    },
+    ProtocolOp: {
+      _enum: [
+        'AssetRegisterTicker',
+        'AssetIssue',
+        'AssetAddDocument',
+        'AssetCreateToken',
+        'DividendNew',
+        'GeneralTmAddActiveRule',
+        'IdentityRegisterDid',
+        'IdentityCddRegisterDid',
+        'IdentityAddClaim',
+        'IdentitySetMasterKey',
+        'IdentityAddSigningItem',
+        'MipsPropose',
+        'VotingAddBallot',
+      ],
     },
   },
 };

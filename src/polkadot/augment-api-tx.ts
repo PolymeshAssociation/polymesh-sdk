@@ -26,7 +26,7 @@ import {
 import { Keys } from '@polkadot/types/interfaces/session';
 import { EraIndex, RewardDestination, ValidatorPrefs } from '@polkadot/types/interfaces/staking';
 import { Key } from '@polkadot/types/interfaces/system';
-import { bool, Bytes, u16, u32, u64, u128 } from '@polkadot/types/primitive';
+import { bool, Bytes, u16, u32, u64,u128 } from '@polkadot/types/primitive';
 import { AnyNumber, ITuple } from '@polkadot/types/types';
 import {
   AccountKey,
@@ -50,6 +50,8 @@ import {
   OffChainSignature,
   OfflineSlashingParams,
   Permission,
+  PosRatio,
+  ProtocolOp,
   Rule,
   Signatory,
   SigningItem,
@@ -227,7 +229,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Take the origin account as a stash and lock up `value` of its balance. `controller` will
        * be the account that controls it.
-       * `value` must be more than the `minimum_balance` specified by `T::Currency`.
+       * `value` must be more than the `minimum_balance` specified by `<T as Trait>::Currency`.
        * The dispatch origin for this call must be _Signed_ by the stash account.
        * # <weight>
        * - Independent of the arguments. Moderate complexity.
@@ -265,7 +267,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
        * period ends. If this leaves an amount actively bonded less than
-       * T::Currency::minimum_balance(), then it is increased to the full amount.
+       * <T as Trait>::Currency::minimum_balance(), then it is increased to the full amount.
        * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
        * the funds out of management ready for transfer.
        * No more than a limited number of unlocking chunks (see `MAX_UNLOCKING_CHUNKS`)
@@ -1706,13 +1708,13 @@ declare module '@polkadot/api/types/submittable' {
        * Change the controller account as admin.
        **/
       changeController: AugmentedSubmittable<
-        (accountId: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
+        (controller: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * Change the bridge admin key.
        **/
-      changeAdminKey: AugmentedSubmittable<
-        (accountKey: AccountKey | string | Uint8Array) => SubmittableExtrinsic<ApiType>
+      changeAdmin: AugmentedSubmittable<
+        (admin: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * Change the timelock period.
@@ -1724,7 +1726,7 @@ declare module '@polkadot/api/types/submittable' {
        * Freezes the entire operation of the bridge module if it is not already frozen. The only
        * available operations in the frozen state are the following admin methods:
        * * `change_controller`,
-       * * `change_admin_key`,
+       * * `change_admin`,
        * * `change_timelock`,
        * * `unfreeze`,
        * * `freeze_bridge_txs`,
@@ -1798,11 +1800,6 @@ declare module '@polkadot/api/types/submittable' {
               )[]
         ) => SubmittableExtrinsic<ApiType>
       >;
-      /**
-       * Performs the admin authorization check. The check is successful iff the origin is the
-       * bridge admin key.
-       **/
-      checkAdmin: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
     };
     dividend: {
       /**
@@ -2640,6 +2637,71 @@ declare module '@polkadot/api/types/submittable' {
        * * Last member of a group
        **/
       abdicateMembership: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
+    };
+    protocolFee: {
+      /**
+       * Changes the fee coefficient for the root origin.
+       **/
+      changeCoefficient: AugmentedSubmittable<
+        (coefficient: PosRatio) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Changes the a base fee for the root origin.
+       **/
+      changeBaseFee: AugmentedSubmittable<
+        (
+          op:
+            | ProtocolOp
+            | (
+                | 'AssetRegisterTicker'
+                | 'AssetIssue'
+                | 'AssetAddDocument'
+                | 'AssetCreateToken'
+                | 'DividendNew'
+                | 'GeneralTmAddActiveRule'
+                | 'IdentityRegisterDid'
+                | 'IdentityCddRegisterDid'
+                | 'IdentityAddClaim'
+                | 'IdentitySetMasterKey'
+                | 'IdentityAddSigningItem'
+                | 'MipsPropose'
+                | 'VotingAddBallot'
+              )
+            | number
+            | Uint8Array,
+          baseFee: BalanceOf | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Emits an event with the fee of the operation.
+       **/
+      getFee: AugmentedSubmittable<
+        (
+          op:
+            | ProtocolOp
+            | (
+                | 'AssetRegisterTicker'
+                | 'AssetIssue'
+                | 'AssetAddDocument'
+                | 'AssetCreateToken'
+                | 'DividendNew'
+                | 'GeneralTmAddActiveRule'
+                | 'IdentityRegisterDid'
+                | 'IdentityCddRegisterDid'
+                | 'IdentityAddClaim'
+                | 'IdentitySetMasterKey'
+                | 'IdentityAddSigningItem'
+                | 'MipsPropose'
+                | 'VotingAddBallot'
+              )
+            | number
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Emits an event with the fee coefficient.
+       **/
+      getCoefficient: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
     };
   }
 
