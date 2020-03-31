@@ -101,6 +101,17 @@ export class Polymesh {
   }
 
   /**
+   * Set a pair as the current account keyring pair
+   *
+   * @param address - account address of the keyring pair value
+   */
+  public setPair(address: string): Promise<void> {
+    const { context } = this;
+
+    return context.setPair(address);
+  }
+
+  /**
    * Reserve a ticker symbol to later use in the creation of a Security Token.
    * The ticker will expire after a set amount of time, after which other users can reserve it
    *
