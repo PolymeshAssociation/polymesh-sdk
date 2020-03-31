@@ -180,7 +180,7 @@ export enum AssetTx {
 
 export enum BridgeTx {
   ChangeController = 'bridge.changeController',
-  ChangeAdminKey = 'bridge.changeAdminKey',
+  ChangeAdmin = 'bridge.changeAdmin',
   ChangeTimelock = 'bridge.changeTimelock',
   Freeze = 'bridge.freeze',
   Unfreeze = 'bridge.unfreeze',
@@ -189,7 +189,6 @@ export enum BridgeTx {
   HandleBridgeTx = 'bridge.handleBridgeTx',
   FreezeTxs = 'bridge.freezeTxs',
   UnfreezeTxs = 'bridge.unfreezeTxs',
-  CheckAdmin = 'bridge.checkAdmin',
 }
 
 export enum DividendTx {
@@ -282,6 +281,13 @@ export enum CddServiceProvidersTx {
   AbdicateMembership = 'cddServiceProviders.abdicateMembership',
 }
 
+export enum ProtocolFeeTx {
+  ChangeCoefficient = 'protocolFee.changeCoefficient',
+  ChangeBaseFee = 'protocolFee.changeBaseFee',
+  GetFee = 'protocolFee.getFee',
+  GetCoefficient = 'protocolFee.getCoefficient',
+}
+
 export type TxTag =
   | SystemTx
   | TimestampTx
@@ -309,7 +315,8 @@ export type TxTag =
   | PercentageTmTx
   | ExemptionTx
   | SimpleTokenTx
-  | CddServiceProvidersTx;
+  | CddServiceProvidersTx
+  | ProtocolFeeTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -339,4 +346,5 @@ export const TxTags = {
   exemption: ExemptionTx,
   simpleToken: SimpleTokenTx,
   cddServiceProviders: CddServiceProvidersTx,
+  protocolFee: ProtocolFeeTx,
 };

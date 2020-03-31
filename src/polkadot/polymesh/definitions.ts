@@ -360,5 +360,22 @@ export default {
       deactivated_at: 'Moment',
       expiry: 'Option<Moment>',
     },
+    ProtocolOp: {
+      _enum: [
+        'AssetRegisterTicker',
+        'AssetIssue',
+        'AssetAddDocument',
+        'AssetCreateToken',
+        'DividendNew',
+        'GeneralTmAddActiveRule',
+        'IdentityRegisterDid',
+        'IdentityCddRegisterDid',
+        'IdentityAddClaim',
+        'IdentitySetMasterKey',
+        'IdentityAddSigningItem',
+        'MipsPropose',
+        'VotingAddBallot',
+      ],
+    },
   },
 };

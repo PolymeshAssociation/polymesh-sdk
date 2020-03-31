@@ -594,6 +594,7 @@ import {
   PolymeshVotes,
   PreAuthorizedKeyInfo,
   ProportionMatch,
+  ProtocolOp,
   RestrictionResult,
   Rule,
   RuleType,
@@ -2387,5 +2388,8 @@ declare module '@polkadot/types/types/registry' {
     InactiveMember: InactiveMember;
     'Option<InactiveMember>': Option<InactiveMember>;
     'Vec<InactiveMember>': Vec<InactiveMember>;
+    ProtocolOp: ProtocolOp;
+    'Option<ProtocolOp>': Option<ProtocolOp>;
+    'Vec<ProtocolOp>': Vec<ProtocolOp>;
   }
 }

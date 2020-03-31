@@ -4,7 +4,7 @@
 import { Enum, Option, Struct, U8aFixed, Vec } from '@polkadot/types/codec';
 import { Signature } from '@polkadot/types/interfaces/extrinsics';
 import { Balance, Call, H256, H512, Hash, Moment } from '@polkadot/types/interfaces/runtime';
-import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types/primitive';
+import { bool, Bytes, Text, u8,u16, u32, u64, u128 } from '@polkadot/types/primitive';
 import { ITuple } from '@polkadot/types/types';
 
 /** @name AccountKey */
@@ -391,6 +391,23 @@ export interface PreAuthorizedKeyInfo extends Struct {
 export interface ProportionMatch extends Enum {
   readonly isAtLeast: boolean;
   readonly isMoreThan: boolean;
+}
+
+/** @name ProtocolOp */
+export interface ProtocolOp extends Enum {
+  readonly isAssetRegisterTicker: boolean;
+  readonly isAssetIssue: boolean;
+  readonly isAssetAddDocument: boolean;
+  readonly isAssetCreateToken: boolean;
+  readonly isDividendNew: boolean;
+  readonly isGeneralTmAddActiveRule: boolean;
+  readonly isIdentityRegisterDid: boolean;
+  readonly isIdentityCddRegisterDid: boolean;
+  readonly isIdentityAddClaim: boolean;
+  readonly isIdentitySetMasterKey: boolean;
+  readonly isIdentityAddSigningItem: boolean;
+  readonly isMipsPropose: boolean;
+  readonly isVotingAddBallot: boolean;
 }
 
 /** @name RestrictionResult */
