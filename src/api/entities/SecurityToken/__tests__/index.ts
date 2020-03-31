@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
 import sinon from 'sinon';
 
-import { modifyToken } from '~/api/procedures';
+import { modifyToken, transferTokenOwnership } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifierType } from '~/types';
@@ -79,6 +79,32 @@ describe('SecurityToken class', () => {
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
+    });
+  });
+
+  describe('method: transferOwnership', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'TEST';
+      const context = polkadotMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+      const did = 'someOtherDid';
+      const expiry = new Date('10/14/3040');
+
+      const args = {
+        did,
+        expiry,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      sinon
+        .stub(transferTokenOwnership, 'prepare')
+        .withArgs({ ticker, ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await securityToken.transferOwnership(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 

@@ -1,4 +1,4 @@
-import { bool } from '@polkadot/types';
+import { bool, Bytes } from '@polkadot/types';
 import * as createTypeModule from '@polkadot/types/create/createType';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
@@ -7,6 +7,7 @@ import {
   AccountKey,
   AssetIdentifier,
   AssetType,
+  AuthorizationData,
   DocumentHash,
   DocumentName,
   DocumentUri,
@@ -22,15 +23,18 @@ import sinon, { SinonStub } from 'sinon';
 import { PostTransactionValue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
 import { KnownTokenType, TokenIdentifierType } from '~/types';
-import { SignerType } from '~/types/internal';
+import { Authorization, AuthorizationType, SignerType } from '~/types/internal';
 
 import {
   accountKeyToString,
   assetIdentifierToString,
   assetTypeToString,
+  authorizationDataToAuthorization,
+  authorizationToAuthorizationData,
   balanceToBigNumber,
   booleanToBool,
   boolToBoolean,
+  bytesToString,
   dateToMoment,
   delay,
   documentHashToString,
@@ -48,6 +52,7 @@ import {
   signerToSignatory,
   stringToAccountKey,
   stringToAssetIdentifier,
+  stringToBytes,
   stringToDocumentHash,
   stringToDocumentName,
   stringToDocumentUri,
@@ -273,6 +278,47 @@ describe('numberToBalance and balanceToBigNumber', () => {
 
     const result = balanceToBigNumber(balance);
     expect(result).toEqual(new BigNumber(fakeResult).div(Math.pow(10, 6)));
+  });
+});
+
+describe('stringToBytes and bytesToString', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToBytes should convert a string to a polkadot Bytes object', () => {
+    const value = 'someBytes';
+    const fakeResult = ('convertedBytes' as unknown) as Bytes;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType.withArgs(context.polymeshApi.registry, 'Bytes', value).returns(fakeResult);
+
+    const result = stringToBytes(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('bytesToString should convert a polkadot Bytes object to a string', () => {
+    const fakeResult = 'someBytes';
+    const ticker = polkadotMockUtils.createMockBytes(fakeResult);
+
+    const result = bytesToString(ticker);
+    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -949,6 +995,140 @@ describe('signerToSignatory and signatoryToSigner', () => {
     });
 
     result = signatoryToSigner(signatory);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('signerToSignatory and signatoryToSigner', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('authorizationToAuthorizationData should convert an Authorization to a polkadot AuthorizationData object', () => {
+    const context = polkadotMockUtils.getContextInstance();
+    let value: Authorization = {
+      type: AuthorizationType.AttestMasterKeyRotation,
+      value: 'someIdentity',
+    };
+    const fakeResult = ('AuthorizationDataEnum' as unknown) as AuthorizationData;
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'AuthorizationData', { [value.type]: value.value })
+      .returns(fakeResult);
+
+    let result = authorizationToAuthorizationData(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    value = {
+      type: AuthorizationType.NoData,
+    };
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'AuthorizationData', { [value.type]: null })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {
+    let fakeResult: Authorization = {
+      type: AuthorizationType.AttestMasterKeyRotation,
+      value: 'someIdentity',
+    };
+    let authorizationData = polkadotMockUtils.createMockAuthorizationData({
+      attestMasterKeyRotation: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+    });
+
+    let result = authorizationDataToAuthorization(authorizationData);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.RotateMasterKey,
+      value: 'someIdentity',
+    };
+    authorizationData = polkadotMockUtils.createMockAuthorizationData({
+      rotateMasterKey: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+    });
+
+    result = authorizationDataToAuthorization(authorizationData);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.TransferTicker,
+      value: 'someTicker',
+    };
+    authorizationData = polkadotMockUtils.createMockAuthorizationData({
+      transferTicker: polkadotMockUtils.createMockTicker(fakeResult.value),
+    });
+
+    result = authorizationDataToAuthorization(authorizationData);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.AddMultiSigSigner,
+    };
+    authorizationData = polkadotMockUtils.createMockAuthorizationData('addMultiSigSigner');
+
+    result = authorizationDataToAuthorization(authorizationData);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.TransferTokenOwnership,
+      value: 'someTicker',
+    };
+    authorizationData = polkadotMockUtils.createMockAuthorizationData({
+      transferTokenOwnership: polkadotMockUtils.createMockTicker(fakeResult.value),
+    });
+
+    result = authorizationDataToAuthorization(authorizationData);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.JoinIdentity,
+      value: 'someIdentity',
+    };
+    authorizationData = polkadotMockUtils.createMockAuthorizationData({
+      joinIdentity: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+    });
+
+    result = authorizationDataToAuthorization(authorizationData);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.Custom,
+      value: 'someBytes',
+    };
+    authorizationData = polkadotMockUtils.createMockAuthorizationData({
+      custom: polkadotMockUtils.createMockBytes(fakeResult.value),
+    });
+
+    result = authorizationDataToAuthorization(authorizationData);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.NoData,
+    };
+    authorizationData = polkadotMockUtils.createMockAuthorizationData('noData');
+
+    result = authorizationDataToAuthorization(authorizationData);
     expect(result).toEqual(fakeResult);
   });
 });

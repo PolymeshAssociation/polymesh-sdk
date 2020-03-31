@@ -592,8 +592,10 @@ import {
   PermissionedValidator,
   PolymeshReferendumInfo,
   PolymeshVotes,
+  PosRatio,
   PreAuthorizedKeyInfo,
   ProportionMatch,
+  ProtocolOp,
   RestrictionResult,
   Rule,
   RuleType,
@@ -2150,6 +2152,9 @@ declare module '@polkadot/types/types/registry' {
     Ticker: Ticker;
     'Option<Ticker>': Option<Ticker>;
     'Vec<Ticker>': Vec<Ticker>;
+    PosRatio: PosRatio;
+    'Option<PosRatio>': Option<PosRatio>;
+    'Vec<PosRatio>': Vec<PosRatio>;
     DocumentName: DocumentName;
     'Option<DocumentName>': Option<DocumentName>;
     'Vec<DocumentName>': Vec<DocumentName>;
@@ -2387,5 +2392,8 @@ declare module '@polkadot/types/types/registry' {
     InactiveMember: InactiveMember;
     'Option<InactiveMember>': Option<InactiveMember>;
     'Vec<InactiveMember>': Vec<InactiveMember>;
+    ProtocolOp: ProtocolOp;
+    'Option<ProtocolOp>': Option<ProtocolOp>;
+    'Vec<ProtocolOp>': Vec<ProtocolOp>;
   }
 }

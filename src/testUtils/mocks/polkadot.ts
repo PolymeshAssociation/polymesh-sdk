@@ -18,6 +18,7 @@ import {
   AccountKey,
   AssetIdentifier,
   AssetType,
+  AuthorizationData,
   Document,
   DocumentHash,
   DocumentName,
@@ -975,6 +976,24 @@ export const createMockSignatory = (
   signatory?: { identity: IdentityId } | { accountKey: AccountKey }
 ): Signatory => {
   return createMockEnum(signatory) as Signatory;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAuthorizationData = (
+  authorizationData?:
+    | { attestMasterKeyRotation: IdentityId }
+    | { rotateMasterKey: IdentityId }
+    | { transferTicker: Ticker }
+    | 'addMultiSigSigner'
+    | { transferTokenOwnership: Ticker }
+    | { joinIdentity: IdentityId }
+    | { custom: Bytes }
+    | 'noData'
+): AuthorizationData => {
+  return createMockEnum(authorizationData) as AuthorizationData;
 };
 
 /**
