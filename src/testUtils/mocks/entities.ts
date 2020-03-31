@@ -118,6 +118,21 @@ let securityTokenOptions = defaultSecurityTokenOptions;
 
 /**
  * @hidden
+ * Configure the Security Token instance
+ */
+function configureSecurityToken(opts: SecurityTokenOptions): void {
+  const securityToken = ({
+    ticker: opts.ticker,
+    details: securityTokenDetailsStub.resolves(opts.details),
+    currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(opts.currentFundingRound),
+  } as unknown) as MockSecurityToken;
+
+  Object.assign(mockInstanceContainer.securityToken, securityToken);
+  securityTokenConstructorStub.returns(securityToken);
+}
+
+/**
+ * @hidden
  * Initialize the Security Token instance
  */
 function initSecurityToken(opts?: SecurityTokenOptions): void {
@@ -127,16 +142,21 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
-  const securityToken = ({
-    ticker: securityTokenOptions.ticker,
-    details: securityTokenDetailsStub.resolves(securityTokenOptions.details),
-    currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(
-      securityTokenOptions.currentFundingRound
-    ),
-  } as unknown) as MockSecurityToken;
+  configureSecurityToken(securityTokenOptions);
+}
 
-  Object.assign(mockInstanceContainer.securityToken, securityToken);
-  securityTokenConstructorStub.returns(securityToken);
+/**
+ * @hidden
+ * Configure the Ticker Reservation instance
+ */
+function configureTickerReservation(opts: TickerReservationOptions): void {
+  const tickerReservation = ({
+    ticker: opts.ticker,
+    details: tickerReservationDetailsStub.resolves(opts.details),
+  } as unknown) as MockTickerReservation;
+
+  Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
+  tickerReservationConstructorStub.returns(tickerReservation);
 }
 
 /**
@@ -152,13 +172,23 @@ function initTickerReservation(opts?: TickerReservationOptions): void {
     ...opts,
   };
 
-  const tickerReservation = ({
-    ticker: tickerReservationOptions.ticker,
-    details: tickerReservationDetailsStub.resolves(tickerReservationOptions.details),
-  } as unknown) as MockTickerReservation;
+  configureTickerReservation(tickerReservationOptions);
+}
 
-  Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
-  tickerReservationConstructorStub.returns(tickerReservation);
+/**
+ * @hidden
+ * Configure the identity instance
+ */
+function configureIdentity(opts: IdentityOptions): void {
+  const identity = ({
+    did: opts.did,
+    getPolyXBalance: identityGetPolyXBalanceStub.resolves(opts.getPolyXBalance),
+    hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
+    hasRole: identityHasRoleStub.resolves(opts.hasRole),
+  } as unknown) as MockIdentity;
+
+  Object.assign(mockInstanceContainer.identity, identity);
+  identityConstructorStub.returns(identity);
 }
 
 /**
@@ -173,15 +203,37 @@ function initIdentity(opts?: IdentityOptions): void {
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
-  const identity = ({
-    did: identityOptions.did,
-    getPolyXBalance: identityGetPolyXBalanceStub.resolves(identityOptions.getPolyXBalance),
-    hasRoles: identityHasRolesStub.resolves(identityOptions.hasRoles),
-    hasRole: identityHasRoleStub.resolves(identityOptions.hasRole),
-  } as unknown) as MockIdentity;
+  configureIdentity(identityOptions);
+}
 
-  Object.assign(mockInstanceContainer.identity, identity);
-  identityConstructorStub.returns(identity);
+/**
+ * @hidden
+ *
+ * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
+ */
+export function configureMocks(opts?: {
+  identityOptions?: IdentityOptions;
+  tickerReservationOptions?: TickerReservationOptions;
+  securityTokenOptions?: SecurityTokenOptions;
+}): void {
+  const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
+
+  configureIdentity(tempIdentityOptions);
+
+  const tempTickerReservationOptions = {
+    ...defaultTickerReservationOptions,
+    ...opts?.tickerReservationOptions,
+  };
+
+  configureTickerReservation(tempTickerReservationOptions);
+
+  const tempSecuritytokenOptions = (securityTokenOptions = merge(
+    {},
+    defaultSecurityTokenOptions,
+    opts
+  ));
+
+  configureSecurityToken(tempSecuritytokenOptions);
 }
 
 /**
