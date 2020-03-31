@@ -53,7 +53,31 @@ describe('toggleFreezeTransfers procedure', () => {
     polkadotMockUtils.cleanup();
   });
 
+  test('should throw an error if freeze is set to true and the security token is already frozen', () => {
+    entityMockUtils.initMocks({
+      securityTokenOptions: {
+        transfersAreFrozen: true,
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
+    proc.context = mockContext;
+
+    return expect(
+      prepareToggleFreezeTransfers.call(proc, {
+        ticker,
+        freeze: true,
+      })
+    ).rejects.toThrow('The Security Token is already frozen');
+  });
+
   test('should throw an error if freeze is set to false and the security token is already unfrozen', () => {
+    entityMockUtils.initMocks({
+      securityTokenOptions: {
+        transfersAreFrozen: false,
+      },
+    });
+
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
@@ -81,25 +105,13 @@ describe('toggleFreezeTransfers procedure', () => {
     expect(ticker).toBe(result.ticker);
   });
 
-  test('should throw an error if freeze is set to true and the security token is already frozen', () => {
+  test('should add a unfreeze transaction to the queue', async () => {
     entityMockUtils.initMocks({
       securityTokenOptions: {
         transfersAreFrozen: true,
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
-
-    return expect(
-      prepareToggleFreezeTransfers.call(proc, {
-        ticker,
-        freeze: true,
-      })
-    ).rejects.toThrow('The Security Token is already frozen');
-  });
-
-  test('should add a unfreeze transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
