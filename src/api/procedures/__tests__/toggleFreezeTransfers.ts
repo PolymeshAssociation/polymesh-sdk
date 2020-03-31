@@ -23,7 +23,6 @@ describe('toggleFreezeTransfers procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let ticker: string;
   let rawTicker: Ticker;
-  let procedureResult: SecurityToken;
 
   beforeAll(() => {
     polkadotMockUtils.initMocks();
@@ -32,13 +31,12 @@ describe('toggleFreezeTransfers procedure', () => {
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     ticker = 'someTicker';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
-    procedureResult = entityMockUtils.getSecurityTokenInstance();
   });
 
   let addTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([procedureResult]);
+    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = polkadotMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
@@ -59,7 +57,6 @@ describe('toggleFreezeTransfers procedure', () => {
     entityMockUtils.initMocks({
       securityTokenOptions: {
         transfersAreFrozen: true,
-        ticker,
       },
     });
 
@@ -77,7 +74,7 @@ describe('toggleFreezeTransfers procedure', () => {
   test('should throw an error if freeze is set to false and the security token is already unfrozen', () => {
     entityMockUtils.initMocks({
       securityTokenOptions: {
-        ticker,
+        transfersAreFrozen: false,
       },
     });
 
@@ -105,14 +102,13 @@ describe('toggleFreezeTransfers procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
 
-    expect(result.ticker).toBe(procedureResult.ticker);
+    expect(ticker).toBe(result.ticker);
   });
 
   test('should add a unfreeze transaction to the queue', async () => {
     entityMockUtils.initMocks({
       securityTokenOptions: {
         transfersAreFrozen: true,
-        ticker,
       },
     });
 
@@ -128,7 +124,7 @@ describe('toggleFreezeTransfers procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
 
-    expect(result.ticker).toBe(procedureResult.ticker);
+    expect(ticker).toBe(result.ticker);
   });
 });
 

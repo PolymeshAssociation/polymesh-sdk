@@ -54,8 +54,8 @@ const MockIdentityClass = class {
   /**
    * @hidden
    */
-  constructor() {
-    return identityConstructorStub();
+  constructor(...args: unknown[]) {
+    return identityConstructorStub(...args);
   }
 };
 
@@ -63,8 +63,8 @@ const MockTickerReservationClass = class {
   /**
    * @hidden
    */
-  constructor() {
-    return tickerReservationConstructorStub();
+  constructor(...args: unknown[]) {
+    return tickerReservationConstructorStub(...args);
   }
 };
 
@@ -170,7 +170,9 @@ function initTickerReservation(opts?: TickerReservationOptions): void {
   } as unknown) as MockTickerReservation;
 
   Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
-  tickerReservationConstructorStub.returns(tickerReservation);
+  tickerReservationConstructorStub.callsFake(args => {
+    return merge({}, tickerReservation, args);
+  });
 }
 
 /**
@@ -193,7 +195,9 @@ function initIdentity(opts?: IdentityOptions): void {
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
-  identityConstructorStub.returns(identity);
+  identityConstructorStub.callsFake(args => {
+    return merge({}, identity, args);
+  });
 }
 
 /**
