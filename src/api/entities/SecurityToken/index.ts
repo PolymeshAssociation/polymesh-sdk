@@ -23,6 +23,7 @@ import {
 } from '~/utils';
 
 import { Documents } from './Documents';
+import { Transfers } from './Transfers';
 import { SecurityTokenDetails } from './types';
 
 /**
@@ -60,8 +61,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public ticker: string;
 
   // Namespaces
-
   public documents: Documents;
+  public transfers: Transfers;
 
   /**
    * @hidden
@@ -75,6 +76,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.did = tickerToDid(ticker);
 
     this.documents = new Documents(this, context);
+    this.transfers = new Transfers(this, context);
   }
 
   /**
