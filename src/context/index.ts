@@ -154,7 +154,7 @@ export class Context {
       if (!did) {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
-          message: 'The address is not present in the keyring set',
+          message: "The address doesn't have an associated identity",
         });
       }
 

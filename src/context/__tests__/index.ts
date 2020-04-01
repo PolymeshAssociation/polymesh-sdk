@@ -214,26 +214,64 @@ describe('Context class', () => {
         polymeshApi: polkadotMockUtils.getApiInstance(),
       });
 
-      expect(() => context.setPair('012')).toThrow('The address is not present in the keyring set');
+      expect(context.setPair('012')).rejects.toThrow(
+        'The address is not present in the keyring set'
+      );
+    });
+
+    test("should throw error if the address doesn't have an associated identity", async () => {
+      polkadotMockUtils.initMocks({
+        keyringOptions: {
+          getPair: {
+            address: 'address',
+            meta: {},
+          },
+        },
+      });
+
+      polkadotMockUtils.createQueryStub(
+        'identity',
+        'keyToIdentityIds',
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: '' }) } }
+      );
+
+      const context = await Context.create({
+        polymeshApi: polkadotMockUtils.getApiInstance(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      expect(context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY')).rejects.toThrow(
+        "The address doesn't have an associated identity"
+      );
     });
 
     test('should set currentPair to the new value', async () => {
-      const newPair = {
-        address: 'someAddress',
+      const newCurrentPair = {
+        address: 'address',
         meta: {},
       };
       polkadotMockUtils.initMocks({
         keyringOptions: {
-          getPair: newPair,
+          getPair: newCurrentPair,
         },
       });
 
+      polkadotMockUtils.createQueryStub(
+        'identity',
+        'keyToIdentityIds',
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+        { returnValue: { unwrap: () => ({ asUnique: 'uniqueDid' }) } }
+      );
+
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
+        seed: 'Alice'.padEnd(32, ' '),
       });
 
-      context.setPair('012');
-      expect(context.currentPair).toEqual(newPair);
+      context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY');
+
+      expect(context.currentPair).toEqual(newCurrentPair);
     });
   });
 
