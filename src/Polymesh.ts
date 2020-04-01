@@ -1,9 +1,7 @@
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
-import { Option } from '@polkadot/types';
 import { u8aToString } from '@polkadot/util';
 import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
-import { Link } from 'polymesh-types/types';
 
 import { TickerReservation } from '~/api/entities';
 import { reserveTicker, ReserveTickerParams } from '~/api/procedures';
@@ -138,13 +136,12 @@ export class Polymesh {
 
     const tickers = await links.entries({ identity });
 
-    /*
-      NOTE: we have cast to Option<Link> to get access of link_data properties despite what the types say.
-    */
     const tickerReservations = tickers
-      .filter(([, data]) => ((data as unknown) as Option<Link>).unwrap().link_data.isTickerOwned)
+      .filter(([, data]) => {
+        return data.link_data.isTickerOwned;
+      })
       .map(([, data]) => {
-        const ticker = ((data as unknown) as Option<Link>).unwrap().link_data.asTickerOwned;
+        const ticker = data.link_data.asTickerOwned;
         return new TickerReservation(
           // eslint-disable-next-line no-control-regex
           { ticker: u8aToString(ticker).replace(/\u0000/g, '') },
