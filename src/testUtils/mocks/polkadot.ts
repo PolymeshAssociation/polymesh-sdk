@@ -264,22 +264,18 @@ let keyringOptions: KeyringOptions = defaultKeyringOptions;
 /**
  * @hidden
  */
-function initContext(opts?: ContextOptions): void {
-  contextCreateStub = sinon.stub();
-
-  contextOptions = { ...defaultContextOptions, ...opts };
-
+function configureContext(opts: ContextOptions): void {
   const getCurrentIdentity = sinon.stub();
-  contextOptions.withSeed
+  opts.withSeed
     ? getCurrentIdentity.returns({
-        getPolyXBalance: sinon.stub().resolves(contextOptions.balance),
-        did: contextOptions.did,
-        hasRoles: sinon.stub().resolves(contextOptions.hasRoles),
+        getPolyXBalance: sinon.stub().resolves(opts.balance),
+        did: opts.did,
+        hasRoles: sinon.stub().resolves(opts.hasRoles),
       })
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')
       );
-  const currentPair = contextOptions.withSeed
+  const currentPair = opts.withSeed
     ? ({
         address: '0xdummy',
       } as IKeyringPair)
@@ -288,7 +284,7 @@ function initContext(opts?: ContextOptions): void {
   const contextInstance = ({
     currentPair,
     getCurrentIdentity,
-    accountBalance: sinon.stub().resolves(contextOptions.balance),
+    accountBalance: sinon.stub().resolves(opts.balance),
     getAccounts: sinon.stub().returns([]),
     setPair: sinon.stub().callsFake(address => {
       contextInstance.currentPair = { address } as IKeyringPair;
@@ -299,6 +295,17 @@ function initContext(opts?: ContextOptions): void {
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
 
   MockContextClass.create = contextCreateStub.resolves(contextInstance);
+}
+
+/**
+ * @hidden
+ */
+function initContext(opts?: ContextOptions): void {
+  contextCreateStub = sinon.stub();
+
+  contextOptions = { ...defaultContextOptions, ...opts };
+
+  configureContext(contextOptions);
 }
 
 /**
@@ -361,11 +368,8 @@ function initApi(): void {
 /**
  * @hidden
  */
-function initKeyring(opts?: KeyringOptions): void {
-  keyringConstructorStub = sinon.stub();
-
-  keyringOptions = { ...defaultKeyringOptions, ...opts };
-  const { error, getPair, getPairs, addFromUri, addFromSeed } = keyringOptions;
+function configureKeyring(opts: KeyringOptions): void {
+  const { error, getPair, getPairs, addFromUri, addFromSeed } = opts;
 
   const err = new Error('Error');
 
@@ -386,6 +390,35 @@ function initKeyring(opts?: KeyringOptions): void {
   Object.assign(mockInstanceContainer.keyringInstance, (keyringInstance as unknown) as Keyring);
 
   keyringConstructorStub.returns(keyringInstance);
+}
+
+/**
+ * @hidden
+ */
+function initKeyring(opts?: KeyringOptions): void {
+  keyringConstructorStub = sinon.stub();
+
+  keyringOptions = { ...defaultKeyringOptions, ...opts };
+
+  configureKeyring(keyringOptions);
+}
+
+/**
+ * @hidden
+ *
+ * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
+ */
+export function configureMocks(opts?: {
+  contextOptions?: ContextOptions;
+  keyringOptions?: KeyringOptions;
+}): void {
+  const tempKeyringOptions = { ...defaultKeyringOptions, ...opts?.keyringOptions };
+
+  configureKeyring(tempKeyringOptions);
+
+  const tempContextOptions = { ...defaultContextOptions, ...opts?.contextOptions };
+
+  configureContext(tempContextOptions);
 }
 
 /**

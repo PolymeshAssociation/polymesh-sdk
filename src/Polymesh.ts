@@ -183,4 +183,13 @@ export class Polymesh {
     }
     return this.context.getCurrentIdentity();
   }
+
+  // TODO @monitz87: remove when the dApp team no longer needs it
+  /* istanbul ignore next: only for testing purposes */
+  /**
+   * Polkadot client
+   */
+  public get _polkadotApi(): ApiPromise {
+    return this.context.polymeshApi;
+  }
 }

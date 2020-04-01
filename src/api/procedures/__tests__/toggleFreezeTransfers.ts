@@ -29,7 +29,7 @@ describe('toggleFreezeTransfers procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    ticker = 'someTicker';
+    ticker = 'tickerFrozen';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
   });
 
@@ -54,7 +54,7 @@ describe('toggleFreezeTransfers procedure', () => {
   });
 
   test('should throw an error if freeze is set to true and the security token is already frozen', () => {
-    entityMockUtils.initMocks({
+    entityMockUtils.configureMocks({
       securityTokenOptions: {
         transfersAreFrozen: true,
       },
@@ -72,12 +72,6 @@ describe('toggleFreezeTransfers procedure', () => {
   });
 
   test('should throw an error if freeze is set to false and the security token is already unfrozen', () => {
-    entityMockUtils.initMocks({
-      securityTokenOptions: {
-        transfersAreFrozen: false,
-      },
-    });
-
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
@@ -106,7 +100,7 @@ describe('toggleFreezeTransfers procedure', () => {
   });
 
   test('should add a unfreeze transaction to the queue', async () => {
-    entityMockUtils.initMocks({
+    entityMockUtils.configureMocks({
       securityTokenOptions: {
         transfersAreFrozen: true,
       },
