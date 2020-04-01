@@ -184,6 +184,7 @@ export class Polymesh {
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
+  /* istanbul ignore next: only for testing purposes */
   /**
    * Polkadot client
    */
