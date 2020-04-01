@@ -5,11 +5,12 @@ import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { Link } from 'polymesh-types/types';
 
-import { TickerReservation } from '~/api/entities';
+import { Identity, TickerReservation } from '~/api/entities';
 import { reserveTicker, ReserveTickerParams } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
+import { tickerToString } from '~/utils';
 
 /**
  * Main entry point of the Polymesh SDK
@@ -138,18 +139,11 @@ export class Polymesh {
 
     const tickers = await links.entries({ identity });
 
-    /*
-      NOTE: we have cast to Option<Link> to get access of link_data properties despite what the types say.
-    */
     const tickerReservations = tickers
-      .filter(([, data]) => ((data as unknown) as Option<Link>).unwrap().link_data.isTickerOwned)
+      .filter(([, data]) => data.link_data.isTickerOwned)
       .map(([, data]) => {
-        const ticker = ((data as unknown) as Option<Link>).unwrap().link_data.asTickerOwned;
-        return new TickerReservation(
-          // eslint-disable-next-line no-control-regex
-          { ticker: u8aToString(ticker).replace(/\u0000/g, '') },
-          context
-        );
+        const ticker = data.link_data.asTickerOwned;
+        return new TickerReservation({ ticker: tickerToString(ticker) }, context);
       });
 
     return tickerReservations;
@@ -181,5 +175,15 @@ export class Polymesh {
       code: ErrorCode.FatalError,
       message: `There is no reservation for ${ticker} ticker`,
     });
+  }
+
+  /**
+   * Create an identity instance from a DID. If no DID is passed, the current identity is returned
+   */
+  public getIdentity(args?: { did: string }): Identity {
+    if (args) {
+      return new Identity(args, this.context);
+    }
+    return this.context.getCurrentIdentity();
   }
 }

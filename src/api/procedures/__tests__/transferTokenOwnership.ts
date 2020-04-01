@@ -13,8 +13,8 @@ import {
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TickerReservationStatus } from '~/types';
-import { Authorization, AuthorizationType, PolymeshTx, Signer, SignerType } from '~/types/internal';
+import { Authorization, AuthorizationType, RoleType, TickerReservationStatus } from '~/types';
+import { PolymeshTx, Signer, SignerType } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('transferTokenOwnership procedure', () => {

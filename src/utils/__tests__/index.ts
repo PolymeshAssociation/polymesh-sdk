@@ -22,8 +22,8 @@ import sinon, { SinonStub } from 'sinon';
 
 import { PostTransactionValue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
-import { KnownTokenType, TokenIdentifierType } from '~/types';
-import { Authorization, AuthorizationType, SignerType } from '~/types/internal';
+import { Authorization, AuthorizationType, KnownTokenType, TokenIdentifierType } from '~/types';
+import { SignerType } from '~/types/internal';
 
 import {
   accountKeyToString,
