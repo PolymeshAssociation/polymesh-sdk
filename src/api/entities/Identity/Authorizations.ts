@@ -29,19 +29,26 @@ export class Authorizations extends Namespace<Identity> {
       signerToSignatory({ type: SignerType.Identity, value: did }, context)
     );
 
-    return entries.map(([, auth]) => {
-      const { expiry, auth_id: authId, authorization_data: data, authorized_by: issuerDid } = auth;
+    return entries
+      .map(([, auth]) => {
+        const {
+          expiry,
+          auth_id: authId,
+          authorization_data: data,
+          authorized_by: issuerDid,
+        } = auth;
 
-      return new AuthorizationRequest(
-        {
+        return {
           authId: u64ToBigNumber(authId),
           expiry: expiry.isSome ? momentToDate(expiry.unwrap()) : null,
           data: authorizationDataToAuthorization(data),
           targetDid: did,
           issuerDid: signatoryToSigner(issuerDid).value,
-        },
-        context
-      );
-    });
+        };
+      })
+      .filter(({ expiry }) => expiry === null || expiry > new Date())
+      .map(args => {
+        return new AuthorizationRequest(args, context);
+      });
   }
 }
