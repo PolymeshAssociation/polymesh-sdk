@@ -183,17 +183,15 @@ describe('Polymesh Class', () => {
 
       polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
-          polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLink({
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: polkadotMockUtils.createMockLinkData({
-                tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
-              }),
-              expiry: polkadotMockUtils.createMockOption(),
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: polkadotMockUtils.createMockU64(),
-            })
-          ),
+          polkadotMockUtils.createMockLink({
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_data: polkadotMockUtils.createMockLinkData({
+              tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+            }),
+            expiry: polkadotMockUtils.createMockOption(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_id: polkadotMockUtils.createMockU64(),
+          }),
         ],
       });
 
@@ -215,17 +213,15 @@ describe('Polymesh Class', () => {
 
       polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
-          polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLink({
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: polkadotMockUtils.createMockLinkData({
-                tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
-              }),
-              expiry: polkadotMockUtils.createMockOption(),
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: polkadotMockUtils.createMockU64(),
-            })
-          ),
+          polkadotMockUtils.createMockLink({
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_data: polkadotMockUtils.createMockLinkData({
+              tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+            }),
+            expiry: polkadotMockUtils.createMockOption(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_id: polkadotMockUtils.createMockU64(),
+          }),
         ],
       });
 
