@@ -182,4 +182,13 @@ export class Polymesh {
       message: `There is no reservation for ${ticker} ticker`,
     });
   }
+
+  // TODO @monitz87: remove when the dApp team no longer needs it
+  /* istanbul ignore next: only for testing purposes */
+  /**
+   * Polkadot client
+   */
+  public get _polkadotApi(): ApiPromise {
+    return this.context.polymeshApi;
+  }
 }
