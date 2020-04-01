@@ -112,7 +112,9 @@ describe('Polymesh Class', () => {
   describe('method: getIdentityBalance', () => {
     test("should return the identity's POLYX balance", async () => {
       const fakeBalance = new BigNumber(20);
-      polkadotMockUtils.initMocks({ contextOptions: { withSeed: true, balance: fakeBalance } });
+      polkadotMockUtils.configureMocks({
+        contextOptions: { withSeed: true, balance: fakeBalance },
+      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -127,7 +129,7 @@ describe('Polymesh Class', () => {
   describe('method: getAccountBalance', () => {
     test('should return the free POLYX balance of the current account', async () => {
       const fakeBalance = new BigNumber(100);
-      polkadotMockUtils.initMocks({ contextOptions: { balance: fakeBalance } });
+      polkadotMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -139,7 +141,7 @@ describe('Polymesh Class', () => {
 
     test('should return the free POLYX balance of the supplied account', async () => {
       const fakeBalance = new BigNumber(100);
-      polkadotMockUtils.initMocks({ contextOptions: { balance: fakeBalance } });
+      polkadotMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -179,7 +181,7 @@ describe('Polymesh Class', () => {
     test('should return a list of ticker reservations if did parameter is set', async () => {
       const fakeTicker = 'TEST';
 
-      polkadotMockUtils.initMocks({ contextOptions: { withSeed: true } });
+      polkadotMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
       polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
@@ -211,7 +213,7 @@ describe('Polymesh Class', () => {
     test('should return a list of ticker reservations owned by the identity', async () => {
       const fakeTicker = 'TEST';
 
-      polkadotMockUtils.initMocks({ contextOptions: { withSeed: true } });
+      polkadotMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
       polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
