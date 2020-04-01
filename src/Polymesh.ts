@@ -1,9 +1,6 @@
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
-import { Option } from '@polkadot/types';
-import { u8aToString } from '@polkadot/util';
 import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
-import { Link } from 'polymesh-types/types';
 
 import { Identity, TickerReservation } from '~/api/entities';
 import { reserveTicker, ReserveTickerParams } from '~/api/procedures';

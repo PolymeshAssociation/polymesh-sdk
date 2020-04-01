@@ -2,7 +2,7 @@ import { Keyring } from '@polkadot/api';
 import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 
-import { TickerReservation } from '~/api/entities';
+import { Identity, TickerReservation } from '~/api/entities';
 import { reserveTicker } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Polymesh } from '~/Polymesh';
@@ -183,17 +183,15 @@ describe('Polymesh Class', () => {
 
       polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
-          polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLink({
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: polkadotMockUtils.createMockLinkData({
-                tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
-              }),
-              expiry: polkadotMockUtils.createMockOption(),
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: polkadotMockUtils.createMockU64(),
-            })
-          ),
+          polkadotMockUtils.createMockLink({
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_data: polkadotMockUtils.createMockLinkData({
+              tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+            }),
+            expiry: polkadotMockUtils.createMockOption(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_id: polkadotMockUtils.createMockU64(),
+          }),
         ],
       });
 
@@ -215,17 +213,15 @@ describe('Polymesh Class', () => {
 
       polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
-          polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLink({
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: polkadotMockUtils.createMockLinkData({
-                tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
-              }),
-              expiry: polkadotMockUtils.createMockOption(),
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: polkadotMockUtils.createMockU64(),
-            })
-          ),
+          polkadotMockUtils.createMockLink({
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_data: polkadotMockUtils.createMockLinkData({
+              tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+            }),
+            expiry: polkadotMockUtils.createMockOption(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_id: polkadotMockUtils.createMockU64(),
+          }),
         ],
       });
 
@@ -279,6 +275,34 @@ describe('Polymesh Class', () => {
       return expect(polymesh.getTickerReservation({ ticker })).rejects.toThrow(
         `There is no reservation for ${ticker} ticker`
       );
+    });
+  });
+
+  describe('method: getIdentity', () => {
+    test('should return the current identity if no parameters are passed', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const context = polkadotMockUtils.getContextInstance();
+
+      expect(polymesh.getIdentity()).toEqual(context.getCurrentIdentity());
+    });
+
+    test('should return an identity object with the passed did', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const params = { did: 'testDid' };
+
+      const result = polymesh.getIdentity(params);
+      const context = polkadotMockUtils.getContextInstance();
+
+      expect(result instanceof Identity).toBe(true);
+      expect(result).toMatchObject(new Identity(params, context));
     });
   });
 });

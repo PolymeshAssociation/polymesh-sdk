@@ -22,7 +22,7 @@ describe('Documents class', () => {
     polkadotMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend namespace', () => {
     expect(Documents.prototype instanceof Namespace).toBe(true);
   });
 

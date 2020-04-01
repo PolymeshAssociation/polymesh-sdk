@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+/* eslint-disable @typescript-eslint/camelcase */
 
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { bool, Bytes, Enum, Option, u8, u64 } from '@polkadot/types';
@@ -18,6 +19,7 @@ import {
   AccountKey,
   AssetIdentifier,
   AssetType,
+  Authorization,
   AuthorizationData,
   Document,
   DocumentHash,
@@ -748,7 +750,7 @@ export const createMockDocumentHash = (hash?: string): DocumentHash =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockOption = <T extends Codec>(wrapped?: T): Option<T> =>
+export const createMockOption = <T extends Codec>(wrapped: T | null = null): Option<T> =>
   createMockCodec(
     {
       unwrap: () => wrapped as T,
@@ -861,7 +863,6 @@ export const createMockLinkData = (
   return createMockEnum(linkData) as LinkData;
 };
 
-/* eslint-disable @typescript-eslint/camelcase */
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
@@ -942,7 +943,6 @@ export const createMockDocument = (
     },
     false
   ) as Document;
-/* eslint-enable @typescript-eslint/camelcase */
 
 /**
  * @hidden
@@ -995,6 +995,33 @@ export const createMockAuthorizationData = (
 ): AuthorizationData => {
   return createMockEnum(authorizationData) as AuthorizationData;
 };
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAuthorization = (
+  authorization: {
+    authorization_data: AuthorizationData;
+    authorized_by: Signatory;
+    expiry: Option<Moment>;
+    auth_id: u64;
+  } = {
+    authorization_data: createMockAuthorizationData(),
+    authorized_by: createMockSignatory(),
+    expiry: createMockOption(),
+    auth_id: createMockU64(),
+  }
+): Authorization =>
+  createMockCodec(
+    {
+      authorization_data: authorization.authorization_data,
+      authorized_by: authorization.authorized_by,
+      expiry: authorization.expiry,
+      auth_id: authorization.auth_id,
+    },
+    false
+  ) as Authorization;
 
 /**
  * @hidden

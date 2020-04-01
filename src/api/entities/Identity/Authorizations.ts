@@ -16,7 +16,7 @@ import { Identity } from './';
  */
 export class Authorizations extends Namespace<Identity> {
   /**
-   * Fetch all authorization requests for which this identity is the target
+   * Fetch all pending authorization requests for which this identity is the target
    */
   public async getReceived(): Promise<AuthorizationRequest[]> {
     const {
