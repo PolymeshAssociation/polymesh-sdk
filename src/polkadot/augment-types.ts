@@ -1,19 +1,47 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
-/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable */
 
 import { Compact, Option, Raw, Vec } from '@polkadot/types/codec';
+import {
+  BitVec,
+  Bytes,
+  Data,
+  Null,
+  StorageKey,
+  Text,
+  Type,
+  U256,
+  Unconstructable,
+  bool,
+  i128,
+  i16,
+  i256,
+  i32,
+  i64,
+  i8,
+  u128,
+  u16,
+  u256,
+  u32,
+  u64,
+  u8,
+  usize,
+} from '@polkadot/types/primitive';
 import {
   BlockAttestations,
   IncludedBlocks,
   MoreAttestations,
 } from '@polkadot/types/interfaces/attestations';
 import { RawAuraPreDigest } from '@polkadot/types/interfaces/aura';
+import { ExtrinsicOrHash, ExtrinsicStatus } from '@polkadot/types/interfaces/author';
 import { UncleEntryItem } from '@polkadot/types/interfaces/authorship';
 import {
   BabeAuthorityWeight,
   BabeBlockWeight,
   BabeWeight,
+  EpochAuthorship,
   MaybeVrf,
+  Randomness,
   RawBabePreDigest,
   RawBabePreDigestCompat,
   RawBabePreDigestPrimary,
@@ -34,6 +62,8 @@ import {
   VestingSchedule,
   WithdrawReasons,
 } from '@polkadot/types/interfaces/balances';
+import { BlockHash } from '@polkadot/types/interfaces/chain';
+import { PrefixedStorageKey } from '@polkadot/types/interfaces/childstate';
 import { EthereumAddress } from '@polkadot/types/interfaces/claims';
 import {
   MemberCount,
@@ -41,7 +71,7 @@ import {
   Votes,
   VotesTo230,
 } from '@polkadot/types/interfaces/collective';
-import { AuthorityId } from '@polkadot/types/interfaces/consensus';
+import { AuthorityId, RawVRFOutput } from '@polkadot/types/interfaces/consensus';
 import {
   AliveContractInfo,
   CodeHash,
@@ -60,20 +90,33 @@ import {
   TrieId,
 } from '@polkadot/types/interfaces/contracts';
 import {
+  AccountVote,
+  AccountVoteSplit,
+  AccountVoteStandard,
   Conviction,
+  Delegations,
+  PriorLock,
   PropIndex,
   Proposal,
   ProxyState,
   ReferendumIndex,
   ReferendumInfo,
+  ReferendumInfoFinished,
+  ReferendumInfoTo239,
+  ReferendumStatus,
+  Tally,
+  Voting,
+  VotingDelegating,
+  VotingDirect,
+  VotingDirectVote,
 } from '@polkadot/types/interfaces/democracy';
 import {
   ApprovalFlag,
   SetIndex,
   Vote,
   VoteIndex,
-  VoterInfo,
   VoteThreshold,
+  VoterInfo,
 } from '@polkadot/types/interfaces/elections';
 import { CreatedBlock, ImportedAux } from '@polkadot/types/interfaces/engine';
 import { Account, Log } from '@polkadot/types/interfaces/evm';
@@ -108,8 +151,8 @@ import {
   AssetOptions,
   Owner,
   PermissionLatest,
-  PermissionsV1,
   PermissionVersions,
+  PermissionsV1,
 } from '@polkadot/types/interfaces/genericAsset';
 import {
   AuthorityIndex,
@@ -143,6 +186,8 @@ import {
 import {
   CallMetadataV0,
   DoubleMapTypeLatest,
+  DoubleMapTypeV10,
+  DoubleMapTypeV11,
   DoubleMapTypeV3,
   DoubleMapTypeV4,
   DoubleMapTypeV5,
@@ -150,15 +195,15 @@ import {
   DoubleMapTypeV7,
   DoubleMapTypeV8,
   DoubleMapTypeV9,
-  DoubleMapTypeV10,
-  DoubleMapTypeV11,
-  ErrorMetadataV8,
-  ErrorMetadataV9,
   ErrorMetadataV10,
   ErrorMetadataV11,
+  ErrorMetadataV8,
+  ErrorMetadataV9,
   EventMetadataLatest,
   EventMetadataV0,
   EventMetadataV1,
+  EventMetadataV10,
+  EventMetadataV11,
   EventMetadataV2,
   EventMetadataV3,
   EventMetadataV4,
@@ -167,13 +212,13 @@ import {
   EventMetadataV7,
   EventMetadataV8,
   EventMetadataV9,
-  EventMetadataV10,
-  EventMetadataV11,
   ExtrinsicMetadataLatest,
   ExtrinsicMetadataV11,
   FunctionArgumentMetadataLatest,
   FunctionArgumentMetadataV0,
   FunctionArgumentMetadataV1,
+  FunctionArgumentMetadataV10,
+  FunctionArgumentMetadataV11,
   FunctionArgumentMetadataV2,
   FunctionArgumentMetadataV3,
   FunctionArgumentMetadataV4,
@@ -182,11 +227,11 @@ import {
   FunctionArgumentMetadataV7,
   FunctionArgumentMetadataV8,
   FunctionArgumentMetadataV9,
-  FunctionArgumentMetadataV10,
-  FunctionArgumentMetadataV11,
   FunctionMetadataLatest,
   FunctionMetadataV0,
   FunctionMetadataV1,
+  FunctionMetadataV10,
+  FunctionMetadataV11,
   FunctionMetadataV2,
   FunctionMetadataV3,
   FunctionMetadataV4,
@@ -195,10 +240,10 @@ import {
   FunctionMetadataV7,
   FunctionMetadataV8,
   FunctionMetadataV9,
-  FunctionMetadataV10,
-  FunctionMetadataV11,
   MapTypeLatest,
   MapTypeV0,
+  MapTypeV10,
+  MapTypeV11,
   MapTypeV2,
   MapTypeV3,
   MapTypeV4,
@@ -207,12 +252,12 @@ import {
   MapTypeV7,
   MapTypeV8,
   MapTypeV9,
-  MapTypeV10,
-  MapTypeV11,
   MetadataAll,
   MetadataLatest,
   MetadataV0,
   MetadataV1,
+  MetadataV10,
+  MetadataV11,
   MetadataV2,
   MetadataV3,
   MetadataV4,
@@ -221,18 +266,18 @@ import {
   MetadataV7,
   MetadataV8,
   MetadataV9,
-  MetadataV10,
-  MetadataV11,
   ModuleConstantMetadataLatest,
+  ModuleConstantMetadataV10,
+  ModuleConstantMetadataV11,
   ModuleConstantMetadataV6,
   ModuleConstantMetadataV7,
   ModuleConstantMetadataV8,
   ModuleConstantMetadataV9,
-  ModuleConstantMetadataV10,
-  ModuleConstantMetadataV11,
   ModuleMetadataLatest,
   ModuleMetadataV0,
   ModuleMetadataV1,
+  ModuleMetadataV10,
+  ModuleMetadataV11,
   ModuleMetadataV2,
   ModuleMetadataV3,
   ModuleMetadataV4,
@@ -241,8 +286,6 @@ import {
   ModuleMetadataV7,
   ModuleMetadataV8,
   ModuleMetadataV9,
-  ModuleMetadataV10,
-  ModuleMetadataV11,
   OuterDispatchCallV0,
   OuterDispatchMetadataV0,
   OuterEventEventMetadataEventsV0,
@@ -250,6 +293,8 @@ import {
   OuterEventMetadataV0,
   PlainTypeLatest,
   PlainTypeV0,
+  PlainTypeV10,
+  PlainTypeV11,
   PlainTypeV2,
   PlainTypeV3,
   PlainTypeV4,
@@ -258,30 +303,28 @@ import {
   PlainTypeV7,
   PlainTypeV8,
   PlainTypeV9,
-  PlainTypeV10,
-  PlainTypeV11,
   RuntimeModuleMetadataV0,
   StorageEntryMetadataLatest,
+  StorageEntryMetadataV10,
+  StorageEntryMetadataV11,
   StorageEntryMetadataV6,
   StorageEntryMetadataV7,
   StorageEntryMetadataV8,
   StorageEntryMetadataV9,
-  StorageEntryMetadataV10,
-  StorageEntryMetadataV11,
   StorageEntryModifierLatest,
+  StorageEntryModifierV10,
+  StorageEntryModifierV11,
   StorageEntryModifierV6,
   StorageEntryModifierV7,
   StorageEntryModifierV8,
   StorageEntryModifierV9,
-  StorageEntryModifierV10,
-  StorageEntryModifierV11,
   StorageEntryTypeLatest,
+  StorageEntryTypeV10,
+  StorageEntryTypeV11,
   StorageEntryTypeV6,
   StorageEntryTypeV7,
   StorageEntryTypeV8,
   StorageEntryTypeV9,
-  StorageEntryTypeV10,
-  StorageEntryTypeV11,
   StorageFunctionMetadataV0,
   StorageFunctionMetadataV1,
   StorageFunctionMetadataV2,
@@ -301,29 +344,31 @@ import {
   StorageFunctionTypeV4,
   StorageFunctionTypeV5,
   StorageHasher,
+  StorageHasherV10,
+  StorageHasherV11,
   StorageHasherV4,
   StorageHasherV5,
   StorageHasherV6,
   StorageHasherV7,
   StorageHasherV8,
   StorageHasherV9,
-  StorageHasherV10,
-  StorageHasherV11,
   StorageMetadataLatest,
   StorageMetadataV0,
+  StorageMetadataV10,
+  StorageMetadataV11,
   StorageMetadataV7,
   StorageMetadataV8,
   StorageMetadataV9,
-  StorageMetadataV10,
-  StorageMetadataV11,
 } from '@polkadot/types/interfaces/metadata';
+import { StorageKind } from '@polkadot/types/interfaces/offchain';
 import {
+  DeferredOffenceOf,
   Kind,
   OffenceDetails,
   Offender,
   OpaqueTimeSlot,
-  Reporter,
   ReportIdOf,
+  Reporter,
 } from '@polkadot/types/interfaces/offences';
 import {
   AttestedCandidate,
@@ -340,11 +385,11 @@ import {
   LeasePeriod,
   LeasePeriodOf,
   NewBidder,
-  ParachainDispatchOrigin,
   ParaId,
   ParaIdOf,
   ParaInfo,
   ParaScheduling,
+  ParachainDispatchOrigin,
   Retriable,
   SlotRange,
   SubId,
@@ -353,30 +398,9 @@ import {
   WinningData,
   WinningDataEntry,
 } from '@polkadot/types/interfaces/parachains';
+import { RuntimeDispatchInfo } from '@polkadot/types/interfaces/payment';
 import { ActiveRecovery, RecoveryConfig } from '@polkadot/types/interfaces/recovery';
-import {
-  ApiId,
-  BlockHash,
-  ChainProperties,
-  ExtrinsicOrHash,
-  ExtrinsicStatus,
-  Health,
-  KeyValueOption,
-  NetworkState,
-  NetworkStatePeerset,
-  NetworkStatePeersetInfo,
-  NotConnectedPeer,
-  Peer,
-  PeerEndpoint,
-  PeerEndpointAddr,
-  PeerInfo,
-  PeerPing,
-  RpcMethods,
-  RuntimeDispatchInfo,
-  RuntimeVersion,
-  RuntimeVersionApi,
-  StorageChangeSet,
-} from '@polkadot/types/interfaces/rpc';
+import { RpcMethods } from '@polkadot/types/interfaces/rpc';
 import {
   AccountId,
   AccountIdOf,
@@ -468,9 +492,9 @@ import {
   ReleasesStaking,
   RewardDestination,
   RewardPoint,
+  SlashJournalEntry,
   SlashingSpans,
   SlashingSpansTo204,
-  SlashJournalEntry,
   SpanIndex,
   SpanRecord,
   StakingLedger,
@@ -484,7 +508,15 @@ import {
   ValidatorPrefsTo196,
 } from '@polkadot/types/interfaces/staking';
 import {
+  ApiId,
+  KeyValueOption,
+  RuntimeVersion,
+  RuntimeVersionApi,
+  StorageChangeSet,
+} from '@polkadot/types/interfaces/state';
+import {
   AccountInfo,
+  ChainProperties,
   DigestOf,
   DispatchError,
   DispatchErrorModule,
@@ -497,7 +529,19 @@ import {
   EventIndex,
   EventRecord,
   EventRecordTo76,
+  Health,
   Key,
+  LastRuntimeUpgradeInfo,
+  NetworkState,
+  NetworkStatePeerset,
+  NetworkStatePeersetInfo,
+  NodeRole,
+  NotConnectedPeer,
+  Peer,
+  PeerEndpoint,
+  PeerEndpointAddr,
+  PeerInfo,
+  PeerPing,
   Phase,
   RefCount,
 } from '@polkadot/types/interfaces/system';
@@ -510,31 +554,6 @@ import {
 import { Multiplier } from '@polkadot/types/interfaces/txpayment';
 import { Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
 import { VestingInfo } from '@polkadot/types/interfaces/vesting';
-import {
-  BitVec,
-  bool,
-  Bytes,
-  Data,
-  i8,
-  i16,
-  i32,
-  i64,
-  i128,
-  i256,
-  Null,
-  StorageKey,
-  Text,
-  Type,
-  u8,
-  u16,
-  u32,
-  u64,
-  u128,
-  U256,
-  u256,
-  Unconstructable,
-  usize,
-} from '@polkadot/types/primitive';
 import {
   AccountKey,
   AssetIdentifier,
@@ -576,8 +595,8 @@ import {
   Link,
   LinkData,
   LinkedKeyInfo,
-  Memo,
   MIP,
+  Memo,
   MipDescription,
   MipsIndex,
   MipsMetadata,
@@ -599,18 +618,18 @@ import {
   RestrictionResult,
   Rule,
   RuleType,
+  STO,
   Scope,
   SecurityToken,
+  SignData,
   Signatory,
   SignatoryType,
-  SignData,
   SigningItem,
   SigningItemWithAuth,
   SimpleTokenRecord,
   SmartExtension,
   SmartExtensionName,
   SmartExtensionType,
-  STO,
   TargetIdAuthorization,
   Ticker,
   TickerRegistration,
@@ -875,6 +894,12 @@ declare module '@polkadot/types/types/registry' {
     'Compact<BabeWeight>': Compact<BabeWeight>;
     'Option<BabeWeight>': Option<BabeWeight>;
     'Vec<BabeWeight>': Vec<BabeWeight>;
+    EpochAuthorship: EpochAuthorship;
+    'Option<EpochAuthorship>': Option<EpochAuthorship>;
+    'Vec<EpochAuthorship>': Vec<EpochAuthorship>;
+    Randomness: Randomness;
+    'Option<Randomness>': Option<Randomness>;
+    'Vec<Randomness>': Vec<Randomness>;
     RawBabePreDigest: RawBabePreDigest;
     'Option<RawBabePreDigest>': Option<RawBabePreDigest>;
     'Vec<RawBabePreDigest>': Vec<RawBabePreDigest>;
@@ -944,6 +969,9 @@ declare module '@polkadot/types/types/registry' {
     AuthorityId: AuthorityId;
     'Option<AuthorityId>': Option<AuthorityId>;
     'Vec<AuthorityId>': Vec<AuthorityId>;
+    RawVRFOutput: RawVRFOutput;
+    'Option<RawVRFOutput>': Option<RawVRFOutput>;
+    'Vec<RawVRFOutput>': Vec<RawVRFOutput>;
     AliveContractInfo: AliveContractInfo;
     'Option<AliveContractInfo>': Option<AliveContractInfo>;
     'Vec<AliveContractInfo>': Vec<AliveContractInfo>;
@@ -990,9 +1018,24 @@ declare module '@polkadot/types/types/registry' {
     TrieId: TrieId;
     'Option<TrieId>': Option<TrieId>;
     'Vec<TrieId>': Vec<TrieId>;
+    AccountVote: AccountVote;
+    'Option<AccountVote>': Option<AccountVote>;
+    'Vec<AccountVote>': Vec<AccountVote>;
+    AccountVoteSplit: AccountVoteSplit;
+    'Option<AccountVoteSplit>': Option<AccountVoteSplit>;
+    'Vec<AccountVoteSplit>': Vec<AccountVoteSplit>;
+    AccountVoteStandard: AccountVoteStandard;
+    'Option<AccountVoteStandard>': Option<AccountVoteStandard>;
+    'Vec<AccountVoteStandard>': Vec<AccountVoteStandard>;
     Conviction: Conviction;
     'Option<Conviction>': Option<Conviction>;
     'Vec<Conviction>': Vec<Conviction>;
+    Delegations: Delegations;
+    'Option<Delegations>': Option<Delegations>;
+    'Vec<Delegations>': Vec<Delegations>;
+    PriorLock: PriorLock;
+    'Option<PriorLock>': Option<PriorLock>;
+    'Vec<PriorLock>': Vec<PriorLock>;
     PropIndex: PropIndex;
     'Compact<PropIndex>': Compact<PropIndex>;
     'Option<PropIndex>': Option<PropIndex>;
@@ -1007,9 +1050,33 @@ declare module '@polkadot/types/types/registry' {
     'Compact<ReferendumIndex>': Compact<ReferendumIndex>;
     'Option<ReferendumIndex>': Option<ReferendumIndex>;
     'Vec<ReferendumIndex>': Vec<ReferendumIndex>;
+    ReferendumInfoTo239: ReferendumInfoTo239;
+    'Option<ReferendumInfoTo239>': Option<ReferendumInfoTo239>;
+    'Vec<ReferendumInfoTo239>': Vec<ReferendumInfoTo239>;
     ReferendumInfo: ReferendumInfo;
     'Option<ReferendumInfo>': Option<ReferendumInfo>;
     'Vec<ReferendumInfo>': Vec<ReferendumInfo>;
+    ReferendumInfoFinished: ReferendumInfoFinished;
+    'Option<ReferendumInfoFinished>': Option<ReferendumInfoFinished>;
+    'Vec<ReferendumInfoFinished>': Vec<ReferendumInfoFinished>;
+    ReferendumStatus: ReferendumStatus;
+    'Option<ReferendumStatus>': Option<ReferendumStatus>;
+    'Vec<ReferendumStatus>': Vec<ReferendumStatus>;
+    Tally: Tally;
+    'Option<Tally>': Option<Tally>;
+    'Vec<Tally>': Vec<Tally>;
+    Voting: Voting;
+    'Option<Voting>': Option<Voting>;
+    'Vec<Voting>': Vec<Voting>;
+    VotingDirect: VotingDirect;
+    'Option<VotingDirect>': Option<VotingDirect>;
+    'Vec<VotingDirect>': Vec<VotingDirect>;
+    VotingDirectVote: VotingDirectVote;
+    'Option<VotingDirectVote>': Option<VotingDirectVote>;
+    'Vec<VotingDirectVote>': Vec<VotingDirectVote>;
+    VotingDelegating: VotingDelegating;
+    'Option<VotingDelegating>': Option<VotingDelegating>;
+    'Vec<VotingDelegating>': Vec<VotingDelegating>;
     ApprovalFlag: ApprovalFlag;
     'Compact<ApprovalFlag>': Compact<ApprovalFlag>;
     'Option<ApprovalFlag>': Option<ApprovalFlag>;
@@ -1207,6 +1274,9 @@ declare module '@polkadot/types/types/registry' {
     OpaqueNetworkState: OpaqueNetworkState;
     'Option<OpaqueNetworkState>': Option<OpaqueNetworkState>;
     'Vec<OpaqueNetworkState>': Vec<OpaqueNetworkState>;
+    DeferredOffenceOf: DeferredOffenceOf;
+    'Option<DeferredOffenceOf>': Option<DeferredOffenceOf>;
+    'Vec<DeferredOffenceOf>': Vec<DeferredOffenceOf>;
     Kind: Kind;
     'Option<Kind>': Option<Kind>;
     'Vec<Kind>': Vec<Kind>;
@@ -1394,6 +1464,9 @@ declare module '@polkadot/types/types/registry' {
     AccountInfo: AccountInfo;
     'Option<AccountInfo>': Option<AccountInfo>;
     'Vec<AccountInfo>': Vec<AccountInfo>;
+    ChainProperties: ChainProperties;
+    'Option<ChainProperties>': Option<ChainProperties>;
+    'Vec<ChainProperties>': Vec<ChainProperties>;
     DigestOf: DigestOf;
     'Option<DigestOf>': Option<DigestOf>;
     'Vec<DigestOf>': Vec<DigestOf>;
@@ -1431,9 +1504,45 @@ declare module '@polkadot/types/types/registry' {
     EventRecordTo76: EventRecordTo76;
     'Option<EventRecordTo76>': Option<EventRecordTo76>;
     'Vec<EventRecordTo76>': Vec<EventRecordTo76>;
+    Health: Health;
+    'Option<Health>': Option<Health>;
+    'Vec<Health>': Vec<Health>;
     Key: Key;
     'Option<Key>': Option<Key>;
     'Vec<Key>': Vec<Key>;
+    LastRuntimeUpgradeInfo: LastRuntimeUpgradeInfo;
+    'Option<LastRuntimeUpgradeInfo>': Option<LastRuntimeUpgradeInfo>;
+    'Vec<LastRuntimeUpgradeInfo>': Vec<LastRuntimeUpgradeInfo>;
+    NetworkState: NetworkState;
+    'Option<NetworkState>': Option<NetworkState>;
+    'Vec<NetworkState>': Vec<NetworkState>;
+    NetworkStatePeerset: NetworkStatePeerset;
+    'Option<NetworkStatePeerset>': Option<NetworkStatePeerset>;
+    'Vec<NetworkStatePeerset>': Vec<NetworkStatePeerset>;
+    NetworkStatePeersetInfo: NetworkStatePeersetInfo;
+    'Option<NetworkStatePeersetInfo>': Option<NetworkStatePeersetInfo>;
+    'Vec<NetworkStatePeersetInfo>': Vec<NetworkStatePeersetInfo>;
+    NodeRole: NodeRole;
+    'Option<NodeRole>': Option<NodeRole>;
+    'Vec<NodeRole>': Vec<NodeRole>;
+    NotConnectedPeer: NotConnectedPeer;
+    'Option<NotConnectedPeer>': Option<NotConnectedPeer>;
+    'Vec<NotConnectedPeer>': Vec<NotConnectedPeer>;
+    Peer: Peer;
+    'Option<Peer>': Option<Peer>;
+    'Vec<Peer>': Vec<Peer>;
+    PeerEndpoint: PeerEndpoint;
+    'Option<PeerEndpoint>': Option<PeerEndpoint>;
+    'Vec<PeerEndpoint>': Vec<PeerEndpoint>;
+    PeerEndpointAddr: PeerEndpointAddr;
+    'Option<PeerEndpointAddr>': Option<PeerEndpointAddr>;
+    'Vec<PeerEndpointAddr>': Vec<PeerEndpointAddr>;
+    PeerPing: PeerPing;
+    'Option<PeerPing>': Option<PeerPing>;
+    'Vec<PeerPing>': Vec<PeerPing>;
+    PeerInfo: PeerInfo;
+    'Option<PeerInfo>': Option<PeerInfo>;
+    'Vec<PeerInfo>': Vec<PeerInfo>;
     Phase: Phase;
     'Option<Phase>': Option<Phase>;
     'Vec<Phase>': Vec<Phase>;
@@ -2083,60 +2192,33 @@ declare module '@polkadot/types/types/registry' {
     MetadataAll: MetadataAll;
     'Option<MetadataAll>': Option<MetadataAll>;
     'Vec<MetadataAll>': Vec<MetadataAll>;
-    ApiId: ApiId;
-    'Option<ApiId>': Option<ApiId>;
-    'Vec<ApiId>': Vec<ApiId>;
-    BlockHash: BlockHash;
-    'Option<BlockHash>': Option<BlockHash>;
-    'Vec<BlockHash>': Vec<BlockHash>;
-    ChainProperties: ChainProperties;
-    'Option<ChainProperties>': Option<ChainProperties>;
-    'Vec<ChainProperties>': Vec<ChainProperties>;
+    RpcMethods: RpcMethods;
+    'Option<RpcMethods>': Option<RpcMethods>;
+    'Vec<RpcMethods>': Vec<RpcMethods>;
     ExtrinsicOrHash: ExtrinsicOrHash;
     'Option<ExtrinsicOrHash>': Option<ExtrinsicOrHash>;
     'Vec<ExtrinsicOrHash>': Vec<ExtrinsicOrHash>;
     ExtrinsicStatus: ExtrinsicStatus;
     'Option<ExtrinsicStatus>': Option<ExtrinsicStatus>;
     'Vec<ExtrinsicStatus>': Vec<ExtrinsicStatus>;
-    Health: Health;
-    'Option<Health>': Option<Health>;
-    'Vec<Health>': Vec<Health>;
-    KeyValueOption: KeyValueOption;
-    'Option<KeyValueOption>': Option<KeyValueOption>;
-    'Vec<KeyValueOption>': Vec<KeyValueOption>;
-    NetworkState: NetworkState;
-    'Option<NetworkState>': Option<NetworkState>;
-    'Vec<NetworkState>': Vec<NetworkState>;
-    Peer: Peer;
-    'Option<Peer>': Option<Peer>;
-    'Vec<Peer>': Vec<Peer>;
-    NotConnectedPeer: NotConnectedPeer;
-    'Option<NotConnectedPeer>': Option<NotConnectedPeer>;
-    'Vec<NotConnectedPeer>': Vec<NotConnectedPeer>;
-    PeerEndpoint: PeerEndpoint;
-    'Option<PeerEndpoint>': Option<PeerEndpoint>;
-    'Vec<PeerEndpoint>': Vec<PeerEndpoint>;
-    PeerEndpointAddr: PeerEndpointAddr;
-    'Option<PeerEndpointAddr>': Option<PeerEndpointAddr>;
-    'Vec<PeerEndpointAddr>': Vec<PeerEndpointAddr>;
-    PeerPing: PeerPing;
-    'Option<PeerPing>': Option<PeerPing>;
-    'Vec<PeerPing>': Vec<PeerPing>;
-    NetworkStatePeerset: NetworkStatePeerset;
-    'Option<NetworkStatePeerset>': Option<NetworkStatePeerset>;
-    'Vec<NetworkStatePeerset>': Vec<NetworkStatePeerset>;
-    NetworkStatePeersetInfo: NetworkStatePeersetInfo;
-    'Option<NetworkStatePeersetInfo>': Option<NetworkStatePeersetInfo>;
-    'Vec<NetworkStatePeersetInfo>': Vec<NetworkStatePeersetInfo>;
-    PeerInfo: PeerInfo;
-    'Option<PeerInfo>': Option<PeerInfo>;
-    'Vec<PeerInfo>': Vec<PeerInfo>;
-    RpcMethods: RpcMethods;
-    'Option<RpcMethods>': Option<RpcMethods>;
-    'Vec<RpcMethods>': Vec<RpcMethods>;
+    BlockHash: BlockHash;
+    'Option<BlockHash>': Option<BlockHash>;
+    'Vec<BlockHash>': Vec<BlockHash>;
+    PrefixedStorageKey: PrefixedStorageKey;
+    'Option<PrefixedStorageKey>': Option<PrefixedStorageKey>;
+    'Vec<PrefixedStorageKey>': Vec<PrefixedStorageKey>;
+    StorageKind: StorageKind;
+    'Option<StorageKind>': Option<StorageKind>;
+    'Vec<StorageKind>': Vec<StorageKind>;
     RuntimeDispatchInfo: RuntimeDispatchInfo;
     'Option<RuntimeDispatchInfo>': Option<RuntimeDispatchInfo>;
     'Vec<RuntimeDispatchInfo>': Vec<RuntimeDispatchInfo>;
+    ApiId: ApiId;
+    'Option<ApiId>': Option<ApiId>;
+    'Vec<ApiId>': Vec<ApiId>;
+    KeyValueOption: KeyValueOption;
+    'Option<KeyValueOption>': Option<KeyValueOption>;
+    'Vec<KeyValueOption>': Vec<KeyValueOption>;
     RuntimeVersionApi: RuntimeVersionApi;
     'Option<RuntimeVersionApi>': Option<RuntimeVersionApi>;
     'Vec<RuntimeVersionApi>': Vec<RuntimeVersionApi>;

@@ -64,10 +64,10 @@ describe('Authorizations class', () => {
           expiry ? polkadotMockUtils.createMockMoment(expiry.getTime()) : expiry
         ),
         authorization_data: polkadotMockUtils.createMockAuthorizationData({
-          transferTokenOwnership: polkadotMockUtils.createMockTicker(data.value),
+          TransferTokenOwnership: polkadotMockUtils.createMockTicker(data.value),
         }),
         authorized_by: polkadotMockUtils.createMockSignatory({
-          identity: polkadotMockUtils.createMockIdentityId(issuerDid),
+          Identity: polkadotMockUtils.createMockIdentityId(issuerDid),
         }),
       }));
 

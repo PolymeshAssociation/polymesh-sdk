@@ -1,8 +1,9 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
-/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable */
 
-import { ApiTypes } from '@polkadot/api/types';
-import { Option, U8aFixed, Vec } from '@polkadot/types/codec';
+import { AnyNumber, ITuple } from '@polkadot/types/types';
+import { Linkage, Option, U8aFixed, Vec } from '@polkadot/types/codec';
+import { Bytes, bool, u16, u32, u64 } from '@polkadot/types/primitive';
 import { UncleEntryItem } from '@polkadot/types/interfaces/authorship';
 import { BabeAuthorityWeight, MaybeVrf } from '@polkadot/types/interfaces/babe';
 import { BalanceLock, VestingSchedule } from '@polkadot/types/interfaces/balances';
@@ -62,8 +63,6 @@ import {
 import { DigestOf, EventIndex, EventRecord } from '@polkadot/types/interfaces/system';
 import { TreasuryProposal } from '@polkadot/types/interfaces/treasury';
 import { Multiplier } from '@polkadot/types/interfaces/txpayment';
-import { bool, Bytes, u16, u32, u64 } from '@polkadot/types/primitive';
-import { AnyNumber, ITuple } from '@polkadot/types/types';
 import {
   AccountKey,
   AssetIdentifier,
@@ -96,914 +95,23 @@ import {
   PosRatio,
   PreAuthorizedKeyInfo,
   ProtocolOp,
+  STO,
   SecurityToken,
   Signatory,
   SimpleTokenRecord,
   SmartExtension,
   SmartExtensionType,
-  STO,
   TargetIdAuthorization,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
 } from 'polymesh-types/polymesh';
 import { Observable } from 'rxjs';
+import { ApiTypes } from '@polkadot/api/types';
 
 declare module '@polkadot/api/types/storage' {
   export interface AugmentedQueries<ApiType> {
-    system: {
-      /**
-       * Extrinsics nonce for accounts.
-       **/
-      accountNonce: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Index>
-      >;
-      /**
-       * Total extrinsics count for the current block.
-       **/
-      extrinsicCount: AugmentedQuery<ApiType, () => Observable<Option<u32>>>;
-      /**
-       * Total weight for all extrinsics put together, for the current block.
-       **/
-      allExtrinsicsWeight: AugmentedQuery<ApiType, () => Observable<Option<Weight>>>;
-      /**
-       * Total length (in bytes) for all extrinsics put together, for the current block.
-       **/
-      allExtrinsicsLen: AugmentedQuery<ApiType, () => Observable<Option<u32>>>;
-      /**
-       * Map of block numbers to block hashes.
-       **/
-      blockHash: AugmentedQuery<
-        ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Hash>
-      >;
-      /**
-       * Extrinsics data for the current block (maps an extrinsic's index to its data).
-       **/
-      extrinsicData: AugmentedQuery<
-        ApiType,
-        (arg: u32 | AnyNumber | Uint8Array) => Observable<Bytes>
-      >;
-      /**
-       * The current block number being processed. Set by `execute_block`.
-       **/
-      number: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
-      /**
-       * Hash of the previous block.
-       **/
-      parentHash: AugmentedQuery<ApiType, () => Observable<Hash>>;
-      /**
-       * Extrinsics root of the current block, also part of the block header.
-       **/
-      extrinsicsRoot: AugmentedQuery<ApiType, () => Observable<Hash>>;
-      /**
-       * Digest of the current block, also part of the block header.
-       **/
-      digest: AugmentedQuery<ApiType, () => Observable<DigestOf>>;
-      /**
-       * Events deposited for the current block.
-       **/
-      events: AugmentedQuery<ApiType, () => Observable<Vec<EventRecord>>>;
-      /**
-       * The number of events in the `Events<T>` list.
-       **/
-      eventCount: AugmentedQuery<ApiType, () => Observable<EventIndex>>;
-      /**
-       * Mapping between a topic (represented by T::Hash) and a vector of indexes
-       * of events in the `<Events<T>>` list.
-       * The first key serves no purpose. This field is declared as double_map just
-       * for convenience of using `remove_prefix`.
-       * All topic vectors have deterministic storage locations depending on the topic. This
-       * allows light-clients to leverage the changes trie storage tracking mechanism and
-       * in case of changes fetch the list of events of interest.
-       * The value has the type `(T::BlockNumber, EventIndex)` because if we used only just
-       * the `EventIndex` then in case if the topic has the same contents on the next block
-       * no notification will be triggered thus the event might be lost.
-       **/
-      eventTopics: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: null,
-          key2: Hash | string | Uint8Array
-        ) => Observable<Vec<ITuple<[BlockNumber, EventIndex]>>>
-      >;
-    };
-    babe: {
-      /**
-       * Current epoch index.
-       **/
-      epochIndex: AugmentedQuery<ApiType, () => Observable<u64>>;
-      /**
-       * Current epoch authorities.
-       **/
-      authorities: AugmentedQuery<
-        ApiType,
-        () => Observable<Vec<ITuple<[AuthorityId, BabeAuthorityWeight]>>>
-      >;
-      /**
-       * The slot at which the first epoch actually started. This is 0
-       * until the first block of the chain.
-       **/
-      genesisSlot: AugmentedQuery<ApiType, () => Observable<u64>>;
-      /**
-       * Current slot number.
-       **/
-      currentSlot: AugmentedQuery<ApiType, () => Observable<u64>>;
-      /**
-       * The epoch randomness for the *current* epoch.
-       * # Security
-       * This MUST NOT be used for gambling, as it can be influenced by a
-       * malicious validator in the short term. It MAY be used in many
-       * cryptographic protocols, however, so long as one remembers that this
-       * (like everything else on-chain) it is public. For example, it can be
-       * used where a number is needed that cannot have been chosen by an
-       * adversary, for purposes such as public-coin zero-knowledge proofs.
-       **/
-      randomness: AugmentedQuery<ApiType, () => Observable<U8aFixed>>;
-      /**
-       * Next epoch randomness.
-       **/
-      nextRandomness: AugmentedQuery<ApiType, () => Observable<U8aFixed>>;
-      /**
-       * Randomness under construction.
-       * We make a tradeoff between storage accesses and list length.
-       * We store the under-construction randomness in segments of up to
-       * `UNDER_CONSTRUCTION_SEGMENT_LENGTH`.
-       * Once a segment reaches this length, we begin the next one.
-       * We reset all segments and return to `0` at the beginning of every
-       * epoch.
-       **/
-      segmentIndex: AugmentedQuery<ApiType, () => Observable<u32>>;
-      underConstruction: AugmentedQuery<
-        ApiType,
-        (arg: u32 | AnyNumber | Uint8Array) => Observable<Vec<U8aFixed>>
-      >;
-      /**
-       * Temporary value (cleared at block finalization) which is `Some`
-       * if per-block initialization has already been called for current block.
-       **/
-      initialized: AugmentedQuery<ApiType, () => Observable<Option<MaybeVrf>>>;
-    };
-    timestamp: {
-      /**
-       * Current time for the current block.
-       **/
-      now: AugmentedQuery<ApiType, () => Observable<Moment>>;
-      /**
-       * Did the timestamp get updated in this block?
-       **/
-      didUpdate: AugmentedQuery<ApiType, () => Observable<bool>>;
-    };
-    indices: {
-      /**
-       * The next free enumeration set.
-       **/
-      nextEnumSet: AugmentedQuery<ApiType, () => Observable<AccountIndex>>;
-      /**
-       * The enumeration sets.
-       **/
-      enumSet: AugmentedQuery<
-        ApiType,
-        (arg: AccountIndex | AnyNumber | Uint8Array) => Observable<Vec<AccountId>>
-      >;
-    };
-    balances: {
-      /**
-       * The total units issued in the system.
-       **/
-      totalIssuance: AugmentedQuery<ApiType, () => Observable<Balance>>;
-      /**
-       * Information regarding the vesting of a given account.
-       **/
-      vesting: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Option<VestingSchedule>>
-      >;
-      /**
-       * The 'free' balance of a given account.
-       * This is the only balance that matters in terms of most operations on tokens. It
-       * alone is used to determine the balance when in the contract execution environment.
-       **/
-      freeBalance: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Balance>
-      >;
-      /**
-       * The amount of the balance of a given account that is externally reserved; this can still get
-       * slashed, but gets slashed last of all.
-       * This balance is a 'reserve' balance that other subsystems use in order to set aside tokens
-       * that are still 'owned' by the account holder, but which are suspendable.
-       **/
-      reservedBalance: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Balance>
-      >;
-      /**
-       * Any liquidity locks on some account balances.
-       **/
-      locks: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Vec<BalanceLock>>
-      >;
-      /**
-       * Balance held by the identity. It can be spent by its signing keys.
-       **/
-      identityBalance: AugmentedQuery<
-        ApiType,
-        (arg: IdentityId | string | Uint8Array) => Observable<Balance>
-      >;
-      /**
-       * Signing key => Charge Fee to did?. Default is false i.e. the fee will be charged from user balance
-       **/
-      chargeDid: AugmentedQuery<
-        ApiType,
-        (arg: AccountKey | string | Uint8Array) => Observable<bool>
-      >;
-      /**
-       * AccountId of the block rewards reserve
-       **/
-      blockRewardsReserve: AugmentedQuery<ApiType, () => Observable<AccountId>>;
-    };
-    authorship: {
-      /**
-       * Uncles
-       **/
-      uncles: AugmentedQuery<ApiType, () => Observable<Vec<UncleEntryItem>>>;
-      /**
-       * Author of current block.
-       **/
-      author: AugmentedQuery<ApiType, () => Observable<Option<AccountId>>>;
-      /**
-       * Whether uncles were already set in this block.
-       **/
-      didSetUncles: AugmentedQuery<ApiType, () => Observable<bool>>;
-    };
-    staking: {
-      /**
-       * The ideal number of staking participants.
-       **/
-      validatorCount: AugmentedQuery<ApiType, () => Observable<u32>>;
-      /**
-       * Minimum number of staking participants before emergency conditions are imposed.
-       **/
-      minimumValidatorCount: AugmentedQuery<ApiType, () => Observable<u32>>;
-      /**
-       * Any validators that may never be slashed or forcibly kicked. It's a Vec since they're
-       * easy to initialize and the performance hit is minimal (we expect no more than four
-       * invulnerables) and restricted to testnets.
-       **/
-      invulnerables: AugmentedQuery<ApiType, () => Observable<Vec<AccountId>>>;
-      /**
-       * Map from all locked "stash" accounts to the controller account.
-       **/
-      bonded: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Option<AccountId>>
-      >;
-      /**
-       * Map from all (unlocked) "controller" accounts to the info regarding the staking.
-       **/
-      ledger: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Option<StakingLedger>>
-      >;
-      /**
-       * Where the reward payment should be made. Keyed by stash.
-       **/
-      payee: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<RewardDestination>
-      >;
-      /**
-       * The map from (wannabe) validator stash key to the preferences of that validator.
-       **/
-      validators: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<ValidatorPrefs>
-      >;
-      /**
-       * The map from nominator stash key to the set of stash keys of all validators to nominate.
-       * NOTE: is private so that we can ensure upgraded before all typical accesses.
-       * Direct storage APIs can still bypass this protection.
-       **/
-      nominators: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Option<Nominations>>
-      >;
-      /**
-       * Nominators for a particular account that is in action right now. You can't iterate
-       * through validators here, but you can find them in the Session module.
-       * This is keyed by the stash account.
-       **/
-      stakers: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Exposure>
-      >;
-      /**
-       * The currently elected validator set keyed by stash account ID.
-       **/
-      currentElected: AugmentedQuery<ApiType, () => Observable<Vec<AccountId>>>;
-      /**
-       * The current era index.
-       **/
-      currentEra: AugmentedQuery<ApiType, () => Observable<EraIndex>>;
-      /**
-       * The start of the current era.
-       **/
-      currentEraStart: AugmentedQuery<ApiType, () => Observable<MomentOf>>;
-      /**
-       * The session index at which the current era started.
-       **/
-      currentEraStartSessionIndex: AugmentedQuery<ApiType, () => Observable<SessionIndex>>;
-      /**
-       * Rewards for the current era. Using indices of current elected set.
-       **/
-      currentEraPointsEarned: AugmentedQuery<ApiType, () => Observable<EraPoints>>;
-      /**
-       * The amount of balance actively at stake for each validator slot, currently.
-       * This is used to derive rewards and punishments.
-       **/
-      slotStake: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
-      /**
-       * True if the next session change will be a new era regardless of index.
-       **/
-      forceEra: AugmentedQuery<ApiType, () => Observable<Forcing>>;
-      /**
-       * The percentage of the slash that is distributed to reporters.
-       * The rest of the slashed value is handled by the `Slash`.
-       **/
-      slashRewardFraction: AugmentedQuery<ApiType, () => Observable<Perbill>>;
-      /**
-       * The amount of currency given to reporters of a slash event which was
-       * canceled by extraordinary circumstances (e.g. governance).
-       **/
-      canceledSlashPayout: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
-      /**
-       * All unapplied slashes that are queued for later.
-       **/
-      unappliedSlashes: AugmentedQuery<
-        ApiType,
-        (arg: EraIndex | AnyNumber | Uint8Array) => Observable<Vec<UnappliedSlash>>
-      >;
-      /**
-       * A mapping from still-bonded eras to the first session index of that era.
-       **/
-      bondedEras: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[EraIndex, SessionIndex]>>>>;
-      /**
-       * All slashing events on validators, mapped by era to the highest slash proportion
-       * and slash value of the era.
-       **/
-      validatorSlashInEra: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: EraIndex | AnyNumber | Uint8Array,
-          key2: AccountId | string | Uint8Array
-        ) => Observable<Option<ITuple<[Perbill, BalanceOf]>>>
-      >;
-      /**
-       * All slashing events on nominators, mapped by era to the highest slash value of the era.
-       **/
-      nominatorSlashInEra: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: EraIndex | AnyNumber | Uint8Array,
-          key2: AccountId | string | Uint8Array
-        ) => Observable<Option<BalanceOf>>
-      >;
-      /**
-       * Slashing spans for stash accounts.
-       **/
-      slashingSpans: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Option<SlashingSpans>>
-      >;
-      /**
-       * Records information about the maximum slash of a stash within a slashing span,
-       * as well as how much reward has been paid out.
-       **/
-      spanSlash: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[AccountId, SpanIndex]>
-            | [AccountId | string | Uint8Array, SpanIndex | AnyNumber | Uint8Array]
-        ) => Observable<SpanRecord>
-      >;
-      /**
-       * The earliest era for which we have a pending, unapplied slash.
-       **/
-      earliestUnappliedSlash: AugmentedQuery<ApiType, () => Observable<Option<EraIndex>>>;
-      /**
-       * The version of storage for upgrade.
-       **/
-      storageVersion: AugmentedQuery<ApiType, () => Observable<u32>>;
-      /**
-       * The map from (wannabe) validators to the status of compliance
-       **/
-      permissionedValidators: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Option<PermissionedValidator>>
-      >;
-      /**
-       * Commision rate to be used by all validators.
-       **/
-      validatorCommission: AugmentedQuery<ApiType, () => Observable<Commission>>;
-      /**
-       * The minimum amount with which a validator can bond.
-       **/
-      minimumBondThreshold: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
-    };
-    offences: {
-      /**
-       * The primary structure that holds all offence records keyed by report identifiers.
-       **/
-      reports: AugmentedQuery<
-        ApiType,
-        (arg: ReportIdOf | string | Uint8Array) => Observable<Option<OffenceDetails>>
-      >;
-      /**
-       * A vector of reports of the same kind that happened at the same time slot.
-       **/
-      concurrentReportsIndex: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: Kind | string | Uint8Array,
-          key2: OpaqueTimeSlot | string | Uint8Array
-        ) => Observable<Vec<ReportIdOf>>
-      >;
-      /**
-       * Enumerates all reports of a kind along with the time they happened.
-       * All reports are sorted by the time of offence.
-       * Note that the actual type of this mapping is `Vec<u8>`, this is because values of
-       * different types are not supported at the moment so we are doing the manual serialization.
-       **/
-      reportsByKindIndex: AugmentedQuery<
-        ApiType,
-        (arg: Kind | string | Uint8Array) => Observable<Bytes>
-      >;
-    };
-    session: {
-      /**
-       * The current set of validators.
-       **/
-      validators: AugmentedQuery<ApiType, () => Observable<Vec<ValidatorId>>>;
-      /**
-       * Current index of the session.
-       **/
-      currentIndex: AugmentedQuery<ApiType, () => Observable<SessionIndex>>;
-      /**
-       * True if the underlying economic identities or weighting behind the validators
-       * has changed in the queued validator set.
-       **/
-      queuedChanged: AugmentedQuery<ApiType, () => Observable<bool>>;
-      /**
-       * The queued keys for the next session. When the next session begins, these keys
-       * will be used to determine the validator's session keys.
-       **/
-      queuedKeys: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[ValidatorId, Keys]>>>>;
-      /**
-       * Indices of disabled validators.
-       * The set is cleared when `on_session_ending` returns a new set of identities.
-       **/
-      disabledValidators: AugmentedQuery<ApiType, () => Observable<Vec<u32>>>;
-      /**
-       * The next session keys for a validator.
-       * The first key is always `DEDUP_KEY_PREFIX` to have all the data in the same branch of
-       * the trie. Having all data in the same branch should prevent slowing down other queries.
-       **/
-      nextKeys: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: Bytes | string | Uint8Array,
-          key2: ValidatorId | string | Uint8Array
-        ) => Observable<Option<Keys>>
-      >;
-      /**
-       * The owner of a key. The second key is the `KeyTypeId` + the encoded key.
-       * The first key is always `DEDUP_KEY_PREFIX` to have all the data in the same branch of
-       * the trie. Having all data in the same branch should prevent slowing down other queries.
-       **/
-      keyOwner: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: Bytes | string | Uint8Array,
-          key2:
-            | ITuple<[KeyTypeId, Bytes]>
-            | [KeyTypeId | AnyNumber | Uint8Array, Bytes | string | Uint8Array]
-        ) => Observable<Option<ValidatorId>>
-      >;
-    };
-    grandpa: {
-      /**
-       * DEPRECATED
-       * This used to store the current authority set, which has been migrated to the well-known
-       * GRANDPA_AUTHORITES_KEY unhashed key.
-       **/
-      authorities: AugmentedQuery<ApiType, () => Observable<AuthorityList>>;
-      /**
-       * State of the current authority set.
-       **/
-      state: AugmentedQuery<ApiType, () => Observable<StoredState>>;
-      /**
-       * Pending change: (signaled at, scheduled change).
-       **/
-      pendingChange: AugmentedQuery<ApiType, () => Observable<Option<StoredPendingChange>>>;
-      /**
-       * next block number where we can force a change.
-       **/
-      nextForced: AugmentedQuery<ApiType, () => Observable<Option<BlockNumber>>>;
-      /**
-       * `true` if we are currently stalled.
-       **/
-      stalled: AugmentedQuery<
-        ApiType,
-        () => Observable<Option<ITuple<[BlockNumber, BlockNumber]>>>
-      >;
-      /**
-       * The number of changes (both in terms of keys and underlying economic responsibilities)
-       * in the "set" of Grandpa validators from genesis.
-       **/
-      currentSetId: AugmentedQuery<ApiType, () => Observable<SetId>>;
-      /**
-       * A mapping from grandpa set ID to the index of the *most recent* session for which its members were responsible.
-       **/
-      setIdSession: AugmentedQuery<
-        ApiType,
-        (arg: SetId | AnyNumber | Uint8Array) => Observable<Option<SessionIndex>>
-      >;
-    };
-    imOnline: {
-      /**
-       * The block number when we should gossip.
-       **/
-      gossipAt: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
-      /**
-       * The current set of keys that may issue a heartbeat.
-       **/
-      keys: AugmentedQuery<ApiType, () => Observable<Vec<AuthorityId>>>;
-      /**
-       * For each session index, we keep a mapping of `AuthIndex`
-       * to `offchain::OpaqueNetworkState`.
-       **/
-      receivedHeartbeats: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: SessionIndex | AnyNumber | Uint8Array,
-          key2: AuthIndex | AnyNumber | Uint8Array
-        ) => Observable<Option<Bytes>>
-      >;
-      /**
-       * For each session index, we keep a mapping of `T::ValidatorId` to the
-       * number of blocks authored by the given authority.
-       **/
-      authoredBlocks: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: SessionIndex | AnyNumber | Uint8Array,
-          key2: ValidatorId | string | Uint8Array
-        ) => Observable<u32>
-      >;
-      /**
-       * Config parameters for slash fraction
-       **/
-      slashingParams: AugmentedQuery<ApiType, () => Observable<OfflineSlashingParams>>;
-    };
-    randomnessCollectiveFlip: {
-      /**
-       * Series of block headers from the last 81 blocks that acts as random seed material. This
-       * is arranged as a ring buffer with `block_number % 81` being the index into the `Vec` of
-       * the oldest hash.
-       **/
-      randomMaterial: AugmentedQuery<ApiType, () => Observable<Vec<Hash>>>;
-    };
-    transactionPayment: {
-      nextFeeMultiplier: AugmentedQuery<ApiType, () => Observable<Multiplier>>;
-    };
-    sudo: {
-      /**
-       * The `AccountId` of the sudo key.
-       **/
-      key: AugmentedQuery<ApiType, () => Observable<AccountId>>;
-    };
-    multiSig: {
-      /**
-       * Nonce to ensure unique MultiSig addresses are generated. starts from 1.
-       **/
-      multiSigNonce: AugmentedQuery<ApiType, () => Observable<u64>>;
-      /**
-       * Signers of a multisig. (mulisig, signer) => signer.
-       **/
-      multiSigSigners: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: AccountId | string | Uint8Array,
-          key2: Signatory | { identity: any } | { accountKey: any } | string | Uint8Array
-        ) => Observable<Signatory>
-      >;
-      /**
-       * Number of approved/accepted signers of a multisig.
-       **/
-      numberOfSigners: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<u64>
-      >;
-      /**
-       * Confirmations required before processing a multisig tx
-       **/
-      multiSigSignsRequired: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<u64>
-      >;
-      /**
-       * Number of transactions proposed in a multisig. Used as tx id. starts from 0
-       **/
-      multiSigTxDone: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<u64>
-      >;
-      /**
-       * Proposals presented for voting to a multisig (multisig, proposal id) => Option<proposal>.
-       **/
-      proposals: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[AccountId, u64]>
-            | [AccountId | string | Uint8Array, u64 | AnyNumber | Uint8Array]
-        ) => Observable<Option<Proposal>>
-      >;
-      /**
-       * A mapping of proposals to their IDs.
-       **/
-      proposalIds: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: AccountId | string | Uint8Array,
-          key2: Proposal | { callIndex?: any; args?: any } | string | Uint8Array
-        ) => Observable<Option<u64>>
-      >;
-      /**
-       * Number of votes in favor of a tx. Mapping from (multisig, tx id) => no. of approvals.
-       **/
-      txApprovals: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[AccountId, u64]>
-            | [AccountId | string | Uint8Array, u64 | AnyNumber | Uint8Array]
-        ) => Observable<u64>
-      >;
-      /**
-       * Individual multisig signer votes. (multi sig, signer, proposal) => vote
-       **/
-      votes: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[AccountId, Signatory, u64]>
-            | [
-                AccountId | string | Uint8Array,
-                Signatory | { identity: any } | { accountKey: any } | string | Uint8Array,
-                u64 | AnyNumber | Uint8Array
-              ]
-        ) => Observable<bool>
-      >;
-      /**
-       * Maps a multisig to its creator's identity
-       **/
-      multiSigCreator: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<IdentityId>
-      >;
-      /**
-       * Maps a key to a multisig address
-       **/
-      keyToMultiSig: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<AccountId>
-      >;
-    };
-    contracts: {
-      /**
-       * Gas spent so far in this block.
-       **/
-      gasSpent: AugmentedQuery<ApiType, () => Observable<Gas>>;
-      /**
-       * Current cost schedule for contracts.
-       **/
-      currentSchedule: AugmentedQuery<ApiType, () => Observable<Schedule>>;
-      /**
-       * A mapping from an original code hash to the original code, untouched by instrumentation.
-       **/
-      pristineCode: AugmentedQuery<
-        ApiType,
-        (arg: CodeHash | string | Uint8Array) => Observable<Option<Bytes>>
-      >;
-      /**
-       * A mapping between an original code hash and instrumented wasm code, ready for execution.
-       **/
-      codeStorage: AugmentedQuery<
-        ApiType,
-        (arg: CodeHash | string | Uint8Array) => Observable<Option<PrefabWasmModule>>
-      >;
-      /**
-       * The subtrie counter.
-       **/
-      accountCounter: AugmentedQuery<ApiType, () => Observable<u64>>;
-      /**
-       * The code associated with a given account.
-       **/
-      contractInfoOf: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Option<ContractInfo>>
-      >;
-      /**
-       * The price of one unit of gas.
-       **/
-      gasPrice: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
-    };
-    treasury: {
-      /**
-       * Number of proposals that have been made.
-       **/
-      proposalCount: AugmentedQuery<ApiType, () => Observable<ProposalIndex>>;
-      /**
-       * Proposals that have been made.
-       **/
-      proposals: AugmentedQuery<
-        ApiType,
-        (arg: ProposalIndex | AnyNumber | Uint8Array) => Observable<Option<TreasuryProposal>>
-      >;
-      /**
-       * Proposal indices that have been approved but not yet awarded.
-       **/
-      approvals: AugmentedQuery<ApiType, () => Observable<Vec<ProposalIndex>>>;
-    };
-    polymeshCommittee: {
-      /**
-       * The hashes of the active proposals.
-       **/
-      proposals: AugmentedQuery<ApiType, () => Observable<Vec<Hash>>>;
-      /**
-       * Actual proposal for a given hash.
-       **/
-      proposalOf: AugmentedQuery<
-        ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>
-      >;
-      /**
-       * PolymeshVotes on a given proposal, if it is ongoing.
-       **/
-      voting: AugmentedQuery<
-        ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<PolymeshVotes>>
-      >;
-      /**
-       * Proposals so far.
-       **/
-      proposalCount: AugmentedQuery<ApiType, () => Observable<u32>>;
-      /**
-       * The current members of the committee.
-       **/
-      members: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
-      /**
-       * Vote threshold for an approval.
-       **/
-      voteThreshold: AugmentedQuery<ApiType, () => Observable<ITuple<[u32, u32]>>>;
-    };
-    committeeMembership: {
-      /**
-       * Identities that are part of this group, known as "Active members".
-       **/
-      activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
-      inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
-    };
-    mips: {
-      /**
-       * The minimum amount to be used as a deposit for a public referendum proposal.
-       **/
-      minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
-      /**
-       * Minimum stake a proposal must gather in order to be considered by the committee.
-       **/
-      quorumThreshold: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
-      /**
-       * How long (in blocks) a ballot runs
-       **/
-      proposalDuration: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
-      /**
-       * Proposals so far. Index can be used to keep track of MIPs off-chain.
-       **/
-      proposalCount: AugmentedQuery<ApiType, () => Observable<u32>>;
-      /**
-       * The hashes of the active proposals.
-       **/
-      proposalMetadata: AugmentedQuery<ApiType, () => Observable<Vec<MipsMetadata>>>;
-      /**
-       * Those who have locked a deposit.
-       * proposal hash -> (deposit, proposer)
-       **/
-      deposits: AugmentedQuery<
-        ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Vec<ITuple<[AccountId, BalanceOf]>>>
-      >;
-      /**
-       * Actual proposal for a given hash, if it's current.
-       * proposal hash -> proposal
-       **/
-      proposals: AugmentedQuery<
-        ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<MIP>>
-      >;
-      /**
-       * Lookup proposal hash by a proposal's index
-       * MIP index -> proposal hash
-       **/
-      proposalByIndex: AugmentedQuery<
-        ApiType,
-        (arg: MipsIndex | AnyNumber | Uint8Array) => Observable<Hash>
-      >;
-      /**
-       * PolymeshVotes on a given proposal, if it is ongoing.
-       * proposal hash -> vote count
-       **/
-      voting: AugmentedQuery<
-        ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<PolymeshVotes>>
-      >;
-      /**
-       * Active referendums.
-       **/
-      referendumMetadata: AugmentedQuery<ApiType, () => Observable<Vec<PolymeshReferendumInfo>>>;
-      /**
-       * Proposals that have met the quorum threshold to be put forward to a governance committee
-       * proposal hash -> proposal
-       **/
-      referendums: AugmentedQuery<
-        ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>
-      >;
-    };
     asset: {
-      /**
-       * The DID of the fee collector
-       **/
-      feeCollector: AugmentedQuery<ApiType, () => Observable<AccountId>>;
-      /**
-       * Ticker registration details
-       * (ticker) -> TickerRegistration
-       **/
-      tickers: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<TickerRegistration>
-      >;
-      /**
-       * Ticker registration config
-       * (ticker) -> TickerRegistrationConfig
-       **/
-      tickerConfig: AugmentedQuery<ApiType, () => Observable<TickerRegistrationConfig>>;
-      /**
-       * details of the token corresponding to the token ticker
-       * (ticker) -> SecurityToken details [returns SecurityToken struct]
-       **/
-      tokens: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<SecurityToken>
-      >;
-      /**
-       * Used to store the securityToken balance corresponds to ticker and Identity
-       * (ticker, DID) -> balance
-       **/
-      balanceOf: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId]>
-            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
-        ) => Observable<Balance>
-      >;
-      /**
-       * A map of pairs of a ticker name and an `IdentifierType` to asset identifiers.
-       **/
-      identifiers: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentifierType]>
-            | [
-                Ticker | string | Uint8Array,
-                (
-                  | IdentifierType
-                  | { isin: any }
-                  | { cusip: any }
-                  | { custom: any }
-                  | string
-                  | Uint8Array
-                )
-              ]
-        ) => Observable<AssetIdentifier>
-      >;
       /**
        * (ticker, sender (DID), spender(DID)) -> allowance amount
        **/
@@ -1024,25 +132,31 @@ declare module '@polkadot/api/types/storage' {
        **/
       assetCreationFee: AugmentedQuery<ApiType, () => Observable<Balance>>;
       /**
-       * cost in base currency to register a ticker
+       * Store the nonce for off chain signature to increase the custody allowance
+       * (ticker, token holder, nonce) -> bool
        **/
-      tickerRegistrationFee: AugmentedQuery<ApiType, () => Observable<Balance>>;
-      /**
-       * Checkpoints created per token
-       * (ticker) -> no. of checkpoints
-       **/
-      totalCheckpoints: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<u64>
-      >;
-      /**
-       * Total supply of the token at the checkpoint
-       * (ticker, checkpointId) -> total supply at given checkpoint
-       **/
-      checkpointTotalSupply: AugmentedQuery<
+      authenticationNonce: AugmentedQuery<
         ApiType,
         (
-          arg: ITuple<[Ticker, u64]> | [Ticker | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+          arg:
+            | ITuple<[Ticker, IdentityId, u16]>
+            | [
+                Ticker | string | Uint8Array,
+                IdentityId | string | Uint8Array,
+                u16 | AnyNumber | Uint8Array
+              ]
+        ) => Observable<bool>
+      >;
+      /**
+       * Used to store the securityToken balance corresponds to ticker and Identity
+       * (ticker, DID) -> balance
+       **/
+      balanceOf: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, IdentityId]>
+            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
         ) => Observable<Balance>
       >;
       /**
@@ -1062,16 +176,14 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
-       * Last checkpoint updated for a DID's balance
-       * (ticker, DID) -> List of checkpoints where user balance changed
+       * Total supply of the token at the checkpoint
+       * (ticker, checkpointId) -> total supply at given checkpoint
        **/
-      userCheckpoints: AugmentedQuery<
+      checkpointTotalSupply: AugmentedQuery<
         ApiType,
         (
-          arg:
-            | ITuple<[Ticker, IdentityId]>
-            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
-        ) => Observable<Vec<u64>>
+          arg: ITuple<[Ticker, u64]> | [Ticker | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+        ) => Observable<Balance>
       >;
       /**
        * Allowance provided to the custodian
@@ -1087,54 +199,6 @@ declare module '@polkadot/api/types/storage' {
                 IdentityId | string | Uint8Array,
                 IdentityId | string | Uint8Array
               ]
-        ) => Observable<Balance>
-      >;
-      /**
-       * Total custodian allowance for a given token holder
-       * (ticker, token holder) -> balance
-       **/
-      totalCustodyAllowance: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId]>
-            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
-        ) => Observable<Balance>
-      >;
-      /**
-       * Store the nonce for off chain signature to increase the custody allowance
-       * (ticker, token holder, nonce) -> bool
-       **/
-      authenticationNonce: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId, u16]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentityId | string | Uint8Array,
-                u16 | AnyNumber | Uint8Array
-              ]
-        ) => Observable<bool>
-      >;
-      /**
-       * The name of the current funding round.
-       * ticker -> funding round
-       **/
-      fundingRound: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<FundingRoundName>
-      >;
-      /**
-       * The total balances of tokens issued in all recorded funding rounds.
-       * (ticker, funding round) -> balance
-       **/
-      issuedInFundingRound: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, FundingRoundName]>
-            | [Ticker | string | Uint8Array, FundingRoundName | string]
         ) => Observable<Balance>
       >;
       /**
@@ -1162,9 +226,9 @@ declare module '@polkadot/api/types/storage' {
                 Ticker | string | Uint8Array,
                 (
                   | SmartExtensionType
-                  | { transferManager: any }
-                  | { offerings: any }
-                  | { custom: any }
+                  | { TransferManager: any }
+                  | { Offerings: any }
+                  | { Custom: any }
                   | string
                   | Uint8Array
                 )
@@ -1172,24 +236,254 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Vec<AccountId>>
       >;
       /**
+       * The DID of the fee collector
+       **/
+      feeCollector: AugmentedQuery<ApiType, () => Observable<AccountId>>;
+      /**
        * The set of frozen assets implemented as a membership map.
        * ticker -> bool
        **/
       frozen: AugmentedQuery<ApiType, (arg: Ticker | string | Uint8Array) => Observable<bool>>;
+      /**
+       * The name of the current funding round.
+       * ticker -> funding round
+       **/
+      fundingRound: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<FundingRoundName>
+      >;
+      /**
+       * A map of pairs of a ticker name and an `IdentifierType` to asset identifiers.
+       **/
+      identifiers: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, IdentifierType]>
+            | [
+                Ticker | string | Uint8Array,
+                (
+                  | IdentifierType
+                  | { Isin: any }
+                  | { Cusip: any }
+                  | { Custom: any }
+                  | string
+                  | Uint8Array
+                )
+              ]
+        ) => Observable<AssetIdentifier>
+      >;
+      /**
+       * The total balances of tokens issued in all recorded funding rounds.
+       * (ticker, funding round) -> balance
+       **/
+      issuedInFundingRound: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, FundingRoundName]>
+            | [Ticker | string | Uint8Array, FundingRoundName | string]
+        ) => Observable<Balance>
+      >;
+      /**
+       * Ticker registration config
+       * (ticker) -> TickerRegistrationConfig
+       **/
+      tickerConfig: AugmentedQuery<ApiType, () => Observable<TickerRegistrationConfig>>;
+      /**
+       * cost in base currency to register a ticker
+       **/
+      tickerRegistrationFee: AugmentedQuery<ApiType, () => Observable<Balance>>;
+      /**
+       * Ticker registration details
+       * (ticker) -> TickerRegistration
+       **/
+      tickers: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<TickerRegistration>
+      >;
+      /**
+       * details of the token corresponding to the token ticker
+       * (ticker) -> SecurityToken details [returns SecurityToken struct]
+       **/
+      tokens: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<SecurityToken>
+      >;
+      /**
+       * Checkpoints created per token
+       * (ticker) -> no. of checkpoints
+       **/
+      totalCheckpoints: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<u64>
+      >;
+      /**
+       * Total custodian allowance for a given token holder
+       * (ticker, token holder) -> balance
+       **/
+      totalCustodyAllowance: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, IdentityId]>
+            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
+        ) => Observable<Balance>
+      >;
+      /**
+       * Last checkpoint updated for a DID's balance
+       * (ticker, DID) -> List of checkpoints where user balance changed
+       **/
+      userCheckpoints: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, IdentityId]>
+            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
+        ) => Observable<Vec<u64>>
+      >;
+    };
+    authorship: {
+      /**
+       * Author of current block.
+       **/
+      author: AugmentedQuery<ApiType, () => Observable<Option<AccountId>>>;
+      /**
+       * Whether uncles were already set in this block.
+       **/
+      didSetUncles: AugmentedQuery<ApiType, () => Observable<bool>>;
+      /**
+       * Uncles
+       **/
+      uncles: AugmentedQuery<ApiType, () => Observable<Vec<UncleEntryItem>>>;
+    };
+    babe: {
+      /**
+       * Current epoch authorities.
+       **/
+      authorities: AugmentedQuery<
+        ApiType,
+        () => Observable<Vec<ITuple<[AuthorityId, BabeAuthorityWeight]>>>
+      >;
+      /**
+       * Current slot number.
+       **/
+      currentSlot: AugmentedQuery<ApiType, () => Observable<u64>>;
+      /**
+       * Current epoch index.
+       **/
+      epochIndex: AugmentedQuery<ApiType, () => Observable<u64>>;
+      /**
+       * The slot at which the first epoch actually started. This is 0
+       * until the first block of the chain.
+       **/
+      genesisSlot: AugmentedQuery<ApiType, () => Observable<u64>>;
+      /**
+       * Temporary value (cleared at block finalization) which is `Some`
+       * if per-block initialization has already been called for current block.
+       **/
+      initialized: AugmentedQuery<ApiType, () => Observable<Option<MaybeVrf>>>;
+      /**
+       * Next epoch randomness.
+       **/
+      nextRandomness: AugmentedQuery<ApiType, () => Observable<U8aFixed>>;
+      /**
+       * The epoch randomness for the *current* epoch.
+       * # Security
+       * This MUST NOT be used for gambling, as it can be influenced by a
+       * malicious validator in the short term. It MAY be used in many
+       * cryptographic protocols, however, so long as one remembers that this
+       * (like everything else on-chain) it is public. For example, it can be
+       * used where a number is needed that cannot have been chosen by an
+       * adversary, for purposes such as public-coin zero-knowledge proofs.
+       **/
+      randomness: AugmentedQuery<ApiType, () => Observable<U8aFixed>>;
+      /**
+       * Randomness under construction.
+       * We make a tradeoff between storage accesses and list length.
+       * We store the under-construction randomness in segments of up to
+       * `UNDER_CONSTRUCTION_SEGMENT_LENGTH`.
+       * Once a segment reaches this length, we begin the next one.
+       * We reset all segments and return to `0` at the beginning of every
+       * epoch.
+       **/
+      segmentIndex: AugmentedQuery<ApiType, () => Observable<u32>>;
+      underConstruction: AugmentedQuery<
+        ApiType,
+        (arg: u32 | AnyNumber | Uint8Array) => Observable<Vec<U8aFixed>>
+      >;
+    };
+    balances: {
+      /**
+       * AccountId of the block rewards reserve
+       **/
+      blockRewardsReserve: AugmentedQuery<ApiType, () => Observable<AccountId>>;
+      /**
+       * Signing key => Charge Fee to did?. Default is false i.e. the fee will be charged from user balance
+       **/
+      chargeDid: AugmentedQuery<
+        ApiType,
+        (arg: AccountKey | string | Uint8Array) => Observable<bool>
+      >;
+      /**
+       * The 'free' balance of a given account.
+       * This is the only balance that matters in terms of most operations on tokens. It
+       * alone is used to determine the balance when in the contract execution environment.
+       **/
+      freeBalance: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Balance>
+      >;
+      /**
+       * Balance held by the identity. It can be spent by its signing keys.
+       **/
+      identityBalance: AugmentedQuery<
+        ApiType,
+        (arg: IdentityId | string | Uint8Array) => Observable<Balance>
+      >;
+      /**
+       * Any liquidity locks on some account balances.
+       **/
+      locks: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Vec<BalanceLock>>
+      >;
+      /**
+       * The amount of the balance of a given account that is externally reserved; this can still get
+       * slashed, but gets slashed last of all.
+       * This balance is a 'reserve' balance that other subsystems use in order to set aside tokens
+       * that are still 'owned' by the account holder, but which are suspendable.
+       **/
+      reservedBalance: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Balance>
+      >;
+      /**
+       * The total units issued in the system.
+       **/
+      totalIssuance: AugmentedQuery<ApiType, () => Observable<Balance>>;
+      /**
+       * Information regarding the vesting of a given account.
+       **/
+      vesting: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Option<VestingSchedule>>
+      >;
     };
     bridge: {
+      /**
+       * The admin key.
+       **/
+      admin: AugmentedQuery<ApiType, () => Observable<AccountId>>;
       /**
        * The multisig account of the bridge controller. The genesis signers must accept their
        * authorizations to be able to get their proposals delivered.
        **/
       controller: AugmentedQuery<ApiType, () => Observable<AccountId>>;
       /**
-       * Pending issuance transactions to identities.
+       * Whether or not the bridge operation is frozen.
        **/
-      pendingTxs: AugmentedQuery<
-        ApiType,
-        (arg: IdentityId | string | Uint8Array) => Observable<Vec<BridgeTx>>
-      >;
+      frozen: AugmentedQuery<ApiType, () => Observable<bool>>;
       /**
        * Frozen transactions.
        **/
@@ -1217,13 +511,12 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<bool>
       >;
       /**
-       * The admin key.
+       * Pending issuance transactions to identities.
        **/
-      admin: AugmentedQuery<ApiType, () => Observable<AccountId>>;
-      /**
-       * Whether or not the bridge operation is frozen.
-       **/
-      frozen: AugmentedQuery<ApiType, () => Observable<bool>>;
+      pendingTxs: AugmentedQuery<
+        ApiType,
+        (arg: IdentityId | string | Uint8Array) => Observable<Vec<BridgeTx>>
+      >;
       /**
        * The bridge transaction timelock period, in blocks, since the acceptance of the
        * transaction proposal during which the admin key can freeze the transaction.
@@ -1235,10 +528,72 @@ declare module '@polkadot/api/types/storage' {
        **/
       timelockedTxs: AugmentedQuery<
         ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<BridgeTx>>
+        (
+          arg: BlockNumber | AnyNumber | Uint8Array
+        ) => Observable<ITuple<[Vec<BridgeTx>, Linkage<BlockNumber>]>>
+      >;
+    };
+    cddServiceProviders: {
+      /**
+       * Identities that are part of this group, known as "Active members".
+       **/
+      activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
+    };
+    committeeMembership: {
+      /**
+       * Identities that are part of this group, known as "Active members".
+       **/
+      activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
+    };
+    contracts: {
+      /**
+       * The subtrie counter.
+       **/
+      accountCounter: AugmentedQuery<ApiType, () => Observable<u64>>;
+      /**
+       * A mapping between an original code hash and instrumented wasm code, ready for execution.
+       **/
+      codeStorage: AugmentedQuery<
+        ApiType,
+        (arg: CodeHash | string | Uint8Array) => Observable<Option<PrefabWasmModule>>
+      >;
+      /**
+       * The code associated with a given account.
+       **/
+      contractInfoOf: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Option<ContractInfo>>
+      >;
+      /**
+       * Current cost schedule for contracts.
+       **/
+      currentSchedule: AugmentedQuery<ApiType, () => Observable<Schedule>>;
+      /**
+       * The price of one unit of gas.
+       **/
+      gasPrice: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      /**
+       * Gas spent so far in this block.
+       **/
+      gasSpent: AugmentedQuery<ApiType, () => Observable<Gas>>;
+      /**
+       * A mapping from an original code hash to the original code, untouched by instrumentation.
+       **/
+      pristineCode: AugmentedQuery<
+        ApiType,
+        (arg: CodeHash | string | Uint8Array) => Observable<Option<Bytes>>
       >;
     };
     dividend: {
+      /**
+       * How many dividends were created for a ticker so far; (ticker) => count
+       **/
+      dividendCount: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<u32>
+      >;
       /**
        * Dividend records; (ticker, dividend ID) => dividend entry
        * Note: contrary to checkpoint IDs, dividend IDs are 0-indexed.
@@ -1248,13 +603,6 @@ declare module '@polkadot/api/types/storage' {
         (
           arg: ITuple<[Ticker, u32]> | [Ticker | string | Uint8Array, u32 | AnyNumber | Uint8Array]
         ) => Observable<Dividend>
-      >;
-      /**
-       * How many dividends were created for a ticker so far; (ticker) => count
-       **/
-      dividendCount: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<u32>
       >;
       /**
        * Payout flags, decide whether a user already was paid their dividend
@@ -1273,120 +621,19 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<bool>
       >;
     };
-    identity: {
-      /**
-       * Module owner.
-       **/
-      owner: AugmentedQuery<ApiType, () => Observable<AccountId>>;
-      /**
-       * DID -> identity info
-       **/
-      didRecords: AugmentedQuery<
-        ApiType,
-        (arg: IdentityId | string | Uint8Array) => Observable<DidRecord>
-      >;
-      /**
-       * DID -> bool that indicates if signing keys are frozen.
-       **/
-      isDidFrozen: AugmentedQuery<
-        ApiType,
-        (arg: IdentityId | string | Uint8Array) => Observable<bool>
-      >;
-      /**
-       * It stores the current identity for current transaction.
-       **/
-      currentDid: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
-      /**
-       * It stores the current gas fee payer for the current transaction
-       **/
-      currentPayer: AugmentedQuery<ApiType, () => Observable<Option<Signatory>>>;
-      /**
-       * (Target ID, claim type) (issuer,scope) -> Associated claims
-       **/
-      claims: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: Claim1stKey | { target?: any; claim_type?: any } | string | Uint8Array,
-          key2: Claim2ndKey | { issuer?: any; scope?: any } | string | Uint8Array
-        ) => Observable<IdentityClaim>
-      >;
-      keyToIdentityIds: AugmentedQuery<
-        ApiType,
-        (arg: AccountKey | string | Uint8Array) => Observable<Option<LinkedKeyInfo>>
-      >;
-      /**
-       * Nonce to ensure unique actions. starts from 1.
-       **/
-      multiPurposeNonce: AugmentedQuery<ApiType, () => Observable<u64>>;
-      /**
-       * Pre-authorize join to Identity.
-       **/
-      preAuthorizedJoinDid: AugmentedQuery<
-        ApiType,
-        (
-          arg: Signatory | { identity: any } | { accountKey: any } | string | Uint8Array
-        ) => Observable<Vec<PreAuthorizedKeyInfo>>
-      >;
-      /**
-       * Authorization nonce per Identity. Initially is 0.
-       **/
-      offChainAuthorizationNonce: AugmentedQuery<
-        ApiType,
-        (arg: IdentityId | string | Uint8Array) => Observable<AuthorizationNonce>
-      >;
-      /**
-       * Inmediate revoke of any off-chain authorization.
-       **/
-      revokeOffChainAuthorization: AugmentedQuery<
+    exemption: {
+      exemptionList: AugmentedQuery<
         ApiType,
         (
           arg:
-            | ITuple<[Signatory, TargetIdAuthorization]>
+            | ITuple<[Ticker, u16, IdentityId]>
             | [
-                Signatory | { identity: any } | { accountKey: any } | string | Uint8Array,
-                (
-                  | TargetIdAuthorization
-                  | { target_id?: any; nonce?: any; expires_at?: any }
-                  | string
-                  | Uint8Array
-                )
+                Ticker | string | Uint8Array,
+                u16 | AnyNumber | Uint8Array,
+                IdentityId | string | Uint8Array
               ]
         ) => Observable<bool>
       >;
-      /**
-       * All authorizations that an identity/key has
-       **/
-      authorizations: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: Signatory | { identity: any } | { accountKey: any } | string | Uint8Array,
-          key2: u64 | AnyNumber | Uint8Array
-        ) => Observable<Authorization>
-      >;
-      /**
-       * All links that an identity/key has
-       **/
-      links: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: Signatory | { identity: any } | { accountKey: any } | string | Uint8Array,
-          key2: u64 | AnyNumber | Uint8Array
-        ) => Observable<Link>
-      >;
-      /**
-       * All authorizations that an identity/key has given. (Authorizer, auth_id -> authorized)
-       **/
-      authorizationsGiven: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: Signatory | { identity: any } | { accountKey: any } | string | Uint8Array,
-          key2: u64 | AnyNumber | Uint8Array
-        ) => Observable<Signatory>
-      >;
-      /**
-       * It defines if authorization from a CDD provider is needed to change master key of an identity
-       **/
-      cddAuthForMasterKeyRotation: AugmentedQuery<ApiType, () => Observable<bool>>;
     };
     generalTM: {
       /**
@@ -1404,146 +651,400 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<Vec<IdentityId>>
       >;
     };
-    voting: {
+    grandpa: {
       /**
-       * Mapping of ticker and ballot name -> ballot details
+       * DEPRECATED
+       * This used to store the current authority set, which has been migrated to the well-known
+       * GRANDPA_AUTHORITES_KEY unhashed key.
        **/
-      ballots: AugmentedQuery<
+      authorities: AugmentedQuery<ApiType, () => Observable<AuthorityList>>;
+      /**
+       * The number of changes (both in terms of keys and underlying economic responsibilities)
+       * in the "set" of Grandpa validators from genesis.
+       **/
+      currentSetId: AugmentedQuery<ApiType, () => Observable<SetId>>;
+      /**
+       * next block number where we can force a change.
+       **/
+      nextForced: AugmentedQuery<ApiType, () => Observable<Option<BlockNumber>>>;
+      /**
+       * Pending change: (signaled at, scheduled change).
+       **/
+      pendingChange: AugmentedQuery<ApiType, () => Observable<Option<StoredPendingChange>>>;
+      /**
+       * A mapping from grandpa set ID to the index of the *most recent* session for which its members were responsible.
+       **/
+      setIdSession: AugmentedQuery<
         ApiType,
-        (
-          arg: ITuple<[Ticker, Bytes]> | [Ticker | string | Uint8Array, Bytes | string | Uint8Array]
-        ) => Observable<Ballot>
+        (arg: SetId | AnyNumber | Uint8Array) => Observable<Option<SessionIndex>>
       >;
       /**
-       * Helper data to make voting cheaper.
-       * (ticker, BallotName) -> NoOfChoices
+       * `true` if we are currently stalled.
        **/
-      totalChoices: AugmentedQuery<
+      stalled: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<ITuple<[BlockNumber, BlockNumber]>>>
+      >;
+      /**
+       * State of the current authority set.
+       **/
+      state: AugmentedQuery<ApiType, () => Observable<StoredState>>;
+    };
+    identity: {
+      /**
+       * All authorizations that an identity/key has
+       **/
+      authorizations: AugmentedQueryDoubleMap<
         ApiType,
         (
-          arg: ITuple<[Ticker, Bytes]> | [Ticker | string | Uint8Array, Bytes | string | Uint8Array]
+          key1: Signatory | { Identity: any } | { AccountKey: any } | string | Uint8Array,
+          key2: u64 | AnyNumber | Uint8Array
+        ) => Observable<Authorization>
+      >;
+      /**
+       * All authorizations that an identity/key has given. (Authorizer, auth_id -> authorized)
+       **/
+      authorizationsGiven: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Signatory | { Identity: any } | { AccountKey: any } | string | Uint8Array,
+          key2: u64 | AnyNumber | Uint8Array
+        ) => Observable<Signatory>
+      >;
+      /**
+       * It defines if authorization from a CDD provider is needed to change master key of an identity
+       **/
+      cddAuthForMasterKeyRotation: AugmentedQuery<ApiType, () => Observable<bool>>;
+      /**
+       * (Target ID, claim type) (issuer,scope) -> Associated claims
+       **/
+      claims: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Claim1stKey | { target?: any; claim_type?: any } | string | Uint8Array,
+          key2: Claim2ndKey | { issuer?: any; scope?: any } | string | Uint8Array
+        ) => Observable<IdentityClaim>
+      >;
+      /**
+       * It stores the current identity for current transaction.
+       **/
+      currentDid: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
+      /**
+       * It stores the current gas fee payer for the current transaction
+       **/
+      currentPayer: AugmentedQuery<ApiType, () => Observable<Option<Signatory>>>;
+      /**
+       * DID -> identity info
+       **/
+      didRecords: AugmentedQuery<
+        ApiType,
+        (arg: IdentityId | string | Uint8Array) => Observable<DidRecord>
+      >;
+      /**
+       * DID -> bool that indicates if signing keys are frozen.
+       **/
+      isDidFrozen: AugmentedQuery<
+        ApiType,
+        (arg: IdentityId | string | Uint8Array) => Observable<bool>
+      >;
+      keyToIdentityIds: AugmentedQuery<
+        ApiType,
+        (arg: AccountKey | string | Uint8Array) => Observable<Option<LinkedKeyInfo>>
+      >;
+      /**
+       * All links that an identity/key has
+       **/
+      links: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Signatory | { Identity: any } | { AccountKey: any } | string | Uint8Array,
+          key2: u64 | AnyNumber | Uint8Array
+        ) => Observable<Link>
+      >;
+      /**
+       * Nonce to ensure unique actions. starts from 1.
+       **/
+      multiPurposeNonce: AugmentedQuery<ApiType, () => Observable<u64>>;
+      /**
+       * Authorization nonce per Identity. Initially is 0.
+       **/
+      offChainAuthorizationNonce: AugmentedQuery<
+        ApiType,
+        (arg: IdentityId | string | Uint8Array) => Observable<AuthorizationNonce>
+      >;
+      /**
+       * Module owner.
+       **/
+      owner: AugmentedQuery<ApiType, () => Observable<AccountId>>;
+      /**
+       * Pre-authorize join to Identity.
+       **/
+      preAuthorizedJoinDid: AugmentedQuery<
+        ApiType,
+        (
+          arg: Signatory | { Identity: any } | { AccountKey: any } | string | Uint8Array
+        ) => Observable<Vec<PreAuthorizedKeyInfo>>
+      >;
+      /**
+       * Inmediate revoke of any off-chain authorization.
+       **/
+      revokeOffChainAuthorization: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Signatory, TargetIdAuthorization]>
+            | [
+                Signatory | { Identity: any } | { AccountKey: any } | string | Uint8Array,
+                (
+                  | TargetIdAuthorization
+                  | { target_id?: any; nonce?: any; expires_at?: any }
+                  | string
+                  | Uint8Array
+                )
+              ]
+        ) => Observable<bool>
+      >;
+    };
+    imOnline: {
+      /**
+       * For each session index, we keep a mapping of `T::ValidatorId` to the
+       * number of blocks authored by the given authority.
+       **/
+      authoredBlocks: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: SessionIndex | AnyNumber | Uint8Array,
+          key2: ValidatorId | string | Uint8Array
+        ) => Observable<u32>
+      >;
+      /**
+       * The block number when we should gossip.
+       **/
+      gossipAt: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+      /**
+       * The current set of keys that may issue a heartbeat.
+       **/
+      keys: AugmentedQuery<ApiType, () => Observable<Vec<AuthorityId>>>;
+      /**
+       * For each session index, we keep a mapping of `AuthIndex`
+       * to `offchain::OpaqueNetworkState`.
+       **/
+      receivedHeartbeats: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: SessionIndex | AnyNumber | Uint8Array,
+          key2: AuthIndex | AnyNumber | Uint8Array
+        ) => Observable<Option<Bytes>>
+      >;
+      /**
+       * Config parameters for slash fraction
+       **/
+      slashingParams: AugmentedQuery<ApiType, () => Observable<OfflineSlashingParams>>;
+    };
+    indices: {
+      /**
+       * The enumeration sets.
+       **/
+      enumSet: AugmentedQuery<
+        ApiType,
+        (arg: AccountIndex | AnyNumber | Uint8Array) => Observable<Vec<AccountId>>
+      >;
+      /**
+       * The next free enumeration set.
+       **/
+      nextEnumSet: AugmentedQuery<ApiType, () => Observable<AccountIndex>>;
+    };
+    mips: {
+      /**
+       * Those who have locked a deposit.
+       * proposal hash -> (deposit, proposer)
+       **/
+      deposits: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Vec<ITuple<[AccountId, BalanceOf]>>>
+      >;
+      /**
+       * The minimum amount to be used as a deposit for a public referendum proposal.
+       **/
+      minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      /**
+       * Lookup proposal hash by a proposal's index
+       * MIP index -> proposal hash
+       **/
+      proposalByIndex: AugmentedQuery<
+        ApiType,
+        (arg: MipsIndex | AnyNumber | Uint8Array) => Observable<Hash>
+      >;
+      /**
+       * Proposals so far. Index can be used to keep track of MIPs off-chain.
+       **/
+      proposalCount: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * How long (in blocks) a ballot runs
+       **/
+      proposalDuration: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+      /**
+       * The hashes of the active proposals.
+       **/
+      proposalMetadata: AugmentedQuery<ApiType, () => Observable<Vec<MipsMetadata>>>;
+      /**
+       * Actual proposal for a given hash, if it's current.
+       * proposal hash -> proposal
+       **/
+      proposals: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<MIP>>
+      >;
+      /**
+       * Minimum stake a proposal must gather in order to be considered by the committee.
+       **/
+      quorumThreshold: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      /**
+       * Active referendums.
+       **/
+      referendumMetadata: AugmentedQuery<ApiType, () => Observable<Vec<PolymeshReferendumInfo>>>;
+      /**
+       * Proposals that have met the quorum threshold to be put forward to a governance committee
+       * proposal hash -> proposal
+       **/
+      referendums: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>
+      >;
+      /**
+       * PolymeshVotes on a given proposal, if it is ongoing.
+       * proposal hash -> vote count
+       **/
+      voting: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<PolymeshVotes>>
+      >;
+    };
+    multiSig: {
+      /**
+       * Maps a key to a multisig address
+       **/
+      keyToMultiSig: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<AccountId>
+      >;
+      /**
+       * Maps a multisig to its creator's identity
+       **/
+      multiSigCreator: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<IdentityId>
+      >;
+      /**
+       * Nonce to ensure unique MultiSig addresses are generated. starts from 1.
+       **/
+      multiSigNonce: AugmentedQuery<ApiType, () => Observable<u64>>;
+      /**
+       * Signers of a multisig. (mulisig, signer) => signer.
+       **/
+      multiSigSigners: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: AccountId | string | Uint8Array,
+          key2: Signatory | { Identity: any } | { AccountKey: any } | string | Uint8Array
+        ) => Observable<Signatory>
+      >;
+      /**
+       * Confirmations required before processing a multisig tx
+       **/
+      multiSigSignsRequired: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<u64>
+      >;
+      /**
+       * Number of transactions proposed in a multisig. Used as tx id. starts from 0
+       **/
+      multiSigTxDone: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<u64>
+      >;
+      /**
+       * Number of approved/accepted signers of a multisig.
+       **/
+      numberOfSigners: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<u64>
+      >;
+      /**
+       * A mapping of proposals to their IDs.
+       **/
+      proposalIds: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: AccountId | string | Uint8Array,
+          key2: Proposal | { callIndex?: any; args?: any } | string | Uint8Array
+        ) => Observable<Option<u64>>
+      >;
+      /**
+       * Proposals presented for voting to a multisig (multisig, proposal id) => Option<proposal>.
+       **/
+      proposals: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[AccountId, u64]>
+            | [AccountId | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+        ) => Observable<Option<Proposal>>
+      >;
+      /**
+       * Number of votes in favor of a tx. Mapping from (multisig, tx id) => no. of approvals.
+       **/
+      txApprovals: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[AccountId, u64]>
+            | [AccountId | string | Uint8Array, u64 | AnyNumber | Uint8Array]
         ) => Observable<u64>
       >;
       /**
-       * (Ticker, BallotName, DID) -> Vector of vote weights.
-       * weight at 0 index means weight for choice 1 of motion 1.
-       * weight at 1 index means weight for choice 2 of motion 1.
-       * User must enter 0 vote weight if they don't want to vote for a choice.
+       * Individual multisig signer votes. (multi sig, signer, proposal) => vote
        **/
       votes: AugmentedQuery<
         ApiType,
         (
           arg:
-            | ITuple<[Ticker, Bytes, IdentityId]>
+            | ITuple<[AccountId, Signatory, u64]>
             | [
-                Ticker | string | Uint8Array,
-                Bytes | string | Uint8Array,
-                IdentityId | string | Uint8Array
+                AccountId | string | Uint8Array,
+                Signatory | { Identity: any } | { AccountKey: any } | string | Uint8Array,
+                u64 | AnyNumber | Uint8Array
               ]
-        ) => Observable<Vec<Balance>>
-      >;
-      /**
-       * (Ticker, BallotName) -> Vector of current vote weights.
-       * weight at 0 index means weight for choice 1 of motion 1.
-       * weight at 1 index means weight for choice 2 of motion 1.
-       **/
-      results: AugmentedQuery<
-        ApiType,
-        (
-          arg: ITuple<[Ticker, Bytes]> | [Ticker | string | Uint8Array, Bytes | string | Uint8Array]
-        ) => Observable<Vec<Balance>>
+        ) => Observable<bool>
       >;
     };
-    stoCapped: {
+    offences: {
       /**
-       * Tokens can have multiple whitelists that (for now) check entries individually within each other
-       * (ticker, sto_id) -> STO
+       * A vector of reports of the same kind that happened at the same time slot.
        **/
-      stosByToken: AugmentedQuery<
+      concurrentReportsIndex: AugmentedQueryDoubleMap<
         ApiType,
         (
-          arg: ITuple<[Ticker, u32]> | [Ticker | string | Uint8Array, u32 | AnyNumber | Uint8Array]
-        ) => Observable<STO>
+          key1: Kind | string | Uint8Array,
+          key2: OpaqueTimeSlot | string | Uint8Array
+        ) => Observable<Vec<ReportIdOf>>
       >;
       /**
-       * It returns the sto count corresponds to its ticker
-       * ticker -> sto count
+       * The primary structure that holds all offence records keyed by report identifiers.
        **/
-      stoCount: AugmentedQuery<ApiType, (arg: Ticker | string | Uint8Array) => Observable<u32>>;
-      /**
-       * List of SimpleToken tokens which will be accepted as the fund raised type for the STO
-       * (asset_ticker, sto_id, index) -> simple_token_ticker
-       **/
-      allowedTokens: AugmentedQuery<
+      reports: AugmentedQuery<
         ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, u32, u32]>
-            | [
-                Ticker | string | Uint8Array,
-                u32 | AnyNumber | Uint8Array,
-                u32 | AnyNumber | Uint8Array
-              ]
-        ) => Observable<Ticker>
+        (arg: ReportIdOf | string | Uint8Array) => Observable<Option<OffenceDetails>>
       >;
       /**
-       * To track the index of the token address for the given STO
-       * (Asset_ticker, sto_id, simple_token_ticker) -> index
+       * Enumerates all reports of a kind along with the time they happened.
+       * All reports are sorted by the time of offence.
+       * Note that the actual type of this mapping is `Vec<u8>`, this is because values of
+       * different types are not supported at the moment so we are doing the manual serialization.
        **/
-      tokenIndexForSTO: AugmentedQuery<
+      reportsByKindIndex: AugmentedQuery<
         ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, u32, Ticker]>
-            | [
-                Ticker | string | Uint8Array,
-                u32 | AnyNumber | Uint8Array,
-                Ticker | string | Uint8Array
-              ]
-        ) => Observable<Option<u32>>
-      >;
-      /**
-       * To track the no of different tokens allowed as fund raised type for the given STO
-       * (asset_ticker, sto_id) -> count
-       **/
-      tokensCountForSto: AugmentedQuery<
-        ApiType,
-        (
-          arg: ITuple<[Ticker, u32]> | [Ticker | string | Uint8Array, u32 | AnyNumber | Uint8Array]
-        ) => Observable<u32>
-      >;
-      /**
-       * To track the investment data of the investor corresponds to ticker
-       * (asset_ticker, sto_id, DID) -> Investment structure
-       **/
-      investmentData: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, u32, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                u32 | AnyNumber | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<Investment>
-      >;
-      /**
-       * To track the investment amount of the investor corresponds to ticker using SimpleToken
-       * (asset_ticker, simple_token_ticker, sto_id, accountId) -> Invested balance
-       **/
-      simpleTokenSpent: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, Ticker, u32, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                Ticker | string | Uint8Array,
-                u32 | AnyNumber | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<Balance>
+        (arg: Kind | string | Uint8Array) => Observable<Bytes>
       >;
     };
     percentageTM: {
@@ -1552,19 +1053,129 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<u16>
       >;
     };
-    exemption: {
-      exemptionList: AugmentedQuery<
+    polymeshCommittee: {
+      /**
+       * The current members of the committee.
+       **/
+      members: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * Proposals so far.
+       **/
+      proposalCount: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * Actual proposal for a given hash.
+       **/
+      proposalOf: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>
+      >;
+      /**
+       * The hashes of the active proposals.
+       **/
+      proposals: AugmentedQuery<ApiType, () => Observable<Vec<Hash>>>;
+      /**
+       * Vote threshold for an approval.
+       **/
+      voteThreshold: AugmentedQuery<ApiType, () => Observable<ITuple<[u32, u32]>>>;
+      /**
+       * PolymeshVotes on a given proposal, if it is ongoing.
+       **/
+      voting: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<PolymeshVotes>>
+      >;
+    };
+    protocolFee: {
+      /**
+       * The mapping of operation names to the base fees of those operations.
+       **/
+      baseFees: AugmentedQuery<
         ApiType,
         (
           arg:
-            | ITuple<[Ticker, u16, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                u16 | AnyNumber | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<bool>
+            | ProtocolOp
+            | (
+                | 'AssetRegisterTicker'
+                | 'AssetIssue'
+                | 'AssetAddDocument'
+                | 'AssetCreateToken'
+                | 'DividendNew'
+                | 'GeneralTmAddActiveRule'
+                | 'IdentityRegisterDid'
+                | 'IdentityCddRegisterDid'
+                | 'IdentityAddClaim'
+                | 'IdentitySetMasterKey'
+                | 'IdentityAddSigningItem'
+                | 'MipsPropose'
+                | 'VotingAddBallot'
+              )
+            | number
+            | Uint8Array
+        ) => Observable<BalanceOf>
       >;
+      /**
+       * The fee coefficient as a positive rational (numerator, denominator).
+       **/
+      coefficient: AugmentedQuery<ApiType, () => Observable<PosRatio>>;
+    };
+    randomnessCollectiveFlip: {
+      /**
+       * Series of block headers from the last 81 blocks that acts as random seed material. This
+       * is arranged as a ring buffer with `block_number % 81` being the index into the `Vec` of
+       * the oldest hash.
+       **/
+      randomMaterial: AugmentedQuery<ApiType, () => Observable<Vec<Hash>>>;
+    };
+    session: {
+      /**
+       * Current index of the session.
+       **/
+      currentIndex: AugmentedQuery<ApiType, () => Observable<SessionIndex>>;
+      /**
+       * Indices of disabled validators.
+       * The set is cleared when `on_session_ending` returns a new set of identities.
+       **/
+      disabledValidators: AugmentedQuery<ApiType, () => Observable<Vec<u32>>>;
+      /**
+       * The owner of a key. The second key is the `KeyTypeId` + the encoded key.
+       * The first key is always `DEDUP_KEY_PREFIX` to have all the data in the same branch of
+       * the trie. Having all data in the same branch should prevent slowing down other queries.
+       **/
+      keyOwner: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Bytes | string | Uint8Array,
+          key2:
+            | ITuple<[KeyTypeId, Bytes]>
+            | [KeyTypeId | AnyNumber | Uint8Array, Bytes | string | Uint8Array]
+        ) => Observable<Option<ValidatorId>>
+      >;
+      /**
+       * The next session keys for a validator.
+       * The first key is always `DEDUP_KEY_PREFIX` to have all the data in the same branch of
+       * the trie. Having all data in the same branch should prevent slowing down other queries.
+       **/
+      nextKeys: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Bytes | string | Uint8Array,
+          key2: ValidatorId | string | Uint8Array
+        ) => Observable<Option<Keys>>
+      >;
+      /**
+       * True if the underlying economic identities or weighting behind the validators
+       * has changed in the queued validator set.
+       **/
+      queuedChanged: AugmentedQuery<ApiType, () => Observable<bool>>;
+      /**
+       * The queued keys for the next session. When the next session begins, these keys
+       * will be used to determine the validator's session keys.
+       **/
+      queuedKeys: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[ValidatorId, Keys]>>>>;
+      /**
+       * The current set of validators.
+       **/
+      validators: AugmentedQuery<ApiType, () => Observable<Vec<ValidatorId>>>;
     };
     simpleToken: {
       /**
@@ -1605,12 +1216,186 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<SimpleTokenRecord>
       >;
     };
-    cddServiceProviders: {
+    staking: {
       /**
-       * Identities that are part of this group, known as "Active members".
+       * Map from all locked "stash" accounts to the controller account.
        **/
-      activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
-      inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
+      bonded: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Option<AccountId>>
+      >;
+      /**
+       * A mapping from still-bonded eras to the first session index of that era.
+       **/
+      bondedEras: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[EraIndex, SessionIndex]>>>>;
+      /**
+       * The amount of currency given to reporters of a slash event which was
+       * canceled by extraordinary circumstances (e.g. governance).
+       **/
+      canceledSlashPayout: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      /**
+       * The currently elected validator set keyed by stash account ID.
+       **/
+      currentElected: AugmentedQuery<ApiType, () => Observable<Vec<AccountId>>>;
+      /**
+       * The current era index.
+       **/
+      currentEra: AugmentedQuery<ApiType, () => Observable<EraIndex>>;
+      /**
+       * Rewards for the current era. Using indices of current elected set.
+       **/
+      currentEraPointsEarned: AugmentedQuery<ApiType, () => Observable<EraPoints>>;
+      /**
+       * The start of the current era.
+       **/
+      currentEraStart: AugmentedQuery<ApiType, () => Observable<MomentOf>>;
+      /**
+       * The session index at which the current era started.
+       **/
+      currentEraStartSessionIndex: AugmentedQuery<ApiType, () => Observable<SessionIndex>>;
+      /**
+       * The earliest era for which we have a pending, unapplied slash.
+       **/
+      earliestUnappliedSlash: AugmentedQuery<ApiType, () => Observable<Option<EraIndex>>>;
+      /**
+       * True if the next session change will be a new era regardless of index.
+       **/
+      forceEra: AugmentedQuery<ApiType, () => Observable<Forcing>>;
+      /**
+       * Any validators that may never be slashed or forcibly kicked. It's a Vec since they're
+       * easy to initialize and the performance hit is minimal (we expect no more than four
+       * invulnerables) and restricted to testnets.
+       **/
+      invulnerables: AugmentedQuery<ApiType, () => Observable<Vec<AccountId>>>;
+      /**
+       * Map from all (unlocked) "controller" accounts to the info regarding the staking.
+       **/
+      ledger: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Option<StakingLedger>>
+      >;
+      /**
+       * The minimum amount with which a validator can bond.
+       **/
+      minimumBondThreshold: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      /**
+       * Minimum number of staking participants before emergency conditions are imposed.
+       **/
+      minimumValidatorCount: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * The map from nominator stash key to the set of stash keys of all validators to nominate.
+       * NOTE: is private so that we can ensure upgraded before all typical accesses.
+       * Direct storage APIs can still bypass this protection.
+       **/
+      nominators: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId | string | Uint8Array
+        ) => Observable<ITuple<[Option<Nominations>, Linkage<AccountId>]>>
+      >;
+      /**
+       * All slashing events on nominators, mapped by era to the highest slash value of the era.
+       **/
+      nominatorSlashInEra: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: EraIndex | AnyNumber | Uint8Array,
+          key2: AccountId | string | Uint8Array
+        ) => Observable<Option<BalanceOf>>
+      >;
+      /**
+       * Where the reward payment should be made. Keyed by stash.
+       **/
+      payee: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<RewardDestination>
+      >;
+      /**
+       * The map from (wannabe) validators to the status of compliance
+       **/
+      permissionedValidators: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId | string | Uint8Array
+        ) => Observable<ITuple<[Option<PermissionedValidator>, Linkage<AccountId>]>>
+      >;
+      /**
+       * Slashing spans for stash accounts.
+       **/
+      slashingSpans: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Option<SlashingSpans>>
+      >;
+      /**
+       * The percentage of the slash that is distributed to reporters.
+       * The rest of the slashed value is handled by the `Slash`.
+       **/
+      slashRewardFraction: AugmentedQuery<ApiType, () => Observable<Perbill>>;
+      /**
+       * The amount of balance actively at stake for each validator slot, currently.
+       * This is used to derive rewards and punishments.
+       **/
+      slotStake: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      /**
+       * Records information about the maximum slash of a stash within a slashing span,
+       * as well as how much reward has been paid out.
+       **/
+      spanSlash: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[AccountId, SpanIndex]>
+            | [AccountId | string | Uint8Array, SpanIndex | AnyNumber | Uint8Array]
+        ) => Observable<SpanRecord>
+      >;
+      /**
+       * Nominators for a particular account that is in action right now. You can't iterate
+       * through validators here, but you can find them in the Session module.
+       * This is keyed by the stash account.
+       **/
+      stakers: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Exposure>
+      >;
+      /**
+       * The version of storage for upgrade.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * All unapplied slashes that are queued for later.
+       **/
+      unappliedSlashes: AugmentedQuery<
+        ApiType,
+        (arg: EraIndex | AnyNumber | Uint8Array) => Observable<Vec<UnappliedSlash>>
+      >;
+      /**
+       * Commision rate to be used by all validators.
+       **/
+      validatorCommission: AugmentedQuery<ApiType, () => Observable<Commission>>;
+      /**
+       * The ideal number of staking participants.
+       **/
+      validatorCount: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * The map from (wannabe) validator stash key to the preferences of that validator.
+       **/
+      validators: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId | string | Uint8Array
+        ) => Observable<ITuple<[ValidatorPrefs, Linkage<AccountId>]>>
+      >;
+      /**
+       * All slashing events on validators, mapped by era to the highest slash proportion
+       * and slash value of the era.
+       **/
+      validatorSlashInEra: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: EraIndex | AnyNumber | Uint8Array,
+          key2: AccountId | string | Uint8Array
+        ) => Observable<Option<ITuple<[Perbill, BalanceOf]>>>
+      >;
     };
     statistic: {
       investorCountPerAsset: AugmentedQuery<
@@ -1618,38 +1403,261 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<Counter>
       >;
     };
-    protocolFee: {
+    stoCapped: {
       /**
-       * The mapping of operation names to the base fees of those operations.
+       * List of SimpleToken tokens which will be accepted as the fund raised type for the STO
+       * (asset_ticker, sto_id, index) -> simple_token_ticker
        **/
-      baseFees: AugmentedQuery<
+      allowedTokens: AugmentedQuery<
         ApiType,
         (
           arg:
-            | ProtocolOp
-            | (
-                | 'AssetRegisterTicker'
-                | 'AssetIssue'
-                | 'AssetAddDocument'
-                | 'AssetCreateToken'
-                | 'DividendNew'
-                | 'GeneralTmAddActiveRule'
-                | 'IdentityRegisterDid'
-                | 'IdentityCddRegisterDid'
-                | 'IdentityAddClaim'
-                | 'IdentitySetMasterKey'
-                | 'IdentityAddSigningItem'
-                | 'MipsPropose'
-                | 'VotingAddBallot'
-              )
-            | number
-            | Uint8Array
-        ) => Observable<BalanceOf>
+            | ITuple<[Ticker, u32, u32]>
+            | [
+                Ticker | string | Uint8Array,
+                u32 | AnyNumber | Uint8Array,
+                u32 | AnyNumber | Uint8Array
+              ]
+        ) => Observable<Ticker>
       >;
       /**
-       * The fee coefficient as a positive rational (numerator, denominator).
+       * To track the investment data of the investor corresponds to ticker
+       * (asset_ticker, sto_id, DID) -> Investment structure
        **/
-      coefficient: AugmentedQuery<ApiType, () => Observable<PosRatio>>;
+      investmentData: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, u32, IdentityId]>
+            | [
+                Ticker | string | Uint8Array,
+                u32 | AnyNumber | Uint8Array,
+                IdentityId | string | Uint8Array
+              ]
+        ) => Observable<Investment>
+      >;
+      /**
+       * To track the investment amount of the investor corresponds to ticker using SimpleToken
+       * (asset_ticker, simple_token_ticker, sto_id, accountId) -> Invested balance
+       **/
+      simpleTokenSpent: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, Ticker, u32, IdentityId]>
+            | [
+                Ticker | string | Uint8Array,
+                Ticker | string | Uint8Array,
+                u32 | AnyNumber | Uint8Array,
+                IdentityId | string | Uint8Array
+              ]
+        ) => Observable<Balance>
+      >;
+      /**
+       * It returns the sto count corresponds to its ticker
+       * ticker -> sto count
+       **/
+      stoCount: AugmentedQuery<ApiType, (arg: Ticker | string | Uint8Array) => Observable<u32>>;
+      /**
+       * Tokens can have multiple whitelists that (for now) check entries individually within each other
+       * (ticker, sto_id) -> STO
+       **/
+      stosByToken: AugmentedQuery<
+        ApiType,
+        (
+          arg: ITuple<[Ticker, u32]> | [Ticker | string | Uint8Array, u32 | AnyNumber | Uint8Array]
+        ) => Observable<STO>
+      >;
+      /**
+       * To track the index of the token address for the given STO
+       * (Asset_ticker, sto_id, simple_token_ticker) -> index
+       **/
+      tokenIndexForSTO: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, u32, Ticker]>
+            | [
+                Ticker | string | Uint8Array,
+                u32 | AnyNumber | Uint8Array,
+                Ticker | string | Uint8Array
+              ]
+        ) => Observable<Option<u32>>
+      >;
+      /**
+       * To track the no of different tokens allowed as fund raised type for the given STO
+       * (asset_ticker, sto_id) -> count
+       **/
+      tokensCountForSto: AugmentedQuery<
+        ApiType,
+        (
+          arg: ITuple<[Ticker, u32]> | [Ticker | string | Uint8Array, u32 | AnyNumber | Uint8Array]
+        ) => Observable<u32>
+      >;
+    };
+    sudo: {
+      /**
+       * The `AccountId` of the sudo key.
+       **/
+      key: AugmentedQuery<ApiType, () => Observable<AccountId>>;
+    };
+    system: {
+      /**
+       * Extrinsics nonce for accounts.
+       **/
+      accountNonce: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Index>
+      >;
+      /**
+       * Total length (in bytes) for all extrinsics put together, for the current block.
+       **/
+      allExtrinsicsLen: AugmentedQuery<ApiType, () => Observable<Option<u32>>>;
+      /**
+       * Total weight for all extrinsics put together, for the current block.
+       **/
+      allExtrinsicsWeight: AugmentedQuery<ApiType, () => Observable<Option<Weight>>>;
+      /**
+       * Map of block numbers to block hashes.
+       **/
+      blockHash: AugmentedQuery<
+        ApiType,
+        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Hash>
+      >;
+      /**
+       * Digest of the current block, also part of the block header.
+       **/
+      digest: AugmentedQuery<ApiType, () => Observable<DigestOf>>;
+      /**
+       * The number of events in the `Events<T>` list.
+       **/
+      eventCount: AugmentedQuery<ApiType, () => Observable<EventIndex>>;
+      /**
+       * Events deposited for the current block.
+       **/
+      events: AugmentedQuery<ApiType, () => Observable<Vec<EventRecord>>>;
+      /**
+       * Mapping between a topic (represented by T::Hash) and a vector of indexes
+       * of events in the `<Events<T>>` list.
+       * The first key serves no purpose. This field is declared as double_map just
+       * for convenience of using `remove_prefix`.
+       * All topic vectors have deterministic storage locations depending on the topic. This
+       * allows light-clients to leverage the changes trie storage tracking mechanism and
+       * in case of changes fetch the list of events of interest.
+       * The value has the type `(T::BlockNumber, EventIndex)` because if we used only just
+       * the `EventIndex` then in case if the topic has the same contents on the next block
+       * no notification will be triggered thus the event might be lost.
+       **/
+      eventTopics: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: null,
+          key2: Hash | string | Uint8Array
+        ) => Observable<Vec<ITuple<[BlockNumber, EventIndex]>>>
+      >;
+      /**
+       * Total extrinsics count for the current block.
+       **/
+      extrinsicCount: AugmentedQuery<ApiType, () => Observable<Option<u32>>>;
+      /**
+       * Extrinsics data for the current block (maps an extrinsic's index to its data).
+       **/
+      extrinsicData: AugmentedQuery<
+        ApiType,
+        (arg: u32 | AnyNumber | Uint8Array) => Observable<Bytes>
+      >;
+      /**
+       * Extrinsics root of the current block, also part of the block header.
+       **/
+      extrinsicsRoot: AugmentedQuery<ApiType, () => Observable<Hash>>;
+      /**
+       * The current block number being processed. Set by `execute_block`.
+       **/
+      number: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+      /**
+       * Hash of the previous block.
+       **/
+      parentHash: AugmentedQuery<ApiType, () => Observable<Hash>>;
+    };
+    timestamp: {
+      /**
+       * Did the timestamp get updated in this block?
+       **/
+      didUpdate: AugmentedQuery<ApiType, () => Observable<bool>>;
+      /**
+       * Current time for the current block.
+       **/
+      now: AugmentedQuery<ApiType, () => Observable<Moment>>;
+    };
+    transactionPayment: {
+      nextFeeMultiplier: AugmentedQuery<ApiType, () => Observable<Multiplier>>;
+    };
+    treasury: {
+      /**
+       * Proposal indices that have been approved but not yet awarded.
+       **/
+      approvals: AugmentedQuery<ApiType, () => Observable<Vec<ProposalIndex>>>;
+      /**
+       * Number of proposals that have been made.
+       **/
+      proposalCount: AugmentedQuery<ApiType, () => Observable<ProposalIndex>>;
+      /**
+       * Proposals that have been made.
+       **/
+      proposals: AugmentedQuery<
+        ApiType,
+        (arg: ProposalIndex | AnyNumber | Uint8Array) => Observable<Option<TreasuryProposal>>
+      >;
+    };
+    voting: {
+      /**
+       * Mapping of ticker and ballot name -> ballot details
+       **/
+      ballots: AugmentedQuery<
+        ApiType,
+        (
+          arg: ITuple<[Ticker, Bytes]> | [Ticker | string | Uint8Array, Bytes | string | Uint8Array]
+        ) => Observable<ITuple<[Ballot, Linkage<ITuple<[Ticker, Bytes]>>]>>
+      >;
+      /**
+       * (Ticker, BallotName) -> Vector of current vote weights.
+       * weight at 0 index means weight for choice 1 of motion 1.
+       * weight at 1 index means weight for choice 2 of motion 1.
+       **/
+      results: AugmentedQuery<
+        ApiType,
+        (
+          arg: ITuple<[Ticker, Bytes]> | [Ticker | string | Uint8Array, Bytes | string | Uint8Array]
+        ) => Observable<Vec<Balance>>
+      >;
+      /**
+       * Helper data to make voting cheaper.
+       * (ticker, BallotName) -> NoOfChoices
+       **/
+      totalChoices: AugmentedQuery<
+        ApiType,
+        (
+          arg: ITuple<[Ticker, Bytes]> | [Ticker | string | Uint8Array, Bytes | string | Uint8Array]
+        ) => Observable<u64>
+      >;
+      /**
+       * (Ticker, BallotName, DID) -> Vector of vote weights.
+       * weight at 0 index means weight for choice 1 of motion 1.
+       * weight at 1 index means weight for choice 2 of motion 1.
+       * User must enter 0 vote weight if they don't want to vote for a choice.
+       **/
+      votes: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, Bytes, IdentityId]>
+            | [
+                Ticker | string | Uint8Array,
+                Bytes | string | Uint8Array,
+                IdentityId | string | Uint8Array
+              ]
+        ) => Observable<Vec<Balance>>
+      >;
     };
   }
 

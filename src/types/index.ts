@@ -86,10 +86,10 @@ export function isTokenOwnerRole(role: Role): role is TokenOwnerRole {
 export type Role = TickerOwnerRole | TokenOwnerRole;
 
 export enum KnownTokenType {
-  Equity = 'equity',
-  Debt = 'debt',
-  Commodity = 'commodity',
-  StructuredProduct = 'structuredProduct',
+  Equity = 'Equity',
+  Debt = 'Debt',
+  Commodity = 'Commodity',
+  StructuredProduct = 'StructuredProduct',
 }
 
 /**
@@ -98,8 +98,8 @@ export enum KnownTokenType {
 export type TokenType = KnownTokenType | { custom: string };
 
 export enum TokenIdentifierType {
-  Isin = 'isin',
-  Cusip = 'cusip',
+  Isin = 'Isin',
+  Cusip = 'Cusip',
 }
 
 // NOTE: query.asset.identifiers doesn’t support custom identifier types properly for now
@@ -126,14 +126,14 @@ export interface TokenDocument {
  * Type of authorization request
  */
 export enum AuthorizationType {
-  AttestMasterKeyRotation = 'attestMasterKeyRotation',
-  RotateMasterKey = 'rotateMasterKey',
-  TransferTicker = 'transferTicker',
-  AddMultiSigSigner = 'addMultiSigSigner',
-  TransferTokenOwnership = 'transferTokenOwnership',
-  JoinIdentity = 'joinIdentity',
-  Custom = 'custom',
-  NoData = 'noData',
+  AttestMasterKeyRotation = 'AttestMasterKeyRotation',
+  RotateMasterKey = 'RotateMasterKey',
+  TransferTicker = 'TransferTicker',
+  AddMultiSigSigner = 'AddMultiSigSigner',
+  TransferTokenOwnership = 'TransferTokenOwnership',
+  JoinIdentity = 'JoinIdentity',
+  Custom = 'Custom',
+  NoData = 'NoData',
 }
 
 /**

@@ -52,7 +52,7 @@ describe('SecurityToken class', () => {
       const totalSupply = 1000;
       const isDivisible = true;
       const owner = '0x0wn3r';
-      const assetType = 'equity';
+      const assetType = 'Equity';
 
       const context = polkadotMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);

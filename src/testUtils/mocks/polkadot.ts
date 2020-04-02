@@ -143,6 +143,7 @@ const defaultReceipt: ISubmittableResult = {
   isError: false,
   isFinalized: false,
   isInBlock: false,
+  isWarning: false,
   events: [],
   toHuman: () => ({}),
 };
@@ -881,7 +882,7 @@ const createMockEnum = (enumValue?: string | Record<string, Codec>): Enum => {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAssetType = (
-  assetType?: 'equity' | 'debt' | 'commodity' | 'structuredProduct' | { custom: Bytes }
+  assetType?: 'Equity' | 'Debt' | 'Commodity' | 'StructuredProduct' | { Custom: Bytes }
 ): AssetType => {
   return createMockEnum(assetType) as AssetType;
 };
@@ -891,7 +892,7 @@ export const createMockAssetType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockLinkData = (
-  linkData?: { documentOwned: Document } | { tickerOwned: Ticker } | { tokenOwned: Ticker }
+  linkData?: { DocumentOwned: Document } | { TickerOwned: Ticker } | { TokenOwned: Ticker }
 ): LinkData => {
   return createMockEnum(linkData) as LinkData;
 };
@@ -982,7 +983,7 @@ export const createMockDocument = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockIdentifierType = (
-  identifierType?: 'isin' | 'cusip' | { custom: Bytes }
+  identifierType?: 'Isin' | 'Cusip' | { Custom: Bytes }
 ): IdentifierType => {
   return createMockEnum(identifierType) as IdentifierType;
 };
@@ -1006,7 +1007,7 @@ export const createMockFundingRoundName = (roundName?: string): FundingRoundName
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSignatory = (
-  signatory?: { identity: IdentityId } | { accountKey: AccountKey }
+  signatory?: { Identity: IdentityId } | { AccountKey: AccountKey }
 ): Signatory => {
   return createMockEnum(signatory) as Signatory;
 };
@@ -1017,14 +1018,14 @@ export const createMockSignatory = (
  */
 export const createMockAuthorizationData = (
   authorizationData?:
-    | { attestMasterKeyRotation: IdentityId }
-    | { rotateMasterKey: IdentityId }
-    | { transferTicker: Ticker }
-    | 'addMultiSigSigner'
-    | { transferTokenOwnership: Ticker }
-    | { joinIdentity: IdentityId }
+    | { AttestMasterKeyRotation: IdentityId }
+    | { RotateMasterKey: IdentityId }
+    | { TransferTicker: Ticker }
+    | 'AddMultiSigSigner'
+    | { TransferTokenOwnership: Ticker }
+    | { JoinIdentity: IdentityId }
     | { custom: Bytes }
-    | 'noData'
+    | 'NoData'
 ): AuthorizationData => {
   return createMockEnum(authorizationData) as AuthorizationData;
 };
