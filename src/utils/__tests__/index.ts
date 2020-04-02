@@ -1,4 +1,4 @@
-import { bool, Bytes } from '@polkadot/types';
+import { bool, Bytes, u64 } from '@polkadot/types';
 import * as createTypeModule from '@polkadot/types/create/createType';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
@@ -22,8 +22,8 @@ import sinon, { SinonStub } from 'sinon';
 
 import { PostTransactionValue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
-import { KnownTokenType, TokenIdentifierType } from '~/types';
-import { Authorization, AuthorizationType, SignerType } from '~/types/internal';
+import { Authorization, AuthorizationType, KnownTokenType, TokenIdentifierType } from '~/types';
+import { SignerType } from '~/types/internal';
 
 import {
   accountKeyToString,
@@ -47,6 +47,7 @@ import {
   identityIdToString,
   momentToDate,
   numberToBalance,
+  numberToU64,
   serialize,
   signatoryToSigner,
   signerToSignatory,
@@ -66,6 +67,7 @@ import {
   tokenIdentifierTypeToIdentifierType,
   tokenNameToString,
   tokenTypeToAssetType,
+  u64ToBigNumber,
   unserialize,
   unwrapValues,
 } from '../';
@@ -278,6 +280,49 @@ describe('numberToBalance and balanceToBigNumber', () => {
 
     const result = balanceToBigNumber(balance);
     expect(result).toEqual(new BigNumber(fakeResult).div(Math.pow(10, 6)));
+  });
+});
+
+describe('numberToU64 and u64ToBigNumber', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('numberToU64 should convert a number to a polkadot u64 object', () => {
+    const value = new BigNumber(100);
+    const fakeResult = ('100' as unknown) as u64;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'u64', value.toString())
+      .returns(fakeResult);
+
+    const result = numberToU64(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('u64ToBigNumber should convert a polkadot u64 object to a BigNumber', () => {
+    const fakeResult = 100;
+    const balance = polkadotMockUtils.createMockBalance(fakeResult);
+
+    const result = u64ToBigNumber(balance);
+    expect(result).toEqual(new BigNumber(fakeResult));
   });
 });
 

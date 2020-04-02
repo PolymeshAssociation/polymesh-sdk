@@ -4,20 +4,27 @@ import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
-import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
-import { SecurityTokenDetails } from '~/api/entities/SecurityToken/types';
+import { AuthorizationRequest, Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import { Mocked } from '~/testUtils/types';
-import { TickerReservationDetails, TickerReservationStatus } from '~/types';
+import {
+  Authorization,
+  AuthorizationType,
+  SecurityTokenDetails,
+  TickerReservationDetails,
+  TickerReservationStatus,
+} from '~/types';
 
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
   tickerReservation: {} as MockTickerReservation,
   securityToken: {} as MockSecurityToken,
+  authorizationRequest: {} as MockAuthorizationRequest,
 };
 
 type MockIdentity = Mocked<Identity>;
 type MockTickerReservation = Mocked<TickerReservation>;
 type MockSecurityToken = Mocked<SecurityToken>;
+type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 
 interface IdentityOptions {
   did?: string;
@@ -38,9 +45,17 @@ interface SecurityTokenOptions {
   transfersAreFrozen?: boolean;
 }
 
+interface AuthorizationRequestOptions {
+  targetDid?: string;
+  issuerDid?: string;
+  expiry?: Date | null;
+  data?: Authorization;
+}
+
 let identityConstructorStub: SinonStub;
 let tickerReservationConstructorStub: SinonStub;
 let securityTokenConstructorStub: SinonStub;
+let authorizationRequestConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let identityGetPolyXBalanceStub: SinonStub;
@@ -77,6 +92,15 @@ const MockSecurityTokenClass = class {
   }
 };
 
+const MockAuthorizationRequestClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return authorizationRequestConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -90,6 +114,11 @@ export const mockTickerReservationModule = (path: string) => (): object => ({
 export const mockSecurityTokenModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   SecurityToken: MockSecurityTokenClass,
+});
+
+export const mockAuthorizationRequestModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  AuthorizationRequest: MockAuthorizationRequestClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -118,6 +147,43 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   transfersAreFrozen: false,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
+const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
+  targetDid: 'targetDid',
+  issuerDid: 'issuerDid',
+  data: { type: AuthorizationType.TransferTokenOwnership, value: 'UNWANTED_TOKEN' },
+  expiry: null,
+};
+let authorizationRequestOptions = defaultAuthorizationRequestOptions;
+
+/**
+ * @hidden
+ * Configure the Authorization Request instance
+ */
+function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void {
+  const authorizationRequest = ({
+    targetDid: opts.targetDid,
+    issuerDid: opts.issuerDid,
+    expiry: opts.expiry,
+    data: opts.data,
+  } as unknown) as MockAuthorizationRequest;
+
+  Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
+  authorizationRequestConstructorStub.callsFake(args => {
+    return merge({}, authorizationRequest, args);
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Authorization Request instance
+ */
+function initAuthorizationRequest(opts?: AuthorizationRequestOptions): void {
+  authorizationRequestConstructorStub = sinon.stub();
+
+  authorizationRequestOptions = { ...defaultAuthorizationRequestOptions, ...opts };
+
+  configureAuthorizationRequest(authorizationRequestOptions);
+}
 
 /**
  * @hidden
@@ -228,6 +294,7 @@ export function configureMocks(opts?: {
   identityOptions?: IdentityOptions;
   tickerReservationOptions?: TickerReservationOptions;
   securityTokenOptions?: SecurityTokenOptions;
+  authorizationRequestOptions?: AuthorizationRequestOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -247,6 +314,13 @@ export function configureMocks(opts?: {
   );
 
   configureSecurityToken(tempSecuritytokenOptions);
+
+  const tempAuthorizationRequestOptions = {
+    ...defaultAuthorizationRequestOptions,
+    ...opts?.authorizationRequestOptions,
+  };
+
+  configureAuthorizationRequest(tempAuthorizationRequestOptions);
 }
 
 /**
@@ -258,6 +332,7 @@ export function initMocks(opts?: {
   identityOptions?: IdentityOptions;
   tickerReservationOptions?: TickerReservationOptions;
   securityTokenOptions?: SecurityTokenOptions;
+  authorizationRequestOptions?: AuthorizationRequestOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -267,6 +342,9 @@ export function initMocks(opts?: {
 
   // Security Token
   initSecurityToken(opts?.securityTokenOptions);
+
+  // Authorization Request
+  initAuthorizationRequest(opts?.authorizationRequestOptions);
 }
 
 /**
@@ -277,6 +355,7 @@ export function cleanup(): void {
   mockInstanceContainer.identity = {} as MockIdentity;
   mockInstanceContainer.tickerReservation = {} as MockTickerReservation;
   mockInstanceContainer.securityToken = {} as MockSecurityToken;
+  mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
 }
 
 /**
@@ -285,7 +364,12 @@ export function cleanup(): void {
  */
 export function reset(): void {
   cleanup();
-  initMocks({ identityOptions, tickerReservationOptions, securityTokenOptions });
+  initMocks({
+    identityOptions,
+    tickerReservationOptions,
+    securityTokenOptions,
+    authorizationRequestOptions,
+  });
 }
 
 /**
@@ -294,7 +378,7 @@ export function reset(): void {
  */
 export function getIdentityInstance(opts?: IdentityOptions): MockIdentity {
   if (opts) {
-    initIdentity(opts);
+    configureIdentity(opts);
   }
 
   return mockInstanceContainer.identity;
@@ -332,7 +416,7 @@ export function getTickerReservationInstance(
   opts: TickerReservationOptions
 ): MockTickerReservation {
   if (opts) {
-    initTickerReservation(opts);
+    configureTickerReservation(opts);
   }
 
   return mockInstanceContainer.tickerReservation;
@@ -360,7 +444,7 @@ export function getTickerReservationDetailsStub(
  */
 export function getSecurityTokenInstance(opts?: SecurityTokenOptions): MockSecurityToken {
   if (opts) {
-    initSecurityToken(opts);
+    configureSecurityToken(opts);
   }
 
   return mockInstanceContainer.securityToken;
@@ -402,4 +486,18 @@ export function getSecurityTokenTransfersAreFrozenStub(frozen: boolean): SinonSt
   }
 
   return securityTokenTransfersAreFrozenStub;
+}
+
+/**
+ * @hidden
+ * Retrieve an Authorization Request instance
+ */
+export function getAuthorizationRequestInstance(
+  opts?: AuthorizationRequestOptions
+): MockAuthorizationRequest {
+  if (opts) {
+    configureAuthorizationRequest(opts);
+  }
+
+  return mockInstanceContainer.authorizationRequest;
 }

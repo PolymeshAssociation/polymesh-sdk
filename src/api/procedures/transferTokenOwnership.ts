@@ -1,7 +1,7 @@
 import { SecurityToken } from '~/api/entities';
 import { Procedure } from '~/base';
-import { Role, RoleType } from '~/types';
-import { AuthorizationType, SignerType } from '~/types/internal';
+import { AuthorizationType, Role, RoleType } from '~/types';
+import { SignerType } from '~/types/internal';
 import { authorizationToAuthorizationData, dateToMoment, signerToSignatory } from '~/utils';
 
 export interface TransferTokenOwnershipParams {

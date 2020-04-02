@@ -5,7 +5,7 @@ import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
 import { RoleType } from '~/types';
 
-import { Identity } from '../Identity';
+import { Identity } from '../';
 
 jest.mock(
   '~/api/entities/TickerReservation',
