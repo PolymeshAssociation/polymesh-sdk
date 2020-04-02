@@ -1,11 +1,11 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
-/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable */
 
+import { ITuple } from '@polkadot/types/types';
 import { Enum, Option, Struct, U8aFixed, Vec } from '@polkadot/types/codec';
+import { Bytes, Text, bool, u128, u16, u32, u64, u8 } from '@polkadot/types/primitive';
 import { Signature } from '@polkadot/types/interfaces/extrinsics';
 import { Balance, Call, H256, H512, Hash, Moment } from '@polkadot/types/interfaces/runtime';
-import { bool, Bytes, Text, u8,u16, u32, u64, u128 } from '@polkadot/types/primitive';
-import { ITuple } from '@polkadot/types/types';
 
 /** @name AccountKey */
 export interface AccountKey extends U8aFixed {}
@@ -561,3 +561,5 @@ export interface TokenName extends Text {}
 
 /** @name Url */
 export interface Url extends Text {}
+
+export type PHANTOM_POLYMESH = 'polymesh';

@@ -1,6 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
-/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable */
 
+import { Bytes, u32, u64 } from '@polkadot/types/primitive';
 import { Gas } from '@polkadot/types/interfaces/contracts';
 import {
   Balance,
@@ -11,7 +12,6 @@ import {
 } from '@polkadot/types/interfaces/runtime';
 import { SessionIndex } from '@polkadot/types/interfaces/session';
 import { EraIndex } from '@polkadot/types/interfaces/staking';
-import { Bytes, u32, u64 } from '@polkadot/types/primitive';
 
 declare module '@polkadot/metadata/Decorated/consts/types' {
   export interface Constants {
@@ -30,16 +30,11 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
        **/
       expectedBlockTime: AugmentedConst<Moment>;
     };
-    timestamp: {
-      /**
-       * The minimum period between blocks. Beware that this is different to the *expected* period
-       * that the block production apparatus provides. Your chosen consensus system will generally
-       * work with this to determine a sensible block time. e.g. For Aura, it will be double this
-       * period on default settings.
-       **/
-      minimumPeriod: AugmentedConst<Moment>;
-    };
     balances: {
+      /**
+       * The fee required to create an account.
+       **/
+      creationFee: AugmentedConst<Balance>;
       /**
        * This is no longer needede but kept for compatibility reasons
        * The minimum amount required to keep an account open.
@@ -49,108 +44,31 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
        * The fee required to make a transfer.
        **/
       transferFee: AugmentedConst<Balance>;
-      /**
-       * The fee required to create an account.
-       **/
-      creationFee: AugmentedConst<Balance>;
     };
-    staking: {
-      /**
-       * Number of sessions per era.
-       **/
-      sessionsPerEra: AugmentedConst<SessionIndex>;
-      /**
-       * Number of eras that staked funds must remain bonded for.
-       **/
-      bondingDuration: AugmentedConst<EraIndex>;
-    };
-    session: {
-      /**
-       * Used as first key for `NextKeys` and `KeyOwner` to put all the data into the same branch
-       * of the trie.
-       **/
-      dedupKeyPrefix: AugmentedConst<Bytes>;
-    };
-    finalityTracker: {
-      /**
-       * The number of recent samples to keep from this chain. Default is 101.
-       **/
-      windowSize: AugmentedConst<BlockNumber>;
-      /**
-       * The delay after which point things become suspicious. Default is 1000.
-       **/
-      reportLatency: AugmentedConst<BlockNumber>;
-    };
-    transactionPayment: {
-      /**
-       * The fee to be paid for making a transaction; the base.
-       **/
-      transactionBaseFee: AugmentedConst<BalanceOf>;
-      /**
-       * The fee to be paid for making a transaction; the per-byte portion.
-       **/
-      transactionByteFee: AugmentedConst<BalanceOf>;
+    bridge: {
+      blockRangeForTimelock: AugmentedConst<BlockNumber>;
+      maxTimelockedTxsPerBlock: AugmentedConst<u32>;
     };
     contracts: {
       /**
-       * Number of block delay an extrinsic claim surcharge has.
-       * When claim surcharge is called by an extrinsic the rent is checked
-       * for current_block - delay
+       * The maximum amount of gas that could be expended per block. A reasonable
+       * default value is 10_000_000.
        **/
-      signedClaimHandicap: AugmentedConst<BlockNumber>;
+      blockGasLimit: AugmentedConst<Gas>;
       /**
-       * The minimum amount required to generate a tombstone.
+       * The base fee charged for calling into a contract. A reasonable default
+       * value is 135.
        **/
-      tombstoneDeposit: AugmentedConst<BalanceOf>;
-      /**
-       * Size of a contract at the time of instantiaion. This is a simple way to ensure that
-       * empty contracts eventually gets deleted.
-       **/
-      storageSizeOffset: AugmentedConst<u32>;
-      /**
-       * Price of a byte of storage per one block interval. Should be greater than 0.
-       **/
-      rentByteFee: AugmentedConst<BalanceOf>;
-      /**
-       * The amount of funds a contract should deposit in order to offset
-       * the cost of one byte.
-       * Let's suppose the deposit is 1,000 BU (balance units)/byte and the rent is 1 BU/byte/day,
-       * then a contract with 1,000,000 BU that uses 1,000 bytes of storage would pay no rent.
-       * But if the balance reduced to 500,000 BU and the storage stayed the same at 1,000,
-       * then it would pay 500 BU/day.
-       **/
-      rentDepositOffset: AugmentedConst<BalanceOf>;
-      /**
-       * Reward that is received by the party whose touch has led
-       * to removal of a contract.
-       **/
-      surchargeReward: AugmentedConst<BalanceOf>;
-      /**
-       * The fee required to make a transfer.
-       **/
-      transferFee: AugmentedConst<BalanceOf>;
-      /**
-       * The fee required to create an account.
-       **/
-      creationFee: AugmentedConst<BalanceOf>;
-      /**
-       * The fee to be paid for making a transaction; the base.
-       **/
-      transactionBaseFee: AugmentedConst<BalanceOf>;
-      /**
-       * The fee to be paid for making a transaction; the per-byte portion.
-       **/
-      transactionByteFee: AugmentedConst<BalanceOf>;
+      callBaseFee: AugmentedConst<Gas>;
       /**
        * The fee required to instantiate a contract instance. A reasonable default value
        * is 21.
        **/
       contractFee: AugmentedConst<BalanceOf>;
       /**
-       * The base fee charged for calling into a contract. A reasonable default
-       * value is 135.
+       * The fee required to create an account.
        **/
-      callBaseFee: AugmentedConst<Gas>;
+      creationFee: AugmentedConst<BalanceOf>;
       /**
        * The base fee charged for instantiating a contract. A reasonable default value
        * is 175.
@@ -166,12 +84,102 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
        **/
       maxValueSize: AugmentedConst<u32>;
       /**
-       * The maximum amount of gas that could be expended per block. A reasonable
-       * default value is 10_000_000.
+       * Price of a byte of storage per one block interval. Should be greater than 0.
        **/
-      blockGasLimit: AugmentedConst<Gas>;
+      rentByteFee: AugmentedConst<BalanceOf>;
+      /**
+       * The amount of funds a contract should deposit in order to offset
+       * the cost of one byte.
+       * Let's suppose the deposit is 1,000 BU (balance units)/byte and the rent is 1 BU/byte/day,
+       * then a contract with 1,000,000 BU that uses 1,000 bytes of storage would pay no rent.
+       * But if the balance reduced to 500,000 BU and the storage stayed the same at 1,000,
+       * then it would pay 500 BU/day.
+       **/
+      rentDepositOffset: AugmentedConst<BalanceOf>;
+      /**
+       * Number of block delay an extrinsic claim surcharge has.
+       * When claim surcharge is called by an extrinsic the rent is checked
+       * for current_block - delay
+       **/
+      signedClaimHandicap: AugmentedConst<BlockNumber>;
+      /**
+       * Size of a contract at the time of instantiaion. This is a simple way to ensure that
+       * empty contracts eventually gets deleted.
+       **/
+      storageSizeOffset: AugmentedConst<u32>;
+      /**
+       * Reward that is received by the party whose touch has led
+       * to removal of a contract.
+       **/
+      surchargeReward: AugmentedConst<BalanceOf>;
+      /**
+       * The minimum amount required to generate a tombstone.
+       **/
+      tombstoneDeposit: AugmentedConst<BalanceOf>;
+      /**
+       * The fee to be paid for making a transaction; the base.
+       **/
+      transactionBaseFee: AugmentedConst<BalanceOf>;
+      /**
+       * The fee to be paid for making a transaction; the per-byte portion.
+       **/
+      transactionByteFee: AugmentedConst<BalanceOf>;
+      /**
+       * The fee required to make a transfer.
+       **/
+      transferFee: AugmentedConst<BalanceOf>;
+    };
+    finalityTracker: {
+      /**
+       * The delay after which point things become suspicious. Default is 1000.
+       **/
+      reportLatency: AugmentedConst<BlockNumber>;
+      /**
+       * The number of recent samples to keep from this chain. Default is 101.
+       **/
+      windowSize: AugmentedConst<BlockNumber>;
+    };
+    session: {
+      /**
+       * Used as first key for `NextKeys` and `KeyOwner` to put all the data into the same branch
+       * of the trie.
+       **/
+      dedupKeyPrefix: AugmentedConst<Bytes>;
+    };
+    staking: {
+      /**
+       * Number of eras that staked funds must remain bonded for.
+       **/
+      bondingDuration: AugmentedConst<EraIndex>;
+      /**
+       * Number of sessions per era.
+       **/
+      sessionsPerEra: AugmentedConst<SessionIndex>;
+    };
+    timestamp: {
+      /**
+       * The minimum period between blocks. Beware that this is different to the *expected* period
+       * that the block production apparatus provides. Your chosen consensus system will generally
+       * work with this to determine a sensible block time. e.g. For Aura, it will be double this
+       * period on default settings.
+       **/
+      minimumPeriod: AugmentedConst<Moment>;
+    };
+    transactionPayment: {
+      /**
+       * The fee to be paid for making a transaction; the base.
+       **/
+      transactionBaseFee: AugmentedConst<BalanceOf>;
+      /**
+       * The fee to be paid for making a transaction; the per-byte portion.
+       **/
+      transactionByteFee: AugmentedConst<BalanceOf>;
     };
     treasury: {
+      /**
+       * Percentage of spare funds (if any) that are burnt per spend period.
+       **/
+      burn: AugmentedConst<Permill>;
       /**
        * Fraction of a proposal's value that should be bonded in order to place the proposal.
        * An accepted proposal gets these back. A rejected proposal does not.
@@ -185,14 +193,6 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
        * Period between successive spends.
        **/
       spendPeriod: AugmentedConst<BlockNumber>;
-      /**
-       * Percentage of spare funds (if any) that are burnt per spend period.
-       **/
-      burn: AugmentedConst<Permill>;
-    };
-    bridge: {
-      maxTimelockedTxsPerBlock: AugmentedConst<u32>;
-      blockRangeForTimelock: AugmentedConst<BlockNumber>;
     };
   }
 }

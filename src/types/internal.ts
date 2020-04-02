@@ -90,8 +90,8 @@ export interface TransactionSpec<
 }
 
 export enum SignerType {
-  Identity = 'identity',
-  AccountKey = 'accountKey',
+  Identity = 'Identity',
+  AccountKey = 'AccountKey',
 }
 
 export interface Signer {

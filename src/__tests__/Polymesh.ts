@@ -7,6 +7,7 @@ import { reserveTicker } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Polymesh } from '~/Polymesh';
 import { polkadotMockUtils } from '~/testUtils/mocks';
+import * as utilsModule from '~/utils';
 
 jest.mock(
   '@polkadot/api',
@@ -178,6 +179,10 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getTickerReservations', () => {
+    beforeAll(() => {
+      sinon.stub(utilsModule, 'signerToSignatory');
+    });
+
     test('should return a list of ticker reservations if did parameter is set', async () => {
       const fakeTicker = 'TEST';
 
@@ -188,7 +193,7 @@ describe('Polymesh Class', () => {
           polkadotMockUtils.createMockLink({
             // eslint-disable-next-line @typescript-eslint/camelcase
             link_data: polkadotMockUtils.createMockLinkData({
-              tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+              TickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
             }),
             expiry: polkadotMockUtils.createMockOption(),
             // eslint-disable-next-line @typescript-eslint/camelcase
@@ -218,7 +223,7 @@ describe('Polymesh Class', () => {
           polkadotMockUtils.createMockLink({
             // eslint-disable-next-line @typescript-eslint/camelcase
             link_data: polkadotMockUtils.createMockLinkData({
-              tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+              TickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
             }),
             expiry: polkadotMockUtils.createMockOption(),
             // eslint-disable-next-line @typescript-eslint/camelcase

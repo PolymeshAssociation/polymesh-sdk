@@ -7,7 +7,8 @@ import { reserveTicker, ReserveTickerParams } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
-import { tickerToString } from '~/utils';
+import { SignerType } from '~/types/internal';
+import { signerToSignatory, tickerToString } from '~/utils';
 
 /**
  * Main entry point of the Polymesh SDK
@@ -134,7 +135,9 @@ export class Polymesh {
       identity = context.getCurrentIdentity().did;
     }
 
-    const tickers = await links.entries({ identity });
+    const tickers = await links.entries(
+      signerToSignatory({ type: SignerType.Identity, value: identity }, context)
+    );
 
     const tickerReservations = tickers
       .filter(([, data]) => data.link_data.isTickerOwned)

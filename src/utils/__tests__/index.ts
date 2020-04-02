@@ -592,7 +592,7 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
 
     const fakeType = 'otherType';
     assetType = polkadotMockUtils.createMockAssetType({
-      custom: polkadotMockUtils.createMockBytes(fakeType),
+      Custom: polkadotMockUtils.createMockBytes(fakeType),
     });
 
     result = assetTypeToString(assetType);
@@ -649,7 +649,7 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
 
     const fakeType = 'otherType';
     identifierType = polkadotMockUtils.createMockIdentifierType({
-      custom: polkadotMockUtils.createMockBytes(fakeType),
+      Custom: polkadotMockUtils.createMockBytes(fakeType),
     });
 
     result = identifierTypeToString(identifierType);
@@ -1025,7 +1025,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
       value: 'someIdentity',
     };
     let signatory = polkadotMockUtils.createMockSignatory({
-      identity: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+      Identity: polkadotMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     let result = signatoryToSigner(signatory);
@@ -1036,7 +1036,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
       value: 'someAccountKey',
     };
     signatory = polkadotMockUtils.createMockSignatory({
-      accountKey: polkadotMockUtils.createMockAccountKey(fakeResult.value),
+      AccountKey: polkadotMockUtils.createMockAccountKey(fakeResult.value),
     });
 
     result = signatoryToSigner(signatory);
@@ -1099,7 +1099,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
       value: 'someIdentity',
     };
     let authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      attestMasterKeyRotation: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+      AttestMasterKeyRotation: polkadotMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     let result = authorizationDataToAuthorization(authorizationData);
@@ -1110,7 +1110,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
       value: 'someIdentity',
     };
     authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      rotateMasterKey: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+      RotateMasterKey: polkadotMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -1121,7 +1121,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
       value: 'someTicker',
     };
     authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      transferTicker: polkadotMockUtils.createMockTicker(fakeResult.value),
+      TransferTicker: polkadotMockUtils.createMockTicker(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -1130,7 +1130,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
     fakeResult = {
       type: AuthorizationType.AddMultiSigSigner,
     };
-    authorizationData = polkadotMockUtils.createMockAuthorizationData('addMultiSigSigner');
+    authorizationData = polkadotMockUtils.createMockAuthorizationData('AddMultiSigSigner');
 
     result = authorizationDataToAuthorization(authorizationData);
     expect(result).toEqual(fakeResult);
@@ -1140,7 +1140,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
       value: 'someTicker',
     };
     authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      transferTokenOwnership: polkadotMockUtils.createMockTicker(fakeResult.value),
+      TransferTokenOwnership: polkadotMockUtils.createMockTicker(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -1151,7 +1151,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
       value: 'someIdentity',
     };
     authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      joinIdentity: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+      JoinIdentity: polkadotMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -1171,7 +1171,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
     fakeResult = {
       type: AuthorizationType.NoData,
     };
-    authorizationData = polkadotMockUtils.createMockAuthorizationData('noData');
+    authorizationData = polkadotMockUtils.createMockAuthorizationData('NoData');
 
     result = authorizationDataToAuthorization(authorizationData);
     expect(result).toEqual(fakeResult);
