@@ -48,8 +48,8 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: details', () => {
-    let tickersStub: sinon.SinonStub<[string | Uint8Array | Ticker, Callback<Codec | Codec[]>]>;
-    let tokensStub: sinon.SinonStub<[string | Uint8Array | Ticker, Callback<Codec | Codec[]>]>;
+    let tickersStub: sinon.SinonStub;
+    let tokensStub: sinon.SinonStub;
 
     beforeEach(() => {
       tickersStub = polkadotMockUtils.createQueryStub('asset', 'tickers', {
