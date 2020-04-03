@@ -146,28 +146,30 @@ export class Context {
     } = this;
 
     let newCurrentPair;
+    let identityIds;
+    let did;
 
     try {
       newCurrentPair = keyring.getPair(address);
     } catch (e) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: 'The address is not present in the keyring set 1',
+        message: 'The address is not present in the keyring set',
       });
     }
 
     try {
-      const identityIds = await identity.keyToIdentityIds(newCurrentPair.publicKey);
-      const did = identityIds.unwrap().asUnique;
-
-      this.currentPair = newCurrentPair;
-      this.currentIdentity = new Identity({ did: did.toString() }, this);
-    } catch (err) {
+      identityIds = await identity.keyToIdentityIds(newCurrentPair.publicKey);
+      did = identityIds.unwrap().asUnique;
+    } catch (e) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'There is no Identity associated to this account',
       });
     }
+
+    this.currentPair = newCurrentPair;
+    this.currentIdentity = new Identity({ did: did.toString() }, this);
   }
 
   /**

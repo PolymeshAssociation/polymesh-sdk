@@ -48,6 +48,7 @@ describe('Context class', () => {
       const newPair = {
         address: 'someAddress1',
         meta: {},
+        publicKey: 'publicKey',
       };
       polkadotMockUtils.configureMocks({
         keyringOptions: {
@@ -72,7 +73,7 @@ describe('Context class', () => {
     });
 
     test('should create a Context class from a keyring with Pair and Identity attached', async () => {
-      const pairs = [{ address: 'someAddress', meta: {} }];
+      const pairs = [{ address: 'someAddress', meta: {}, publicKey: 'publicKey' }];
       polkadotMockUtils.configureMocks({
         keyringOptions: {
           getPairs: pairs,
@@ -99,6 +100,7 @@ describe('Context class', () => {
       const newPair = {
         address: 'someAddress',
         meta: {},
+        publicKey: 'publicKey',
       };
       polkadotMockUtils.configureMocks({
         keyringOptions: {
@@ -126,6 +128,7 @@ describe('Context class', () => {
       const newPair = {
         address: 'someAddress',
         meta: {},
+        publicKey: 'publicKey',
       };
       polkadotMockUtils.configureMocks({
         keyringOptions: {
@@ -152,6 +155,7 @@ describe('Context class', () => {
       const newPair = {
         address: 'someAddress',
         meta: {},
+        publicKey: 'publicKey',
       };
       polkadotMockUtils.configureMocks({
         keyringOptions: {
@@ -178,11 +182,13 @@ describe('Context class', () => {
             name: 'name 01',
           },
           somethingElse: false,
+          publicKey: 'publicKey',
         },
         {
           address: '02',
           meta: {},
           somethingElse: false,
+          publicKey: 'publicKey',
         },
       ];
       polkadotMockUtils.configureMocks({
@@ -214,64 +220,104 @@ describe('Context class', () => {
         polymeshApi: polkadotMockUtils.getApiInstance(),
       });
 
-      expect(context.setPair('012')).rejects.toThrow(
+      await expect(context.setPair('012')).rejects.toThrow(
         'The address is not present in the keyring set'
       );
     });
 
     test("should throw error if the address doesn't have an associated identity", async () => {
-      polkadotMockUtils.initMocks({
+      const publicKey = 'publicKey';
+      const newPublicKey = 'newPublicKey';
+      const newAddress = 'newAddress';
+      polkadotMockUtils.configureMocks({
         keyringOptions: {
-          getPair: {
+          addFromSeed: {
             address: 'address',
             meta: {},
+            publicKey,
+          },
+          getPair: {
+            address: newAddress,
+            meta: {},
+            publicKey: newPublicKey,
           },
         },
       });
 
-      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: polkadotMockUtils.createMockOption(
-          polkadotMockUtils.createMockLinkedKeyInfo({
-            Unique: polkadotMockUtils.createMockIdentityId(''),
-          })
-        ),
-      });
+      polkadotMockUtils
+        .createQueryStub('identity', 'keyToIdentityIds')
+        .withArgs(publicKey)
+        .returns(
+          polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLinkedKeyInfo({
+              Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+            })
+          )
+        );
+
+      polkadotMockUtils
+        .createQueryStub('identity', 'keyToIdentityIds')
+        .withArgs(newPublicKey)
+        .returns(polkadotMockUtils.createMockOption());
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      expect(context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY')).rejects.toThrow(
-        "The address doesn't have an associated identity"
+      await expect(context.setPair(newAddress)).rejects.toThrow(
+        'There is no Identity associated to this account'
       );
     });
 
     test('should set currentPair to the new value', async () => {
+      const publicKey = 'publicKey';
+      const newPublicKey = 'newPublicKey';
+      const newAddress = 'newAddress';
       const newCurrentPair = {
-        address: 'address',
+        address: newAddress,
         meta: {},
+        publicKey: newPublicKey,
       };
       polkadotMockUtils.configureMocks({
         keyringOptions: {
+          addFromSeed: {
+            address: 'address',
+            meta: {},
+            publicKey,
+          },
           getPair: newCurrentPair,
         },
       });
 
-      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: polkadotMockUtils.createMockOption(
-          polkadotMockUtils.createMockLinkedKeyInfo({
-            Unique: polkadotMockUtils.createMockIdentityId('uniqueDid'),
-          })
-        ),
-      });
+      polkadotMockUtils
+        .createQueryStub('identity', 'keyToIdentityIds')
+        .withArgs(publicKey)
+        .returns(
+          polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLinkedKeyInfo({
+              Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+            })
+          )
+        );
+
+      polkadotMockUtils
+        .createQueryStub('identity', 'keyToIdentityIds')
+        .withArgs(newPublicKey)
+        .returns(
+          polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLinkedKeyInfo({
+              Unique: polkadotMockUtils.createMockIdentityId('newIdentityId'),
+            })
+          )
+        );
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY');
+      await context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY');
 
       expect(context.currentPair).toEqual(newCurrentPair);
     });
