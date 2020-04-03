@@ -49,7 +49,7 @@ describe('Context class', () => {
         address: 'someAddress1',
         meta: {},
       };
-      polkadotMockUtils.initMocks({
+      polkadotMockUtils.configureMocks({
         keyringOptions: {
           addFromSeed: newPair,
         },
@@ -73,7 +73,7 @@ describe('Context class', () => {
 
     test('should create a Context class from a keyring with Pair and Identity attached', async () => {
       const pairs = [{ address: 'someAddress', meta: {} }];
-      polkadotMockUtils.initMocks({
+      polkadotMockUtils.configureMocks({
         keyringOptions: {
           getPairs: pairs,
         },
@@ -100,7 +100,7 @@ describe('Context class', () => {
         address: 'someAddress',
         meta: {},
       };
-      polkadotMockUtils.initMocks({
+      polkadotMockUtils.configureMocks({
         keyringOptions: {
           addFromUri: newPair,
         },
@@ -127,7 +127,7 @@ describe('Context class', () => {
         address: 'someAddress',
         meta: {},
       };
-      polkadotMockUtils.initMocks({
+      polkadotMockUtils.configureMocks({
         keyringOptions: {
           addFromSeed: newPair,
         },
@@ -153,7 +153,7 @@ describe('Context class', () => {
         address: 'someAddress',
         meta: {},
       };
-      polkadotMockUtils.initMocks({
+      polkadotMockUtils.configureMocks({
         keyringOptions: {
           addFromSeed: newPair,
         },
@@ -185,7 +185,7 @@ describe('Context class', () => {
           somethingElse: false,
         },
       ];
-      polkadotMockUtils.initMocks({
+      polkadotMockUtils.configureMocks({
         keyringOptions: {
           getPairs: pairs,
         },
@@ -204,8 +204,8 @@ describe('Context class', () => {
   });
 
   describe('method: setPair', () => {
-    test.only('should throw error if the pair does not exist in the keyring set', async () => {
-      polkadotMockUtils.initMocks({
+    test('should throw error if the pair does not exist in the keyring set', async () => {
+      polkadotMockUtils.configureMocks({
         keyringOptions: {
           error: true,
         },
@@ -252,7 +252,7 @@ describe('Context class', () => {
         address: 'address',
         meta: {},
       };
-      polkadotMockUtils.initMocks({
+      polkadotMockUtils.configureMocks({
         keyringOptions: {
           getPair: newCurrentPair,
         },

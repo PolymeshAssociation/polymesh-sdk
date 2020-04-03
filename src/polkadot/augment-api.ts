@@ -1,5 +1,5 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
-/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable */
 
 import '@polkadot/api/augment/rpc';
 import './augment-api-consts';

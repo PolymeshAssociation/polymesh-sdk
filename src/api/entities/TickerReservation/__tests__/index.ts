@@ -165,7 +165,7 @@ describe('TickerReservation class', () => {
           /* eslint-disable @typescript-eslint/camelcase */
           owner_did: polkadotMockUtils.createMockIdentityId(ownerDid),
           name: polkadotMockUtils.createMockTokenName('someToken'),
-          asset_type: polkadotMockUtils.createMockAssetType('equity'),
+          asset_type: polkadotMockUtils.createMockAssetType('Equity'),
           divisible: polkadotMockUtils.createMockBool(true),
           link_id: polkadotMockUtils.createMockU64(3),
           total_supply: polkadotMockUtils.createMockBalance(1000),

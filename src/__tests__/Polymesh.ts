@@ -2,11 +2,12 @@ import { Keyring } from '@polkadot/api';
 import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 
-import { TickerReservation } from '~/api/entities';
+import { Identity, TickerReservation } from '~/api/entities';
 import { reserveTicker } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Polymesh } from '~/Polymesh';
 import { polkadotMockUtils } from '~/testUtils/mocks';
+import * as utilsModule from '~/utils';
 
 jest.mock(
   '@polkadot/api',
@@ -112,7 +113,9 @@ describe('Polymesh Class', () => {
   describe('method: getIdentityBalance', () => {
     test("should return the identity's POLYX balance", async () => {
       const fakeBalance = new BigNumber(20);
-      polkadotMockUtils.initMocks({ contextOptions: { withSeed: true, balance: fakeBalance } });
+      polkadotMockUtils.configureMocks({
+        contextOptions: { withSeed: true, balance: fakeBalance },
+      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -127,7 +130,7 @@ describe('Polymesh Class', () => {
   describe('method: getAccountBalance', () => {
     test('should return the free POLYX balance of the current account', async () => {
       const fakeBalance = new BigNumber(100);
-      polkadotMockUtils.initMocks({ contextOptions: { balance: fakeBalance } });
+      polkadotMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -139,7 +142,7 @@ describe('Polymesh Class', () => {
 
     test('should return the free POLYX balance of the supplied account', async () => {
       const fakeBalance = new BigNumber(100);
-      polkadotMockUtils.initMocks({ contextOptions: { balance: fakeBalance } });
+      polkadotMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -176,24 +179,26 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getTickerReservations', () => {
+    beforeAll(() => {
+      sinon.stub(utilsModule, 'signerToSignatory');
+    });
+
     test('should return a list of ticker reservations if did parameter is set', async () => {
       const fakeTicker = 'TEST';
 
-      polkadotMockUtils.initMocks({ contextOptions: { withSeed: true } });
+      polkadotMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
       polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
-          polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLink({
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: polkadotMockUtils.createMockLinkData({
-                tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
-              }),
-              expiry: polkadotMockUtils.createMockOption(),
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: polkadotMockUtils.createMockU64(),
-            })
-          ),
+          polkadotMockUtils.createMockLink({
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_data: polkadotMockUtils.createMockLinkData({
+              TickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+            }),
+            expiry: polkadotMockUtils.createMockOption(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_id: polkadotMockUtils.createMockU64(),
+          }),
         ],
       });
 
@@ -211,21 +216,19 @@ describe('Polymesh Class', () => {
     test('should return a list of ticker reservations owned by the identity', async () => {
       const fakeTicker = 'TEST';
 
-      polkadotMockUtils.initMocks({ contextOptions: { withSeed: true } });
+      polkadotMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
       polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
-          polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLink({
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: polkadotMockUtils.createMockLinkData({
-                tickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
-              }),
-              expiry: polkadotMockUtils.createMockOption(),
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: polkadotMockUtils.createMockU64(),
-            })
-          ),
+          polkadotMockUtils.createMockLink({
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_data: polkadotMockUtils.createMockLinkData({
+              TickerOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+            }),
+            expiry: polkadotMockUtils.createMockOption(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_id: polkadotMockUtils.createMockU64(),
+          }),
         ],
       });
 
@@ -279,6 +282,34 @@ describe('Polymesh Class', () => {
       return expect(polymesh.getTickerReservation({ ticker })).rejects.toThrow(
         `There is no reservation for ${ticker} ticker`
       );
+    });
+  });
+
+  describe('method: getIdentity', () => {
+    test('should return the current identity if no parameters are passed', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const context = polkadotMockUtils.getContextInstance();
+
+      expect(polymesh.getIdentity()).toEqual(context.getCurrentIdentity());
+    });
+
+    test('should return an identity object with the passed did', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const params = { did: 'testDid' };
+
+      const result = polymesh.getIdentity(params);
+      const context = polkadotMockUtils.getContextInstance();
+
+      expect(result instanceof Identity).toBe(true);
+      expect(result).toMatchObject(new Identity(params, context));
     });
   });
 });

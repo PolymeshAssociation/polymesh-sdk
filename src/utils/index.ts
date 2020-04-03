@@ -1,4 +1,4 @@
-import { bool, Bytes } from '@polkadot/types';
+import { bool, Bytes, u64 } from '@polkadot/types';
 import { createType } from '@polkadot/types/create/createType';
 import { Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
@@ -25,10 +25,16 @@ import {
 
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode, KnownTokenType, TokenDocument, TokenIdentifierType, TokenType } from '~/types';
 import {
   Authorization,
   AuthorizationType,
+  ErrorCode,
+  KnownTokenType,
+  TokenDocument,
+  TokenIdentifierType,
+  TokenType,
+} from '~/types';
+import {
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -148,7 +154,8 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
  * @hidden
  */
 export function tickerToString(ticker: Ticker): string {
-  return u8aToString(ticker);
+  // eslint-disable-next-line no-control-regex
+  return u8aToString(ticker).replace(/\u0000/g, '');
 }
 
 /**
@@ -306,6 +313,20 @@ export function numberToBalance(value: number | BigNumber, context: Context): Ba
  */
 export function balanceToBigNumber(balance: Balance): BigNumber {
   return new BigNumber(balance.toString()).div(Math.pow(10, 6));
+}
+
+/**
+ * @hidden
+ */
+export function numberToU64(value: number | BigNumber, context: Context): u64 {
+  return createType<'u64'>(context.polymeshApi.registry, 'u64', new BigNumber(value).toString());
+}
+
+/**
+ * @hidden
+ */
+export function u64ToBigNumber(balance: u64): BigNumber {
+  return new BigNumber(balance.toString());
 }
 
 /**

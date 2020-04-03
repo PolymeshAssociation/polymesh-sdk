@@ -13,8 +13,8 @@ import {
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TickerReservationStatus } from '~/types';
-import { Authorization, AuthorizationType, PolymeshTx, Signer, SignerType } from '~/types/internal';
+import { Authorization, AuthorizationType, RoleType, TickerReservationStatus } from '~/types';
+import { PolymeshTx, Signer, SignerType } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('transferTokenOwnership procedure', () => {
@@ -47,10 +47,10 @@ describe('transferTokenOwnership procedure', () => {
     did = 'someOtherDid';
     expiry = new Date('10/14/3040');
     rawSignatory = polkadotMockUtils.createMockSignatory({
-      identity: polkadotMockUtils.createMockIdentityId(did),
+      Identity: polkadotMockUtils.createMockIdentityId(did),
     });
     rawAuthorizationData = polkadotMockUtils.createMockAuthorizationData({
-      transferTokenOwnership: polkadotMockUtils.createMockTicker(ticker),
+      TransferTokenOwnership: polkadotMockUtils.createMockTicker(ticker),
     });
     rawMoment = polkadotMockUtils.createMockMoment(expiry.getTime());
     args = {

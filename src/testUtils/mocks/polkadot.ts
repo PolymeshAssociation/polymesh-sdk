@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+/* eslint-disable @typescript-eslint/camelcase */
 
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { bool, Bytes, Enum, Option, u8, u64 } from '@polkadot/types';
@@ -18,6 +19,7 @@ import {
   AccountKey,
   AssetIdentifier,
   AssetType,
+  Authorization,
   AuthorizationData,
   Document,
   DocumentHash,
@@ -142,6 +144,7 @@ const defaultReceipt: ISubmittableResult = {
   isError: false,
   isFinalized: false,
   isInBlock: false,
+  isWarning: false,
   events: [],
   toHuman: () => ({}),
 };
@@ -263,22 +266,18 @@ let keyringOptions: KeyringOptions = defaultKeyringOptions;
 /**
  * @hidden
  */
-function initContext(opts?: ContextOptions): void {
-  contextCreateStub = sinon.stub();
-
-  contextOptions = { ...defaultContextOptions, ...opts };
-
+function configureContext(opts: ContextOptions): void {
   const getCurrentIdentity = sinon.stub();
-  contextOptions.withSeed
+  opts.withSeed
     ? getCurrentIdentity.returns({
-        getPolyXBalance: sinon.stub().resolves(contextOptions.balance),
-        did: contextOptions.did,
-        hasRoles: sinon.stub().resolves(contextOptions.hasRoles),
+        getPolyXBalance: sinon.stub().resolves(opts.balance),
+        did: opts.did,
+        hasRoles: sinon.stub().resolves(opts.hasRoles),
       })
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')
       );
-  const currentPair = contextOptions.withSeed
+  const currentPair = opts.withSeed
     ? ({
         address: '0xdummy',
       } as IKeyringPair)
@@ -287,7 +286,7 @@ function initContext(opts?: ContextOptions): void {
   const contextInstance = ({
     currentPair,
     getCurrentIdentity,
-    accountBalance: sinon.stub().resolves(contextOptions.balance),
+    accountBalance: sinon.stub().resolves(opts.balance),
     getAccounts: sinon.stub().returns([]),
     setPair: sinon.stub().callsFake(address => {
       contextInstance.currentPair = { address } as IKeyringPair;
@@ -298,6 +297,17 @@ function initContext(opts?: ContextOptions): void {
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
 
   MockContextClass.create = contextCreateStub.resolves(contextInstance);
+}
+
+/**
+ * @hidden
+ */
+function initContext(opts?: ContextOptions): void {
+  contextCreateStub = sinon.stub();
+
+  contextOptions = { ...defaultContextOptions, ...opts };
+
+  configureContext(contextOptions);
 }
 
 /**
@@ -360,11 +370,8 @@ function initApi(): void {
 /**
  * @hidden
  */
-function initKeyring(opts?: KeyringOptions): void {
-  keyringConstructorStub = sinon.stub();
-
-  keyringOptions = { ...defaultKeyringOptions, ...opts };
-  const { error, getPair, getPairs, addFromUri, addFromSeed } = keyringOptions;
+function configureKeyring(opts: KeyringOptions): void {
+  const { error, getPair, getPairs, addFromUri, addFromSeed } = opts;
 
   const err = new Error('Error');
 
@@ -385,6 +392,35 @@ function initKeyring(opts?: KeyringOptions): void {
   Object.assign(mockInstanceContainer.keyringInstance, (keyringInstance as unknown) as Keyring);
 
   keyringConstructorStub.returns(keyringInstance);
+}
+
+/**
+ * @hidden
+ */
+function initKeyring(opts?: KeyringOptions): void {
+  keyringConstructorStub = sinon.stub();
+
+  keyringOptions = { ...defaultKeyringOptions, ...opts };
+
+  configureKeyring(keyringOptions);
+}
+
+/**
+ * @hidden
+ *
+ * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
+ */
+export function configureMocks(opts?: {
+  contextOptions?: ContextOptions;
+  keyringOptions?: KeyringOptions;
+}): void {
+  const tempKeyringOptions = { ...defaultKeyringOptions, ...opts?.keyringOptions };
+
+  configureKeyring(tempKeyringOptions);
+
+  const tempContextOptions = { ...defaultContextOptions, ...opts?.contextOptions };
+
+  configureContext(tempContextOptions);
 }
 
 /**
@@ -749,7 +785,7 @@ export const createMockDocumentHash = (hash?: string): DocumentHash =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockOption = <T extends Codec>(wrapped?: T): Option<T> =>
+export const createMockOption = <T extends Codec>(wrapped: T | null = null): Option<T> =>
   createMockCodec(
     {
       unwrap: () => wrapped as T,
@@ -847,7 +883,7 @@ const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): E
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAssetType = (
-  assetType?: 'equity' | 'debt' | 'commodity' | 'structuredProduct' | { custom: Bytes }
+  assetType?: 'Equity' | 'Debt' | 'Commodity' | 'StructuredProduct' | { Custom: Bytes }
 ): AssetType => {
   return createMockEnum(assetType) as AssetType;
 };
@@ -857,12 +893,11 @@ export const createMockAssetType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockLinkData = (
-  linkData?: { documentOwned: Document } | { tickerOwned: Ticker } | { tokenOwned: Ticker }
+  linkData?: { DocumentOwned: Document } | { TickerOwned: Ticker } | { TokenOwned: Ticker }
 ): LinkData => {
   return createMockEnum(linkData) as LinkData;
 };
 
-/* eslint-disable @typescript-eslint/camelcase */
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
@@ -943,14 +978,13 @@ export const createMockDocument = (
     },
     false
   ) as Document;
-/* eslint-enable @typescript-eslint/camelcase */
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockIdentifierType = (
-  identifierType?: 'isin' | 'cusip' | { custom: Bytes }
+  identifierType?: 'Isin' | 'Cusip' | { Custom: Bytes }
 ): IdentifierType => {
   return createMockEnum(identifierType) as IdentifierType;
 };
@@ -974,7 +1008,7 @@ export const createMockFundingRoundName = (roundName?: string): FundingRoundName
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSignatory = (
-  signatory?: { identity: IdentityId } | { accountKey: AccountKey }
+  signatory?: { Identity: IdentityId } | { AccountKey: AccountKey }
 ): Signatory => {
   return createMockEnum(signatory) as Signatory;
 };
@@ -985,17 +1019,44 @@ export const createMockSignatory = (
  */
 export const createMockAuthorizationData = (
   authorizationData?:
-    | { attestMasterKeyRotation: IdentityId }
-    | { rotateMasterKey: IdentityId }
-    | { transferTicker: Ticker }
-    | 'addMultiSigSigner'
-    | { transferTokenOwnership: Ticker }
-    | { joinIdentity: IdentityId }
+    | { AttestMasterKeyRotation: IdentityId }
+    | { RotateMasterKey: IdentityId }
+    | { TransferTicker: Ticker }
+    | 'AddMultiSigSigner'
+    | { TransferTokenOwnership: Ticker }
+    | { JoinIdentity: IdentityId }
     | { custom: Bytes }
-    | 'noData'
+    | 'NoData'
 ): AuthorizationData => {
   return createMockEnum(authorizationData) as AuthorizationData;
 };
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAuthorization = (
+  authorization: {
+    authorization_data: AuthorizationData;
+    authorized_by: Signatory;
+    expiry: Option<Moment>;
+    auth_id: u64;
+  } = {
+    authorization_data: createMockAuthorizationData(),
+    authorized_by: createMockSignatory(),
+    expiry: createMockOption(),
+    auth_id: createMockU64(),
+  }
+): Authorization =>
+  createMockCodec(
+    {
+      authorization_data: authorization.authorization_data,
+      authorized_by: authorization.authorized_by,
+      expiry: authorization.expiry,
+      auth_id: authorization.auth_id,
+    },
+    false
+  ) as Authorization;
 
 /**
  * @hidden

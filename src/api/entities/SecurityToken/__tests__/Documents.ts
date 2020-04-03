@@ -22,7 +22,7 @@ describe('Documents class', () => {
     polkadotMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend namespace', () => {
     expect(Documents.prototype instanceof Namespace).toBe(true);
   });
 
@@ -83,14 +83,14 @@ describe('Documents class', () => {
       const links = [
         polkadotMockUtils.createMockLink({
           link_data: polkadotMockUtils.createMockLinkData({
-            documentOwned: rawDocuments[0],
+            DocumentOwned: rawDocuments[0],
           }),
           expiry: polkadotMockUtils.createMockOption(),
           link_id: polkadotMockUtils.createMockU64(1),
         }),
         polkadotMockUtils.createMockLink({
           link_data: polkadotMockUtils.createMockLinkData({
-            documentOwned: rawDocuments[1],
+            DocumentOwned: rawDocuments[1],
           }),
           expiry: polkadotMockUtils.createMockOption(),
           link_id: polkadotMockUtils.createMockU64(2),

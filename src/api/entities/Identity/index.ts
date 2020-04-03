@@ -1,5 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 
+import { Authorizations } from '~/api/entities/Identity/Authorizations';
 import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
@@ -33,6 +34,9 @@ export class Identity extends Entity<UniqueIdentifiers> {
    */
   public did: string;
 
+  // Namespaces
+  public authorizations: Authorizations;
+
   /**
    * Create an Identity entity
    */
@@ -42,6 +46,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const { did } = identifiers;
 
     this.did = did;
+    this.authorizations = new Authorizations(this, context);
   }
 
   /**
