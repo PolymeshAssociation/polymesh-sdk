@@ -28,6 +28,7 @@ import {
   IdentityId,
   Link,
   LinkData,
+  LinkedKeyInfo,
   SecurityToken,
   Signatory,
   Ticker,
@@ -826,7 +827,7 @@ export const createMockBool = (value?: boolean): bool =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-const createMockEnum = (enumValue?: string | Record<string, Codec>): Enum => {
+const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): Enum => {
   const codec: Record<string, unknown> = {};
 
   if (typeof enumValue === 'string') {
@@ -1006,3 +1007,13 @@ export const createMockEventRecord = (data: unknown[]): EventRecord =>
       data,
     },
   } as unknown) as EventRecord);
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockLinkedKeyInfo = (
+  linkedKeyInfo?: { Unique: IdentityId } | { Group: IdentityId[] }
+): LinkedKeyInfo => {
+  return createMockEnum(linkedKeyInfo) as LinkedKeyInfo;
+};

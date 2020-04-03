@@ -204,7 +204,7 @@ describe('Context class', () => {
   });
 
   describe('method: setPair', () => {
-    test('should throw error if the pair does not exist in the keyring set', async () => {
+    test.only('should throw error if the pair does not exist in the keyring set', async () => {
       polkadotMockUtils.initMocks({
         keyringOptions: {
           error: true,
@@ -229,12 +229,13 @@ describe('Context class', () => {
         },
       });
 
-      polkadotMockUtils.createQueryStub(
-        'identity',
-        'keyToIdentityIds',
-        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-        { returnValue: { unwrap: () => ({ asUnique: '' }) } }
-      );
+      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: polkadotMockUtils.createMockOption(
+          polkadotMockUtils.createMockLinkedKeyInfo({
+            Unique: polkadotMockUtils.createMockIdentityId(''),
+          })
+        ),
+      });
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
@@ -257,12 +258,13 @@ describe('Context class', () => {
         },
       });
 
-      polkadotMockUtils.createQueryStub(
-        'identity',
-        'keyToIdentityIds',
-        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-        { returnValue: { unwrap: () => ({ asUnique: 'uniqueDid' }) } }
-      );
+      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: polkadotMockUtils.createMockOption(
+          polkadotMockUtils.createMockLinkedKeyInfo({
+            Unique: polkadotMockUtils.createMockIdentityId('uniqueDid'),
+          })
+        ),
+      });
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
