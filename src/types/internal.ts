@@ -6,6 +6,7 @@ import {
   SubmittableExtrinsics,
 } from '@polkadot/api/types';
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 
 import { PostTransactionValue } from '~/base';
 
@@ -97,4 +98,9 @@ export enum SignerType {
 export interface Signer {
   type: SignerType;
   value: string;
+}
+
+export interface AuthTarget {
+  did: string;
+  authId: BigNumber;
 }

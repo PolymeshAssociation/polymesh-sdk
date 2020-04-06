@@ -1,4 +1,4 @@
-import { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
+import { AuthorizationRequest } from '~/api/entities';
 import { Namespace } from '~/base';
 import { SignerType } from '~/types/internal';
 import {

@@ -126,7 +126,7 @@ export async function prepareCreateSecurityToken(
   if (documents) {
     const rawDocuments = documents.map(document => tokenDocumentToDocument(document, context));
 
-    this.addTransaction(tx.asset.addDocuments, {}, rawTicker, rawDocuments);
+    this.addTransaction(tx.asset.addDocuments, { isCritical: false }, rawTicker, rawDocuments);
   }
 
   return new SecurityToken({ ticker }, context);

@@ -4,3 +4,4 @@ export { toggleFreezeTransfers, ToggleFreezeTransfersParams } from './toggleFree
 export { createSecurityToken, CreateSecurityTokenParams } from './createSecurityToken';
 export { setTokenDocuments, SetTokenDocumentsParams } from './setTokenDocuments';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
+export { consumeAuthorizationRequests, ConsumeParams } from './consumeAuthorizationRequests';

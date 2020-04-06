@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
+import { AuthorizationRequest } from '~/api/entities';
 import { Namespace } from '~/base';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType } from '~/types';
