@@ -1049,7 +1049,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
 
     fakeResult = {
       type: SignerType.AccountKey,
-      value: 'someAccountKey',
+      value: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
     };
     signatory = polkadotMockUtils.createMockSignatory({
       AccountKey: polkadotMockUtils.createMockAccountKey(fakeResult.value),
