@@ -16,7 +16,7 @@ import { Authorization, AuthorizationType } from '~/types';
 import { AuthTarget } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
-describe('toggleFreezeTransfers procedure', () => {
+describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
   let authTargetToAuthIdentifierStub: sinon.SinonStub<[AuthTarget, Context], AuthIdentifier>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
