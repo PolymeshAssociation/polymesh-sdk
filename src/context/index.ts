@@ -7,7 +7,7 @@ import { IdentityId } from 'polymesh-types/types';
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
-import { balanceToBigNumber } from '~/utils';
+import { balanceToBigNumber, identityIdToString, stringToAccountKey } from '~/utils';
 
 interface SignerData {
   currentPair: IKeyringPair;
@@ -159,7 +159,10 @@ export class Context {
     }
 
     try {
-      identityIds = await identity.keyToIdentityIds(newCurrentPair.publicKey);
+      identityIds = await identity.keyToIdentityIds(
+        stringToAccountKey(newCurrentPair.address, this)
+      );
+
       did = identityIds.unwrap().asUnique;
     } catch (e) {
       throw new PolymeshError({
@@ -169,7 +172,7 @@ export class Context {
     }
 
     this.currentPair = newCurrentPair;
-    this.currentIdentity = new Identity({ did: did.toString() }, this);
+    this.currentIdentity = new Identity({ did: identityIdToString(did) }, this);
   }
 
   /**

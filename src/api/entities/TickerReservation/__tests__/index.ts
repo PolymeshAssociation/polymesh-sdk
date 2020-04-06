@@ -1,6 +1,4 @@
-import { Callback, Codec } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities/SecurityToken';

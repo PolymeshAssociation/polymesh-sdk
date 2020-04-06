@@ -3,7 +3,7 @@ import { createType } from '@polkadot/types/create/createType';
 import { Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { stringToU8a, u8aConcat, u8aFixLength, u8aToString } from '@polkadot/util';
-import { blake2AsHex } from '@polkadot/util-crypto';
+import * as utilsCrypto from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import {
@@ -96,7 +96,7 @@ export function unserialize<UniqueIdentifiers extends object>(id: string): Uniqu
  * Generate a Security Token's DID from a ticker
  */
 export function tickerToDid(ticker: string): string {
-  return blake2AsHex(
+  return utilsCrypto.blake2AsHex(
     u8aConcat(stringToU8a('SECURITY_TOKEN:'), u8aFixLength(stringToU8a(ticker), 96, true))
   );
 }
@@ -190,14 +190,18 @@ export function identityIdToString(identityId: IdentityId): string {
  * @hidden
  */
 export function stringToAccountKey(accountKey: string, context: Context): AccountKey {
-  return createType<'AccountKey'>(context.polymeshApi.registry, 'AccountKey', accountKey);
+  return createType<'AccountKey'>(
+    context.polymeshApi.registry,
+    'AccountKey',
+    utilsCrypto.decodeAddress(accountKey)
+  );
 }
 
 /**
  * @hidden
  */
 export function accountKeyToString(accountKey: AccountKey): string {
-  return u8aToString(accountKey);
+  return utilsCrypto.encodeAddress(u8aToString(accountKey));
 }
 
 /**

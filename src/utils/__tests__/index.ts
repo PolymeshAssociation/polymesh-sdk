@@ -2,6 +2,8 @@ import { bool, Bytes, u64 } from '@polkadot/types';
 import * as createTypeModule from '@polkadot/types/create/createType';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
+import { u8aToString } from '@polkadot/util';
+import * as utilsCrypto from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import {
   AccountKey,
@@ -216,11 +218,19 @@ describe('stringToAccountKey and accountKeyToString', () => {
   });
 
   test('stringToAccountKey should convert a string to a polkadot AccountKey object', () => {
-    const value = 'someAccountKey';
+    const value = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
     const fakeResult = ('convertedAccountKey' as unknown) as AccountKey;
     const context = polkadotMockUtils.getContextInstance();
+    const decodeAddressResult = utilsCrypto.decodeAddress(value);
 
-    mockCreateType.withArgs(context.polymeshApi.registry, 'AccountKey', value).returns(fakeResult);
+    sinon
+      .stub(utilsCrypto, 'decodeAddress')
+      .withArgs(value)
+      .returns(decodeAddressResult);
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'AccountKey', decodeAddressResult)
+      .returns(fakeResult);
 
     const result = stringToAccountKey(value, context);
 
@@ -228,8 +238,14 @@ describe('stringToAccountKey and accountKeyToString', () => {
   });
 
   test('accountKeyToString should convert a polkadot AccountKey object to a string', () => {
-    const fakeResult = 'someAccountKey';
+    const fakeResult = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
     const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult);
+    const encodeAddressResult = utilsCrypto.encodeAddress(u8aToString(accountKey));
+
+    sinon
+      .stub(utilsCrypto, 'encodeAddress')
+      .withArgs(fakeResult)
+      .returns(encodeAddressResult);
 
     const result = accountKeyToString(accountKey);
     expect(result).toEqual(fakeResult);

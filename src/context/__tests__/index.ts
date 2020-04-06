@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
 import { polkadotMockUtils } from '~/testUtils/mocks';
-import { balanceToBigNumber } from '~/utils';
+import * as utilsModule from '~/utils';
 
 jest.mock(
   '@polkadot/api',
@@ -270,15 +270,18 @@ describe('Context class', () => {
       );
     });
 
-    test('should set currentPair to the new value', async () => {
+    test('should set new values for currentPair and getCurrentIdentity', async () => {
       const publicKey = 'publicKey';
       const newPublicKey = 'newPublicKey';
       const newAddress = 'newAddress';
+      const newIdentityId = 'newIdentityId';
+      const accountKey = polkadotMockUtils.createMockAccountKey(newAddress);
       const newCurrentPair = {
         address: newAddress,
         meta: {},
         publicKey: newPublicKey,
       };
+
       polkadotMockUtils.configureMocks({
         keyringOptions: {
           addFromSeed: {
@@ -303,11 +306,11 @@ describe('Context class', () => {
 
       polkadotMockUtils
         .createQueryStub('identity', 'keyToIdentityIds')
-        .withArgs(newPublicKey)
+        .withArgs(accountKey)
         .returns(
           polkadotMockUtils.createMockOption(
             polkadotMockUtils.createMockLinkedKeyInfo({
-              Unique: polkadotMockUtils.createMockIdentityId('newIdentityId'),
+              Unique: polkadotMockUtils.createMockIdentityId(newIdentityId),
             })
           )
         );
@@ -317,9 +320,15 @@ describe('Context class', () => {
         seed: 'Alice'.padEnd(32, ' '),
       });
 
+      sinon
+        .stub(utilsModule, 'stringToAccountKey')
+        .withArgs(newAddress, context)
+        .returns(accountKey);
+
       await context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY');
 
       expect(context.currentPair).toEqual(newCurrentPair);
+      expect(context.getCurrentIdentity().did).toEqual(newIdentityId);
     });
   });
 
@@ -350,7 +359,7 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance();
-      expect(result).toEqual(balanceToBigNumber(returnValue));
+      expect(result).toEqual(utilsModule.balanceToBigNumber(returnValue));
     });
 
     test('should return the account POLYX balance if accountId is set', async () => {
@@ -369,7 +378,7 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance('accountId');
-      expect(result).toEqual(balanceToBigNumber(returnValue));
+      expect(result).toEqual(utilsModule.balanceToBigNumber(returnValue));
     });
   });
 
