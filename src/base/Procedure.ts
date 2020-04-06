@@ -26,7 +26,10 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     args: Args
   ) => Promise<MaybePostTransactionValue<ReturnValue>>;
 
-  private checkRoles: (this: Procedure<Args, ReturnValue>, args: Args) => Promise<boolean> | Role[];
+  private checkRoles: (
+    this: Procedure<Args, ReturnValue>,
+    args: Args
+  ) => Promise<boolean> | boolean | Role[];
 
   private transactions: TransactionSpec[] = [];
 
@@ -50,7 +53,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       | ((
           this: Procedure<Args, ReturnValue>,
           args: Args
-        ) => Promise<boolean> | Role[]) = async (): Promise<boolean> => true
+        ) => Promise<boolean> | boolean | Role[]) = async (): Promise<boolean> => true
   ) {
     this.prepareTransactions = prepareTransactions;
 

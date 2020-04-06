@@ -10,6 +10,7 @@ import {
   AccountKey,
   AssetIdentifier,
   AssetType,
+  AuthIdentifier,
   AuthorizationData,
   Document,
   DocumentHash,
@@ -35,6 +36,7 @@ import {
   TokenType,
 } from '~/types';
 import {
+  AuthTarget,
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -484,6 +486,33 @@ export function documentToTokenDocument(
     name: documentNameToString(name),
     uri: documentUriToString(uri),
     contentHash: documentHashToString(content_hash),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function authTargetToAuthIdentifier(
+  { did, authId }: AuthTarget,
+  context: Context
+): AuthIdentifier {
+  return createType<'AuthIdentifier'>(context.polymeshApi.registry, 'AuthIdentifier', {
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    auth_id: numberToU64(authId, context),
+    signatory: signerToSignatory({ type: SignerType.Identity, value: did }, context),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function authIdentifierToAuthTarget({
+  auth_id: authId,
+  signatory,
+}: AuthIdentifier): AuthTarget {
+  return {
+    authId: u64ToBigNumber(authId),
+    did: signatoryToSigner(signatory).value,
   };
 }
 
