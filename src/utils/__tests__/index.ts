@@ -3,7 +3,7 @@ import * as createTypeModule from '@polkadot/types/create/createType';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { u8aToString } from '@polkadot/util';
-import * as utilsCrypto from '@polkadot/util-crypto';
+import * as utilCryptoModule from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import {
   AccountKey,
@@ -221,10 +221,10 @@ describe('stringToAccountKey and accountKeyToString', () => {
     const value = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
     const fakeResult = ('convertedAccountKey' as unknown) as AccountKey;
     const context = polkadotMockUtils.getContextInstance();
-    const decodeAddressResult = utilsCrypto.decodeAddress(value);
+    const decodeAddressResult = utilCryptoModule.decodeAddress(value);
 
     sinon
-      .stub(utilsCrypto, 'decodeAddress')
+      .stub(utilCryptoModule, 'decodeAddress')
       .withArgs(value)
       .returns(decodeAddressResult);
 
@@ -240,10 +240,10 @@ describe('stringToAccountKey and accountKeyToString', () => {
   test('accountKeyToString should convert a polkadot AccountKey object to a string', () => {
     const fakeResult = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
     const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult);
-    const encodeAddressResult = utilsCrypto.encodeAddress(u8aToString(accountKey));
+    const encodeAddressResult = utilCryptoModule.encodeAddress(u8aToString(accountKey));
 
     sinon
-      .stub(utilsCrypto, 'encodeAddress')
+      .stub(utilCryptoModule, 'encodeAddress')
       .withArgs(fakeResult)
       .returns(encodeAddressResult);
 
