@@ -2,8 +2,8 @@ import { bool, Bytes, u64 } from '@polkadot/types';
 import * as createTypeModule from '@polkadot/types/create/createType';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
-import { u8aToString } from '@polkadot/util';
-import * as utilCryptoModule from '@polkadot/util-crypto';
+import * as decodeAddressModule from '@polkadot/util-crypto/address/decode';
+import * as encodeAddressModule from '@polkadot/util-crypto/address/encode';
 import BigNumber from 'bignumber.js';
 import {
   AccountKey,
@@ -82,6 +82,8 @@ jest.mock(
   require('~/testUtils/mocks/polkadot').mockPolkadotModule('@polkadot/api')
 );
 jest.mock('~/context', require('~/testUtils/mocks/polkadot').mockContextModule('~/context'));
+
+const encodedAddressStub = sinon.stub(encodeAddressModule, 'default');
 
 describe('delay', () => {
   jest.useFakeTimers();
@@ -227,7 +229,7 @@ describe('stringToAccountKey and accountKeyToString', () => {
     const decodedValue = ('decodedAccountId' as unknown) as Uint8Array;
 
     sinon
-      .stub(utilCryptoModule, 'decodeAddress')
+      .stub(decodeAddressModule, 'default')
       .withArgs(value)
       .returns(decodedValue);
 
@@ -243,15 +245,12 @@ describe('stringToAccountKey and accountKeyToString', () => {
   test('accountKeyToString should convert a polkadot AccountKey object to a string', () => {
     const fakeResult = 'someAccountId';
     const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult);
-    const encodedValue = ('encodedAccountId' as unknown) as Uint8Array;
+    const encodedValue = 'encodedAddress';
 
-    sinon
-      .stub(utilCryptoModule, 'encodeAddress')
-      .withArgs(fakeResult)
-      .returns(encodedValue);
+    encodedAddressStub.withArgs(fakeResult).returns(encodedValue);
 
     const result = accountKeyToString(accountKey);
-    expect(result).toEqual(fakeResult);
+    expect(result).toEqual(encodedValue);
   });
 });
 
@@ -1113,13 +1112,16 @@ describe('signerToSignatory and signatoryToSigner', () => {
     let result = signatoryToSigner(signatory);
     expect(result).toEqual(fakeResult);
 
+    const someAccountKey = 'someAccountKey';
     fakeResult = {
       type: SignerType.AccountKey,
-      value: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+      value: someAccountKey,
     };
     signatory = polkadotMockUtils.createMockSignatory({
       AccountKey: polkadotMockUtils.createMockAccountKey(fakeResult.value),
     });
+
+    encodedAddressStub.withArgs(someAccountKey).returns(someAccountKey);
 
     result = signatoryToSigner(signatory);
     expect(result).toEqual(fakeResult);
