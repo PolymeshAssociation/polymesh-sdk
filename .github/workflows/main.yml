@@ -33,17 +33,6 @@ jobs:
       - name: test
         run: yarn test
 
-  sonarcloud:
-    name: SonarCloud Analysis
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          SONAR_TOKEN: 31ae22ddd68b4bca781bf10243fdb5d7808b3134
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   release:
     name: Building and releasing project
     runs-on: ubuntu-latest
