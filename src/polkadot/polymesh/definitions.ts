@@ -232,6 +232,11 @@ export default {
       proposal_hash: 'Hash',
       url: 'Option<Url>',
       description: 'Option<MipDescription>',
+      cool_off_until: 'u32',
+    },
+    DepositInfo: {
+      owner: 'AccountKey',
+      amount: 'Balance',
     },
     PolymeshVotes: {
       index: 'u32',

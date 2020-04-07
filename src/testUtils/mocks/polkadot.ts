@@ -4,6 +4,7 @@
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { bool, Bytes, Enum, Option, u8, u64 } from '@polkadot/types';
 import {
+  AccountData,
   Balance,
   DispatchError,
   DispatchErrorModule,
@@ -978,6 +979,28 @@ export const createMockDocument = (
     },
     false
   ) as Document;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAccountData = (
+  accountData: { free: Balance; reserved: Balance; miscFrozen: Balance; feeFrozen: Balance } = {
+    free: createMockBalance(),
+    reserved: createMockBalance(),
+    miscFrozen: createMockBalance(),
+    feeFrozen: createMockBalance(),
+  }
+): AccountData =>
+  createMockCodec(
+    {
+      free: accountData.free,
+      reserved: accountData.reserved,
+      miscFrozen: accountData.miscFrozen,
+      feeFrozen: accountData.feeFrozen,
+    },
+    false
+  ) as AccountData;
 
 /**
  * @hidden
