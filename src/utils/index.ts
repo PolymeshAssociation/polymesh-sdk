@@ -203,7 +203,7 @@ export function stringToAccountKey(accountKey: string, context: Context): Accoun
  * @hidden
  */
 export function accountKeyToString(accountKey: AccountKey): string {
-  return encodeAddress(u8aToString(accountKey));
+  return encodeAddress(accountKey);
 }
 
 /**

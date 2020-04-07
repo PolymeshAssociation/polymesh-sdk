@@ -244,15 +244,14 @@ describe('stringToAccountKey and accountKeyToString', () => {
   test('accountKeyToString should convert a polkadot AccountKey object to a string', () => {
     const fakeResult = 'someAccountId';
     const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult);
-    const encodedValue = 'encodedAddress';
 
     sinon
       .stub(encodeAddressModule, 'default')
-      .withArgs(fakeResult)
-      .returns(encodedValue);
+      .withArgs(accountKey)
+      .returns(fakeResult);
 
     const result = accountKeyToString(accountKey);
-    expect(result).toEqual(encodedValue);
+    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -1116,18 +1115,20 @@ describe('signerToSignatory and signatoryToSigner', () => {
     expect(result).toEqual(fakeResult);
 
     const someAccountKey = 'someAccountKey';
+    const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult.value);
+
     fakeResult = {
       type: SignerType.AccountKey,
       value: someAccountKey,
     };
     signatory = polkadotMockUtils.createMockSignatory({
-      AccountKey: polkadotMockUtils.createMockAccountKey(fakeResult.value),
+      AccountKey: accountKey,
     });
 
     sinon
       .stub(encodeAddressModule, 'default')
-      .withArgs(someAccountKey)
-      .returns(fakeResult.value);
+      .withArgs(accountKey)
+      .returns(someAccountKey);
 
     result = signatoryToSigner(signatory);
     expect(result).toEqual(fakeResult);
