@@ -64,7 +64,6 @@ describe('AuthorizationRequest class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = polkadotMockUtils.getContextInstance();
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -100,7 +99,6 @@ describe('AuthorizationRequest class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = polkadotMockUtils.getContextInstance();
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),

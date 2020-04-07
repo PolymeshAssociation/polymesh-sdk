@@ -328,9 +328,9 @@ function updateQuery(mod?: Queries): void {
  * Mock the query module
  */
 function initQuery(): void {
-  const queryModule = {} as Queries;
+  const mod = {} as Queries;
 
-  updateQuery(queryModule);
+  updateQuery(mod);
 }
 
 /**
@@ -350,9 +350,9 @@ function updateTx(mod?: Extrinsics): void {
  * Mock the tx module
  */
 function initTx(): void {
-  const txModule = {} as Extrinsics;
+  const mod = {} as Extrinsics;
 
-  updateTx(txModule);
+  updateTx(mod);
 }
 
 /**
