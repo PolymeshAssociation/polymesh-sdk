@@ -33,6 +33,14 @@ jobs:
       - name: test
         run: yarn test
 
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@master
+
   release:
     name: Building and releasing project
     runs-on: ubuntu-latest

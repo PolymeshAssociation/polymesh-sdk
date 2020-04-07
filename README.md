@@ -1,5 +1,6 @@
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/standard/semistandard)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=PolymathNetwork_polymesh-sdk&metric=coverage)](https://sonarcloud.io/dashboard?id=PolymathNetwork_polymesh-sdk)
 
 # Polymesh SDK
 
@@ -31,7 +32,7 @@ Things included in the repo:
 
 ## Usage
 
-Connect to Polymesh
+Connect to a Polymesh node with an account via an suri
 
 ```ts
 import { Polymesh } from './src/Polymesh';
@@ -42,10 +43,17 @@ const api = await Polymesh.connect({
 });
 ```
 
-Gets your balance account
+Get your account balance
 
 ```ts
 const balance = await api.getAccountBalance();
+```
+
+Reserve a Ticker
+
+```ts
+const ticker = await api.reserveTicker({ ticker: 'MY_TICKER_SYMBOL' });
+await ticker.run();
 ```
 
 **To be continued...**
