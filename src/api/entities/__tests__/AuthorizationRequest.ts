@@ -22,7 +22,6 @@ describe('AuthorizationRequest class', () => {
 
   afterEach(() => {
     polkadotMockUtils.reset();
-    sinon.restore();
   });
 
   afterAll(() => {
@@ -60,6 +59,10 @@ describe('AuthorizationRequest class', () => {
   });
 
   describe('method: accept', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = polkadotMockUtils.getContextInstance();
       const authorizationRequest = new AuthorizationRequest(
@@ -92,6 +95,10 @@ describe('AuthorizationRequest class', () => {
   });
 
   describe('method: remove', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = polkadotMockUtils.getContextInstance();
       const authorizationRequest = new AuthorizationRequest(
