@@ -1,5 +1,3 @@
-import { Balance } from '@polkadot/types/interfaces';
-import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
