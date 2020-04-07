@@ -241,9 +241,9 @@ describe('stringToAccountKey and accountKeyToString', () => {
   });
 
   test('accountKeyToString should convert a polkadot AccountKey object to a string', () => {
-    const fakeResult = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+    const fakeResult = 'someAccountId';
     const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult);
-    const encodeAddressResult = utilsCrypto.encodeAddress(u8aToString(accountKey));
+    const encodedValue = ('encodedAccountId' as unknown) as Uint8Array;
 
     sinon
       .stub(utilsCrypto, 'encodeAddress')
