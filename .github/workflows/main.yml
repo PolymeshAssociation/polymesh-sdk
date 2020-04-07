@@ -40,6 +40,9 @@ jobs:
       - uses: actions/checkout@v2
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     name: Building and releasing project
