@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-import { Entity } from '~/base';
+import { consumeAuthorizationRequests } from '~/api/procedures';
+import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { Authorization } from '~/types';
 
@@ -64,10 +65,9 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
   public expiry: Date | null;
 
   /**
-   * @hidden
    * internal identifier for the request (used to accept/reject/cancel)
    */
-  private authId: BigNumber;
+  public authId: BigNumber;
 
   /**
    * @hidden
@@ -84,5 +84,28 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
     this.authId = authId;
     this.expiry = expiry;
     this.data = data;
+  }
+
+  /**
+   * Accept the authorization request. You must be the target of the request to be able to accept it
+   */
+  public accept(): Promise<TransactionQueue> {
+    return consumeAuthorizationRequests.prepare(
+      { authRequests: [this], accept: true },
+      this.context
+    );
+  }
+
+  /**
+   * Remove the authorization request
+   *
+   * - If you are the request issuer, this will cancel the authorization
+   * - If you are the request target, this will reject the authorization
+   */
+  public remove(): Promise<TransactionQueue> {
+    return consumeAuthorizationRequests.prepare(
+      { authRequests: [this], accept: false },
+      this.context
+    );
   }
 }

@@ -19,6 +19,7 @@ import {
   AccountKey,
   AssetIdentifier,
   AssetType,
+  AuthIdentifier,
   Authorization,
   AuthorizationData,
   Document,
@@ -982,6 +983,34 @@ export const createMockDocument = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockSignatory = (
+  signatory?: { Identity: IdentityId } | { AccountKey: AccountKey }
+): Signatory => {
+  return createMockEnum(signatory) as Signatory;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAuthIdentifier = (
+  authIdentifier: { signatory: Signatory; auth_id: u64 } = {
+    signatory: createMockSignatory(),
+    auth_id: createMockU64(),
+  }
+): AuthIdentifier =>
+  createMockCodec(
+    {
+      signatory: authIdentifier.signatory,
+      auth_id: authIdentifier.auth_id,
+    },
+    false
+  ) as AuthIdentifier;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockIdentifierType = (
   identifierType?: 'Isin' | 'Cusip' | { Custom: Bytes }
 ): IdentifierType => {
@@ -1001,16 +1030,6 @@ export const createMockAssetIdentifier = (identifier?: string): AssetIdentifier 
  */
 export const createMockFundingRoundName = (roundName?: string): FundingRoundName =>
   createMockStringCodec(roundName) as FundingRoundName;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockSignatory = (
-  signatory?: { Identity: IdentityId } | { AccountKey: AccountKey }
-): Signatory => {
-  return createMockEnum(signatory) as Signatory;
-};
 
 /**
  * @hidden

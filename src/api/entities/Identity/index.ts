@@ -1,12 +1,13 @@
 import { BigNumber } from 'bignumber.js';
 
-import { Authorizations } from '~/api/entities/Identity/Authorizations';
 import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode, isTickerOwnerRole, isTokenOwnerRole, Role } from '~/types';
 import { balanceToBigNumber } from '~/utils';
+
+import { Authorizations } from './Authorizations';
 
 /**
  * Properties that uniquely identify an Identity

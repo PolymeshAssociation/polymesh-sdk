@@ -9,6 +9,7 @@ import {
   AccountKey,
   AssetIdentifier,
   AssetType,
+  AuthIdentifier,
   AuthorizationData,
   DocumentHash,
   DocumentName,
@@ -31,8 +32,10 @@ import {
   accountKeyToString,
   assetIdentifierToString,
   assetTypeToString,
+  authIdentifierToAuthTarget,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
+  authTargetToAuthIdentifier,
   balanceToBigNumber,
   booleanToBool,
   boolToBoolean,
@@ -218,18 +221,18 @@ describe('stringToAccountKey and accountKeyToString', () => {
   });
 
   test('stringToAccountKey should convert a string to a polkadot AccountKey object', () => {
-    const value = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+    const value = 'someAccountId';
     const fakeResult = ('convertedAccountKey' as unknown) as AccountKey;
     const context = polkadotMockUtils.getContextInstance();
-    const decodeAddressResult = utilCryptoModule.decodeAddress(value);
+    const decodedValue = ('decodedAccountId' as unknown) as Uint8Array;
 
     sinon
       .stub(utilCryptoModule, 'decodeAddress')
       .withArgs(value)
-      .returns(decodeAddressResult);
+      .returns(decodedValue);
 
     mockCreateType
-      .withArgs(context.polymeshApi.registry, 'AccountKey', decodeAddressResult)
+      .withArgs(context.polymeshApi.registry, 'AccountKey', decodedValue)
       .returns(fakeResult);
 
     const result = stringToAccountKey(value, context);
@@ -238,14 +241,14 @@ describe('stringToAccountKey and accountKeyToString', () => {
   });
 
   test('accountKeyToString should convert a polkadot AccountKey object to a string', () => {
-    const fakeResult = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+    const fakeResult = 'someAccountId';
     const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult);
-    const encodeAddressResult = utilCryptoModule.encodeAddress(u8aToString(accountKey));
+    const encodedValue = ('encodedAccountId' as unknown) as Uint8Array;
 
     sinon
       .stub(utilCryptoModule, 'encodeAddress')
       .withArgs(fakeResult)
-      .returns(encodeAddressResult);
+      .returns(encodedValue);
 
     const result = accountKeyToString(accountKey);
     expect(result).toEqual(fakeResult);
@@ -950,6 +953,69 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
     const doc = polkadotMockUtils.createMockDocument(mockDocument);
 
     const result = documentToTokenDocument(doc);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
+  let mockCreateType: SinonStub;
+
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockCreateType = sinon.stub(createTypeModule, 'createType');
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+    mockCreateType.restore();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('authTargetToAuthIdentifier should convert an AuthTarget to a polkadot AuthIdentifer object', () => {
+    const did = 'someDid';
+    const authId = new BigNumber(1);
+    const value = {
+      did,
+      authId,
+    };
+    const fakeResult = ('convertedAuthIdentifier' as unknown) as AuthIdentifier;
+    const context = polkadotMockUtils.getContextInstance();
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'AuthIdentifier', {
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        auth_id: numberToU64(authId, context),
+        signatory: signerToSignatory({ type: SignerType.Identity, value: did }, context),
+      })
+      .returns(fakeResult);
+
+    const result = authTargetToAuthIdentifier(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('authIdentifierToAuthTarget should convert a polkadot AuthIdentifier object to an AuthTarget', () => {
+    const did = 'someDid';
+    const authId = new BigNumber(1);
+    const fakeResult = {
+      did,
+      authId,
+    };
+    const authIdentifier = polkadotMockUtils.createMockAuthIdentifier({
+      signatory: polkadotMockUtils.createMockSignatory({
+        Identity: polkadotMockUtils.createMockIdentityId(did),
+      }),
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      auth_id: polkadotMockUtils.createMockU64(authId.toNumber()),
+    });
+
+    const result = authIdentifierToAuthTarget(authIdentifier);
     expect(result).toEqual(fakeResult);
   });
 });
