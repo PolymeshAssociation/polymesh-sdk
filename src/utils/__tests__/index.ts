@@ -83,8 +83,6 @@ jest.mock(
 );
 jest.mock('~/context', require('~/testUtils/mocks/polkadot').mockContextModule('~/context'));
 
-const encodedAddressStub = sinon.stub(encodeAddressModule, 'default');
-
 describe('delay', () => {
   jest.useFakeTimers();
 
@@ -220,6 +218,7 @@ describe('stringToAccountKey and accountKeyToString', () => {
 
   afterAll(() => {
     polkadotMockUtils.cleanup();
+    sinon.restore();
   });
 
   test('stringToAccountKey should convert a string to a polkadot AccountKey object', () => {
@@ -247,7 +246,10 @@ describe('stringToAccountKey and accountKeyToString', () => {
     const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult);
     const encodedValue = 'encodedAddress';
 
-    encodedAddressStub.withArgs(fakeResult).returns(encodedValue);
+    sinon
+      .stub(encodeAddressModule, 'default')
+      .withArgs(fakeResult)
+      .returns(encodedValue);
 
     const result = accountKeyToString(accountKey);
     expect(result).toEqual(encodedValue);
@@ -1081,6 +1083,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
 
   afterAll(() => {
     polkadotMockUtils.cleanup();
+    sinon.restore();
   });
 
   test('signerToSignatory should convert a Signer to a polkadot Signatory object', () => {
@@ -1121,7 +1124,10 @@ describe('signerToSignatory and signatoryToSigner', () => {
       AccountKey: polkadotMockUtils.createMockAccountKey(fakeResult.value),
     });
 
-    encodedAddressStub.withArgs(someAccountKey).returns(someAccountKey);
+    sinon
+      .stub(encodeAddressModule, 'default')
+      .withArgs(someAccountKey)
+      .returns(fakeResult.value);
 
     result = signatoryToSigner(signatory);
     expect(result).toEqual(fakeResult);
