@@ -183,6 +183,10 @@ describe('Polymesh Class', () => {
       sinon.stub(utilsModule, 'signerToSignatory');
     });
 
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return a list of ticker reservations if did parameter is set', async () => {
       const fakeTicker = 'TEST';
 
@@ -310,6 +314,129 @@ describe('Polymesh Class', () => {
 
       expect(result instanceof Identity).toBe(true);
       expect(result).toMatchObject(new Identity(params, context));
+    });
+  });
+
+  describe('method: getSecurityTokens', () => {
+    beforeAll(() => {
+      sinon.stub(utilsModule, 'signerToSignatory');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return a list of security tokens if did parameter is set', async () => {
+      const fakeTicker = 'TEST';
+
+      polkadotMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      polkadotMockUtils.createQueryStub('identity', 'links', {
+        entries: [
+          polkadotMockUtils.createMockLink({
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_data: polkadotMockUtils.createMockLinkData({
+              TokenOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+            }),
+            expiry: polkadotMockUtils.createMockOption(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_id: polkadotMockUtils.createMockU64(),
+          }),
+        ],
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const securityTokens = await polymesh.getSecurityTokens({ did: 'someDid' });
+
+      expect(securityTokens).toHaveLength(1);
+      expect(securityTokens[0].ticker).toBe(fakeTicker);
+    });
+
+    test('should return a list of security tokens owned by the identity', async () => {
+      const fakeTicker = 'TEST';
+
+      polkadotMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      polkadotMockUtils.createQueryStub('identity', 'links', {
+        entries: [
+          polkadotMockUtils.createMockLink({
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_data: polkadotMockUtils.createMockLinkData({
+              TokenOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+            }),
+            expiry: polkadotMockUtils.createMockOption(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            link_id: polkadotMockUtils.createMockU64(),
+          }),
+        ],
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const securityTokens = await polymesh.getSecurityTokens();
+
+      expect(securityTokens).toHaveLength(1);
+      expect(securityTokens[0].ticker).toBe(fakeTicker);
+    });
+  });
+
+  describe('method: getSecurityToken', () => {
+    test('should return a specific security token', async () => {
+      const ticker = 'TEST';
+
+      polkadotMockUtils.createQueryStub('asset', 'tokens', {
+        returnValue: polkadotMockUtils.createMockSecurityToken({
+          /* eslint-disable @typescript-eslint/camelcase */
+          owner_did: polkadotMockUtils.createMockIdentityId(),
+          name: polkadotMockUtils.createMockTokenName(ticker),
+          asset_type: polkadotMockUtils.createMockAssetType(),
+          divisible: polkadotMockUtils.createMockBool(),
+          link_id: polkadotMockUtils.createMockU64(),
+          total_supply: polkadotMockUtils.createMockBalance(),
+          /* eslint-enable @typescript-eslint/camelcase */
+        }),
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const securityToken = await polymesh.getSecurityToken({ ticker });
+      expect(securityToken.ticker).toBe(ticker);
+    });
+
+    test('should throw if security token does not exist', async () => {
+      const ticker = 'TEST';
+
+      polkadotMockUtils.createQueryStub('asset', 'tokens', {
+        returnValue: polkadotMockUtils.createMockSecurityToken({
+          /* eslint-disable @typescript-eslint/camelcase */
+          owner_did: polkadotMockUtils.createMockIdentityId(),
+          name: polkadotMockUtils.createMockTokenName(),
+          asset_type: polkadotMockUtils.createMockAssetType(),
+          divisible: polkadotMockUtils.createMockBool(),
+          link_id: polkadotMockUtils.createMockU64(),
+          total_supply: polkadotMockUtils.createMockBalance(),
+          /* eslint-enable @typescript-eslint/camelcase */
+        }),
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      return expect(polymesh.getSecurityToken({ ticker })).rejects.toThrow(
+        `${ticker} is not a Security Token`
+      );
     });
   });
 });

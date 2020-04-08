@@ -2,7 +2,7 @@ import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 
-import { Identity, TickerReservation } from '~/api/entities';
+import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import { reserveTicker, ReserveTickerParams } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
@@ -185,6 +185,73 @@ export class Polymesh {
       return new Identity(args, this.context);
     }
     return this.context.getCurrentIdentity();
+  }
+
+  /**
+   * Retrieve all the Security Tokens owned by an identity
+   *
+   * @param args.did - identity ID as stored in the blockchain
+   */
+  public async getSecurityTokens(args?: { did: string }): Promise<SecurityToken[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            identity: { links },
+          },
+        },
+      },
+      context,
+    } = this;
+
+    let identity: string;
+
+    if (args) {
+      identity = args.did;
+    } else {
+      identity = context.getCurrentIdentity().did;
+    }
+
+    const tokens = await links.entries(
+      signerToSignatory({ type: SignerType.Identity, value: identity }, context)
+    );
+
+    const securityTokens = tokens
+      .filter(([, data]) => data.link_data.isTokenOwned)
+      .map(([, data]) => {
+        const token = data.link_data.asTokenOwned;
+        return new SecurityToken({ ticker: tickerToString(token) }, context);
+      });
+
+    return securityTokens;
+  }
+
+  /**
+   * Retrieve a Security Token
+   *
+   * @param args.ticker - Security Token ticker
+   */
+  public async getSecurityToken(args: { ticker: string }): Promise<SecurityToken> {
+    const { ticker } = args;
+    const {
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      context,
+    } = this;
+
+    const securityToken = await asset.tokens(ticker);
+
+    if (!securityToken.name.isEmpty) {
+      return new SecurityToken({ ticker }, context);
+    }
+
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: `${ticker} is not a Security Token`,
+    });
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
