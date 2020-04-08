@@ -108,7 +108,7 @@ describe('Polymesh Transaction class', () => {
 
       expect(transaction.status).toBe(TransactionStatus.Running);
 
-      polkadotMockUtils.updateTxStatus(tx, polkadotMockUtils.MockTxStatus.InBlock);
+      polkadotMockUtils.updateTxStatus(tx, polkadotMockUtils.MockTxStatus.Intermediate);
 
       await delay(0);
 
