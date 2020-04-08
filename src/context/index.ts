@@ -167,7 +167,9 @@ export class Context {
       });
     }
 
-    const { free } = await this.polymeshApi.query.balances.account(address);
+    const {
+      data: { free },
+    } = await this.polymeshApi.query.system.account(address);
 
     return balanceToBigNumber(free);
   }
