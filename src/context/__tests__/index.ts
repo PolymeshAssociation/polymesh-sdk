@@ -249,11 +249,15 @@ describe('Context class', () => {
 
     test('should return the account POLYX balance if currentPair is set', async () => {
       const freeBalance = polkadotMockUtils.createMockBalance(100);
-      const returnValue = polkadotMockUtils.createMockAccountData({
-        free: freeBalance,
-        reserved: polkadotMockUtils.createMockBalance(),
-        miscFrozen: polkadotMockUtils.createMockBalance(),
-        feeFrozen: polkadotMockUtils.createMockBalance(),
+      const returnValue = polkadotMockUtils.createMockAccountInfo({
+        nonce: polkadotMockUtils.createMockIndex(),
+        refcount: polkadotMockUtils.createMockRefCount(),
+        data: polkadotMockUtils.createMockAccountData({
+          free: freeBalance,
+          reserved: polkadotMockUtils.createMockBalance(),
+          miscFrozen: polkadotMockUtils.createMockBalance(),
+          feeFrozen: polkadotMockUtils.createMockBalance(),
+        }),
       });
       polkadotMockUtils.createQueryStub(
         'identity',
@@ -261,7 +265,7 @@ describe('Context class', () => {
         // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
         { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
       );
-      polkadotMockUtils.createQueryStub('balances', 'account', { returnValue });
+      polkadotMockUtils.createQueryStub('system', 'account', { returnValue });
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
@@ -274,11 +278,15 @@ describe('Context class', () => {
 
     test('should return the account POLYX balance if accountId is set', async () => {
       const freeBalance = polkadotMockUtils.createMockBalance(100);
-      const returnValue = polkadotMockUtils.createMockAccountData({
-        free: freeBalance,
-        reserved: polkadotMockUtils.createMockBalance(),
-        miscFrozen: polkadotMockUtils.createMockBalance(),
-        feeFrozen: polkadotMockUtils.createMockBalance(),
+      const returnValue = polkadotMockUtils.createMockAccountInfo({
+        nonce: polkadotMockUtils.createMockIndex(),
+        refcount: polkadotMockUtils.createMockRefCount(),
+        data: polkadotMockUtils.createMockAccountData({
+          free: freeBalance,
+          reserved: polkadotMockUtils.createMockBalance(),
+          miscFrozen: polkadotMockUtils.createMockBalance(),
+          feeFrozen: polkadotMockUtils.createMockBalance(),
+        }),
       });
       polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
         returnValue: {
@@ -286,7 +294,7 @@ describe('Context class', () => {
           unwrap: () => ({ asUnique: '012abc' }),
         },
       });
-      polkadotMockUtils.createQueryStub('balances', 'account', { returnValue });
+      polkadotMockUtils.createQueryStub('system', 'account', { returnValue });
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),

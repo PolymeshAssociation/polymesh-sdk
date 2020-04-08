@@ -2,15 +2,18 @@
 /* eslint-disable @typescript-eslint/camelcase */
 
 import { ApiPromise, Keyring } from '@polkadot/api';
-import { bool, Bytes, Enum, Option, u8, u64 } from '@polkadot/types';
+import { bool, Bytes, Enum, Option, u8, u32, u64 } from '@polkadot/types';
 import {
   AccountData,
+  AccountInfo,
   Balance,
   DispatchError,
   DispatchErrorModule,
   EventRecord,
   ExtrinsicStatus,
+  Index,
   Moment,
+  RefCount,
 } from '@polkadot/types/interfaces';
 import { Codec, IKeyringPair, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { stringToU8a } from '@polkadot/util';
@@ -831,6 +834,12 @@ export const createMockU8 = (value?: number): u8 => createMockNumberCodec(value)
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockU32 = (value?: number): u8 => createMockNumberCodec(value) as u32;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockU64 = (value?: number): u64 => createMockNumberCodec(value) as u64;
 
 /**
@@ -1001,6 +1010,39 @@ export const createMockAccountData = (
     },
     false
   ) as AccountData;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockIndex = (value?: number): Index => createMockNumberCodec(value) as Index;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRefCount = (value?: number): RefCount =>
+  createMockNumberCodec(value) as RefCount;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAccountInfo = (
+  accountInfo: { nonce: Index; refcount: RefCount; data: AccountData } = {
+    nonce: createMockIndex(),
+    refcount: createMockRefCount(),
+    data: createMockAccountData(),
+  }
+): AccountInfo =>
+  createMockCodec(
+    {
+      nonce: accountInfo.nonce,
+      refcount: accountInfo.refcount,
+      data: accountInfo.data,
+    },
+    false
+  ) as AccountInfo;
 
 /**
  * @hidden
