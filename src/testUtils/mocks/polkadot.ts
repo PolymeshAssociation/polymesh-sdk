@@ -31,6 +31,7 @@ import {
   IdentityId,
   Link,
   LinkData,
+  LinkedKeyInfo,
   SecurityToken,
   Signatory,
   Ticker,
@@ -104,6 +105,7 @@ interface ContextOptions {
 interface Pair {
   address: string;
   meta: object;
+  publicKey: string;
 }
 
 interface KeyringOptions {
@@ -256,10 +258,10 @@ const defaultContextOptions: ContextOptions = {
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
-  getPair: { address: 'address', meta: {} },
-  getPairs: [{ address: 'address', meta: {} }],
-  addFromSeed: { address: 'address', meta: {} },
-  addFromUri: { address: 'address', meta: {} },
+  getPair: { address: 'address', meta: {}, publicKey: 'publicKey1' },
+  getPairs: [{ address: 'address', meta: {}, publicKey: 'publicKey2' }],
+  addFromSeed: { address: 'address', meta: {}, publicKey: 'publicKey3' },
+  addFromUri: { address: 'address', meta: {}, publicKey: 'publicKey4' },
 };
 let keyringOptions: KeyringOptions = defaultKeyringOptions;
 
@@ -487,8 +489,7 @@ export function createTxStub<
   mod: ModuleName,
   tx: TransactionName,
   autoresolve: MockTxStatus | false = MockTxStatus.Succeeded
-): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> &
-  SinonStub<ArgsType<Extrinsics[ModuleName][TransactionName]>> {
+): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> & SinonStub {
   let runtimeModule = txModule[mod];
 
   if (!runtimeModule) {
@@ -529,7 +530,7 @@ export function createTxStub<
   const transactionMock = (instance.tx[mod][tx] as unknown) as PolymeshTx<
     ArgsType<Extrinsics[ModuleName][TransactionName]>
   > &
-    SinonStub<ArgsType<Extrinsics[ModuleName][TransactionName]>>;
+    SinonStub;
 
   return transactionMock;
 }
@@ -552,7 +553,7 @@ export function createQueryStub<
     entries?: unknown[];
     multi?: unknown;
   }
-): Queries[ModuleName][QueryName] & SinonStub<ArgsType<Queries[ModuleName][QueryName]>> {
+): Queries[ModuleName][QueryName] & SinonStub {
   let runtimeModule = queryModule[mod];
 
   if (!runtimeModule) {
@@ -577,8 +578,7 @@ export function createQueryStub<
 
   const instance = mockInstanceContainer.apiInstance;
 
-  const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] &
-    SinonStub<ArgsType<Queries[ModuleName][QueryName]>>;
+  const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] & SinonStub;
 
   if (opts?.entries) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -863,7 +863,7 @@ export const createMockBool = (value?: boolean): bool =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-const createMockEnum = (enumValue?: string | Record<string, Codec>): Enum => {
+const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): Enum => {
   const codec: Record<string, unknown> = {};
 
   if (typeof enumValue === 'string') {
@@ -1086,3 +1086,13 @@ export const createMockEventRecord = (data: unknown[]): EventRecord =>
       data,
     },
   } as unknown) as EventRecord);
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockLinkedKeyInfo = (
+  linkedKeyInfo?: { Unique: IdentityId } | { Group: IdentityId[] }
+): LinkedKeyInfo => {
+  return createMockEnum(linkedKeyInfo) as LinkedKeyInfo;
+};
