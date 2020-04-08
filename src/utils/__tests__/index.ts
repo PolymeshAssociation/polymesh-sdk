@@ -1114,12 +1114,12 @@ describe('signerToSignatory and signatoryToSigner', () => {
     let result = signatoryToSigner(signatory);
     expect(result).toEqual(fakeResult);
 
-    const someAccountKey = 'someAccountKey';
-    const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult.value);
+    const accountKey = polkadotMockUtils.createMockAccountKey('someAccountKey');
+    const encodedAddress = 'someEncodedAddress';
 
     fakeResult = {
       type: SignerType.AccountKey,
-      value: someAccountKey,
+      value: encodedAddress,
     };
     signatory = polkadotMockUtils.createMockSignatory({
       AccountKey: accountKey,
@@ -1128,7 +1128,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
     sinon
       .stub(encodeAddressModule, 'default')
       .withArgs(accountKey)
-      .returns(someAccountKey);
+      .returns(encodedAddress);
 
     result = signatoryToSigner(signatory);
     expect(result).toEqual(fakeResult);
