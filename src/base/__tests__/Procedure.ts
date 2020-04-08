@@ -199,7 +199,7 @@ describe('Procedure class', () => {
       proc2.context = context;
       const result = proc2.addProcedure(proc1);
 
-      expect(result).rejects.toThrow(errorMsg);
+      return expect(result).rejects.toThrow(errorMsg);
     });
   });
 });
