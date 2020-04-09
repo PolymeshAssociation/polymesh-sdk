@@ -32,7 +32,7 @@ Things included in the repo:
 
 ## Usage
 
-Connect to a Polymesh node with an account via an suri
+Connect to a Polymesh node with an account URI
 
 ```ts
 import { Polymesh } from './src/Polymesh';
