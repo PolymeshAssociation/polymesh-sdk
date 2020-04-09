@@ -1,6 +1,6 @@
 import { u64, Vec } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Document, Link, Ticker } from 'polymesh-types/types';
+import { Document, Link, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -14,6 +14,7 @@ import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUt
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TokenDocument } from '~/types';
 import { PolymeshTx } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -33,6 +34,9 @@ describe('setTokenDocuments procedure', () => {
   let rawDocuments: Document[];
   let links: Link[];
   let args: Params;
+
+  let tokenSignatory: Signatory;
+  let linkIds: u64[];
 
   beforeAll(() => {
     polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(500) } });
@@ -63,6 +67,10 @@ describe('setTokenDocuments procedure', () => {
         content_hash: polkadotMockUtils.createMockDocumentHash(contentHash),
       })
     );
+    tokenSignatory = polkadotMockUtils.createMockSignatory({
+      Identity: polkadotMockUtils.createMockIdentityId('tokenDid'),
+    });
+    linkIds = [polkadotMockUtils.createMockU64(1), polkadotMockUtils.createMockU64(2)];
     /* eslint-disable @typescript-eslint/camelcase */
     links = [
       polkadotMockUtils.createMockLink({
@@ -70,14 +78,14 @@ describe('setTokenDocuments procedure', () => {
           DocumentOwned: rawDocuments[0],
         }),
         expiry: polkadotMockUtils.createMockOption(),
-        link_id: polkadotMockUtils.createMockU64(1),
+        link_id: linkIds[0],
       }),
       polkadotMockUtils.createMockLink({
         link_data: polkadotMockUtils.createMockLinkData({
           DocumentOwned: rawDocuments[1],
         }),
         expiry: polkadotMockUtils.createMockOption(),
-        link_id: polkadotMockUtils.createMockU64(2),
+        link_id: linkIds[1],
       }),
     ];
     /* eslint-enable @typescript-eslint/camelcase */
@@ -96,7 +104,7 @@ describe('setTokenDocuments procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     polkadotMockUtils.createQueryStub('identity', 'links', {
-      entries: [links[0]],
+      entries: [tuple([tokenSignatory, linkIds[0]], links[0])],
     });
 
     removeDocumentsTransaction = polkadotMockUtils.createTxStub('asset', 'removeDocuments');
@@ -124,7 +132,7 @@ describe('setTokenDocuments procedure', () => {
 
   test('should throw an error if the new list is the same as the current one', () => {
     polkadotMockUtils.createQueryStub('identity', 'links', {
-      entries: links,
+      entries: links.map(link => tuple([tokenSignatory, link.link_id], link)),
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
