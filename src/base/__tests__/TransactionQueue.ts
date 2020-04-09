@@ -178,7 +178,7 @@ describe('Transaction Queue class', () => {
 
       const runPromise = queue.run();
 
-      expect(runPromise).rejects.toThrow('Transaction Error');
+      return expect(runPromise).rejects.toThrow('Transaction Error');
     });
 
     test('should succeed if the only failures are from non-critical transactions', () => {
@@ -207,7 +207,7 @@ describe('Transaction Queue class', () => {
 
       const runPromise = queue.run();
 
-      expect(runPromise).resolves.not.toThrow();
+      return expect(runPromise).resolves.not.toThrow();
     });
 
     test('should throw an error if attempting to run a queue that has already run', async () => {

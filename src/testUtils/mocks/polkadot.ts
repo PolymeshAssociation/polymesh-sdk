@@ -124,6 +124,11 @@ interface KeyringOptions {
   error?: boolean;
 }
 
+interface StubQuery {
+  entries: SinonStub;
+  multi: SinonStub;
+}
+
 type MockContext = Mocked<Context>;
 
 export enum MockTxStatus {
@@ -554,10 +559,10 @@ export function createQueryStub<
   query: QueryName,
   opts?: {
     returnValue?: unknown;
-    entries?: unknown[];
+    entries?: [unknown[], unknown][]; // [Keys, Codec]
     multi?: unknown;
   }
-): Queries[ModuleName][QueryName] & SinonStub {
+): Queries[ModuleName][QueryName] & SinonStub & StubQuery {
   let runtimeModule = queryModule[mod];
 
   if (!runtimeModule) {
@@ -565,32 +570,28 @@ export function createQueryStub<
     queryModule[mod] = runtimeModule;
   }
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
+  let stub: Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+
   if (!runtimeModule[query]) {
-    runtimeModule[query] = (sinon.stub() as unknown) as Queries[ModuleName][QueryName];
-    if (opts?.entries) {
-      (runtimeModule[query] as any).entries = sinon
-        .stub()
-        .resolves(opts.entries.map(entry => ['someKey', entry]));
-    } else if (opts?.multi) {
-      (runtimeModule[query] as any).multi = sinon.stub().resolves(opts.multi);
-    }
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+    stub = (sinon.stub() as unknown) as Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+    stub.entries = sinon.stub();
+    stub.multi = sinon.stub();
+    runtimeModule[query] = stub;
 
     updateQuery();
+  } else {
+    const instance = mockInstanceContainer.apiInstance;
+    stub = instance.query[mod][query] as Queries[ModuleName][QueryName] & SinonStub & StubQuery;
   }
-
-  const instance = mockInstanceContainer.apiInstance;
-
-  const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] & SinonStub;
 
   if (opts?.entries) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (stub as any).entries = sinon.stub().resolves(opts.entries.map(entry => ['someKey', entry]));
+    stub.entries.resolves(opts.entries.map(([keys, value]) => [{ args: keys }, value]));
   }
-
+  if (opts?.multi) {
+    stub.multi.resolves(opts.multi);
+  }
   if (opts?.returnValue) {
-    stub.returns(opts.returnValue);
+    stub.resolves(opts.returnValue);
   }
 
   return stub;
@@ -717,13 +718,14 @@ const createMockStringCodec = (value?: string): Codec =>
     {
       toString: () => value,
     },
-    !value
+    value === undefined
   );
 
 /**
  * @hidden
  */
-const createMockU8ACodec = (value?: string): Codec => createMockCodec(stringToU8a(value), !value);
+const createMockU8ACodec = (value?: string): Codec =>
+  createMockCodec(stringToU8a(value), value === undefined);
 
 /**
  * @hidden
@@ -734,7 +736,7 @@ const createMockNumberCodec = (value?: number): Codec =>
       toNumber: () => value,
       toString: () => `${value}`,
     },
-    !value
+    value === undefined
   );
 
 /**
