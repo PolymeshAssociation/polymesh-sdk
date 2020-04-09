@@ -28,7 +28,7 @@ Things included in the repo:
 - `yarn semantic-release` runs semantic release to calculate version numbers based on the nature of changes since the last version (used in CI pipelines)
 - `yarn lint` runs the linter on all .ts files and outputs all errors
 - `yarn format` runs prettier-eslint on all .ts files and rewrites the files with well formatted code
-- `yarn ts-node` compiles typescript files to be run seamlessly in a Node environment
+- `yarn ts-node` run a ts script without prior compilation
 
 ## Usage
 
