@@ -8,13 +8,23 @@ export enum SystemTx {
   Remark = 'system.remark',
   SetHeapPages = 'system.setHeapPages',
   SetCode = 'system.setCode',
+  SetCodeWithoutChecks = 'system.setCodeWithoutChecks',
+  SetChangesTrieConfig = 'system.setChangesTrieConfig',
   SetStorage = 'system.setStorage',
   KillStorage = 'system.killStorage',
   KillPrefix = 'system.killPrefix',
+  Suicide = 'system.suicide',
 }
 
 export enum TimestampTx {
   Set = 'timestamp.set',
+}
+
+export enum IndicesTx {
+  Claim = 'indices.claim',
+  Transfer = 'indices.transfer',
+  Free = 'indices.free',
+  ForceTransfer = 'indices.forceTransfer',
 }
 
 export enum BalancesTx {
@@ -23,6 +33,7 @@ export enum BalancesTx {
   TopUpIdentityBalance = 'balances.topUpIdentityBalance',
   ReclaimIdentityBalance = 'balances.reclaimIdentityBalance',
   ChangeChargeDidFlag = 'balances.changeChargeDidFlag',
+  TopUpBrrBalance = 'balances.topUpBrrBalance',
   SetBalance = 'balances.setBalance',
   ForceTransfer = 'balances.forceTransfer',
 }
@@ -48,7 +59,7 @@ export enum StakingTx {
   CompliancePassed = 'staking.compliancePassed',
   ValidateCddExpiryNominators = 'staking.validateCddExpiryNominators',
   EnableIndividualCommissions = 'staking.enableIndividualCommissions',
-  SetGlobalComission = 'staking.setGlobalComission',
+  SetGlobalCommission = 'staking.setGlobalCommission',
   SetMinBondThreshold = 'staking.setMinBondThreshold',
   ForceNoEras = 'staking.forceNoEras',
   ForceNewEra = 'staking.forceNewEra',
@@ -56,10 +67,25 @@ export enum StakingTx {
   ForceUnstake = 'staking.forceUnstake',
   ForceNewEraAlways = 'staking.forceNewEraAlways',
   CancelDeferredSlash = 'staking.cancelDeferredSlash',
+  PayoutNominator = 'staking.payoutNominator',
+  PayoutValidator = 'staking.payoutValidator',
+  Rebond = 'staking.rebond',
+  SetHistoryDepth = 'staking.setHistoryDepth',
+  ReapStash = 'staking.reapStash',
+}
+
+export enum ElectionsTx {
+  Vote = 'elections.vote',
+  RemoveVoter = 'elections.removeVoter',
+  ReportDefunctVoter = 'elections.reportDefunctVoter',
+  SubmitCandidacy = 'elections.submitCandidacy',
+  RenounceCandidacy = 'elections.renounceCandidacy',
+  RemoveMember = 'elections.removeMember',
 }
 
 export enum SessionTx {
   SetKeys = 'session.setKeys',
+  PurgeKeys = 'session.purgeKeys',
 }
 
 export enum FinalityTrackerTx {
@@ -113,12 +139,18 @@ export enum TreasuryTx {
   ProposeSpend = 'treasury.proposeSpend',
   RejectProposal = 'treasury.rejectProposal',
   ApproveProposal = 'treasury.approveProposal',
+  ReportAwesome = 'treasury.reportAwesome',
+  RetractTip = 'treasury.retractTip',
+  TipNew = 'treasury.tipNew',
+  Tip = 'treasury.tip',
+  CloseTip = 'treasury.closeTip',
 }
 
 export enum PolymeshCommitteeTx {
   SetVoteThreshold = 'polymeshCommittee.setVoteThreshold',
   Propose = 'polymeshCommittee.propose',
   Vote = 'polymeshCommittee.vote',
+  Close = 'polymeshCommittee.close',
 }
 
 export enum CommitteeMembershipTx {
@@ -128,6 +160,8 @@ export enum CommitteeMembershipTx {
   SwapMember = 'committeeMembership.swapMember',
   ResetMembers = 'committeeMembership.resetMembers',
   AbdicateMembership = 'committeeMembership.abdicateMembership',
+  SetPrime = 'committeeMembership.setPrime',
+  ClearPrime = 'committeeMembership.clearPrime',
 }
 
 export enum MipsTx {
@@ -135,6 +169,10 @@ export enum MipsTx {
   SetQuorumThreshold = 'mips.setQuorumThreshold',
   SetProposalDuration = 'mips.setProposalDuration',
   Propose = 'mips.propose',
+  AmendProposal = 'mips.amendProposal',
+  CancelProposal = 'mips.cancelProposal',
+  BondAdditionalDeposit = 'mips.bondAdditionalDeposit',
+  UnbondDeposit = 'mips.unbondDeposit',
   Vote = 'mips.vote',
   KillProposal = 'mips.killProposal',
   FastTrackProposal = 'mips.fastTrackProposal',
@@ -217,6 +255,7 @@ export enum IdentityTx {
   FreezeSigningKeys = 'identity.freezeSigningKeys',
   UnfreezeSigningKeys = 'identity.unfreezeSigningKeys',
   GetMyDid = 'identity.getMyDid',
+  GetCddOf = 'identity.getCddOf',
   AddAuthorization = 'identity.addAuthorization',
   AddAuthorizationAsKey = 'identity.addAuthorizationAsKey',
   BatchAddAuthorization = 'identity.batchAddAuthorization',
@@ -279,6 +318,8 @@ export enum CddServiceProvidersTx {
   SwapMember = 'cddServiceProviders.swapMember',
   ResetMembers = 'cddServiceProviders.resetMembers',
   AbdicateMembership = 'cddServiceProviders.abdicateMembership',
+  SetPrime = 'cddServiceProviders.setPrime',
+  ClearPrime = 'cddServiceProviders.clearPrime',
 }
 
 export enum ProtocolFeeTx {
@@ -291,9 +332,11 @@ export enum ProtocolFeeTx {
 export type TxTag =
   | SystemTx
   | TimestampTx
+  | IndicesTx
   | BalancesTx
   | AuthorshipTx
   | StakingTx
+  | ElectionsTx
   | SessionTx
   | FinalityTrackerTx
   | GrandpaTx
@@ -321,9 +364,11 @@ export type TxTag =
 export const TxTags = {
   system: SystemTx,
   timestamp: TimestampTx,
+  indices: IndicesTx,
   balances: BalancesTx,
   authorship: AuthorshipTx,
   staking: StakingTx,
+  elections: ElectionsTx,
   session: SessionTx,
   finalityTracker: FinalityTrackerTx,
   grandpa: GrandpaTx,

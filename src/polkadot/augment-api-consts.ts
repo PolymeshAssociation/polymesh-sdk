@@ -8,6 +8,7 @@ import {
   BalanceOf,
   BlockNumber,
   Moment,
+  Percent,
   Permill,
 } from '@polkadot/types/interfaces/runtime';
 import { SessionIndex } from '@polkadot/types/interfaces/session';
@@ -32,18 +33,10 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
     };
     balances: {
       /**
-       * The fee required to create an account.
-       **/
-      creationFee: AugmentedConst<Balance>;
-      /**
-       * This is no longer needede but kept for compatibility reasons
+       * This is no longer needed but kept for compatibility reasons
        * The minimum amount required to keep an account open.
        **/
       existentialDeposit: AugmentedConst<Balance>;
-      /**
-       * The fee required to make a transfer.
-       **/
-      transferFee: AugmentedConst<Balance>;
     };
     bridge: {
       blockRangeForTimelock: AugmentedConst<BlockNumber>;
@@ -65,10 +58,6 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
        * is 21.
        **/
       contractFee: AugmentedConst<BalanceOf>;
-      /**
-       * The fee required to create an account.
-       **/
-      creationFee: AugmentedConst<BalanceOf>;
       /**
        * The base fee charged for instantiating a contract. A reasonable default value
        * is 175.
@@ -103,7 +92,7 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
        **/
       signedClaimHandicap: AugmentedConst<BlockNumber>;
       /**
-       * Size of a contract at the time of instantiaion. This is a simple way to ensure that
+       * Size of a contract at the time of instantiation. This is a simple way to ensure that
        * empty contracts eventually gets deleted.
        **/
       storageSizeOffset: AugmentedConst<u32>;
@@ -124,10 +113,13 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
        * The fee to be paid for making a transaction; the per-byte portion.
        **/
       transactionByteFee: AugmentedConst<BalanceOf>;
-      /**
-       * The fee required to make a transfer.
-       **/
-      transferFee: AugmentedConst<BalanceOf>;
+    };
+    elections: {
+      candidacyBond: AugmentedConst<BalanceOf>;
+      desiredMembers: AugmentedConst<u32>;
+      desiredRunnersUp: AugmentedConst<u32>;
+      termDuration: AugmentedConst<BlockNumber>;
+      votingBond: AugmentedConst<BalanceOf>;
     };
     finalityTracker: {
       /**
@@ -193,6 +185,22 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
        * Period between successive spends.
        **/
       spendPeriod: AugmentedConst<BlockNumber>;
+      /**
+       * The period for which a tip remains open after is has achieved threshold tippers.
+       **/
+      tipCountdown: AugmentedConst<BlockNumber>;
+      /**
+       * The amount of the final tip which goes to the original reporter of the tip.
+       **/
+      tipFindersFee: AugmentedConst<Percent>;
+      /**
+       * The amount held on deposit for placing a tip report.
+       **/
+      tipReportDepositBase: AugmentedConst<BalanceOf>;
+      /**
+       * The amount held on deposit per byte within the tip report reason.
+       **/
+      tipReportDepositPerByte: AugmentedConst<BalanceOf>;
     };
   }
 }

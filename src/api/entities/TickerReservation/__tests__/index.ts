@@ -1,6 +1,4 @@
-import { Callback, Codec } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities/SecurityToken';
@@ -48,8 +46,8 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: details', () => {
-    let tickersStub: sinon.SinonStub<[string | Uint8Array | Ticker, Callback<Codec | Codec[]>]>;
-    let tokensStub: sinon.SinonStub<[string | Uint8Array | Ticker, Callback<Codec | Codec[]>]>;
+    let tickersStub: sinon.SinonStub;
+    let tokensStub: sinon.SinonStub;
 
     beforeEach(() => {
       tickersStub = polkadotMockUtils.createQueryStub('asset', 'tickers', {

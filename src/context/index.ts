@@ -7,7 +7,7 @@ import { IdentityId } from 'polymesh-types/types';
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
-import { balanceToBigNumber } from '~/utils';
+import { balanceToBigNumber, identityIdToString, stringToAccountKey } from '~/utils';
 
 interface SignerData {
   currentPair: IKeyringPair;
@@ -137,16 +137,42 @@ export class Context {
   /**
    * Set a pair as the current account keyring pair
    */
-  public setPair(address: string): void {
-    const { keyring } = this;
+  public async setPair(address: string): Promise<void> {
+    const {
+      keyring,
+      polymeshApi: {
+        query: { identity },
+      },
+    } = this;
+
+    let newCurrentPair;
+    let identityIds;
+    let did;
+
     try {
-      this.currentPair = keyring.getPair(address);
+      newCurrentPair = keyring.getPair(address);
     } catch (e) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'The address is not present in the keyring set',
       });
     }
+
+    try {
+      identityIds = await identity.keyToIdentityIds(
+        stringToAccountKey(newCurrentPair.address, this)
+      );
+
+      did = identityIds.unwrap().asUnique;
+    } catch (e) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'There is no Identity associated to this account',
+      });
+    }
+
+    this.currentPair = newCurrentPair;
+    this.currentIdentity = new Identity({ did: identityIdToString(did) }, this);
   }
 
   /**
@@ -167,9 +193,11 @@ export class Context {
       });
     }
 
-    const balance = await this.polymeshApi.query.balances.freeBalance(address);
+    const {
+      data: { free },
+    } = await this.polymeshApi.query.system.account(address);
 
-    return balanceToBigNumber(balance);
+    return balanceToBigNumber(free);
   }
 
   /**

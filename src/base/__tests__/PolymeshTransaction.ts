@@ -108,7 +108,7 @@ describe('Polymesh Transaction class', () => {
 
       expect(transaction.status).toBe(TransactionStatus.Running);
 
-      polkadotMockUtils.updateTxStatus(tx, polkadotMockUtils.MockTxStatus.InBlock);
+      polkadotMockUtils.updateTxStatus(tx, polkadotMockUtils.MockTxStatus.Intermediate);
 
       await delay(0);
 
@@ -272,7 +272,7 @@ describe('Polymesh Transaction class', () => {
 
       const listenerStub = sinon.stub();
 
-      transaction.onStatusChange(transaction => listenerStub(transaction.status));
+      transaction.onStatusChange(t => listenerStub(t.status));
 
       await transaction.run();
 
@@ -293,7 +293,7 @@ describe('Polymesh Transaction class', () => {
 
       const listenerStub = sinon.stub();
 
-      const unsub = transaction.onStatusChange(transaction => listenerStub(transaction.status));
+      const unsub = transaction.onStatusChange(t => listenerStub(t.status));
 
       transaction.run();
 
