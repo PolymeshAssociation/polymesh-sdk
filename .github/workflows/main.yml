@@ -32,7 +32,7 @@ jobs:
         run: yarn --frozen-lockfile
       - name: test
         run: yarn test
-      - name: edit coverage report # hack to support the different paths, since istanbul won't change it
+      - name: edit coverage report # hack to support the different paths in the container
         run: sed -i "s|SF:/.*/src/|SF:/github/workspace/src/|g" coverage/lcov.info
       - name: sonarcloud scan
         uses: SonarSource/sonarcloud-github-action@master
