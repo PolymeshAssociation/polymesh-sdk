@@ -193,9 +193,11 @@ export class Context {
       });
     }
 
-    const balance = await this.polymeshApi.query.balances.freeBalance(address);
+    const {
+      data: { free },
+    } = await this.polymeshApi.query.system.account(address);
 
-    return balanceToBigNumber(balance);
+    return balanceToBigNumber(free);
   }
 
   /**
