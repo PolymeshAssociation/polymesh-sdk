@@ -120,7 +120,7 @@ describe('Identity class', () => {
 
       const hasRole = identity.hasRole(role);
 
-      expect(hasRole).rejects.toThrow(`Unrecognized role "${type}"`);
+      return expect(hasRole).rejects.toThrow(`Unrecognized role "${JSON.stringify(role)}"`);
     });
 
     test('hasRoles should return true if the identity possesses all roles', async () => {

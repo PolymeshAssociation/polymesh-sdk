@@ -168,7 +168,9 @@ describe('Context class', () => {
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      expect(context).rejects.toThrow(new Error('There is no Identity associated to this account'));
+      return expect(context).rejects.toThrow(
+        new Error('There is no Identity associated to this account')
+      );
     });
   });
 
