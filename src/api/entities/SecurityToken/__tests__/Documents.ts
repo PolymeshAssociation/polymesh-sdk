@@ -4,6 +4,7 @@ import { SecurityToken } from '~/api/entities';
 import { setTokenDocuments } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
 import { Documents } from '../Documents';
@@ -27,6 +28,10 @@ describe('Documents class', () => {
   });
 
   describe('method: set', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = polkadotMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
@@ -56,6 +61,10 @@ describe('Documents class', () => {
   });
 
   describe('method: get', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should retrieve all documents linked to the token', async () => {
       sinon.stub(utilsModule, 'signerToSignatory');
 
@@ -79,26 +88,37 @@ describe('Documents class', () => {
           content_hash: polkadotMockUtils.createMockDocumentHash(contentHash),
         })
       );
+
+      const signatory = polkadotMockUtils.createMockSignatory({
+        Identity: polkadotMockUtils.createMockIdentityId('tokenDid'),
+      });
+      const ids = [polkadotMockUtils.createMockU64(1), polkadotMockUtils.createMockU64(2)];
       /* eslint-disable @typescript-eslint/camelcase */
-      const links = [
-        polkadotMockUtils.createMockLink({
-          link_data: polkadotMockUtils.createMockLinkData({
-            DocumentOwned: rawDocuments[0],
-          }),
-          expiry: polkadotMockUtils.createMockOption(),
-          link_id: polkadotMockUtils.createMockU64(1),
-        }),
-        polkadotMockUtils.createMockLink({
-          link_data: polkadotMockUtils.createMockLinkData({
-            DocumentOwned: rawDocuments[1],
-          }),
-          expiry: polkadotMockUtils.createMockOption(),
-          link_id: polkadotMockUtils.createMockU64(2),
-        }),
+      const linkEntries = [
+        tuple(
+          [signatory, ids[0]],
+          polkadotMockUtils.createMockLink({
+            link_data: polkadotMockUtils.createMockLinkData({
+              DocumentOwned: rawDocuments[0],
+            }),
+            expiry: polkadotMockUtils.createMockOption(),
+            link_id: ids[0],
+          })
+        ),
+        tuple(
+          [signatory, ids[1]],
+          polkadotMockUtils.createMockLink({
+            link_data: polkadotMockUtils.createMockLinkData({
+              DocumentOwned: rawDocuments[1],
+            }),
+            expiry: polkadotMockUtils.createMockOption(),
+            link_id: ids[1],
+          })
+        ),
       ];
       /* eslint-enable @typescript-eslint/camelcase */
       polkadotMockUtils.createQueryStub('identity', 'links', {
-        entries: links,
+        entries: linkEntries,
       });
 
       const context = polkadotMockUtils.getContextInstance();

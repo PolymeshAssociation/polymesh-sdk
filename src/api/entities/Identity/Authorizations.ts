@@ -33,7 +33,7 @@ export class Authorizations extends Namespace<Identity> {
       signerToSignatory({ type: SignerType.Identity, value: did }, context)
     );
 
-    return this.createAuthorizationRequests(entries.map(([, auth]) => auth));
+    return this.createAuthorizationRequests(entries.map(([, auth]) => ({ auth, target: did })));
   }
 
   /**
@@ -58,37 +58,36 @@ export class Authorizations extends Namespace<Identity> {
       authQueryParams
     );
 
-    return this.createAuthorizationRequests(authorizations);
+    return this.createAuthorizationRequests(
+      authorizations.map((auth, index) => ({
+        auth,
+        target: signatoryToSigner(authQueryParams[index][0]).value,
+      }))
+    );
   }
 
   /**
    * @hidden
    *
    * Create an array of AuthorizationRequests from an array of on-chain Authorizations
-   *
-   * @param auths
-   * @param targetDid
    */
-  private createAuthorizationRequests(auths: Authorization[]): AuthorizationRequest[] {
-    const {
-      context,
-      parent: { did: targetDid },
-    } = this;
+  private createAuthorizationRequests(
+    auths: { auth: Authorization; target: string }[]
+  ): AuthorizationRequest[] {
+    const { context } = this;
     return auths
       .map(auth => {
         const {
-          expiry,
-          auth_id: authId,
-          authorization_data: data,
-          authorized_by: issuerDid,
+          auth: { expiry, auth_id: authId, authorization_data: data, authorized_by: issuer },
+          target,
         } = auth;
 
         return {
           authId: u64ToBigNumber(authId),
           expiry: expiry.isSome ? momentToDate(expiry.unwrap()) : null,
           data: authorizationDataToAuthorization(data),
-          targetDid,
-          issuerDid: signatoryToSigner(issuerDid).value,
+          targetDid: target,
+          issuerDid: signatoryToSigner(issuer).value,
         };
       })
       .filter(({ expiry }) => expiry === null || expiry > new Date())
