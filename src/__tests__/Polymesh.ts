@@ -339,15 +339,18 @@ describe('Polymesh Class', () => {
 
       polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
-          polkadotMockUtils.createMockLink({
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            link_data: polkadotMockUtils.createMockLinkData({
-              TokenOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+          [
+            ['someKey'],
+            polkadotMockUtils.createMockLink({
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_data: polkadotMockUtils.createMockLinkData({
+                TokenOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+              }),
+              expiry: polkadotMockUtils.createMockOption(),
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_id: polkadotMockUtils.createMockU64(),
             }),
-            expiry: polkadotMockUtils.createMockOption(),
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            link_id: polkadotMockUtils.createMockU64(),
-          }),
+          ],
         ],
       });
 
@@ -369,15 +372,18 @@ describe('Polymesh Class', () => {
 
       polkadotMockUtils.createQueryStub('identity', 'links', {
         entries: [
-          polkadotMockUtils.createMockLink({
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            link_data: polkadotMockUtils.createMockLinkData({
-              TokenOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+          [
+            ['someKey'],
+            polkadotMockUtils.createMockLink({
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_data: polkadotMockUtils.createMockLinkData({
+                TokenOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+              }),
+              expiry: polkadotMockUtils.createMockOption(),
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              link_id: polkadotMockUtils.createMockU64(),
             }),
-            expiry: polkadotMockUtils.createMockOption(),
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            link_id: polkadotMockUtils.createMockU64(),
-          }),
+          ],
         ],
       });
 
