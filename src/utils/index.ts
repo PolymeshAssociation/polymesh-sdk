@@ -3,7 +3,7 @@ import { createType } from '@polkadot/types/create/createType';
 import { Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { stringToU8a, u8aConcat, u8aFixLength, u8aToString } from '@polkadot/util';
-import { blake2AsHex } from '@polkadot/util-crypto';
+import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import {
@@ -192,14 +192,18 @@ export function identityIdToString(identityId: IdentityId): string {
  * @hidden
  */
 export function stringToAccountKey(accountKey: string, context: Context): AccountKey {
-  return createType<'AccountKey'>(context.polymeshApi.registry, 'AccountKey', accountKey);
+  return createType<'AccountKey'>(
+    context.polymeshApi.registry,
+    'AccountKey',
+    decodeAddress(accountKey)
+  );
 }
 
 /**
  * @hidden
  */
 export function accountKeyToString(accountKey: AccountKey): string {
-  return u8aToString(accountKey);
+  return encodeAddress(accountKey);
 }
 
 /**

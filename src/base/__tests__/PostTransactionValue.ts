@@ -7,7 +7,7 @@ describe('Post Transaction Value class', () => {
   describe('method: run', () => {
     test('should run the provided resolver function with the receipt and assign the resulting value', async () => {
       const receipt = (1 as unknown) as ISubmittableResult;
-      const resolverFunctionStub = sinon.stub().callsFake(receipt => Promise.resolve(receipt));
+      const resolverFunctionStub = sinon.stub().callsFake(r => Promise.resolve(r));
       const p = new PostTransactionValue<number>(resolverFunctionStub);
 
       await p.run(receipt);

@@ -116,13 +116,13 @@ describe('createSecurityToken procedure', () => {
     rawType = polkadotMockUtils.createMockAssetType(tokenType);
     rawIdentifiers = tokenIdentifiers.map(({ type, value }) => {
       return [
-        polkadotMockUtils.createMockIdentifierType(type as TokenIdentifierType),
+        polkadotMockUtils.createMockIdentifierType(type),
         polkadotMockUtils.createMockAssetIdentifier(value),
       ];
     });
-    rawDocuments = documents.map(({ name, uri, contentHash }) =>
+    rawDocuments = documents.map(({ name: documentName, uri, contentHash }) =>
       polkadotMockUtils.createMockDocument({
-        name: polkadotMockUtils.createMockDocumentName(name),
+        name: polkadotMockUtils.createMockDocumentName(documentName),
         uri: polkadotMockUtils.createMockDocumentUri(uri),
         // eslint-disable-next-line @typescript-eslint/camelcase
         content_hash: polkadotMockUtils.createMockDocumentHash(contentHash),

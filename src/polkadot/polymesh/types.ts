@@ -164,6 +164,12 @@ export interface Compliance extends Enum {
 /** @name Counter */
 export interface Counter extends u64 {}
 
+/** @name DepositInfo */
+export interface DepositInfo extends Struct {
+  readonly owner: AccountKey;
+  readonly amount: Balance;
+}
+
 /** @name DidRecord */
 export interface DidRecord extends Struct {
   readonly roles: Vec<IdentityRole>;
@@ -317,6 +323,7 @@ export interface MipsMetadata extends Struct {
   readonly proposal_hash: Hash;
   readonly url: Option<Url>;
   readonly description: Option<MipDescription>;
+  readonly cool_off_until: u32;
 }
 
 /** @name MipsPriority */

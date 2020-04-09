@@ -185,10 +185,7 @@ export class TransactionQueue<
     this.status = status;
 
     switch (status) {
-      case TransactionQueueStatus.Running: {
-        this.emitter.emit(Events.StatusChange, this);
-        return;
-      }
+      case TransactionQueueStatus.Running:
       case TransactionQueueStatus.Succeeded: {
         this.emitter.emit(Events.StatusChange, this);
         return;

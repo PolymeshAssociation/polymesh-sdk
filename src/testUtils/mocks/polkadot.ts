@@ -2,14 +2,18 @@
 /* eslint-disable @typescript-eslint/camelcase */
 
 import { ApiPromise, Keyring } from '@polkadot/api';
-import { bool, Bytes, Enum, Option, u8, u64 } from '@polkadot/types';
+import { bool, Bytes, Enum, Option, u8, u32, u64 } from '@polkadot/types';
 import {
+  AccountData,
+  AccountInfo,
   Balance,
   DispatchError,
   DispatchErrorModule,
   EventRecord,
   ExtrinsicStatus,
+  Index,
   Moment,
+  RefCount,
 } from '@polkadot/types/interfaces';
 import { Codec, IKeyringPair, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { stringToU8a } from '@polkadot/util';
@@ -31,6 +35,7 @@ import {
   IdentityId,
   Link,
   LinkData,
+  LinkedKeyInfo,
   SecurityToken,
   Signatory,
   Ticker,
@@ -104,6 +109,7 @@ interface ContextOptions {
 interface Pair {
   address: string;
   meta: object;
+  publicKey: string;
 }
 
 interface KeyringOptions {
@@ -126,7 +132,7 @@ export enum MockTxStatus {
   Failed = 'Failed',
   Aborted = 'Aborted',
   Rejected = 'Rejected',
-  InBlock = 'InBlock',
+  Intermediate = 'Intermediate',
 }
 
 export enum TxFailReason {
@@ -149,16 +155,16 @@ const defaultReceipt: ISubmittableResult = {
   toHuman: () => ({}),
 };
 
-const inBlockReceipt: ISubmittableResult = merge({}, defaultReceipt, {
-  status: { isReady: false, isInBlock: false, asInBlock: 'blockHash' },
+const intermediateReceipt: ISubmittableResult = merge({}, defaultReceipt, {
+  status: { isReady: false, isInBlock: false },
   isCompleted: true,
-  isInBlock: true,
+  isInBlock: false,
 });
 
 const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
-  status: { isReady: false, isFinalized: true, asFinalized: 'blockHash' },
+  status: { isReady: false, isInBlock: true, asInBlock: 'blockHash' },
   isCompleted: true,
-  isFinalized: true,
+  isInBlock: true,
 });
 
 /**
@@ -226,8 +232,8 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
   if (status === MockTxStatus.Ready) {
     return defaultReceipt;
   }
-  if (status === MockTxStatus.InBlock) {
-    return inBlockReceipt;
+  if (status === MockTxStatus.Intermediate) {
+    return intermediateReceipt;
   }
 
   throw new Error(`There is no receipt associated with status ${status}`);
@@ -256,10 +262,10 @@ const defaultContextOptions: ContextOptions = {
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
-  getPair: { address: 'address', meta: {} },
-  getPairs: [{ address: 'address', meta: {} }],
-  addFromSeed: { address: 'address', meta: {} },
-  addFromUri: { address: 'address', meta: {} },
+  getPair: { address: 'address', meta: {}, publicKey: 'publicKey1' },
+  getPairs: [{ address: 'address', meta: {}, publicKey: 'publicKey2' }],
+  addFromSeed: { address: 'address', meta: {}, publicKey: 'publicKey3' },
+  addFromUri: { address: 'address', meta: {}, publicKey: 'publicKey4' },
 };
 let keyringOptions: KeyringOptions = defaultKeyringOptions;
 
@@ -327,9 +333,9 @@ function updateQuery(mod?: Queries): void {
  * Mock the query module
  */
 function initQuery(): void {
-  const queryModule = {} as Queries;
+  const mod = {} as Queries;
 
-  updateQuery(queryModule);
+  updateQuery(mod);
 }
 
 /**
@@ -349,9 +355,9 @@ function updateTx(mod?: Extrinsics): void {
  * Mock the tx module
  */
 function initTx(): void {
-  const txModule = {} as Extrinsics;
+  const mod = {} as Extrinsics;
 
-  updateTx(txModule);
+  updateTx(mod);
 }
 
 /**
@@ -487,8 +493,7 @@ export function createTxStub<
   mod: ModuleName,
   tx: TransactionName,
   autoresolve: MockTxStatus | false = MockTxStatus.Succeeded
-): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> &
-  SinonStub<ArgsType<Extrinsics[ModuleName][TransactionName]>> {
+): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> & SinonStub {
   let runtimeModule = txModule[mod];
 
   if (!runtimeModule) {
@@ -529,7 +534,7 @@ export function createTxStub<
   const transactionMock = (instance.tx[mod][tx] as unknown) as PolymeshTx<
     ArgsType<Extrinsics[ModuleName][TransactionName]>
   > &
-    SinonStub<ArgsType<Extrinsics[ModuleName][TransactionName]>>;
+    SinonStub;
 
   return transactionMock;
 }
@@ -552,7 +557,7 @@ export function createQueryStub<
     entries?: unknown[];
     multi?: unknown;
   }
-): Queries[ModuleName][QueryName] & SinonStub<ArgsType<Queries[ModuleName][QueryName]>> {
+): Queries[ModuleName][QueryName] & SinonStub {
   let runtimeModule = queryModule[mod];
 
   if (!runtimeModule) {
@@ -577,8 +582,7 @@ export function createQueryStub<
 
   const instance = mockInstanceContainer.apiInstance;
 
-  const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] &
-    SinonStub<ArgsType<Queries[ModuleName][QueryName]>>;
+  const stub = instance.query[mod][query] as Queries[ModuleName][QueryName] & SinonStub;
 
   if (opts?.entries) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -830,6 +834,12 @@ export const createMockU8 = (value?: number): u8 => createMockNumberCodec(value)
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockU32 = (value?: number): u8 => createMockNumberCodec(value) as u32;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockU64 = (value?: number): u64 => createMockNumberCodec(value) as u64;
 
 /**
@@ -863,7 +873,7 @@ export const createMockBool = (value?: boolean): bool =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-const createMockEnum = (enumValue?: string | Record<string, Codec>): Enum => {
+const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): Enum => {
   const codec: Record<string, unknown> = {};
 
   if (typeof enumValue === 'string') {
@@ -983,6 +993,61 @@ export const createMockDocument = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockAccountData = (
+  accountData: { free: Balance; reserved: Balance; miscFrozen: Balance; feeFrozen: Balance } = {
+    free: createMockBalance(),
+    reserved: createMockBalance(),
+    miscFrozen: createMockBalance(),
+    feeFrozen: createMockBalance(),
+  }
+): AccountData =>
+  createMockCodec(
+    {
+      free: accountData.free,
+      reserved: accountData.reserved,
+      miscFrozen: accountData.miscFrozen,
+      feeFrozen: accountData.feeFrozen,
+    },
+    false
+  ) as AccountData;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockIndex = (value?: number): Index => createMockNumberCodec(value) as Index;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRefCount = (value?: number): RefCount =>
+  createMockNumberCodec(value) as RefCount;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAccountInfo = (
+  accountInfo: { nonce: Index; refcount: RefCount; data: AccountData } = {
+    nonce: createMockIndex(),
+    refcount: createMockRefCount(),
+    data: createMockAccountData(),
+  }
+): AccountInfo =>
+  createMockCodec(
+    {
+      nonce: accountInfo.nonce,
+      refcount: accountInfo.refcount,
+      data: accountInfo.data,
+    },
+    false
+  ) as AccountInfo;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockSignatory = (
   signatory?: { Identity: IdentityId } | { AccountKey: AccountKey }
 ): Signatory => {
@@ -1086,3 +1151,13 @@ export const createMockEventRecord = (data: unknown[]): EventRecord =>
       data,
     },
   } as unknown) as EventRecord);
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockLinkedKeyInfo = (
+  linkedKeyInfo?: { Unique: IdentityId } | { Group: IdentityId[] }
+): LinkedKeyInfo => {
+  return createMockEnum(linkedKeyInfo) as LinkedKeyInfo;
+};

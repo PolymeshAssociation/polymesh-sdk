@@ -575,6 +575,7 @@ import {
   Commission,
   Compliance,
   Counter,
+  DepositInfo,
   DidRecord,
   Dividend,
   Document,
@@ -2378,6 +2379,9 @@ declare module '@polkadot/types/types/registry' {
     MipsMetadata: MipsMetadata;
     'Option<MipsMetadata>': Option<MipsMetadata>;
     'Vec<MipsMetadata>': Vec<MipsMetadata>;
+    DepositInfo: DepositInfo;
+    'Option<DepositInfo>': Option<DepositInfo>;
+    'Vec<DepositInfo>': Vec<DepositInfo>;
     PolymeshVotes: PolymeshVotes;
     'Option<PolymeshVotes>': Option<PolymeshVotes>;
     'Vec<PolymeshVotes>': Vec<PolymeshVotes>;

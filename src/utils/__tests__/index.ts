@@ -2,6 +2,8 @@ import { bool, Bytes, u64 } from '@polkadot/types';
 import * as createTypeModule from '@polkadot/types/create/createType';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
+import * as decodeAddressModule from '@polkadot/util-crypto/address/decode';
+import * as encodeAddressModule from '@polkadot/util-crypto/address/encode';
 import BigNumber from 'bignumber.js';
 import {
   AccountKey,
@@ -216,14 +218,23 @@ describe('stringToAccountKey and accountKeyToString', () => {
 
   afterAll(() => {
     polkadotMockUtils.cleanup();
+    sinon.restore();
   });
 
   test('stringToAccountKey should convert a string to a polkadot AccountKey object', () => {
-    const value = 'someAccountKey';
+    const value = 'someAccountId';
     const fakeResult = ('convertedAccountKey' as unknown) as AccountKey;
     const context = polkadotMockUtils.getContextInstance();
+    const decodedValue = ('decodedAccountId' as unknown) as Uint8Array;
 
-    mockCreateType.withArgs(context.polymeshApi.registry, 'AccountKey', value).returns(fakeResult);
+    sinon
+      .stub(decodeAddressModule, 'default')
+      .withArgs(value)
+      .returns(decodedValue);
+
+    mockCreateType
+      .withArgs(context.polymeshApi.registry, 'AccountKey', decodedValue)
+      .returns(fakeResult);
 
     const result = stringToAccountKey(value, context);
 
@@ -231,8 +242,13 @@ describe('stringToAccountKey and accountKeyToString', () => {
   });
 
   test('accountKeyToString should convert a polkadot AccountKey object to a string', () => {
-    const fakeResult = 'someAccountKey';
+    const fakeResult = 'someAccountId';
     const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult);
+
+    sinon
+      .stub(encodeAddressModule, 'default')
+      .withArgs(accountKey)
+      .returns(fakeResult);
 
     const result = accountKeyToString(accountKey);
     expect(result).toEqual(fakeResult);
@@ -1066,6 +1082,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
 
   afterAll(() => {
     polkadotMockUtils.cleanup();
+    sinon.restore();
   });
 
   test('signerToSignatory should convert a Signer to a polkadot Signatory object', () => {
@@ -1097,13 +1114,21 @@ describe('signerToSignatory and signatoryToSigner', () => {
     let result = signatoryToSigner(signatory);
     expect(result).toEqual(fakeResult);
 
+    const accountKey = polkadotMockUtils.createMockAccountKey('someAccountKey');
+    const encodedAddress = 'someEncodedAddress';
+
     fakeResult = {
       type: SignerType.AccountKey,
-      value: 'someAccountKey',
+      value: encodedAddress,
     };
     signatory = polkadotMockUtils.createMockSignatory({
-      AccountKey: polkadotMockUtils.createMockAccountKey(fakeResult.value),
+      AccountKey: accountKey,
     });
+
+    sinon
+      .stub(encodeAddressModule, 'default')
+      .withArgs(accountKey)
+      .returns(encodedAddress);
 
     result = signatoryToSigner(signatory);
     expect(result).toEqual(fakeResult);

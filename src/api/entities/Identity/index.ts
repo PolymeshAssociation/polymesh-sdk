@@ -85,7 +85,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      message: `Unrecognized role "${role!.type}"`,
+      message: `Unrecognized role "${JSON.stringify(role)}"`,
     });
   }
 
