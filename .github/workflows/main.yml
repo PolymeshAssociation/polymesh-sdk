@@ -32,17 +32,8 @@ jobs:
         run: yarn --frozen-lockfile
       - name: test
         run: yarn test
-
-  scan:
-    name: Scanning
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '10.x'
-      - name: install dependencies
-        run: yarn --frozen-lockfile
+      - name: edit coverage report # hack to support the different paths, since istanbul won't change it
+        run: sed -i "s|SF:/.*/src/|SF:/github/workspace/src/|g" coverage/lcov.info
       - name: sonarcloud scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
@@ -52,7 +43,7 @@ jobs:
   release:
     name: Building and releasing project
     runs-on: ubuntu-latest
-    needs: [lint, test, scan]
+    needs: [lint, test]
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
