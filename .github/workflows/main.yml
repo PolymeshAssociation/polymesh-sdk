@@ -32,6 +32,11 @@ jobs:
         run: yarn --frozen-lockfile
       - name: test
         run: yarn test
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
   release:
     name: Building and releasing project
