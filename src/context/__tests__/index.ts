@@ -1,10 +1,9 @@
-import { Balance } from '@polkadot/types/interfaces';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
 import { polkadotMockUtils } from '~/testUtils/mocks';
-import { balanceToBigNumber } from '~/utils';
+import * as utilsModule from '~/utils';
 
 jest.mock(
   '@polkadot/api',
@@ -48,6 +47,7 @@ describe('Context class', () => {
       const newPair = {
         address: 'someAddress1',
         meta: {},
+        publicKey: 'publicKey',
       };
       polkadotMockUtils.configureMocks({
         keyringOptions: {
@@ -72,7 +72,7 @@ describe('Context class', () => {
     });
 
     test('should create a Context class from a keyring with Pair and Identity attached', async () => {
-      const pairs = [{ address: 'someAddress', meta: {} }];
+      const pairs = [{ address: 'someAddress', meta: {}, publicKey: 'publicKey' }];
       polkadotMockUtils.configureMocks({
         keyringOptions: {
           getPairs: pairs,
@@ -99,6 +99,7 @@ describe('Context class', () => {
       const newPair = {
         address: 'someAddress',
         meta: {},
+        publicKey: 'publicKey',
       };
       polkadotMockUtils.configureMocks({
         keyringOptions: {
@@ -126,6 +127,7 @@ describe('Context class', () => {
       const newPair = {
         address: 'someAddress',
         meta: {},
+        publicKey: 'publicKey',
       };
       polkadotMockUtils.configureMocks({
         keyringOptions: {
@@ -152,6 +154,7 @@ describe('Context class', () => {
       const newPair = {
         address: 'someAddress',
         meta: {},
+        publicKey: 'publicKey',
       };
       polkadotMockUtils.configureMocks({
         keyringOptions: {
@@ -178,11 +181,13 @@ describe('Context class', () => {
             name: 'name 01',
           },
           somethingElse: false,
+          publicKey: 'publicKey',
         },
         {
           address: '02',
           meta: {},
           somethingElse: false,
+          publicKey: 'publicKey',
         },
       ];
       polkadotMockUtils.configureMocks({
@@ -214,26 +219,115 @@ describe('Context class', () => {
         polymeshApi: polkadotMockUtils.getApiInstance(),
       });
 
-      expect(() => context.setPair('012')).toThrow('The address is not present in the keyring set');
+      await expect(context.setPair('012')).rejects.toThrow(
+        'The address is not present in the keyring set'
+      );
     });
 
-    test('should set currentPair to the new value', async () => {
-      const newPair = {
-        address: 'someAddress',
-        meta: {},
-      };
+    test("should throw error if the address doesn't have an associated identity", async () => {
+      const publicKey = 'publicKey';
+      const newPublicKey = 'newPublicKey';
+      const newAddress = 'newAddress';
       polkadotMockUtils.configureMocks({
         keyringOptions: {
-          getPair: newPair,
+          addFromSeed: {
+            address: 'address',
+            meta: {},
+            publicKey,
+          },
+          getPair: {
+            address: newAddress,
+            meta: {},
+            publicKey: newPublicKey,
+          },
         },
       });
 
+      polkadotMockUtils
+        .createQueryStub('identity', 'keyToIdentityIds')
+        .withArgs(publicKey)
+        .returns(
+          polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLinkedKeyInfo({
+              Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+            })
+          )
+        );
+
+      polkadotMockUtils
+        .createQueryStub('identity', 'keyToIdentityIds')
+        .withArgs(newPublicKey)
+        .returns(polkadotMockUtils.createMockOption());
+
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
+        seed: 'Alice'.padEnd(32, ' '),
       });
 
-      context.setPair('012');
-      expect(context.currentPair).toEqual(newPair);
+      await expect(context.setPair(newAddress)).rejects.toThrow(
+        'There is no Identity associated to this account'
+      );
+    });
+
+    test('should set new values for currentPair and getCurrentIdentity', async () => {
+      const publicKey = 'publicKey';
+      const newPublicKey = 'newPublicKey';
+      const newAddress = 'newAddress';
+      const newIdentityId = 'newIdentityId';
+      const accountKey = polkadotMockUtils.createMockAccountKey(newAddress);
+      const newCurrentPair = {
+        address: newAddress,
+        meta: {},
+        publicKey: newPublicKey,
+      };
+
+      polkadotMockUtils.configureMocks({
+        keyringOptions: {
+          addFromSeed: {
+            address: 'address',
+            meta: {},
+            publicKey,
+          },
+          getPair: newCurrentPair,
+        },
+      });
+
+      polkadotMockUtils
+        .createQueryStub('identity', 'keyToIdentityIds')
+        .withArgs(publicKey)
+        .returns(
+          polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLinkedKeyInfo({
+              Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+            })
+          )
+        );
+
+      polkadotMockUtils
+        .createQueryStub('identity', 'keyToIdentityIds')
+        .withArgs(accountKey)
+        .returns(
+          polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLinkedKeyInfo({
+              Unique: polkadotMockUtils.createMockIdentityId(newIdentityId),
+            })
+          )
+        );
+
+      const context = await Context.create({
+        polymeshApi: polkadotMockUtils.getApiInstance(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      sinon
+        .stub(utilsModule, 'stringToAccountKey')
+        .withArgs(newAddress, context)
+        .returns(accountKey);
+
+      await context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY');
+
+      expect(context.currentPair).toEqual(newCurrentPair);
+      expect(context.getCurrentIdentity().did).toEqual(newIdentityId);
     });
   });
 
@@ -249,14 +343,24 @@ describe('Context class', () => {
     });
 
     test('should return the account POLYX balance if currentPair is set', async () => {
-      const returnValue = (100 as unknown) as Balance;
+      const freeBalance = polkadotMockUtils.createMockBalance(100);
+      const returnValue = polkadotMockUtils.createMockAccountInfo({
+        nonce: polkadotMockUtils.createMockIndex(),
+        refcount: polkadotMockUtils.createMockRefCount(),
+        data: polkadotMockUtils.createMockAccountData({
+          free: freeBalance,
+          reserved: polkadotMockUtils.createMockBalance(),
+          miscFrozen: polkadotMockUtils.createMockBalance(),
+          feeFrozen: polkadotMockUtils.createMockBalance(),
+        }),
+      });
       polkadotMockUtils.createQueryStub(
         'identity',
         'keyToIdentityIds',
         // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
         { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
       );
-      polkadotMockUtils.createQueryStub('balances', 'freeBalance', { returnValue });
+      polkadotMockUtils.createQueryStub('system', 'account', { returnValue });
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
@@ -264,18 +368,28 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance();
-      expect(result).toEqual(balanceToBigNumber(returnValue));
+      expect(result).toEqual(utilsModule.balanceToBigNumber(freeBalance));
     });
 
     test('should return the account POLYX balance if accountId is set', async () => {
-      const returnValue = (100 as unknown) as Balance;
+      const freeBalance = polkadotMockUtils.createMockBalance(100);
+      const returnValue = polkadotMockUtils.createMockAccountInfo({
+        nonce: polkadotMockUtils.createMockIndex(),
+        refcount: polkadotMockUtils.createMockRefCount(),
+        data: polkadotMockUtils.createMockAccountData({
+          free: freeBalance,
+          reserved: polkadotMockUtils.createMockBalance(),
+          miscFrozen: polkadotMockUtils.createMockBalance(),
+          feeFrozen: polkadotMockUtils.createMockBalance(),
+        }),
+      });
       polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
         returnValue: {
           // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
           unwrap: () => ({ asUnique: '012abc' }),
         },
       });
-      polkadotMockUtils.createQueryStub('balances', 'freeBalance', { returnValue });
+      polkadotMockUtils.createQueryStub('system', 'account', { returnValue });
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
@@ -283,7 +397,7 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance('accountId');
-      expect(result).toEqual(balanceToBigNumber(returnValue));
+      expect(result).toEqual(utilsModule.balanceToBigNumber(freeBalance));
     });
   });
 

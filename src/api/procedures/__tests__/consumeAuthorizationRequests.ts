@@ -143,12 +143,11 @@ describe('consumeAuthorizationRequests procedure', () => {
   });
 
   describe('isAuthorized', () => {
-    // let authParams
     test('should return whether the current identity is the target of all non-expired requests if trying to accept', () => {
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>();
       proc.context = mockContext;
       const { did } = mockContext.getCurrentIdentity();
-      const authParams = [
+      const constructorParams = [
         {
           authId: new BigNumber(1),
           expiry: null,
@@ -170,7 +169,9 @@ describe('consumeAuthorizationRequests procedure', () => {
       ];
       const args = {
         accept: true,
-        authRequests: authParams.map(params => new AuthorizationRequest(params, mockContext)),
+        authRequests: constructorParams.map(
+          params => new AuthorizationRequest(params, mockContext)
+        ),
       } as ConsumeAuthorizationRequestsParams;
 
       const boundFunc = isAuthorized.bind(proc);
@@ -185,7 +186,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>();
       proc.context = mockContext;
       const { did } = mockContext.getCurrentIdentity();
-      const authParams = [
+      const constructorParams = [
         {
           authId: new BigNumber(1),
           expiry: null,
@@ -216,7 +217,9 @@ describe('consumeAuthorizationRequests procedure', () => {
       ];
       const args = {
         accept: false,
-        authRequests: authParams.map(params => new AuthorizationRequest(params, mockContext)),
+        authRequests: constructorParams.map(
+          params => new AuthorizationRequest(params, mockContext)
+        ),
       } as ConsumeAuthorizationRequestsParams;
 
       const boundFunc = isAuthorized.bind(proc);
