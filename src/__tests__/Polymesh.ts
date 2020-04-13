@@ -1,5 +1,4 @@
 import { Keyring } from '@polkadot/api';
-import { assert } from '@polkadot/util';
 import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 
