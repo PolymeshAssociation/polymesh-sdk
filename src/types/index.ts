@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 export enum TransactionStatus {
   /**
    * the transaction is prepped to run
@@ -160,6 +162,14 @@ export enum ErrorCode {
   InvalidUuid = 'InvalidUuid',
   ValidationError = 'ValidationError',
   NotAuthorized = 'NotAuthorized',
+}
+
+/**
+ * Issuer representation
+ */
+export interface IssuanceData {
+  did: string;
+  balance: BigNumber;
 }
 
 export * from '~/api/entities/types';
