@@ -332,7 +332,7 @@ describe('Polymesh Class', () => {
       sinon.restore();
     });
 
-    test('should return a list of security tokens if did parameter is set', async () => {
+    test('should return a list of security tokens owned by the supplied did', async () => {
       const fakeTicker = 'TEST';
 
       polkadotMockUtils.configureMocks({ contextOptions: { withSeed: true } });
@@ -365,7 +365,7 @@ describe('Polymesh Class', () => {
       expect(securityTokens[0].ticker).toBe(fakeTicker);
     });
 
-    test('should return a list of security tokens owned by the identity', async () => {
+    test('should return a list of security tokens owned by the current identity if no did is supplied', async () => {
       const fakeTicker = 'TEST';
 
       polkadotMockUtils.configureMocks({ contextOptions: { withSeed: true } });
@@ -447,7 +447,7 @@ describe('Polymesh Class', () => {
       });
 
       return expect(polymesh.getSecurityToken({ ticker })).rejects.toThrow(
-        `${ticker} is not a Security Token`
+        `There is no Security Token with ticker "${ticker}"`
       );
     });
   });

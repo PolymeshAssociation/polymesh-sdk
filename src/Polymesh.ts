@@ -212,15 +212,15 @@ export class Polymesh {
       identity = context.getCurrentIdentity().did;
     }
 
-    const tokens = await links.entries(
+    const identityLinks = await links.entries(
       signerToSignatory({ type: SignerType.Identity, value: identity }, context)
     );
 
-    const securityTokens = tokens
+    const securityTokens = identityLinks
       .filter(([, data]) => data.link_data.isTokenOwned)
       .map(([, data]) => {
-        const token = data.link_data.asTokenOwned;
-        return new SecurityToken({ ticker: tickerToString(token) }, context);
+        const ticker = data.link_data.asTokenOwned;
+        return new SecurityToken({ ticker: tickerToString(ticker) }, context);
       });
 
     return securityTokens;
@@ -250,7 +250,7 @@ export class Polymesh {
 
     throw new PolymeshError({
       code: ErrorCode.FatalError,
-      message: `${ticker} is not a Security Token`,
+      message: `There is no Security Token with ticker "${ticker}"`,
     });
   }
 
