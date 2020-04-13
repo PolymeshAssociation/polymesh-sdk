@@ -187,6 +187,40 @@ export class Polymesh {
     return this.context.getCurrentIdentity();
   }
 
+  /**
+   * Handle connection errors
+   *
+   * @returns an unsubscribe callback
+   */
+  onConnectionError(callback: (...args: unknown[]) => unknown): () => void {
+    const {
+      context: { polymeshApi },
+    } = this;
+
+    polymeshApi.on('error', callback);
+
+    return (): void => {
+      polymeshApi.off('error', callback);
+    };
+  }
+
+  /**
+   * Handle disconnection
+   *
+   * @returns an unsubscribe callback
+   */
+  onDisconnect(callback: (...args: unknown[]) => unknown): () => void {
+    const {
+      context: { polymeshApi },
+    } = this;
+
+    polymeshApi.on('disconnected', callback);
+
+    return (): void => {
+      polymeshApi.off('disconnected', callback);
+    };
+  }
+
   // TODO @monitz87: remove when the dApp team no longer needs it
   /* istanbul ignore next: only for testing purposes */
   /**

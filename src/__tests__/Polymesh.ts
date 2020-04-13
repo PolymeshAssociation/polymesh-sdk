@@ -1,4 +1,5 @@
 import { Keyring } from '@polkadot/api';
+import { assert } from '@polkadot/util';
 import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -316,6 +317,54 @@ describe('Polymesh Class', () => {
 
       expect(result instanceof Identity).toBe(true);
       expect(result).toMatchObject(new Identity(params, context));
+    });
+  });
+
+  describe('method: onConnectionError', () => {
+    test('should call the supplied listener when the event is emitted and return an unsubscribe callback', async () => {
+      const polkadot = polkadotMockUtils.getApiInstance();
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const callback = sinon.stub();
+
+      const unsub = polymesh.onConnectionError(callback);
+
+      polkadot.emit('error');
+      polkadot.emit('disconnected');
+
+      unsub();
+
+      polkadot.emit('error');
+
+      sinon.assert.calledOnce(callback);
+    });
+  });
+
+  describe('method: onDisconnect', () => {
+    test('should call the supplied listener when the event is emitted and return an unsubscribe callback', async () => {
+      const polkadot = polkadotMockUtils.getApiInstance();
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const callback = sinon.stub();
+
+      const unsub = polymesh.onDisconnect(callback);
+
+      polkadot.emit('disconnected');
+      polkadot.emit('error');
+
+      unsub();
+
+      polkadot.emit('disconnected');
+
+      sinon.assert.calledOnce(callback);
     });
   });
 });
