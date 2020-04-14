@@ -188,6 +188,40 @@ export class Polymesh {
   }
 
   /**
+   * Handle connection errors
+   *
+   * @returns an unsubscribe callback
+   */
+  onConnectionError(callback: (...args: unknown[]) => unknown): () => void {
+    const {
+      context: { polymeshApi },
+    } = this;
+
+    polymeshApi.on('error', callback);
+
+    return (): void => {
+      polymeshApi.off('error', callback);
+    };
+  }
+
+  /**
+   * Handle disconnection
+   *
+   * @returns an unsubscribe callback
+   */
+  onDisconnect(callback: (...args: unknown[]) => unknown): () => void {
+    const {
+      context: { polymeshApi },
+    } = this;
+
+    polymeshApi.on('disconnected', callback);
+
+    return (): void => {
+      polymeshApi.off('disconnected', callback);
+    };
+  }
+
+  /**
    * Retrieve all the Security Tokens owned by an identity
    *
    * @param args.did - identity ID as stored in the blockchain
