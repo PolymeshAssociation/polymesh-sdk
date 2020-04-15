@@ -1,6 +1,5 @@
-import { u64, Vec } from '@polkadot/types';
-import BigNumber from 'bignumber.js';
-import { Document, IdentityId,Link, Signatory, Ticker } from 'polymesh-types/types';
+import { Vec } from '@polkadot/types';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -12,9 +11,8 @@ import {
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TokenDocument } from '~/types';
+import { RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
 describe('setTokenTrustedClaimIssuers procedure', () => {
