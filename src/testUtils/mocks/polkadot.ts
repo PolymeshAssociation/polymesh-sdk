@@ -18,6 +18,7 @@ import {
 import { Codec, IKeyringPair, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { stringToU8a } from '@polkadot/util';
 import { BigNumber } from 'bignumber.js';
+import { EventEmitter } from 'events';
 import { cloneDeep, every, merge, upperFirst } from 'lodash';
 import {
   AccountKey,
@@ -50,9 +51,26 @@ import { Mocked } from '~/testUtils/types';
 import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
 
+let apiEmitter: EventEmitter;
+
+/**
+ * Create a mock instance of the Polkadot API
+ */
+function createApi(): Mutable<ApiPromise> & EventEmitter {
+  apiEmitter = new EventEmitter();
+  apiEmitter.on('error', () => undefined);
+  return {
+    emit: (event: string) => apiEmitter.emit(event),
+    on: (event: string, listener: (...args: unknown[]) => unknown) =>
+      apiEmitter.on(event, listener),
+    off: (event: string, listener: (...args: unknown[]) => unknown) =>
+      apiEmitter.off(event, listener),
+  } as Mutable<ApiPromise> & EventEmitter;
+}
+
 const mockInstanceContainer = {
   contextInstance: {} as MockContext,
-  apiInstance: {} as Mutable<ApiPromise>,
+  apiInstance: createApi(),
   keyringInstance: {} as Mutable<Keyring>,
 };
 
@@ -467,7 +485,7 @@ export function initMocks(opts?: {
  * Restore instances to their original state
  */
 export function cleanup(): void {
-  mockInstanceContainer.apiInstance = {} as Mutable<ApiPromise>;
+  mockInstanceContainer.apiInstance = createApi();
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.keyringInstance = {} as Mutable<Keyring>;
 }
@@ -667,8 +685,8 @@ export function setContextAccountBalance(balance: BigNumber): void {
  * @hidden
  * Retrieve an instance of the mocked Polkadot API
  */
-export function getApiInstance(): ApiPromise {
-  return mockInstanceContainer.apiInstance as ApiPromise;
+export function getApiInstance(): ApiPromise & EventEmitter {
+  return mockInstanceContainer.apiInstance as ApiPromise & EventEmitter;
 }
 
 /**
