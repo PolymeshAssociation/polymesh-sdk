@@ -1,25 +1,23 @@
+import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
-import {
-  getRequiredRoles,
-  Params,
-  prepareSetIssuancesData,
-} from '~/api/procedures/setIssuancesData';
+import { getRequiredRoles, Params, prepareIssueTokens } from '~/api/procedures/issueTokens';
 import { Context } from '~/context';
-import { Ticker } from '~/polkadot';
+import { IdentityId, Ticker } from '~/polkadot';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
 import * as utilsModule from '~/utils';
+import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
 jest.mock(
   '~/api/entities/SecurityToken',
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
 
-describe('setIssuancesData procedure', () => {
+describe('issueTokens procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let ticker: string;
@@ -53,16 +51,16 @@ describe('setIssuancesData procedure', () => {
     polkadotMockUtils.cleanup();
   });
 
-  test('should throw an error if security token is divisible and at least one balance exceeds six decimals', () => {
+  test('should throw an error if security token is divisible and at least one amount exceeds six decimals', () => {
     const args = {
-      issuances: [
+      issuanceData: [
         {
           did: 'someDid',
-          balance: new BigNumber(100),
+          amount: new BigNumber(100),
         },
         {
           did: 'anotherDid',
-          balance: new BigNumber(50.1234567),
+          amount: new BigNumber(50.1234567),
         },
       ],
       ticker,
@@ -79,21 +77,21 @@ describe('setIssuancesData procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    return expect(prepareSetIssuancesData.call(proc, args)).rejects.toThrow(
-      'At most one balance exceeds the six decimals limit'
+    return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
+      `Issuance amounts cannot have more than ${MAX_DECIMALS} decimals`
     );
   });
 
-  test('should throw an error if security token is not divisible and at least one balance has decimals', () => {
+  test('should throw an error if security token is not divisible and at least one amount has decimals', () => {
     const args = {
-      issuances: [
+      issuanceData: [
         {
           did: 'someDid',
-          balance: new BigNumber(100),
+          amount: new BigNumber(100),
         },
         {
           did: 'anotherDid',
-          balance: new BigNumber(50.1),
+          amount: new BigNumber(50.1),
         },
       ],
       ticker,
@@ -102,17 +100,17 @@ describe('setIssuancesData procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    return expect(prepareSetIssuancesData.call(proc, args)).rejects.toThrow(
-      'At most one balance has decimals'
+    return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
+      'Cannot issue decimal amounts of an indivisible token'
     );
   });
 
   test('should throw an error if token supply is bigger than the limit total supply', () => {
     const args = {
-      issuances: [
+      issuanceData: [
         {
           did: 'someDid',
-          balance: new BigNumber(100),
+          amount: new BigNumber(100),
         },
       ],
       ticker,
@@ -131,53 +129,48 @@ describe('setIssuancesData procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    return expect(prepareSetIssuancesData.call(proc, args)).rejects.toThrow(
-      `The total supply for "${ticker}" cannot be bigger than ${limitTotalSupply.toString()}`
+    return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
+      `This issuance operation will cause the total supply of "${ticker}" to exceed the maximum allowed (${MAX_TOKEN_AMOUNT.toFormat()})`
     );
   });
 
   test('should add a batch issue transaction to the queue', async () => {
-    const balanceOne = 100;
-    const balanceTwo = 200;
     const args = {
-      issuances: [
+      issuanceData: [
         {
           did: 'someDid',
-          balance: new BigNumber(balanceOne),
+          amount: new BigNumber(100),
         },
         {
           did: 'otherDid',
-          balance: new BigNumber(balanceTwo),
+          amount: new BigNumber(200),
         },
       ],
       ticker,
     };
 
-    const someIdentityId = 'someIdentityId';
-    const otherIdentityId = 'otherIdentityId';
-
-    const investors = [
-      polkadotMockUtils.createMockIdentityId(someIdentityId),
-      polkadotMockUtils.createMockIdentityId(otherIdentityId),
-    ];
-    const balances = [
-      polkadotMockUtils.createMockBalance(balanceOne),
-      polkadotMockUtils.createMockBalance(balanceTwo),
-    ];
+    const investors: IdentityId[] = [];
+    const balances: Balance[] = [];
 
     const stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
     const numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
 
-    stringToIdentityIdStub.withArgs(args.issuances[0].did, mockContext).returns(investors[0]);
-    stringToIdentityIdStub.withArgs(args.issuances[1].did, mockContext).returns(investors[1]);
-    numberToBalanceStub.withArgs(args.issuances[0].balance, mockContext).returns(balances[0]);
-    numberToBalanceStub.withArgs(args.issuances[1].balance, mockContext).returns(balances[1]);
+    args.issuanceData.forEach(data => {
+      const identityId = polkadotMockUtils.createMockIdentityId(`${data.did}Identity`);
+      const balance = polkadotMockUtils.createMockBalance(data.amount.toNumber());
+
+      investors.push(identityId);
+      balances.push(balance);
+
+      stringToIdentityIdStub.withArgs(data.did, mockContext).returns(identityId);
+      numberToBalanceStub.withArgs(data.amount, mockContext).returns(balance);
+    });
 
     const transaction = polkadotMockUtils.createTxStub('asset', 'batchIssue');
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    const result = await prepareSetIssuancesData.call(proc, args);
+    const result = await prepareIssueTokens.call(proc, args);
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, investors, balances);
     expect(result.ticker).toBe(ticker);

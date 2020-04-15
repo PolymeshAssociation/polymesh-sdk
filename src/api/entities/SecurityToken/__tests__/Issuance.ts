@@ -2,28 +2,30 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
-import { setIssuancesData } from '~/api/procedures';
+import { issueTokens } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
 
-import { Issuances } from '../Issuances';
+import { Issuance } from '../Issuance';
 
-describe('Issuances class', () => {
+describe('Issuance class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     polkadotMockUtils.initMocks();
   });
 
   afterEach(() => {
+    entityMockUtils.reset();
     polkadotMockUtils.reset();
   });
 
   afterAll(() => {
+    entityMockUtils.cleanup();
     polkadotMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
-    expect(Issuances.prototype instanceof Namespace).toBe(true);
+    expect(Issuance.prototype instanceof Namespace).toBe(true);
   });
 
   describe('method: issue', () => {
@@ -34,13 +36,13 @@ describe('Issuances class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = polkadotMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
-      const issuances = new Issuances(token, context);
+      const issuance = new Issuance(token, context);
 
       const args = {
-        issuances: [
+        issuanceData: [
           {
             did: 'someDid',
-            balance: new BigNumber(100),
+            amount: new BigNumber(100),
           },
         ],
       };
@@ -48,11 +50,11 @@ describe('Issuances class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
       sinon
-        .stub(setIssuancesData, 'prepare')
+        .stub(issueTokens, 'prepare')
         .withArgs({ ticker: token.ticker, ...args }, context)
         .resolves(expectedQueue);
 
-      const queue = await issuances.issue(args);
+      const queue = await issuance.issue(args);
 
       expect(queue).toBe(expectedQueue);
     });

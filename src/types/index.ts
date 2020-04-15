@@ -165,11 +165,11 @@ export enum ErrorCode {
 }
 
 /**
- * Issuer representation
+ * Represents an amount of tokens to be issued to an identity
  */
 export interface IssuanceData {
   did: string;
-  balance: BigNumber;
+  amount: BigNumber;
 }
 
 export * from '~/api/entities/types';
