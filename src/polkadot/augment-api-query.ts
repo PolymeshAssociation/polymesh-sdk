@@ -662,7 +662,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<bool>
       >;
     };
-    generalTM: {
+    generalTm: {
       /**
        * List of active rules for a ticker (Ticker -> Array of AssetTransferRules)
        **/
