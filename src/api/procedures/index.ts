@@ -5,4 +5,4 @@ export { createSecurityToken, CreateSecurityTokenParams } from './createSecurity
 export { setTokenDocuments, SetTokenDocumentsParams } from './setTokenDocuments';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 export { consumeAuthorizationRequests, ConsumeParams } from './consumeAuthorizationRequests';
-export { setIssuanceData, SetIssuanceDataParams } from './setIssuanceData';
+export { setIssuancesData, SetIssuancesDataParams } from './setIssuancesData';

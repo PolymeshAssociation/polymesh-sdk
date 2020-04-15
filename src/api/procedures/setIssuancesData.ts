@@ -5,18 +5,17 @@ import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, IssuanceData, Role, RoleType } from '~/types';
 import { numberToBalance, stringToIdentityId, stringToTicker } from '~/utils';
 
-export interface SetIssuanceDataParams {
+export interface SetIssuancesDataParams {
   issuances: IssuanceData[];
 }
-
-export type Params = SetIssuanceDataParams & {
+export type Params = SetIssuancesDataParams & {
   ticker: string;
 };
 
 /**
  * @hidden
  */
-export async function prepareSetIssuanceData(
+export async function prepareSetIssuancesData(
   this: Procedure<Params, SecurityToken>,
   args: Params
 ): Promise<SecurityToken> {
@@ -30,18 +29,10 @@ export async function prepareSetIssuanceData(
   } = this;
   const { ticker, issuances } = args;
 
-  const investors = issuances.map(issuance => stringToIdentityId(issuance.did, context));
-  const values = issuances.map(issuance => new BigNumber(issuance.balance));
-
-  if (investors.length !== values.length) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You must set the same number of investors as values',
-    });
-  }
-
   const securityToken = new SecurityToken({ ticker }, context);
+
   const { isDivisible, totalSupply } = await securityToken.details();
+  const values = issuances.map(issuance => new BigNumber(issuance.balance));
 
   values.forEach(value => {
     if (isDivisible) {
@@ -55,7 +46,7 @@ export async function prepareSetIssuanceData(
       if (value.decimalPlaces()) {
         throw new PolymeshError({
           code: ErrorCode.ValidationError,
-          message: 'At most one balance has decimals in its format',
+          message: 'At most one balance has decimals',
         });
       }
     }
@@ -77,11 +68,12 @@ export async function prepareSetIssuanceData(
   // TODO: check canTransfer method
 
   const rawTicker = stringToTicker(ticker, context);
+  const investors = issuances.map(issuance => stringToIdentityId(issuance.did, context));
   const balances = issuances.map(issuance => numberToBalance(issuance.balance, context));
 
   this.addTransaction(asset.batchIssue, {}, rawTicker, investors, balances);
 
-  return new SecurityToken({ ticker }, context);
+  return securityToken;
 }
 
 /**
@@ -91,4 +83,4 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 
-export const setIssuanceData = new Procedure(prepareSetIssuanceData, getRequiredRoles);
+export const setIssuancesData = new Procedure(prepareSetIssuancesData, getRequiredRoles);

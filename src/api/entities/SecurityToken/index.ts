@@ -23,7 +23,7 @@ import {
 } from '~/utils';
 
 import { Documents } from './Documents';
-import { Issuance } from './Issuance';
+import { Issuances } from './Issuances';
 import { Transfers } from './Transfers';
 import { SecurityTokenDetails } from './types';
 
@@ -64,7 +64,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   // Namespaces
   public documents: Documents;
   public transfers: Transfers;
-  public issuance: Issuance;
+  public issuances: Issuances;
 
   /**
    * @hidden
@@ -79,7 +79,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
     this.documents = new Documents(this, context);
     this.transfers = new Transfers(this, context);
-    this.issuance = new Issuance(this, context);
+    this.issuances = new Issuances(this, context);
   }
 
   /**
