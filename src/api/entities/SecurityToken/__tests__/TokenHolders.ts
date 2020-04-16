@@ -76,8 +76,8 @@ describe('TokenHolders class', () => {
       });
 
       const balanceOfEntries = [
-        tuple(['signatory', identityIds[0]], balances[0]),
-        tuple(['signatory', identityIds[1]], balances[1]),
+        tuple(['storageKey', identityIds[0]], balances[0]),
+        tuple(['storageKey', identityIds[1]], balances[1]),
       ];
 
       polkadotMockUtils.createQueryStub('asset', 'balanceOf', {
