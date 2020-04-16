@@ -155,15 +155,15 @@ describe('issueTokens procedure', () => {
     const stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
     const numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
 
-    args.issuanceData.forEach(data => {
-      const identityId = polkadotMockUtils.createMockIdentityId(`${data.did}Identity`);
-      const balance = polkadotMockUtils.createMockBalance(data.amount.toNumber());
+    args.issuanceData.forEach(({ did, amount }) => {
+      const identityId = polkadotMockUtils.createMockIdentityId(`${did}Identity`);
+      const balance = polkadotMockUtils.createMockBalance(amount.toNumber());
 
       investors.push(identityId);
       balances.push(balance);
 
-      stringToIdentityIdStub.withArgs(data.did, mockContext).returns(identityId);
-      numberToBalanceStub.withArgs(data.amount, mockContext).returns(balance);
+      stringToIdentityIdStub.withArgs(did, mockContext).returns(identityId);
+      numberToBalanceStub.withArgs(amount, mockContext).returns(balance);
     });
 
     const transaction = polkadotMockUtils.createTxStub('asset', 'batchIssue');

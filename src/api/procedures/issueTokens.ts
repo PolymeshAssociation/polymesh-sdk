@@ -1,5 +1,8 @@
+import { Balance } from '@polkadot/types/interfaces';
+
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
+import { IdentityId } from '~/polkadot';
 import { ErrorCode, IssuanceData, Role, RoleType } from '~/types';
 import { numberToBalance, stringToIdentityId, stringToTicker } from '~/utils';
 import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
@@ -31,7 +34,7 @@ export async function prepareIssueTokens(
   const securityToken = new SecurityToken({ ticker }, context);
 
   const { isDivisible, totalSupply } = await securityToken.details();
-  const values = issuanceData.map(issuance => issuance.amount);
+  const values = issuanceData.map(({ amount }) => amount);
 
   values.forEach(value => {
     if (isDivisible) {
@@ -62,11 +65,17 @@ export async function prepareIssueTokens(
     });
   }
 
-  // TODO: check canTransfer method
+  // TODO: implement canTransfer
 
   const rawTicker = stringToTicker(ticker, context);
-  const investors = issuanceData.map(issuance => stringToIdentityId(issuance.did, context));
-  const balances = issuanceData.map(issuance => numberToBalance(issuance.amount, context));
+
+  const investors: IdentityId[] = [];
+  const balances: Balance[] = [];
+
+  issuanceData.forEach(({ did, amount }) => {
+    investors.push(stringToIdentityId(did, context));
+    balances.push(numberToBalance(amount, context));
+  });
 
   this.addTransaction(asset.batchIssue, {}, rawTicker, investors, balances);
 
