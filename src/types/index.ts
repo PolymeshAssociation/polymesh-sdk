@@ -1,5 +1,3 @@
-import BigNumber from 'bignumber.js';
-
 export enum TransactionStatus {
   /**
    * the transaction is prepped to run
@@ -191,7 +189,7 @@ export type Condition = { target: ConditionTarget; trustedIssuers: string[] } & 
 );
 
 export interface Rule {
-  id: BigNumber;
+  id: number;
   conditions: Condition[];
 }
 
