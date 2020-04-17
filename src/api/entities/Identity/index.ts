@@ -54,8 +54,15 @@ export class Identity extends Entity<UniqueIdentifiers> {
    * Retrieve the POLYX balance of this particular Identity
    */
   public async getPolyXBalance(): Promise<BigNumber> {
-    const { context, did } = this;
-    const balance = await context.polymeshApi.query.balances.identityBalance(did);
+    const {
+      did,
+      context: {
+        polymeshApi: {
+          query: { balances },
+        },
+      },
+    } = this;
+    const balance = await balances.identityBalance(did);
 
     return balanceToBigNumber(balance);
   }
@@ -87,6 +94,23 @@ export class Identity extends Entity<UniqueIdentifiers> {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       message: `Unrecognized role "${JSON.stringify(role)}"`,
     });
+  }
+
+  /**
+   * Retrieve the balance of a particular token
+   */
+  public async getBalanceOf(ticker: string): Promise<BigNumber> {
+    const {
+      did,
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+    } = this;
+
+    const balance = await asset.balanceOf(ticker, did);
+    return balanceToBigNumber(balance);
   }
 
   /**

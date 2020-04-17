@@ -1,9 +1,11 @@
 import BigNumber from 'bignumber.js';
+import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
 import { RoleType } from '~/types';
+import * as utilsModule from '~/utils';
 
 import { Identity } from '../';
 
@@ -151,6 +153,29 @@ describe('Identity class', () => {
       const hasRole = await identity.hasRoles(roles);
 
       expect(hasRole).toBe(false);
+    });
+  });
+
+  describe('method: getBalanceOf', () => {
+    test('should return the balance of a given token', async () => {
+      const ticker = 'TEST';
+      const fakeValue = new BigNumber(100);
+      const fakeBalance = polkadotMockUtils.createMockBalance(fakeValue.toNumber());
+
+      polkadotMockUtils
+        .createQueryStub('asset', 'balanceOf')
+        .withArgs(ticker)
+        .resolves(fakeBalance);
+
+      sinon
+        .stub(utilsModule, 'balanceToBigNumber')
+        .withArgs(fakeBalance)
+        .returns(fakeValue);
+
+      const identity = new Identity({ did: 'someDid' }, context);
+      const result = await identity.getBalanceOf(ticker);
+
+      expect(result).toEqual(fakeValue);
     });
   });
 });
