@@ -1,5 +1,4 @@
 import { bool, Bytes, u64 } from '@polkadot/types';
-import { createType } from '@polkadot/types/create/createType';
 import { Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { stringToU8a, u8aConcat, u8aFixLength, u8aToString } from '@polkadot/util';
@@ -107,7 +106,7 @@ export function tickerToDid(ticker: string): string {
  * @hidden
  */
 export function stringToTokenName(name: string, context: Context): TokenName {
-  return createType<'TokenName'>(context.polymeshApi.registry, 'TokenName', name);
+  return context.polymeshApi.createType('TokenName', name);
 }
 
 /**
@@ -121,7 +120,7 @@ export function tokenNameToString(name: TokenName): string {
  * @hidden
  */
 export function booleanToBool(value: boolean, context: Context): bool {
-  return createType<'bool'>(context.polymeshApi.registry, 'bool', value);
+  return context.polymeshApi.createType('bool', value);
 }
 
 /**
@@ -135,7 +134,7 @@ export function boolToBoolean(value: bool): boolean {
  * @hidden
  */
 export function stringToBytes(bytes: string, context: Context): Bytes {
-  return createType<'Bytes'>(context.polymeshApi.registry, 'Bytes', bytes);
+  return context.polymeshApi.createType('Bytes', bytes);
 }
 
 /**
@@ -149,7 +148,7 @@ export function bytesToString(bytes: Bytes): string {
  * @hidden
  */
 export function stringToTicker(ticker: string, context: Context): Ticker {
-  return createType<'Ticker'>(context.polymeshApi.registry, 'Ticker', ticker);
+  return context.polymeshApi.createType('Ticker', ticker);
 }
 
 /**
@@ -164,7 +163,7 @@ export function tickerToString(ticker: Ticker): string {
  * @hidden
  */
 export function dateToMoment(date: Date, context: Context): Moment {
-  return createType<'Moment'>(context.polymeshApi.registry, 'Moment', date.getTime());
+  return context.polymeshApi.createType('Moment', date.getTime());
 }
 
 /**
@@ -178,7 +177,7 @@ export function momentToDate(moment: Moment): Date {
  * @hidden
  */
 export function stringToIdentityId(identityId: string, context: Context): IdentityId {
-  return createType<'IdentityId'>(context.polymeshApi.registry, 'IdentityId', identityId);
+  return context.polymeshApi.createType('IdentityId', identityId);
 }
 
 /**
@@ -192,11 +191,7 @@ export function identityIdToString(identityId: IdentityId): string {
  * @hidden
  */
 export function stringToAccountKey(accountKey: string, context: Context): AccountKey {
-  return createType<'AccountKey'>(
-    context.polymeshApi.registry,
-    'AccountKey',
-    decodeAddress(accountKey)
-  );
+  return context.polymeshApi.createType('AccountKey', decodeAddress(accountKey));
 }
 
 /**
@@ -210,7 +205,7 @@ export function accountKeyToString(accountKey: AccountKey): string {
  * @hidden
  */
 export function signerToSignatory(signer: Signer, context: Context): Signatory {
-  return createType<'Signatory'>(context.polymeshApi.registry, 'Signatory', {
+  return context.polymeshApi.createType('Signatory', {
     [signer.type]: signer.value,
   });
 }
@@ -241,7 +236,7 @@ export function authorizationToAuthorizationData(
 ): AuthorizationData {
   const { type, value = null } = auth as { type: AuthorizationType; value?: string };
 
-  return createType<'AuthorizationData'>(context.polymeshApi.registry, 'AuthorizationData', {
+  return context.polymeshApi.createType('AuthorizationData', {
     [type]: value,
   });
 }
@@ -307,8 +302,7 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
  * @hidden
  */
 export function numberToBalance(value: number | BigNumber, context: Context): Balance {
-  return createType<'Balance'>(
-    context.polymeshApi.registry,
+  return context.polymeshApi.createType(
     'Balance',
     new BigNumber(value).multipliedBy(Math.pow(10, 6)).toString()
   );
@@ -325,7 +319,7 @@ export function balanceToBigNumber(balance: Balance): BigNumber {
  * @hidden
  */
 export function numberToU64(value: number | BigNumber, context: Context): u64 {
-  return createType<'u64'>(context.polymeshApi.registry, 'u64', new BigNumber(value).toString());
+  return context.polymeshApi.createType('u64', new BigNumber(value).toString());
 }
 
 /**
@@ -339,7 +333,7 @@ export function u64ToBigNumber(balance: u64): BigNumber {
  * @hidden
  */
 export function tokenTypeToAssetType(type: TokenType, context: Context): AssetType {
-  return createType<'AssetType'>(context.polymeshApi.registry, 'AssetType', type);
+  return context.polymeshApi.createType('AssetType', type);
 }
 
 /**
@@ -369,7 +363,7 @@ export function tokenIdentifierTypeToIdentifierType(
   type: TokenIdentifierType,
   context: Context
 ): IdentifierType {
-  return createType<'IdentifierType'>(context.polymeshApi.registry, 'IdentifierType', type);
+  return context.polymeshApi.createType('IdentifierType', type);
 }
 
 /**
@@ -390,7 +384,7 @@ export function identifierTypeToString(type: IdentifierType): string {
  * @hidden
  */
 export function stringToAssetIdentifier(id: string, context: Context): AssetIdentifier {
-  return createType<'AssetIdentifier'>(context.polymeshApi.registry, 'AssetIdentifier', id);
+  return context.polymeshApi.createType('AssetIdentifier', id);
 }
 
 /**
@@ -404,11 +398,7 @@ export function assetIdentifierToString(id: AssetIdentifier): string {
  * @hidden
  */
 export function stringToFundingRoundName(roundName: string, context: Context): FundingRoundName {
-  return createType<'FundingRoundName'>(
-    context.polymeshApi.registry,
-    'FundingRoundName',
-    roundName
-  );
+  return context.polymeshApi.createType('FundingRoundName', roundName);
 }
 
 /**
@@ -422,7 +412,7 @@ export function fundingRoundNameToString(roundName: FundingRoundName): string {
  * @hidden
  */
 export function stringToDocumentName(docName: string, context: Context): DocumentName {
-  return createType<'DocumentName'>(context.polymeshApi.registry, 'DocumentName', docName);
+  return context.polymeshApi.createType('DocumentName', docName);
 }
 
 /**
@@ -436,7 +426,7 @@ export function documentNameToString(docName: DocumentName): string {
  * @hidden
  */
 export function stringToDocumentUri(docUri: string, context: Context): DocumentUri {
-  return createType<'DocumentUri'>(context.polymeshApi.registry, 'DocumentUri', docUri);
+  return context.polymeshApi.createType('DocumentUri', docUri);
 }
 
 /**
@@ -450,7 +440,7 @@ export function documentUriToString(docUri: DocumentUri): string {
  * @hidden
  */
 export function stringToDocumentHash(docHash: string, context: Context): DocumentHash {
-  return createType<'DocumentHash'>(context.polymeshApi.registry, 'DocumentHash', docHash);
+  return context.polymeshApi.createType('DocumentHash', docHash);
 }
 
 /**
@@ -467,7 +457,7 @@ export function tokenDocumentToDocument(
   { name, uri, contentHash }: TokenDocument,
   context: Context
 ): Document {
-  return createType<'Document'>(context.polymeshApi.registry, 'Document', {
+  return context.polymeshApi.createType('Document', {
     name: stringToDocumentName(name, context),
     uri: stringToDocumentUri(uri, context),
     // eslint-disable-next-line @typescript-eslint/camelcase
@@ -496,7 +486,7 @@ export function authTargetToAuthIdentifier(
   { did, authId }: AuthTarget,
   context: Context
 ): AuthIdentifier {
-  return createType<'AuthIdentifier'>(context.polymeshApi.registry, 'AuthIdentifier', {
+  return context.polymeshApi.createType('AuthIdentifier', {
     // eslint-disable-next-line @typescript-eslint/camelcase
     auth_id: numberToU64(authId, context),
     signatory: signerToSignatory({ type: SignerType.Identity, value: did }, context),
