@@ -1,5 +1,4 @@
 import { bool, Bytes, u64 } from '@polkadot/types';
-import * as createTypeModule from '@polkadot/types/create/createType';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import * as decodeAddressModule from '@polkadot/util-crypto/address/decode';
@@ -21,7 +20,7 @@ import {
   Ticker,
   TokenName,
 } from 'polymesh-types/types';
-import sinon, { SinonStub } from 'sinon';
+import sinon from 'sinon';
 
 import { PostTransactionValue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
@@ -158,19 +157,12 @@ describe('tickerToDid', () => {
 });
 
 describe('stringToIdentityId and identityIdToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -182,8 +174,9 @@ describe('stringToIdentityId and identityIdToString', () => {
     const fakeResult = ('type' as unknown) as IdentityId;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'IdentityId', identity)
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('IdentityId', identity)
       .returns(fakeResult);
 
     const result = stringToIdentityId(identity, context);
@@ -201,19 +194,12 @@ describe('stringToIdentityId and identityIdToString', () => {
 });
 
 describe('stringToAccountKey and accountKeyToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -232,8 +218,9 @@ describe('stringToAccountKey and accountKeyToString', () => {
       .withArgs(value)
       .returns(decodedValue);
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'AccountKey', decodedValue)
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('AccountKey', decodedValue)
       .returns(fakeResult);
 
     const result = stringToAccountKey(value, context);
@@ -256,19 +243,12 @@ describe('stringToAccountKey and accountKeyToString', () => {
 });
 
 describe('numberToBalance and balanceToBigNumber', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -280,12 +260,9 @@ describe('numberToBalance and balanceToBigNumber', () => {
     const fakeResult = ('100' as unknown) as Balance;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(
-        context.polymeshApi.registry,
-        'Balance',
-        value.multipliedBy(Math.pow(10, 6)).toString()
-      )
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
       .returns(fakeResult);
 
     const result = numberToBalance(value, context);
@@ -303,19 +280,12 @@ describe('numberToBalance and balanceToBigNumber', () => {
 });
 
 describe('numberToU64 and u64ToBigNumber', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -327,8 +297,9 @@ describe('numberToU64 and u64ToBigNumber', () => {
     const fakeResult = ('100' as unknown) as u64;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'u64', value.toString())
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('u64', value.toString())
       .returns(fakeResult);
 
     const result = numberToU64(value, context);
@@ -346,19 +317,12 @@ describe('numberToU64 and u64ToBigNumber', () => {
 });
 
 describe('stringToBytes and bytesToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -370,7 +334,10 @@ describe('stringToBytes and bytesToString', () => {
     const fakeResult = ('convertedBytes' as unknown) as Bytes;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType.withArgs(context.polymeshApi.registry, 'Bytes', value).returns(fakeResult);
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('Bytes', value)
+      .returns(fakeResult);
 
     const result = stringToBytes(value, context);
 
@@ -387,19 +354,12 @@ describe('stringToBytes and bytesToString', () => {
 });
 
 describe('stringToTicker and tickerToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -411,7 +371,10 @@ describe('stringToTicker and tickerToString', () => {
     const fakeResult = ('convertedTicker' as unknown) as Ticker;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType.withArgs(context.polymeshApi.registry, 'Ticker', value).returns(fakeResult);
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('Ticker', value)
+      .returns(fakeResult);
 
     const result = stringToTicker(value, context);
 
@@ -428,19 +391,12 @@ describe('stringToTicker and tickerToString', () => {
 });
 
 describe('stringToTokenName and tokenNameToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -452,7 +408,10 @@ describe('stringToTokenName and tokenNameToString', () => {
     const fakeResult = ('convertedName' as unknown) as TokenName;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType.withArgs(context.polymeshApi.registry, 'TokenName', value).returns(fakeResult);
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('TokenName', value)
+      .returns(fakeResult);
 
     const result = stringToTokenName(value, context);
 
@@ -469,19 +428,12 @@ describe('stringToTokenName and tokenNameToString', () => {
 });
 
 describe('booleanToBool and boolToBoolean', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -493,7 +445,10 @@ describe('booleanToBool and boolToBoolean', () => {
     const fakeResult = ('true' as unknown) as bool;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType.withArgs(context.polymeshApi.registry, 'bool', value).returns(fakeResult);
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('bool', value)
+      .returns(fakeResult);
 
     const result = booleanToBool(value, context);
 
@@ -510,19 +465,12 @@ describe('booleanToBool and boolToBoolean', () => {
 });
 
 describe('dateToMoment and momentToDate', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -534,8 +482,9 @@ describe('dateToMoment and momentToDate', () => {
     const fakeResult = (10000 as unknown) as Moment;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'Moment', Math.round(value.getTime()))
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('Moment', Math.round(value.getTime()))
       .returns(fakeResult);
 
     const result = dateToMoment(value, context);
@@ -553,19 +502,12 @@ describe('dateToMoment and momentToDate', () => {
 });
 
 describe('tokenTypeToAssetType and assetTypeToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -577,7 +519,10 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
     const fakeResult = ('CommodityEnum' as unknown) as AssetType;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType.withArgs(context.polymeshApi.registry, 'AssetType', value).returns(fakeResult);
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('AssetType', value)
+      .returns(fakeResult);
 
     const result = tokenTypeToAssetType(value, context);
 
@@ -620,19 +565,12 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
 });
 
 describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -644,8 +582,9 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
     const fakeResult = ('IsinEnum' as unknown) as IdentifierType;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'IdentifierType', value)
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('IdentifierType', value)
       .returns(fakeResult);
 
     const result = tokenIdentifierTypeToIdentifierType(value, context);
@@ -677,19 +616,12 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
 });
 
 describe('stringToAssetIdentifier and assetIdentifierToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -701,8 +633,9 @@ describe('stringToAssetIdentifier and assetIdentifierToString', () => {
     const fakeResult = ('convertedIdentifier' as unknown) as AssetIdentifier;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'AssetIdentifier', value)
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('AssetIdentifier', value)
       .returns(fakeResult);
 
     const result = stringToAssetIdentifier(value, context);
@@ -720,19 +653,12 @@ describe('stringToAssetIdentifier and assetIdentifierToString', () => {
 });
 
 describe('stringToFundingRoundName and fundingRoundNameToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -744,8 +670,9 @@ describe('stringToFundingRoundName and fundingRoundNameToString', () => {
     const fakeResult = ('convertedName' as unknown) as FundingRoundName;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'FundingRoundName', value)
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('FundingRoundName', value)
       .returns(fakeResult);
 
     const result = stringToFundingRoundName(value, context);
@@ -763,19 +690,12 @@ describe('stringToFundingRoundName and fundingRoundNameToString', () => {
 });
 
 describe('stringToDocumentName and documentNameToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -787,8 +707,9 @@ describe('stringToDocumentName and documentNameToString', () => {
     const fakeResult = ('convertedName' as unknown) as DocumentName;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'DocumentName', value)
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('DocumentName', value)
       .returns(fakeResult);
 
     const result = stringToDocumentName(value, context);
@@ -806,19 +727,12 @@ describe('stringToDocumentName and documentNameToString', () => {
 });
 
 describe('stringToDocumentUri and documentUriToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -830,7 +744,10 @@ describe('stringToDocumentUri and documentUriToString', () => {
     const fakeResult = ('convertedUri' as unknown) as DocumentUri;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType.withArgs(context.polymeshApi.registry, 'DocumentUri', value).returns(fakeResult);
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('DocumentUri', value)
+      .returns(fakeResult);
 
     const result = stringToDocumentUri(value, context);
 
@@ -847,19 +764,12 @@ describe('stringToDocumentUri and documentUriToString', () => {
 });
 
 describe('stringToDocumentHash and documentHashToString', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -871,8 +781,9 @@ describe('stringToDocumentHash and documentHashToString', () => {
     const fakeResult = ('convertedHash' as unknown) as DocumentHash;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'DocumentHash', value)
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('DocumentHash', value)
       .returns(fakeResult);
 
     const result = stringToDocumentHash(value, context);
@@ -890,19 +801,12 @@ describe('stringToDocumentHash and documentHashToString', () => {
 });
 
 describe('tokenDocumentToDocument and documentToTokenDocument', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -921,8 +825,9 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
     const fakeResult = ('convertedDocument' as unknown) as Document;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'Document', {
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('Document', {
         name: stringToDocumentName(name, context),
         uri: stringToDocumentUri(uri, context),
         // eslint-disable-next-line @typescript-eslint/camelcase
@@ -958,19 +863,12 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
 });
 
 describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -987,8 +885,9 @@ describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
     const fakeResult = ('convertedAuthIdentifier' as unknown) as AuthIdentifier;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'AuthIdentifier', {
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthIdentifier', {
         // eslint-disable-next-line @typescript-eslint/camelcase
         auth_id: numberToU64(authId, context),
         signatory: signerToSignatory({ type: SignerType.Identity, value: did }, context),
@@ -1065,19 +964,12 @@ describe('findEventRecord', () => {
 });
 
 describe('signerToSignatory and signatoryToSigner', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -1093,8 +985,9 @@ describe('signerToSignatory and signatoryToSigner', () => {
     const fakeResult = ('SignatoryEnum' as unknown) as Signatory;
     const context = polkadotMockUtils.getContextInstance();
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'Signatory', { [value.type]: value.value })
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('Signatory', { [value.type]: value.value })
       .returns(fakeResult);
 
     const result = signerToSignatory(value, context);
@@ -1136,19 +1029,12 @@ describe('signerToSignatory and signatoryToSigner', () => {
 });
 
 describe('signerToSignatory and signatoryToSigner', () => {
-  let mockCreateType: SinonStub;
-
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
 
-  beforeEach(() => {
-    mockCreateType = sinon.stub(createTypeModule, 'createType');
-  });
-
   afterEach(() => {
     polkadotMockUtils.reset();
-    mockCreateType.restore();
   });
 
   afterAll(() => {
@@ -1163,8 +1049,9 @@ describe('signerToSignatory and signatoryToSigner', () => {
     };
     const fakeResult = ('AuthorizationDataEnum' as unknown) as AuthorizationData;
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'AuthorizationData', { [value.type]: value.value })
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationData', { [value.type]: value.value })
       .returns(fakeResult);
 
     let result = authorizationToAuthorizationData(value, context);
@@ -1175,8 +1062,9 @@ describe('signerToSignatory and signatoryToSigner', () => {
       type: AuthorizationType.NoData,
     };
 
-    mockCreateType
-      .withArgs(context.polymeshApi.registry, 'AuthorizationData', { [value.type]: null })
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationData', { [value.type]: null })
       .returns(fakeResult);
 
     result = authorizationToAuthorizationData(value, context);
