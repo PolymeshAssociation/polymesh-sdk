@@ -1,7 +1,7 @@
 import { Identity } from '~/api/entities';
 import { setTokenTrustedClaimIssuers, SetTokenTrustedClaimIssuersParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { identityIdToString,stringToTicker } from '~/utils';
+import { identityIdToString, stringToTicker } from '~/utils';
 
 import { SecurityToken } from '../';
 
