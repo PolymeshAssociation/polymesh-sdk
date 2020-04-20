@@ -17,13 +17,6 @@ import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
-jest.mock(
-  '~/api/entities/TickerReservation',
-  require('~/testUtils/mocks/entities').mockTickerReservationModule(
-    '~/api/entities/TickerReservation'
-  )
-);
-
 describe('setTokenDocuments procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
