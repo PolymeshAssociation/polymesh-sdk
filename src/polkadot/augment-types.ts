@@ -6,12 +6,12 @@ import {
   BitVec,
   Bytes,
   Data,
+  DoNotConstruct,
   Null,
   StorageKey,
   Text,
   Type,
   U256,
-  Unconstructable,
   bool,
   i128,
   i16,
@@ -95,6 +95,8 @@ import {
   AccountVoteStandard,
   Conviction,
   Delegations,
+  PreimageStatus,
+  PreimageStatusAvailable,
   PriorLock,
   PropIndex,
   Proposal,
@@ -420,6 +422,7 @@ import {
   DispatchClass,
   DispatchInfo,
   DispatchInfoTo190,
+  Fixed128,
   Fixed64,
   H160,
   H256,
@@ -450,6 +453,12 @@ import {
   Weight,
   WeightMultiplier,
 } from '@polkadot/types/interfaces/runtime';
+import {
+  SchedulePeriod,
+  SchedulePriority,
+  Scheduled,
+  TaskAddress,
+} from '@polkadot/types/interfaces/scheduler';
 import {
   FullIdentification,
   IdentificationTuple,
@@ -499,6 +508,7 @@ import {
   SpanRecord,
   StakingLedger,
   StakingLedgerTo223,
+  StakingLedgerTo240,
   UnappliedSlash,
   UnappliedSlashOther,
   UnlockChunk,
@@ -517,6 +527,7 @@ import {
 import {
   AccountInfo,
   ChainProperties,
+  ChainType,
   DigestOf,
   DispatchError,
   DispatchErrorModule,
@@ -552,7 +563,7 @@ import {
   TreasuryProposal,
 } from '@polkadot/types/interfaces/treasury';
 import { Multiplier } from '@polkadot/types/interfaces/txpayment';
-import { Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
+import { CallHash, Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
 import { VestingInfo } from '@polkadot/types/interfaces/vesting';
 import {
   AccountKey,
@@ -654,6 +665,9 @@ declare module '@polkadot/types/types/registry' {
     Data: Data;
     'Option<Data>': Option<Data>;
     'Vec<Data>': Vec<Data>;
+    DoNotConstruct: DoNotConstruct;
+    'Option<DoNotConstruct>': Option<DoNotConstruct>;
+    'Vec<DoNotConstruct>': Vec<DoNotConstruct>;
     i8: i8;
     'Option<i8>': Option<i8>;
     'Vec<i8>': Vec<i8>;
@@ -712,9 +726,6 @@ declare module '@polkadot/types/types/registry' {
     'Compact<U256>': Compact<U256>;
     'Option<U256>': Option<U256>;
     'Vec<U256>': Vec<U256>;
-    Unconstructable: Unconstructable;
-    'Option<Unconstructable>': Option<Unconstructable>;
-    'Vec<Unconstructable>': Vec<Unconstructable>;
     usize: usize;
     'Compact<usize>': Compact<usize>;
     'Option<usize>': Option<usize>;
@@ -779,6 +790,9 @@ declare module '@polkadot/types/types/registry' {
     Fixed64: Fixed64;
     'Option<Fixed64>': Option<Fixed64>;
     'Vec<Fixed64>': Vec<Fixed64>;
+    Fixed128: Fixed128;
+    'Option<Fixed128>': Option<Fixed128>;
+    'Vec<Fixed128>': Vec<Fixed128>;
     H160: H160;
     'Option<H160>': Option<H160>;
     'Vec<H160>': Vec<H160>;
@@ -1034,6 +1048,12 @@ declare module '@polkadot/types/types/registry' {
     Delegations: Delegations;
     'Option<Delegations>': Option<Delegations>;
     'Vec<Delegations>': Vec<Delegations>;
+    PreimageStatus: PreimageStatus;
+    'Option<PreimageStatus>': Option<PreimageStatus>;
+    'Vec<PreimageStatus>': Vec<PreimageStatus>;
+    PreimageStatusAvailable: PreimageStatusAvailable;
+    'Option<PreimageStatusAvailable>': Option<PreimageStatusAvailable>;
+    'Vec<PreimageStatusAvailable>': Vec<PreimageStatusAvailable>;
     PriorLock: PriorLock;
     'Option<PriorLock>': Option<PriorLock>;
     'Vec<PriorLock>': Vec<PriorLock>;
@@ -1302,6 +1322,19 @@ declare module '@polkadot/types/types/registry' {
     RecoveryConfig: RecoveryConfig;
     'Option<RecoveryConfig>': Option<RecoveryConfig>;
     'Vec<RecoveryConfig>': Vec<RecoveryConfig>;
+    SchedulePeriod: SchedulePeriod;
+    'Option<SchedulePeriod>': Option<SchedulePeriod>;
+    'Vec<SchedulePeriod>': Vec<SchedulePeriod>;
+    SchedulePriority: SchedulePriority;
+    'Compact<SchedulePriority>': Compact<SchedulePriority>;
+    'Option<SchedulePriority>': Option<SchedulePriority>;
+    'Vec<SchedulePriority>': Vec<SchedulePriority>;
+    Scheduled: Scheduled;
+    'Option<Scheduled>': Option<Scheduled>;
+    'Vec<Scheduled>': Vec<Scheduled>;
+    TaskAddress: TaskAddress;
+    'Option<TaskAddress>': Option<TaskAddress>;
+    'Vec<TaskAddress>': Vec<TaskAddress>;
     Keys: Keys;
     'Option<Keys>': Option<Keys>;
     'Vec<Keys>': Vec<Keys>;
@@ -1437,6 +1470,9 @@ declare module '@polkadot/types/types/registry' {
     StakingLedgerTo223: StakingLedgerTo223;
     'Option<StakingLedgerTo223>': Option<StakingLedgerTo223>;
     'Vec<StakingLedgerTo223>': Vec<StakingLedgerTo223>;
+    StakingLedgerTo240: StakingLedgerTo240;
+    'Option<StakingLedgerTo240>': Option<StakingLedgerTo240>;
+    'Vec<StakingLedgerTo240>': Vec<StakingLedgerTo240>;
     StakingLedger: StakingLedger;
     'Option<StakingLedger>': Option<StakingLedger>;
     'Vec<StakingLedger>': Vec<StakingLedger>;
@@ -1468,6 +1504,9 @@ declare module '@polkadot/types/types/registry' {
     ChainProperties: ChainProperties;
     'Option<ChainProperties>': Option<ChainProperties>;
     'Vec<ChainProperties>': Vec<ChainProperties>;
+    ChainType: ChainType;
+    'Option<ChainType>': Option<ChainType>;
+    'Vec<ChainType>': Vec<ChainType>;
     DigestOf: DigestOf;
     'Option<DigestOf>': Option<DigestOf>;
     'Vec<DigestOf>': Vec<DigestOf>;
@@ -1551,27 +1590,30 @@ declare module '@polkadot/types/types/registry' {
     'Compact<RefCount>': Compact<RefCount>;
     'Option<RefCount>': Option<RefCount>;
     'Vec<RefCount>': Vec<RefCount>;
+    OpenTip: OpenTip;
+    'Option<OpenTip>': Option<OpenTip>;
+    'Vec<OpenTip>': Vec<OpenTip>;
     OpenTipFinder: OpenTipFinder;
     'Option<OpenTipFinder>': Option<OpenTipFinder>;
     'Vec<OpenTipFinder>': Vec<OpenTipFinder>;
     OpenTipTip: OpenTipTip;
     'Option<OpenTipTip>': Option<OpenTipTip>;
     'Vec<OpenTipTip>': Vec<OpenTipTip>;
-    OpenTip: OpenTip;
-    'Option<OpenTip>': Option<OpenTip>;
-    'Vec<OpenTip>': Vec<OpenTip>;
     TreasuryProposal: TreasuryProposal;
     'Option<TreasuryProposal>': Option<TreasuryProposal>;
     'Vec<TreasuryProposal>': Vec<TreasuryProposal>;
     Multiplier: Multiplier;
     'Option<Multiplier>': Option<Multiplier>;
     'Vec<Multiplier>': Vec<Multiplier>;
-    Timepoint: Timepoint;
-    'Option<Timepoint>': Option<Timepoint>;
-    'Vec<Timepoint>': Vec<Timepoint>;
+    CallHash: CallHash;
+    'Option<CallHash>': Option<CallHash>;
+    'Vec<CallHash>': Vec<CallHash>;
     Multisig: Multisig;
     'Option<Multisig>': Option<Multisig>;
     'Vec<Multisig>': Vec<Multisig>;
+    Timepoint: Timepoint;
+    'Option<Timepoint>': Option<Timepoint>;
+    'Vec<Timepoint>': Vec<Timepoint>;
     VestingInfo: VestingInfo;
     'Option<VestingInfo>': Option<VestingInfo>;
     'Vec<VestingInfo>': Vec<VestingInfo>;
