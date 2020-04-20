@@ -22,6 +22,7 @@ import {
   tokenNameToString,
 } from '~/utils';
 
+import { Compliance } from './Compliance';
 import { Documents } from './Documents';
 import { Issuance } from './Issuance';
 import { Transfers } from './Transfers';
@@ -65,6 +66,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public documents: Documents;
   public transfers: Transfers;
   public issuance: Issuance;
+  public compliance: Compliance;
 
   /**
    * @hidden
@@ -80,6 +82,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.documents = new Documents(this, context);
     this.transfers = new Transfers(this, context);
     this.issuance = new Issuance(this, context);
+    this.compliance = new Compliance(this, context);
   }
 
   /**

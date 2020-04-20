@@ -142,9 +142,10 @@ interface KeyringOptions {
   error?: boolean;
 }
 
-interface StubQuery {
+export interface StubQuery {
   entries: SinonStub;
   multi: SinonStub;
+  size: SinonStub;
 }
 
 type MockContext = Mocked<Context>;
@@ -579,6 +580,7 @@ export function createQueryStub<
     returnValue?: unknown;
     entries?: [unknown[], unknown][]; // [Keys, Codec]
     multi?: unknown;
+    size?: number;
   }
 ): Queries[ModuleName][QueryName] & SinonStub & StubQuery {
   let runtimeModule = queryModule[mod];
@@ -594,6 +596,7 @@ export function createQueryStub<
     stub = (sinon.stub() as unknown) as Queries[ModuleName][QueryName] & SinonStub & StubQuery;
     stub.entries = sinon.stub();
     stub.multi = sinon.stub();
+    stub.size = sinon.stub();
     runtimeModule[query] = stub;
 
     updateQuery();
@@ -607,6 +610,10 @@ export function createQueryStub<
   }
   if (opts?.multi) {
     stub.multi.resolves(opts.multi);
+  }
+  if (opts?.size) {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    stub.size.resolves(createMockU64(opts.size));
   }
   if (opts?.returnValue) {
     stub.resolves(opts.returnValue);
@@ -753,6 +760,7 @@ const createMockNumberCodec = (value?: number): Codec =>
     {
       toNumber: () => value,
       toString: () => `${value}`,
+      isZero: () => value === 0,
     },
     value === undefined
   );
