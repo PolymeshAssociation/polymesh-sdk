@@ -156,15 +156,29 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getBalanceOf', () => {
+  describe('method: getTokenBalance', () => {
     test('should return the balance of a given token', async () => {
       const ticker = 'TEST';
+      const did = 'someDid';
+      const rawTicker = polkadotMockUtils.createMockTicker(ticker);
+      const rawIdentityId = polkadotMockUtils.createMockIdentityId(did);
       const fakeValue = new BigNumber(100);
       const fakeBalance = polkadotMockUtils.createMockBalance(fakeValue.toNumber());
+      const mockContext = polkadotMockUtils.getContextInstance();
+
+      sinon
+        .stub(utilsModule, 'stringToTicker')
+        .withArgs(ticker, mockContext)
+        .returns(rawTicker);
+
+      sinon
+        .stub(utilsModule, 'stringToIdentityId')
+        .withArgs(did, mockContext)
+        .returns(rawIdentityId);
 
       polkadotMockUtils
         .createQueryStub('asset', 'balanceOf')
-        .withArgs(ticker)
+        .withArgs(rawTicker, rawIdentityId)
         .resolves(fakeBalance);
 
       sinon
@@ -172,8 +186,8 @@ describe('Identity class', () => {
         .withArgs(fakeBalance)
         .returns(fakeValue);
 
-      const identity = new Identity({ did: 'someDid' }, context);
-      const result = await identity.getBalanceOf(ticker);
+      const identity = new Identity({ did }, context);
+      const result = await identity.getTokenBalance(ticker);
 
       expect(result).toEqual(fakeValue);
     });

@@ -5,7 +5,7 @@ import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode, isTickerOwnerRole, isTokenOwnerRole, Role } from '~/types';
-import { balanceToBigNumber } from '~/utils';
+import { balanceToBigNumber, stringToIdentityId, stringToTicker } from '~/utils';
 
 import { Authorizations } from './Authorizations';
 
@@ -97,11 +97,12 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the balance of a particular token
+   * Retrieve the balance of a particular Security Token
    */
-  public async getBalanceOf(ticker: string): Promise<BigNumber> {
+  public async getTokenBalance(ticker: string): Promise<BigNumber> {
     const {
       did,
+      context,
       context: {
         polymeshApi: {
           query: { asset },
@@ -109,7 +110,10 @@ export class Identity extends Entity<UniqueIdentifiers> {
       },
     } = this;
 
-    const balance = await asset.balanceOf(ticker, did);
+    const balance = await asset.balanceOf(
+      stringToTicker(ticker, context),
+      stringToIdentityId(did, context)
+    );
     return balanceToBigNumber(balance);
   }
 
