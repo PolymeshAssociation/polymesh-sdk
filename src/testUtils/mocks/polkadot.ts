@@ -389,6 +389,7 @@ function initTx(): void {
  */
 function initApi(): void {
   mockInstanceContainer.apiInstance.registry = ('registry' as unknown) as Registry;
+  mockInstanceContainer.apiInstance.createType = sinon.stub();
 
   initTx();
   initQuery();
@@ -694,6 +695,14 @@ export function setContextAccountBalance(balance: BigNumber): void {
  */
 export function getApiInstance(): ApiPromise & EventEmitter {
   return mockInstanceContainer.apiInstance as ApiPromise & EventEmitter;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the createType method
+ */
+export function getCreateTypeStub(): SinonStub {
+  return mockInstanceContainer.apiInstance.createType as SinonStub;
 }
 
 /**
