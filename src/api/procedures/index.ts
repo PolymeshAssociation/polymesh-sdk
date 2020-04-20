@@ -5,6 +5,7 @@ export { createSecurityToken, CreateSecurityTokenParams } from './createSecurity
 export { setTokenDocuments, SetTokenDocumentsParams } from './setTokenDocuments';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 export { consumeAuthorizationRequests, ConsumeParams } from './consumeAuthorizationRequests';
+export { issueTokens, IssueTokensParams } from './issueTokens';
 export {
   setTokenTrustedClaimIssuers,
   SetTokenTrustedClaimIssuersParams,
