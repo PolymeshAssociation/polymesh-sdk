@@ -9,7 +9,7 @@ const dirName = path.resolve('src', 'polkadot', 'polymesh');
 rimraf.sync(dirName);
 fs.mkdirSync(dirName);
 
-https.get('https://pme.polymath.network/code/polymesh_schema.json', res => {
+https.get('https://pmd.polymath.network/code/polymesh_schema.json', res => {
   const chunks = [];
   res.on('data', chunk => {
     chunks.push(chunk);
