@@ -1,7 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import { AnyNumber, ITuple } from '@polkadot/types/types';
+import { AnyNumber, ITuple, Observable } from '@polkadot/types/types';
 import { Linkage, Option, U8aFixed, Vec } from '@polkadot/types/codec';
 import { Bytes, bool, u16, u32, u64 } from '@polkadot/types/primitive';
 import { UncleEntryItem } from '@polkadot/types/interfaces/authorship';
@@ -106,7 +106,6 @@ import {
   TickerRegistration,
   TickerRegistrationConfig,
 } from 'polymesh-types/polymesh';
-import { Observable } from 'rxjs';
 import { ApiTypes } from '@polkadot/api/types';
 
 declare module '@polkadot/api/types/storage' {
@@ -1084,7 +1083,7 @@ declare module '@polkadot/api/types/storage' {
         (arg: Kind | string | Uint8Array) => Observable<Bytes>
       >;
     };
-    percentageTM: {
+    percentageTm: {
       maximumPercentageEnabledForToken: AugmentedQuery<
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<u16>
@@ -1568,7 +1567,7 @@ declare module '@polkadot/api/types/storage' {
        * To track the index of the token address for the given STO
        * (Asset_ticker, sto_id, simple_token_ticker) -> index
        **/
-      tokenIndexForSTO: AugmentedQuery<
+      tokenIndexForSto: AugmentedQuery<
         ApiType,
         (
           arg:
