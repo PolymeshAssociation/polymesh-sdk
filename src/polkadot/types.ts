@@ -384,7 +384,7 @@ export const TxTags = {
   bridge: BridgeTx,
   dividend: DividendTx,
   identity: IdentityTx,
-  generalTM: GeneralTmTx,
+  generalTm: GeneralTmTx,
   voting: VotingTx,
   stoCapped: StoCappedTx,
   percentageTM: PercentageTmTx,

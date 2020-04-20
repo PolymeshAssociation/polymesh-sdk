@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 export enum TransactionStatus {
   /**
    * the transaction is prepped to run
@@ -149,6 +151,50 @@ export type Authorization =
       value: string;
     };
 
+export enum ConditionTarget {
+  Sender = 'Sender',
+  Receiver = 'Receiver',
+  Both = 'Both',
+}
+
+export enum ClaimType {
+  Accredited = 'Accredited',
+  Affiliate = 'Affiliate',
+  BuyLockup = 'BuyLockup',
+  SellLockup = 'SellLockup',
+  CustomerDueDiligence = 'CustomerDueDiligence',
+  KnowYourCustomer = 'KnowYourCustomer',
+  Jurisdiction = 'Jurisdiction',
+  Whitelisted = 'Whitelisted',
+  Blacklisted = 'Blacklisted',
+  NoData = 'NoData',
+}
+
+export type Claim =
+  | { type: ClaimType.Jurisdiction; name: string; scope: string }
+  | { type: ClaimType.NoData }
+  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string };
+
+export enum ConditionType {
+  IsPresent = 'IsPresent',
+  IsAbsent = 'IsAbsent',
+  IsAnyOf = 'IsAnyOf',
+  IsNoneOf = 'IsNoneOf',
+}
+
+export type Condition = { target: ConditionTarget; trustedIssuers: string[] } & (
+  | {
+      type: ConditionType.IsPresent | ConditionType.IsAbsent;
+      claim: Claim;
+    }
+  | { type: ConditionType.IsAnyOf | ConditionType.IsNoneOf; claims: Claim[] }
+);
+
+export interface Rule {
+  id: number;
+  conditions: Condition[];
+}
+
 /**
  * Specifies possible types of errors in the SDK
  */
@@ -160,6 +206,14 @@ export enum ErrorCode {
   InvalidUuid = 'InvalidUuid',
   ValidationError = 'ValidationError',
   NotAuthorized = 'NotAuthorized',
+}
+
+/**
+ * Represents an amount of tokens to be issued to an identity
+ */
+export interface IssuanceData {
+  did: string;
+  amount: BigNumber;
 }
 
 export * from '~/api/entities/types';
