@@ -37,6 +37,7 @@ describe('TokenHolders class', () => {
     });
 
     test('should retrieve all the token holders with balance', async () => {
+      const ticker = 'TEST';
       const fakeData = [
         {
           identity: 'someIdentity',
@@ -76,8 +77,8 @@ describe('TokenHolders class', () => {
       });
 
       const balanceOfEntries = [
-        tuple(['storageKey', identityIds[0]], balances[0]),
-        tuple(['storageKey', identityIds[1]], balances[1]),
+        tuple([ticker, identityIds[0]], balances[0]),
+        tuple([ticker, identityIds[1]], balances[1]),
       ];
 
       polkadotMockUtils.createQueryStub('asset', 'balanceOf', {

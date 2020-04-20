@@ -32,10 +32,10 @@ export class TokenHolders extends Namespace<SecurityToken> {
     } = this;
 
     const entries = await query.asset.balanceOf.entries(ticker);
-    const IdentityBalance: IdentityBalance[] = [];
+    const balances: IdentityBalance[] = [];
 
     entries.forEach(([storageKey, balance]) => {
-      IdentityBalance.push({
+      balances.push({
         identity: new Identity(
           { did: identityIdToString(storageKey.args[1] as IdentityId) },
           context
@@ -44,6 +44,6 @@ export class TokenHolders extends Namespace<SecurityToken> {
       });
     });
 
-    return IdentityBalance;
+    return balances;
   }
 }
