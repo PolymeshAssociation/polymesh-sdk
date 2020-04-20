@@ -6,7 +6,7 @@ const { stringCamelCase, stringLowerFirst, stringUpperFirst } = require('@polkad
 const fs = require('fs');
 const path = require('path');
 
-const websocket = new w3cwebsocket('wss://pme.polymath.network');
+const websocket = new w3cwebsocket('wss://pmd.polymath.network');
 websocket.onopen = () => {
   websocket.send('{"id":"1","jsonrpc":"2.0","method":"state_getMetadata","params":[]}');
 };
