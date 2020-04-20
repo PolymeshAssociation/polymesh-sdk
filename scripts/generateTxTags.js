@@ -28,7 +28,7 @@ websocket.onmessage = message => {
       const moduleNameCamelCase = stringCamelCase(moduleName);
       const moduleNamePascal = stringUpperFirst(moduleNameCamelCase);
       txTag = txTag.concat(`\n  | ${moduleNamePascal}Tx`);
-      txTags = txTags.concat(`  ${stringLowerFirst(moduleName)}: ${moduleNamePascal}Tx,\n`);
+      txTags = txTags.concat(`  ${stringCamelCase(moduleName)}: ${moduleNamePascal}Tx,\n`);
 
       namespaces = namespaces.concat(`export enum ${moduleNamePascal}Tx {\n`);
       allCalls.forEach(({ name: callName }) => {
