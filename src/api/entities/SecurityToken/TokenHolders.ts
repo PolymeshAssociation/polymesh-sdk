@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Identity } from '~/api/entities/Identity';
 import { Namespace } from '~/base';
 import { IdentityId } from '~/polkadot';
-import { balanceToBigNumber, identityIdToString } from '~/utils';
+import { balanceToBigNumber, identityIdToString, stringToTicker } from '~/utils';
 
 import { SecurityToken } from './';
 
@@ -31,7 +31,7 @@ export class TokenHolders extends Namespace<SecurityToken> {
       parent: { ticker },
     } = this;
 
-    const entries = await query.asset.balanceOf.entries(ticker);
+    const entries = await query.asset.balanceOf.entries(stringToTicker(ticker, context));
     const balances: IdentityBalance[] = [];
 
     entries.forEach(([storageKey, balance]) => {

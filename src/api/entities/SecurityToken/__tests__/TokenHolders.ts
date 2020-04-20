@@ -4,7 +4,7 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities/Identity';
 import { Namespace } from '~/base';
-import { IdentityId } from '~/polkadot';
+import { IdentityId, Ticker } from '~/polkadot';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
@@ -38,6 +38,8 @@ describe('TokenHolders class', () => {
 
     test('should retrieve all the token holders with balance', async () => {
       const ticker = 'TEST';
+      const mockContext = polkadotMockUtils.getContextInstance();
+      const rawTicker = polkadotMockUtils.createMockTicker(ticker);
       const fakeData = [
         {
           identity: 'someIdentity',
@@ -51,11 +53,17 @@ describe('TokenHolders class', () => {
 
       const expectedHolders: IdentityBalance[] = [];
 
+      sinon
+        .stub(utilsModule, 'stringToTicker')
+        .withArgs(ticker, mockContext)
+        .returns(rawTicker);
+
       const identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
       const balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
 
       const identityIds: IdentityId[] = [];
       const balances: Balance[] = [];
+      const balanceOfEntries: [Ticker[], Balance][] = [];
 
       const context = polkadotMockUtils.getContextInstance();
 
@@ -70,16 +78,13 @@ describe('TokenHolders class', () => {
         identityIdToStringStub.withArgs(identityId).returns(identity);
         balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
 
+        balanceOfEntries.push(tuple([rawTicker, identityId], fakeBalance));
+
         expectedHolders.push({
           identity: new Identity({ did: identity }, context),
           balance,
         });
       });
-
-      const balanceOfEntries = [
-        tuple([ticker, identityIds[0]], balances[0]),
-        tuple([ticker, identityIds[1]], balances[1]),
-      ];
 
       polkadotMockUtils.createQueryStub('asset', 'balanceOf', {
         entries: balanceOfEntries,
