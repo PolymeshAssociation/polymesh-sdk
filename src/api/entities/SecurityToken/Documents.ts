@@ -1,4 +1,4 @@
-import { setTokenDocuments } from '~/api/procedures';
+import { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { TokenDocument } from '~/types';
 import { SignerType } from '~/types/internal';
@@ -17,7 +17,7 @@ export class Documents extends Namespace<SecurityToken> {
    *
    * @param args.documents - new list of documents
    */
-  public set(args: { documents: TokenDocument[] }): Promise<TransactionQueue<SecurityToken>> {
+  public set(args: SetTokenDocumentsParams): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
       context,
