@@ -1,9 +1,12 @@
 import BigNumber from 'bignumber.js';
+import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
+import { IdentityId } from '~/polkadot';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
 import { RoleType } from '~/types';
+import * as utilsModule from '~/utils';
 
 import { Identity } from '../';
 
@@ -20,9 +23,11 @@ jest.mock(
 
 describe('Identity class', () => {
   let context: Context;
+  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
 
   beforeAll(() => {
     polkadotMockUtils.initMocks();
+    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
   });
 
   beforeEach(() => {
@@ -60,11 +65,18 @@ describe('Identity class', () => {
 
   describe('method: getPolyXBalance', () => {
     test("should return the identity's POLYX balance", async () => {
+      const did = 'someDid';
       const fakeBalance = new BigNumber(100);
+      const rawIdentityId = polkadotMockUtils.createMockIdentityId(did);
+      const mockContext = polkadotMockUtils.getContextInstance();
+
+      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
+
       polkadotMockUtils
         .createQueryStub('balances', 'identityBalance')
         .resolves(fakeBalance.times(Math.pow(10, 6)));
-      const identity = new Identity({ did: 'abc' }, context);
+
+      const identity = new Identity({ did }, context);
       const result = await identity.getPolyXBalance();
       expect(result).toEqual(fakeBalance);
     });
@@ -151,6 +163,40 @@ describe('Identity class', () => {
       const hasRole = await identity.hasRoles(roles);
 
       expect(hasRole).toBe(false);
+    });
+  });
+
+  describe('method: getTokenBalance', () => {
+    test('should return the balance of a given token', async () => {
+      const ticker = 'TEST';
+      const did = 'someDid';
+      const rawTicker = polkadotMockUtils.createMockTicker(ticker);
+      const rawIdentityId = polkadotMockUtils.createMockIdentityId(did);
+      const fakeValue = new BigNumber(100);
+      const fakeBalance = polkadotMockUtils.createMockBalance(fakeValue.toNumber());
+      const mockContext = polkadotMockUtils.getContextInstance();
+
+      sinon
+        .stub(utilsModule, 'stringToTicker')
+        .withArgs(ticker, mockContext)
+        .returns(rawTicker);
+
+      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
+
+      polkadotMockUtils
+        .createQueryStub('asset', 'balanceOf')
+        .withArgs(rawTicker, rawIdentityId)
+        .resolves(fakeBalance);
+
+      sinon
+        .stub(utilsModule, 'balanceToBigNumber')
+        .withArgs(fakeBalance)
+        .returns(fakeValue);
+
+      const identity = new Identity({ did }, context);
+      const result = await identity.getTokenBalance(ticker);
+
+      expect(result).toEqual(fakeValue);
     });
   });
 });
