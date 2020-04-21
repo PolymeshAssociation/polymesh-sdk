@@ -120,7 +120,7 @@ export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransac
     });
 
     return instance;
-  }) as MockTransaction[];
+  });
 
   polymeshTransactionConstructorStub = sinon.stub();
 
