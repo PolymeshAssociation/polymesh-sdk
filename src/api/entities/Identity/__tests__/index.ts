@@ -3,6 +3,7 @@ import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
+import { IdentityId } from '~/polkadot';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
 import { RoleType } from '~/types';
 import * as utilsModule from '~/utils';
@@ -22,9 +23,11 @@ jest.mock(
 
 describe('Identity class', () => {
   let context: Context;
+  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
 
   beforeAll(() => {
     polkadotMockUtils.initMocks();
+    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
   });
 
   beforeEach(() => {
@@ -67,10 +70,7 @@ describe('Identity class', () => {
       const rawIdentityId = polkadotMockUtils.createMockIdentityId(did);
       const mockContext = polkadotMockUtils.getContextInstance();
 
-      sinon
-        .stub(utilsModule, 'stringToIdentityId')
-        .withArgs(did, mockContext)
-        .returns(rawIdentityId);
+      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
 
       polkadotMockUtils
         .createQueryStub('balances', 'identityBalance')
@@ -181,10 +181,7 @@ describe('Identity class', () => {
         .withArgs(ticker, mockContext)
         .returns(rawTicker);
 
-      sinon
-        .stub(utilsModule, 'stringToIdentityId')
-        .withArgs(did, mockContext)
-        .returns(rawIdentityId);
+      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
 
       polkadotMockUtils
         .createQueryStub('asset', 'balanceOf')
