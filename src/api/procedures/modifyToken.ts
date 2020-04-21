@@ -36,6 +36,7 @@ export async function prepareModifyToken(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
+  // TODO: queryMulti
   const [{ isDivisible, name }, fundingRound] = await Promise.all([
     securityToken.details(),
     securityToken.currentFundingRound(),
