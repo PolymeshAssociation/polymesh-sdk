@@ -63,7 +63,7 @@ describe('TokenHolders class', () => {
 
       const identityIds: IdentityId[] = [];
       const balances: Balance[] = [];
-      const balanceOfEntries: [Ticker[], Balance][] = [];
+      const balanceOfEntries: [[Ticker, IdentityId], Balance][] = [];
 
       const context = polkadotMockUtils.getContextInstance();
 
