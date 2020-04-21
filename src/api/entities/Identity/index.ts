@@ -56,13 +56,14 @@ export class Identity extends Entity<UniqueIdentifiers> {
   public async getPolyXBalance(): Promise<BigNumber> {
     const {
       did,
+      context,
       context: {
         polymeshApi: {
           query: { balances },
         },
       },
     } = this;
-    const balance = await balances.identityBalance(did);
+    const balance = await balances.identityBalance(stringToIdentityId(did, context));
 
     return balanceToBigNumber(balance);
   }

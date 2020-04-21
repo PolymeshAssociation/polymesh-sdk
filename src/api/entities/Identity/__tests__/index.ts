@@ -62,11 +62,21 @@ describe('Identity class', () => {
 
   describe('method: getPolyXBalance', () => {
     test("should return the identity's POLYX balance", async () => {
+      const did = 'someDid';
       const fakeBalance = new BigNumber(100);
+      const rawIdentityId = polkadotMockUtils.createMockIdentityId(did);
+      const mockContext = polkadotMockUtils.getContextInstance();
+
+      sinon
+        .stub(utilsModule, 'stringToIdentityId')
+        .withArgs(did, mockContext)
+        .returns(rawIdentityId);
+
       polkadotMockUtils
         .createQueryStub('balances', 'identityBalance')
         .resolves(fakeBalance.times(Math.pow(10, 6)));
-      const identity = new Identity({ did: 'abc' }, context);
+
+      const identity = new Identity({ did }, context);
       const result = await identity.getPolyXBalance();
       expect(result).toEqual(fakeBalance);
     });
