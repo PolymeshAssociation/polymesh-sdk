@@ -1,11 +1,19 @@
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
+import { Identity } from '~/api/entities/Identity';
 import { setTokenTrustedClaimIssuers } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
+import { IdentityId } from '~/polkadot';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import * as utilsModule from '~/utils';
 
 import { TrustedClaimIssuers } from '../TrustedClaimIssuers';
+
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 describe('TrustedClaimIssuers class', () => {
   beforeAll(() => {
@@ -49,6 +57,42 @@ describe('TrustedClaimIssuers class', () => {
       const queue = await trustedClaimIssuers.set(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: get', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the current default trusted claim issuers', async () => {
+      const ticker = 'test';
+      const rawTicker = polkadotMockUtils.createMockTicker(ticker);
+      const stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+      const context = polkadotMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+
+      const expectedDids = ['someDid', 'otherDid', 'yetAnotherDid'];
+
+      const expectedIdentities: Identity[] = [];
+      const claimIssuers: IdentityId[] = [];
+
+      expectedDids.forEach(did => {
+        expectedIdentities.push(new Identity({ did }, context));
+        claimIssuers.push(polkadotMockUtils.createMockIdentityId(did));
+      });
+
+      stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
+      polkadotMockUtils
+        .createQueryStub('generalTm', 'trustedClaimIssuer')
+        .withArgs(rawTicker)
+        .resolves(claimIssuers);
+
+      const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
+
+      const result = await trustedClaimIssuers.get();
+
+      expect(result).toEqual(expectedIdentities);
     });
   });
 });
