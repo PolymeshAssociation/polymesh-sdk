@@ -61,8 +61,6 @@ describe('TokenHolders class', () => {
       const identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
       const balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
 
-      const identityIds: IdentityId[] = [];
-      const balances: Balance[] = [];
       const balanceOfEntries: [[Ticker, IdentityId], Balance][] = [];
 
       const context = polkadotMockUtils.getContextInstance();
@@ -71,9 +69,6 @@ describe('TokenHolders class', () => {
         const identityId = polkadotMockUtils.createMockIdentityId(identity);
         const fakeBalance = polkadotMockUtils.createMockBalance(value);
         const balance = new BigNumber(value);
-
-        identityIds.push(identityId);
-        balances.push(fakeBalance);
 
         identityIdToStringStub.withArgs(identityId).returns(identity);
         balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
