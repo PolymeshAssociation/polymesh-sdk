@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { AuthIdentifier } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { AuthorizationRequest } from '~/api/entities';
+import { AuthorizationRequest, Identity } from '~/api/entities';
 import {
   ConsumeAuthorizationRequestsParams,
   isAuthorized,
@@ -177,7 +177,10 @@ describe('consumeAuthorizationRequests procedure', () => {
       const boundFunc = isAuthorized.bind(proc);
       expect(boundFunc(args)).toBe(true);
 
-      args.authRequests[0].targetDid = 'notTheCurrentIdentity';
+      args.authRequests[0].targetIdentity = new Identity(
+        { did: 'notTheCurrentIdentity' },
+        mockContext
+      );
 
       expect(boundFunc(args)).toBe(false);
     });
@@ -225,7 +228,10 @@ describe('consumeAuthorizationRequests procedure', () => {
       const boundFunc = isAuthorized.bind(proc);
       expect(boundFunc(args)).toBe(true);
 
-      args.authRequests[0].targetDid = 'notTheCurrentIdentity';
+      args.authRequests[0].targetIdentity = new Identity(
+        { did: 'notTheCurrentIdentity' },
+        mockContext
+      );
 
       expect(boundFunc(args)).toBe(false);
     });

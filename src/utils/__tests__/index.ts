@@ -22,6 +22,7 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { Identity } from '~/api/entities';
 import { PostTransactionValue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
 import { Authorization, AuthorizationType, KnownTokenType, TokenIdentifierType } from '~/types';
@@ -74,6 +75,7 @@ import {
   u64ToBigNumber,
   unserialize,
   unwrapValues,
+  valueToDid,
 } from '../';
 
 jest.mock(
@@ -190,6 +192,25 @@ describe('stringToIdentityId and identityIdToString', () => {
 
     const result = identityIdToString(identityId);
     expect(result).toBe(fakeResult);
+  });
+});
+
+describe('valueToDid', () => {
+  test('valueToDid should return the Indentity DID string', () => {
+    const did = 'someDid';
+    const context = polkadotMockUtils.getContextInstance();
+    const identity = new Identity({ did }, context);
+
+    const result = valueToDid(identity);
+
+    expect(result).toBe(did);
+  });
+
+  test('valueToDid should return the same DID string that it receives', () => {
+    const did = 'someDid';
+    const result = valueToDid(did);
+
+    expect(result).toBe(did);
   });
 });
 

@@ -1,5 +1,7 @@
 import BigNumber from 'bignumber.js';
 
+import { Identity } from '~/api/entities/Identity';
+
 export enum TransactionStatus {
   /**
    * the transaction is prepped to run
