@@ -54,6 +54,9 @@ export class Polymesh {
            */
           Weight: 'u32',
         },
+        rpc: {
+          ...polymesh.rpc,
+        },
       });
 
       let context: Context;

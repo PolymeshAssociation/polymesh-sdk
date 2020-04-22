@@ -119,6 +119,24 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Check whether this Identity has valid cdd claim
+   */
+  public async hasValidCdd(): Promise<void> {
+    const {
+      context,
+      did,
+      context: {
+        polymeshApi: { rpc },
+      },
+    } = this;
+    // const hash = await rpc.chain.getBlockHash();
+    const IdentityId = stringToIdentityId(did, context);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (rpc as any).identity.isIdentityHasValidCdd(IdentityId);
+    console.log(result);
+  }
+
+  /**
    * Check whether this Identity possesses all specified roles
    */
   public async hasRoles(roles: Role[]): Promise<boolean> {

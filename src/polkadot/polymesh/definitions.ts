@@ -384,4 +384,29 @@ export default {
       ],
     },
   },
+  rpc: {
+    identity: {
+      isIdentityHasValidCdd: {
+        description: 'use to tell whether the given did has valid cdd claim or not',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+          {
+            name: 'did',
+            type: 'IdentityId',
+            isOptional: false,
+          },
+          {
+            name: 'buffer_time',
+            type: 'u64',
+            isOptional: true,
+          },
+        ],
+        type: 'CddStatus',
+      },
+    },
+  },
 };

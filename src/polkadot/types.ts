@@ -387,7 +387,7 @@ export const TxTags = {
   generalTm: GeneralTmTx,
   voting: VotingTx,
   stoCapped: StoCappedTx,
-  percentageTM: PercentageTmTx,
+  percentageTm: PercentageTmTx,
   exemption: ExemptionTx,
   simpleToken: SimpleTokenTx,
   cddServiceProviders: CddServiceProvidersTx,
