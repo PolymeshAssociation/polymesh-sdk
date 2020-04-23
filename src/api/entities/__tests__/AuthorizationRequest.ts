@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { Identity } from '~/api/entities/Identity';
 import { consumeAuthorizationRequests } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
@@ -36,6 +37,8 @@ describe('AuthorizationRequest class', () => {
     test('should assign target did, issuer did, expiry and data to instance', () => {
       const targetDid = 'someDid';
       const issuerDid = 'otherDid';
+      const targetIdentity = new Identity({ did: targetDid }, context);
+      const issuerIdentity = new Identity({ did: issuerDid }, context);
       const expiry = new Date();
       const data = ('something' as unknown) as Authorization;
       const authRequest = new AuthorizationRequest(
@@ -43,8 +46,8 @@ describe('AuthorizationRequest class', () => {
         context
       );
 
-      expect(authRequest.targetDid).toBe(targetDid);
-      expect(authRequest.issuerDid).toBe(issuerDid);
+      expect(authRequest.targetIdentity).toEqual(targetIdentity);
+      expect(authRequest.issuerIdentity).toEqual(issuerIdentity);
       expect(authRequest.expiry).toBe(expiry);
       expect(authRequest.data).toBe(data);
     });
