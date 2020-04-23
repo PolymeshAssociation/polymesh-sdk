@@ -64,6 +64,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
+    // TODO: queryMulti
     const [{ owner: tickerOwner, expiry }, { owner_did: tokenOwner }] = await Promise.all([
       asset.tickers(ticker),
       asset.tokens(ticker),

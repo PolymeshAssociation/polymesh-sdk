@@ -52,6 +52,7 @@ export async function prepareSetTokenTrustedClaimIssuers(
 
   await Promise.all(
     newClaimIssuerChunks.map(async newClaimIssuerChunk => {
+      // TODO: queryMulti
       const sizes = await Promise.all(
         newClaimIssuerChunk.map(claimIssuer => query.identity.didRecords.size(claimIssuer))
       );

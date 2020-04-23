@@ -1,5 +1,7 @@
+import { Identity } from '~/api/entities';
 import { setTokenTrustedClaimIssuers, SetTokenTrustedClaimIssuersParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
+import { identityIdToString, stringToTicker } from '~/utils';
 
 import { SecurityToken } from '../';
 
@@ -20,5 +22,23 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
       context,
     } = this;
     return setTokenTrustedClaimIssuers.prepare({ ticker, ...args }, context);
+  }
+
+  /**
+   * Retrieve the current default trusted claim issuers of the Security Token
+   */
+  public async get(): Promise<Identity[]> {
+    const {
+      context,
+      parent: { ticker },
+    } = this;
+
+    const claimIssuers = await context.polymeshApi.query.generalTm.trustedClaimIssuer(
+      stringToTicker(ticker, context)
+    );
+
+    return claimIssuers.map(
+      claimIssuer => new Identity({ did: identityIdToString(claimIssuer) }, context)
+    );
   }
 }

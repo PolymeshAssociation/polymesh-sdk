@@ -5,7 +5,7 @@ import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode, isTickerOwnerRole, isTokenOwnerRole, Role } from '~/types';
-import { balanceToBigNumber } from '~/utils';
+import { balanceToBigNumber, stringToIdentityId, stringToTicker } from '~/utils';
 
 import { Authorizations } from './Authorizations';
 
@@ -54,8 +54,16 @@ export class Identity extends Entity<UniqueIdentifiers> {
    * Retrieve the POLYX balance of this particular Identity
    */
   public async getPolyXBalance(): Promise<BigNumber> {
-    const { context, did } = this;
-    const balance = await context.polymeshApi.query.balances.identityBalance(did);
+    const {
+      did,
+      context,
+      context: {
+        polymeshApi: {
+          query: { balances },
+        },
+      },
+    } = this;
+    const balance = await balances.identityBalance(stringToIdentityId(did, context));
 
     return balanceToBigNumber(balance);
   }
@@ -87,6 +95,27 @@ export class Identity extends Entity<UniqueIdentifiers> {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       message: `Unrecognized role "${JSON.stringify(role)}"`,
     });
+  }
+
+  /**
+   * Retrieve the balance of a particular Security Token
+   */
+  public async getTokenBalance(ticker: string): Promise<BigNumber> {
+    const {
+      did,
+      context,
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+    } = this;
+
+    const balance = await asset.balanceOf(
+      stringToTicker(ticker, context),
+      stringToIdentityId(did, context)
+    );
+    return balanceToBigNumber(balance);
   }
 
   /**
