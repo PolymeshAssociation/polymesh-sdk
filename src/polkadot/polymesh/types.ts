@@ -100,6 +100,14 @@ export interface BridgeTx extends Struct {
   readonly tx_hash: H256;
 }
 
+/** @name CddStatus */
+export interface CddStatus extends Enum {
+  readonly isOk: boolean;
+  readonly asOk: IdentityId;
+  readonly isErr: boolean;
+  readonly asErr: Bytes;
+}
+
 /** @name Claim */
 export interface Claim extends Enum {
   readonly isAccredited: boolean;

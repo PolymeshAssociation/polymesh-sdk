@@ -383,6 +383,12 @@ export default {
         'VotingAddBallot',
       ],
     },
+    CddStatus: {
+      _enum: {
+        Ok: 'IdentityId',
+        Err: 'Vec<u8>',
+      },
+    },
   },
   rpc: {
     identity: {

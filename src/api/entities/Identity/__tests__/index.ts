@@ -199,4 +199,33 @@ describe('Identity class', () => {
       expect(result).toEqual(fakeValue);
     });
   });
+
+  describe('method: hasValidCdd', () => {
+    test('should return the state of the current cdd identity', async () => {
+      const did = 'someDid';
+      const statusResponse = true;
+      const mockContext = polkadotMockUtils.getContextInstance();
+      const rawIdentityId = polkadotMockUtils.createMockIdentityId(did);
+      const fakeHasValidCdd = polkadotMockUtils.createMockCddStatus({
+        Ok: rawIdentityId,
+      });
+
+      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
+
+      polkadotMockUtils
+        .createRpcStub('identity', 'isIdentityHasValidCdd')
+        .withArgs(rawIdentityId)
+        .resolves(fakeHasValidCdd);
+
+      sinon
+        .stub(utilsModule, 'cddStatusToBoolean')
+        .withArgs(fakeHasValidCdd)
+        .returns(statusResponse);
+
+      const identity = new Identity({ did }, context);
+      const result = await identity.hasValidCdd();
+
+      expect(result).toEqual(statusResponse);
+    });
+  });
 });

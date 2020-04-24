@@ -579,6 +579,7 @@ import {
   BatchAddClaimItem,
   BatchRevokeClaimItem,
   BridgeTx,
+  CddStatus,
   Claim,
   Claim1stKey,
   Claim2ndKey,
@@ -2523,5 +2524,8 @@ declare module '@polkadot/types/types/registry' {
     ProtocolOp: ProtocolOp;
     'Option<ProtocolOp>': Option<ProtocolOp>;
     'Vec<ProtocolOp>': Vec<ProtocolOp>;
+    CddStatus: CddStatus;
+    'Option<CddStatus>': Option<CddStatus>;
+    'Vec<CddStatus>': Vec<CddStatus>;
   }
 }

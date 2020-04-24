@@ -11,6 +11,7 @@ import {
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  CddStatus,
   Document,
   DocumentHash,
   DocumentName,
@@ -504,6 +505,16 @@ export function authIdentifierToAuthTarget({
     authId: u64ToBigNumber(authId),
     did: signatoryToSigner(signatory).value,
   };
+}
+
+/**
+ * @hidden
+ */
+export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
+  if (cddStatus.isOk) {
+    return true;
+  }
+  return false;
 }
 
 /**
