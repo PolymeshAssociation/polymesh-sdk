@@ -8,7 +8,7 @@ import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
 import { SignerType } from '~/types/internal';
-import { signerToSignatory, tickerToString } from '~/utils';
+import { signerToSignatory, tickerToString, valueToDid } from '~/utils';
 
 /**
  * Main entry point of the Polymesh SDK
@@ -118,9 +118,11 @@ export class Polymesh {
    * Retrieve all the ticker reservations currently owned by an identity. This includes
    * Security Tokens that have already been launched
    *
-   * @param args.did - identity ID as stored in the blockchain
+   * @param args.did - identity representation or identity ID as stored in the blockchain
    */
-  public async getTickerReservations(args?: { did: string }): Promise<TickerReservation[]> {
+  public async getTickerReservations(args?: {
+    did: string | Identity;
+  }): Promise<TickerReservation[]> {
     const {
       context: {
         polymeshApi: {
@@ -135,7 +137,7 @@ export class Polymesh {
     let identity: string;
 
     if (args) {
-      identity = args.did;
+      identity = valueToDid(args.did);
     } else {
       identity = context.getCurrentIdentity().did;
     }
@@ -229,9 +231,9 @@ export class Polymesh {
   /**
    * Retrieve all the Security Tokens owned by an identity
    *
-   * @param args.did - identity ID as stored in the blockchain
+   * @param args.did - identity representation or identity ID as stored in the blockchain
    */
-  public async getSecurityTokens(args?: { did: string }): Promise<SecurityToken[]> {
+  public async getSecurityTokens(args?: { did: string | Identity }): Promise<SecurityToken[]> {
     const {
       context: {
         polymeshApi: {
@@ -246,7 +248,7 @@ export class Polymesh {
     let identity: string;
 
     if (args) {
-      identity = args.did;
+      identity = valueToDid(args.did);
     } else {
       identity = context.getCurrentIdentity().did;
     }

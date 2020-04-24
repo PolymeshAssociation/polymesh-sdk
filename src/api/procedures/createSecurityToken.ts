@@ -65,6 +65,7 @@ export async function prepareCreateSecurityToken(
 
   const reservation = new TickerReservation({ ticker }, context);
 
+  // TODO: queryMulti
   const [rawFee, balance, { status }] = await Promise.all([
     query.asset.assetCreationFee(),
     context.accountBalance(),

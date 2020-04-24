@@ -24,6 +24,7 @@ import {
   TokenName,
 } from 'polymesh-types/types';
 
+import { Identity } from '~/api/entities/Identity';
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import {
@@ -186,6 +187,16 @@ export function stringToIdentityId(identityId: string, context: Context): Identi
  */
 export function identityIdToString(identityId: IdentityId): string {
   return identityId.toString();
+}
+
+/**
+ * @hidden
+ */
+export function valueToDid(value: string | Identity): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return value.did;
 }
 
 /**

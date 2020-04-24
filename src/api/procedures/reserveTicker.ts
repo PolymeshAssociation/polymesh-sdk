@@ -45,6 +45,7 @@ export async function prepareReserveTicker(
 
   const reservation = new TickerReservation({ ticker }, context);
 
+  // TODO: queryMulti
   const [
     rawFee,
     balance,
