@@ -378,7 +378,7 @@ export function identifierTypeToString(type: IdentifierType): string {
     return TokenIdentifierType.Isin;
   }
 
-  return u8aToString(type.asCustom);
+  return TokenIdentifierType.Cins;
 }
 
 /**

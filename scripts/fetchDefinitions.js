@@ -6,24 +6,28 @@ const rimraf = require('rimraf');
 const util = require('util');
 
 const dirName = path.resolve('src', 'polkadot', 'polymesh');
+const urlPath = 'https://pmf.polymath.network/code';
+
 rimraf.sync(dirName);
 fs.mkdirSync(dirName);
 
-https.get('https://pmd.polymath.network/code/polymesh_schema.json', res => {
+https.get(`${urlPath}/polymesh_schema.json`, res => {
   const chunks = [];
   res.on('data', chunk => {
     chunks.push(chunk);
   });
 
   res.on('end', () => {
-    const schema = Buffer.concat(chunks).toString();
-    const content = JSON.parse(`{ "types": ${schema} }`);
+    const schema = Buffer.concat(chunks);
     fs.writeFileSync(
       path.resolve(dirName, 'definitions.ts'),
-      `/* eslint-disable @typescript-eslint/camelcase */\nexport default ${util.inspect(content, {
-        compact: false,
-        depth: null,
-      })}`
+      `/* eslint-disable @typescript-eslint/camelcase */\nexport default ${util.inspect(
+        JSON.parse(schema),
+        {
+          compact: false,
+          depth: null,
+        }
+      )}`
     );
   });
 });

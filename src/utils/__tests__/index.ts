@@ -606,10 +606,8 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
     result = identifierTypeToString(identifierType);
     expect(result).toEqual(fakeResult);
 
-    const fakeType = 'otherType';
-    identifierType = polkadotMockUtils.createMockIdentifierType({
-      Custom: polkadotMockUtils.createMockBytes(fakeType),
-    });
+    const fakeType = TokenIdentifierType.Cins;
+    identifierType = polkadotMockUtils.createMockIdentifierType(fakeType);
 
     result = identifierTypeToString(identifierType);
     expect(result).toEqual(fakeType);

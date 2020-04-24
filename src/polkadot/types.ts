@@ -36,6 +36,7 @@ export enum BalancesTx {
   TopUpBrrBalance = 'balances.topUpBrrBalance',
   SetBalance = 'balances.setBalance',
   ForceTransfer = 'balances.forceTransfer',
+  BurnAccountBalance = 'balances.burnAccountBalance',
 }
 
 export enum AuthorshipTx {
@@ -136,14 +137,8 @@ export enum ContractsTx {
 }
 
 export enum TreasuryTx {
-  ProposeSpend = 'treasury.proposeSpend',
-  RejectProposal = 'treasury.rejectProposal',
-  ApproveProposal = 'treasury.approveProposal',
-  ReportAwesome = 'treasury.reportAwesome',
-  RetractTip = 'treasury.retractTip',
-  TipNew = 'treasury.tipNew',
-  Tip = 'treasury.tip',
-  CloseTip = 'treasury.closeTip',
+  Disbursement = 'treasury.disbursement',
+  Reimbursement = 'treasury.reimbursement',
 }
 
 export enum PolymeshCommitteeTx {
@@ -151,6 +146,7 @@ export enum PolymeshCommitteeTx {
   Propose = 'polymeshCommittee.propose',
   Vote = 'polymeshCommittee.vote',
   Close = 'polymeshCommittee.close',
+  SetReleaseCoordinator = 'polymeshCommittee.setReleaseCoordinator',
 }
 
 export enum CommitteeMembershipTx {
@@ -165,9 +161,11 @@ export enum CommitteeMembershipTx {
 }
 
 export enum MipsTx {
+  SetPruneHistoricalMips = 'mips.setPruneHistoricalMips',
   SetMinProposalDeposit = 'mips.setMinProposalDeposit',
   SetQuorumThreshold = 'mips.setQuorumThreshold',
   SetProposalDuration = 'mips.setProposalDuration',
+  SetDefaultEnactPeriod = 'mips.setDefaultEnactPeriod',
   Propose = 'mips.propose',
   AmendProposal = 'mips.amendProposal',
   CancelProposal = 'mips.cancelProposal',
@@ -176,8 +174,10 @@ export enum MipsTx {
   Vote = 'mips.vote',
   KillProposal = 'mips.killProposal',
   FastTrackProposal = 'mips.fastTrackProposal',
-  SubmitReferendum = 'mips.submitReferendum',
+  EmergencyReferendum = 'mips.emergencyReferendum',
   EnactReferendum = 'mips.enactReferendum',
+  RejectReferendum = 'mips.rejectReferendum',
+  SetReferendumEnactmentPeriod = 'mips.setReferendumEnactmentPeriod',
 }
 
 export enum AssetTx {

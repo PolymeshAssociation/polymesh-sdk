@@ -154,8 +154,10 @@ describe('SecurityToken class', () => {
       const ticker = 'TEST';
       const isinValue = 'FAKE ISIN';
       const cusipValue = 'FAKE CUSIP';
+      const cinsValue = 'FAKE CINS';
       const isinMock = polkadotMockUtils.createMockAssetIdentifier(isinValue);
       const cusipMock = polkadotMockUtils.createMockAssetIdentifier(cusipValue);
+      const cinsMock = polkadotMockUtils.createMockAssetIdentifier(cinsValue);
       const tokenIdentifiers = [
         {
           type: TokenIdentifierType.Isin,
@@ -164,6 +166,10 @@ describe('SecurityToken class', () => {
         {
           type: TokenIdentifierType.Cusip,
           value: cusipValue,
+        },
+        {
+          type: TokenIdentifierType.Cins,
+          value: cinsValue,
         },
       ];
 
@@ -189,8 +195,12 @@ describe('SecurityToken class', () => {
         .withArgs(tokenIdentifiers[1].type, context)
         .returns(rawIdentifiers[1][0]);
 
+      tokenIdentifierTypeToIdentifierTypeStub
+        .withArgs(tokenIdentifiers[2].type, context)
+        .returns(rawIdentifiers[2][0]);
+
       polkadotMockUtils.createQueryStub('asset', 'identifiers', {
-        multi: [isinMock, cusipMock],
+        multi: [isinMock, cusipMock, cinsMock],
       });
 
       const securityToken = new SecurityToken({ ticker }, context);
@@ -199,6 +209,7 @@ describe('SecurityToken class', () => {
 
       expect(result[0].value).toBe(isinValue);
       expect(result[1].value).toBe(cusipValue);
+      expect(result[2].value).toBe(cinsValue);
     });
   });
 });

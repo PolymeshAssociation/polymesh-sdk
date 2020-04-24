@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/camelcase */
 export default {
   types: {
-    IdentityId: 'H256',
+    IdentityId: '[u8; 32]',
     Ticker: '[u8; 12]',
     PosRatio: '(u32, u32)',
     DocumentName: 'Text',
@@ -23,9 +23,9 @@ export default {
     },
     IdentifierType: {
       _enum: {
-        Isin: '',
+        Cins: '',
         Cusip: '',
-        Custom: 'Vec<u8>',
+        Isin: '',
       },
     },
     TokenName: 'Text',
@@ -229,10 +229,14 @@ export default {
       proposer: 'AccountKey',
       index: 'u32',
       end: 'u32',
-      proposal_hash: 'Hash',
       url: 'Option<Url>',
       description: 'Option<MipDescription>',
       cool_off_until: 'u32',
+      beneficiaries: 'Vec<Beneficiary>',
+    },
+    Beneficiary: {
+      id: 'IdentityId',
+      amount: 'Balance',
     },
     DepositInfo: {
       owner: 'AccountKey',
@@ -243,18 +247,26 @@ export default {
       ayes: 'Vec<(IdentityId, Balance)>',
       nays: 'Vec<(IdentityId, Balance)>',
     },
-    MipsIndex: 'u32',
-    MipsPriority: {
-      _enum: ['High', 'Normal'],
+    MipId: 'u32',
+    ProposalState: {
+      _enum: ['Pending', 'Cancelled', 'Killed', 'Rejected', 'Referendum'],
+    },
+    ReferendumState: {
+      _enum: ['Pending', 'Scheduled', 'Rejected', 'Failed', 'Executed'],
+    },
+    ReferendumType: {
+      _enum: ['FastTracked', 'Emergency', 'Community'],
     },
     MIP: {
       index: 'MipsIndex',
       proposal: 'Call',
+      state: 'ProposalState',
     },
-    PolymeshReferendumInfo: {
+    Referendum: {
       index: 'MipsIndex',
-      priority: 'MipsPriority',
-      proposal_hash: 'Hash',
+      state: 'ReferendumState',
+      referendum_type: 'ReferendumType',
+      enactment_period: 'u32',
     },
     TickerTransferApproval: {
       authorized_by: 'IdentityId',
@@ -366,6 +378,12 @@ export default {
       deactivated_at: 'Moment',
       expiry: 'Option<Moment>',
     },
+    VotingResult: {
+      ayes_count: 'u32',
+      ayes_stake: 'Balance',
+      nays_count: 'u32',
+      nays_stake: 'Balance',
+    },
     ProtocolOp: {
       _enum: [
         'AssetRegisterTicker',
@@ -389,11 +407,39 @@ export default {
         Err: 'Vec<u8>',
       },
     },
+    AssetDidResult: {
+      _enum: {
+        Ok: 'IdentityId',
+        Err: 'Vec<u8>',
+      },
+    },
+    DidRecordsSuccess: {
+      master_key: 'AccountKey',
+      signing_items: 'Vec<SigningItem>',
+    },
+    DidRecords: {
+      _enum: {
+        Success: 'DidRecordsSuccess',
+        IdNotFound: 'Vec<u8>',
+      },
+    },
+    CappedVoteCountSuccess: {
+      ayes: 'u64',
+      nays: 'u64',
+    },
+    CappedVoteCount: {
+      _enum: {
+        Success: 'CappedVoteCountSuccess',
+        ProposalNotFound: 'Vec<u8>',
+      },
+    },
+    Weight: 'u32',
+    CappedFee: 'u64',
   },
   rpc: {
     identity: {
       isIdentityHasValidCdd: {
-        description: 'use to tell whether the given did has valid cdd claim or not',
+        description: 'use to tell whether the given ' + 'did has valid cdd claim or not',
         params: [
           {
             name: 'blockHash',
@@ -412,6 +458,119 @@ export default {
           },
         ],
         type: 'CddStatus',
+      },
+      getAssetDid: {
+        description: 'function is used to query the given ticker DID',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+          {
+            name: 'ticker',
+            type: 'Ticker',
+            isOptional: false,
+          },
+        ],
+        type: 'AssetDidResult',
+      },
+      getDidRecords: {
+        description: 'Used to get the did record values for a given DID',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+          {
+            name: 'did',
+            type: 'IdentityId',
+            isOptional: false,
+          },
+        ],
+        type: 'DidRecords',
+      },
+    },
+    mips: {
+      getVotes: {
+        description: 'Summary of votes of a proposal given by index',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+          {
+            name: 'index',
+            type: 'u32',
+            isOptional: false,
+          },
+        ],
+        type: 'CappedVoteCount',
+      },
+      proposedBy: {
+        description: 'Retrieves proposal indices started by address',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+          {
+            name: 'address',
+            type: 'AccountId',
+            isOptional: false,
+          },
+        ],
+        type: 'Vec<u32>',
+      },
+      votedOn: {
+        description: 'Retrieves proposal address indices voted on',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+          {
+            name: 'address',
+            type: 'AccountId',
+            isOptional: false,
+          },
+        ],
+        type: 'Vec<u32>',
+      },
+    },
+    protocolFee: {
+      computeFee: {
+        description: 'Gets the fee of a chargeable extrinsic operation',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+          {
+            name: 'op',
+            type: 'ProtocolOp',
+            isOptional: false,
+          },
+        ],
+        type: 'CappedFee',
+      },
+    },
+    staking: {
+      getCurve: {
+        description: 'Retrieves curves parameters',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'Vec<(Perbill, Perbill)>',
       },
     },
   },

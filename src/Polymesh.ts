@@ -48,11 +48,6 @@ export class Polymesh {
         provider: new WsProvider(nodeUrl),
         types: {
           ...polymesh.types,
-          /*
-           * TODO @monitz87: remove this when the core team updates mesh to the latest substrate version
-           * more info here: https://github.com/polkadot-js/api/pull/2188/files#diff-510cd5587cfa8b33877a96e743926146R61
-           */
-          Weight: 'u32',
         },
         rpc: {
           ...polymesh.rpc,
