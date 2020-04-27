@@ -1,5 +1,7 @@
 import { setTokenRules, SetTokenRulesParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
+import { Rule } from '~/types';
+import { assetTransferRuleToRule, identityIdToString, stringToTicker } from '~/utils';
 
 import { SecurityToken } from '../';
 
@@ -26,6 +28,39 @@ export class Rules extends Namespace<SecurityToken> {
     return setTokenRules.prepare({ ticker, ...args }, context);
   }
 
+  /**
+   * Retrieve all of the Security Token's transfer rules
+   */
+  public async get(): Promise<Rule[]> {
+    const {
+      parent: { ticker },
+      context: {
+        polymeshApi: {
+          query: { generalTm },
+        },
+      },
+      context,
+    } = this;
+    // TODO: queryMulti
+    const rawTicker = stringToTicker(ticker, context);
+    const [tokenRules, defaultClaimIssuers] = await Promise.all([
+      generalTm.assetRulesMap(rawTicker),
+      generalTm.trustedClaimIssuer(rawTicker),
+    ]);
+
+    return tokenRules.rules.map(assetTransferRule => {
+      const rule = assetTransferRuleToRule(assetTransferRule);
+
+      rule.conditions.forEach(condition => {
+        if (!condition.trustedClaimIssuers || !condition.trustedClaimIssuers.length) {
+          condition.trustedClaimIssuers = defaultClaimIssuers.map(identityIdToString);
+        }
+      });
+
+      return rule;
+    });
+  }
+  
   /**
    * Detele all the current rules for the Security Token.
    */
