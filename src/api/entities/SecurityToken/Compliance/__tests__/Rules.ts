@@ -35,7 +35,7 @@ describe('Rules class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = polkadotMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
-      const trustedClaimIssuers = new Rules(token, context);
+      const rules = new Rules(token, context);
 
       const args: Omit<Params, 'ticker'> = {
         rules: [
@@ -67,7 +67,7 @@ describe('Rules class', () => {
         .withArgs({ ticker: token.ticker, ...args }, context)
         .resolves(expectedQueue);
 
-      const queue = await trustedClaimIssuers.set(args);
+      const queue = await rules.set(args);
 
       expect(queue).toBe(expectedQueue);
     });
@@ -81,7 +81,7 @@ describe('Rules class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = polkadotMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
-      const trustedClaimIssuers = new Rules(token, context);
+      const rules = new Rules(token, context);
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
@@ -90,7 +90,7 @@ describe('Rules class', () => {
         .withArgs({ ticker: token.ticker, rules: [] }, context)
         .resolves(expectedQueue);
 
-      const queue = await trustedClaimIssuers.reset();
+      const queue = await rules.reset();
 
       expect(queue).toBe(expectedQueue);
     });
