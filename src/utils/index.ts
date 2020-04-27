@@ -1,17 +1,20 @@
-import { bool, Bytes, u64 } from '@polkadot/types';
+import { bool, Bytes, u32, u64 } from '@polkadot/types';
 import { Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { stringToU8a, u8aConcat, u8aFixLength, u8aToString } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
+import { isEqual } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,
+  AssetTransferRule,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
   CddStatus,
+  Claim as MeshClaim,
   Document,
   DocumentHash,
   DocumentName,
@@ -19,6 +22,9 @@ import {
   FundingRoundName,
   IdentifierType,
   IdentityId,
+  JurisdictionName,
+  Rule as MeshRule,
+  RuleType,
   Signatory,
   Ticker,
   TokenName,
@@ -30,8 +36,18 @@ import { Context } from '~/context';
 import {
   Authorization,
   AuthorizationType,
+  Claim,
+  ClaimType,
+  Condition,
+  ConditionTarget,
+  ConditionType,
   ErrorCode,
+  isMultiClaimCondition,
+  isSingleClaimCondition,
   KnownTokenType,
+  MultiClaimCondition,
+  Rule,
+  SingleClaimCondition,
   TokenDocument,
   TokenIdentifierType,
   TokenType,
@@ -44,6 +60,7 @@ import {
   Signer,
   SignerType,
 } from '~/types/internal';
+import { tuple } from '~/types/utils';
 
 /**
  * @hidden
@@ -330,6 +347,20 @@ export function balanceToBigNumber(balance: Balance): BigNumber {
 /**
  * @hidden
  */
+export function numberToU32(value: number | BigNumber, context: Context): u32 {
+  return context.polymeshApi.createType('u32', new BigNumber(value).toString());
+}
+
+/**
+ * @hidden
+ */
+export function u32ToBigNumber(value: u32): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
 export function numberToU64(value: number | BigNumber, context: Context): u64 {
   return context.polymeshApi.createType('u64', new BigNumber(value).toString());
 }
@@ -337,8 +368,8 @@ export function numberToU64(value: number | BigNumber, context: Context): u64 {
 /**
  * @hidden
  */
-export function u64ToBigNumber(balance: u64): BigNumber {
-  return new BigNumber(balance.toString());
+export function u64ToBigNumber(value: u64): BigNumber {
+  return new BigNumber(value.toString());
 }
 
 /**
@@ -526,6 +557,241 @@ export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * @hidden
+ */
+export function stringToJurisdictionName(name: string, context: Context): JurisdictionName {
+  return context.polymeshApi.createType('JurisdictionName', name);
+}
+
+/**
+ * @hidden
+ */
+export function jurisdictionNameToString(name: JurisdictionName): string {
+  return name.toString();
+}
+
+/**
+ * @hidden
+ */
+export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
+  let value: unknown;
+
+  switch (claim.type) {
+    case ClaimType.NoData:
+    case ClaimType.CustomerDueDiligence: {
+      value = null;
+      break;
+    }
+    case ClaimType.Jurisdiction: {
+      value = tuple(claim.name, claim.scope);
+      break;
+    }
+    default: {
+      value = claim.scope;
+    }
+  }
+
+  return context.polymeshApi.createType('Claim', { [claim.type]: value });
+}
+
+/**
+ * @hidden
+ */
+export function meshClaimToClaim(claim: MeshClaim): Claim {
+  if (claim.isJurisdiction) {
+    const [name, scope] = claim.asJurisdiction;
+    return {
+      type: ClaimType.Jurisdiction,
+      name: jurisdictionNameToString(name),
+      scope: identityIdToString(scope),
+    };
+  }
+
+  if (claim.isNoData) {
+    return {
+      type: ClaimType.NoData,
+    };
+  }
+
+  if (claim.isAccredited) {
+    return {
+      type: ClaimType.Accredited,
+      scope: identityIdToString(claim.asAccredited),
+    };
+  }
+
+  if (claim.isAffiliate) {
+    return {
+      type: ClaimType.Affiliate,
+      scope: identityIdToString(claim.asAffiliate),
+    };
+  }
+
+  if (claim.isBuyLockup) {
+    return {
+      type: ClaimType.BuyLockup,
+      scope: identityIdToString(claim.asBuyLockup),
+    };
+  }
+
+  if (claim.isSellLockup) {
+    return {
+      type: ClaimType.SellLockup,
+      scope: identityIdToString(claim.asSellLockup),
+    };
+  }
+
+  if (claim.isCustomerDueDiligence) {
+    return {
+      type: ClaimType.CustomerDueDiligence,
+    };
+  }
+
+  if (claim.isKnowYourCustomer) {
+    return {
+      type: ClaimType.KnowYourCustomer,
+      scope: identityIdToString(claim.asKnowYourCustomer),
+    };
+  }
+
+  if (claim.isWhitelisted) {
+    return {
+      type: ClaimType.Whitelisted,
+      scope: identityIdToString(claim.asWhitelisted),
+    };
+  }
+
+  return {
+    type: ClaimType.Blacklisted,
+    scope: identityIdToString(claim.asBlacklisted),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function ruleToAssetTransferRule(rule: Rule, context: Context): AssetTransferRule {
+  const { polymeshApi } = context;
+  const senderRules: MeshRule[] = [];
+  const receiverRules: MeshRule[] = [];
+
+  rule.conditions.forEach(condition => {
+    let claimContent: MeshClaim | MeshClaim[];
+    if (isSingleClaimCondition(condition)) {
+      const { claim } = condition;
+      claimContent = claimToMeshClaim(claim, context);
+    } else {
+      const { claims } = condition;
+      claimContent = claims.map(claim => claimToMeshClaim(claim, context));
+    }
+
+    const { target, type, trustedClaimIssuers = [] } = condition;
+
+    const meshRule = polymeshApi.createType('Rule', {
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      rule_type: {
+        [type]: claimContent,
+      },
+      issuers: trustedClaimIssuers.map(issuer => stringToIdentityId(issuer, context)),
+    });
+
+    if ([ConditionTarget.Both, ConditionTarget.Receiver].includes(target)) {
+      receiverRules.push(meshRule);
+    }
+
+    if ([ConditionTarget.Both, ConditionTarget.Sender].includes(target)) {
+      senderRules.push(meshRule);
+    }
+  });
+
+  return polymeshApi.createType('AssetTransferRule', {
+    /* eslint-disable @typescript-eslint/camelcase */
+    sender_rules: senderRules,
+    receiver_rules: receiverRules,
+    rule_id: numberToU32(rule.id, context),
+    /* eslint-enable @typescript-eslint/camelcase */
+  });
+}
+
+/**
+ * @hidden
+ */
+export function assetTransferRuleToRule(rule: AssetTransferRule): Rule {
+  const ruleTypeToCondition = (
+    ruleType: RuleType
+  ):
+    | Pick<SingleClaimCondition, 'type' | 'claim'>
+    | Pick<MultiClaimCondition, 'type' | 'claims'> => {
+    if (ruleType.isIsPresent) {
+      return {
+        type: ConditionType.IsPresent,
+        claim: meshClaimToClaim(ruleType.asIsPresent),
+      };
+    }
+
+    if (ruleType.isIsAbsent) {
+      return {
+        type: ConditionType.IsAbsent,
+        claim: meshClaimToClaim(ruleType.asIsAbsent),
+      };
+    }
+
+    if (ruleType.isIsAnyOf) {
+      return {
+        type: ConditionType.IsAnyOf,
+        claims: ruleType.asIsAnyOf.map(claim => meshClaimToClaim(claim)),
+      };
+    }
+
+    return {
+      type: ConditionType.IsNoneOf,
+      claims: ruleType.asIsNoneOf.map(claim => meshClaimToClaim(claim)),
+    };
+  };
+
+  const conditions: Condition[] = rule.sender_rules.map(({ rule_type: ruleType, issuers }) => ({
+    ...ruleTypeToCondition(ruleType),
+    target: ConditionTarget.Sender,
+    trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
+  }));
+
+  rule.receiver_rules.forEach(({ rule_type: ruleType, issuers }) => {
+    const newCondition = {
+      ...ruleTypeToCondition(ruleType),
+      target: ConditionTarget.Receiver,
+      trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
+    };
+
+    const existingCondition = conditions.find(condition => {
+      let equalClaims = false;
+
+      if (isSingleClaimCondition(condition) && isSingleClaimCondition(newCondition)) {
+        equalClaims = isEqual(condition.claim, newCondition.claim);
+      }
+
+      if (isMultiClaimCondition(condition) && isMultiClaimCondition(newCondition)) {
+        equalClaims = isEqual(condition.claims, newCondition.claims);
+      }
+
+      return (
+        equalClaims && isEqual(condition.trustedClaimIssuers, newCondition.trustedClaimIssuers)
+      );
+    });
+
+    if (existingCondition) {
+      existingCondition.target = ConditionTarget.Both;
+    } else {
+      conditions.push(newCondition);
+    }
+  });
+
+  return {
+    id: u32ToBigNumber(rule.rule_id).toNumber(),
+    conditions,
+  };
 }
 
 /**

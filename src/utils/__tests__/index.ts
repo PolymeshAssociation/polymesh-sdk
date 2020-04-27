@@ -7,15 +7,18 @@ import BigNumber from 'bignumber.js';
 import {
   AccountKey,
   AssetIdentifier,
+  AssetTransferRule,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  Claim as MeshClaim,
   DocumentHash,
   DocumentName,
   DocumentUri,
   FundingRoundName,
   IdentifierType,
   IdentityId,
+  JurisdictionName,
   Signatory,
   Ticker,
   TokenName,
@@ -25,12 +28,23 @@ import sinon from 'sinon';
 import { Identity } from '~/api/entities';
 import { PostTransactionValue } from '~/base';
 import { polkadotMockUtils } from '~/testUtils/mocks';
-import { Authorization, AuthorizationType, KnownTokenType, TokenIdentifierType } from '~/types';
+import {
+  Authorization,
+  AuthorizationType,
+  Claim,
+  ClaimType,
+  Condition,
+  ConditionTarget,
+  ConditionType,
+  KnownTokenType,
+  TokenIdentifierType,
+} from '~/types';
 import { SignerType } from '~/types/internal';
 
 import {
   accountKeyToString,
   assetIdentifierToString,
+  assetTransferRuleToRule,
   assetTypeToString,
   authIdentifierToAuthTarget,
   authorizationDataToAuthorization,
@@ -41,6 +55,7 @@ import {
   boolToBoolean,
   bytesToString,
   cddStatusToBoolean,
+  claimToMeshClaim,
   dateToMoment,
   delay,
   documentHashToString,
@@ -51,9 +66,13 @@ import {
   fundingRoundNameToString,
   identifierTypeToString,
   identityIdToString,
+  jurisdictionNameToString,
+  meshClaimToClaim,
   momentToDate,
   numberToBalance,
+  numberToU32,
   numberToU64,
+  ruleToAssetTransferRule,
   serialize,
   signatoryToSigner,
   signerToSignatory,
@@ -65,6 +84,7 @@ import {
   stringToDocumentUri,
   stringToFundingRoundName,
   stringToIdentityId,
+  stringToJurisdictionName,
   stringToTicker,
   stringToTokenName,
   tickerToDid,
@@ -1066,7 +1086,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
   });
 });
 
-describe('signerToSignatory and signatoryToSigner', () => {
+describe('authorizationToAuthorizationData and authorizationDataToAuthorization', () => {
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
@@ -1192,5 +1212,403 @@ describe('signerToSignatory and signatoryToSigner', () => {
 
     result = authorizationDataToAuthorization(authorizationData);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToJurisdictionName and jurisdictionNameToString', () => {
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToJurisdictionName should convert a string to a polkadot JurisdictionName object', () => {
+    const context = polkadotMockUtils.getContextInstance();
+    const value = 'someJurisdiction';
+    const fakeResult = ('jurisdictionName' as unknown) as JurisdictionName;
+
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('JurisdictionName', value)
+      .returns(fakeResult);
+
+    const result = stringToJurisdictionName(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('jurisdictionNameToString should convert a polkadot JurisdictionName object to a string', () => {
+    const fakeResult = 'someJurisdiction';
+    const jurisdictionName = polkadotMockUtils.createMockJurisdictionName(fakeResult);
+
+    const result = jurisdictionNameToString(jurisdictionName);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('claimToMeshClaim and jurisdictionNameToString', () => {
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('claimToMeshClaim should convert a Claim to a polkadot Claim object', () => {
+    const context = polkadotMockUtils.getContextInstance();
+    let value: Claim = {
+      type: ClaimType.Jurisdiction,
+      name: 'someJurisdiction',
+      scope: 'someTickerDid',
+    };
+    const fakeResult = ('meshClaim' as unknown) as MeshClaim;
+
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('Claim', { [value.type]: [value.name, value.scope] })
+      .returns(fakeResult);
+
+    let result = claimToMeshClaim(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    value = {
+      type: ClaimType.Whitelisted,
+      scope: 'someTickerDid',
+    };
+
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('Claim', { [value.type]: value.scope })
+      .returns(fakeResult);
+
+    result = claimToMeshClaim(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    value = {
+      type: ClaimType.NoData,
+    };
+
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('Claim', { [value.type]: null })
+      .returns(fakeResult);
+
+    result = claimToMeshClaim(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('meshClaimToClaim should convert a polkadot Claim object to a Claim', () => {
+    let fakeResult: Claim = {
+      type: ClaimType.Accredited,
+      scope: 'someTickerDid',
+    };
+
+    let claim = polkadotMockUtils.createMockClaim({
+      Accredited: polkadotMockUtils.createMockScope(fakeResult.scope),
+    });
+
+    let result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.Affiliate,
+      scope: 'someIdentity',
+    };
+    claim = polkadotMockUtils.createMockClaim({
+      Affiliate: polkadotMockUtils.createMockScope(fakeResult.scope),
+    });
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.Blacklisted,
+      scope: 'someIdentity',
+    };
+    claim = polkadotMockUtils.createMockClaim({
+      Blacklisted: polkadotMockUtils.createMockScope(fakeResult.scope),
+    });
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.BuyLockup,
+      scope: 'someIdentity',
+    };
+    claim = polkadotMockUtils.createMockClaim({
+      BuyLockup: polkadotMockUtils.createMockScope(fakeResult.scope),
+    });
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.CustomerDueDiligence,
+    };
+    claim = polkadotMockUtils.createMockClaim('CustomerDueDiligence');
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.Jurisdiction,
+      name: 'someJurisdiction',
+      scope: 'someIdentity',
+    };
+
+    claim = polkadotMockUtils.createMockClaim({
+      Jurisdiction: [
+        polkadotMockUtils.createMockJurisdictionName(fakeResult.name),
+        polkadotMockUtils.createMockScope(fakeResult.scope),
+      ],
+    });
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.KnowYourCustomer,
+      scope: 'someIdentity',
+    };
+    claim = polkadotMockUtils.createMockClaim({
+      KnowYourCustomer: polkadotMockUtils.createMockScope(fakeResult.scope),
+    });
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.NoData,
+    };
+    claim = polkadotMockUtils.createMockClaim('NoData');
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.SellLockup,
+      scope: 'someIdentity',
+    };
+    claim = polkadotMockUtils.createMockClaim({
+      SellLockup: polkadotMockUtils.createMockScope(fakeResult.scope),
+    });
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.Whitelisted,
+      scope: 'someIdentity',
+    };
+    claim = polkadotMockUtils.createMockClaim({
+      Whitelisted: polkadotMockUtils.createMockScope(fakeResult.scope),
+    });
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('ruleToAssetTransferRule should convert a Rule to a polkadot AssetTransferRule object', () => {
+    const conditions: Condition[] = [
+      {
+        type: ConditionType.IsPresent,
+        target: ConditionTarget.Both,
+        claim: {
+          type: ClaimType.Whitelisted,
+          scope: 'someTickerDid',
+        },
+        trustedClaimIssuers: ['someDid', 'otherDid'],
+      },
+      {
+        type: ConditionType.IsNoneOf,
+        target: ConditionTarget.Sender,
+        claims: [
+          {
+            type: ClaimType.Blacklisted,
+            scope: 'someTickerDid',
+          },
+          {
+            type: ClaimType.SellLockup,
+            scope: 'someTickerDid',
+          },
+        ],
+      },
+      {
+        type: ConditionType.IsAbsent,
+        target: ConditionTarget.Receiver,
+        claim: {
+          type: ClaimType.Jurisdiction,
+          scope: 'someTickerDid',
+          name: 'someJurisdiction',
+        },
+      },
+    ];
+    const value = {
+      conditions,
+      id: 1,
+    };
+    const fakeResult = ('convertedAssetTransferRule' as unknown) as AssetTransferRule;
+    const context = polkadotMockUtils.getContextInstance();
+
+    const createTypeStub = polkadotMockUtils.getCreateTypeStub();
+
+    conditions.forEach(({ type }, index) => {
+      createTypeStub
+        .withArgs(
+          'Rule',
+          sinon.match({
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            rule_type: sinon.match.has(type),
+          })
+        )
+        .returns(`meshRule${index}${type}`);
+    });
+
+    createTypeStub
+      .withArgs('AssetTransferRule', {
+        /* eslint-disable @typescript-eslint/camelcase */
+        sender_rules: ['meshRule0IsPresent', 'meshRule1IsNoneOf'],
+        receiver_rules: ['meshRule0IsPresent', 'meshRule2IsAbsent'],
+        rule_id: numberToU32(value.id, context),
+        /* eslint-enable @typescript-eslint/camelcase */
+      })
+      .returns(fakeResult);
+
+    const result = ruleToAssetTransferRule(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('assetTransferRuleToRule should convert a polkadot AssetTransferRule object to a Rule', () => {
+    const id = 1;
+    const tokenDid = 'someTokenDid';
+    const issuerDids = ['someDid', 'otherDid'];
+    const conditions: Condition[] = [
+      {
+        type: ConditionType.IsPresent,
+        target: ConditionTarget.Both,
+        claim: {
+          type: ClaimType.KnowYourCustomer,
+          scope: tokenDid,
+        },
+        trustedClaimIssuers: issuerDids,
+      },
+      {
+        type: ConditionType.IsAbsent,
+        target: ConditionTarget.Receiver,
+        claim: {
+          type: ClaimType.BuyLockup,
+          scope: tokenDid,
+        },
+        trustedClaimIssuers: issuerDids,
+      },
+      {
+        type: ConditionType.IsNoneOf,
+        target: ConditionTarget.Sender,
+        claims: [
+          {
+            type: ClaimType.Blacklisted,
+            scope: tokenDid,
+          },
+          {
+            type: ClaimType.SellLockup,
+            scope: tokenDid,
+          },
+        ],
+        trustedClaimIssuers: issuerDids,
+      },
+      {
+        type: ConditionType.IsAnyOf,
+        target: ConditionTarget.Both,
+        claims: [
+          {
+            type: ClaimType.Whitelisted,
+            scope: tokenDid,
+          },
+          {
+            type: ClaimType.CustomerDueDiligence,
+          },
+        ],
+        trustedClaimIssuers: issuerDids,
+      },
+    ];
+    const fakeResult = {
+      id,
+      conditions,
+    };
+
+    const scope = polkadotMockUtils.createMockScope(tokenDid);
+    const issuers = issuerDids.map(polkadotMockUtils.createMockIdentityId);
+    const rules = [
+      /* eslint-disable @typescript-eslint/camelcase */
+      polkadotMockUtils.createMockRule({
+        rule_type: polkadotMockUtils.createMockRuleType({
+          IsPresent: polkadotMockUtils.createMockClaim({ KnowYourCustomer: scope }),
+        }),
+        issuers,
+      }),
+      polkadotMockUtils.createMockRule({
+        rule_type: polkadotMockUtils.createMockRuleType({
+          IsAbsent: polkadotMockUtils.createMockClaim({ BuyLockup: scope }),
+        }),
+        issuers,
+      }),
+      polkadotMockUtils.createMockRule({
+        rule_type: polkadotMockUtils.createMockRuleType({
+          IsNoneOf: [
+            polkadotMockUtils.createMockClaim({ Blacklisted: scope }),
+            polkadotMockUtils.createMockClaim({ SellLockup: scope }),
+          ],
+        }),
+        issuers,
+      }),
+      polkadotMockUtils.createMockRule({
+        rule_type: polkadotMockUtils.createMockRuleType({
+          IsAnyOf: [
+            polkadotMockUtils.createMockClaim({ Whitelisted: scope }),
+            polkadotMockUtils.createMockClaim('CustomerDueDiligence'),
+          ],
+        }),
+        issuers,
+      }),
+    ];
+    const assetTransferRule = polkadotMockUtils.createMockAssetTransferRule({
+      sender_rules: [rules[0], rules[2], rules[3]],
+      receiver_rules: [rules[0], rules[1], rules[3]],
+      rule_id: polkadotMockUtils.createMockU32(1),
+    });
+    /* eslint-enable @typescript-eslint/camelcase */
+
+    const result = assetTransferRuleToRule(assetTransferRule);
+    expect(result.conditions).toEqual(expect.arrayContaining(fakeResult.conditions));
   });
 });

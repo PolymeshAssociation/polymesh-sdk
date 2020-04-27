@@ -23,11 +23,13 @@ import { cloneDeep, every, merge, upperFirst } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,
+  AssetTransferRule,
   AssetType,
   AuthIdentifier,
   Authorization,
   AuthorizationData,
   CddStatus,
+  Claim,
   Document,
   DocumentHash,
   DocumentName,
@@ -35,9 +37,13 @@ import {
   FundingRoundName,
   IdentifierType,
   IdentityId,
+  JurisdictionName,
   Link,
   LinkData,
   LinkedKeyInfo,
+  Rule,
+  RuleType,
+  Scope,
   SecurityToken,
   Signatory,
   Ticker,
@@ -1265,3 +1271,88 @@ export const createMockLinkedKeyInfo = (
 export const createMockCddStatus = (cddStatus?: { Ok: IdentityId } | { Err: Bytes }): CddStatus => {
   return createMockEnum(cddStatus) as CddStatus;
 };
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockJurisdictionName = (name?: string): JurisdictionName =>
+  createMockStringCodec(name) as JurisdictionName;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockClaim = (
+  claim?:
+    | { Accredited: Scope }
+    | { Affiliate: Scope }
+    | { BuyLockup: Scope }
+    | { SellLockup: Scope }
+    | 'CustomerDueDiligence'
+    | { KnowYourCustomer: Scope }
+    | { Jurisdiction: [JurisdictionName, Scope] }
+    | { Whitelisted: Scope }
+    | { Blacklisted: Scope }
+    | 'NoData'
+): Claim => {
+  return createMockEnum(claim) as Claim;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRuleType = (
+  ruleType?:
+    | { IsPresent: Claim }
+    | { IsAbsent: Claim }
+    | { IsAnyOf: Claim[] }
+    | { IsNoneOf: Claim[] }
+): RuleType => {
+  return createMockEnum(ruleType) as RuleType;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRule = (
+  rule: { rule_type: RuleType; issuers: IdentityId[] } = {
+    rule_type: createMockRuleType(),
+    issuers: [],
+  }
+): Rule =>
+  createMockCodec(
+    {
+      rule_type: rule.rule_type,
+      issuers: rule.issuers,
+    },
+    false
+  ) as Rule;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetTransferRule = (
+  assetTransferRule: { sender_rules: Rule[]; receiver_rules: Rule[]; rule_id: u32 } = {
+    sender_rules: [],
+    receiver_rules: [],
+    rule_id: createMockU32(),
+  }
+): AssetTransferRule =>
+  createMockCodec(
+    {
+      sender_rules: assetTransferRule.sender_rules,
+      receiver_rules: assetTransferRule.receiver_rules,
+      rule_id: assetTransferRule.rule_id,
+    },
+    false
+  ) as AssetTransferRule;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockScope = (did?: string): Scope => createMockStringCodec(did) as Scope;

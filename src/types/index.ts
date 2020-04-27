@@ -174,6 +174,7 @@ export enum ClaimType {
 export type Claim =
   | { type: ClaimType.Jurisdiction; name: string; scope: string }
   | { type: ClaimType.NoData }
+  | { type: ClaimType.CustomerDueDiligence }
   | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string };
 
 export enum ConditionType {
@@ -183,13 +184,33 @@ export enum ConditionType {
   IsNoneOf = 'IsNoneOf',
 }
 
-export type Condition = { target: ConditionTarget; trustedIssuers: string[] } & (
-  | {
-      type: ConditionType.IsPresent | ConditionType.IsAbsent;
-      claim: Claim;
-    }
-  | { type: ConditionType.IsAnyOf | ConditionType.IsNoneOf; claims: Claim[] }
-);
+export type ConditionBase = { target: ConditionTarget; trustedClaimIssuers?: string[] };
+
+export type SingleClaimCondition = ConditionBase & {
+  type: ConditionType.IsPresent | ConditionType.IsAbsent;
+  claim: Claim;
+};
+
+export type MultiClaimCondition = ConditionBase & {
+  type: ConditionType.IsAnyOf | ConditionType.IsNoneOf;
+  claims: Claim[];
+};
+
+export type Condition = SingleClaimCondition | MultiClaimCondition;
+
+/**
+ * @hidden
+ */
+export function isSingleClaimCondition(condition: Condition): condition is SingleClaimCondition {
+  return [ConditionType.IsPresent, ConditionType.IsAbsent].includes(condition.type);
+}
+
+/**
+ * @hidden
+ */
+export function isMultiClaimCondition(condition: Condition): condition is MultiClaimCondition {
+  return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
+}
 
 export interface Rule {
   id: number;
