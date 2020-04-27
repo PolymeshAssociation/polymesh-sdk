@@ -34,8 +34,8 @@ export async function prepareConsumeAuthorizationRequests(
     const requestIds = liveRequests.map(({ authId }) => numberToU64(authId, context));
     this.addTransaction(tx.identity.batchAcceptAuthorization, {}, requestIds);
   } else {
-    const authIdentifiers = liveRequests.map(({ authId, targetDid }) =>
-      authTargetToAuthIdentifier({ authId, did: targetDid }, context)
+    const authIdentifiers = liveRequests.map(({ authId, targetIdentity }) =>
+      authTargetToAuthIdentifier({ authId, did: targetIdentity.did }, context)
     );
     this.addTransaction(tx.identity.batchRemoveAuthorization, {}, authIdentifiers);
   }
@@ -50,10 +50,10 @@ export function isAuthorized(
 ): boolean {
   const { did } = this.context.getCurrentIdentity();
 
-  return authRequests.filter(isLive).every(({ targetDid, issuerDid }) => {
-    let condition = did === targetDid;
+  return authRequests.filter(isLive).every(({ targetIdentity, issuerIdentity }) => {
+    let condition = did === targetIdentity.did;
     if (!accept) {
-      condition = condition || did === issuerDid;
+      condition = condition || did === issuerIdentity.did;
     }
 
     return condition;

@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { Identity } from '~/api/entities/Identity';
 import { consumeAuthorizationRequests } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
@@ -33,14 +34,14 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * ID of the identity to which the request was emitted
+   * Identity to which the request was emitted
    */
-  public targetDid: string;
+  public targetIdentity: Identity;
 
   /**
-   * ID of the identity that emitted the request
+   * Identity that emitted the request
    */
-  public issuerDid: string;
+  public issuerIdentity: Identity;
 
   /**
    * authorization request data corresponding to type of authorization
@@ -79,8 +80,8 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
 
     const { authId } = identifiers;
 
-    this.targetDid = targetDid;
-    this.issuerDid = issuerDid;
+    this.targetIdentity = new Identity({ did: targetDid }, context);
+    this.issuerIdentity = new Identity({ did: issuerDid }, context);
     this.authId = authId;
     this.expiry = expiry;
     this.data = data;
