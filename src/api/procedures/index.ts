@@ -10,3 +10,4 @@ export {
   setTokenTrustedClaimIssuers,
   SetTokenTrustedClaimIssuersParams,
 } from './setTokenTrustedClaimIssuers';
+export { setTokenRules, SetTokenRulesParams } from './setTokenRules';

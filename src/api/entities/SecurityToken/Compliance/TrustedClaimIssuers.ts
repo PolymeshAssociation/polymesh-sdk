@@ -6,7 +6,7 @@ import { identityIdToString, stringToTicker } from '~/utils';
 import { SecurityToken } from '../';
 
 /**
- * Handles all Security Token Compliance related functionality
+ * Handles all Security Token Default Trusted Claim Issuers related functionality
  */
 export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   /**
