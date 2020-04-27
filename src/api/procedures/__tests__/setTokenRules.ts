@@ -18,7 +18,6 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   let assetTransferRuleToRuleStub: sinon.SinonStub<[AssetTransferRule], Rule>;
   let assetRulesMapStub: sinon.SinonStub;
   let ticker: string;
-  let rulePool: Condition[];
   let rules: Condition[][];
   let rawTicker: Ticker;
   let senderRules: MeshRule[][];
