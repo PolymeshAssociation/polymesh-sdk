@@ -27,7 +27,7 @@ export class Rules extends Namespace<SecurityToken> {
   }
 
   /**
-   * Detele all the actual rules for the Security Token.
+   * Detele all the current rules for the Security Token.
    */
   public reset(): Promise<TransactionQueue<SecurityToken>> {
     const {
