@@ -627,11 +627,11 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
     result = identifierTypeToString(identifierType);
     expect(result).toEqual(fakeResult);
 
-    const fakeType = TokenIdentifierType.Cins;
-    identifierType = polkadotMockUtils.createMockIdentifierType(fakeType);
+    fakeResult = TokenIdentifierType.Cins;
+    identifierType = polkadotMockUtils.createMockIdentifierType(fakeResult);
 
     result = identifierTypeToString(identifierType);
-    expect(result).toEqual(fakeType);
+    expect(result).toEqual(fakeResult);
   });
 });
 

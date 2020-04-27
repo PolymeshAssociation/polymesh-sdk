@@ -134,9 +134,9 @@ export class Identity extends Entity<UniqueIdentifiers> {
         polymeshApi: { rpc },
       },
     } = this;
-    const IdentityId = stringToIdentityId(did, context);
+    const identityId = stringToIdentityId(did, context);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (rpc as any).identity.isIdentityHasValidCdd(IdentityId);
+    const result = await (rpc as any).identity.isIdentityHasValidCdd(identityId);
     return cddStatusToBoolean(result);
   }
 

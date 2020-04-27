@@ -44,14 +44,12 @@ export class Polymesh {
     let polymeshApi: ApiPromise;
 
     try {
+      const { types, rpc } = polymesh;
+
       polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
-        types: {
-          ...polymesh.types,
-        },
-        rpc: {
-          ...polymesh.rpc,
-        },
+        types,
+        rpc,
       });
 
       let context: Context;

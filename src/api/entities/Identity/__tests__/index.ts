@@ -201,7 +201,7 @@ describe('Identity class', () => {
   });
 
   describe('method: hasValidCdd', () => {
-    test('should return the state of the current cdd identity', async () => {
+    test('should return whether the Identity has valid CDD', async () => {
       const did = 'someDid';
       const statusResponse = true;
       const mockContext = polkadotMockUtils.getContextInstance();
