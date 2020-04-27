@@ -84,11 +84,11 @@ import {
   Investment,
   Link,
   LinkedKeyInfo,
-  MIP,
-  MipId,
-  MipsMetadata,
   OfflineSlashingParams,
+  PIP,
   PermissionedValidator,
+  PipId,
+  PipsMetadata,
   PolymeshVotes,
   PosRatio,
   PreAuthorizedKeyInfo,
@@ -875,105 +875,6 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Option<ITuple<[AccountId, BalanceOf]>>>
       >;
     };
-    mips: {
-      /**
-       * Default enactment period that will be use after a proposal is accepted by GC.
-       **/
-      defaultEnactmentPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
-      /**
-       * Those who have locked a deposit.
-       * proposal (id, proposer) -> deposit
-       **/
-      deposits: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: MipId | AnyNumber | Uint8Array,
-          key2: AccountId | string | Uint8Array
-        ) => Observable<DepositInfo>
-      >;
-      /**
-       * The minimum amount to be used as a deposit for a public referendum proposal.
-       **/
-      minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
-      /**
-       * Proposals so far. id can be used to keep track of MIPs off-chain.
-       **/
-      mipIdSequence: AugmentedQuery<ApiType, () => Observable<u32>>;
-      /**
-       * During Cool-off period, proposal owner can amend any MIP detail or cancel the entire
-       * proposal.
-       **/
-      proposalCoolOffPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
-      /**
-       * How long (in blocks) a ballot runs
-       **/
-      proposalDuration: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
-      /**
-       * The metadata of the active proposals.
-       **/
-      proposalMetadata: AugmentedQuery<
-        ApiType,
-        (arg: MipId | AnyNumber | Uint8Array) => Observable<Option<MipsMetadata>>
-      >;
-      /**
-       * PolymeshVotes on a given proposal, if it is ongoing.
-       * proposal id -> vote count
-       **/
-      proposalResult: AugmentedQuery<
-        ApiType,
-        (arg: MipId | AnyNumber | Uint8Array) => Observable<VotingResult>
-      >;
-      /**
-       * Actual proposal for a given id, if it's current.
-       * proposal id -> proposal
-       **/
-      proposals: AugmentedQuery<
-        ApiType,
-        (arg: MipId | AnyNumber | Uint8Array) => Observable<Option<MIP>>
-      >;
-      /**
-       * It maps the block number where a list of proposal are considered as matured.
-       **/
-      proposalsMaturingAt: AugmentedQuery<
-        ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<MipId>>
-      >;
-      /**
-       * Votes per Proposal and account. Used to avoid double vote issue.
-       * (proposal id, account) -> Vote
-       **/
-      proposalVotes: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: MipId | AnyNumber | Uint8Array,
-          key2: AccountId | string | Uint8Array
-        ) => Observable<Vote>
-      >;
-      /**
-       * Determines whether historical MIP data is persisted or removed
-       **/
-      pruneHistoricalMips: AugmentedQuery<ApiType, () => Observable<bool>>;
-      /**
-       * Minimum stake a proposal must gather in order to be considered by the committee.
-       **/
-      quorumThreshold: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
-      /**
-       * Proposals that have met the quorum threshold to be put forward to a governance committee
-       * proposal id -> proposal
-       **/
-      referendums: AugmentedQuery<
-        ApiType,
-        (arg: MipId | AnyNumber | Uint8Array) => Observable<Option<Referendum>>
-      >;
-      /**
-       * List of id's of current scheduled referendums.
-       * block number -> Mip id
-       **/
-      scheduledReferendumsAt: AugmentedQuery<
-        ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<MipId>>
-      >;
-    };
     multiSig: {
       /**
        * Maps a key to a multisig address
@@ -1107,6 +1008,105 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<u16>
       >;
     };
+    pips: {
+      /**
+       * Default enactment period that will be use after a proposal is accepted by GC.
+       **/
+      defaultEnactmentPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+      /**
+       * Those who have locked a deposit.
+       * proposal (id, proposer) -> deposit
+       **/
+      deposits: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: PipId | AnyNumber | Uint8Array,
+          key2: AccountId | string | Uint8Array
+        ) => Observable<DepositInfo>
+      >;
+      /**
+       * The minimum amount to be used as a deposit for a public referendum proposal.
+       **/
+      minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      /**
+       * Proposals so far. id can be used to keep track of PIPs off-chain.
+       **/
+      pipIdSequence: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * During Cool-off period, proposal owner can amend any PIP detail or cancel the entire
+       * proposal.
+       **/
+      proposalCoolOffPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+      /**
+       * How long (in blocks) a ballot runs
+       **/
+      proposalDuration: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+      /**
+       * The metadata of the active proposals.
+       **/
+      proposalMetadata: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<PipsMetadata>>
+      >;
+      /**
+       * PolymeshVotes on a given proposal, if it is ongoing.
+       * proposal id -> vote count
+       **/
+      proposalResult: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<VotingResult>
+      >;
+      /**
+       * Actual proposal for a given id, if it's current.
+       * proposal id -> proposal
+       **/
+      proposals: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<PIP>>
+      >;
+      /**
+       * It maps the block number where a list of proposal are considered as matured.
+       **/
+      proposalsMaturingAt: AugmentedQuery<
+        ApiType,
+        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
+      >;
+      /**
+       * Votes per Proposal and account. Used to avoid double vote issue.
+       * (proposal id, account) -> Vote
+       **/
+      proposalVotes: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: PipId | AnyNumber | Uint8Array,
+          key2: AccountId | string | Uint8Array
+        ) => Observable<Vote>
+      >;
+      /**
+       * Determines whether historical PIP data is persisted or removed
+       **/
+      pruneHistoricalPips: AugmentedQuery<ApiType, () => Observable<bool>>;
+      /**
+       * Minimum stake a proposal must gather in order to be considered by the committee.
+       **/
+      quorumThreshold: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      /**
+       * Proposals that have met the quorum threshold to be put forward to a governance committee
+       * proposal id -> proposal
+       **/
+      referendums: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<Referendum>>
+      >;
+      /**
+       * List of id's of current scheduled referendums.
+       * block number -> Pip id
+       **/
+      scheduledReferendumsAt: AugmentedQuery<
+        ApiType,
+        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
+      >;
+    };
     polymeshCommittee: {
       /**
        * The current members of the committee.
@@ -1168,7 +1168,7 @@ declare module '@polkadot/api/types/storage' {
             | 'IdentityAddClaim'
             | 'IdentitySetMasterKey'
             | 'IdentityAddSigningItem'
-            | 'MipsPropose'
+            | 'PipsPropose'
             | 'VotingAddBallot'
             | number
             | Uint8Array

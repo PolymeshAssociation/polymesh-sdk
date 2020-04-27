@@ -355,30 +355,6 @@ export interface LinkedKeyInfo extends Enum {
 /** @name Memo */
 export interface Memo extends U8aFixed {}
 
-/** @name MIP */
-export interface MIP extends Struct {
-  readonly index: MipId;
-  readonly proposal: Call;
-  readonly state: ProposalState;
-}
-
-/** @name MipDescription */
-export interface MipDescription extends Text {}
-
-/** @name MipId */
-export interface MipId extends u32 {}
-
-/** @name MipsMetadata */
-export interface MipsMetadata extends Struct {
-  readonly proposer: AccountKey;
-  readonly index: u32;
-  readonly end: u32;
-  readonly url: Option<Url>;
-  readonly description: Option<MipDescription>;
-  readonly cool_off_until: u32;
-  readonly beneficiaries: Vec<Beneficiary>;
-}
-
 /** @name Motion */
 export interface Motion extends Struct {
   readonly title: MotionTitle;
@@ -419,6 +395,30 @@ export interface Permission extends Enum {
 /** @name PermissionedValidator */
 export interface PermissionedValidator extends Struct {
   readonly compliance: Compliance;
+}
+
+/** @name PIP */
+export interface PIP extends Struct {
+  readonly id: PipId;
+  readonly proposal: Call;
+  readonly state: ProposalState;
+}
+
+/** @name PipDescription */
+export interface PipDescription extends Text {}
+
+/** @name PipId */
+export interface PipId extends u32 {}
+
+/** @name PipsMetadata */
+export interface PipsMetadata extends Struct {
+  readonly proposer: AccountKey;
+  readonly id: PipId;
+  readonly end: u32;
+  readonly url: Option<Url>;
+  readonly description: Option<PipDescription>;
+  readonly cool_off_until: u32;
+  readonly beneficiaries: Vec<Beneficiary>;
 }
 
 /** @name PolymeshVotes */
@@ -465,13 +465,13 @@ export interface ProtocolOp extends Enum {
   readonly isIdentityAddClaim: boolean;
   readonly isIdentitySetMasterKey: boolean;
   readonly isIdentityAddSigningItem: boolean;
-  readonly isMipsPropose: boolean;
+  readonly isPipsPropose: boolean;
   readonly isVotingAddBallot: boolean;
 }
 
 /** @name Referendum */
 export interface Referendum extends Struct {
-  readonly index: MipId;
+  readonly id: PipId;
   readonly state: ReferendumState;
   readonly referendum_type: ReferendumType;
   readonly enactment_period: u32;

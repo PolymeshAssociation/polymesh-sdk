@@ -160,24 +160,24 @@ export enum CommitteeMembershipTx {
   ClearPrime = 'committeeMembership.clearPrime',
 }
 
-export enum MipsTx {
-  SetPruneHistoricalMips = 'mips.setPruneHistoricalMips',
-  SetMinProposalDeposit = 'mips.setMinProposalDeposit',
-  SetQuorumThreshold = 'mips.setQuorumThreshold',
-  SetProposalDuration = 'mips.setProposalDuration',
-  SetDefaultEnactPeriod = 'mips.setDefaultEnactPeriod',
-  Propose = 'mips.propose',
-  AmendProposal = 'mips.amendProposal',
-  CancelProposal = 'mips.cancelProposal',
-  BondAdditionalDeposit = 'mips.bondAdditionalDeposit',
-  UnbondDeposit = 'mips.unbondDeposit',
-  Vote = 'mips.vote',
-  KillProposal = 'mips.killProposal',
-  FastTrackProposal = 'mips.fastTrackProposal',
-  EmergencyReferendum = 'mips.emergencyReferendum',
-  EnactReferendum = 'mips.enactReferendum',
-  RejectReferendum = 'mips.rejectReferendum',
-  SetReferendumEnactmentPeriod = 'mips.setReferendumEnactmentPeriod',
+export enum PipsTx {
+  SetPruneHistoricalPips = 'pips.setPruneHistoricalPips',
+  SetMinProposalDeposit = 'pips.setMinProposalDeposit',
+  SetQuorumThreshold = 'pips.setQuorumThreshold',
+  SetProposalDuration = 'pips.setProposalDuration',
+  SetDefaultEnactPeriod = 'pips.setDefaultEnactPeriod',
+  Propose = 'pips.propose',
+  AmendProposal = 'pips.amendProposal',
+  CancelProposal = 'pips.cancelProposal',
+  BondAdditionalDeposit = 'pips.bondAdditionalDeposit',
+  UnbondDeposit = 'pips.unbondDeposit',
+  Vote = 'pips.vote',
+  KillProposal = 'pips.killProposal',
+  FastTrackProposal = 'pips.fastTrackProposal',
+  EmergencyReferendum = 'pips.emergencyReferendum',
+  EnactReferendum = 'pips.enactReferendum',
+  RejectReferendum = 'pips.rejectReferendum',
+  SetReferendumEnactmentPeriod = 'pips.setReferendumEnactmentPeriod',
 }
 
 export enum AssetTx {
@@ -347,7 +347,7 @@ export type TxTag =
   | TreasuryTx
   | PolymeshCommitteeTx
   | CommitteeMembershipTx
-  | MipsTx
+  | PipsTx
   | AssetTx
   | BridgeTx
   | DividendTx
@@ -379,7 +379,7 @@ export const TxTags = {
   treasury: TreasuryTx,
   polymeshCommittee: PolymeshCommitteeTx,
   committeeMembership: CommitteeMembershipTx,
-  mips: MipsTx,
+  pips: PipsTx,
   asset: AssetTx,
   bridge: BridgeTx,
   dividend: DividendTx,

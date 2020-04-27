@@ -624,19 +624,19 @@ import {
   Link,
   LinkData,
   LinkedKeyInfo,
-  MIP,
   Memo,
-  MipDescription,
-  MipId,
-  MipsMetadata,
   Motion,
   MotionInfoLink,
   MotionTitle,
   OffChainSignature,
   OfflineSlashingParams,
+  PIP,
   PendingTx,
   Permission,
   PermissionedValidator,
+  PipDescription,
+  PipId,
+  PipsMetadata,
   PolymeshVotes,
   PosRatio,
   PreAuthorizedKeyInfo,
@@ -2462,12 +2462,12 @@ declare module '@polkadot/types/types/registry' {
     Url: Url;
     'Option<Url>': Option<Url>;
     'Vec<Url>': Vec<Url>;
-    MipDescription: MipDescription;
-    'Option<MipDescription>': Option<MipDescription>;
-    'Vec<MipDescription>': Vec<MipDescription>;
-    MipsMetadata: MipsMetadata;
-    'Option<MipsMetadata>': Option<MipsMetadata>;
-    'Vec<MipsMetadata>': Vec<MipsMetadata>;
+    PipDescription: PipDescription;
+    'Option<PipDescription>': Option<PipDescription>;
+    'Vec<PipDescription>': Vec<PipDescription>;
+    PipsMetadata: PipsMetadata;
+    'Option<PipsMetadata>': Option<PipsMetadata>;
+    'Vec<PipsMetadata>': Vec<PipsMetadata>;
     Beneficiary: Beneficiary;
     'Option<Beneficiary>': Option<Beneficiary>;
     'Vec<Beneficiary>': Vec<Beneficiary>;
@@ -2477,10 +2477,10 @@ declare module '@polkadot/types/types/registry' {
     PolymeshVotes: PolymeshVotes;
     'Option<PolymeshVotes>': Option<PolymeshVotes>;
     'Vec<PolymeshVotes>': Vec<PolymeshVotes>;
-    MipId: MipId;
-    'Compact<MipId>': Compact<MipId>;
-    'Option<MipId>': Option<MipId>;
-    'Vec<MipId>': Vec<MipId>;
+    PipId: PipId;
+    'Compact<PipId>': Compact<PipId>;
+    'Option<PipId>': Option<PipId>;
+    'Vec<PipId>': Vec<PipId>;
     ProposalState: ProposalState;
     'Option<ProposalState>': Option<ProposalState>;
     'Vec<ProposalState>': Vec<ProposalState>;
@@ -2490,9 +2490,9 @@ declare module '@polkadot/types/types/registry' {
     ReferendumType: ReferendumType;
     'Option<ReferendumType>': Option<ReferendumType>;
     'Vec<ReferendumType>': Vec<ReferendumType>;
-    MIP: MIP;
-    'Option<MIP>': Option<MIP>;
-    'Vec<MIP>': Vec<MIP>;
+    PIP: PIP;
+    'Option<PIP>': Option<PIP>;
+    'Vec<PIP>': Vec<PIP>;
     Referendum: Referendum;
     'Option<Referendum>': Option<Referendum>;
     'Vec<Referendum>': Vec<Referendum>;

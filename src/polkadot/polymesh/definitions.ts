@@ -224,13 +224,13 @@ export default {
       motions: 'Vec<Motion>',
     },
     Url: 'Text',
-    MipDescription: 'Text',
-    MipsMetadata: {
+    PipDescription: 'Text',
+    PipsMetadata: {
       proposer: 'AccountKey',
-      index: 'u32',
+      id: 'PipId',
       end: 'u32',
       url: 'Option<Url>',
-      description: 'Option<MipDescription>',
+      description: 'Option<PipDescription>',
       cool_off_until: 'u32',
       beneficiaries: 'Vec<Beneficiary>',
     },
@@ -247,7 +247,7 @@ export default {
       ayes: 'Vec<(IdentityId, Balance)>',
       nays: 'Vec<(IdentityId, Balance)>',
     },
-    MipId: 'u32',
+    PipId: 'u32',
     ProposalState: {
       _enum: ['Pending', 'Cancelled', 'Killed', 'Rejected', 'Referendum'],
     },
@@ -257,13 +257,13 @@ export default {
     ReferendumType: {
       _enum: ['FastTracked', 'Emergency', 'Community'],
     },
-    MIP: {
-      index: 'MipId',
+    PIP: {
+      id: 'PipId',
       proposal: 'Call',
       state: 'ProposalState',
     },
     Referendum: {
-      index: 'MipId',
+      id: 'PipId',
       state: 'ReferendumState',
       referendum_type: 'ReferendumType',
       enactment_period: 'u32',
@@ -397,7 +397,7 @@ export default {
         'IdentityAddClaim',
         'IdentitySetMasterKey',
         'IdentityAddSigningItem',
-        'MipsPropose',
+        'PipsPropose',
         'VotingAddBallot',
       ],
     },
@@ -492,7 +492,7 @@ export default {
         type: 'DidRecords',
       },
     },
-    mips: {
+    pips: {
       getVotes: {
         description: 'Summary of votes of a proposal given by index',
         params: [

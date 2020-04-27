@@ -46,11 +46,11 @@ import {
   IdentifierType,
   IdentityId,
   Memo,
-  MipDescription,
-  MipId,
   OffChainSignature,
   OfflineSlashingParams,
   Permission,
+  PipDescription,
+  PipId,
   PosRatio,
   ProtocolOp,
   Rule,
@@ -1897,190 +1897,6 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
     };
-    mips: {
-      /**
-       * It amends the `url` and the `description` of the proposal with id `id`.
-       * # Errors
-       * * `BadOrigin`: Only the owner of the proposal can amend it.
-       * * `ProposalIsImmutable`: A proposals is mutable only during its cool off period.
-       **/
-      amendProposal: AugmentedSubmittable<
-        (
-          id: MipId | AnyNumber | Uint8Array,
-          url: Option<Url> | null | object | string | Uint8Array,
-          description: Option<MipDescription> | null | object | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Id bonds an additional deposit to proposal with id `id`.
-       * That amount is added to the current deposit.
-       * # Errors
-       * * `BadOrigin`: Only the owner of the proposal can bond an additional deposit.
-       * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
-       **/
-      bondAdditionalDeposit: AugmentedSubmittable<
-        (
-          id: MipId | AnyNumber | Uint8Array,
-          additionalDeposit: BalanceOf | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * It cancels the proposal of the id `id`.
-       * Proposals can be cancelled only during its _cool-off period.
-       * # Errors
-       * * `BadOrigin`: Only the owner of the proposal can amend it.
-       * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
-       **/
-      cancelProposal: AugmentedSubmittable<
-        (id: MipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Governance committee can make a proposal that automatically becomes a referendum on
-       * which the committee can vote on.
-       **/
-      emergencyReferendum: AugmentedSubmittable<
-        (
-          proposal: Proposal | { callIndex?: any; args?: any } | string | Uint8Array,
-          url: Option<Url> | null | object | string | Uint8Array,
-          description: Option<MipDescription> | null | object | string | Uint8Array,
-          beneficiaries:
-            | Vec<Beneficiary>
-            | (Beneficiary | { id?: any; amount?: any } | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Moves a referendum instance into dispatch queue.
-       **/
-      enactReferendum: AugmentedSubmittable<
-        (id: MipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Any governance committee member can fast track a proposal and turn it into a referendum
-       * that will be voted on by the committee.
-       **/
-      fastTrackProposal: AugmentedSubmittable<
-        (id: MipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * An emergency stop measure to kill a proposal. Governance committee can kill
-       * a proposal at any time.
-       **/
-      killProposal: AugmentedSubmittable<
-        (id: MipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * A network member creates a Mesh Improvement Proposal by submitting a dispatchable which
-       * changes the network in someway. A minimum deposit is required to open a new proposal.
-       * # Arguments
-       * * `proposal` a dispatchable call
-       * * `deposit` minimum deposit value
-       * * `url` a link to a website for proposal discussion
-       **/
-      propose: AugmentedSubmittable<
-        (
-          proposal: Proposal | { callIndex?: any; args?: any } | string | Uint8Array,
-          deposit: BalanceOf | AnyNumber | Uint8Array,
-          url: Option<Url> | null | object | string | Uint8Array,
-          description: Option<MipDescription> | null | object | string | Uint8Array,
-          beneficiaries:
-            | Vec<Beneficiary>
-            | (Beneficiary | { id?: any; amount?: any } | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Moves a referendum instance into rejected state.
-       **/
-      rejectReferendum: AugmentedSubmittable<
-        (id: MipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change the default enact period.
-       **/
-      setDefaultEnactPeriod: AugmentedSubmittable<
-        (duration: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change the minimum proposal deposit amount required to start a proposal. Only Governance
-       * committee is allowed to change this value.
-       * # Arguments
-       * * `deposit` the new min deposit required to start a proposal
-       **/
-      setMinProposalDeposit: AugmentedSubmittable<
-        (deposit: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change the proposal duration value. This is the number of blocks for which votes are
-       * accepted on a proposal. Only Governance committee is allowed to change this value.
-       * # Arguments
-       * * `duration` proposal duration in blocks
-       **/
-      setProposalDuration: AugmentedSubmittable<
-        (duration: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change whether completed MIPs are pruned. Can only be called by governance council
-       * # Arguments
-       * * `deposit` the new min deposit required to start a proposal
-       **/
-      setPruneHistoricalMips: AugmentedSubmittable<
-        (newValue: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change the quorum threshold amount. This is the amount which a proposal must gather so
-       * as to be considered by a committee. Only Governance committee is allowed to change
-       * this value.
-       * # Arguments
-       * * `threshold` the new quorum threshold amount value
-       **/
-      setQuorumThreshold: AugmentedSubmittable<
-        (threshold: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * It updates the enactment period of a specific referendum.
-       * # Arguments
-       * * `until`, It defines the future block where the enactment period will finished.  A
-       * `None` value means that enactment period is going to finish in the next block.
-       * # Errors
-       * * `BadOrigin`, Only the release coordinator can update the enactment period.
-       * * ``,
-       **/
-      setReferendumEnactmentPeriod: AugmentedSubmittable<
-        (
-          mid: MipId | AnyNumber | Uint8Array,
-          until: Option<BlockNumber> | null | object | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * It unbonds any amount from the deposit of the proposal with id `id`.
-       * # Errors
-       * * `BadOrigin`: Only the owner of the proposal can release part of the deposit.
-       * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
-       * * `InsufficientDeposit`: If the final deposit will be less that the minimum deposit for
-       * a proposal.
-       **/
-      unbondDeposit: AugmentedSubmittable<
-        (
-          id: MipId | AnyNumber | Uint8Array,
-          amount: BalanceOf | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * A network member can vote on any Mesh Improvement Proposal by selecting the id that
-       * corresponds ot the dispatchable action and vote with some balance.
-       * # Arguments
-       * * `proposal` a dispatchable call
-       * * `id` proposal id
-       * * `aye_or_nay` a bool representing for or against vote
-       * * `deposit` minimum deposit value
-       **/
-      vote: AugmentedSubmittable<
-        (
-          id: MipId | AnyNumber | Uint8Array,
-          ayeOrNay: bool | boolean | Uint8Array,
-          deposit: BalanceOf | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-    };
     multiSig: {
       /**
        * Accept a multisig signer authorization given to signer's identity
@@ -2301,6 +2117,190 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
     };
+    pips: {
+      /**
+       * It amends the `url` and the `description` of the proposal with id `id`.
+       * # Errors
+       * * `BadOrigin`: Only the owner of the proposal can amend it.
+       * * `ProposalIsImmutable`: A proposals is mutable only during its cool off period.
+       **/
+      amendProposal: AugmentedSubmittable<
+        (
+          id: PipId | AnyNumber | Uint8Array,
+          url: Option<Url> | null | object | string | Uint8Array,
+          description: Option<PipDescription> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Id bonds an additional deposit to proposal with id `id`.
+       * That amount is added to the current deposit.
+       * # Errors
+       * * `BadOrigin`: Only the owner of the proposal can bond an additional deposit.
+       * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
+       **/
+      bondAdditionalDeposit: AugmentedSubmittable<
+        (
+          id: PipId | AnyNumber | Uint8Array,
+          additionalDeposit: BalanceOf | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * It cancels the proposal of the id `id`.
+       * Proposals can be cancelled only during its _cool-off period.
+       * # Errors
+       * * `BadOrigin`: Only the owner of the proposal can amend it.
+       * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
+       **/
+      cancelProposal: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Governance committee can make a proposal that automatically becomes a referendum on
+       * which the committee can vote on.
+       **/
+      emergencyReferendum: AugmentedSubmittable<
+        (
+          proposal: Proposal | { callIndex?: any; args?: any } | string | Uint8Array,
+          url: Option<Url> | null | object | string | Uint8Array,
+          description: Option<PipDescription> | null | object | string | Uint8Array,
+          beneficiaries:
+            | Vec<Beneficiary>
+            | (Beneficiary | { id?: any; amount?: any } | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Moves a referendum instance into dispatch queue.
+       **/
+      enactReferendum: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Any governance committee member can fast track a proposal and turn it into a referendum
+       * that will be voted on by the committee.
+       **/
+      fastTrackProposal: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * An emergency stop measure to kill a proposal. Governance committee can kill
+       * a proposal at any time.
+       **/
+      killProposal: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * A network member creates a Mesh Improvement Proposal by submitting a dispatchable which
+       * changes the network in someway. A minimum deposit is required to open a new proposal.
+       * # Arguments
+       * * `proposal` a dispatchable call
+       * * `deposit` minimum deposit value
+       * * `url` a link to a website for proposal discussion
+       **/
+      propose: AugmentedSubmittable<
+        (
+          proposal: Proposal | { callIndex?: any; args?: any } | string | Uint8Array,
+          deposit: BalanceOf | AnyNumber | Uint8Array,
+          url: Option<Url> | null | object | string | Uint8Array,
+          description: Option<PipDescription> | null | object | string | Uint8Array,
+          beneficiaries:
+            | Vec<Beneficiary>
+            | (Beneficiary | { id?: any; amount?: any } | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Moves a referendum instance into rejected state.
+       **/
+      rejectReferendum: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Change the default enact period.
+       **/
+      setDefaultEnactPeriod: AugmentedSubmittable<
+        (duration: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Change the minimum proposal deposit amount required to start a proposal. Only Governance
+       * committee is allowed to change this value.
+       * # Arguments
+       * * `deposit` the new min deposit required to start a proposal
+       **/
+      setMinProposalDeposit: AugmentedSubmittable<
+        (deposit: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Change the proposal duration value. This is the number of blocks for which votes are
+       * accepted on a proposal. Only Governance committee is allowed to change this value.
+       * # Arguments
+       * * `duration` proposal duration in blocks
+       **/
+      setProposalDuration: AugmentedSubmittable<
+        (duration: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Change whether completed PIPs are pruned. Can only be called by governance council
+       * # Arguments
+       * * `deposit` the new min deposit required to start a proposal
+       **/
+      setPruneHistoricalPips: AugmentedSubmittable<
+        (newValue: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Change the quorum threshold amount. This is the amount which a proposal must gather so
+       * as to be considered by a committee. Only Governance committee is allowed to change
+       * this value.
+       * # Arguments
+       * * `threshold` the new quorum threshold amount value
+       **/
+      setQuorumThreshold: AugmentedSubmittable<
+        (threshold: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * It updates the enactment period of a specific referendum.
+       * # Arguments
+       * * `until`, It defines the future block where the enactment period will finished.  A
+       * `None` value means that enactment period is going to finish in the next block.
+       * # Errors
+       * * `BadOrigin`, Only the release coordinator can update the enactment period.
+       * * ``,
+       **/
+      setReferendumEnactmentPeriod: AugmentedSubmittable<
+        (
+          mid: PipId | AnyNumber | Uint8Array,
+          until: Option<BlockNumber> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * It unbonds any amount from the deposit of the proposal with id `id`.
+       * # Errors
+       * * `BadOrigin`: Only the owner of the proposal can release part of the deposit.
+       * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
+       * * `InsufficientDeposit`: If the final deposit will be less that the minimum deposit for
+       * a proposal.
+       **/
+      unbondDeposit: AugmentedSubmittable<
+        (
+          id: PipId | AnyNumber | Uint8Array,
+          amount: BalanceOf | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * A network member can vote on any Mesh Improvement Proposal by selecting the id that
+       * corresponds ot the dispatchable action and vote with some balance.
+       * # Arguments
+       * * `proposal` a dispatchable call
+       * * `id` proposal id
+       * * `aye_or_nay` a bool representing for or against vote
+       * * `deposit` minimum deposit value
+       **/
+      vote: AugmentedSubmittable<
+        (
+          id: PipId | AnyNumber | Uint8Array,
+          ayeOrNay: bool | boolean | Uint8Array,
+          deposit: BalanceOf | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+    };
     polymeshCommittee: {
       /**
        * May be called by any signed account after the voting duration has ended in order to
@@ -2387,7 +2387,7 @@ declare module '@polkadot/api/types/submittable' {
             | 'IdentityAddClaim'
             | 'IdentitySetMasterKey'
             | 'IdentityAddSigningItem'
-            | 'MipsPropose'
+            | 'PipsPropose'
             | 'VotingAddBallot'
             | number
             | Uint8Array,
@@ -2422,7 +2422,7 @@ declare module '@polkadot/api/types/submittable' {
             | 'IdentityAddClaim'
             | 'IdentitySetMasterKey'
             | 'IdentityAddSigningItem'
-            | 'MipsPropose'
+            | 'PipsPropose'
             | 'VotingAddBallot'
             | number
             | Uint8Array
