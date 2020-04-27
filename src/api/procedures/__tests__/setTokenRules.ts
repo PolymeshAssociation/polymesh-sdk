@@ -1,11 +1,5 @@
 import { Vec } from '@polkadot/types';
-import {
-  AssetTransferRule,
-  AssetTransferRules,
-  IdentityId,
-  Rule as MeshRule,
-  Ticker,
-} from 'polymesh-types/types';
+import { AssetTransferRule, Rule as MeshRule, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -13,7 +7,7 @@ import { getRequiredRoles, Params, prepareSetTokenRules } from '~/api/procedures
 import { Context } from '~/context';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, Condition, ConditionTarget, ConditionType, RoleType, Rule } from '~/types';
+import { Condition, RoleType, Rule } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
