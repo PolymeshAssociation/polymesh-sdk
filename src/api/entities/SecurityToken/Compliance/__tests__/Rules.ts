@@ -72,4 +72,27 @@ describe('Rules class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: reset', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = polkadotMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const trustedClaimIssuers = new Rules(token, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      sinon
+        .stub(setTokenRules, 'prepare')
+        .withArgs({ ticker: token.ticker, rules: [] }, context)
+        .resolves(expectedQueue);
+
+      const queue = await trustedClaimIssuers.reset();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
 });

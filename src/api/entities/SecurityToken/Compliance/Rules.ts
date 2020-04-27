@@ -25,4 +25,15 @@ export class Rules extends Namespace<SecurityToken> {
     } = this;
     return setTokenRules.prepare({ ticker, ...args }, context);
   }
+
+  /**
+   * Detele all the actual rules for the Security Token.
+   */
+  public reset(): Promise<TransactionQueue<SecurityToken>> {
+    const {
+      parent: { ticker },
+      context,
+    } = this;
+    return setTokenRules.prepare({ ticker, rules: [] }, context);
+  }
 }
