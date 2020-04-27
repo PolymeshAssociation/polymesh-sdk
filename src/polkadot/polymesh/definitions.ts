@@ -258,12 +258,12 @@ export default {
       _enum: ['FastTracked', 'Emergency', 'Community'],
     },
     MIP: {
-      index: 'MipsIndex',
+      index: 'MipId',
       proposal: 'Call',
       state: 'ProposalState',
     },
     Referendum: {
-      index: 'MipsIndex',
+      index: 'MipId',
       state: 'ReferendumState',
       referendum_type: 'ReferendumType',
       enactment_period: 'u32',

@@ -357,7 +357,7 @@ export interface Memo extends U8aFixed {}
 
 /** @name MIP */
 export interface MIP extends Struct {
-  readonly index: MipsIndex;
+  readonly index: MipId;
   readonly proposal: Call;
   readonly state: ProposalState;
 }
@@ -471,7 +471,7 @@ export interface ProtocolOp extends Enum {
 
 /** @name Referendum */
 export interface Referendum extends Struct {
-  readonly index: MipsIndex;
+  readonly index: MipId;
   readonly state: ReferendumState;
   readonly referendum_type: ReferendumType;
   readonly enactment_period: u32;
