@@ -7,7 +7,6 @@ import { Bytes, bool, u16, u32, u64 } from '@polkadot/types/primitive';
 import { UncleEntryItem } from '@polkadot/types/interfaces/authorship';
 import { BabeAuthorityWeight, MaybeVrf } from '@polkadot/types/interfaces/babe';
 import { AccountData, BalanceLock } from '@polkadot/types/interfaces/balances';
-import { ProposalIndex } from '@polkadot/types/interfaces/collective';
 import { AuthorityId } from '@polkadot/types/interfaces/consensus';
 import {
   CodeHash,
@@ -17,6 +16,7 @@ import {
   Schedule,
 } from '@polkadot/types/interfaces/contracts';
 import { Proposal } from '@polkadot/types/interfaces/democracy';
+import { Vote } from '@polkadot/types/interfaces/elections';
 import {
   AuthorityList,
   SetId,
@@ -60,7 +60,6 @@ import {
   ValidatorPrefs,
 } from '@polkadot/types/interfaces/staking';
 import { AccountInfo, DigestOf, EventIndex, EventRecord } from '@polkadot/types/interfaces/system';
-import { OpenTip, TreasuryProposal } from '@polkadot/types/interfaces/treasury';
 import { Multiplier } from '@polkadot/types/interfaces/txpayment';
 import {
   AccountKey,
@@ -85,16 +84,16 @@ import {
   Investment,
   Link,
   LinkedKeyInfo,
-  MIP,
-  MipsIndex,
-  MipsMetadata,
   OfflineSlashingParams,
+  PIP,
   PermissionedValidator,
-  PolymeshReferendumInfo,
+  PipId,
+  PipsMetadata,
   PolymeshVotes,
   PosRatio,
   PreAuthorizedKeyInfo,
   ProtocolOp,
+  Referendum,
   STO,
   SecurityToken,
   Signatory,
@@ -105,6 +104,7 @@ import {
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
+  VotingResult,
 } from 'polymesh-types/polymesh';
 import { ApiTypes } from '@polkadot/api/types';
 
@@ -260,14 +260,7 @@ declare module '@polkadot/api/types/storage' {
             | ITuple<[Ticker, IdentifierType]>
             | [
                 Ticker | string | Uint8Array,
-                (
-                  | IdentifierType
-                  | { Isin: any }
-                  | { Cusip: any }
-                  | { Custom: any }
-                  | string
-                  | Uint8Array
-                )
+                IdentifierType | 'Cins' | 'Cusip' | 'Isin' | number | Uint8Array
               ]
         ) => Observable<AssetIdentifier>
       >;
@@ -882,80 +875,6 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Option<ITuple<[AccountId, BalanceOf]>>>
       >;
     };
-    mips: {
-      /**
-       * Those who have locked a deposit.
-       * proposal (hash, proposer) -> deposit
-       **/
-      deposits: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: Hash | string | Uint8Array,
-          key2: AccountId | string | Uint8Array
-        ) => Observable<DepositInfo>
-      >;
-      /**
-       * The minimum amount to be used as a deposit for a public referendum proposal.
-       **/
-      minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
-      /**
-       * Lookup proposal hash by a proposal's index
-       * MIP index -> proposal hash
-       **/
-      proposalByIndex: AugmentedQuery<
-        ApiType,
-        (arg: MipsIndex | AnyNumber | Uint8Array) => Observable<Hash>
-      >;
-      /**
-       * During Cool-off period, proposal owner can amend any MIP detail or cancel the entire
-       * proposal.
-       **/
-      proposalCoolOffPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
-      /**
-       * Proposals so far. Index can be used to keep track of MIPs off-chain.
-       **/
-      proposalCount: AugmentedQuery<ApiType, () => Observable<u32>>;
-      /**
-       * How long (in blocks) a ballot runs
-       **/
-      proposalDuration: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
-      /**
-       * The hashes of the active proposals.
-       **/
-      proposalMetadata: AugmentedQuery<ApiType, () => Observable<Vec<MipsMetadata>>>;
-      /**
-       * Actual proposal for a given hash, if it's current.
-       * proposal hash -> proposal
-       **/
-      proposals: AugmentedQuery<
-        ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<MIP>>
-      >;
-      /**
-       * Minimum stake a proposal must gather in order to be considered by the committee.
-       **/
-      quorumThreshold: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
-      /**
-       * Active referendums.
-       **/
-      referendumMetadata: AugmentedQuery<ApiType, () => Observable<Vec<PolymeshReferendumInfo>>>;
-      /**
-       * Proposals that have met the quorum threshold to be put forward to a governance committee
-       * proposal hash -> proposal
-       **/
-      referendums: AugmentedQuery<
-        ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>
-      >;
-      /**
-       * PolymeshVotes on a given proposal, if it is ongoing.
-       * proposal hash -> vote count
-       **/
-      voting: AugmentedQuery<
-        ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<PolymeshVotes>>
-      >;
-    };
     multiSig: {
       /**
        * Maps a key to a multisig address
@@ -1089,6 +1008,105 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<u16>
       >;
     };
+    pips: {
+      /**
+       * Default enactment period that will be use after a proposal is accepted by GC.
+       **/
+      defaultEnactmentPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+      /**
+       * Those who have locked a deposit.
+       * proposal (id, proposer) -> deposit
+       **/
+      deposits: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: PipId | AnyNumber | Uint8Array,
+          key2: AccountId | string | Uint8Array
+        ) => Observable<DepositInfo>
+      >;
+      /**
+       * The minimum amount to be used as a deposit for a public referendum proposal.
+       **/
+      minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      /**
+       * Proposals so far. id can be used to keep track of PIPs off-chain.
+       **/
+      pipIdSequence: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * During Cool-off period, proposal owner can amend any PIP detail or cancel the entire
+       * proposal.
+       **/
+      proposalCoolOffPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+      /**
+       * How long (in blocks) a ballot runs
+       **/
+      proposalDuration: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+      /**
+       * The metadata of the active proposals.
+       **/
+      proposalMetadata: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<PipsMetadata>>
+      >;
+      /**
+       * PolymeshVotes on a given proposal, if it is ongoing.
+       * proposal id -> vote count
+       **/
+      proposalResult: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<VotingResult>
+      >;
+      /**
+       * Actual proposal for a given id, if it's current.
+       * proposal id -> proposal
+       **/
+      proposals: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<PIP>>
+      >;
+      /**
+       * It maps the block number where a list of proposal are considered as matured.
+       **/
+      proposalsMaturingAt: AugmentedQuery<
+        ApiType,
+        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
+      >;
+      /**
+       * Votes per Proposal and account. Used to avoid double vote issue.
+       * (proposal id, account) -> Vote
+       **/
+      proposalVotes: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: PipId | AnyNumber | Uint8Array,
+          key2: AccountId | string | Uint8Array
+        ) => Observable<Vote>
+      >;
+      /**
+       * Determines whether historical PIP data is persisted or removed
+       **/
+      pruneHistoricalPips: AugmentedQuery<ApiType, () => Observable<bool>>;
+      /**
+       * Minimum stake a proposal must gather in order to be considered by the committee.
+       **/
+      quorumThreshold: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      /**
+       * Proposals that have met the quorum threshold to be put forward to a governance committee
+       * proposal id -> proposal
+       **/
+      referendums: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<Referendum>>
+      >;
+      /**
+       * List of id's of current scheduled referendums.
+       * block number -> Pip id
+       **/
+      scheduledReferendumsAt: AugmentedQuery<
+        ApiType,
+        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
+      >;
+    };
     polymeshCommittee: {
       /**
        * The current members of the committee.
@@ -1115,6 +1133,10 @@ declare module '@polkadot/api/types/storage' {
        **/
       proposals: AugmentedQuery<ApiType, () => Observable<Vec<Hash>>>;
       /**
+       * Release coordinator.
+       **/
+      releaseCoordinator: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
+      /**
        * Vote threshold for an approval.
        **/
       voteThreshold: AugmentedQuery<ApiType, () => Observable<ITuple<[u32, u32]>>>;
@@ -1135,21 +1157,19 @@ declare module '@polkadot/api/types/storage' {
         (
           arg:
             | ProtocolOp
-            | (
-                | 'AssetRegisterTicker'
-                | 'AssetIssue'
-                | 'AssetAddDocument'
-                | 'AssetCreateToken'
-                | 'DividendNew'
-                | 'GeneralTmAddActiveRule'
-                | 'IdentityRegisterDid'
-                | 'IdentityCddRegisterDid'
-                | 'IdentityAddClaim'
-                | 'IdentitySetMasterKey'
-                | 'IdentityAddSigningItem'
-                | 'MipsPropose'
-                | 'VotingAddBallot'
-              )
+            | 'AssetRegisterTicker'
+            | 'AssetIssue'
+            | 'AssetAddDocument'
+            | 'AssetCreateToken'
+            | 'DividendNew'
+            | 'GeneralTmAddActiveRule'
+            | 'IdentityRegisterDid'
+            | 'IdentityCddRegisterDid'
+            | 'IdentityAddClaim'
+            | 'IdentitySetMasterKey'
+            | 'IdentityAddSigningItem'
+            | 'PipsPropose'
+            | 'VotingAddBallot'
             | number
             | Uint8Array
         ) => Observable<BalanceOf>
@@ -1687,38 +1707,7 @@ declare module '@polkadot/api/types/storage' {
       nextFeeMultiplier: AugmentedQuery<ApiType, () => Observable<Multiplier>>;
     };
     treasury: {
-      /**
-       * Proposal indices that have been approved but not yet awarded.
-       **/
-      approvals: AugmentedQuery<ApiType, () => Observable<Vec<ProposalIndex>>>;
-      /**
-       * Number of proposals that have been made.
-       **/
-      proposalCount: AugmentedQuery<ApiType, () => Observable<ProposalIndex>>;
-      /**
-       * Proposals that have been made.
-       **/
-      proposals: AugmentedQuery<
-        ApiType,
-        (arg: ProposalIndex | AnyNumber | Uint8Array) => Observable<Option<TreasuryProposal>>
-      >;
-      /**
-       * Simple preimage lookup from the reason's hash to the original data. Again, has an
-       * insecure enumerable hash since the key is guaranteed to be the result of a secure hash.
-       **/
-      reasons: AugmentedQuery<
-        ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<Bytes>>
-      >;
-      /**
-       * Tips that are not yet completed. Keyed by the hash of `(reason, who)` from the value.
-       * This has the insecure enumerable hash function since the key itself is already
-       * guaranteed to be a secure hash.
-       **/
-      tips: AugmentedQuery<
-        ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<OpenTip>>
-      >;
+      balance: AugmentedQuery<ApiType, () => Observable<Balance>>;
     };
     voting: {
       /**

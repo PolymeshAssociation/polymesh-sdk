@@ -379,6 +379,9 @@ import {
   CandidateReceipt,
   CollatorId,
   CollatorSignature,
+  DoubleVoteReport,
+  DoubleVoteReportProof,
+  DoubleVoteReportStatement,
   EgressQueueRoot,
   HeadData,
   IncomingParachain,
@@ -390,12 +393,17 @@ import {
   ParaId,
   ParaIdOf,
   ParaInfo,
+  ParaPastCodeMeta,
   ParaScheduling,
   ParachainDispatchOrigin,
   Retriable,
+  SigningContext,
   SlotRange,
+  Statement,
   SubId,
   UpwardMessage,
+  ValidationCode,
+  ValidatorSignature,
   ValidityAttestation,
   WinningData,
   WinningDataEntry,
@@ -520,6 +528,7 @@ import {
 import {
   ApiId,
   KeyValueOption,
+  ReadProof,
   RuntimeVersion,
   RuntimeVersionApi,
   StorageChangeSet,
@@ -567,6 +576,7 @@ import { CallHash, Multisig, Timepoint } from '@polkadot/types/interfaces/utilit
 import { VestingInfo } from '@polkadot/types/interfaces/vesting';
 import {
   AccountKey,
+  AssetDidResult,
   AssetIdentifier,
   AssetTransferRule,
   AssetTransferRules,
@@ -578,7 +588,12 @@ import {
   Ballot,
   BatchAddClaimItem,
   BatchRevokeClaimItem,
+  Beneficiary,
   BridgeTx,
+  CappedFee,
+  CappedVoteCount,
+  CappedVoteCountSuccess,
+  CddStatus,
   Claim,
   Claim1stKey,
   Claim2ndKey,
@@ -588,6 +603,8 @@ import {
   Counter,
   DepositInfo,
   DidRecord,
+  DidRecords,
+  DidRecordsSuccess,
   Dividend,
   Document,
   DocumentHash,
@@ -607,26 +624,28 @@ import {
   Link,
   LinkData,
   LinkedKeyInfo,
-  MIP,
   Memo,
-  MipDescription,
-  MipsIndex,
-  MipsMetadata,
-  MipsPriority,
   Motion,
   MotionInfoLink,
   MotionTitle,
   OffChainSignature,
   OfflineSlashingParams,
+  PIP,
   PendingTx,
   Permission,
   PermissionedValidator,
-  PolymeshReferendumInfo,
+  PipDescription,
+  PipId,
+  PipsMetadata,
   PolymeshVotes,
   PosRatio,
   PreAuthorizedKeyInfo,
   ProportionMatch,
+  ProposalState,
   ProtocolOp,
+  Referendum,
+  ReferendumState,
+  ReferendumType,
   RestrictionResult,
   Rule,
   RuleType,
@@ -649,6 +668,7 @@ import {
   TickerTransferApproval,
   TokenName,
   Url,
+  VotingResult,
 } from 'polymesh-types/polymesh';
 
 declare module '@polkadot/types/types/registry' {
@@ -1648,6 +1668,15 @@ declare module '@polkadot/types/types/registry' {
     CollatorSignature: CollatorSignature;
     'Option<CollatorSignature>': Option<CollatorSignature>;
     'Vec<CollatorSignature>': Vec<CollatorSignature>;
+    DoubleVoteReport: DoubleVoteReport;
+    'Option<DoubleVoteReport>': Option<DoubleVoteReport>;
+    'Vec<DoubleVoteReport>': Vec<DoubleVoteReport>;
+    DoubleVoteReportProof: DoubleVoteReportProof;
+    'Option<DoubleVoteReportProof>': Option<DoubleVoteReportProof>;
+    'Vec<DoubleVoteReportProof>': Vec<DoubleVoteReportProof>;
+    DoubleVoteReportStatement: DoubleVoteReportStatement;
+    'Option<DoubleVoteReportStatement>': Option<DoubleVoteReportStatement>;
+    'Vec<DoubleVoteReportStatement>': Vec<DoubleVoteReportStatement>;
     EgressQueueRoot: EgressQueueRoot;
     'Option<EgressQueueRoot>': Option<EgressQueueRoot>;
     'Vec<EgressQueueRoot>': Vec<EgressQueueRoot>;
@@ -1682,6 +1711,9 @@ declare module '@polkadot/types/types/registry' {
     ParaInfo: ParaInfo;
     'Option<ParaInfo>': Option<ParaInfo>;
     'Vec<ParaInfo>': Vec<ParaInfo>;
+    ParaPastCodeMeta: ParaPastCodeMeta;
+    'Option<ParaPastCodeMeta>': Option<ParaPastCodeMeta>;
+    'Vec<ParaPastCodeMeta>': Vec<ParaPastCodeMeta>;
     ParachainDispatchOrigin: ParachainDispatchOrigin;
     'Option<ParachainDispatchOrigin>': Option<ParachainDispatchOrigin>;
     'Vec<ParachainDispatchOrigin>': Vec<ParachainDispatchOrigin>;
@@ -1691,9 +1723,15 @@ declare module '@polkadot/types/types/registry' {
     Retriable: Retriable;
     'Option<Retriable>': Option<Retriable>;
     'Vec<Retriable>': Vec<Retriable>;
+    SigningContext: SigningContext;
+    'Option<SigningContext>': Option<SigningContext>;
+    'Vec<SigningContext>': Vec<SigningContext>;
     SlotRange: SlotRange;
     'Option<SlotRange>': Option<SlotRange>;
     'Vec<SlotRange>': Vec<SlotRange>;
+    Statement: Statement;
+    'Option<Statement>': Option<Statement>;
+    'Vec<Statement>': Vec<Statement>;
     SubId: SubId;
     'Compact<SubId>': Compact<SubId>;
     'Option<SubId>': Option<SubId>;
@@ -1701,9 +1739,15 @@ declare module '@polkadot/types/types/registry' {
     UpwardMessage: UpwardMessage;
     'Option<UpwardMessage>': Option<UpwardMessage>;
     'Vec<UpwardMessage>': Vec<UpwardMessage>;
+    ValidationCode: ValidationCode;
+    'Option<ValidationCode>': Option<ValidationCode>;
+    'Vec<ValidationCode>': Vec<ValidationCode>;
     ValidityAttestation: ValidityAttestation;
     'Option<ValidityAttestation>': Option<ValidityAttestation>;
     'Vec<ValidityAttestation>': Vec<ValidityAttestation>;
+    ValidatorSignature: ValidatorSignature;
+    'Option<ValidatorSignature>': Option<ValidatorSignature>;
+    'Vec<ValidatorSignature>': Vec<ValidatorSignature>;
     WinningDataEntry: WinningDataEntry;
     'Option<WinningDataEntry>': Option<WinningDataEntry>;
     'Vec<WinningDataEntry>': Vec<WinningDataEntry>;
@@ -2262,6 +2306,9 @@ declare module '@polkadot/types/types/registry' {
     KeyValueOption: KeyValueOption;
     'Option<KeyValueOption>': Option<KeyValueOption>;
     'Vec<KeyValueOption>': Vec<KeyValueOption>;
+    ReadProof: ReadProof;
+    'Option<ReadProof>': Option<ReadProof>;
+    'Vec<ReadProof>': Vec<ReadProof>;
     RuntimeVersionApi: RuntimeVersionApi;
     'Option<RuntimeVersionApi>': Option<RuntimeVersionApi>;
     'Vec<RuntimeVersionApi>': Vec<RuntimeVersionApi>;
@@ -2415,31 +2462,40 @@ declare module '@polkadot/types/types/registry' {
     Url: Url;
     'Option<Url>': Option<Url>;
     'Vec<Url>': Vec<Url>;
-    MipDescription: MipDescription;
-    'Option<MipDescription>': Option<MipDescription>;
-    'Vec<MipDescription>': Vec<MipDescription>;
-    MipsMetadata: MipsMetadata;
-    'Option<MipsMetadata>': Option<MipsMetadata>;
-    'Vec<MipsMetadata>': Vec<MipsMetadata>;
+    PipDescription: PipDescription;
+    'Option<PipDescription>': Option<PipDescription>;
+    'Vec<PipDescription>': Vec<PipDescription>;
+    PipsMetadata: PipsMetadata;
+    'Option<PipsMetadata>': Option<PipsMetadata>;
+    'Vec<PipsMetadata>': Vec<PipsMetadata>;
+    Beneficiary: Beneficiary;
+    'Option<Beneficiary>': Option<Beneficiary>;
+    'Vec<Beneficiary>': Vec<Beneficiary>;
     DepositInfo: DepositInfo;
     'Option<DepositInfo>': Option<DepositInfo>;
     'Vec<DepositInfo>': Vec<DepositInfo>;
     PolymeshVotes: PolymeshVotes;
     'Option<PolymeshVotes>': Option<PolymeshVotes>;
     'Vec<PolymeshVotes>': Vec<PolymeshVotes>;
-    MipsIndex: MipsIndex;
-    'Compact<MipsIndex>': Compact<MipsIndex>;
-    'Option<MipsIndex>': Option<MipsIndex>;
-    'Vec<MipsIndex>': Vec<MipsIndex>;
-    MipsPriority: MipsPriority;
-    'Option<MipsPriority>': Option<MipsPriority>;
-    'Vec<MipsPriority>': Vec<MipsPriority>;
-    MIP: MIP;
-    'Option<MIP>': Option<MIP>;
-    'Vec<MIP>': Vec<MIP>;
-    PolymeshReferendumInfo: PolymeshReferendumInfo;
-    'Option<PolymeshReferendumInfo>': Option<PolymeshReferendumInfo>;
-    'Vec<PolymeshReferendumInfo>': Vec<PolymeshReferendumInfo>;
+    PipId: PipId;
+    'Compact<PipId>': Compact<PipId>;
+    'Option<PipId>': Option<PipId>;
+    'Vec<PipId>': Vec<PipId>;
+    ProposalState: ProposalState;
+    'Option<ProposalState>': Option<ProposalState>;
+    'Vec<ProposalState>': Vec<ProposalState>;
+    ReferendumState: ReferendumState;
+    'Option<ReferendumState>': Option<ReferendumState>;
+    'Vec<ReferendumState>': Vec<ReferendumState>;
+    ReferendumType: ReferendumType;
+    'Option<ReferendumType>': Option<ReferendumType>;
+    'Vec<ReferendumType>': Vec<ReferendumType>;
+    PIP: PIP;
+    'Option<PIP>': Option<PIP>;
+    'Vec<PIP>': Vec<PIP>;
+    Referendum: Referendum;
+    'Option<Referendum>': Option<Referendum>;
+    'Vec<Referendum>': Vec<Referendum>;
     TickerTransferApproval: TickerTransferApproval;
     'Option<TickerTransferApproval>': Option<TickerTransferApproval>;
     'Vec<TickerTransferApproval>': Vec<TickerTransferApproval>;
@@ -2520,8 +2576,33 @@ declare module '@polkadot/types/types/registry' {
     InactiveMember: InactiveMember;
     'Option<InactiveMember>': Option<InactiveMember>;
     'Vec<InactiveMember>': Vec<InactiveMember>;
+    VotingResult: VotingResult;
+    'Option<VotingResult>': Option<VotingResult>;
+    'Vec<VotingResult>': Vec<VotingResult>;
     ProtocolOp: ProtocolOp;
     'Option<ProtocolOp>': Option<ProtocolOp>;
     'Vec<ProtocolOp>': Vec<ProtocolOp>;
+    CddStatus: CddStatus;
+    'Option<CddStatus>': Option<CddStatus>;
+    'Vec<CddStatus>': Vec<CddStatus>;
+    AssetDidResult: AssetDidResult;
+    'Option<AssetDidResult>': Option<AssetDidResult>;
+    'Vec<AssetDidResult>': Vec<AssetDidResult>;
+    DidRecordsSuccess: DidRecordsSuccess;
+    'Option<DidRecordsSuccess>': Option<DidRecordsSuccess>;
+    'Vec<DidRecordsSuccess>': Vec<DidRecordsSuccess>;
+    DidRecords: DidRecords;
+    'Option<DidRecords>': Option<DidRecords>;
+    'Vec<DidRecords>': Vec<DidRecords>;
+    CappedVoteCountSuccess: CappedVoteCountSuccess;
+    'Option<CappedVoteCountSuccess>': Option<CappedVoteCountSuccess>;
+    'Vec<CappedVoteCountSuccess>': Vec<CappedVoteCountSuccess>;
+    CappedVoteCount: CappedVoteCount;
+    'Option<CappedVoteCount>': Option<CappedVoteCount>;
+    'Vec<CappedVoteCount>': Vec<CappedVoteCount>;
+    CappedFee: CappedFee;
+    'Compact<CappedFee>': Compact<CappedFee>;
+    'Option<CappedFee>': Option<CappedFee>;
+    'Vec<CappedFee>': Vec<CappedFee>;
   }
 }

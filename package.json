@@ -8,10 +8,10 @@
   "license": "ISC",
   "scripts": {
     "start": "node scripts/generateTsconfigDev.js && cross-env webpack-dev-server --config=webpack.config.dev.js",
-    "generate:polkadot-types": "yarn fetch-schema && yarn generate:defs && yarn generate:meta && yarn generate:tags",
-    "fetch-schema": "node scripts/fetchSchema.js",
+    "generate:polkadot-types": "yarn fetch-definitions && yarn generate:defs && yarn generate:meta && yarn generate:tags",
+    "fetch-definitions": "node scripts/fetchDefinitions.js",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package polymesh-types --input ./src/polkadot",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://pmd.polymath.network --output ./src/polkadot --strict",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://pmf.polymath.network --output ./src/polkadot --strict",
     "generate:tags": "node scripts/generateTxTags.js",
     "test": "jest --coverage",
     "build:ts": "ttsc -b",
@@ -25,7 +25,7 @@
   "devDependencies": {
     "@commitlint/cli": "^7.6.1",
     "@commitlint/config-conventional": "^7.6.0",
-    "@polkadot/typegen": "1.11.0-beta.26",
+    "@polkadot/typegen": "1.12.0-beta.5",
     "@types/jest": "^23.3.10",
     "@types/json-stable-stringify": "^1.0.32",
     "@types/lodash": "^4.14.149",
@@ -77,7 +77,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@polkadot/api": "1.11.0-beta.26",
+    "@polkadot/api": "1.12.0-beta.5",
     "@polkadot/util": "2.8.1",
     "@polkadot/util-crypto": "2.8.1",
     "@types/bignumber.js": "^5.0.0",

@@ -36,6 +36,7 @@ export enum BalancesTx {
   TopUpBrrBalance = 'balances.topUpBrrBalance',
   SetBalance = 'balances.setBalance',
   ForceTransfer = 'balances.forceTransfer',
+  BurnAccountBalance = 'balances.burnAccountBalance',
 }
 
 export enum AuthorshipTx {
@@ -136,14 +137,8 @@ export enum ContractsTx {
 }
 
 export enum TreasuryTx {
-  ProposeSpend = 'treasury.proposeSpend',
-  RejectProposal = 'treasury.rejectProposal',
-  ApproveProposal = 'treasury.approveProposal',
-  ReportAwesome = 'treasury.reportAwesome',
-  RetractTip = 'treasury.retractTip',
-  TipNew = 'treasury.tipNew',
-  Tip = 'treasury.tip',
-  CloseTip = 'treasury.closeTip',
+  Disbursement = 'treasury.disbursement',
+  Reimbursement = 'treasury.reimbursement',
 }
 
 export enum PolymeshCommitteeTx {
@@ -151,6 +146,7 @@ export enum PolymeshCommitteeTx {
   Propose = 'polymeshCommittee.propose',
   Vote = 'polymeshCommittee.vote',
   Close = 'polymeshCommittee.close',
+  SetReleaseCoordinator = 'polymeshCommittee.setReleaseCoordinator',
 }
 
 export enum CommitteeMembershipTx {
@@ -164,20 +160,24 @@ export enum CommitteeMembershipTx {
   ClearPrime = 'committeeMembership.clearPrime',
 }
 
-export enum MipsTx {
-  SetMinProposalDeposit = 'mips.setMinProposalDeposit',
-  SetQuorumThreshold = 'mips.setQuorumThreshold',
-  SetProposalDuration = 'mips.setProposalDuration',
-  Propose = 'mips.propose',
-  AmendProposal = 'mips.amendProposal',
-  CancelProposal = 'mips.cancelProposal',
-  BondAdditionalDeposit = 'mips.bondAdditionalDeposit',
-  UnbondDeposit = 'mips.unbondDeposit',
-  Vote = 'mips.vote',
-  KillProposal = 'mips.killProposal',
-  FastTrackProposal = 'mips.fastTrackProposal',
-  SubmitReferendum = 'mips.submitReferendum',
-  EnactReferendum = 'mips.enactReferendum',
+export enum PipsTx {
+  SetPruneHistoricalPips = 'pips.setPruneHistoricalPips',
+  SetMinProposalDeposit = 'pips.setMinProposalDeposit',
+  SetQuorumThreshold = 'pips.setQuorumThreshold',
+  SetProposalDuration = 'pips.setProposalDuration',
+  SetDefaultEnactPeriod = 'pips.setDefaultEnactPeriod',
+  Propose = 'pips.propose',
+  AmendProposal = 'pips.amendProposal',
+  CancelProposal = 'pips.cancelProposal',
+  BondAdditionalDeposit = 'pips.bondAdditionalDeposit',
+  UnbondDeposit = 'pips.unbondDeposit',
+  Vote = 'pips.vote',
+  KillProposal = 'pips.killProposal',
+  FastTrackProposal = 'pips.fastTrackProposal',
+  EmergencyReferendum = 'pips.emergencyReferendum',
+  EnactReferendum = 'pips.enactReferendum',
+  RejectReferendum = 'pips.rejectReferendum',
+  SetReferendumEnactmentPeriod = 'pips.setReferendumEnactmentPeriod',
 }
 
 export enum AssetTx {
@@ -347,7 +347,7 @@ export type TxTag =
   | TreasuryTx
   | PolymeshCommitteeTx
   | CommitteeMembershipTx
-  | MipsTx
+  | PipsTx
   | AssetTx
   | BridgeTx
   | DividendTx
@@ -379,7 +379,7 @@ export const TxTags = {
   treasury: TreasuryTx,
   polymeshCommittee: PolymeshCommitteeTx,
   committeeMembership: CommitteeMembershipTx,
-  mips: MipsTx,
+  pips: PipsTx,
   asset: AssetTx,
   bridge: BridgeTx,
   dividend: DividendTx,
@@ -387,7 +387,7 @@ export const TxTags = {
   generalTm: GeneralTmTx,
   voting: VotingTx,
   stoCapped: StoCappedTx,
-  percentageTM: PercentageTmTx,
+  percentageTm: PercentageTmTx,
   exemption: ExemptionTx,
   simpleToken: SimpleTokenTx,
   cddServiceProviders: CddServiceProvidersTx,
