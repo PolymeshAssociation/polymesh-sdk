@@ -3,14 +3,7 @@
 
 import { Bytes, u32, u64 } from '@polkadot/types/primitive';
 import { Gas } from '@polkadot/types/interfaces/contracts';
-import {
-  Balance,
-  BalanceOf,
-  BlockNumber,
-  Moment,
-  Percent,
-  Permill,
-} from '@polkadot/types/interfaces/runtime';
+import { Balance, BalanceOf, BlockNumber, Moment } from '@polkadot/types/interfaces/runtime';
 import { SessionIndex } from '@polkadot/types/interfaces/session';
 import { EraIndex } from '@polkadot/types/interfaces/staking';
 
@@ -166,41 +159,6 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
        * The fee to be paid for making a transaction; the per-byte portion.
        **/
       transactionByteFee: AugmentedConst<BalanceOf>;
-    };
-    treasury: {
-      /**
-       * Percentage of spare funds (if any) that are burnt per spend period.
-       **/
-      burn: AugmentedConst<Permill>;
-      /**
-       * Fraction of a proposal's value that should be bonded in order to place the proposal.
-       * An accepted proposal gets these back. A rejected proposal does not.
-       **/
-      proposalBond: AugmentedConst<Permill>;
-      /**
-       * Minimum amount of funds that should be placed in a deposit for making a proposal.
-       **/
-      proposalBondMinimum: AugmentedConst<BalanceOf>;
-      /**
-       * Period between successive spends.
-       **/
-      spendPeriod: AugmentedConst<BlockNumber>;
-      /**
-       * The period for which a tip remains open after is has achieved threshold tippers.
-       **/
-      tipCountdown: AugmentedConst<BlockNumber>;
-      /**
-       * The amount of the final tip which goes to the original reporter of the tip.
-       **/
-      tipFindersFee: AugmentedConst<Percent>;
-      /**
-       * The amount held on deposit for placing a tip report.
-       **/
-      tipReportDepositBase: AugmentedConst<BalanceOf>;
-      /**
-       * The amount held on deposit per byte within the tip report reason.
-       **/
-      tipReportDepositPerByte: AugmentedConst<BalanceOf>;
     };
   }
 }
