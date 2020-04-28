@@ -11,3 +11,4 @@ export {
   SetTokenTrustedClaimIssuersParams,
 } from './setTokenTrustedClaimIssuers';
 export { setTokenRules, SetTokenRulesParams } from './setTokenRules';
+export { togglePauseRules, TogglePauseRulesParams } from './togglePauseRules';
