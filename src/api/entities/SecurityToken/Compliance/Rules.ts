@@ -60,7 +60,7 @@ export class Rules extends Namespace<SecurityToken> {
       return rule;
     });
   }
-  
+
   /**
    * Detele all the current rules for the Security Token.
    */
