@@ -14,7 +14,6 @@ describe('transferPolyX procedure', () => {
   beforeAll(() => {
     polkadotMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    sinon.stub(utilsModule, 'valueToDid').returns(someDid);
     sinon.stub(utilsModule, 'stringToAccountKey').returns(polkadotMockUtils.createMockAccountKey());
   });
 
@@ -56,6 +55,7 @@ describe('transferPolyX procedure', () => {
   });
 
   test('should add a balance transfer transaction to the queue', async () => {
+    const to = 'someAccount';
     const amount = new BigNumber(99);
     const rawBalance = polkadotMockUtils.createMockBalance(amount.toNumber());
 
@@ -73,16 +73,10 @@ describe('transferPolyX procedure', () => {
     proc.context = mockContext;
 
     await prepareTransferPolyX.call(proc, {
-      to: 'someAccount',
+      to,
       amount,
     });
 
-    sinon.assert.calledWith(
-      procedureMockUtils.getAddTransactionStub(),
-      tx,
-      {},
-      someDid,
-      rawBalance
-    );
+    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), tx, {}, to, rawBalance);
   });
 });

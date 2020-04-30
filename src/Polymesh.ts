@@ -92,7 +92,7 @@ export class Polymesh {
   /**
    * Transfer an amount of POLYX to a specified account
    *
-   * @param args.to - address or identity representation that will receive the polyx
+   * @param args.to - account id that will receive the polyx
    * @param args.amount - amount of polyx to be transferred
    */
   public transferPolyX(args: TransferPolyXParams): Promise<TransactionQueue<void>> {
