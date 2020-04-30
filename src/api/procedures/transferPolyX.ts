@@ -40,7 +40,8 @@ export async function prepareTransferPolyX(
   try {
     const identityIds = await identity.keyToIdentityIds(stringToAccountKey(to, context));
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const did = identityIds.unwrap().asUnique;
+    const _did = identityIds.unwrap().asUnique;
+
     this.addTransaction(tx.balances.transfer, {}, to, numberToBalance(val, context));
   } catch (err) {
     throw new PolymeshError({
