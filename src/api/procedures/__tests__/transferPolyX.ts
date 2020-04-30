@@ -9,7 +9,6 @@ import * as utilsModule from '~/utils';
 
 describe('transferPolyX procedure', () => {
   let mockContext: Mocked<Context>;
-  const someDid = 'someDid';
 
   beforeAll(() => {
     polkadotMockUtils.initMocks();
