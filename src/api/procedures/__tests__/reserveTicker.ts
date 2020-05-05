@@ -1,6 +1,7 @@
+import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
+import { PosRatio, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { TickerReservation } from '~/api/entities';
@@ -28,17 +29,25 @@ jest.mock(
 describe('reserveTicker procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let posRatioToBigNumberStub: sinon.SinonStub<[PosRatio], BigNumber>;
+  let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
   let ticker: string;
   let rawTicker: Ticker;
   let args: ReserveTickerParams;
   let fee: number;
   let reservation: PostTransactionValue<TickerReservation>;
+  let rawPosRatio: PosRatio;
+  let rawFee: Balance;
+  let numerator: number;
+  let denominator: number;
 
   beforeAll(() => {
     polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(500) } });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks({ identityOptions: { did: 'someOtherDid' } });
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    posRatioToBigNumberStub = sinon.stub(utilsModule, 'posRatioToBigNumber');
+    balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
     ticker = 'someTicker';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
     args = {
@@ -46,6 +55,10 @@ describe('reserveTicker procedure', () => {
     };
     fee = 250;
     reservation = ('reservation' as unknown) as PostTransactionValue<TickerReservation>;
+    rawPosRatio = polkadotMockUtils.createMockPostRatio(numerator, denominator);
+    rawFee = polkadotMockUtils.createMockBalance(fee);
+    numerator = 1;
+    denominator = 1;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -61,8 +74,11 @@ describe('reserveTicker procedure', () => {
       status: TickerReservationStatus.Free,
     });
 
-    polkadotMockUtils.createQueryStub('asset', 'tickerRegistrationFee', {
-      returnValue: polkadotMockUtils.createMockBalance(fee * Math.pow(10, 6)),
+    polkadotMockUtils.createQueryStub('protocolFee', 'coefficient', {
+      returnValue: rawPosRatio,
+    });
+    polkadotMockUtils.createQueryStub('protocolFee', 'baseFees', {
+      returnValue: rawFee,
     });
     polkadotMockUtils.createQueryStub('asset', 'tickerConfig', {
       returnValue: polkadotMockUtils.createMockTickerRegistrationConfig(),
@@ -73,6 +89,12 @@ describe('reserveTicker procedure', () => {
     mockContext = polkadotMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+
+    posRatioToBigNumberStub
+      .withArgs(rawPosRatio)
+      .returns(new BigNumber(numerator).dividedBy(new BigNumber(denominator)));
+
+    balanceToBigNumberStub.returns(new BigNumber(fee));
   });
 
   afterEach(() => {
@@ -151,9 +173,12 @@ describe('reserveTicker procedure', () => {
   });
 
   test("should throw an error if the signing account doesn't have enough balance", () => {
-    polkadotMockUtils.createQueryStub('asset', 'tickerRegistrationFee', {
-      returnValue: polkadotMockUtils.createMockBalance(600000000),
+    const fakeValue = 600000000;
+    const fakeBalance = polkadotMockUtils.createMockBalance(fakeValue);
+    polkadotMockUtils.createQueryStub('protocolFee', 'baseFees', {
+      returnValue: fakeBalance,
     });
+    balanceToBigNumberStub.withArgs(fakeBalance).returns(new BigNumber(fakeValue));
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
@@ -179,14 +204,18 @@ describe('reserveTicker procedure', () => {
 
   test("should throw an error if extendPeriod property is set to true and the signing account doesn't have enough balance", () => {
     const expiryDate = new Date(new Date().getTime() + 1000);
+    const fakeValue = 600000000;
+    const fakeBalance = polkadotMockUtils.createMockBalance(fakeValue);
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       expiryDate,
       status: TickerReservationStatus.Reserved,
     });
-    polkadotMockUtils.createQueryStub('asset', 'tickerRegistrationFee', {
-      returnValue: polkadotMockUtils.createMockBalance(600000000),
+    polkadotMockUtils.createQueryStub('protocolFee', 'baseFees', {
+      returnValue: fakeBalance,
     });
+    balanceToBigNumberStub.withArgs(fakeBalance).returns(new BigNumber(fakeValue));
+
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 

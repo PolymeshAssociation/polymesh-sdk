@@ -72,6 +72,7 @@ import {
   numberToBalance,
   numberToU32,
   numberToU64,
+  posRatioToBigNumber,
   ruleToAssetTransferRule,
   serialize,
   signatoryToSigner,
@@ -318,6 +319,29 @@ describe('numberToBalance and balanceToBigNumber', () => {
 
     const result = balanceToBigNumber(balance);
     expect(result).toEqual(new BigNumber(fakeResult).div(Math.pow(10, 6)));
+  });
+});
+
+describe('posRatioToBigNumber', () => {
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('posRatioToBigNumber should convert a PosRatio object to a BigNumber', () => {
+    const numerator = 1;
+    const denominator = 1;
+    const balance = polkadotMockUtils.createMockPostRatio(numerator, denominator);
+
+    const result = posRatioToBigNumber(balance);
+    expect(result).toEqual(new BigNumber(numerator).dividedBy(new BigNumber(denominator)));
   });
 });
 
