@@ -590,6 +590,8 @@ import {
   BatchRevokeClaimItem,
   Beneficiary,
   BridgeTx,
+  BridgeTxDetail,
+  BridgeTxStatus,
   CappedFee,
   CappedVoteCount,
   CappedVoteCountSuccess,
@@ -630,10 +632,10 @@ import {
   MotionTitle,
   OffChainSignature,
   OfflineSlashingParams,
-  PIP,
   PendingTx,
   Permission,
   PermissionedValidator,
+  Pip,
   PipDescription,
   PipId,
   PipsMetadata,
@@ -641,6 +643,7 @@ import {
   PosRatio,
   PreAuthorizedKeyInfo,
   ProportionMatch,
+  ProposalData,
   ProposalState,
   ProtocolOp,
   Referendum,
@@ -2490,9 +2493,12 @@ declare module '@polkadot/types/types/registry' {
     ReferendumType: ReferendumType;
     'Option<ReferendumType>': Option<ReferendumType>;
     'Vec<ReferendumType>': Vec<ReferendumType>;
-    PIP: PIP;
-    'Option<PIP>': Option<PIP>;
-    'Vec<PIP>': Vec<PIP>;
+    Pip: Pip;
+    'Option<Pip>': Option<Pip>;
+    'Vec<Pip>': Vec<Pip>;
+    ProposalData: ProposalData;
+    'Option<ProposalData>': Option<ProposalData>;
+    'Vec<ProposalData>': Vec<ProposalData>;
     Referendum: Referendum;
     'Option<Referendum>': Option<Referendum>;
     'Vec<Referendum>': Vec<Referendum>;
@@ -2600,6 +2606,12 @@ declare module '@polkadot/types/types/registry' {
     CappedVoteCount: CappedVoteCount;
     'Option<CappedVoteCount>': Option<CappedVoteCount>;
     'Vec<CappedVoteCount>': Vec<CappedVoteCount>;
+    BridgeTxDetail: BridgeTxDetail;
+    'Option<BridgeTxDetail>': Option<BridgeTxDetail>;
+    'Vec<BridgeTxDetail>': Vec<BridgeTxDetail>;
+    BridgeTxStatus: BridgeTxStatus;
+    'Option<BridgeTxStatus>': Option<BridgeTxStatus>;
+    'Vec<BridgeTxStatus>': Vec<BridgeTxStatus>;
     CappedFee: CappedFee;
     'Compact<CappedFee>': Compact<CappedFee>;
     'Option<CappedFee>': Option<CappedFee>;

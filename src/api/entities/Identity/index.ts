@@ -4,10 +4,11 @@ import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode, isTickerOwnerRole, isTokenOwnerRole, Role } from '~/types';
+import { ErrorCode, isCddProviderRole, isTickerOwnerRole, isTokenOwnerRole, Role } from '~/types';
 import {
   balanceToBigNumber,
   cddStatusToBoolean,
+  identityIdToString,
   stringToIdentityId,
   stringToTicker,
 } from '~/utils';
@@ -93,6 +94,17 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const { owner } = await token.details();
 
       return owner.did === did;
+    } else if (isCddProviderRole(role)) {
+      const {
+        polymeshApi: {
+          query: { cddServiceProviders },
+        },
+      } = context;
+
+      const activeMembers = await cddServiceProviders.activeMembers();
+      const membersDid = activeMembers.map(identityIdToString);
+
+      return membersDid.includes(did);
     }
 
     throw new PolymeshError({
