@@ -238,4 +238,12 @@ export interface IssuanceData {
   amount: BigNumber;
 }
 
+export enum TransferStatus {
+  Failure = 'Failure',
+  Success = 'Success',
+  InsufficientBalance = 'InsufficientBalance',
+  InvalidReceiver = 'InvalidReceiver',
+  FundsLimitReached = 'FundsLimitReached',
+}
+
 export * from '~/api/entities/types';

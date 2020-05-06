@@ -54,10 +54,8 @@ export enum StakingTx {
   SetPayee = 'staking.setPayee',
   SetController = 'staking.setController',
   SetValidatorCount = 'staking.setValidatorCount',
-  AddPotentialValidator = 'staking.addPotentialValidator',
-  RemoveValidator = 'staking.removeValidator',
-  ComplianceFailed = 'staking.complianceFailed',
-  CompliancePassed = 'staking.compliancePassed',
+  AddPermissionedValidator = 'staking.addPermissionedValidator',
+  RemovePermissionedValidator = 'staking.removePermissionedValidator',
   ValidateCddExpiryNominators = 'staking.validateCddExpiryNominators',
   EnableIndividualCommissions = 'staking.enableIndividualCommissions',
   SetGlobalCommission = 'staking.setGlobalCommission',
@@ -73,15 +71,6 @@ export enum StakingTx {
   Rebond = 'staking.rebond',
   SetHistoryDepth = 'staking.setHistoryDepth',
   ReapStash = 'staking.reapStash',
-}
-
-export enum ElectionsTx {
-  Vote = 'elections.vote',
-  RemoveVoter = 'elections.removeVoter',
-  ReportDefunctVoter = 'elections.reportDefunctVoter',
-  SubmitCandidacy = 'elections.submitCandidacy',
-  RenounceCandidacy = 'elections.renounceCandidacy',
-  RemoveMember = 'elections.removeMember',
 }
 
 export enum SessionTx {
@@ -216,19 +205,6 @@ export enum AssetTx {
   UnarchiveExtension = 'asset.unarchiveExtension',
 }
 
-export enum BridgeTx {
-  ChangeController = 'bridge.changeController',
-  ChangeAdmin = 'bridge.changeAdmin',
-  ChangeTimelock = 'bridge.changeTimelock',
-  Freeze = 'bridge.freeze',
-  Unfreeze = 'bridge.unfreeze',
-  ProposeBridgeTx = 'bridge.proposeBridgeTx',
-  FinalizePending = 'bridge.finalizePending',
-  HandleBridgeTx = 'bridge.handleBridgeTx',
-  FreezeTxs = 'bridge.freezeTxs',
-  UnfreezeTxs = 'bridge.unfreezeTxs',
-}
-
 export enum DividendTx {
   New = 'dividend.new',
   Cancel = 'dividend.cancel',
@@ -267,18 +243,33 @@ export enum IdentityTx {
   RevokeOffchainAuthorization = 'identity.revokeOffchainAuthorization',
 }
 
-export enum GeneralTmTx {
-  AddActiveRule = 'generalTm.addActiveRule',
-  RemoveActiveRule = 'generalTm.removeActiveRule',
-  ResetActiveRules = 'generalTm.resetActiveRules',
-  PauseAssetRules = 'generalTm.pauseAssetRules',
-  ResumeAssetRules = 'generalTm.resumeAssetRules',
-  AddDefaultTrustedClaimIssuer = 'generalTm.addDefaultTrustedClaimIssuer',
-  RemoveDefaultTrustedClaimIssuer = 'generalTm.removeDefaultTrustedClaimIssuer',
-  AddDefaultTrustedClaimIssuersBatch = 'generalTm.addDefaultTrustedClaimIssuersBatch',
-  RemoveDefaultTrustedClaimIssuersBatch = 'generalTm.removeDefaultTrustedClaimIssuersBatch',
-  ChangeAssetRule = 'generalTm.changeAssetRule',
-  ChangeAssetRuleBatch = 'generalTm.changeAssetRuleBatch',
+export enum BridgeTx {
+  ChangeController = 'bridge.changeController',
+  ChangeAdmin = 'bridge.changeAdmin',
+  ChangeTimelock = 'bridge.changeTimelock',
+  Freeze = 'bridge.freeze',
+  Unfreeze = 'bridge.unfreeze',
+  ChangeBridgeLimit = 'bridge.changeBridgeLimit',
+  ChangeBridgeWhitelist = 'bridge.changeBridgeWhitelist',
+  ForceHandleBridgeTx = 'bridge.forceHandleBridgeTx',
+  ProposeBridgeTx = 'bridge.proposeBridgeTx',
+  HandleBridgeTx = 'bridge.handleBridgeTx',
+  FreezeTxs = 'bridge.freezeTxs',
+  UnfreezeTxs = 'bridge.unfreezeTxs',
+}
+
+export enum ComplianceManagerTx {
+  AddActiveRule = 'complianceManager.addActiveRule',
+  RemoveActiveRule = 'complianceManager.removeActiveRule',
+  ResetActiveRules = 'complianceManager.resetActiveRules',
+  PauseAssetRules = 'complianceManager.pauseAssetRules',
+  ResumeAssetRules = 'complianceManager.resumeAssetRules',
+  AddDefaultTrustedClaimIssuer = 'complianceManager.addDefaultTrustedClaimIssuer',
+  RemoveDefaultTrustedClaimIssuer = 'complianceManager.removeDefaultTrustedClaimIssuer',
+  AddDefaultTrustedClaimIssuersBatch = 'complianceManager.addDefaultTrustedClaimIssuersBatch',
+  RemoveDefaultTrustedClaimIssuersBatch = 'complianceManager.removeDefaultTrustedClaimIssuersBatch',
+  ChangeAssetRule = 'complianceManager.changeAssetRule',
+  ChangeAssetRuleBatch = 'complianceManager.changeAssetRuleBatch',
 }
 
 export enum VotingTx {
@@ -325,8 +316,6 @@ export enum CddServiceProvidersTx {
 export enum ProtocolFeeTx {
   ChangeCoefficient = 'protocolFee.changeCoefficient',
   ChangeBaseFee = 'protocolFee.changeBaseFee',
-  GetFee = 'protocolFee.getFee',
-  GetCoefficient = 'protocolFee.getCoefficient',
 }
 
 export type TxTag =
@@ -336,7 +325,6 @@ export type TxTag =
   | BalancesTx
   | AuthorshipTx
   | StakingTx
-  | ElectionsTx
   | SessionTx
   | FinalityTrackerTx
   | GrandpaTx
@@ -349,10 +337,10 @@ export type TxTag =
   | CommitteeMembershipTx
   | PipsTx
   | AssetTx
-  | BridgeTx
   | DividendTx
   | IdentityTx
-  | GeneralTmTx
+  | BridgeTx
+  | ComplianceManagerTx
   | VotingTx
   | StoCappedTx
   | PercentageTmTx
@@ -368,7 +356,6 @@ export const TxTags = {
   balances: BalancesTx,
   authorship: AuthorshipTx,
   staking: StakingTx,
-  elections: ElectionsTx,
   session: SessionTx,
   finalityTracker: FinalityTrackerTx,
   grandpa: GrandpaTx,
@@ -381,10 +368,10 @@ export const TxTags = {
   committeeMembership: CommitteeMembershipTx,
   pips: PipsTx,
   asset: AssetTx,
-  bridge: BridgeTx,
   dividend: DividendTx,
   identity: IdentityTx,
-  generalTm: GeneralTmTx,
+  bridge: BridgeTx,
+  complianceManager: ComplianceManagerTx,
   voting: VotingTx,
   stoCapped: StoCappedTx,
   percentageTm: PercentageTmTx,

@@ -111,6 +111,7 @@ export class Context {
           currentPair.publicKey
         );
         const did = identityIds.unwrap().asUnique;
+        console.log('ADDRESS', currentPair.address);
 
         return new Context({ polymeshApi, keyring, pair: { currentPair, did } });
       } catch (err) {

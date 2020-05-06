@@ -69,6 +69,7 @@ import {
   AuthorizationNonce,
   Ballot,
   BridgeTx,
+  BridgeTxDetail,
   Claim1stKey,
   Claim2ndKey,
   Commission,
@@ -85,8 +86,8 @@ import {
   Link,
   LinkedKeyInfo,
   OfflineSlashingParams,
-  PIP,
   PermissionedValidator,
+  Pip,
   PipId,
   PipsMetadata,
   PolymeshVotes,
@@ -127,11 +128,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
-       * cost in base currency to create a token
-       **/
-      assetCreationFee: AugmentedQuery<ApiType, () => Observable<Balance>>;
-      /**
-       * Store the nonce for off chain signature to increase the custody allowance
+       * Store the nonce for off chain signature to increase the custody allowance.
        * (ticker, token holder, nonce) -> bool
        **/
       authenticationNonce: AugmentedQuery<
@@ -147,7 +144,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<bool>
       >;
       /**
-       * Used to store the securityToken balance corresponds to ticker and Identity
+       * Used to store the securityToken balance corresponds to ticker and Identity.
        * (ticker, DID) -> Balance
        **/
       balanceOf: AugmentedQueryDoubleMap<
@@ -158,7 +155,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
-       * Balance of a DID at a checkpoint
+       * Balance of a DID at a checkpoint.
        * (ticker, DID, checkpoint ID) -> Balance of a DID at a checkpoint
        **/
       checkpointBalance: AugmentedQuery<
@@ -174,7 +171,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
-       * Total supply of the token at the checkpoint
+       * Total supply of the token at the checkpoint.
        * (ticker, checkpointId) -> total supply at given checkpoint
        **/
       checkpointTotalSupply: AugmentedQuery<
@@ -184,7 +181,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
-       * Allowance provided to the custodian
+       * Allowance provided to the custodian.
        * (ticker, token holder, custodian) -> balance
        **/
       custodianAllowance: AugmentedQuery<
@@ -200,7 +197,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
-       * List of Smart extension added for the given tokens
+       * List of Smart extension added for the given tokens.
        * ticker, AccountId (SE address) -> SmartExtension detail
        **/
       extensionDetails: AugmentedQuery<
@@ -212,7 +209,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<SmartExtension>
       >;
       /**
-       * List of Smart extension added for the given tokens and for the given type
+       * List of Smart extension added for the given tokens and for the given type.
        * ticker, type of SE -> address/AccountId of SE
        **/
       extensions: AugmentedQuery<
@@ -233,10 +230,6 @@ declare module '@polkadot/api/types/storage' {
               ]
         ) => Observable<Vec<AccountId>>
       >;
-      /**
-       * The DID of the fee collector
-       **/
-      feeCollector: AugmentedQuery<ApiType, () => Observable<AccountId>>;
       /**
        * The set of frozen assets implemented as a membership map.
        * ticker -> bool
@@ -277,16 +270,12 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
-       * Ticker registration config
+       * Ticker registration config.
        * (ticker) -> TickerRegistrationConfig
        **/
       tickerConfig: AugmentedQuery<ApiType, () => Observable<TickerRegistrationConfig>>;
       /**
-       * cost in base currency to register a ticker
-       **/
-      tickerRegistrationFee: AugmentedQuery<ApiType, () => Observable<Balance>>;
-      /**
-       * Ticker registration details
+       * Ticker registration details.
        * (ticker) -> TickerRegistration
        **/
       tickers: AugmentedQuery<
@@ -294,7 +283,7 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<TickerRegistration>
       >;
       /**
-       * details of the token corresponding to the token ticker
+       * Details of the token corresponding to the token ticker.
        * (ticker) -> SecurityToken details [returns SecurityToken struct]
        **/
       tokens: AugmentedQuery<
@@ -302,7 +291,7 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<SecurityToken>
       >;
       /**
-       * Checkpoints created per token
+       * Checkpoints created per token.
        * (ticker) -> no. of checkpoints
        **/
       totalCheckpoints: AugmentedQuery<
@@ -310,7 +299,7 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<u64>
       >;
       /**
-       * Total custodian allowance for a given token holder
+       * Total custodian allowance for a given token holder.
        * (ticker, token holder) -> balance
        **/
       totalCustodyAllowance: AugmentedQuery<
@@ -322,7 +311,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
-       * Last checkpoint updated for a DID's balance
+       * Last checkpoint updated for a DID's balance.
        * (ticker, DID) -> List of checkpoints where user balance changed
        **/
       userCheckpoints: AugmentedQuery<
@@ -452,6 +441,29 @@ declare module '@polkadot/api/types/storage' {
        **/
       admin: AugmentedQuery<ApiType, () => Observable<AccountId>>;
       /**
+       * The maximum number of bridged POLYX per identity within a set interval of
+       * blocks. Fields: POLYX amount and the block interval duration.
+       **/
+      bridgeLimit: AugmentedQuery<ApiType, () => Observable<ITuple<[Balance, BlockNumber]>>>;
+      /**
+       * Identities not constrained by the bridge limit.
+       **/
+      bridgeLimitWhitelist: AugmentedQuery<
+        ApiType,
+        (arg: IdentityId | string | Uint8Array) => Observable<bool>
+      >;
+      /**
+       * Details of bridge transactions identified with pairs of the recipient account and the
+       * bridge transaction nonce.
+       **/
+      bridgeTxDetails: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: AccountId | string | Uint8Array,
+          key2: u32 | AnyNumber | Uint8Array
+        ) => Observable<BridgeTxDetail>
+      >;
+      /**
        * The multisig account of the bridge controller. The genesis signers must accept their
        * authorizations to be able to get their proposals delivered.
        **/
@@ -461,37 +473,12 @@ declare module '@polkadot/api/types/storage' {
        **/
       frozen: AugmentedQuery<ApiType, () => Observable<bool>>;
       /**
-       * Frozen transactions.
+       * Amount of POLYX bridged by the identity in last block interval. Fields: the bridged
+       * amount and the last interval number.
        **/
-      frozenTxs: AugmentedQuery<
+      polyxBridged: AugmentedQuery<
         ApiType,
-        (
-          arg:
-            | BridgeTx
-            | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
-            | string
-            | Uint8Array
-        ) => Observable<bool>
-      >;
-      /**
-       * Handled bridge transactions.
-       **/
-      handledTxs: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | BridgeTx
-            | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
-            | string
-            | Uint8Array
-        ) => Observable<bool>
-      >;
-      /**
-       * Pending issuance transactions to identities.
-       **/
-      pendingTxs: AugmentedQuery<
-        ApiType,
-        (arg: IdentityId | string | Uint8Array) => Observable<Vec<BridgeTx>>
+        (arg: IdentityId | string | Uint8Array) => Observable<ITuple<[Balance, BlockNumber]>>
       >;
       /**
        * The bridge transaction timelock period, in blocks, since the acceptance of the
@@ -500,20 +487,22 @@ declare module '@polkadot/api/types/storage' {
       timelock: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
       /**
        * The list of timelocked transactions with the block numbers in which those transactions
-       * become unlocked.
+       * become unlocked. Pending transactions are also included here to be retried
+       * automatically.
        **/
       timelockedTxs: AugmentedQuery<
         ApiType,
-        (
-          arg: BlockNumber | AnyNumber | Uint8Array
-        ) => Observable<ITuple<[Vec<BridgeTx>, Linkage<BlockNumber>]>>
+        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<BridgeTx>>
       >;
     };
     cddServiceProviders: {
       /**
-       * Identities that are part of this group, known as "Active members".
+       * The current "active" membership, stored as an ordered Vec.
        **/
       activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * The current "inactive" membership, stored as an ordered Vec.
+       **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
       /**
        * The current prime member, if one exists.
@@ -522,14 +511,33 @@ declare module '@polkadot/api/types/storage' {
     };
     committeeMembership: {
       /**
-       * Identities that are part of this group, known as "Active members".
+       * The current "active" membership, stored as an ordered Vec.
        **/
       activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * The current "inactive" membership, stored as an ordered Vec.
+       **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
       /**
        * The current prime member, if one exists.
        **/
       prime: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
+    };
+    complianceManager: {
+      /**
+       * List of active rules for a ticker (Ticker -> Array of AssetTransferRules)
+       **/
+      assetRulesMap: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<AssetTransferRules>
+      >;
+      /**
+       * List of trusted claim issuer Ticker -> Issuer Identity
+       **/
+      trustedClaimIssuer: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<Vec<IdentityId>>
+      >;
     };
     contracts: {
       /**
@@ -605,41 +613,6 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<bool>
       >;
     };
-    elections: {
-      /**
-       * The present candidate list. Sorted based on account-id. A current member or a runner can
-       * never enter this vector and is always implicitly assumed to be a candidate.
-       **/
-      candidates: AugmentedQuery<ApiType, () => Observable<Vec<AccountId>>>;
-      /**
-       * The total number of vote rounds that have happened, excluding the upcoming one.
-       **/
-      electionRounds: AugmentedQuery<ApiType, () => Observable<u32>>;
-      /**
-       * The current elected membership. Sorted based on account id.
-       **/
-      members: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[AccountId, BalanceOf]>>>>;
-      /**
-       * The current runners_up. Sorted based on low to high merit (worse to best runner).
-       **/
-      runnersUp: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[AccountId, BalanceOf]>>>>;
-      /**
-       * Locked stake of a voter.
-       **/
-      stakeOf: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<BalanceOf>
-      >;
-      /**
-       * Votes of a particular voter, with the round index of the votes.
-       **/
-      votesOf: AugmentedQuery<
-        ApiType,
-        (
-          arg: AccountId | string | Uint8Array
-        ) => Observable<ITuple<[Vec<AccountId>, Linkage<AccountId>]>>
-      >;
-    };
     exemption: {
       exemptionList: AugmentedQuery<
         ApiType,
@@ -652,22 +625,6 @@ declare module '@polkadot/api/types/storage' {
                 IdentityId | string | Uint8Array
               ]
         ) => Observable<bool>
-      >;
-    };
-    generalTm: {
-      /**
-       * List of active rules for a ticker (Ticker -> Array of AssetTransferRules)
-       **/
-      assetRulesMap: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<AssetTransferRules>
-      >;
-      /**
-       * List of trusted claim issuer Ticker -> Issuer Identity
-       **/
-      trustedClaimIssuer: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<Vec<IdentityId>>
       >;
     };
     grandpa: {
@@ -792,10 +749,6 @@ declare module '@polkadot/api/types/storage' {
         (arg: IdentityId | string | Uint8Array) => Observable<AuthorizationNonce>
       >;
       /**
-       * Module owner.
-       **/
-      owner: AugmentedQuery<ApiType, () => Observable<AccountId>>;
-      /**
        * Pre-authorize join to Identity.
        **/
       preAuthorizedJoinDid: AugmentedQuery<
@@ -877,25 +830,25 @@ declare module '@polkadot/api/types/storage' {
     };
     multiSig: {
       /**
-       * Maps a key to a multisig address
+       * Maps a key to a multisig address.
        **/
       keyToMultiSig: AugmentedQuery<
         ApiType,
         (arg: AccountKey | string | Uint8Array) => Observable<AccountId>
       >;
       /**
-       * Maps a multisig to its creator's identity
+       * Maps a multisig to its creator's identity.
        **/
       multiSigCreator: AugmentedQuery<
         ApiType,
         (arg: AccountId | string | Uint8Array) => Observable<IdentityId>
       >;
       /**
-       * Nonce to ensure unique MultiSig addresses are generated. starts from 1.
+       * Nonce to ensure unique MultiSig addresses are generated; starts from 1.
        **/
       multiSigNonce: AugmentedQuery<ApiType, () => Observable<u64>>;
       /**
-       * Signers of a multisig. (mulisig, signer) => signer.
+       * Signers of a multisig. (multisig, signer) => signer.
        **/
       multiSigSigners: AugmentedQueryDoubleMap<
         ApiType,
@@ -905,14 +858,14 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Signatory>
       >;
       /**
-       * Confirmations required before processing a multisig tx
+       * Confirmations required before processing a multisig tx.
        **/
       multiSigSignsRequired: AugmentedQuery<
         ApiType,
         (arg: AccountId | string | Uint8Array) => Observable<u64>
       >;
       /**
-       * Number of transactions proposed in a multisig. Used as tx id. starts from 0
+       * Number of transactions proposed in a multisig. Used as tx id; starts from 0.
        **/
       multiSigTxDone: AugmentedQuery<
         ApiType,
@@ -958,7 +911,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<u64>
       >;
       /**
-       * Individual multisig signer votes. (multi sig, signer, proposal) => vote
+       * Individual multisig signer votes. (multi sig, signer, proposal) => vote.
        **/
       votes: AugmentedQuery<
         ApiType,
@@ -1003,6 +956,9 @@ declare module '@polkadot/api/types/storage' {
       >;
     };
     percentageTm: {
+      /**
+       * Maximum percentage enabled for a given token
+       **/
       maximumPercentageEnabledForToken: AugmentedQuery<
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<u16>
@@ -1062,7 +1018,7 @@ declare module '@polkadot/api/types/storage' {
        **/
       proposals: AugmentedQuery<
         ApiType,
-        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<PIP>>
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<Pip>>
       >;
       /**
        * It maps the block number where a list of proposal are considered as matured.
@@ -1162,7 +1118,7 @@ declare module '@polkadot/api/types/storage' {
             | 'AssetAddDocument'
             | 'AssetCreateToken'
             | 'DividendNew'
-            | 'GeneralTmAddActiveRule'
+            | 'ComplianceManagerAddActiveRule'
             | 'IdentityRegisterDid'
             | 'IdentityCddRegisterDid'
             | 'IdentityAddClaim'
@@ -1266,10 +1222,6 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
-       * The cost to create a new simple token
-       **/
-      creationFee: AugmentedQuery<ApiType, () => Observable<Balance>>;
-      /**
        * The details associated with each simple token
        **/
       tokens: AugmentedQuery<
@@ -1350,7 +1302,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Exposure>
       >;
       /**
-       * The session index at which the era start for the last `HISTORY_DEPTH` eras
+       * The session index at which the era start for the last `HISTORY_DEPTH` eras.
        **/
       erasStartSessionIndex: AugmentedQuery<
         ApiType,
@@ -1444,7 +1396,7 @@ declare module '@polkadot/api/types/storage' {
         (arg: AccountId | string | Uint8Array) => Observable<RewardDestination>
       >;
       /**
-       * The map from (wannabe) validators to the status of compliance
+       * The map from (wannabe) validators to the status of compliance.
        **/
       permissionedValidators: AugmentedQuery<
         ApiType,
@@ -1705,9 +1657,6 @@ declare module '@polkadot/api/types/storage' {
     };
     transactionPayment: {
       nextFeeMultiplier: AugmentedQuery<ApiType, () => Observable<Multiplier>>;
-    };
-    treasury: {
-      balance: AugmentedQuery<ApiType, () => Observable<Balance>>;
     };
     voting: {
       /**
