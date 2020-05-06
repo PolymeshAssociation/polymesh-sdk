@@ -5,10 +5,18 @@ import { ITuple } from '@polkadot/types/types';
 import { Enum, Option, Struct, U8aFixed, Vec } from '@polkadot/types/codec';
 import { Bytes, Text, bool, u128, u16, u32, u64, u8 } from '@polkadot/types/primitive';
 import { Signature } from '@polkadot/types/interfaces/extrinsics';
-import { Balance, Call, H256, H512, Hash, Moment } from '@polkadot/types/interfaces/runtime';
+import { Balance, Call, H256, H512, Moment } from '@polkadot/types/interfaces/runtime';
 
 /** @name AccountKey */
 export interface AccountKey extends U8aFixed {}
+
+/** @name AssetDidResult */
+export interface AssetDidResult extends Enum {
+  readonly isOk: boolean;
+  readonly asOk: IdentityId;
+  readonly isErr: boolean;
+  readonly asErr: Bytes;
+}
 
 /** @name AssetIdentifier */
 export interface AssetIdentifier extends Text {}
@@ -92,12 +100,43 @@ export interface BatchRevokeClaimItem extends Struct {
   readonly claim: Claim;
 }
 
+/** @name Beneficiary */
+export interface Beneficiary extends Struct {
+  readonly id: IdentityId;
+  readonly amount: Balance;
+}
+
 /** @name BridgeTx */
 export interface BridgeTx extends Struct {
   readonly nonce: u64;
   readonly recipient: IssueRecipient;
   readonly value: u128;
   readonly tx_hash: H256;
+}
+
+/** @name CappedFee */
+export interface CappedFee extends u64 {}
+
+/** @name CappedVoteCount */
+export interface CappedVoteCount extends Enum {
+  readonly isSuccess: boolean;
+  readonly asSuccess: CappedVoteCountSuccess;
+  readonly isProposalNotFound: boolean;
+  readonly asProposalNotFound: Bytes;
+}
+
+/** @name CappedVoteCountSuccess */
+export interface CappedVoteCountSuccess extends Struct {
+  readonly ayes: u64;
+  readonly nays: u64;
+}
+
+/** @name CddStatus */
+export interface CddStatus extends Enum {
+  readonly isOk: boolean;
+  readonly asOk: IdentityId;
+  readonly isErr: boolean;
+  readonly asErr: Bytes;
 }
 
 /** @name Claim */
@@ -177,6 +216,20 @@ export interface DidRecord extends Struct {
   readonly signing_items: Vec<SigningItem>;
 }
 
+/** @name DidRecords */
+export interface DidRecords extends Enum {
+  readonly isSuccess: boolean;
+  readonly asSuccess: DidRecordsSuccess;
+  readonly isIdNotFound: boolean;
+  readonly asIdNotFound: Bytes;
+}
+
+/** @name DidRecordsSuccess */
+export interface DidRecordsSuccess extends Struct {
+  readonly master_key: AccountKey;
+  readonly signing_items: Vec<SigningItem>;
+}
+
 /** @name Dividend */
 export interface Dividend extends Struct {
   readonly amount: Balance;
@@ -211,10 +264,9 @@ export interface FundingRoundName extends Text {}
 
 /** @name IdentifierType */
 export interface IdentifierType extends Enum {
-  readonly isIsin: boolean;
+  readonly isCins: boolean;
   readonly isCusip: boolean;
-  readonly isCustom: boolean;
-  readonly asCustom: Bytes;
+  readonly isIsin: boolean;
 }
 
 /** @name IdentityClaim */
@@ -233,7 +285,7 @@ export interface IdentityClaimKey extends Struct {
 }
 
 /** @name IdentityId */
-export interface IdentityId extends H256 {}
+export interface IdentityId extends U8aFixed {}
 
 /** @name IdentityRole */
 export interface IdentityRole extends Enum {
@@ -303,35 +355,6 @@ export interface LinkedKeyInfo extends Enum {
 /** @name Memo */
 export interface Memo extends U8aFixed {}
 
-/** @name MIP */
-export interface MIP extends Struct {
-  readonly index: MipsIndex;
-  readonly proposal: Call;
-}
-
-/** @name MipDescription */
-export interface MipDescription extends Text {}
-
-/** @name MipsIndex */
-export interface MipsIndex extends u32 {}
-
-/** @name MipsMetadata */
-export interface MipsMetadata extends Struct {
-  readonly proposer: AccountKey;
-  readonly index: u32;
-  readonly end: u32;
-  readonly proposal_hash: Hash;
-  readonly url: Option<Url>;
-  readonly description: Option<MipDescription>;
-  readonly cool_off_until: u32;
-}
-
-/** @name MipsPriority */
-export interface MipsPriority extends Enum {
-  readonly isHigh: boolean;
-  readonly isNormal: boolean;
-}
-
 /** @name Motion */
 export interface Motion extends Struct {
   readonly title: MotionTitle;
@@ -374,11 +397,28 @@ export interface PermissionedValidator extends Struct {
   readonly compliance: Compliance;
 }
 
-/** @name PolymeshReferendumInfo */
-export interface PolymeshReferendumInfo extends Struct {
-  readonly index: MipsIndex;
-  readonly priority: MipsPriority;
-  readonly proposal_hash: Hash;
+/** @name PIP */
+export interface PIP extends Struct {
+  readonly id: PipId;
+  readonly proposal: Call;
+  readonly state: ProposalState;
+}
+
+/** @name PipDescription */
+export interface PipDescription extends Text {}
+
+/** @name PipId */
+export interface PipId extends u32 {}
+
+/** @name PipsMetadata */
+export interface PipsMetadata extends Struct {
+  readonly proposer: AccountKey;
+  readonly id: PipId;
+  readonly end: u32;
+  readonly url: Option<Url>;
+  readonly description: Option<PipDescription>;
+  readonly cool_off_until: u32;
+  readonly beneficiaries: Vec<Beneficiary>;
 }
 
 /** @name PolymeshVotes */
@@ -403,6 +443,15 @@ export interface ProportionMatch extends Enum {
   readonly isMoreThan: boolean;
 }
 
+/** @name ProposalState */
+export interface ProposalState extends Enum {
+  readonly isPending: boolean;
+  readonly isCancelled: boolean;
+  readonly isKilled: boolean;
+  readonly isRejected: boolean;
+  readonly isReferendum: boolean;
+}
+
 /** @name ProtocolOp */
 export interface ProtocolOp extends Enum {
   readonly isAssetRegisterTicker: boolean;
@@ -416,8 +465,32 @@ export interface ProtocolOp extends Enum {
   readonly isIdentityAddClaim: boolean;
   readonly isIdentitySetMasterKey: boolean;
   readonly isIdentityAddSigningItem: boolean;
-  readonly isMipsPropose: boolean;
+  readonly isPipsPropose: boolean;
   readonly isVotingAddBallot: boolean;
+}
+
+/** @name Referendum */
+export interface Referendum extends Struct {
+  readonly id: PipId;
+  readonly state: ReferendumState;
+  readonly referendum_type: ReferendumType;
+  readonly enactment_period: u32;
+}
+
+/** @name ReferendumState */
+export interface ReferendumState extends Enum {
+  readonly isPending: boolean;
+  readonly isScheduled: boolean;
+  readonly isRejected: boolean;
+  readonly isFailed: boolean;
+  readonly isExecuted: boolean;
+}
+
+/** @name ReferendumType */
+export interface ReferendumType extends Enum {
+  readonly isFastTracked: boolean;
+  readonly isEmergency: boolean;
+  readonly isCommunity: boolean;
 }
 
 /** @name RestrictionResult */
@@ -568,5 +641,16 @@ export interface TokenName extends Text {}
 
 /** @name Url */
 export interface Url extends Text {}
+
+/** @name VotingResult */
+export interface VotingResult extends Struct {
+  readonly ayes_count: u32;
+  readonly ayes_stake: Balance;
+  readonly nays_count: u32;
+  readonly nays_stake: Balance;
+}
+
+/** @name Weight */
+export interface Weight extends u32 {}
 
 export type PHANTOM_POLYMESH = 'polymesh';

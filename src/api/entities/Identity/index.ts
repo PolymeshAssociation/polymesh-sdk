@@ -5,7 +5,12 @@ import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode, isTickerOwnerRole, isTokenOwnerRole, Role } from '~/types';
-import { balanceToBigNumber, stringToIdentityId, stringToTicker } from '~/utils';
+import {
+  balanceToBigNumber,
+  cddStatusToBoolean,
+  stringToIdentityId,
+  stringToTicker,
+} from '~/utils';
 
 import { Authorizations } from './Authorizations';
 
@@ -116,6 +121,23 @@ export class Identity extends Entity<UniqueIdentifiers> {
       stringToIdentityId(did, context)
     );
     return balanceToBigNumber(balance);
+  }
+
+  /**
+   * Check whether this Identity has a valid CDD claim
+   */
+  public async hasValidCdd(): Promise<boolean> {
+    const {
+      context,
+      did,
+      context: {
+        polymeshApi: { rpc },
+      },
+    } = this;
+    const identityId = stringToIdentityId(did, context);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (rpc as any).identity.isIdentityHasValidCdd(identityId);
+    return cddStatusToBoolean(result);
   }
 
   /**

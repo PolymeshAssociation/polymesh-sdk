@@ -28,6 +28,7 @@ import {
   AuthIdentifier,
   Authorization,
   AuthorizationData,
+  CddStatus,
   Claim,
   Document,
   DocumentHash,
@@ -284,6 +285,11 @@ export const mockContextModule = (path: string) => (): object => ({
 const txMocksData = new Map<unknown, TxMockData>();
 let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
+
+// TODO cast rpcModule to a better type
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let rpcModule = {} as any;
+
 const defaultContextOptions: ContextOptions = {
   did: 'someDid',
   withSeed: true,
@@ -379,6 +385,19 @@ function updateTx(mod?: Extrinsics): void {
   mockInstanceContainer.apiInstance.tx = txModule;
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * @hidden
+ */
+function updateRpc(mod?: any): void {
+  const updateTo = mod || rpcModule;
+
+  rpcModule = updateTo;
+
+  mockInstanceContainer.apiInstance.rpc = rpcModule;
+}
+/* eslint-enabled @typescript-eslint/no-explicit-any */
+
 /**
  * @hidden
  *
@@ -392,6 +411,17 @@ function initTx(): void {
 
 /**
  * @hidden
+ *
+ * Mock the rpc module
+ */
+function initRpc(): void {
+  const mod = {} as any;
+
+  updateRpc(mod);
+}
+
+/**
+ * @hidden
  */
 function initApi(): void {
   mockInstanceContainer.apiInstance.registry = ('registry' as unknown) as Registry;
@@ -399,6 +429,7 @@ function initApi(): void {
 
   initTx();
   initQuery();
+  initRpc();
 
   apiPromiseCreateStub = sinon.stub();
   MockApiPromiseClass.create = apiPromiseCreateStub.resolves(mockInstanceContainer.apiInstance);
@@ -622,6 +653,35 @@ export function createQueryStub<
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     stub.size.resolves(createMockU64(opts.size));
   }
+  if (opts?.returnValue) {
+    stub.resolves(opts.returnValue);
+  }
+
+  return stub;
+}
+
+/**
+ * @hidden
+ * Create and return a rpc stub
+ *
+ * @param mod - name of the module
+ * @param rpc - name of the rpc function
+ */
+export function createRpcStub(
+  mod: string,
+  rpc: string,
+  opts?: {
+    returnValue?: unknown;
+  }
+): SinonStub {
+  const runtimeModule = {} as any;
+  rpcModule[mod] = runtimeModule;
+
+  const stub: SinonStub = sinon.stub();
+  runtimeModule[rpc] = stub;
+
+  updateRpc();
+
   if (opts?.returnValue) {
     stub.resolves(opts.returnValue);
   }
@@ -1120,7 +1180,7 @@ export const createMockAuthIdentifier = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockIdentifierType = (
-  identifierType?: 'Isin' | 'Cusip' | { Custom: Bytes }
+  identifierType?: 'Isin' | 'Cusip' | 'Cins'
 ): IdentifierType => {
   return createMockEnum(identifierType) as IdentifierType;
 };
@@ -1203,6 +1263,13 @@ export const createMockLinkedKeyInfo = (
   linkedKeyInfo?: { Unique: IdentityId } | { Group: IdentityId[] }
 ): LinkedKeyInfo => {
   return createMockEnum(linkedKeyInfo) as LinkedKeyInfo;
+};
+
+/**
+ * @hidden
+ */
+export const createMockCddStatus = (cddStatus?: { Ok: IdentityId } | { Err: Bytes }): CddStatus => {
+  return createMockEnum(cddStatus) as CddStatus;
 };
 
 /**

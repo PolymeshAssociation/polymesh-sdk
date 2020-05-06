@@ -13,6 +13,7 @@ import {
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  CddStatus,
   Claim as MeshClaim,
   Document,
   DocumentHash,
@@ -419,7 +420,7 @@ export function identifierTypeToString(type: IdentifierType): string {
     return TokenIdentifierType.Isin;
   }
 
-  return u8aToString(type.asCustom);
+  return TokenIdentifierType.Cins;
 }
 
 /**
@@ -546,6 +547,16 @@ export function authIdentifierToAuthTarget({
     authId: u64ToBigNumber(authId),
     did: signatoryToSigner(signatory).value,
   };
+}
+
+/**
+ * @hidden
+ */
+export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
+  if (cddStatus.isOk) {
+    return true;
+  }
+  return false;
 }
 
 /**

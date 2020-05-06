@@ -54,6 +54,7 @@ import {
   booleanToBool,
   boolToBoolean,
   bytesToString,
+  cddStatusToBoolean,
   claimToMeshClaim,
   dateToMoment,
   delay,
@@ -646,13 +647,11 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
     result = identifierTypeToString(identifierType);
     expect(result).toEqual(fakeResult);
 
-    const fakeType = 'otherType';
-    identifierType = polkadotMockUtils.createMockIdentifierType({
-      Custom: polkadotMockUtils.createMockBytes(fakeType),
-    });
+    fakeResult = TokenIdentifierType.Cins;
+    identifierType = polkadotMockUtils.createMockIdentifierType(fakeResult);
 
     result = identifierTypeToString(identifierType);
-    expect(result).toEqual(fakeType);
+    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -957,6 +956,24 @@ describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
 
     const result = authIdentifierToAuthTarget(authIdentifier);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('cddStatusToBoolean', () => {
+  test('cddStatusToBoolean should convert a valid CDD status to a true boolean', async () => {
+    const cddStatusMock = polkadotMockUtils.createMockCddStatus({
+      Ok: polkadotMockUtils.createMockIdentityId(),
+    });
+    const result = cddStatusToBoolean(cddStatusMock);
+
+    expect(result).toEqual(true);
+  });
+
+  test('cddStatusToBoolean should convert an invalid CDD status to a false boolean', async () => {
+    const cddStatusMock = polkadotMockUtils.createMockCddStatus();
+    const result = cddStatusToBoolean(cddStatusMock);
+
+    expect(result).toEqual(false);
   });
 });
 
