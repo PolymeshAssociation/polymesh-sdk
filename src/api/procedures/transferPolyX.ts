@@ -1,8 +1,10 @@
 import BigNumber from 'bignumber.js';
 
+import { Identity } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
+import { IdentityId } from '~/polkadot';
 import { ErrorCode } from '~/types';
-import { numberToBalance, stringToAccountKey } from '~/utils';
+import { identityIdToString, numberToBalance, stringToAccountKey } from '~/utils';
 
 export interface TransferPolyXParams {
   to: string;
@@ -28,27 +30,54 @@ export async function prepareTransferPolyX(
 
   const { to, amount: val } = args;
 
-  const freeBalance = await context.accountBalance();
+  let identityId: IdentityId;
+
+  // TODO: queryMulti
+  const [freeBalance, identityIds] = await Promise.all([
+    context.accountBalance(),
+    identity.keyToIdentityIds(stringToAccountKey(to, context)),
+  ]);
 
   if (val.isGreaterThan(freeBalance)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Insufficient balance to perform this action',
+      message: 'Insufficient balance',
     });
   }
 
   try {
-    const identityIds = await identity.keyToIdentityIds(stringToAccountKey(to, context));
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _did = identityIds.unwrap().asUnique;
-
-    this.addTransaction(tx.balances.transfer, {}, to, numberToBalance(val, context));
+    identityId = identityIds.unwrap().asUnique;
   } catch (err) {
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
-      message: 'The destination account has not an associated identity',
+      code: ErrorCode.ValidationError,
+      message: "The destination account doesn't have an asssociated identity",
     });
   }
+
+  const senderIdentity = context.getCurrentIdentity();
+  const receiverIdentity = new Identity({ did: identityIdToString(identityId) }, context);
+
+  // TODO: queryMulti
+  const [senderCdd, receiverCdd] = await Promise.all([
+    senderIdentity.hasValidCdd(),
+    receiverIdentity.hasValidCdd(),
+  ]);
+
+  if (!senderCdd) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The sender Identity has an invalid CDD claim',
+    });
+  }
+
+  if (!receiverCdd) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The receiver Identity has an invalid CDD claim',
+    });
+  }
+
+  this.addTransaction(tx.balances.transfer, {}, to, numberToBalance(val, context));
 }
 
 export const transferPolyX = new Procedure(prepareTransferPolyX);
