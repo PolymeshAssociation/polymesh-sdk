@@ -1,7 +1,7 @@
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType } from '~/types';
-import { stringToTicker } from '~/utils';
+import { boolToBoolean, stringToTicker } from '~/utils';
 
 export interface TogglePauseRulesParams {
   pause: boolean;
@@ -30,23 +30,18 @@ export async function prepareTogglePauseRules(
 
   const { is_paused: isPaused } = await query.generalTm.assetRulesMap(rawTicker);
 
-  if (pause) {
-    if (isPaused) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The Security Token rules are already paused',
-      });
-    }
-    this.addTransaction(tx.generalTm.pauseAssetRules, {}, rawTicker);
-  } else {
-    if (!isPaused) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The Security Token rules are already unpaused',
-      });
-    }
-    this.addTransaction(tx.generalTm.resumeAssetRules, {}, rawTicker);
+  if (pause === boolToBoolean(isPaused)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `Rules are already ${isPaused ? '' : 'un'}paused`,
+    });
   }
+
+  this.addTransaction(
+    pause ? tx.generalTm.pauseAssetRules : tx.generalTm.resumeAssetRules,
+    {},
+    rawTicker
+  );
 
   return new SecurityToken({ ticker }, context);
 }

@@ -1,3 +1,4 @@
+import { bool } from '@polkadot/types';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -22,6 +23,7 @@ describe('togglePauseRules procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let assetRulesMapStub: sinon.SinonStub;
+  let boolToBooleanStub: sinon.SinonStub<[bool], boolean>;
   let ticker: string;
   let rawTicker: Ticker;
 
@@ -30,6 +32,7 @@ describe('togglePauseRules procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    boolToBooleanStub = sinon.stub(utilsModule, 'boolToBoolean');
     ticker = 'TEST';
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
   });
@@ -43,6 +46,11 @@ describe('togglePauseRules procedure', () => {
     assetRulesMapStub = polkadotMockUtils.createQueryStub('generalTm', 'assetRulesMap', {
       returnValue: [],
     });
+    assetRulesMapStub.withArgs(rawTicker).returns({
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      is_paused: true,
+    });
+    boolToBooleanStub.returns(true);
   });
 
   afterEach(() => {
@@ -58,11 +66,6 @@ describe('togglePauseRules procedure', () => {
   });
 
   test('should throw an error if pause is set to true and the rules are already paused', () => {
-    assetRulesMapStub.withArgs(rawTicker).returns({
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      is_paused: true,
-    });
-
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
@@ -71,7 +74,7 @@ describe('togglePauseRules procedure', () => {
         ticker,
         pause: true,
       })
-    ).rejects.toThrow('The Security Token rules are already paused');
+    ).rejects.toThrow('Rules are already paused');
   });
 
   test('should throw an error if pause is set to false and the rules are already unpaused', () => {
@@ -79,6 +82,8 @@ describe('togglePauseRules procedure', () => {
       // eslint-disable-next-line @typescript-eslint/camelcase
       is_paused: false,
     });
+
+    boolToBooleanStub.returns(false);
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
@@ -88,7 +93,7 @@ describe('togglePauseRules procedure', () => {
         ticker,
         pause: false,
       })
-    ).rejects.toThrow('The Security Token rules are already unpaused');
+    ).rejects.toThrow('Rules are already unpaused');
   });
 
   test('should add a pause asset rules transaction to the queue', async () => {
@@ -96,6 +101,8 @@ describe('togglePauseRules procedure', () => {
       // eslint-disable-next-line @typescript-eslint/camelcase
       is_paused: false,
     });
+
+    boolToBooleanStub.returns(false);
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
@@ -113,11 +120,6 @@ describe('togglePauseRules procedure', () => {
   });
 
   test('should add a resume asset rules transaction to the queue', async () => {
-    assetRulesMapStub.withArgs(rawTicker).returns({
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      is_paused: true,
-    });
-
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 

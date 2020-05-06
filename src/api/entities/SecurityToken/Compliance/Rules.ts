@@ -73,7 +73,7 @@ export class Rules extends Namespace<SecurityToken> {
   }
 
   /**
-   * Pause temporarily all the Security Token's current rules
+   * Pause all the Security Token's rules. This means that all transfers and token issuance will be allowed until rules are unpaused
    */
   public pause(): Promise<TransactionQueue<SecurityToken>> {
     const {
