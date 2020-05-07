@@ -243,7 +243,7 @@ export enum ErrorCode {
 }
 
 /**
- * Operation names to the base fees
+ * Polymesh protocol operation names
  */
 export enum ProtocolOp {
   AssetRegisterTicker = 'AssetRegisterTicker',
