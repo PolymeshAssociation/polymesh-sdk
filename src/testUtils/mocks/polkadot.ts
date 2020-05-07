@@ -130,6 +130,7 @@ interface ContextOptions {
   withSeed?: boolean;
   balance?: BigNumber;
   hasRoles?: boolean;
+  validCdd?: boolean;
 }
 
 interface Pair {
@@ -296,6 +297,7 @@ const defaultContextOptions: ContextOptions = {
   withSeed: true,
   balance: new BigNumber(100),
   hasRoles: true,
+  validCdd: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -316,6 +318,7 @@ function configureContext(opts: ContextOptions): void {
         getPolyXBalance: sinon.stub().resolves(opts.balance),
         did: opts.did,
         hasRoles: sinon.stub().resolves(opts.hasRoles),
+        hasValidCdd: sinon.stub().resolves(opts.validCdd),
       })
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')

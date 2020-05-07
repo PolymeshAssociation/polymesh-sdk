@@ -3,7 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
-import { addClaims, AddClaimsParams, reserveTicker, ReserveTickerParams } from '~/api/procedures';
+import { addClaims, AddClaimsParams, reserveTicker, ReserveTickerParams, transferPolyX, TransferPolyXParams } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
@@ -82,6 +82,16 @@ export class Polymesh {
         message: `Error while connecting to "${nodeUrl}": "${e.message}"`,
       });
     }
+  }
+
+  /**
+   * Transfer an amount of POLYX to a specified account
+   *
+   * @param args.to - account id that will receive the POLYX
+   * @param args.amount - amount of POLYX to be transferred
+   */
+  public transferPolyX(args: TransferPolyXParams): Promise<TransactionQueue<void>> {
+    return transferPolyX.prepare(args, this.context);
   }
 
   /**

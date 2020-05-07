@@ -31,6 +31,7 @@ interface IdentityOptions {
   getPolyXBalance?: BigNumber;
   hasRoles?: boolean;
   hasRole?: boolean;
+  hasValidCdd?: boolean;
 }
 
 interface TickerReservationOptions {
@@ -61,6 +62,7 @@ let securityTokenDetailsStub: SinonStub;
 let identityGetPolyXBalanceStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
+let identityHasValidCddStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
 let securityTokenTransfersAreFrozenStub: SinonStub;
@@ -124,6 +126,7 @@ export const mockAuthorizationRequestModule = (path: string) => (): object => ({
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   getPolyXBalance: new BigNumber(100),
+  hasValidCdd: true,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultTickerReservationOptions: TickerReservationOptions = {
@@ -262,6 +265,7 @@ function configureIdentity(opts: IdentityOptions): void {
     getPolyXBalance: identityGetPolyXBalanceStub.resolves(opts.getPolyXBalance),
     hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
+    hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -279,6 +283,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityGetPolyXBalanceStub = sinon.stub();
   identityHasRolesStub = sinon.stub();
   identityHasRoleStub = sinon.stub();
+  identityHasValidCddStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -406,6 +411,14 @@ export function getIdentityHasRolesStub(): SinonStub {
  */
 export function getIdentityHasRoleStub(): SinonStub {
   return identityHasRoleStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Identity.hasValidCdd` method
+ */
+export function getIdentityHasValidCddStub(): SinonStub {
+  return identityHasValidCddStub;
 }
 
 /**
