@@ -46,7 +46,7 @@ describe('togglePauseRules procedure', () => {
     assetRulesMapStub = polkadotMockUtils.createQueryStub('generalTm', 'assetRulesMap', {
       returnValue: [],
     });
-    assetRulesMapStub.withArgs(rawTicker).returns({
+    assetRulesMapStub.withArgs(rawTicker).resolves({
       // eslint-disable-next-line @typescript-eslint/camelcase
       is_paused: true,
     });
