@@ -1,4 +1,4 @@
-import { setTokenRules, SetTokenRulesParams } from '~/api/procedures';
+import { setTokenRules, SetTokenRulesParams, togglePauseRules } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { Rule } from '~/types';
 import { assetTransferRuleToRule, identityIdToString, stringToTicker } from '~/utils';
@@ -60,7 +60,7 @@ export class Rules extends Namespace<SecurityToken> {
       return rule;
     });
   }
-  
+
   /**
    * Detele all the current rules for the Security Token.
    */
@@ -70,5 +70,27 @@ export class Rules extends Namespace<SecurityToken> {
       context,
     } = this;
     return setTokenRules.prepare({ ticker, rules: [] }, context);
+  }
+
+  /**
+   * Pause all the Security Token's rules. This means that all transfers and token issuance will be allowed until rules are unpaused
+   */
+  public pause(): Promise<TransactionQueue<SecurityToken>> {
+    const {
+      parent: { ticker },
+      context,
+    } = this;
+    return togglePauseRules.prepare({ ticker, pause: true }, context);
+  }
+
+  /**
+   * Un-pause all the Security Token's current rules
+   */
+  public unpause(): Promise<TransactionQueue<SecurityToken>> {
+    const {
+      parent: { ticker },
+      context,
+    } = this;
+    return togglePauseRules.prepare({ ticker, pause: false }, context);
   }
 }
