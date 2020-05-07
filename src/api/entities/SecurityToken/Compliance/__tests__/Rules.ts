@@ -1,7 +1,7 @@
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
-import { setTokenRules } from '~/api/procedures';
+import { setTokenRules, togglePauseRules } from '~/api/procedures';
 import { Params } from '~/api/procedures/setTokenRules';
 import { Namespace, TransactionQueue } from '~/base';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
@@ -212,6 +212,52 @@ describe('Rules class', () => {
       ];
 
       expect(result).toEqual(expected);
+    });
+  });
+
+  describe('method: pause', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = polkadotMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const rules = new Rules(token, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      sinon
+        .stub(togglePauseRules, 'prepare')
+        .withArgs({ ticker: token.ticker, pause: true }, context)
+        .resolves(expectedQueue);
+
+      const queue = await rules.pause();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: unpause', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = polkadotMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const rules = new Rules(token, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      sinon
+        .stub(togglePauseRules, 'prepare')
+        .withArgs({ ticker: token.ticker, pause: false }, context)
+        .resolves(expectedQueue);
+
+      const queue = await rules.unpause();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });
