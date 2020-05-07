@@ -13,3 +13,4 @@ export {
 export { setTokenRules, SetTokenRulesParams } from './setTokenRules';
 export { transferPolyX, TransferPolyXParams } from './transferPolyX';
 export { addClaims, AddClaimsParams, ClaimTargets } from './addClaims';
+export { togglePauseRules, TogglePauseRulesParams } from './togglePauseRules';
