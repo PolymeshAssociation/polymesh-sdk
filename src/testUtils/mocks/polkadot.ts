@@ -41,6 +41,7 @@ import {
   Link,
   LinkData,
   LinkedKeyInfo,
+  PosRatio,
   Rule,
   RuleType,
   Scope,
@@ -960,6 +961,12 @@ export const createMockBytes = (value?: string): Bytes => createMockU8ACodec(val
  */
 export const createMockTokenName = (name?: string): TokenName =>
   createMockStringCodec(name) as TokenName;
+
+/**
+ * @hidden
+ */
+export const createMockPosRatio = (numerator: number, denominator: number): PosRatio =>
+  [createMockU32(numerator), createMockU32(denominator)] as PosRatio;
 
 /**
  * @hidden

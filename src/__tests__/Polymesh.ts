@@ -3,10 +3,11 @@ import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { reserveTicker, transferPolyX } from '~/api/procedures';
+import { addClaims, ClaimTargets, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Polymesh } from '~/Polymesh';
 import { polkadotMockUtils } from '~/testUtils/mocks';
+import { ClaimType } from '~/types';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -476,6 +477,40 @@ describe('Polymesh Class', () => {
       return expect(polymesh.getSecurityToken({ ticker })).rejects.toThrow(
         `There is no Security Token with ticker "${ticker}"`
       );
+    });
+  });
+
+  describe('method: addClaims', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = polkadotMockUtils.getContextInstance();
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const claims: ClaimTargets[] = [
+        {
+          targets: ['someDid'],
+          claim: {
+            type: ClaimType.Accredited,
+            scope: 'someIdentityId',
+          },
+        },
+      ];
+
+      const args = { claims };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(addClaims, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await polymesh.addClaims(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 

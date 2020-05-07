@@ -59,6 +59,7 @@ export enum TransactionQueueStatus {
 export enum RoleType {
   TickerOwner = 'TickerOwner',
   TokenOwner = 'TokenOwner',
+  CddProvider = 'CddProvider',
 }
 
 export interface TickerOwnerRole {
@@ -85,7 +86,18 @@ export function isTokenOwnerRole(role: Role): role is TokenOwnerRole {
   return role.type === RoleType.TokenOwner;
 }
 
-export type Role = TickerOwnerRole | TokenOwnerRole;
+export interface CddProviderRole {
+  type: RoleType.CddProvider;
+}
+
+/**
+ * @hidden
+ */
+export function isCddProviderRole(role: Role): role is CddProviderRole {
+  return role.type === RoleType.CddProvider;
+}
+
+export type Role = TickerOwnerRole | TokenOwnerRole | CddProviderRole;
 
 export enum KnownTokenType {
   Equity = 'Equity',
@@ -228,6 +240,25 @@ export enum ErrorCode {
   InvalidUuid = 'InvalidUuid',
   ValidationError = 'ValidationError',
   NotAuthorized = 'NotAuthorized',
+}
+
+/**
+ * Polymesh protocol operation names
+ */
+export enum ProtocolOp {
+  AssetRegisterTicker = 'AssetRegisterTicker',
+  AssetIssue = 'AssetIssue',
+  AssetAddDocument = 'AssetAddDocument',
+  AssetCreateToken = 'AssetCreateToken',
+  DividendNew = 'DividendNew',
+  GeneralTmAddActiveRule = 'GeneralTmAddActiveRule',
+  IdentityRegisterDid = 'IdentityRegisterDid',
+  IdentityCddRegisterDid = 'IdentityCddRegisterDid',
+  IdentityAddClaim = 'IdentityAddClaim',
+  IdentitySetMasterKey = 'IdentitySetMasterKey',
+  IdentityAddSigningItem = 'IdentityAddSigningItem',
+  PipsPropose = 'PipsPropose',
+  VotingAddBallot = 'VotingAddBallot',
 }
 
 /**
