@@ -257,10 +257,16 @@ export default {
     ReferendumType: {
       _enum: ['FastTracked', 'Emergency', 'Community'],
     },
-    PIP: {
+    Pip: {
       id: 'PipId',
       proposal: 'Call',
       state: 'ProposalState',
+    },
+    ProposalData: {
+      _enum: {
+        Hash: 'Hash',
+        Proposal: 'Vec<u8>',
+      },
     },
     Referendum: {
       id: 'PipId',
@@ -338,9 +344,9 @@ export default {
       },
     },
     BridgeTx: {
-      nonce: 'u64',
-      recipient: 'IssueRecipient',
-      value: 'u128',
+      nonce: 'u32',
+      recipient: 'AccountId',
+      value: 'Balance',
       tx_hash: 'H256',
     },
     PendingTx: {
@@ -434,6 +440,21 @@ export default {
       },
     },
     Weight: 'u32',
+    BridgeTxDetail: {
+      amount: 'Balance',
+      status: 'BridgeTxStatus',
+      execution_block: 'BlockNumber',
+      tx_hash: 'H256',
+    },
+    BridgeTxStatus: {
+      _enum: {
+        Absent: '',
+        Pending: 'u8',
+        Frozen: '',
+        Timelocked: '',
+        Handled: '',
+      },
+    },
     CappedFee: 'u64',
   },
   rpc: {

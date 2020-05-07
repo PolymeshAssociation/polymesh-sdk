@@ -4,8 +4,14 @@ import { Ticker } from 'polymesh-types/types';
 import { TickerReservation } from '~/api/entities';
 import { PolymeshError, PostTransactionValue, Procedure } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode, Role, RoleType, TickerReservationStatus } from '~/types';
-import { balanceToBigNumber, findEventRecord, stringToTicker, tickerToString } from '~/utils';
+import { ErrorCode, ProtocolOp, Role, RoleType, TickerReservationStatus } from '~/types';
+import {
+  balanceToBigNumber,
+  findEventRecord,
+  posRatioToBigNumber,
+  stringToTicker,
+  tickerToString,
+} from '~/utils';
 
 export interface ReserveTickerParams {
   ticker: string;
@@ -47,12 +53,14 @@ export async function prepareReserveTicker(
 
   // TODO: queryMulti
   const [
-    rawFee,
+    rawCoefficient,
+    rawRegisterTickerFee,
     balance,
     { max_ticker_length: rawMaxTickerLength },
     { expiryDate, status },
   ] = await Promise.all([
-    query.asset.tickerRegistrationFee(),
+    query.protocolFee.coefficient(),
+    query.protocolFee.baseFees(ProtocolOp.AssetRegisterTicker),
     context.accountBalance(),
     query.asset.tickerConfig(),
     reservation.details(),
@@ -96,7 +104,9 @@ export async function prepareReserveTicker(
     }
   }
 
-  const fee = balanceToBigNumber(rawFee);
+  const ratio = posRatioToBigNumber(rawCoefficient);
+  const registerTickerFee = balanceToBigNumber(rawRegisterTickerFee);
+  const fee = registerTickerFee.multipliedBy(ratio);
 
   if (balance.lt(fee)) {
     throw new PolymeshError({

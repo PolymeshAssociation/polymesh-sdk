@@ -75,15 +75,6 @@ export enum StakingTx {
   ReapStash = 'staking.reapStash',
 }
 
-export enum ElectionsTx {
-  Vote = 'elections.vote',
-  RemoveVoter = 'elections.removeVoter',
-  ReportDefunctVoter = 'elections.reportDefunctVoter',
-  SubmitCandidacy = 'elections.submitCandidacy',
-  RenounceCandidacy = 'elections.renounceCandidacy',
-  RemoveMember = 'elections.removeMember',
-}
-
 export enum SessionTx {
   SetKeys = 'session.setKeys',
   PurgeKeys = 'session.purgeKeys',
@@ -216,19 +207,6 @@ export enum AssetTx {
   UnarchiveExtension = 'asset.unarchiveExtension',
 }
 
-export enum BridgeTx {
-  ChangeController = 'bridge.changeController',
-  ChangeAdmin = 'bridge.changeAdmin',
-  ChangeTimelock = 'bridge.changeTimelock',
-  Freeze = 'bridge.freeze',
-  Unfreeze = 'bridge.unfreeze',
-  ProposeBridgeTx = 'bridge.proposeBridgeTx',
-  FinalizePending = 'bridge.finalizePending',
-  HandleBridgeTx = 'bridge.handleBridgeTx',
-  FreezeTxs = 'bridge.freezeTxs',
-  UnfreezeTxs = 'bridge.unfreezeTxs',
-}
-
 export enum DividendTx {
   New = 'dividend.new',
   Cancel = 'dividend.cancel',
@@ -265,6 +243,21 @@ export enum IdentityTx {
   BatchAcceptAuthorization = 'identity.batchAcceptAuthorization',
   AddSigningItemsWithAuthorization = 'identity.addSigningItemsWithAuthorization',
   RevokeOffchainAuthorization = 'identity.revokeOffchainAuthorization',
+}
+
+export enum BridgeTx {
+  ChangeController = 'bridge.changeController',
+  ChangeAdmin = 'bridge.changeAdmin',
+  ChangeTimelock = 'bridge.changeTimelock',
+  Freeze = 'bridge.freeze',
+  Unfreeze = 'bridge.unfreeze',
+  ChangeBridgeLimit = 'bridge.changeBridgeLimit',
+  ChangeBridgeWhitelist = 'bridge.changeBridgeWhitelist',
+  ForceHandleBridgeTx = 'bridge.forceHandleBridgeTx',
+  ProposeBridgeTx = 'bridge.proposeBridgeTx',
+  HandleBridgeTx = 'bridge.handleBridgeTx',
+  FreezeTxs = 'bridge.freezeTxs',
+  UnfreezeTxs = 'bridge.unfreezeTxs',
 }
 
 export enum GeneralTmTx {
@@ -336,7 +329,6 @@ export type TxTag =
   | BalancesTx
   | AuthorshipTx
   | StakingTx
-  | ElectionsTx
   | SessionTx
   | FinalityTrackerTx
   | GrandpaTx
@@ -349,9 +341,9 @@ export type TxTag =
   | CommitteeMembershipTx
   | PipsTx
   | AssetTx
-  | BridgeTx
   | DividendTx
   | IdentityTx
+  | BridgeTx
   | GeneralTmTx
   | VotingTx
   | StoCappedTx
@@ -368,7 +360,6 @@ export const TxTags = {
   balances: BalancesTx,
   authorship: AuthorshipTx,
   staking: StakingTx,
-  elections: ElectionsTx,
   session: SessionTx,
   finalityTracker: FinalityTrackerTx,
   grandpa: GrandpaTx,
@@ -381,9 +372,9 @@ export const TxTags = {
   committeeMembership: CommitteeMembershipTx,
   pips: PipsTx,
   asset: AssetTx,
-  bridge: BridgeTx,
   dividend: DividendTx,
   identity: IdentityTx,
+  bridge: BridgeTx,
   generalTm: GeneralTmTx,
   voting: VotingTx,
   stoCapped: StoCappedTx,
