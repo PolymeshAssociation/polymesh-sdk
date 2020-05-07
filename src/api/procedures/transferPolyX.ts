@@ -28,7 +28,7 @@ export async function prepareTransferPolyX(
     context,
   } = this;
 
-  const { to, amount: val } = args;
+  const { to, amount } = args;
 
   let identityId: IdentityId;
 
@@ -38,7 +38,7 @@ export async function prepareTransferPolyX(
     identity.keyToIdentityIds(stringToAccountKey(to, context)),
   ]);
 
-  if (val.isGreaterThan(freeBalance)) {
+  if (amount.isGreaterThan(freeBalance)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Insufficient balance',
@@ -77,7 +77,7 @@ export async function prepareTransferPolyX(
     });
   }
 
-  this.addTransaction(tx.balances.transfer, {}, to, numberToBalance(val, context));
+  this.addTransaction(tx.balances.transfer, {}, to, numberToBalance(amount, context));
 }
 
 export const transferPolyX = new Procedure(prepareTransferPolyX);

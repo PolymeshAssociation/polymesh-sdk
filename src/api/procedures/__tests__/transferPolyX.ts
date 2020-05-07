@@ -63,12 +63,13 @@ describe('transferPolyX procedure', () => {
     ).rejects.toThrow("The destination account doesn't have an asssociated identity");
   });
 
-  test("should throw an error if sender account doesn't have a valid cdd", () => {
-    polkadotMockUtils.createQueryStub(
-      'identity',
-      'keyToIdentityIds',
-      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-      { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
+  test("should throw an error if sender identity doesn't have a valid cdd", () => {
+    polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
+      polkadotMockUtils.createMockOption(
+        polkadotMockUtils.createMockLinkedKeyInfo({
+          Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+        })
+      )
     );
 
     polkadotMockUtils.configureMocks({
@@ -86,11 +87,12 @@ describe('transferPolyX procedure', () => {
   });
 
   test("should throw an error if destination account doesn't have a valid cdd", () => {
-    polkadotMockUtils.createQueryStub(
-      'identity',
-      'keyToIdentityIds',
-      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-      { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
+    polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
+      polkadotMockUtils.createMockOption(
+        polkadotMockUtils.createMockLinkedKeyInfo({
+          Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+        })
+      )
     );
 
     entityMockUtils.configureMocks({
@@ -112,11 +114,12 @@ describe('transferPolyX procedure', () => {
     const amount = new BigNumber(99);
     const rawAmount = polkadotMockUtils.createMockBalance(amount.toNumber());
 
-    polkadotMockUtils.createQueryStub(
-      'identity',
-      'keyToIdentityIds',
-      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-      { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
+    polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
+      polkadotMockUtils.createMockOption(
+        polkadotMockUtils.createMockLinkedKeyInfo({
+          Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+        })
+      )
     );
 
     sinon.stub(utilsModule, 'numberToBalance').returns(rawAmount);
