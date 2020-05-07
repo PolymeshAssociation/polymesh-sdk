@@ -129,15 +129,13 @@ describe('Identity class', () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
       const role: Role = { type: RoleType.CddProvider };
-      const mockSomeDid = polkadotMockUtils.createMockIdentityId(did);
+      const rawDid = polkadotMockUtils.createMockIdentityId(did);
 
-      polkadotMockUtils
-        .createQueryStub('cddServiceProviders', 'activeMembers')
-        .resolves([mockSomeDid]);
+      polkadotMockUtils.createQueryStub('cddServiceProviders', 'activeMembers').resolves([rawDid]);
 
       sinon
         .stub(utilsModule, 'identityIdToString')
-        .withArgs(mockSomeDid)
+        .withArgs(rawDid)
         .returns(did);
 
       let hasRole = await identity.hasRole(role);

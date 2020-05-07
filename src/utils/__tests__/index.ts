@@ -335,10 +335,10 @@ describe('posRatioToBigNumber', () => {
     polkadotMockUtils.cleanup();
   });
 
-  test('posRatioToBigNumber should convert a PosRatio object to a BigNumber', () => {
+  test('posRatioToBigNumber should convert a polkadot PosRatio object to a BigNumber', () => {
     const numerator = 1;
     const denominator = 1;
-    const balance = polkadotMockUtils.createMockPostRatio(numerator, denominator);
+    const balance = polkadotMockUtils.createMockPosRatio(numerator, denominator);
 
     const result = posRatioToBigNumber(balance);
     expect(result).toEqual(new BigNumber(numerator).dividedBy(new BigNumber(denominator)));

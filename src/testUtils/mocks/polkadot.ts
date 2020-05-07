@@ -962,7 +962,7 @@ export const createMockTokenName = (name?: string): TokenName =>
 /**
  * @hidden
  */
-export const createMockPostRatio = (numerator: number, denominator: number): PosRatio =>
+export const createMockPosRatio = (numerator: number, denominator: number): PosRatio =>
   [createMockU32(numerator), createMockU32(denominator)] as PosRatio;
 
 /**

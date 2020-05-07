@@ -80,9 +80,10 @@ describe('createSecurityToken procedure', () => {
   let rawFee: Balance;
   let numerator: number;
   let denominator: number;
+  let posRatioToBigNumberResult: BigNumber;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(500) } });
+    polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(1000) } });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
@@ -99,6 +100,8 @@ describe('createSecurityToken procedure', () => {
     tokenDocumentToDocumentStub = sinon.stub(utilsModule, 'tokenDocumentToDocument');
     posRatioToBigNumberStub = sinon.stub(utilsModule, 'posRatioToBigNumber');
     balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
+    numerator = 5;
+    denominator = 2;
     ticker = 'someTicker';
     name = 'someName';
     totalSupply = new BigNumber(100);
@@ -138,10 +141,7 @@ describe('createSecurityToken procedure', () => {
       })
     );
     rawFundingRound = polkadotMockUtils.createMockFundingRoundName(fundingRound);
-    rawPosRatio = polkadotMockUtils.createMockPostRatio(numerator, denominator);
-    rawFee = polkadotMockUtils.createMockBalance(fee);
-    numerator = 1;
-    denominator = 1;
+    rawPosRatio = polkadotMockUtils.createMockPosRatio(numerator, denominator);
     args = {
       ticker,
       name,
@@ -152,6 +152,8 @@ describe('createSecurityToken procedure', () => {
       fundingRound,
     };
     fee = 250;
+    rawFee = polkadotMockUtils.createMockBalance(fee);
+    posRatioToBigNumberResult = new BigNumber(numerator).dividedBy(new BigNumber(denominator));
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -199,11 +201,9 @@ describe('createSecurityToken procedure', () => {
     stringToFundingRoundNameStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
     tokenDocumentToDocumentStub.withArgs(documents[0], mockContext).returns(rawDocuments[0]);
 
-    posRatioToBigNumberStub
-      .withArgs(rawPosRatio)
-      .returns(new BigNumber(numerator).dividedBy(new BigNumber(denominator)));
+    posRatioToBigNumberStub.withArgs(rawPosRatio).returns(posRatioToBigNumberResult);
 
-    balanceToBigNumberStub.returns(new BigNumber(fee));
+    balanceToBigNumberStub.withArgs(rawFee).returns(new BigNumber(fee));
   });
 
   afterEach(() => {
@@ -271,7 +271,7 @@ describe('createSecurityToken procedure', () => {
       addTransactionStub.firstCall,
       transaction,
       sinon.match({
-        fee: new BigNumber(fee),
+        fee: new BigNumber(fee).multipliedBy(posRatioToBigNumberResult),
       }),
       rawName,
       rawTicker,
@@ -293,7 +293,7 @@ describe('createSecurityToken procedure', () => {
       addTransactionStub.secondCall,
       transaction,
       sinon.match({
-        fee: new BigNumber(fee),
+        fee: new BigNumber(fee).multipliedBy(posRatioToBigNumberResult),
       }),
       rawName,
       rawTicker,

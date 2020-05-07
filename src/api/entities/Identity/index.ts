@@ -102,9 +102,9 @@ export class Identity extends Entity<UniqueIdentifiers> {
       } = context;
 
       const activeMembers = await cddServiceProviders.activeMembers();
-      const membersDid = activeMembers.map(identityIdToString);
+      const memberDids = activeMembers.map(identityIdToString);
 
-      return membersDid.includes(did);
+      return memberDids.includes(did);
     }
 
     throw new PolymeshError({

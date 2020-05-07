@@ -3,7 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { addClaims, Claims, reserveTicker } from '~/api/procedures';
+import { addClaims, ClaimTargets, reserveTicker } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Polymesh } from '~/Polymesh';
 import { polkadotMockUtils } from '~/testUtils/mocks';
@@ -462,9 +462,9 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      const claims: Claims[] = [
+      const claims: ClaimTargets[] = [
         {
-          target: ['someDid'],
+          targets: ['someDid'],
           claim: {
             type: ClaimType.Accredited,
             scope: 'someIdentityId',

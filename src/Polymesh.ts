@@ -193,9 +193,9 @@ export class Polymesh {
   }
 
   /**
-   * Add a batch of claims
+   * Add claims to identities
    *
-   * @param args.claims - array of clamis to be added
+   * @param args.claims - array of claims to be added
    */
   public addClaims(args: AddClaimsParams): Promise<TransactionQueue<void>> {
     return addClaims.prepare(args, this.context);
