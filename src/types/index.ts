@@ -243,7 +243,7 @@ export enum ErrorCode {
 }
 
 /**
- *
+ * Operation names to the base fees
  */
 export enum ProtocolOp {
   AssetRegisterTicker = 'AssetRegisterTicker',
