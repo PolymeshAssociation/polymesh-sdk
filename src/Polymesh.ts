@@ -3,7 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
-import { reserveTicker, ReserveTickerParams } from '~/api/procedures';
+import { addClaims, AddClaimsParams, reserveTicker, ReserveTickerParams } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
@@ -190,6 +190,15 @@ export class Polymesh {
       return new Identity(args, this.context);
     }
     return this.context.getCurrentIdentity();
+  }
+
+  /**
+   * Add a batch of claims
+   *
+   * @param args.claims - array of clamis to be added
+   */
+  public addClaims(args: AddClaimsParams): Promise<TransactionQueue<void>> {
+    return addClaims.prepare(args, this.context);
   }
 
   /**

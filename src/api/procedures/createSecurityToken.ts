@@ -16,6 +16,7 @@ import {
   balanceToBigNumber,
   booleanToBool,
   numberToBalance,
+  posRatioToBigNumber,
   stringToAssetIdentifier,
   stringToFundingRoundName,
   stringToTicker,
@@ -66,8 +67,9 @@ export async function prepareCreateSecurityToken(
   const reservation = new TickerReservation({ ticker }, context);
 
   // TODO: queryMulti
-  const [rawFee, balance, { status }] = await Promise.all([
-    query.asset.assetCreationFee(),
+  const [rawPosRatio, rawCreateTokenFee, balance, { status }] = await Promise.all([
+    query.protocolFee.coefficient(),
+    query.protocolFee.baseFees('AssetCreateToken'),
     context.accountBalance(),
     reservation.details(),
   ]);
@@ -86,7 +88,9 @@ export async function prepareCreateSecurityToken(
     });
   }
 
-  const fee = balanceToBigNumber(rawFee);
+  const ratio = posRatioToBigNumber(rawPosRatio);
+  const createTokenFee = balanceToBigNumber(rawCreateTokenFee);
+  const fee = createTokenFee.dividedBy(ratio);
 
   if (balance.lt(fee)) {
     throw new PolymeshError({

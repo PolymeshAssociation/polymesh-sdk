@@ -23,6 +23,7 @@ import {
   IdentifierType,
   IdentityId,
   JurisdictionName,
+  PosRatio,
   Rule as MeshRule,
   RuleType,
   Signatory,
@@ -475,6 +476,14 @@ export function assetTypeToString(assetType: AssetType): string {
   }
 
   return u8aToString(assetType.asCustom);
+}
+
+/**
+ * @hidden
+ */
+export function posRatioToBigNumber(postRatio: PosRatio): BigNumber {
+  const [numerator, denominator] = postRatio.map(u32ToBigNumber);
+  return numerator.dividedBy(denominator);
 }
 
 /**
