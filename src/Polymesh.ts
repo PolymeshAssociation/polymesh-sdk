@@ -86,10 +86,13 @@ export class Polymesh {
 
   /**
    * Get the POLYX balance of the current account
+   * NOTE: For Testnet v1 we don't expose this method
    */
+  /*
   public getIdentityBalance(): Promise<BigNumber> {
     return this.context.getCurrentIdentity().getPolyXBalance();
   }
+  */
 
   /**
    * Get the free POLYX balance of an account

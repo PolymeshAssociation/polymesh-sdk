@@ -68,7 +68,7 @@ describe('Rules class', () => {
         .resolves(expectedQueue);
 
       const queue = await rules.set(args);
-      
+
       expect(queue).toBe(expectedQueue);
     });
   });
