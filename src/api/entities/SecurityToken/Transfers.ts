@@ -12,7 +12,6 @@ import {
   stringToAccountId,
   stringToIdentityId,
   stringToTicker,
-  u8ToTransferStatus,
   valueToDid,
 } from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
