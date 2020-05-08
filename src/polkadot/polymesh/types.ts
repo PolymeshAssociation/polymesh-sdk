@@ -100,7 +100,7 @@ export interface Ballot extends Struct {
 export interface BatchAddClaimItem extends Struct {
   readonly target: IdentityId;
   readonly claim: Claim;
-  readonly expiry: Option<u64>;
+  readonly expiry: Option<Moment>;
 }
 
 /** @name BatchRevokeClaimItem */
@@ -139,6 +139,14 @@ export interface BridgeTxStatus extends Enum {
   readonly isFrozen: boolean;
   readonly isTimelocked: boolean;
   readonly isHandled: boolean;
+}
+
+/** @name CanTransferResult */
+export interface CanTransferResult extends Enum {
+  readonly isOk: boolean;
+  readonly asOk: u8;
+  readonly isErr: boolean;
+  readonly asErr: Bytes;
 }
 
 /** @name CappedFee */
@@ -261,8 +269,8 @@ export interface DidRecordsSuccess extends Struct {
 export interface Dividend extends Struct {
   readonly amount: Balance;
   readonly active: bool;
-  readonly maturates_at: Option<u64>;
-  readonly expires_at: Option<u64>;
+  readonly matures_at: Option<Moment>;
+  readonly expires_at: Option<Moment>;
   readonly payout_currency: Option<Ticker>;
   readonly checkpoint_id: u64;
 }
@@ -494,7 +502,7 @@ export interface ProtocolOp extends Enum {
   readonly isAssetAddDocument: boolean;
   readonly isAssetCreateToken: boolean;
   readonly isDividendNew: boolean;
-  readonly isGeneralTmAddActiveRule: boolean;
+  readonly isComplianceManagerAddActiveRule: boolean;
   readonly isIdentityRegisterDid: boolean;
   readonly isIdentityCddRegisterDid: boolean;
   readonly isIdentityAddClaim: boolean;

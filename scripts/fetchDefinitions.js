@@ -6,7 +6,7 @@ const rimraf = require('rimraf');
 const util = require('util');
 
 const dirName = path.resolve('src', 'polkadot', 'polymesh');
-const urlPath = 'https://pme.polymath.network/code';
+const urlPath = 'https://pmf.polymath.network/code';
 
 rimraf.sync(dirName);
 fs.mkdirSync(dirName);

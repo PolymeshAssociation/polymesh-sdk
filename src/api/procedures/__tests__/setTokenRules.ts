@@ -73,12 +73,15 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    assetRulesMapStub = polkadotMockUtils.createQueryStub('generalTm', 'assetRulesMap', {
+    assetRulesMapStub = polkadotMockUtils.createQueryStub('complianceManager', 'assetRulesMap', {
       returnValue: [],
     });
 
-    resetActiveRulesTransaction = polkadotMockUtils.createTxStub('generalTm', 'resetActiveRules');
-    addActiveRuleTransaction = polkadotMockUtils.createTxStub('generalTm', 'addActiveRule');
+    resetActiveRulesTransaction = polkadotMockUtils.createTxStub(
+      'complianceManager',
+      'resetActiveRules'
+    );
+    addActiveRuleTransaction = polkadotMockUtils.createTxStub('complianceManager', 'addActiveRule');
 
     mockContext = polkadotMockUtils.getContextInstance();
 

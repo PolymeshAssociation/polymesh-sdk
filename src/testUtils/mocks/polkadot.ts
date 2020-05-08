@@ -5,6 +5,7 @@ import { ApiPromise, Keyring } from '@polkadot/api';
 import { bool, Bytes, Enum, Option, u8, u32, u64 } from '@polkadot/types';
 import {
   AccountData,
+  AccountId,
   AccountInfo,
   Balance,
   DispatchError,
@@ -28,6 +29,7 @@ import {
   AuthIdentifier,
   Authorization,
   AuthorizationData,
+  CanTransferResult,
   CddStatus,
   Claim,
   Document,
@@ -868,6 +870,13 @@ export const createMockAccountKey = (accountKey?: string): AccountKey =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockAccountId = (accountId?: string): AccountId =>
+  createMockStringCodec(accountId) as AccountId;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockBalance = (balance?: number): Balance =>
   createMockNumberCodec(balance) as Balance;
 
@@ -1271,16 +1280,13 @@ export const createMockEventRecord = (data: unknown[]): EventRecord =>
  */
 export const createMockLinkedKeyInfo = (
   linkedKeyInfo?: { Unique: IdentityId } | { Group: IdentityId[] }
-): LinkedKeyInfo => {
-  return createMockEnum(linkedKeyInfo) as LinkedKeyInfo;
-};
+): LinkedKeyInfo => createMockEnum(linkedKeyInfo) as LinkedKeyInfo;
 
 /**
  * @hidden
  */
-export const createMockCddStatus = (cddStatus?: { Ok: IdentityId } | { Err: Bytes }): CddStatus => {
-  return createMockEnum(cddStatus) as CddStatus;
-};
+export const createMockCddStatus = (cddStatus?: { Ok: IdentityId } | { Err: Bytes }): CddStatus =>
+  createMockEnum(cddStatus) as CddStatus;
 
 /**
  * @hidden
@@ -1305,9 +1311,7 @@ export const createMockClaim = (
     | { Whitelisted: Scope }
     | { Blacklisted: Scope }
     | 'NoData'
-): Claim => {
-  return createMockEnum(claim) as Claim;
-};
+): Claim => createMockEnum(claim) as Claim;
 
 /**
  * @hidden
@@ -1319,9 +1323,7 @@ export const createMockRuleType = (
     | { IsAbsent: Claim }
     | { IsAnyOf: Claim[] }
     | { IsNoneOf: Claim[] }
-): RuleType => {
-  return createMockEnum(ruleType) as RuleType;
-};
+): RuleType => createMockEnum(ruleType) as RuleType;
 
 /**
  * @hidden
@@ -1366,3 +1368,10 @@ export const createMockAssetTransferRule = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockScope = (did?: string): Scope => createMockStringCodec(did) as Scope;
+
+/**
+ * @hidden
+ */
+export const createMockCanTransferResult = (
+  canTransferResult?: { Ok: u8 } | { Err: Bytes }
+): CanTransferResult => createMockEnum(canTransferResult) as CanTransferResult;

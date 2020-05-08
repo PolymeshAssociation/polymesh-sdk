@@ -184,8 +184,8 @@ export default {
     Dividend: {
       amount: 'Balance',
       active: 'bool',
-      maturates_at: 'Option<u64>',
-      expires_at: 'Option<u64>',
+      matures_at: 'Option<Moment>',
+      expires_at: 'Option<Moment>',
       payout_currency: 'Option<Ticker>',
       checkpoint_id: 'u64',
     },
@@ -373,7 +373,7 @@ export default {
     BatchAddClaimItem: {
       target: 'IdentityId',
       claim: 'Claim',
-      expiry: 'Option<u64>',
+      expiry: 'Option<Moment>',
     },
     BatchRevokeClaimItem: {
       target: 'IdentityId',
@@ -397,7 +397,7 @@ export default {
         'AssetAddDocument',
         'AssetCreateToken',
         'DividendNew',
-        'GeneralTmAddActiveRule',
+        'ComplianceManagerAddActiveRule',
         'IdentityRegisterDid',
         'IdentityCddRegisterDid',
         'IdentityAddClaim',
@@ -456,17 +456,18 @@ export default {
       },
     },
     CappedFee: 'u64',
+    CanTransferResult: {
+      _enum: {
+        Ok: 'u8',
+        Err: 'Vec<u8>',
+      },
+    },
   },
   rpc: {
     identity: {
       isIdentityHasValidCdd: {
         description: 'use to tell whether the given ' + 'did has valid cdd claim or not',
         params: [
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
           {
             name: 'did',
             type: 'IdentityId',
@@ -477,6 +478,11 @@ export default {
             type: 'u64',
             isOptional: true,
           },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
         ],
         type: 'CddStatus',
       },
@@ -484,14 +490,14 @@ export default {
         description: 'function is used to query the given ticker DID',
         params: [
           {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-          {
             name: 'ticker',
             type: 'Ticker',
             isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
           },
         ],
         type: 'AssetDidResult',
@@ -500,14 +506,14 @@ export default {
         description: 'Used to get the did record values for a given DID',
         params: [
           {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-          {
             name: 'did',
             type: 'IdentityId',
             isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
           },
         ],
         type: 'DidRecords',
@@ -518,14 +524,14 @@ export default {
         description: 'Summary of votes of a proposal given by index',
         params: [
           {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-          {
             name: 'index',
             type: 'u32',
             isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
           },
         ],
         type: 'CappedVoteCount',
@@ -534,14 +540,14 @@ export default {
         description: 'Retrieves proposal indices started by address',
         params: [
           {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-          {
             name: 'address',
             type: 'AccountId',
             isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
           },
         ],
         type: 'Vec<u32>',
@@ -550,14 +556,14 @@ export default {
         description: 'Retrieves proposal address indices voted on',
         params: [
           {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-          {
             name: 'address',
             type: 'AccountId',
             isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
           },
         ],
         type: 'Vec<u32>',
@@ -568,14 +574,14 @@ export default {
         description: 'Gets the fee of a chargeable extrinsic operation',
         params: [
           {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-          {
             name: 'op',
             type: 'ProtocolOp',
             isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
           },
         ],
         type: 'CappedFee',
@@ -592,6 +598,45 @@ export default {
           },
         ],
         type: 'Vec<(Perbill, Perbill)>',
+      },
+    },
+    asset: {
+      canTransfer: {
+        description:
+          'Checks whether a transaction with ' + 'given parameters can take place or ' + 'not',
+        params: [
+          {
+            name: 'sender',
+            type: 'AccountId',
+            isOptional: false,
+          },
+          {
+            name: 'ticker',
+            type: 'Ticker',
+            isOptional: false,
+          },
+          {
+            name: 'from_did',
+            type: 'IdentityId',
+            isOptional: false,
+          },
+          {
+            name: 'to_did',
+            type: 'IdentityId',
+            isOptional: false,
+          },
+          {
+            name: 'value',
+            type: 'Balance',
+            isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'CanTransferResult',
       },
     },
   },

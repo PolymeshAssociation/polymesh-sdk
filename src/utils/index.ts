@@ -1,5 +1,5 @@
-import { bool, Bytes, u32, u64 } from '@polkadot/types';
-import { Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
+import { bool, Bytes, u8, u32, u64 } from '@polkadot/types';
+import { AccountId, Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { stringToU8a, u8aConcat, u8aFixLength, u8aToString } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -13,6 +13,7 @@ import {
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  CanTransferResult,
   CddStatus,
   Claim as MeshClaim,
   Document,
@@ -52,6 +53,7 @@ import {
   TokenDocument,
   TokenIdentifierType,
   TokenType,
+  TransferStatus,
 } from '~/types';
 import {
   AuthTarget,
@@ -191,6 +193,20 @@ export function dateToMoment(date: Date, context: Context): Moment {
  */
 export function momentToDate(moment: Moment): Date {
   return new Date(moment.toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function stringToAccountId(accountId: string, context: Context): AccountId {
+  return context.polymeshApi.createType('AccountId', accountId);
+}
+
+/**
+ * @hidden
+ */
+export function accountIdToString(accountId: AccountId): string {
+  return accountId.toString();
 }
 
 /**
@@ -371,6 +387,37 @@ export function numberToU64(value: number | BigNumber, context: Context): u64 {
  */
 export function u64ToBigNumber(value: u64): BigNumber {
   return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function u8ToTransferStatus(status: u8): TransferStatus {
+  const code = status.toNumber();
+
+  switch (code) {
+    case 81: {
+      return TransferStatus.Success;
+    }
+    case 82: {
+      return TransferStatus.InsufficientBalance;
+    }
+    case 86: {
+      return TransferStatus.InvalidReceiver;
+    }
+    case 164: {
+      return TransferStatus.FundsLimitReached;
+    }
+    case 80: {
+      return TransferStatus.Failure;
+    }
+    default: {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `Unsupported status code "${status.toString()}". Please report this issue to the Polymath team`,
+      });
+    }
+  }
 }
 
 /**
@@ -566,6 +613,22 @@ export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * @hidden
+ */
+export function canTransferResultToTransferStatus(
+  canTransferResult: CanTransferResult
+): TransferStatus {
+  if (canTransferResult.isErr) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: `Error while checking transfer validity: ${bytesToString(canTransferResult.asErr)}`,
+    });
+  }
+
+  return u8ToTransferStatus(canTransferResult.asOk);
 }
 
 /**

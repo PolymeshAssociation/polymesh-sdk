@@ -54,10 +54,8 @@ export enum StakingTx {
   SetPayee = 'staking.setPayee',
   SetController = 'staking.setController',
   SetValidatorCount = 'staking.setValidatorCount',
-  AddPotentialValidator = 'staking.addPotentialValidator',
-  RemoveValidator = 'staking.removeValidator',
-  ComplianceFailed = 'staking.complianceFailed',
-  CompliancePassed = 'staking.compliancePassed',
+  AddPermissionedValidator = 'staking.addPermissionedValidator',
+  RemovePermissionedValidator = 'staking.removePermissionedValidator',
   ValidateCddExpiryNominators = 'staking.validateCddExpiryNominators',
   EnableIndividualCommissions = 'staking.enableIndividualCommissions',
   SetGlobalCommission = 'staking.setGlobalCommission',
@@ -260,18 +258,18 @@ export enum BridgeTx {
   UnfreezeTxs = 'bridge.unfreezeTxs',
 }
 
-export enum GeneralTmTx {
-  AddActiveRule = 'generalTm.addActiveRule',
-  RemoveActiveRule = 'generalTm.removeActiveRule',
-  ResetActiveRules = 'generalTm.resetActiveRules',
-  PauseAssetRules = 'generalTm.pauseAssetRules',
-  ResumeAssetRules = 'generalTm.resumeAssetRules',
-  AddDefaultTrustedClaimIssuer = 'generalTm.addDefaultTrustedClaimIssuer',
-  RemoveDefaultTrustedClaimIssuer = 'generalTm.removeDefaultTrustedClaimIssuer',
-  AddDefaultTrustedClaimIssuersBatch = 'generalTm.addDefaultTrustedClaimIssuersBatch',
-  RemoveDefaultTrustedClaimIssuersBatch = 'generalTm.removeDefaultTrustedClaimIssuersBatch',
-  ChangeAssetRule = 'generalTm.changeAssetRule',
-  ChangeAssetRuleBatch = 'generalTm.changeAssetRuleBatch',
+export enum ComplianceManagerTx {
+  AddActiveRule = 'complianceManager.addActiveRule',
+  RemoveActiveRule = 'complianceManager.removeActiveRule',
+  ResetActiveRules = 'complianceManager.resetActiveRules',
+  PauseAssetRules = 'complianceManager.pauseAssetRules',
+  ResumeAssetRules = 'complianceManager.resumeAssetRules',
+  AddDefaultTrustedClaimIssuer = 'complianceManager.addDefaultTrustedClaimIssuer',
+  RemoveDefaultTrustedClaimIssuer = 'complianceManager.removeDefaultTrustedClaimIssuer',
+  AddDefaultTrustedClaimIssuersBatch = 'complianceManager.addDefaultTrustedClaimIssuersBatch',
+  RemoveDefaultTrustedClaimIssuersBatch = 'complianceManager.removeDefaultTrustedClaimIssuersBatch',
+  ChangeAssetRule = 'complianceManager.changeAssetRule',
+  ChangeAssetRuleBatch = 'complianceManager.changeAssetRuleBatch',
 }
 
 export enum VotingTx {
@@ -318,8 +316,6 @@ export enum CddServiceProvidersTx {
 export enum ProtocolFeeTx {
   ChangeCoefficient = 'protocolFee.changeCoefficient',
   ChangeBaseFee = 'protocolFee.changeBaseFee',
-  GetFee = 'protocolFee.getFee',
-  GetCoefficient = 'protocolFee.getCoefficient',
 }
 
 export type TxTag =
@@ -344,7 +340,7 @@ export type TxTag =
   | DividendTx
   | IdentityTx
   | BridgeTx
-  | GeneralTmTx
+  | ComplianceManagerTx
   | VotingTx
   | StoCappedTx
   | PercentageTmTx
@@ -375,7 +371,7 @@ export const TxTags = {
   dividend: DividendTx,
   identity: IdentityTx,
   bridge: BridgeTx,
-  generalTm: GeneralTmTx,
+  complianceManager: ComplianceManagerTx,
   voting: VotingTx,
   stoCapped: StoCappedTx,
   percentageTm: PercentageTmTx,
