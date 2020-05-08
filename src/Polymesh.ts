@@ -3,7 +3,14 @@ import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
-import { addClaims, AddClaimsParams, reserveTicker, ReserveTickerParams, transferPolyX, TransferPolyXParams } from '~/api/procedures';
+import {
+  addClaims,
+  AddClaimsParams,
+  reserveTicker,
+  ReserveTickerParams,
+  transferPolyX,
+  TransferPolyXParams,
+} from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
@@ -84,7 +91,6 @@ export class Polymesh {
     }
   }
 
-  // TODO: uncomment the method after v1
   /**
    * Transfer an amount of POLYX to a specified account
    *
@@ -95,6 +101,7 @@ export class Polymesh {
     return transferPolyX.prepare(args, this.context);
   }
 
+  // TODO: uncomment the method after v1
   /**
    * Get the POLYX balance of the current account
    * NOTE: We don't expose this method for Testnet v1
