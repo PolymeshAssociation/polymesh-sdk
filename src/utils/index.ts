@@ -318,10 +318,10 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
     };
   }
 
-  if (auth.isTransferTokenOwnership) {
+  if (auth.isTransferAssetOwnership) {
     return {
-      type: AuthorizationType.TransferTokenOwnership,
-      value: tickerToString(auth.asTransferTokenOwnership),
+      type: AuthorizationType.TransferAssetOwnership,
+      value: tickerToString(auth.asTransferAssetOwnership),
     };
   }
 
@@ -431,17 +431,32 @@ export function tokenTypeToAssetType(type: TokenType, context: Context): AssetTy
  * @hidden
  */
 export function assetTypeToString(assetType: AssetType): string {
+  if (assetType.isEquityCommon) {
+    return KnownTokenType.EquityCommon;
+  }
+  if (assetType.isEquityPreferred) {
+    return KnownTokenType.EquityPreferred;
+  }
   if (assetType.isCommodity) {
     return KnownTokenType.Commodity;
   }
-  if (assetType.isDebt) {
-    return KnownTokenType.Debt;
+  if (assetType.isFixedIncome) {
+    return KnownTokenType.FixedIncome;
   }
-  if (assetType.isEquity) {
-    return KnownTokenType.Equity;
+  if (assetType.isReit) {
+    return KnownTokenType.Reit;
+  }
+  if (assetType.isFund) {
+    return KnownTokenType.Fund;
+  }
+  if (assetType.isRevenueShareAgreement) {
+    return KnownTokenType.RevenueShareAgreement;
   }
   if (assetType.isStructuredProduct) {
     return KnownTokenType.StructuredProduct;
+  }
+  if (assetType.isDerivative) {
+    return KnownTokenType.Derivative;
   }
 
   return u8aToString(assetType.asCustom);

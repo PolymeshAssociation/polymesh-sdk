@@ -139,7 +139,7 @@ describe('modifyToken procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    const transaction = polkadotMockUtils.createTxStub('asset', 'renameToken');
+    const transaction = polkadotMockUtils.createTxStub('asset', 'renameAsset');
 
     const result = await prepareModifyToken.call(proc, {
       ticker,

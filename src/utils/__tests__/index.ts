@@ -644,19 +644,55 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
     let result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.Equity;
+    fakeResult = KnownTokenType.EquityCommon;
     assetType = polkadotMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.Debt;
+    fakeResult = KnownTokenType.EquityPreferred;
+    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = KnownTokenType.Commodity;
+    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = KnownTokenType.FixedIncome;
+    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = KnownTokenType.Reit;
+    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = KnownTokenType.Fund;
+    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = KnownTokenType.RevenueShareAgreement;
     assetType = polkadotMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.StructuredProduct;
+    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = KnownTokenType.Derivative;
     assetType = polkadotMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
@@ -1239,11 +1275,11 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
-      type: AuthorizationType.TransferTokenOwnership,
+      type: AuthorizationType.TransferAssetOwnership,
       value: 'someTicker',
     };
     authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      TransferTokenOwnership: polkadotMockUtils.createMockTicker(fakeResult.value),
+      TransferAssetOwnership: polkadotMockUtils.createMockTicker(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);

@@ -345,7 +345,7 @@ describe('Polymesh Class', () => {
             polkadotMockUtils.createMockLink({
               // eslint-disable-next-line @typescript-eslint/camelcase
               link_data: polkadotMockUtils.createMockLinkData({
-                TokenOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+                AssetOwned: polkadotMockUtils.createMockTicker(fakeTicker),
               }),
               expiry: polkadotMockUtils.createMockOption(),
               // eslint-disable-next-line @typescript-eslint/camelcase
@@ -378,7 +378,7 @@ describe('Polymesh Class', () => {
             polkadotMockUtils.createMockLink({
               // eslint-disable-next-line @typescript-eslint/camelcase
               link_data: polkadotMockUtils.createMockLinkData({
-                TokenOwned: polkadotMockUtils.createMockTicker(fakeTicker),
+                AssetOwned: polkadotMockUtils.createMockTicker(fakeTicker),
               }),
               expiry: polkadotMockUtils.createMockOption(),
               // eslint-disable-next-line @typescript-eslint/camelcase

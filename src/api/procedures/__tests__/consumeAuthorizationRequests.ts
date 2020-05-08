@@ -51,7 +51,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         targetDid: 'targetDid1',
         issuerDid: 'issuerDid1',
         data: {
-          type: AuthorizationType.TransferTokenOwnership,
+          type: AuthorizationType.TransferAssetOwnership,
           value: 'someTicker1',
         },
       },
@@ -61,7 +61,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         targetDid: 'targetDid2',
         issuerDid: 'issuerDid2',
         data: {
-          type: AuthorizationType.TransferTokenOwnership,
+          type: AuthorizationType.TransferAssetOwnership,
           value: 'someTicker2',
         },
       },
@@ -71,7 +71,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         targetDid: 'targetDid3',
         issuerDid: 'issuerDid3',
         data: {
-          type: AuthorizationType.TransferTokenOwnership,
+          type: AuthorizationType.TransferAssetOwnership,
           value: 'someTicker3',
         },
       },
