@@ -40,9 +40,10 @@ describe('reserveTicker procedure', () => {
   let rawFee: Balance;
   let numerator: number;
   let denominator: number;
+  let posRatioToBigNumberResult: BigNumber;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(500) } });
+    polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(1000) } });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks({ identityOptions: { did: 'someOtherDid' } });
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
@@ -54,11 +55,12 @@ describe('reserveTicker procedure', () => {
       ticker,
     };
     fee = 250;
+    numerator = 7;
+    denominator = 3;
     reservation = ('reservation' as unknown) as PostTransactionValue<TickerReservation>;
-    rawPosRatio = polkadotMockUtils.createMockPostRatio(numerator, denominator);
+    rawPosRatio = polkadotMockUtils.createMockPosRatio(numerator, denominator);
     rawFee = polkadotMockUtils.createMockBalance(fee);
-    numerator = 1;
-    denominator = 1;
+    posRatioToBigNumberResult = new BigNumber(numerator).dividedBy(new BigNumber(denominator));
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -94,7 +96,9 @@ describe('reserveTicker procedure', () => {
       .withArgs(rawPosRatio)
       .returns(new BigNumber(numerator).dividedBy(new BigNumber(denominator)));
 
-    balanceToBigNumberStub.returns(new BigNumber(fee));
+    posRatioToBigNumberStub.withArgs(rawPosRatio).returns(posRatioToBigNumberResult);
+
+    balanceToBigNumberStub.withArgs(rawFee).returns(new BigNumber(fee));
   });
 
   afterEach(() => {
@@ -234,7 +238,7 @@ describe('reserveTicker procedure', () => {
       addTransactionStub,
       transaction,
       sinon.match({
-        fee: new BigNumber(fee),
+        fee: new BigNumber(fee).multipliedBy(posRatioToBigNumberResult),
         resolvers: sinon.match.array,
       }),
       rawTicker

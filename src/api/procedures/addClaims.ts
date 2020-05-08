@@ -13,14 +13,14 @@ interface AddClaimItem {
   expiry: Moment | null;
 }
 
-export interface Claims {
-  target: string[];
+export interface ClaimTargets {
+  targets: string[];
   claim: Claim;
   expiry?: Date;
 }
 
 export interface AddClaimsParams {
-  claims: Claims[];
+  claims: ClaimTargets[];
 }
 
 /**
@@ -46,8 +46,7 @@ export async function prepareAddClaims(
 
   const addClaimItems: AddClaimItem[] = [];
 
-  claims.forEach(claimItem => {
-    const { target: targets, claim, expiry } = claimItem;
+  claims.forEach(({ targets, claim, expiry }) => {
     targets.forEach(target =>
       addClaimItems.push({
         target: stringToIdentityId(target, context),
@@ -65,7 +64,7 @@ export async function prepareAddClaims(
     addClaimItemsChunks.map(async addClaimItemsChunk => {
       // TODO: queryMulti
       const sizes = await Promise.all(
-        addClaimItemsChunk.map(addClaimItem => didRecords.size(addClaimItem.target))
+        addClaimItemsChunk.map(({ target }) => didRecords.size(target))
       );
 
       sizes.forEach((size, index) => {
@@ -92,7 +91,7 @@ export async function prepareAddClaims(
  * @hidden
  */
 export function getRequiredRoles({ claims }: AddClaimsParams): Role[] {
-  if (claims.some(e => e.claim.type === ClaimType.CustomerDueDiligence)) {
+  if (claims.some(({ claim: { type } }) => type === ClaimType.CustomerDueDiligence)) {
     return [{ type: RoleType.CddProvider }];
   }
   return [];

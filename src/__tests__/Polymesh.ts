@@ -3,7 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { addClaims, Claims, reserveTicker } from '~/api/procedures';
+import { addClaims, ClaimTargets, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Polymesh } from '~/Polymesh';
 import { polkadotMockUtils } from '~/testUtils/mocks';
@@ -400,6 +400,33 @@ describe('Polymesh Class', () => {
     });
   });
 
+  describe('method: transferPolyX', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = polkadotMockUtils.getContextInstance();
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const args = {
+        to: 'someAccount',
+        amount: new BigNumber(50),
+      };
+
+      const expectedQueue = ('' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(transferPolyX, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await polymesh.transferPolyX(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: getSecurityToken', () => {
     test('should return a specific security token', async () => {
       const ticker = 'TEST';
@@ -462,9 +489,9 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      const claims: Claims[] = [
+      const claims: ClaimTargets[] = [
         {
-          target: ['someDid'],
+          targets: ['someDid'],
           claim: {
             type: ClaimType.Accredited,
             scope: 'someIdentityId',

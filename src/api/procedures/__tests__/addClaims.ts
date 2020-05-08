@@ -53,11 +53,11 @@ describe('addClaims procedure', () => {
     args = {
       claims: [
         {
-          target: [someDid, otherDid],
+          targets: [someDid, otherDid],
           claim: cddClaim,
         },
         {
-          target: [someDid],
+          targets: [someDid],
           claim: buyLockupClaim,
           expiry,
         },
@@ -100,7 +100,7 @@ describe('addClaims procedure', () => {
     polkadotMockUtils.cleanup();
   });
 
-  test("should throw an error if some of the supplied did targets don't exist", () => {
+  test("should throw an error if some of the supplied dids targets don't exist", () => {
     didRecordsStub.size.withArgs(rawOtherDid).resolves(polkadotMockUtils.createMockU64(0));
 
     const proc = procedureMockUtils.getInstance<AddClaimsParams, void>();
@@ -144,7 +144,7 @@ describe('getRequiredRoles', () => {
     const args = {
       claims: [
         {
-          target: ['someDid'],
+          targets: ['someDid'],
           claim: { type: ClaimType.CustomerDueDiligence },
         },
       ],
@@ -153,11 +153,11 @@ describe('getRequiredRoles', () => {
     expect(getRequiredRoles(args)).toEqual([{ type: RoleType.CddProvider }]);
   });
 
-  test('should return an empty role if args has not a customer due diligence claim type', () => {
+  test("should return an empty array if args doesn't have a customer due diligence claim type", () => {
     const args = {
       claims: [
         {
-          target: ['someDid'],
+          targets: ['someDid'],
           claim: { type: ClaimType.Accredited, scope: 'someIdentityId' },
         },
       ],

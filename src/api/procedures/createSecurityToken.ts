@@ -5,6 +5,7 @@ import { SecurityToken, TickerReservation } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import {
   ErrorCode,
+  ProtocolOp,
   Role,
   RoleType,
   TickerReservationStatus,
@@ -67,9 +68,9 @@ export async function prepareCreateSecurityToken(
   const reservation = new TickerReservation({ ticker }, context);
 
   // TODO: queryMulti
-  const [rawPosRatio, rawCreateTokenFee, balance, { status }] = await Promise.all([
+  const [rawCoefficient, rawCreateTokenFee, balance, { status }] = await Promise.all([
     query.protocolFee.coefficient(),
-    query.protocolFee.baseFees('AssetCreateToken'),
+    query.protocolFee.baseFees(ProtocolOp.AssetCreateToken),
     context.accountBalance(),
     reservation.details(),
   ]);
@@ -88,9 +89,9 @@ export async function prepareCreateSecurityToken(
     });
   }
 
-  const ratio = posRatioToBigNumber(rawPosRatio);
+  const ratio = posRatioToBigNumber(rawCoefficient);
   const createTokenFee = balanceToBigNumber(rawCreateTokenFee);
-  const fee = createTokenFee.dividedBy(ratio);
+  const fee = createTokenFee.multipliedBy(ratio);
 
   if (balance.lt(fee)) {
     throw new PolymeshError({
