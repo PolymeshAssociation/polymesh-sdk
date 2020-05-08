@@ -3,9 +3,18 @@
 
 import { ITuple } from '@polkadot/types/types';
 import { Enum, Option, Struct, U8aFixed, Vec } from '@polkadot/types/codec';
-import { Bytes, Text, bool, u128, u16, u32, u64, u8 } from '@polkadot/types/primitive';
+import { Bytes, Text, bool, u16, u32, u64, u8 } from '@polkadot/types/primitive';
 import { Signature } from '@polkadot/types/interfaces/extrinsics';
-import { Balance, Call, H256, H512, Moment } from '@polkadot/types/interfaces/runtime';
+import {
+  AccountId,
+  Balance,
+  BlockNumber,
+  Call,
+  H256,
+  H512,
+  Hash,
+  Moment,
+} from '@polkadot/types/interfaces/runtime';
 
 /** @name AccountKey */
 export interface AccountKey extends U8aFixed {}
@@ -108,10 +117,28 @@ export interface Beneficiary extends Struct {
 
 /** @name BridgeTx */
 export interface BridgeTx extends Struct {
-  readonly nonce: u64;
-  readonly recipient: IssueRecipient;
-  readonly value: u128;
+  readonly nonce: u32;
+  readonly recipient: AccountId;
+  readonly value: Balance;
   readonly tx_hash: H256;
+}
+
+/** @name BridgeTxDetail */
+export interface BridgeTxDetail extends Struct {
+  readonly amount: Balance;
+  readonly status: BridgeTxStatus;
+  readonly execution_block: BlockNumber;
+  readonly tx_hash: H256;
+}
+
+/** @name BridgeTxStatus */
+export interface BridgeTxStatus extends Enum {
+  readonly isAbsent: boolean;
+  readonly isPending: boolean;
+  readonly asPending: u8;
+  readonly isFrozen: boolean;
+  readonly isTimelocked: boolean;
+  readonly isHandled: boolean;
 }
 
 /** @name CappedFee */
@@ -397,8 +424,8 @@ export interface PermissionedValidator extends Struct {
   readonly compliance: Compliance;
 }
 
-/** @name PIP */
-export interface PIP extends Struct {
+/** @name Pip */
+export interface Pip extends Struct {
   readonly id: PipId;
   readonly proposal: Call;
   readonly state: ProposalState;
@@ -441,6 +468,14 @@ export interface PreAuthorizedKeyInfo extends Struct {
 export interface ProportionMatch extends Enum {
   readonly isAtLeast: boolean;
   readonly isMoreThan: boolean;
+}
+
+/** @name ProposalData */
+export interface ProposalData extends Enum {
+  readonly isHash: boolean;
+  readonly asHash: Hash;
+  readonly isProposal: boolean;
+  readonly asProposal: Bytes;
 }
 
 /** @name ProposalState */
