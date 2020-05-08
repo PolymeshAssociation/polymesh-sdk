@@ -125,7 +125,7 @@ describe('Rules class', () => {
         issuers: [],
       });
 
-      polkadotMockUtils.createQueryStub('generalTm', 'assetRulesMap', {
+      polkadotMockUtils.createQueryStub('complianceManager', 'assetRulesMap', {
         returnValue: {
           rules: [
             polkadotMockUtils.createMockAssetTransferRule({
@@ -163,7 +163,7 @@ describe('Rules class', () => {
         },
       });
 
-      polkadotMockUtils.createQueryStub('generalTm', 'trustedClaimIssuer', {
+      polkadotMockUtils.createQueryStub('complianceManager', 'trustedClaimIssuer', {
         returnValue: defaultClaimIssuers,
       });
 

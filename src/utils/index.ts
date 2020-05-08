@@ -13,6 +13,7 @@ import {
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  CanTransferResult,
   CddStatus,
   Claim as MeshClaim,
   Document,
@@ -391,38 +392,6 @@ export function u64ToBigNumber(value: u64): BigNumber {
 /**
  * @hidden
  */
-export function transferStatusCodeToU8(status: TransferStatus, context: Context): u8 {
-  let code: number;
-
-  switch (status) {
-    case TransferStatus.Success: {
-      code = 81;
-      break;
-    }
-    case TransferStatus.InsufficientBalance: {
-      code = 82;
-      break;
-    }
-    case TransferStatus.InvalidReceiver: {
-      code = 86;
-      break;
-    }
-    case TransferStatus.FundsLimitReached: {
-      code = 164;
-      break;
-    }
-    case TransferStatus.Failure:
-    default: {
-      code = 80;
-    }
-  }
-
-  return context.polymeshApi.createType('u8', code);
-}
-
-/**
- * @hidden
- */
 export function u8ToTransferStatus(status: u8): TransferStatus {
   const code = status.toNumber();
 
@@ -644,6 +613,22 @@ export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * @hidden
+ */
+export function canTransferResultToTransferStatus(
+  canTransferResult: CanTransferResult
+): TransferStatus {
+  if (canTransferResult.isErr) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: `Error while checking transfer validity: ${bytesToString(canTransferResult.asErr)}`,
+    });
+  }
+
+  return u8ToTransferStatus(canTransferResult.asOk);
 }
 
 /**

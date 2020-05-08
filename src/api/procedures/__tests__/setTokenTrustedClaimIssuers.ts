@@ -54,19 +54,23 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    trustedClaimIssuerStub = polkadotMockUtils.createQueryStub('generalTm', 'trustedClaimIssuer', {
-      returnValue: [],
-    });
+    trustedClaimIssuerStub = polkadotMockUtils.createQueryStub(
+      'complianceManager',
+      'trustedClaimIssuer',
+      {
+        returnValue: [],
+      }
+    );
     didRecordsStub = polkadotMockUtils.createQueryStub('identity', 'didRecords', {
       size: 1,
     });
 
     removeDefaultTrustedClaimIssuersBatchTransaction = polkadotMockUtils.createTxStub(
-      'generalTm',
+      'complianceManager',
       'removeDefaultTrustedClaimIssuersBatch'
     );
     addDefaultTrustedClaimIssuersBatchTransaction = polkadotMockUtils.createTxStub(
-      'generalTm',
+      'complianceManager',
       'addDefaultTrustedClaimIssuersBatch'
     );
 

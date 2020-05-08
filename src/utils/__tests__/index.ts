@@ -1,5 +1,5 @@
 import { bool, Bytes, u64 } from '@polkadot/types';
-import { Balance, Moment } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import * as decodeAddressModule from '@polkadot/util-crypto/address/decode';
 import * as encodeAddressModule from '@polkadot/util-crypto/address/encode';
@@ -38,10 +38,12 @@ import {
   ConditionType,
   KnownTokenType,
   TokenIdentifierType,
+  TransferStatus,
 } from '~/types';
 import { SignerType } from '~/types/internal';
 
 import {
+  accountIdToString,
   accountKeyToString,
   assetIdentifierToString,
   assetTransferRuleToRule,
@@ -54,6 +56,7 @@ import {
   booleanToBool,
   boolToBoolean,
   bytesToString,
+  canTransferResultToTransferStatus,
   cddStatusToBoolean,
   claimToMeshClaim,
   dateToMoment,
@@ -77,6 +80,7 @@ import {
   serialize,
   signatoryToSigner,
   signerToSignatory,
+  stringToAccountId,
   stringToAccountKey,
   stringToAssetIdentifier,
   stringToBytes,
@@ -94,6 +98,7 @@ import {
   tokenIdentifierTypeToIdentifierType,
   tokenNameToString,
   tokenTypeToAssetType,
+  u8ToTransferStatus,
   u64ToBigNumber,
   unserialize,
   unwrapValues,
@@ -489,6 +494,43 @@ describe('stringToTokenName and tokenNameToString', () => {
     const tokenName = polkadotMockUtils.createMockTokenName(fakeResult);
 
     const result = tokenNameToString(tokenName);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToAccountId and accountIdToSting', () => {
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToAccountId should convert a string to a polkadot AccountId object', () => {
+    const value = 'someAccountId';
+    const fakeResult = ('convertedAccountId' as unknown) as AccountId;
+    const context = polkadotMockUtils.getContextInstance();
+
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('AccountId', value)
+      .returns(fakeResult);
+
+    const result = stringToAccountId(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('accountIdToSting should convert a polkadot AccountId object to a string', () => {
+    const fakeResult = 'someAccountId';
+    const accountId = polkadotMockUtils.createMockAccountId(fakeResult);
+
+    const result = accountIdToString(accountId);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -1634,5 +1676,53 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
 
     const result = assetTransferRuleToRule(assetTransferRule);
     expect(result.conditions).toEqual(expect.arrayContaining(fakeResult.conditions));
+  });
+});
+
+describe('u8ToTransferStatus', () => {
+  test('u8ToTransferStatus should convert a polkadot u8 object to a TransferStatus', () => {
+    let result = u8ToTransferStatus(polkadotMockUtils.createMockU8(80));
+
+    expect(result).toBe(TransferStatus.Failure);
+
+    result = u8ToTransferStatus(polkadotMockUtils.createMockU8(81));
+
+    expect(result).toBe(TransferStatus.Success);
+
+    result = u8ToTransferStatus(polkadotMockUtils.createMockU8(82));
+
+    expect(result).toBe(TransferStatus.InsufficientBalance);
+
+    result = u8ToTransferStatus(polkadotMockUtils.createMockU8(86));
+
+    expect(result).toBe(TransferStatus.InvalidReceiver);
+
+    result = u8ToTransferStatus(polkadotMockUtils.createMockU8(164));
+
+    expect(result).toBe(TransferStatus.FundsLimitReached);
+
+    const fakeStatusCode = 1;
+    expect(() => u8ToTransferStatus(polkadotMockUtils.createMockU8(fakeStatusCode))).toThrow(
+      `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymath team`
+    );
+  });
+});
+
+describe('canTransferResultToTransferStatus', () => {
+  test('canTransferResultToTransferStatus should convert a polkadot CanTransferResult object to a TransferStatus', () => {
+    const errorMsg = 'someError';
+    expect(() =>
+      canTransferResultToTransferStatus(
+        polkadotMockUtils.createMockCanTransferResult({
+          Err: polkadotMockUtils.createMockBytes(errorMsg),
+        })
+      )
+    ).toThrow(`Error while checking transfer validity: ${errorMsg}`);
+
+    const result = canTransferResultToTransferStatus(
+      polkadotMockUtils.createMockCanTransferResult({ Ok: polkadotMockUtils.createMockU8(81) })
+    );
+
+    expect(result).toBe(TransferStatus.Success);
   });
 });

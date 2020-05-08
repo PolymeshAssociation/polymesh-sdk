@@ -14,7 +14,7 @@ import { signerToSignatory, tickerToString, valueToDid } from '~/utils';
  * Main entry point of the Polymesh SDK
  */
 export class Polymesh {
-  private context: Context = {} as Context;
+  public context: Context = {} as Context;
 
   /**
    * @hidden

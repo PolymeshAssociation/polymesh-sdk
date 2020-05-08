@@ -30,7 +30,7 @@ export async function prepareSetTokenRules(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const currentRulesRaw = await query.generalTm.assetRulesMap(rawTicker);
+  const currentRulesRaw = await query.complianceManager.assetRulesMap(rawTicker);
 
   const currentRules = currentRulesRaw.rules.map(rule => assetTransferRuleToRule(rule).conditions);
 
@@ -61,11 +61,17 @@ export async function prepareSetTokenRules(
   });
 
   if (currentRules.length) {
-    this.addTransaction(tx.generalTm.resetActiveRules, {}, rawTicker);
+    this.addTransaction(tx.complianceManager.resetActiveRules, {}, rawTicker);
   }
 
   rawRules.forEach(({ senderRules, receiverRules }) => {
-    this.addTransaction(tx.generalTm.addActiveRule, {}, rawTicker, senderRules, receiverRules);
+    this.addTransaction(
+      tx.complianceManager.addActiveRule,
+      {},
+      rawTicker,
+      senderRules,
+      receiverRules
+    );
   });
 
   return new SecurityToken({ ticker }, context);

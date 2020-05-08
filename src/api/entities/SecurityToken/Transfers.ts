@@ -1,12 +1,13 @@
-import { u8 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities/Identity';
 import { toggleFreezeTransfers } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
+import { CanTransferResult } from '~/polkadot';
 import { TransferStatus } from '~/types';
 import {
   boolToBoolean,
+  canTransferResultToTransferStatus,
   numberToBalance,
   stringToAccountId,
   stringToIdentityId,
@@ -14,6 +15,7 @@ import {
   u8ToTransferStatus,
   valueToDid,
 } from '~/utils';
+import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 
 import { SecurityToken } from './';
 
@@ -63,6 +65,10 @@ export class Transfers extends Namespace<SecurityToken> {
 
   /**
    * Check whether it is possible to transfer a certain amount of this asset between two identities
+   *
+   * @param args.from - sender identity (optional, defaults to the current identity)
+   * @param args.to - receiver identity
+   * @param args.amount - amount of tokens to transfer
    */
   public async canTransfer(args: {
     from?: string | Identity;
@@ -72,7 +78,7 @@ export class Transfers extends Namespace<SecurityToken> {
     const {
       parent: { ticker },
       context: {
-        polymeshApi: { rpc, query },
+        polymeshApi: { rpc },
       },
       context,
     } = this;
@@ -86,13 +92,10 @@ export class Transfers extends Namespace<SecurityToken> {
      * The RPC requires a sender account ID (although it's not being used at the moment). We use the current account
      * or a dummy account (Alice's in testnet) if the SDK was instanced without one
      */
-    const senderAddress =
-      context.currentPair?.address || '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-
-    const hash = await query.system.parentHash();
+    const senderAddress = context.currentPair?.address || DUMMY_ACCOUNT_ID;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const status: u8 = await (rpc as any).asset.canTransfer(
+    const res: CanTransferResult = await (rpc as any).asset.canTransfer(
       stringToAccountId(senderAddress, context),
       stringToTicker(ticker, context),
       stringToIdentityId(fromDid, context),
@@ -100,8 +103,6 @@ export class Transfers extends Namespace<SecurityToken> {
       numberToBalance(amount, context)
     );
 
-    console.log('STATUS', status);
-
-    return u8ToTransferStatus(status);
+    return canTransferResultToTransferStatus(res);
   }
 }

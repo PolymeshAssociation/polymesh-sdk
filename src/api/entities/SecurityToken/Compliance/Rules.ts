@@ -36,7 +36,7 @@ export class Rules extends Namespace<SecurityToken> {
       parent: { ticker },
       context: {
         polymeshApi: {
-          query: { generalTm },
+          query: { complianceManager },
         },
       },
       context,
@@ -44,8 +44,8 @@ export class Rules extends Namespace<SecurityToken> {
     // TODO: queryMulti
     const rawTicker = stringToTicker(ticker, context);
     const [tokenRules, defaultClaimIssuers] = await Promise.all([
-      generalTm.assetRulesMap(rawTicker),
-      generalTm.trustedClaimIssuer(rawTicker),
+      complianceManager.assetRulesMap(rawTicker),
+      complianceManager.trustedClaimIssuer(rawTicker),
     ]);
 
     return tokenRules.rules.map(assetTransferRule => {

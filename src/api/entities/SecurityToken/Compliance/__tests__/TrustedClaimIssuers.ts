@@ -84,7 +84,7 @@ describe('TrustedClaimIssuers class', () => {
 
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
       polkadotMockUtils
-        .createQueryStub('generalTm', 'trustedClaimIssuer')
+        .createQueryStub('complianceManager', 'trustedClaimIssuer')
         .withArgs(rawTicker)
         .resolves(claimIssuers);
 
