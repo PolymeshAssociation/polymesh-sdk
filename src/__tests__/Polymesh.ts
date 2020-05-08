@@ -110,6 +110,7 @@ describe('Polymesh Class', () => {
     });
   });
 
+  // TODO: uncomment the method after v1
   /*
   describe('method: getIdentityBalance', () => {
     test("should return the identity's POLYX balance", async () => {

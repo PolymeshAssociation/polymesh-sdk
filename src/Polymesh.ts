@@ -84,6 +84,7 @@ export class Polymesh {
     }
   }
 
+  // TODO: uncomment the method after v1
   /**
    * Get the POLYX balance of the current account
    * NOTE: We don't expose this method for Testnet v1
