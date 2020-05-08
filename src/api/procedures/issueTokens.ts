@@ -1,9 +1,10 @@
 import { Balance } from '@polkadot/types/interfaces';
+import { chunk } from 'lodash';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { IdentityId } from '~/polkadot';
-import { ErrorCode, IssuanceData, Role, RoleType } from '~/types';
+import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
 import { numberToBalance, stringToIdentityId, stringToTicker } from '~/utils';
 import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
@@ -65,17 +66,42 @@ export async function prepareIssueTokens(
     });
   }
 
-  // TODO: implement canTransfer
-
   const rawTicker = stringToTicker(ticker, context);
 
   const investors: IdentityId[] = [];
   const balances: Balance[] = [];
+  const canNotTransferDids: Array<[string, TransferStatus]> = [];
 
-  issuanceData.forEach(({ did, amount }) => {
-    investors.push(stringToIdentityId(did, context));
-    balances.push(numberToBalance(amount, context));
-  });
+  const issuanceDataItemsChunks = chunk(issuanceData, 10);
+
+  await Promise.all(
+    issuanceDataItemsChunks.map(async issuanceDataItemsChunk => {
+      // TODO: queryMulti
+      const canTransfers = await Promise.all(
+        issuanceDataItemsChunk.map(({ did, amount }) =>
+          securityToken.transfers.canTransfer({ to: did, amount })
+        )
+      );
+
+      canTransfers.forEach((canTransfer, index) => {
+        investors.push(stringToIdentityId(issuanceDataItemsChunk[index].did, context));
+        balances.push(numberToBalance(issuanceDataItemsChunk[index].amount, context));
+
+        if (canTransfer !== TransferStatus.Success) {
+          canNotTransferDids.push([issuanceDataItemsChunk[index].did, canTransfer]);
+        }
+      });
+    })
+  );
+
+  if (canNotTransferDids.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `You can not issue tokens for some of the supplied identity IDs: ${canNotTransferDids.join(
+        '- '
+      )}`,
+    });
+  }
 
   this.addTransaction(asset.batchIssue, {}, rawTicker, investors, balances);
 

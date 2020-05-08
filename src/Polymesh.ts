@@ -3,7 +3,14 @@ import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
-import { addClaims, AddClaimsParams, reserveTicker, ReserveTickerParams, transferPolyX, TransferPolyXParams } from '~/api/procedures';
+import {
+  addClaims,
+  AddClaimsParams,
+  reserveTicker,
+  ReserveTickerParams,
+  transferPolyX,
+  TransferPolyXParams,
+} from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';

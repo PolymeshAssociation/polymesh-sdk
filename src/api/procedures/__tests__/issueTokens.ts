@@ -8,7 +8,7 @@ import { Context } from '~/context';
 import { IdentityId, Ticker } from '~/polkadot';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
+import { RoleType, TransferStatus } from '~/types';
 import * as utilsModule from '~/utils';
 import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
@@ -131,6 +131,32 @@ describe('issueTokens procedure', () => {
 
     return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
       `This issuance operation will cause the total supply of "${ticker}" to exceed the maximum allowed (${MAX_TOKEN_AMOUNT.toFormat()})`
+    );
+  });
+
+  test('shoud throw an error if at least one identity id has not a canTransfer success status', () => {
+    const status = 'Failure';
+    const args = {
+      issuanceData: [
+        {
+          did: 'someDid',
+          amount: new BigNumber(100),
+        },
+      ],
+      ticker,
+    };
+
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        transfersCanTransfer: TransferStatus[status],
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
+    proc.context = mockContext;
+
+    return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
+      `You can not issue tokens for some of the supplied identity IDs: ${args.issuanceData[0].did},${status}`
     );
   });
 
