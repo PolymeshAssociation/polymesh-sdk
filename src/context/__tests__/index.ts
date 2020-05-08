@@ -57,8 +57,13 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
+        {
+          returnValue: polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLinkedKeyInfo({
+              Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+            })
+          ),
+        }
       );
 
       const context = await Context.create({
@@ -81,8 +86,13 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
+        {
+          returnValue: polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLinkedKeyInfo({
+              Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+            })
+          ),
+        }
       );
 
       const context = await Context.create({
@@ -109,8 +119,13 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
+        {
+          returnValue: polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLinkedKeyInfo({
+              Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+            })
+          ),
+        }
       );
 
       const context = await Context.create({
@@ -137,8 +152,13 @@ describe('Context class', () => {
       const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
         'identity',
         'keyToIdentityIds',
-        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
+        {
+          returnValue: polkadotMockUtils.createMockOption(
+            polkadotMockUtils.createMockLinkedKeyInfo({
+              Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+            })
+          ),
+        }
       );
 
       const context = await Context.create({
@@ -356,12 +376,13 @@ describe('Context class', () => {
           feeFrozen: polkadotMockUtils.createMockBalance(),
         }),
       });
-      polkadotMockUtils.createQueryStub(
-        'identity',
-        'keyToIdentityIds',
-        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-        { returnValue: { unwrap: () => ({ asUnique: '012abc' }) } }
-      );
+      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: polkadotMockUtils.createMockOption(
+          polkadotMockUtils.createMockLinkedKeyInfo({
+            Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
       polkadotMockUtils.createQueryStub('system', 'account', { returnValue });
 
       const context = await Context.create({
@@ -386,10 +407,11 @@ describe('Context class', () => {
         }),
       });
       polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: {
-          // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-          unwrap: () => ({ asUnique: '012abc' }),
-        },
+        returnValue: polkadotMockUtils.createMockOption(
+          polkadotMockUtils.createMockLinkedKeyInfo({
+            Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
       });
       polkadotMockUtils.createQueryStub('system', 'account', { returnValue });
 
@@ -405,13 +427,14 @@ describe('Context class', () => {
 
   describe('method: getCurrentIdentity', () => {
     test('should return the current identity', async () => {
-      const did = '012abc';
-      polkadotMockUtils.createQueryStub(
-        'identity',
-        'keyToIdentityIds',
-        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-        { returnValue: { unwrap: () => ({ asUnique: did }) } }
-      );
+      const did = 'someDid';
+      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: polkadotMockUtils.createMockOption(
+          polkadotMockUtils.createMockLinkedKeyInfo({
+            Unique: polkadotMockUtils.createMockIdentityId(did),
+          })
+        ),
+      });
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),

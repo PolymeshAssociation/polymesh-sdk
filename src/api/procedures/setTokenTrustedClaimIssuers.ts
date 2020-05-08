@@ -31,7 +31,7 @@ export async function prepareSetTokenTrustedClaimIssuers(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const rawCurrentClaimIssuers = await query.generalTm.trustedClaimIssuer(rawTicker);
+  const rawCurrentClaimIssuers = await query.complianceManager.trustedClaimIssuer(rawTicker);
   const currentClaimIssuers = rawCurrentClaimIssuers.map(issuer => identityIdToString(issuer));
 
   if (
@@ -76,7 +76,7 @@ export async function prepareSetTokenTrustedClaimIssuers(
 
   if (rawCurrentClaimIssuers.length) {
     this.addTransaction(
-      tx.generalTm.removeDefaultTrustedClaimIssuersBatch,
+      tx.complianceManager.removeDefaultTrustedClaimIssuersBatch,
       {},
       rawTicker,
       rawCurrentClaimIssuers
@@ -85,7 +85,7 @@ export async function prepareSetTokenTrustedClaimIssuers(
 
   if (rawNewClaimIssuers.length) {
     this.addTransaction(
-      tx.generalTm.addDefaultTrustedClaimIssuersBatch,
+      tx.complianceManager.addDefaultTrustedClaimIssuersBatch,
       {},
       rawTicker,
       rawNewClaimIssuers

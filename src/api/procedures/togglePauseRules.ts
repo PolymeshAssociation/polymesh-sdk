@@ -28,7 +28,7 @@ export async function prepareTogglePauseRules(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const { is_paused: isPaused } = await query.generalTm.assetRulesMap(rawTicker);
+  const { is_paused: isPaused } = await query.complianceManager.assetRulesMap(rawTicker);
 
   if (pause === boolToBoolean(isPaused)) {
     throw new PolymeshError({
@@ -38,7 +38,7 @@ export async function prepareTogglePauseRules(
   }
 
   this.addTransaction(
-    pause ? tx.generalTm.pauseAssetRules : tx.generalTm.resumeAssetRules,
+    pause ? tx.complianceManager.pauseAssetRules : tx.complianceManager.resumeAssetRules,
     {},
     rawTicker
   );

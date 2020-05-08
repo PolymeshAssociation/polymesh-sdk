@@ -33,7 +33,7 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
       parent: { ticker },
     } = this;
 
-    const claimIssuers = await context.polymeshApi.query.generalTm.trustedClaimIssuer(
+    const claimIssuers = await context.polymeshApi.query.complianceManager.trustedClaimIssuer(
       stringToTicker(ticker, context)
     );
 

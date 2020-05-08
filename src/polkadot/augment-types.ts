@@ -592,6 +592,7 @@ import {
   BridgeTx,
   BridgeTxDetail,
   BridgeTxStatus,
+  CanTransferResult,
   CappedFee,
   CappedVoteCount,
   CappedVoteCountSuccess,
@@ -2616,5 +2617,8 @@ declare module '@polkadot/types/types/registry' {
     'Compact<CappedFee>': Compact<CappedFee>;
     'Option<CappedFee>': Option<CappedFee>;
     'Vec<CappedFee>': Vec<CappedFee>;
+    CanTransferResult: CanTransferResult;
+    'Option<CanTransferResult>': Option<CanTransferResult>;
+    'Vec<CanTransferResult>': Vec<CanTransferResult>;
   }
 }

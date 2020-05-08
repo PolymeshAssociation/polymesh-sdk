@@ -441,18 +441,20 @@ declare module '@polkadot/api/types/storage' {
        **/
       admin: AugmentedQuery<ApiType, () => Observable<AccountId>>;
       /**
-       * limit on bridged POLYX per identity for the testnet. (POLYX, LIMIT_REST_BLOCK)
+       * The maximum number of bridged POLYX per identity within a set interval of
+       * blocks. Fields: POLYX amount and the block interval duration.
        **/
       bridgeLimit: AugmentedQuery<ApiType, () => Observable<ITuple<[Balance, BlockNumber]>>>;
       /**
-       * Identity whitelist that are not limited by the bridge limit
+       * Identities not constrained by the bridge limit.
        **/
       bridgeLimitWhitelist: AugmentedQuery<
         ApiType,
         (arg: IdentityId | string | Uint8Array) => Observable<bool>
       >;
       /**
-       * Status of bridge transactions
+       * Details of bridge transactions identified with pairs of the recipient account and the
+       * bridge transaction nonce.
        **/
       bridgeTxDetails: AugmentedQueryDoubleMap<
         ApiType,
@@ -471,7 +473,8 @@ declare module '@polkadot/api/types/storage' {
        **/
       frozen: AugmentedQuery<ApiType, () => Observable<bool>>;
       /**
-       * Amount of POLYX bridged by the identity in last limit bucket (AMOUNT_BRIDGED, LAST_BUCKET)
+       * Amount of POLYX bridged by the identity in last block interval. Fields: the bridged
+       * amount and the last interval number.
        **/
       polyxBridged: AugmentedQuery<
         ApiType,
@@ -484,7 +487,8 @@ declare module '@polkadot/api/types/storage' {
       timelock: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
       /**
        * The list of timelocked transactions with the block numbers in which those transactions
-       * become unlocked. Pending transactions are also included here if they will be tried automatically.
+       * become unlocked. Pending transactions are also included here to be retried
+       * automatically.
        **/
       timelockedTxs: AugmentedQuery<
         ApiType,
@@ -493,9 +497,12 @@ declare module '@polkadot/api/types/storage' {
     };
     cddServiceProviders: {
       /**
-       * Identities that are part of this group, known as "Active members".
+       * The current "active" membership, stored as an ordered Vec.
        **/
       activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * The current "inactive" membership, stored as an ordered Vec.
+       **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
       /**
        * The current prime member, if one exists.
@@ -504,14 +511,33 @@ declare module '@polkadot/api/types/storage' {
     };
     committeeMembership: {
       /**
-       * Identities that are part of this group, known as "Active members".
+       * The current "active" membership, stored as an ordered Vec.
        **/
       activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * The current "inactive" membership, stored as an ordered Vec.
+       **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
       /**
        * The current prime member, if one exists.
        **/
       prime: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
+    };
+    complianceManager: {
+      /**
+       * List of active rules for a ticker (Ticker -> Array of AssetTransferRules)
+       **/
+      assetRulesMap: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<AssetTransferRules>
+      >;
+      /**
+       * List of trusted claim issuer Ticker -> Issuer Identity
+       **/
+      trustedClaimIssuer: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<Vec<IdentityId>>
+      >;
     };
     contracts: {
       /**
@@ -599,22 +625,6 @@ declare module '@polkadot/api/types/storage' {
                 IdentityId | string | Uint8Array
               ]
         ) => Observable<bool>
-      >;
-    };
-    generalTm: {
-      /**
-       * List of active rules for a ticker (Ticker -> Array of AssetTransferRules)
-       **/
-      assetRulesMap: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<AssetTransferRules>
-      >;
-      /**
-       * List of trusted claim issuer Ticker -> Issuer Identity
-       **/
-      trustedClaimIssuer: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<Vec<IdentityId>>
       >;
     };
     grandpa: {
@@ -1108,7 +1118,7 @@ declare module '@polkadot/api/types/storage' {
             | 'AssetAddDocument'
             | 'AssetCreateToken'
             | 'DividendNew'
-            | 'GeneralTmAddActiveRule'
+            | 'ComplianceManagerAddActiveRule'
             | 'IdentityRegisterDid'
             | 'IdentityCddRegisterDid'
             | 'IdentityAddClaim'
@@ -1292,7 +1302,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Exposure>
       >;
       /**
-       * The session index at which the era start for the last `HISTORY_DEPTH` eras
+       * The session index at which the era start for the last `HISTORY_DEPTH` eras.
        **/
       erasStartSessionIndex: AugmentedQuery<
         ApiType,
@@ -1386,7 +1396,7 @@ declare module '@polkadot/api/types/storage' {
         (arg: AccountId | string | Uint8Array) => Observable<RewardDestination>
       >;
       /**
-       * The map from (wannabe) validators to the status of compliance
+       * The map from (wannabe) validators to the status of compliance.
        **/
       permissionedValidators: AugmentedQuery<
         ApiType,
@@ -1647,9 +1657,6 @@ declare module '@polkadot/api/types/storage' {
     };
     transactionPayment: {
       nextFeeMultiplier: AugmentedQuery<ApiType, () => Observable<Multiplier>>;
-    };
-    treasury: {
-      balance: AugmentedQuery<ApiType, () => Observable<Balance>>;
     };
     voting: {
       /**
