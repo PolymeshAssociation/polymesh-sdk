@@ -41,6 +41,7 @@ import {
   Link,
   LinkData,
   LinkedKeyInfo,
+  PosRatio,
   Rule,
   RuleType,
   Scope,
@@ -129,6 +130,7 @@ interface ContextOptions {
   withSeed?: boolean;
   balance?: BigNumber;
   hasRoles?: boolean;
+  validCdd?: boolean;
 }
 
 interface Pair {
@@ -295,6 +297,7 @@ const defaultContextOptions: ContextOptions = {
   withSeed: true,
   balance: new BigNumber(100),
   hasRoles: true,
+  validCdd: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -315,6 +318,7 @@ function configureContext(opts: ContextOptions): void {
         getPolyXBalance: sinon.stub().resolves(opts.balance),
         did: opts.did,
         hasRoles: sinon.stub().resolves(opts.hasRoles),
+        hasValidCdd: sinon.stub().resolves(opts.validCdd),
       })
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')
@@ -957,6 +961,12 @@ export const createMockBytes = (value?: string): Bytes => createMockU8ACodec(val
  */
 export const createMockTokenName = (name?: string): TokenName =>
   createMockStringCodec(name) as TokenName;
+
+/**
+ * @hidden
+ */
+export const createMockPosRatio = (numerator: number, denominator: number): PosRatio =>
+  [createMockU32(numerator), createMockU32(denominator)] as PosRatio;
 
 /**
  * @hidden

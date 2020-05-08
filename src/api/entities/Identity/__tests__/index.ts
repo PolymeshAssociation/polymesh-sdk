@@ -5,7 +5,7 @@ import { Entity } from '~/base';
 import { Context } from '~/context';
 import { IdentityId } from '~/polkadot';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
-import { RoleType } from '~/types';
+import { Role, RoleType } from '~/types';
 import * as utilsModule from '~/utils';
 
 import { Identity } from '../';
@@ -113,6 +113,30 @@ describe('Identity class', () => {
     test('hasRole should check whether the identity has the Token Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const role = { type: RoleType.TokenOwner, ticker: 'someTicker' };
+
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      identity.did = 'otherDid';
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+    });
+
+    test('hasRole should check whether the identity has the CDD Provider role', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const role: Role = { type: RoleType.CddProvider };
+      const rawDid = polkadotMockUtils.createMockIdentityId(did);
+
+      polkadotMockUtils.createQueryStub('cddServiceProviders', 'activeMembers').resolves([rawDid]);
+
+      sinon
+        .stub(utilsModule, 'identityIdToString')
+        .withArgs(rawDid)
+        .returns(did);
 
       let hasRole = await identity.hasRole(role);
 

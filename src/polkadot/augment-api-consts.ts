@@ -32,7 +32,6 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
       existentialDeposit: AugmentedConst<Balance>;
     };
     bridge: {
-      blockRangeForTimelock: AugmentedConst<BlockNumber>;
       maxTimelockedTxsPerBlock: AugmentedConst<u32>;
     };
     contracts: {
@@ -106,13 +105,6 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
        * The fee to be paid for making a transaction; the per-byte portion.
        **/
       transactionByteFee: AugmentedConst<BalanceOf>;
-    };
-    elections: {
-      candidacyBond: AugmentedConst<BalanceOf>;
-      desiredMembers: AugmentedConst<u32>;
-      desiredRunnersUp: AugmentedConst<u32>;
-      termDuration: AugmentedConst<BlockNumber>;
-      votingBond: AugmentedConst<BalanceOf>;
     };
     finalityTracker: {
       /**
