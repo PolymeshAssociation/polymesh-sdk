@@ -1015,7 +1015,17 @@ const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): E
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAssetType = (
-  assetType?: 'Equity' | 'Debt' | 'Commodity' | 'StructuredProduct' | { Custom: Bytes }
+  assetType?:
+    | 'EquityCommon'
+    | 'EquityPreferred'
+    | 'Commodity'
+    | 'FixedIncome'
+    | 'Reit'
+    | 'Fund'
+    | 'RevenueShareAgreement'
+    | 'StructuredProduct'
+    | 'Derivative'
+    | { Custom: Bytes }
 ): AssetType => {
   return createMockEnum(assetType) as AssetType;
 };
@@ -1025,7 +1035,7 @@ export const createMockAssetType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockLinkData = (
-  linkData?: { DocumentOwned: Document } | { TickerOwned: Ticker } | { TokenOwned: Ticker }
+  linkData?: { DocumentOwned: Document } | { TickerOwned: Ticker } | { AssetOwned: Ticker }
 ): LinkData => {
   return createMockEnum(linkData) as LinkData;
 };
@@ -1228,7 +1238,7 @@ export const createMockAuthorizationData = (
     | { RotateMasterKey: IdentityId }
     | { TransferTicker: Ticker }
     | 'AddMultiSigSigner'
-    | { TransferTokenOwnership: Ticker }
+    | { TransferAssetOwnership: Ticker }
     | { JoinIdentity: IdentityId }
     | { custom: Bytes }
     | 'NoData'

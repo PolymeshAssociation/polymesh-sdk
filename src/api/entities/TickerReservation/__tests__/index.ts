@@ -163,7 +163,7 @@ describe('TickerReservation class', () => {
           /* eslint-disable @typescript-eslint/camelcase */
           owner_did: polkadotMockUtils.createMockIdentityId(ownerDid),
           name: polkadotMockUtils.createMockTokenName('someToken'),
-          asset_type: polkadotMockUtils.createMockAssetType('Equity'),
+          asset_type: polkadotMockUtils.createMockAssetType('EquityCommon'),
           divisible: polkadotMockUtils.createMockBool(true),
           link_id: polkadotMockUtils.createMockU64(3),
           total_supply: polkadotMockUtils.createMockBalance(1000),
@@ -216,7 +216,7 @@ describe('TickerReservation class', () => {
         name: 'TEST',
         totalSupply: new BigNumber(100),
         isDivisible: true,
-        tokenType: KnownTokenType.Equity,
+        tokenType: KnownTokenType.EquityCommon,
         tokenIdentifiers: [{ type: TokenIdentifierType.Isin, value: '12345' }],
         fundingRound: 'Series A',
       };

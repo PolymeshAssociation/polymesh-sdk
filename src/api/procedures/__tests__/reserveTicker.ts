@@ -257,7 +257,7 @@ describe('tickerReservationResolver', () => {
   });
 
   beforeEach(() => {
-    findEventRecordStub.returns(polkadotMockUtils.createMockEventRecord([ticker]));
+    findEventRecordStub.returns(polkadotMockUtils.createMockEventRecord(['someDid', ticker]));
   });
 
   afterEach(() => {
