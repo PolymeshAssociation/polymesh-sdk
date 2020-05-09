@@ -28,7 +28,7 @@ export async function prepareTransferTokenOwnership(
 
   const rawSignatory = signerToSignatory({ type: SignerType.Identity, value: did }, context);
   const rawAuthorizationData = authorizationToAuthorizationData(
-    { type: AuthorizationType.TransferTokenOwnership, value: ticker },
+    { type: AuthorizationType.TransferAssetOwnership, value: ticker },
     context
   );
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;

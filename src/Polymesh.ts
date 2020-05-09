@@ -286,9 +286,9 @@ export class Polymesh {
     );
 
     const securityTokens = identityLinks
-      .filter(([, data]) => data.link_data.isTokenOwned)
+      .filter(([, data]) => data.link_data.isAssetOwned)
       .map(([, data]) => {
-        const ticker = data.link_data.asTokenOwned;
+        const ticker = data.link_data.asAssetOwned;
         return new SecurityToken({ ticker: tickerToString(ticker) }, context);
       });
 

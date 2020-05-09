@@ -116,7 +116,7 @@ export async function prepareCreateSecurityToken(
   const rawFundingRound = fundingRound ? stringToFundingRoundName(fundingRound, context) : null;
 
   this.addTransaction(
-    tx.asset.createToken,
+    tx.asset.createAsset,
     {
       fee,
     },

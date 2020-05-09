@@ -153,7 +153,7 @@ let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
   targetDid: 'targetDid',
   issuerDid: 'issuerDid',
-  data: { type: AuthorizationType.TransferTokenOwnership, value: 'UNWANTED_TOKEN' },
+  data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_TOKEN' },
   expiry: null,
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;

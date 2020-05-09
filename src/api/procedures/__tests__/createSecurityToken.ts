@@ -106,7 +106,7 @@ describe('createSecurityToken procedure', () => {
     name = 'someName';
     totalSupply = new BigNumber(100);
     isDivisible = true;
-    tokenType = KnownTokenType.Equity;
+    tokenType = KnownTokenType.EquityCommon;
     tokenIdentifiers = [
       {
         type: TokenIdentifierType.Isin,
@@ -183,7 +183,7 @@ describe('createSecurityToken procedure', () => {
       returnValue: polkadotMockUtils.createMockTickerRegistrationConfig(),
     });
 
-    transaction = polkadotMockUtils.createTxStub('asset', 'createToken');
+    transaction = polkadotMockUtils.createTxStub('asset', 'createAsset');
 
     mockContext = polkadotMockUtils.getContextInstance();
 

@@ -27,7 +27,7 @@ export const createTickerReservationResolver = (context: Context) => (
 ): TickerReservation => {
   const eventRecord = findEventRecord(receipt, 'asset', 'TickerRegistered');
   const data = eventRecord.event.data;
-  const newTicker = tickerToString(data[0] as Ticker);
+  const newTicker = tickerToString(data[1] as Ticker);
 
   return new TickerReservation({ ticker: newTicker }, context);
 };

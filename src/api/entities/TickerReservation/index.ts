@@ -7,7 +7,7 @@ import {
 } from '~/api/procedures/createSecurityToken';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { identityIdToString, momentToDate } from '~/utils';
+import { identityIdToString, momentToDate, stringToTicker } from '~/utils';
 
 import { TickerReservationDetails, TickerReservationStatus } from './types';
 
@@ -64,10 +64,12 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
+    const rawTicker = stringToTicker(ticker, context);
+
     // TODO: queryMulti
     const [{ owner: tickerOwner, expiry }, { owner_did: tokenOwner }] = await Promise.all([
-      asset.tickers(ticker),
-      asset.tokens(ticker),
+      asset.tickers(rawTicker),
+      asset.tokens(rawTicker),
     ]);
 
     const tickerOwned = !tickerOwner.isEmpty;
