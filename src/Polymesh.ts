@@ -101,12 +101,16 @@ export class Polymesh {
     return transferPolyX.prepare(args, this.context);
   }
 
+  // TODO: uncomment the method after v1
   /**
    * Get the POLYX balance of the current account
+   * NOTE: We don't expose this method for Testnet v1
    */
+  /*
   public getIdentityBalance(): Promise<BigNumber> {
     return this.context.getCurrentIdentity().getPolyXBalance();
   }
+  */
 
   /**
    * Get the free POLYX balance of an account

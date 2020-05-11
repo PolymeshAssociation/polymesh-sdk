@@ -111,6 +111,8 @@ describe('Polymesh Class', () => {
     });
   });
 
+  // TODO: uncomment the method after v1
+  /*
   describe('method: getIdentityBalance', () => {
     test("should return the identity's POLYX balance", async () => {
       const fakeBalance = new BigNumber(20);
@@ -127,6 +129,7 @@ describe('Polymesh Class', () => {
       expect(result).toEqual(fakeBalance);
     });
   });
+  */
 
   describe('method: getAccountBalance', () => {
     test('should return the free POLYX balance of the current account', async () => {
