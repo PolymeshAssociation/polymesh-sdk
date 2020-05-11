@@ -282,4 +282,10 @@ export enum TransferStatus {
   FundsLimitReached = 'FundsLimitReached',
 }
 
+export interface ClaimTargets {
+  targets: string[];
+  claim: Claim;
+  expiry?: Date;
+}
+
 export * from '~/api/entities/types';
