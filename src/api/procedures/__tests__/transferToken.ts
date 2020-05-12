@@ -63,7 +63,7 @@ describe('transferToken procedure', () => {
     polkadotMockUtils.cleanup();
   });
 
-  test('should throw an error with possible reason if transfer status is different than success and failure', () => {
+  test('should throw an error with reason if transfer status is different than success and failure', () => {
     const amount = new BigNumber(100);
     const status = TransferStatus.FundsLimitReached;
 
@@ -81,7 +81,7 @@ describe('transferToken procedure', () => {
     );
   });
 
-  test('should throw an error without possible reason if transfer status is failure', () => {
+  test('should throw an error without reason if transfer status is failure', () => {
     const amount = new BigNumber(100);
     const status = TransferStatus.Failure;
 
