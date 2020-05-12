@@ -43,7 +43,7 @@ export async function prepareTransferToken(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}".${
-        canTransfer !== TransferStatus.Failure ? ` Possible reason: ${canTransfer}` : ''
+        canTransfer !== TransferStatus.Failure ? ` Reason: ${canTransfer}` : ''
       }`,
     });
   }
