@@ -77,7 +77,7 @@ describe('transferToken procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareTransferToken.call(proc, { ...args, amount })).rejects.toThrow(
-      `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}". Possible reason: ${status}`
+      `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}". Reason: ${status}`
     );
   });
 
