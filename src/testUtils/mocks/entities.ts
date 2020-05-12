@@ -12,6 +12,7 @@ import {
   SecurityTokenDetails,
   TickerReservationDetails,
   TickerReservationStatus,
+  TransferStatus,
 } from '~/types';
 
 const mockInstanceContainer = {
@@ -44,6 +45,7 @@ interface SecurityTokenOptions {
   details?: Partial<SecurityTokenDetails>;
   currentFundingRound?: string;
   transfersAreFrozen?: boolean;
+  transfersCanTransfer?: TransferStatus;
 }
 
 interface AuthorizationRequestOptions {
@@ -66,6 +68,7 @@ let identityHasValidCddStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
 let securityTokenTransfersAreFrozenStub: SinonStub;
+let securityTokenTransfersCanTransferStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -148,6 +151,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   },
   currentFundingRound: 'Series A',
   transfersAreFrozen: false,
+  transfersCanTransfer: TransferStatus.Success,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -199,6 +203,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(opts.currentFundingRound),
     transfers: {
       areFrozen: securityTokenTransfersAreFrozenStub.resolves(opts.transfersAreFrozen),
+      canTransfer: securityTokenTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
     },
   } as unknown) as MockSecurityToken;
 
@@ -217,6 +222,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenDetailsStub = sinon.stub();
   securityTokenCurrentFundingRoundStub = sinon.stub();
   securityTokenTransfersAreFrozenStub = sinon.stub();
+  securityTokenTransfersCanTransferStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -499,6 +505,18 @@ export function getSecurityTokenTransfersAreFrozenStub(frozen: boolean): SinonSt
   }
 
   return securityTokenTransfersAreFrozenStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.Transfers.canTransfer` method
+ */
+export function getSecurityTokenTransfersCanTransferStub(status: TransferStatus): SinonStub {
+  if (status) {
+    return securityTokenTransfersCanTransferStub.resolves(status);
+  }
+
+  return securityTokenTransfersCanTransferStub;
 }
 
 /**

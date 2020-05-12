@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities/Identity';
-import { toggleFreezeTransfers } from '~/api/procedures';
+import { toggleFreezeTransfers, TransferDataParams, transferToken } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { CanTransferResult } from '~/polkadot';
 import { TransferStatus } from '~/types';
@@ -103,5 +103,16 @@ export class Transfers extends Namespace<SecurityToken> {
     );
 
     return canTransferResultToTransferStatus(res);
+  }
+
+  /**
+   * Transfer an amount of the token to another identity.
+   */
+  public async transfer(args: TransferDataParams): Promise<TransactionQueue<SecurityToken>> {
+    const {
+      parent: { ticker },
+      context,
+    } = this;
+    return transferToken.prepare({ ticker, ...args }, context);
   }
 }
