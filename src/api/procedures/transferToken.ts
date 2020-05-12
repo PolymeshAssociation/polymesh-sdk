@@ -5,12 +5,12 @@ import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType, TransferStatus } from '~/types';
 import { numberToBalance, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
 
-export interface TransferDataParams {
+export interface TransferTokenParams {
   to: string | Identity;
   amount: BigNumber;
 }
 
-export type Params = TransferDataParams & {
+export type Params = TransferTokenParams & {
   ticker: string;
 };
 
@@ -24,7 +24,6 @@ export async function prepareTransferToken(
   const {
     context: {
       polymeshApi: {
-        query: { identity },
         tx: { asset },
       },
     },
@@ -35,36 +34,17 @@ export async function prepareTransferToken(
 
   const did = valueToDid(to);
   const value = numberToBalance(amount, context);
-  const currentIdentity = context.getCurrentIdentity();
   const identityId = stringToIdentityId(did, context);
   const securityToken = new SecurityToken({ ticker }, context);
-
-  // TODO: queryMulti
-  const [tokenBalance, size] = await Promise.all([
-    currentIdentity.getTokenBalance(ticker),
-    identity.didRecords.size(identityId),
-  ]);
-
-  if (tokenBalance.lt(amount)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Insufficient balance',
-    });
-  }
-
-  if (size.isZero()) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: "The destination account doesn't have an asssociated identity",
-    });
-  }
 
   const canTransfer = await securityToken.transfers.canTransfer({ to: did, amount });
 
   if (canTransfer !== TransferStatus.Success) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}". Possible reason: ${canTransfer}`,
+      message: `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}".${
+        canTransfer !== TransferStatus.Failure ? ` Possible reason: ${canTransfer}` : ''
+      }`,
     });
   }
 

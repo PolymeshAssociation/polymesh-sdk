@@ -22,7 +22,6 @@ describe('transferToken procedure', () => {
   let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context], Balance>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let valueToDidStub: sinon.SinonStub<[string | Identity], string>;
-  let didRecordsStub: sinon.SinonStub & polkadotMockUtils.StubQuery;
   let did: string;
   let ticker: string;
   let rawTicker: Ticker;
@@ -49,9 +48,6 @@ describe('transferToken procedure', () => {
   beforeEach(() => {
     mockContext = polkadotMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    didRecordsStub = polkadotMockUtils.createQueryStub('identity', 'didRecords', {
-      size: 1,
-    });
     valueToDidStub.returns('someDid');
   });
 
@@ -67,27 +63,25 @@ describe('transferToken procedure', () => {
     polkadotMockUtils.cleanup();
   });
 
-  test('should throw an error if the user has insufficient token balance to transfer', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+  test('should throw an error with possible reason if transfer status is different than success and failure', () => {
+    const amount = new BigNumber(100);
+    const status = TransferStatus.FundsLimitReached;
 
-    return expect(
-      prepareTransferToken.call(proc, { ...args, amount: new BigNumber(10000) })
-    ).rejects.toThrow('Insufficient balance');
-  });
-
-  test("should throw an error if the supplied did don't exist", () => {
-    didRecordsStub.size.resolves(polkadotMockUtils.createMockU64(0));
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        transfersCanTransfer: status,
+      },
+    });
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    return expect(prepareTransferToken.call(proc, args)).rejects.toThrow(
-      "The destination account doesn't have an asssociated identity"
+    return expect(prepareTransferToken.call(proc, { ...args, amount })).rejects.toThrow(
+      `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}". Possible reason: ${status}`
     );
   });
 
-  test('should throw an error if transfer status is different than success', () => {
+  test('should throw an error without possible reason if transfer status is failure', () => {
     const amount = new BigNumber(100);
     const status = TransferStatus.Failure;
 
@@ -101,7 +95,7 @@ describe('transferToken procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareTransferToken.call(proc, { ...args, amount })).rejects.toThrow(
-      `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}". Possible reason: ${status}`
+      `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}".`
     );
   });
 

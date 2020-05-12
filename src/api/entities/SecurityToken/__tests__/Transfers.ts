@@ -20,7 +20,7 @@ describe('Transfers class', () => {
   let mockContext: Mocked<Context>;
   let mockSecurityToken: Mocked<SecurityToken>;
   let transfers: Transfers;
-  let toggleFreezeTransfersPrepareStub: SinonStub<
+  let prepareToggleFreezeTransfersStub: SinonStub<
     [Params, Context],
     Promise<TransactionQueue<SecurityToken, unknown[][]>>
   >;
@@ -29,7 +29,7 @@ describe('Transfers class', () => {
     entityMockUtils.initMocks();
     polkadotMockUtils.initMocks();
 
-    toggleFreezeTransfersPrepareStub = sinon.stub(toggleFreezeTransfers, 'prepare');
+    prepareToggleFreezeTransfersStub = sinon.stub(toggleFreezeTransfers, 'prepare');
   });
 
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe('Transfers class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      toggleFreezeTransfersPrepareStub
+      prepareToggleFreezeTransfersStub
         .withArgs({ ticker: mockSecurityToken.ticker, freeze: true }, mockContext)
         .resolves(expectedQueue);
 
@@ -68,7 +68,7 @@ describe('Transfers class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      toggleFreezeTransfersPrepareStub
+      prepareToggleFreezeTransfersStub
         .withArgs({ ticker: mockSecurityToken.ticker, freeze: false }, mockContext)
         .resolves(expectedQueue);
 
