@@ -133,6 +133,7 @@ interface ContextOptions {
   balance?: BigNumber;
   hasRoles?: boolean;
   validCdd?: boolean;
+  tokenBalance?: BigNumber;
 }
 
 interface Pair {
@@ -300,6 +301,7 @@ const defaultContextOptions: ContextOptions = {
   balance: new BigNumber(100),
   hasRoles: true,
   validCdd: true,
+  tokenBalance: new BigNumber(1000),
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -321,6 +323,7 @@ function configureContext(opts: ContextOptions): void {
         did: opts.did,
         hasRoles: sinon.stub().resolves(opts.hasRoles),
         hasValidCdd: sinon.stub().resolves(opts.validCdd),
+        getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
       })
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')

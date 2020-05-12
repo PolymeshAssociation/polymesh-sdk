@@ -15,3 +15,4 @@ export { transferPolyX, TransferPolyXParams } from './transferPolyX';
 export { addClaims, AddClaimsParams } from './addClaims';
 export { revokeClaims, RevokeClaimsParams } from './revokeClaims';
 export { togglePauseRules, TogglePauseRulesParams } from './togglePauseRules';
+export { transferToken, TransferTokenParams } from './transferToken';
