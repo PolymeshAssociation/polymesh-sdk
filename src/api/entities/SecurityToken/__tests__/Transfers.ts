@@ -2,7 +2,7 @@ import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 
-import { toggleFreezeTransfers } from '~/api/procedures';
+import { toggleFreezeTransfers, transferToken } from '~/api/procedures';
 import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import { Namespace, TransactionQueue } from '~/base';
 import { Context } from '~/context';
@@ -20,7 +20,7 @@ describe('Transfers class', () => {
   let mockContext: Mocked<Context>;
   let mockSecurityToken: Mocked<SecurityToken>;
   let transfers: Transfers;
-  let prepareStub: SinonStub<
+  let prepareToggleFreezeTransfersStub: SinonStub<
     [Params, Context],
     Promise<TransactionQueue<SecurityToken, unknown[][]>>
   >;
@@ -29,7 +29,7 @@ describe('Transfers class', () => {
     entityMockUtils.initMocks();
     polkadotMockUtils.initMocks();
 
-    prepareStub = sinon.stub(toggleFreezeTransfers, 'prepare');
+    prepareToggleFreezeTransfersStub = sinon.stub(toggleFreezeTransfers, 'prepare');
   });
 
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe('Transfers class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      prepareStub
+      prepareToggleFreezeTransfersStub
         .withArgs({ ticker: mockSecurityToken.ticker, freeze: true }, mockContext)
         .resolves(expectedQueue);
 
@@ -68,7 +68,7 @@ describe('Transfers class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      prepareStub
+      prepareToggleFreezeTransfersStub
         .withArgs({ ticker: mockSecurityToken.ticker, freeze: false }, mockContext)
         .resolves(expectedQueue);
 
@@ -179,6 +179,25 @@ describe('Transfers class', () => {
       const result = await transfers.canTransfer({ from: fromDid, to: toDid, amount });
 
       expect(result).toBe(TransferStatus.Success);
+    });
+  });
+
+  describe('method: transfer', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const args = {
+        to: 'someDid',
+        amount: new BigNumber(100),
+      };
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      sinon
+        .stub(transferToken, 'prepare')
+        .withArgs({ ticker: mockSecurityToken.ticker, ...args }, mockContext)
+        .resolves(expectedQueue);
+
+      const queue = await transfers.transfer(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });
