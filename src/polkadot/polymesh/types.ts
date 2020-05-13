@@ -45,10 +45,15 @@ export interface AssetTransferRules extends Struct {
 
 /** @name AssetType */
 export interface AssetType extends Enum {
-  readonly isEquity: boolean;
-  readonly isDebt: boolean;
+  readonly isEquityCommon: boolean;
+  readonly isEquityPreferred: boolean;
   readonly isCommodity: boolean;
+  readonly isFixedIncome: boolean;
+  readonly isReit: boolean;
+  readonly isFund: boolean;
+  readonly isRevenueShareAgreement: boolean;
   readonly isStructuredProduct: boolean;
+  readonly isDerivative: boolean;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
 }
@@ -76,8 +81,8 @@ export interface AuthorizationData extends Enum {
   readonly isTransferTicker: boolean;
   readonly asTransferTicker: Ticker;
   readonly isAddMultiSigSigner: boolean;
-  readonly isTransferTokenOwnership: boolean;
-  readonly asTransferTokenOwnership: Ticker;
+  readonly isTransferAssetOwnership: boolean;
+  readonly asTransferAssetOwnership: Ticker;
   readonly isJoinIdentity: boolean;
   readonly asJoinIdentity: IdentityId;
   readonly isCustom: boolean;
@@ -375,8 +380,8 @@ export interface LinkData extends Enum {
   readonly asDocumentOwned: Document;
   readonly isTickerOwned: boolean;
   readonly asTickerOwned: Ticker;
-  readonly isTokenOwned: boolean;
-  readonly asTokenOwned: Ticker;
+  readonly isAssetOwned: boolean;
+  readonly asAssetOwned: Ticker;
 }
 
 /** @name LinkedKeyInfo */
@@ -500,7 +505,7 @@ export interface ProtocolOp extends Enum {
   readonly isAssetRegisterTicker: boolean;
   readonly isAssetIssue: boolean;
   readonly isAssetAddDocument: boolean;
-  readonly isAssetCreateToken: boolean;
+  readonly isAssetCreateAsset: boolean;
   readonly isDividendNew: boolean;
   readonly isComplianceManagerAddActiveRule: boolean;
   readonly isIdentityRegisterDid: boolean;

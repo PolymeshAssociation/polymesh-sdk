@@ -133,6 +133,7 @@ interface ContextOptions {
   balance?: BigNumber;
   hasRoles?: boolean;
   validCdd?: boolean;
+  tokenBalance?: BigNumber;
 }
 
 interface Pair {
@@ -300,6 +301,7 @@ const defaultContextOptions: ContextOptions = {
   balance: new BigNumber(100),
   hasRoles: true,
   validCdd: true,
+  tokenBalance: new BigNumber(1000),
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -321,6 +323,7 @@ function configureContext(opts: ContextOptions): void {
         did: opts.did,
         hasRoles: sinon.stub().resolves(opts.hasRoles),
         hasValidCdd: sinon.stub().resolves(opts.validCdd),
+        getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
       })
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')
@@ -1015,7 +1018,17 @@ const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): E
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAssetType = (
-  assetType?: 'Equity' | 'Debt' | 'Commodity' | 'StructuredProduct' | { Custom: Bytes }
+  assetType?:
+    | 'EquityCommon'
+    | 'EquityPreferred'
+    | 'Commodity'
+    | 'FixedIncome'
+    | 'Reit'
+    | 'Fund'
+    | 'RevenueShareAgreement'
+    | 'StructuredProduct'
+    | 'Derivative'
+    | { Custom: Bytes }
 ): AssetType => {
   return createMockEnum(assetType) as AssetType;
 };
@@ -1025,7 +1038,7 @@ export const createMockAssetType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockLinkData = (
-  linkData?: { DocumentOwned: Document } | { TickerOwned: Ticker } | { TokenOwned: Ticker }
+  linkData?: { DocumentOwned: Document } | { TickerOwned: Ticker } | { AssetOwned: Ticker }
 ): LinkData => {
   return createMockEnum(linkData) as LinkData;
 };
@@ -1228,7 +1241,7 @@ export const createMockAuthorizationData = (
     | { RotateMasterKey: IdentityId }
     | { TransferTicker: Ticker }
     | 'AddMultiSigSigner'
-    | { TransferTokenOwnership: Ticker }
+    | { TransferAssetOwnership: Ticker }
     | { JoinIdentity: IdentityId }
     | { custom: Bytes }
     | 'NoData'

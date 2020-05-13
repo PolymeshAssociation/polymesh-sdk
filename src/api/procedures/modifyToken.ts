@@ -66,7 +66,7 @@ export async function prepareModifyToken(
       });
     }
 
-    this.addTransaction(tx.asset.renameToken, {}, rawTicker, stringToTokenName(newName, context));
+    this.addTransaction(tx.asset.renameAsset, {}, rawTicker, stringToTokenName(newName, context));
   }
 
   if (newFundingRound) {

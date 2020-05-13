@@ -4,19 +4,13 @@ import { Claim as MeshClaim } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure } from '~/base';
 import { IdentityId } from '~/polkadot';
-import { Claim, ClaimType, ErrorCode, Role, RoleType } from '~/types';
+import { ClaimTargets, ClaimType, ErrorCode, Role, RoleType } from '~/types';
 import { claimToMeshClaim, dateToMoment, identityIdToString, stringToIdentityId } from '~/utils';
 
 interface AddClaimItem {
   target: IdentityId;
   claim: MeshClaim;
   expiry: Moment | null;
-}
-
-export interface ClaimTargets {
-  targets: string[];
-  claim: Claim;
-  expiry?: Date;
 }
 
 export interface AddClaimsParams {

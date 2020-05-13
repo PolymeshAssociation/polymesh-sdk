@@ -11,6 +11,7 @@ import {
   transferPolyX,
   TransferPolyXParams,
 } from '~/api/procedures';
+import { revokeClaims, RevokeClaimsParams } from '~/api/procedures/revokeClaims';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
@@ -101,12 +102,16 @@ export class Polymesh {
     return transferPolyX.prepare(args, this.context);
   }
 
+  // TODO: uncomment the method after v1
   /**
    * Get the POLYX balance of the current account
+   * NOTE: We don't expose this method for Testnet v1
    */
+  /*
   public getIdentityBalance(): Promise<BigNumber> {
     return this.context.getCurrentIdentity().getPolyXBalance();
   }
+  */
 
   /**
    * Get the free POLYX balance of an account
@@ -219,11 +224,20 @@ export class Polymesh {
   }
 
   /**
+   * Revoke claims from identities
+   *
+   * @param args.claims - array of claims to be revoked
+   */
+  public revokeClaims(args: RevokeClaimsParams): Promise<TransactionQueue<void>> {
+    return revokeClaims.prepare(args, this.context);
+  }
+
+  /**
    * Handle connection errors
    *
    * @returns an unsubscribe callback
    */
-  onConnectionError(callback: (...args: unknown[]) => unknown): () => void {
+  public onConnectionError(callback: (...args: unknown[]) => unknown): () => void {
     const {
       context: { polymeshApi },
     } = this;
@@ -240,7 +254,7 @@ export class Polymesh {
    *
    * @returns an unsubscribe callback
    */
-  onDisconnect(callback: (...args: unknown[]) => unknown): () => void {
+  public onDisconnect(callback: (...args: unknown[]) => unknown): () => void {
     const {
       context: { polymeshApi },
     } = this;
@@ -282,9 +296,9 @@ export class Polymesh {
     );
 
     const securityTokens = identityLinks
-      .filter(([, data]) => data.link_data.isTokenOwned)
+      .filter(([, data]) => data.link_data.isAssetOwned)
       .map(([, data]) => {
-        const ticker = data.link_data.asTokenOwned;
+        const ticker = data.link_data.asAssetOwned;
         return new SecurityToken({ ticker: tickerToString(ticker) }, context);
       });
 

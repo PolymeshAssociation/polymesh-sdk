@@ -1116,7 +1116,7 @@ declare module '@polkadot/api/types/storage' {
             | 'AssetRegisterTicker'
             | 'AssetIssue'
             | 'AssetAddDocument'
-            | 'AssetCreateToken'
+            | 'AssetCreateAsset'
             | 'DividendNew'
             | 'ComplianceManagerAddActiveRule'
             | 'IdentityRegisterDid'
@@ -1465,6 +1465,9 @@ declare module '@polkadot/api/types/storage' {
       >;
     };
     statistic: {
+      /**
+       * Number of investor per asset.
+       **/
       investorCountPerAsset: AugmentedQuery<
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<Counter>

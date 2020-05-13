@@ -157,7 +157,7 @@ let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
   targetDid: 'targetDid',
   issuerDid: 'issuerDid',
-  data: { type: AuthorizationType.TransferTokenOwnership, value: 'UNWANTED_TOKEN' },
+  data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_TOKEN' },
   expiry: null,
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
@@ -499,8 +499,8 @@ export function getSecurityTokenCurrentFundingRoundStub(currentFundingRound?: st
  * @hidden
  * Retrieve the stub of the `SecurityToken.Transfers.areFrozen` method
  */
-export function getSecurityTokenTransfersAreFrozenStub(frozen: boolean): SinonStub {
-  if (frozen) {
+export function getSecurityTokenTransfersAreFrozenStub(frozen?: boolean): SinonStub {
+  if (frozen !== undefined) {
     return securityTokenTransfersAreFrozenStub.resolves(frozen);
   }
 
@@ -511,7 +511,7 @@ export function getSecurityTokenTransfersAreFrozenStub(frozen: boolean): SinonSt
  * @hidden
  * Retrieve the stub of the `SecurityToken.Transfers.canTransfer` method
  */
-export function getSecurityTokenTransfersCanTransferStub(status: TransferStatus): SinonStub {
+export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus): SinonStub {
   if (status) {
     return securityTokenTransfersCanTransferStub.resolves(status);
   }

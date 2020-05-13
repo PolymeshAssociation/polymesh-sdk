@@ -69,6 +69,16 @@ declare module '@polkadot/api/types/submittable' {
   export interface AugmentedSubmittables<ApiType> {
     asset: {
       /**
+       * This function is used to accept a token ownership transfer.
+       * NB: To reject the transfer, call remove auth function in identity module.
+       * # Arguments
+       * * `origin` It contains the signing key of the caller (i.e who signed the transaction to execute this function).
+       * * `auth_id` Authorization ID of the token ownership transfer authorization.
+       **/
+      acceptAssetOwnershipTransfer: AugmentedSubmittable<
+        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * This function is used to accept a ticker transfer.
        * NB: To reject the transfer, call remove auth function in identity module.
        * # Arguments
@@ -76,16 +86,6 @@ declare module '@polkadot/api/types/submittable' {
        * * `auth_id` Authorization ID of ticker transfer authorization.
        **/
       acceptTickerTransfer: AugmentedSubmittable<
-        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * This function is used to accept a token ownership transfer.
-       * NB: To reject the transfer, call remove auth function in identity module.
-       * # Arguments
-       * * `origin` It contains the signing key of the caller (i.e who signed the transaction to execute this function).
-       * * `auth_id` Authorization ID of the token ownership transfer authorization.
-       **/
-      acceptTokenOwnershipTransfer: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -169,26 +169,6 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Checks whether a transaction with given parameters can take place or not
-       * This function is state less function and used to validate the transfer before actual transfer call.
-       * # Arguments
-       * * `origin` Signing Key of the caller.
-       * * `ticker` Ticker of the token.
-       * * `from_did` DID from whom tokens will be transferred.
-       * * `to_did` DID to whom tokens will be transferred.
-       * * `value` Amount of the tokens.
-       * * `data` Off chain data blob to validate the transfer.
-       **/
-      canTransfer: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          fromDid: IdentityId | string | Uint8Array,
-          toDid: IdentityId | string | Uint8Array,
-          value: Balance | AnyNumber | Uint8Array,
-          data: Bytes | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
        * Forces a redemption of an DID's tokens. Can only be called by token owner.
        * # Arguments
        * * `origin` Signing key of the token owner.
@@ -230,16 +210,6 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Function used to create the checkpoint.
-       * NB: Only called by the owner of the security token i.e owner DID.
-       * # Arguments
-       * * `origin` Signing key of the token owner. (Only token owner can call this function).
-       * * `ticker` Ticker of the token.
-       **/
-      createCheckpoint: AugmentedSubmittable<
-        (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
        * Initializes a new security token
        * makes the initiating account the owner of the security token
        * & the balance of the owner is set to total supply.
@@ -255,7 +225,7 @@ declare module '@polkadot/api/types/submittable' {
        * # Weight
        * `400_000 + 20_000 * identifiers.len()`
        **/
-      createToken: AugmentedSubmittable<
+      createAsset: AugmentedSubmittable<
         (
           name: TokenName | string,
           ticker: Ticker | string | Uint8Array,
@@ -263,10 +233,15 @@ declare module '@polkadot/api/types/submittable' {
           divisible: bool | boolean | Uint8Array,
           assetType:
             | AssetType
-            | { Equity: any }
-            | { Debt: any }
+            | { EquityCommon: any }
+            | { EquityPreferred: any }
             | { Commodity: any }
+            | { FixedIncome: any }
+            | { REIT: any }
+            | { Fund: any }
+            | { RevenueShareAgreement: any }
             | { StructuredProduct: any }
+            | { Derivative: any }
             | { Custom: any }
             | string
             | Uint8Array,
@@ -278,6 +253,16 @@ declare module '@polkadot/api/types/submittable' {
               ][],
           fundingRound: Option<FundingRoundName> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Function used to create the checkpoint.
+       * NB: Only called by the owner of the security token i.e owner DID.
+       * # Arguments
+       * * `origin` Signing key of the token owner. (Only token owner can call this function).
+       * * `ticker` Ticker of the token.
+       **/
+      createCheckpoint: AugmentedSubmittable<
+        (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * Freezes transfers and minting of a given token.
@@ -297,14 +282,12 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `origin` Signing key of the token holder.
        * * `ticker` Ticker of the token.
-       * * `holder_did` DID of the token holder (i.e who wants to increase the custody allowance).
        * * `custodian_did` DID of the custodian (i.e whom allowance provided).
        * * `value` Allowance amount.
        **/
       increaseCustodyAllowance: AugmentedSubmittable<
         (
           ticker: Ticker | string | Uint8Array,
-          holderDid: IdentityId | string | Uint8Array,
           custodianDid: IdentityId | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
@@ -317,7 +300,6 @@ declare module '@polkadot/api/types/submittable' {
        * * `holder_did` DID of the token holder (i.e who wants to increase the custody allowance).
        * * `holder_account_id` Signing key which signs the off chain data blob.
        * * `custodian_did` DID of the custodian (i.e whom allowance provided).
-       * * `caller_did` DID of the caller.
        * * `value` Allowance amount.
        * * `nonce` A u16 number which avoid the replay attack.
        * * `signature` Signature provided by the holder_did.
@@ -328,7 +310,6 @@ declare module '@polkadot/api/types/submittable' {
           holderDid: IdentityId | string | Uint8Array,
           holderAccountId: AccountId | string | Uint8Array,
           custodianDid: IdentityId | string | Uint8Array,
-          callerDid: IdentityId | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array,
           nonce: u16 | AnyNumber | Uint8Array,
           signature: OffChainSignature | string | Uint8Array
@@ -433,7 +414,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `ticker` - the ticker of the token.
        * * `name` - the new name of the token.
        **/
-      renameToken: AugmentedSubmittable<
+      renameAsset: AugmentedSubmittable<
         (
           ticker: Ticker | string | Uint8Array,
           name: TokenName | string
@@ -473,7 +454,6 @@ declare module '@polkadot/api/types/submittable' {
        * * `origin` Signing key of the custodian.
        * * `ticker` Ticker of the token.
        * * `holder_did` DID of the token holder (i.e whom balance get reduced).
-       * * `custodian_did` DID of the custodian (i.e who has the valid approved allowance).
        * * `receiver_did` DID of the receiver.
        * * `value` Amount of tokens need to transfer.
        **/
@@ -481,7 +461,6 @@ declare module '@polkadot/api/types/submittable' {
         (
           ticker: Ticker | string | Uint8Array,
           holderDid: IdentityId | string | Uint8Array,
-          custodianDid: IdentityId | string | Uint8Array,
           receiverDid: IdentityId | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
@@ -1386,7 +1365,7 @@ declare module '@polkadot/api/types/submittable' {
             | { RotateMasterKey: any }
             | { TransferTicker: any }
             | { AddMultiSigSigner: any }
-            | { TransferTokenOwnership: any }
+            | { TransferAssetOwnership: any }
             | { JoinIdentity: any }
             | { Custom: any }
             | { NoData: any }
@@ -1408,7 +1387,7 @@ declare module '@polkadot/api/types/submittable' {
             | { RotateMasterKey: any }
             | { TransferTicker: any }
             | { AddMultiSigSigner: any }
-            | { TransferTokenOwnership: any }
+            | { TransferAssetOwnership: any }
             | { JoinIdentity: any }
             | { Custom: any }
             | { NoData: any }
@@ -1510,7 +1489,7 @@ declare module '@polkadot/api/types/submittable' {
                   | { RotateMasterKey: any }
                   | { TransferTicker: any }
                   | { AddMultiSigSigner: any }
-                  | { TransferTokenOwnership: any }
+                  | { TransferAssetOwnership: any }
                   | { JoinIdentity: any }
                   | { Custom: any }
                   | { NoData: any }
@@ -2279,7 +2258,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Change the vote threshold the determines the winning proposal. For e.g., for a simple
-       * majority use (1, 2) which represents the inequation ">= 1/2"
+       * majority use (1, 2) which represents the in-equation ">= 1/2"
        * # Arguments
        * * `match_criteria` One of {AtLeast, MoreThan}
        * * `n` Numerator of the fraction representing vote threshold
@@ -2317,7 +2296,7 @@ declare module '@polkadot/api/types/submittable' {
             | 'AssetRegisterTicker'
             | 'AssetIssue'
             | 'AssetAddDocument'
-            | 'AssetCreateToken'
+            | 'AssetCreateAsset'
             | 'DividendNew'
             | 'ComplianceManagerAddActiveRule'
             | 'IdentityRegisterDid'
