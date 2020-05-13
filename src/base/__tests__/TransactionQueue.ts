@@ -65,8 +65,8 @@ describe('Transaction Queue class', () => {
       ];
 
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
-
       const fees = new BigNumber(3);
+
       const returnValue = 3;
       let queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
@@ -108,8 +108,8 @@ describe('Transaction Queue class', () => {
         },
       ];
       let transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
-      const fees = new BigNumber(3);
       const returnValue = 3;
+      const fees = new BigNumber(3);
       let queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,
@@ -168,8 +168,8 @@ describe('Transaction Queue class', () => {
 
       polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
-      const fees = new BigNumber(3);
       const returnValue = 3;
+      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
         fees,
@@ -197,8 +197,8 @@ describe('Transaction Queue class', () => {
 
       polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
-      const fees = new BigNumber(3);
       const returnValue = 3;
+      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
         fees,
@@ -226,8 +226,8 @@ describe('Transaction Queue class', () => {
 
       polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
-      const fees = new BigNumber(3);
       const returnValue = 3;
+      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
         fees,
@@ -250,8 +250,8 @@ describe('Transaction Queue class', () => {
         },
       ];
       polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
-      const fees = new BigNumber(3);
       const returnValue = 3;
+      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,
@@ -276,8 +276,8 @@ describe('Transaction Queue class', () => {
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
-      const fees = new BigNumber(3);
       const returnValue = 3;
+      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,
@@ -313,8 +313,8 @@ describe('Transaction Queue class', () => {
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
-      const fees = new BigNumber(3);
       const returnValue = 3;
+      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,
@@ -352,8 +352,8 @@ describe('Transaction Queue class', () => {
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
-      const fees = new BigNumber(3);
       const returnValue = 3;
+      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
         fees,

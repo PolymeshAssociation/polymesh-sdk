@@ -248,25 +248,6 @@ export enum ErrorCode {
 }
 
 /**
- * Polymesh protocol operation names
- */
-export enum ProtocolOp {
-  AssetRegisterTicker = 'AssetRegisterTicker',
-  AssetIssue = 'AssetIssue',
-  AssetAddDocument = 'AssetAddDocument',
-  AssetCreateToken = 'AssetCreateAsset',
-  DividendNew = 'DividendNew',
-  GeneralTmAddActiveRule = 'GeneralTmAddActiveRule',
-  IdentityRegisterDid = 'IdentityRegisterDid',
-  IdentityCddRegisterDid = 'IdentityCddRegisterDid',
-  IdentityAddClaim = 'IdentityAddClaim',
-  IdentitySetMasterKey = 'IdentitySetMasterKey',
-  IdentityAddSigningItem = 'IdentityAddSigningItem',
-  PipsPropose = 'PipsPropose',
-  VotingAddBallot = 'VotingAddBallot',
-}
-
-/**
  * Represents an amount of tokens to be issued to an identity
  */
 export interface IssuanceData {

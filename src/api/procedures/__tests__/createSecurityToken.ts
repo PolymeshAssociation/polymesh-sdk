@@ -8,7 +8,6 @@ import {
   Document,
   FundingRoundName,
   IdentifierType,
-  PosRatio,
   Ticker,
   TokenName,
 } from 'polymesh-types/types';
@@ -56,8 +55,6 @@ describe('createSecurityToken procedure', () => {
   let stringToAssetIdentifierStub: sinon.SinonStub<[string, Context], AssetIdentifier>;
   let stringToFundingRoundNameStub: sinon.SinonStub<[string, Context], FundingRoundName>;
   let tokenDocumentToDocumentStub: sinon.SinonStub<[TokenDocument, Context], Document>;
-  let posRatioToBigNumberStub: sinon.SinonStub<[PosRatio], BigNumber>;
-  let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
   let ticker: string;
   let name: string;
   let totalSupply: BigNumber;
@@ -75,12 +72,6 @@ describe('createSecurityToken procedure', () => {
   let rawFundingRound: FundingRoundName;
   let rawDocuments: Document[];
   let args: Params;
-  let fee: number;
-  let rawPosRatio: PosRatio;
-  let rawFee: Balance;
-  let numerator: number;
-  let denominator: number;
-  let posRatioToBigNumberResult: BigNumber;
 
   beforeAll(() => {
     polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(1000) } });
@@ -98,10 +89,6 @@ describe('createSecurityToken procedure', () => {
     stringToAssetIdentifierStub = sinon.stub(utilsModule, 'stringToAssetIdentifier');
     stringToFundingRoundNameStub = sinon.stub(utilsModule, 'stringToFundingRoundName');
     tokenDocumentToDocumentStub = sinon.stub(utilsModule, 'tokenDocumentToDocument');
-    posRatioToBigNumberStub = sinon.stub(utilsModule, 'posRatioToBigNumber');
-    balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
-    numerator = 5;
-    denominator = 2;
     ticker = 'someTicker';
     name = 'someName';
     totalSupply = new BigNumber(100);
@@ -141,7 +128,6 @@ describe('createSecurityToken procedure', () => {
       })
     );
     rawFundingRound = polkadotMockUtils.createMockFundingRoundName(fundingRound);
-    rawPosRatio = polkadotMockUtils.createMockPosRatio(numerator, denominator);
     args = {
       ticker,
       name,
@@ -151,9 +137,6 @@ describe('createSecurityToken procedure', () => {
       tokenIdentifiers,
       fundingRound,
     };
-    fee = 250;
-    rawFee = polkadotMockUtils.createMockBalance(fee);
-    posRatioToBigNumberResult = new BigNumber(numerator).dividedBy(new BigNumber(denominator));
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -173,12 +156,6 @@ describe('createSecurityToken procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    polkadotMockUtils.createQueryStub('protocolFee', 'coefficient', {
-      returnValue: rawPosRatio,
-    });
-    polkadotMockUtils.createQueryStub('protocolFee', 'baseFees', {
-      returnValue: rawFee,
-    });
     polkadotMockUtils.createQueryStub('asset', 'tickerConfig', {
       returnValue: polkadotMockUtils.createMockTickerRegistrationConfig(),
     });
@@ -200,10 +177,6 @@ describe('createSecurityToken procedure', () => {
       .returns(rawIdentifiers[0][1]);
     stringToFundingRoundNameStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
     tokenDocumentToDocumentStub.withArgs(documents[0], mockContext).returns(rawDocuments[0]);
-
-    posRatioToBigNumberStub.withArgs(rawPosRatio).returns(posRatioToBigNumberResult);
-
-    balanceToBigNumberStub.withArgs(rawFee).returns(new BigNumber(fee));
   });
 
   afterEach(() => {
@@ -246,21 +219,6 @@ describe('createSecurityToken procedure', () => {
     );
   });
 
-  test("should throw an error if the signing account doesn't have enough balance", () => {
-    const fakeValue = 600000000;
-    const fakeBalance = polkadotMockUtils.createMockBalance(fakeValue);
-    polkadotMockUtils.createQueryStub('protocolFee', 'baseFees', {
-      returnValue: fakeBalance,
-    });
-    balanceToBigNumberStub.withArgs(fakeBalance).returns(new BigNumber(fakeValue));
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
-
-    return expect(prepareCreateSecurityToken.call(proc, args)).rejects.toThrow(
-      'Not enough POLYX balance to pay for token creation'
-    );
-  });
-
   test('should add a token creation transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
@@ -270,9 +228,7 @@ describe('createSecurityToken procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
       transaction,
-      sinon.match({
-        fee: new BigNumber(fee).multipliedBy(posRatioToBigNumberResult),
-      }),
+      {},
       rawName,
       rawTicker,
       rawTotalSupply,
@@ -292,9 +248,7 @@ describe('createSecurityToken procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.secondCall,
       transaction,
-      sinon.match({
-        fee: new BigNumber(fee).multipliedBy(posRatioToBigNumberResult),
-      }),
+      {},
       rawName,
       rawTicker,
       rawTotalSupply,

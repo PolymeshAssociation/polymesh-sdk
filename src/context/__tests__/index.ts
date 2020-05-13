@@ -455,4 +455,45 @@ describe('Context class', () => {
       );
     });
   });
+
+  describe('method: getCurrentPair', () => {
+    test('should return the current keyring pair', async () => {
+      const pair = {
+        address: 'someAddress1',
+        meta: {},
+        publicKey: 'publicKey',
+      };
+      polkadotMockUtils.configureMocks({
+        keyringOptions: {
+          addFromSeed: pair,
+        },
+      });
+      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: polkadotMockUtils.createMockOption(
+          polkadotMockUtils.createMockLinkedKeyInfo({
+            Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+
+      const context = await Context.create({
+        polymeshApi: polkadotMockUtils.getApiInstance(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = context.getCurrentPair();
+
+      expect(result).toBe(pair);
+    });
+
+    test("should throw an error if the current pair isn't defined", async () => {
+      const context = await Context.create({
+        polymeshApi: polkadotMockUtils.getApiInstance(),
+      });
+
+      expect(() => context.getCurrentPair()).toThrow(
+        'There is no account associated with the current SDK instance'
+      );
+    });
+  });
 });
