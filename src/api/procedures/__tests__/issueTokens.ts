@@ -134,7 +134,7 @@ describe('issueTokens procedure', () => {
     );
   });
 
-  test('shoud throw an error if at least one identity id has not a canTransfer success status', () => {
+  test('shoud throw an error if at least one identity id has not a canMint success status', () => {
     const status = 'Failure';
     const args = {
       issuanceData: [
@@ -148,7 +148,7 @@ describe('issueTokens procedure', () => {
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        transfersCanTransfer: TransferStatus[status],
+        transfersCanMint: TransferStatus[status],
       },
     });
 
@@ -156,7 +156,7 @@ describe('issueTokens procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
-      `You can not issue tokens for some of the supplied identity IDs: ${args.issuanceData[0].did},${status}`
+      `You can not mint tokens for some of the supplied identity IDs: ${args.issuanceData[0].did},${status}`
     );
   });
 
