@@ -100,10 +100,15 @@ export function isCddProviderRole(role: Role): role is CddProviderRole {
 export type Role = TickerOwnerRole | TokenOwnerRole | CddProviderRole;
 
 export enum KnownTokenType {
-  Equity = 'Equity',
-  Debt = 'Debt',
+  EquityCommon = 'EquityCommon',
+  EquityPreferred = 'EquityPreferred',
   Commodity = 'Commodity',
+  FixedIncome = 'FixedIncome',
+  Reit = 'Reit',
+  Fund = 'Fund',
+  RevenueShareAgreement = 'RevenueShareAgreement',
   StructuredProduct = 'StructuredProduct',
+  Derivative = 'Derivative',
 }
 
 /**
@@ -145,7 +150,7 @@ export enum AuthorizationType {
   RotateMasterKey = 'RotateMasterKey',
   TransferTicker = 'TransferTicker',
   AddMultiSigSigner = 'AddMultiSigSigner',
-  TransferTokenOwnership = 'TransferTokenOwnership',
+  TransferAssetOwnership = 'TransferAssetOwnership',
   JoinIdentity = 'JoinIdentity',
   Custom = 'Custom',
   NoData = 'NoData',
@@ -249,7 +254,7 @@ export enum ProtocolOp {
   AssetRegisterTicker = 'AssetRegisterTicker',
   AssetIssue = 'AssetIssue',
   AssetAddDocument = 'AssetAddDocument',
-  AssetCreateToken = 'AssetCreateToken',
+  AssetCreateToken = 'AssetCreateAsset',
   DividendNew = 'DividendNew',
   GeneralTmAddActiveRule = 'GeneralTmAddActiveRule',
   IdentityRegisterDid = 'IdentityRegisterDid',
@@ -275,6 +280,12 @@ export enum TransferStatus {
   InsufficientBalance = 'InsufficientBalance',
   InvalidReceiver = 'InvalidReceiver',
   FundsLimitReached = 'FundsLimitReached',
+}
+
+export interface ClaimTargets {
+  targets: string[];
+  claim: Claim;
+  expiry?: Date;
 }
 
 export * from '~/api/entities/types';

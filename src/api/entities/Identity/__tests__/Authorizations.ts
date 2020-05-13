@@ -43,21 +43,21 @@ describe('Authorizations class', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          data: { type: AuthorizationType.TransferTokenOwnership, value: 'myTicker' },
+          data: { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' },
           targetDid: did,
           issuerDid: 'alice',
         },
         {
           authId: new BigNumber(2),
           expiry: new Date('10/14/3040'),
-          data: { type: AuthorizationType.TransferTokenOwnership, value: 'otherTicker' },
+          data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
           targetDid: did,
           issuerDid: 'bob',
         },
         {
           authId: new BigNumber(3),
           expiry: new Date('10/14/1987'), // expired
-          data: { type: AuthorizationType.TransferTokenOwnership, value: 'otherTicker' },
+          data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
           targetDid: did,
           issuerDid: 'bob',
         },
@@ -72,7 +72,7 @@ describe('Authorizations class', () => {
               expiry ? polkadotMockUtils.createMockMoment(expiry.getTime()) : expiry
             ),
             authorization_data: polkadotMockUtils.createMockAuthorizationData({
-              TransferTokenOwnership: polkadotMockUtils.createMockTicker(data.value),
+              TransferAssetOwnership: polkadotMockUtils.createMockTicker(data.value),
             }),
             authorized_by: polkadotMockUtils.createMockSignatory({
               Identity: polkadotMockUtils.createMockIdentityId(issuerDid),
@@ -115,21 +115,21 @@ describe('Authorizations class', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          data: { type: AuthorizationType.TransferTokenOwnership, value: 'myTicker' },
+          data: { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' },
           targetDid: 'alice',
           issuerDid: did,
         },
         {
           authId: new BigNumber(2),
           expiry: new Date('10/14/3040'),
-          data: { type: AuthorizationType.TransferTokenOwnership, value: 'otherTicker' },
+          data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
           targetDid: 'bob',
           issuerDid: did,
         },
         {
           authId: new BigNumber(3),
           expiry: new Date('10/14/1987'), // expired
-          data: { type: AuthorizationType.TransferTokenOwnership, value: 'otherTicker' },
+          data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
           targetDid: 'charlie',
           issuerDid: did,
         },
@@ -141,7 +141,7 @@ describe('Authorizations class', () => {
           expiry ? polkadotMockUtils.createMockMoment(expiry.getTime()) : expiry
         ),
         authorization_data: polkadotMockUtils.createMockAuthorizationData({
-          TransferTokenOwnership: polkadotMockUtils.createMockTicker(data.value),
+          TransferAssetOwnership: polkadotMockUtils.createMockTicker(data.value),
         }),
         authorized_by: polkadotMockUtils.createMockSignatory({
           Identity: polkadotMockUtils.createMockIdentityId(did),

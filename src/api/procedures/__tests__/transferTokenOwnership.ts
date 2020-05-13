@@ -50,7 +50,7 @@ describe('transferTokenOwnership procedure', () => {
       Identity: polkadotMockUtils.createMockIdentityId(did),
     });
     rawAuthorizationData = polkadotMockUtils.createMockAuthorizationData({
-      TransferTokenOwnership: polkadotMockUtils.createMockTicker(ticker),
+      TransferAssetOwnership: polkadotMockUtils.createMockTicker(ticker),
     });
     rawMoment = polkadotMockUtils.createMockMoment(expiry.getTime());
     args = {
@@ -80,7 +80,7 @@ describe('transferTokenOwnership procedure', () => {
       .withArgs({ type: SignerType.Identity, value: did }, mockContext)
       .returns(rawSignatory);
     authorizationToAuthorizationDataStub
-      .withArgs({ type: AuthorizationType.TransferTokenOwnership, value: ticker }, mockContext)
+      .withArgs({ type: AuthorizationType.TransferAssetOwnership, value: ticker }, mockContext)
       .returns(rawAuthorizationData);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawMoment);
   });
