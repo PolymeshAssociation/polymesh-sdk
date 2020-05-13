@@ -2,7 +2,7 @@ import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 
-import { toggleFreezeTransfers, transferToken } from '~/api/procedures';
+import { toggleFreezeTransfers } from '~/api/procedures';
 import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import { Namespace, TransactionQueue } from '~/base';
 import { Context } from '~/context';
