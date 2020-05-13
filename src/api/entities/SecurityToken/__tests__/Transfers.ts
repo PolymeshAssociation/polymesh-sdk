@@ -178,7 +178,7 @@ describe('Transfers class', () => {
   });
 
   describe('method: canMint', () => {
-    test('should return a status value representing whether the transaction can be made', async () => {
+    test('should return a status value representing whether the minting can be made', async () => {
       const rawResponse = polkadotMockUtils.createMockCanTransferResult({
         Ok: polkadotMockUtils.createMockU8(statusCode),
       });
