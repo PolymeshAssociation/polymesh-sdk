@@ -164,7 +164,7 @@ describe('reserveTicker procedure', () => {
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
-    const result = await prepareReserveTicker.call(proc, args);
+    let result = await prepareReserveTicker.call(proc, args);
 
     sinon.assert.calledWith(
       addTransactionStub,
