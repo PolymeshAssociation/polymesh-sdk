@@ -3,11 +3,11 @@ import { BigNumber } from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { addClaims, ClaimTargets, reserveTicker, transferPolyX } from '~/api/procedures';
+import { addClaims, reserveTicker, revokeClaims, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Polymesh } from '~/Polymesh';
 import { polkadotMockUtils } from '~/testUtils/mocks';
-import { ClaimType } from '~/types';
+import { ClaimTargets, ClaimType } from '~/types';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -512,6 +512,40 @@ describe('Polymesh Class', () => {
         .resolves(expectedQueue);
 
       const queue = await polymesh.addClaims(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: revokeClaims', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = polkadotMockUtils.getContextInstance();
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const claims: ClaimTargets[] = [
+        {
+          targets: ['someDid'],
+          claim: {
+            type: ClaimType.Accredited,
+            scope: 'someIdentityId',
+          },
+        },
+      ];
+
+      const args = { claims };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(revokeClaims, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await polymesh.revokeClaims(args);
 
       expect(queue).toBe(expectedQueue);
     });

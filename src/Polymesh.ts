@@ -11,6 +11,7 @@ import {
   transferPolyX,
   TransferPolyXParams,
 } from '~/api/procedures';
+import { revokeClaims, RevokeClaimsParams } from '~/api/procedures/revokeClaims';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
@@ -223,11 +224,20 @@ export class Polymesh {
   }
 
   /**
+   * Revoke claims from identities
+   *
+   * @param args.claims - array of claims to be revoked
+   */
+  public revokeClaims(args: RevokeClaimsParams): Promise<TransactionQueue<void>> {
+    return revokeClaims.prepare(args, this.context);
+  }
+
+  /**
    * Handle connection errors
    *
    * @returns an unsubscribe callback
    */
-  onConnectionError(callback: (...args: unknown[]) => unknown): () => void {
+  public onConnectionError(callback: (...args: unknown[]) => unknown): () => void {
     const {
       context: { polymeshApi },
     } = this;
@@ -244,7 +254,7 @@ export class Polymesh {
    *
    * @returns an unsubscribe callback
    */
-  onDisconnect(callback: (...args: unknown[]) => unknown): () => void {
+  public onDisconnect(callback: (...args: unknown[]) => unknown): () => void {
     const {
       context: { polymeshApi },
     } = this;
