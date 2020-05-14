@@ -5,7 +5,6 @@ import { SecurityToken, TickerReservation } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import {
   ErrorCode,
-  ProtocolOp,
   Role,
   RoleType,
   TickerReservationStatus,
@@ -14,10 +13,8 @@ import {
   TokenType,
 } from '~/types';
 import {
-  balanceToBigNumber,
   booleanToBool,
   numberToBalance,
-  posRatioToBigNumber,
   stringToAssetIdentifier,
   stringToFundingRoundName,
   stringToTicker,
@@ -50,7 +47,7 @@ export async function prepareCreateSecurityToken(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { query, tx },
+      polymeshApi: { tx },
     },
     context,
   } = this;
@@ -67,13 +64,7 @@ export async function prepareCreateSecurityToken(
 
   const reservation = new TickerReservation({ ticker }, context);
 
-  // TODO: queryMulti
-  const [rawCoefficient, rawCreateTokenFee, balance, { status }] = await Promise.all([
-    query.protocolFee.coefficient(),
-    query.protocolFee.baseFees(ProtocolOp.AssetCreateToken),
-    context.accountBalance(),
-    reservation.details(),
-  ]);
+  const { status } = await reservation.details();
 
   if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
@@ -86,17 +77,6 @@ export async function prepareCreateSecurityToken(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: `You must first reserve ticker "${ticker}" in order to create a Security Token with it`,
-    });
-  }
-
-  const ratio = posRatioToBigNumber(rawCoefficient);
-  const createTokenFee = balanceToBigNumber(rawCreateTokenFee);
-  const fee = createTokenFee.multipliedBy(ratio);
-
-  if (balance.lt(fee)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Not enough POLYX balance to pay for token creation',
     });
   }
 
@@ -117,9 +97,7 @@ export async function prepareCreateSecurityToken(
 
   this.addTransaction(
     tx.asset.createAsset,
-    {
-      fee,
-    },
+    {},
     rawName,
     rawTicker,
     rawTotalSupply,

@@ -1,5 +1,8 @@
 import { AddressOrPair } from '@polkadot/api/types';
+import { stringUpperFirst } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
+import { reduce } from 'lodash';
 
 import { TransactionQueue } from '~/base';
 import { PolymeshError } from '~/base/PolymeshError';
@@ -14,6 +17,14 @@ import {
   ResolverFunctionArray,
   TransactionSpec,
 } from '~/types/internal';
+import { balanceToBigNumber, posRatioToBigNumber, stringToProtocolOp } from '~/utils';
+
+interface AddTransactionOpts<Values extends unknown[]> {
+  fee?: BigNumber;
+  resolvers?: ResolverFunctionArray<Values>;
+  isCritical?: boolean;
+  signer?: AddressOrPair;
+}
 
 /**
  * @hidden
@@ -31,9 +42,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     args: Args
   ) => Promise<boolean> | boolean | Role[];
 
-  private transactions: TransactionSpec[] = [];
-
-  private fees: Array<BigNumber> = [];
+  private transactions: (Omit<TransactionSpec, 'fee'> & { fee: BigNumber | null })[] = [];
 
   public context = {} as Context;
 
@@ -70,7 +79,6 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    */
   private cleanup(): void {
     this.transactions = [];
-    this.fees = [];
     this.context = {} as Context;
   }
 
@@ -81,6 +89,12 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    * @param context - context in which the resulting queue will run
    */
   public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
+    const {
+      polymeshApi: {
+        query: { protocolFee },
+      },
+    } = context;
+
     this.context = context;
 
     const checkRolesResult = await this.checkRoles(args);
@@ -99,17 +113,65 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       });
     }
 
-    const returnValue = await this.prepareTransactions(args);
-    const totalFees = this.fees.reduce((acc, next) => {
-      return acc.plus(next);
-    }, new BigNumber(0));
+    const [returnValue, rawCoefficient, currentBalance] = await Promise.all([
+      this.prepareTransactions(args),
+      protocolFee.coefficient(),
+      context.accountBalance(),
+    ]);
+    const coefficient = posRatioToBigNumber(rawCoefficient);
+    const transactionsWithFees: TransactionSpec[] = await P.map(
+      this.transactions,
+      async transactionSpec => {
+        let { fee } = transactionSpec;
+        const { tx } = transactionSpec;
 
-    const transactionQueue = new TransactionQueue(this.transactions, totalFees, returnValue);
+        if (!fee) {
+          const transaction = tx as PolymeshTx<unknown[]>; // can't be a PostTransactionValue because othewise fee would be already set manually
+          const protocolOp = `${stringUpperFirst(transaction.section)}${stringUpperFirst(
+            transaction.method
+          )}`;
+
+          try {
+            const rawFee = await protocolFee.baseFees(stringToProtocolOp(protocolOp, context));
+            fee = balanceToBigNumber(rawFee).multipliedBy(coefficient);
+          } catch (err) {
+            fee = new BigNumber(0);
+          }
+        }
+
+        return { ...transactionSpec, fee };
+      }
+    );
+
+    const fees = reduce(transactionsWithFees, (sum, { fee }) => sum.plus(fee), new BigNumber(0));
+
+    if (currentBalance.lt(fees)) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: `Not enough POLYX balance to pay for this procedure's fees. Balance: ${currentBalance.toFormat()}, fees: ${fees.toFormat()}`,
+      });
+    }
+
+    const transactionQueue = new TransactionQueue(transactionsWithFees, fees, returnValue);
 
     this.cleanup();
 
     return transactionQueue;
   }
+
+  public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
+    tx: PolymeshTx<TxArgs>,
+    options: AddTransactionOpts<Values>,
+    ...args: MapMaybePostTransactionValue<TxArgs>
+  ): PostTransactionValueArray<Values>;
+
+  public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
+    tx: PostTransactionValue<PolymeshTx<TxArgs>>,
+    options: Omit<AddTransactionOpts<Values>, 'fee'> & {
+      fee: BigNumber; // fee must be provided by hand if the transaction is a future value
+    },
+    ...args: MapMaybePostTransactionValue<TxArgs>
+  ): PostTransactionValueArray<Values>;
 
   /**
    * Appends a method (or [[PostTransactionValue]] that resolves to a method) into the TransactionQueue's queue. This defines
@@ -118,8 +180,8 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    * @param method - a method that will be run in the Procedure's TransactionQueue.
    * A future method is a transaction that doesn't exist at prepare time
    * (for example a transaction on a module that hasn't been attached but will be by the time the previous transactions are run)
-   * @param options.fee - value in POLYX of the transaction (defaults to 0)
-   * @param options.resolvers - asynchronous callbacks used to return runtime data after
+   * @param options.fee - value in POLYX of the transaction (should only be set manually if the transaction is a future value or other special cases, otherwise it is fetched automatically from the chain)
+   * @param options.resolvers - asynchronous calslbacks used to return runtime data after
    * the added transaction has finished successfully
    * @param options.isCritical - whether this transaction failing should make the entire queue fail or not. Defaults to true
    * @param options.signer - address or keyring pair of the account that will sign this transaction. Defaults to the current pair in the context
@@ -129,35 +191,29 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    */
   public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
     tx: MaybePostTransactionValue<PolymeshTx<TxArgs>>,
-    options: {
-      fee?: BigNumber;
-      resolvers?: ResolverFunctionArray<Values>;
-      isCritical?: boolean;
-      signer?: AddressOrPair;
-    },
+    options: AddTransactionOpts<Values>,
     ...args: MapMaybePostTransactionValue<TxArgs>
   ): PostTransactionValueArray<Values> {
     const {
-      fee = new BigNumber(0),
+      fee = null,
       resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
       isCritical = true,
-      signer = this.context.currentPair,
+      signer = this.context.getCurrentPair(),
     } = options;
     const postTransactionValues = resolvers.map(
       resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
-    this.fees.push(fee);
-
     const transaction = {
-      tx,
+      tx: tx as PolymeshTx<unknown[]>,
       args,
       postTransactionValues,
       isCritical,
       signer,
+      fee,
     };
 
-    this.transactions.push((transaction as unknown) as TransactionSpec);
+    this.transactions.push(transaction);
 
     return postTransactionValues;
   }
@@ -188,8 +244,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       procedure.context = this.context;
       const returnValue = await procedure.prepareTransactions(args);
 
-      const { transactions, fees } = procedure;
-      this.fees = [...this.fees, ...fees];
+      const { transactions } = procedure;
       this.transactions = [...this.transactions, ...transactions];
 
       return returnValue;

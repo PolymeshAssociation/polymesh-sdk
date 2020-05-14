@@ -19,6 +19,7 @@ import {
   IdentifierType,
   IdentityId,
   JurisdictionName,
+  ProtocolOp,
   Signatory,
   Ticker,
   TokenName,
@@ -90,6 +91,7 @@ import {
   stringToFundingRoundName,
   stringToIdentityId,
   stringToJurisdictionName,
+  stringToProtocolOp,
   stringToTicker,
   stringToTokenName,
   tickerToDid,
@@ -1760,5 +1762,34 @@ describe('canTransferResultToTransferStatus', () => {
     );
 
     expect(result).toBe(TransferStatus.Success);
+  });
+});
+
+describe('stringToProtocolOp', () => {
+  beforeAll(() => {
+    polkadotMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    polkadotMockUtils.reset();
+  });
+
+  afterAll(() => {
+    polkadotMockUtils.cleanup();
+  });
+
+  test('stringToProtocolOp should convert a string to a polkadot ProtocolOp object', () => {
+    const value = 'someProtocolOp';
+    const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
+    const context = polkadotMockUtils.getContextInstance();
+
+    polkadotMockUtils
+      .getCreateTypeStub()
+      .withArgs('ProtocolOp', value)
+      .returns(fakeResult);
+
+    const result = stringToProtocolOp(value, context);
+
+    expect(result).toEqual(fakeResult);
   });
 });
