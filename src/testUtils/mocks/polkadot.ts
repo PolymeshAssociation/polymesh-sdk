@@ -333,10 +333,17 @@ function configureContext(opts: ContextOptions): void {
         address: '0xdummy',
       } as IKeyringPair)
     : undefined;
+  const getCurrentPair = sinon.stub();
+  opts.withSeed
+    ? getCurrentPair.returns(currentPair)
+    : getCurrentPair.throws(
+        new Error('There is no account associated with the current SDK instance')
+      );
 
   const contextInstance = ({
     currentPair,
     getCurrentIdentity,
+    getCurrentPair,
     accountBalance: sinon.stub().resolves(opts.balance),
     getAccounts: sinon.stub().returns([]),
     setPair: sinon.stub().callsFake(address => {
@@ -572,7 +579,7 @@ export function createTxStub<
     txModule[mod] = runtimeModule;
   }
 
-  runtimeModule[tx] = (sinon.stub().returns({
+  const transaction = (sinon.stub().returns({
     section: mod,
     method: tx,
     hash: tx,
@@ -597,6 +604,11 @@ export function createTxStub<
       return Promise.resolve(unsubCallback);
     }),
   }) as unknown) as Extrinsics[ModuleName][TransactionName];
+
+  (transaction as any).section = mod;
+  (transaction as any).method = tx;
+
+  runtimeModule[tx] = transaction;
 
   updateTx();
 

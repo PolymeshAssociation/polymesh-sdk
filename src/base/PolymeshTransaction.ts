@@ -1,6 +1,7 @@
 import { AddressOrPair } from '@polkadot/api/types';
 import { DispatchError } from '@polkadot/types/interfaces';
 import { ISubmittableResult, RegistryError } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { TxTag } from 'polymesh-types/types';
 
@@ -67,6 +68,12 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
   public args: MapMaybePostTransactionValue<Args>;
 
   /**
+   *
+   * @param transactionSpec
+   */
+  public fee: BigNumber;
+
+  /**
    * @hidden
    *
    * underlying transaction to be executed
@@ -100,7 +107,7 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
    * @hidden
    */
   constructor(transactionSpec: TransactionSpec<Args, Values>) {
-    const { postTransactionValues, tx, args, signer, isCritical } = transactionSpec;
+    const { postTransactionValues, tx, args, signer, isCritical, fee } = transactionSpec;
 
     if (postTransactionValues) {
       this.postValues = postTransactionValues;
@@ -111,6 +118,7 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
     this.args = args;
     this.signer = signer;
     this.isCritical = isCritical;
+    this.fee = fee;
 
     this.setTag();
   }
