@@ -88,6 +88,10 @@ export interface TransactionSpec<
    * whether this tx failing makes the entire tx queue fail or not
    */
   isCritical: boolean;
+  /**
+   * any fee associated with running the transaction (doesn't include gas)
+   */
+  fee: BigNumber;
 }
 
 export enum SignerType {

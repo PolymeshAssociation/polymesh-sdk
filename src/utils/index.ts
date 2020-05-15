@@ -25,6 +25,7 @@ import {
   IdentityId,
   JurisdictionName,
   PosRatio,
+  ProtocolOp,
   Rule as MeshRule,
   RuleType,
   Signatory,
@@ -879,6 +880,13 @@ export function assetTransferRuleToRule(rule: AssetTransferRule): Rule {
     id: u32ToBigNumber(rule.rule_id).toNumber(),
     conditions,
   };
+}
+
+/**
+ * @hidden
+ */
+export function stringToProtocolOp(protocolOp: string, context: Context): ProtocolOp {
+  return context.polymeshApi.createType('ProtocolOp', protocolOp);
 }
 
 /**

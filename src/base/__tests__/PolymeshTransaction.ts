@@ -1,4 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { PostTransactionValue } from '~/base';
@@ -18,6 +19,7 @@ describe('Polymesh Transaction class', () => {
   const txSpec = {
     signer: 'signer',
     isCritical: false,
+    fee: new BigNumber(100),
   };
 
   afterEach(() => {

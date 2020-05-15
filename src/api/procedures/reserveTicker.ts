@@ -4,14 +4,8 @@ import { Ticker } from 'polymesh-types/types';
 import { TickerReservation } from '~/api/entities';
 import { PolymeshError, PostTransactionValue, Procedure } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode, ProtocolOp, Role, RoleType, TickerReservationStatus } from '~/types';
-import {
-  balanceToBigNumber,
-  findEventRecord,
-  posRatioToBigNumber,
-  stringToTicker,
-  tickerToString,
-} from '~/utils';
+import { ErrorCode, Role, RoleType, TickerReservationStatus } from '~/types';
+import { findEventRecord, stringToTicker, tickerToString } from '~/utils';
 
 export interface ReserveTickerParams {
   ticker: string;
@@ -52,16 +46,7 @@ export async function prepareReserveTicker(
   const reservation = new TickerReservation({ ticker }, context);
 
   // TODO: queryMulti
-  const [
-    rawCoefficient,
-    rawRegisterTickerFee,
-    balance,
-    { max_ticker_length: rawMaxTickerLength },
-    { expiryDate, status },
-  ] = await Promise.all([
-    query.protocolFee.coefficient(),
-    query.protocolFee.baseFees(ProtocolOp.AssetRegisterTicker),
-    context.accountBalance(),
+  const [{ max_ticker_length: rawMaxTickerLength }, { expiryDate, status }] = await Promise.all([
     query.asset.tickerConfig(),
     reservation.details(),
   ]);
@@ -104,23 +89,9 @@ export async function prepareReserveTicker(
     }
   }
 
-  const ratio = posRatioToBigNumber(rawCoefficient);
-  const registerTickerFee = balanceToBigNumber(rawRegisterTickerFee);
-  const fee = registerTickerFee.multipliedBy(ratio);
-
-  if (balance.lt(fee)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `Not enough POLYX balance to pay for ticker ${
-        extendPeriod ? 'period extension' : 'reservation'
-      }`,
-    });
-  }
-
   const [newReservation] = this.addTransaction(
     tx.asset.registerTicker,
     {
-      fee,
       resolvers: [createTickerReservationResolver(context)],
     },
     rawTicker

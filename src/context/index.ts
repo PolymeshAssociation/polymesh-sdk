@@ -68,11 +68,8 @@ export class Context {
   }
 
   static async create(params: { polymeshApi: ApiPromise; seed: string }): Promise<Context>;
-
   static async create(params: { polymeshApi: ApiPromise; keyring: Keyring }): Promise<Context>;
-
   static async create(params: { polymeshApi: ApiPromise; uri: string }): Promise<Context>;
-
   static async create(params: { polymeshApi: ApiPromise }): Promise<Context>;
 
   /**
@@ -216,5 +213,22 @@ export class Context {
     }
 
     return currentIdentity;
+  }
+
+  /**
+   * Retrieve current Keyring Pair
+   *
+   * @throws if there is no account associated to the SDK instance
+   */
+  public getCurrentPair(): IKeyringPair {
+    const { currentPair } = this;
+    if (!currentPair) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'There is no account associated with the current SDK instance',
+      });
+    }
+
+    return currentPair;
   }
 }
