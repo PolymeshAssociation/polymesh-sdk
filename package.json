@@ -82,8 +82,10 @@
     "@polkadot/util": "2.8.1",
     "@polkadot/util-crypto": "2.8.1",
     "@types/bignumber.js": "^5.0.0",
+    "apollo-boost": "^0.4.9",
     "bignumber.js": "^9.0.0",
     "bluebird": "^3.7.2",
+    "graphql": "^15.0.0",
     "json-stable-stringify": "^1.0.1",
     "lodash": "^4.17.15"
   }
