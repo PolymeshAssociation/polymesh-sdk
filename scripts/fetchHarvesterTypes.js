@@ -2,18 +2,18 @@
 const git = require('nodegit');
 const path = require('path');
 const rimraf = require('rimraf');
-const { exec } = require('child_process');
+const fs = require('fs');
 
-const BRANCH = process.env.BRANCH;
-const GITHUB_PROYECT = 'git@github.com:PolymathNetwork/tooling-gql.git';
+const BRANCH = process.argv[2];
+const GITHUB_PROJECT = 'git@github.com:PolymathNetwork/tooling-gql.git';
 const TOOLING_FOLDER = 'tooling-gql';
-const OUTPUT_TYPES = path.resolve(__dirname, '../src/polkadot/harvester-types.ts');
+const OUTPUT_TYPES = path.resolve(__dirname, '../src/harvester/types.ts');
 
 const tooling = path.resolve(__dirname, TOOLING_FOLDER);
 rimraf.sync(tooling);
 
 git
-  .Clone(GITHUB_PROYECT, tooling, {
+  .Clone(GITHUB_PROJECT, tooling, {
     fetchOpts: {
       callbacks: {
         certificateCheck: () => 1,
@@ -23,10 +23,16 @@ git
       },
     },
   })
-  .then(function() {
+  .then(async repository => {
     if (BRANCH) {
-      exec(`cd scripts/${TOOLING_FOLDER} && git checkout ${BRANCH}`);
+      const reference = await repository.getBranch(`refs/remotes/origin/${BRANCH}`);
+      await repository.checkoutRef(reference);
     }
-    exec(`cp scripts/${TOOLING_FOLDER}/src/generated/graphqlTypes.ts ${OUTPUT_TYPES}`);
+
+    fs.copyFile(
+      path.resolve(__dirname, `../scripts/${TOOLING_FOLDER}/src/generated/graphqlTypes.ts`),
+      OUTPUT_TYPES
+    );
+
     rimraf.sync(tooling);
   });
