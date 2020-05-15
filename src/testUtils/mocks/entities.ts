@@ -528,7 +528,7 @@ export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus
  * @hidden
  * Retrieve the stub of the `SecurityToken.Transfers.canMint` method
  */
-export function getSecurityTokenTransfersCanMintStub(status: TransferStatus): SinonStub {
+export function getSecurityTokenTransfersCanMintStub(status?: TransferStatus): SinonStub {
   if (status) {
     return securityTokenTransfersCanMintStub.resolves(status);
   }

@@ -70,25 +70,25 @@ export async function prepareIssueTokens(
 
   const investors: IdentityId[] = [];
   const balances: Balance[] = [];
-  const canNotMintDids: Array<[string, TransferStatus]> = [];
+  const canNotMintDids: Array<string> = [];
 
   const issuanceDataItemsChunks = chunk(issuanceData, 10);
 
   await Promise.all(
     issuanceDataItemsChunks.map(async issuanceDataItemsChunk => {
       // TODO: queryMulti
-      const canTransfers = await Promise.all(
+      const transferStatuses = await Promise.all(
         issuanceDataItemsChunk.map(({ did, amount }) =>
           securityToken.transfers.canMint({ to: did, amount })
         )
       );
 
-      canTransfers.forEach((canTransfer, index) => {
+      transferStatuses.forEach((canTransfer, index) => {
         investors.push(stringToIdentityId(issuanceDataItemsChunk[index].did, context));
         balances.push(numberToBalance(issuanceDataItemsChunk[index].amount, context));
 
         if (canTransfer !== TransferStatus.Success) {
-          canNotMintDids.push([issuanceDataItemsChunk[index].did, canTransfer]);
+          canNotMintDids.push(`${issuanceDataItemsChunk[index].did} [${canTransfer}]`);
         }
       });
     })
@@ -97,8 +97,8 @@ export async function prepareIssueTokens(
   if (canNotMintDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `You can not mint tokens for some of the supplied identity IDs: ${canNotMintDids.join(
-        '- '
+      message: `You can't issue tokens to some of the supplied identities: ${canNotMintDids.join(
+        ', '
       )}`,
     });
   }

@@ -74,8 +74,7 @@ export class Transfers extends Namespace<SecurityToken> {
     to: string | Identity;
     amount: BigNumber;
   }): Promise<TransferStatus> {
-    const { context } = this;
-    const { from = context.getCurrentIdentity(), to, amount } = args;
+    const { from = this.context.getCurrentIdentity(), to, amount } = args;
     return this._canTransfer({ from, to, amount });
   }
 
