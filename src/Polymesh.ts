@@ -25,7 +25,7 @@ import { HARVESTER_ENDPOINT } from '~/utils/constants';
  */
 export class Polymesh {
   public context: Context = {} as Context;
-  public harvester: ApolloClient<{}>;
+  private harvester: ApolloClient<{}>;
 
   /**
    * @hidden
