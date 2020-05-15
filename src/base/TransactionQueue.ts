@@ -86,19 +86,21 @@ export class TransactionQueue<
     returnValue: MaybePostTransactionValue<ReturnType>
   ) {
     this.emitter = new EventEmitter();
-    this.fees = fees;
     this.returnValue = returnValue;
     this.hasRun = false;
 
-    this.transactions = transactions.map(transaction => {
+    this.fees = fees;
+    this.transactions = ([] as unknown) as PolymeshTransactionArray<TransactionArgs>;
+
+    transactions.forEach(transaction => {
       const txn = new PolymeshTransaction(transaction);
 
       txn.onStatusChange(updatedTransaction => {
         this.emitter.emit(Events.TransactionStatusChange, updatedTransaction, this);
       });
 
-      return txn;
-    }) as PolymeshTransactionArray<TransactionArgs>;
+      this.transactions.push(txn);
+    });
   }
 
   /**
