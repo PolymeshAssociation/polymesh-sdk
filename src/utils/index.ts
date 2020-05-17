@@ -65,6 +65,7 @@ import {
   SignerType,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
 /**
  * @hidden
@@ -171,6 +172,12 @@ export function bytesToString(bytes: Bytes): string {
  * @hidden
  */
 export function stringToTicker(ticker: string, context: Context): Ticker {
+  if (ticker.length > MAX_TICKER_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `Ticker length cannot exceed ${MAX_TICKER_LENGTH} characters`,
+    });
+  }
   return context.polymeshApi.createType('Ticker', ticker);
 }
 

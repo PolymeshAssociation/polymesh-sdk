@@ -16,7 +16,7 @@ import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
 import { SignerType } from '~/types/internal';
-import { signerToSignatory, tickerToString, valueToDid } from '~/utils';
+import { signerToSignatory, stringToTicker, tickerToString, valueToDid } from '~/utils';
 
 /**
  * Main entry point of the Polymesh SDK
@@ -192,7 +192,7 @@ export class Polymesh {
       context,
     } = this;
 
-    const tickerReservation = await asset.tickers(ticker);
+    const tickerReservation = await asset.tickers(stringToTicker(ticker, context));
 
     if (!tickerReservation.owner.isEmpty) {
       return new TickerReservation({ ticker }, context);
@@ -321,7 +321,7 @@ export class Polymesh {
       context,
     } = this;
 
-    const securityToken = await asset.tokens(ticker);
+    const securityToken = await asset.tokens(stringToTicker(ticker, context));
 
     if (!securityToken.name.isEmpty) {
       return new SecurityToken({ ticker }, context);

@@ -35,7 +35,7 @@ export async function prepareReserveTicker(
 ): Promise<PostTransactionValue<TickerReservation>> {
   const {
     context: {
-      polymeshApi: { query, tx },
+      polymeshApi: { tx },
     },
     context,
   } = this;
@@ -45,20 +45,14 @@ export async function prepareReserveTicker(
 
   const reservation = new TickerReservation({ ticker }, context);
 
-  // TODO: queryMulti
-  const [{ max_ticker_length: rawMaxTickerLength }, { expiryDate, status }] = await Promise.all([
-    query.asset.tickerConfig(),
-    reservation.details(),
-  ]);
+  const { expiryDate, status } = await reservation.details();
 
   if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: `A Security Token with ticker "${ticker}" already exists`,
     });
-  }
-
-  if (status === TickerReservationStatus.Reserved) {
+  } else if (status === TickerReservationStatus.Reserved) {
     if (!extendPeriod) {
       const isPermanent = expiryDate === null;
 
@@ -69,19 +63,8 @@ export async function prepareReserveTicker(
         }expire${!isPermanent ? ` at ${expiryDate}` : ''}`,
       });
     }
-  }
-
-  if (!extendPeriod) {
-    const maxTickerLength = rawMaxTickerLength.toNumber();
-
-    if (ticker.length > maxTickerLength) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: `Ticker length cannot exceed ${maxTickerLength}`,
-      });
-    }
   } else {
-    if (status === TickerReservationStatus.Free) {
+    if (extendPeriod) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'Ticker not reserved or the reservation has expired',
