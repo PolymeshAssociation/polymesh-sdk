@@ -24,18 +24,48 @@ describe('Transfers class', () => {
     [Params, Context],
     Promise<TransactionQueue<SecurityToken, unknown[][]>>
   >;
+  let stringToAccountIdStub: SinonStub<[string, Context], AccountId>;
+  let stringToTickerStub: SinonStub<[string, Context], Ticker>;
+  let stringToIdentityIdStub: SinonStub<[string, Context], IdentityId>;
+  let numberToBalanceStub: SinonStub<[number | BigNumber, Context], Balance>;
+  let rawAccountId: AccountId;
+  let rawToDid: IdentityId;
+  let rawTicker: Ticker;
+  let rawAmount: Balance;
+  let statusCode: number;
+  let amount: BigNumber;
+  let toDid: string;
+  let ticker: string;
+  let accountId: string;
 
   beforeAll(() => {
+    toDid = 'toDid';
+    statusCode = 81;
+    amount = new BigNumber(100);
     entityMockUtils.initMocks();
     polkadotMockUtils.initMocks();
-
+    stringToAccountIdStub = sinon.stub(utilsModule, 'stringToAccountId');
+    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
+    numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
+    rawToDid = polkadotMockUtils.createMockIdentityId(toDid);
+    rawAmount = polkadotMockUtils.createMockBalance(amount.toNumber());
     prepareToggleFreezeTransfersStub = sinon.stub(toggleFreezeTransfers, 'prepare');
   });
 
   beforeEach(() => {
     mockContext = polkadotMockUtils.getContextInstance();
     mockSecurityToken = entityMockUtils.getSecurityTokenInstance();
+    stringToIdentityIdStub.withArgs(toDid, mockContext).returns(rawToDid);
+    numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
     transfers = new Transfers(mockSecurityToken, mockContext);
+    ticker = mockSecurityToken.ticker;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    accountId = mockContext.currentPair?.address!;
+    rawAccountId = polkadotMockUtils.createMockAccountId(accountId);
+    rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    stringToAccountIdStub.withArgs(accountId, mockContext).returns(rawAccountId);
+    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
 
   afterEach(() => {
@@ -93,51 +123,16 @@ describe('Transfers class', () => {
   });
 
   describe('method: canTransfer', () => {
-    let stringToAccountIdStub: SinonStub<[string, Context], AccountId>;
-    let stringToTickerStub: SinonStub<[string, Context], Ticker>;
-    let stringToIdentityIdStub: SinonStub<[string, Context], IdentityId>;
-    let numberToBalanceStub: SinonStub<[number | BigNumber, Context], Balance>;
-
-    let statusCode: number;
     let fromDid: string;
-    let toDid: string;
-    let ticker: string;
-    let amount: BigNumber;
-    let accountId: string;
-
-    let rawAccountId: AccountId;
     let rawFromDid: IdentityId;
-    let rawToDid: IdentityId;
-    let rawTicker: Ticker;
-    let rawAmount: Balance;
 
     beforeAll(() => {
-      stringToAccountIdStub = sinon.stub(utilsModule, 'stringToAccountId');
-      stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-      stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
-      numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
-
-      statusCode = 81;
       fromDid = 'fromDid';
-      toDid = 'toDid';
-      ({ ticker } = mockSecurityToken);
-      amount = new BigNumber(100);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      accountId = mockContext.currentPair?.address!;
-
-      rawAccountId = polkadotMockUtils.createMockAccountId(accountId);
       rawFromDid = polkadotMockUtils.createMockIdentityId(fromDid);
-      rawToDid = polkadotMockUtils.createMockIdentityId(toDid);
-      rawTicker = polkadotMockUtils.createMockTicker(ticker);
-      rawAmount = polkadotMockUtils.createMockBalance(amount.toNumber());
     });
 
     beforeEach(() => {
-      stringToAccountIdStub.withArgs(accountId, mockContext).returns(rawAccountId);
-      stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
-      stringToIdentityIdStub.withArgs(toDid, mockContext).returns(rawToDid);
-      numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
     });
 
     test('should return a status value representing whether the transaction can be made from the current identity', async () => {
@@ -177,6 +172,23 @@ describe('Transfers class', () => {
         .returns(rawResponse);
 
       const result = await transfers.canTransfer({ from: fromDid, to: toDid, amount });
+
+      expect(result).toBe(TransferStatus.Success);
+    });
+  });
+
+  describe('method: canMint', () => {
+    test('should return a status value representing whether the minting can be made', async () => {
+      const rawResponse = polkadotMockUtils.createMockCanTransferResult({
+        Ok: polkadotMockUtils.createMockU8(statusCode),
+      });
+
+      polkadotMockUtils
+        .createRpcStub('asset', 'canTransfer')
+        .withArgs(rawAccountId, rawTicker, null, rawToDid, rawAmount)
+        .returns(rawResponse);
+
+      const result = await transfers.canMint({ to: toDid, amount });
 
       expect(result).toBe(TransferStatus.Success);
     });
