@@ -46,6 +46,7 @@ interface SecurityTokenOptions {
   currentFundingRound?: string;
   transfersAreFrozen?: boolean;
   transfersCanTransfer?: TransferStatus;
+  transfersCanMint?: TransferStatus;
 }
 
 interface AuthorizationRequestOptions {
@@ -69,6 +70,7 @@ let tickerReservationDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
 let securityTokenTransfersAreFrozenStub: SinonStub;
 let securityTokenTransfersCanTransferStub: SinonStub;
+let securityTokenTransfersCanMintStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -152,6 +154,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   currentFundingRound: 'Series A',
   transfersAreFrozen: false,
   transfersCanTransfer: TransferStatus.Success,
+  transfersCanMint: TransferStatus.Success,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -204,6 +207,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     transfers: {
       areFrozen: securityTokenTransfersAreFrozenStub.resolves(opts.transfersAreFrozen),
       canTransfer: securityTokenTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
+      canMint: securityTokenTransfersCanMintStub.resolves(opts.transfersCanMint),
     },
   } as unknown) as MockSecurityToken;
 
@@ -223,6 +227,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenCurrentFundingRoundStub = sinon.stub();
   securityTokenTransfersAreFrozenStub = sinon.stub();
   securityTokenTransfersCanTransferStub = sinon.stub();
+  securityTokenTransfersCanMintStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -517,6 +522,18 @@ export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus
   }
 
   return securityTokenTransfersCanTransferStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.Transfers.canMint` method
+ */
+export function getSecurityTokenTransfersCanMintStub(status?: TransferStatus): SinonStub {
+  if (status) {
+    return securityTokenTransfersCanMintStub.resolves(status);
+  }
+
+  return securityTokenTransfersCanMintStub;
 }
 
 /**
