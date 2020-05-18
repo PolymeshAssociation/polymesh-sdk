@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node scripts/generateTsconfigDev.js && cross-env webpack-dev-server --config=webpack.config.dev.js",
     "generate:polkadot-types": "yarn fetch-definitions && yarn generate:defs && yarn generate:meta && yarn generate:tags",
+    "fetch:harvester-types": "node scripts/fetchHarvesterTypes.js",
     "fetch-definitions": "node scripts/fetchDefinitions.js",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package polymesh-types --input ./src/polkadot",
     "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://pmf.polymath.network --output ./src/polkadot --strict",
@@ -53,6 +54,7 @@
     "husky": "^4.1.0",
     "jest": "25.1.0",
     "lint-staged": "^8.1.5",
+    "nodegit": "^0.26.5",
     "prettier": "^1.19.1",
     "prettier-eslint": "^9.0.1",
     "prettier-eslint-cli": "^5.0.0",
@@ -89,6 +91,7 @@
     "apollo-link-http": "^1.5.17",
     "apollo-link-state": "^0.4.2",
     "bignumber.js": "^9.0.0",
+    "graphql": "^15.0.0",
     "bluebird": "^3.7.2",
     "graphql": "^15.0.0",
     "graphql-tag": "^2.10.3",
