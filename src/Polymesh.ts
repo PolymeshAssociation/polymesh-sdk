@@ -19,7 +19,7 @@ import {
 } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode } from '~/types';
+import { ErrorCode, SubCallback, UnsubCallback } from '~/types';
 import { SignerType } from '~/types/internal';
 import { signerToSignatory, tickerToString, valueToDid } from '~/utils';
 import { HARVESTER_ENDPOINT } from '~/utils/constants';
@@ -131,15 +131,47 @@ export class Polymesh {
   }
   */
 
+  public getAccountBalance(args?: { accountId: string }): Promise<BigNumber>;
+  public getAccountBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+  public getAccountBalance(
+    args: { accountId: string },
+    callback: SubCallback<BigNumber>
+  ): Promise<UnsubCallback>;
+
   /**
    * Get the free POLYX balance of an account
    *
    * @param args.accountId - defaults to the current account
+   *
+   * @note can be subscribed to
    */
-  public getAccountBalance(args?: { accountId: string }): Promise<BigNumber> {
+  public getAccountBalance(
+    args?: { accountId: string } | SubCallback<BigNumber>,
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
     const { context } = this;
+    let accountId: string | undefined;
+    let cb: SubCallback<BigNumber> | undefined = callback;
 
-    return context.accountBalance(args?.accountId);
+    switch (typeof args) {
+      case 'undefined': {
+        break;
+      }
+      case 'function': {
+        cb = args;
+        break;
+      }
+      default: {
+        ({ accountId } = args);
+        break;
+      }
+    }
+
+    if (cb) {
+      return context.accountBalance(accountId, cb);
+    }
+
+    return context.accountBalance(accountId);
   }
 
   /**

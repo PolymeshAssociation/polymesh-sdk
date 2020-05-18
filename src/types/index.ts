@@ -269,4 +269,7 @@ export interface ClaimTargets {
   expiry?: Date;
 }
 
+export type SubCallback<T> = (result: T) => void | Promise<void>;
+export type UnsubCallback = () => void;
+
 export * from '~/api/entities/types';

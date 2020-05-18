@@ -1,3 +1,5 @@
+import { QueryableStorageEntry } from '@polkadot/api/types';
+
 import { Identity } from '~/api/entities/Identity';
 import { SecurityToken } from '~/api/entities/SecurityToken';
 import { reserveTicker } from '~/api/procedures';
@@ -7,6 +9,8 @@ import {
 } from '~/api/procedures/createSecurityToken';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
+import { SecurityToken as MeshToken, TickerRegistration } from '~/polkadot';
+import { SubCallback, UnsubCallback } from '~/types';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils';
 
 import { TickerReservationDetails, TickerReservationStatus } from './types';
@@ -50,14 +54,22 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
     this.ticker = ticker;
   }
 
+  public details(): Promise<TickerReservationDetails>;
+  public details(callback: SubCallback<TickerReservationDetails>): Promise<UnsubCallback>;
+
   /**
    * Retrieve the reservation's owner, expiry date and status
+   *
+   * @note can be subscribed to
    */
-  public async details(): Promise<TickerReservationDetails> {
+  public async details(
+    callback?: SubCallback<TickerReservationDetails>
+  ): Promise<TickerReservationDetails | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
           query: { asset },
+          queryMulti,
         },
       },
       ticker,
@@ -66,41 +78,61 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    // TODO: queryMulti
-    const [{ owner: tickerOwner, expiry }, { owner_did: tokenOwner }] = await Promise.all([
-      asset.tickers(rawTicker),
-      asset.tokens(rawTicker),
-    ]);
+    const assembleResult = (
+      { owner: tickerOwner, expiry }: TickerRegistration,
+      { owner_did: tokenOwner }: MeshToken
+    ): TickerReservationDetails => {
+      const tickerOwned = !tickerOwner.isEmpty;
+      const tokenOwned = !tokenOwner.isEmpty;
 
-    const tickerOwned = !tickerOwner.isEmpty;
-    const tokenOwned = !tokenOwner.isEmpty;
+      let status: TickerReservationStatus;
+      let expiryDate: Date | null = null;
+      const owner = tickerOwned
+        ? new Identity({ did: identityIdToString(tickerOwner) }, context)
+        : null;
 
-    let status: TickerReservationStatus;
-    let expiryDate: Date | null = null;
-    const owner = tickerOwned
-      ? new Identity({ did: identityIdToString(tickerOwner) }, context)
-      : null;
+      if (tokenOwned) {
+        status = TickerReservationStatus.TokenCreated;
+      } else if (tickerOwned) {
+        status = TickerReservationStatus.Reserved;
+        if (expiry.isSome) {
+          expiryDate = momentToDate(expiry.unwrap());
 
-    if (tokenOwned) {
-      status = TickerReservationStatus.TokenCreated;
-    } else if (tickerOwned) {
-      status = TickerReservationStatus.Reserved;
-      if (expiry.isSome) {
-        expiryDate = momentToDate(expiry.unwrap());
-
-        if (expiryDate < new Date()) {
-          status = TickerReservationStatus.Free;
+          if (expiryDate < new Date()) {
+            status = TickerReservationStatus.Free;
+          }
         }
+      } else {
+        status = TickerReservationStatus.Free;
       }
-    } else {
-      status = TickerReservationStatus.Free;
+
+      return {
+        owner,
+        expiryDate,
+        status,
+      };
+    };
+
+    if (callback) {
+      // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
+      return queryMulti<[TickerRegistration, MeshToken]>(
+        [
+          [asset.tickers as QueryableStorageEntry<'promise'>, rawTicker],
+          [asset.tokens as QueryableStorageEntry<'promise'>, rawTicker],
+        ],
+        ([registration, token]) => {
+          callback(assembleResult(registration, token));
+        }
+      );
     }
 
-    return {
-      owner,
-      expiryDate,
-      status,
-    };
+    // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
+    const [tickerRegistration, securityToken] = await queryMulti<[TickerRegistration, MeshToken]>([
+      [asset.tickers as QueryableStorageEntry<'promise'>, rawTicker],
+      [asset.tokens as QueryableStorageEntry<'promise'>, rawTicker],
+    ]);
+
+    return assembleResult(tickerRegistration, securityToken);
   }
 
   /**
