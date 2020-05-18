@@ -82,10 +82,16 @@
     "@polkadot/util": "2.8.1",
     "@polkadot/util-crypto": "2.8.1",
     "@types/bignumber.js": "^5.0.0",
-    "apollo-boost": "^0.4.9",
+    "apollo-cache-inmemory": "^1.6.6",
+    "apollo-client": "^2.6.10",
+    "apollo-link": "^1.2.14",
+    "apollo-link-error": "^1.1.13",
+    "apollo-link-http": "^1.5.17",
+    "apollo-link-state": "^0.4.2",
     "bignumber.js": "^9.0.0",
     "bluebird": "^3.7.2",
     "graphql": "^15.0.0",
+    "graphql-tag": "^2.10.3",
     "json-stable-stringify": "^1.0.1",
     "lodash": "^4.17.15"
   }

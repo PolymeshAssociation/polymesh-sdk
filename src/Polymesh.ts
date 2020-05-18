@@ -1,5 +1,8 @@
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
-import { ApolloClient, HttpLink, InMemoryCache } from 'apollo-boost';
+import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
+import { ApolloClient } from 'apollo-client';
+import { ApolloLink } from 'apollo-link';
+import { HttpLink } from 'apollo-link-http';
 import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 
@@ -25,12 +28,12 @@ import { HARVESTER_ENDPOINT } from '~/utils/constants';
  */
 export class Polymesh {
   public context: Context = {} as Context;
-  private harvester: ApolloClient<{}>;
+  private harvester: ApolloClient<NormalizedCacheObject>;
 
   /**
    * @hidden
    */
-  private constructor(context: Context, harvester: ApolloClient<{}>) {
+  private constructor(context: Context, harvester: ApolloClient<NormalizedCacheObject>) {
     this.context = context;
     this.harvester = harvester;
   }
@@ -54,7 +57,7 @@ export class Polymesh {
   }): Promise<Polymesh> {
     const { nodeUrl, accountSeed, keyring, accountUri } = params;
     let polymeshApi: ApiPromise;
-    let harvester: ApolloClient<{}>;
+    let harvester: ApolloClient<NormalizedCacheObject>;
 
     try {
       const { types, rpc } = polymesh;
@@ -89,9 +92,11 @@ export class Polymesh {
       }
 
       harvester = new ApolloClient({
-        link: new HttpLink({
-          uri: HARVESTER_ENDPOINT,
-        }),
+        link: ApolloLink.from([
+          new HttpLink({
+            uri: HARVESTER_ENDPOINT,
+          }),
+        ]),
         cache: new InMemoryCache(),
       });
 
