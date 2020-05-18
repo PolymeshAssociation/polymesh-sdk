@@ -1,4 +1,8 @@
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
+import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
+import { ApolloClient } from 'apollo-client';
+import { ApolloLink } from 'apollo-link';
+import { HttpLink } from 'apollo-link-http';
 import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 
@@ -8,27 +12,31 @@ import {
   AddClaimsParams,
   reserveTicker,
   ReserveTickerParams,
+  revokeClaims,
+  RevokeClaimsParams,
   transferPolyX,
   TransferPolyXParams,
 } from '~/api/procedures';
-import { revokeClaims, RevokeClaimsParams } from '~/api/procedures/revokeClaims';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
 import { SignerType } from '~/types/internal';
 import { signerToSignatory, stringToTicker, tickerToString, valueToDid } from '~/utils';
+import { HARVESTER_ENDPOINT } from '~/utils/constants';
 
 /**
  * Main entry point of the Polymesh SDK
  */
 export class Polymesh {
   public context: Context = {} as Context;
+  private harvester: ApolloClient<NormalizedCacheObject>;
 
   /**
    * @hidden
    */
-  private constructor(context: Context) {
+  private constructor(context: Context, harvester: ApolloClient<NormalizedCacheObject>) {
     this.context = context;
+    this.harvester = harvester;
   }
 
   static async connect(params: { nodeUrl: string; accountSeed: string }): Promise<Polymesh>;
@@ -50,6 +58,7 @@ export class Polymesh {
   }): Promise<Polymesh> {
     const { nodeUrl, accountSeed, keyring, accountUri } = params;
     let polymeshApi: ApiPromise;
+    let harvester: ApolloClient<NormalizedCacheObject>;
 
     try {
       const { types, rpc } = polymesh;
@@ -83,7 +92,16 @@ export class Polymesh {
         });
       }
 
-      return new Polymesh(context);
+      harvester = new ApolloClient({
+        link: ApolloLink.from([
+          new HttpLink({
+            uri: HARVESTER_ENDPOINT,
+          }),
+        ]),
+        cache: new InMemoryCache(),
+      });
+
+      return new Polymesh(context, harvester);
     } catch (e) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,

@@ -1,9 +1,10 @@
 import { Balance } from '@polkadot/types/interfaces';
+import { chunk } from 'lodash';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { IdentityId } from '~/polkadot';
-import { ErrorCode, IssuanceData, Role, RoleType } from '~/types';
+import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
 import { numberToBalance, stringToIdentityId, stringToTicker } from '~/utils';
 import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
@@ -65,17 +66,42 @@ export async function prepareIssueTokens(
     });
   }
 
-  // TODO: implement canTransfer
-
   const rawTicker = stringToTicker(ticker, context);
 
   const investors: IdentityId[] = [];
   const balances: Balance[] = [];
+  const canNotMintDids: Array<string> = [];
 
-  issuanceData.forEach(({ did, amount }) => {
-    investors.push(stringToIdentityId(did, context));
-    balances.push(numberToBalance(amount, context));
-  });
+  const issuanceDataItemsChunks = chunk(issuanceData, 10);
+
+  await Promise.all(
+    issuanceDataItemsChunks.map(async issuanceDataItemsChunk => {
+      // TODO: queryMulti
+      const transferStatuses = await Promise.all(
+        issuanceDataItemsChunk.map(({ did, amount }) =>
+          securityToken.transfers.canMint({ to: did, amount })
+        )
+      );
+
+      transferStatuses.forEach((canTransfer, index) => {
+        investors.push(stringToIdentityId(issuanceDataItemsChunk[index].did, context));
+        balances.push(numberToBalance(issuanceDataItemsChunk[index].amount, context));
+
+        if (canTransfer !== TransferStatus.Success) {
+          canNotMintDids.push(`${issuanceDataItemsChunk[index].did} [${canTransfer}]`);
+        }
+      });
+    })
+  );
+
+  if (canNotMintDids.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `You can't issue tokens to some of the supplied identities: ${canNotMintDids.join(
+        ', '
+      )}`,
+    });
+  }
 
   this.addTransaction(asset.batchIssue, {}, rawTicker, investors, balances);
 
