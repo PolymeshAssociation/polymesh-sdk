@@ -8,7 +8,7 @@ import { Context } from '~/context';
 import { IdentityId, Ticker } from '~/polkadot';
 import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
+import { RoleType, TransferStatus } from '~/types';
 import * as utilsModule from '~/utils';
 import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
@@ -131,6 +131,32 @@ describe('issueTokens procedure', () => {
 
     return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
       `This issuance operation will cause the total supply of "${ticker}" to exceed the maximum allowed (${MAX_TOKEN_AMOUNT.toFormat()})`
+    );
+  });
+
+  test('should throw an error if canMint returns a status different from Success', () => {
+    const status = TransferStatus.Failure;
+    const args = {
+      issuanceData: [
+        {
+          did: 'someDid',
+          amount: new BigNumber(100),
+        },
+      ],
+      ticker,
+    };
+
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        transfersCanMint: status,
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
+    proc.context = mockContext;
+
+    return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
+      `You can't issue tokens to some of the supplied identities: ${args.issuanceData[0].did} [${status}]`
     );
   });
 

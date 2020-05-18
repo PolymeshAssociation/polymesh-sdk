@@ -69,8 +69,31 @@ export class Transfers extends Namespace<SecurityToken> {
    * @param args.to - receiver identity
    * @param args.amount - amount of tokens to transfer
    */
-  public async canTransfer(args: {
+  public canTransfer(args: {
     from?: string | Identity;
+    to: string | Identity;
+    amount: BigNumber;
+  }): Promise<TransferStatus> {
+    const { from = this.context.getCurrentIdentity(), to, amount } = args;
+    return this._canTransfer({ from, to, amount });
+  }
+
+  /**
+   * Check whether it is possible to mint a certain amount of this asset
+   *
+   * @param args.to - receiver identity
+   * @param args.amount - amount of tokens to mint
+   */
+  public canMint(args: { to: string | Identity; amount: BigNumber }): Promise<TransferStatus> {
+    const { to, amount } = args;
+    return this._canTransfer({ from: null, to, amount });
+  }
+
+  /**
+   * @hidden
+   */
+  private async _canTransfer(args: {
+    from?: null | string | Identity;
     to: string | Identity;
     amount: BigNumber;
   }): Promise<TransferStatus> {
@@ -82,9 +105,12 @@ export class Transfers extends Namespace<SecurityToken> {
       context,
     } = this;
 
-    const { from = context.getCurrentIdentity(), to, amount } = args;
+    const { from, to, amount } = args;
 
-    const fromDid = valueToDid(from);
+    let fromDid = null;
+    if (from) {
+      fromDid = stringToIdentityId(valueToDid(from), context);
+    }
     const toDid = valueToDid(to);
 
     /*
@@ -97,7 +123,7 @@ export class Transfers extends Namespace<SecurityToken> {
     const res: CanTransferResult = await (rpc as any).asset.canTransfer(
       stringToAccountId(senderAddress, context),
       stringToTicker(ticker, context),
-      stringToIdentityId(fromDid, context),
+      fromDid,
       stringToIdentityId(toDid, context),
       numberToBalance(amount, context)
     );
