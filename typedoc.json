@@ -1,4 +1,6 @@
 {
   "mode": "modules",
-  "out": "docs"
+  "out": "docs",
+  "exclude": "**/{__tests__,polkadot}/**/*",
+  "ignoreCompilerErrors": true
 }

@@ -12,10 +12,11 @@ import {
   AddClaimsParams,
   reserveTicker,
   ReserveTickerParams,
+  revokeClaims,
+  RevokeClaimsParams,
   transferPolyX,
   TransferPolyXParams,
 } from '~/api/procedures';
-import { revokeClaims, RevokeClaimsParams } from '~/api/procedures/revokeClaims';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
