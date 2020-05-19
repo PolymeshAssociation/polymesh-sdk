@@ -42,6 +42,7 @@ import {
   TransferStatus,
 } from '~/types';
 import { SignerType } from '~/types/internal';
+import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
   accountIdToString,
@@ -452,6 +453,15 @@ describe('stringToTicker and tickerToString', () => {
     const result = stringToTicker(value, context);
 
     expect(result).toBe(fakeResult);
+  });
+
+  test('stringToTicker should throw an error if the string length exceeds the max ticker length', () => {
+    const value = 'veryLongTickr';
+    const context = polkadotMockUtils.getContextInstance();
+
+    expect(() => stringToTicker(value, context)).toThrow(
+      `Ticker length cannot exceed ${MAX_TICKER_LENGTH} characters`
+    );
   });
 
   test('tickerToString should convert a polkadot Ticker object to a string', () => {
