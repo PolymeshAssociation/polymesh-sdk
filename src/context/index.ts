@@ -210,8 +210,8 @@ export class Context {
     const assembleResult = ({ data: { free } }: AccountInfo): BigNumber => balanceToBigNumber(free);
 
     if (callback) {
-      return system.account(address, accountInfo => {
-        callback(assembleResult(accountInfo));
+      return system.account(address, info => {
+        callback(assembleResult(info));
       });
     }
 

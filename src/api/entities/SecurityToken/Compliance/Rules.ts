@@ -85,12 +85,12 @@ export class Rules extends Namespace<SecurityToken> {
       );
     }
 
-    const res = await queryMulti<[AssetTransferRules, Vec<IdentityId>]>([
+    const result = await queryMulti<[AssetTransferRules, Vec<IdentityId>]>([
       [complianceManager.assetRulesMap as QueryableStorageEntry<'promise'>, rawTicker],
       [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
     ]);
 
-    return assembleResult(res);
+    return assembleResult(result);
   }
 
   /**
