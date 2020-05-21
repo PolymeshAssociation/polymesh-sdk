@@ -71,6 +71,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * This function is used to accept a token ownership transfer.
        * NB: To reject the transfer, call remove auth function in identity module.
+       *
        * # Arguments
        * * `origin` It contains the signing key of the caller (i.e who signed the transaction to execute this function).
        * * `auth_id` Authorization ID of the token ownership transfer authorization.
@@ -81,6 +82,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * This function is used to accept a ticker transfer.
        * NB: To reject the transfer, call remove auth function in identity module.
+       *
        * # Arguments
        * * `origin` It contains the signing key of the caller (i.e who signed the transaction to execute this function).
        * * `auth_id` Authorization ID of ticker transfer authorization.
@@ -90,10 +92,12 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Add documents for a given token. To be called only by the token owner.
+       *
        * # Arguments
        * * `origin` Signing key of the token owner.
        * * `ticker` Ticker of the token.
        * * `documents` Documents to be attached to `ticker`.
+       *
        * # Weight
        * `200_000 + 60_000 * documents.len()`
        **/
@@ -107,6 +111,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Whitelisting the Smart-Extension address for a given ticker.
+       *
        * # Arguments
        * * `origin` - Signatory who owns to ticker/asset.
        * * `ticker` - ticker for whom extension get added.
@@ -125,6 +130,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Approve token transfer from one DID to another.
        * once this is done, transfer_from can be called with corresponding values.
+       *
        * # Arguments
        * * `origin` Signing key of the token owner (i.e sender).
        * * `spender_did` DID of the spender.
@@ -139,6 +145,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Archived the extension. Extension is use to verify the compliance or any smart logic it posses.
+       *
        * # Arguments
        * * `origin` - Signatory who owns the ticker/asset.
        * * `ticker` - Ticker symbol of the asset.
@@ -153,11 +160,13 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Function is used issue(or mint) new tokens for the given DIDs
        * can only be executed by the token owner.
+       *
        * # Arguments
        * * `origin` Signing key of token owner.
        * * `ticker` Ticker of the token.
        * * `investor_dids` Array of the DID of the token holders to whom new tokens get issued.
        * * `values` Array of the Amount of tokens that get issued.
+       *
        * # Weight
        * `300_000 + 400_000 * idvestor_dids.len().max(values.len())`
        **/
@@ -170,6 +179,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Forces a redemption of an DID's tokens. Can only be called by token owner.
+       *
        * # Arguments
        * * `origin` Signing key of the token owner.
        * * `ticker` Ticker of the token.
@@ -190,6 +200,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Forces a transfer between two DIDs & This can only be called by security token owner.
        * This function doesn't validate any type of restriction beside a valid CDD check.
+       *
        * # Arguments
        * * `origin` signing key of the token owner DID.
        * * `ticker` symbol of the token.
@@ -213,6 +224,7 @@ declare module '@polkadot/api/types/submittable' {
        * Initializes a new security token
        * makes the initiating account the owner of the security token
        * & the balance of the owner is set to total supply.
+       *
        * # Arguments
        * * `origin` - contains the signing key of the caller (i.e who signed the transaction to execute this function).
        * * `name` - the name of the token.
@@ -222,6 +234,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `asset_type` - the asset type.
        * * `identifiers` - a vector of asset identifiers.
        * * `funding_round` - name of the funding round.
+       *
        * # Weight
        * `400_000 + 20_000 * identifiers.len()`
        **/
@@ -257,6 +270,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Function used to create the checkpoint.
        * NB: Only called by the owner of the security token i.e owner DID.
+       *
        * # Arguments
        * * `origin` Signing key of the token owner. (Only token owner can call this function).
        * * `ticker` Ticker of the token.
@@ -266,6 +280,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Freezes transfers and minting of a given token.
+       *
        * # Arguments
        * * `origin` - the signing key of the sender.
        * * `ticker` - the ticker of the token.
@@ -279,6 +294,7 @@ declare module '@polkadot/api/types/submittable' {
        * Any investor/token holder can add a custodian and transfer the token transfer ownership to the custodian
        * Through that investor balance will remain the same but the given token are only transfer by the custodian.
        * This implementation make sure to have an accurate investor count from omnibus wallets.
+       *
        * # Arguments
        * * `origin` Signing key of the token holder.
        * * `ticker` Ticker of the token.
@@ -294,6 +310,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Used to increase the allowance for a given custodian by providing the off chain signature.
+       *
        * # Arguments
        * * `origin` Signing key of a DID who posses off chain signature.
        * * `ticker` Ticker of the token.
@@ -317,6 +334,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Used to know whether the given token will issue new tokens or not.
+       *
        * # Arguments
        * * `_origin` Signing key.
        * * `ticker` Ticker of the token whose issuance status need to know.
@@ -327,6 +345,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Function is used to issue(or mint) new tokens for the given DID
        * can only be executed by the token owner.
+       *
        * # Arguments
        * * `origin` Signing key of token owner.
        * * `ticker` Ticker of the token.
@@ -343,6 +362,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Makes an indivisible token divisible. Only called by the token owner.
+       *
        * # Arguments
        * * `origin` Signing key of the token owner.
        * * `ticker` Ticker of the token.
@@ -352,6 +372,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Used to redeem the security tokens.
+       *
        * # Arguments
        * * `origin` Signing key of the token holder who wants to redeem the tokens.
        * * `ticker` Ticker of the token.
@@ -367,6 +388,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Used to redeem the security tokens by some other DID who has approval.
+       *
        * # Arguments
        * * `origin` Signing key of the spender who has valid approval to redeem the tokens.
        * * `ticker` Ticker of the token.
@@ -385,6 +407,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * This function is used to either register a new ticker or extend validity of an existing ticker.
        * NB: Ticker validity does not get carry forward when renewing ticker.
+       *
        * # Arguments
        * * `origin` It contains the signing key of the caller (i.e who signed the transaction to execute this function).
        * * `ticker` ticker to register.
@@ -394,10 +417,12 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Remove documents for a given token. To be called only by the token owner.
+       *
        * # Arguments
        * * `origin` Signing key of the token owner.
        * * `ticker` Ticker of the token.
        * * `doc_ids` Documents to be removed from `ticker`.
+       *
        * # Weight
        * `200_000 + 60_000 * do_ids.len()`
        **/
@@ -409,6 +434,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Renames a given token.
+       *
        * # Arguments
        * * `origin` - the signing key of the sender.
        * * `ticker` - the ticker of the token.
@@ -422,6 +448,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Sets the name of the current funding round.
+       *
        * # Arguments
        * * `origin` - the signing key of the token owner DID.
        * * `ticker` - the ticker of the token.
@@ -435,6 +462,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Transfer tokens from one DID to another DID as tokens are stored/managed on the DID level.
+       *
        * # Arguments
        * * `origin` signing key of the sender.
        * * `ticker` Ticker of the token.
@@ -450,6 +478,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Used to transfer the tokens by the approved custodian.
+       *
        * # Arguments
        * * `origin` Signing key of the custodian.
        * * `ticker` Ticker of the token.
@@ -467,6 +496,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * If sufficient allowance provided, transfer from a DID to another DID without token owner's signature.
+       *
        * # Arguments
        * * `origin` Signing key of spender.
        * * `ticker` Ticker of the token.
@@ -486,6 +516,7 @@ declare module '@polkadot/api/types/submittable' {
        * An ERC1594 transfer_from with data
        * This function can be used by the exchanges or other third parties to dynamically validate the transaction
        * by passing the data blob.
+       *
        * # Arguments
        * * `origin` Signing key of the spender.
        * * `ticker` Ticker of the token.
@@ -507,6 +538,7 @@ declare module '@polkadot/api/types/submittable' {
        * An ERC1594 transfer with data
        * This function can be used by the exchanges or other third parties to dynamically validate the transaction
        * by passing the data blob.
+       *
        * # Arguments
        * * `origin` Signing key of the sender.
        * * `ticker` Ticker of the token.
@@ -524,6 +556,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Un-archived the extension. Extension is use to verify the compliance or any smart logic it posses.
+       *
        * # Arguments
        * * `origin` - Signatory who owns the ticker/asset.
        * * `ticker` - Ticker symbol of the asset.
@@ -537,6 +570,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Unfreezes transfers and minting of a given token.
+       *
        * # Arguments
        * * `origin` - the signing key of the sender.
        * * `ticker` - the ticker of the frozen token.
@@ -546,10 +580,12 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Update documents for the given token, Only be called by the token owner.
+       *
        * # Arguments
        * * `origin` Signing key of the token owner.
        * * `ticker` Ticker of the token.
        * * `docs` Vector of tuples (Document to be updated, Contents of new document).
+       *
        * # Weight
        * `200_000 + 60_000 * docs.len()`
        **/
@@ -566,11 +602,13 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Updates the asset identifiers. Can only be called by the token owner.
+       *
        * # Arguments
        * * `origin` - the signing key of the token owner.
        * * `ticker` - the ticker of the token.
        * * `identifiers` - the asset identifiers to be updated in the form of a vector of pairs
        * of `IdentifierType` and `AssetIdentifier` value.
+       *
        * # Weight
        * `150_000 + 20_000 * identifiers.len()`
        **/
@@ -625,6 +663,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Exactly as `transfer`, except the origin must be root and the source account may be
        * specified.
+       *
        * # </weight>
        **/
       forceTransfer: AugmentedSubmittable<
@@ -647,9 +686,12 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Set the balances of a given account.
+       *
        * This will alter `FreeBalance` and `ReservedBalance` in storage. it will
        * also decrease the total issuance of the system (`TotalIssuance`).
+       *
        * The dispatch origin for this call is `root`.
+       *
        * # <weight>
        * - Independent of the arguments.
        * - Contains a limited number of reads and writes.
@@ -681,17 +723,23 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Transfer some liquid free balance to another account.
+       *
        * `transfer` will set the `FreeBalance` of the sender and receiver.
        * It will decrease the total issuance of the system by the `TransferFee`.
+       *
        * The dispatch origin for this call must be `Signed` by the transactor.
+       *
        * # <weight>
        * - Dependent on arguments but not critical, given proper implementations for
        * input config types. See related functions below.
        * - It contains a limited number of reads and writes internally and no complex computation.
+       *
        * Related functions:
+       *
        * - `ensure_can_withdraw` is always called internally but has a bounded complexity.
        * - Transferring balances to accounts that did not exist before will cause
        * `T::OnNewAccount::on_new_account` to be called.
+       *
        * # </weight>
        **/
       transfer: AugmentedSubmittable<
@@ -769,6 +817,7 @@ declare module '@polkadot/api/types/submittable' {
       freeze: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
       /**
        * Freezes given bridge transactions.
+       *
        * # Weight
        * `50_000 + 200_000 * bridge_txs.len()`
        **/
@@ -816,6 +865,7 @@ declare module '@polkadot/api/types/submittable' {
       unfreeze: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
       /**
        * Unfreezes given bridge transactions.
+       *
        * # Weight
        * `50_000 + 700_000 * bridge_txs.len()`
        **/
@@ -836,15 +886,19 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * It allows a caller member to *unilaterally quit* without this
        * being subject to a GC vote.
+       *
        * # Arguments
        * * `origin` Member of committee who wants to quit.
+       *
        * # Error
+       *
        * * Only master key can abdicate.
        * * Last member of a group cannot abdicate.
        **/
       abdicateMembership: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
       /**
        * Add a member `who` to the set. May only be called from `AddOrigin` or root.
+       *
        * # Arguments
        * * `origin` Origin representing `AddOrigin` or root
        * * `who` IdentityId to be added to the group.
@@ -858,12 +912,16 @@ declare module '@polkadot/api/types/submittable' {
       clearPrime: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
       /**
        * It disables a member at specific moment.
+       *
        * Please note that if member is already revoked (a "valid member"), its revocation
        * time-stamp will be updated.
+       *
        * Any disabled member should NOT allow to act like an active member of the group. For
        * instance, a disabled CDD member should NOT be able to generate a CDD claim. However any
        * generated claim issued before `at` would be considered as a valid one.
+       *
        * If you want to invalidate any generated claim, you should use `Self::remove_member`.
+       *
        * # Arguments
        * * `at` Revocation time-stamp.
        * * `who` Target member of the group.
@@ -879,10 +937,12 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Remove a member `who` from the set. May only be called from `RemoveOrigin` or root.
+       *
        * Any claim previously generated by this member is not valid as a group claim. For
        * instance, if a CDD member group generated a claim for a target identity and then it is
        * removed, that claim will be invalid.
        * In case you want to keep the validity of generated claims, you have to use `Self::disable_member` function
+       *
        * # Arguments
        * * `origin` Origin representing `RemoveOrigin` or root
        * * `who` IdentityId to be removed from the group.
@@ -893,6 +953,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Change the membership to a new set, disregarding the existing membership.
        * May only be called from `ResetOrigin` or root.
+       *
        * # Arguments
        * * `origin` Origin representing `ResetOrigin` or root
        * * `members` New set of identities
@@ -910,7 +971,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Swap out one member `remove` for another `add`.
+       *
        * May only be called from `SwapOrigin` or root.
+       *
        * # Arguments
        * * `origin` Origin representing `SwapOrigin` or root
        * * `remove` IdentityId to be removed from the group.
@@ -927,15 +990,19 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * It allows a caller member to *unilaterally quit* without this
        * being subject to a GC vote.
+       *
        * # Arguments
        * * `origin` Member of committee who wants to quit.
+       *
        * # Error
+       *
        * * Only master key can abdicate.
        * * Last member of a group cannot abdicate.
        **/
       abdicateMembership: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
       /**
        * Add a member `who` to the set. May only be called from `AddOrigin` or root.
+       *
        * # Arguments
        * * `origin` Origin representing `AddOrigin` or root
        * * `who` IdentityId to be added to the group.
@@ -949,12 +1016,16 @@ declare module '@polkadot/api/types/submittable' {
       clearPrime: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
       /**
        * It disables a member at specific moment.
+       *
        * Please note that if member is already revoked (a "valid member"), its revocation
        * time-stamp will be updated.
+       *
        * Any disabled member should NOT allow to act like an active member of the group. For
        * instance, a disabled CDD member should NOT be able to generate a CDD claim. However any
        * generated claim issued before `at` would be considered as a valid one.
+       *
        * If you want to invalidate any generated claim, you should use `Self::remove_member`.
+       *
        * # Arguments
        * * `at` Revocation time-stamp.
        * * `who` Target member of the group.
@@ -970,10 +1041,12 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Remove a member `who` from the set. May only be called from `RemoveOrigin` or root.
+       *
        * Any claim previously generated by this member is not valid as a group claim. For
        * instance, if a CDD member group generated a claim for a target identity and then it is
        * removed, that claim will be invalid.
        * In case you want to keep the validity of generated claims, you have to use `Self::disable_member` function
+       *
        * # Arguments
        * * `origin` Origin representing `RemoveOrigin` or root
        * * `who` IdentityId to be removed from the group.
@@ -984,6 +1057,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Change the membership to a new set, disregarding the existing membership.
        * May only be called from `ResetOrigin` or root.
+       *
        * # Arguments
        * * `origin` Origin representing `ResetOrigin` or root
        * * `members` New set of identities
@@ -1001,7 +1075,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Swap out one member `remove` for another `add`.
+       *
        * May only be called from `SwapOrigin` or root.
+       *
        * # Arguments
        * * `origin` Origin representing `SwapOrigin` or root
        * * `remove` IdentityId to be removed from the group.
@@ -1017,6 +1093,7 @@ declare module '@polkadot/api/types/submittable' {
     complianceManager: {
       /**
        * Adds an asset rule to active rules for a ticker
+       *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
        * * ticker - Symbol of the asset
@@ -1037,6 +1114,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * To add the default trusted claim issuer for a given asset
        * Addition - When the given element is not exist
+       *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker.
        * * ticker - Symbol of the asset.
@@ -1051,10 +1129,12 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * To add the default trusted claim issuer for a given asset
        * Addition - When the given element is not exist
+       *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker.
        * * ticker - Symbol of the asset.
        * * trusted_issuers - Vector of IdentityId of the trusted claim issuers.
+       *
        * # Weight
        * `50_000 + 250_000 * trusted_issuers.len().max(values.len())`
        **/
@@ -1066,6 +1146,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Change/Modify the existing asset rule of a given ticker
+       *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker.
        * * ticker - Symbol of the asset.
@@ -1083,10 +1164,12 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Change/Modify the existing asset rule of a given ticker in batch
+       *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker.
        * * ticker - Symbol of the asset.
        * * asset_rules - Vector of asset rule.
+       *
        * # Weight
        * `100_000 + 100_000 * asset_rules.len().max(values.len())`
        **/
@@ -1105,6 +1188,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * It pauses the verification of rules for `ticker` during transfers.
+       *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
        * * ticker - Symbol of the asset
@@ -1114,6 +1198,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Removes a rule from active asset rules
+       *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
        * * ticker - Symbol of the asset
@@ -1128,6 +1213,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * To remove the default trusted claim issuer for a given asset
        * Removal - When the given element is already present
+       *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker.
        * * ticker - Symbol of the asset.
@@ -1142,10 +1228,12 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * To remove the default trusted claim issuer for a given asset
        * Removal - When the given element is already present
+       *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker.
        * * ticker - Symbol of the asset.
        * * trusted_issuers - Vector of IdentityId of the trusted claim issuers.
+       *
        * # Weight
        * `50_000 + 250_000 * trusted_issuers.len().max(values.len())`
        **/
@@ -1157,6 +1245,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Removes all active rules of a given ticker
+       *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
        * * ticker - Symbol of the asset
@@ -1166,6 +1255,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * It resumes the verification of rules for `ticker` during transfers.
+       *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
        * * ticker - Symbol of the asset
@@ -1177,6 +1267,7 @@ declare module '@polkadot/api/types/submittable' {
     contracts: {
       /**
        * Makes a call to an account, optionally transferring some balance.
+       *
        * * If the account is a smart-contract account, the associated code will be
        * executed and any value will be transferred.
        * * If the account is a regular account, any value will be transferred.
@@ -1194,6 +1285,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Allows block producers to claim a small reward for evicting a contract. If a block producer
        * fails to do so, a regular users will be allowed to claim the reward.
+       *
        * If contract is not evicted as a result of this call, no actions are taken and
        * the sender is not eligible for the reward.
        **/
@@ -1205,7 +1297,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Instantiates a new contract from the `codehash` generated by `put_code`, optionally transferring some balance.
+       *
        * Instantiation is executed as follows:
+       *
        * - The destination address is computed based on the sender and hash of the code.
        * - The smart-contract account is created at the computed address.
        * - The `ctor_code` is executed in the context of the newly-created account. Buffer returned
@@ -1233,6 +1327,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Updates the schedule for metering contracts.
+       *
        * The schedule must have a greater version than the stored schedule.
        **/
       updateSchedule: AugmentedSubmittable<
@@ -1343,6 +1438,7 @@ declare module '@polkadot/api/types/submittable' {
        * Call this with the new master key. By invoking this method, caller accepts authorization
        * with the new master key. If a CDD service provider approved this change, master key of
        * the DID is updated.
+       *
        * # Arguments
        * * `owner_auth_id` Authorization from the owner who initiated the change
        * * `cdd_auth_id` Authorization from a CDD service provider
@@ -1422,6 +1518,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Adds a new batch of claim records or edits an existing one. Only called by
        * `did_issuer`'s signing key.
+       *
        * # Weight
        * `300_000 + 100_000 * claims.len()`
        **/
@@ -1440,14 +1537,17 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * It adds signing keys to target identity `id`.
        * Keys are directly added to identity because each of them has an authorization.
+       *
        * Arguments:
        * - `origin` Master key of `id` identity.
        * - `id` Identity where new signing keys will be added.
        * - `additional_keys` New signing items (and their authorization data) to add to target
        * identity.
+       *
        * Failure
        * - It can only called by master key owner.
        * - Keys should be able to linked to any identity.
+       *
        * # Weight
        * `400_000 + 200_000 * auths.len()`
        **/
@@ -1466,6 +1566,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Accepts an array of authorizations.
+       *
        * # Weight
        * `100_000 + 500_000 * auth_ids.len()`
        **/
@@ -1474,6 +1575,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Adds an array of authorizations.
+       *
        * # Weight
        * `150_000 + 50_000 * auths.len()`
        **/
@@ -1502,6 +1604,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Removes an array of authorizations.
+       *
        * # Weight
        * `150_000 + 50_000 * auths.len()`
        **/
@@ -1514,12 +1617,14 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Register `target_account` with a new Identity.
+       *
        * # Failure
        * - `origin` has to be a active CDD provider. Inactive CDD providers cannot add new
        * claims.
        * - `target_account` (master key of the new Identity) can be linked to just one and only
        * one identity.
        * - External signing keys can be linked to just one identity.
+       *
        * # Weight
        * `400_000 + 60_000 * signing_items.len()`
        **/
@@ -1540,6 +1645,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Set if CDD authorization is required for updating master key of an identity.
        * Callable via root (governance)
+       *
        * # Arguments
        * * `auth_required` CDD Authorization required or not
        **/
@@ -1557,7 +1663,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * It disables all signing keys at `did` identity.
+       *
        * # Errors
+       *
        **/
       freezeSigningKeys: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
       /**
@@ -1620,8 +1728,10 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Removes specified signing keys of a DID if present.
+       *
        * # Failure
        * It can only called by master key owner.
+       *
        * # Weight
        * `400_000 + 60_000 * signers_to_remove.len()`
        **/
@@ -1656,9 +1766,11 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Revoke multiple claims in a batch.
+       *
        * # Arguments
        * * origin - did issuer
        * * did_and_claim_data - Vector of the identities & the corresponding claim data whom claim needs to be revoked
+       *
        * # Weight
        * `100_000 + 150_000 * claims.len()`
        **/
@@ -1685,6 +1797,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Sets a new master key for a DID.
+       *
        * # Failure
        * Only called by master key owner.
        **/
@@ -1694,6 +1807,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * It sets permissions for an specific `target_key` key.
        * Only the master key of an identity is able to set signing key permissions.
+       *
        * # Weight
        * `400_000 + 30_000 * permissions.len()`
        **/
@@ -1715,7 +1829,13 @@ declare module '@polkadot/api/types/submittable' {
         (
           heartbeat:
             | Heartbeat
-            | { blockNumber?: any; networkState?: any; sessionIndex?: any; authorityIndex?: any }
+            | {
+                blockNumber?: any;
+                networkState?: any;
+                sessionIndex?: any;
+                authorityIndex?: any;
+                validatorsLen?: any;
+              }
             | string
             | Uint8Array,
           signature: Signature | string | Uint8Array
@@ -1738,10 +1858,15 @@ declare module '@polkadot/api/types/submittable' {
     indices: {
       /**
        * Assign an previously unassigned index.
+       *
        * Payment: `Deposit` is reserved from the sender account.
+       *
        * The dispatch origin for this call must be _Signed_.
+       *
        * - `index`: the index to be claimed. This must not be in use.
+       *
        * Emits `IndexAssigned` if successful.
+       *
        * # <weight>
        * - `O(1)`.
        * - One storage mutation (codec `O(1)`).
@@ -1755,10 +1880,14 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Force an index to an account. This doesn't require a deposit. If the index is already
        * held, then any deposit is reimbursed to its current owner.
+       *
        * The dispatch origin for this call must be _Root_.
+       *
        * - `index`: the index to be (re-)assigned.
        * - `new`: the new owner of the index. This function is a no-op if it is equal to sender.
+       *
        * Emits `IndexAssigned` if successful.
+       *
        * # <weight>
        * - `O(1)`.
        * - One storage mutation (codec `O(1)`).
@@ -1774,10 +1903,15 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Free up an index owned by the sender.
+       *
        * Payment: Any previous deposit placed for the index is unreserved in the sender account.
+       *
        * The dispatch origin for this call must be _Signed_ and the sender must own the index.
+       *
        * - `index`: the index to be freed. This must be owned by the sender.
+       *
        * Emits `IndexFreed` if successful.
+       *
        * # <weight>
        * - `O(1)`.
        * - One storage mutation (codec `O(1)`).
@@ -1791,10 +1925,14 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Assign an index already owned by the sender to another account. The balance reservation
        * is effectively transferred to the new account.
+       *
        * The dispatch origin for this call must be _Signed_.
+       *
        * - `index`: the index to be re-assigned. This must be owned by the sender.
        * - `new`: the new owner of the index. This function is a no-op if it is equal to sender.
+       *
        * Emits `IndexAssigned` if successful.
+       *
        * # <weight>
        * - `O(1)`.
        * - One storage mutation (codec `O(1)`).
@@ -1812,6 +1950,7 @@ declare module '@polkadot/api/types/submittable' {
     multiSig: {
       /**
        * Accepts a multisig signer authorization given to signer's identity.
+       *
        * # Arguments
        * * `proposal_id` - Auth id of the authorization.
        **/
@@ -1820,6 +1959,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Accepts a multisig signer authorization given to signer's key (AccountId).
+       *
        * # Arguments
        * * `proposal_id` - Auth id of the authorization.
        **/
@@ -1828,6 +1968,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Adds a signer to the multisig. This must be called by the multisig itself.
+       *
        * # Arguments
        * * `signer` - Signatory to add.
        **/
@@ -1839,9 +1980,11 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Adds a signer to the multisig. This must be called by the creator identity of the
        * multisig.
+       *
        * # Arguments
        * * `multisig` - Address of the multi sig
        * * `signers` - Signatories to add.
+       *
        * # Weight
        * `100_000 + 300_000 * signers.len()`
        **/
@@ -1855,6 +1998,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Approves a multisig proposal using the caller's identity.
+       *
        * # Arguments
        * * `multisig` - MultiSig address.
        * * `proposal_id` - Proposal id to approve.
@@ -1868,6 +2012,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Approves a multisig proposal using the caller's signing key (`AccountId`).
+       *
        * # Arguments
        * * `multisig` - MultiSig address.
        * * `proposal_id` - Proposal id to approve.
@@ -1882,12 +2027,15 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Replaces all existing signers of the given multisig and changes the number of required
        * signatures.
+       *
        * NOTE: Once this function get executed no other function of the multisig is allowed to
        * execute until unless enough potential signers accept the authorization whose count is
        * greater than or equal to the number of required signatures.
+       *
        * # Arguments
        * * signers - Vector of signers for a given multisig.
        * * sigs_required - Number of signature required for a given multisig.
+       *
        * # Weight
        * `200_000 + 300_000 * signers.len()`
        **/
@@ -1902,6 +2050,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Changes the number of signatures required by a multisig. This must be called by the
        * multisig itself.
+       *
        * # Arguments
        * * `sigs_required` - New number of required signatures.
        **/
@@ -1910,6 +2059,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Creates a multisig
+       *
        * # Arguments
        * * `signers` - Signers of the multisig (They need to accept authorization before they are actually added).
        * * `sigs_required` - Number of sigs required to process a multi-sig tx.
@@ -1924,6 +2074,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Creates a multisig proposal if it hasn't been created or approves it if it has.
+       *
        * # Arguments
        * * `multisig` - MultiSig address.
        * * `proposal` - Proposal to be voted on.
@@ -1937,6 +2088,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Creates a multisig proposal if it hasn't been created or approves it if it has.
+       *
        * # Arguments
        * * `multisig` - MultiSig address.
        * * `proposal` - Proposal to be voted on.
@@ -1950,6 +2102,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Creates a multisig proposal
+       *
        * # Arguments
        * * `multisig` - MultiSig address.
        * * `proposal` - Proposal to be voted on.
@@ -1963,6 +2116,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Creates a multisig proposal
+       *
        * # Arguments
        * * `multisig` - MultiSig address.
        * * `proposal` - Proposal to be voted on.
@@ -1977,6 +2131,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Adds a multisig as the master key of the current did if the current did is the creator
        * of the multisig.
+       *
        * # Arguments
        * * `multi_sig` - multi sig address
        **/
@@ -1989,6 +2144,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Adds a multisig as a signer of current did if the current did is the creator of the
        * multisig.
+       *
        * # Arguments
        * * `multi_sig` - multi sig address
        **/
@@ -1997,6 +2153,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Removes a signer from the multisig. This must be called by the multisig itself.
+       *
        * # Arguments
        * * `signer` - Signatory to remove.
        **/
@@ -2008,9 +2165,11 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Removes a signer from the multisig.
        * This must be called by the creator identity of the multisig.
+       *
        * # Arguments
        * * `multisig` - Address of the multisig.
        * * `signers` - Signatories to remove.
+       *
        * # Weight
        * `150_000 + 150_000 * signers.len()`
        **/
@@ -2037,9 +2196,11 @@ declare module '@polkadot/api/types/submittable' {
     pips: {
       /**
        * It amends the `url` and the `description` of the proposal with id `id`.
+       *
        * # Errors
        * * `BadOrigin`: Only the owner of the proposal can amend it.
        * * `ProposalIsImmutable`: A proposals is mutable only during its cool off period.
+       *
        **/
       amendProposal: AugmentedSubmittable<
         (
@@ -2051,6 +2212,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Id bonds an additional deposit to proposal with id `id`.
        * That amount is added to the current deposit.
+       *
        * # Errors
        * * `BadOrigin`: Only the owner of the proposal can bond an additional deposit.
        * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
@@ -2063,7 +2225,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * It cancels the proposal of the id `id`.
+       *
        * Proposals can be cancelled only during its _cool-off period.
+       *
        * # Errors
        * * `BadOrigin`: Only the owner of the proposal can amend it.
        * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
@@ -2108,6 +2272,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * A network member creates a Mesh Improvement Proposal by submitting a dispatchable which
        * changes the network in someway. A minimum deposit is required to open a new proposal.
+       *
        * # Arguments
        * * `proposal` a dispatchable call
        * * `deposit` minimum deposit value
@@ -2139,6 +2304,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Change the minimum proposal deposit amount required to start a proposal. Only Governance
        * committee is allowed to change this value.
+       *
        * # Arguments
        * * `deposit` the new min deposit required to start a proposal
        **/
@@ -2148,6 +2314,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Change the proposal duration value. This is the number of blocks for which votes are
        * accepted on a proposal. Only Governance committee is allowed to change this value.
+       *
        * # Arguments
        * * `duration` proposal duration in blocks
        **/
@@ -2156,6 +2323,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Change whether completed PIPs are pruned. Can only be called by governance council
+       *
        * # Arguments
        * * `deposit` the new min deposit required to start a proposal
        **/
@@ -2166,6 +2334,7 @@ declare module '@polkadot/api/types/submittable' {
        * Change the quorum threshold amount. This is the amount which a proposal must gather so
        * as to be considered by a committee. Only Governance committee is allowed to change
        * this value.
+       *
        * # Arguments
        * * `threshold` the new quorum threshold amount value
        **/
@@ -2174,9 +2343,11 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * It updates the enactment period of a specific referendum.
+       *
        * # Arguments
        * * `until`, It defines the future block where the enactment period will finished.  A
        * `None` value means that enactment period is going to finish in the next block.
+       *
        * # Errors
        * * `BadOrigin`, Only the release coordinator can update the enactment period.
        * * ``,
@@ -2189,6 +2360,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * It unbonds any amount from the deposit of the proposal with id `id`.
+       *
        * # Errors
        * * `BadOrigin`: Only the owner of the proposal can release part of the deposit.
        * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
@@ -2204,6 +2376,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * A network member can vote on any Mesh Improvement Proposal by selecting the id that
        * corresponds ot the dispatchable action and vote with some balance.
+       *
        * # Arguments
        * * `proposal` a dispatchable call
        * * `id` proposal id
@@ -2222,8 +2395,10 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * May be called by any signed account after the voting duration has ended in order to
        * finish voting and close the proposal.
+       *
        * Abstentions are counted as rejections unless there is a prime member set and the prime
        * member cast an approval.
+       *
        * - the weight of `proposal` preimage.
        * - up to three events deposited.
        * - one read, two removals, one mutation. (plus three static reads.)
@@ -2240,6 +2415,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Any committee member proposes a dispatchable.
+       *
        * # Arguments
        * * `proposal` A dispatchable call
        **/
@@ -2250,6 +2426,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * It changes the release coordinator.
+       *
        * # Errors
        * * `MemberNotFound`, If the new coordinator `id` is not part of the committee.
        **/
@@ -2259,6 +2436,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Change the vote threshold the determines the winning proposal. For e.g., for a simple
        * majority use (1, 2) which represents the in-equation ">= 1/2"
+       *
        * # Arguments
        * * `match_criteria` One of {AtLeast, MoreThan}
        * * `n` Numerator of the fraction representing vote threshold
@@ -2272,6 +2450,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Member casts a vote.
+       *
        * # Arguments
        * * `proposal` Hash of proposal to be voted on
        * * `index` Proposal index
@@ -2322,7 +2501,9 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Removes any session key(s) of the function caller.
        * This doesn't take effect until the next session.
+       *
        * The dispatch origin of this function must be signed.
+       *
        * # <weight>
        * - O(N) in number of key types.
        * - Removes N + 1 DB entries.
@@ -2334,7 +2515,9 @@ declare module '@polkadot/api/types/submittable' {
        * Sets the session key(s) of the function caller to `keys`.
        * Allows an account to set its session key prior to becoming a validator.
        * This doesn't take effect until the next session.
+       *
        * The dispatch origin of this function must be signed.
+       *
        * # <weight>
        * - O(log n) in number of accounts.
        * - One extra DB entry.
@@ -2393,6 +2576,7 @@ declare module '@polkadot/api/types/submittable' {
        * Governance committee on 2/3 rds majority can introduce a new potential validator
        * to the pool of validators. Staking module uses `PermissionedValidators` to ensure
        * validators have completed KYB compliance and considers them for validation.
+       *
        * # Arguments
        * * origin Required origin for adding a potential validator.
        * * validator Stash AccountId of the validator.
@@ -2403,15 +2587,20 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Take the origin account as a stash and lock up `value` of its balance. `controller` will
        * be the account that controls it.
+       *
        * `value` must be more than the `minimum_balance` specified by `<T as Trait>::Currency`.
+       *
        * The dispatch origin for this call must be _Signed_ by the stash account.
+       *
        * # <weight>
        * - Independent of the arguments. Moderate complexity.
        * - O(1).
        * - Three extra DB entries.
+       *
        * NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned unless
        * the `origin` falls below _existential deposit_ and gets removed as dust.
        * # </weight>
+       *
        * # Arguments
        * * origin Stash account (signer of the extrinsic).
        * * controller Account that controls the operation of stash.
@@ -2427,15 +2616,19 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Add some extra amount that have appeared in the stash `free_balance` into the balance up
        * for staking.
+       *
        * Use this if there are additional funds in your stash account that you wish to bond.
        * Unlike [`bond`] or [`unbond`] this function does not impose any limitation on the amount
        * that can be added.
+       *
        * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+       *
        * # <weight>
        * - Independent of the arguments. Insignificant complexity.
        * - O(1).
        * - One DB entry.
        * # </weight>
+       *
        * # Arguments
        * * origin Stash account (signer of the extrinsic).
        * * max_additional Extra amount that need to be bonded.
@@ -2449,6 +2642,7 @@ declare module '@polkadot/api/types/submittable' {
        * Cancel enactment of a deferred slash. Can be called by either the root origin or
        * the `T::SlashCancelOrigin`.
        * passing the era and indices of the slashes for that era to kill.
+       *
        * # <weight>
        * - One storage write.
        * # </weight>
@@ -2461,8 +2655,11 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Declare no desire to either validate or nominate.
+       *
        * Effects will be felt at the beginning of the next era.
+       *
        * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+       *
        * # <weight>
        * - Independent of the arguments. Insignificant complexity.
        * - Contains one read.
@@ -2479,6 +2676,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Force there to be a new era at the end of the next session. After this, it will be
        * reset to normal (non-forced) behavior.
+       *
        * # <weight>
        * - No arguments.
        * # </weight>
@@ -2486,6 +2684,7 @@ declare module '@polkadot/api/types/submittable' {
       forceNewEra: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
       /**
        * Force there to be a new era at the end of sessions indefinitely.
+       *
        * # <weight>
        * - One storage write
        * # </weight>
@@ -2493,6 +2692,7 @@ declare module '@polkadot/api/types/submittable' {
       forceNewEraAlways: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
       /**
        * Force there to be no new eras indefinitely.
+       *
        * # <weight>
        * - No arguments.
        * # </weight>
@@ -2506,14 +2706,18 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Declare the desire to nominate `targets` for the origin controller.
+       *
        * Effects will be felt at the beginning of the next era.
+       *
        * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+       *
        * # <weight>
        * - The transaction's complexity is proportional to the size of `targets`,
        * which is capped at `MAX_NOMINATIONS`.
        * - It also depends upon the no. of claim issuers for a given stash account.
        * - Both the reads and writes follow a similar pattern.
        * # </weight>
+       *
        * # Arguments
        * * origin Controller (Signer of the extrinsic).
        * * targets List of stash AccountId of the validators whom nominator wants to nominate.
@@ -2527,15 +2731,19 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Make one nominator's payout for one era.
+       *
        * - `who` is the controller account of the nominator to pay out.
        * - `era` may not be lower than one following the most recently paid era. If it is higher,
        * then it indicates an instruction to skip the payout of all previous eras.
        * - `validators` is the list of all validators that `who` had exposure to during `era`.
        * If it is incomplete, then less than the full reward will be paid out.
        * It must not exceed `MAX_NOMINATIONS`.
+       *
        * WARNING: once an era is payed for a validator such validator can't claim the payout of
        * previous era.
+       *
        * WARNING: Incorrect arguments here can result in loss of payout. Be very careful.
+       *
        * # <weight>
        * - Number of storage read of `O(validators)`; `validators` is the argument of the call,
        * and is bounded by `MAX_NOMINATIONS`.
@@ -2556,12 +2764,16 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Make one validator's payout for one era.
+       *
        * - `who` is the controller account of the validator to pay out.
        * - `era` may not be lower than one following the most recently paid era. If it is higher,
        * then it indicates an instruction to skip the payout of all previous eras.
+       *
        * WARNING: once an era is payed for a validator such validator can't claim the payout of
        * previous era.
+       *
        * WARNING: Incorrect arguments here can result in loss of payout. Be very careful.
+       *
        * # <weight>
        * - Time complexity: O(1).
        * - Contains a limited number of reads and writes.
@@ -2574,7 +2786,9 @@ declare module '@polkadot/api/types/submittable' {
        * Remove all data structure concerning a staker/stash once its balance is zero.
        * This is essentially equivalent to `withdraw_unbonded` except it can be called by anyone
        * and the target `stash` must have no funds left.
+       *
        * This can be called from any origin.
+       *
        * - `stash`: The stash account to reap. Its balance must be zero.
        **/
       reapStash: AugmentedSubmittable<
@@ -2582,6 +2796,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Re-bond a portion of the stash scheduled to be unlocked.
+       *
        * # <weight>
        * - Time complexity: O(1). Bounded by `MAX_UNLOCKING_CHUNKS`.
        * - Storage changes: Can't increase storage, only decrease it.
@@ -2594,6 +2809,7 @@ declare module '@polkadot/api/types/submittable' {
        * Remove a validator from the pool of validators. Effects are known in the next session.
        * Staking module checks `PermissionedValidators` to ensure validators have
        * completed KYB compliance
+       *
        * # Arguments
        * * origin Required origin for removing a potential validator.
        * * validator Stash AccountId of the validator.
@@ -2603,13 +2819,17 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * (Re-)set the controller of a stash.
+       *
        * Effects will be felt at the beginning of the next era.
+       *
        * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+       *
        * # <weight>
        * - Independent of the arguments. Insignificant complexity.
        * - Contains a limited number of reads.
        * - Writes are limited to the `origin` account key.
        * # </weight>
+       *
        * # Arguments
        * * origin Stash AccountId (signer of the extrinsic).
        * * controller New AccountId that act as the controller of the stash account.
@@ -2622,6 +2842,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Changes commission rate which applies to all validators. Only Governance
        * committee is allowed to change this value.
+       *
        * # Arguments
        * * `new_value` the new commission to be used for reward calculations
        **/
@@ -2630,6 +2851,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Set history_depth value.
+       *
        * Origin must be root.
        **/
       setHistoryDepth: AugmentedSubmittable<
@@ -2648,6 +2870,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Changes min bond value to be used in bond(). Only Governance
        * committee is allowed to change this value.
+       *
        * # Arguments
        * * `new_value` the new minimum
        **/
@@ -2656,8 +2879,11 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * (Re-)set the payment target for a controller.
+       *
        * Effects will be felt at the beginning of the next era.
+       *
        * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+       *
        * # <weight>
        * - Independent of the arguments. Insignificant complexity.
        * - Contains a limited number of reads.
@@ -2679,13 +2905,18 @@ declare module '@polkadot/api/types/submittable' {
        * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
        * period ends. If this leaves an amount actively bonded less than
        * <T as Trait>::Currency::minimum_balance(), then it is increased to the full amount.
+       *
        * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
        * the funds out of management ready for transfer.
+       *
        * No more than a limited number of unlocking chunks (see `MAX_UNLOCKING_CHUNKS`)
        * can co-exists at the same time. In that case, [`Call::withdraw_unbonded`] need
        * to be called first to remove some of the chunks (if possible).
+       *
        * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+       *
        * See also [`Call::withdraw_unbonded`].
+       *
        * # <weight>
        * - Independent of the arguments. Limited but potentially exploitable complexity.
        * - Contains a limited number of reads.
@@ -2694,6 +2925,7 @@ declare module '@polkadot/api/types/submittable' {
        * The only way to clean the aforementioned storage item is also user-controlled via `withdraw_unbonded`.
        * - One DB entry.
        * </weight>
+       *
        * # Arguments
        * * origin Controller (Signer of the extrinsic).
        * * value Balance needs to be unbonded.
@@ -2703,13 +2935,17 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Declare the desire to validate for the origin controller.
+       *
        * Effects will be felt at the beginning of the next era.
+       *
        * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+       *
        * # <weight>
        * - Independent of the arguments. Insignificant complexity.
        * - Contains a limited number of reads.
        * - Writes are limited to the `origin` account key.
        * # </weight>
+       *
        * # Arguments
        * * origin Controller (signer of the extrinsic).
        * * prefs Amount of commission a potential validator proposes.
@@ -2721,9 +2957,11 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Validate the nominators CDD expiry time.
+       *
        * If an account from a given set of address is nominating then
        * check the CDD expiry time of it and if it is expired
        * then the account should be unbonded and removed from the nominating process.
+       *
        * #<weight>
        * - Depends on passed list of AccountId.
        * - Depends on the no. of claim issuers an accountId has for the CDD expiry.
@@ -2736,10 +2974,14 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Remove any unlocked chunks from the `unlocking` queue from our management.
+       *
        * This essentially frees up that balance to be used by the stash account to do
        * whatever it wants.
+       *
        * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+       *
        * See also [`Call::unbond`].
+       *
        * # <weight>
        * - Could be dependent on the `origin` argument and how much `unlocking` chunks exist.
        * It implies `consolidate_unlocked` which loops over `Ledger.unlocking`, which is
@@ -2753,6 +2995,7 @@ declare module '@polkadot/api/types/submittable' {
     stoCapped: {
       /**
        * Used to buy tokens
+       *
        * # Arguments
        * * `origin` Signing key of the investor
        * * `ticker` Ticker of the token
@@ -2768,6 +3011,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Used to buy tokens using stable coins
+       *
        * # Arguments
        * * `origin` Signing key of the investor
        * * `ticker` Ticker of the token
@@ -2785,6 +3029,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Used to initialize the STO for a given asset
+       *
        * # Arguments
        * * `origin` Signing key of the token owner who wants to initialize the sto
        * * `ticker` Ticker of the token
@@ -2808,6 +3053,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Modify the list of allowed tokens (stable coins) corresponds to given token/asset
+       *
        * # Arguments
        * * `origin` Signing key of the token owner
        * * `ticker` Ticker of the token
@@ -2826,6 +3072,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Pause the STO, Can only be called by the token owner
        * By doing this every operations on given sto_id would get freezed like buy_tokens
+       *
        * # Arguments
        * * `origin` Signing key of the token owner
        * * `ticker` Ticker of the token
@@ -2840,6 +3087,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Un-pause the STO, Can only be called by the token owner
        * By doing this every operations on given sto_id would get un freezed.
+       *
        * # Arguments
        * * `origin` Signing key of the token owner
        * * `ticker` Ticker of the token
@@ -2855,7 +3103,9 @@ declare module '@polkadot/api/types/submittable' {
     sudo: {
       /**
        * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo key.
+       *
        * The dispatch origin for this call must be _Signed_.
+       *
        * # <weight>
        * - O(1).
        * - Limited storage reads.
@@ -2869,7 +3119,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Authenticates the sudo key and dispatches a function call with `Root` origin.
+       *
        * The dispatch origin for this call must be _Signed_.
+       *
        * # <weight>
        * - O(1).
        * - Limited storage reads.
@@ -2885,7 +3137,9 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Authenticates the sudo key and dispatches a function call with `Signed` origin from
        * a given account.
+       *
        * The dispatch origin for this call must be _Signed_.
+       *
        * # <weight>
        * - O(1).
        * - Limited storage reads.
@@ -2966,10 +3220,13 @@ declare module '@polkadot/api/types/submittable' {
     timestamp: {
       /**
        * Set the current time.
+       *
        * This call should be invoked exactly once per block. It will panic at the finalization
        * phase, if this call hasn't been invoked by that time.
+       *
        * The timestamp should be greater than the previous one by the amount specified by
        * `MinimumPeriod`.
+       *
        * The dispatch origin for this call must be `Inherent`.
        **/
       set: AugmentedSubmittable<
@@ -2980,6 +3237,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * It transfers balances from treasury to each of beneficiaries and the specific amount
        * for each of them.
+       *
        * # Error
        * * `BadOrigin`: Only root can execute transaction.
        * * `InsufficientBalance`: If treasury balances is not enough to cover all beneficiaries.
@@ -2993,6 +3251,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * It transfers the specific `amount` from `origin` account into treasury.
+       *
        * Only accounts which are associated to an identity can make a donation to treasury.
        **/
       reimbursement: AugmentedSubmittable<
@@ -3002,6 +3261,7 @@ declare module '@polkadot/api/types/submittable' {
     voting: {
       /**
        * Adds a ballot
+       *
        * # Arguments
        * * `ticker` - Ticker of the token for which ballot is to be created
        * * `ballot_name` - Name of the ballot
@@ -3020,6 +3280,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Cancels a vote by setting it as expired
+       *
        * # Arguments
        * * `ticker` - Ticker of the token for which ballot is to be cancelled
        * * `ballot_name` - Name of the ballot
@@ -3032,6 +3293,7 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Casts a vote
+       *
        * # Arguments
        * * `ticker` - Ticker of the token for which vote is to be cast
        * * `ballot_name` - Name of the ballot
