@@ -125,26 +125,6 @@ describe('reserveTicker procedure', () => {
     );
   });
 
-  test('should throw an error if the ticker length exceeds the maximum', () => {
-    const maxTickerLength = 3;
-    polkadotMockUtils.createQueryStub('asset', 'tickerConfig', {
-      returnValue: polkadotMockUtils.createMockTickerRegistrationConfig({
-        /* eslint-disable @typescript-eslint/camelcase */
-        max_ticker_length: polkadotMockUtils.createMockU8(maxTickerLength),
-        registration_length: polkadotMockUtils.createMockOption(
-          polkadotMockUtils.createMockMoment(10000)
-        ),
-        /* eslint-enable @typescript-eslint/camelcase */
-      }),
-    });
-    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
-    proc.context = mockContext;
-
-    return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
-      `Ticker length cannot exceed ${maxTickerLength}`
-    );
-  });
-
   test('should throw an error if extendPeriod property is set to true and the ticker has not been reserved or the reservation has expired', async () => {
     const expiryDate = new Date(2019, 1, 1);
     entityMockUtils.getTickerReservationDetailsStub().resolves({
