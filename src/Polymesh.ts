@@ -23,7 +23,7 @@ import { didsWithClaims } from '~/harvester/queries';
 import { IdentityWithClaims, Query } from '~/harvester/types';
 import { Claim, ClaimData, ClaimType, ErrorCode } from '~/types';
 import { SignerType } from '~/types/internal';
-import { signerToSignatory, stringToClaimType, tickerToString, valueToDid } from '~/utils';
+import { signerToSignatory, stringToClaimType, stringToTicker, tickerToString, valueToDid } from '~/utils';
 import { HARVESTER_ENDPOINT } from '~/utils/constants';
 
 /**
@@ -214,7 +214,7 @@ export class Polymesh {
       context,
     } = this;
 
-    const tickerReservation = await asset.tickers(ticker);
+    const tickerReservation = await asset.tickers(stringToTicker(ticker, context));
 
     if (!tickerReservation.owner.isEmpty) {
       return new TickerReservation({ ticker }, context);
@@ -343,7 +343,7 @@ export class Polymesh {
       context,
     } = this;
 
-    const securityToken = await asset.tokens(ticker);
+    const securityToken = await asset.tokens(stringToTicker(ticker, context));
 
     if (!securityToken.name.isEmpty) {
       return new SecurityToken({ ticker }, context);
