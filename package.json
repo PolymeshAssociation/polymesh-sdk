@@ -26,7 +26,7 @@
   "devDependencies": {
     "@commitlint/cli": "^7.6.1",
     "@commitlint/config-conventional": "^7.6.0",
-    "@polkadot/typegen": "1.12.0-beta.5",
+    "@polkadot/typegen": "1.14.1",
     "@types/bluebird": "^3.5.30",
     "@types/jest": "^23.3.10",
     "@types/json-stable-stringify": "^1.0.32",
@@ -80,9 +80,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@polkadot/api": "1.12.0-beta.5",
-    "@polkadot/util": "2.8.1",
-    "@polkadot/util-crypto": "2.8.1",
+    "@polkadot/api": "1.14.1",
+    "@polkadot/util": "2.10.1",
+    "@polkadot/util-crypto": "2.10.1",
     "@types/bignumber.js": "^5.0.0",
     "apollo-cache-inmemory": "^1.6.6",
     "apollo-client": "^2.6.10",
@@ -93,7 +93,6 @@
     "bignumber.js": "^9.0.0",
     "graphql": "^15.0.0",
     "bluebird": "^3.7.2",
-    "graphql": "^15.0.0",
     "graphql-tag": "^2.10.3",
     "json-stable-stringify": "^1.0.1",
     "lodash": "^4.17.15"
