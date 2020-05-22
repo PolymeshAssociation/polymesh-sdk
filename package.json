@@ -91,8 +91,8 @@
     "apollo-link-http": "^1.5.17",
     "apollo-link-state": "^0.4.2",
     "bignumber.js": "^9.0.0",
-    "graphql": "^15.0.0",
     "bluebird": "^3.7.2",
+    "graphql": "15.0.0",
     "graphql-tag": "^2.10.3",
     "json-stable-stringify": "^1.0.1",
     "lodash": "^4.17.15"

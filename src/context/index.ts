@@ -1,4 +1,5 @@
 import { ApiPromise, Keyring } from '@polkadot/api';
+import { AccountInfo } from '@polkadot/types/interfaces';
 import { IKeyringPair } from '@polkadot/types/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
 import BigNumber from 'bignumber.js';
@@ -6,7 +7,7 @@ import { IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
-import { ErrorCode } from '~/types';
+import { ErrorCode, SubCallback, UnsubCallback } from '~/types';
 import { balanceToBigNumber, identityIdToString, stringToAccountKey } from '~/utils';
 
 interface SignerData {
@@ -172,11 +173,27 @@ export class Context {
     this.currentIdentity = new Identity({ did: identityIdToString(did) }, this);
   }
 
+  public accountBalance(accountId?: string): Promise<BigNumber>;
+  public accountBalance(
+    accountId: string | undefined,
+    callback: SubCallback<BigNumber>
+  ): Promise<UnsubCallback>;
+
   /**
    * Retrieve the account level POLYX balance
+   *
+   * @note can be subscribed to
    */
-  public async accountBalance(accountId?: string): Promise<BigNumber> {
-    const { currentPair } = this;
+  public async accountBalance(
+    accountId?: string,
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
+    const {
+      currentPair,
+      polymeshApi: {
+        query: { system },
+      },
+    } = this;
     let address: string;
 
     if (accountId) {
@@ -190,11 +207,17 @@ export class Context {
       });
     }
 
-    const {
-      data: { free },
-    } = await this.polymeshApi.query.system.account(address);
+    const assembleResult = ({ data: { free } }: AccountInfo): BigNumber => balanceToBigNumber(free);
 
-    return balanceToBigNumber(free);
+    if (callback) {
+      return system.account(address, info => {
+        callback(assembleResult(info));
+      });
+    }
+
+    const accountInfo = await this.polymeshApi.query.system.account(address);
+
+    return assembleResult(accountInfo);
   }
 
   /**

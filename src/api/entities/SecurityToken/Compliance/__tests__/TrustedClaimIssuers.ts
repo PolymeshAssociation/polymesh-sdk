@@ -4,7 +4,8 @@ import { SecurityToken } from '~/api/entities';
 import { Identity } from '~/api/entities/Identity';
 import { setTokenTrustedClaimIssuers } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { IdentityId } from '~/polkadot';
+import { Context } from '~/context';
+import { IdentityId, Ticker } from '~/polkadot';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
 
@@ -61,21 +62,30 @@ describe('TrustedClaimIssuers class', () => {
   });
 
   describe('method: get', () => {
-    afterAll(() => {
-      sinon.restore();
-    });
+    let ticker: string;
+    let rawTicker: Ticker;
+    let stringToTickerStub: sinon.SinonStub;
+    let context: Context;
+    let token: SecurityToken;
+    let expectedDids: string[];
+    let expectedIdentities: Identity[];
+    let claimIssuers: IdentityId[];
 
-    test('should return the current default trusted claim issuers', async () => {
-      const ticker = 'test';
-      const rawTicker = polkadotMockUtils.createMockTicker(ticker);
-      const stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-      const context = polkadotMockUtils.getContextInstance();
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+    let trustedClaimIssuerStub: sinon.SinonStub;
 
-      const expectedDids = ['someDid', 'otherDid', 'yetAnotherDid'];
+    let trustedClaimIssuers: TrustedClaimIssuers;
 
-      const expectedIdentities: Identity[] = [];
-      const claimIssuers: IdentityId[] = [];
+    beforeAll(() => {
+      ticker = 'test';
+      rawTicker = polkadotMockUtils.createMockTicker(ticker);
+      stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+      context = polkadotMockUtils.getContextInstance();
+      token = entityMockUtils.getSecurityTokenInstance({ ticker });
+
+      expectedDids = ['someDid', 'otherDid', 'yetAnotherDid'];
+
+      expectedIdentities = [];
+      claimIssuers = [];
 
       expectedDids.forEach(did => {
         expectedIdentities.push(new Identity({ did }, context));
@@ -83,16 +93,40 @@ describe('TrustedClaimIssuers class', () => {
       });
 
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
-      polkadotMockUtils
-        .createQueryStub('complianceManager', 'trustedClaimIssuer')
-        .withArgs(rawTicker)
-        .resolves(claimIssuers);
+      trustedClaimIssuerStub = polkadotMockUtils.createQueryStub(
+        'complianceManager',
+        'trustedClaimIssuer'
+      );
 
-      const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
+      trustedClaimIssuers = new TrustedClaimIssuers(token, context);
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the current default trusted claim issuers', async () => {
+      trustedClaimIssuerStub.withArgs(rawTicker).resolves(claimIssuers);
 
       const result = await trustedClaimIssuers.get();
 
       expect(result).toEqual(expectedIdentities);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+
+      trustedClaimIssuerStub.withArgs(rawTicker).callsFake((_, cbFunc) => {
+        cbFunc(claimIssuers);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+
+      const result = await trustedClaimIssuers.get(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, expectedIdentities);
     });
   });
 });

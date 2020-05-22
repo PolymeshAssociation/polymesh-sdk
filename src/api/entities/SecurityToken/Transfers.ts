@@ -4,7 +4,7 @@ import { Identity } from '~/api/entities/Identity';
 import { toggleFreezeTransfers, transferToken, TransferTokenParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { CanTransferResult } from '~/polkadot';
-import { TransferStatus } from '~/types';
+import { SubCallback, TransferStatus, UnsubCallback } from '~/types';
 import {
   boolToBoolean,
   canTransferResultToTransferStatus,
@@ -44,10 +44,15 @@ export class Transfers extends Namespace<SecurityToken> {
     return toggleFreezeTransfers.prepare({ ticker, freeze: false }, context);
   }
 
+  public areFrozen(): Promise<boolean>;
+  public areFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
+
   /**
    * Check whether transfers are frozen for the Security Token
+   *
+   * @note can be subscribed to
    */
-  public async areFrozen(): Promise<boolean> {
+  public async areFrozen(callback?: SubCallback<boolean>): Promise<boolean | UnsubCallback> {
     const {
       parent: { ticker },
       context: {
@@ -55,9 +60,18 @@ export class Transfers extends Namespace<SecurityToken> {
           query: { asset },
         },
       },
+      context,
     } = this;
 
-    const result = await asset.frozen(ticker);
+    const rawTicker = stringToTicker(ticker, context);
+
+    if (callback) {
+      return asset.frozen(rawTicker, frozen => {
+        callback(boolToBoolean(frozen));
+      });
+    }
+
+    const result = await asset.frozen(rawTicker);
 
     return boolToBoolean(result);
   }

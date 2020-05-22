@@ -1,6 +1,8 @@
 import { Identity } from '~/api/entities';
 import { setTokenTrustedClaimIssuers, SetTokenTrustedClaimIssuersParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
+import { IdentityId } from '~/polkadot';
+import { SubCallback, UnsubCallback } from '~/types';
 import { identityIdToString, stringToTicker } from '~/utils';
 
 import { SecurityToken } from '../';
@@ -24,21 +26,38 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
     return setTokenTrustedClaimIssuers.prepare({ ticker, ...args }, context);
   }
 
+  public get(): Promise<Identity[]>;
+  public get(callback: SubCallback<Identity[]>): Promise<UnsubCallback>;
+
   /**
    * Retrieve the current default trusted claim issuers of the Security Token
+   *
+   * @note can be subscribed to
    */
-  public async get(): Promise<Identity[]> {
+  public async get(callback?: SubCallback<Identity[]>): Promise<Identity[] | UnsubCallback> {
     const {
+      context: {
+        polymeshApi: {
+          query: { complianceManager },
+        },
+      },
       context,
       parent: { ticker },
     } = this;
 
-    const claimIssuers = await context.polymeshApi.query.complianceManager.trustedClaimIssuer(
-      stringToTicker(ticker, context)
-    );
+    const rawTicker = stringToTicker(ticker, context);
 
-    return claimIssuers.map(
-      claimIssuer => new Identity({ did: identityIdToString(claimIssuer) }, context)
-    );
+    const assembleResult = (issuers: IdentityId[]): Identity[] =>
+      issuers.map(claimIssuer => new Identity({ did: identityIdToString(claimIssuer) }, context));
+
+    if (callback) {
+      return complianceManager.trustedClaimIssuer(rawTicker, issuers => {
+        callback(assembleResult(issuers));
+      });
+    }
+
+    const claimIssuers = await complianceManager.trustedClaimIssuer(rawTicker);
+
+    return assembleResult(claimIssuers);
   }
 }
