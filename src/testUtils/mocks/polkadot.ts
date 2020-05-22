@@ -20,7 +20,9 @@ import { Codec, IKeyringPair, ISubmittableResult, Registry } from '@polkadot/typ
 import { stringToU8a } from '@polkadot/util';
 import { BigNumber } from 'bignumber.js';
 import { EventEmitter } from 'events';
+import { DocumentNode } from 'graphql';
 import { cloneDeep, every, merge, upperFirst } from 'lodash';
+import { MockApolloClient } from 'mock-apollo-client';
 import {
   AccountKey,
   AssetIdentifier,
@@ -57,6 +59,7 @@ import {
 import sinon, { SinonStub } from 'sinon';
 
 import { Context } from '~/context';
+import { apolloMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
@@ -82,6 +85,7 @@ const mockInstanceContainer = {
   contextInstance: {} as MockContext,
   apiInstance: createApi(),
   keyringInstance: {} as Mutable<Keyring>,
+  apolloInstance: apolloMockUtils.initMocks(),
 };
 
 let apiPromiseCreateStub: SinonStub;
@@ -350,6 +354,7 @@ function configureContext(opts: ContextOptions): void {
       contextInstance.currentPair = { address } as IKeyringPair;
     }),
     polymeshApi: mockInstanceContainer.apiInstance,
+    harvester: mockInstanceContainer.apolloInstance,
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
@@ -624,6 +629,26 @@ export function createTxStub<
 
 /**
  * @hidden
+ * Create and return an apollo query stub
+ *
+ * @param query - apollo document node
+ * @param returnValue
+ */
+export function createApolloQueryStub(query: DocumentNode, returnData: any): MockApolloClient {
+  const instance = mockInstanceContainer.apolloInstance;
+
+  instance.query = sinon
+    .stub()
+    .withArgs(query)
+    .resolves({
+      data: returnData,
+    });
+
+  return instance;
+}
+
+/**
+ * @hidden
  * Create and return a query stub
  *
  * @param mod - name of the module
@@ -748,6 +773,15 @@ export function updateTxStatus<
   }
 
   txMockData.statusCallback(statusToReceipt(status, failReason));
+}
+
+/**
+ * @hidden
+ * Make calls to `Harvester.query` throw an error
+ */
+export function throwOnHarvesterQuery(): void {
+  const instance = mockInstanceContainer.apolloInstance;
+  instance.query = createErrStub;
 }
 
 /**

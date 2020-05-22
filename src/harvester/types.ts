@@ -11,6 +11,7 @@ export type Scalars = {
   Float: number;
   Object: any;
   DateTime: any;
+  BigInt: any;
 };
 
 export type Account = {
@@ -103,12 +104,12 @@ export type ChainInfo = {
 
 export type Claim = {
   __typename?: 'Claim';
-  targetDID?: Maybe<Scalars['String']>;
-  issuer?: Maybe<Scalars['String']>;
-  issuance_date?: Maybe<Scalars['Int']>;
-  last_update_date?: Maybe<Scalars['Int']>;
-  expiry?: Maybe<Scalars['Int']>;
-  type?: Maybe<Scalars['String']>;
+  targetDID: Scalars['String'];
+  issuer: Scalars['String'];
+  issuance_date: Scalars['BigInt'];
+  last_update_date: Scalars['BigInt'];
+  expiry?: Maybe<Scalars['BigInt']>;
+  type: Scalars['String'];
   jurisdiction?: Maybe<Scalars['String']>;
   scope?: Maybe<Scalars['String']>;
 };
@@ -172,8 +173,8 @@ export type Extrinsic = {
 
 export type IdentityWithClaims = {
   __typename?: 'IdentityWithClaims';
-  did?: Maybe<Scalars['String']>;
-  claims?: Maybe<Array<Maybe<Claim>>>;
+  did: Scalars['String'];
+  claims: Array<Claim>;
 };
 
 export type Query = {
@@ -375,6 +376,7 @@ export type ResolversTypes = {
   Boolean: ResolverTypeWrapper<any>;
   IdentityWithClaims: ResolverTypeWrapper<any>;
   Claim: ResolverTypeWrapper<any>;
+  BigInt: ResolverTypeWrapper<any>;
 };
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -393,6 +395,7 @@ export type ResolversParentTypes = {
   Boolean: any;
   IdentityWithClaims: any;
   Claim: any;
+  BigInt: any;
 };
 
 export type AccountResolvers<
@@ -417,6 +420,10 @@ export type AccountResolvers<
   >;
   __isTypeOf?: isTypeOfResolverFn<ParentType>;
 };
+
+export interface BigIntScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['BigInt'], any> {
+  name: 'BigInt';
+}
 
 export type BlockResolvers<
   ContextType = any,
@@ -502,12 +509,12 @@ export type ClaimResolvers<
   ContextType = any,
   ParentType extends ResolversParentTypes['Claim'] = ResolversParentTypes['Claim']
 > = {
-  targetDID?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  issuer?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  issuance_date?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  last_update_date?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  expiry?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  targetDID?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  issuer?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  issuance_date?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
+  last_update_date?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
+  expiry?: Resolver<Maybe<ResolversTypes['BigInt']>, ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   jurisdiction?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   scope?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: isTypeOfResolverFn<ParentType>;
@@ -583,8 +590,8 @@ export type IdentityWithClaimsResolvers<
   ContextType = any,
   ParentType extends ResolversParentTypes['IdentityWithClaims'] = ResolversParentTypes['IdentityWithClaims']
 > = {
-  did?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  claims?: Resolver<Maybe<Array<Maybe<ResolversTypes['Claim']>>>, ParentType, ContextType>;
+  did?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  claims?: Resolver<Array<ResolversTypes['Claim']>, ParentType, ContextType>;
   __isTypeOf?: isTypeOfResolverFn<ParentType>;
 };
 
@@ -674,6 +681,7 @@ export type QueryResolvers<
 
 export type Resolvers<ContextType = any> = {
   Account?: AccountResolvers<ContextType>;
+  BigInt?: GraphQLScalarType;
   Block?: BlockResolvers<ContextType>;
   ChainInfo?: ChainInfoResolvers<ContextType>;
   Claim?: ClaimResolvers<ContextType>;

@@ -85,6 +85,7 @@ import {
   stringToAccountKey,
   stringToAssetIdentifier,
   stringToBytes,
+  stringToClaimType,
   stringToDocumentHash,
   stringToDocumentName,
   stringToDocumentUri,
@@ -1524,6 +1525,60 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
     });
 
     result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToClaimType', () => {
+  test('stringToClaimType should convert a string to a ClaimType object', () => {
+    let fakeResult = ClaimType.Accredited;
+    let claimType = 'Accredited';
+    let result = stringToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Affiliate;
+    claimType = 'Affiliate';
+    result = stringToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.BuyLockup;
+    claimType = 'BuyLockup';
+    result = stringToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.SellLockup;
+    claimType = 'SellLockup';
+    result = stringToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.CustomerDueDiligence;
+    claimType = 'CustomerDueDiligence';
+    result = stringToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.KnowYourCustomer;
+    claimType = 'KnowYourCustomer';
+    result = stringToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Jurisdiction;
+    claimType = 'Jurisdiction';
+    result = stringToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Whitelisted;
+    claimType = 'Whitelisted';
+    result = stringToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Blacklisted;
+    claimType = 'Blacklisted';
+    result = stringToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.NoData;
+    claimType = 'NoData';
+    result = stringToClaimType(claimType);
     expect(result).toEqual(fakeResult);
   });
 });

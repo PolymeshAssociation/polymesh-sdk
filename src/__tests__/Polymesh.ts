@@ -5,8 +5,10 @@ import sinon from 'sinon';
 import { Identity, TickerReservation } from '~/api/entities';
 import { addClaims, reserveTicker, revokeClaims, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
+import { didsWithClaims } from '~/harvester/queries';
+import { IdentityWithClaims } from '~/harvester/types';
 import { Polymesh } from '~/Polymesh';
-import { polkadotMockUtils } from '~/testUtils/mocks';
+import { apolloMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
 import { ClaimTargets, ClaimType } from '~/types';
 import * as utilsModule from '~/utils';
 
@@ -15,10 +17,12 @@ jest.mock(
   require('~/testUtils/mocks/polkadot').mockPolkadotModule('@polkadot/api')
 );
 jest.mock('~/context', require('~/testUtils/mocks/polkadot').mockContextModule('~/context'));
+jest.mock('apollo-client', require('~/testUtils/mocks/apollo').mockApolloModule('apollo-client'));
 
 describe('Polymesh Class', () => {
   beforeAll(() => {
     polkadotMockUtils.initMocks();
+    apolloMockUtils.initMocks();
   });
 
   afterEach(() => {
@@ -50,6 +54,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: polkadotMockUtils.getApiInstance(),
+        apolloClient: apolloMockUtils.getApolloClient(),
         seed: accountSeed,
       });
     });
@@ -66,6 +71,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: polkadotMockUtils.getApiInstance(),
+        apolloClient: apolloMockUtils.getApolloClient(),
         keyring,
       });
     });
@@ -82,6 +88,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: polkadotMockUtils.getApiInstance(),
+        apolloClient: apolloMockUtils.getApolloClient(),
         uri: accountUri,
       });
     });
@@ -400,6 +407,119 @@ describe('Polymesh Class', () => {
 
       expect(securityTokens).toHaveLength(1);
       expect(securityTokens[0].ticker).toBe(fakeTicker);
+    });
+  });
+
+  describe('method: getSecurityToken', () => {
+    beforeAll(() => {
+      //
+    });
+
+    afterAll(() => {
+      //
+    });
+
+    test('should return a list of issued claims', async () => {
+      const context = polkadotMockUtils.getContextInstance();
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const date = 1589816265000;
+      const customerDueDiligenceType = 'CustomerDueDiligence';
+      const jurisdictionType = 'Jurisdiction';
+      const whitelistedType = 'Whitelisted';
+      const claim = {
+        target: new Identity({ did: targetDid }, context),
+        issuer: new Identity({ did: issuerDid }, context),
+        issuedAt: new Date(date),
+      };
+      const fakeClaims = [
+        {
+          ...claim,
+          expiry: null,
+          claim: {
+            type: customerDueDiligenceType,
+          },
+        },
+        {
+          ...claim,
+          expiry: new Date(date),
+          claim: {
+            type: jurisdictionType,
+            name: 'someJurisdiction',
+            scope: 'someScope',
+          },
+        },
+        {
+          ...claim,
+          expiry: null,
+          claim: {
+            type: whitelistedType,
+            scope: 'someScope',
+          },
+        },
+      ];
+      /* eslint-disable @typescript-eslint/camelcase */
+      const claims = {
+        targetDID: targetDid,
+        issuer: issuerDid,
+        issuance_date: date,
+        last_update_date: date,
+      };
+      const didsWithClaimsQueryResponse: IdentityWithClaims[] = [
+        {
+          did: targetDid,
+          claims: [
+            {
+              ...claims,
+              expiry: null,
+              type: customerDueDiligenceType,
+            },
+            {
+              ...claims,
+              expiry: date,
+              type: jurisdictionType,
+              jurisdiction: 'someJurisdiction',
+              scope: 'someScope',
+            },
+            {
+              ...claims,
+              expiry: null,
+              type: whitelistedType,
+              jurisdiction: null,
+              scope: 'someScope',
+            },
+          ],
+        },
+      ];
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      polkadotMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      polkadotMockUtils.createApolloQueryStub(didsWithClaims({}).query, {
+        didsWithClaims: didsWithClaimsQueryResponse,
+      });
+
+      const getIssuedClaims = await polymesh.getIssuedClaims();
+
+      expect(getIssuedClaims).toEqual(fakeClaims);
+    });
+
+    test('should throw if the harvester query fails', async () => {
+      polkadotMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      polkadotMockUtils.throwOnHarvesterQuery();
+
+      return expect(polymesh.getIssuedClaims()).rejects.toThrow('Error in harvester query: Error');
     });
   });
 

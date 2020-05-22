@@ -1,5 +1,7 @@
 import BigNumber from 'bignumber.js';
 
+import { Identity } from '~/api/entities';
+
 export enum TransactionStatus {
   /**
    * the transaction is prepped to run
@@ -193,6 +195,14 @@ export type Claim =
   | { type: ClaimType.NoData }
   | { type: ClaimType.CustomerDueDiligence }
   | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string };
+
+export type ClaimData = {
+  target: Identity;
+  issuer: Identity;
+  issuedAt: Date;
+  expiry: Date | null;
+  claim: Claim;
+};
 
 export enum ConditionType {
   IsPresent = 'IsPresent',

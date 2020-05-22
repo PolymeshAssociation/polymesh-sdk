@@ -688,6 +688,40 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
 /**
  * @hidden
  */
+export function stringToClaimType(claim: string): ClaimType {
+  if (claim === 'Accredited') {
+    return ClaimType.Accredited;
+  }
+  if (claim === 'Affiliate') {
+    return ClaimType.Affiliate;
+  }
+  if (claim === 'BuyLockup') {
+    return ClaimType.BuyLockup;
+  }
+  if (claim === 'SellLockup') {
+    return ClaimType.SellLockup;
+  }
+  if (claim === 'CustomerDueDiligence') {
+    return ClaimType.CustomerDueDiligence;
+  }
+  if (claim === 'KnowYourCustomer') {
+    return ClaimType.KnowYourCustomer;
+  }
+  if (claim === 'Jurisdiction') {
+    return ClaimType.Jurisdiction;
+  }
+  if (claim === 'Whitelisted') {
+    return ClaimType.Whitelisted;
+  }
+  if (claim === 'Blacklisted') {
+    return ClaimType.Blacklisted;
+  }
+  return ClaimType.NoData;
+}
+
+/**
+ * @hidden
+ */
 export function meshClaimToClaim(claim: MeshClaim): Claim {
   if (claim.isJurisdiction) {
     const [name, scope] = claim.asJurisdiction;
