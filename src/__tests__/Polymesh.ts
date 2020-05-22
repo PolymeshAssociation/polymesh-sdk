@@ -411,14 +411,6 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getSecurityToken', () => {
-    beforeAll(() => {
-      //
-    });
-
-    afterAll(() => {
-      //
-    });
-
     test('should return a list of issued claims', async () => {
       const context = polkadotMockUtils.getContextInstance();
       const targetDid = 'someTargetDid';
