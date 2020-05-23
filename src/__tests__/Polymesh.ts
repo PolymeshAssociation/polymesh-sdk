@@ -462,7 +462,7 @@ describe('Polymesh Class', () => {
         returnValue: polkadotMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
           owner_did: polkadotMockUtils.createMockIdentityId(),
-          name: polkadotMockUtils.createMockTokenName(ticker),
+          name: polkadotMockUtils.createMockAssetName(ticker),
           asset_type: polkadotMockUtils.createMockAssetType(),
           divisible: polkadotMockUtils.createMockBool(),
           link_id: polkadotMockUtils.createMockU64(),
@@ -487,7 +487,7 @@ describe('Polymesh Class', () => {
         returnValue: polkadotMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
           owner_did: polkadotMockUtils.createMockIdentityId(),
-          name: polkadotMockUtils.createMockTokenName(),
+          name: polkadotMockUtils.createMockAssetName(),
           asset_type: polkadotMockUtils.createMockAssetType(),
           divisible: polkadotMockUtils.createMockBool(),
           link_id: polkadotMockUtils.createMockU64(),

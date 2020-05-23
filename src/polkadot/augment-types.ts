@@ -601,6 +601,7 @@ import {
   AccountKey,
   AssetDidResult,
   AssetIdentifier,
+  AssetName,
   AssetTransferRule,
   AssetTransferRules,
   AssetType,
@@ -693,7 +694,6 @@ import {
   TickerRegistration,
   TickerRegistrationConfig,
   TickerTransferApproval,
-  TokenName,
   Url,
   VotingResult,
 } from 'polymesh-types/polymesh';
@@ -2450,9 +2450,9 @@ declare module '@polkadot/types/types/registry' {
     IdentifierType: IdentifierType;
     'Option<IdentifierType>': Option<IdentifierType>;
     'Vec<IdentifierType>': Vec<IdentifierType>;
-    TokenName: TokenName;
-    'Option<TokenName>': Option<TokenName>;
-    'Vec<TokenName>': Vec<TokenName>;
+    AssetName: AssetName;
+    'Option<AssetName>': Option<AssetName>;
+    'Vec<AssetName>': Vec<AssetName>;
     AssetIdentifier: AssetIdentifier;
     'Option<AssetIdentifier>': Option<AssetIdentifier>;
     'Vec<AssetIdentifier>': Vec<AssetIdentifier>;

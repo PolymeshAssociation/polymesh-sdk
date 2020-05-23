@@ -61,7 +61,7 @@ describe('SecurityToken class', () => {
         returnValue: polkadotMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
           owner_did: polkadotMockUtils.createMockIdentityId(owner),
-          name: polkadotMockUtils.createMockTokenName(ticker),
+          name: polkadotMockUtils.createMockAssetName(ticker),
           asset_type: polkadotMockUtils.createMockAssetType(assetType),
           divisible: polkadotMockUtils.createMockBool(isDivisible),
           link_id: polkadotMockUtils.createMockU64(3),

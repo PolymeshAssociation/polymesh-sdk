@@ -33,11 +33,11 @@ export default {
         Isin: '',
       },
     },
-    TokenName: 'Text',
+    AssetName: 'Text',
     AssetIdentifier: 'Text',
     FundingRoundName: 'Text',
     SecurityToken: {
-      name: 'TokenName',
+      name: 'AssetName',
       total_supply: 'Balance',
       owner_did: 'IdentityId',
       divisible: 'bool',
@@ -177,7 +177,7 @@ export default {
     Investment: {
       investor_did: 'IdentityId',
       amount_paid: 'Balance',
-      tokens_purchased: 'Balance',
+      assets_purchased: 'Balance',
       last_purchase_date: 'Moment',
     },
     SimpleTokenRecord: {
@@ -623,12 +623,12 @@ export default {
           {
             name: 'from_did',
             type: 'IdentityId',
-            isOptional: false,
+            isOptional: true,
           },
           {
             name: 'to_did',
             type: 'IdentityId',
-            isOptional: false,
+            isOptional: true,
           },
           {
             name: 'value',
