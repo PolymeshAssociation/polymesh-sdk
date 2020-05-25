@@ -1,4 +1,5 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
+import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 
@@ -109,16 +110,40 @@ describe('Transfers class', () => {
   });
 
   describe('method: areFrozen', () => {
-    test('should return whether the security token is frozen or not', async () => {
-      const boolValue = true;
+    let frozenStub: sinon.SinonStub;
+    let boolValue: boolean;
+    let rawBoolValue: bool;
 
-      polkadotMockUtils.createQueryStub('asset', 'frozen', {
-        returnValue: polkadotMockUtils.createMockBool(boolValue),
-      });
+    beforeAll(() => {
+      boolValue = true;
+      rawBoolValue = polkadotMockUtils.createMockBool(boolValue);
+    });
+
+    beforeEach(() => {
+      frozenStub = polkadotMockUtils.createQueryStub('asset', 'frozen');
+    });
+
+    test('should return whether the security token is frozen or not', async () => {
+      frozenStub.resolves(rawBoolValue);
 
       const result = await transfers.areFrozen();
 
       expect(result).toBe(boolValue);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      frozenStub.callsFake(async (_, cbFunc) => {
+        cbFunc(rawBoolValue);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await transfers.areFrozen(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, boolValue);
     });
   });
 

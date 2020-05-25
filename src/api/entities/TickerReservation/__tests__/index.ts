@@ -46,22 +46,23 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: details', () => {
-    let tickersStub: sinon.SinonStub;
-    let tokensStub: sinon.SinonStub;
+    let queryMultiStub: sinon.SinonStub;
 
     beforeEach(() => {
-      tickersStub = polkadotMockUtils.createQueryStub('asset', 'tickers', {
-        returnValue: polkadotMockUtils.createMockTickerRegistration(),
-      });
-      tokensStub = polkadotMockUtils.createQueryStub('asset', 'tokens', {
-        returnValue: polkadotMockUtils.createMockSecurityToken(),
-      });
+      polkadotMockUtils.createQueryStub('asset', 'tickers');
+      polkadotMockUtils.createQueryStub('asset', 'tokens');
+      queryMultiStub = polkadotMockUtils.getQueryMultiStub();
     });
 
     test('should return details for a free ticker', async () => {
       const ticker = 'abc';
       const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
+
+      queryMultiStub.resolves([
+        polkadotMockUtils.createMockTickerRegistration(),
+        polkadotMockUtils.createMockSecurityToken(),
+      ]);
 
       const details = await tickerReservation.details();
 
@@ -79,14 +80,15 @@ describe('TickerReservation class', () => {
       const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      tickersStub.returns(
+      queryMultiStub.resolves([
         polkadotMockUtils.createMockTickerRegistration({
           owner: polkadotMockUtils.createMockIdentityId(ownerDid),
           expiry: polkadotMockUtils.createMockOption(
             polkadotMockUtils.createMockMoment(expiryDate.getTime())
           ),
-        })
-      );
+        }),
+        polkadotMockUtils.createMockSecurityToken(),
+      ]);
 
       const details = await tickerReservation.details();
 
@@ -104,12 +106,13 @@ describe('TickerReservation class', () => {
       const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      tickersStub.returns(
+      queryMultiStub.resolves([
         polkadotMockUtils.createMockTickerRegistration({
           owner: polkadotMockUtils.createMockIdentityId(ownerDid),
           expiry: polkadotMockUtils.createMockOption(), // null expiry
-        })
-      );
+        }),
+        polkadotMockUtils.createMockSecurityToken(),
+      ]);
 
       const details = await tickerReservation.details();
 
@@ -127,14 +130,15 @@ describe('TickerReservation class', () => {
       const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      tickersStub.returns(
+      queryMultiStub.resolves([
         polkadotMockUtils.createMockTickerRegistration({
           owner: polkadotMockUtils.createMockIdentityId(ownerDid),
           expiry: polkadotMockUtils.createMockOption(
             polkadotMockUtils.createMockMoment(expiryDate.getTime())
           ),
-        })
-      );
+        }),
+        polkadotMockUtils.createMockSecurityToken(),
+      ]);
 
       const details = await tickerReservation.details();
 
@@ -152,13 +156,11 @@ describe('TickerReservation class', () => {
       const context = polkadotMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      tickersStub.returns(
+      queryMultiStub.resolves([
         polkadotMockUtils.createMockTickerRegistration({
           owner: polkadotMockUtils.createMockIdentityId(ownerDid),
           expiry: polkadotMockUtils.createMockOption(),
-        })
-      );
-      tokensStub.returns(
+        }),
         polkadotMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
           owner_did: polkadotMockUtils.createMockIdentityId(ownerDid),
@@ -168,8 +170,8 @@ describe('TickerReservation class', () => {
           link_id: polkadotMockUtils.createMockU64(3),
           total_supply: polkadotMockUtils.createMockBalance(1000),
           /* eslint-enable @typescript-eslint/camelcase */
-        })
-      );
+        }),
+      ]);
 
       const details = await tickerReservation.details();
 
@@ -177,6 +179,32 @@ describe('TickerReservation class', () => {
         owner: { did: ownerDid },
         expiryDate,
         status: TickerReservationStatus.TokenCreated,
+      });
+    });
+
+    test('should allow subscription', async () => {
+      const ticker = 'abc';
+      const context = polkadotMockUtils.getContextInstance();
+      const tickerReservation = new TickerReservation({ ticker }, context);
+
+      const unsubCallback = 'unsubCallback';
+
+      queryMultiStub.callsFake(async (_, cbFunc) => {
+        cbFunc([
+          polkadotMockUtils.createMockTickerRegistration(),
+          polkadotMockUtils.createMockSecurityToken(),
+        ]);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const unsub = await tickerReservation.details(callback);
+
+      expect(unsub).toBe(unsubCallback);
+      sinon.assert.calledWith(callback, {
+        owner: null,
+        expiryDate: null,
+        status: TickerReservationStatus.Free,
       });
     });
   });

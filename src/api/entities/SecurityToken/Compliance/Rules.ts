@@ -1,6 +1,10 @@
+import { QueryableStorageEntry } from '@polkadot/api/types';
+import { Vec } from '@polkadot/types/codec';
+
 import { setTokenRules, SetTokenRulesParams, togglePauseRules } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { Rule } from '~/types';
+import { AssetTransferRules, IdentityId } from '~/polkadot';
+import { Rule, SubCallback, UnsubCallback } from '~/types';
 import { assetTransferRuleToRule, identityIdToString, stringToTicker } from '~/utils';
 
 import { SecurityToken } from '../';
@@ -28,37 +32,65 @@ export class Rules extends Namespace<SecurityToken> {
     return setTokenRules.prepare({ ticker, ...args }, context);
   }
 
+  public get(): Promise<Rule[]>;
+  public get(callback: SubCallback<Rule[]>): Promise<UnsubCallback>;
+
   /**
    * Retrieve all of the Security Token's transfer rules
+   *
+   * @note can be subscribed to
    */
-  public async get(): Promise<Rule[]> {
+  public async get(callback?: SubCallback<Rule[]>): Promise<Rule[] | UnsubCallback> {
     const {
       parent: { ticker },
       context: {
         polymeshApi: {
           query: { complianceManager },
+          queryMulti,
         },
       },
       context,
     } = this;
-    // TODO: queryMulti
+
     const rawTicker = stringToTicker(ticker, context);
-    const [tokenRules, defaultClaimIssuers] = await Promise.all([
-      complianceManager.assetRulesMap(rawTicker),
-      complianceManager.trustedClaimIssuer(rawTicker),
+
+    const assembleResult = ([transferRules, claimIssuers]: [
+      AssetTransferRules,
+      Vec<IdentityId>
+    ]): Rule[] => {
+      const defaultTrustedClaimIssuers = claimIssuers.map(identityIdToString);
+
+      return transferRules.rules.map(assetTransferRule => {
+        const rule = assetTransferRuleToRule(assetTransferRule);
+
+        rule.conditions.forEach(condition => {
+          if (!condition.trustedClaimIssuers || !condition.trustedClaimIssuers.length) {
+            condition.trustedClaimIssuers = defaultTrustedClaimIssuers;
+          }
+        });
+
+        return rule;
+      });
+    };
+
+    if (callback) {
+      return queryMulti<[AssetTransferRules, Vec<IdentityId>]>(
+        [
+          [complianceManager.assetRulesMap as QueryableStorageEntry<'promise'>, rawTicker],
+          [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
+        ],
+        res => {
+          callback(assembleResult(res));
+        }
+      );
+    }
+
+    const result = await queryMulti<[AssetTransferRules, Vec<IdentityId>]>([
+      [complianceManager.assetRulesMap as QueryableStorageEntry<'promise'>, rawTicker],
+      [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
     ]);
 
-    return tokenRules.rules.map(assetTransferRule => {
-      const rule = assetTransferRuleToRule(assetTransferRule);
-
-      rule.conditions.forEach(condition => {
-        if (!condition.trustedClaimIssuers || !condition.trustedClaimIssuers.length) {
-          condition.trustedClaimIssuers = defaultClaimIssuers.map(identityIdToString);
-        }
-      });
-
-      return rule;
-    });
+    return assembleResult(result);
   }
 
   /**

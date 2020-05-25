@@ -21,9 +21,15 @@ import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { didsWithClaims } from '~/harvester/queries';
 import { IdentityWithClaims, Query } from '~/harvester/types';
-import { Claim, ClaimData, ClaimType, ErrorCode } from '~/types';
+import { Claim, ClaimData, ClaimType, ErrorCode, SubCallback, UnsubCallback } from '~/types';
 import { SignerType } from '~/types/internal';
-import { signerToSignatory, stringToClaimType, stringToTicker, tickerToString, valueToDid } from '~/utils';
+import {
+  signerToSignatory,
+  stringToClaimType,
+  stringToTicker,
+  tickerToString,
+  valueToDid,
+} from '~/utils';
 import { HARVESTER_ENDPOINT } from '~/utils/constants';
 
 /**
@@ -124,7 +130,7 @@ export class Polymesh {
     return transferPolyX.prepare(args, this.context);
   }
 
-  // TODO: uncomment the method after v1
+  // TODO: uncomment for v2
   /**
    * Get the POLYX balance of the current account
    * NOTE: We don't expose this method for Testnet v1
@@ -135,15 +141,47 @@ export class Polymesh {
   }
   */
 
+  public getAccountBalance(args?: { accountId: string }): Promise<BigNumber>;
+  public getAccountBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+  public getAccountBalance(
+    args: { accountId: string },
+    callback: SubCallback<BigNumber>
+  ): Promise<UnsubCallback>;
+
   /**
    * Get the free POLYX balance of an account
    *
    * @param args.accountId - defaults to the current account
+   *
+   * @note can be subscribed to
    */
-  public getAccountBalance(args?: { accountId: string }): Promise<BigNumber> {
+  public getAccountBalance(
+    args?: { accountId: string } | SubCallback<BigNumber>,
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
     const { context } = this;
+    let accountId: string | undefined;
+    let cb: SubCallback<BigNumber> | undefined = callback;
 
-    return context.accountBalance(args?.accountId);
+    switch (typeof args) {
+      case 'undefined': {
+        break;
+      }
+      case 'function': {
+        cb = args;
+        break;
+      }
+      default: {
+        ({ accountId } = args);
+        break;
+      }
+    }
+
+    if (cb) {
+      return context.accountBalance(accountId, cb);
+    }
+
+    return context.accountBalance(accountId);
   }
 
   /**

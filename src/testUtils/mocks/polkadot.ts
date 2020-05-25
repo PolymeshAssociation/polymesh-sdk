@@ -1,5 +1,6 @@
 /* istanbul ignore file */
 /* eslint-disable @typescript-eslint/camelcase */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { bool, Bytes, Enum, Option, u8, u32, u64 } from '@polkadot/types';
@@ -296,8 +297,9 @@ let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
 
 // TODO cast rpcModule to a better type
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let rpcModule = {} as any;
+
+let queryMultiStub = sinon.stub();
 
 const defaultContextOptions: ContextOptions = {
   did: 'someDid',
@@ -406,7 +408,6 @@ function updateTx(mod?: Extrinsics): void {
   mockInstanceContainer.apiInstance.tx = txModule;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * @hidden
  */
@@ -417,7 +418,17 @@ function updateRpc(mod?: any): void {
 
   mockInstanceContainer.apiInstance.rpc = rpcModule;
 }
-/* eslint-enabled @typescript-eslint/no-explicit-any */
+
+/**
+ * @hidden
+ */
+function updateQueryMulti(stub?: SinonStub): void {
+  const updateTo = stub || queryMultiStub;
+
+  queryMultiStub = updateTo;
+
+  mockInstanceContainer.apiInstance.queryMulti = queryMultiStub;
+}
 
 /**
  * @hidden
@@ -443,6 +454,17 @@ function initRpc(): void {
 
 /**
  * @hidden
+ *
+ * Mock queryMulti
+ */
+function initQueryMulti(): void {
+  const stub = sinon.stub();
+
+  updateQueryMulti(stub);
+}
+
+/**
+ * @hidden
  */
 function initApi(): void {
   mockInstanceContainer.apiInstance.registry = ('registry' as unknown) as Registry;
@@ -451,6 +473,7 @@ function initApi(): void {
   initTx();
   initQuery();
   initRpc();
+  initQueryMulti();
 
   apiPromiseCreateStub = sinon.stub();
   MockApiPromiseClass.create = apiPromiseCreateStub.resolves(mockInstanceContainer.apiInstance);
@@ -733,6 +756,13 @@ export function createRpcStub(
   }
 
   return stub;
+}
+
+/**
+ * @hidden
+ */
+export function getQueryMultiStub(): SinonStub {
+  return queryMultiStub;
 }
 
 /**

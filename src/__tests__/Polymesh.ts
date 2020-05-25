@@ -1,5 +1,5 @@
 import { Keyring } from '@polkadot/api';
-import { BigNumber } from 'bignumber.js';
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
@@ -9,7 +9,7 @@ import { didsWithClaims } from '~/harvester/queries';
 import { IdentityWithClaims } from '~/harvester/types';
 import { Polymesh } from '~/Polymesh';
 import { apolloMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
-import { ClaimTargets, ClaimType } from '~/types';
+import { ClaimTargets, ClaimType, SubCallback } from '~/types';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -161,6 +161,30 @@ describe('Polymesh Class', () => {
 
       const result = await polymesh.getAccountBalance({ accountId: 'someId' });
       expect(result).toEqual(fakeBalance);
+    });
+
+    test('should allow subscription (with and without a supplied account id)', async () => {
+      const fakeBalance = new BigNumber(100);
+      const unsubCallback = 'unsubCallback';
+      polkadotMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
+
+      const accountBalanceStub = polkadotMockUtils
+        .getContextInstance()
+        .accountBalance.resolves(unsubCallback);
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const callback = (() => 1 as unknown) as SubCallback<BigNumber>;
+      let result = await polymesh.getAccountBalance(callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(accountBalanceStub, undefined, callback);
+
+      const accountId = 'someId';
+      result = await polymesh.getAccountBalance({ accountId }, callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(accountBalanceStub, accountId, callback);
     });
   });
 

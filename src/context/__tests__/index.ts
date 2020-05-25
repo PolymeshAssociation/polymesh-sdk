@@ -10,6 +10,7 @@ jest.mock(
   require('~/testUtils/mocks/polkadot').mockPolkadotModule('@polkadot/api')
 );
 
+// TODO: refactor tests (too much repeated code)
 describe('Context class', () => {
   beforeAll(() => {
     polkadotMockUtils.initMocks();
@@ -437,6 +438,44 @@ describe('Context class', () => {
 
       const result = await context.accountBalance('accountId');
       expect(result).toEqual(utilsModule.balanceToBigNumber(freeBalance));
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+
+      const freeBalance = polkadotMockUtils.createMockBalance(100);
+      const returnValue = polkadotMockUtils.createMockAccountInfo({
+        nonce: polkadotMockUtils.createMockIndex(),
+        refcount: polkadotMockUtils.createMockRefCount(),
+        data: polkadotMockUtils.createMockAccountData({
+          free: freeBalance,
+          reserved: polkadotMockUtils.createMockBalance(),
+          miscFrozen: polkadotMockUtils.createMockBalance(),
+          feeFrozen: polkadotMockUtils.createMockBalance(),
+        }),
+      });
+      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: polkadotMockUtils.createMockOption(
+          polkadotMockUtils.createMockLinkedKeyInfo({
+            Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+      polkadotMockUtils.createQueryStub('system', 'account').callsFake(async (_, cbFunc) => {
+        cbFunc(returnValue);
+        return unsubCallback;
+      });
+
+      const context = await Context.create({
+        polymeshApi: polkadotMockUtils.getApiInstance(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const callback = sinon.stub();
+      const result = await context.accountBalance('accountId', callback);
+
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, utilsModule.balanceToBigNumber(freeBalance));
     });
   });
 

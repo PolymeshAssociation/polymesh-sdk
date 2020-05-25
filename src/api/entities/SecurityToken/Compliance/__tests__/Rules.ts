@@ -1,9 +1,12 @@
+import { Vec } from '@polkadot/types/codec';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
 import { setTokenRules, togglePauseRules } from '~/api/procedures';
 import { Params } from '~/api/procedures/setTokenRules';
 import { Namespace, TransactionQueue } from '~/base';
+import { Context } from '~/context';
+import { AssetTransferRules, IdentityId } from '~/polkadot';
 import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
 import { ClaimType, ConditionTarget, ConditionType, Rule } from '~/types';
 
@@ -97,21 +100,33 @@ describe('Rules class', () => {
   });
 
   describe('method: get', () => {
-    afterAll(() => {
-      sinon.restore();
-    });
+    let ticker: string;
+    let context: Context;
+    let token: SecurityToken;
+    let rules: Rules;
+    let defaultClaimIssuers: string[];
+    let notDefaultClaimIssuer: string;
+    let tokenDid: string;
 
-    test('should return all transfer rules attached to the Security Token, using the default trusted claim issuers where none are set', async () => {
-      const ticker = 'test';
-      const context = polkadotMockUtils.getContextInstance();
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
-      const rules = new Rules(token, context);
+    let expected: Rule[];
 
-      const defaultClaimIssuers = ['defaultissuer'];
-      const notDefaultClaimIssuer = 'notDefaultClaimIssuer';
-      const tokenDid = 'someTokenDid';
+    let queryMultiStub: sinon.SinonStub;
+    let queryMultiResult: [AssetTransferRules, Vec<IdentityId>];
+
+    beforeEach(() => {
+      ticker = 'test';
+      context = polkadotMockUtils.getContextInstance();
+      token = entityMockUtils.getSecurityTokenInstance({ ticker });
+      rules = new Rules(token, context);
+      defaultClaimIssuers = ['defaultissuer'];
+      notDefaultClaimIssuer = 'notDefaultClaimIssuer';
+      tokenDid = 'someTokenDid';
+      polkadotMockUtils.createQueryStub('complianceManager', 'assetRulesMap');
+      polkadotMockUtils.createQueryStub('complianceManager', 'trustedClaimIssuer');
+
+      queryMultiStub = polkadotMockUtils.getQueryMultiStub();
+
       const scope = polkadotMockUtils.createMockScope(tokenDid);
-
       const ruleForBoth = polkadotMockUtils.createMockRule({
         // eslint-disable-next-line @typescript-eslint/camelcase
         rule_type: polkadotMockUtils.createMockRuleType({
@@ -125,8 +140,8 @@ describe('Rules class', () => {
         issuers: [],
       });
 
-      polkadotMockUtils.createQueryStub('complianceManager', 'assetRulesMap', {
-        returnValue: {
+      queryMultiResult = [
+        {
           rules: [
             polkadotMockUtils.createMockAssetTransferRule({
               /* eslint-disable @typescript-eslint/camelcase */
@@ -160,15 +175,11 @@ describe('Rules class', () => {
               /* eslint-enable @typescript-eslint/camelcase */
             }),
           ],
-        },
-      });
+        } as AssetTransferRules,
+        (defaultClaimIssuers as unknown) as Vec<IdentityId>,
+      ];
 
-      polkadotMockUtils.createQueryStub('complianceManager', 'trustedClaimIssuer', {
-        returnValue: defaultClaimIssuers,
-      });
-
-      const result = await rules.get();
-      const expected: Rule[] = [
+      expected = [
         {
           id: 1,
           conditions: [
@@ -210,8 +221,32 @@ describe('Rules class', () => {
           ],
         },
       ];
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return all transfer rules attached to the Security Token, using the default trusted claim issuers where none are set', async () => {
+      queryMultiStub.resolves(queryMultiResult);
+      const result = await rules.get();
 
       expect(result).toEqual(expected);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      queryMultiStub.callsFake((_, cbFunc) => {
+        cbFunc(queryMultiResult);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+
+      const result = await rules.get(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, expected);
     });
   });
 

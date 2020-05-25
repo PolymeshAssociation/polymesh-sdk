@@ -4,7 +4,15 @@ import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode, isCddProviderRole, isTickerOwnerRole, isTokenOwnerRole, Role } from '~/types';
+import {
+  ErrorCode,
+  isCddProviderRole,
+  isTickerOwnerRole,
+  isTokenOwnerRole,
+  Role,
+  SubCallback,
+  UnsubCallback,
+} from '~/types';
 import {
   balanceToBigNumber,
   cddStatusToBoolean,
@@ -56,23 +64,40 @@ export class Identity extends Entity<UniqueIdentifiers> {
     this.authorizations = new Authorizations(this, context);
   }
 
-  /**
-   * Retrieve the POLYX balance of this particular Identity
-   */
-  public async getPolyXBalance(): Promise<BigNumber> {
-    const {
-      did,
-      context,
-      context: {
-        polymeshApi: {
-          query: { balances },
-        },
-      },
-    } = this;
-    const balance = await balances.identityBalance(stringToIdentityId(did, context));
+  // TODO: uncomment for v2
+  // public getPolyXBalance(): Promise<BigNumber>;
+  // public getPolyXBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
 
-    return balanceToBigNumber(balance);
-  }
+  // /**
+  //  * Retrieve the POLYX balance of this particular Identity
+  //  *
+  //  * @note can be subscribed to
+  //  */
+  // public async getPolyXBalance(
+  //   callback?: SubCallback<BigNumber>
+  // ): Promise<BigNumber | UnsubCallback> {
+  //   const {
+  //     did,
+  //     context,
+  //     context: {
+  //       polymeshApi: {
+  //         query: { balances },
+  //       },
+  //     },
+  //   } = this;
+
+  //   const rawIdentityId = stringToIdentityId(did, context);
+
+  //   if (callback) {
+  //     return balances.identityBalance(rawIdentityId, res => {
+  //       callback(balanceToBigNumber(res));
+  //     });
+  //   }
+
+  //   const balance = await balances.identityBalance(rawIdentityId);
+
+  //   return balanceToBigNumber(balance);
+  // }
 
   /**
    * Check whether this Identity possesses the specified Role
@@ -113,10 +138,21 @@ export class Identity extends Entity<UniqueIdentifiers> {
     });
   }
 
+  public getTokenBalance(args: { ticker: string }): Promise<BigNumber>;
+  public getTokenBalance(
+    args: { ticker: string },
+    callback: SubCallback<BigNumber>
+  ): Promise<UnsubCallback>;
+
   /**
    * Retrieve the balance of a particular Security Token
+   *
+   * @note can be subscribed to
    */
-  public async getTokenBalance(ticker: string): Promise<BigNumber> {
+  public async getTokenBalance(
+    args: { ticker: string },
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
     const {
       did,
       context,
@@ -126,11 +162,19 @@ export class Identity extends Entity<UniqueIdentifiers> {
         },
       },
     } = this;
+    const { ticker } = args;
 
-    const balance = await asset.balanceOf(
-      stringToTicker(ticker, context),
-      stringToIdentityId(did, context)
-    );
+    const rawTicker = stringToTicker(ticker, context);
+    const rawIdentityId = stringToIdentityId(did, context);
+
+    if (callback) {
+      return asset.balanceOf(rawTicker, rawIdentityId, res => {
+        callback(balanceToBigNumber(res));
+      });
+    }
+
+    const balance = await asset.balanceOf(rawTicker, rawIdentityId);
+
     return balanceToBigNumber(balance);
   }
 
