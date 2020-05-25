@@ -14,9 +14,9 @@ import * as utilsModule from '~/utils';
 
 jest.mock(
   '@polkadot/api',
-  require('~/testUtils/mocks/polkadot').mockPolkadotModule('@polkadot/api')
+  require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
 );
-jest.mock('~/context', require('~/testUtils/mocks/polkadot').mockContextModule('~/context'));
+jest.mock('~/context', require('~/testUtils/mocks/dataSources').mockContextModule('~/context'));
 jest.mock('apollo-client', require('~/testUtils/mocks/apollo').mockApolloModule('apollo-client'));
 
 describe('Polymesh Class', () => {

@@ -120,7 +120,7 @@ const MockContextClass = class {
   public static create = contextCreateStub;
 };
 
-let createErrStub: SinonStub;
+let errorStub: SinonStub;
 
 type StatusCallback = (receipt: ISubmittableResult) => void;
 type UnsubCallback = () => void;
@@ -560,7 +560,7 @@ export function initMocks(opts?: {
   initKeyring(opts?.keyringOptions);
 
   txMocksData.clear();
-  createErrStub = sinon.stub().throws(new Error('Error'));
+  errorStub = sinon.stub().throws(new Error('Error'));
 }
 
 /**
@@ -811,7 +811,7 @@ export function updateTxStatus<
  */
 export function throwOnHarvesterQuery(): void {
   const instance = mockInstanceContainer.apolloInstance;
-  instance.query = createErrStub;
+  instance.query = errorStub;
 }
 
 /**
@@ -819,7 +819,7 @@ export function throwOnHarvesterQuery(): void {
  * Make calls to `Context.create` throw an error
  */
 export function throwOnContextCreation(): void {
-  MockContextClass.create = createErrStub;
+  MockContextClass.create = errorStub;
 }
 
 /**
@@ -827,7 +827,7 @@ export function throwOnContextCreation(): void {
  * Make calls to `ApiPromise.create` throw an error
  */
 export function throwOnApiCreation(): void {
-  MockApiPromiseClass.create = createErrStub;
+  MockApiPromiseClass.create = errorStub;
 }
 
 /**

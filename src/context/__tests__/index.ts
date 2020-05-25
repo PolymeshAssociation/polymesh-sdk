@@ -7,7 +7,7 @@ import * as utilsModule from '~/utils';
 
 jest.mock(
   '@polkadot/api',
-  require('~/testUtils/mocks/polkadot').mockPolkadotModule('@polkadot/api')
+  require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
 );
 
 // TODO: refactor tests (too much repeated code)

@@ -111,9 +111,9 @@ import {
 
 jest.mock(
   '@polkadot/api',
-  require('~/testUtils/mocks/polkadot').mockPolkadotModule('@polkadot/api')
+  require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
 );
-jest.mock('~/context', require('~/testUtils/mocks/polkadot').mockContextModule('~/context'));
+jest.mock('~/context', require('~/testUtils/mocks/dataSources').mockContextModule('~/context'));
 
 describe('delay', () => {
   jest.useFakeTimers();
