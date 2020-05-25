@@ -48,6 +48,7 @@ import {
   accountIdToString,
   accountKeyToString,
   assetIdentifierToString,
+  assetNameToString,
   assetTransferRuleToRule,
   assetTypeToString,
   authIdentifierToAuthTarget,
@@ -99,7 +100,6 @@ import {
   tickerToString,
   tokenDocumentToDocument,
   tokenIdentifierTypeToIdentifierType,
-  tokenNameToString,
   tokenTypeToAssetType,
   u8ToTransferStatus,
   u64ToBigNumber,
@@ -473,7 +473,7 @@ describe('stringToTicker and tickerToString', () => {
   });
 });
 
-describe('stringToAssetName and tokenNameToString', () => {
+describe('stringToAssetName and assetNameToString', () => {
   beforeAll(() => {
     polkadotMockUtils.initMocks();
   });
@@ -501,11 +501,11 @@ describe('stringToAssetName and tokenNameToString', () => {
     expect(result).toEqual(fakeResult);
   });
 
-  test('tokenNameToString should convert a polkadot AssetName object to a string', () => {
+  test('assetNameToString should convert a polkadot AssetName object to a string', () => {
     const fakeResult = 'someAssetName';
-    const tokenName = polkadotMockUtils.createMockAssetName(fakeResult);
+    const assetName = polkadotMockUtils.createMockAssetName(fakeResult);
 
-    const result = tokenNameToString(tokenName);
+    const result = assetNameToString(assetName);
     expect(result).toEqual(fakeResult);
   });
 });

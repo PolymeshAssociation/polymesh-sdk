@@ -136,7 +136,7 @@ export function stringToAssetName(name: string, context: Context): AssetName {
 /**
  * @hidden
  */
-export function tokenNameToString(name: AssetName): string {
+export function assetNameToString(name: AssetName): string {
   return name.toString();
 }
 
