@@ -205,7 +205,7 @@ export type Query = {
   /** Get Bridged event by Ethereum transaction hash */
   bridgedEventByTxHash?: Maybe<Event>;
   /** Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers */
-  didsWithClaims?: Maybe<Array<Maybe<IdentityWithClaims>>>;
+  didsWithClaims: Array<IdentityWithClaims>;
 };
 
 export type QueryBlocksArgs = {
@@ -269,10 +269,10 @@ export type QueryBridgedEventByTxHashArgs = {
 };
 
 export type QueryDidsWithClaimsArgs = {
-  dids?: Maybe<Array<Maybe<Scalars['String']>>>;
+  dids?: Maybe<Array<Scalars['String']>>;
   scope?: Maybe<Scalars['String']>;
-  trustedClaimIssuers?: Maybe<Array<Maybe<Scalars['String']>>>;
-  claimTypes?: Maybe<Array<Maybe<Scalars['String']>>>;
+  trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
+  claimTypes?: Maybe<Array<Scalars['String']>>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
@@ -672,7 +672,7 @@ export type QueryResolvers<
     RequireFields<QueryBridgedEventByTxHashArgs, 'ethTransactionHash'>
   >;
   didsWithClaims?: Resolver<
-    Maybe<Array<Maybe<ResolversTypes['IdentityWithClaims']>>>,
+    Array<ResolversTypes['IdentityWithClaims']>,
     ParentType,
     ContextType,
     RequireFields<QueryDidsWithClaimsArgs, never>

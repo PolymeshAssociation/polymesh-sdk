@@ -20,12 +20,12 @@ import {
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { didsWithClaims } from '~/harvester/queries';
-import { IdentityWithClaims, Query } from '~/harvester/types';
-import { Claim, ClaimData, ClaimType, ErrorCode, SubCallback, UnsubCallback } from '~/types';
+import { Query } from '~/harvester/types';
+import { ClaimData, Ensured, ErrorCode, SubCallback, UnsubCallback } from '~/types';
 import { SignerType } from '~/types/internal';
 import {
+  createClaim,
   signerToSignatory,
-  stringToClaimType,
   stringToTicker,
   tickerToString,
   valueToDid,
@@ -64,7 +64,7 @@ export class Polymesh {
   }): Promise<Polymesh> {
     const { nodeUrl, accountSeed, keyring, accountUri } = params;
     let polymeshApi: ApiPromise;
-    let apolloClient: ApolloClient<NormalizedCacheObject>;
+    let harvesterClient: ApolloClient<NormalizedCacheObject>;
 
     try {
       const { types, rpc } = polymesh;
@@ -75,7 +75,7 @@ export class Polymesh {
         rpc,
       });
 
-      apolloClient = new ApolloClient({
+      harvesterClient = new ApolloClient({
         link: ApolloLink.from([
           new HttpLink({
             uri: HARVESTER_ENDPOINT,
@@ -89,25 +89,25 @@ export class Polymesh {
       if (accountSeed) {
         context = await Context.create({
           polymeshApi,
-          apolloClient,
+          harvesterClient,
           seed: accountSeed,
         });
       } else if (keyring) {
         context = await Context.create({
           polymeshApi,
-          apolloClient,
+          harvesterClient,
           keyring,
         });
       } else if (accountUri) {
         context = await Context.create({
           polymeshApi,
-          apolloClient,
+          harvesterClient,
           uri: accountUri,
         });
       } else {
         context = await Context.create({
           polymeshApi,
-          apolloClient,
+          harvesterClient,
         });
       }
 
@@ -394,7 +394,7 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all issued claims
+   * Retrieve all claims issued by the current identity
    */
   public async getIssuedClaims(): Promise<ClaimData[]> {
     const {
@@ -419,40 +419,21 @@ export class Polymesh {
       });
     }
 
-    const identityWithClaims = (result.data.didsWithClaims as unknown) as IdentityWithClaims[];
-
+    const didsWithClaimsResult: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>> = result;
+    const {
+      data: { didsWithClaims: didsWithClaimsList },
+    } = didsWithClaimsResult;
     const claimData: ClaimData[] = [];
 
-    identityWithClaims.forEach(({ claims }) => {
+    didsWithClaimsList.forEach(({ claims }) => {
       claims.forEach(
         ({ targetDID, issuer, issuance_date: issuanceDate, expiry, type, jurisdiction, scope }) => {
-          const claimType = stringToClaimType(type);
-          let claim = {
-            type: claimType,
-          } as Claim;
-
-          if (claimType === ClaimType.Jurisdiction) {
-            claim = {
-              ...claim,
-              name: jurisdiction as string,
-              scope: scope as string,
-            } as Claim;
-          } else if (
-            claimType !== ClaimType.NoData &&
-            claimType !== ClaimType.CustomerDueDiligence
-          ) {
-            claim = {
-              ...claim,
-              scope: scope as string,
-            } as Claim;
-          }
-
           claimData.push({
             target: new Identity({ did: targetDID }, context),
             issuer: new Identity({ did: issuer }, context),
             issuedAt: new Date(issuanceDate),
             expiry: expiry ? new Date(expiry) : null,
-            claim,
+            claim: createClaim(type, jurisdiction, scope),
           });
         }
       );

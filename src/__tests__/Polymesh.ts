@@ -54,7 +54,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: polkadotMockUtils.getApiInstance(),
-        apolloClient: apolloMockUtils.getApolloClient(),
+        harvesterClient: apolloMockUtils.getHarvesterClient(),
         seed: accountSeed,
       });
     });
@@ -71,7 +71,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: polkadotMockUtils.getApiInstance(),
-        apolloClient: apolloMockUtils.getApolloClient(),
+        harvesterClient: apolloMockUtils.getHarvesterClient(),
         keyring,
       });
     });
@@ -88,7 +88,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: polkadotMockUtils.getApiInstance(),
-        apolloClient: apolloMockUtils.getApolloClient(),
+        harvesterClient: apolloMockUtils.getHarvesterClient(),
         uri: accountUri,
       });
     });
@@ -434,7 +434,7 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getSecurityToken', () => {
+  describe('method: getIssuedClaims', () => {
     test('should return a list of issued claims', async () => {
       const context = polkadotMockUtils.getContextInstance();
       const targetDid = 'someTargetDid';
@@ -475,7 +475,7 @@ describe('Polymesh Class', () => {
         },
       ];
       /* eslint-disable @typescript-eslint/camelcase */
-      const claims = {
+      const commonClaimData = {
         targetDID: targetDid,
         issuer: issuerDid,
         issuance_date: date,
@@ -486,19 +486,19 @@ describe('Polymesh Class', () => {
           did: targetDid,
           claims: [
             {
-              ...claims,
+              ...commonClaimData,
               expiry: null,
               type: customerDueDiligenceType,
             },
             {
-              ...claims,
+              ...commonClaimData,
               expiry: date,
               type: jurisdictionType,
               jurisdiction: 'someJurisdiction',
               scope: 'someScope',
             },
             {
-              ...claims,
+              ...commonClaimData,
               expiry: null,
               type: whitelistedType,
               jurisdiction: null,
@@ -520,9 +520,9 @@ describe('Polymesh Class', () => {
         didsWithClaims: didsWithClaimsQueryResponse,
       });
 
-      const getIssuedClaims = await polymesh.getIssuedClaims();
+      const result = await polymesh.getIssuedClaims();
 
-      expect(getIssuedClaims).toEqual(fakeClaims);
+      expect(result).toEqual(fakeClaims);
     });
 
     test('should throw if the harvester query fails', async () => {

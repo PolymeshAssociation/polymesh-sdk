@@ -19,7 +19,7 @@ interface SignerData {
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
-  apolloClient: ApolloClient<NormalizedCacheObject>;
+  harvesterClient: ApolloClient<NormalizedCacheObject>;
   keyring: Keyring;
   pair?: SignerData;
 }
@@ -51,7 +51,7 @@ export class Context {
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, apolloClient, keyring, pair } = params;
+    const { polymeshApi, harvesterClient, keyring, pair } = params;
 
     this.polymeshApi = new Proxy(polymeshApi, {
       get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
@@ -72,30 +72,30 @@ export class Context {
       this.currentIdentity = new Identity({ did: pair.did.toString() }, this);
     }
 
-    this.harvester = apolloClient;
+    this.harvester = harvesterClient;
   }
 
   static async create(params: {
     polymeshApi: ApiPromise;
-    apolloClient: ApolloClient<NormalizedCacheObject>;
+    harvesterClient: ApolloClient<NormalizedCacheObject>;
     seed: string;
   }): Promise<Context>;
 
   static async create(params: {
     polymeshApi: ApiPromise;
-    apolloClient: ApolloClient<NormalizedCacheObject>;
+    harvesterClient: ApolloClient<NormalizedCacheObject>;
     keyring: Keyring;
   }): Promise<Context>;
 
   static async create(params: {
     polymeshApi: ApiPromise;
-    apolloClient: ApolloClient<NormalizedCacheObject>;
+    harvesterClient: ApolloClient<NormalizedCacheObject>;
     uri: string;
   }): Promise<Context>;
 
   static async create(params: {
     polymeshApi: ApiPromise;
-    apolloClient: ApolloClient<NormalizedCacheObject>;
+    harvesterClient: ApolloClient<NormalizedCacheObject>;
   }): Promise<Context>;
 
   /**
@@ -103,12 +103,12 @@ export class Context {
    */
   static async create(params: {
     polymeshApi: ApiPromise;
-    apolloClient: ApolloClient<NormalizedCacheObject>;
+    harvesterClient: ApolloClient<NormalizedCacheObject>;
     seed?: string;
     keyring?: Keyring;
     uri?: string;
   }): Promise<Context> {
-    const { polymeshApi, apolloClient, seed, keyring: passedKeyring, uri } = params;
+    const { polymeshApi, harvesterClient, seed, keyring: passedKeyring, uri } = params;
 
     let keyring = new Keyring({ type: 'sr25519' });
     let currentPair: IKeyringPair | undefined;
@@ -136,7 +136,7 @@ export class Context {
         );
         const did = identityIds.unwrap().asUnique;
 
-        return new Context({ polymeshApi, apolloClient, keyring, pair: { currentPair, did } });
+        return new Context({ polymeshApi, harvesterClient, keyring, pair: { currentPair, did } });
       } catch (err) {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
@@ -145,7 +145,7 @@ export class Context {
       }
     }
 
-    return new Context({ polymeshApi, apolloClient, keyring });
+    return new Context({ polymeshApi, harvesterClient, keyring });
   }
 
   /**

@@ -61,6 +61,7 @@ import {
   canTransferResultToTransferStatus,
   cddStatusToBoolean,
   claimToMeshClaim,
+  createClaim,
   dateToMoment,
   delay,
   documentHashToString,
@@ -86,7 +87,6 @@ import {
   stringToAccountKey,
   stringToAssetIdentifier,
   stringToBytes,
-  stringToClaimType,
   stringToDocumentHash,
   stringToDocumentName,
   stringToDocumentUri,
@@ -1539,57 +1539,34 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
   });
 });
 
-describe('stringToClaimType', () => {
-  test('stringToClaimType should convert a string to a ClaimType object', () => {
-    let fakeResult = ClaimType.Accredited;
-    let claimType = 'Accredited';
-    let result = stringToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+describe('createClaim', () => {
+  test('', () => {
+    let type = 'Jurisdiction';
+    const jurisdiction = 'someJurisdiction';
+    let scope = 'someScope';
 
-    fakeResult = ClaimType.Affiliate;
-    claimType = 'Affiliate';
-    result = stringToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+    let result = createClaim(type, jurisdiction, scope);
+    expect(result).toEqual({
+      type: ClaimType.Jurisdiction,
+      name: jurisdiction,
+      scope,
+    });
 
-    fakeResult = ClaimType.BuyLockup;
-    claimType = 'BuyLockup';
-    result = stringToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+    type = 'BuyLockup';
+    scope = 'someScope';
 
-    fakeResult = ClaimType.SellLockup;
-    claimType = 'SellLockup';
-    result = stringToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+    result = createClaim(type, null, scope);
+    expect(result).toEqual({
+      type: ClaimType.BuyLockup,
+      scope,
+    });
 
-    fakeResult = ClaimType.CustomerDueDiligence;
-    claimType = 'CustomerDueDiligence';
-    result = stringToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+    type = 'NoData';
 
-    fakeResult = ClaimType.KnowYourCustomer;
-    claimType = 'KnowYourCustomer';
-    result = stringToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = ClaimType.Jurisdiction;
-    claimType = 'Jurisdiction';
-    result = stringToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = ClaimType.Whitelisted;
-    claimType = 'Whitelisted';
-    result = stringToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = ClaimType.Blacklisted;
-    claimType = 'Blacklisted';
-    result = stringToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = ClaimType.NoData;
-    claimType = 'NoData';
-    result = stringToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+    result = createClaim(type, null, null);
+    expect(result).toEqual({
+      type: ClaimType.NoData,
+    });
   });
 });
 

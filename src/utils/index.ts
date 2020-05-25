@@ -695,35 +695,29 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
 /**
  * @hidden
  */
-export function stringToClaimType(claim: string): ClaimType {
-  if (claim === 'Accredited') {
-    return ClaimType.Accredited;
+export function createClaim(
+  type: string,
+  jurisdiction?: string | null,
+  scope?: string | null
+): Claim {
+  let claim = {
+    type,
+  } as Claim;
+
+  if (type === ClaimType.Jurisdiction) {
+    claim = {
+      ...claim,
+      name: jurisdiction as string,
+      scope: scope as string,
+    } as Claim;
+  } else if (type !== ClaimType.NoData && type !== ClaimType.CustomerDueDiligence) {
+    claim = {
+      ...claim,
+      scope: scope as string,
+    } as Claim;
   }
-  if (claim === 'Affiliate') {
-    return ClaimType.Affiliate;
-  }
-  if (claim === 'BuyLockup') {
-    return ClaimType.BuyLockup;
-  }
-  if (claim === 'SellLockup') {
-    return ClaimType.SellLockup;
-  }
-  if (claim === 'CustomerDueDiligence') {
-    return ClaimType.CustomerDueDiligence;
-  }
-  if (claim === 'KnowYourCustomer') {
-    return ClaimType.KnowYourCustomer;
-  }
-  if (claim === 'Jurisdiction') {
-    return ClaimType.Jurisdiction;
-  }
-  if (claim === 'Whitelisted') {
-    return ClaimType.Whitelisted;
-  }
-  if (claim === 'Blacklisted') {
-    return ClaimType.Blacklisted;
-  }
-  return ClaimType.NoData;
+
+  return claim;
 }
 
 /**

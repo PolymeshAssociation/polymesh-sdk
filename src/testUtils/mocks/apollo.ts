@@ -27,6 +27,6 @@ export const mockApolloModule = (path: string) => (): object => ({
  * @hidden
  * Retrieve an instance of the mocked Apollo Client
  */
-export function getApolloClient(): MockApolloClient {
+export function getHarvesterClient(): MockApolloClient {
   return mockApolloClient;
 }

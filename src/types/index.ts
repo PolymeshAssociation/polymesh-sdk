@@ -282,4 +282,6 @@ export interface ClaimTargets {
 export type SubCallback<T> = (result: T) => void | Promise<void>;
 export type UnsubCallback = () => void;
 
+export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
+
 export * from '~/api/entities/types';
