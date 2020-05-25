@@ -468,6 +468,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: polkadotMockUtils.getApiInstance(),
+        apolloClient: apolloMockUtils.getApolloClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
