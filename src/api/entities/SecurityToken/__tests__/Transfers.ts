@@ -8,7 +8,7 @@ import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import { Namespace, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { IdentityId, Ticker } from '~/polkadot';
-import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransferStatus } from '~/types';
 import * as utilsModule from '~/utils';
@@ -44,18 +44,18 @@ describe('Transfers class', () => {
     statusCode = 81;
     amount = new BigNumber(100);
     entityMockUtils.initMocks();
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     stringToAccountIdStub = sinon.stub(utilsModule, 'stringToAccountId');
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
     numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
-    rawToDid = polkadotMockUtils.createMockIdentityId(toDid);
-    rawAmount = polkadotMockUtils.createMockBalance(amount.toNumber());
+    rawToDid = dsMockUtils.createMockIdentityId(toDid);
+    rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
     prepareToggleFreezeTransfersStub = sinon.stub(toggleFreezeTransfers, 'prepare');
   });
 
   beforeEach(() => {
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
     mockSecurityToken = entityMockUtils.getSecurityTokenInstance();
     stringToIdentityIdStub.withArgs(toDid, mockContext).returns(rawToDid);
     numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
@@ -63,18 +63,18 @@ describe('Transfers class', () => {
     ticker = mockSecurityToken.ticker;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     accountId = mockContext.currentPair?.address!;
-    rawAccountId = polkadotMockUtils.createMockAccountId(accountId);
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    rawAccountId = dsMockUtils.createMockAccountId(accountId);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
     stringToAccountIdStub.withArgs(accountId, mockContext).returns(rawAccountId);
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -116,11 +116,11 @@ describe('Transfers class', () => {
 
     beforeAll(() => {
       boolValue = true;
-      rawBoolValue = polkadotMockUtils.createMockBool(boolValue);
+      rawBoolValue = dsMockUtils.createMockBool(boolValue);
     });
 
     beforeEach(() => {
-      frozenStub = polkadotMockUtils.createQueryStub('asset', 'frozen');
+      frozenStub = dsMockUtils.createQueryStub('asset', 'frozen');
     });
 
     test('should return whether the security token is frozen or not', async () => {
@@ -153,7 +153,7 @@ describe('Transfers class', () => {
 
     beforeAll(() => {
       fromDid = 'fromDid';
-      rawFromDid = polkadotMockUtils.createMockIdentityId(fromDid);
+      rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
     });
 
     beforeEach(() => {
@@ -163,8 +163,8 @@ describe('Transfers class', () => {
     test('should return a status value representing whether the transaction can be made from the current identity', async () => {
       const currentDid = mockContext.getCurrentIdentity().did;
 
-      const rawCurrentDid = polkadotMockUtils.createMockIdentityId(currentDid);
-      const rawDummyAccountId = polkadotMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
+      const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
+      const rawDummyAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
 
       stringToIdentityIdStub.withArgs(currentDid, mockContext).returns(rawCurrentDid);
 
@@ -172,11 +172,11 @@ describe('Transfers class', () => {
       mockContext.currentPair = undefined;
       stringToAccountIdStub.withArgs(DUMMY_ACCOUNT_ID, mockContext).returns(rawDummyAccountId);
 
-      const rawResponse = polkadotMockUtils.createMockCanTransferResult({
-        Ok: polkadotMockUtils.createMockU8(statusCode),
+      const rawResponse = dsMockUtils.createMockCanTransferResult({
+        Ok: dsMockUtils.createMockU8(statusCode),
       });
 
-      polkadotMockUtils
+      dsMockUtils
         .createRpcStub('asset', 'canTransfer')
         .withArgs(rawDummyAccountId, rawTicker, rawCurrentDid, rawToDid, rawAmount)
         .returns(rawResponse);
@@ -187,11 +187,11 @@ describe('Transfers class', () => {
     });
 
     test('should return a status value representing whether the transaction can be made from another identity', async () => {
-      const rawResponse = polkadotMockUtils.createMockCanTransferResult({
-        Ok: polkadotMockUtils.createMockU8(statusCode),
+      const rawResponse = dsMockUtils.createMockCanTransferResult({
+        Ok: dsMockUtils.createMockU8(statusCode),
       });
 
-      polkadotMockUtils
+      dsMockUtils
         .createRpcStub('asset', 'canTransfer')
         .withArgs(rawAccountId, rawTicker, rawFromDid, rawToDid, rawAmount)
         .returns(rawResponse);
@@ -204,11 +204,11 @@ describe('Transfers class', () => {
 
   describe('method: canMint', () => {
     test('should return a status value representing whether the minting can be made', async () => {
-      const rawResponse = polkadotMockUtils.createMockCanTransferResult({
-        Ok: polkadotMockUtils.createMockU8(statusCode),
+      const rawResponse = dsMockUtils.createMockCanTransferResult({
+        Ok: dsMockUtils.createMockU8(statusCode),
       });
 
-      polkadotMockUtils
+      dsMockUtils
         .createRpcStub('asset', 'canTransfer')
         .withArgs(rawAccountId, rawTicker, null, rawToDid, rawAmount)
         .returns(rawResponse);

@@ -12,7 +12,7 @@ import {
 } from '~/api/procedures/reserveTicker';
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TickerReservationStatus } from '~/types';
 import { PolymeshTx } from '~/types/internal';
@@ -34,12 +34,12 @@ describe('reserveTicker procedure', () => {
   let reservation: PostTransactionValue<TickerReservation>;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(1000) } });
+    dsMockUtils.initMocks({ contextOptions: { balance: new BigNumber(1000) } });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks({ identityOptions: { did: 'someOtherDid' } });
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     ticker = 'someTicker';
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
     args = {
       ticker,
     };
@@ -59,13 +59,13 @@ describe('reserveTicker procedure', () => {
       status: TickerReservationStatus.Free,
     });
 
-    polkadotMockUtils.createQueryStub('asset', 'tickerConfig', {
-      returnValue: polkadotMockUtils.createMockTickerRegistrationConfig(),
+    dsMockUtils.createQueryStub('asset', 'tickerConfig', {
+      returnValue: dsMockUtils.createMockTickerRegistrationConfig(),
     });
 
-    transaction = polkadotMockUtils.createTxStub('asset', 'registerTicker');
+    transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
 
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
@@ -73,13 +73,13 @@ describe('reserveTicker procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if the ticker is already reserved', () => {
@@ -179,14 +179,14 @@ describe('reserveTicker procedure', () => {
 describe('tickerReservationResolver', () => {
   const findEventRecordStub = sinon.stub(utilsModule, 'findEventRecord');
   const tickerString = 'someTicker';
-  const ticker = polkadotMockUtils.createMockTicker(tickerString);
+  const ticker = dsMockUtils.createMockTicker(tickerString);
 
   beforeAll(() => {
     entityMockUtils.initMocks({ tickerReservationOptions: { ticker: tickerString } });
   });
 
   beforeEach(() => {
-    findEventRecordStub.returns(polkadotMockUtils.createMockEventRecord(['someDid', ticker]));
+    findEventRecordStub.returns(dsMockUtils.createMockEventRecord(['someDid', ticker]));
   });
 
   afterEach(() => {

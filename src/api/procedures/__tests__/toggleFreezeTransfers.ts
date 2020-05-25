@@ -8,7 +8,7 @@ import {
   prepareToggleFreezeTransfers,
 } from '~/api/procedures/toggleFreezeTransfers';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
 import * as utilsModule from '~/utils';
@@ -25,32 +25,32 @@ describe('toggleFreezeTransfers procedure', () => {
   let rawTicker: Ticker;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     ticker = 'tickerFrozen';
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
   });
 
   let addTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
 
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if freeze is set to true and the security token is already frozen', () => {
@@ -87,7 +87,7 @@ describe('toggleFreezeTransfers procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    const transaction = polkadotMockUtils.createTxStub('asset', 'freeze');
+    const transaction = dsMockUtils.createTxStub('asset', 'freeze');
 
     const result = await prepareToggleFreezeTransfers.call(proc, {
       ticker,
@@ -109,7 +109,7 @@ describe('toggleFreezeTransfers procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    const transaction = polkadotMockUtils.createTxStub('asset', 'unfreeze');
+    const transaction = dsMockUtils.createTxStub('asset', 'unfreeze');
 
     const result = await prepareToggleFreezeTransfers.call(proc, {
       ticker,

@@ -10,7 +10,7 @@ import {
   prepareConsumeAuthorizationRequests,
 } from '~/api/procedures/consumeAuthorizationRequests';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType } from '~/types';
 import { AuthTarget } from '~/types/internal';
@@ -32,7 +32,7 @@ describe('consumeAuthorizationRequests procedure', () => {
   let rawAuthIds: u64[];
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     authTargetToAuthIdentifierStub = sinon.stub(utilsModule, 'authTargetToAuthIdentifier');
@@ -43,7 +43,7 @@ describe('consumeAuthorizationRequests procedure', () => {
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
     authParams = [
       {
         authId: new BigNumber(1),
@@ -84,15 +84,15 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       auths.push(new AuthorizationRequest(params, mockContext));
 
-      const rawAuthId = polkadotMockUtils.createMockU64(authId.toNumber());
+      const rawAuthId = dsMockUtils.createMockU64(authId.toNumber());
       rawAuthIds.push(rawAuthId);
       numberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
 
-      const rawAuthIdentifier = polkadotMockUtils.createMockAuthIdentifier({
+      const rawAuthIdentifier = dsMockUtils.createMockAuthIdentifier({
         // eslint-disable-next-line @typescript-eslint/camelcase
-        auth_id: polkadotMockUtils.createMockU64(authId.toNumber()),
-        signatory: polkadotMockUtils.createMockSignatory({
-          Identity: polkadotMockUtils.createMockIdentityId(targetDid),
+        auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+        signatory: dsMockUtils.createMockSignatory({
+          Identity: dsMockUtils.createMockIdentityId(targetDid),
         }),
       });
       rawAuthIdentifiers.push(rawAuthIdentifier);
@@ -105,20 +105,20 @@ describe('consumeAuthorizationRequests procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should add a batch accept authorization transaction to the queue and ignore expired requests', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>();
     proc.context = mockContext;
 
-    const transaction = polkadotMockUtils.createTxStub('identity', 'batchAcceptAuthorization');
+    const transaction = dsMockUtils.createTxStub('identity', 'batchAcceptAuthorization');
 
     await prepareConsumeAuthorizationRequests.call(proc, {
       accept: true,
@@ -132,7 +132,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>();
     proc.context = mockContext;
 
-    const transaction = polkadotMockUtils.createTxStub('identity', 'batchRemoveAuthorization');
+    const transaction = dsMockUtils.createTxStub('identity', 'batchRemoveAuthorization');
 
     await prepareConsumeAuthorizationRequests.call(proc, {
       accept: false,

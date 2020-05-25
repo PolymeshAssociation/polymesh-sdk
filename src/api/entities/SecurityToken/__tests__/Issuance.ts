@@ -4,24 +4,24 @@ import sinon from 'sinon';
 import { SecurityToken } from '~/api/entities';
 import { issueTokens } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 
 import { Issuance } from '../Issuance';
 
 describe('Issuance class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
     entityMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -34,7 +34,7 @@ describe('Issuance class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
       const issuance = new Issuance(token, context);
 

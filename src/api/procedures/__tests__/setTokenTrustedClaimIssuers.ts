@@ -9,7 +9,7 @@ import {
   prepareSetTokenTrustedClaimIssuers,
 } from '~/api/procedures/setTokenTrustedClaimIssuers';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
@@ -21,7 +21,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
   let trustedClaimIssuerStub: sinon.SinonStub;
-  let didRecordsStub: sinon.SinonStub & polkadotMockUtils.StubQuery;
+  let didRecordsStub: sinon.SinonStub & dsMockUtils.StubQuery;
   let ticker: string;
   let claimIssuerDids: string[];
   let rawTicker: Ticker;
@@ -29,7 +29,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   let args: Params;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
@@ -37,8 +37,8 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
     ticker = 'someTicker';
     claimIssuerDids = ['aDid', 'otherDid', 'differentDid'];
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
-    rawClaimIssuerDids = claimIssuerDids.map(polkadotMockUtils.createMockIdentityId);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawClaimIssuerDids = claimIssuerDids.map(dsMockUtils.createMockIdentityId);
     /* eslint-enable @typescript-eslint/camelcase */
     args = {
       ticker,
@@ -54,27 +54,27 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    trustedClaimIssuerStub = polkadotMockUtils.createQueryStub(
+    trustedClaimIssuerStub = dsMockUtils.createQueryStub(
       'complianceManager',
       'trustedClaimIssuer',
       {
         returnValue: [],
       }
     );
-    didRecordsStub = polkadotMockUtils.createQueryStub('identity', 'didRecords', {
+    didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords', {
       size: 1,
     });
 
-    removeDefaultTrustedClaimIssuersBatchTransaction = polkadotMockUtils.createTxStub(
+    removeDefaultTrustedClaimIssuersBatchTransaction = dsMockUtils.createTxStub(
       'complianceManager',
       'removeDefaultTrustedClaimIssuersBatch'
     );
-    addDefaultTrustedClaimIssuersBatchTransaction = polkadotMockUtils.createTxStub(
+    addDefaultTrustedClaimIssuersBatchTransaction = dsMockUtils.createTxStub(
       'complianceManager',
       'addDefaultTrustedClaimIssuersBatch'
     );
 
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     claimIssuerDids.forEach((did, index) => {
@@ -86,13 +86,13 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if the new list is the same as the current one', () => {
@@ -109,7 +109,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     const nonExistentDidIndex = 1;
     didRecordsStub.size
       .withArgs(rawClaimIssuerDids[nonExistentDidIndex])
-      .resolves(polkadotMockUtils.createMockU64(0));
+      .resolves(dsMockUtils.createMockU64(0));
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 

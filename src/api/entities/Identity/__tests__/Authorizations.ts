@@ -3,7 +3,7 @@ import sinon from 'sinon';
 
 import { AuthorizationRequest } from '~/api/entities';
 import { Namespace } from '~/base';
-import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
@@ -13,15 +13,15 @@ import { Authorizations } from '../Authorizations';
 describe('Authorizations class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -66,27 +66,27 @@ describe('Authorizations class', () => {
       const authEntries = authParams.map(({ authId, expiry, issuerDid, data }) =>
         tuple(
           [did, authId],
-          polkadotMockUtils.createMockAuthorization({
-            auth_id: polkadotMockUtils.createMockU64(authId.toNumber()),
-            expiry: polkadotMockUtils.createMockOption(
-              expiry ? polkadotMockUtils.createMockMoment(expiry.getTime()) : expiry
+          dsMockUtils.createMockAuthorization({
+            auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+            expiry: dsMockUtils.createMockOption(
+              expiry ? dsMockUtils.createMockMoment(expiry.getTime()) : expiry
             ),
-            authorization_data: polkadotMockUtils.createMockAuthorizationData({
-              TransferAssetOwnership: polkadotMockUtils.createMockTicker(data.value),
+            authorization_data: dsMockUtils.createMockAuthorizationData({
+              TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
             }),
-            authorized_by: polkadotMockUtils.createMockSignatory({
-              Identity: polkadotMockUtils.createMockIdentityId(issuerDid),
+            authorized_by: dsMockUtils.createMockSignatory({
+              Identity: dsMockUtils.createMockIdentityId(issuerDid),
             }),
           })
         )
       );
 
       /* eslint-enable @typescript-eslint/camelcase */
-      polkadotMockUtils.createQueryStub('identity', 'authorizations', {
+      dsMockUtils.createQueryStub('identity', 'authorizations', {
         entries: authEntries,
       });
 
-      const context = polkadotMockUtils.getContextInstance({ did });
+      const context = dsMockUtils.getContextInstance({ did });
       const identity = entityMockUtils.getIdentityInstance({ did });
       const authsNamespace = new Authorizations(identity, context);
 
@@ -136,15 +136,15 @@ describe('Authorizations class', () => {
       ];
 
       const authorizations = authParams.map(({ authId, expiry, data }) => ({
-        auth_id: polkadotMockUtils.createMockU64(authId.toNumber()),
-        expiry: polkadotMockUtils.createMockOption(
-          expiry ? polkadotMockUtils.createMockMoment(expiry.getTime()) : expiry
+        auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+        expiry: dsMockUtils.createMockOption(
+          expiry ? dsMockUtils.createMockMoment(expiry.getTime()) : expiry
         ),
-        authorization_data: polkadotMockUtils.createMockAuthorizationData({
-          TransferAssetOwnership: polkadotMockUtils.createMockTicker(data.value),
+        authorization_data: dsMockUtils.createMockAuthorizationData({
+          TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
         }),
-        authorized_by: polkadotMockUtils.createMockSignatory({
-          Identity: polkadotMockUtils.createMockIdentityId(did),
+        authorized_by: dsMockUtils.createMockSignatory({
+          Identity: dsMockUtils.createMockIdentityId(did),
         }),
       }));
       /* eslint-enable @typescript-eslint/camelcase */
@@ -153,13 +153,13 @@ describe('Authorizations class', () => {
         ({ authorized_by: issuer, auth_id: authId }, index) =>
           tuple(
             [issuer, authId],
-            polkadotMockUtils.createMockSignatory({
-              Identity: polkadotMockUtils.createMockIdentityId(authParams[index].targetDid),
+            dsMockUtils.createMockSignatory({
+              Identity: dsMockUtils.createMockIdentityId(authParams[index].targetDid),
             })
           )
       );
 
-      polkadotMockUtils.createQueryStub('identity', 'authorizationsGiven', {
+      dsMockUtils.createQueryStub('identity', 'authorizationsGiven', {
         entries: authorizationsGivenEntries,
       });
 
@@ -167,10 +167,10 @@ describe('Authorizations class', () => {
         tuple(signatory, keys[1])
       );
 
-      const authorizationsStub = polkadotMockUtils.createQueryStub('identity', 'authorizations');
+      const authorizationsStub = dsMockUtils.createQueryStub('identity', 'authorizations');
       authorizationsStub.multi.withArgs(authsMultiArgs).resolves(authorizations);
 
-      const context = polkadotMockUtils.getContextInstance({ did });
+      const context = dsMockUtils.getContextInstance({ did });
       const identity = entityMockUtils.getIdentityInstance({ did });
       const authsNamespace = new Authorizations(identity, context);
 

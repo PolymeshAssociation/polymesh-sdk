@@ -11,7 +11,7 @@ import {
   prepareTransferTokenOwnership,
 } from '~/api/procedures/transferTokenOwnership';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, RoleType, TickerReservationStatus } from '~/types';
 import { PolymeshTx, Signer, SignerType } from '~/types/internal';
@@ -34,7 +34,7 @@ describe('transferTokenOwnership procedure', () => {
   let args: Params;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(500) } });
+    dsMockUtils.initMocks({ contextOptions: { balance: new BigNumber(500) } });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     signerToSignatoryStub = sinon.stub(utilsModule, 'signerToSignatory');
@@ -46,13 +46,13 @@ describe('transferTokenOwnership procedure', () => {
     ticker = 'someTicker';
     did = 'someOtherDid';
     expiry = new Date('10/14/3040');
-    rawSignatory = polkadotMockUtils.createMockSignatory({
-      Identity: polkadotMockUtils.createMockIdentityId(did),
+    rawSignatory = dsMockUtils.createMockSignatory({
+      Identity: dsMockUtils.createMockIdentityId(did),
     });
-    rawAuthorizationData = polkadotMockUtils.createMockAuthorizationData({
-      TransferAssetOwnership: polkadotMockUtils.createMockTicker(ticker),
+    rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
+      TransferAssetOwnership: dsMockUtils.createMockTicker(ticker),
     });
-    rawMoment = polkadotMockUtils.createMockMoment(expiry.getTime());
+    rawMoment = dsMockUtils.createMockMoment(expiry.getTime());
     args = {
       ticker,
       did,
@@ -72,9 +72,9 @@ describe('transferTokenOwnership procedure', () => {
       status: TickerReservationStatus.Free,
     });
 
-    transaction = polkadotMockUtils.createTxStub('identity', 'addAuthorization');
+    transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
 
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
 
     signerToSignatoryStub
       .withArgs({ type: SignerType.Identity, value: did }, mockContext)
@@ -88,13 +88,13 @@ describe('transferTokenOwnership procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should add an add authorization transaction to the queue', async () => {

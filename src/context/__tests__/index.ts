@@ -2,7 +2,7 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
-import { apolloMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import { apolloMockUtils, dsMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -13,21 +13,21 @@ jest.mock(
 // TODO: refactor tests (too much repeated code)
 describe('Context class', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     apolloMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if accessing the transaction submodule without an active account', async () => {
     const context = await Context.create({
-      polymeshApi: polkadotMockUtils.getApiInstance(),
+      polymeshApi: dsMockUtils.getApiInstance(),
       harvesterClient: apolloMockUtils.getHarvesterClient(),
     });
 
@@ -39,7 +39,7 @@ describe('Context class', () => {
   describe('method: create', () => {
     test('should throw if seed parameter is not a 32 length string', async () => {
       const context = Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
         seed: 'abc',
       });
@@ -53,25 +53,21 @@ describe('Context class', () => {
         meta: {},
         publicKey: 'publicKey',
       };
-      polkadotMockUtils.configureMocks({
+      dsMockUtils.configureMocks({
         keyringOptions: {
           addFromSeed: newPair,
         },
       });
-      const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
-        'identity',
-        'keyToIdentityIds',
-        {
-          returnValue: polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLinkedKeyInfo({
-              Unique: polkadotMockUtils.createMockIdentityId('someDid'),
-            })
-          ),
-        }
-      );
+      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
@@ -83,27 +79,23 @@ describe('Context class', () => {
 
     test('should create a Context class from a keyring with Pair and Identity attached', async () => {
       const pairs = [{ address: 'someAddress', meta: {}, publicKey: 'publicKey' }];
-      polkadotMockUtils.configureMocks({
+      dsMockUtils.configureMocks({
         keyringOptions: {
           getPairs: pairs,
         },
       });
-      const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
-        'identity',
-        'keyToIdentityIds',
-        {
-          returnValue: polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLinkedKeyInfo({
-              Unique: polkadotMockUtils.createMockIdentityId('someDid'),
-            })
-          ),
-        }
-      );
+      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
-        keyring: polkadotMockUtils.getKeyringInstance(),
+        keyring: dsMockUtils.getKeyringInstance(),
       });
 
       sinon.assert.calledOnce(keyToIdentityIdsStub);
@@ -117,25 +109,21 @@ describe('Context class', () => {
         meta: {},
         publicKey: 'publicKey',
       };
-      polkadotMockUtils.configureMocks({
+      dsMockUtils.configureMocks({
         keyringOptions: {
           addFromUri: newPair,
         },
       });
-      const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
-        'identity',
-        'keyToIdentityIds',
-        {
-          returnValue: polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLinkedKeyInfo({
-              Unique: polkadotMockUtils.createMockIdentityId('someDid'),
-            })
-          ),
-        }
-      );
+      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
         uri: '//Alice',
       });
@@ -151,25 +139,21 @@ describe('Context class', () => {
         meta: {},
         publicKey: 'publicKey',
       };
-      polkadotMockUtils.configureMocks({
+      dsMockUtils.configureMocks({
         keyringOptions: {
           addFromSeed: newPair,
         },
       });
-      const keyToIdentityIdsStub = polkadotMockUtils.createQueryStub(
-        'identity',
-        'keyToIdentityIds',
-        {
-          returnValue: polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLinkedKeyInfo({
-              Unique: polkadotMockUtils.createMockIdentityId('someDid'),
-            })
-          ),
-        }
-      );
+      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
       });
 
@@ -184,15 +168,15 @@ describe('Context class', () => {
         meta: {},
         publicKey: 'publicKey',
       };
-      polkadotMockUtils.configureMocks({
+      dsMockUtils.configureMocks({
         keyringOptions: {
           addFromSeed: newPair,
         },
       });
-      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds');
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds');
 
       const context = Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
@@ -221,14 +205,14 @@ describe('Context class', () => {
           publicKey: 'publicKey',
         },
       ];
-      polkadotMockUtils.configureMocks({
+      dsMockUtils.configureMocks({
         keyringOptions: {
           getPairs: pairs,
         },
       });
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
       });
 
@@ -242,13 +226,13 @@ describe('Context class', () => {
 
   describe('method: setPair', () => {
     test('should throw error if the pair does not exist in the keyring set', async () => {
-      polkadotMockUtils.configureMocks({
+      dsMockUtils.configureMocks({
         keyringOptions: {
           error: true,
         },
       });
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
       });
 
@@ -261,7 +245,7 @@ describe('Context class', () => {
       const publicKey = 'publicKey';
       const newPublicKey = 'newPublicKey';
       const newAddress = 'newAddress';
-      polkadotMockUtils.configureMocks({
+      dsMockUtils.configureMocks({
         keyringOptions: {
           addFromSeed: {
             address: 'address',
@@ -276,24 +260,24 @@ describe('Context class', () => {
         },
       });
 
-      polkadotMockUtils
+      dsMockUtils
         .createQueryStub('identity', 'keyToIdentityIds')
         .withArgs(publicKey)
         .returns(
-          polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLinkedKeyInfo({
-              Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockLinkedKeyInfo({
+              Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
             })
           )
         );
 
-      polkadotMockUtils
+      dsMockUtils
         .createQueryStub('identity', 'keyToIdentityIds')
         .withArgs(newPublicKey)
-        .returns(polkadotMockUtils.createMockOption());
+        .returns(dsMockUtils.createMockOption());
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
@@ -308,14 +292,14 @@ describe('Context class', () => {
       const newPublicKey = 'newPublicKey';
       const newAddress = 'newAddress';
       const newIdentityId = 'newIdentityId';
-      const accountKey = polkadotMockUtils.createMockAccountKey(newAddress);
+      const accountKey = dsMockUtils.createMockAccountKey(newAddress);
       const newCurrentPair = {
         address: newAddress,
         meta: {},
         publicKey: newPublicKey,
       };
 
-      polkadotMockUtils.configureMocks({
+      dsMockUtils.configureMocks({
         keyringOptions: {
           addFromSeed: {
             address: 'address',
@@ -326,30 +310,30 @@ describe('Context class', () => {
         },
       });
 
-      polkadotMockUtils
+      dsMockUtils
         .createQueryStub('identity', 'keyToIdentityIds')
         .withArgs(publicKey)
         .returns(
-          polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLinkedKeyInfo({
-              Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockLinkedKeyInfo({
+              Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
             })
           )
         );
 
-      polkadotMockUtils
+      dsMockUtils
         .createQueryStub('identity', 'keyToIdentityIds')
         .withArgs(accountKey)
         .returns(
-          polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockLinkedKeyInfo({
-              Unique: polkadotMockUtils.createMockIdentityId(newIdentityId),
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockLinkedKeyInfo({
+              Unique: dsMockUtils.createMockIdentityId(newIdentityId),
             })
           )
         );
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
@@ -369,7 +353,7 @@ describe('Context class', () => {
   describe('method: accountBalance', () => {
     test('should throw if accountId or currentPair is not set', async () => {
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
       });
 
@@ -379,28 +363,28 @@ describe('Context class', () => {
     });
 
     test('should return the account POLYX balance if currentPair is set', async () => {
-      const freeBalance = polkadotMockUtils.createMockBalance(100);
-      const returnValue = polkadotMockUtils.createMockAccountInfo({
-        nonce: polkadotMockUtils.createMockIndex(),
-        refcount: polkadotMockUtils.createMockRefCount(),
-        data: polkadotMockUtils.createMockAccountData({
+      const freeBalance = dsMockUtils.createMockBalance(100);
+      const returnValue = dsMockUtils.createMockAccountInfo({
+        nonce: dsMockUtils.createMockIndex(),
+        refcount: dsMockUtils.createMockRefCount(),
+        data: dsMockUtils.createMockAccountData({
           free: freeBalance,
-          reserved: polkadotMockUtils.createMockBalance(),
-          miscFrozen: polkadotMockUtils.createMockBalance(),
-          feeFrozen: polkadotMockUtils.createMockBalance(),
+          reserved: dsMockUtils.createMockBalance(),
+          miscFrozen: dsMockUtils.createMockBalance(),
+          feeFrozen: dsMockUtils.createMockBalance(),
         }),
       });
-      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: polkadotMockUtils.createMockOption(
-          polkadotMockUtils.createMockLinkedKeyInfo({
-            Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
           })
         ),
       });
-      polkadotMockUtils.createQueryStub('system', 'account', { returnValue });
+      dsMockUtils.createQueryStub('system', 'account', { returnValue });
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
@@ -410,28 +394,28 @@ describe('Context class', () => {
     });
 
     test('should return the account POLYX balance if accountId is set', async () => {
-      const freeBalance = polkadotMockUtils.createMockBalance(100);
-      const returnValue = polkadotMockUtils.createMockAccountInfo({
-        nonce: polkadotMockUtils.createMockIndex(),
-        refcount: polkadotMockUtils.createMockRefCount(),
-        data: polkadotMockUtils.createMockAccountData({
+      const freeBalance = dsMockUtils.createMockBalance(100);
+      const returnValue = dsMockUtils.createMockAccountInfo({
+        nonce: dsMockUtils.createMockIndex(),
+        refcount: dsMockUtils.createMockRefCount(),
+        data: dsMockUtils.createMockAccountData({
           free: freeBalance,
-          reserved: polkadotMockUtils.createMockBalance(),
-          miscFrozen: polkadotMockUtils.createMockBalance(),
-          feeFrozen: polkadotMockUtils.createMockBalance(),
+          reserved: dsMockUtils.createMockBalance(),
+          miscFrozen: dsMockUtils.createMockBalance(),
+          feeFrozen: dsMockUtils.createMockBalance(),
         }),
       });
-      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: polkadotMockUtils.createMockOption(
-          polkadotMockUtils.createMockLinkedKeyInfo({
-            Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
           })
         ),
       });
-      polkadotMockUtils.createQueryStub('system', 'account', { returnValue });
+      dsMockUtils.createQueryStub('system', 'account', { returnValue });
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
@@ -443,31 +427,31 @@ describe('Context class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
 
-      const freeBalance = polkadotMockUtils.createMockBalance(100);
-      const returnValue = polkadotMockUtils.createMockAccountInfo({
-        nonce: polkadotMockUtils.createMockIndex(),
-        refcount: polkadotMockUtils.createMockRefCount(),
-        data: polkadotMockUtils.createMockAccountData({
+      const freeBalance = dsMockUtils.createMockBalance(100);
+      const returnValue = dsMockUtils.createMockAccountInfo({
+        nonce: dsMockUtils.createMockIndex(),
+        refcount: dsMockUtils.createMockRefCount(),
+        data: dsMockUtils.createMockAccountData({
           free: freeBalance,
-          reserved: polkadotMockUtils.createMockBalance(),
-          miscFrozen: polkadotMockUtils.createMockBalance(),
-          feeFrozen: polkadotMockUtils.createMockBalance(),
+          reserved: dsMockUtils.createMockBalance(),
+          miscFrozen: dsMockUtils.createMockBalance(),
+          feeFrozen: dsMockUtils.createMockBalance(),
         }),
       });
-      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: polkadotMockUtils.createMockOption(
-          polkadotMockUtils.createMockLinkedKeyInfo({
-            Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
           })
         ),
       });
-      polkadotMockUtils.createQueryStub('system', 'account').callsFake(async (_, cbFunc) => {
+      dsMockUtils.createQueryStub('system', 'account').callsFake(async (_, cbFunc) => {
         cbFunc(returnValue);
         return unsubCallback;
       });
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
@@ -483,16 +467,16 @@ describe('Context class', () => {
   describe('method: getCurrentIdentity', () => {
     test('should return the current identity', async () => {
       const did = 'someDid';
-      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: polkadotMockUtils.createMockOption(
-          polkadotMockUtils.createMockLinkedKeyInfo({
-            Unique: polkadotMockUtils.createMockIdentityId(did),
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId(did),
           })
         ),
       });
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
@@ -503,7 +487,7 @@ describe('Context class', () => {
 
     test("should throw an error if the current identity isn't defined", async () => {
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
       });
 
@@ -520,21 +504,21 @@ describe('Context class', () => {
         meta: {},
         publicKey: 'publicKey',
       };
-      polkadotMockUtils.configureMocks({
+      dsMockUtils.configureMocks({
         keyringOptions: {
           addFromSeed: pair,
         },
       });
-      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: polkadotMockUtils.createMockOption(
-          polkadotMockUtils.createMockLinkedKeyInfo({
-            Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
           })
         ),
       });
 
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
@@ -546,7 +530,7 @@ describe('Context class', () => {
 
     test("should throw an error if the current pair isn't defined", async () => {
       const context = await Context.create({
-        polymeshApi: polkadotMockUtils.getApiInstance(),
+        polymeshApi: dsMockUtils.getApiInstance(),
         harvesterClient: apolloMockUtils.getHarvesterClient(),
       });
 

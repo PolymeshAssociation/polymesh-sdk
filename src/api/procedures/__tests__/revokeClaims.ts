@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import { prepareRevokeClaims, RevokeClaimsParams } from '~/api/procedures/revokeClaims';
 import { Context } from '~/context';
 import { IdentityId } from '~/polkadot';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Claim, ClaimType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
@@ -16,7 +16,7 @@ describe('revokeClaims procedure', () => {
   let claimToMeshClaimStub: sinon.SinonStub<[Claim, Context], MeshClaim>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let didRecordsStub: sinon.SinonStub & polkadotMockUtils.StubQuery;
+  let didRecordsStub: sinon.SinonStub & dsMockUtils.StubQuery;
   let addTransactionStub: sinon.SinonStub;
   let revokeClaimsBatchTransaction: PolymeshTx<[Vec<BatchRevokeClaimItem>]>;
 
@@ -34,7 +34,7 @@ describe('revokeClaims procedure', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
 
     claimToMeshClaimStub = sinon.stub(utilsModule, 'claimToMeshClaim');
     identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
@@ -57,23 +57,23 @@ describe('revokeClaims procedure', () => {
       ],
     };
 
-    rawCddClaim = polkadotMockUtils.createMockClaim('CustomerDueDiligence');
-    rawBuyLockupClaim = polkadotMockUtils.createMockClaim({
-      BuyLockup: polkadotMockUtils.createMockIdentityId(),
+    rawCddClaim = dsMockUtils.createMockClaim('CustomerDueDiligence');
+    rawBuyLockupClaim = dsMockUtils.createMockClaim({
+      BuyLockup: dsMockUtils.createMockIdentityId(),
     });
-    rawSomeDid = polkadotMockUtils.createMockIdentityId(someDid);
-    rawOtherDid = polkadotMockUtils.createMockIdentityId(otherDid);
+    rawSomeDid = dsMockUtils.createMockIdentityId(someDid);
+    rawOtherDid = dsMockUtils.createMockIdentityId(otherDid);
   });
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    mockContext = polkadotMockUtils.getContextInstance();
-    revokeClaimsBatchTransaction = polkadotMockUtils.createTxStub('identity', 'revokeClaimsBatch');
+    mockContext = dsMockUtils.getContextInstance();
+    revokeClaimsBatchTransaction = dsMockUtils.createTxStub('identity', 'revokeClaimsBatch');
     claimToMeshClaimStub.withArgs(cddClaim, mockContext).returns(rawCddClaim);
     claimToMeshClaimStub.withArgs(buyLockupClaim, mockContext).returns(rawBuyLockupClaim);
     stringToIdentityIdStub.withArgs(someDid, mockContext).returns(rawSomeDid);
     stringToIdentityIdStub.withArgs(otherDid, mockContext).returns(rawOtherDid);
-    didRecordsStub = polkadotMockUtils.createQueryStub('identity', 'didRecords', {
+    didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords', {
       size: 1,
     });
     identityIdToStringStub.withArgs(rawOtherDid).returns(otherDid);
@@ -82,17 +82,17 @@ describe('revokeClaims procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test("should throw an error if some of the supplied target dids don't exist", () => {
-    didRecordsStub.size.withArgs(rawOtherDid).resolves(polkadotMockUtils.createMockU64(0));
+    didRecordsStub.size.withArgs(rawOtherDid).resolves(dsMockUtils.createMockU64(0));
 
     const proc = procedureMockUtils.getInstance<RevokeClaimsParams, void>();
     proc.context = mockContext;
