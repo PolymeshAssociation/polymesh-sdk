@@ -55,11 +55,11 @@ describe('issueTokens procedure', () => {
     const args = {
       issuanceData: [
         {
-          did: 'someDid',
+          identity: 'someDid',
           amount: new BigNumber(100),
         },
         {
-          did: 'anotherDid',
+          identity: 'anotherDid',
           amount: new BigNumber(50.1234567),
         },
       ],
@@ -86,11 +86,11 @@ describe('issueTokens procedure', () => {
     const args = {
       issuanceData: [
         {
-          did: 'someDid',
+          identity: 'someDid',
           amount: new BigNumber(100),
         },
         {
-          did: 'anotherDid',
+          identity: 'anotherDid',
           amount: new BigNumber(50.1),
         },
       ],
@@ -109,7 +109,7 @@ describe('issueTokens procedure', () => {
     const args = {
       issuanceData: [
         {
-          did: 'someDid',
+          identity: 'someDid',
           amount: new BigNumber(100),
         },
       ],
@@ -139,7 +139,7 @@ describe('issueTokens procedure', () => {
     const args = {
       issuanceData: [
         {
-          did: 'someDid',
+          identity: 'someDid',
           amount: new BigNumber(100),
         },
       ],
@@ -156,7 +156,7 @@ describe('issueTokens procedure', () => {
     proc.context = mockContext;
 
     return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
-      `You can't issue tokens to some of the supplied identities: ${args.issuanceData[0].did} [${status}]`
+      `You can't issue tokens to some of the supplied identities: ${args.issuanceData[0].identity} [${status}]`
     );
   });
 
@@ -164,11 +164,11 @@ describe('issueTokens procedure', () => {
     const args = {
       issuanceData: [
         {
-          did: 'someDid',
+          identity: 'someDid',
           amount: new BigNumber(100),
         },
         {
-          did: 'otherDid',
+          identity: 'otherDid',
           amount: new BigNumber(200),
         },
       ],
@@ -181,14 +181,14 @@ describe('issueTokens procedure', () => {
     const stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
     const numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
 
-    args.issuanceData.forEach(({ did, amount }) => {
-      const identityId = polkadotMockUtils.createMockIdentityId(`${did}Identity`);
+    args.issuanceData.forEach(({ identity, amount }) => {
+      const identityId = polkadotMockUtils.createMockIdentityId(`${identity}Identity`);
       const balance = polkadotMockUtils.createMockBalance(amount.toNumber());
 
       investors.push(identityId);
       balances.push(balance);
 
-      stringToIdentityIdStub.withArgs(did, mockContext).returns(identityId);
+      stringToIdentityIdStub.withArgs(identity, mockContext).returns(identityId);
       numberToBalanceStub.withArgs(amount, mockContext).returns(balance);
     });
 

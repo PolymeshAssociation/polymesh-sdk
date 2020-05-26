@@ -3,6 +3,7 @@ import sinon from 'sinon';
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
 import { polkadotMockUtils } from '~/testUtils/mocks';
+import { createMockAccountKey } from '~/testUtils/mocks/polkadot';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -534,5 +535,56 @@ describe('Context class', () => {
         'There is no account associated with the current SDK instance'
       );
     });
+  });
+
+  describe('method: getInvalidDids', () => {
+    /* eslint-disable @typescript-eslint/camelcase */
+    test('should return which DIDs in the input array are invalid', async () => {
+      const inputDids = ['someDid', 'otherDid', 'invalidDid', 'otherInvalidDid'];
+      polkadotMockUtils.createQueryStub('identity', 'didRecords', {
+        multi: [
+          polkadotMockUtils.createMockDidRecord({
+            roles: [],
+            master_key: createMockAccountKey('someKey'),
+            signing_items: [],
+          }),
+          polkadotMockUtils.createMockDidRecord({
+            roles: [],
+            master_key: createMockAccountKey('otherKey'),
+            signing_items: [],
+          }),
+          polkadotMockUtils.createMockDidRecord(),
+          polkadotMockUtils.createMockDidRecord(),
+        ],
+      });
+
+      const newPair = {
+        address: 'someAddress',
+        meta: {},
+        publicKey: 'publicKey',
+      };
+      polkadotMockUtils.configureMocks({
+        keyringOptions: {
+          addFromUri: newPair,
+        },
+      });
+      polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: polkadotMockUtils.createMockOption(
+          polkadotMockUtils.createMockLinkedKeyInfo({
+            Unique: polkadotMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+
+      const context = await Context.create({
+        polymeshApi: polkadotMockUtils.getApiInstance(),
+        uri: '//Alice',
+      });
+
+      const invalidDids = await context.getInvalidDids(inputDids);
+
+      expect(invalidDids).toEqual(inputDids.slice(2, 4));
+    });
+    /* eslint-enable @typescript-eslint/camelcase */
   });
 });

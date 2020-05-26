@@ -1,11 +1,11 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { chunk } from 'lodash';
 import { Claim as MeshClaim } from 'polymesh-types/types';
 
+import { Identity } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { IdentityId } from '~/polkadot';
 import { ClaimTargets, ClaimType, ErrorCode, Role, RoleType } from '~/types';
-import { claimToMeshClaim, dateToMoment, identityIdToString, stringToIdentityId } from '~/utils';
+import { claimToMeshClaim, dateToMoment, stringToIdentityId, valueToDid } from '~/utils';
 
 interface AddClaimItem {
   target: IdentityId;
@@ -28,53 +28,31 @@ export async function prepareAddClaims(
 
   const {
     context: {
-      polymeshApi: {
-        tx,
-        query: {
-          identity: { didRecords },
-        },
-      },
+      polymeshApi: { tx },
     },
     context,
   } = this;
 
   const addClaimItems: AddClaimItem[] = [];
+  const allTargets: (string | Identity)[] = [];
 
   claims.forEach(({ targets, claim, expiry }) => {
-    targets.forEach(target =>
+    targets.forEach(target => {
+      allTargets.push(target);
       addClaimItems.push({
-        target: stringToIdentityId(target, context),
+        target: stringToIdentityId(valueToDid(target), context),
         claim: claimToMeshClaim(claim, context),
         expiry: expiry ? dateToMoment(expiry, context) : null,
-      })
-    );
+      });
+    });
   });
 
-  const addClaimItemsChunks = chunk(addClaimItems, 10);
-
-  const nonExistentDids: IdentityId[] = [];
-
-  await Promise.all(
-    addClaimItemsChunks.map(async addClaimItemsChunk => {
-      // TODO: queryMulti
-      const sizes = await Promise.all(
-        addClaimItemsChunk.map(({ target }) => didRecords.size(target))
-      );
-
-      sizes.forEach((size, index) => {
-        if (size.isZero()) {
-          nonExistentDids.push(addClaimItemsChunk[index].target);
-        }
-      });
-    })
-  );
+  const nonExistentDids: string[] = await context.getInvalidDids(allTargets);
 
   if (nonExistentDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Some of the supplied identity IDs do not exist: ${nonExistentDids
-        .map(identityIdToString)
-        .join(', ')}`,
+      message: `Some of the supplied identity IDs do not exist: ${nonExistentDids.join(', ')}`,
     });
   }
 
