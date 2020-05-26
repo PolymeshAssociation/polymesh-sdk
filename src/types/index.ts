@@ -1,5 +1,7 @@
 import BigNumber from 'bignumber.js';
 
+import { Identity } from '~/api/entities';
+
 export enum TransactionStatus {
   /**
    * the transaction is prepped to run
@@ -251,7 +253,7 @@ export enum ErrorCode {
  * Represents an amount of tokens to be issued to an identity
  */
 export interface IssuanceData {
-  did: string;
+  identity: string | Identity;
   amount: BigNumber;
 }
 
@@ -264,7 +266,7 @@ export enum TransferStatus {
 }
 
 export interface ClaimTargets {
-  targets: string[];
+  targets: (string | Identity)[];
   claim: Claim;
   expiry?: Date;
 }

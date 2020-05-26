@@ -5,7 +5,7 @@ import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { IdentityId } from '~/polkadot';
 import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
-import { numberToBalance, stringToIdentityId, stringToTicker } from '~/utils';
+import { numberToBalance, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
 import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
 export interface IssueTokensParams {
@@ -78,17 +78,18 @@ export async function prepareIssueTokens(
     issuanceDataItemsChunks.map(async issuanceDataItemsChunk => {
       // TODO: queryMulti
       const transferStatuses = await Promise.all(
-        issuanceDataItemsChunk.map(({ did, amount }) =>
-          securityToken.transfers.canMint({ to: did, amount })
+        issuanceDataItemsChunk.map(({ identity, amount }) =>
+          securityToken.transfers.canMint({ to: identity, amount })
         )
       );
 
       transferStatuses.forEach((canTransfer, index) => {
-        investors.push(stringToIdentityId(issuanceDataItemsChunk[index].did, context));
-        balances.push(numberToBalance(issuanceDataItemsChunk[index].amount, context));
+        const { identity, amount } = issuanceDataItemsChunk[index];
+        investors.push(stringToIdentityId(valueToDid(identity), context));
+        balances.push(numberToBalance(amount, context));
 
         if (canTransfer !== TransferStatus.Success) {
-          canNotMintDids.push(`${issuanceDataItemsChunk[index].did} [${canTransfer}]`);
+          canNotMintDids.push(`${identity} [${canTransfer}]`);
         }
       });
     })

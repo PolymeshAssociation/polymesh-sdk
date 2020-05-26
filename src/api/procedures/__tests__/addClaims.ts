@@ -18,7 +18,6 @@ describe('addClaims procedure', () => {
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let didRecordsStub: sinon.SinonStub & polkadotMockUtils.StubQuery;
   let addTransactionStub: sinon.SinonStub;
   let addClaimsBatchTransaction: PolymeshTx<[Vec<BatchAddClaimItem>]>;
 
@@ -82,9 +81,6 @@ describe('addClaims procedure', () => {
     stringToIdentityIdStub.withArgs(someDid, mockContext).returns(rawSomeDid);
     stringToIdentityIdStub.withArgs(otherDid, mockContext).returns(rawOtherDid);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
-    didRecordsStub = polkadotMockUtils.createQueryStub('identity', 'didRecords', {
-      size: 1,
-    });
     identityIdToStringStub.withArgs(rawOtherDid).returns(otherDid);
   });
 
@@ -101,7 +97,7 @@ describe('addClaims procedure', () => {
   });
 
   test("should throw an error if some of the supplied target dids don't exist", () => {
-    didRecordsStub.size.withArgs(rawOtherDid).resolves(polkadotMockUtils.createMockU64(0));
+    polkadotMockUtils.configureMocks({ contextOptions: { invalidDids: [otherDid] } });
 
     const proc = procedureMockUtils.getInstance<AddClaimsParams, void>();
     proc.context = mockContext;
