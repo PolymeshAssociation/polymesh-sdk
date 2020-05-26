@@ -2,7 +2,7 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
-import { apolloMockUtils, dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -14,7 +14,6 @@ jest.mock(
 describe('Context class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
-    apolloMockUtils.initMocks();
   });
 
   afterEach(() => {
@@ -28,7 +27,7 @@ describe('Context class', () => {
   test('should throw an error if accessing the transaction submodule without an active account', async () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
-      harvesterClient: apolloMockUtils.getHarvesterClient(),
+      harvesterClient: dsMockUtils.getHarvesterClient(),
     });
 
     expect(() => context.polymeshApi.tx).toThrow(
@@ -40,7 +39,7 @@ describe('Context class', () => {
     test('should throw if seed parameter is not a 32 length string', async () => {
       const context = Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: 'abc',
       });
 
@@ -68,7 +67,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -94,7 +93,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         keyring: dsMockUtils.getKeyringInstance(),
       });
 
@@ -124,7 +123,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         uri: '//Alice',
       });
 
@@ -154,7 +153,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
       });
 
       sinon.assert.notCalled(keyToIdentityIdsStub);
@@ -177,7 +176,7 @@ describe('Context class', () => {
 
       const context = Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -213,7 +212,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
       });
 
       const result = context.getAccounts();
@@ -233,7 +232,7 @@ describe('Context class', () => {
       });
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
       });
 
       await expect(context.setPair('012')).rejects.toThrow(
@@ -278,7 +277,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -334,7 +333,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -354,7 +353,7 @@ describe('Context class', () => {
     test('should throw if accountId or currentPair is not set', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
       });
 
       expect(context.accountBalance()).rejects.toThrow(
@@ -385,7 +384,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -416,7 +415,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -452,7 +451,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -477,7 +476,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -488,7 +487,7 @@ describe('Context class', () => {
     test("should throw an error if the current identity isn't defined", async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
       });
 
       expect(() => context.getCurrentIdentity()).toThrow(
@@ -519,7 +518,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -531,7 +530,7 @@ describe('Context class', () => {
     test("should throw an error if the current pair isn't defined", async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
       });
 
       expect(() => context.getCurrentPair()).toThrow(

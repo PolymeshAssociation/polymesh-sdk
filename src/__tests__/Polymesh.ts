@@ -8,7 +8,7 @@ import { TransactionQueue } from '~/base';
 import { didsWithClaims } from '~/harvester/queries';
 import { IdentityWithClaims } from '~/harvester/types';
 import { Polymesh } from '~/Polymesh';
-import { apolloMockUtils, dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils } from '~/testUtils/mocks';
 import { ClaimTargets, ClaimType, SubCallback } from '~/types';
 import * as utilsModule from '~/utils';
 
@@ -17,12 +17,14 @@ jest.mock(
   require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
 );
 jest.mock('~/context', require('~/testUtils/mocks/dataSources').mockContextModule('~/context'));
-jest.mock('apollo-client', require('~/testUtils/mocks/apollo').mockApolloModule('apollo-client'));
+jest.mock(
+  'apollo-client',
+  require('~/testUtils/mocks/dataSources').mockApolloModule('apollo-client')
+);
 
 describe('Polymesh Class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
-    apolloMockUtils.initMocks();
   });
 
   afterEach(() => {
@@ -54,7 +56,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: accountSeed,
       });
     });
@@ -71,7 +73,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         keyring,
       });
     });
@@ -88,7 +90,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: apolloMockUtils.getHarvesterClient(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         uri: accountUri,
       });
     });
