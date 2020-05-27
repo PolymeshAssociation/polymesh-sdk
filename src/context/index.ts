@@ -3,12 +3,18 @@ import { AccountInfo } from '@polkadot/types/interfaces';
 import { IKeyringPair } from '@polkadot/types/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
+import { DidRecord, IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
 import { ErrorCode, SubCallback, UnsubCallback } from '~/types';
-import { balanceToBigNumber, identityIdToString, stringToAccountKey } from '~/utils';
+import {
+  balanceToBigNumber,
+  identityIdToString,
+  stringToAccountKey,
+  stringToIdentityId,
+  valueToDid,
+} from '~/utils';
 
 interface SignerData {
   currentPair: IKeyringPair;
@@ -253,5 +259,26 @@ export class Context {
     }
 
     return currentPair;
+  }
+
+  /**
+   * Check whether identities exist
+   */
+  public async getInvalidDids(identities: (string | Identity)[]): Promise<string[]> {
+    const dids = identities.map(valueToDid);
+    const rawIdentities = dids.map(did => stringToIdentityId(did, this));
+    const records = await this.polymeshApi.query.identity.didRecords.multi<DidRecord>(
+      rawIdentities
+    );
+
+    const invalidDids: string[] = [];
+
+    records.forEach((record, index) => {
+      if (record.isEmpty) {
+        invalidDids.push(dids[index]);
+      }
+    });
+
+    return invalidDids;
   }
 }

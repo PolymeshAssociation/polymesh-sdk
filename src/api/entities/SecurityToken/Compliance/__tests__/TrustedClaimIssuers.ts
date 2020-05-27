@@ -45,7 +45,7 @@ describe('TrustedClaimIssuers class', () => {
       const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
 
       const args = {
-        claimIssuerDids: ['someDid', 'otherDid'],
+        claimIssuerIdentities: ['someDid', 'otherDid'],
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;

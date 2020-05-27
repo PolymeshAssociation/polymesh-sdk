@@ -41,7 +41,7 @@ describe('Issuance class', () => {
       const args = {
         issuanceData: [
           {
-            did: 'someDid',
+            identity: 'someDid',
             amount: new BigNumber(100),
           },
         ],
