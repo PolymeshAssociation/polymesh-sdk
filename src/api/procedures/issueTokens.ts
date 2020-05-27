@@ -6,7 +6,7 @@ import { PolymeshError, Procedure } from '~/base';
 import { IdentityId } from '~/polkadot';
 import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
 import { numberToBalance, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
-import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import { MAX_BATCH_ELEMENTS,MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
 export interface IssueTokensParams {
   issuanceData: IssuanceData[];
@@ -72,19 +72,19 @@ export async function prepareIssueTokens(
   const balances: Balance[] = [];
   const canNotMintDids: Array<string> = [];
 
-  const issuanceDataItemsChunks = chunk(issuanceData, 10);
+  const issuanceDataChunks = chunk(issuanceData, 10);
 
   await Promise.all(
-    issuanceDataItemsChunks.map(async issuanceDataItemsChunk => {
+    issuanceDataChunks.map(async issuanceDataChunk => {
       // TODO: queryMulti
       const transferStatuses = await Promise.all(
-        issuanceDataItemsChunk.map(({ identity, amount }) =>
+        issuanceDataChunk.map(({ identity, amount }) =>
           securityToken.transfers.canMint({ to: identity, amount })
         )
       );
 
       transferStatuses.forEach((canTransfer, index) => {
-        const { identity, amount } = issuanceDataItemsChunk[index];
+        const { identity, amount } = issuanceDataChunk[index];
         investors.push(stringToIdentityId(valueToDid(identity), context));
         balances.push(numberToBalance(amount, context));
 
@@ -104,13 +104,17 @@ export async function prepareIssueTokens(
     });
   }
 
-  this.addTransaction(
-    asset.batchIssue,
-    { batchSize: issuanceData.length },
-    rawTicker,
-    investors,
-    balances
-  );
+  const investorChunks = chunk(investors, MAX_BATCH_ELEMENTS);
+
+  chunk(balances, MAX_BATCH_ELEMENTS).forEach((balanceChunk, index) => {
+    this.addTransaction(
+      asset.batchIssue,
+      { batchSize: issuanceData.length },
+      rawTicker,
+      investorChunks[index],
+      balanceChunk
+    );
+  });
 
   return securityToken;
 }

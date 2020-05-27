@@ -123,14 +123,14 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
       removeDefaultTrustedClaimIssuersBatchTransaction,
-      {},
+      { batchSize: currentClaimIssuerDids.length },
       rawTicker,
       currentClaimIssuerDids
     );
     sinon.assert.calledWith(
       addTransactionStub.secondCall,
       addDefaultTrustedClaimIssuersBatchTransaction,
-      {},
+      { batchSize: rawClaimIssuerDids.length },
       rawTicker,
       rawClaimIssuerDids
     );
@@ -146,7 +146,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
       addDefaultTrustedClaimIssuersBatchTransaction,
-      {},
+      { batchSize: rawClaimIssuerDids.length },
       rawTicker,
       rawClaimIssuerDids
     );
@@ -168,7 +168,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
       removeDefaultTrustedClaimIssuersBatchTransaction,
-      {},
+      { batchSize: currentClaimIssuerDids.length },
       rawTicker,
       currentClaimIssuerDids
     );

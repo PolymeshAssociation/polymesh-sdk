@@ -1,4 +1,5 @@
 import { Moment } from '@polkadot/types/interfaces';
+import { chunk } from 'lodash';
 import { Claim as MeshClaim } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
@@ -6,6 +7,7 @@ import { PolymeshError, Procedure } from '~/base';
 import { IdentityId } from '~/polkadot';
 import { ClaimTargets, ClaimType, ErrorCode, Role, RoleType } from '~/types';
 import { claimToMeshClaim, dateToMoment, stringToIdentityId, valueToDid } from '~/utils';
+import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 interface AddClaimItem {
   target: IdentityId;
@@ -56,7 +58,9 @@ export async function prepareAddClaims(
     });
   }
 
-  this.addTransaction(tx.identity.addClaimsBatch, {}, addClaimItems);
+  chunk(addClaimItems, MAX_BATCH_ELEMENTS).forEach(itemChunk => {
+    this.addTransaction(tx.identity.addClaimsBatch, { batchSize: itemChunk.length }, itemChunk);
+  });
 }
 
 /**

@@ -132,8 +132,8 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
         if (!fee) {
           const transaction = tx as PolymeshTx<unknown[]>; // can't be a PostTransactionValue because othewise fee would be already set manually
           const { section: moduleName, method: extrinsicName } = transaction;
-
-          if (extrinsicName.startsWith('batch') && !batchSize) {
+          const batchRegex = RegExp('(b|s?B)atch');
+          if (batchRegex.exec(extrinsicName) && !batchSize) {
             throw new PolymeshError({
               code: ErrorCode.FatalError,
               message:
@@ -142,7 +142,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
           }
 
           const protocolOp = `${stringUpperFirst(moduleName)}${stringUpperFirst(
-            extrinsicName.replace('batch', '')
+            extrinsicName.replace(batchRegex, '')
           )}`;
 
           try {

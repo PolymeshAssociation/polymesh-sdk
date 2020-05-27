@@ -122,7 +122,7 @@ describe('revokeClaims procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       revokeClaimsBatchTransaction,
-      {},
+      { batchSize: rawRevokeClaimItems.length },
       rawRevokeClaimItems
     );
   });

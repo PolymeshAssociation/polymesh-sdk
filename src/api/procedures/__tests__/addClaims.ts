@@ -131,7 +131,12 @@ describe('addClaims procedure', () => {
       },
     ];
 
-    sinon.assert.calledWith(addTransactionStub, addClaimsBatchTransaction, {}, rawAddClaimItems);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      addClaimsBatchTransaction,
+      { batchSize: rawAddClaimItems.length },
+      rawAddClaimItems
+    );
   });
 });
 

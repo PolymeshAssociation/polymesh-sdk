@@ -1,3 +1,4 @@
+import { chunk } from 'lodash';
 import { Claim as MeshClaim } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
@@ -5,6 +6,7 @@ import { PolymeshError, Procedure } from '~/base';
 import { IdentityId } from '~/polkadot';
 import { ClaimTargets, ErrorCode } from '~/types';
 import { claimToMeshClaim, stringToIdentityId, valueToDid } from '~/utils';
+import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 interface RevokeClaimItem {
   target: IdentityId;
@@ -55,7 +57,9 @@ export async function prepareRevokeClaims(
     });
   }
 
-  this.addTransaction(tx.identity.revokeClaimsBatch, {}, revokeClaimItems);
+  chunk(revokeClaimItems, MAX_BATCH_ELEMENTS).forEach(itemChunk => {
+    this.addTransaction(tx.identity.revokeClaimsBatch, { batchSize: itemChunk.length }, itemChunk);
+  });
 }
 
 export const revokeClaims = new Procedure(prepareRevokeClaims);
