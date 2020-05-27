@@ -192,9 +192,8 @@ export enum ClaimType {
 
 export type Claim =
   | { type: ClaimType.Jurisdiction; name: string; scope: string }
-  | { type: ClaimType.NoData }
-  | { type: ClaimType.CustomerDueDiligence }
-  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string };
+  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string }
+  | { type: ClaimType.NoData | ClaimType.CustomerDueDiligence };
 
 export type ClaimData = {
   target: Identity;

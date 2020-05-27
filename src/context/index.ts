@@ -45,7 +45,7 @@ export class Context {
 
   private currentIdentity?: Identity;
 
-  public harvester: ApolloClient<NormalizedCacheObject>;
+  public harvesterClient: ApolloClient<NormalizedCacheObject>;
 
   /**
    * @hidden
@@ -72,7 +72,7 @@ export class Context {
       this.currentIdentity = new Identity({ did: pair.did.toString() }, this);
     }
 
-    this.harvester = harvesterClient;
+    this.harvesterClient = harvesterClient;
   }
 
   static async create(params: {

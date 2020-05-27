@@ -23,7 +23,6 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
 import { BigNumber } from 'bignumber.js';
 import { EventEmitter } from 'events';
-import { DocumentNode } from 'graphql';
 import { cloneDeep, every, merge, upperFirst } from 'lodash';
 import {
   AccountKey,
@@ -61,6 +60,7 @@ import {
 import sinon, { SinonStub } from 'sinon';
 
 import { Context } from '~/context';
+import { GraphqlQuery } from '~/harvester/queries';
 import { Mocked } from '~/testUtils/types';
 import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
@@ -82,11 +82,23 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
   } as Mutable<ApiPromise> & EventEmitter;
 }
 
+const apolloConstructorStub = sinon.stub();
+
+const MockApolloClientClass = class {
+  /**
+   * @hidden
+   */
+  public constructor() {
+    // apolloConstructorStub = sinon.stub();
+    return apolloConstructorStub();
+  }
+};
+
 const mockInstanceContainer = {
   contextInstance: {} as MockContext,
   apiInstance: createApi(),
   keyringInstance: {} as Mutable<Keyring>,
-  apolloInstance: {} as ApolloClient<NormalizedCacheObject>,
+  apolloInstance: new MockApolloClientClass() as ApolloClient<NormalizedCacheObject>,
 };
 
 let apiPromiseCreateStub: SinonStub;
@@ -108,17 +120,6 @@ const MockKeyringClass = class {
    */
   public constructor() {
     return keyringConstructorStub();
-  }
-};
-
-let apolloConstructurStub: SinonStub;
-
-const MockApolloClass = class {
-  /**
-   * @hidden
-   */
-  public constructor() {
-    return apolloConstructurStub;
   }
 };
 
@@ -305,7 +306,7 @@ export const mockContextModule = (path: string) => (): object => ({
 
 export const mockApolloModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
-  ApolloClient: MockApolloClass,
+  ApolloClient: MockApolloClientClass,
 });
 
 const txMocksData = new Map<unknown, TxMockData>();
@@ -372,7 +373,7 @@ function configureContext(opts: ContextOptions): void {
       contextInstance.currentPair = { address } as IKeyringPair;
     }),
     polymeshApi: mockInstanceContainer.apiInstance,
-    harvester: mockInstanceContainer.apolloInstance,
+    harvesterClient: mockInstanceContainer.apolloInstance,
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
@@ -535,13 +536,6 @@ function initKeyring(opts?: KeyringOptions): void {
 
 /**
  * @hidden
- */
-function initApollo(): void {
-  apolloConstructurStub = sinon.stub();
-}
-
-/**
- * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
@@ -582,9 +576,6 @@ export function initMocks(opts?: {
   // Keyring
   initKeyring(opts?.keyringOptions);
 
-  // Apollo Client
-  initApollo();
-
   txMocksData.clear();
   errorStub = sinon.stub().throws(new Error('Error'));
 }
@@ -597,6 +588,9 @@ export function cleanup(): void {
   mockInstanceContainer.apiInstance = createApi();
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.keyringInstance = {} as Mutable<Keyring>;
+  mockInstanceContainer.apolloInstance = new MockApolloClientClass() as ApolloClient<
+    NormalizedCacheObject
+  >;
 }
 
 /**
@@ -683,20 +677,17 @@ export function createTxStub<
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloQueryStub(
-  query: DocumentNode,
-  returnData: any
-): ApolloClient<NormalizedCacheObject> {
+export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: any): SinonStub {
   const instance = mockInstanceContainer.apolloInstance;
+  const stub = sinon.stub();
 
-  instance.query = sinon
-    .stub()
-    .withArgs(query)
-    .resolves({
-      data: returnData,
-    });
+  stub.withArgs(query).resolves({
+    data: returnData,
+  });
 
-  return instance;
+  instance.query = stub;
+
+  return stub;
 }
 
 /**
@@ -882,7 +873,7 @@ export function getApiInstance(): ApiPromise & EventEmitter {
  * Retrieve an instance of the mocked Apollo Client
  */
 export function getHarvesterClient(): ApolloClient<NormalizedCacheObject> {
-  return (apolloConstructurStub as unknown) as ApolloClient<NormalizedCacheObject>;
+  return mockInstanceContainer.apolloInstance;
 }
 
 /**

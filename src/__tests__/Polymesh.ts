@@ -518,9 +518,12 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      dsMockUtils.createApolloQueryStub(didsWithClaims({}).query, {
-        didsWithClaims: didsWithClaimsQueryResponse,
-      });
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({ trustedClaimIssuers: ['someDid'], count: 100 }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
+      );
 
       const result = await polymesh.getIssuedClaims();
 

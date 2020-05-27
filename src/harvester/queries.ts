@@ -3,9 +3,9 @@ import gql from 'graphql-tag';
 
 import { QueryDidsWithClaimsArgs } from '~/harvester/types';
 
-interface GraphqlQuery {
+export interface GraphqlQuery<VariablesType> {
   query: DocumentNode;
-  variables: QueryDidsWithClaimsArgs;
+  variables: VariablesType;
 }
 
 /**
@@ -13,7 +13,9 @@ interface GraphqlQuery {
  *
  * Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers
  */
-export function didsWithClaims(variables: QueryDidsWithClaimsArgs): GraphqlQuery {
+export function didsWithClaims(
+  variables: QueryDidsWithClaimsArgs
+): GraphqlQuery<QueryDidsWithClaimsArgs> {
   const query = gql`
     query DidsWithClaimsQuery(
       $dids: [String]
