@@ -125,7 +125,14 @@ describe('consumeAuthorizationRequests procedure', () => {
       authRequests: auths,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawAuthIds.slice(0, -1));
+    const authIds = rawAuthIds.slice(0, -1);
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      { batchSize: authIds.length },
+      authIds
+    );
   });
 
   test('should add a batch remove authorization transaction to the queue and ignore expired requests', async () => {
@@ -139,7 +146,14 @@ describe('consumeAuthorizationRequests procedure', () => {
       authRequests: auths,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawAuthIdentifiers.slice(0, -1));
+    const authIds = rawAuthIdentifiers.slice(0, -1);
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      { batchSize: authIds.length },
+      authIds
+    );
   });
 
   describe('isAuthorized', () => {

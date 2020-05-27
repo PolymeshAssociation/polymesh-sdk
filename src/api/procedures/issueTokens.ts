@@ -104,7 +104,13 @@ export async function prepareIssueTokens(
     });
   }
 
-  this.addTransaction(asset.batchIssue, {}, rawTicker, investors, balances);
+  this.addTransaction(
+    asset.batchIssue,
+    { batchSize: issuanceData.length },
+    rawTicker,
+    investors,
+    balances
+  );
 
   return securityToken;
 }

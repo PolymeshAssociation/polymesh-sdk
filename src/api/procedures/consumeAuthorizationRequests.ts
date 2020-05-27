@@ -32,12 +32,20 @@ export async function prepareConsumeAuthorizationRequests(
 
   if (accept) {
     const requestIds = liveRequests.map(({ authId }) => numberToU64(authId, context));
-    this.addTransaction(tx.identity.batchAcceptAuthorization, {}, requestIds);
+    this.addTransaction(
+      tx.identity.batchAcceptAuthorization,
+      { batchSize: requestIds.length },
+      requestIds
+    );
   } else {
     const authIdentifiers = liveRequests.map(({ authId, targetIdentity }) =>
       authTargetToAuthIdentifier({ authId, did: targetIdentity.did }, context)
     );
-    this.addTransaction(tx.identity.batchRemoveAuthorization, {}, authIdentifiers);
+    this.addTransaction(
+      tx.identity.batchRemoveAuthorization,
+      { batchSize: authIdentifiers.length },
+      authIdentifiers
+    );
   }
 }
 

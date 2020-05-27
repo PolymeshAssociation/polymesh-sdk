@@ -24,6 +24,7 @@ interface AddTransactionOpts<Values extends unknown[]> {
   resolvers?: ResolverFunctionArray<Values>;
   isCritical?: boolean;
   signer?: AddressOrPair;
+  batchSize?: number;
 }
 
 /**
@@ -42,7 +43,10 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     args: Args
   ) => Promise<boolean> | boolean | Role[];
 
-  private transactions: (Omit<TransactionSpec, 'fee'> & { fee: BigNumber | null })[] = [];
+  private transactions: (Omit<TransactionSpec, 'fee'> & {
+    fee: BigNumber | null;
+    batchSize: number | null;
+  })[] = [];
 
   public context = {} as Context;
 
@@ -123,12 +127,22 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       this.transactions,
       async transactionSpec => {
         let { fee } = transactionSpec;
-        const { tx } = transactionSpec;
+        const { tx, batchSize } = transactionSpec;
 
         if (!fee) {
           const transaction = tx as PolymeshTx<unknown[]>; // can't be a PostTransactionValue because othewise fee would be already set manually
-          const protocolOp = `${stringUpperFirst(transaction.section)}${stringUpperFirst(
-            transaction.method
+          const { section: moduleName, method: extrinsicName } = transaction;
+
+          if (extrinsicName.startsWith('batch') && !batchSize) {
+            throw new PolymeshError({
+              code: ErrorCode.FatalError,
+              message:
+                'Did not set batch size for batch transaction. Please report this error to the Polymath team',
+            });
+          }
+
+          const protocolOp = `${stringUpperFirst(moduleName)}${stringUpperFirst(
+            extrinsicName.replace('batch', '')
           )}`;
 
           try {
@@ -168,7 +182,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
   public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
     tx: PostTransactionValue<PolymeshTx<TxArgs>>,
     options: Omit<AddTransactionOpts<Values>, 'fee'> & {
-      fee: BigNumber; // fee must be provided by hand if the transaction is a future value
+      fee: BigNumber; // fee MUST be provided by hand if the transaction is a future value
     },
     ...args: MapMaybePostTransactionValue<TxArgs>
   ): PostTransactionValueArray<Values>;
@@ -185,12 +199,13 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    * the added transaction has finished successfully
    * @param options.isCritical - whether this transaction failing should make the entire queue fail or not. Defaults to true
    * @param options.signer - address or keyring pair of the account that will sign this transaction. Defaults to the current pair in the context
+   * @param options.batchSize - when adding batch transactions, this is used to specify the amount of elements in the batch (for fee calculations). If a batch transaction is added without this option being set, an error will be thrown
    * @param args - arguments to be passed to the transaction method
    *
    * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options
    */
   public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
-    tx: MaybePostTransactionValue<PolymeshTx<TxArgs>>,
+    transaction: MaybePostTransactionValue<PolymeshTx<TxArgs>>,
     options: AddTransactionOpts<Values>,
     ...args: MapMaybePostTransactionValue<TxArgs>
   ): PostTransactionValueArray<Values> {
@@ -199,21 +214,23 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
       isCritical = true,
       signer = this.context.getCurrentPair(),
+      batchSize = null,
     } = options;
     const postTransactionValues = resolvers.map(
       resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
-    const transaction = {
-      tx: tx as PolymeshTx<unknown[]>,
+    const tx = transaction as MaybePostTransactionValue<PolymeshTx<unknown[]>>;
+
+    this.transactions.push({
+      tx,
       args,
       postTransactionValues,
       isCritical,
       signer,
       fee,
-    };
-
-    this.transactions.push(transaction);
+      batchSize,
+    });
 
     return postTransactionValues;
   }
