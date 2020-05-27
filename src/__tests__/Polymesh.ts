@@ -1,4 +1,6 @@
 import { Keyring } from '@polkadot/api';
+import { ApolloLink, GraphQLRequest } from 'apollo-link';
+import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -36,6 +38,12 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: create', () => {
+    beforeAll(() => {
+      sinon.stub(apolloLinkContextModule, 'setContext').callsFake(cbFunc => {
+        return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
+      });
+    });
+
     test('should instantiate Context and return a Polymesh instance', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -56,6 +64,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
+        isApolloConfigured: false,
         harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: accountSeed,
       });
@@ -73,6 +82,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
+        isApolloConfigured: false,
         harvesterClient: dsMockUtils.getHarvesterClient(),
         keyring,
       });
@@ -90,6 +100,30 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
+        isApolloConfigured: false,
+        harvesterClient: dsMockUtils.getHarvesterClient(),
+        uri: accountUri,
+      });
+    });
+
+    test('should instantiate Context with harvester credentials and return a Polymesh instance', async () => {
+      const accountUri = '//uri';
+      const createStub = dsMockUtils.getContextCreateStub();
+      const harvester = {
+        link: 'someLink',
+        key: 'someKey',
+      };
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri,
+        harvester,
+      });
+
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledWith(createStub, {
+        polymeshApi: dsMockUtils.getApiInstance(),
+        isApolloConfigured: true,
         harvesterClient: dsMockUtils.getHarvesterClient(),
         uri: accountUri,
       });

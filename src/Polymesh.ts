@@ -2,6 +2,7 @@ import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloClient, ApolloQueryResult } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
+import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
@@ -21,7 +22,14 @@ import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { didsWithClaims } from '~/harvester/queries';
 import { Query } from '~/harvester/types';
-import { ClaimData, Ensured, ErrorCode, SubCallback, UnsubCallback } from '~/types';
+import {
+  ClaimData,
+  Ensured,
+  ErrorCode,
+  HarvesterConfig,
+  SubCallback,
+  UnsubCallback,
+} from '~/types';
 import { SignerType } from '~/types/internal';
 import {
   createClaim,
@@ -30,7 +38,6 @@ import {
   tickerToString,
   valueToDid,
 } from '~/utils';
-import { HARVESTER_ENDPOINT } from '~/utils/constants';
 
 /**
  * Main entry point of the Polymesh SDK
@@ -51,6 +58,26 @@ export class Polymesh {
 
   static async connect(params: { nodeUrl: string; accountUri: string }): Promise<Polymesh>;
 
+  static async connect(params: {
+    nodeUrl: string;
+    accountSeed: string;
+    harvester: HarvesterConfig;
+  }): Promise<Polymesh>;
+
+  static async connect(params: {
+    nodeUrl: string;
+    keyring: Keyring;
+    harvester: HarvesterConfig;
+  }): Promise<Polymesh>;
+
+  static async connect(params: {
+    nodeUrl: string;
+    accountUri: string;
+    harvester: HarvesterConfig;
+  }): Promise<Polymesh>;
+
+  static async connect(params: { nodeUrl: string; harvester: HarvesterConfig }): Promise<Polymesh>;
+
   static async connect(params: { nodeUrl: string }): Promise<Polymesh>;
 
   /**
@@ -61,8 +88,9 @@ export class Polymesh {
     accountSeed?: string;
     keyring?: Keyring;
     accountUri?: string;
+    harvester?: HarvesterConfig;
   }): Promise<Polymesh> {
-    const { nodeUrl, accountSeed, keyring, accountUri } = params;
+    const { nodeUrl, accountSeed, keyring, accountUri, harvester } = params;
     let polymeshApi: ApiPromise;
     let harvesterClient: ApolloClient<NormalizedCacheObject>;
 
@@ -76,37 +104,52 @@ export class Polymesh {
       });
 
       harvesterClient = new ApolloClient({
-        link: ApolloLink.from([
-          new HttpLink({
-            uri: HARVESTER_ENDPOINT,
-          }),
-        ]),
+        link: setContext((_, { headers }) => {
+          return {
+            headers: {
+              ...headers,
+              'x-api-key': harvester ? harvester.key : '',
+            },
+          };
+        }).concat(
+          ApolloLink.from([
+            new HttpLink({
+              uri: harvester ? harvester.link : '',
+            }),
+          ])
+        ),
         cache: new InMemoryCache(),
       });
+
+      const isApolloConfigured = typeof harvester !== 'undefined';
 
       let context: Context;
 
       if (accountSeed) {
         context = await Context.create({
           polymeshApi,
+          isApolloConfigured,
           harvesterClient,
           seed: accountSeed,
         });
       } else if (keyring) {
         context = await Context.create({
           polymeshApi,
+          isApolloConfigured,
           harvesterClient,
           keyring,
         });
       } else if (accountUri) {
         context = await Context.create({
           polymeshApi,
+          isApolloConfigured,
           harvesterClient,
           uri: accountUri,
         });
       } else {
         context = await Context.create({
           polymeshApi,
+          isApolloConfigured,
           harvesterClient,
         });
       }

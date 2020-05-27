@@ -19,6 +19,7 @@ interface SignerData {
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
+  isApolloConfigured: boolean;
   harvesterClient: ApolloClient<NormalizedCacheObject>;
   keyring: Keyring;
   pair?: SignerData;
@@ -51,7 +52,7 @@ export class Context {
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, harvesterClient, keyring, pair } = params;
+    const { polymeshApi, isApolloConfigured, harvesterClient, keyring, pair } = params;
 
     this.polymeshApi = new Proxy(polymeshApi, {
       get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
@@ -72,29 +73,47 @@ export class Context {
       this.currentIdentity = new Identity({ did: pair.did.toString() }, this);
     }
 
-    this.harvester = harvesterClient;
+    this.harvester = new Proxy(harvesterClient, {
+      get: (
+        target,
+        prop: keyof ApolloClient<NormalizedCacheObject>
+      ): ApolloClient<NormalizedCacheObject>[keyof ApolloClient<NormalizedCacheObject>] => {
+        if (prop === 'query' && !isApolloConfigured) {
+          throw new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Cannot perform this action without an active harvester connection',
+          });
+        }
+
+        return target[prop];
+      },
+    });
   }
 
   static async create(params: {
     polymeshApi: ApiPromise;
+    isApolloConfigured: boolean;
     harvesterClient: ApolloClient<NormalizedCacheObject>;
     seed: string;
   }): Promise<Context>;
 
   static async create(params: {
     polymeshApi: ApiPromise;
+    isApolloConfigured: boolean;
     harvesterClient: ApolloClient<NormalizedCacheObject>;
     keyring: Keyring;
   }): Promise<Context>;
 
   static async create(params: {
     polymeshApi: ApiPromise;
+    isApolloConfigured: boolean;
     harvesterClient: ApolloClient<NormalizedCacheObject>;
     uri: string;
   }): Promise<Context>;
 
   static async create(params: {
     polymeshApi: ApiPromise;
+    isApolloConfigured: boolean;
     harvesterClient: ApolloClient<NormalizedCacheObject>;
   }): Promise<Context>;
 
@@ -103,12 +122,20 @@ export class Context {
    */
   static async create(params: {
     polymeshApi: ApiPromise;
+    isApolloConfigured: boolean;
     harvesterClient: ApolloClient<NormalizedCacheObject>;
     seed?: string;
     keyring?: Keyring;
     uri?: string;
   }): Promise<Context> {
-    const { polymeshApi, harvesterClient, seed, keyring: passedKeyring, uri } = params;
+    const {
+      polymeshApi,
+      isApolloConfigured,
+      harvesterClient,
+      seed,
+      keyring: passedKeyring,
+      uri,
+    } = params;
 
     let keyring = new Keyring({ type: 'sr25519' });
     let currentPair: IKeyringPair | undefined;
@@ -136,7 +163,13 @@ export class Context {
         );
         const did = identityIds.unwrap().asUnique;
 
-        return new Context({ polymeshApi, harvesterClient, keyring, pair: { currentPair, did } });
+        return new Context({
+          polymeshApi,
+          isApolloConfigured,
+          harvesterClient,
+          keyring,
+          pair: { currentPair, did },
+        });
       } catch (err) {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
@@ -145,7 +178,7 @@ export class Context {
       }
     }
 
-    return new Context({ polymeshApi, harvesterClient, keyring });
+    return new Context({ polymeshApi, isApolloConfigured, harvesterClient, keyring });
   }
 
   /**
