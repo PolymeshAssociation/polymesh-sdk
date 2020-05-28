@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ApiPromise, Keyring } from '@polkadot/api';
+import { Signer } from '@polkadot/api/types';
 import { bool, Bytes, Enum, Option, u8, u32, u64 } from '@polkadot/types';
 import {
   AccountData,
@@ -60,7 +61,7 @@ import {
   TickerRegistration,
   TickerRegistrationConfig,
 } from 'polymesh-types/types';
-import sinon, { SinonStub } from 'sinon';
+import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
 import { Context } from '~/context';
 import { Mocked } from '~/testUtils/types';
@@ -81,6 +82,7 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
       apiEmitter.on(event, listener),
     off: (event: string, listener: (...args: unknown[]) => unknown) =>
       apiEmitter.off(event, listener),
+    setSigner: sinon.stub() as (signer: Signer) => void,
   } as Mutable<ApiPromise> & EventEmitter;
 }
 
@@ -818,8 +820,10 @@ export function setContextAccountBalance(balance: BigNumber): void {
  * @hidden
  * Retrieve an instance of the mocked Polkadot API
  */
-export function getApiInstance(): ApiPromise & EventEmitter {
-  return mockInstanceContainer.apiInstance as ApiPromise & EventEmitter;
+export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> & EventEmitter {
+  return (mockInstanceContainer.apiInstance as unknown) as ApiPromise &
+    SinonStubbedInstance<ApiPromise> &
+    EventEmitter;
 }
 
 /**

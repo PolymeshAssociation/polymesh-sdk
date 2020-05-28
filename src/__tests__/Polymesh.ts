@@ -1,4 +1,5 @@
 import { Keyring } from '@polkadot/api';
+import { Signer } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -84,6 +85,25 @@ describe('Polymesh Class', () => {
         polymeshApi: polkadotMockUtils.getApiInstance(),
         uri: accountUri,
       });
+    });
+
+    test('should set an optional signer for the polkadot API', async () => {
+      const accountSeed = 'Alice'.padEnd(32, ' ');
+      const createStub = polkadotMockUtils.getContextCreateStub();
+      const signer = 'signer' as Signer;
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountSeed,
+        signer,
+      });
+
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledWith(createStub, {
+        polymeshApi: polkadotMockUtils.getApiInstance(),
+        seed: accountSeed,
+      });
+      sinon.assert.calledWith(polkadotMockUtils.getApiInstance().setSigner, signer);
     });
 
     test('should throw if Context fails in the connection process', async () => {
