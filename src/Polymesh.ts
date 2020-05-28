@@ -442,14 +442,14 @@ export class Polymesh {
   public async getIssuedClaims(): Promise<ClaimData[]> {
     const {
       context,
-      context: { harvester },
+      context: { harvesterClient },
     } = this;
 
     const { did } = context.getCurrentIdentity();
 
-    let result: ApolloQueryResult<Query>;
+    let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
     try {
-      result = await harvester.query<Query>(
+      result = await harvesterClient.query<Query>(
         didsWithClaims({
           trustedClaimIssuers: [did],
           count: 100,
@@ -462,10 +462,9 @@ export class Polymesh {
       });
     }
 
-    const didsWithClaimsResult: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>> = result;
     const {
       data: { didsWithClaims: didsWithClaimsList },
-    } = didsWithClaimsResult;
+    } = result;
     const claimData: ClaimData[] = [];
 
     didsWithClaimsList.forEach(({ claims }) => {

@@ -1,10 +1,10 @@
-import { chunk } from 'lodash';
 import { Claim as MeshClaim } from 'polymesh-types/types';
 
+import { Identity } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { IdentityId } from '~/polkadot';
 import { ClaimTargets, ErrorCode } from '~/types';
-import { claimToMeshClaim, identityIdToString, stringToIdentityId } from '~/utils';
+import { claimToMeshClaim, stringToIdentityId, valueToDid } from '~/utils';
 
 interface RevokeClaimItem {
   target: IdentityId;
@@ -26,54 +26,32 @@ export async function prepareRevokeClaims(
 
   const {
     context: {
-      polymeshApi: {
-        tx,
-        query: {
-          identity: { didRecords },
-        },
-      },
+      polymeshApi: { tx },
     },
     context,
   } = this;
 
   const revokeClaimItems: RevokeClaimItem[] = [];
+  const allTargets: (string | Identity)[] = [];
 
   claims.forEach(({ targets, claim }) => {
-    targets.forEach(target =>
+    targets.forEach(target => {
+      allTargets.push(target);
       revokeClaimItems.push({
-        target: stringToIdentityId(target, context),
+        target: stringToIdentityId(valueToDid(target), context),
         claim: claimToMeshClaim(claim, context),
-      })
-    );
+      });
+    });
   });
 
-  const revokeClaimItemsChunks = chunk(revokeClaimItems, 10);
-
-  const nonExistentDids: IdentityId[] = [];
-
-  await Promise.all(
-    revokeClaimItemsChunks.map(async revokeClaimItemsChunk => {
-      // TODO: queryMulti
-      const sizes = await Promise.all(
-        revokeClaimItemsChunk.map(({ target }) => didRecords.size(target))
-      );
-
-      sizes.forEach((size, index) => {
-        if (size.isZero()) {
-          nonExistentDids.push(revokeClaimItemsChunk[index].target);
-        }
-      });
-    })
-  );
+  const nonExistentDids: string[] = await context.getInvalidDids(allTargets);
 
   // TODO @monitz87: check if the claim exists when the harvester is done
 
   if (nonExistentDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Some of the supplied identity IDs do not exist: ${nonExistentDids
-        .map(identityIdToString)
-        .join(', ')}`,
+      message: `Some of the supplied identity IDs do not exist: ${nonExistentDids.join(', ')}`,
     });
   }
 

@@ -5,12 +5,18 @@ import stringToU8a from '@polkadot/util/string/toU8a';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
+import { DidRecord, IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
 import { ErrorCode, SubCallback, UnsubCallback } from '~/types';
-import { balanceToBigNumber, identityIdToString, stringToAccountKey } from '~/utils';
+import {
+  balanceToBigNumber,
+  identityIdToString,
+  stringToAccountKey,
+  stringToIdentityId,
+  valueToDid,
+} from '~/utils';
 
 interface SignerData {
   currentPair: IKeyringPair;
@@ -46,7 +52,7 @@ export class Context {
 
   private currentIdentity?: Identity;
 
-  public harvester: ApolloClient<NormalizedCacheObject>;
+  public harvesterClient: ApolloClient<NormalizedCacheObject>;
 
   /**
    * @hidden
@@ -73,7 +79,7 @@ export class Context {
       this.currentIdentity = new Identity({ did: pair.did.toString() }, this);
     }
 
-    this.harvester = new Proxy(harvesterClient, {
+    this.harvesterClient = new Proxy(harvesterClient, {
       get: (
         target,
         prop: keyof ApolloClient<NormalizedCacheObject>
@@ -312,5 +318,26 @@ export class Context {
     }
 
     return currentPair;
+  }
+
+  /**
+   * Check whether identities exist
+   */
+  public async getInvalidDids(identities: (string | Identity)[]): Promise<string[]> {
+    const dids = identities.map(valueToDid);
+    const rawIdentities = dids.map(did => stringToIdentityId(did, this));
+    const records = await this.polymeshApi.query.identity.didRecords.multi<DidRecord>(
+      rawIdentities
+    );
+
+    const invalidDids: string[] = [];
+
+    records.forEach((record, index) => {
+      if (record.isEmpty) {
+        invalidDids.push(dids[index]);
+      }
+    });
+
+    return invalidDids;
   }
 }

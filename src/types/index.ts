@@ -192,9 +192,8 @@ export enum ClaimType {
 
 export type Claim =
   | { type: ClaimType.Jurisdiction; name: string; scope: string }
-  | { type: ClaimType.NoData }
-  | { type: ClaimType.CustomerDueDiligence }
-  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string };
+  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string }
+  | { type: ClaimType.NoData | ClaimType.CustomerDueDiligence };
 
 export type ClaimData = {
   target: Identity;
@@ -261,7 +260,7 @@ export enum ErrorCode {
  * Represents an amount of tokens to be issued to an identity
  */
 export interface IssuanceData {
-  did: string;
+  identity: string | Identity;
   amount: BigNumber;
 }
 
@@ -274,7 +273,7 @@ export enum TransferStatus {
 }
 
 export interface ClaimTargets {
-  targets: string[];
+  targets: (string | Identity)[];
   claim: Claim;
   expiry?: Date;
 }

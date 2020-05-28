@@ -16,7 +16,6 @@ describe('revokeClaims procedure', () => {
   let claimToMeshClaimStub: sinon.SinonStub<[Claim, Context], MeshClaim>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let didRecordsStub: sinon.SinonStub & dsMockUtils.StubQuery;
   let addTransactionStub: sinon.SinonStub;
   let revokeClaimsBatchTransaction: PolymeshTx<[Vec<BatchRevokeClaimItem>]>;
 
@@ -73,9 +72,6 @@ describe('revokeClaims procedure', () => {
     claimToMeshClaimStub.withArgs(buyLockupClaim, mockContext).returns(rawBuyLockupClaim);
     stringToIdentityIdStub.withArgs(someDid, mockContext).returns(rawSomeDid);
     stringToIdentityIdStub.withArgs(otherDid, mockContext).returns(rawOtherDid);
-    didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords', {
-      size: 1,
-    });
     identityIdToStringStub.withArgs(rawOtherDid).returns(otherDid);
   });
 
@@ -92,7 +88,7 @@ describe('revokeClaims procedure', () => {
   });
 
   test("should throw an error if some of the supplied target dids don't exist", () => {
-    didRecordsStub.size.withArgs(rawOtherDid).resolves(dsMockUtils.createMockU64(0));
+    dsMockUtils.configureMocks({ contextOptions: { invalidDids: [otherDid] } });
 
     const proc = procedureMockUtils.getInstance<RevokeClaimsParams, void>();
     proc.context = mockContext;
