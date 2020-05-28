@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
 import { dsMockUtils } from '~/testUtils/mocks';
-import { createMockAccountKey } from '~/testUtils/mocks/polkadot';
+import { createMockAccountKey } from '~/testUtils/mocks/dataSources';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -581,6 +581,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         uri: '//Alice',
       });
 
