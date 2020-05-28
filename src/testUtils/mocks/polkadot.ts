@@ -25,6 +25,7 @@ import { cloneDeep, every, merge, upperFirst } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,
+  AssetName,
   AssetTransferRule,
   AssetType,
   AuthIdentifier,
@@ -58,7 +59,6 @@ import {
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
-  TokenName,
 } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
@@ -1023,8 +1023,8 @@ export const createMockBytes = (value?: string): Bytes => createMockU8ACodec(val
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockTokenName = (name?: string): TokenName =>
-  createMockStringCodec(name) as TokenName;
+export const createMockAssetName = (name?: string): AssetName =>
+  createMockStringCodec(name) as AssetName;
 
 /**
  * @hidden
@@ -1116,14 +1116,14 @@ export const createMockTickerRegistrationConfig = (
  */
 export const createMockSecurityToken = (
   token: {
-    name: TokenName;
+    name: AssetName;
     total_supply: Balance;
     owner_did: IdentityId;
     divisible: bool;
     asset_type: AssetType;
     link_id: u64;
   } = {
-    name: createMockTokenName(),
+    name: createMockAssetName(),
     total_supply: createMockBalance(),
     owner_did: createMockIdentityId(),
     divisible: createMockBool(),

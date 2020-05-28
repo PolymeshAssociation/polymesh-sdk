@@ -4,12 +4,12 @@ import { ITuple } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
+  AssetName,
   AssetType,
   Document,
   FundingRoundName,
   IdentifierType,
   Ticker,
-  TokenName,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -45,7 +45,7 @@ describe('createSecurityToken procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context], Balance>;
-  let stringToTokenNameStub: sinon.SinonStub<[string, Context], TokenName>;
+  let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let tokenTypeToAssetTypeStub: sinon.SinonStub<[TokenType, Context], AssetType>;
   let tokenIdentifierTypeToIdentifierTypeStub: sinon.SinonStub<
@@ -64,7 +64,7 @@ describe('createSecurityToken procedure', () => {
   let fundingRound: string;
   let documents: TokenDocument[];
   let rawTicker: Ticker;
-  let rawName: TokenName;
+  let rawName: AssetName;
   let rawTotalSupply: Balance;
   let rawIsDivisible: bool;
   let rawType: AssetType;
@@ -79,7 +79,7 @@ describe('createSecurityToken procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
-    stringToTokenNameStub = sinon.stub(utilsModule, 'stringToTokenName');
+    stringToAssetNameStub = sinon.stub(utilsModule, 'stringToAssetName');
     booleanToBoolStub = sinon.stub(utilsModule, 'booleanToBool');
     tokenTypeToAssetTypeStub = sinon.stub(utilsModule, 'tokenTypeToAssetType');
     tokenIdentifierTypeToIdentifierTypeStub = sinon.stub(
@@ -109,7 +109,7 @@ describe('createSecurityToken procedure', () => {
       },
     ];
     rawTicker = polkadotMockUtils.createMockTicker(ticker);
-    rawName = polkadotMockUtils.createMockTokenName(name);
+    rawName = polkadotMockUtils.createMockAssetName(name);
     rawTotalSupply = polkadotMockUtils.createMockBalance(totalSupply.toNumber());
     rawIsDivisible = polkadotMockUtils.createMockBool(isDivisible);
     rawType = polkadotMockUtils.createMockAssetType(tokenType);
@@ -143,7 +143,7 @@ describe('createSecurityToken procedure', () => {
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   let transaction: PolymeshTx<[
-    TokenName,
+    AssetName,
     Ticker,
     Balance,
     bool,
@@ -166,7 +166,7 @@ describe('createSecurityToken procedure', () => {
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     numberToBalanceStub.withArgs(totalSupply, mockContext).returns(rawTotalSupply);
-    stringToTokenNameStub.withArgs(name, mockContext).returns(rawName);
+    stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     tokenTypeToAssetTypeStub.withArgs(tokenType, mockContext).returns(rawType);
     tokenIdentifierTypeToIdentifierTypeStub

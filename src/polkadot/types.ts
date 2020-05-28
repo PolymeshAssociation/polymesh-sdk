@@ -145,8 +145,6 @@ export enum CommitteeMembershipTx {
   SwapMember = 'committeeMembership.swapMember',
   ResetMembers = 'committeeMembership.resetMembers',
   AbdicateMembership = 'committeeMembership.abdicateMembership',
-  SetPrime = 'committeeMembership.setPrime',
-  ClearPrime = 'committeeMembership.clearPrime',
 }
 
 export enum PipsTx {
@@ -154,7 +152,8 @@ export enum PipsTx {
   SetMinProposalDeposit = 'pips.setMinProposalDeposit',
   SetQuorumThreshold = 'pips.setQuorumThreshold',
   SetProposalDuration = 'pips.setProposalDuration',
-  SetDefaultEnactPeriod = 'pips.setDefaultEnactPeriod',
+  SetProposalCoolOffPeriod = 'pips.setProposalCoolOffPeriod',
+  SetDefaultEnactmentPeriod = 'pips.setDefaultEnactmentPeriod',
   Propose = 'pips.propose',
   AmendProposal = 'pips.amendProposal',
   CancelProposal = 'pips.cancelProposal',
@@ -166,7 +165,7 @@ export enum PipsTx {
   EmergencyReferendum = 'pips.emergencyReferendum',
   EnactReferendum = 'pips.enactReferendum',
   RejectReferendum = 'pips.rejectReferendum',
-  SetReferendumEnactmentPeriod = 'pips.setReferendumEnactmentPeriod',
+  OverrideReferendumEnactmentPeriod = 'pips.overrideReferendumEnactmentPeriod',
 }
 
 export enum AssetTx {
@@ -251,8 +250,11 @@ export enum BridgeTx {
   ChangeBridgeLimit = 'bridge.changeBridgeLimit',
   ChangeBridgeWhitelist = 'bridge.changeBridgeWhitelist',
   ForceHandleBridgeTx = 'bridge.forceHandleBridgeTx',
+  ForceHandleBridgeTxs = 'bridge.forceHandleBridgeTxs',
   ProposeBridgeTx = 'bridge.proposeBridgeTx',
+  ProposeBridgeTxs = 'bridge.proposeBridgeTxs',
   HandleBridgeTx = 'bridge.handleBridgeTx',
+  HandleBridgeTxs = 'bridge.handleBridgeTxs',
   FreezeTxs = 'bridge.freezeTxs',
   UnfreezeTxs = 'bridge.unfreezeTxs',
 }
@@ -260,6 +262,7 @@ export enum BridgeTx {
 export enum ComplianceManagerTx {
   AddActiveRule = 'complianceManager.addActiveRule',
   RemoveActiveRule = 'complianceManager.removeActiveRule',
+  ReplaceAssetRules = 'complianceManager.replaceAssetRules',
   ResetActiveRules = 'complianceManager.resetActiveRules',
   PauseAssetRules = 'complianceManager.pauseAssetRules',
   ResumeAssetRules = 'complianceManager.resumeAssetRules',
@@ -286,10 +289,6 @@ export enum StoCappedTx {
   UnpauseSto = 'stoCapped.unpauseSto',
 }
 
-export enum PercentageTmTx {
-  ToggleMaximumPercentageRestriction = 'percentageTm.toggleMaximumPercentageRestriction',
-}
-
 export enum ExemptionTx {
   ModifyExemptionList = 'exemption.modifyExemptionList',
 }
@@ -308,8 +307,6 @@ export enum CddServiceProvidersTx {
   SwapMember = 'cddServiceProviders.swapMember',
   ResetMembers = 'cddServiceProviders.resetMembers',
   AbdicateMembership = 'cddServiceProviders.abdicateMembership',
-  SetPrime = 'cddServiceProviders.setPrime',
-  ClearPrime = 'cddServiceProviders.clearPrime',
 }
 
 export enum ProtocolFeeTx {
@@ -342,7 +339,6 @@ export type TxTag =
   | ComplianceManagerTx
   | VotingTx
   | StoCappedTx
-  | PercentageTmTx
   | ExemptionTx
   | SimpleTokenTx
   | CddServiceProvidersTx
@@ -373,7 +369,6 @@ export const TxTags = {
   complianceManager: ComplianceManagerTx,
   voting: VotingTx,
   stoCapped: StoCappedTx,
-  percentageTm: PercentageTmTx,
   exemption: ExemptionTx,
   simpleToken: SimpleTokenTx,
   cddServiceProviders: CddServiceProvidersTx,

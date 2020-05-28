@@ -92,7 +92,6 @@ import {
   PipsMetadata,
   PolymeshVotes,
   PosRatio,
-  PreAuthorizedKeyInfo,
   ProtocolOp,
   Referendum,
   STO,
@@ -510,10 +509,6 @@ declare module '@polkadot/api/types/storage' {
        * The current "inactive" membership, stored as an ordered Vec.
        **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
-      /**
-       * The current prime member, if one exists.
-       **/
-      prime: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
     };
     committeeMembership: {
       /**
@@ -524,10 +519,6 @@ declare module '@polkadot/api/types/storage' {
        * The current "inactive" membership, stored as an ordered Vec.
        **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
-      /**
-       * The current prime member, if one exists.
-       **/
-      prime: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
     };
     complianceManager: {
       /**
@@ -756,15 +747,6 @@ declare module '@polkadot/api/types/storage' {
         (arg: IdentityId | string | Uint8Array) => Observable<AuthorizationNonce>
       >;
       /**
-       * Pre-authorize join to Identity.
-       **/
-      preAuthorizedJoinDid: AugmentedQuery<
-        ApiType,
-        (
-          arg: Signatory | { Identity: any } | { AccountKey: any } | string | Uint8Array
-        ) => Observable<Vec<PreAuthorizedKeyInfo>>
-      >;
-      /**
        * Inmediate revoke of any off-chain authorization.
        **/
       revokeOffChainAuthorization: AugmentedQuery<
@@ -887,6 +869,17 @@ declare module '@polkadot/api/types/storage' {
         (arg: AccountId | string | Uint8Array) => Observable<u64>
       >;
       /**
+       * Know whether the proposal is closed or not
+       **/
+      proposalClosed: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[AccountId, u64]>
+            | [AccountId | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+        ) => Observable<bool>
+      >;
+      /**
        * A mapping of proposals to their IDs.
        **/
       proposalIds: AugmentedQueryDoubleMap<
@@ -897,7 +890,7 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Option<u64>>
       >;
       /**
-       * Proposals presented for voting to a multisig (multisig, proposal id) => Option<proposal>.
+       * Proposals presented for voting to a multisig (multisig, proposal id) => Option<T::Proposal>.
        **/
       proposals: AugmentedQuery<
         ApiType,
@@ -963,15 +956,6 @@ declare module '@polkadot/api/types/storage' {
       reportsByKindIndex: AugmentedQuery<
         ApiType,
         (arg: Kind | string | Uint8Array) => Observable<Bytes>
-      >;
-    };
-    percentageTm: {
-      /**
-       * Maximum percentage enabled for a given token
-       **/
-      maximumPercentageEnabledForToken: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<u16>
       >;
     };
     pips: {
@@ -1078,11 +1062,6 @@ declare module '@polkadot/api/types/storage' {
        * The current members of the committee.
        **/
       members: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
-      /**
-       * The member who provides the default vote for any other members that do not vote before
-       * the timeout. If None, then no member has that privilege.
-       **/
-      prime: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
       /**
        * Proposals so far.
        **/

@@ -12,6 +12,7 @@ import { Context } from '~/context';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
 import {
   assetIdentifierToString,
+  assetNameToString,
   assetTypeToString,
   balanceToBigNumber,
   boolToBoolean,
@@ -19,7 +20,6 @@ import {
   identityIdToString,
   tickerToDid,
   tokenIdentifierTypeToIdentifierType,
-  tokenNameToString,
 } from '~/utils';
 
 import { Compliance } from './Compliance';
@@ -132,7 +132,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     return {
       assetType: assetTypeToString(asset_type),
       isDivisible: boolToBoolean(divisible),
-      name: tokenNameToString(name),
+      name: assetNameToString(name),
       owner: new Identity({ did: identityIdToString(owner_did) }, context),
       totalSupply: balanceToBigNumber(total_supply),
     };
