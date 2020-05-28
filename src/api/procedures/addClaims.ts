@@ -1,6 +1,6 @@
 import { Moment } from '@polkadot/types/interfaces';
 import { chunk } from 'lodash';
-import { Claim as MeshClaim } from 'polymesh-types/types';
+import { Claim as MeshClaim, TxTags } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
@@ -58,7 +58,7 @@ export async function prepareAddClaims(
     });
   }
 
-  chunk(addClaimItems, MAX_BATCH_ELEMENTS).forEach(itemChunk => {
+  chunk(addClaimItems, MAX_BATCH_ELEMENTS[TxTags.identity.AddClaimsBatch]).forEach(itemChunk => {
     this.addTransaction(tx.identity.addClaimsBatch, { batchSize: itemChunk.length }, itemChunk);
   });
 }

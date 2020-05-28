@@ -3,10 +3,10 @@ import { chunk } from 'lodash';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { IdentityId } from '~/polkadot';
+import { IdentityId, TxTags } from '~/polkadot';
 import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
 import { numberToBalance, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
-import { MAX_BATCH_ELEMENTS,MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import { MAX_BATCH_ELEMENTS, MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
 export interface IssueTokensParams {
   issuanceData: IssuanceData[];
@@ -104,9 +104,10 @@ export async function prepareIssueTokens(
     });
   }
 
-  const investorChunks = chunk(investors, MAX_BATCH_ELEMENTS);
+  const maxElements = MAX_BATCH_ELEMENTS[TxTags.asset.BatchIssue];
+  const investorChunks = chunk(investors, maxElements);
 
-  chunk(balances, MAX_BATCH_ELEMENTS).forEach((balanceChunk, index) => {
+  chunk(balances, maxElements).forEach((balanceChunk, index) => {
     this.addTransaction(
       asset.batchIssue,
       { batchSize: issuanceData.length },

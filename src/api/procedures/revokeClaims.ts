@@ -1,5 +1,5 @@
 import { chunk } from 'lodash';
-import { Claim as MeshClaim } from 'polymesh-types/types';
+import { Claim as MeshClaim, TxTags } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
@@ -57,9 +57,15 @@ export async function prepareRevokeClaims(
     });
   }
 
-  chunk(revokeClaimItems, MAX_BATCH_ELEMENTS).forEach(itemChunk => {
-    this.addTransaction(tx.identity.revokeClaimsBatch, { batchSize: itemChunk.length }, itemChunk);
-  });
+  chunk(revokeClaimItems, MAX_BATCH_ELEMENTS[TxTags.identity.RevokeClaimsBatch]).forEach(
+    itemChunk => {
+      this.addTransaction(
+        tx.identity.revokeClaimsBatch,
+        { batchSize: itemChunk.length },
+        itemChunk
+      );
+    }
+  );
 }
 
 export const revokeClaims = new Procedure(prepareRevokeClaims);
