@@ -2,6 +2,7 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
+import { GraphqlQuery } from '~/harvester/queries';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountKey } from '~/testUtils/mocks/dataSources';
 import * as utilsModule from '~/utils';
@@ -63,12 +64,11 @@ describe('Context class', () => {
       seed: 'Alice'.padEnd(32, ' '),
     });
 
-    expect(() => context.harvester.query).toThrow(
+    expect(() => context.harvesterClient.query).toThrow(
       'Cannot perform this action without an active harvester connection'
     );
   });
 
-  /*
   test('should return an ApolloClient instance if harvester credentials are set', async () => {
     const newPair = {
       address: 'someAddress1',
@@ -88,14 +88,19 @@ describe('Context class', () => {
       ),
     });
 
+    const harvesterQueryStub = dsMockUtils.createApolloQueryStub({} as GraphqlQuery<unknown>, {});
+
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       isApolloConfigured: true,
       harvesterClient: dsMockUtils.getHarvesterClient(),
       seed: 'Alice'.padEnd(32, ' '),
     });
+
+    await context.harvesterClient.query({} as GraphqlQuery<unknown>);
+
+    sinon.assert.calledOnce(harvesterQueryStub);
   });
-  */
 
   describe('method: create', () => {
     test('should throw if seed parameter is not a 32 length string', async () => {
@@ -660,6 +665,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
+        isApolloConfigured: false,
         harvesterClient: dsMockUtils.getHarvesterClient(),
         uri: '//Alice',
       });
