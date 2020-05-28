@@ -71,6 +71,22 @@ describe('Polymesh Class', () => {
       });
     });
 
+    test('should instantiate Context with a ui keyring and return a Polymesh instance', async () => {
+      const keyring = {} as Keyring;
+      const createStub = polkadotMockUtils.getContextCreateStub();
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        keyring: { keyring },
+      });
+
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledWith(createStub, {
+        polymeshApi: polkadotMockUtils.getApiInstance(),
+        keyring,
+      });
+    });
+
     test('should instantiate Context with a uri and return a Polymesh instance', async () => {
       const accountUri = '//uri';
       const createStub = polkadotMockUtils.getContextCreateStub();

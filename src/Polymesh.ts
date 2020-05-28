@@ -1,4 +1,5 @@
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
+import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Signer } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloClient } from 'apollo-client';
@@ -20,7 +21,7 @@ import {
 } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode, SubCallback, UnsubCallback } from '~/types';
+import { CommonKeyring, ErrorCode, SubCallback, UiKeyring, UnsubCallback } from '~/types';
 import { SignerType } from '~/types/internal';
 import { signerToSignatory, stringToTicker, tickerToString, valueToDid } from '~/utils';
 import { HARVESTER_ENDPOINT } from '~/utils/constants';
@@ -29,6 +30,15 @@ interface ConnectParamsBase {
   nodeUrl: string;
   signer?: Signer;
 }
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * @hidden
+ */
+function isUiKeyring(keyring: any): keyring is UiKeyring {
+  return !!keyring.keyring;
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**
  * Main entry point of the Polymesh SDK
@@ -47,7 +57,9 @@ export class Polymesh {
 
   static async connect(params: ConnectParamsBase & { accountSeed: string }): Promise<Polymesh>;
 
-  static async connect(params: ConnectParamsBase & { keyring: Keyring }): Promise<Polymesh>;
+  static async connect(params: ConnectParamsBase & { 
+    keyring: CommonKeyring | UiKeyring;
+  }): Promise<Polymesh>;
 
   static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
 
@@ -59,7 +71,7 @@ export class Polymesh {
   static async connect(
     params: ConnectParamsBase & {
       accountSeed?: string;
-      keyring?: Keyring;
+      keyring?: CommonKeyring | UiKeyring;
       accountUri?: string;
     }
   ): Promise<Polymesh> {
@@ -88,9 +100,15 @@ export class Polymesh {
           seed: accountSeed,
         });
       } else if (keyring) {
+        let keyringInstance: CommonKeyring;
+        if (isUiKeyring(keyring)) {
+          keyringInstance = keyring.keyring;
+        } else {
+          keyringInstance = keyring;
+        }
         context = await Context.create({
           polymeshApi,
-          keyring,
+          keyring: keyringInstance,
         });
       } else if (accountUri) {
         context = await Context.create({

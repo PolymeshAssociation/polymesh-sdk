@@ -1,3 +1,4 @@
+import { Keyring } from '@polkadot/api';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities';
@@ -273,5 +274,10 @@ export interface ClaimTargets {
 
 export type SubCallback<T> = (result: T) => void | Promise<void>;
 export type UnsubCallback = () => void;
+
+export type CommonKeyring = Pick<Keyring, 'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri'>;
+export interface UiKeyring {
+  keyring: CommonKeyring;
+}
 
 export * from '~/api/entities/types';
