@@ -1,4 +1,3 @@
-import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Signer } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
@@ -57,9 +56,11 @@ export class Polymesh {
 
   static async connect(params: ConnectParamsBase & { accountSeed: string }): Promise<Polymesh>;
 
-  static async connect(params: ConnectParamsBase & { 
-    keyring: CommonKeyring | UiKeyring;
-  }): Promise<Polymesh>;
+  static async connect(
+    params: ConnectParamsBase & {
+      keyring: CommonKeyring | UiKeyring;
+    }
+  ): Promise<Polymesh>;
 
   static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
 
