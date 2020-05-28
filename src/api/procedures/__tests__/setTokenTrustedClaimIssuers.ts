@@ -21,9 +21,8 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
   let trustedClaimIssuerStub: sinon.SinonStub;
-  let didRecordsStub: sinon.SinonStub & dsMockUtils.StubQuery;
   let ticker: string;
-  let claimIssuerDids: string[];
+  let claimIssuerIdentities: string[];
   let rawTicker: Ticker;
   let rawClaimIssuerDids: IdentityId[];
   let args: Params;
@@ -36,13 +35,13 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
     identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
     ticker = 'someTicker';
-    claimIssuerDids = ['aDid', 'otherDid', 'differentDid'];
+    claimIssuerIdentities = ['aDid', 'otherDid', 'differentDid'];
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawClaimIssuerDids = claimIssuerDids.map(dsMockUtils.createMockIdentityId);
+    rawClaimIssuerDids = claimIssuerIdentities.map(dsMockUtils.createMockIdentityId);
     /* eslint-enable @typescript-eslint/camelcase */
     args = {
       ticker,
-      claimIssuerDids,
+      claimIssuerIdentities,
     };
   });
 
@@ -61,9 +60,6 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
         returnValue: [],
       }
     );
-    didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords', {
-      size: 1,
-    });
 
     removeDefaultTrustedClaimIssuersBatchTransaction = dsMockUtils.createTxStub(
       'complianceManager',
@@ -77,7 +73,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    claimIssuerDids.forEach((did, index) => {
+    claimIssuerIdentities.forEach((did, index) => {
       stringToIdentityIdStub.withArgs(did, mockContext).returns(rawClaimIssuerDids[index]);
       identityIdToStringStub.withArgs(rawClaimIssuerDids[index]).returns(did);
     });
@@ -106,15 +102,13 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   });
 
   test("should throw an error if some of the supplied dids don't exist", () => {
-    const nonExistentDidIndex = 1;
-    didRecordsStub.size
-      .withArgs(rawClaimIssuerDids[nonExistentDidIndex])
-      .resolves(dsMockUtils.createMockU64(0));
+    const nonExistendDid = claimIssuerIdentities[1];
+    dsMockUtils.configureMocks({ contextOptions: { invalidDids: [nonExistendDid] } });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
     return expect(prepareSetTokenTrustedClaimIssuers.call(proc, args)).rejects.toThrow(
-      `Some of the supplied identity IDs do not exist: ${claimIssuerDids[nonExistentDidIndex]}`
+      `Some of the supplied identity IDs do not exist: ${nonExistendDid}`
     );
   });
 
@@ -168,7 +162,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
 
     const result = await prepareSetTokenTrustedClaimIssuers.call(proc, {
       ...args,
-      claimIssuerDids: [],
+      claimIssuerIdentities: [],
     });
 
     sinon.assert.calledWith(

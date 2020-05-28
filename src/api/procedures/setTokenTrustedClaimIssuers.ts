@@ -1,13 +1,12 @@
-import { chunk, difference } from 'lodash';
+import { difference } from 'lodash';
 
-import { SecurityToken } from '~/api/entities';
+import { Identity, SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { IdentityId } from '~/polkadot';
 import { ErrorCode, Role, RoleType } from '~/types';
-import { identityIdToString, stringToIdentityId, stringToTicker } from '~/utils';
+import { identityIdToString, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
 
 export interface SetTokenTrustedClaimIssuersParams {
-  claimIssuerDids: string[];
+  claimIssuerIdentities: (string | Identity)[];
 }
 
 export type Params = SetTokenTrustedClaimIssuersParams & {
@@ -27,7 +26,7 @@ export async function prepareSetTokenTrustedClaimIssuers(
     },
     context,
   } = this;
-  const { ticker, claimIssuerDids } = args;
+  const { ticker, claimIssuerIdentities } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
@@ -35,8 +34,8 @@ export async function prepareSetTokenTrustedClaimIssuers(
   const currentClaimIssuers = rawCurrentClaimIssuers.map(issuer => identityIdToString(issuer));
 
   if (
-    !difference(currentClaimIssuers, claimIssuerDids).length &&
-    currentClaimIssuers.length === claimIssuerDids.length
+    !difference(currentClaimIssuers, claimIssuerIdentities).length &&
+    currentClaimIssuers.length === claimIssuerIdentities.length
   ) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -44,33 +43,16 @@ export async function prepareSetTokenTrustedClaimIssuers(
     });
   }
 
-  const rawNewClaimIssuers = claimIssuerDids.map(did => stringToIdentityId(did, context));
-
-  const newClaimIssuerChunks = chunk(rawNewClaimIssuers, 10);
-
-  const nonExistentDids: IdentityId[] = [];
-
-  await Promise.all(
-    newClaimIssuerChunks.map(async newClaimIssuerChunk => {
-      // TODO: queryMulti
-      const sizes = await Promise.all(
-        newClaimIssuerChunk.map(claimIssuer => query.identity.didRecords.size(claimIssuer))
-      );
-
-      sizes.forEach((size, index) => {
-        if (size.isZero()) {
-          nonExistentDids.push(newClaimIssuerChunk[index]);
-        }
-      });
-    })
+  const rawNewClaimIssuers = claimIssuerIdentities.map(identity =>
+    stringToIdentityId(valueToDid(identity), context)
   );
+
+  const nonExistentDids: string[] = await context.getInvalidDids(claimIssuerIdentities);
 
   if (nonExistentDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Some of the supplied identity IDs do not exist: ${nonExistentDids
-        .map(identityIdToString)
-        .join(', ')}`,
+      message: `Some of the supplied identity IDs do not exist: ${nonExistentDids.join(', ')}`,
     });
   }
 

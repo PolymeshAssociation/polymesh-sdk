@@ -260,7 +260,7 @@ export enum ErrorCode {
  * Represents an amount of tokens to be issued to an identity
  */
 export interface IssuanceData {
-  did: string;
+  identity: string | Identity;
   amount: BigNumber;
 }
 
@@ -273,7 +273,7 @@ export enum TransferStatus {
 }
 
 export interface ClaimTargets {
-  targets: string[];
+  targets: (string | Identity)[];
   claim: Claim;
   expiry?: Date;
 }

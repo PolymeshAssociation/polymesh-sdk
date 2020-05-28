@@ -35,6 +35,7 @@ import {
   CanTransferResult,
   CddStatus,
   Claim,
+  DidRecord,
   Document,
   DocumentHash,
   DocumentName,
@@ -42,16 +43,20 @@ import {
   FundingRoundName,
   IdentifierType,
   IdentityId,
+  IdentityRole,
   JurisdictionName,
   Link,
   LinkData,
   LinkedKeyInfo,
+  Permission,
   PosRatio,
   Rule,
   RuleType,
   Scope,
   SecurityToken,
   Signatory,
+  SignatoryType,
+  SigningItem,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
@@ -151,6 +156,7 @@ interface ContextOptions {
   hasRoles?: boolean;
   validCdd?: boolean;
   tokenBalance?: BigNumber;
+  invalidDids?: string[];
 }
 
 interface Pair {
@@ -325,6 +331,7 @@ const defaultContextOptions: ContextOptions = {
   hasRoles: true,
   validCdd: true,
   tokenBalance: new BigNumber(1000),
+  invalidDids: [],
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -374,6 +381,7 @@ function configureContext(opts: ContextOptions): void {
     }),
     polymeshApi: mockInstanceContainer.apiInstance,
     harvesterClient: mockInstanceContainer.apolloInstance,
+    getInvalidDids: sinon.stub().resolves(opts.invalidDids),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
@@ -913,6 +921,8 @@ export function getKeyringInstance(opts?: KeyringOptions): Keyring {
   }
   return mockInstanceContainer.keyringInstance as Keyring;
 }
+
+// TODO @monitz87: make struct making functions behave like `createMockDidRecord`
 
 /**
  * @hidden
@@ -1479,6 +1489,59 @@ export const createMockAssetTransferRule = (
     },
     false
   ) as AssetTransferRule;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSignatoryType = (
+  signatoryType?: 'External' | 'Identity' | 'Multisig' | 'Relayer'
+): SignatoryType => createMockEnum(signatoryType) as SignatoryType;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSigningItem = (
+  signingItem: { signer: Signatory; signer_type: SignatoryType; permissions: Permission[] } = {
+    signer: createMockSignatory(),
+    signer_type: createMockSignatoryType(),
+    permissions: [],
+  }
+): SigningItem =>
+  createMockCodec(
+    {
+      signer: signingItem.signer,
+      signer_type: signingItem.signer_type,
+      permissions: signingItem.permissions,
+    },
+    false
+  ) as SigningItem;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockDidRecord = (didRecord?: {
+  roles: IdentityRole[];
+  master_key: AccountKey;
+  signing_items: SigningItem[];
+}): DidRecord => {
+  const { roles, master_key, signing_items } = didRecord || {
+    roles: [],
+    master_key: createMockAccountKey(),
+    signing_items: [],
+  };
+
+  return createMockCodec(
+    {
+      roles,
+      master_key,
+      signing_items,
+    },
+    !didRecord
+  ) as DidRecord;
+};
 
 /**
  * @hidden
