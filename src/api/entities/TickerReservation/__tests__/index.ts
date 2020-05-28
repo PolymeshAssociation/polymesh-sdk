@@ -164,7 +164,7 @@ describe('TickerReservation class', () => {
         polkadotMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
           owner_did: polkadotMockUtils.createMockIdentityId(ownerDid),
-          name: polkadotMockUtils.createMockTokenName('someToken'),
+          name: polkadotMockUtils.createMockAssetName('someToken'),
           asset_type: polkadotMockUtils.createMockAssetType('EquityCommon'),
           divisible: polkadotMockUtils.createMockBool(true),
           link_id: polkadotMockUtils.createMockU64(3),
