@@ -266,7 +266,13 @@ describe('createSecurityToken procedure', () => {
 
     const result = await prepareCreateSecurityToken.call(proc, { ...args, documents });
 
-    sinon.assert.calledWith(addTransactionStub, tx, { isCritical: false }, rawTicker, rawDocuments);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      tx,
+      { isCritical: false, batchSize: rawDocuments.length },
+      rawTicker,
+      rawDocuments
+    );
 
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });

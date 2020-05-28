@@ -10,6 +10,8 @@ export const HARVESTER_ENDPOINT =
   'https://24pha89jxg.execute-api.us-east-1.amazonaws.com/dev/graphql';
 export const MAX_BATCH_ELEMENTS = {
   [TxTags.asset.BatchIssue]: 500,
+  [TxTags.asset.AddDocuments]: 500,
+  [TxTags.asset.RemoveDocuments]: 500,
   [TxTags.identity.BatchAcceptAuthorization]: 500,
   [TxTags.identity.BatchRemoveAuthorization]: 500,
   [TxTags.identity.AddClaimsBatch]: 500,

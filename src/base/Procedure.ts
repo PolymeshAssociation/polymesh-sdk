@@ -147,7 +147,9 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
 
           try {
             const rawFee = await protocolFee.baseFees(stringToProtocolOp(protocolOp, context));
-            fee = balanceToBigNumber(rawFee).multipliedBy(coefficient);
+            fee = balanceToBigNumber(rawFee)
+              .multipliedBy(coefficient)
+              .multipliedBy(batchSize || 1);
           } catch (err) {
             fee = new BigNumber(0);
           }

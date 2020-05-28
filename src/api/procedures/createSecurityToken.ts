@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
-import { AssetIdentifier, IdentifierType } from 'polymesh-types/types';
+import { chunk } from 'lodash';
+import { AssetIdentifier, IdentifierType, TxTags } from 'polymesh-types/types';
 
 import { SecurityToken, TickerReservation } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
@@ -23,6 +24,7 @@ import {
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
 } from '~/utils';
+import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 export interface CreateSecurityTokenParams {
   name: string;
@@ -109,8 +111,14 @@ export async function prepareCreateSecurityToken(
 
   if (documents) {
     const rawDocuments = documents.map(document => tokenDocumentToDocument(document, context));
-
-    this.addTransaction(tx.asset.addDocuments, { isCritical: false }, rawTicker, rawDocuments);
+    chunk(rawDocuments, MAX_BATCH_ELEMENTS[TxTags.asset.AddDocuments]).forEach(rawDocumentChunk => {
+      this.addTransaction(
+        tx.asset.addDocuments,
+        { isCritical: false, batchSize: rawDocumentChunk.length },
+        rawTicker,
+        rawDocumentChunk
+      );
+    });
   }
 
   return new SecurityToken({ ticker }, context);

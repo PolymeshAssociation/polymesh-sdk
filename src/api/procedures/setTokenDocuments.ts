@@ -1,6 +1,6 @@
 import { u64 } from '@polkadot/types';
-import { differenceWith } from 'lodash';
-import { Document } from 'polymesh-types/types';
+import { chunk, differenceWith } from 'lodash';
+import { Document, TxTags } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
@@ -13,6 +13,7 @@ import {
   tickerToDid,
   tokenDocumentToDocument,
 } from '~/utils';
+import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 export interface SetTokenDocumentsParams {
   documents: TokenDocument[];
@@ -71,11 +72,25 @@ export async function prepareSetTokenDocuments(
   const rawTicker = stringToTicker(ticker, context);
 
   if (currentDocIds.length) {
-    this.addTransaction(tx.asset.removeDocuments, {}, rawTicker, currentDocIds);
+    chunk(currentDocIds, MAX_BATCH_ELEMENTS[TxTags.asset.RemoveDocuments]).forEach(docIdChunk => {
+      this.addTransaction(
+        tx.asset.removeDocuments,
+        { batchSize: docIdChunk.length },
+        rawTicker,
+        docIdChunk
+      );
+    });
   }
 
   if (rawDocuments.length) {
-    this.addTransaction(tx.asset.addDocuments, {}, rawTicker, rawDocuments);
+    chunk(rawDocuments, MAX_BATCH_ELEMENTS[TxTags.asset.AddDocuments]).forEach(rawDocumentChunk => {
+      this.addTransaction(
+        tx.asset.addDocuments,
+        { batchSize: rawDocumentChunk.length },
+        rawTicker,
+        rawDocumentChunk
+      );
+    });
   }
 
   return new SecurityToken({ ticker }, context);
