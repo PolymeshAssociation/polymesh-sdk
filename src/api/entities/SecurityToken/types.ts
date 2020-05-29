@@ -9,3 +9,11 @@ export interface SecurityTokenDetails {
   owner: Identity;
   totalSupply: BigNumber;
 }
+
+/**
+ * Represents the balance of a token holder
+ */
+export interface IdentityBalance {
+  identity: Identity;
+  balance: BigNumber;
+}
