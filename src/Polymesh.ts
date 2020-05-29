@@ -1,4 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
+import { Signer } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloClient } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
@@ -24,6 +25,11 @@ import { SignerType } from '~/types/internal';
 import { signerToSignatory, stringToTicker, tickerToString, valueToDid } from '~/utils';
 import { HARVESTER_ENDPOINT } from '~/utils/constants';
 
+interface ConnectParamsBase {
+  nodeUrl: string;
+  signer?: Signer;
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * @hidden
@@ -48,27 +54,29 @@ export class Polymesh {
     this.harvester = harvester;
   }
 
-  static async connect(params: { nodeUrl: string; accountSeed: string }): Promise<Polymesh>;
+  static async connect(params: ConnectParamsBase & { accountSeed: string }): Promise<Polymesh>;
 
-  static async connect(params: {
-    nodeUrl: string;
-    keyring: CommonKeyring | UiKeyring;
-  }): Promise<Polymesh>;
+  static async connect(
+    params: ConnectParamsBase & {
+      keyring: CommonKeyring | UiKeyring;
+    }
+  ): Promise<Polymesh>;
 
-  static async connect(params: { nodeUrl: string; accountUri: string }): Promise<Polymesh>;
+  static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
 
-  static async connect(params: { nodeUrl: string }): Promise<Polymesh>;
+  static async connect(params: ConnectParamsBase): Promise<Polymesh>;
 
   /**
    * Create the instance and connect to the Polymesh node
    */
-  static async connect(params: {
-    nodeUrl: string;
-    accountSeed?: string;
-    keyring?: CommonKeyring | UiKeyring;
-    accountUri?: string;
-  }): Promise<Polymesh> {
-    const { nodeUrl, accountSeed, keyring, accountUri } = params;
+  static async connect(
+    params: ConnectParamsBase & {
+      accountSeed?: string;
+      keyring?: CommonKeyring | UiKeyring;
+      accountUri?: string;
+    }
+  ): Promise<Polymesh> {
+    const { nodeUrl, accountSeed, keyring, accountUri, signer } = params;
     let polymeshApi: ApiPromise;
     let harvester: ApolloClient<NormalizedCacheObject>;
 
@@ -80,6 +88,10 @@ export class Polymesh {
         types,
         rpc,
       });
+
+      if (signer) {
+        polymeshApi.setSigner(signer);
+      }
 
       let context: Context;
 
