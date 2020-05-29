@@ -91,6 +91,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         keyring,
       });
     });
@@ -126,6 +127,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
+        harvesterClient: dsMockUtils.getHarvesterClient(),
         seed: accountSeed,
       });
       sinon.assert.calledWith(dsMockUtils.getApiInstance().setSigner, signer);

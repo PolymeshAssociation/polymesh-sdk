@@ -22,7 +22,15 @@ import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { didsWithClaims } from '~/harvester/queries';
 import { Query } from '~/harvester/types';
-import { CommonKeyring, ErrorCode, SubCallback, UiKeyring, UnsubCallback } from '~/types';
+import {
+  ClaimData,
+  CommonKeyring,
+  Ensured,
+  ErrorCode,
+  SubCallback,
+  UiKeyring,
+  UnsubCallback,
+} from '~/types';
 import { SignerType } from '~/types/internal';
 import {
   createClaim,

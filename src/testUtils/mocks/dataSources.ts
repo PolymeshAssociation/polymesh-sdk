@@ -66,9 +66,8 @@ import {
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
 import { Context } from '~/context';
-import { GraphqlQuery } from '~/harvester/queries';
 import { Mocked } from '~/testUtils/types';
-import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
+import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
 
 let apiEmitter: EventEmitter;
