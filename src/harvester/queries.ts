@@ -1,12 +1,7 @@
-import { DocumentNode } from 'graphql';
 import gql from 'graphql-tag';
 
 import { QueryDidsWithClaimsArgs } from '~/harvester/types';
-
-export interface GraphqlQuery<VariablesType> {
-  query: DocumentNode;
-  variables: VariablesType;
-}
+import { GraphqlQuery } from '~/types/internal';
 
 /**
  * @hidden

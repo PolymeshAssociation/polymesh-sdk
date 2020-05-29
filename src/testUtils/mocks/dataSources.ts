@@ -94,7 +94,6 @@ const MockApolloClientClass = class {
    * @hidden
    */
   public constructor() {
-    // apolloConstructorStub = sinon.stub();
     return apolloConstructorStub();
   }
 };
