@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ApiPromise, Keyring } from '@polkadot/api';
+import { Signer } from '@polkadot/api/types';
 import { bool, Bytes, Enum, Option, u8, u32, u64 } from '@polkadot/types';
 import {
   AccountData,
@@ -27,6 +28,7 @@ import { cloneDeep, every, merge, upperFirst } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,
+  AssetName,
   AssetTransferRule,
   AssetType,
   AuthIdentifier,
@@ -60,9 +62,8 @@ import {
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
-  TokenName,
 } from 'polymesh-types/types';
-import sinon, { SinonStub } from 'sinon';
+import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
 import { Context } from '~/context';
 import { GraphqlQuery } from '~/harvester/queries';
@@ -84,6 +85,7 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
       apiEmitter.on(event, listener),
     off: (event: string, listener: (...args: unknown[]) => unknown) =>
       apiEmitter.off(event, listener),
+    setSigner: sinon.stub() as (signer: Signer) => void,
   } as Mutable<ApiPromise> & EventEmitter;
 }
 
@@ -871,8 +873,10 @@ export function setContextAccountBalance(balance: BigNumber): void {
  * @hidden
  * Retrieve an instance of the mocked Polkadot API
  */
-export function getApiInstance(): ApiPromise & EventEmitter {
-  return mockInstanceContainer.apiInstance as ApiPromise & EventEmitter;
+export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> & EventEmitter {
+  return (mockInstanceContainer.apiInstance as unknown) as ApiPromise &
+    SinonStubbedInstance<ApiPromise> &
+    EventEmitter;
 }
 
 /**
@@ -1084,8 +1088,8 @@ export const createMockBytes = (value?: string): Bytes => createMockU8ACodec(val
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockTokenName = (name?: string): TokenName =>
-  createMockStringCodec(name) as TokenName;
+export const createMockAssetName = (name?: string): AssetName =>
+  createMockStringCodec(name) as AssetName;
 
 /**
  * @hidden
@@ -1177,14 +1181,14 @@ export const createMockTickerRegistrationConfig = (
  */
 export const createMockSecurityToken = (
   token: {
-    name: TokenName;
+    name: AssetName;
     total_supply: Balance;
     owner_did: IdentityId;
     divisible: bool;
     asset_type: AssetType;
     link_id: u64;
   } = {
-    name: createMockTokenName(),
+    name: createMockAssetName(),
     total_supply: createMockBalance(),
     owner_did: createMockIdentityId(),
     divisible: createMockBool(),

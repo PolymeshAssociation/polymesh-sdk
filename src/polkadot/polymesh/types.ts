@@ -30,6 +30,9 @@ export interface AssetDidResult extends Enum {
 /** @name AssetIdentifier */
 export interface AssetIdentifier extends Text {}
 
+/** @name AssetName */
+export interface AssetName extends Text {}
+
 /** @name AssetTransferRule */
 export interface AssetTransferRule extends Struct {
   readonly sender_rules: Vec<Rule>;
@@ -352,7 +355,7 @@ export interface InactiveMember extends Struct {
 export interface Investment extends Struct {
   readonly investor_did: IdentityId;
   readonly amount_paid: Balance;
-  readonly tokens_purchased: Balance;
+  readonly assets_purchased: Balance;
   readonly last_purchase_date: Moment;
 }
 
@@ -571,7 +574,7 @@ export interface Scope extends IdentityId {}
 
 /** @name SecurityToken */
 export interface SecurityToken extends Struct {
-  readonly name: TokenName;
+  readonly name: AssetName;
   readonly total_supply: Balance;
   readonly owner_did: IdentityId;
   readonly divisible: bool;
@@ -683,9 +686,6 @@ export interface TickerTransferApproval extends Struct {
   readonly next_ticker: Option<Ticker>;
   readonly previous_ticker: Option<Ticker>;
 }
-
-/** @name TokenName */
-export interface TokenName extends Text {}
 
 /** @name Url */
 export interface Url extends Text {}

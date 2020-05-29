@@ -9,7 +9,7 @@ import { DidRecord, IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
-import { ErrorCode, SubCallback, UnsubCallback } from '~/types';
+import { CommonKeyring, ErrorCode, SubCallback, UnsubCallback } from '~/types';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -26,7 +26,7 @@ interface SignerData {
 interface ConstructorParams {
   polymeshApi: ApiPromise;
   harvesterClient: ApolloClient<NormalizedCacheObject>;
-  keyring: Keyring;
+  keyring: CommonKeyring;
   pair?: SignerData;
 }
 
@@ -43,7 +43,7 @@ interface AccountData {
  * - Holds the current Identity
  */
 export class Context {
-  private keyring: Keyring;
+  private keyring: CommonKeyring;
 
   public polymeshApi: ApiPromise;
 
@@ -90,7 +90,7 @@ export class Context {
   static async create(params: {
     polymeshApi: ApiPromise;
     harvesterClient: ApolloClient<NormalizedCacheObject>;
-    keyring: Keyring;
+    keyring: CommonKeyring;
   }): Promise<Context>;
 
   static async create(params: {
@@ -111,12 +111,12 @@ export class Context {
     polymeshApi: ApiPromise;
     harvesterClient: ApolloClient<NormalizedCacheObject>;
     seed?: string;
-    keyring?: Keyring;
+    keyring?: CommonKeyring;
     uri?: string;
   }): Promise<Context> {
     const { polymeshApi, harvesterClient, seed, keyring: passedKeyring, uri } = params;
 
-    let keyring = new Keyring({ type: 'sr25519' });
+    let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
     let currentPair: IKeyringPair | undefined;
 
     if (passedKeyring) {

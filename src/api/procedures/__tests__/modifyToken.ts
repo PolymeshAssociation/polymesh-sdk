@@ -1,4 +1,4 @@
-import { FundingRoundName, Ticker, TokenName } from 'polymesh-types/types';
+import { AssetName, FundingRoundName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -17,7 +17,7 @@ jest.mock(
 describe('modifyToken procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let stringToTokenNameStub: sinon.SinonStub<[string, Context], TokenName>;
+  let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
   let stringToFundingRoundNameStub: sinon.SinonStub<[string, Context], FundingRoundName>;
   let ticker: string;
   let rawTicker: Ticker;
@@ -28,7 +28,7 @@ describe('modifyToken procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    stringToTokenNameStub = sinon.stub(utilsModule, 'stringToTokenName');
+    stringToAssetNameStub = sinon.stub(utilsModule, 'stringToAssetName');
     stringToFundingRoundNameStub = sinon.stub(utilsModule, 'stringToFundingRoundName');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -133,8 +133,8 @@ describe('modifyToken procedure', () => {
 
   test('should add a rename token transaction to the queue', async () => {
     const newName = 'NEW_NAME';
-    const rawTokenName = dsMockUtils.createMockTokenName(newName);
-    stringToTokenNameStub.withArgs(newName, mockContext).returns(rawTokenName);
+    const rawAssetName = dsMockUtils.createMockAssetName(newName);
+    stringToAssetNameStub.withArgs(newName, mockContext).returns(rawAssetName);
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
@@ -146,7 +146,7 @@ describe('modifyToken procedure', () => {
       name: newName,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawTokenName);
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAssetName);
     expect(result.ticker).toBe(ticker);
   });
 
