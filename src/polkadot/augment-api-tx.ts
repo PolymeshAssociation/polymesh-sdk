@@ -31,6 +31,7 @@ import { Key } from '@polkadot/types/interfaces/system';
 import {
   AccountKey,
   AssetIdentifier,
+  AssetName,
   AssetTransferRule,
   AssetType,
   AuthIdentifier,
@@ -60,7 +61,6 @@ import {
   SmartExtension,
   TargetIdAuthorization,
   Ticker,
-  TokenName,
   Url,
 } from 'polymesh-types/polymesh';
 import { ApiTypes, SubmittableExtrinsic } from '@polkadot/api/types';
@@ -240,7 +240,7 @@ declare module '@polkadot/api/types/submittable' {
        **/
       createAsset: AugmentedSubmittable<
         (
-          name: TokenName | string,
+          name: AssetName | string,
           ticker: Ticker | string | Uint8Array,
           totalSupply: Balance | AnyNumber | Uint8Array,
           divisible: bool | boolean | Uint8Array,
@@ -443,7 +443,7 @@ declare module '@polkadot/api/types/submittable' {
       renameAsset: AugmentedSubmittable<
         (
           ticker: Ticker | string | Uint8Array,
-          name: TokenName | string
+          name: AssetName | string
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -811,6 +811,26 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
+       * Forces handling a vector of transactions by bypassing the bridge limit and timelock.
+       * The vector is processed until the first proposal which causes an error, in which case
+       * the error is returned and the rest of proposals are not processed.
+       *
+       * # Weight
+       * `50_000 + 200_000 * bridge_txs.len()`
+       **/
+      forceHandleBridgeTxs: AugmentedSubmittable<
+        (
+          bridgeTxs:
+            | Vec<BridgeTx>
+            | (
+                | BridgeTx
+                | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
+                | string
+                | Uint8Array
+              )[]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * Freezes transaction handling in the bridge module if it is not already frozen. When the
        * bridge is frozen, attempted transactions get postponed instead of getting handled.
        **/
@@ -846,6 +866,26 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
+       * Handles a vector of approved bridge transaction proposals. The vector is processed until
+       * the first proposal which causes an error, in which case the error is returned and the
+       * rest of proposals are not processed.
+       *
+       * # Weight
+       * `50_000 + 200_000 * bridge_txs.len()`
+       **/
+      handleBridgeTxs: AugmentedSubmittable<
+        (
+          bridgeTxs:
+            | Vec<BridgeTx>
+            | (
+                | BridgeTx
+                | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
+                | string
+                | Uint8Array
+              )[]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * Proposes a bridge transaction, which amounts to making a multisig proposal for the
        * bridge transaction if the transaction is new or approving an existing proposal if the
        * transaction has already been proposed.
@@ -857,6 +897,26 @@ declare module '@polkadot/api/types/submittable' {
             | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
             | string
             | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Proposes a vector of bridge transactions. The vector is processed until the first
+       * proposal which causes an error, in which case the error is returned and the rest of
+       * proposals are not processed.
+       *
+       * # Weight
+       * `100_000 + 700_000 * bridge_txs.len()`
+       **/
+      proposeBridgeTxs: AugmentedSubmittable<
+        (
+          bridgeTxs:
+            | Vec<BridgeTx>
+            | (
+                | BridgeTx
+                | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
+                | string
+                | Uint8Array
+              )[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -884,11 +944,11 @@ declare module '@polkadot/api/types/submittable' {
     };
     cddServiceProviders: {
       /**
-       * It allows a caller member to *unilaterally quit* without this
-       * being subject to a GC vote.
+       * Allows the calling member to *unilaterally quit* without this being subject to a GC
+       * vote.
        *
        * # Arguments
-       * * `origin` Member of committee who wants to quit.
+       * * `origin` - Member of committee who wants to quit.
        *
        * # Error
        *
@@ -897,21 +957,17 @@ declare module '@polkadot/api/types/submittable' {
        **/
       abdicateMembership: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
       /**
-       * Add a member `who` to the set. May only be called from `AddOrigin` or root.
+       * Adds a member `who` to the group. May only be called from `AddOrigin` or root.
        *
        * # Arguments
-       * * `origin` Origin representing `AddOrigin` or root
-       * * `who` IdentityId to be added to the group.
+       * * `origin` - Origin representing `AddOrigin` or root
+       * * `who` - IdentityId to be added to the group.
        **/
       addMember: AugmentedSubmittable<
         (who: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Remove the prime member if it exists.
-       **/
-      clearPrime: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
-      /**
-       * It disables a member at specific moment.
+       * Disables a member at specific moment.
        *
        * Please note that if member is already revoked (a "valid member"), its revocation
        * time-stamp will be updated.
@@ -923,9 +979,9 @@ declare module '@polkadot/api/types/submittable' {
        * If you want to invalidate any generated claim, you should use `Self::remove_member`.
        *
        * # Arguments
-       * * `at` Revocation time-stamp.
-       * * `who` Target member of the group.
-       * * `expiry` Time-stamp when `who` is removed from CDD. As soon as it is expired, the
+       * * `at` - Revocation time-stamp.
+       * * `who` - Target member of the group.
+       * * `expiry` - Time-stamp when `who` is removed from CDD. As soon as it is expired, the
        * generated claims will be "invalid" as `who` is not considered a member of the group.
        **/
       disableMember: AugmentedSubmittable<
@@ -936,27 +992,27 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Remove a member `who` from the set. May only be called from `RemoveOrigin` or root.
+       * Removes a member `who` from the set. May only be called from `RemoveOrigin` or root.
        *
        * Any claim previously generated by this member is not valid as a group claim. For
        * instance, if a CDD member group generated a claim for a target identity and then it is
-       * removed, that claim will be invalid.
-       * In case you want to keep the validity of generated claims, you have to use `Self::disable_member` function
+       * removed, that claim will be invalid.  In case you want to keep the validity of generated
+       * claims, you have to use `Self::disable_member` function
        *
        * # Arguments
-       * * `origin` Origin representing `RemoveOrigin` or root
-       * * `who` IdentityId to be removed from the group.
+       * * `origin` - Origin representing `RemoveOrigin` or root
+       * * `who` - IdentityId to be removed from the group.
        **/
       removeMember: AugmentedSubmittable<
         (who: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Change the membership to a new set, disregarding the existing membership.
+       * Changes the membership to a new set, disregarding the existing membership.
        * May only be called from `ResetOrigin` or root.
        *
        * # Arguments
-       * * `origin` Origin representing `ResetOrigin` or root
-       * * `members` New set of identities
+       * * `origin` - Origin representing `ResetOrigin` or root
+       * * `members` - New set of identities
        **/
       resetMembers: AugmentedSubmittable<
         (
@@ -964,20 +1020,14 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Set the prime member. Must be a current member.
-       **/
-      setPrime: AugmentedSubmittable<
-        (who: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Swap out one member `remove` for another `add`.
+       * Swaps out one member `remove` for another member `add`.
        *
        * May only be called from `SwapOrigin` or root.
        *
        * # Arguments
-       * * `origin` Origin representing `SwapOrigin` or root
-       * * `remove` IdentityId to be removed from the group.
-       * * `add` IdentityId to be added in place of `remove`.
+       * * `origin` - Origin representing `SwapOrigin` or root
+       * * `remove` - IdentityId to be removed from the group.
+       * * `add` - IdentityId to be added in place of `remove`.
        **/
       swapMember: AugmentedSubmittable<
         (
@@ -988,11 +1038,11 @@ declare module '@polkadot/api/types/submittable' {
     };
     committeeMembership: {
       /**
-       * It allows a caller member to *unilaterally quit* without this
-       * being subject to a GC vote.
+       * Allows the calling member to *unilaterally quit* without this being subject to a GC
+       * vote.
        *
        * # Arguments
-       * * `origin` Member of committee who wants to quit.
+       * * `origin` - Member of committee who wants to quit.
        *
        * # Error
        *
@@ -1001,21 +1051,17 @@ declare module '@polkadot/api/types/submittable' {
        **/
       abdicateMembership: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
       /**
-       * Add a member `who` to the set. May only be called from `AddOrigin` or root.
+       * Adds a member `who` to the group. May only be called from `AddOrigin` or root.
        *
        * # Arguments
-       * * `origin` Origin representing `AddOrigin` or root
-       * * `who` IdentityId to be added to the group.
+       * * `origin` - Origin representing `AddOrigin` or root
+       * * `who` - IdentityId to be added to the group.
        **/
       addMember: AugmentedSubmittable<
         (who: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Remove the prime member if it exists.
-       **/
-      clearPrime: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
-      /**
-       * It disables a member at specific moment.
+       * Disables a member at specific moment.
        *
        * Please note that if member is already revoked (a "valid member"), its revocation
        * time-stamp will be updated.
@@ -1027,9 +1073,9 @@ declare module '@polkadot/api/types/submittable' {
        * If you want to invalidate any generated claim, you should use `Self::remove_member`.
        *
        * # Arguments
-       * * `at` Revocation time-stamp.
-       * * `who` Target member of the group.
-       * * `expiry` Time-stamp when `who` is removed from CDD. As soon as it is expired, the
+       * * `at` - Revocation time-stamp.
+       * * `who` - Target member of the group.
+       * * `expiry` - Time-stamp when `who` is removed from CDD. As soon as it is expired, the
        * generated claims will be "invalid" as `who` is not considered a member of the group.
        **/
       disableMember: AugmentedSubmittable<
@@ -1040,27 +1086,27 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Remove a member `who` from the set. May only be called from `RemoveOrigin` or root.
+       * Removes a member `who` from the set. May only be called from `RemoveOrigin` or root.
        *
        * Any claim previously generated by this member is not valid as a group claim. For
        * instance, if a CDD member group generated a claim for a target identity and then it is
-       * removed, that claim will be invalid.
-       * In case you want to keep the validity of generated claims, you have to use `Self::disable_member` function
+       * removed, that claim will be invalid.  In case you want to keep the validity of generated
+       * claims, you have to use `Self::disable_member` function
        *
        * # Arguments
-       * * `origin` Origin representing `RemoveOrigin` or root
-       * * `who` IdentityId to be removed from the group.
+       * * `origin` - Origin representing `RemoveOrigin` or root
+       * * `who` - IdentityId to be removed from the group.
        **/
       removeMember: AugmentedSubmittable<
         (who: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Change the membership to a new set, disregarding the existing membership.
+       * Changes the membership to a new set, disregarding the existing membership.
        * May only be called from `ResetOrigin` or root.
        *
        * # Arguments
-       * * `origin` Origin representing `ResetOrigin` or root
-       * * `members` New set of identities
+       * * `origin` - Origin representing `ResetOrigin` or root
+       * * `members` - New set of identities
        **/
       resetMembers: AugmentedSubmittable<
         (
@@ -1068,20 +1114,14 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Set the prime member. Must be a current member.
-       **/
-      setPrime: AugmentedSubmittable<
-        (who: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Swap out one member `remove` for another `add`.
+       * Swaps out one member `remove` for another member `add`.
        *
        * May only be called from `SwapOrigin` or root.
        *
        * # Arguments
-       * * `origin` Origin representing `SwapOrigin` or root
-       * * `remove` IdentityId to be removed from the group.
-       * * `add` IdentityId to be added in place of `remove`.
+       * * `origin` - Origin representing `SwapOrigin` or root
+       * * `remove` - IdentityId to be removed from the group.
+       * * `add` - IdentityId to be added in place of `remove`.
        **/
       swapMember: AugmentedSubmittable<
         (
@@ -1092,7 +1132,8 @@ declare module '@polkadot/api/types/submittable' {
     };
     complianceManager: {
       /**
-       * Adds an asset rule to active rules for a ticker
+       * Adds an asset rule to active rules for a ticker.
+       * If rules are duplicated, it does nothing.
        *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
@@ -1127,7 +1168,7 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * To add the default trusted claim issuer for a given asset
+       * To add a list of default trusted claim issuers for a given asset
        * Addition - When the given element is not exist
        *
        * # Arguments
@@ -1197,7 +1238,7 @@ declare module '@polkadot/api/types/submittable' {
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Removes a rule from active asset rules
+       * Removes a rule from asset rules.
        *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
@@ -1241,6 +1282,33 @@ declare module '@polkadot/api/types/submittable' {
         (
           ticker: Ticker | string | Uint8Array,
           trustedIssuers: Vec<IdentityId> | (IdentityId | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Replaces asset rules of a ticker with new rules.
+       *
+       * # Arguments
+       * * `ticker` - the asset ticker,
+       * * `asset_rules - the new asset rules.
+       *
+       * # Errors
+       * * `Unauthorized` if `origin` is not the owner of the ticker.
+       * * `DuplicateAssetRules` if `asset_rules` contains multiple entries with the same `rule_id`.
+       *
+       * # Weight
+       * `150_000 + 50_000 * asset_rules.len()`
+       **/
+      replaceAssetRules: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          assetRules:
+            | Vec<AssetTransferRule>
+            | (
+                | AssetTransferRule
+                | { sender_rules?: any; receiver_rules?: any; rule_id?: any }
+                | string
+                | Uint8Array
+              )[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2182,17 +2250,6 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
     };
-    percentageTm: {
-      /**
-       * Set a maximum percentage that can be owned by a single investor
-       **/
-      toggleMaximumPercentageRestriction: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          maxPercentage: u16 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-    };
     pips: {
       /**
        * It amends the `url` and the `description` of the proposal with id `id`.
@@ -2244,9 +2301,7 @@ declare module '@polkadot/api/types/submittable' {
           proposal: Proposal | { callIndex?: any; args?: any } | string | Uint8Array,
           url: Option<Url> | null | object | string | Uint8Array,
           description: Option<PipDescription> | null | object | string | Uint8Array,
-          beneficiaries:
-            | Vec<Beneficiary>
-            | (Beneficiary | { id?: any; amount?: any } | string | Uint8Array)[]
+          beneficiaries: Option<Vec<Beneficiary>> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2270,6 +2325,23 @@ declare module '@polkadot/api/types/submittable' {
         (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
+       * It updates the enactment period of a specific referendum.
+       *
+       * # Arguments
+       * * `until`, It defines the future block where the enactment period will finished.  A
+       * `None` value means that enactment period is going to finish in the next block.
+       *
+       * # Errors
+       * * `BadOrigin`, Only the release coordinator can update the enactment period.
+       * * ``,
+       **/
+      overrideReferendumEnactmentPeriod: AugmentedSubmittable<
+        (
+          id: PipId | AnyNumber | Uint8Array,
+          until: Option<BlockNumber> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * A network member creates a Mesh Improvement Proposal by submitting a dispatchable which
        * changes the network in someway. A minimum deposit is required to open a new proposal.
        *
@@ -2284,9 +2356,7 @@ declare module '@polkadot/api/types/submittable' {
           deposit: BalanceOf | AnyNumber | Uint8Array,
           url: Option<Url> | null | object | string | Uint8Array,
           description: Option<PipDescription> | null | object | string | Uint8Array,
-          beneficiaries:
-            | Vec<Beneficiary>
-            | (Beneficiary | { id?: any; amount?: any } | string | Uint8Array)[]
+          beneficiaries: Option<Vec<Beneficiary>> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2298,7 +2368,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Change the default enact period.
        **/
-      setDefaultEnactPeriod: AugmentedSubmittable<
+      setDefaultEnactmentPeriod: AugmentedSubmittable<
         (duration: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2310,6 +2380,16 @@ declare module '@polkadot/api/types/submittable' {
        **/
       setMinProposalDeposit: AugmentedSubmittable<
         (deposit: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Change the proposal cool off period value. This is the number of blocks after which the proposer of a pip
+       * can modify or cancel their proposal, and other voting is prohibited
+       *
+       * # Arguments
+       * * `duration` proposal cool off period duration in blocks
+       **/
+      setProposalCoolOffPeriod: AugmentedSubmittable<
+        (duration: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * Change the proposal duration value. This is the number of blocks for which votes are
@@ -2340,23 +2420,6 @@ declare module '@polkadot/api/types/submittable' {
        **/
       setQuorumThreshold: AugmentedSubmittable<
         (threshold: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * It updates the enactment period of a specific referendum.
-       *
-       * # Arguments
-       * * `until`, It defines the future block where the enactment period will finished.  A
-       * `None` value means that enactment period is going to finish in the next block.
-       *
-       * # Errors
-       * * `BadOrigin`, Only the release coordinator can update the enactment period.
-       * * ``,
-       **/
-      setReferendumEnactmentPeriod: AugmentedSubmittable<
-        (
-          mid: PipId | AnyNumber | Uint8Array,
-          until: Option<BlockNumber> | null | object | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * It unbonds any amount from the deposit of the proposal with id `id`.
@@ -2396,9 +2459,13 @@ declare module '@polkadot/api/types/submittable' {
        * May be called by any signed account after the voting duration has ended in order to
        * finish voting and close the proposal.
        *
-       * Abstentions are counted as rejections unless there is a prime member set and the prime
-       * member cast an approval.
+       * Abstentions are counted as rejections.
        *
+       * # Arguments
+       * * `proposal` - A hash of the proposal to be closed.
+       * * `index` - The proposal index.
+       *
+       * # Complexity
        * - the weight of `proposal` preimage.
        * - up to three events deposited.
        * - one read, two removals, one mutation. (plus three static reads.)
@@ -2417,7 +2484,7 @@ declare module '@polkadot/api/types/submittable' {
        * Any committee member proposes a dispatchable.
        *
        * # Arguments
-       * * `proposal` A dispatchable call
+       * * `proposal` - A dispatchable call.
        **/
       propose: AugmentedSubmittable<
         (
@@ -2425,7 +2492,10 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * It changes the release coordinator.
+       * Changes the release coordinator.
+       *
+       * # Arguments
+       * * `id` - The DID of the new release coordinator.
        *
        * # Errors
        * * `MemberNotFound`, If the new coordinator `id` is not part of the committee.
@@ -2438,9 +2508,9 @@ declare module '@polkadot/api/types/submittable' {
        * majority use (1, 2) which represents the in-equation ">= 1/2"
        *
        * # Arguments
-       * * `match_criteria` One of {AtLeast, MoreThan}
-       * * `n` Numerator of the fraction representing vote threshold
-       * * `d` Denominator of the fraction representing vote threshold
+       * * `match_criteria` - One of {AtLeast, MoreThan}.
+       * * `n` - Numerator of the fraction representing vote threshold.
+       * * `d` - Denominator of the fraction representing vote threshold.
        **/
       setVoteThreshold: AugmentedSubmittable<
         (
@@ -2452,9 +2522,9 @@ declare module '@polkadot/api/types/submittable' {
        * Member casts a vote.
        *
        * # Arguments
-       * * `proposal` Hash of proposal to be voted on
-       * * `index` Proposal index
-       * * `approve` Represents a `for` or `against` vote
+       * * `proposal` - A hash of the proposal to be voted on.
+       * * `index` - The proposal index.
+       * * `approve` - If `true` than this is a `for` vote, and `against` otherwise.
        **/
       vote: AugmentedSubmittable<
         (
@@ -2467,6 +2537,9 @@ declare module '@polkadot/api/types/submittable' {
     protocolFee: {
       /**
        * Changes the a base fee for the root origin.
+       *
+       * # Errors
+       * * `BadOrigin` - Only root allowed.
        **/
       changeBaseFee: AugmentedSubmittable<
         (
@@ -2492,6 +2565,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Changes the fee coefficient for the root origin.
+       *
+       * # Errors
+       * * `BadOrigin` - Only root allowed.
        **/
       changeCoefficient: AugmentedSubmittable<
         (coefficient: PosRatio) => SubmittableExtrinsic<ApiType>

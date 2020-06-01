@@ -1,4 +1,5 @@
 import { Keyring } from '@polkadot/api';
+import { Signer } from '@polkadot/api/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
@@ -65,8 +66,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        isApolloConfigured: false,
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        harvesterClient: null,
         seed: accountSeed,
       });
     });
@@ -83,8 +83,24 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        isApolloConfigured: false,
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        harvesterClient: null,
+        keyring,
+      });
+    });
+
+    test('should instantiate Context with a ui keyring and return a Polymesh instance', async () => {
+      const keyring = {} as Keyring;
+      const createStub = dsMockUtils.getContextCreateStub();
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        keyring: { keyring },
+      });
+
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledWith(createStub, {
+        polymeshApi: dsMockUtils.getApiInstance(),
+        harvesterClient: null,
         keyring,
       });
     });
@@ -101,8 +117,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        isApolloConfigured: false,
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        harvesterClient: null,
         uri: accountUri,
       });
     });
@@ -124,10 +139,29 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        isApolloConfigured: true,
         harvesterClient: dsMockUtils.getHarvesterClient(),
         uri: accountUri,
       });
+    });
+
+    test('should set an optional signer for the polkadot API', async () => {
+      const accountSeed = 'Alice'.padEnd(32, ' ');
+      const createStub = dsMockUtils.getContextCreateStub();
+      const signer = 'signer' as Signer;
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountSeed,
+        signer,
+      });
+
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledWith(createStub, {
+        polymeshApi: dsMockUtils.getApiInstance(),
+        harvesterClient: null,
+        seed: accountSeed,
+      });
+      sinon.assert.calledWith(dsMockUtils.getApiInstance().setSigner, signer);
     });
 
     test('should throw if Context fails in the connection process', async () => {
@@ -704,7 +738,7 @@ describe('Polymesh Class', () => {
         returnValue: dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
           owner_did: dsMockUtils.createMockIdentityId(),
-          name: dsMockUtils.createMockTokenName(ticker),
+          name: dsMockUtils.createMockAssetName(ticker),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
           link_id: dsMockUtils.createMockU64(),
@@ -729,7 +763,7 @@ describe('Polymesh Class', () => {
         returnValue: dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
           owner_did: dsMockUtils.createMockIdentityId(),
-          name: dsMockUtils.createMockTokenName(),
+          name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
           link_id: dsMockUtils.createMockU64(),
