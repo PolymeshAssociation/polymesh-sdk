@@ -330,7 +330,6 @@ export class Context {
       });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return _harvesterClient!;
+    return _harvesterClient;
   }
 }
