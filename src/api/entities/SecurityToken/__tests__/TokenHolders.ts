@@ -6,10 +6,11 @@ import { Identity } from '~/api/entities/Identity';
 import { Namespace } from '~/base';
 import { IdentityId, Ticker } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { IdentityBalance } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
-import { IdentityBalance, TokenHolders } from '../TokenHolders';
+import { TokenHolders } from '../TokenHolders';
 
 describe('TokenHolders class', () => {
   beforeAll(() => {

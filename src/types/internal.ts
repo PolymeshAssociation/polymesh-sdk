@@ -7,6 +7,7 @@ import {
 } from '@polkadot/api/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { DocumentNode } from 'graphql';
 
 import { PostTransactionValue } from '~/base';
 
@@ -107,4 +108,9 @@ export interface Signer {
 export interface AuthTarget {
   did: string;
   authId: BigNumber;
+}
+
+export interface GraphqlQuery<Variables> {
+  query: DocumentNode;
+  variables: Variables;
 }

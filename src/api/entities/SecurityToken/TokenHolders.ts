@@ -1,19 +1,10 @@
-import BigNumber from 'bignumber.js';
-
 import { Identity } from '~/api/entities/Identity';
+import { IdentityBalance } from '~/api/entities/types';
 import { Namespace } from '~/base';
 import { IdentityId } from '~/polkadot';
 import { balanceToBigNumber, identityIdToString, stringToTicker } from '~/utils';
 
 import { SecurityToken } from './';
-
-/**
- * Represents the balance of a token holder
- */
-export interface IdentityBalance {
-  identity: Identity;
-  balance: BigNumber;
-}
 
 /**
  * Handles all Security Token Holders related functionality

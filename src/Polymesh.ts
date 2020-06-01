@@ -1,4 +1,5 @@
-import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
+import { ApiPromise, WsProvider } from '@polkadot/api';
+import { Signer } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloClient, ApolloQueryResult } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
@@ -24,10 +25,12 @@ import { didsWithClaims } from '~/harvester/queries';
 import { Query } from '~/harvester/types';
 import {
   ClaimData,
+  CommonKeyring,
   Ensured,
   ErrorCode,
   HarvesterConfig,
   SubCallback,
+  UiKeyring,
   UnsubCallback,
 } from '~/types';
 import { SignerType } from '~/types/internal';
@@ -38,6 +41,20 @@ import {
   tickerToString,
   valueToDid,
 } from '~/utils';
+
+interface ConnectParamsBase {
+  nodeUrl: string;
+  signer?: Signer;
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * @hidden
+ */
+function isUiKeyring(keyring: any): keyring is UiKeyring {
+  return !!keyring.keyring;
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**
  * Main entry point of the Polymesh SDK
@@ -52,45 +69,45 @@ export class Polymesh {
     this.context = context;
   }
 
-  static async connect(params: { nodeUrl: string; accountSeed: string }): Promise<Polymesh>;
+  static async connect(params: ConnectParamsBase & { accountSeed: string }): Promise<Polymesh>;
 
-  static async connect(params: { nodeUrl: string; keyring: Keyring }): Promise<Polymesh>;
+  static async connect(
+    params: ConnectParamsBase & {
+      keyring: CommonKeyring | UiKeyring;
+    }
+  ): Promise<Polymesh>;
 
-  static async connect(params: { nodeUrl: string; accountUri: string }): Promise<Polymesh>;
+  static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
 
-  static async connect(params: {
-    nodeUrl: string;
-    accountSeed: string;
-    harvester: HarvesterConfig;
-  }): Promise<Polymesh>;
+  static async connect(
+    params: ConnectParamsBase & { accountSeed: string; harvester: HarvesterConfig }
+  ): Promise<Polymesh>;
 
-  static async connect(params: {
-    nodeUrl: string;
-    keyring: Keyring;
-    harvester: HarvesterConfig;
-  }): Promise<Polymesh>;
+  static async connect(
+    params: ConnectParamsBase & {
+      keyring: CommonKeyring | UiKeyring;
+      harvester: HarvesterConfig;
+    }
+  ): Promise<Polymesh>;
 
-  static async connect(params: {
-    nodeUrl: string;
-    accountUri: string;
-    harvester: HarvesterConfig;
-  }): Promise<Polymesh>;
+  static async connect(
+    params: ConnectParamsBase & { accountUri: string; harvester: HarvesterConfig }
+  ): Promise<Polymesh>;
 
-  static async connect(params: { nodeUrl: string; harvester: HarvesterConfig }): Promise<Polymesh>;
-
-  static async connect(params: { nodeUrl: string }): Promise<Polymesh>;
+  static async connect(params: ConnectParamsBase): Promise<Polymesh>;
 
   /**
    * Create the instance and connect to the Polymesh node
    */
-  static async connect(params: {
-    nodeUrl: string;
-    accountSeed?: string;
-    keyring?: Keyring;
-    accountUri?: string;
-    harvester?: HarvesterConfig;
-  }): Promise<Polymesh> {
-    const { nodeUrl, accountSeed, keyring, accountUri, harvester } = params;
+  static async connect(
+    params: ConnectParamsBase & {
+      accountSeed?: string;
+      keyring?: CommonKeyring | UiKeyring;
+      accountUri?: string;
+      harvester?: HarvesterConfig;
+    }
+  ): Promise<Polymesh> {
+    const { nodeUrl, accountSeed, keyring, accountUri, signer, harvester } = params;
     let polymeshApi: ApiPromise;
     let harvesterClient: ApolloClient<NormalizedCacheObject> | null = null;
 
@@ -123,6 +140,10 @@ export class Polymesh {
         });
       }
 
+      if (signer) {
+        polymeshApi.setSigner(signer);
+      }
+
       let context: Context;
 
       if (accountSeed) {
@@ -132,10 +153,16 @@ export class Polymesh {
           seed: accountSeed,
         });
       } else if (keyring) {
+        let keyringInstance: CommonKeyring;
+        if (isUiKeyring(keyring)) {
+          keyringInstance = keyring.keyring;
+        } else {
+          keyringInstance = keyring;
+        }
         context = await Context.create({
           polymeshApi,
           harvesterClient,
-          keyring,
+          keyring: keyringInstance,
         });
       } else if (accountUri) {
         context = await Context.create({

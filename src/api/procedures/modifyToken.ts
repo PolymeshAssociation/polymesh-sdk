@@ -1,7 +1,7 @@
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType } from '~/types';
-import { stringToFundingRoundName, stringToTicker, stringToTokenName } from '~/utils';
+import { stringToAssetName, stringToFundingRoundName, stringToTicker } from '~/utils';
 
 export type ModifyTokenParams =
   | { makeDivisible?: true; name: string; fundingRound?: string }
@@ -66,7 +66,7 @@ export async function prepareModifyToken(
       });
     }
 
-    this.addTransaction(tx.asset.renameAsset, {}, rawTicker, stringToTokenName(newName, context));
+    this.addTransaction(tx.asset.renameAsset, {}, rawTicker, stringToAssetName(newName, context));
   }
 
   if (newFundingRound) {

@@ -7,6 +7,7 @@ import BigNumber from 'bignumber.js';
 import {
   AccountKey,
   AssetIdentifier,
+  AssetName,
   AssetTransferRule,
   AssetType,
   AuthIdentifier,
@@ -22,7 +23,6 @@ import {
   ProtocolOp,
   Signatory,
   Ticker,
-  TokenName,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -48,6 +48,7 @@ import {
   accountIdToString,
   accountKeyToString,
   assetIdentifierToString,
+  assetNameToString,
   assetTransferRuleToRule,
   assetTypeToString,
   authIdentifierToAuthTarget,
@@ -86,6 +87,7 @@ import {
   stringToAccountId,
   stringToAccountKey,
   stringToAssetIdentifier,
+  stringToAssetName,
   stringToBytes,
   stringToDocumentHash,
   stringToDocumentName,
@@ -95,12 +97,10 @@ import {
   stringToJurisdictionName,
   stringToProtocolOp,
   stringToTicker,
-  stringToTokenName,
   tickerToDid,
   tickerToString,
   tokenDocumentToDocument,
   tokenIdentifierTypeToIdentifierType,
-  tokenNameToString,
   tokenTypeToAssetType,
   u8ToTransferStatus,
   u64ToBigNumber,
@@ -474,7 +474,7 @@ describe('stringToTicker and tickerToString', () => {
   });
 });
 
-describe('stringToTokenName and tokenNameToString', () => {
+describe('stringToAssetName and assetNameToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -487,26 +487,26 @@ describe('stringToTokenName and tokenNameToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToTokenName should convert a string to a polkadot TokenName object', () => {
+  test('stringToAssetName should convert a string to a polkadot AssetName object', () => {
     const value = 'someName';
-    const fakeResult = ('convertedName' as unknown) as TokenName;
+    const fakeResult = ('convertedName' as unknown) as AssetName;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('TokenName', value)
+      .withArgs('AssetName', value)
       .returns(fakeResult);
 
-    const result = stringToTokenName(value, context);
+    const result = stringToAssetName(value, context);
 
     expect(result).toEqual(fakeResult);
   });
 
-  test('tokenNameToString should convert a polkadot TokenName object to a string', () => {
-    const fakeResult = 'someTokenName';
-    const tokenName = dsMockUtils.createMockTokenName(fakeResult);
+  test('assetNameToString should convert a polkadot AssetName object to a string', () => {
+    const fakeResult = 'someAssetName';
+    const assetName = dsMockUtils.createMockAssetName(fakeResult);
 
-    const result = tokenNameToString(tokenName);
+    const result = assetNameToString(assetName);
     expect(result).toEqual(fakeResult);
   });
 });
