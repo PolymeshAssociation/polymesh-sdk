@@ -10,7 +10,7 @@ import {
   prepareSetTokenDocuments,
 } from '~/api/procedures/setTokenDocuments';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TokenDocument } from '~/types';
 import { PolymeshTx } from '~/types/internal';
@@ -32,7 +32,7 @@ describe('setTokenDocuments procedure', () => {
   let linkIds: u64[];
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(500) } });
+    dsMockUtils.initMocks({ contextOptions: { balance: new BigNumber(500) } });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
@@ -51,33 +51,33 @@ describe('setTokenDocuments procedure', () => {
         contentHash: 'otherHash',
       },
     ];
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
     rawDocuments = documents.map(({ name, uri, contentHash }) =>
-      polkadotMockUtils.createMockDocument({
-        name: polkadotMockUtils.createMockDocumentName(name),
-        uri: polkadotMockUtils.createMockDocumentUri(uri),
+      dsMockUtils.createMockDocument({
+        name: dsMockUtils.createMockDocumentName(name),
+        uri: dsMockUtils.createMockDocumentUri(uri),
         // eslint-disable-next-line @typescript-eslint/camelcase
-        content_hash: polkadotMockUtils.createMockDocumentHash(contentHash),
+        content_hash: dsMockUtils.createMockDocumentHash(contentHash),
       })
     );
-    tokenSignatory = polkadotMockUtils.createMockSignatory({
-      Identity: polkadotMockUtils.createMockIdentityId('tokenDid'),
+    tokenSignatory = dsMockUtils.createMockSignatory({
+      Identity: dsMockUtils.createMockIdentityId('tokenDid'),
     });
-    linkIds = [polkadotMockUtils.createMockU64(1), polkadotMockUtils.createMockU64(2)];
+    linkIds = [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(2)];
     /* eslint-disable @typescript-eslint/camelcase */
     links = [
-      polkadotMockUtils.createMockLink({
-        link_data: polkadotMockUtils.createMockLinkData({
+      dsMockUtils.createMockLink({
+        link_data: dsMockUtils.createMockLinkData({
           DocumentOwned: rawDocuments[0],
         }),
-        expiry: polkadotMockUtils.createMockOption(),
+        expiry: dsMockUtils.createMockOption(),
         link_id: linkIds[0],
       }),
-      polkadotMockUtils.createMockLink({
-        link_data: polkadotMockUtils.createMockLinkData({
+      dsMockUtils.createMockLink({
+        link_data: dsMockUtils.createMockLinkData({
           DocumentOwned: rawDocuments[1],
         }),
-        expiry: polkadotMockUtils.createMockOption(),
+        expiry: dsMockUtils.createMockOption(),
         link_id: linkIds[1],
       }),
     ];
@@ -96,14 +96,14 @@ describe('setTokenDocuments procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    polkadotMockUtils.createQueryStub('identity', 'links', {
+    dsMockUtils.createQueryStub('identity', 'links', {
       entries: [tuple([tokenSignatory, linkIds[0]], links[0])],
     });
 
-    removeDocumentsTransaction = polkadotMockUtils.createTxStub('asset', 'removeDocuments');
-    addDocumentsTransaction = polkadotMockUtils.createTxStub('asset', 'addDocuments');
+    removeDocumentsTransaction = dsMockUtils.createTxStub('asset', 'removeDocuments');
+    addDocumentsTransaction = dsMockUtils.createTxStub('asset', 'addDocuments');
 
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     documents.forEach((document, index) => {
@@ -114,17 +114,17 @@ describe('setTokenDocuments procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if the new list is the same as the current one', () => {
-    polkadotMockUtils.createQueryStub('identity', 'links', {
+    dsMockUtils.createQueryStub('identity', 'links', {
       entries: links.map(link => tuple([tokenSignatory, link.link_id], link)),
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
@@ -159,7 +159,7 @@ describe('setTokenDocuments procedure', () => {
   });
 
   test('should not add a remove documents transaction if there are no documents linked to the token', async () => {
-    polkadotMockUtils.createQueryStub('identity', 'links', {
+    dsMockUtils.createQueryStub('identity', 'links', {
       entries: [],
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();

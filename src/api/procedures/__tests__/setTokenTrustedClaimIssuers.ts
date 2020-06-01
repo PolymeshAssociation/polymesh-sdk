@@ -9,7 +9,7 @@ import {
   prepareSetTokenTrustedClaimIssuers,
 } from '~/api/procedures/setTokenTrustedClaimIssuers';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
@@ -28,7 +28,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   let args: Params;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
@@ -36,8 +36,8 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
     ticker = 'someTicker';
     claimIssuerIdentities = ['aDid', 'otherDid', 'differentDid'];
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
-    rawClaimIssuerDids = claimIssuerIdentities.map(polkadotMockUtils.createMockIdentityId);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawClaimIssuerDids = claimIssuerIdentities.map(dsMockUtils.createMockIdentityId);
     /* eslint-enable @typescript-eslint/camelcase */
     args = {
       ticker,
@@ -53,7 +53,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    trustedClaimIssuerStub = polkadotMockUtils.createQueryStub(
+    trustedClaimIssuerStub = dsMockUtils.createQueryStub(
       'complianceManager',
       'trustedClaimIssuer',
       {
@@ -61,16 +61,16 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
       }
     );
 
-    removeDefaultTrustedClaimIssuersBatchTransaction = polkadotMockUtils.createTxStub(
+    removeDefaultTrustedClaimIssuersBatchTransaction = dsMockUtils.createTxStub(
       'complianceManager',
       'removeDefaultTrustedClaimIssuersBatch'
     );
-    addDefaultTrustedClaimIssuersBatchTransaction = polkadotMockUtils.createTxStub(
+    addDefaultTrustedClaimIssuersBatchTransaction = dsMockUtils.createTxStub(
       'complianceManager',
       'addDefaultTrustedClaimIssuersBatch'
     );
 
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     claimIssuerIdentities.forEach((did, index) => {
@@ -82,13 +82,13 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if the new list is the same as the current one', () => {
@@ -103,7 +103,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
 
   test("should throw an error if some of the supplied dids don't exist", () => {
     const nonExistendDid = claimIssuerIdentities[1];
-    polkadotMockUtils.configureMocks({ contextOptions: { invalidDids: [nonExistendDid] } });
+    dsMockUtils.configureMocks({ contextOptions: { invalidDids: [nonExistendDid] } });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 

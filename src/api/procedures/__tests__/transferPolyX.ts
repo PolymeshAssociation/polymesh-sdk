@@ -3,7 +3,7 @@ import sinon from 'sinon';
 
 import { prepareTransferPolyX, TransferPolyXParams } from '~/api/procedures/transferPolyX';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import * as utilsModule from '~/utils';
 
@@ -17,29 +17,29 @@ describe('transferPolyX procedure', () => {
 
   beforeAll(() => {
     entityMockUtils.initMocks();
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    sinon.stub(utilsModule, 'stringToAccountKey').returns(polkadotMockUtils.createMockAccountKey());
+    sinon.stub(utilsModule, 'stringToAccountKey').returns(dsMockUtils.createMockAccountKey());
   });
 
   beforeEach(() => {
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
   });
 
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if the user has insufficient balance to transfer', () => {
-    polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
+    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
 
     const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>();
     proc.context = mockContext;
@@ -53,7 +53,7 @@ describe('transferPolyX procedure', () => {
   });
 
   test("should throw an error if destination account doesn't have an associated identity", () => {
-    polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
+    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
 
     const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>();
     proc.context = mockContext;
@@ -64,15 +64,15 @@ describe('transferPolyX procedure', () => {
   });
 
   test("should throw an error if sender identity doesn't have a valid cdd", () => {
-    polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
-      polkadotMockUtils.createMockOption(
-        polkadotMockUtils.createMockLinkedKeyInfo({
-          Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
+      dsMockUtils.createMockOption(
+        dsMockUtils.createMockLinkedKeyInfo({
+          Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
         })
       )
     );
 
-    polkadotMockUtils.configureMocks({
+    dsMockUtils.configureMocks({
       contextOptions: {
         validCdd: false,
       },
@@ -87,10 +87,10 @@ describe('transferPolyX procedure', () => {
   });
 
   test("should throw an error if destination account doesn't have a valid cdd", () => {
-    polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
-      polkadotMockUtils.createMockOption(
-        polkadotMockUtils.createMockLinkedKeyInfo({
-          Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
+      dsMockUtils.createMockOption(
+        dsMockUtils.createMockLinkedKeyInfo({
+          Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
         })
       )
     );
@@ -112,19 +112,19 @@ describe('transferPolyX procedure', () => {
   test('should add a balance transfer transaction to the queue', async () => {
     const to = 'someAccount';
     const amount = new BigNumber(99);
-    const rawAmount = polkadotMockUtils.createMockBalance(amount.toNumber());
+    const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
 
-    polkadotMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
-      polkadotMockUtils.createMockOption(
-        polkadotMockUtils.createMockLinkedKeyInfo({
-          Unique: polkadotMockUtils.createMockIdentityId('currentIdentityId'),
+    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
+      dsMockUtils.createMockOption(
+        dsMockUtils.createMockLinkedKeyInfo({
+          Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
         })
       )
     );
 
     sinon.stub(utilsModule, 'numberToBalance').returns(rawAmount);
 
-    const tx = polkadotMockUtils.createTxStub('balances', 'transfer');
+    const tx = dsMockUtils.createTxStub('balances', 'transfer');
     const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>();
     proc.context = mockContext;
 

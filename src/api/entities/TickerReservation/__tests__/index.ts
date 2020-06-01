@@ -5,22 +5,22 @@ import { SecurityToken } from '~/api/entities/SecurityToken';
 import { reserveTicker } from '~/api/procedures';
 import { createSecurityToken } from '~/api/procedures/createSecurityToken';
 import { Entity, TransactionQueue } from '~/base';
-import { polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils } from '~/testUtils/mocks';
 import { KnownTokenType, TickerReservationStatus, TokenIdentifierType } from '~/types';
 
 import { TickerReservation } from '../';
 
 describe('TickerReservation class', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -30,7 +30,7 @@ describe('TickerReservation class', () => {
   describe('constructor', () => {
     test('should assign ticker to instance', () => {
       const ticker = 'abc';
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       expect(tickerReservation.ticker).toBe(ticker);
@@ -49,19 +49,19 @@ describe('TickerReservation class', () => {
     let queryMultiStub: sinon.SinonStub;
 
     beforeEach(() => {
-      polkadotMockUtils.createQueryStub('asset', 'tickers');
-      polkadotMockUtils.createQueryStub('asset', 'tokens');
-      queryMultiStub = polkadotMockUtils.getQueryMultiStub();
+      dsMockUtils.createQueryStub('asset', 'tickers');
+      dsMockUtils.createQueryStub('asset', 'tokens');
+      queryMultiStub = dsMockUtils.getQueryMultiStub();
     });
 
     test('should return details for a free ticker', async () => {
       const ticker = 'abc';
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiStub.resolves([
-        polkadotMockUtils.createMockTickerRegistration(),
-        polkadotMockUtils.createMockSecurityToken(),
+        dsMockUtils.createMockTickerRegistration(),
+        dsMockUtils.createMockSecurityToken(),
       ]);
 
       const details = await tickerReservation.details();
@@ -77,17 +77,15 @@ describe('TickerReservation class', () => {
       const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = new Date(new Date().getTime() + 100000);
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiStub.resolves([
-        polkadotMockUtils.createMockTickerRegistration({
-          owner: polkadotMockUtils.createMockIdentityId(ownerDid),
-          expiry: polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockMoment(expiryDate.getTime())
-          ),
+        dsMockUtils.createMockTickerRegistration({
+          owner: dsMockUtils.createMockIdentityId(ownerDid),
+          expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryDate.getTime())),
         }),
-        polkadotMockUtils.createMockSecurityToken(),
+        dsMockUtils.createMockSecurityToken(),
       ]);
 
       const details = await tickerReservation.details();
@@ -103,15 +101,15 @@ describe('TickerReservation class', () => {
       const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = null;
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiStub.resolves([
-        polkadotMockUtils.createMockTickerRegistration({
-          owner: polkadotMockUtils.createMockIdentityId(ownerDid),
-          expiry: polkadotMockUtils.createMockOption(), // null expiry
+        dsMockUtils.createMockTickerRegistration({
+          owner: dsMockUtils.createMockIdentityId(ownerDid),
+          expiry: dsMockUtils.createMockOption(), // null expiry
         }),
-        polkadotMockUtils.createMockSecurityToken(),
+        dsMockUtils.createMockSecurityToken(),
       ]);
 
       const details = await tickerReservation.details();
@@ -127,17 +125,15 @@ describe('TickerReservation class', () => {
       const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = new Date(new Date().getTime() - 100000);
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiStub.resolves([
-        polkadotMockUtils.createMockTickerRegistration({
-          owner: polkadotMockUtils.createMockIdentityId(ownerDid),
-          expiry: polkadotMockUtils.createMockOption(
-            polkadotMockUtils.createMockMoment(expiryDate.getTime())
-          ),
+        dsMockUtils.createMockTickerRegistration({
+          owner: dsMockUtils.createMockIdentityId(ownerDid),
+          expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryDate.getTime())),
         }),
-        polkadotMockUtils.createMockSecurityToken(),
+        dsMockUtils.createMockSecurityToken(),
       ]);
 
       const details = await tickerReservation.details();
@@ -153,22 +149,22 @@ describe('TickerReservation class', () => {
       const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = null;
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiStub.resolves([
-        polkadotMockUtils.createMockTickerRegistration({
-          owner: polkadotMockUtils.createMockIdentityId(ownerDid),
-          expiry: polkadotMockUtils.createMockOption(),
+        dsMockUtils.createMockTickerRegistration({
+          owner: dsMockUtils.createMockIdentityId(ownerDid),
+          expiry: dsMockUtils.createMockOption(),
         }),
-        polkadotMockUtils.createMockSecurityToken({
+        dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
-          owner_did: polkadotMockUtils.createMockIdentityId(ownerDid),
-          name: polkadotMockUtils.createMockAssetName('someToken'),
-          asset_type: polkadotMockUtils.createMockAssetType('EquityCommon'),
-          divisible: polkadotMockUtils.createMockBool(true),
-          link_id: polkadotMockUtils.createMockU64(3),
-          total_supply: polkadotMockUtils.createMockBalance(1000),
+          owner_did: dsMockUtils.createMockIdentityId(ownerDid),
+          name: dsMockUtils.createMockAssetName('someToken'),
+          asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
+          divisible: dsMockUtils.createMockBool(true),
+          link_id: dsMockUtils.createMockU64(3),
+          total_supply: dsMockUtils.createMockBalance(1000),
           /* eslint-enable @typescript-eslint/camelcase */
         }),
       ]);
@@ -184,16 +180,13 @@ describe('TickerReservation class', () => {
 
     test('should allow subscription', async () => {
       const ticker = 'abc';
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       const unsubCallback = 'unsubCallback';
 
       queryMultiStub.callsFake(async (_, cbFunc) => {
-        cbFunc([
-          polkadotMockUtils.createMockTickerRegistration(),
-          polkadotMockUtils.createMockSecurityToken(),
-        ]);
+        cbFunc([dsMockUtils.createMockTickerRegistration(), dsMockUtils.createMockSecurityToken()]);
         return unsubCallback;
       });
 
@@ -212,7 +205,7 @@ describe('TickerReservation class', () => {
   describe('method: extend', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'TEST';
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       const args = {
@@ -236,7 +229,7 @@ describe('TickerReservation class', () => {
   describe('method: createToken', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'TEST';
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       const args = {

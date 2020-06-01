@@ -193,9 +193,16 @@ export enum ClaimType {
 
 export type Claim =
   | { type: ClaimType.Jurisdiction; name: string; scope: string }
-  | { type: ClaimType.NoData }
-  | { type: ClaimType.CustomerDueDiligence }
-  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string };
+  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string }
+  | { type: ClaimType.NoData | ClaimType.CustomerDueDiligence };
+
+export type ClaimData = {
+  target: Identity;
+  issuer: Identity;
+  issuedAt: Date;
+  expiry: Date | null;
+  claim: Claim;
+};
 
 export enum ConditionType {
   IsPresent = 'IsPresent',
@@ -273,9 +280,13 @@ export interface ClaimTargets {
 }
 
 export type SubCallback<T> = (result: T) => void | Promise<void>;
+
 export type UnsubCallback = () => void;
 
+export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
+
 export type CommonKeyring = Pick<Keyring, 'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri'>;
+
 export interface UiKeyring {
   keyring: CommonKeyring;
 }

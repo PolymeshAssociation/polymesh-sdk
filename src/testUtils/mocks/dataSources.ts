@@ -20,6 +20,8 @@ import {
 } from '@polkadot/types/interfaces';
 import { Codec, IKeyringPair, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { stringToU8a } from '@polkadot/util';
+import { NormalizedCacheObject } from 'apollo-cache-inmemory';
+import ApolloClient from 'apollo-client';
 import { BigNumber } from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { cloneDeep, every, merge, upperFirst } from 'lodash';
@@ -65,7 +67,7 @@ import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
 import { Context } from '~/context';
 import { Mocked } from '~/testUtils/types';
-import { Extrinsics, PolymeshTx, Queries } from '~/types/internal';
+import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
 
 let apiEmitter: EventEmitter;
@@ -86,10 +88,22 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
   } as Mutable<ApiPromise> & EventEmitter;
 }
 
+const apolloConstructorStub = sinon.stub();
+
+const MockApolloClientClass = class {
+  /**
+   * @hidden
+   */
+  public constructor() {
+    return apolloConstructorStub();
+  }
+};
+
 const mockInstanceContainer = {
   contextInstance: {} as MockContext,
   apiInstance: createApi(),
   keyringInstance: {} as Mutable<Keyring>,
+  apolloInstance: new MockApolloClientClass() as ApolloClient<NormalizedCacheObject>,
 };
 
 let apiPromiseCreateStub: SinonStub;
@@ -123,7 +137,7 @@ const MockContextClass = class {
   public static create = contextCreateStub;
 };
 
-let createErrStub: SinonStub;
+let errorStub: SinonStub;
 
 type StatusCallback = (receipt: ISubmittableResult) => void;
 type UnsubCallback = () => void;
@@ -296,6 +310,11 @@ export const mockContextModule = (path: string) => (): object => ({
   Context: MockContextClass,
 });
 
+export const mockApolloModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  ApolloClient: MockApolloClientClass,
+});
+
 const txMocksData = new Map<unknown, TxMockData>();
 let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
@@ -361,6 +380,7 @@ function configureContext(opts: ContextOptions): void {
       contextInstance.currentPair = { address } as IKeyringPair;
     }),
     polymeshApi: mockInstanceContainer.apiInstance,
+    harvesterClient: mockInstanceContainer.apolloInstance,
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
   } as unknown) as MockContext;
 
@@ -565,7 +585,7 @@ export function initMocks(opts?: {
   initKeyring(opts?.keyringOptions);
 
   txMocksData.clear();
-  createErrStub = sinon.stub().throws(new Error('Error'));
+  errorStub = sinon.stub().throws(new Error('Error'));
 }
 
 /**
@@ -576,6 +596,9 @@ export function cleanup(): void {
   mockInstanceContainer.apiInstance = createApi();
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.keyringInstance = {} as Mutable<Keyring>;
+  mockInstanceContainer.apolloInstance = new MockApolloClientClass() as ApolloClient<
+    NormalizedCacheObject
+  >;
 }
 
 /**
@@ -653,6 +676,26 @@ export function createTxStub<
     SinonStub;
 
   return transactionMock;
+}
+
+/**
+ * @hidden
+ * Create and return an apollo query stub
+ *
+ * @param query - apollo document node
+ * @param returnValue
+ */
+export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: any): SinonStub {
+  const instance = mockInstanceContainer.apolloInstance;
+  const stub = sinon.stub();
+
+  stub.withArgs(query).resolves({
+    data: returnData,
+  });
+
+  instance.query = stub;
+
+  return stub;
 }
 
 /**
@@ -792,10 +835,19 @@ export function updateTxStatus<
 
 /**
  * @hidden
+ * Make calls to `Harvester.query` throw an error
+ */
+export function throwOnHarvesterQuery(): void {
+  const instance = mockInstanceContainer.apolloInstance;
+  instance.query = errorStub;
+}
+
+/**
+ * @hidden
  * Make calls to `Context.create` throw an error
  */
 export function throwOnContextCreation(): void {
-  MockContextClass.create = createErrStub;
+  MockContextClass.create = errorStub;
 }
 
 /**
@@ -803,7 +855,7 @@ export function throwOnContextCreation(): void {
  * Make calls to `ApiPromise.create` throw an error
  */
 export function throwOnApiCreation(): void {
-  MockApiPromiseClass.create = createErrStub;
+  MockApiPromiseClass.create = errorStub;
 }
 
 /**
@@ -824,6 +876,14 @@ export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> 
   return (mockInstanceContainer.apiInstance as unknown) as ApiPromise &
     SinonStubbedInstance<ApiPromise> &
     EventEmitter;
+}
+
+/**
+ * @hidden
+ * Retrieve an instance of the mocked Apollo Client
+ */
+export function getHarvesterClient(): ApolloClient<NormalizedCacheObject> {
+  return mockInstanceContainer.apolloInstance;
 }
 
 /**

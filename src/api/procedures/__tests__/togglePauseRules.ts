@@ -9,7 +9,7 @@ import {
   prepareTogglePauseRules,
 } from '~/api/procedures/togglePauseRules';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
 import * as utilsModule from '~/utils';
@@ -28,22 +28,22 @@ describe('togglePauseRules procedure', () => {
   let rawTicker: Ticker;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     boolToBooleanStub = sinon.stub(utilsModule, 'boolToBoolean');
     ticker = 'TEST';
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
   });
 
   let addTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    assetRulesMapStub = polkadotMockUtils.createQueryStub('complianceManager', 'assetRulesMap', {
+    assetRulesMapStub = dsMockUtils.createQueryStub('complianceManager', 'assetRulesMap', {
       returnValue: [],
     });
     assetRulesMapStub.withArgs(rawTicker).resolves({
@@ -56,13 +56,13 @@ describe('togglePauseRules procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if pause is set to true and the rules are already paused', () => {
@@ -107,7 +107,7 @@ describe('togglePauseRules procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    const transaction = polkadotMockUtils.createTxStub('complianceManager', 'pauseAssetRules');
+    const transaction = dsMockUtils.createTxStub('complianceManager', 'pauseAssetRules');
 
     const result = await prepareTogglePauseRules.call(proc, {
       ticker,
@@ -123,7 +123,7 @@ describe('togglePauseRules procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    const transaction = polkadotMockUtils.createTxStub('complianceManager', 'resumeAssetRules');
+    const transaction = dsMockUtils.createTxStub('complianceManager', 'resumeAssetRules');
 
     const result = await prepareTogglePauseRules.call(proc, {
       ticker,

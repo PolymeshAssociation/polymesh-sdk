@@ -6,7 +6,7 @@ import sinon from 'sinon';
 import { Identity, SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareTransferToken } from '~/api/procedures/transferToken';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TransferStatus } from '~/types';
 import * as utilsModule from '~/utils';
@@ -28,7 +28,7 @@ describe('transferToken procedure', () => {
   let args: Params;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
@@ -37,7 +37,7 @@ describe('transferToken procedure', () => {
     valueToDidStub = sinon.stub(utilsModule, 'valueToDid');
     did = 'someDid';
     ticker = 'TEST';
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
     args = {
       to: did,
       amount: new BigNumber(100),
@@ -46,7 +46,7 @@ describe('transferToken procedure', () => {
   });
 
   beforeEach(() => {
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     valueToDidStub.returns('someDid');
   });
@@ -54,13 +54,13 @@ describe('transferToken procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error with reason if transfer status is different than success and failure', () => {
@@ -101,12 +101,12 @@ describe('transferToken procedure', () => {
 
   test('should add a token transfer transaction to the queue', async () => {
     const amount = 100;
-    const rawAmount = polkadotMockUtils.createMockBalance(amount);
-    const rawDid = polkadotMockUtils.createMockIdentityId(did);
+    const rawAmount = dsMockUtils.createMockBalance(amount);
+    const rawDid = dsMockUtils.createMockIdentityId(did);
     numberToBalanceStub.returns(rawAmount);
     stringToIdentityIdStub.returns(rawDid);
 
-    const tx = polkadotMockUtils.createTxStub('asset', 'transfer');
+    const tx = dsMockUtils.createTxStub('asset', 'transfer');
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 

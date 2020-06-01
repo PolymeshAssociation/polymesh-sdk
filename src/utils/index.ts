@@ -695,6 +695,31 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
 /**
  * @hidden
  */
+export function createClaim(
+  claimType: string,
+  jurisdiction?: string | null,
+  scope?: string | null
+): Claim {
+  const type = claimType as ClaimType;
+  if (type === ClaimType.Jurisdiction) {
+    return {
+      type,
+      name: jurisdiction as string,
+      scope: scope as string,
+    };
+  } else if (type !== ClaimType.NoData && type !== ClaimType.CustomerDueDiligence) {
+    return {
+      type,
+      scope: scope as string,
+    };
+  }
+
+  return { type };
+}
+
+/**
+ * @hidden
+ */
 export function meshClaimToClaim(claim: MeshClaim): Claim {
   if (claim.isJurisdiction) {
     const [name, scope] = claim.asJurisdiction;

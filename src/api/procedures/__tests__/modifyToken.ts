@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareModifyToken } from '~/api/procedures/modifyToken';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
 import * as utilsModule from '~/utils';
@@ -24,14 +24,14 @@ describe('modifyToken procedure', () => {
   let fundingRound: string;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     stringToAssetNameStub = sinon.stub(utilsModule, 'stringToAssetName');
     stringToFundingRoundNameStub = sinon.stub(utilsModule, 'stringToFundingRoundName');
     ticker = 'someTicker';
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
     fundingRound = 'Series A';
   });
 
@@ -39,20 +39,20 @@ describe('modifyToken procedure', () => {
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
 
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if the user has not passed any arguments', () => {
@@ -120,7 +120,7 @@ describe('modifyToken procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    const transaction = polkadotMockUtils.createTxStub('asset', 'makeDivisible');
+    const transaction = dsMockUtils.createTxStub('asset', 'makeDivisible');
 
     const result = await prepareModifyToken.call(proc, {
       ticker,
@@ -133,13 +133,13 @@ describe('modifyToken procedure', () => {
 
   test('should add a rename token transaction to the queue', async () => {
     const newName = 'NEW_NAME';
-    const rawAssetName = polkadotMockUtils.createMockAssetName(newName);
+    const rawAssetName = dsMockUtils.createMockAssetName(newName);
     stringToAssetNameStub.withArgs(newName, mockContext).returns(rawAssetName);
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    const transaction = polkadotMockUtils.createTxStub('asset', 'renameAsset');
+    const transaction = dsMockUtils.createTxStub('asset', 'renameAsset');
 
     const result = await prepareModifyToken.call(proc, {
       ticker,
@@ -152,13 +152,13 @@ describe('modifyToken procedure', () => {
 
   test('should add a set funding round transaction to the queue', async () => {
     const newFundingRound = 'Series B';
-    const rawFundingRound = polkadotMockUtils.createMockFundingRoundName(newFundingRound);
+    const rawFundingRound = dsMockUtils.createMockFundingRoundName(newFundingRound);
     stringToFundingRoundNameStub.withArgs(newFundingRound, mockContext).returns(rawFundingRound);
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    const transaction = polkadotMockUtils.createTxStub('asset', 'setFundingRound');
+    const transaction = dsMockUtils.createTxStub('asset', 'setFundingRound');
 
     const result = await prepareModifyToken.call(proc, {
       ticker,

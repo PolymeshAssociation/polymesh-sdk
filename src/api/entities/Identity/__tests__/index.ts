@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import { Entity } from '~/base';
 import { Context } from '~/context';
 import { IdentityId, Ticker } from '~/polkadot';
-import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Role, RoleType } from '~/types';
 import * as utilsModule from '~/utils';
 
@@ -27,20 +27,20 @@ describe('Identity class', () => {
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
   });
 
   beforeEach(() => {
-    context = polkadotMockUtils.getContextInstance();
+    context = dsMockUtils.getContextInstance();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -69,12 +69,12 @@ describe('Identity class', () => {
   //   test("should return the identity's POLYX balance", async () => {
   //     const did = 'someDid';
   //     const fakeBalance = new BigNumber(100);
-  //     const rawIdentityId = polkadotMockUtils.createMockIdentityId(did);
-  //     const mockContext = polkadotMockUtils.getContextInstance();
+  //     const rawIdentityId = dsMockUtils.createMockIdentityId(did);
+  //     const mockContext = dsMockUtils.getContextInstance();
 
   //     stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
 
-  //     polkadotMockUtils
+  //     dsMockUtils
   //       .createQueryStub('balances', 'identityBalance')
   //       .resolves(fakeBalance.times(Math.pow(10, 6)));
 
@@ -131,9 +131,9 @@ describe('Identity class', () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
       const role: Role = { type: RoleType.CddProvider };
-      const rawDid = polkadotMockUtils.createMockIdentityId(did);
+      const rawDid = dsMockUtils.createMockIdentityId(did);
 
-      polkadotMockUtils.createQueryStub('cddServiceProviders', 'activeMembers').resolves([rawDid]);
+      dsMockUtils.createQueryStub('cddServiceProviders', 'activeMembers').resolves([rawDid]);
 
       sinon
         .stub(utilsModule, 'identityIdToString')
@@ -207,12 +207,12 @@ describe('Identity class', () => {
     beforeAll(() => {
       ticker = 'TEST';
       did = 'someDid';
-      rawTicker = polkadotMockUtils.createMockTicker(ticker);
-      rawIdentityId = polkadotMockUtils.createMockIdentityId(did);
+      rawTicker = dsMockUtils.createMockTicker(ticker);
+      rawIdentityId = dsMockUtils.createMockIdentityId(did);
       fakeValue = new BigNumber(100);
-      fakeBalance = polkadotMockUtils.createMockBalance(fakeValue.toNumber());
-      mockContext = polkadotMockUtils.getContextInstance();
-      balanceOfStub = polkadotMockUtils.createQueryStub('asset', 'balanceOf');
+      fakeBalance = dsMockUtils.createMockBalance(fakeValue.toNumber());
+      mockContext = dsMockUtils.getContextInstance();
+      balanceOfStub = dsMockUtils.createQueryStub('asset', 'balanceOf');
 
       stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
 
@@ -261,15 +261,15 @@ describe('Identity class', () => {
     test('should return whether the Identity has valid CDD', async () => {
       const did = 'someDid';
       const statusResponse = true;
-      const mockContext = polkadotMockUtils.getContextInstance();
-      const rawIdentityId = polkadotMockUtils.createMockIdentityId(did);
-      const fakeHasValidCdd = polkadotMockUtils.createMockCddStatus({
+      const mockContext = dsMockUtils.getContextInstance();
+      const rawIdentityId = dsMockUtils.createMockIdentityId(did);
+      const fakeHasValidCdd = dsMockUtils.createMockCddStatus({
         Ok: rawIdentityId,
       });
 
       stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
 
-      polkadotMockUtils
+      dsMockUtils
         .createRpcStub('identity', 'isIdentityHasValidCdd')
         .withArgs(rawIdentityId)
         .resolves(fakeHasValidCdd);

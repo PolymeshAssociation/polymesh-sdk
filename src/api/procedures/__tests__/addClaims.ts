@@ -6,7 +6,7 @@ import sinon from 'sinon';
 import { AddClaimsParams, getRequiredRoles, prepareAddClaims } from '~/api/procedures/addClaims';
 import { Context } from '~/context';
 import { IdentityId } from '~/polkadot';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Claim, ClaimType, RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
@@ -37,7 +37,7 @@ describe('addClaims procedure', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
 
     claimToMeshClaimStub = sinon.stub(utilsModule, 'claimToMeshClaim');
     dateToMomentStub = sinon.stub(utilsModule, 'dateToMoment');
@@ -63,19 +63,19 @@ describe('addClaims procedure', () => {
       ],
     };
 
-    rawCddClaim = polkadotMockUtils.createMockClaim('CustomerDueDiligence');
-    rawBuyLockupClaim = polkadotMockUtils.createMockClaim({
-      BuyLockup: polkadotMockUtils.createMockIdentityId(),
+    rawCddClaim = dsMockUtils.createMockClaim('CustomerDueDiligence');
+    rawBuyLockupClaim = dsMockUtils.createMockClaim({
+      BuyLockup: dsMockUtils.createMockIdentityId(),
     });
-    rawSomeDid = polkadotMockUtils.createMockIdentityId(someDid);
-    rawOtherDid = polkadotMockUtils.createMockIdentityId(otherDid);
-    rawExpiry = polkadotMockUtils.createMockMoment(expiry.getTime());
+    rawSomeDid = dsMockUtils.createMockIdentityId(someDid);
+    rawOtherDid = dsMockUtils.createMockIdentityId(otherDid);
+    rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
   });
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    mockContext = polkadotMockUtils.getContextInstance();
-    addClaimsBatchTransaction = polkadotMockUtils.createTxStub('identity', 'addClaimsBatch');
+    mockContext = dsMockUtils.getContextInstance();
+    addClaimsBatchTransaction = dsMockUtils.createTxStub('identity', 'addClaimsBatch');
     claimToMeshClaimStub.withArgs(cddClaim, mockContext).returns(rawCddClaim);
     claimToMeshClaimStub.withArgs(buyLockupClaim, mockContext).returns(rawBuyLockupClaim);
     stringToIdentityIdStub.withArgs(someDid, mockContext).returns(rawSomeDid);
@@ -87,17 +87,17 @@ describe('addClaims procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test("should throw an error if some of the supplied target dids don't exist", () => {
-    polkadotMockUtils.configureMocks({ contextOptions: { invalidDids: [otherDid] } });
+    dsMockUtils.configureMocks({ contextOptions: { invalidDids: [otherDid] } });
 
     const proc = procedureMockUtils.getInstance<AddClaimsParams, void>();
     proc.context = mockContext;

@@ -29,7 +29,7 @@ git
       await repository.checkoutRef(reference);
     }
 
-    fs.copyFile(
+    fs.copyFileSync(
       path.resolve(__dirname, `../scripts/${TOOLING_FOLDER}/src/generated/graphqlTypes.ts`),
       OUTPUT_TYPES
     );
