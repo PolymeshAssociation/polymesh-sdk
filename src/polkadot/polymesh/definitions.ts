@@ -33,11 +33,11 @@ export default {
         Isin: '',
       },
     },
-    TokenName: 'Text',
+    AssetName: 'Text',
     AssetIdentifier: 'Text',
     FundingRoundName: 'Text',
     SecurityToken: {
-      name: 'TokenName',
+      name: 'AssetName',
       total_supply: 'Balance',
       owner_did: 'IdentityId',
       divisible: 'bool',
@@ -177,7 +177,7 @@ export default {
     Investment: {
       investor_did: 'IdentityId',
       amount_paid: 'Balance',
-      tokens_purchased: 'Balance',
+      assets_purchased: 'Balance',
       last_purchase_date: 'Moment',
     },
     SimpleTokenRecord: {
@@ -471,7 +471,7 @@ export default {
   rpc: {
     identity: {
       isIdentityHasValidCdd: {
-        description: 'use to tell whether the given ' + 'did has valid cdd claim or not',
+        description: 'use to tell whether the given did has valid cdd claim or not',
         params: [
           {
             name: 'did',
@@ -607,8 +607,7 @@ export default {
     },
     asset: {
       canTransfer: {
-        description:
-          'Checks whether a transaction with ' + 'given parameters can take place or ' + 'not',
+        description: 'Checks whether a transaction with given parameters can take place or not',
         params: [
           {
             name: 'sender',
@@ -623,12 +622,12 @@ export default {
           {
             name: 'from_did',
             type: 'IdentityId',
-            isOptional: false,
+            isOptional: true,
           },
           {
             name: 'to_did',
             type: 'IdentityId',
-            isOptional: false,
+            isOptional: true,
           },
           {
             name: 'value',

@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import { SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareSetTokenRules } from '~/api/procedures/setTokenRules';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Condition, RoleType, Rule } from '~/types';
 import { PolymeshTx } from '~/types/internal';
@@ -26,7 +26,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   let args: Params;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
@@ -57,7 +57,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
           /* eslint-enable @typescript-eslint/camelcase */
         } as AssetTransferRule)
     );
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
     /* eslint-enable @typescript-eslint/camelcase */
     args = {
       ticker,
@@ -73,25 +73,22 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    assetRulesMapStub = polkadotMockUtils.createQueryStub('complianceManager', 'assetRulesMap', {
+    assetRulesMapStub = dsMockUtils.createQueryStub('complianceManager', 'assetRulesMap', {
       returnValue: [],
     });
 
-    resetActiveRulesTransaction = polkadotMockUtils.createTxStub(
-      'complianceManager',
-      'resetActiveRules'
-    );
-    addActiveRuleTransaction = polkadotMockUtils.createTxStub('complianceManager', 'addActiveRule');
+    resetActiveRulesTransaction = dsMockUtils.createTxStub('complianceManager', 'resetActiveRules');
+    addActiveRuleTransaction = dsMockUtils.createTxStub('complianceManager', 'addActiveRule');
 
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     rules.forEach((rule, index) => {
-      const assetTransferRule = polkadotMockUtils.createMockAssetTransferRule({
+      const assetTransferRule = dsMockUtils.createMockAssetTransferRule({
         /* eslint-disable @typescript-eslint/camelcase */
         sender_rules: senderRules[index],
         receiver_rules: receiverRules[index],
-        rule_id: polkadotMockUtils.createMockU32(1),
+        rule_id: dsMockUtils.createMockU32(1),
         /* eslint-enable @typescript-eslint/camelcase */
       });
       ruleToAssetTransferRuleStub
@@ -113,13 +110,13 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if the new list is the same as the current one', () => {

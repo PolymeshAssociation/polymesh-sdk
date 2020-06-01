@@ -5,26 +5,27 @@ import sinon from 'sinon';
 import { Identity } from '~/api/entities/Identity';
 import { Namespace } from '~/base';
 import { IdentityId, Ticker } from '~/polkadot';
-import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { IdentityBalance } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
-import { IdentityBalance, TokenHolders } from '../TokenHolders';
+import { TokenHolders } from '../TokenHolders';
 
 describe('TokenHolders class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
     entityMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -38,8 +39,8 @@ describe('TokenHolders class', () => {
 
     test('should retrieve all the token holders with balance', async () => {
       const ticker = 'TEST';
-      const mockContext = polkadotMockUtils.getContextInstance();
-      const rawTicker = polkadotMockUtils.createMockTicker(ticker);
+      const mockContext = dsMockUtils.getContextInstance();
+      const rawTicker = dsMockUtils.createMockTicker(ticker);
       const fakeData = [
         {
           identity: 'someIdentity',
@@ -63,11 +64,11 @@ describe('TokenHolders class', () => {
 
       const balanceOfEntries: [[Ticker, IdentityId], Balance][] = [];
 
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
 
       fakeData.forEach(({ identity, value }) => {
-        const identityId = polkadotMockUtils.createMockIdentityId(identity);
-        const fakeBalance = polkadotMockUtils.createMockBalance(value);
+        const identityId = dsMockUtils.createMockIdentityId(identity);
+        const fakeBalance = dsMockUtils.createMockBalance(value);
         const balance = new BigNumber(value);
 
         identityIdToStringStub.withArgs(identityId).returns(identity);
@@ -81,7 +82,7 @@ describe('TokenHolders class', () => {
         });
       });
 
-      polkadotMockUtils.createQueryStub('asset', 'balanceOf', {
+      dsMockUtils.createQueryStub('asset', 'balanceOf', {
         entries: balanceOfEntries,
       });
 

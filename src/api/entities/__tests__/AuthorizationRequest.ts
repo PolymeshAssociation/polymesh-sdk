@@ -5,7 +5,7 @@ import { Identity } from '~/api/entities/Identity';
 import { consumeAuthorizationRequests } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils } from '~/testUtils/mocks';
 import { Authorization, AuthorizationType } from '~/types';
 
 import { AuthorizationRequest } from '../AuthorizationRequest';
@@ -14,19 +14,19 @@ describe('AuthorizationRequest class', () => {
   let context: Context;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   beforeEach(() => {
-    context = polkadotMockUtils.getContextInstance();
+    context = dsMockUtils.getContextInstance();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should extend entity', () => {

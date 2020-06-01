@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { SecurityToken } from '~/api/entities';
 import { setTokenDocuments } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
@@ -12,15 +12,15 @@ import { Documents } from '../Documents';
 describe('Documents class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -33,7 +33,7 @@ describe('Documents class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
       const documents = new Documents(token, context);
 
@@ -81,47 +81,47 @@ describe('Documents class', () => {
         },
       ];
       const rawDocuments = expectedDocuments.map(({ name, uri, contentHash }) =>
-        polkadotMockUtils.createMockDocument({
-          name: polkadotMockUtils.createMockDocumentName(name),
-          uri: polkadotMockUtils.createMockDocumentUri(uri),
+        dsMockUtils.createMockDocument({
+          name: dsMockUtils.createMockDocumentName(name),
+          uri: dsMockUtils.createMockDocumentUri(uri),
           // eslint-disable-next-line @typescript-eslint/camelcase
-          content_hash: polkadotMockUtils.createMockDocumentHash(contentHash),
+          content_hash: dsMockUtils.createMockDocumentHash(contentHash),
         })
       );
 
-      const signatory = polkadotMockUtils.createMockSignatory({
-        Identity: polkadotMockUtils.createMockIdentityId('tokenDid'),
+      const signatory = dsMockUtils.createMockSignatory({
+        Identity: dsMockUtils.createMockIdentityId('tokenDid'),
       });
-      const ids = [polkadotMockUtils.createMockU64(1), polkadotMockUtils.createMockU64(2)];
+      const ids = [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(2)];
       /* eslint-disable @typescript-eslint/camelcase */
       const linkEntries = [
         tuple(
           [signatory, ids[0]],
-          polkadotMockUtils.createMockLink({
-            link_data: polkadotMockUtils.createMockLinkData({
+          dsMockUtils.createMockLink({
+            link_data: dsMockUtils.createMockLinkData({
               DocumentOwned: rawDocuments[0],
             }),
-            expiry: polkadotMockUtils.createMockOption(),
+            expiry: dsMockUtils.createMockOption(),
             link_id: ids[0],
           })
         ),
         tuple(
           [signatory, ids[1]],
-          polkadotMockUtils.createMockLink({
-            link_data: polkadotMockUtils.createMockLinkData({
+          dsMockUtils.createMockLink({
+            link_data: dsMockUtils.createMockLinkData({
               DocumentOwned: rawDocuments[1],
             }),
-            expiry: polkadotMockUtils.createMockOption(),
+            expiry: dsMockUtils.createMockOption(),
             link_id: ids[1],
           })
         ),
       ];
       /* eslint-enable @typescript-eslint/camelcase */
-      polkadotMockUtils.createQueryStub('identity', 'links', {
+      dsMockUtils.createQueryStub('identity', 'links', {
         entries: linkEntries,
       });
 
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
       const documents = new Documents(token, context);
       const result = await documents.get();

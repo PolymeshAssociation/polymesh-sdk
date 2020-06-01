@@ -7,6 +7,7 @@ import BigNumber from 'bignumber.js';
 import {
   AccountKey,
   AssetIdentifier,
+  AssetName,
   AssetTransferRule,
   AssetType,
   AuthIdentifier,
@@ -22,13 +23,12 @@ import {
   ProtocolOp,
   Signatory,
   Ticker,
-  TokenName,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { PostTransactionValue } from '~/base';
-import { polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils } from '~/testUtils/mocks';
 import {
   Authorization,
   AuthorizationType,
@@ -48,6 +48,7 @@ import {
   accountIdToString,
   accountKeyToString,
   assetIdentifierToString,
+  assetNameToString,
   assetTransferRuleToRule,
   assetTypeToString,
   authIdentifierToAuthTarget,
@@ -61,6 +62,7 @@ import {
   canTransferResultToTransferStatus,
   cddStatusToBoolean,
   claimToMeshClaim,
+  createClaim,
   dateToMoment,
   delay,
   documentHashToString,
@@ -85,6 +87,7 @@ import {
   stringToAccountId,
   stringToAccountKey,
   stringToAssetIdentifier,
+  stringToAssetName,
   stringToBytes,
   stringToDocumentHash,
   stringToDocumentName,
@@ -94,12 +97,10 @@ import {
   stringToJurisdictionName,
   stringToProtocolOp,
   stringToTicker,
-  stringToTokenName,
   tickerToDid,
   tickerToString,
   tokenDocumentToDocument,
   tokenIdentifierTypeToIdentifierType,
-  tokenNameToString,
   tokenTypeToAssetType,
   u8ToTransferStatus,
   u64ToBigNumber,
@@ -110,9 +111,9 @@ import {
 
 jest.mock(
   '@polkadot/api',
-  require('~/testUtils/mocks/polkadot').mockPolkadotModule('@polkadot/api')
+  require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
 );
-jest.mock('~/context', require('~/testUtils/mocks/polkadot').mockContextModule('~/context'));
+jest.mock('~/context', require('~/testUtils/mocks/dataSources').mockContextModule('~/context'));
 
 describe('delay', () => {
   jest.useFakeTimers();
@@ -190,23 +191,23 @@ describe('tickerToDid', () => {
 
 describe('stringToIdentityId and identityIdToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('stringToIdentityId should convert a did string into an IdentityId', () => {
     const identity = 'IdentityObject';
     const fakeResult = ('type' as unknown) as IdentityId;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('IdentityId', identity)
       .returns(fakeResult);
@@ -218,7 +219,7 @@ describe('stringToIdentityId and identityIdToString', () => {
 
   test('identityIdToString should convert an IdentityId to a did string', () => {
     const fakeResult = 'IdentityString';
-    const identityId = polkadotMockUtils.createMockIdentityId(fakeResult);
+    const identityId = dsMockUtils.createMockIdentityId(fakeResult);
 
     const result = identityIdToString(identityId);
     expect(result).toBe(fakeResult);
@@ -228,7 +229,7 @@ describe('stringToIdentityId and identityIdToString', () => {
 describe('valueToDid', () => {
   test('valueToDid should return the Indentity DID string', () => {
     const did = 'someDid';
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
     const identity = new Identity({ did }, context);
 
     const result = valueToDid(identity);
@@ -246,22 +247,22 @@ describe('valueToDid', () => {
 
 describe('stringToAccountKey and accountKeyToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
     sinon.restore();
   });
 
   test('stringToAccountKey should convert a string to a polkadot AccountKey object', () => {
     const value = 'someAccountId';
     const fakeResult = ('convertedAccountKey' as unknown) as AccountKey;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
     const decodedValue = ('decodedAccountId' as unknown) as Uint8Array;
 
     sinon
@@ -269,7 +270,7 @@ describe('stringToAccountKey and accountKeyToString', () => {
       .withArgs(value)
       .returns(decodedValue);
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('AccountKey', decodedValue)
       .returns(fakeResult);
@@ -281,7 +282,7 @@ describe('stringToAccountKey and accountKeyToString', () => {
 
   test('accountKeyToString should convert a polkadot AccountKey object to a string', () => {
     const fakeResult = 'someAccountId';
-    const accountKey = polkadotMockUtils.createMockAccountKey(fakeResult);
+    const accountKey = dsMockUtils.createMockAccountKey(fakeResult);
 
     sinon
       .stub(encodeAddressModule, 'default')
@@ -295,23 +296,23 @@ describe('stringToAccountKey and accountKeyToString', () => {
 
 describe('numberToBalance and balanceToBigNumber', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('numberToBalance should convert a number to a polkadot Balance object', () => {
     const value = new BigNumber(100);
     const fakeResult = ('100' as unknown) as Balance;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
       .returns(fakeResult);
@@ -323,7 +324,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
 
   test('balanceToBigNumber should convert a polkadot Balance object to a BigNumber', () => {
     const fakeResult = 100;
-    const balance = polkadotMockUtils.createMockBalance(fakeResult);
+    const balance = dsMockUtils.createMockBalance(fakeResult);
 
     const result = balanceToBigNumber(balance);
     expect(result).toEqual(new BigNumber(fakeResult).div(Math.pow(10, 6)));
@@ -332,21 +333,21 @@ describe('numberToBalance and balanceToBigNumber', () => {
 
 describe('posRatioToBigNumber', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('posRatioToBigNumber should convert a polkadot PosRatio object to a BigNumber', () => {
     const numerator = 1;
     const denominator = 1;
-    const balance = polkadotMockUtils.createMockPosRatio(numerator, denominator);
+    const balance = dsMockUtils.createMockPosRatio(numerator, denominator);
 
     const result = posRatioToBigNumber(balance);
     expect(result).toEqual(new BigNumber(numerator).dividedBy(new BigNumber(denominator)));
@@ -355,23 +356,23 @@ describe('posRatioToBigNumber', () => {
 
 describe('numberToU64 and u64ToBigNumber', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('numberToU64 should convert a number to a polkadot u64 object', () => {
     const value = new BigNumber(100);
     const fakeResult = ('100' as unknown) as u64;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('u64', value.toString())
       .returns(fakeResult);
@@ -383,7 +384,7 @@ describe('numberToU64 and u64ToBigNumber', () => {
 
   test('u64ToBigNumber should convert a polkadot u64 object to a BigNumber', () => {
     const fakeResult = 100;
-    const balance = polkadotMockUtils.createMockBalance(fakeResult);
+    const balance = dsMockUtils.createMockBalance(fakeResult);
 
     const result = u64ToBigNumber(balance);
     expect(result).toEqual(new BigNumber(fakeResult));
@@ -392,23 +393,23 @@ describe('numberToU64 and u64ToBigNumber', () => {
 
 describe('stringToBytes and bytesToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('stringToBytes should convert a string to a polkadot Bytes object', () => {
     const value = 'someBytes';
     const fakeResult = ('convertedBytes' as unknown) as Bytes;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('Bytes', value)
       .returns(fakeResult);
@@ -420,7 +421,7 @@ describe('stringToBytes and bytesToString', () => {
 
   test('bytesToString should convert a polkadot Bytes object to a string', () => {
     const fakeResult = 'someBytes';
-    const ticker = polkadotMockUtils.createMockBytes(fakeResult);
+    const ticker = dsMockUtils.createMockBytes(fakeResult);
 
     const result = bytesToString(ticker);
     expect(result).toEqual(fakeResult);
@@ -429,23 +430,23 @@ describe('stringToBytes and bytesToString', () => {
 
 describe('stringToTicker and tickerToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('stringToTicker should convert a string to a polkadot Ticker object', () => {
     const value = 'someTicker';
     const fakeResult = ('convertedTicker' as unknown) as Ticker;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('Ticker', value)
       .returns(fakeResult);
@@ -457,7 +458,7 @@ describe('stringToTicker and tickerToString', () => {
 
   test('stringToTicker should throw an error if the string length exceeds the max ticker length', () => {
     const value = 'veryLongTickr';
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
     expect(() => stringToTicker(value, context)).toThrow(
       `Ticker length cannot exceed ${MAX_TICKER_LENGTH} characters`
@@ -466,69 +467,69 @@ describe('stringToTicker and tickerToString', () => {
 
   test('tickerToString should convert a polkadot Ticker object to a string', () => {
     const fakeResult = 'someTicker';
-    const ticker = polkadotMockUtils.createMockTicker(fakeResult);
+    const ticker = dsMockUtils.createMockTicker(fakeResult);
 
     const result = tickerToString(ticker);
     expect(result).toEqual(fakeResult);
   });
 });
 
-describe('stringToTokenName and tokenNameToString', () => {
+describe('stringToAssetName and assetNameToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
-  test('stringToTokenName should convert a string to a polkadot TokenName object', () => {
+  test('stringToAssetName should convert a string to a polkadot AssetName object', () => {
     const value = 'someName';
-    const fakeResult = ('convertedName' as unknown) as TokenName;
-    const context = polkadotMockUtils.getContextInstance();
+    const fakeResult = ('convertedName' as unknown) as AssetName;
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
-      .withArgs('TokenName', value)
+      .withArgs('AssetName', value)
       .returns(fakeResult);
 
-    const result = stringToTokenName(value, context);
+    const result = stringToAssetName(value, context);
 
     expect(result).toEqual(fakeResult);
   });
 
-  test('tokenNameToString should convert a polkadot TokenName object to a string', () => {
-    const fakeResult = 'someTokenName';
-    const tokenName = polkadotMockUtils.createMockTokenName(fakeResult);
+  test('assetNameToString should convert a polkadot AssetName object to a string', () => {
+    const fakeResult = 'someAssetName';
+    const assetName = dsMockUtils.createMockAssetName(fakeResult);
 
-    const result = tokenNameToString(tokenName);
+    const result = assetNameToString(assetName);
     expect(result).toEqual(fakeResult);
   });
 });
 
 describe('stringToAccountId and accountIdToSting', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('stringToAccountId should convert a string to a polkadot AccountId object', () => {
     const value = 'someAccountId';
     const fakeResult = ('convertedAccountId' as unknown) as AccountId;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('AccountId', value)
       .returns(fakeResult);
@@ -540,7 +541,7 @@ describe('stringToAccountId and accountIdToSting', () => {
 
   test('accountIdToSting should convert a polkadot AccountId object to a string', () => {
     const fakeResult = 'someAccountId';
-    const accountId = polkadotMockUtils.createMockAccountId(fakeResult);
+    const accountId = dsMockUtils.createMockAccountId(fakeResult);
 
     const result = accountIdToString(accountId);
     expect(result).toEqual(fakeResult);
@@ -549,23 +550,23 @@ describe('stringToAccountId and accountIdToSting', () => {
 
 describe('booleanToBool and boolToBoolean', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('booleanToBool should convert a boolean to a polkadot bool object', () => {
     const value = true;
     const fakeResult = ('true' as unknown) as bool;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('bool', value)
       .returns(fakeResult);
@@ -577,7 +578,7 @@ describe('booleanToBool and boolToBoolean', () => {
 
   test('boolToBoolean should convert a polkadot bool object to a boolean', () => {
     const fakeResult = true;
-    const mockBool = polkadotMockUtils.createMockBool(fakeResult);
+    const mockBool = dsMockUtils.createMockBool(fakeResult);
 
     const result = boolToBoolean(mockBool);
     expect(result).toEqual(fakeResult);
@@ -586,23 +587,23 @@ describe('booleanToBool and boolToBoolean', () => {
 
 describe('dateToMoment and momentToDate', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('dateToMoment should convert a Date to a polkadot Moment object', () => {
     const value = new Date();
     const fakeResult = (10000 as unknown) as Moment;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('Moment', Math.round(value.getTime()))
       .returns(fakeResult);
@@ -614,7 +615,7 @@ describe('dateToMoment and momentToDate', () => {
 
   test('momentToDate should convert a polkadot Moment object to a Date', () => {
     const fakeResult = 10000;
-    const moment = polkadotMockUtils.createMockMoment(fakeResult);
+    const moment = dsMockUtils.createMockMoment(fakeResult);
 
     const result = momentToDate(moment);
     expect(result).toEqual(new Date(fakeResult));
@@ -623,23 +624,23 @@ describe('dateToMoment and momentToDate', () => {
 
 describe('tokenTypeToAssetType and assetTypeToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('tokenTypeToAssetType should convert a TokenType to a polkadot AssetType object', () => {
     const value = KnownTokenType.Commodity;
     const fakeResult = ('CommodityEnum' as unknown) as AssetType;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('AssetType', value)
       .returns(fakeResult);
@@ -651,68 +652,68 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
 
   test('assetTypeToString should convert a polkadot AssetType object to a string', () => {
     let fakeResult = KnownTokenType.Commodity;
-    let assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+    let assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     let result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.EquityCommon;
-    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+    assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.EquityPreferred;
-    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+    assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.Commodity;
-    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+    assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.FixedIncome;
-    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+    assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.Reit;
-    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+    assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.Fund;
-    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+    assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.RevenueShareAgreement;
-    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+    assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.StructuredProduct;
-    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+    assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.Derivative;
-    assetType = polkadotMockUtils.createMockAssetType(fakeResult);
+    assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
     const fakeType = 'otherType';
-    assetType = polkadotMockUtils.createMockAssetType({
-      Custom: polkadotMockUtils.createMockBytes(fakeType),
+    assetType = dsMockUtils.createMockAssetType({
+      Custom: dsMockUtils.createMockBytes(fakeType),
     });
 
     result = assetTypeToString(assetType);
@@ -722,23 +723,23 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
 
 describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('tokenIdentifierTypeToIdentifierType should convert a TokenIdentifierType to a polkadot IdentifierType object', () => {
     const value = TokenIdentifierType.Isin;
     const fakeResult = ('IsinEnum' as unknown) as IdentifierType;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('IdentifierType', value)
       .returns(fakeResult);
@@ -750,19 +751,19 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
 
   test('identifierTypeToString should convert a polkadot IdentifierType object to a string', () => {
     let fakeResult = TokenIdentifierType.Isin;
-    let identifierType = polkadotMockUtils.createMockIdentifierType(fakeResult);
+    let identifierType = dsMockUtils.createMockIdentifierType(fakeResult);
 
     let result = identifierTypeToString(identifierType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = TokenIdentifierType.Cusip;
-    identifierType = polkadotMockUtils.createMockIdentifierType(fakeResult);
+    identifierType = dsMockUtils.createMockIdentifierType(fakeResult);
 
     result = identifierTypeToString(identifierType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = TokenIdentifierType.Cins;
-    identifierType = polkadotMockUtils.createMockIdentifierType(fakeResult);
+    identifierType = dsMockUtils.createMockIdentifierType(fakeResult);
 
     result = identifierTypeToString(identifierType);
     expect(result).toEqual(fakeResult);
@@ -771,23 +772,23 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
 
 describe('stringToAssetIdentifier and assetIdentifierToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('stringToAssetIdentifier should convert a string to a polkadot AssetIdentifier object', () => {
     const value = 'someIdentifier';
     const fakeResult = ('convertedIdentifier' as unknown) as AssetIdentifier;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('AssetIdentifier', value)
       .returns(fakeResult);
@@ -799,7 +800,7 @@ describe('stringToAssetIdentifier and assetIdentifierToString', () => {
 
   test('assetIdentifierToString should convert a polkadot AssetIdentifier object to a string', () => {
     const fakeResult = 'someIdentifier';
-    const identifierType = polkadotMockUtils.createMockAssetIdentifier(fakeResult);
+    const identifierType = dsMockUtils.createMockAssetIdentifier(fakeResult);
 
     const result = assetIdentifierToString(identifierType);
     expect(result).toEqual(fakeResult);
@@ -808,23 +809,23 @@ describe('stringToAssetIdentifier and assetIdentifierToString', () => {
 
 describe('stringToFundingRoundName and fundingRoundNameToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('stringToFundingRoundName should convert a string to a polkadot FundingRoundName object', () => {
     const value = 'someName';
     const fakeResult = ('convertedName' as unknown) as FundingRoundName;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('FundingRoundName', value)
       .returns(fakeResult);
@@ -836,7 +837,7 @@ describe('stringToFundingRoundName and fundingRoundNameToString', () => {
 
   test('fundingRoundNameToString should convert a polkadot FundingRoundName object to a string', () => {
     const fakeResult = 'someFundingRoundName';
-    const roundName = polkadotMockUtils.createMockFundingRoundName(fakeResult);
+    const roundName = dsMockUtils.createMockFundingRoundName(fakeResult);
 
     const result = fundingRoundNameToString(roundName);
     expect(result).toEqual(fakeResult);
@@ -845,23 +846,23 @@ describe('stringToFundingRoundName and fundingRoundNameToString', () => {
 
 describe('stringToDocumentName and documentNameToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('stringToDocumentName should convert a string to a polkadot DocumentName object', () => {
     const value = 'someName';
     const fakeResult = ('convertedName' as unknown) as DocumentName;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('DocumentName', value)
       .returns(fakeResult);
@@ -873,7 +874,7 @@ describe('stringToDocumentName and documentNameToString', () => {
 
   test('documentNameToString should convert a polkadot DocumentName object to a string', () => {
     const fakeResult = 'someDocumentName';
-    const docName = polkadotMockUtils.createMockDocumentName(fakeResult);
+    const docName = dsMockUtils.createMockDocumentName(fakeResult);
 
     const result = documentNameToString(docName);
     expect(result).toEqual(fakeResult);
@@ -882,23 +883,23 @@ describe('stringToDocumentName and documentNameToString', () => {
 
 describe('stringToDocumentUri and documentUriToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('stringToDocumentUri should convert a string to a polkadot DocumentUri object', () => {
     const value = 'someUri';
     const fakeResult = ('convertedUri' as unknown) as DocumentUri;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('DocumentUri', value)
       .returns(fakeResult);
@@ -910,7 +911,7 @@ describe('stringToDocumentUri and documentUriToString', () => {
 
   test('documentUriToString should convert a polkadot DocumentUri object to a string', () => {
     const fakeResult = 'someDocumentUri';
-    const docUri = polkadotMockUtils.createMockDocumentUri(fakeResult);
+    const docUri = dsMockUtils.createMockDocumentUri(fakeResult);
 
     const result = documentUriToString(docUri);
     expect(result).toEqual(fakeResult);
@@ -919,23 +920,23 @@ describe('stringToDocumentUri and documentUriToString', () => {
 
 describe('stringToDocumentHash and documentHashToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('stringToDocumentHash should convert a string to a polkadot DocumentHash object', () => {
     const value = 'someHash';
     const fakeResult = ('convertedHash' as unknown) as DocumentHash;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('DocumentHash', value)
       .returns(fakeResult);
@@ -947,7 +948,7 @@ describe('stringToDocumentHash and documentHashToString', () => {
 
   test('documentHashToString should convert a polkadot DocumentHash object to a string', () => {
     const fakeResult = 'someDocumentHash';
-    const docHash = polkadotMockUtils.createMockDocumentHash(fakeResult);
+    const docHash = dsMockUtils.createMockDocumentHash(fakeResult);
 
     const result = documentHashToString(docHash);
     expect(result).toEqual(fakeResult);
@@ -956,15 +957,15 @@ describe('stringToDocumentHash and documentHashToString', () => {
 
 describe('tokenDocumentToDocument and documentToTokenDocument', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('tokenDocumentToDocument should convert a TokenDocument to a polkadot Document object', () => {
@@ -977,9 +978,9 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
       contentHash,
     };
     const fakeResult = ('convertedDocument' as unknown) as Document;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('Document', {
         name: stringToDocumentName(name, context),
@@ -1004,12 +1005,12 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
       contentHash,
     };
     const mockDocument = {
-      name: polkadotMockUtils.createMockDocumentName(name),
-      uri: polkadotMockUtils.createMockDocumentUri(uri),
+      name: dsMockUtils.createMockDocumentName(name),
+      uri: dsMockUtils.createMockDocumentUri(uri),
       // eslint-disable-next-line @typescript-eslint/camelcase
-      content_hash: polkadotMockUtils.createMockDocumentHash(contentHash),
+      content_hash: dsMockUtils.createMockDocumentHash(contentHash),
     };
-    const doc = polkadotMockUtils.createMockDocument(mockDocument);
+    const doc = dsMockUtils.createMockDocument(mockDocument);
 
     const result = documentToTokenDocument(doc);
     expect(result).toEqual(fakeResult);
@@ -1018,15 +1019,15 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
 
 describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('authTargetToAuthIdentifier should convert an AuthTarget to a polkadot AuthIdentifer object', () => {
@@ -1037,9 +1038,9 @@ describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
       authId,
     };
     const fakeResult = ('convertedAuthIdentifier' as unknown) as AuthIdentifier;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('AuthIdentifier', {
         // eslint-disable-next-line @typescript-eslint/camelcase
@@ -1060,12 +1061,12 @@ describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
       did,
       authId,
     };
-    const authIdentifier = polkadotMockUtils.createMockAuthIdentifier({
-      signatory: polkadotMockUtils.createMockSignatory({
-        Identity: polkadotMockUtils.createMockIdentityId(did),
+    const authIdentifier = dsMockUtils.createMockAuthIdentifier({
+      signatory: dsMockUtils.createMockSignatory({
+        Identity: dsMockUtils.createMockIdentityId(did),
       }),
       // eslint-disable-next-line @typescript-eslint/camelcase
-      auth_id: polkadotMockUtils.createMockU64(authId.toNumber()),
+      auth_id: dsMockUtils.createMockU64(authId.toNumber()),
     });
 
     const result = authIdentifierToAuthTarget(authIdentifier);
@@ -1075,8 +1076,8 @@ describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
 
 describe('cddStatusToBoolean', () => {
   test('cddStatusToBoolean should convert a valid CDD status to a true boolean', async () => {
-    const cddStatusMock = polkadotMockUtils.createMockCddStatus({
-      Ok: polkadotMockUtils.createMockIdentityId(),
+    const cddStatusMock = dsMockUtils.createMockCddStatus({
+      Ok: dsMockUtils.createMockIdentityId(),
     });
     const result = cddStatusToBoolean(cddStatusMock);
 
@@ -1084,7 +1085,7 @@ describe('cddStatusToBoolean', () => {
   });
 
   test('cddStatusToBoolean should convert an invalid CDD status to a false boolean', async () => {
-    const cddStatusMock = polkadotMockUtils.createMockCddStatus();
+    const cddStatusMock = dsMockUtils.createMockCddStatus();
     const result = cddStatusToBoolean(cddStatusMock);
 
     expect(result).toEqual(false);
@@ -1137,15 +1138,15 @@ describe('findEventRecord', () => {
 
 describe('signerToSignatory and signatoryToSigner', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
     sinon.restore();
   });
 
@@ -1155,9 +1156,9 @@ describe('signerToSignatory and signatoryToSigner', () => {
       value: 'someIdentity',
     };
     const fakeResult = ('SignatoryEnum' as unknown) as Signatory;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('Signatory', { [value.type]: value.value })
       .returns(fakeResult);
@@ -1172,21 +1173,21 @@ describe('signerToSignatory and signatoryToSigner', () => {
       type: SignerType.Identity,
       value: 'someIdentity',
     };
-    let signatory = polkadotMockUtils.createMockSignatory({
-      Identity: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+    let signatory = dsMockUtils.createMockSignatory({
+      Identity: dsMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     let result = signatoryToSigner(signatory);
     expect(result).toEqual(fakeResult);
 
-    const accountKey = polkadotMockUtils.createMockAccountKey('someAccountKey');
+    const accountKey = dsMockUtils.createMockAccountKey('someAccountKey');
     const encodedAddress = 'someEncodedAddress';
 
     fakeResult = {
       type: SignerType.AccountKey,
       value: encodedAddress,
     };
-    signatory = polkadotMockUtils.createMockSignatory({
+    signatory = dsMockUtils.createMockSignatory({
       AccountKey: accountKey,
     });
 
@@ -1202,26 +1203,26 @@ describe('signerToSignatory and signatoryToSigner', () => {
 
 describe('authorizationToAuthorizationData and authorizationDataToAuthorization', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('authorizationToAuthorizationData should convert an Authorization to a polkadot AuthorizationData object', () => {
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
     let value: Authorization = {
       type: AuthorizationType.AttestMasterKeyRotation,
       value: 'someIdentity',
     };
     const fakeResult = ('AuthorizationDataEnum' as unknown) as AuthorizationData;
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('AuthorizationData', { [value.type]: value.value })
       .returns(fakeResult);
@@ -1234,7 +1235,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       type: AuthorizationType.NoData,
     };
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('AuthorizationData', { [value.type]: null })
       .returns(fakeResult);
@@ -1249,8 +1250,8 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       type: AuthorizationType.AttestMasterKeyRotation,
       value: 'someIdentity',
     };
-    let authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      AttestMasterKeyRotation: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+    let authorizationData = dsMockUtils.createMockAuthorizationData({
+      AttestMasterKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     let result = authorizationDataToAuthorization(authorizationData);
@@ -1260,8 +1261,8 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       type: AuthorizationType.RotateMasterKey,
       value: 'someIdentity',
     };
-    authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      RotateMasterKey: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      RotateMasterKey: dsMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -1271,8 +1272,8 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       type: AuthorizationType.TransferTicker,
       value: 'someTicker',
     };
-    authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      TransferTicker: polkadotMockUtils.createMockTicker(fakeResult.value),
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      TransferTicker: dsMockUtils.createMockTicker(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -1281,7 +1282,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     fakeResult = {
       type: AuthorizationType.AddMultiSigSigner,
     };
-    authorizationData = polkadotMockUtils.createMockAuthorizationData('AddMultiSigSigner');
+    authorizationData = dsMockUtils.createMockAuthorizationData('AddMultiSigSigner');
 
     result = authorizationDataToAuthorization(authorizationData);
     expect(result).toEqual(fakeResult);
@@ -1290,8 +1291,8 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       type: AuthorizationType.TransferAssetOwnership,
       value: 'someTicker',
     };
-    authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      TransferAssetOwnership: polkadotMockUtils.createMockTicker(fakeResult.value),
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      TransferAssetOwnership: dsMockUtils.createMockTicker(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -1301,8 +1302,8 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       type: AuthorizationType.JoinIdentity,
       value: 'someIdentity',
     };
-    authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      JoinIdentity: polkadotMockUtils.createMockIdentityId(fakeResult.value),
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      JoinIdentity: dsMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -1312,8 +1313,8 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       type: AuthorizationType.Custom,
       value: 'someBytes',
     };
-    authorizationData = polkadotMockUtils.createMockAuthorizationData({
-      custom: polkadotMockUtils.createMockBytes(fakeResult.value),
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      custom: dsMockUtils.createMockBytes(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -1322,7 +1323,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     fakeResult = {
       type: AuthorizationType.NoData,
     };
-    authorizationData = polkadotMockUtils.createMockAuthorizationData('NoData');
+    authorizationData = dsMockUtils.createMockAuthorizationData('NoData');
 
     result = authorizationDataToAuthorization(authorizationData);
     expect(result).toEqual(fakeResult);
@@ -1331,23 +1332,23 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
 describe('stringToJurisdictionName and jurisdictionNameToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('stringToJurisdictionName should convert a string to a polkadot JurisdictionName object', () => {
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
     const value = 'someJurisdiction';
     const fakeResult = ('jurisdictionName' as unknown) as JurisdictionName;
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('JurisdictionName', value)
       .returns(fakeResult);
@@ -1359,7 +1360,7 @@ describe('stringToJurisdictionName and jurisdictionNameToString', () => {
 
   test('jurisdictionNameToString should convert a polkadot JurisdictionName object to a string', () => {
     const fakeResult = 'someJurisdiction';
-    const jurisdictionName = polkadotMockUtils.createMockJurisdictionName(fakeResult);
+    const jurisdictionName = dsMockUtils.createMockJurisdictionName(fakeResult);
 
     const result = jurisdictionNameToString(jurisdictionName);
     expect(result).toEqual(fakeResult);
@@ -1368,19 +1369,19 @@ describe('stringToJurisdictionName and jurisdictionNameToString', () => {
 
 describe('claimToMeshClaim and jurisdictionNameToString', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('claimToMeshClaim should convert a Claim to a polkadot Claim object', () => {
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
     let value: Claim = {
       type: ClaimType.Jurisdiction,
       name: 'someJurisdiction',
@@ -1388,7 +1389,7 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
     };
     const fakeResult = ('meshClaim' as unknown) as MeshClaim;
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('Claim', { [value.type]: [value.name, value.scope] })
       .returns(fakeResult);
@@ -1402,7 +1403,7 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
       scope: 'someTickerDid',
     };
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('Claim', { [value.type]: value.scope })
       .returns(fakeResult);
@@ -1415,7 +1416,7 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
       type: ClaimType.NoData,
     };
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('Claim', { [value.type]: null })
       .returns(fakeResult);
@@ -1431,8 +1432,8 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
       scope: 'someTickerDid',
     };
 
-    let claim = polkadotMockUtils.createMockClaim({
-      Accredited: polkadotMockUtils.createMockScope(fakeResult.scope),
+    let claim = dsMockUtils.createMockClaim({
+      Accredited: dsMockUtils.createMockScope(fakeResult.scope),
     });
 
     let result = meshClaimToClaim(claim);
@@ -1442,8 +1443,8 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
       type: ClaimType.Affiliate,
       scope: 'someIdentity',
     };
-    claim = polkadotMockUtils.createMockClaim({
-      Affiliate: polkadotMockUtils.createMockScope(fakeResult.scope),
+    claim = dsMockUtils.createMockClaim({
+      Affiliate: dsMockUtils.createMockScope(fakeResult.scope),
     });
 
     result = meshClaimToClaim(claim);
@@ -1453,8 +1454,8 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
       type: ClaimType.Blacklisted,
       scope: 'someIdentity',
     };
-    claim = polkadotMockUtils.createMockClaim({
-      Blacklisted: polkadotMockUtils.createMockScope(fakeResult.scope),
+    claim = dsMockUtils.createMockClaim({
+      Blacklisted: dsMockUtils.createMockScope(fakeResult.scope),
     });
 
     result = meshClaimToClaim(claim);
@@ -1464,8 +1465,8 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
       type: ClaimType.BuyLockup,
       scope: 'someIdentity',
     };
-    claim = polkadotMockUtils.createMockClaim({
-      BuyLockup: polkadotMockUtils.createMockScope(fakeResult.scope),
+    claim = dsMockUtils.createMockClaim({
+      BuyLockup: dsMockUtils.createMockScope(fakeResult.scope),
     });
 
     result = meshClaimToClaim(claim);
@@ -1474,7 +1475,7 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
     fakeResult = {
       type: ClaimType.CustomerDueDiligence,
     };
-    claim = polkadotMockUtils.createMockClaim('CustomerDueDiligence');
+    claim = dsMockUtils.createMockClaim('CustomerDueDiligence');
 
     result = meshClaimToClaim(claim);
     expect(result).toEqual(fakeResult);
@@ -1485,10 +1486,10 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
       scope: 'someIdentity',
     };
 
-    claim = polkadotMockUtils.createMockClaim({
+    claim = dsMockUtils.createMockClaim({
       Jurisdiction: [
-        polkadotMockUtils.createMockJurisdictionName(fakeResult.name),
-        polkadotMockUtils.createMockScope(fakeResult.scope),
+        dsMockUtils.createMockJurisdictionName(fakeResult.name),
+        dsMockUtils.createMockScope(fakeResult.scope),
       ],
     });
 
@@ -1499,8 +1500,8 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
       type: ClaimType.KnowYourCustomer,
       scope: 'someIdentity',
     };
-    claim = polkadotMockUtils.createMockClaim({
-      KnowYourCustomer: polkadotMockUtils.createMockScope(fakeResult.scope),
+    claim = dsMockUtils.createMockClaim({
+      KnowYourCustomer: dsMockUtils.createMockScope(fakeResult.scope),
     });
 
     result = meshClaimToClaim(claim);
@@ -1509,7 +1510,7 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
     fakeResult = {
       type: ClaimType.NoData,
     };
-    claim = polkadotMockUtils.createMockClaim('NoData');
+    claim = dsMockUtils.createMockClaim('NoData');
 
     result = meshClaimToClaim(claim);
     expect(result).toEqual(fakeResult);
@@ -1518,8 +1519,8 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
       type: ClaimType.SellLockup,
       scope: 'someIdentity',
     };
-    claim = polkadotMockUtils.createMockClaim({
-      SellLockup: polkadotMockUtils.createMockScope(fakeResult.scope),
+    claim = dsMockUtils.createMockClaim({
+      SellLockup: dsMockUtils.createMockScope(fakeResult.scope),
     });
 
     result = meshClaimToClaim(claim);
@@ -1529,8 +1530,8 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
       type: ClaimType.Whitelisted,
       scope: 'someIdentity',
     };
-    claim = polkadotMockUtils.createMockClaim({
-      Whitelisted: polkadotMockUtils.createMockScope(fakeResult.scope),
+    claim = dsMockUtils.createMockClaim({
+      Whitelisted: dsMockUtils.createMockScope(fakeResult.scope),
     });
 
     result = meshClaimToClaim(claim);
@@ -1538,17 +1539,48 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
   });
 });
 
+describe('createClaim', () => {
+  test('', () => {
+    let type = 'Jurisdiction';
+    const jurisdiction = 'someJurisdiction';
+    let scope = 'someScope';
+
+    let result = createClaim(type, jurisdiction, scope);
+    expect(result).toEqual({
+      type: ClaimType.Jurisdiction,
+      name: jurisdiction,
+      scope,
+    });
+
+    type = 'BuyLockup';
+    scope = 'someScope';
+
+    result = createClaim(type, null, scope);
+    expect(result).toEqual({
+      type: ClaimType.BuyLockup,
+      scope,
+    });
+
+    type = 'NoData';
+
+    result = createClaim(type, null, null);
+    expect(result).toEqual({
+      type: ClaimType.NoData,
+    });
+  });
+});
+
 describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('ruleToAssetTransferRule should convert a Rule to a polkadot AssetTransferRule object', () => {
@@ -1591,9 +1623,9 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
       id: 1,
     };
     const fakeResult = ('convertedAssetTransferRule' as unknown) as AssetTransferRule;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    const createTypeStub = polkadotMockUtils.getCreateTypeStub();
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
 
     conditions.forEach(({ type }, index) => {
       createTypeStub
@@ -1680,45 +1712,45 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
       conditions,
     };
 
-    const scope = polkadotMockUtils.createMockScope(tokenDid);
-    const issuers = issuerDids.map(polkadotMockUtils.createMockIdentityId);
+    const scope = dsMockUtils.createMockScope(tokenDid);
+    const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
     const rules = [
       /* eslint-disable @typescript-eslint/camelcase */
-      polkadotMockUtils.createMockRule({
-        rule_type: polkadotMockUtils.createMockRuleType({
-          IsPresent: polkadotMockUtils.createMockClaim({ KnowYourCustomer: scope }),
+      dsMockUtils.createMockRule({
+        rule_type: dsMockUtils.createMockRuleType({
+          IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
         }),
         issuers,
       }),
-      polkadotMockUtils.createMockRule({
-        rule_type: polkadotMockUtils.createMockRuleType({
-          IsAbsent: polkadotMockUtils.createMockClaim({ BuyLockup: scope }),
+      dsMockUtils.createMockRule({
+        rule_type: dsMockUtils.createMockRuleType({
+          IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
         }),
         issuers,
       }),
-      polkadotMockUtils.createMockRule({
-        rule_type: polkadotMockUtils.createMockRuleType({
+      dsMockUtils.createMockRule({
+        rule_type: dsMockUtils.createMockRuleType({
           IsNoneOf: [
-            polkadotMockUtils.createMockClaim({ Blacklisted: scope }),
-            polkadotMockUtils.createMockClaim({ SellLockup: scope }),
+            dsMockUtils.createMockClaim({ Blacklisted: scope }),
+            dsMockUtils.createMockClaim({ SellLockup: scope }),
           ],
         }),
         issuers,
       }),
-      polkadotMockUtils.createMockRule({
-        rule_type: polkadotMockUtils.createMockRuleType({
+      dsMockUtils.createMockRule({
+        rule_type: dsMockUtils.createMockRuleType({
           IsAnyOf: [
-            polkadotMockUtils.createMockClaim({ Whitelisted: scope }),
-            polkadotMockUtils.createMockClaim('CustomerDueDiligence'),
+            dsMockUtils.createMockClaim({ Whitelisted: scope }),
+            dsMockUtils.createMockClaim('CustomerDueDiligence'),
           ],
         }),
         issuers,
       }),
     ];
-    const assetTransferRule = polkadotMockUtils.createMockAssetTransferRule({
+    const assetTransferRule = dsMockUtils.createMockAssetTransferRule({
       sender_rules: [rules[0], rules[2], rules[3]],
       receiver_rules: [rules[0], rules[1], rules[3]],
-      rule_id: polkadotMockUtils.createMockU32(1),
+      rule_id: dsMockUtils.createMockU32(1),
     });
     /* eslint-enable @typescript-eslint/camelcase */
 
@@ -1729,28 +1761,28 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
 
 describe('u8ToTransferStatus', () => {
   test('u8ToTransferStatus should convert a polkadot u8 object to a TransferStatus', () => {
-    let result = u8ToTransferStatus(polkadotMockUtils.createMockU8(80));
+    let result = u8ToTransferStatus(dsMockUtils.createMockU8(80));
 
     expect(result).toBe(TransferStatus.Failure);
 
-    result = u8ToTransferStatus(polkadotMockUtils.createMockU8(81));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(81));
 
     expect(result).toBe(TransferStatus.Success);
 
-    result = u8ToTransferStatus(polkadotMockUtils.createMockU8(82));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(82));
 
     expect(result).toBe(TransferStatus.InsufficientBalance);
 
-    result = u8ToTransferStatus(polkadotMockUtils.createMockU8(86));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(86));
 
     expect(result).toBe(TransferStatus.InvalidReceiver);
 
-    result = u8ToTransferStatus(polkadotMockUtils.createMockU8(164));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(164));
 
     expect(result).toBe(TransferStatus.FundsLimitReached);
 
     const fakeStatusCode = 1;
-    expect(() => u8ToTransferStatus(polkadotMockUtils.createMockU8(fakeStatusCode))).toThrow(
+    expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
       `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymath team`
     );
   });
@@ -1761,14 +1793,14 @@ describe('canTransferResultToTransferStatus', () => {
     const errorMsg = 'someError';
     expect(() =>
       canTransferResultToTransferStatus(
-        polkadotMockUtils.createMockCanTransferResult({
-          Err: polkadotMockUtils.createMockBytes(errorMsg),
+        dsMockUtils.createMockCanTransferResult({
+          Err: dsMockUtils.createMockBytes(errorMsg),
         })
       )
     ).toThrow(`Error while checking transfer validity: ${errorMsg}`);
 
     const result = canTransferResultToTransferStatus(
-      polkadotMockUtils.createMockCanTransferResult({ Ok: polkadotMockUtils.createMockU8(81) })
+      dsMockUtils.createMockCanTransferResult({ Ok: dsMockUtils.createMockU8(81) })
     );
 
     expect(result).toBe(TransferStatus.Success);
@@ -1777,23 +1809,23 @@ describe('canTransferResultToTransferStatus', () => {
 
 describe('stringToProtocolOp', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('stringToProtocolOp should convert a string to a polkadot ProtocolOp object', () => {
     const value = 'someProtocolOp';
     const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
-    const context = polkadotMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance();
 
-    polkadotMockUtils
+    dsMockUtils
       .getCreateTypeStub()
       .withArgs('ProtocolOp', value)
       .returns(fakeResult);

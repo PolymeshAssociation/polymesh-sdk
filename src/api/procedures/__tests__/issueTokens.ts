@@ -6,7 +6,7 @@ import { SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareIssueTokens } from '~/api/procedures/issueTokens';
 import { Context } from '~/context';
 import { IdentityId, Ticker } from '~/polkadot';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TransferStatus } from '~/types';
 import * as utilsModule from '~/utils';
@@ -25,16 +25,16 @@ describe('issueTokens procedure', () => {
   let addTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     ticker = 'someTicker';
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
   });
 
   beforeEach(() => {
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
@@ -42,13 +42,13 @@ describe('issueTokens procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if security token is divisible and at least one amount exceeds six decimals', () => {
@@ -182,8 +182,8 @@ describe('issueTokens procedure', () => {
     const numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
 
     args.issuanceData.forEach(({ identity, amount }) => {
-      const identityId = polkadotMockUtils.createMockIdentityId(`${identity}Identity`);
-      const balance = polkadotMockUtils.createMockBalance(amount.toNumber());
+      const identityId = dsMockUtils.createMockIdentityId(`${identity}Identity`);
+      const balance = dsMockUtils.createMockBalance(amount.toNumber());
 
       investors.push(identityId);
       balances.push(balance);
@@ -192,7 +192,7 @@ describe('issueTokens procedure', () => {
       numberToBalanceStub.withArgs(amount, mockContext).returns(balance);
     });
 
-    const transaction = polkadotMockUtils.createTxStub('asset', 'batchIssue');
+    const transaction = dsMockUtils.createTxStub('asset', 'batchIssue');
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 

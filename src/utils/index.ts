@@ -9,6 +9,7 @@ import { isEqual } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,
+  AssetName,
   AssetTransferRule,
   AssetType,
   AuthIdentifier,
@@ -30,7 +31,6 @@ import {
   RuleType,
   Signatory,
   Ticker,
-  TokenName,
 } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
@@ -129,14 +129,14 @@ export function tickerToDid(ticker: string): string {
 /**
  * @hidden
  */
-export function stringToTokenName(name: string, context: Context): TokenName {
-  return context.polymeshApi.createType('TokenName', name);
+export function stringToAssetName(name: string, context: Context): AssetName {
+  return context.polymeshApi.createType('AssetName', name);
 }
 
 /**
  * @hidden
  */
-export function tokenNameToString(name: TokenName): string {
+export function assetNameToString(name: AssetName): string {
   return name.toString();
 }
 
@@ -690,6 +690,31 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
   }
 
   return context.polymeshApi.createType('Claim', { [claim.type]: value });
+}
+
+/**
+ * @hidden
+ */
+export function createClaim(
+  claimType: string,
+  jurisdiction?: string | null,
+  scope?: string | null
+): Claim {
+  const type = claimType as ClaimType;
+  if (type === ClaimType.Jurisdiction) {
+    return {
+      type,
+      name: jurisdiction as string,
+      scope: scope as string,
+    };
+  } else if (type !== ClaimType.NoData && type !== ClaimType.CustomerDueDiligence) {
+    return {
+      type,
+      scope: scope as string,
+    };
+  }
+
+  return { type };
 }
 
 /**

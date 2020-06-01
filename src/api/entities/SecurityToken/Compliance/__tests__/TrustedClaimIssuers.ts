@@ -6,7 +6,7 @@ import { setTokenTrustedClaimIssuers } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { IdentityId, Ticker } from '~/polkadot';
-import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
 
 import { TrustedClaimIssuers } from '../TrustedClaimIssuers';
@@ -19,15 +19,15 @@ jest.mock(
 describe('TrustedClaimIssuers class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -40,7 +40,7 @@ describe('TrustedClaimIssuers class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
 
@@ -77,9 +77,9 @@ describe('TrustedClaimIssuers class', () => {
 
     beforeAll(() => {
       ticker = 'test';
-      rawTicker = polkadotMockUtils.createMockTicker(ticker);
+      rawTicker = dsMockUtils.createMockTicker(ticker);
       stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-      context = polkadotMockUtils.getContextInstance();
+      context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance({ ticker });
 
       expectedDids = ['someDid', 'otherDid', 'yetAnotherDid'];
@@ -89,11 +89,11 @@ describe('TrustedClaimIssuers class', () => {
 
       expectedDids.forEach(did => {
         expectedIdentities.push(new Identity({ did }, context));
-        claimIssuers.push(polkadotMockUtils.createMockIdentityId(did));
+        claimIssuers.push(dsMockUtils.createMockIdentityId(did));
       });
 
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
-      trustedClaimIssuerStub = polkadotMockUtils.createQueryStub(
+      trustedClaimIssuerStub = dsMockUtils.createQueryStub(
         'complianceManager',
         'trustedClaimIssuer'
       );

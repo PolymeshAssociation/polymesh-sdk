@@ -17,9 +17,9 @@ import {
   booleanToBool,
   numberToBalance,
   stringToAssetIdentifier,
+  stringToAssetName,
   stringToFundingRoundName,
   stringToTicker,
-  stringToTokenName,
   tokenDocumentToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
@@ -84,7 +84,7 @@ export async function prepareCreateSecurityToken(
 
   const rawTicker = stringToTicker(ticker, context);
   const rawTotalSupply = numberToBalance(totalSupply, context);
-  const rawName = stringToTokenName(name, context);
+  const rawName = stringToAssetName(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawType = tokenTypeToAssetType(tokenType, context);
   const rawIdentifiers = tokenIdentifiers.map<[IdentifierType, AssetIdentifier]>(

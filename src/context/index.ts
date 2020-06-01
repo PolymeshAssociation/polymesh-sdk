@@ -2,12 +2,14 @@ import { ApiPromise, Keyring } from '@polkadot/api';
 import { AccountInfo } from '@polkadot/types/interfaces';
 import { IKeyringPair } from '@polkadot/types/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
+import { NormalizedCacheObject } from 'apollo-cache-inmemory';
+import ApolloClient from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
-import { ErrorCode, SubCallback, UnsubCallback } from '~/types';
+import { CommonKeyring, ErrorCode, SubCallback, UnsubCallback } from '~/types';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -23,7 +25,8 @@ interface SignerData {
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
-  keyring: Keyring;
+  harvesterClient: ApolloClient<NormalizedCacheObject>;
+  keyring: CommonKeyring;
   pair?: SignerData;
 }
 
@@ -40,7 +43,7 @@ interface AccountData {
  * - Holds the current Identity
  */
 export class Context {
-  private keyring: Keyring;
+  private keyring: CommonKeyring;
 
   public polymeshApi: ApiPromise;
 
@@ -48,11 +51,13 @@ export class Context {
 
   private currentIdentity?: Identity;
 
+  public harvesterClient: ApolloClient<NormalizedCacheObject>;
+
   /**
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, keyring, pair } = params;
+    const { polymeshApi, harvesterClient, keyring, pair } = params;
 
     this.polymeshApi = new Proxy(polymeshApi, {
       get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
@@ -72,25 +77,46 @@ export class Context {
       this.currentPair = pair.currentPair;
       this.currentIdentity = new Identity({ did: pair.did.toString() }, this);
     }
+
+    this.harvesterClient = harvesterClient;
   }
 
-  static async create(params: { polymeshApi: ApiPromise; seed: string }): Promise<Context>;
-  static async create(params: { polymeshApi: ApiPromise; keyring: Keyring }): Promise<Context>;
-  static async create(params: { polymeshApi: ApiPromise; uri: string }): Promise<Context>;
-  static async create(params: { polymeshApi: ApiPromise }): Promise<Context>;
+  static async create(params: {
+    polymeshApi: ApiPromise;
+    harvesterClient: ApolloClient<NormalizedCacheObject>;
+    seed: string;
+  }): Promise<Context>;
+
+  static async create(params: {
+    polymeshApi: ApiPromise;
+    harvesterClient: ApolloClient<NormalizedCacheObject>;
+    keyring: CommonKeyring;
+  }): Promise<Context>;
+
+  static async create(params: {
+    polymeshApi: ApiPromise;
+    harvesterClient: ApolloClient<NormalizedCacheObject>;
+    uri: string;
+  }): Promise<Context>;
+
+  static async create(params: {
+    polymeshApi: ApiPromise;
+    harvesterClient: ApolloClient<NormalizedCacheObject>;
+  }): Promise<Context>;
 
   /**
    * Create the Context instance
    */
   static async create(params: {
     polymeshApi: ApiPromise;
+    harvesterClient: ApolloClient<NormalizedCacheObject>;
     seed?: string;
-    keyring?: Keyring;
+    keyring?: CommonKeyring;
     uri?: string;
   }): Promise<Context> {
-    const { polymeshApi, seed, keyring: passedKeyring, uri } = params;
+    const { polymeshApi, harvesterClient, seed, keyring: passedKeyring, uri } = params;
 
-    let keyring = new Keyring({ type: 'sr25519' });
+    let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
     let currentPair: IKeyringPair | undefined;
 
     if (passedKeyring) {
@@ -116,7 +142,7 @@ export class Context {
         );
         const did = identityIds.unwrap().asUnique;
 
-        return new Context({ polymeshApi, keyring, pair: { currentPair, did } });
+        return new Context({ polymeshApi, harvesterClient, keyring, pair: { currentPair, did } });
       } catch (err) {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
@@ -125,7 +151,7 @@ export class Context {
       }
     }
 
-    return new Context({ polymeshApi, keyring });
+    return new Context({ polymeshApi, harvesterClient, keyring });
   }
 
   /**

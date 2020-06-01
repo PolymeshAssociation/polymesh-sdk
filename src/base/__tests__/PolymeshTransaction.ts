@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { PostTransactionValue } from '~/base';
-import { polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils } from '~/testUtils/mocks';
 import { TransactionStatus } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -13,7 +13,7 @@ import { PolymeshTransaction } from '../PolymeshTransaction';
 
 describe('Polymesh Transaction class', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   const txSpec = {
@@ -23,12 +23,12 @@ describe('Polymesh Transaction class', () => {
   };
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   describe('method: run', () => {
     test('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
-      const tx = polkadotMockUtils.createTxStub('asset', 'registerTicker');
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('A_TICKER');
 
       const transaction = new PolymeshTransaction({
@@ -46,7 +46,7 @@ describe('Polymesh Transaction class', () => {
     });
 
     test('should unwrap PostTransactionValue arguments', async () => {
-      const tx = polkadotMockUtils.createTxStub('asset', 'registerTicker');
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
       const ticker = 'A_DIFFERENT_TICKER';
       const postTransactionTicker = new PostTransactionValue(async () => ticker);
       await postTransactionTicker.run({} as ISubmittableResult);
@@ -67,7 +67,7 @@ describe('Polymesh Transaction class', () => {
     });
 
     test('should unwrap the method if it is a PostTransactionValue', async () => {
-      const tx = polkadotMockUtils.createTxStub('asset', 'registerTicker');
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
       const ticker = 'NOT_THE_SAME_ONE';
       const postTransactionTx = new PostTransactionValue(async () => tx);
       const args = tuple(ticker);
@@ -89,7 +89,7 @@ describe('Polymesh Transaction class', () => {
     });
 
     test('should update the transaction status', async () => {
-      const tx = polkadotMockUtils.createTxStub('asset', 'registerTicker', false);
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker', false);
       const args = tuple('ANOTHER_TICKER');
 
       const transaction = new PolymeshTransaction({
@@ -104,19 +104,19 @@ describe('Polymesh Transaction class', () => {
 
       expect(transaction.status).toBe(TransactionStatus.Unapproved);
 
-      polkadotMockUtils.updateTxStatus(tx, polkadotMockUtils.MockTxStatus.Ready);
+      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.Ready);
 
       await delay(0);
 
       expect(transaction.status).toBe(TransactionStatus.Running);
 
-      polkadotMockUtils.updateTxStatus(tx, polkadotMockUtils.MockTxStatus.Intermediate);
+      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.Intermediate);
 
       await delay(0);
 
       expect(transaction.status).toBe(TransactionStatus.Running);
 
-      polkadotMockUtils.updateTxStatus(tx, polkadotMockUtils.MockTxStatus.Succeeded);
+      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.Succeeded);
 
       await delay(0);
 
@@ -124,7 +124,7 @@ describe('Polymesh Transaction class', () => {
     });
 
     test('should resolve all postValues', async () => {
-      const tx = polkadotMockUtils.createTxStub('asset', 'registerTicker');
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('YET_ANOTHER_TICKER');
       const firstStub = sinon.stub().resolves(1);
       const secondStub = sinon.stub().resolves('someString');
@@ -147,10 +147,10 @@ describe('Polymesh Transaction class', () => {
     });
 
     test('should throw an error when the transaction is aborted', async () => {
-      const tx = polkadotMockUtils.createTxStub(
+      const tx = dsMockUtils.createTxStub(
         'asset',
         'registerTicker',
-        polkadotMockUtils.MockTxStatus.Aborted
+        dsMockUtils.MockTxStatus.Aborted
       );
       const args = tuple('IT_HURTS');
 
@@ -167,7 +167,7 @@ describe('Polymesh Transaction class', () => {
     });
 
     test('should throw an error when the transaction fails', async () => {
-      let tx = polkadotMockUtils.createTxStub('asset', 'registerTicker', false);
+      let tx = dsMockUtils.createTxStub('asset', 'registerTicker', false);
       const args = tuple('PLEASE_MAKE_IT_STOP');
 
       let transaction = new PolymeshTransaction({
@@ -177,16 +177,16 @@ describe('Polymesh Transaction class', () => {
       });
       let runPromise = transaction.run();
 
-      polkadotMockUtils.updateTxStatus(
+      dsMockUtils.updateTxStatus(
         tx,
-        polkadotMockUtils.MockTxStatus.Failed,
-        polkadotMockUtils.TxFailReason.BadOrigin
+        dsMockUtils.MockTxStatus.Failed,
+        dsMockUtils.TxFailReason.BadOrigin
       );
 
       await expect(runPromise).rejects.toThrow('Bad origin');
       expect(transaction.status).toBe(TransactionStatus.Failed);
 
-      tx = polkadotMockUtils.createTxStub('asset', 'registerTicker', false);
+      tx = dsMockUtils.createTxStub('asset', 'registerTicker', false);
       transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
@@ -194,10 +194,10 @@ describe('Polymesh Transaction class', () => {
       });
       runPromise = transaction.run();
 
-      polkadotMockUtils.updateTxStatus(
+      dsMockUtils.updateTxStatus(
         tx,
-        polkadotMockUtils.MockTxStatus.Failed,
-        polkadotMockUtils.TxFailReason.CannotLookup
+        dsMockUtils.MockTxStatus.Failed,
+        dsMockUtils.TxFailReason.CannotLookup
       );
 
       await expect(runPromise).rejects.toThrow(
@@ -205,7 +205,7 @@ describe('Polymesh Transaction class', () => {
       );
       expect(transaction.status).toBe(TransactionStatus.Failed);
 
-      tx = polkadotMockUtils.createTxStub('asset', 'registerTicker', false);
+      tx = dsMockUtils.createTxStub('asset', 'registerTicker', false);
       transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
@@ -213,16 +213,16 @@ describe('Polymesh Transaction class', () => {
       });
       runPromise = transaction.run();
 
-      polkadotMockUtils.updateTxStatus(
+      dsMockUtils.updateTxStatus(
         tx,
-        polkadotMockUtils.MockTxStatus.Failed,
-        polkadotMockUtils.TxFailReason.Other
+        dsMockUtils.MockTxStatus.Failed,
+        dsMockUtils.TxFailReason.Other
       );
 
       await expect(runPromise).rejects.toThrow('Unknown error');
       expect(transaction.status).toBe(TransactionStatus.Failed);
 
-      tx = polkadotMockUtils.createTxStub('asset', 'registerTicker', false);
+      tx = dsMockUtils.createTxStub('asset', 'registerTicker', false);
       transaction = new PolymeshTransaction({
         ...txSpec,
         tx,
@@ -230,10 +230,10 @@ describe('Polymesh Transaction class', () => {
       });
       runPromise = transaction.run();
 
-      polkadotMockUtils.updateTxStatus(
+      dsMockUtils.updateTxStatus(
         tx,
-        polkadotMockUtils.MockTxStatus.Failed,
-        polkadotMockUtils.TxFailReason.Module
+        dsMockUtils.MockTxStatus.Failed,
+        dsMockUtils.TxFailReason.Module
       );
 
       await expect(runPromise).rejects.toThrow('someModule.SomeError: This is very bad');
@@ -241,10 +241,10 @@ describe('Polymesh Transaction class', () => {
     });
 
     test('should throw an error when the transaction is rejected', async () => {
-      const tx = polkadotMockUtils.createTxStub(
+      const tx = dsMockUtils.createTxStub(
         'asset',
         'registerTicker',
-        polkadotMockUtils.MockTxStatus.Rejected
+        dsMockUtils.MockTxStatus.Rejected
       );
       const args = tuple('THIS_IS_THE_LAST_ONE_I_SWEAR');
 
@@ -263,7 +263,7 @@ describe('Polymesh Transaction class', () => {
 
   describe('method: onStatusChange', () => {
     test("should execute a callback when the transaction's status changes", async () => {
-      const tx = polkadotMockUtils.createTxStub('asset', 'registerTicker');
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('I_HAVE_LOST_THE_WILL_TO_LIVE');
 
       const transaction = new PolymeshTransaction({
@@ -284,7 +284,7 @@ describe('Polymesh Transaction class', () => {
     });
 
     test('should return an unsubscribe function', async () => {
-      const tx = polkadotMockUtils.createTxStub('asset', 'registerTicker', false);
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker', false);
       const args = tuple('THE_ONLY_THING_THAT_KEEPS_ME_GOING_IS_THE_HOPE_OF_FULL_COVERAGE');
 
       const transaction = new PolymeshTransaction({

@@ -6,7 +6,7 @@ import sinon from 'sinon';
 import * as baseModule from '~/base';
 import { Context } from '~/context';
 import { PosRatio, ProtocolOp } from '~/polkadot';
-import { polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils } from '~/testUtils/mocks';
 import { Role } from '~/types';
 import { MaybePostTransactionValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -17,19 +17,19 @@ import { Procedure } from '../Procedure';
 describe('Procedure class', () => {
   let context: Context;
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   beforeEach(() => {
-    context = polkadotMockUtils.getContextInstance();
+    context = dsMockUtils.getContextInstance();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   describe('method: prepare', () => {
@@ -52,20 +52,20 @@ describe('Procedure class', () => {
       fees = [250, 0];
       numerator = 7;
       denominator = 3;
-      rawCoefficient = polkadotMockUtils.createMockPosRatio(numerator, denominator);
-      rawFees = fees.map(polkadotMockUtils.createMockBalance);
+      rawCoefficient = dsMockUtils.createMockPosRatio(numerator, denominator);
+      rawFees = fees.map(dsMockUtils.createMockBalance);
       coefficient = new BigNumber(numerator).dividedBy(new BigNumber(denominator));
     });
 
     beforeEach(() => {
-      polkadotMockUtils.createQueryStub('protocolFee', 'coefficient', {
+      dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
         returnValue: rawCoefficient,
       });
-      polkadotMockUtils
+      dsMockUtils
         .createQueryStub('protocolFee', 'baseFees')
         .withArgs('AssetRegisterTicker')
         .resolves(rawFees[0]);
-      polkadotMockUtils
+      dsMockUtils
         .createQueryStub('protocolFee', 'baseFees')
         .withArgs('IdentityRegisterDid')
         .resolves(rawFees[1]);
@@ -89,8 +89,8 @@ describe('Procedure class', () => {
         ticker,
         signingItems,
       };
-      const tx1 = polkadotMockUtils.createTxStub('asset', 'registerTicker');
-      const tx2 = polkadotMockUtils.createTxStub('identity', 'registerDid');
+      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const tx2 = dsMockUtils.createTxStub('identity', 'registerDid');
       const fee1 = new BigNumber(20);
       const fee2 = new BigNumber(30);
 
@@ -191,7 +191,7 @@ describe('Procedure class', () => {
       };
 
       let proc = new Procedure(func, [({ type: 'FakeRole' } as unknown) as Role]);
-      context = polkadotMockUtils.getContextInstance({ hasRoles: false });
+      context = dsMockUtils.getContextInstance({ hasRoles: false });
 
       await expect(proc.prepare(procArgs, context)).rejects.toThrow(
         'Current account is not authorized to execute this procedure'
@@ -211,8 +211,8 @@ describe('Procedure class', () => {
         ticker,
         signingItems,
       };
-      const tx1 = polkadotMockUtils.createTxStub('asset', 'registerTicker');
-      const tx2 = polkadotMockUtils.createTxStub('identity', 'registerDid');
+      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const tx2 = dsMockUtils.createTxStub('identity', 'registerDid');
 
       stringToProtocolOpStub.withArgs(protocolOps[1], context).throws(); // extrinsic without a fee
 
@@ -279,7 +279,7 @@ describe('Procedure class', () => {
       const ticker = 'MY_TOKEN';
       const resolvedNum = 1;
       const resolvedStr = 'something';
-      const tx = polkadotMockUtils.createTxStub('asset', 'registerTicker');
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const proc = new Procedure(async () => undefined);
       proc.context = context;

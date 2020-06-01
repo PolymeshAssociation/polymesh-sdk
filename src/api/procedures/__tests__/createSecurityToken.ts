@@ -4,12 +4,12 @@ import { ITuple } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
+  AssetName,
   AssetType,
   Document,
   FundingRoundName,
   IdentifierType,
   Ticker,
-  TokenName,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -20,7 +20,7 @@ import {
   prepareCreateSecurityToken,
 } from '~/api/procedures/createSecurityToken';
 import { Context } from '~/context';
-import { entityMockUtils, polkadotMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   KnownTokenType,
@@ -45,7 +45,7 @@ describe('createSecurityToken procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context], Balance>;
-  let stringToTokenNameStub: sinon.SinonStub<[string, Context], TokenName>;
+  let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let tokenTypeToAssetTypeStub: sinon.SinonStub<[TokenType, Context], AssetType>;
   let tokenIdentifierTypeToIdentifierTypeStub: sinon.SinonStub<
@@ -64,7 +64,7 @@ describe('createSecurityToken procedure', () => {
   let fundingRound: string;
   let documents: TokenDocument[];
   let rawTicker: Ticker;
-  let rawName: TokenName;
+  let rawName: AssetName;
   let rawTotalSupply: Balance;
   let rawIsDivisible: bool;
   let rawType: AssetType;
@@ -74,12 +74,12 @@ describe('createSecurityToken procedure', () => {
   let args: Params;
 
   beforeAll(() => {
-    polkadotMockUtils.initMocks({ contextOptions: { balance: new BigNumber(1000) } });
+    dsMockUtils.initMocks({ contextOptions: { balance: new BigNumber(1000) } });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
-    stringToTokenNameStub = sinon.stub(utilsModule, 'stringToTokenName');
+    stringToAssetNameStub = sinon.stub(utilsModule, 'stringToAssetName');
     booleanToBoolStub = sinon.stub(utilsModule, 'booleanToBool');
     tokenTypeToAssetTypeStub = sinon.stub(utilsModule, 'tokenTypeToAssetType');
     tokenIdentifierTypeToIdentifierTypeStub = sinon.stub(
@@ -108,26 +108,26 @@ describe('createSecurityToken procedure', () => {
         contentHash: 'someHash',
       },
     ];
-    rawTicker = polkadotMockUtils.createMockTicker(ticker);
-    rawName = polkadotMockUtils.createMockTokenName(name);
-    rawTotalSupply = polkadotMockUtils.createMockBalance(totalSupply.toNumber());
-    rawIsDivisible = polkadotMockUtils.createMockBool(isDivisible);
-    rawType = polkadotMockUtils.createMockAssetType(tokenType);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawName = dsMockUtils.createMockAssetName(name);
+    rawTotalSupply = dsMockUtils.createMockBalance(totalSupply.toNumber());
+    rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
+    rawType = dsMockUtils.createMockAssetType(tokenType);
     rawIdentifiers = tokenIdentifiers.map(({ type, value }) => {
       return [
-        polkadotMockUtils.createMockIdentifierType(type),
-        polkadotMockUtils.createMockAssetIdentifier(value),
+        dsMockUtils.createMockIdentifierType(type),
+        dsMockUtils.createMockAssetIdentifier(value),
       ];
     });
     rawDocuments = documents.map(({ name: documentName, uri, contentHash }) =>
-      polkadotMockUtils.createMockDocument({
-        name: polkadotMockUtils.createMockDocumentName(documentName),
-        uri: polkadotMockUtils.createMockDocumentUri(uri),
+      dsMockUtils.createMockDocument({
+        name: dsMockUtils.createMockDocumentName(documentName),
+        uri: dsMockUtils.createMockDocumentUri(uri),
         // eslint-disable-next-line @typescript-eslint/camelcase
-        content_hash: polkadotMockUtils.createMockDocumentHash(contentHash),
+        content_hash: dsMockUtils.createMockDocumentHash(contentHash),
       })
     );
-    rawFundingRound = polkadotMockUtils.createMockFundingRoundName(fundingRound);
+    rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
     args = {
       ticker,
       name,
@@ -143,7 +143,7 @@ describe('createSecurityToken procedure', () => {
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   let transaction: PolymeshTx<[
-    TokenName,
+    AssetName,
     Ticker,
     Balance,
     bool,
@@ -156,17 +156,17 @@ describe('createSecurityToken procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    polkadotMockUtils.createQueryStub('asset', 'tickerConfig', {
-      returnValue: polkadotMockUtils.createMockTickerRegistrationConfig(),
+    dsMockUtils.createQueryStub('asset', 'tickerConfig', {
+      returnValue: dsMockUtils.createMockTickerRegistrationConfig(),
     });
 
-    transaction = polkadotMockUtils.createTxStub('asset', 'createAsset');
+    transaction = dsMockUtils.createTxStub('asset', 'createAsset');
 
-    mockContext = polkadotMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     numberToBalanceStub.withArgs(totalSupply, mockContext).returns(rawTotalSupply);
-    stringToTokenNameStub.withArgs(name, mockContext).returns(rawName);
+    stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     tokenTypeToAssetTypeStub.withArgs(tokenType, mockContext).returns(rawType);
     tokenIdentifierTypeToIdentifierTypeStub
@@ -182,13 +182,13 @@ describe('createSecurityToken procedure', () => {
   afterEach(() => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should throw an error if a token with that ticker has already been launched', () => {
@@ -262,7 +262,7 @@ describe('createSecurityToken procedure', () => {
   test('should add a document add transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
-    const tx = polkadotMockUtils.createTxStub('asset', 'addDocuments');
+    const tx = dsMockUtils.createTxStub('asset', 'addDocuments');
 
     const result = await prepareCreateSecurityToken.call(proc, { ...args, documents });
 

@@ -7,7 +7,7 @@ import { Params } from '~/api/procedures/setTokenRules';
 import { Namespace, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { AssetTransferRules, IdentityId } from '~/polkadot';
-import { entityMockUtils, polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { ClaimType, ConditionTarget, ConditionType, Rule } from '~/types';
 
 import { Rules } from '../Rules';
@@ -15,15 +15,15 @@ import { Rules } from '../Rules';
 describe('Rules class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -36,7 +36,7 @@ describe('Rules class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
       const rules = new Rules(token, context);
 
@@ -82,7 +82,7 @@ describe('Rules class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
       const rules = new Rules(token, context);
 
@@ -115,26 +115,26 @@ describe('Rules class', () => {
 
     beforeEach(() => {
       ticker = 'test';
-      context = polkadotMockUtils.getContextInstance();
+      context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance({ ticker });
       rules = new Rules(token, context);
       defaultClaimIssuers = ['defaultissuer'];
       notDefaultClaimIssuer = 'notDefaultClaimIssuer';
       tokenDid = 'someTokenDid';
-      polkadotMockUtils.createQueryStub('complianceManager', 'assetRulesMap');
-      polkadotMockUtils.createQueryStub('complianceManager', 'trustedClaimIssuer');
+      dsMockUtils.createQueryStub('complianceManager', 'assetRulesMap');
+      dsMockUtils.createQueryStub('complianceManager', 'trustedClaimIssuer');
 
-      queryMultiStub = polkadotMockUtils.getQueryMultiStub();
+      queryMultiStub = dsMockUtils.getQueryMultiStub();
 
-      const scope = polkadotMockUtils.createMockScope(tokenDid);
-      const ruleForBoth = polkadotMockUtils.createMockRule({
+      const scope = dsMockUtils.createMockScope(tokenDid);
+      const ruleForBoth = dsMockUtils.createMockRule({
         // eslint-disable-next-line @typescript-eslint/camelcase
-        rule_type: polkadotMockUtils.createMockRuleType({
+        rule_type: dsMockUtils.createMockRuleType({
           IsAnyOf: [
-            polkadotMockUtils.createMockClaim({
+            dsMockUtils.createMockClaim({
               KnowYourCustomer: scope,
             }),
-            polkadotMockUtils.createMockClaim('CustomerDueDiligence'),
+            dsMockUtils.createMockClaim('CustomerDueDiligence'),
           ],
         }),
         issuers: [],
@@ -143,35 +143,35 @@ describe('Rules class', () => {
       queryMultiResult = [
         {
           rules: [
-            polkadotMockUtils.createMockAssetTransferRule({
+            dsMockUtils.createMockAssetTransferRule({
               /* eslint-disable @typescript-eslint/camelcase */
               sender_rules: [
-                polkadotMockUtils.createMockRule({
-                  rule_type: polkadotMockUtils.createMockRuleType({
-                    IsPresent: polkadotMockUtils.createMockClaim({
+                dsMockUtils.createMockRule({
+                  rule_type: dsMockUtils.createMockRuleType({
+                    IsPresent: dsMockUtils.createMockClaim({
                       Whitelisted: scope,
                     }),
                   }),
-                  issuers: [polkadotMockUtils.createMockIdentityId(notDefaultClaimIssuer)],
+                  issuers: [dsMockUtils.createMockIdentityId(notDefaultClaimIssuer)],
                 }),
               ],
               receiver_rules: [],
-              rule_id: polkadotMockUtils.createMockU32(1),
+              rule_id: dsMockUtils.createMockU32(1),
             }),
-            polkadotMockUtils.createMockAssetTransferRule({
+            dsMockUtils.createMockAssetTransferRule({
               sender_rules: [ruleForBoth],
               receiver_rules: [
                 ruleForBoth,
-                polkadotMockUtils.createMockRule({
-                  rule_type: polkadotMockUtils.createMockRuleType({
-                    IsAbsent: polkadotMockUtils.createMockClaim({
+                dsMockUtils.createMockRule({
+                  rule_type: dsMockUtils.createMockRuleType({
+                    IsAbsent: dsMockUtils.createMockClaim({
                       Blacklisted: scope,
                     }),
                   }),
                   issuers: [],
                 }),
               ],
-              rule_id: polkadotMockUtils.createMockU32(2),
+              rule_id: dsMockUtils.createMockU32(2),
               /* eslint-enable @typescript-eslint/camelcase */
             }),
           ],
@@ -256,7 +256,7 @@ describe('Rules class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
       const rules = new Rules(token, context);
 
@@ -279,7 +279,7 @@ describe('Rules class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
       const rules = new Rules(token, context);
 

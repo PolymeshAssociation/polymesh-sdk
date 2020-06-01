@@ -3,7 +3,7 @@ import sinon from 'sinon';
 
 import { modifyToken, transferTokenOwnership } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
-import { polkadotMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
@@ -12,15 +12,15 @@ import { SecurityToken } from '../';
 
 describe('SecurityToken class', () => {
   beforeAll(() => {
-    polkadotMockUtils.initMocks();
+    dsMockUtils.initMocks();
   });
 
   afterEach(() => {
-    polkadotMockUtils.reset();
+    dsMockUtils.reset();
   });
 
   afterAll(() => {
-    polkadotMockUtils.cleanup();
+    dsMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -30,7 +30,7 @@ describe('SecurityToken class', () => {
   describe('constructor', () => {
     test('should assign ticker and did to instance', () => {
       const ticker = 'test';
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
       expect(securityToken.ticker).toBe(ticker);
@@ -54,18 +54,18 @@ describe('SecurityToken class', () => {
       const owner = '0x0wn3r';
       const assetType = 'EquityCommon';
 
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      polkadotMockUtils.createQueryStub('asset', 'tokens', {
-        returnValue: polkadotMockUtils.createMockSecurityToken({
+      dsMockUtils.createQueryStub('asset', 'tokens', {
+        returnValue: dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
-          owner_did: polkadotMockUtils.createMockIdentityId(owner),
-          name: polkadotMockUtils.createMockTokenName(ticker),
-          asset_type: polkadotMockUtils.createMockAssetType(assetType),
-          divisible: polkadotMockUtils.createMockBool(isDivisible),
-          link_id: polkadotMockUtils.createMockU64(3),
-          total_supply: polkadotMockUtils.createMockBalance(totalSupply),
+          owner_did: dsMockUtils.createMockIdentityId(owner),
+          name: dsMockUtils.createMockAssetName(ticker),
+          asset_type: dsMockUtils.createMockAssetType(assetType),
+          divisible: dsMockUtils.createMockBool(isDivisible),
+          link_id: dsMockUtils.createMockU64(3),
+          total_supply: dsMockUtils.createMockBalance(totalSupply),
           /* eslint-enable @typescript-eslint/camelcase */
         }),
       });
@@ -85,7 +85,7 @@ describe('SecurityToken class', () => {
   describe('method: transferOwnership', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'TEST';
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
       const did = 'someOtherDid';
       const expiry = new Date('10/14/3040');
@@ -111,7 +111,7 @@ describe('SecurityToken class', () => {
   describe('method: modify', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'TEST';
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
       const makeDivisible: true = true;
 
@@ -136,11 +136,11 @@ describe('SecurityToken class', () => {
     test('should return the funding round for a security token', async () => {
       const ticker = 'test';
       const fundingRound = 'Series A';
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      polkadotMockUtils.createQueryStub('asset', 'fundingRound', {
-        returnValue: polkadotMockUtils.createMockFundingRoundName(fundingRound),
+      dsMockUtils.createQueryStub('asset', 'fundingRound', {
+        returnValue: dsMockUtils.createMockFundingRoundName(fundingRound),
       });
 
       const result = await securityToken.currentFundingRound();
@@ -155,9 +155,9 @@ describe('SecurityToken class', () => {
       const isinValue = 'FAKE ISIN';
       const cusipValue = 'FAKE CUSIP';
       const cinsValue = 'FAKE CINS';
-      const isinMock = polkadotMockUtils.createMockAssetIdentifier(isinValue);
-      const cusipMock = polkadotMockUtils.createMockAssetIdentifier(cusipValue);
-      const cinsMock = polkadotMockUtils.createMockAssetIdentifier(cinsValue);
+      const isinMock = dsMockUtils.createMockAssetIdentifier(isinValue);
+      const cusipMock = dsMockUtils.createMockAssetIdentifier(cusipValue);
+      const cinsMock = dsMockUtils.createMockAssetIdentifier(cinsValue);
       const tokenIdentifiers = [
         {
           type: TokenIdentifierType.Isin,
@@ -175,12 +175,12 @@ describe('SecurityToken class', () => {
 
       const rawIdentifiers = tokenIdentifiers.map(({ type, value }) =>
         tuple(
-          polkadotMockUtils.createMockIdentifierType(type),
-          polkadotMockUtils.createMockAssetIdentifier(value)
+          dsMockUtils.createMockIdentifierType(type),
+          dsMockUtils.createMockAssetIdentifier(value)
         )
       );
 
-      const context = polkadotMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
 
       const tokenIdentifierTypeToIdentifierTypeStub = sinon.stub(
         utilsModule,
@@ -199,7 +199,7 @@ describe('SecurityToken class', () => {
         .withArgs(tokenIdentifiers[2].type, context)
         .returns(rawIdentifiers[2][0]);
 
-      polkadotMockUtils.createQueryStub('asset', 'identifiers', {
+      dsMockUtils.createQueryStub('asset', 'identifiers', {
         multi: [isinMock, cusipMock, cinsMock],
       });
 

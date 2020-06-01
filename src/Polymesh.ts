@@ -1,6 +1,7 @@
-import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
+import { ApiPromise, WsProvider } from '@polkadot/api';
+import { Signer } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
-import { ApolloClient } from 'apollo-client';
+import { ApolloClient, ApolloQueryResult } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
 import { BigNumber } from 'bignumber.js';
@@ -19,46 +20,79 @@ import {
 } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode, SubCallback, UnsubCallback } from '~/types';
+import { didsWithClaims } from '~/harvester/queries';
+import { Query } from '~/harvester/types';
+import {
+  ClaimData,
+  CommonKeyring,
+  Ensured,
+  ErrorCode,
+  SubCallback,
+  UiKeyring,
+  UnsubCallback,
+} from '~/types';
 import { SignerType } from '~/types/internal';
-import { signerToSignatory, stringToTicker, tickerToString, valueToDid } from '~/utils';
+import {
+  createClaim,
+  signerToSignatory,
+  stringToTicker,
+  tickerToString,
+  valueToDid,
+} from '~/utils';
 import { HARVESTER_ENDPOINT } from '~/utils/constants';
+
+interface ConnectParamsBase {
+  nodeUrl: string;
+  signer?: Signer;
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * @hidden
+ */
+function isUiKeyring(keyring: any): keyring is UiKeyring {
+  return !!keyring.keyring;
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**
  * Main entry point of the Polymesh SDK
  */
 export class Polymesh {
   public context: Context = {} as Context;
-  private harvester: ApolloClient<NormalizedCacheObject>;
 
   /**
    * @hidden
    */
-  private constructor(context: Context, harvester: ApolloClient<NormalizedCacheObject>) {
+  private constructor(context: Context) {
     this.context = context;
-    this.harvester = harvester;
   }
 
-  static async connect(params: { nodeUrl: string; accountSeed: string }): Promise<Polymesh>;
+  static async connect(params: ConnectParamsBase & { accountSeed: string }): Promise<Polymesh>;
 
-  static async connect(params: { nodeUrl: string; keyring: Keyring }): Promise<Polymesh>;
+  static async connect(
+    params: ConnectParamsBase & {
+      keyring: CommonKeyring | UiKeyring;
+    }
+  ): Promise<Polymesh>;
 
-  static async connect(params: { nodeUrl: string; accountUri: string }): Promise<Polymesh>;
+  static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
 
-  static async connect(params: { nodeUrl: string }): Promise<Polymesh>;
+  static async connect(params: ConnectParamsBase): Promise<Polymesh>;
 
   /**
    * Create the instance and connect to the Polymesh node
    */
-  static async connect(params: {
-    nodeUrl: string;
-    accountSeed?: string;
-    keyring?: Keyring;
-    accountUri?: string;
-  }): Promise<Polymesh> {
-    const { nodeUrl, accountSeed, keyring, accountUri } = params;
+  static async connect(
+    params: ConnectParamsBase & {
+      accountSeed?: string;
+      keyring?: CommonKeyring | UiKeyring;
+      accountUri?: string;
+    }
+  ): Promise<Polymesh> {
+    const { nodeUrl, accountSeed, keyring, accountUri, signer } = params;
     let polymeshApi: ApiPromise;
-    let harvester: ApolloClient<NormalizedCacheObject>;
+    let harvesterClient: ApolloClient<NormalizedCacheObject>;
 
     try {
       const { types, rpc } = polymesh;
@@ -69,30 +103,7 @@ export class Polymesh {
         rpc,
       });
 
-      let context: Context;
-
-      if (accountSeed) {
-        context = await Context.create({
-          polymeshApi,
-          seed: accountSeed,
-        });
-      } else if (keyring) {
-        context = await Context.create({
-          polymeshApi,
-          keyring,
-        });
-      } else if (accountUri) {
-        context = await Context.create({
-          polymeshApi,
-          uri: accountUri,
-        });
-      } else {
-        context = await Context.create({
-          polymeshApi,
-        });
-      }
-
-      harvester = new ApolloClient({
+      harvesterClient = new ApolloClient({
         link: ApolloLink.from([
           new HttpLink({
             uri: HARVESTER_ENDPOINT,
@@ -101,7 +112,44 @@ export class Polymesh {
         cache: new InMemoryCache(),
       });
 
-      return new Polymesh(context, harvester);
+      if (signer) {
+        polymeshApi.setSigner(signer);
+      }
+
+      let context: Context;
+
+      if (accountSeed) {
+        context = await Context.create({
+          polymeshApi,
+          harvesterClient,
+          seed: accountSeed,
+        });
+      } else if (keyring) {
+        let keyringInstance: CommonKeyring;
+        if (isUiKeyring(keyring)) {
+          keyringInstance = keyring.keyring;
+        } else {
+          keyringInstance = keyring;
+        }
+        context = await Context.create({
+          polymeshApi,
+          harvesterClient,
+          keyring: keyringInstance,
+        });
+      } else if (accountUri) {
+        context = await Context.create({
+          polymeshApi,
+          harvesterClient,
+          uri: accountUri,
+        });
+      } else {
+        context = await Context.create({
+          polymeshApi,
+          harvesterClient,
+        });
+      }
+
+      return new Polymesh(context);
     } catch (e) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
@@ -381,6 +429,54 @@ export class Polymesh {
       code: ErrorCode.FatalError,
       message: `There is no Security Token with ticker "${ticker}"`,
     });
+  }
+
+  /**
+   * Retrieve all claims issued by the current identity
+   */
+  public async getIssuedClaims(): Promise<ClaimData[]> {
+    const {
+      context,
+      context: { harvesterClient },
+    } = this;
+
+    const { did } = context.getCurrentIdentity();
+
+    let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
+    try {
+      result = await harvesterClient.query<Query>(
+        didsWithClaims({
+          trustedClaimIssuers: [did],
+          count: 100,
+        })
+      );
+    } catch (e) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `Error in harvester query: ${e.message}`,
+      });
+    }
+
+    const {
+      data: { didsWithClaims: didsWithClaimsList },
+    } = result;
+    const claimData: ClaimData[] = [];
+
+    didsWithClaimsList.forEach(({ claims }) => {
+      claims.forEach(
+        ({ targetDID, issuer, issuance_date: issuanceDate, expiry, type, jurisdiction, scope }) => {
+          claimData.push({
+            target: new Identity({ did: targetDID }, context),
+            issuer: new Identity({ did: issuer }, context),
+            issuedAt: new Date(issuanceDate),
+            expiry: expiry ? new Date(expiry) : null,
+            claim: createClaim(type, jurisdiction, scope),
+          });
+        }
+      );
+    });
+
+    return claimData;
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
