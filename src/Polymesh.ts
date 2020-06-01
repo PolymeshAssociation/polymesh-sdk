@@ -92,7 +92,7 @@ export class Polymesh {
   }): Promise<Polymesh> {
     const { nodeUrl, accountSeed, keyring, accountUri, harvester } = params;
     let polymeshApi: ApiPromise;
-    let harvesterClient: ApolloClient<NormalizedCacheObject>;
+    let harvesterClient: ApolloClient<NormalizedCacheObject> | null = null;
 
     try {
       const { types, rpc } = polymesh;
@@ -103,53 +103,49 @@ export class Polymesh {
         rpc,
       });
 
-      harvesterClient = new ApolloClient({
-        link: setContext((_, { headers }) => {
-          return {
-            headers: {
-              ...headers,
-              'x-api-key': harvester ? harvester.key : '',
-            },
-          };
-        }).concat(
-          ApolloLink.from([
-            new HttpLink({
-              uri: harvester ? harvester.link : '',
-            }),
-          ])
-        ),
-        cache: new InMemoryCache(),
-      });
-
-      const isApolloConfigured = typeof harvester !== 'undefined';
+      if (harvester) {
+        harvesterClient = new ApolloClient({
+          link: setContext((_, { headers }) => {
+            return {
+              headers: {
+                ...headers,
+                'x-api-key': harvester ? harvester.key : '',
+              },
+            };
+          }).concat(
+            ApolloLink.from([
+              new HttpLink({
+                uri: harvester ? harvester.link : '',
+              }),
+            ])
+          ),
+          cache: new InMemoryCache(),
+        });
+      }
 
       let context: Context;
 
       if (accountSeed) {
         context = await Context.create({
           polymeshApi,
-          isApolloConfigured,
           harvesterClient,
           seed: accountSeed,
         });
       } else if (keyring) {
         context = await Context.create({
           polymeshApi,
-          isApolloConfigured,
           harvesterClient,
           keyring,
         });
       } else if (accountUri) {
         context = await Context.create({
           polymeshApi,
-          isApolloConfigured,
           harvesterClient,
           uri: accountUri,
         });
       } else {
         context = await Context.create({
           polymeshApi,
-          isApolloConfigured,
           harvesterClient,
         });
       }
