@@ -126,13 +126,13 @@ export class Polymesh {
             return {
               headers: {
                 ...headers,
-                'x-api-key': harvester ? harvester.key : '',
+                'x-api-key': harvester.key,
               },
             };
           }).concat(
             ApolloLink.from([
               new HttpLink({
-                uri: harvester ? harvester.link : '',
+                uri: harvester.link,
               }),
             ])
           ),

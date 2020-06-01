@@ -65,8 +65,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        isApolloConfigured: false,
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        harvesterClient: null,
         seed: accountSeed,
       });
     });
@@ -83,8 +82,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        isApolloConfigured: false,
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        harvesterClient: null,
         keyring,
       });
     });
@@ -101,7 +99,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        harvesterClient: null,
         keyring,
       });
     });
@@ -118,8 +116,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        isApolloConfigured: false,
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        harvesterClient: null,
         uri: accountUri,
       });
     });
@@ -141,7 +138,6 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        isApolloConfigured: true,
         harvesterClient: dsMockUtils.getHarvesterClient(),
         uri: accountUri,
       });
@@ -161,7 +157,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        harvesterClient: null,
         seed: accountSeed,
       });
       sinon.assert.calledWith(dsMockUtils.getApiInstance().setSigner, signer);
