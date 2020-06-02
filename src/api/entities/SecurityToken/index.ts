@@ -1,3 +1,4 @@
+import { ApolloQueryResult } from 'apollo-client';
 import { AssetIdentifier } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
@@ -7,9 +8,11 @@ import {
   transferTokenOwnership,
   TransferTokenOwnershipParams,
 } from '~/api/procedures';
-import { Entity, TransactionQueue } from '~/base';
+import { Entity, PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { TokenIdentifier, TokenIdentifierType } from '~/types';
+import { eventByIndexedArgs } from '~/harvester/queries';
+import { Query } from '~/harvester/types';
+import { Ensured, ErrorCode, EventIdentifier, TokenIdentifier, TokenIdentifierType } from '~/types';
 import {
   assetIdentifierToString,
   assetNameToString,
@@ -18,6 +21,7 @@ import {
   boolToBoolean,
   fundingRoundNameToString,
   identityIdToString,
+  padTicker,
   tickerToDid,
   tokenIdentifierTypeToIdentifierType,
 } from '~/utils';
@@ -184,5 +188,43 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     }));
 
     return tokenIdentifiers;
+  }
+
+  /**
+   * Retrieve the event identifier of the token creation transaction
+   */
+  public async createdAt(): Promise<EventIdentifier | null> {
+    const {
+      context: { harvesterClient },
+      ticker,
+    } = this;
+
+    let result: ApolloQueryResult<Ensured<Query, 'eventByIndexedArgs'>>;
+    try {
+      result = await harvesterClient.query<Ensured<Query, 'eventByIndexedArgs'>>(
+        eventByIndexedArgs({
+          moduleId: 'asset',
+          eventId: 'AssetCreated',
+          eventArg1: padTicker(ticker),
+        })
+      );
+    } catch (e) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: `Error in harvester query: ${e.message}`,
+      });
+    }
+
+    // TODO remove null check once types fixed
+    if (result.data.eventByIndexedArgs) {
+      /* eslint-disable @typescript-eslint/no-non-null-assertion */
+      return {
+        blockNumber: result.data.eventByIndexedArgs.block_id!,
+        eventIndex: result.data.eventByIndexedArgs.event_idx!,
+      };
+      /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+    }
+
+    return null;
   }
 }

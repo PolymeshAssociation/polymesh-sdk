@@ -1,7 +1,7 @@
 import { didsWithClaims, eventByIndexedArgs } from '../queries';
 
 describe('didsWithClaims', () => {
-  test('should verify that the variables are the same that were passed to the query', () => {
+  test('should pass the variables to the grapqhl query', () => {
     const variables = {
       dids: ['someDid', 'otherDid'],
       scope: 'someScope',
@@ -19,7 +19,7 @@ describe('didsWithClaims', () => {
 });
 
 describe('eventByIndexedArgs', () => {
-  test('should verify that the variables are the same that were passed to the query', () => {
+  test('should pass the variables to the grapqhl query', () => {
     const variables = {
       moduleId: 'someModule',
       eventId: 'someEvent',

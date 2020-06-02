@@ -8,13 +8,12 @@ import sinon from 'sinon';
 import { Identity, TickerReservation } from '~/api/entities';
 import { addClaims, reserveTicker, revokeClaims, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
-import { didsWithClaims, eventByIndexedArgs } from '~/harvester/queries';
+import { didsWithClaims } from '~/harvester/queries';
 import { IdentityWithClaims } from '~/harvester/types';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { ClaimTargets, ClaimType, SubCallback } from '~/types';
 import * as utilsModule from '~/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
 jest.mock(
   '@polkadot/api',
@@ -502,88 +501,6 @@ describe('Polymesh Class', () => {
 
       expect(securityTokens).toHaveLength(1);
       expect(securityTokens[0].ticker).toBe(fakeTicker);
-    });
-  });
-
-  describe('method: getCreationTokenEventId', () => {
-    test('should return the event id of the token creation', async () => {
-      const ticker = 'SOMETICKER';
-      const blockId = 1234;
-      const variables = {
-        moduleId: 'asset',
-        eventId: 'AssetCreated',
-        eventArg1: ticker + '\u0000'.repeat(MAX_TICKER_LENGTH - ticker.length),
-      };
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      const fakeResult = { block_id: blockId };
-
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        harvester: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
-        eventByIndexedArgs: fakeResult,
-      });
-
-      const result = await polymesh.getCreationTokenEventId({ ticker });
-
-      expect(result).toEqual(blockId);
-    });
-
-    test('should return null if the block id does not exist or if the query result is empty', async () => {
-      const ticker = 'SOMETICKER';
-      const variables = {
-        moduleId: 'asset',
-        eventId: 'AssetCreated',
-        eventArg1: ticker + '\u0000'.repeat(MAX_TICKER_LENGTH - ticker.length),
-      };
-
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        harvester: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
-      let result = await polymesh.getCreationTokenEventId({ ticker });
-      expect(result).toBeNull();
-
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
-        eventByIndexedArgs: {},
-      });
-      result = await polymesh.getCreationTokenEventId({ ticker });
-      expect(result).toBeNull();
-    });
-
-    test('should throw if the harvester query fails', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        harvester: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      dsMockUtils.throwOnHarvesterQuery();
-
-      return expect(polymesh.getCreationTokenEventId({ ticker: 'someTicker' })).rejects.toThrow(
-        'Error in harvester query: Error'
-      );
     });
   });
 

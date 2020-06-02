@@ -79,6 +79,7 @@ import {
   numberToBalance,
   numberToU32,
   numberToU64,
+  padTicker,
   posRatioToBigNumber,
   ruleToAssetTransferRule,
   serialize,
@@ -1841,5 +1842,16 @@ describe('stringToProtocolOp', () => {
     const result = stringToProtocolOp(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('padTicker', () => {
+  test('should pad the ticker string on the right side to cover the max ticker length', () => {
+    const ticker = 'LONGTICKER';
+    const fakeResult = 'LONGTICKER\u0000\u0000';
+
+    const result = padTicker(ticker);
+
+    expect(result).toBe(fakeResult);
   });
 });

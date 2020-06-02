@@ -21,7 +21,7 @@ import {
 } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { didsWithClaims, eventByIndexedArgs } from '~/harvester/queries';
+import { didsWithClaims } from '~/harvester/queries';
 import { Query } from '~/harvester/types';
 import {
   ClaimData,
@@ -41,7 +41,6 @@ import {
   tickerToString,
   valueToDid,
 } from '~/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
@@ -447,40 +446,6 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve the event id of the token creation transaction
-   *
-   * @param args.ticker - Security Token ticker
-   */
-  public async getCreationTokenEventId(args: { ticker: string }): Promise<number | null> {
-    const {
-      context: { harvesterClient },
-    } = this;
-    const { ticker } = args;
-
-    let result: ApolloQueryResult<Pick<Query, 'eventByIndexedArgs'>>;
-    try {
-      result = await harvesterClient.query<Query>(
-        eventByIndexedArgs({
-          moduleId: 'asset',
-          eventId: 'AssetCreated',
-          eventArg1: ticker + '\u0000'.repeat(MAX_TICKER_LENGTH - ticker.length),
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: `Error in harvester query: ${e.message}`,
-      });
-    }
-
-    if (result.data.eventByIndexedArgs) {
-      return result.data.eventByIndexedArgs.block_id || null;
-    }
-
-    return null;
-  }
-
-  /**
    * Retrieve all claims issued by the current identity
    */
   public async getIssuedClaims(): Promise<ClaimData[]> {
@@ -493,7 +458,7 @@ export class Polymesh {
 
     let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
     try {
-      result = await harvesterClient.query<Query>(
+      result = await harvesterClient.query<Ensured<Query, 'didsWithClaims'>>(
         didsWithClaims({
           trustedClaimIssuers: [did],
           count: 100,

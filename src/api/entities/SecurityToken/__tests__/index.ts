@@ -3,6 +3,7 @@ import sinon from 'sinon';
 
 import { modifyToken, transferTokenOwnership } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
+import { eventByIndexedArgs } from '~/harvester/queries';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
@@ -210,6 +211,56 @@ describe('SecurityToken class', () => {
       expect(result[0].value).toBe(isinValue);
       expect(result[1].value).toBe(cusipValue);
       expect(result[2].value).toBe(cinsValue);
+    });
+  });
+
+  describe('method: createdAt', () => {
+    test('should return the event identifier object of the token creation', async () => {
+      const ticker = 'SOMETICKER';
+      const blockId = 1234;
+      const eventIdx = 1;
+      const variables = {
+        moduleId: 'asset',
+        eventId: 'AssetCreated',
+        eventArg1: utilsModule.padTicker(ticker),
+      };
+      const fakeResult = { blockNumber: blockId, eventIndex: eventIdx };
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        eventByIndexedArgs: { block_id: blockId, event_idx: eventIdx },
+      });
+
+      const result = await securityToken.createdAt();
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should return null if the query result is empty', async () => {
+      const ticker = 'SOMETICKER';
+      const variables = {
+        moduleId: 'asset',
+        eventId: 'AssetCreated',
+        eventArg1: utilsModule.padTicker(ticker),
+      };
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
+      const result = await securityToken.createdAt();
+      expect(result).toBeNull();
+    });
+
+    test('should throw if the harvester query fails', async () => {
+      const ticker = 'SOMETICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      dsMockUtils.throwOnHarvesterQuery();
+
+      return expect(securityToken.createdAt()).rejects.toThrow('Error in harvester query: Error');
     });
   });
 });
