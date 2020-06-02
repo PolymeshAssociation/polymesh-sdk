@@ -4,7 +4,6 @@ import { Identity } from '~/api/entities';
 import { Context } from '~/context';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountKey } from '~/testUtils/mocks/dataSources';
-import { GraphqlQuery } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -37,7 +36,7 @@ describe('Context class', () => {
     );
   });
 
-  test('should throw an error if accessing the harvester query submodule without an active connection', async () => {
+  test('should throw an error if accessing the harvester client without an active connection', async () => {
     const newPair = {
       address: 'someAddress1',
       meta: {},
@@ -62,12 +61,12 @@ describe('Context class', () => {
       seed: 'Alice'.padEnd(32, ' '),
     });
 
-    expect(() => context.harvesterClient.query).toThrow(
+    expect(() => context.harvesterClient).toThrow(
       'Cannot perform this action without an active harvester connection'
     );
   });
 
-  test('should return an ApolloClient instance if harvester credentials are set', async () => {
+  test('should check if the harvester client is equal to the instance passed to the constructor', async () => {
     const newPair = {
       address: 'someAddress1',
       meta: {},
@@ -86,17 +85,15 @@ describe('Context class', () => {
       ),
     });
 
-    const harvesterQueryStub = dsMockUtils.createApolloQueryStub({} as GraphqlQuery<unknown>, {});
+    const harvesterClient = dsMockUtils.getHarvesterClient();
 
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
-      harvesterClient: dsMockUtils.getHarvesterClient(),
+      harvesterClient,
       seed: 'Alice'.padEnd(32, ' '),
     });
 
-    await context.harvesterClient.query({} as GraphqlQuery<unknown>);
-
-    sinon.assert.calledOnce(harvesterQueryStub);
+    expect(context.harvesterClient).toEqual(harvesterClient);
   });
 
   describe('method: create', () => {

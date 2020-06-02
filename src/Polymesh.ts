@@ -45,6 +45,7 @@ import {
 interface ConnectParamsBase {
   nodeUrl: string;
   signer?: Signer;
+  harvester?: HarvesterConfig;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -78,21 +79,6 @@ export class Polymesh {
   ): Promise<Polymesh>;
 
   static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
-
-  static async connect(
-    params: ConnectParamsBase & { accountSeed: string; harvester: HarvesterConfig }
-  ): Promise<Polymesh>;
-
-  static async connect(
-    params: ConnectParamsBase & {
-      keyring: CommonKeyring | UiKeyring;
-      harvester: HarvesterConfig;
-    }
-  ): Promise<Polymesh>;
-
-  static async connect(
-    params: ConnectParamsBase & { accountUri: string; harvester: HarvesterConfig }
-  ): Promise<Polymesh>;
 
   static async connect(params: ConnectParamsBase): Promise<Polymesh>;
 
