@@ -248,8 +248,8 @@ describe('Procedure class', () => {
         ticker,
         signingItems,
       };
-      const tx1 = polkadotMockUtils.createTxStub('asset', 'registerTicker');
-      const tx2 = polkadotMockUtils.createTxStub('identity', 'batchAcceptAuthorization');
+      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const tx2 = dsMockUtils.createTxStub('identity', 'batchAcceptAuthorization');
 
       stringToProtocolOpStub.withArgs(protocolOps[1], context).throws(); // extrinsic without a fee
 
