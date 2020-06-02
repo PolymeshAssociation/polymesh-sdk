@@ -471,7 +471,7 @@ export default {
   rpc: {
     identity: {
       isIdentityHasValidCdd: {
-        description: 'use to tell whether the given did has valid cdd claim or not',
+        description: 'use to tell whether the given ' + 'did has valid cdd claim or not',
         params: [
           {
             name: 'did',
@@ -607,7 +607,8 @@ export default {
     },
     asset: {
       canTransfer: {
-        description: 'Checks whether a transaction with given parameters can take place or not',
+        description:
+          'Checks whether a transaction with ' + 'given parameters can take place or ' + 'not',
         params: [
           {
             name: 'sender',
@@ -621,13 +622,13 @@ export default {
           },
           {
             name: 'from_did',
-            type: 'IdentityId',
-            isOptional: true,
+            type: 'Option<IdentityId>',
+            isOptional: false,
           },
           {
             name: 'to_did',
-            type: 'IdentityId',
-            isOptional: true,
+            type: 'Option<IdentityId>',
+            isOptional: false,
           },
           {
             name: 'value',
