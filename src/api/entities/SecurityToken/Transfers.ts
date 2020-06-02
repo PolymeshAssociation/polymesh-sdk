@@ -121,7 +121,7 @@ export class Transfers extends Namespace<SecurityToken> {
 
     const { from, to, amount } = args;
 
-    let fromDid = null;
+    let fromDid;
     if (from) {
       fromDid = stringToIdentityId(valueToDid(from), context);
     }
