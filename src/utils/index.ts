@@ -410,8 +410,14 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     case 82: {
       return TransferStatus.InsufficientBalance;
     }
-    case 86: {
-      return TransferStatus.InvalidReceiver;
+    case 160: {
+      return TransferStatus.InvalidSenderIdentity;
+    }
+    case 161: {
+      return TransferStatus.InvalidReceiverIdentity;
+    }
+    case 162: {
+      return TransferStatus.ComplianceFailure;
     }
     case 164: {
       return TransferStatus.FundsLimitReached;

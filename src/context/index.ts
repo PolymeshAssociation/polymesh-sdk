@@ -51,7 +51,7 @@ export class Context {
 
   private currentIdentity?: Identity;
 
-  private _harvesterClient?: ApolloClient<NormalizedCacheObject>;
+  private _harvesterClient: ApolloClient<NormalizedCacheObject> | null;
 
   /**
    * @hidden
@@ -59,9 +59,7 @@ export class Context {
   private constructor(params: ConstructorParams) {
     const { polymeshApi, harvesterClient, keyring, pair } = params;
 
-    if (harvesterClient) {
-      this._harvesterClient = harvesterClient;
-    }
+    this._harvesterClient = harvesterClient;
 
     this.polymeshApi = new Proxy(polymeshApi, {
       get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
