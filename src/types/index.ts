@@ -269,7 +269,9 @@ export enum TransferStatus {
   Failure = 'Failure',
   Success = 'Success',
   InsufficientBalance = 'InsufficientBalance',
-  InvalidReceiver = 'InvalidReceiver',
+  InvalidSenderIdentity = 'InvalidSenderIdentity',
+  InvalidReceiverIdentity = 'InvalidReceiverIdentity',
+  ComplianceFailure = 'ComplianceFailure',
   FundsLimitReached = 'FundsLimitReached',
 }
 
