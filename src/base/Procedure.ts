@@ -198,11 +198,21 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       fee = null,
       resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
       isCritical = true,
-      signer = this.context.getCurrentPair(),
     } = options;
+    let { signer } = options;
     const postTransactionValues = resolvers.map(
       resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
+
+    if (!signer) {
+      const currentPair = this.context.getCurrentPair();
+      const { isLocked, address } = currentPair;
+      /*
+       * if the keyring pair is locked, it means it most likely got added from the polkadot extension
+       * with a custom signer. This means we have to pass just the address to signAndSend
+       */
+      signer = isLocked ? address : currentPair;
+    }
 
     const transaction = {
       tx: tx as PolymeshTx<unknown[]>,
