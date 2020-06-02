@@ -1773,9 +1773,17 @@ describe('u8ToTransferStatus', () => {
 
     expect(result).toBe(TransferStatus.InsufficientBalance);
 
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(86));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(160));
 
-    expect(result).toBe(TransferStatus.InvalidReceiver);
+    expect(result).toBe(TransferStatus.InvalidSenderIdentity);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(161));
+
+    expect(result).toBe(TransferStatus.InvalidReceiverIdentity);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(162));
+
+    expect(result).toBe(TransferStatus.ComplianceFailure);
 
     result = u8ToTransferStatus(dsMockUtils.createMockU8(164));
 
