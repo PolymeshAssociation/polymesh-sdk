@@ -1,4 +1,5 @@
 import { Keyring } from '@polkadot/api';
+import { IKeyringPair } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities';
@@ -291,6 +292,10 @@ export type CommonKeyring = Pick<Keyring, 'getPair' | 'getPairs' | 'addFromSeed'
 
 export interface UiKeyring {
   keyring: CommonKeyring;
+}
+
+export interface KeyringPair extends IKeyringPair {
+  isLocked: boolean;
 }
 
 export * from '~/api/entities/types';
