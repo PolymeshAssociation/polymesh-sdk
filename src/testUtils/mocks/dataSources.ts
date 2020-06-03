@@ -18,7 +18,7 @@ import {
   Moment,
   RefCount,
 } from '@polkadot/types/interfaces';
-import { Codec, IKeyringPair, ISubmittableResult, Registry } from '@polkadot/types/types';
+import { Codec, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { stringToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
@@ -67,6 +67,7 @@ import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
 import { Context } from '~/context';
 import { Mocked } from '~/testUtils/types';
+import { KeyringPair } from '~/types';
 import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
 
@@ -361,7 +362,8 @@ function configureContext(opts: ContextOptions): void {
   const currentPair = opts.withSeed
     ? ({
         address: '0xdummy',
-      } as IKeyringPair)
+        isLocked: false,
+      } as KeyringPair)
     : undefined;
   const getCurrentPair = sinon.stub();
   opts.withSeed
@@ -377,7 +379,7 @@ function configureContext(opts: ContextOptions): void {
     accountBalance: sinon.stub().resolves(opts.balance),
     getAccounts: sinon.stub().returns([]),
     setPair: sinon.stub().callsFake(address => {
-      contextInstance.currentPair = { address } as IKeyringPair;
+      contextInstance.currentPair = { address } as KeyringPair;
     }),
     polymeshApi: mockInstanceContainer.apiInstance,
     harvesterClient: mockInstanceContainer.apolloInstance,

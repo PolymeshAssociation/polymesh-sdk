@@ -1,6 +1,5 @@
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { AccountInfo } from '@polkadot/types/interfaces';
-import { IKeyringPair } from '@polkadot/types/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
@@ -9,7 +8,7 @@ import { DidRecord, IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
-import { CommonKeyring, ErrorCode, SubCallback, UnsubCallback } from '~/types';
+import { CommonKeyring, ErrorCode, KeyringPair,SubCallback, UnsubCallback } from '~/types';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -19,7 +18,7 @@ import {
 } from '~/utils';
 
 interface SignerData {
-  currentPair: IKeyringPair;
+  currentPair: KeyringPair;
   did: IdentityId;
 }
 
@@ -47,7 +46,7 @@ export class Context {
 
   public polymeshApi: ApiPromise;
 
-  public currentPair?: IKeyringPair;
+  public currentPair?: KeyringPair;
 
   private currentIdentity?: Identity;
 
@@ -117,7 +116,7 @@ export class Context {
     const { polymeshApi, harvesterClient, seed, keyring: passedKeyring, uri } = params;
 
     let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
-    let currentPair: IKeyringPair | undefined;
+    let currentPair: KeyringPair | undefined;
 
     if (passedKeyring) {
       keyring = passedKeyring;
@@ -280,7 +279,7 @@ export class Context {
    *
    * @throws if there is no account associated to the SDK instance
    */
-  public getCurrentPair(): IKeyringPair {
+  public getCurrentPair(): KeyringPair {
     const { currentPair } = this;
     if (!currentPair) {
       throw new PolymeshError({
