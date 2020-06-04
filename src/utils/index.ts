@@ -410,6 +410,24 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     case 82: {
       return TransferStatus.InsufficientBalance;
     }
+    case 83: {
+      return TransferStatus.InsufficientAllowance;
+    }
+    case 84: {
+      return TransferStatus.TransfersHalted;
+    }
+    case 85: {
+      return TransferStatus.FundsLocked;
+    }
+    case 86: {
+      return TransferStatus.InvalidSenderAddress;
+    }
+    case 87: {
+      return TransferStatus.InvalidReceiverAddress;
+    }
+    case 88: {
+      return TransferStatus.InvalidOperator;
+    }
     case 160: {
       return TransferStatus.InvalidSenderIdentity;
     }
@@ -419,8 +437,17 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     case 162: {
       return TransferStatus.ComplianceFailure;
     }
+    case 163: {
+      return TransferStatus.SmartExtensionFailure;
+    }
     case 164: {
       return TransferStatus.InvalidGranularity;
+    }
+    case 165: {
+      return TransferStatus.VolumeLimitReached;
+    }
+    case 166: {
+      return TransferStatus.BlacklistedTransaction;
     }
     case 168: {
       return TransferStatus.FundsLimitReached;
