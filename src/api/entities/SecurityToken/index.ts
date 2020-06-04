@@ -191,7 +191,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the event identifier of the token creation transaction
+   * Retrieve the identifier data (block number and event index) of the event that was emitted when the token was created
+   *
+   * @note This data is harvested from the chain and stored in a database, so there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async createdAt(): Promise<EventIdentifier | null> {
     const {
@@ -215,8 +217,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       });
     }
 
-    // TODO remove null check once types fixed
     if (result.data.eventByIndexedArgs) {
+      // TODO remove null check once types fixed
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
         blockNumber: result.data.eventByIndexedArgs.block_id!,
