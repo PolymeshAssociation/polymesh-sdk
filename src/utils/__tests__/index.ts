@@ -1787,6 +1787,10 @@ describe('u8ToTransferStatus', () => {
 
     result = u8ToTransferStatus(dsMockUtils.createMockU8(164));
 
+    expect(result).toBe(TransferStatus.InvalidGranularity);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(168));
+
     expect(result).toBe(TransferStatus.FundsLimitReached);
 
     const fakeStatusCode = 1;

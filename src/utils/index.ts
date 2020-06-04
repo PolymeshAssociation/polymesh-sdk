@@ -420,6 +420,9 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
       return TransferStatus.ComplianceFailure;
     }
     case 164: {
+      return TransferStatus.InvalidGranularity;
+    }
+    case 168: {
       return TransferStatus.FundsLimitReached;
     }
     case 80: {
