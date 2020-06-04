@@ -13,10 +13,10 @@ export function didsWithClaims(
 ): GraphqlQuery<QueryDidsWithClaimsArgs> {
   const query = gql`
     query DidsWithClaimsQuery(
-      $dids: [String]
+      $dids: [String!]
       $scope: String
-      $trustedClaimIssuers: [String]
-      $claimTypes: [String]
+      $trustedClaimIssuers: [String!]
+      $claimTypes: [String!]
       $count: Int
       $skip: Int
     ) {

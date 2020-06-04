@@ -3,6 +3,7 @@ import { Signer } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloClient, ApolloQueryResult } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
+import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
@@ -27,6 +28,7 @@ import {
   CommonKeyring,
   Ensured,
   ErrorCode,
+  HarvesterConfig,
   SubCallback,
   UiKeyring,
   UnsubCallback,
@@ -39,11 +41,11 @@ import {
   tickerToString,
   valueToDid,
 } from '~/utils';
-import { HARVESTER_ENDPOINT } from '~/utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
   signer?: Signer;
+  harvester?: HarvesterConfig;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -88,11 +90,12 @@ export class Polymesh {
       accountSeed?: string;
       keyring?: CommonKeyring | UiKeyring;
       accountUri?: string;
+      harvester?: HarvesterConfig;
     }
   ): Promise<Polymesh> {
-    const { nodeUrl, accountSeed, keyring, accountUri, signer } = params;
+    const { nodeUrl, accountSeed, keyring, accountUri, signer, harvester } = params;
     let polymeshApi: ApiPromise;
-    let harvesterClient: ApolloClient<NormalizedCacheObject>;
+    let harvesterClient: ApolloClient<NormalizedCacheObject> | null = null;
 
     try {
       const { types, rpc } = polymesh;
@@ -103,14 +106,25 @@ export class Polymesh {
         rpc,
       });
 
-      harvesterClient = new ApolloClient({
-        link: ApolloLink.from([
-          new HttpLink({
-            uri: HARVESTER_ENDPOINT,
-          }),
-        ]),
-        cache: new InMemoryCache(),
-      });
+      if (harvester) {
+        harvesterClient = new ApolloClient({
+          link: setContext((_, { headers }) => {
+            return {
+              headers: {
+                ...headers,
+                'x-api-key': harvester.key,
+              },
+            };
+          }).concat(
+            ApolloLink.from([
+              new HttpLink({
+                uri: harvester.link,
+              }),
+            ])
+          ),
+          cache: new InMemoryCache(),
+        });
+      }
 
       if (signer) {
         polymeshApi.setSigner(signer);

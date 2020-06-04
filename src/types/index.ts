@@ -1,4 +1,5 @@
 import { Keyring } from '@polkadot/api';
+import { IKeyringPair } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities';
@@ -297,10 +298,19 @@ export type UnsubCallback = () => void;
 
 export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
 
+export interface HarvesterConfig {
+  link: string;
+  key: string;
+}
+
 export type CommonKeyring = Pick<Keyring, 'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri'>;
 
 export interface UiKeyring {
   keyring: CommonKeyring;
+}
+
+export interface KeyringPair extends IKeyringPair {
+  isLocked: boolean;
 }
 
 export * from '~/api/entities/types';

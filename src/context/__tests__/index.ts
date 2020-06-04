@@ -36,6 +36,66 @@ describe('Context class', () => {
     );
   });
 
+  test('should throw an error if accessing the harvester client without an active connection', async () => {
+    const newPair = {
+      address: 'someAddress1',
+      meta: {},
+      publicKey: 'publicKey',
+    };
+    dsMockUtils.configureMocks({
+      keyringOptions: {
+        addFromSeed: newPair,
+      },
+    });
+    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+      returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockLinkedKeyInfo({
+          Unique: dsMockUtils.createMockIdentityId('someDid'),
+        })
+      ),
+    });
+
+    const context = await Context.create({
+      polymeshApi: dsMockUtils.getApiInstance(),
+      harvesterClient: null,
+      seed: 'Alice'.padEnd(32, ' '),
+    });
+
+    expect(() => context.harvesterClient).toThrow(
+      'Cannot perform this action without an active harvester connection'
+    );
+  });
+
+  test('should check if the harvester client is equal to the instance passed to the constructor', async () => {
+    const newPair = {
+      address: 'someAddress1',
+      meta: {},
+      publicKey: 'publicKey',
+    };
+    dsMockUtils.configureMocks({
+      keyringOptions: {
+        addFromSeed: newPair,
+      },
+    });
+    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+      returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockLinkedKeyInfo({
+          Unique: dsMockUtils.createMockIdentityId('someDid'),
+        })
+      ),
+    });
+
+    const harvesterClient = dsMockUtils.getHarvesterClient();
+
+    const context = await Context.create({
+      polymeshApi: dsMockUtils.getApiInstance(),
+      harvesterClient,
+      seed: 'Alice'.padEnd(32, ' '),
+    });
+
+    expect(context.harvesterClient).toEqual(harvesterClient);
+  });
+
   describe('method: create', () => {
     test('should throw if seed parameter is not a 32 length string', async () => {
       const context = Context.create({
