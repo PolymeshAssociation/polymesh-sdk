@@ -9,13 +9,13 @@ export const DUMMY_ACCOUNT_ID = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQ
 export const HARVESTER_ENDPOINT =
   'https://24pha89jxg.execute-api.us-east-1.amazonaws.com/dev/graphql';
 export const MAX_BATCH_ELEMENTS = {
-  [TxTags.asset.BatchIssue]: 500,
-  [TxTags.asset.AddDocuments]: 500,
-  [TxTags.asset.RemoveDocuments]: 500,
-  [TxTags.identity.BatchAcceptAuthorization]: 500,
-  [TxTags.identity.BatchRemoveAuthorization]: 500,
-  [TxTags.identity.AddClaimsBatch]: 500,
-  [TxTags.identity.RevokeClaimsBatch]: 500,
-  [TxTags.complianceManager.RemoveDefaultTrustedClaimIssuersBatch]: 500,
-  [TxTags.complianceManager.AddDefaultTrustedClaimIssuersBatch]: 500,
+  [TxTags.asset.BatchIssue]: 200,
+  [TxTags.asset.AddDocuments]: 20,
+  [TxTags.asset.RemoveDocuments]: 20,
+  [TxTags.identity.BatchAcceptAuthorization]: 200,
+  [TxTags.identity.BatchRemoveAuthorization]: 200,
+  [TxTags.identity.AddClaimsBatch]: 200,
+  [TxTags.identity.RevokeClaimsBatch]: 200,
+  [TxTags.complianceManager.RemoveDefaultTrustedClaimIssuersBatch]: 200,
+  [TxTags.complianceManager.AddDefaultTrustedClaimIssuersBatch]: 200,
 };
