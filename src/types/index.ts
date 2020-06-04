@@ -289,6 +289,11 @@ export type UnsubCallback = () => void;
 
 export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
 
+export interface HarvesterConfig {
+  link: string;
+  key: string;
+}
+
 export type CommonKeyring = Pick<Keyring, 'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri'>;
 
 export interface UiKeyring {
