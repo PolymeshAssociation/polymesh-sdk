@@ -198,7 +198,14 @@ describe('issueTokens procedure', () => {
 
     const result = await prepareIssueTokens.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, investors, balances);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      { batchSize: args.issuanceData.length },
+      rawTicker,
+      investors,
+      balances
+    );
     expect(result.ticker).toBe(ticker);
   });
 });

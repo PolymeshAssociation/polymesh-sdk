@@ -8,7 +8,7 @@ import { DidRecord, IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
-import { CommonKeyring, ErrorCode, KeyringPair,SubCallback, UnsubCallback } from '~/types';
+import { CommonKeyring, ErrorCode, KeyringPair, SubCallback, UnsubCallback } from '~/types';
 import {
   balanceToBigNumber,
   identityIdToString,
