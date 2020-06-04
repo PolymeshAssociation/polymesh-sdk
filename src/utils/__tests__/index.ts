@@ -1774,6 +1774,30 @@ describe('u8ToTransferStatus', () => {
 
     expect(result).toBe(TransferStatus.InsufficientBalance);
 
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(83));
+
+    expect(result).toBe(TransferStatus.InsufficientAllowance);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(84));
+
+    expect(result).toBe(TransferStatus.TransfersHalted);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(85));
+
+    expect(result).toBe(TransferStatus.FundsLocked);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(86));
+
+    expect(result).toBe(TransferStatus.InvalidSenderAddress);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(87));
+
+    expect(result).toBe(TransferStatus.InvalidReceiverAddress);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(88));
+
+    expect(result).toBe(TransferStatus.InvalidOperator);
+
     result = u8ToTransferStatus(dsMockUtils.createMockU8(160));
 
     expect(result).toBe(TransferStatus.InvalidSenderIdentity);
@@ -1786,7 +1810,23 @@ describe('u8ToTransferStatus', () => {
 
     expect(result).toBe(TransferStatus.ComplianceFailure);
 
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(163));
+
+    expect(result).toBe(TransferStatus.SmartExtensionFailure);
+
     result = u8ToTransferStatus(dsMockUtils.createMockU8(164));
+
+    expect(result).toBe(TransferStatus.InvalidGranularity);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(165));
+
+    expect(result).toBe(TransferStatus.VolumeLimitReached);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(166));
+
+    expect(result).toBe(TransferStatus.BlacklistedTransaction);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(168));
 
     expect(result).toBe(TransferStatus.FundsLimitReached);
 

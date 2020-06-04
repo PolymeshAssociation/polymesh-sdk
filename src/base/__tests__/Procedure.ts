@@ -7,7 +7,7 @@ import * as baseModule from '~/base';
 import { Context } from '~/context';
 import { PosRatio, ProtocolOp } from '~/polkadot';
 import { dsMockUtils } from '~/testUtils/mocks';
-import { Role } from '~/types';
+import { KeyringPair, Role } from '~/types';
 import { MaybePostTransactionValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
@@ -259,6 +259,7 @@ describe('Procedure class', () => {
             async (): Promise<number> => resolvedNum,
             async (): Promise<string> => resolvedStr
           ),
+          signer: {} as KeyringPair,
         },
         ticker
       );
@@ -268,6 +269,35 @@ describe('Procedure class', () => {
 
       expect(num.value).toBe(resolvedNum);
       expect(str.value).toBe(resolvedStr);
+    });
+
+    test('should use the current pair as a default signer', async () => {
+      const ticker = 'MY_TOKEN';
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
+
+      const proc = new Procedure(async () => undefined);
+      proc.context = context;
+
+      proc.addTransaction(tx, {}, ticker);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((proc as any).transactions[0].signer).toBe(context.getCurrentPair());
+    });
+
+    test("should use the current pair's address as a default signer if the pair is locked", async () => {
+      const ticker = 'MY_TOKEN';
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
+
+      const proc = new Procedure(async () => undefined);
+      proc.context = context;
+
+      const pair = context.getCurrentPair();
+      pair.isLocked = true;
+
+      proc.addTransaction(tx, {}, ticker);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((proc as any).transactions[0].signer).toBe(pair.address);
     });
   });
 

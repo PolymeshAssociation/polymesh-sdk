@@ -1,4 +1,5 @@
 import { Keyring } from '@polkadot/api';
+import { IKeyringPair } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities';
@@ -267,13 +268,23 @@ export interface IssuanceData {
 }
 
 export enum TransferStatus {
-  Failure = 'Failure',
-  Success = 'Success',
-  InsufficientBalance = 'InsufficientBalance',
-  InvalidSenderIdentity = 'InvalidSenderIdentity',
-  InvalidReceiverIdentity = 'InvalidReceiverIdentity',
-  ComplianceFailure = 'ComplianceFailure',
-  FundsLimitReached = 'FundsLimitReached',
+  Failure = 'Failure', // 80
+  Success = 'Success', // 81
+  InsufficientBalance = 'InsufficientBalance', // 82
+  InsufficientAllowance = 'InsufficientAllowance', // 83
+  TransfersHalted = 'TransfersHalted', // 84
+  FundsLocked = 'FundsLocked', // 85
+  InvalidSenderAddress = 'InvalidSenderAddress', // 86
+  InvalidReceiverAddress = 'InvalidReceiverAddress', // 87
+  InvalidOperator = 'InvalidOperator', // 88
+  InvalidSenderIdentity = 'InvalidSenderIdentity', // 160
+  InvalidReceiverIdentity = 'InvalidReceiverIdentity', // 161
+  ComplianceFailure = 'ComplianceFailure', // 162
+  SmartExtensionFailure = 'SmartExtensionFailure', // 163
+  InvalidGranularity = 'InvalidGranularity', // 164
+  VolumeLimitReached = 'VolumeLimitReached', // 165
+  BlacklistedTransaction = 'BlackListedTransaction', // 166
+  FundsLimitReached = 'FundsLimitReached', // 168
 }
 
 export interface ClaimTargets {
@@ -302,6 +313,10 @@ export interface UiKeyring {
 export interface EventIdentifier {
   blockNumber: number;
   eventIndex: number;
+}
+
+export interface KeyringPair extends IKeyringPair {
+  isLocked: boolean;
 }
 
 export * from '~/api/entities/types';
