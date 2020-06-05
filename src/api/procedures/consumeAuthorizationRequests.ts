@@ -1,6 +1,10 @@
+import { chunk } from 'lodash';
+
 import { AuthorizationRequest } from '~/api/entities';
 import { Procedure } from '~/base';
+import { TxTags } from '~/polkadot';
 import { authTargetToAuthIdentifier, numberToU64 } from '~/utils';
+import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 export interface ConsumeParams {
   accept: boolean;
@@ -32,12 +36,28 @@ export async function prepareConsumeAuthorizationRequests(
 
   if (accept) {
     const requestIds = liveRequests.map(({ authId }) => numberToU64(authId, context));
-    this.addTransaction(tx.identity.batchAcceptAuthorization, {}, requestIds);
+    chunk(requestIds, MAX_BATCH_ELEMENTS[TxTags.identity.BatchAcceptAuthorization]).forEach(
+      idChunk => {
+        this.addTransaction(
+          tx.identity.batchAcceptAuthorization,
+          { batchSize: idChunk.length },
+          idChunk
+        );
+      }
+    );
   } else {
     const authIdentifiers = liveRequests.map(({ authId, targetIdentity }) =>
       authTargetToAuthIdentifier({ authId, did: targetIdentity.did }, context)
     );
-    this.addTransaction(tx.identity.batchRemoveAuthorization, {}, authIdentifiers);
+    chunk(authIdentifiers, MAX_BATCH_ELEMENTS[TxTags.identity.BatchRemoveAuthorization]).forEach(
+      identifierChunk => {
+        this.addTransaction(
+          tx.identity.batchRemoveAuthorization,
+          { batchSize: identifierChunk.length },
+          identifierChunk
+        );
+      }
+    );
   }
 }
 

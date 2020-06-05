@@ -240,6 +240,38 @@ describe('Procedure class', () => {
           .toFormat()}`
       );
     });
+
+    test('should throw an error if there is a batch transaction in the queue with no batch size', async () => {
+      const ticker = 'MY_TOKEN';
+      const signingItems = ['0x1', '0x2'];
+      const procArgs = {
+        ticker,
+        signingItems,
+      };
+      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const tx2 = dsMockUtils.createTxStub('identity', 'batchAcceptAuthorization');
+
+      stringToProtocolOpStub.withArgs(protocolOps[1], context).throws(); // extrinsic without a fee
+
+      const returnValue = 'good';
+
+      const func = async function(
+        this: Procedure<typeof procArgs, string>,
+        args: typeof procArgs
+      ): Promise<string> {
+        this.addTransaction(tx1, {}, args.ticker);
+
+        this.addTransaction(tx2, {}, args.signingItems);
+
+        return returnValue;
+      };
+
+      const proc = new Procedure(func);
+
+      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+        'Did not set batch size for batch transaction. Please report this error to the Polymath team'
+      );
+    });
   });
 
   describe('method: addTransaction', () => {

@@ -1,9 +1,11 @@
-import { difference } from 'lodash';
+import { chunk, difference } from 'lodash';
 
 import { Identity, SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
+import { TxTags } from '~/polkadot';
 import { ErrorCode, Role, RoleType } from '~/types';
 import { identityIdToString, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
+import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 export interface SetTokenTrustedClaimIssuersParams {
   claimIssuerIdentities: (string | Identity)[];
@@ -57,21 +59,31 @@ export async function prepareSetTokenTrustedClaimIssuers(
   }
 
   if (rawCurrentClaimIssuers.length) {
-    this.addTransaction(
-      tx.complianceManager.removeDefaultTrustedClaimIssuersBatch,
-      {},
-      rawTicker,
-      rawCurrentClaimIssuers
-    );
+    chunk(
+      rawCurrentClaimIssuers,
+      MAX_BATCH_ELEMENTS[TxTags.complianceManager.RemoveDefaultTrustedClaimIssuersBatch]
+    ).forEach(issuersChunk => {
+      this.addTransaction(
+        tx.complianceManager.removeDefaultTrustedClaimIssuersBatch,
+        { batchSize: issuersChunk.length },
+        rawTicker,
+        issuersChunk
+      );
+    });
   }
 
   if (rawNewClaimIssuers.length) {
-    this.addTransaction(
-      tx.complianceManager.addDefaultTrustedClaimIssuersBatch,
-      {},
-      rawTicker,
-      rawNewClaimIssuers
-    );
+    chunk(
+      rawNewClaimIssuers,
+      MAX_BATCH_ELEMENTS[TxTags.complianceManager.AddDefaultTrustedClaimIssuersBatch]
+    ).forEach(issuersChunk => {
+      this.addTransaction(
+        tx.complianceManager.addDefaultTrustedClaimIssuersBatch,
+        { batchSize: issuersChunk.length },
+        rawTicker,
+        issuersChunk
+      );
+    });
   }
 
   return new SecurityToken({ ticker }, context);

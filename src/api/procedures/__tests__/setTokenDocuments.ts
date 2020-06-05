@@ -144,14 +144,14 @@ describe('setTokenDocuments procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
       removeDocumentsTransaction,
-      {},
+      { batchSize: 1 },
       rawTicker,
       [links[0].link_id]
     );
     sinon.assert.calledWith(
       addTransactionStub.secondCall,
       addDocumentsTransaction,
-      {},
+      { batchSize: rawDocuments.length },
       rawTicker,
       rawDocuments
     );
@@ -170,7 +170,7 @@ describe('setTokenDocuments procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
       addDocumentsTransaction,
-      {},
+      { batchSize: rawDocuments.length },
       rawTicker,
       rawDocuments
     );
@@ -187,7 +187,7 @@ describe('setTokenDocuments procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
       removeDocumentsTransaction,
-      {},
+      { batchSize: 1 },
       rawTicker,
       [links[0].link_id]
     );
