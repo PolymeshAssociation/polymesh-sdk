@@ -458,7 +458,7 @@ export class Polymesh {
 
     let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
     try {
-      result = await harvesterClient.query<Query>(
+      result = await harvesterClient.query<Ensured<Query, 'didsWithClaims'>>(
         didsWithClaims({
           trustedClaimIssuers: [did],
           count: 100,

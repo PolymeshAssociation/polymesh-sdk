@@ -1,6 +1,6 @@
 import gql from 'graphql-tag';
 
-import { QueryDidsWithClaimsArgs } from '~/harvester/types';
+import { QueryDidsWithClaimsArgs, QueryEventsByIndexedArgsArgs } from '~/harvester/types';
 import { GraphqlQuery } from '~/types/internal';
 
 /**
@@ -39,6 +39,42 @@ export function didsWithClaims(
           jurisdiction
           scope
         }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get a single event by any of its indexed arguments
+ */
+export function eventByIndexedArgs(
+  variables: QueryEventsByIndexedArgsArgs
+): GraphqlQuery<QueryEventsByIndexedArgsArgs> {
+  const query = gql`
+    query EventByIndexedArgsQuery(
+      $moduleId: String!
+      $eventId: String!
+      $eventArg0: String
+      $eventArg1: String
+      $eventArg2: String
+    ) {
+      eventByIndexedArgs(
+        moduleId: $moduleId
+        eventId: $eventId
+        eventArg0: $eventArg0
+        eventArg1: $eventArg1
+        eventArg2: $eventArg2
+      ) {
+        block_id
+        event_idx
+        extrinsic_idx
       }
     }
   `;

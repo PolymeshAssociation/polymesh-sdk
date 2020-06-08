@@ -5,7 +5,7 @@ import { stringToU8a, u8aConcat, u8aFixLength, u8aToString } from '@polkadot/uti
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { isEqual } from 'lodash';
+import { isEqual, padEnd } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,
@@ -997,4 +997,11 @@ export function findEventRecord(
   }
 
   return eventRecord;
+}
+
+/**
+ * @hidden
+ */
+export function padTicker(ticker: string): string {
+  return padEnd(ticker, MAX_TICKER_LENGTH, '\u0000');
 }

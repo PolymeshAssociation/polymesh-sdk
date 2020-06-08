@@ -584,6 +584,10 @@ describe('Polymesh Class', () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
+        harvester: {
+          link: 'someLink',
+          key: 'someKey',
+        },
       });
 
       dsMockUtils.createApolloQueryStub(
@@ -604,6 +608,10 @@ describe('Polymesh Class', () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
+        harvester: {
+          link: 'someLink',
+          key: 'someKey',
+        },
       });
 
       dsMockUtils.throwOnHarvesterQuery();

@@ -256,6 +256,7 @@ export enum ErrorCode {
   InvalidUuid = 'InvalidUuid',
   ValidationError = 'ValidationError',
   NotAuthorized = 'NotAuthorized',
+  MiddlewareError = 'MiddlewareError',
 }
 
 /**
@@ -307,6 +308,11 @@ export type CommonKeyring = Pick<Keyring, 'getPair' | 'getPairs' | 'addFromSeed'
 
 export interface UiKeyring {
   keyring: CommonKeyring;
+}
+
+export interface EventIdentifier {
+  blockNumber: number;
+  eventIndex: number;
 }
 
 export interface KeyringPair extends IKeyringPair {
