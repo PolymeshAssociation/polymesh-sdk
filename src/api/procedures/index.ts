@@ -12,7 +12,6 @@ export {
 } from './setTokenTrustedClaimIssuers';
 export { setTokenRules, SetTokenRulesParams } from './setTokenRules';
 export { transferPolyX, TransferPolyXParams } from './transferPolyX';
-export { addClaims, AddClaimsParams } from './addClaims';
-export { revokeClaims, RevokeClaimsParams } from './revokeClaims';
+export { modifyClaims, ModifyClaimsParams } from './modifyClaims';
 export { togglePauseRules, TogglePauseRulesParams } from './togglePauseRules';
 export { transferToken, TransferTokenParams } from './transferToken';

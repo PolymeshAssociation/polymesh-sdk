@@ -192,10 +192,22 @@ export enum ClaimType {
   NoData = 'NoData',
 }
 
-export type Claim =
+export type ScopedClaim =
   | { type: ClaimType.Jurisdiction; name: string; scope: string }
-  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string }
-  | { type: ClaimType.NoData | ClaimType.CustomerDueDiligence };
+  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string };
+
+export type UnscopedClaim = { type: ClaimType.NoData | ClaimType.CustomerDueDiligence };
+
+export type Claim = ScopedClaim | UnscopedClaim;
+
+/**
+ * @hidden
+ */
+export function isScopedClaim(claim: Claim): claim is ScopedClaim {
+  const { type } = claim;
+
+  return type !== ClaimType.NoData && type !== ClaimType.CustomerDueDiligence;
+}
 
 export type ClaimData = {
   target: Identity;
