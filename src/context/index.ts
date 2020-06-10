@@ -3,12 +3,18 @@ import { AccountInfo } from '@polkadot/types/interfaces';
 import stringToU8a from '@polkadot/util/string/toU8a';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
-import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
-import { CommonKeyring, ErrorCode, KeyringPair, SubCallback, UnsubCallback } from '~/types';
+import {
+  AccountBalance,
+  CommonKeyring,
+  ErrorCode,
+  KeyringPair,
+  SubCallback,
+  UnsubCallback,
+} from '~/types';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -209,10 +215,10 @@ export class Context {
     this.currentIdentity = new Identity({ did: identityIdToString(did) }, this);
   }
 
-  public accountBalance(accountId?: string): Promise<BigNumber>;
+  public accountBalance(accountId?: string): Promise<AccountBalance>;
   public accountBalance(
     accountId: string | undefined,
-    callback: SubCallback<BigNumber>
+    callback: SubCallback<AccountBalance>
   ): Promise<UnsubCallback>;
 
   /**
@@ -222,8 +228,8 @@ export class Context {
    */
   public async accountBalance(
     accountId?: string,
-    callback?: SubCallback<BigNumber>
-  ): Promise<BigNumber | UnsubCallback> {
+    callback?: SubCallback<AccountBalance>
+  ): Promise<AccountBalance | UnsubCallback> {
     const {
       currentPair,
       polymeshApi: {
@@ -243,7 +249,9 @@ export class Context {
       });
     }
 
-    const assembleResult = ({ data: { free } }: AccountInfo): BigNumber => balanceToBigNumber(free);
+    const assembleResult = ({ data: { free, miscFrozen } }: AccountInfo): AccountBalance => {
+      return { free: balanceToBigNumber(free), locked: balanceToBigNumber(miscFrozen) };
+    };
 
     if (callback) {
       return system.account(address, info => {

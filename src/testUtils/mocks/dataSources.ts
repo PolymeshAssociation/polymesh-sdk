@@ -67,7 +67,7 @@ import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
 import { Context } from '~/context';
 import { Mocked } from '~/testUtils/types';
-import { KeyringPair } from '~/types';
+import { AccountBalance, KeyringPair } from '~/types';
 import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
 
@@ -153,7 +153,7 @@ interface TxMockData {
 interface ContextOptions {
   did?: string;
   withSeed?: boolean;
-  balance?: BigNumber;
+  balance?: AccountBalance;
   hasRoles?: boolean;
   validCdd?: boolean;
   tokenBalance?: BigNumber;
@@ -328,7 +328,10 @@ let queryMultiStub = sinon.stub();
 const defaultContextOptions: ContextOptions = {
   did: 'someDid',
   withSeed: true,
-  balance: new BigNumber(100),
+  balance: {
+    free: new BigNumber(100),
+    locked: new BigNumber(10),
+  },
   hasRoles: true,
   validCdd: true,
   tokenBalance: new BigNumber(1000),
@@ -866,7 +869,7 @@ export function throwOnApiCreation(): void {
  *
  * @param balance - new account balance
  */
-export function setContextAccountBalance(balance: BigNumber): void {
+export function setContextAccountBalance(balance: AccountBalance): void {
   mockInstanceContainer.contextInstance.accountBalance.returns(balance);
 }
 

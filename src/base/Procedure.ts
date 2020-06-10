@@ -161,10 +161,10 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
 
     const fees = reduce(transactionsWithFees, (sum, { fee }) => sum.plus(fee), new BigNumber(0));
 
-    if (currentBalance.lt(fees)) {
+    if (currentBalance.free.lt(fees)) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: `Not enough POLYX balance to pay for this procedure's fees. Balance: ${currentBalance.toFormat()}, fees: ${fees.toFormat()}`,
+        message: `Not enough POLYX balance to pay for this procedure's fees. Balance: ${currentBalance.free.toFormat()}, fees: ${fees.toFormat()}`,
       });
     }
 

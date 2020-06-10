@@ -34,7 +34,9 @@ describe('reserveTicker procedure', () => {
   let reservation: PostTransactionValue<TickerReservation>;
 
   beforeAll(() => {
-    dsMockUtils.initMocks({ contextOptions: { balance: new BigNumber(1000) } });
+    dsMockUtils.initMocks({
+      contextOptions: { balance: { free: new BigNumber(1000), locked: new BigNumber(0) } },
+    });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks({ identityOptions: { did: 'someOtherDid' } });
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');

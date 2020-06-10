@@ -331,4 +331,9 @@ export interface KeyringPair extends IKeyringPair {
   isLocked: boolean;
 }
 
+export interface AccountBalance {
+  free: BigNumber;
+  locked: BigNumber;
+}
+
 export * from '~/api/entities/types';

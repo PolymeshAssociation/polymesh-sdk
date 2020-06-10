@@ -32,7 +32,9 @@ describe('setTokenDocuments procedure', () => {
   let linkIds: u64[];
 
   beforeAll(() => {
-    dsMockUtils.initMocks({ contextOptions: { balance: new BigNumber(500) } });
+    dsMockUtils.initMocks({
+      contextOptions: { balance: { free: new BigNumber(500), locked: new BigNumber(0) } },
+    });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');

@@ -5,7 +5,6 @@ import { ApolloClient, ApolloQueryResult } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
-import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
@@ -22,6 +21,7 @@ import { Context } from '~/context';
 import { didsWithClaims } from '~/harvester/queries';
 import { Query } from '~/harvester/types';
 import {
+  AccountBalance,
   ClaimData,
   CommonKeyring,
   Ensured,
@@ -191,27 +191,27 @@ export class Polymesh {
   }
   */
 
-  public getAccountBalance(args?: { accountId: string }): Promise<BigNumber>;
-  public getAccountBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+  public getAccountBalance(args?: { accountId: string }): Promise<AccountBalance>;
+  public getAccountBalance(callback: SubCallback<AccountBalance>): Promise<UnsubCallback>;
   public getAccountBalance(
     args: { accountId: string },
-    callback: SubCallback<BigNumber>
+    callback: SubCallback<AccountBalance>
   ): Promise<UnsubCallback>;
 
   /**
-   * Get the free POLYX balance of an account
+   * Get the free/lock POLYX balance of an account
    *
    * @param args.accountId - defaults to the current account
    *
    * @note can be subscribed to
    */
   public getAccountBalance(
-    args?: { accountId: string } | SubCallback<BigNumber>,
-    callback?: SubCallback<BigNumber>
-  ): Promise<BigNumber | UnsubCallback> {
+    args?: { accountId: string } | SubCallback<AccountBalance>,
+    callback?: SubCallback<AccountBalance>
+  ): Promise<AccountBalance | UnsubCallback> {
     const { context } = this;
     let accountId: string | undefined;
-    let cb: SubCallback<BigNumber> | undefined = callback;
+    let cb: SubCallback<AccountBalance> | undefined = callback;
 
     switch (typeof args) {
       case 'undefined': {

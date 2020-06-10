@@ -74,7 +74,9 @@ describe('createSecurityToken procedure', () => {
   let args: Params;
 
   beforeAll(() => {
-    dsMockUtils.initMocks({ contextOptions: { balance: new BigNumber(1000) } });
+    dsMockUtils.initMocks({
+      contextOptions: { balance: { free: new BigNumber(1000), locked: new BigNumber(0) } },
+    });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
