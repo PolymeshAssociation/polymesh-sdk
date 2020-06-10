@@ -6,13 +6,14 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { addClaims, reserveTicker, revokeClaims, transferPolyX } from '~/api/procedures';
+import { modifyClaims, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { didsWithClaims } from '~/harvester/queries';
 import { IdentityWithClaims } from '~/harvester/types';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { ClaimTargets, ClaimType, SubCallback } from '~/types';
+import { ClaimOperation } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -714,6 +715,10 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: addClaims', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
 
@@ -737,8 +742,8 @@ describe('Polymesh Class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       sinon
-        .stub(addClaims, 'prepare')
-        .withArgs(args, context)
+        .stub(modifyClaims, 'prepare')
+        .withArgs({ ...args, operation: ClaimOperation.Add }, context)
         .resolves(expectedQueue);
 
       const queue = await polymesh.addClaims(args);
@@ -747,7 +752,11 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: revokeClaims', () => {
+  describe('method: editClaims', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
 
@@ -771,8 +780,46 @@ describe('Polymesh Class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       sinon
-        .stub(revokeClaims, 'prepare')
-        .withArgs(args, context)
+        .stub(modifyClaims, 'prepare')
+        .withArgs({ ...args, operation: ClaimOperation.Edit }, context)
+        .resolves(expectedQueue);
+
+      const queue = await polymesh.editClaims(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: revokeClaims', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const claims: ClaimTargets[] = [
+        {
+          targets: ['someDid'],
+          claim: {
+            type: ClaimType.Accredited,
+            scope: 'someIdentityId',
+          },
+        },
+      ];
+
+      const args = { claims };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(modifyClaims, 'prepare')
+        .withArgs({ ...args, operation: ClaimOperation.Revoke }, context)
         .resolves(expectedQueue);
 
       const queue = await polymesh.revokeClaims(args);
