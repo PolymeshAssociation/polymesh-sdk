@@ -175,6 +175,19 @@ describe('Polymesh Class', () => {
       );
     });
 
+    test('should throw if Polkadot fails in the connection process', async () => {
+      dsMockUtils.throwOnApiCreation(sinon.stub().throws(new Error()));
+
+      const nodeUrl = 'wss://some.url';
+      const polymeshApiPromise = Polymesh.connect({
+        nodeUrl,
+      });
+
+      return expect(polymeshApiPromise).rejects.toThrow(
+        `Error while connecting to "${nodeUrl}": "The node couldn’t be reached"`
+      );
+    });
+
     test('should throw if Context create method fails', () => {
       dsMockUtils.throwOnContextCreation();
       const nodeUrl = 'wss://some.url';
