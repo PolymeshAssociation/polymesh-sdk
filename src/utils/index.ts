@@ -65,7 +65,7 @@ import {
   SignerType,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import { IGNORE_CHECKSUM, MAX_TICKER_LENGTH, SS58_FORMAT } from '~/utils/constants';
 
 /**
  * @hidden
@@ -245,7 +245,10 @@ export function valueToDid(value: string | Identity): string {
  * @hidden
  */
 export function stringToAccountKey(accountKey: string, context: Context): AccountKey {
-  return context.polymeshApi.createType('AccountKey', decodeAddress(accountKey));
+  return context.polymeshApi.createType(
+    'AccountKey',
+    decodeAddress(accountKey, IGNORE_CHECKSUM, SS58_FORMAT)
+  );
 }
 
 /**
