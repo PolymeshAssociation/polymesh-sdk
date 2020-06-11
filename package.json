@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node scripts/generateTsconfigDev.js && cross-env webpack-dev-server --config=webpack.config.dev.js",
     "generate:polkadot-types": "yarn fetch-definitions && yarn generate:defs && yarn generate:meta && yarn generate:tags",
-    "fetch:harvester-types": "node scripts/fetchHarvesterTypes.js",
+    "generate:harvester-types": "graphql-codegen",
     "fetch-definitions": "node scripts/fetchDefinitions.js",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package polymesh-types --input ./src/polkadot",
     "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://pme.polymath.network --output ./src/polkadot --strict",
@@ -26,6 +26,8 @@
   "devDependencies": {
     "@commitlint/cli": "^7.6.1",
     "@commitlint/config-conventional": "^7.6.0",
+    "@graphql-codegen/cli": "^1.15.2",
+    "@graphql-codegen/typescript": "^1.15.2",
     "@polkadot/typegen": "1.14.1",
     "@types/bluebird": "^3.5.30",
     "@types/jest": "^23.3.10",

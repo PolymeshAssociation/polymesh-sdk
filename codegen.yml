@@ -1,0 +1,8 @@
+schema:
+  - 'https://24pha89jxg.execute-api.us-east-1.amazonaws.com/dev/graphql':
+      headers:
+        x-api-key: '3LBeUks8aH7dj9Br0vpXj8IXGCI5O3hP6CKVqdFX'
+generates:
+  ./src/harvester/types.ts:
+    plugins:
+      - typescript
