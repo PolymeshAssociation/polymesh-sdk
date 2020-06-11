@@ -255,7 +255,7 @@ export function stringToAccountKey(accountKey: string, context: Context): Accoun
  * @hidden
  */
 export function accountKeyToString(accountKey: AccountKey): string {
-  return encodeAddress(accountKey);
+  return encodeAddress(accountKey, SS58_FORMAT);
 }
 
 /**
