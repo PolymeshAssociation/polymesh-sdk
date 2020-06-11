@@ -1,7 +1,7 @@
 schema:
-  - 'https://24pha89jxg.execute-api.us-east-1.amazonaws.com/dev/graphql':
+  - ${HARVESTER_LINK}:
       headers:
-        x-api-key: ${GRAPHQL_KEY}
+        x-api-key: ${HARVESTER_KEY}
 generates:
   ./src/harvester/types.ts:
     plugins:
