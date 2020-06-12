@@ -1,3 +1,4 @@
+import { StorageKey } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
@@ -41,6 +42,10 @@ describe('TokenHolders class', () => {
       const ticker = 'TEST';
       const mockContext = dsMockUtils.getContextInstance();
       const rawTicker = dsMockUtils.createMockTicker(ticker);
+      const requestPaginatedStub = sinon.stub(utilsModule, 'requestPaginated');
+
+      dsMockUtils.createQueryStub('asset', 'balanceOf');
+
       const fakeData = [
         {
           identity: 'someIdentity',
@@ -62,7 +67,7 @@ describe('TokenHolders class', () => {
       const identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
       const balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
 
-      const balanceOfEntries: [[Ticker, IdentityId], Balance][] = [];
+      const balanceOfEntries: [StorageKey, Balance][] = [];
 
       const context = dsMockUtils.getContextInstance();
 
@@ -74,7 +79,9 @@ describe('TokenHolders class', () => {
         identityIdToStringStub.withArgs(identityId).returns(identity);
         balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
 
-        balanceOfEntries.push(tuple([rawTicker, identityId], fakeBalance));
+        balanceOfEntries.push(
+          tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, fakeBalance)
+        );
 
         expectedHolders.push({
           identity: new Identity({ did: identity }, context),
@@ -82,16 +89,14 @@ describe('TokenHolders class', () => {
         });
       });
 
-      dsMockUtils.createQueryStub('asset', 'balanceOf', {
-        entries: balanceOfEntries,
-      });
+      requestPaginatedStub.resolves({ entries: balanceOfEntries, lastKey: null });
 
       const token = entityMockUtils.getSecurityTokenInstance();
       const tokenHolders = new TokenHolders(token, context);
 
       const result = await tokenHolders.get();
 
-      expect(result).toEqual(expectedHolders);
+      expect(result).toEqual({ data: expectedHolders, next: null });
     });
   });
 });
