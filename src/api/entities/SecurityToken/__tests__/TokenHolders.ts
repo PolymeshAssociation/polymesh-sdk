@@ -5,7 +5,6 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities/Identity';
 import { Namespace } from '~/base';
-import { IdentityId, Ticker } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { IdentityBalance } from '~/types';
 import { tuple } from '~/types/utils';

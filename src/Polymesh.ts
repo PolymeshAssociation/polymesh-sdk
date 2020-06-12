@@ -181,7 +181,7 @@ export class Polymesh {
   }
 
   // TODO: uncomment for v2
-  /**
+  /*
    * Get the POLYX balance of the current account
    * NOTE: We don't expose this method for Testnet v1
    */
@@ -191,13 +191,6 @@ export class Polymesh {
   }
   */
 
-  public getAccountBalance(args?: { accountId: string }): Promise<BigNumber>;
-  public getAccountBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
-  public getAccountBalance(
-    args: { accountId: string },
-    callback: SubCallback<BigNumber>
-  ): Promise<UnsubCallback>;
-
   /**
    * Get the free POLYX balance of an account
    *
@@ -205,6 +198,14 @@ export class Polymesh {
    *
    * @note can be subscribed to
    */
+  public getAccountBalance(args?: { accountId: string }): Promise<BigNumber>;
+  public getAccountBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+  public getAccountBalance(
+    args: { accountId: string },
+    callback: SubCallback<BigNumber>
+  ): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
   public getAccountBalance(
     args?: { accountId: string } | SubCallback<BigNumber>,
     callback?: SubCallback<BigNumber>

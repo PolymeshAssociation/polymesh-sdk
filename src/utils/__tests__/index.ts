@@ -1900,11 +1900,6 @@ describe('padTicker', () => {
 
 describe('requestPaginated', () => {
   test('should fetch and return entries and the hex value of the last key', async () => {
-    const entries = [
-      tuple(['ticker0'], dsMockUtils.createMockU32(0)),
-      tuple(['ticker1'], dsMockUtils.createMockU32(1)),
-      tuple(['ticker2'], dsMockUtils.createMockU32(2)),
-    ];
     const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
       entries: [
         tuple(['ticker0'], dsMockUtils.createMockU32(0)),

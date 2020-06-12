@@ -1,6 +1,5 @@
 import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { request } from 'http';
 import sinon from 'sinon';
 
 import { AuthorizationRequest } from '~/api/entities';
