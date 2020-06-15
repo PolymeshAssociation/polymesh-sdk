@@ -177,7 +177,7 @@ describe('Polymesh Class', () => {
     });
 
     test('should throw if Polkadot fails in the connection process', async () => {
-      dsMockUtils.throwOnApiCreation(sinon.stub().throws(new Error()));
+      dsMockUtils.throwOnApiCreation(new Error());
 
       const nodeUrl = 'wss://some.url';
       const polymeshApiPromise = Polymesh.connect({

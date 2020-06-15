@@ -856,8 +856,8 @@ export function throwOnContextCreation(): void {
  * @hidden
  * Make calls to `ApiPromise.create` throw an error
  */
-export function throwOnApiCreation(returnStub?: sinon.SinonStub): void {
-  MockApiPromiseClass.create = returnStub || errorStub;
+export function throwOnApiCreation(returnValue?: unknown): void {
+  MockApiPromiseClass.create = returnValue ? sinon.stub().throws(returnValue) : errorStub;
 }
 
 /**
