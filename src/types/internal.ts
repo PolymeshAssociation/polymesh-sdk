@@ -114,3 +114,9 @@ export interface GraphqlQuery<Variables> {
   query: DocumentNode;
   variables: Variables;
 }
+
+export enum ClaimOperation {
+  Revoke = 'Revoke',
+  Add = 'Add',
+  Edit = 'Edit',
+}

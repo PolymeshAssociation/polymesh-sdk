@@ -10,12 +10,10 @@ import { polymesh } from 'polymesh-types/definitions';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
-  addClaims,
-  AddClaimsParams,
+  modifyClaims,
+  ModifyClaimsParams,
   reserveTicker,
   ReserveTickerParams,
-  revokeClaims,
-  RevokeClaimsParams,
   transferPolyX,
   TransferPolyXParams,
 } from '~/api/procedures';
@@ -33,7 +31,7 @@ import {
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { SignerType } from '~/types/internal';
+import { ClaimOperation, SignerType } from '~/types/internal';
 import {
   createClaim,
   signerToSignatory,
@@ -335,8 +333,17 @@ export class Polymesh {
    *
    * @param args.claims - array of claims to be added
    */
-  public addClaims(args: AddClaimsParams): Promise<TransactionQueue<void>> {
-    return addClaims.prepare(args, this.context);
+  public addClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
+    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Add }, this.context);
+  }
+
+  /**
+   * Edit claims associated to identities (only the expiry date can be modified)
+   *
+   * * @param args.claims - array of claims to be edited
+   */
+  public editClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
+    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Edit }, this.context);
   }
 
   /**
@@ -344,8 +351,10 @@ export class Polymesh {
    *
    * @param args.claims - array of claims to be revoked
    */
-  public revokeClaims(args: RevokeClaimsParams): Promise<TransactionQueue<void>> {
-    return revokeClaims.prepare(args, this.context);
+  public revokeClaims(
+    args: Omit<ModifyClaimsParams, 'operation'>
+  ): Promise<TransactionQueue<void>> {
+    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Revoke }, this.context);
   }
 
   /**
