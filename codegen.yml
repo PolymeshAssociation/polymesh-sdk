@@ -1,8 +1,8 @@
 schema:
-  - ${HARVESTER_LINK}:
+  - ${MIDDLEWARE_LINK}:
       headers:
-        x-api-key: ${HARVESTER_KEY}
+        x-api-key: ${MIDDLEWARE_LINK}
 generates:
-  ./src/harvester/types.ts:
+  ./src/middleware/types.ts:
     plugins:
       - typescript

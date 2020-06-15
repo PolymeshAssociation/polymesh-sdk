@@ -10,8 +10,8 @@ import {
 } from '~/api/procedures';
 import { Entity, PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { eventByIndexedArgs } from '~/harvester/queries';
-import { Query } from '~/harvester/types';
+import { eventByIndexedArgs } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import { Ensured, ErrorCode, EventIdentifier, TokenIdentifier, TokenIdentifierType } from '~/types';
 import {
   assetIdentifierToString,
@@ -197,13 +197,13 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    */
   public async createdAt(): Promise<EventIdentifier | null> {
     const {
-      context: { harvesterClient },
+      context: { middlewareApi },
       ticker,
     } = this;
 
     let result: ApolloQueryResult<Ensured<Query, 'eventByIndexedArgs'>>;
     try {
-      result = await harvesterClient.query<Ensured<Query, 'eventByIndexedArgs'>>(
+      result = await middlewareApi.query<Ensured<Query, 'eventByIndexedArgs'>>(
         eventByIndexedArgs({
           moduleId: 'asset',
           eventId: 'AssetCreated',
@@ -213,7 +213,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     } catch (e) {
       throw new PolymeshError({
         code: ErrorCode.MiddlewareError,
-        message: `Error in harvester query: ${e.message}`,
+        message: `Error in middleware query: ${e.message}`,
       });
     }
 

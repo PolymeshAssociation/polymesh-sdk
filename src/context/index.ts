@@ -24,7 +24,7 @@ interface SignerData {
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
-  harvesterClient: ApolloClient<NormalizedCacheObject> | null;
+  middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   keyring: CommonKeyring;
   pair?: SignerData;
 }
@@ -50,15 +50,15 @@ export class Context {
 
   private currentIdentity?: Identity;
 
-  private _harvesterClient: ApolloClient<NormalizedCacheObject> | null;
+  private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
   /**
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, harvesterClient, keyring, pair } = params;
+    const { polymeshApi, middlewareApi, keyring, pair } = params;
 
-    this._harvesterClient = harvesterClient;
+    this._middlewareApi = middlewareApi;
 
     this.polymeshApi = new Proxy(polymeshApi, {
       get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
@@ -82,25 +82,25 @@ export class Context {
 
   static async create(params: {
     polymeshApi: ApiPromise;
-    harvesterClient: ApolloClient<NormalizedCacheObject> | null;
+    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
     seed: string;
   }): Promise<Context>;
 
   static async create(params: {
     polymeshApi: ApiPromise;
-    harvesterClient: ApolloClient<NormalizedCacheObject> | null;
+    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
     keyring: CommonKeyring;
   }): Promise<Context>;
 
   static async create(params: {
     polymeshApi: ApiPromise;
-    harvesterClient: ApolloClient<NormalizedCacheObject> | null;
+    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
     uri: string;
   }): Promise<Context>;
 
   static async create(params: {
     polymeshApi: ApiPromise;
-    harvesterClient: ApolloClient<NormalizedCacheObject> | null;
+    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   }): Promise<Context>;
 
   /**
@@ -108,12 +108,12 @@ export class Context {
    */
   static async create(params: {
     polymeshApi: ApiPromise;
-    harvesterClient: ApolloClient<NormalizedCacheObject> | null;
+    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
     seed?: string;
     keyring?: CommonKeyring;
     uri?: string;
   }): Promise<Context> {
-    const { polymeshApi, harvesterClient, seed, keyring: passedKeyring, uri } = params;
+    const { polymeshApi, middlewareApi, seed, keyring: passedKeyring, uri } = params;
 
     let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
     let currentPair: KeyringPair | undefined;
@@ -143,7 +143,7 @@ export class Context {
 
         return new Context({
           polymeshApi,
-          harvesterClient,
+          middlewareApi,
           keyring,
           pair: { currentPair, did },
         });
@@ -155,7 +155,7 @@ export class Context {
       }
     }
 
-    return new Context({ polymeshApi, harvesterClient, keyring });
+    return new Context({ polymeshApi, middlewareApi, keyring });
   }
 
   /**
@@ -313,20 +313,20 @@ export class Context {
   }
 
   /**
-   * Retrieve the harvester client
+   * Retrieve the middleware client
    *
    * @throws if credentials are not set
    */
-  public get harvesterClient(): ApolloClient<NormalizedCacheObject> {
-    const { _harvesterClient } = this;
+  public get middlewareApi(): ApolloClient<NormalizedCacheObject> {
+    const { _middlewareApi } = this;
 
-    if (!_harvesterClient) {
+    if (!_middlewareApi) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: 'Cannot perform this action without an active harvester connection',
+        message: 'Cannot perform this action without an active middleware connection',
       });
     }
 
-    return _harvesterClient;
+    return _middlewareApi;
   }
 }

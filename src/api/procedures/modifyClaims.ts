@@ -3,8 +3,8 @@ import { chunk, cloneDeep, uniq } from 'lodash';
 import { Claim as MeshClaim, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure } from '~/base';
-import { didsWithClaims } from '~/harvester/queries';
-import { Claim as MiddlewareClaim, Query } from '~/harvester/types';
+import { didsWithClaims } from '~/middleware/queries';
+import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import { IdentityId } from '~/polkadot';
 import {
   Claim,
@@ -57,7 +57,7 @@ export async function prepareModifyClaims(
       polymeshApi: {
         tx: { identity },
       },
-      harvesterClient,
+      middlewareApi,
     },
     context,
   } = this;
@@ -90,7 +90,7 @@ export async function prepareModifyClaims(
   if (operation !== ClaimOperation.Add) {
     const {
       data: { didsWithClaims: currentClaims },
-    } = await harvesterClient.query<Ensured<Query, 'didsWithClaims'>>(
+    } = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({ dids: allTargets, trustedClaimIssuers: [context.getCurrentIdentity().did] })
     );
     const claimsByDid = currentClaims.reduce<Record<string, MiddlewareClaim[]>>(
