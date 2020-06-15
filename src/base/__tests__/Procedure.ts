@@ -230,10 +230,10 @@ describe('Procedure class', () => {
       };
 
       const proc = new Procedure(func);
-      const balance = await context.accountBalance();
+      const { free } = await context.accountBalance();
 
       await expect(proc.prepare(procArgs, context)).rejects.toThrow(
-        `Not enough POLYX balance to pay for this procedure's fees. Balance: ${balance.free.toFormat()}, fees: ${new BigNumber(
+        `Not enough POLYX balance to pay for this procedure's fees. Balance: ${free.toFormat()}, fees: ${new BigNumber(
           fees.reduce((sum, fee) => sum + fee, 0)
         )
           .multipliedBy(coefficient)

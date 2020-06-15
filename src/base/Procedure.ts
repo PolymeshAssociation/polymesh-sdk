@@ -117,7 +117,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       });
     }
 
-    const [returnValue, rawCoefficient, currentBalance] = await Promise.all([
+    const [returnValue, rawCoefficient, { free: freeBalance }] = await Promise.all([
       this.prepareTransactions(args),
       protocolFee.coefficient(),
       context.accountBalance(),
@@ -161,10 +161,10 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
 
     const fees = reduce(transactionsWithFees, (sum, { fee }) => sum.plus(fee), new BigNumber(0));
 
-    if (currentBalance.free.lt(fees)) {
+    if (freeBalance.lt(fees)) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: `Not enough POLYX balance to pay for this procedure's fees. Balance: ${currentBalance.free.toFormat()}, fees: ${fees.toFormat()}`,
+        message: `Not enough POLYX balance to pay for this procedure's fees. Balance: ${freeBalance.toFormat()}, fees: ${fees.toFormat()}`,
       });
     }
 

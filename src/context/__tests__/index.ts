@@ -486,19 +486,18 @@ describe('Context class', () => {
 
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
+      const free = dsMockUtils.createMockBalance(100);
+      const miscFrozen = dsMockUtils.createMockBalance(10);
+      const feeFrozen = dsMockUtils.createMockBalance(12);
 
-      const accountBalance = {
-        free: dsMockUtils.createMockBalance(100),
-        miscFrozen: dsMockUtils.createMockBalance(10),
-      };
       const returnValue = dsMockUtils.createMockAccountInfo({
         nonce: dsMockUtils.createMockIndex(),
         refcount: dsMockUtils.createMockRefCount(),
         data: dsMockUtils.createMockAccountData({
-          free: accountBalance.free,
+          free,
           reserved: dsMockUtils.createMockBalance(),
-          miscFrozen: accountBalance.miscFrozen,
-          feeFrozen: dsMockUtils.createMockBalance(),
+          miscFrozen,
+          feeFrozen,
         }),
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
@@ -524,8 +523,8 @@ describe('Context class', () => {
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, {
-        free: utilsModule.balanceToBigNumber(accountBalance.free),
-        locked: utilsModule.balanceToBigNumber(accountBalance.miscFrozen),
+        free: utilsModule.balanceToBigNumber(free),
+        locked: utilsModule.balanceToBigNumber(feeFrozen),
       });
     });
   });

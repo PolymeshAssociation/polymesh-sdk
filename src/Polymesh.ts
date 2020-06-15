@@ -199,7 +199,7 @@ export class Polymesh {
   ): Promise<UnsubCallback>;
 
   /**
-   * Get the free/lock POLYX balance of an account
+   * Get the free/locked POLYX balance of an account
    *
    * @param args.accountId - defaults to the current account
    *

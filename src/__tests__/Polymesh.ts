@@ -210,7 +210,7 @@ describe('Polymesh Class', () => {
   */
 
   describe('method: getAccountBalance', () => {
-    test('should return the free POLYX balance of the current account', async () => {
+    test('should return the free and locked POLYX balance of the current account', async () => {
       const fakeBalance = {
         free: new BigNumber(100),
         locked: new BigNumber(0),
@@ -225,7 +225,7 @@ describe('Polymesh Class', () => {
       expect(result).toEqual(fakeBalance);
     });
 
-    test('should return the free POLYX balance of the supplied account', async () => {
+    test('should return the free and locked POLYX balance of the supplied account', async () => {
       const fakeBalance = {
         free: new BigNumber(100),
         locked: new BigNumber(0),

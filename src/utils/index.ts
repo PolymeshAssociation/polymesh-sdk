@@ -1005,3 +1005,10 @@ export function findEventRecord(
 export function padTicker(ticker: string): string {
   return padEnd(ticker, MAX_TICKER_LENGTH, '\u0000');
 }
+
+/**
+ * @hidden
+ */
+export function maximum(value1: BigNumber, value2: BigNumber): BigNumber {
+  return BigNumber.max(value1, value2);
+}

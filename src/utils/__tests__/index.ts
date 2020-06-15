@@ -74,6 +74,7 @@ import {
   identifierTypeToString,
   identityIdToString,
   jurisdictionNameToString,
+  maximum,
   meshClaimToClaim,
   momentToDate,
   numberToBalance,
@@ -1893,5 +1894,16 @@ describe('padTicker', () => {
     const result = padTicker(ticker);
 
     expect(result).toBe(fakeResult);
+  });
+});
+
+describe('maximum', () => {
+  test('should return the highest number from two numbers', () => {
+    const value1 = new BigNumber(1);
+    const value2 = new BigNumber(2);
+
+    const result = maximum(value1, value2);
+
+    expect(result).toEqual(value2);
   });
 });

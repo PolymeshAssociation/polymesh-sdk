@@ -18,6 +18,7 @@ import {
 import {
   balanceToBigNumber,
   identityIdToString,
+  maximum,
   stringToAccountKey,
   stringToIdentityId,
   valueToDid,
@@ -249,8 +250,13 @@ export class Context {
       });
     }
 
-    const assembleResult = ({ data: { free, miscFrozen } }: AccountInfo): AccountBalance => {
-      return { free: balanceToBigNumber(free), locked: balanceToBigNumber(miscFrozen) };
+    const assembleResult = ({
+      data: { free, miscFrozen, feeFrozen },
+    }: AccountInfo): AccountBalance => {
+      return {
+        free: balanceToBigNumber(free),
+        locked: maximum(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen)),
+      };
     };
 
     if (callback) {
