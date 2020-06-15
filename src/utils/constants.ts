@@ -17,3 +17,5 @@ export const MAX_BATCH_ELEMENTS = {
   [TxTags.complianceManager.RemoveDefaultTrustedClaimIssuersBatch]: 200,
   [TxTags.complianceManager.AddDefaultTrustedClaimIssuersBatch]: 200,
 };
+export const IGNORE_CHECKSUM = true;
+export const SS58_FORMAT = 42;
