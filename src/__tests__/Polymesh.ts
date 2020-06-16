@@ -664,8 +664,8 @@ describe('Polymesh Class', () => {
       dsMockUtils.createQueryStub('asset', 'tokens', {
         returnValue: dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/camelcase */
-          owner_did: dsMockUtils.createMockIdentityId(),
-          name: dsMockUtils.createMockAssetName(ticker),
+          owner_did: dsMockUtils.createMockIdentityId('someDid'),
+          name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
           link_id: dsMockUtils.createMockU64(),

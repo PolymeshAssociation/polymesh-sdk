@@ -110,7 +110,7 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Whitelisting the Smart-Extension address for a given ticker.
+       * Permissioning the Smart-Extension address for a given ticker.
        *
        * # Arguments
        * * `origin` - Signatory who owns to ticker/asset.
@@ -768,22 +768,22 @@ declare module '@polkadot/api/types/submittable' {
         (admin: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
+       * Changes the bridge limit exempted list.
+       **/
+      changeBridgeExempted: AugmentedSubmittable<
+        (
+          exempted:
+            | Vec<ITuple<[IdentityId, bool]>>
+            | [IdentityId | string | Uint8Array, bool | boolean | Uint8Array][]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * Changes the bridge limits.
        **/
       changeBridgeLimit: AugmentedSubmittable<
         (
           amount: Balance | AnyNumber | Uint8Array,
           duration: BlockNumber | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Changes the bridge limit whitelist.
-       **/
-      changeBridgeWhitelist: AugmentedSubmittable<
-        (
-          whitelist:
-            | Vec<ITuple<[IdentityId, bool]>>
-            | [IdentityId | string | Uint8Array, bool | boolean | Uint8Array][]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -1771,6 +1771,16 @@ declare module '@polkadot/api/types/submittable' {
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
+       * Leave an identity as a signing identity.
+       **/
+      leaveIdentityAsIdentity: AugmentedSubmittable<
+        (did: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Leave the signing key's identity.
+       **/
+      leaveIdentityAsKey: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
+      /**
        * Register a new did with a CDD claim for the caller.
        **/
       registerDid: AugmentedSubmittable<
@@ -2533,6 +2543,12 @@ declare module '@polkadot/api/types/submittable' {
           approve: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
+      voteEnactReferendum: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      voteRejectReferendum: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
     };
     protocolFee: {
       /**
@@ -2547,7 +2563,7 @@ declare module '@polkadot/api/types/submittable' {
             | ProtocolOp
             | 'AssetRegisterTicker'
             | 'AssetIssue'
-            | 'AssetAddDocument'
+            | 'AssetAddDocuments'
             | 'AssetCreateAsset'
             | 'DividendNew'
             | 'ComplianceManagerAddActiveRule'
@@ -2555,7 +2571,7 @@ declare module '@polkadot/api/types/submittable' {
             | 'IdentityCddRegisterDid'
             | 'IdentityAddClaim'
             | 'IdentitySetMasterKey'
-            | 'IdentityAddSigningItem'
+            | 'IdentityAddSigningItemsWithAuthorization'
             | 'PipsPropose'
             | 'VotingAddBallot'
             | number
@@ -3332,6 +3348,33 @@ declare module '@polkadot/api/types/submittable' {
        **/
       reimbursement: AugmentedSubmittable<
         (amount: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+    };
+    utility: {
+      /**
+       * Send a batch of dispatch calls.
+       *
+       * This will execute until the first one fails and then stop.
+       *
+       * May be called from any origin.
+       *
+       * - `calls`: The calls to be dispatched from the same origin.
+       *
+       * # <weight>
+       * - The sum of the weights of the `calls`.
+       * - One event.
+       * # </weight>
+       *
+       * This will return `Ok` in all circumstances. To determine the success of the batch, an
+       * event is deposited. If a call failed and the batch was interrupted, then the
+       * `BatchInterrupted` event is deposited, along with the number of successful calls made
+       * and the error of the failed call. If all were successful, then the `BatchCompleted`
+       * event is deposited.
+       **/
+      batch: AugmentedSubmittable<
+        (
+          calls: Vec<Call> | (Call | { callIndex?: any; args?: any } | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>
       >;
     };
     voting: {

@@ -171,7 +171,7 @@ export class Context {
   public getAccounts(): Array<AccountData> {
     const { keyring } = this;
     return keyring.getPairs().map(({ address, meta }) => {
-      return { address, name: meta.name };
+      return { address, name: meta.name as string };
     });
   }
 

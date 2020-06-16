@@ -42,6 +42,7 @@ import {
   TransferStatus,
 } from '~/types';
 import { SignerType } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
@@ -74,7 +75,6 @@ import {
   identifierTypeToString,
   identityIdToString,
   jurisdictionNameToString,
-  maximum,
   meshClaimToClaim,
   momentToDate,
   numberToBalance,
@@ -82,6 +82,7 @@ import {
   numberToU64,
   padTicker,
   posRatioToBigNumber,
+  requestPaginated,
   ruleToAssetTransferRule,
   serialize,
   signatoryToSigner,
@@ -1897,13 +1898,39 @@ describe('padTicker', () => {
   });
 });
 
-describe('maximum', () => {
-  test('should return the highest number from two numbers', () => {
-    const value1 = new BigNumber(1);
-    const value2 = new BigNumber(2);
+describe('requestPaginated', () => {
+  test('should fetch and return entries and the hex value of the last key', async () => {
+    const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
+      entries: [
+        tuple(['ticker0'], dsMockUtils.createMockU32(0)),
+        tuple(['ticker1'], dsMockUtils.createMockU32(1)),
+        tuple(['ticker2'], dsMockUtils.createMockU32(2)),
+      ],
+    });
 
-    const result = maximum(value1, value2);
+    let res = await requestPaginated(queryStub, {
+      paginationOpts: undefined,
+    });
 
-    expect(result).toEqual(value2);
+    expect(res.lastKey).toBeNull();
+    sinon.assert.calledOnce(queryStub.entries);
+
+    sinon.resetHistory();
+
+    res = await requestPaginated(queryStub, {
+      paginationOpts: { size: 3 },
+    });
+
+    expect(typeof res.lastKey).toBe('string');
+    sinon.assert.calledOnce(queryStub.entriesPaged);
+
+    sinon.resetHistory();
+
+    res = await requestPaginated(queryStub, {
+      paginationOpts: { size: 4 },
+    });
+
+    expect(res.lastKey).toBeNull();
+    sinon.assert.calledOnce(queryStub.entriesPaged);
   });
 });

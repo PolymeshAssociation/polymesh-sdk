@@ -336,4 +336,16 @@ export interface AccountBalance {
   locked: BigNumber;
 }
 
+export interface PaginationOptions {
+  size: number;
+  start?: string;
+}
+
+export type NextKey = string | null;
+
+export interface ResultSet<T> {
+  data: T[];
+  next: NextKey;
+}
+
 export * from '~/api/entities/types';

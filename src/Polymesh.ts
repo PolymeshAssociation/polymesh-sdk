@@ -121,6 +121,14 @@ export class Polymesh {
             ])
           ),
           cache: new InMemoryCache(),
+          defaultOptions: {
+            watchQuery: {
+              fetchPolicy: 'no-cache',
+            },
+            query: {
+              fetchPolicy: 'no-cache',
+            },
+          },
         });
       }
 
@@ -181,7 +189,7 @@ export class Polymesh {
   }
 
   // TODO: uncomment for v2
-  /**
+  /*
    * Get the POLYX balance of the current account
    * NOTE: We don't expose this method for Testnet v1
    */
@@ -191,13 +199,6 @@ export class Polymesh {
   }
   */
 
-  public getAccountBalance(args?: { accountId: string }): Promise<AccountBalance>;
-  public getAccountBalance(callback: SubCallback<AccountBalance>): Promise<UnsubCallback>;
-  public getAccountBalance(
-    args: { accountId: string },
-    callback: SubCallback<AccountBalance>
-  ): Promise<UnsubCallback>;
-
   /**
    * Get the free/locked POLYX balance of an account
    *
@@ -205,6 +206,14 @@ export class Polymesh {
    *
    * @note can be subscribed to
    */
+  public getAccountBalance(args?: { accountId: string }): Promise<AccountBalance>;
+  public getAccountBalance(callback: SubCallback<AccountBalance>): Promise<UnsubCallback>;
+  public getAccountBalance(
+    args: { accountId: string },
+    callback: SubCallback<AccountBalance>
+  ): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
   public getAccountBalance(
     args?: { accountId: string } | SubCallback<AccountBalance>,
     callback?: SubCallback<AccountBalance>
@@ -444,7 +453,7 @@ export class Polymesh {
 
     const securityToken = await asset.tokens(stringToTicker(ticker, context));
 
-    if (!securityToken.name.isEmpty) {
+    if (!securityToken.owner_did.isEmpty) {
       return new SecurityToken({ ticker }, context);
     }
 
