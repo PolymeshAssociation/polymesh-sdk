@@ -1044,11 +1044,7 @@ export async function requestPaginated<F extends AnyFunction>(
       lastKey = entries[entries.length - 1][0].toHex();
     }
   } else {
-    /*
-     * NOTE: this type assertion is necessary because the signatures for `.entries` aren't
-     * properly typed in polkadot, so they are not compatible between maps and double maps
-     */
-    entries = await (query as AugmentedQuery<'promise', F>).entries(arg);
+    entries = await query.entries(arg);
   }
 
   return {

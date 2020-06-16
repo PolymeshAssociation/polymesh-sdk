@@ -63,6 +63,7 @@ import {
   AccountData,
   BalanceLock,
   BalanceLockTo212,
+  BalanceStatus,
   Reasons,
   ReleasesBalances,
   VestingSchedule,
@@ -392,30 +393,33 @@ import {
   Reporter,
 } from '@polkadot/types/interfaces/offences';
 import {
+  AbridgedCandidateReceipt,
   AttestedCandidate,
   AuctionIndex,
   Bidder,
+  CandidateCommitments,
   CandidateReceipt,
   CollatorId,
   CollatorSignature,
   DoubleVoteReport,
-  DoubleVoteReportProof,
-  DoubleVoteReportStatement,
-  EgressQueueRoot,
+  DownwardMessage,
+  GlobalValidationSchedule,
   HeadData,
   IncomingParachain,
   IncomingParachainDeploy,
   IncomingParachainFixed,
   LeasePeriod,
   LeasePeriodOf,
+  LocalValidationData,
   NewBidder,
   ParaId,
-  ParaIdOf,
   ParaInfo,
   ParaPastCodeMeta,
   ParaScheduling,
   ParachainDispatchOrigin,
+  Remark,
   Retriable,
+  Scheduling,
   SigningContext,
   SlotRange,
   Statement,
@@ -615,7 +619,9 @@ import {
   AssetIdentifier,
   AssetName,
   AssetTransferRule,
+  AssetTransferRuleResult,
   AssetTransferRules,
+  AssetTransferRulesResult,
   AssetType,
   AuthIdentifier,
   Authorization,
@@ -630,8 +636,6 @@ import {
   BridgeTxStatus,
   CanTransferResult,
   CappedFee,
-  CappedVoteCount,
-  CappedVoteCountSuccess,
   CddStatus,
   Claim,
   Claim1stKey,
@@ -644,6 +648,7 @@ import {
   DidRecord,
   DidRecords,
   DidRecordsSuccess,
+  DidStatus,
   Dividend,
   Document,
   DocumentHash,
@@ -651,6 +656,9 @@ import {
   DocumentUri,
   FeeOf,
   FundingRoundName,
+  HandledTxStatus,
+  HistoricalVotingByAddress,
+  HistoricalVotingById,
   IdentifierType,
   IdentityClaim,
   IdentityClaimKey,
@@ -662,6 +670,7 @@ import {
   JurisdictionName,
   Link,
   LinkData,
+  LinkType,
   LinkedKeyInfo,
   Memo,
   Motion,
@@ -688,6 +697,7 @@ import {
   ReferendumType,
   RestrictionResult,
   Rule,
+  RuleResult,
   RuleType,
   STO,
   Scope,
@@ -707,6 +717,9 @@ import {
   TickerRegistrationConfig,
   TickerTransferApproval,
   Url,
+  VoteByPip,
+  VoteCount,
+  VoteCountProposalFound,
   VotingResult,
 } from 'polymesh-types/polymesh';
 
@@ -1050,6 +1063,9 @@ declare module '@polkadot/types/types/registry' {
     BalanceLock: BalanceLock;
     'Option<BalanceLock>': Option<BalanceLock>;
     'Vec<BalanceLock>': Vec<BalanceLock>;
+    BalanceStatus: BalanceStatus;
+    'Option<BalanceStatus>': Option<BalanceStatus>;
+    'Vec<BalanceStatus>': Vec<BalanceStatus>;
     ReleasesBalances: ReleasesBalances;
     'Option<ReleasesBalances>': Option<ReleasesBalances>;
     'Vec<ReleasesBalances>': Vec<ReleasesBalances>;
@@ -1802,6 +1818,9 @@ declare module '@polkadot/types/types/registry' {
     StatementKind: StatementKind;
     'Option<StatementKind>': Option<StatementKind>;
     'Vec<StatementKind>': Vec<StatementKind>;
+    AbridgedCandidateReceipt: AbridgedCandidateReceipt;
+    'Option<AbridgedCandidateReceipt>': Option<AbridgedCandidateReceipt>;
+    'Vec<AbridgedCandidateReceipt>': Vec<AbridgedCandidateReceipt>;
     AttestedCandidate: AttestedCandidate;
     'Option<AttestedCandidate>': Option<AttestedCandidate>;
     'Vec<AttestedCandidate>': Vec<AttestedCandidate>;
@@ -1812,6 +1831,9 @@ declare module '@polkadot/types/types/registry' {
     Bidder: Bidder;
     'Option<Bidder>': Option<Bidder>;
     'Vec<Bidder>': Vec<Bidder>;
+    CandidateCommitments: CandidateCommitments;
+    'Option<CandidateCommitments>': Option<CandidateCommitments>;
+    'Vec<CandidateCommitments>': Vec<CandidateCommitments>;
     CandidateReceipt: CandidateReceipt;
     'Option<CandidateReceipt>': Option<CandidateReceipt>;
     'Vec<CandidateReceipt>': Vec<CandidateReceipt>;
@@ -1824,58 +1846,61 @@ declare module '@polkadot/types/types/registry' {
     DoubleVoteReport: DoubleVoteReport;
     'Option<DoubleVoteReport>': Option<DoubleVoteReport>;
     'Vec<DoubleVoteReport>': Vec<DoubleVoteReport>;
-    DoubleVoteReportProof: DoubleVoteReportProof;
-    'Option<DoubleVoteReportProof>': Option<DoubleVoteReportProof>;
-    'Vec<DoubleVoteReportProof>': Vec<DoubleVoteReportProof>;
-    DoubleVoteReportStatement: DoubleVoteReportStatement;
-    'Option<DoubleVoteReportStatement>': Option<DoubleVoteReportStatement>;
-    'Vec<DoubleVoteReportStatement>': Vec<DoubleVoteReportStatement>;
-    EgressQueueRoot: EgressQueueRoot;
-    'Option<EgressQueueRoot>': Option<EgressQueueRoot>;
-    'Vec<EgressQueueRoot>': Vec<EgressQueueRoot>;
+    DownwardMessage: DownwardMessage;
+    'Option<DownwardMessage>': Option<DownwardMessage>;
+    'Vec<DownwardMessage>': Vec<DownwardMessage>;
+    GlobalValidationSchedule: GlobalValidationSchedule;
+    'Option<GlobalValidationSchedule>': Option<GlobalValidationSchedule>;
+    'Vec<GlobalValidationSchedule>': Vec<GlobalValidationSchedule>;
     HeadData: HeadData;
     'Option<HeadData>': Option<HeadData>;
     'Vec<HeadData>': Vec<HeadData>;
-    IncomingParachainDeploy: IncomingParachainDeploy;
-    'Option<IncomingParachainDeploy>': Option<IncomingParachainDeploy>;
-    'Vec<IncomingParachainDeploy>': Vec<IncomingParachainDeploy>;
-    IncomingParachainFixed: IncomingParachainFixed;
-    'Option<IncomingParachainFixed>': Option<IncomingParachainFixed>;
-    'Vec<IncomingParachainFixed>': Vec<IncomingParachainFixed>;
     IncomingParachain: IncomingParachain;
     'Option<IncomingParachain>': Option<IncomingParachain>;
     'Vec<IncomingParachain>': Vec<IncomingParachain>;
+    IncomingParachainFixed: IncomingParachainFixed;
+    'Option<IncomingParachainFixed>': Option<IncomingParachainFixed>;
+    'Vec<IncomingParachainFixed>': Vec<IncomingParachainFixed>;
+    IncomingParachainDeploy: IncomingParachainDeploy;
+    'Option<IncomingParachainDeploy>': Option<IncomingParachainDeploy>;
+    'Vec<IncomingParachainDeploy>': Vec<IncomingParachainDeploy>;
     LeasePeriod: LeasePeriod;
     'Option<LeasePeriod>': Option<LeasePeriod>;
     'Vec<LeasePeriod>': Vec<LeasePeriod>;
     LeasePeriodOf: LeasePeriodOf;
     'Option<LeasePeriodOf>': Option<LeasePeriodOf>;
     'Vec<LeasePeriodOf>': Vec<LeasePeriodOf>;
+    LocalValidationData: LocalValidationData;
+    'Option<LocalValidationData>': Option<LocalValidationData>;
+    'Vec<LocalValidationData>': Vec<LocalValidationData>;
     NewBidder: NewBidder;
     'Option<NewBidder>': Option<NewBidder>;
     'Vec<NewBidder>': Vec<NewBidder>;
+    ParachainDispatchOrigin: ParachainDispatchOrigin;
+    'Option<ParachainDispatchOrigin>': Option<ParachainDispatchOrigin>;
+    'Vec<ParachainDispatchOrigin>': Vec<ParachainDispatchOrigin>;
     ParaId: ParaId;
     'Compact<ParaId>': Compact<ParaId>;
     'Option<ParaId>': Option<ParaId>;
     'Vec<ParaId>': Vec<ParaId>;
-    ParaIdOf: ParaIdOf;
-    'Option<ParaIdOf>': Option<ParaIdOf>;
-    'Vec<ParaIdOf>': Vec<ParaIdOf>;
     ParaInfo: ParaInfo;
     'Option<ParaInfo>': Option<ParaInfo>;
     'Vec<ParaInfo>': Vec<ParaInfo>;
     ParaPastCodeMeta: ParaPastCodeMeta;
     'Option<ParaPastCodeMeta>': Option<ParaPastCodeMeta>;
     'Vec<ParaPastCodeMeta>': Vec<ParaPastCodeMeta>;
-    ParachainDispatchOrigin: ParachainDispatchOrigin;
-    'Option<ParachainDispatchOrigin>': Option<ParachainDispatchOrigin>;
-    'Vec<ParachainDispatchOrigin>': Vec<ParachainDispatchOrigin>;
     ParaScheduling: ParaScheduling;
     'Option<ParaScheduling>': Option<ParaScheduling>;
     'Vec<ParaScheduling>': Vec<ParaScheduling>;
+    Remark: Remark;
+    'Option<Remark>': Option<Remark>;
+    'Vec<Remark>': Vec<Remark>;
     Retriable: Retriable;
     'Option<Retriable>': Option<Retriable>;
     'Vec<Retriable>': Vec<Retriable>;
+    Scheduling: Scheduling;
+    'Option<Scheduling>': Option<Scheduling>;
+    'Vec<Scheduling>': Vec<Scheduling>;
     SigningContext: SigningContext;
     'Option<SigningContext>': Option<SigningContext>;
     'Vec<SigningContext>': Vec<SigningContext>;
@@ -1895,18 +1920,18 @@ declare module '@polkadot/types/types/registry' {
     ValidationCode: ValidationCode;
     'Option<ValidationCode>': Option<ValidationCode>;
     'Vec<ValidationCode>': Vec<ValidationCode>;
-    ValidityAttestation: ValidityAttestation;
-    'Option<ValidityAttestation>': Option<ValidityAttestation>;
-    'Vec<ValidityAttestation>': Vec<ValidityAttestation>;
     ValidatorSignature: ValidatorSignature;
     'Option<ValidatorSignature>': Option<ValidatorSignature>;
     'Vec<ValidatorSignature>': Vec<ValidatorSignature>;
-    WinningDataEntry: WinningDataEntry;
-    'Option<WinningDataEntry>': Option<WinningDataEntry>;
-    'Vec<WinningDataEntry>': Vec<WinningDataEntry>;
+    ValidityAttestation: ValidityAttestation;
+    'Option<ValidityAttestation>': Option<ValidityAttestation>;
+    'Vec<ValidityAttestation>': Vec<ValidityAttestation>;
     WinningData: WinningData;
     'Option<WinningData>': Option<WinningData>;
     'Vec<WinningData>': Vec<WinningData>;
+    WinningDataEntry: WinningDataEntry;
+    'Option<WinningDataEntry>': Option<WinningDataEntry>;
+    'Vec<WinningDataEntry>': Vec<WinningDataEntry>;
     CallMetadataV0: CallMetadataV0;
     'Option<CallMetadataV0>': Option<CallMetadataV0>;
     'Vec<CallMetadataV0>': Vec<CallMetadataV0>;
@@ -2567,12 +2592,18 @@ declare module '@polkadot/types/types/registry' {
     AssetTransferRule: AssetTransferRule;
     'Option<AssetTransferRule>': Option<AssetTransferRule>;
     'Vec<AssetTransferRule>': Vec<AssetTransferRule>;
+    AssetTransferRuleResult: AssetTransferRuleResult;
+    'Option<AssetTransferRuleResult>': Option<AssetTransferRuleResult>;
+    'Vec<AssetTransferRuleResult>': Vec<AssetTransferRuleResult>;
     RuleType: RuleType;
     'Option<RuleType>': Option<RuleType>;
     'Vec<RuleType>': Vec<RuleType>;
     Rule: Rule;
     'Option<Rule>': Option<Rule>;
     'Vec<Rule>': Vec<Rule>;
+    RuleResult: RuleResult;
+    'Option<RuleResult>': Option<RuleResult>;
+    'Vec<RuleResult>': Vec<RuleResult>;
     STO: STO;
     'Option<STO>': Option<STO>;
     'Vec<STO>': Vec<STO>;
@@ -2717,6 +2748,9 @@ declare module '@polkadot/types/types/registry' {
     AssetTransferRules: AssetTransferRules;
     'Option<AssetTransferRules>': Option<AssetTransferRules>;
     'Vec<AssetTransferRules>': Vec<AssetTransferRules>;
+    AssetTransferRulesResult: AssetTransferRulesResult;
+    'Option<AssetTransferRulesResult>': Option<AssetTransferRulesResult>;
+    'Vec<AssetTransferRulesResult>': Vec<AssetTransferRulesResult>;
     Claim1stKey: Claim1stKey;
     'Option<Claim1stKey>': Option<Claim1stKey>;
     'Vec<Claim1stKey>': Vec<Claim1stKey>;
@@ -2750,18 +2784,30 @@ declare module '@polkadot/types/types/registry' {
     DidRecords: DidRecords;
     'Option<DidRecords>': Option<DidRecords>;
     'Vec<DidRecords>': Vec<DidRecords>;
-    CappedVoteCountSuccess: CappedVoteCountSuccess;
-    'Option<CappedVoteCountSuccess>': Option<CappedVoteCountSuccess>;
-    'Vec<CappedVoteCountSuccess>': Vec<CappedVoteCountSuccess>;
-    CappedVoteCount: CappedVoteCount;
-    'Option<CappedVoteCount>': Option<CappedVoteCount>;
-    'Vec<CappedVoteCount>': Vec<CappedVoteCount>;
+    VoteCountProposalFound: VoteCountProposalFound;
+    'Option<VoteCountProposalFound>': Option<VoteCountProposalFound>;
+    'Vec<VoteCountProposalFound>': Vec<VoteCountProposalFound>;
+    VoteCount: VoteCount;
+    'Option<VoteCount>': Option<VoteCount>;
+    'Vec<VoteCount>': Vec<VoteCount>;
+    VoteByPip: VoteByPip;
+    'Option<VoteByPip>': Option<VoteByPip>;
+    'Vec<VoteByPip>': Vec<VoteByPip>;
+    HistoricalVotingByAddress: HistoricalVotingByAddress;
+    'Option<HistoricalVotingByAddress>': Option<HistoricalVotingByAddress>;
+    'Vec<HistoricalVotingByAddress>': Vec<HistoricalVotingByAddress>;
+    HistoricalVotingById: HistoricalVotingById;
+    'Option<HistoricalVotingById>': Option<HistoricalVotingById>;
+    'Vec<HistoricalVotingById>': Vec<HistoricalVotingById>;
     BridgeTxDetail: BridgeTxDetail;
     'Option<BridgeTxDetail>': Option<BridgeTxDetail>;
     'Vec<BridgeTxDetail>': Vec<BridgeTxDetail>;
     BridgeTxStatus: BridgeTxStatus;
     'Option<BridgeTxStatus>': Option<BridgeTxStatus>;
     'Vec<BridgeTxStatus>': Vec<BridgeTxStatus>;
+    HandledTxStatus: HandledTxStatus;
+    'Option<HandledTxStatus>': Option<HandledTxStatus>;
+    'Vec<HandledTxStatus>': Vec<HandledTxStatus>;
     CappedFee: CappedFee;
     'Compact<CappedFee>': Compact<CappedFee>;
     'Option<CappedFee>': Option<CappedFee>;
@@ -2769,5 +2815,11 @@ declare module '@polkadot/types/types/registry' {
     CanTransferResult: CanTransferResult;
     'Option<CanTransferResult>': Option<CanTransferResult>;
     'Vec<CanTransferResult>': Vec<CanTransferResult>;
+    LinkType: LinkType;
+    'Option<LinkType>': Option<LinkType>;
+    'Vec<LinkType>': Vec<LinkType>;
+    DidStatus: DidStatus;
+    'Option<DidStatus>': Option<DidStatus>;
+    'Vec<DidStatus>': Vec<DidStatus>;
   }
 }

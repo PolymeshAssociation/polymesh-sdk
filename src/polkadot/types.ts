@@ -252,7 +252,7 @@ export enum BridgeTx {
   Freeze = 'bridge.freeze',
   Unfreeze = 'bridge.unfreeze',
   ChangeBridgeLimit = 'bridge.changeBridgeLimit',
-  ChangeBridgeWhitelist = 'bridge.changeBridgeWhitelist',
+  ChangeBridgeExempted = 'bridge.changeBridgeExempted',
   ForceHandleBridgeTx = 'bridge.forceHandleBridgeTx',
   ForceHandleBridgeTxs = 'bridge.forceHandleBridgeTxs',
   ProposeBridgeTx = 'bridge.proposeBridgeTx',

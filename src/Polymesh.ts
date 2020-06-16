@@ -121,6 +121,14 @@ export class Polymesh {
             ])
           ),
           cache: new InMemoryCache(),
+          defaultOptions: {
+            watchQuery: {
+              fetchPolicy: 'no-cache',
+            },
+            query: {
+              fetchPolicy: 'no-cache',
+            },
+          },
         });
       }
 
@@ -445,7 +453,7 @@ export class Polymesh {
 
     const securityToken = await asset.tokens(stringToTicker(ticker, context));
 
-    if (!securityToken.name.isEmpty) {
+    if (!securityToken.owner_did.isEmpty) {
       return new SecurityToken({ ticker }, context);
     }
 
