@@ -163,13 +163,11 @@ export class Polymesh {
 
       return new Polymesh(context);
     } catch (e) {
-      let { message, code } = e;
-      if (!message) {
-        message = 'The node couldn’t be reached';
-      }
+      const { message, code } = e;
       throw new PolymeshError({
-        code: code || ErrorCode.FatalError,
-        message: `Error while connecting to "${nodeUrl}": "${message}"`,
+        code,
+        message: `Error while connecting to "${nodeUrl}": "${message ||
+          'The node couldn’t be reached'}"`,
       });
     }
   }
