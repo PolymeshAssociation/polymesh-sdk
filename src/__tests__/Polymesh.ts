@@ -8,8 +8,8 @@ import sinon from 'sinon';
 import { Identity, TickerReservation } from '~/api/entities';
 import { modifyClaims, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
-import { didsWithClaims } from '~/harvester/queries';
-import { IdentityWithClaims } from '~/harvester/types';
+import { didsWithClaims } from '~/middleware/queries';
+import { IdentityWithClaims } from '~/middleware/types';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { ClaimTargets, ClaimType, SubCallback } from '~/types';
@@ -66,7 +66,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: null,
+        middlewareApi: null,
         seed: accountSeed,
       });
     });
@@ -83,7 +83,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: null,
+        middlewareApi: null,
         keyring,
       });
     });
@@ -100,7 +100,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: null,
+        middlewareApi: null,
         keyring,
       });
     });
@@ -117,15 +117,15 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: null,
+        middlewareApi: null,
         uri: accountUri,
       });
     });
 
-    test('should instantiate Context with harvester credentials and return a Polymesh instance', async () => {
+    test('should instantiate Context with middleware credentials and return a Polymesh instance', async () => {
       const accountUri = '//uri';
       const createStub = dsMockUtils.getContextCreateStub();
-      const harvester = {
+      const middleware = {
         link: 'someLink',
         key: 'someKey',
       };
@@ -133,13 +133,13 @@ describe('Polymesh Class', () => {
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri,
-        harvester,
+        middleware,
       });
 
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         uri: accountUri,
       });
     });
@@ -158,7 +158,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: null,
+        middlewareApi: null,
         seed: accountSeed,
       });
       sinon.assert.calledWith(dsMockUtils.getApiInstance().setSigner, signer);
@@ -585,7 +585,7 @@ describe('Polymesh Class', () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
-        harvester: {
+        middleware: {
           link: 'someLink',
           key: 'someKey',
         },
@@ -603,21 +603,21 @@ describe('Polymesh Class', () => {
       expect(result).toEqual(fakeClaims);
     });
 
-    test('should throw if the harvester query fails', async () => {
+    test('should throw if the middleware query fails', async () => {
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
-        harvester: {
+        middleware: {
           link: 'someLink',
           key: 'someKey',
         },
       });
 
-      dsMockUtils.throwOnHarvesterQuery();
+      dsMockUtils.throwOnMiddlewareQuery();
 
-      return expect(polymesh.getIssuedClaims()).rejects.toThrow('Error in harvester query: Error');
+      return expect(polymesh.getIssuedClaims()).rejects.toThrow('Error in middleware query: Error');
     });
   });
 

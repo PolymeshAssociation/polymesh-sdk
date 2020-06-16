@@ -28,7 +28,7 @@ describe('Context class', () => {
   test('should throw an error if accessing the transaction submodule without an active account', async () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
-      harvesterClient: dsMockUtils.getHarvesterClient(),
+      middlewareApi: dsMockUtils.getMiddlewareApi(),
     });
 
     expect(() => context.polymeshApi.tx).toThrow(
@@ -36,7 +36,7 @@ describe('Context class', () => {
     );
   });
 
-  test('should throw an error if accessing the harvester client without an active connection', async () => {
+  test('should throw an error if accessing the middleware client without an active connection', async () => {
     const newPair = {
       address: 'someAddress1',
       meta: {},
@@ -57,16 +57,16 @@ describe('Context class', () => {
 
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
-      harvesterClient: null,
+      middlewareApi: null,
       seed: 'Alice'.padEnd(32, ' '),
     });
 
-    expect(() => context.harvesterClient).toThrow(
-      'Cannot perform this action without an active harvester connection'
+    expect(() => context.middlewareApi).toThrow(
+      'Cannot perform this action without an active middleware connection'
     );
   });
 
-  test('should check if the harvester client is equal to the instance passed to the constructor', async () => {
+  test('should check if the middleware client is equal to the instance passed to the constructor', async () => {
     const newPair = {
       address: 'someAddress1',
       meta: {},
@@ -85,22 +85,22 @@ describe('Context class', () => {
       ),
     });
 
-    const harvesterClient = dsMockUtils.getHarvesterClient();
+    const middlewareApi = dsMockUtils.getMiddlewareApi();
 
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
-      harvesterClient,
+      middlewareApi,
       seed: 'Alice'.padEnd(32, ' '),
     });
 
-    expect(context.harvesterClient).toEqual(harvesterClient);
+    expect(context.middlewareApi).toEqual(middlewareApi);
   });
 
   describe('method: create', () => {
     test('should throw if seed parameter is not a 32 length string', async () => {
       const context = Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'abc',
       });
 
@@ -128,7 +128,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -154,7 +154,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         keyring: dsMockUtils.getKeyringInstance(),
       });
 
@@ -184,7 +184,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         uri: '//Alice',
       });
 
@@ -214,7 +214,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
       sinon.assert.notCalled(keyToIdentityIdsStub);
@@ -237,7 +237,7 @@ describe('Context class', () => {
 
       const context = Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -273,7 +273,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
       const result = context.getAccounts();
@@ -293,7 +293,7 @@ describe('Context class', () => {
       });
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
       await expect(context.setPair('012')).rejects.toThrow(
@@ -338,7 +338,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -394,7 +394,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -414,7 +414,7 @@ describe('Context class', () => {
     test('should throw if accountId or currentPair is not set', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
       expect(context.accountBalance()).rejects.toThrow(
@@ -445,7 +445,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -476,7 +476,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -512,7 +512,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -537,7 +537,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -548,7 +548,7 @@ describe('Context class', () => {
     test("should throw an error if the current identity isn't defined", async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
       expect(() => context.getCurrentIdentity()).toThrow(
@@ -579,7 +579,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'Alice'.padEnd(32, ' '),
       });
 
@@ -591,7 +591,7 @@ describe('Context class', () => {
     test("should throw an error if the current pair isn't defined", async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
       expect(() => context.getCurrentPair()).toThrow(
@@ -641,7 +641,7 @@ describe('Context class', () => {
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
-        harvesterClient: dsMockUtils.getHarvesterClient(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
         uri: '//Alice',
       });
 

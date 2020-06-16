@@ -9,7 +9,7 @@ import {
   prepareModifyClaims,
 } from '~/api/procedures/modifyClaims';
 import { Context } from '~/context';
-import { didsWithClaims } from '~/harvester/queries';
+import { didsWithClaims } from '~/middleware/queries';
 import { IdentityId } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';

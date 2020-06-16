@@ -311,7 +311,7 @@ export type UnsubCallback = () => void;
 
 export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
 
-export interface HarvesterConfig {
+export interface MiddlewareConfig {
   link: string;
   key: string;
 }
