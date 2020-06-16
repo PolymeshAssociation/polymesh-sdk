@@ -3,6 +3,7 @@ import { AccountInfo } from '@polkadot/types/interfaces';
 import stringToU8a from '@polkadot/util/string/toU8a';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
+import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
@@ -18,7 +19,6 @@ import {
 import {
   balanceToBigNumber,
   identityIdToString,
-  maximum,
   stringToAccountKey,
   stringToIdentityId,
   valueToDid,
@@ -255,7 +255,7 @@ export class Context {
     }: AccountInfo): AccountBalance => {
       return {
         free: balanceToBigNumber(free),
-        locked: maximum(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen)),
+        locked: BigNumber.max(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen)),
       };
     };
 
