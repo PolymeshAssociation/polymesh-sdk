@@ -110,7 +110,7 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Whitelisting the Smart-Extension address for a given ticker.
+       * Permissioning the Smart-Extension address for a given ticker.
        *
        * # Arguments
        * * `origin` - Signatory who owns to ticker/asset.
@@ -768,22 +768,22 @@ declare module '@polkadot/api/types/submittable' {
         (admin: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
+       * Changes the bridge limit exempted list.
+       **/
+      changeBridgeExempted: AugmentedSubmittable<
+        (
+          exempted:
+            | Vec<ITuple<[IdentityId, bool]>>
+            | [IdentityId | string | Uint8Array, bool | boolean | Uint8Array][]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * Changes the bridge limits.
        **/
       changeBridgeLimit: AugmentedSubmittable<
         (
           amount: Balance | AnyNumber | Uint8Array,
           duration: BlockNumber | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Changes the bridge limit whitelist.
-       **/
-      changeBridgeWhitelist: AugmentedSubmittable<
-        (
-          whitelist:
-            | Vec<ITuple<[IdentityId, bool]>>
-            | [IdentityId | string | Uint8Array, bool | boolean | Uint8Array][]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2563,7 +2563,7 @@ declare module '@polkadot/api/types/submittable' {
             | ProtocolOp
             | 'AssetRegisterTicker'
             | 'AssetIssue'
-            | 'AssetAddDocument'
+            | 'AssetAddDocuments'
             | 'AssetCreateAsset'
             | 'DividendNew'
             | 'ComplianceManagerAddActiveRule'
@@ -2571,7 +2571,7 @@ declare module '@polkadot/api/types/submittable' {
             | 'IdentityCddRegisterDid'
             | 'IdentityAddClaim'
             | 'IdentitySetMasterKey'
-            | 'IdentityAddSigningItem'
+            | 'IdentityAddSigningItemsWithAuthorization'
             | 'PipsPropose'
             | 'VotingAddBallot'
             | number
