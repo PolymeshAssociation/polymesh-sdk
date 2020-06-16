@@ -453,7 +453,7 @@ declare module '@polkadot/api/types/storage' {
       /**
        * Identities not constrained by the bridge limit.
        **/
-      bridgeLimitWhitelist: AugmentedQuery<
+      bridgeLimitExempted: AugmentedQuery<
         ApiType,
         (arg: IdentityId | string | Uint8Array) => Observable<bool>
       >;
@@ -1104,7 +1104,7 @@ declare module '@polkadot/api/types/storage' {
             | ProtocolOp
             | 'AssetRegisterTicker'
             | 'AssetIssue'
-            | 'AssetAddDocument'
+            | 'AssetAddDocuments'
             | 'AssetCreateAsset'
             | 'DividendNew'
             | 'ComplianceManagerAddActiveRule'
@@ -1112,7 +1112,7 @@ declare module '@polkadot/api/types/storage' {
             | 'IdentityCddRegisterDid'
             | 'IdentityAddClaim'
             | 'IdentitySetMasterKey'
-            | 'IdentityAddSigningItem'
+            | 'IdentityAddSigningItemsWithAuthorization'
             | 'PipsPropose'
             | 'VotingAddBallot'
             | number
@@ -1535,7 +1535,7 @@ declare module '@polkadot/api/types/storage' {
        **/
       stoCount: AugmentedQuery<ApiType, (arg: Ticker | string | Uint8Array) => Observable<u32>>;
       /**
-       * Tokens can have multiple whitelists that (for now) check entries individually within each other
+       * Tokens can have multiple exemptions that (for now) check entries individually within each other
        * (ticker, sto_id) -> STO
        **/
       stosByToken: AugmentedQuery<
@@ -1669,6 +1669,7 @@ declare module '@polkadot/api/types/storage' {
     transactionPayment: {
       nextFeeMultiplier: AugmentedQuery<ApiType, () => Observable<Multiplier>>;
     };
+    utility: {};
     voting: {
       /**
        * Mapping of ticker and ballot name -> ballot details

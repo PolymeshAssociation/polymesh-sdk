@@ -1,3 +1,4 @@
+import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -35,6 +36,9 @@ describe('Authorizations class', () => {
 
     test('should retrieve all pending authorizations received by the identity and filter out expired ones', async () => {
       sinon.stub(utilsModule, 'signerToSignatory');
+      dsMockUtils.createQueryStub('identity', 'authorizations');
+
+      const requestPaginatedStub = sinon.stub(utilsModule, 'requestPaginated');
 
       const did = 'someDid';
 
@@ -65,7 +69,7 @@ describe('Authorizations class', () => {
 
       const authEntries = authParams.map(({ authId, expiry, issuerDid, data }) =>
         tuple(
-          [did, authId],
+          ({ args: [did, authId] } as unknown) as StorageKey,
           dsMockUtils.createMockAuthorization({
             auth_id: dsMockUtils.createMockU64(authId.toNumber()),
             expiry: dsMockUtils.createMockOption(
@@ -81,10 +85,7 @@ describe('Authorizations class', () => {
         )
       );
 
-      /* eslint-enable @typescript-eslint/camelcase */
-      dsMockUtils.createQueryStub('identity', 'authorizations', {
-        entries: authEntries,
-      });
+      requestPaginatedStub.resolves({ entries: authEntries, lastKey: null });
 
       const context = dsMockUtils.getContextInstance({ did });
       const identity = entityMockUtils.getIdentityInstance({ did });
@@ -96,7 +97,7 @@ describe('Authorizations class', () => {
 
       const result = await authsNamespace.getReceived();
 
-      expect(result).toEqual(expectedAuthorizations);
+      expect(result).toEqual({ data: expectedAuthorizations, next: null });
     });
   });
 
@@ -107,6 +108,9 @@ describe('Authorizations class', () => {
 
     test('should retrieve all pending authorizations sent by the identity and filter out expired ones', async () => {
       sinon.stub(utilsModule, 'signerToSignatory');
+      dsMockUtils.createQueryStub('identity', 'authorizationsGiven');
+
+      const requestPaginatedStub = sinon.stub(utilsModule, 'requestPaginated');
 
       const did = 'someDid';
 
@@ -152,19 +156,17 @@ describe('Authorizations class', () => {
       const authorizationsGivenEntries = authorizations.map(
         ({ authorized_by: issuer, auth_id: authId }, index) =>
           tuple(
-            [issuer, authId],
+            ({ args: [issuer, authId] } as unknown) as StorageKey,
             dsMockUtils.createMockSignatory({
               Identity: dsMockUtils.createMockIdentityId(authParams[index].targetDid),
             })
           )
       );
 
-      dsMockUtils.createQueryStub('identity', 'authorizationsGiven', {
-        entries: authorizationsGivenEntries,
-      });
+      requestPaginatedStub.resolves({ entries: authorizationsGivenEntries, lastKey: null });
 
       const authsMultiArgs = authorizationsGivenEntries.map(([keys, signatory]) =>
-        tuple(signatory, keys[1])
+        tuple(signatory, keys.args[1])
       );
 
       const authorizationsStub = dsMockUtils.createQueryStub('identity', 'authorizations');
@@ -180,7 +182,7 @@ describe('Authorizations class', () => {
 
       const result = await authsNamespace.getSent();
 
-      expect(result).toEqual(expectedAuthorizations);
+      expect(result).toEqual({ data: expectedAuthorizations, next: null });
     });
   });
 });
