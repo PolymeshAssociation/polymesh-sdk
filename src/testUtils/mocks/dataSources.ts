@@ -180,6 +180,7 @@ interface KeyringOptions {
 
 export interface StubQuery {
   entries: SinonStub;
+  entriesPaged: SinonStub;
   multi: SinonStub;
   size: SinonStub;
 }
@@ -732,6 +733,7 @@ export function createQueryStub<
   if (!runtimeModule[query]) {
     stub = (sinon.stub() as unknown) as Queries[ModuleName][QueryName] & SinonStub & StubQuery;
     stub.entries = sinon.stub();
+    stub.entriesPaged = sinon.stub();
     stub.multi = sinon.stub();
     stub.size = sinon.stub();
     runtimeModule[query] = stub;
@@ -743,7 +745,12 @@ export function createQueryStub<
   }
 
   if (opts?.entries) {
-    stub.entries.resolves(opts.entries.map(([keys, value]) => [{ args: keys }, value]));
+    const entryResults = opts.entries.map(([keys, value], index) => [
+      { args: keys, toHex: (): string => `key${index}` },
+      value,
+    ]);
+    stub.entries.resolves(entryResults);
+    stub.entriesPaged.resolves(entryResults);
   }
   if (opts?.multi) {
     stub.multi.resolves(opts.multi);

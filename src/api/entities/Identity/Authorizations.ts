@@ -3,11 +3,13 @@ import { u64 } from '@polkadot/types';
 import { AuthorizationRequest } from '~/api/entities';
 import { Namespace } from '~/base';
 import { Authorization } from '~/polkadot';
+import { PaginationOptions, ResultSet } from '~/types';
 import { SignerType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   authorizationDataToAuthorization,
   momentToDate,
+  requestPaginated,
   signatoryToSigner,
   signerToSignatory,
   u64ToBigNumber,
@@ -21,36 +23,61 @@ import { Identity } from './';
 export class Authorizations extends Namespace<Identity> {
   /**
    * Fetch all pending authorization requests for which this identity is the target
+   *
+   * @note supports pagination
    */
-  public async getReceived(): Promise<AuthorizationRequest[]> {
+  public async getReceived(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<AuthorizationRequest>> {
     const {
       context: { polymeshApi },
       context,
       parent: { did },
     } = this;
 
-    const entries = await polymeshApi.query.identity.authorizations.entries(
-      signerToSignatory({ type: SignerType.Identity, value: did }, context)
+    const signatory = signerToSignatory({ type: SignerType.Identity, value: did }, context);
+
+    const { entries, lastKey: next } = await requestPaginated(
+      polymeshApi.query.identity.authorizations,
+      {
+        arg: signatory,
+        paginationOpts,
+      }
     );
 
-    return this.createAuthorizationRequests(entries.map(([, auth]) => ({ auth, target: did })));
+    const data = this.createAuthorizationRequests(
+      entries.map(([, auth]) => ({ auth, target: did }))
+    );
+
+    return {
+      data,
+      next,
+    };
   }
 
   /**
    * Fetch all pending authorization requests issued by this identity
    */
-  public async getSent(): Promise<AuthorizationRequest[]> {
+  public async getSent(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<AuthorizationRequest>> {
     const {
       context: { polymeshApi },
       context,
       parent: { did },
     } = this;
 
-    const givenAuthEntries = await polymeshApi.query.identity.authorizationsGiven.entries(
-      signerToSignatory({ type: SignerType.Identity, value: did }, context)
+    const sig = signerToSignatory({ type: SignerType.Identity, value: did }, context);
+
+    const { entries, lastKey: next } = await requestPaginated(
+      polymeshApi.query.identity.authorizationsGiven,
+      {
+        arg: sig,
+        paginationOpts,
+      }
     );
 
-    const authQueryParams = givenAuthEntries.map(([storageKey, signatory]) =>
+    const authQueryParams = entries.map(([storageKey, signatory]) =>
       tuple(signatory, storageKey.args[1] as u64)
     );
 
@@ -58,12 +85,17 @@ export class Authorizations extends Namespace<Identity> {
       authQueryParams
     );
 
-    return this.createAuthorizationRequests(
+    const data = this.createAuthorizationRequests(
       authorizations.map((auth, index) => ({
         auth,
         target: signatoryToSigner(authQueryParams[index][0]).value,
       }))
     );
+
+    return {
+      data,
+      next,
+    };
   }
 
   /**

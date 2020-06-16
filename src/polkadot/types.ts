@@ -136,6 +136,8 @@ export enum PolymeshCommitteeTx {
   Vote = 'polymeshCommittee.vote',
   Close = 'polymeshCommittee.close',
   SetReleaseCoordinator = 'polymeshCommittee.setReleaseCoordinator',
+  VoteEnactReferendum = 'polymeshCommittee.voteEnactReferendum',
+  VoteRejectReferendum = 'polymeshCommittee.voteRejectReferendum',
 }
 
 export enum CommitteeMembershipTx {
@@ -220,6 +222,8 @@ export enum IdentityTx {
   ChangeCddRequirementForMkRotation = 'identity.changeCddRequirementForMkRotation',
   JoinIdentityAsKey = 'identity.joinIdentityAsKey',
   JoinIdentityAsIdentity = 'identity.joinIdentityAsIdentity',
+  LeaveIdentityAsKey = 'identity.leaveIdentityAsKey',
+  LeaveIdentityAsIdentity = 'identity.leaveIdentityAsIdentity',
   AddClaim = 'identity.addClaim',
   AddClaimsBatch = 'identity.addClaimsBatch',
   ForwardedCall = 'identity.forwardedCall',
@@ -248,7 +252,7 @@ export enum BridgeTx {
   Freeze = 'bridge.freeze',
   Unfreeze = 'bridge.unfreeze',
   ChangeBridgeLimit = 'bridge.changeBridgeLimit',
-  ChangeBridgeWhitelist = 'bridge.changeBridgeWhitelist',
+  ChangeBridgeExempted = 'bridge.changeBridgeExempted',
   ForceHandleBridgeTx = 'bridge.forceHandleBridgeTx',
   ForceHandleBridgeTxs = 'bridge.forceHandleBridgeTxs',
   ProposeBridgeTx = 'bridge.proposeBridgeTx',
@@ -314,6 +318,10 @@ export enum ProtocolFeeTx {
   ChangeBaseFee = 'protocolFee.changeBaseFee',
 }
 
+export enum UtilityTx {
+  Batch = 'utility.batch',
+}
+
 export type TxTag =
   | SystemTx
   | TimestampTx
@@ -342,7 +350,8 @@ export type TxTag =
   | ExemptionTx
   | SimpleTokenTx
   | CddServiceProvidersTx
-  | ProtocolFeeTx;
+  | ProtocolFeeTx
+  | UtilityTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -373,4 +382,5 @@ export const TxTags = {
   simpleToken: SimpleTokenTx,
   cddServiceProviders: CddServiceProvidersTx,
   protocolFee: ProtocolFeeTx,
+  utility: UtilityTx,
 };

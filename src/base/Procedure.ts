@@ -232,10 +232,10 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       signer = isLocked ? address : currentPair;
     }
 
-    const tx = transaction as MaybePostTransactionValue<PolymeshTx<unknown[]>>;
+    const tx = transaction as PolymeshTx<unknown[]>;
 
     this.transactions.push({
-      tx: tx as PolymeshTx<unknown[]>,
+      tx,
       args,
       postTransactionValues,
       isCritical,

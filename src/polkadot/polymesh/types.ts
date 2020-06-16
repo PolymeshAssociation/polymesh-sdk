@@ -40,10 +40,25 @@ export interface AssetTransferRule extends Struct {
   readonly rule_id: u32;
 }
 
+/** @name AssetTransferRuleResult */
+export interface AssetTransferRuleResult extends Struct {
+  readonly sender_rules: Vec<Rule>;
+  readonly receiver_rules: Vec<Rule>;
+  readonly rule_id: u32;
+  readonly transfer_rule_result: bool;
+}
+
 /** @name AssetTransferRules */
 export interface AssetTransferRules extends Struct {
   readonly is_paused: bool;
   readonly rules: Vec<AssetTransferRule>;
+}
+
+/** @name AssetTransferRulesResult */
+export interface AssetTransferRulesResult extends Struct {
+  readonly is_paused: bool;
+  readonly rules: Vec<AssetTransferRule>;
+  readonly final_result: bool;
 }
 
 /** @name AssetType */
@@ -160,20 +175,6 @@ export interface CanTransferResult extends Enum {
 /** @name CappedFee */
 export interface CappedFee extends u64 {}
 
-/** @name CappedVoteCount */
-export interface CappedVoteCount extends Enum {
-  readonly isSuccess: boolean;
-  readonly asSuccess: CappedVoteCountSuccess;
-  readonly isProposalNotFound: boolean;
-  readonly asProposalNotFound: Bytes;
-}
-
-/** @name CappedVoteCountSuccess */
-export interface CappedVoteCountSuccess extends Struct {
-  readonly ayes: u64;
-  readonly nays: u64;
-}
-
 /** @name CddStatus */
 export interface CddStatus extends Enum {
   readonly isOk: boolean;
@@ -273,6 +274,13 @@ export interface DidRecordsSuccess extends Struct {
   readonly signing_items: Vec<SigningItem>;
 }
 
+/** @name DidStatus */
+export interface DidStatus extends Enum {
+  readonly isUnknown: boolean;
+  readonly isExists: boolean;
+  readonly isCddVerified: boolean;
+}
+
 /** @name Dividend */
 export interface Dividend extends Struct {
   readonly amount: Balance;
@@ -304,6 +312,20 @@ export interface FeeOf extends Balance {}
 
 /** @name FundingRoundName */
 export interface FundingRoundName extends Text {}
+
+/** @name HandledTxStatus */
+export interface HandledTxStatus extends Enum {
+  readonly isSuccess: boolean;
+  readonly isError: boolean;
+  readonly asError: Text;
+}
+
+/** @name HistoricalVotingByAddress */
+export interface HistoricalVotingByAddress extends Vec<VoteByPip> {}
+
+/** @name HistoricalVotingById */
+export interface HistoricalVotingById
+  extends Vec<ITuple<[AccountKey, HistoricalVotingByAddress]>> {}
 
 /** @name IdentifierType */
 export interface IdentifierType extends Enum {
@@ -393,6 +415,14 @@ export interface LinkedKeyInfo extends Enum {
   readonly asUnique: IdentityId;
   readonly isGroup: boolean;
   readonly asGroup: Vec<IdentityId>;
+}
+
+/** @name LinkType */
+export interface LinkType extends Enum {
+  readonly isDocumentOwnership: boolean;
+  readonly isTickerOwnership: boolean;
+  readonly isAssetOwnership: boolean;
+  readonly isNoData: boolean;
 }
 
 /** @name Memo */
@@ -507,7 +537,7 @@ export interface ProposalState extends Enum {
 export interface ProtocolOp extends Enum {
   readonly isAssetRegisterTicker: boolean;
   readonly isAssetIssue: boolean;
-  readonly isAssetAddDocument: boolean;
+  readonly isAssetAddDocuments: boolean;
   readonly isAssetCreateAsset: boolean;
   readonly isDividendNew: boolean;
   readonly isComplianceManagerAddActiveRule: boolean;
@@ -515,7 +545,7 @@ export interface ProtocolOp extends Enum {
   readonly isIdentityCddRegisterDid: boolean;
   readonly isIdentityAddClaim: boolean;
   readonly isIdentitySetMasterKey: boolean;
-  readonly isIdentityAddSigningItem: boolean;
+  readonly isIdentityAddSigningItemsWithAuthorization: boolean;
   readonly isPipsPropose: boolean;
   readonly isVotingAddBallot: boolean;
 }
@@ -555,6 +585,12 @@ export interface RestrictionResult extends Enum {
 export interface Rule extends Struct {
   readonly rule_type: RuleType;
   readonly issuers: Vec<IdentityId>;
+}
+
+/** @name RuleResult */
+export interface RuleResult extends Struct {
+  readonly rule: Rule;
+  readonly result: bool;
 }
 
 /** @name RuleType */
@@ -689,6 +725,35 @@ export interface TickerTransferApproval extends Struct {
 
 /** @name Url */
 export interface Url extends Text {}
+
+/** @name Vote */
+export interface Vote extends Enum {
+  readonly isNone: boolean;
+  readonly isYes: boolean;
+  readonly asYes: Balance;
+  readonly isNo: boolean;
+  readonly asNo: Balance;
+}
+
+/** @name VoteByPip */
+export interface VoteByPip extends Struct {
+  readonly pip: PipId;
+  readonly vote: Vote;
+}
+
+/** @name VoteCount */
+export interface VoteCount extends Enum {
+  readonly isProposalFound: boolean;
+  readonly asProposalFound: VoteCountProposalFound;
+  readonly isProposalNotFound: boolean;
+  readonly asProposalNotFound: Bytes;
+}
+
+/** @name VoteCountProposalFound */
+export interface VoteCountProposalFound extends Struct {
+  readonly ayes: u64;
+  readonly nays: u64;
+}
 
 /** @name VotingResult */
 export interface VotingResult extends Struct {

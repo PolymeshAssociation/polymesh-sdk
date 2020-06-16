@@ -153,6 +153,12 @@ export default {
       receiver_rules: 'Vec<Rule>',
       rule_id: 'u32',
     },
+    AssetTransferRuleResult: {
+      sender_rules: 'Vec<Rule>',
+      receiver_rules: 'Vec<Rule>',
+      rule_id: 'u32',
+      transfer_rule_result: 'bool',
+    },
     RuleType: {
       _enum: {
         IsPresent: 'Claim',
@@ -164,6 +170,10 @@ export default {
     Rule: {
       rule_type: 'RuleType',
       issuers: 'Vec<IdentityId>',
+    },
+    RuleResult: {
+      rule: 'Rule',
+      result: 'bool',
     },
     STO: {
       beneficiary_did: 'IdentityId',
@@ -367,6 +377,11 @@ export default {
       is_paused: 'bool',
       rules: 'Vec<AssetTransferRule>',
     },
+    AssetTransferRulesResult: {
+      is_paused: 'bool',
+      rules: 'Vec<AssetTransferRule>',
+      final_result: 'bool',
+    },
     Claim1stKey: {
       target: 'IdentityId',
       claim_type: 'ClaimType',
@@ -399,7 +414,7 @@ export default {
       _enum: [
         'AssetRegisterTicker',
         'AssetIssue',
-        'AssetAddDocument',
+        'AssetAddDocuments',
         'AssetCreateAsset',
         'DividendNew',
         'ComplianceManagerAddActiveRule',
@@ -407,7 +422,7 @@ export default {
         'IdentityCddRegisterDid',
         'IdentityAddClaim',
         'IdentitySetMasterKey',
-        'IdentityAddSigningItem',
+        'IdentityAddSigningItemsWithAuthorization',
         'PipsPropose',
         'VotingAddBallot',
       ],
@@ -434,16 +449,29 @@ export default {
         IdNotFound: 'Vec<u8>',
       },
     },
-    CappedVoteCountSuccess: {
+    VoteCountProposalFound: {
       ayes: 'u64',
       nays: 'u64',
     },
-    CappedVoteCount: {
+    VoteCount: {
       _enum: {
-        Success: 'CappedVoteCountSuccess',
+        ProposalFound: 'VoteCountProposalFound',
         ProposalNotFound: 'Vec<u8>',
       },
     },
+    Vote: {
+      _enum: {
+        None: '',
+        Yes: 'Balance',
+        No: 'Balance',
+      },
+    },
+    VoteByPip: {
+      pip: 'PipId',
+      vote: 'Vote',
+    },
+    HistoricalVotingByAddress: 'Vec<VoteByPip>',
+    HistoricalVotingById: 'Vec<(AccountKey, HistoricalVotingByAddress)>',
     Weight: 'u32',
     BridgeTxDetail: {
       amount: 'Balance',
@@ -460,6 +488,12 @@ export default {
         Handled: '',
       },
     },
+    HandledTxStatus: {
+      _enum: {
+        Success: '',
+        Error: 'Text',
+      },
+    },
     CappedFee: 'u64',
     CanTransferResult: {
       _enum: {
@@ -467,8 +501,54 @@ export default {
         Err: 'Vec<u8>',
       },
     },
+    LinkType: {
+      _enum: {
+        DocumentOwnership: '',
+        TickerOwnership: '',
+        AssetOwnership: '',
+        NoData: '',
+      },
+    },
+    DidStatus: {
+      _enum: {
+        Unknown: '',
+        Exists: '',
+        CddVerified: '',
+      },
+    },
   },
   rpc: {
+    compliance: {
+      canTransfer: {
+        description:
+          'Checks whether a transaction with given ' +
+          'parameters is compliant to the compliance ' +
+          'manager rules',
+        params: [
+          {
+            name: 'ticker',
+            type: 'Ticker',
+            isOptional: false,
+          },
+          {
+            name: 'from_did',
+            type: 'Option<IdentityId>',
+            isOptional: false,
+          },
+          {
+            name: 'to_did',
+            type: 'Option<IdentityId>',
+            isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'AssetTransferRulesResult',
+      },
+    },
     identity: {
       isIdentityHasValidCdd: {
         description: 'use to tell whether the given ' + 'did has valid cdd claim or not',
@@ -523,6 +603,51 @@ export default {
         ],
         type: 'DidRecords',
       },
+      getFilteredLinks: {
+        description:
+          'Retrieve links data for a given ' +
+          'signatory and filtered using the given ' +
+          'Link type',
+        params: [
+          {
+            name: 'signatory',
+            type: 'Signatory',
+            isOptional: false,
+          },
+          {
+            name: 'allow_expired',
+            type: 'bool',
+            isOptional: false,
+          },
+          {
+            name: 'link_type',
+            type: 'LinkType',
+            isOptional: true,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'Vec<Link>',
+      },
+      getDidStatus: {
+        description: 'Retrieve status of the DID',
+        params: [
+          {
+            name: 'did',
+            type: 'Vec<IdentityId>',
+            isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'Vec<DidStatus>',
+      },
     },
     pips: {
       getVotes: {
@@ -539,7 +664,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'CappedVoteCount',
+        type: 'VoteCount',
       },
       proposedBy: {
         description: 'Retrieves proposal indices started by address',
@@ -572,6 +697,38 @@ export default {
           },
         ],
         type: 'Vec<u32>',
+      },
+      votingHistoryByAddress: {
+        description: 'Retrieves proposal `address` indices voted on',
+        params: [
+          {
+            name: 'address',
+            type: 'AccountId',
+            isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'HistoricalVoting',
+      },
+      votingHistoryById: {
+        description: 'Retrieve historical voting of `id` identity',
+        params: [
+          {
+            name: 'id',
+            type: 'IdentityId',
+            isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'HistoricalVotingByAddress',
       },
     },
     protocolFee: {
