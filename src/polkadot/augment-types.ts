@@ -36,22 +36,27 @@ import { RawAuraPreDigest } from '@polkadot/types/interfaces/aura';
 import { ExtrinsicOrHash, ExtrinsicStatus } from '@polkadot/types/interfaces/author';
 import { UncleEntryItem } from '@polkadot/types/interfaces/authorship';
 import {
+  AllowedSlots,
   BabeAuthorityWeight,
   BabeBlockWeight,
   BabeWeight,
   EpochAuthorship,
   MaybeRandomness,
   MaybeVrf,
+  NextConfigDescriptor,
+  NextConfigDescriptorV1,
   Randomness,
   RawBabePreDigest,
   RawBabePreDigestCompat,
   RawBabePreDigestPrimary,
   RawBabePreDigestPrimaryTo159,
-  RawBabePreDigestSecondary,
+  RawBabePreDigestSecondaryPlain,
   RawBabePreDigestSecondaryTo159,
+  RawBabePreDigestSecondaryVRF,
   RawBabePreDigestTo159,
   SlotNumber,
   VrfData,
+  VrfOutput,
   VrfProof,
 } from '@polkadot/types/interfaces/babe';
 import {
@@ -107,6 +112,7 @@ import {
   ReferendumInfoFinished,
   ReferendumInfoTo239,
   ReferendumStatus,
+  ReleasesDemocracy,
   Tally,
   Voting,
   VotingDelegating,
@@ -115,6 +121,8 @@ import {
 } from '@polkadot/types/interfaces/democracy';
 import {
   ApprovalFlag,
+  DefunctVoter,
+  Renouncing,
   SetIndex,
   Vote,
   VoteIndex,
@@ -468,6 +476,7 @@ import {
   Phantom,
   PhantomData,
   PreRuntime,
+  ProxyType,
   RuntimeDbWeight,
   Seal,
   SealV0,
@@ -513,6 +522,8 @@ import {
   CompactScore,
   ElectionCompute,
   ElectionResult,
+  ElectionScore,
+  ElectionSize,
   ElectionStatus,
   EraIndex,
   EraPoints,
@@ -556,6 +567,7 @@ import {
   RuntimeVersionApi,
   StorageChangeSet,
 } from '@polkadot/types/interfaces/state';
+import { WeightToFeeCoefficient } from '@polkadot/types/interfaces/support';
 import {
   AccountInfo,
   ChainProperties,
@@ -919,6 +931,9 @@ declare module '@polkadot/types/types/registry' {
     PhantomData: PhantomData;
     'Option<PhantomData>': Option<PhantomData>;
     'Vec<PhantomData>': Vec<PhantomData>;
+    ProxyType: ProxyType;
+    'Option<ProxyType>': Option<ProxyType>;
+    'Vec<ProxyType>': Vec<ProxyType>;
     RuntimeDbWeight: RuntimeDbWeight;
     'Option<RuntimeDbWeight>': Option<RuntimeDbWeight>;
     'Vec<RuntimeDbWeight>': Vec<RuntimeDbWeight>;
@@ -956,6 +971,9 @@ declare module '@polkadot/types/types/registry' {
     RawAuraPreDigest: RawAuraPreDigest;
     'Option<RawAuraPreDigest>': Option<RawAuraPreDigest>;
     'Vec<RawAuraPreDigest>': Vec<RawAuraPreDigest>;
+    AllowedSlots: AllowedSlots;
+    'Option<AllowedSlots>': Option<AllowedSlots>;
+    'Vec<AllowedSlots>': Vec<AllowedSlots>;
     BabeAuthorityWeight: BabeAuthorityWeight;
     'Compact<BabeAuthorityWeight>': Compact<BabeAuthorityWeight>;
     'Option<BabeAuthorityWeight>': Option<BabeAuthorityWeight>;
@@ -977,6 +995,12 @@ declare module '@polkadot/types/types/registry' {
     EpochAuthorship: EpochAuthorship;
     'Option<EpochAuthorship>': Option<EpochAuthorship>;
     'Vec<EpochAuthorship>': Vec<EpochAuthorship>;
+    NextConfigDescriptor: NextConfigDescriptor;
+    'Option<NextConfigDescriptor>': Option<NextConfigDescriptor>;
+    'Vec<NextConfigDescriptor>': Vec<NextConfigDescriptor>;
+    NextConfigDescriptorV1: NextConfigDescriptorV1;
+    'Option<NextConfigDescriptorV1>': Option<NextConfigDescriptorV1>;
+    'Vec<NextConfigDescriptorV1>': Vec<NextConfigDescriptorV1>;
     Randomness: Randomness;
     'Option<Randomness>': Option<Randomness>;
     'Vec<Randomness>': Vec<Randomness>;
@@ -986,9 +1010,12 @@ declare module '@polkadot/types/types/registry' {
     RawBabePreDigestPrimary: RawBabePreDigestPrimary;
     'Option<RawBabePreDigestPrimary>': Option<RawBabePreDigestPrimary>;
     'Vec<RawBabePreDigestPrimary>': Vec<RawBabePreDigestPrimary>;
-    RawBabePreDigestSecondary: RawBabePreDigestSecondary;
-    'Option<RawBabePreDigestSecondary>': Option<RawBabePreDigestSecondary>;
-    'Vec<RawBabePreDigestSecondary>': Vec<RawBabePreDigestSecondary>;
+    RawBabePreDigestSecondaryPlain: RawBabePreDigestSecondaryPlain;
+    'Option<RawBabePreDigestSecondaryPlain>': Option<RawBabePreDigestSecondaryPlain>;
+    'Vec<RawBabePreDigestSecondaryPlain>': Vec<RawBabePreDigestSecondaryPlain>;
+    RawBabePreDigestSecondaryVRF: RawBabePreDigestSecondaryVRF;
+    'Option<RawBabePreDigestSecondaryVRF>': Option<RawBabePreDigestSecondaryVRF>;
+    'Vec<RawBabePreDigestSecondaryVRF>': Vec<RawBabePreDigestSecondaryVRF>;
     RawBabePreDigestTo159: RawBabePreDigestTo159;
     'Option<RawBabePreDigestTo159>': Option<RawBabePreDigestTo159>;
     'Vec<RawBabePreDigestTo159>': Vec<RawBabePreDigestTo159>;
@@ -1008,6 +1035,9 @@ declare module '@polkadot/types/types/registry' {
     VrfData: VrfData;
     'Option<VrfData>': Option<VrfData>;
     'Vec<VrfData>': Vec<VrfData>;
+    VrfOutput: VrfOutput;
+    'Option<VrfOutput>': Option<VrfOutput>;
+    'Vec<VrfOutput>': Vec<VrfOutput>;
     VrfProof: VrfProof;
     'Option<VrfProof>': Option<VrfProof>;
     'Vec<VrfProof>': Vec<VrfProof>;
@@ -1148,6 +1178,9 @@ declare module '@polkadot/types/types/registry' {
     ReferendumStatus: ReferendumStatus;
     'Option<ReferendumStatus>': Option<ReferendumStatus>;
     'Vec<ReferendumStatus>': Vec<ReferendumStatus>;
+    ReleasesDemocracy: ReleasesDemocracy;
+    'Option<ReleasesDemocracy>': Option<ReleasesDemocracy>;
+    'Vec<ReleasesDemocracy>': Vec<ReleasesDemocracy>;
     Tally: Tally;
     'Option<Tally>': Option<Tally>;
     'Vec<Tally>': Vec<Tally>;
@@ -1167,6 +1200,12 @@ declare module '@polkadot/types/types/registry' {
     'Compact<ApprovalFlag>': Compact<ApprovalFlag>;
     'Option<ApprovalFlag>': Option<ApprovalFlag>;
     'Vec<ApprovalFlag>': Vec<ApprovalFlag>;
+    DefunctVoter: DefunctVoter;
+    'Option<DefunctVoter>': Option<DefunctVoter>;
+    'Vec<DefunctVoter>': Vec<DefunctVoter>;
+    Renouncing: Renouncing;
+    'Option<Renouncing>': Option<Renouncing>;
+    'Vec<Renouncing>': Vec<Renouncing>;
     SetIndex: SetIndex;
     'Compact<SetIndex>': Compact<SetIndex>;
     'Option<SetIndex>': Option<SetIndex>;
@@ -1518,6 +1557,12 @@ declare module '@polkadot/types/types/registry' {
     ElectionResult: ElectionResult;
     'Option<ElectionResult>': Option<ElectionResult>;
     'Vec<ElectionResult>': Vec<ElectionResult>;
+    ElectionScore: ElectionScore;
+    'Option<ElectionScore>': Option<ElectionScore>;
+    'Vec<ElectionScore>': Vec<ElectionScore>;
+    ElectionSize: ElectionSize;
+    'Option<ElectionSize>': Option<ElectionSize>;
+    'Vec<ElectionSize>': Vec<ElectionSize>;
     ElectionStatus: ElectionStatus;
     'Option<ElectionStatus>': Option<ElectionStatus>;
     'Vec<ElectionStatus>': Vec<ElectionStatus>;
@@ -1620,6 +1665,9 @@ declare module '@polkadot/types/types/registry' {
     ValidatorPrefsTo145: ValidatorPrefsTo145;
     'Option<ValidatorPrefsTo145>': Option<ValidatorPrefsTo145>;
     'Vec<ValidatorPrefsTo145>': Vec<ValidatorPrefsTo145>;
+    WeightToFeeCoefficient: WeightToFeeCoefficient;
+    'Option<WeightToFeeCoefficient>': Option<WeightToFeeCoefficient>;
+    'Vec<WeightToFeeCoefficient>': Vec<WeightToFeeCoefficient>;
     AccountInfo: AccountInfo;
     'Option<AccountInfo>': Option<AccountInfo>;
     'Vec<AccountInfo>': Vec<AccountInfo>;

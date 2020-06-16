@@ -1,6 +1,7 @@
-import { bool, Bytes, u8, u32, u64 } from '@polkadot/types';
+import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot/api/types';
+import { bool, Bytes, StorageKey, u8, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
-import { ISubmittableResult } from '@polkadot/types/types';
+import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
 import { stringToU8a, u8aConcat, u8aFixLength, u8aToString } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
@@ -49,6 +50,8 @@ import {
   isSingleClaimCondition,
   KnownTokenType,
   MultiClaimCondition,
+  NextKey,
+  PaginationOptions,
   Rule,
   SingleClaimCondition,
   TokenDocument,
@@ -1007,4 +1010,49 @@ export function findEventRecord(
  */
 export function padTicker(ticker: string): string {
   return padEnd(ticker, MAX_TICKER_LENGTH, '\u0000');
+}
+
+/**
+ * @hidden
+ *
+ * Makes an entries request to the chain. If pagination options are supplied,
+ * the request will be paginated. Otherwise, all entries will be requested at once
+ */
+export async function requestPaginated<F extends AnyFunction>(
+  query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,
+  opts: {
+    paginationOpts?: PaginationOptions;
+    arg?: Parameters<F>[0];
+  }
+): Promise<{
+  entries: [StorageKey, ObsInnerType<ReturnType<F>>][];
+  lastKey: NextKey;
+}> {
+  const { arg, paginationOpts } = opts;
+  let entries: [StorageKey, ObsInnerType<ReturnType<F>>][];
+  let lastKey: NextKey = null;
+
+  if (paginationOpts) {
+    const { size: pageSize, start: startKey } = paginationOpts;
+    entries = await query.entriesPaged({
+      arg,
+      pageSize,
+      startKey,
+    });
+
+    if (entries.length === pageSize) {
+      lastKey = entries[entries.length - 1][0].toHex();
+    }
+  } else {
+    /*
+     * NOTE: this type assertion is necessary because the signatures for `.entries` aren't
+     * properly typed in polkadot, so they are not compatible between maps and double maps
+     */
+    entries = await (query as AugmentedQuery<'promise', F>).entries(arg);
+  }
+
+  return {
+    entries,
+    lastKey,
+  };
 }

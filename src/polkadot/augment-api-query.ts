@@ -1669,6 +1669,7 @@ declare module '@polkadot/api/types/storage' {
     transactionPayment: {
       nextFeeMultiplier: AugmentedQuery<ApiType, () => Observable<Multiplier>>;
     };
+    utility: {};
     voting: {
       /**
        * Mapping of ticker and ballot name -> ballot details
