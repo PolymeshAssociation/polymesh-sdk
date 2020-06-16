@@ -19,14 +19,14 @@ import {
 } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { didsWithClaims } from '~/harvester/queries';
-import { Query } from '~/harvester/types';
+import { didsWithClaims } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   ClaimData,
   CommonKeyring,
   Ensured,
   ErrorCode,
-  HarvesterConfig,
+  MiddlewareConfig,
   SubCallback,
   UiKeyring,
   UnsubCallback,
@@ -43,7 +43,7 @@ import {
 interface ConnectParamsBase {
   nodeUrl: string;
   signer?: Signer;
-  harvester?: HarvesterConfig;
+  middleware?: MiddlewareConfig;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -88,12 +88,12 @@ export class Polymesh {
       accountSeed?: string;
       keyring?: CommonKeyring | UiKeyring;
       accountUri?: string;
-      harvester?: HarvesterConfig;
+      middleware?: MiddlewareConfig;
     }
   ): Promise<Polymesh> {
-    const { nodeUrl, accountSeed, keyring, accountUri, signer, harvester } = params;
+    const { nodeUrl, accountSeed, keyring, accountUri, signer, middleware } = params;
     let polymeshApi: ApiPromise;
-    let harvesterClient: ApolloClient<NormalizedCacheObject> | null = null;
+    let middlewareApi: ApolloClient<NormalizedCacheObject> | null = null;
 
     try {
       const { types, rpc } = polymesh;
@@ -104,19 +104,19 @@ export class Polymesh {
         rpc,
       });
 
-      if (harvester) {
-        harvesterClient = new ApolloClient({
+      if (middleware) {
+        middlewareApi = new ApolloClient({
           link: setContext((_, { headers }) => {
             return {
               headers: {
                 ...headers,
-                'x-api-key': harvester.key,
+                'x-api-key': middleware.key,
               },
             };
           }).concat(
             ApolloLink.from([
               new HttpLink({
-                uri: harvester.link,
+                uri: middleware.link,
               }),
             ])
           ),
@@ -141,7 +141,7 @@ export class Polymesh {
       if (accountSeed) {
         context = await Context.create({
           polymeshApi,
-          harvesterClient,
+          middlewareApi,
           seed: accountSeed,
         });
       } else if (keyring) {
@@ -153,19 +153,19 @@ export class Polymesh {
         }
         context = await Context.create({
           polymeshApi,
-          harvesterClient,
+          middlewareApi,
           keyring: keyringInstance,
         });
       } else if (accountUri) {
         context = await Context.create({
           polymeshApi,
-          harvesterClient,
+          middlewareApi,
           uri: accountUri,
         });
       } else {
         context = await Context.create({
           polymeshApi,
-          harvesterClient,
+          middlewareApi,
         });
       }
 
@@ -471,14 +471,14 @@ export class Polymesh {
   public async getIssuedClaims(): Promise<ClaimData[]> {
     const {
       context,
-      context: { harvesterClient },
+      context: { middlewareApi },
     } = this;
 
     const { did } = context.getCurrentIdentity();
 
     let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
     try {
-      result = await harvesterClient.query<Ensured<Query, 'didsWithClaims'>>(
+      result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
         didsWithClaims({
           trustedClaimIssuers: [did],
           count: 100,
@@ -487,7 +487,7 @@ export class Polymesh {
     } catch (e) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: `Error in harvester query: ${e.message}`,
+        message: `Error in middleware query: ${e.message}`,
       });
     }
 

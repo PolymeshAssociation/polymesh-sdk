@@ -383,7 +383,7 @@ function configureContext(opts: ContextOptions): void {
       contextInstance.currentPair = { address } as KeyringPair;
     }),
     polymeshApi: mockInstanceContainer.apiInstance,
-    harvesterClient: mockInstanceContainer.apolloInstance,
+    middlewareApi: mockInstanceContainer.apolloInstance,
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
   } as unknown) as MockContext;
 
@@ -844,9 +844,9 @@ export function updateTxStatus<
 
 /**
  * @hidden
- * Make calls to `Harvester.query` throw an error
+ * Make calls to `Middleware.query` throw an error
  */
-export function throwOnHarvesterQuery(): void {
+export function throwOnMiddlewareQuery(): void {
   const instance = mockInstanceContainer.apolloInstance;
   instance.query = errorStub;
 }
@@ -891,7 +891,7 @@ export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> 
  * @hidden
  * Retrieve an instance of the mocked Apollo Client
  */
-export function getHarvesterClient(): ApolloClient<NormalizedCacheObject> {
+export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> {
   return mockInstanceContainer.apolloInstance;
 }
 
