@@ -21,6 +21,6 @@ export class PolymeshError extends Error {
   constructor({ message, code }: { message?: string; code: ErrorCode }) {
     super(message || ErrorMessagesPerCode[code] || `Unknown error, code: ${code}`);
 
-    this.code = code;
+    this.code = code || ErrorCode.FatalError;
   }
 }

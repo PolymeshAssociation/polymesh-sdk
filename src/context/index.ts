@@ -156,7 +156,7 @@ export class Context {
         });
       } catch (err) {
         throw new PolymeshError({
-          code: ErrorCode.FatalError,
+          code: ErrorCode.IdentityNotPresent,
           message: 'There is no Identity associated to this account',
         });
       }
@@ -207,7 +207,7 @@ export class Context {
       did = identityIds.unwrap().asUnique;
     } catch (e) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.IdentityNotPresent,
         message: 'There is no Identity associated to this account',
       });
     }
@@ -280,7 +280,7 @@ export class Context {
 
     if (!currentIdentity) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.IdentityNotPresent,
         message: 'The current account does not have an associated identity',
       });
     }
