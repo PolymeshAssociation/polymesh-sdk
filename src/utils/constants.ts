@@ -11,7 +11,7 @@ export const MAX_BATCH_ELEMENTS = {
   [TxTags.asset.AddDocuments]: 20,
   [TxTags.asset.RemoveDocuments]: 20,
   [TxTags.identity.BatchAcceptAuthorization]: 100,
-  [TxTags.identity.BatchRemoveAuthorization]: 200,
+  [TxTags.identity.BatchRemoveAuthorization]: 100,
   [TxTags.identity.AddClaimsBatch]: 200,
   [TxTags.identity.RevokeClaimsBatch]: 200,
   [TxTags.complianceManager.RemoveDefaultTrustedClaimIssuersBatch]: 200,
