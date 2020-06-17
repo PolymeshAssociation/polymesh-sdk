@@ -1,0 +1,8 @@
+schema:
+  - ${MIDDLEWARE_LINK}:
+      headers:
+        x-api-key: ${MIDDLEWARE_LINK}
+generates:
+  ./src/middleware/types.ts:
+    plugins:
+      - typescript

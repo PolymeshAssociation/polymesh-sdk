@@ -3,7 +3,7 @@ import sinon from 'sinon';
 
 import { modifyToken, transferTokenOwnership } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
-import { eventByIndexedArgs } from '~/harvester/queries';
+import { eventByIndexedArgs } from '~/middleware/queries';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
@@ -253,14 +253,14 @@ describe('SecurityToken class', () => {
       expect(result).toBeNull();
     });
 
-    test('should throw if the harvester query fails', async () => {
+    test('should throw if the middleware query fails', async () => {
       const ticker = 'SOMETICKER';
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      dsMockUtils.throwOnHarvesterQuery();
+      dsMockUtils.throwOnMiddlewareQuery();
 
-      return expect(securityToken.createdAt()).rejects.toThrow('Error in harvester query: Error');
+      return expect(securityToken.createdAt()).rejects.toThrow('Error in middleware query: Error');
     });
   });
 });

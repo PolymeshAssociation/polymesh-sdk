@@ -1,6 +1,6 @@
 import gql from 'graphql-tag';
 
-import { QueryDidsWithClaimsArgs, QueryEventsByIndexedArgsArgs } from '~/harvester/types';
+import { QueryDidsWithClaimsArgs, QueryEventsByIndexedArgsArgs } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
 
 /**
