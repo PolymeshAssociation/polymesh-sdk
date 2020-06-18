@@ -198,10 +198,10 @@ export interface Claim extends Enum {
   readonly asKnowYourCustomer: Scope;
   readonly isJurisdiction: boolean;
   readonly asJurisdiction: ITuple<[JurisdictionName, Scope]>;
-  readonly isWhitelisted: boolean;
-  readonly asWhitelisted: Scope;
-  readonly isBlacklisted: boolean;
-  readonly asBlacklisted: Scope;
+  readonly isExempted: boolean;
+  readonly asExempted: Scope;
+  readonly isBlocked: boolean;
+  readonly asBlocked: Scope;
   readonly isNoData: boolean;
 }
 
@@ -226,8 +226,8 @@ export interface ClaimType extends Enum {
   readonly isCustomerDueDiligence: boolean;
   readonly isKnowYourCustomer: boolean;
   readonly isJurisdiction: boolean;
-  readonly isWhitelisted: boolean;
-  readonly isBlacklisted: boolean;
+  readonly isExempted: boolean;
+  readonly isBlocked: boolean;
   readonly isNoType: boolean;
 }
 

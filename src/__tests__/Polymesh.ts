@@ -535,7 +535,7 @@ describe('Polymesh Class', () => {
       const date = 1589816265000;
       const customerDueDiligenceType = 'CustomerDueDiligence';
       const jurisdictionType = 'Jurisdiction';
-      const whitelistedType = 'Whitelisted';
+      const exemptedType = 'Exempted';
       const claim = {
         target: new Identity({ did: targetDid }, context),
         issuer: new Identity({ did: issuerDid }, context),
@@ -562,7 +562,7 @@ describe('Polymesh Class', () => {
           ...claim,
           expiry: null,
           claim: {
-            type: whitelistedType,
+            type: exemptedType,
             scope: 'someScope',
           },
         },
@@ -593,7 +593,7 @@ describe('Polymesh Class', () => {
             {
               ...commonClaimData,
               expiry: null,
-              type: whitelistedType,
+              type: exemptedType,
               jurisdiction: null,
               scope: 'someScope',
             },

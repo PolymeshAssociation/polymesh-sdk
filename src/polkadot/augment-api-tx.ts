@@ -1575,8 +1575,8 @@ declare module '@polkadot/api/types/submittable' {
             | { CustomerDueDiligence: any }
             | { KnowYourCustomer: any }
             | { Jurisdiction: any }
-            | { Whitelisted: any }
-            | { Blacklisted: any }
+            | { Exempted: any }
+            | { Blocked: any }
             | { NoData: any }
             | string
             | Uint8Array,
@@ -1835,8 +1835,8 @@ declare module '@polkadot/api/types/submittable' {
             | { CustomerDueDiligence: any }
             | { KnowYourCustomer: any }
             | { Jurisdiction: any }
-            | { Whitelisted: any }
-            | { Blacklisted: any }
+            | { Exempted: any }
+            | { Blocked: any }
             | { NoData: any }
             | string
             | Uint8Array

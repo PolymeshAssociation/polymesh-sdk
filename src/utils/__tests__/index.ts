@@ -1402,7 +1402,7 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
     expect(result).toBe(fakeResult);
 
     value = {
-      type: ClaimType.Whitelisted,
+      type: ClaimType.Exempted,
       scope: 'someTickerDid',
     };
 
@@ -1454,11 +1454,11 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
-      type: ClaimType.Blacklisted,
+      type: ClaimType.Blocked,
       scope: 'someIdentity',
     };
     claim = dsMockUtils.createMockClaim({
-      Blacklisted: dsMockUtils.createMockScope(fakeResult.scope),
+      Blocked: dsMockUtils.createMockScope(fakeResult.scope),
     });
 
     result = meshClaimToClaim(claim);
@@ -1530,11 +1530,11 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
-      type: ClaimType.Whitelisted,
+      type: ClaimType.Exempted,
       scope: 'someIdentity',
     };
     claim = dsMockUtils.createMockClaim({
-      Whitelisted: dsMockUtils.createMockScope(fakeResult.scope),
+      Exempted: dsMockUtils.createMockScope(fakeResult.scope),
     });
 
     result = meshClaimToClaim(claim);
@@ -1592,7 +1592,7 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         type: ConditionType.IsPresent,
         target: ConditionTarget.Both,
         claim: {
-          type: ClaimType.Whitelisted,
+          type: ClaimType.Exempted,
           scope: 'someTickerDid',
         },
         trustedClaimIssuers: ['someDid', 'otherDid'],
@@ -1602,7 +1602,7 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         target: ConditionTarget.Sender,
         claims: [
           {
-            type: ClaimType.Blacklisted,
+            type: ClaimType.Blocked,
             scope: 'someTickerDid',
           },
           {
@@ -1685,7 +1685,7 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         target: ConditionTarget.Sender,
         claims: [
           {
-            type: ClaimType.Blacklisted,
+            type: ClaimType.Blocked,
             scope: tokenDid,
           },
           {
@@ -1700,7 +1700,7 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         target: ConditionTarget.Both,
         claims: [
           {
-            type: ClaimType.Whitelisted,
+            type: ClaimType.Exempted,
             scope: tokenDid,
           },
           {
@@ -1734,7 +1734,7 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
       dsMockUtils.createMockRule({
         rule_type: dsMockUtils.createMockRuleType({
           IsNoneOf: [
-            dsMockUtils.createMockClaim({ Blacklisted: scope }),
+            dsMockUtils.createMockClaim({ Blocked: scope }),
             dsMockUtils.createMockClaim({ SellLockup: scope }),
           ],
         }),
@@ -1743,7 +1743,7 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
       dsMockUtils.createMockRule({
         rule_type: dsMockUtils.createMockRuleType({
           IsAnyOf: [
-            dsMockUtils.createMockClaim({ Whitelisted: scope }),
+            dsMockUtils.createMockClaim({ Exempted: scope }),
             dsMockUtils.createMockClaim('CustomerDueDiligence'),
           ],
         }),
@@ -1826,7 +1826,7 @@ describe('u8ToTransferStatus', () => {
 
     result = u8ToTransferStatus(dsMockUtils.createMockU8(166));
 
-    expect(result).toBe(TransferStatus.BlacklistedTransaction);
+    expect(result).toBe(TransferStatus.BlockedTransaction);
 
     result = u8ToTransferStatus(dsMockUtils.createMockU8(168));
 

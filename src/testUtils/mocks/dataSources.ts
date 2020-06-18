@@ -1449,8 +1449,8 @@ export const createMockClaim = (
     | 'CustomerDueDiligence'
     | { KnowYourCustomer: Scope }
     | { Jurisdiction: [JurisdictionName, Scope] }
-    | { Whitelisted: Scope }
-    | { Blacklisted: Scope }
+    | { Exempted: Scope }
+    | { Blocked: Scope }
     | 'NoData'
 ): Claim => createMockEnum(claim) as Claim;
 
