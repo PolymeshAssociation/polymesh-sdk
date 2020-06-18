@@ -46,7 +46,7 @@ describe('Rules class', () => {
             {
               type: ConditionType.IsPresent,
               claim: {
-                type: ClaimType.Whitelisted,
+                type: ClaimType.Exempted,
                 scope: 'someTokenDid',
               },
               target: ConditionTarget.Both,
@@ -54,7 +54,7 @@ describe('Rules class', () => {
             {
               type: ConditionType.IsAbsent,
               claim: {
-                type: ClaimType.Blacklisted,
+                type: ClaimType.Blocked,
                 scope: 'someTokenDid',
               },
               target: ConditionTarget.Both,
@@ -149,7 +149,7 @@ describe('Rules class', () => {
                 dsMockUtils.createMockRule({
                   rule_type: dsMockUtils.createMockRuleType({
                     IsPresent: dsMockUtils.createMockClaim({
-                      Whitelisted: scope,
+                      Exempted: scope,
                     }),
                   }),
                   issuers: [dsMockUtils.createMockIdentityId(notDefaultClaimIssuer)],
@@ -165,7 +165,7 @@ describe('Rules class', () => {
                 dsMockUtils.createMockRule({
                   rule_type: dsMockUtils.createMockRuleType({
                     IsAbsent: dsMockUtils.createMockClaim({
-                      Blacklisted: scope,
+                      Blocked: scope,
                     }),
                   }),
                   issuers: [],
@@ -187,7 +187,7 @@ describe('Rules class', () => {
               target: ConditionTarget.Sender,
               type: ConditionType.IsPresent,
               claim: {
-                type: ClaimType.Whitelisted,
+                type: ClaimType.Exempted,
                 scope: tokenDid,
               },
               trustedClaimIssuers: [notDefaultClaimIssuer],
@@ -213,7 +213,7 @@ describe('Rules class', () => {
               target: ConditionTarget.Receiver,
               type: ConditionType.IsAbsent,
               claim: {
-                type: ClaimType.Blacklisted,
+                type: ClaimType.Blocked,
                 scope: tokenDid,
               },
               trustedClaimIssuers: defaultClaimIssuers,

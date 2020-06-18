@@ -187,8 +187,8 @@ export enum ClaimType {
   CustomerDueDiligence = 'CustomerDueDiligence',
   KnowYourCustomer = 'KnowYourCustomer',
   Jurisdiction = 'Jurisdiction',
-  Whitelisted = 'Whitelisted',
-  Blacklisted = 'Blacklisted',
+  Exempted = 'Exempted',
+  Blocked = 'Blocked',
   NoData = 'NoData',
 }
 
@@ -296,7 +296,7 @@ export enum TransferStatus {
   SmartExtensionFailure = 'SmartExtensionFailure', // 163
   InvalidGranularity = 'InvalidGranularity', // 164
   VolumeLimitReached = 'VolumeLimitReached', // 165
-  BlacklistedTransaction = 'BlackListedTransaction', // 166
+  BlockedTransaction = 'BlockedTransaction', // 166
   FundsLimitReached = 'FundsLimitReached', // 168
 }
 

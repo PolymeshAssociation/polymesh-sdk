@@ -453,7 +453,7 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
       return TransferStatus.VolumeLimitReached;
     }
     case 166: {
-      return TransferStatus.BlacklistedTransaction;
+      return TransferStatus.BlockedTransaction;
     }
     case 168: {
       return TransferStatus.FundsLimitReached;
@@ -819,16 +819,16 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
     };
   }
 
-  if (claim.isWhitelisted) {
+  if (claim.isExempted) {
     return {
-      type: ClaimType.Whitelisted,
-      scope: identityIdToString(claim.asWhitelisted),
+      type: ClaimType.Exempted,
+      scope: identityIdToString(claim.asExempted),
     };
   }
 
   return {
-    type: ClaimType.Blacklisted,
-    scope: identityIdToString(claim.asBlacklisted),
+    type: ClaimType.Blocked,
+    scope: identityIdToString(claim.asBlocked),
   };
 }
 
