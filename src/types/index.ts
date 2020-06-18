@@ -332,6 +332,11 @@ export interface KeyringPair extends IKeyringPair {
   isLocked: boolean;
 }
 
+export interface AccountBalance {
+  free: BigNumber;
+  locked: BigNumber;
+}
+
 export interface PaginationOptions {
   size: number;
   start?: string;

@@ -450,7 +450,7 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance();
-      expect(result).toEqual(utilsModule.balanceToBigNumber(freeBalance));
+      expect(result.free).toEqual(utilsModule.balanceToBigNumber(freeBalance));
     });
 
     test('should return the account POLYX balance if accountId is set', async () => {
@@ -481,21 +481,23 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance('accountId');
-      expect(result).toEqual(utilsModule.balanceToBigNumber(freeBalance));
+      expect(result.free).toEqual(utilsModule.balanceToBigNumber(freeBalance));
     });
 
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
+      const free = dsMockUtils.createMockBalance(100);
+      const miscFrozen = dsMockUtils.createMockBalance(10);
+      const feeFrozen = dsMockUtils.createMockBalance(12);
 
-      const freeBalance = dsMockUtils.createMockBalance(100);
       const returnValue = dsMockUtils.createMockAccountInfo({
         nonce: dsMockUtils.createMockIndex(),
         refcount: dsMockUtils.createMockRefCount(),
         data: dsMockUtils.createMockAccountData({
-          free: freeBalance,
+          free,
           reserved: dsMockUtils.createMockBalance(),
-          miscFrozen: dsMockUtils.createMockBalance(),
-          feeFrozen: dsMockUtils.createMockBalance(),
+          miscFrozen,
+          feeFrozen,
         }),
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
@@ -520,7 +522,10 @@ describe('Context class', () => {
       const result = await context.accountBalance('accountId', callback);
 
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, utilsModule.balanceToBigNumber(freeBalance));
+      sinon.assert.calledWithExactly(callback, {
+        free: utilsModule.balanceToBigNumber(free),
+        locked: utilsModule.balanceToBigNumber(feeFrozen),
+      });
     });
   });
 

@@ -1013,8 +1013,6 @@ export function padTicker(ticker: string): string {
 }
 
 /**
- * @hidden
- *
  * Makes an entries request to the chain. If pagination options are supplied,
  * the request will be paginated. Otherwise, all entries will be requested at once
  */

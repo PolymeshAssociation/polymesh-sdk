@@ -12,7 +12,7 @@ import { didsWithClaims } from '~/middleware/queries';
 import { IdentityWithClaims } from '~/middleware/types';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils } from '~/testUtils/mocks';
-import { ClaimTargets, ClaimType, SubCallback } from '~/types';
+import { AccountBalance, ClaimTargets, ClaimType, SubCallback } from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -223,8 +223,11 @@ describe('Polymesh Class', () => {
   */
 
   describe('method: getAccountBalance', () => {
-    test('should return the free POLYX balance of the current account', async () => {
-      const fakeBalance = new BigNumber(100);
+    test('should return the free and locked POLYX balance of the current account', async () => {
+      const fakeBalance = {
+        free: new BigNumber(100),
+        locked: new BigNumber(0),
+      };
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
@@ -235,8 +238,11 @@ describe('Polymesh Class', () => {
       expect(result).toEqual(fakeBalance);
     });
 
-    test('should return the free POLYX balance of the supplied account', async () => {
-      const fakeBalance = new BigNumber(100);
+    test('should return the free and locked POLYX balance of the supplied account', async () => {
+      const fakeBalance = {
+        free: new BigNumber(100),
+        locked: new BigNumber(0),
+      };
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
@@ -248,7 +254,10 @@ describe('Polymesh Class', () => {
     });
 
     test('should allow subscription (with and without a supplied account id)', async () => {
-      const fakeBalance = new BigNumber(100);
+      const fakeBalance = {
+        free: new BigNumber(100),
+        locked: new BigNumber(0),
+      };
       const unsubCallback = 'unsubCallback';
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
@@ -260,7 +269,7 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wss://some.url',
       });
 
-      const callback = (() => 1 as unknown) as SubCallback<BigNumber>;
+      const callback = (() => 1 as unknown) as SubCallback<AccountBalance>;
       let result = await polymesh.getAccountBalance(callback);
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(accountBalanceStub, undefined, callback);
