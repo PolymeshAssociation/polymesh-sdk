@@ -28,6 +28,7 @@ import {
   ErrorCode,
   MiddlewareConfig,
   SubCallback,
+  TickerReservationStatus,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
@@ -253,6 +254,17 @@ export class Polymesh {
    */
   public reserveTicker(args: ReserveTickerParams): Promise<TransactionQueue<TickerReservation>> {
     return reserveTicker.prepare(args, this.context);
+  }
+
+  /**
+   * Check if a ticker is available
+   */
+  public async isTickerAvailable(args: { ticker: string }): Promise<boolean> {
+    const { ticker } = args;
+    const reservation = new TickerReservation({ ticker }, this.context);
+    const { status } = await reservation.details();
+
+    return status === TickerReservationStatus.Free;
   }
 
   /**
