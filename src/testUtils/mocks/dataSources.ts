@@ -17,6 +17,7 @@ import {
   Index,
   Moment,
   RefCount,
+  RuntimeVersion,
 } from '@polkadot/types/interfaces';
 import { Codec, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { stringToU8a } from '@polkadot/util';
@@ -500,6 +501,7 @@ function initQueryMulti(): void {
 function initApi(): void {
   mockInstanceContainer.apiInstance.registry = ('registry' as unknown) as Registry;
   mockInstanceContainer.apiInstance.createType = sinon.stub();
+  mockInstanceContainer.apiInstance.runtimeVersion = {} as RuntimeVersion;
 
   initTx();
   initQuery();
@@ -1569,3 +1571,13 @@ export const createMockScope = (did?: string): Scope => createMockStringCodec(di
 export const createMockCanTransferResult = (
   canTransferResult?: { Ok: u8 } | { Err: Bytes }
 ): CanTransferResult => createMockEnum(canTransferResult) as CanTransferResult;
+
+/**
+ * @hidden
+ */
+export const setRuntimeVersion = (name: string, version: number): void => {
+  mockInstanceContainer.apiInstance.runtimeVersion = {
+    specName: createMockStringCodec(name),
+    specVersion: createMockU32(version),
+  } as RuntimeVersion;
+};

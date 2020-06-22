@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
@@ -602,6 +603,33 @@ describe('Context class', () => {
       expect(() => context.getCurrentPair()).toThrow(
         'There is no account associated with the current SDK instance'
       );
+    });
+  });
+
+  describe('method: getNetworkProperties', () => {
+    test('should return current network information', async () => {
+      const fakeResult = {
+        name: 'polymesh',
+        version: new BigNumber(1),
+      };
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+
+      dsMockUtils.setRuntimeVersion(fakeResult.name, fakeResult.version.toNumber());
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        uri: '//Alice',
+      });
+
+      const result = context.getNetworkProperties();
+      expect(result).toEqual(fakeResult);
     });
   });
 

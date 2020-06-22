@@ -21,6 +21,7 @@ import {
   identityIdToString,
   stringToAccountKey,
   stringToIdentityId,
+  u32ToBigNumber,
   valueToDid,
 } from '~/utils';
 
@@ -324,6 +325,21 @@ export class Context {
     });
 
     return invalidDids;
+  }
+
+  /**
+   * Retrieve information for the current network
+   */
+  public getNetworkProperties(): { name: string; version: BigNumber } {
+    const {
+      polymeshApi: {
+        runtimeVersion: { specName, specVersion },
+      },
+    } = this;
+    return {
+      name: specName.toString(),
+      version: u32ToBigNumber(specVersion),
+    };
   }
 
   /**
