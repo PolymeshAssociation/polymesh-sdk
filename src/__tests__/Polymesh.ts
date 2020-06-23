@@ -11,8 +11,14 @@ import { TransactionQueue } from '~/base';
 import { didsWithClaims } from '~/middleware/queries';
 import { IdentityWithClaims } from '~/middleware/types';
 import { Polymesh } from '~/Polymesh';
-import { dsMockUtils } from '~/testUtils/mocks';
-import { AccountBalance, ClaimTargets, ClaimType, SubCallback } from '~/types';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import {
+  AccountBalance,
+  ClaimTargets,
+  ClaimType,
+  SubCallback,
+  TickerReservationStatus,
+} from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -24,6 +30,12 @@ jest.mock('~/context', require('~/testUtils/mocks/dataSources').mockContextModul
 jest.mock(
   'apollo-client',
   require('~/testUtils/mocks/dataSources').mockApolloModule('apollo-client')
+);
+jest.mock(
+  '~/api/entities/TickerReservation',
+  require('~/testUtils/mocks/entities').mockTickerReservationModule(
+    '~/api/entities/TickerReservation'
+  )
 );
 
 describe('Polymesh Class', () => {
@@ -303,6 +315,54 @@ describe('Polymesh Class', () => {
       const queue = await polymesh.reserveTicker(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: isTickerAvailable', () => {
+    beforeAll(() => {
+      entityMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      entityMockUtils.reset();
+    });
+
+    afterAll(() => {
+      entityMockUtils.cleanup();
+    });
+
+    test('should return true if ticker is available to reserve it', async () => {
+      entityMockUtils.getTickerReservationDetailsStub().resolves({
+        owner: entityMockUtils.getIdentityInstance(),
+        expiryDate: new Date(),
+        status: TickerReservationStatus.Free,
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const isTickerAvailable = await polymesh.isTickerAvailable({ ticker: 'someTicker' });
+
+      expect(isTickerAvailable).toBeTruthy();
+    });
+
+    test('should return false if ticker is not available to reserve it', async () => {
+      entityMockUtils.getTickerReservationDetailsStub().resolves({
+        owner: entityMockUtils.getIdentityInstance(),
+        expiryDate: new Date(),
+        status: TickerReservationStatus.Reserved,
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const isTickerAvailable = await polymesh.isTickerAvailable({ ticker: 'someTicker' });
+
+      expect(isTickerAvailable).toBeFalsy();
     });
   });
 
