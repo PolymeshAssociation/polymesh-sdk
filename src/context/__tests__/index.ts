@@ -608,10 +608,13 @@ describe('Context class', () => {
 
   describe('method: getNetworkProperties', () => {
     test('should return current network information', async () => {
+      const name = 'someName';
+      const version = 1;
       const fakeResult = {
-        name: 'polymesh',
-        version: new BigNumber(1),
+        name,
+        version,
       };
+
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockLinkedKeyInfo({
@@ -620,7 +623,10 @@ describe('Context class', () => {
         ),
       });
 
-      dsMockUtils.setRuntimeVersion(fakeResult.name, fakeResult.version.toNumber());
+      dsMockUtils.setRuntimeVersion({ specVersion: dsMockUtils.createMockU32(version) });
+      dsMockUtils
+        .createRpcStub('system', 'chain')
+        .resolves(dsMockUtils.createMockStringCodec(name));
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -628,7 +634,7 @@ describe('Context class', () => {
         uri: '//Alice',
       });
 
-      const result = context.getNetworkProperties();
+      const result = await context.getNetworkProperties();
       expect(result).toEqual(fakeResult);
     });
   });

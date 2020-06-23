@@ -13,6 +13,7 @@ import {
   CommonKeyring,
   ErrorCode,
   KeyringPair,
+  NetworkProperties,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -330,15 +331,20 @@ export class Context {
   /**
    * Retrieve information for the current network
    */
-  public getNetworkProperties(): { name: string; version: BigNumber } {
+  public async getNetworkProperties(): Promise<NetworkProperties> {
     const {
       polymeshApi: {
-        runtimeVersion: { specName, specVersion },
+        runtimeVersion: { specVersion },
+        rpc: {
+          system: { chain },
+        },
       },
     } = this;
+    const name = await chain();
+
     return {
-      name: specName.toString(),
-      version: u32ToBigNumber(specVersion),
+      name: name.toString(),
+      version: u32ToBigNumber(specVersion).toNumber(),
     };
   }
 

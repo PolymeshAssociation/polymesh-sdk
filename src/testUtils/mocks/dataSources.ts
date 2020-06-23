@@ -952,7 +952,7 @@ const createMockCodec = (codec: object, isEmpty: boolean): Codec => {
 /**
  * @hidden
  */
-const createMockStringCodec = (value?: string): Codec =>
+export const createMockStringCodec = (value?: string): Codec =>
   createMockCodec(
     {
       toString: () => value,
@@ -1575,9 +1575,6 @@ export const createMockCanTransferResult = (
 /**
  * @hidden
  */
-export const setRuntimeVersion = (name: string, version: number): void => {
-  mockInstanceContainer.apiInstance.runtimeVersion = {
-    specName: createMockStringCodec(name),
-    specVersion: createMockU32(version),
-  } as RuntimeVersion;
+export const setRuntimeVersion = (args: unknown): void => {
+  mockInstanceContainer.apiInstance.runtimeVersion = args as RuntimeVersion;
 };

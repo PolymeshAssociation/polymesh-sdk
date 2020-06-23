@@ -349,4 +349,9 @@ export interface ResultSet<T> {
   next: NextKey;
 }
 
+export interface NetworkProperties {
+  name: string;
+  version: number;
+}
+
 export * from '~/api/entities/types';
