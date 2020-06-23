@@ -257,11 +257,10 @@ export class Polymesh {
   }
 
   /**
-   * Check if a ticker is available
+   * Check if a ticker hasn't been reserved
    */
   public async isTickerAvailable(args: { ticker: string }): Promise<boolean> {
-    const { ticker } = args;
-    const reservation = new TickerReservation({ ticker }, this.context);
+    const reservation = new TickerReservation(args, this.context);
     const { status } = await reservation.details();
 
     return status === TickerReservationStatus.Free;
