@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
@@ -624,9 +623,7 @@ describe('Context class', () => {
       });
 
       dsMockUtils.setRuntimeVersion({ specVersion: dsMockUtils.createMockU32(version) });
-      dsMockUtils
-        .createRpcStub('system', 'chain')
-        .resolves(dsMockUtils.createMockStringCodec(name));
+      dsMockUtils.createRpcStub('system', 'chain').resolves(dsMockUtils.createMockText(name));
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
