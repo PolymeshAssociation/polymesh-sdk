@@ -348,7 +348,7 @@ describe('Polymesh Class', () => {
       expect(isTickerAvailable).toBeTruthy();
     });
 
-    test('should return false if ticker is available to reserve it', async () => {
+    test('should return false if ticker is not available to reserve it', async () => {
       entityMockUtils.getTickerReservationDetailsStub().resolves({
         owner: entityMockUtils.getIdentityInstance(),
         expiryDate: new Date(),
