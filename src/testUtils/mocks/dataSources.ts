@@ -4,7 +4,7 @@
 
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { Signer } from '@polkadot/api/types';
-import { bool, Bytes, Enum, Option, u8, u32, u64 } from '@polkadot/types';
+import { bool, Bytes, Enum, Option, Text, u8, u32, u64 } from '@polkadot/types';
 import {
   AccountData,
   AccountId,
@@ -1579,5 +1579,4 @@ export const setRuntimeVersion = (args: unknown): void => {
   mockInstanceContainer.apiInstance.runtimeVersion = args as RuntimeVersion;
 };
 
-export const createMockText = (value: string): Text =>
-  (createMockStringCodec(value) as unknown) as Text;
+export const createMockText = (value: string): Text => createMockStringCodec(value) as Text;
