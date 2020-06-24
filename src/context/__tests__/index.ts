@@ -605,6 +605,37 @@ describe('Context class', () => {
     });
   });
 
+  describe('method: getNetworkProperties', () => {
+    test('should return current network information', async () => {
+      const name = 'someName';
+      const version = 1;
+      const fakeResult = {
+        name,
+        version,
+      };
+
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+
+      dsMockUtils.setRuntimeVersion({ specVersion: dsMockUtils.createMockU32(version) });
+      dsMockUtils.createRpcStub('system', 'chain').resolves(dsMockUtils.createMockText(name));
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        uri: '//Alice',
+      });
+
+      const result = await context.getNetworkProperties();
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
   describe('method: getInvalidDids', () => {
     /* eslint-disable @typescript-eslint/camelcase */
     test('should return which DIDs in the input array are invalid', async () => {

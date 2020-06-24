@@ -13,6 +13,7 @@ import {
   CommonKeyring,
   ErrorCode,
   KeyringPair,
+  NetworkProperties,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -21,6 +22,7 @@ import {
   identityIdToString,
   stringToAccountKey,
   stringToIdentityId,
+  u32ToBigNumber,
   valueToDid,
 } from '~/utils';
 
@@ -324,6 +326,26 @@ export class Context {
     });
 
     return invalidDids;
+  }
+
+  /**
+   * Retrieve information for the current network
+   */
+  public async getNetworkProperties(): Promise<NetworkProperties> {
+    const {
+      polymeshApi: {
+        runtimeVersion: { specVersion },
+        rpc: {
+          system: { chain },
+        },
+      },
+    } = this;
+    const name = await chain();
+
+    return {
+      name: name.toString(),
+      version: u32ToBigNumber(specVersion).toNumber(),
+    };
   }
 
   /**

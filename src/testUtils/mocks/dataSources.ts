@@ -4,7 +4,7 @@
 
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { Signer } from '@polkadot/api/types';
-import { bool, Bytes, Enum, Option, u8, u32, u64 } from '@polkadot/types';
+import { bool, Bytes, Enum, Option, Text, u8, u32, u64 } from '@polkadot/types';
 import {
   AccountData,
   AccountId,
@@ -17,6 +17,7 @@ import {
   Index,
   Moment,
   RefCount,
+  RuntimeVersion,
 } from '@polkadot/types/interfaces';
 import { Codec, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { stringToU8a } from '@polkadot/util';
@@ -500,6 +501,7 @@ function initQueryMulti(): void {
 function initApi(): void {
   mockInstanceContainer.apiInstance.registry = ('registry' as unknown) as Registry;
   mockInstanceContainer.apiInstance.createType = sinon.stub();
+  mockInstanceContainer.apiInstance.runtimeVersion = {} as RuntimeVersion;
 
   initTx();
   initQuery();
@@ -1569,3 +1571,12 @@ export const createMockScope = (did?: string): Scope => createMockStringCodec(di
 export const createMockCanTransferResult = (
   canTransferResult?: { Ok: u8 } | { Err: Bytes }
 ): CanTransferResult => createMockEnum(canTransferResult) as CanTransferResult;
+
+/**
+ * @hidden
+ */
+export const setRuntimeVersion = (args: unknown): void => {
+  mockInstanceContainer.apiInstance.runtimeVersion = args as RuntimeVersion;
+};
+
+export const createMockText = (value: string): Text => createMockStringCodec(value) as Text;
