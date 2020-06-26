@@ -16,4 +16,5 @@ export interface SecurityTokenDetails {
 export interface IdentityBalance {
   identity: Identity;
   balance: BigNumber;
+  canMint?: boolean;
 }
