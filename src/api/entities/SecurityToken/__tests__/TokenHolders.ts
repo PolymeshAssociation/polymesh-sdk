@@ -112,17 +112,6 @@ describe('TokenHolders class', () => {
     test('should retrieve all the token holders with balance and mint status in false', async () => {
       dsMockUtils.createQueryStub('asset', 'balanceOf');
 
-      const fakeData = [
-        {
-          identity: 'someIdentity',
-          value: 1000,
-        },
-        {
-          identity: 'otherIdentity',
-          value: 2000,
-        },
-      ];
-
       const expectedHolders: IdentityBalance[] = [];
 
       entityMockUtils.configureMocks({
@@ -166,17 +155,6 @@ describe('TokenHolders class', () => {
 
     test('should retrieve all the token holders with balance and canMint attribute setting in true', async () => {
       dsMockUtils.createQueryStub('asset', 'balanceOf');
-
-      const fakeData = [
-        {
-          identity: 'someIdentity',
-          value: 1000,
-        },
-        {
-          identity: 'otherIdentity',
-          value: 2000,
-        },
-      ];
 
       const expectedHolders: IdentityBalance[] = [];
 

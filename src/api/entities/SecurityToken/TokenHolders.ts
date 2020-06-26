@@ -49,7 +49,7 @@ export class TokenHolders extends Namespace<SecurityToken> {
 
     const securityToken = new SecurityToken({ ticker }, context);
 
-    const areFrozen = opts?.mintStatus ? await securityToken.transfers.areFrozen() : true;
+    const areFrozen = opts?.mintStatus ? await securityToken.transfers.areFrozen() : undefined;
 
     if (opts?.mintStatus && !areFrozen) {
       const entriesChunks = chunk(entries, 10);
@@ -86,7 +86,7 @@ export class TokenHolders extends Namespace<SecurityToken> {
           ),
           balance: balanceToBigNumber(balance),
         };
-        if (opts && opts.mintStatus && areFrozen) {
+        if (opts?.mintStatus) {
           return { ...entrie, canMint: false };
         }
         return entrie;
