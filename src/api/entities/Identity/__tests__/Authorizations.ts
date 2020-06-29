@@ -53,7 +53,6 @@ describe('Authorizations class', () => {
     });
 
     test('should retrieve all pending authorizations received by the identity and filter out expired ones', async () => {
-      /* eslint-disable @typescript-eslint/camelcase */
       const authParams = [
         {
           authId: new BigNumber(1),
@@ -78,6 +77,7 @@ describe('Authorizations class', () => {
         },
       ];
 
+      /* eslint-disable @typescript-eslint/camelcase */
       const authEntries = authParams.map(({ authId, expiry, issuerDid, data }) =>
         tuple(
           ({ args: [did, authId] } as unknown) as StorageKey,
@@ -95,6 +95,7 @@ describe('Authorizations class', () => {
           })
         )
       );
+      /* eslint-enable @typescript-eslint/camelcase */
 
       requestPaginatedStub.resolves({ entries: authEntries, lastKey: null });
 
@@ -108,7 +109,6 @@ describe('Authorizations class', () => {
     });
 
     test('should retrieve all pending authorizations received by the identity filtered by an authorization type', async () => {
-      /* eslint-disable @typescript-eslint/camelcase */
       const authParams = [
         {
           authId: new BigNumber(1),
@@ -133,6 +133,7 @@ describe('Authorizations class', () => {
         },
       ];
 
+      /* eslint-disable @typescript-eslint/camelcase */
       const authEntries = authParams.map(({ authId, expiry, issuerDid, data }) =>
         tuple(
           ({ args: [did, authId] } as unknown) as StorageKey,
@@ -154,6 +155,7 @@ describe('Authorizations class', () => {
           })
         )
       );
+      /* eslint-enable @typescript-eslint/camelcase */
 
       requestPaginatedStub.resolves({ entries: authEntries, lastKey: null });
 
@@ -195,7 +197,6 @@ describe('Authorizations class', () => {
     });
 
     test('should retrieve all pending authorizations sent by the identity and filter out expired ones', async () => {
-      /* eslint-disable @typescript-eslint/camelcase */
       const authParams = [
         {
           authId: new BigNumber(1),
@@ -220,6 +221,7 @@ describe('Authorizations class', () => {
         },
       ];
 
+      /* eslint-disable @typescript-eslint/camelcase */
       const authorizations = authParams.map(({ authId, expiry, data }) => ({
         auth_id: dsMockUtils.createMockU64(authId.toNumber()),
         expiry: dsMockUtils.createMockOption(
@@ -262,7 +264,6 @@ describe('Authorizations class', () => {
     });
 
     test('should retrieve all pending authorizations sent by the identity filtered by an authorization type', async () => {
-      /* eslint-disable @typescript-eslint/camelcase */
       const authParams = [
         {
           authId: new BigNumber(1),
@@ -287,6 +288,7 @@ describe('Authorizations class', () => {
         },
       ];
 
+      /* eslint-disable @typescript-eslint/camelcase */
       const authorizations = authParams.map(({ authId, expiry, data }) => ({
         auth_id: dsMockUtils.createMockU64(authId.toNumber()),
         expiry: dsMockUtils.createMockOption(
