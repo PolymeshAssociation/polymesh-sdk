@@ -3,7 +3,7 @@ import { u64 } from '@polkadot/types';
 import { AuthorizationRequest } from '~/api/entities';
 import { Namespace } from '~/base';
 import { Authorization } from '~/polkadot';
-import { PaginationOptions, ResultSet } from '~/types';
+import { AuthorizationType, PaginationOptions, ResultSet } from '~/types';
 import { SignerType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -21,14 +21,28 @@ import { Identity } from './';
  * Handles all Identity Authorization related functionality
  */
 export class Authorizations extends Namespace<Identity> {
+  public async getReceived(opts: {
+    pagination: PaginationOptions;
+  }): Promise<ResultSet<AuthorizationRequest>>;
+
+  public async getReceived(opts: {
+    filterByType: AuthorizationType;
+  }): Promise<ResultSet<AuthorizationRequest>>;
+
+  public async getReceived(opts?: {
+    pagination: PaginationOptions;
+    filterByType: AuthorizationType;
+  }): Promise<ResultSet<AuthorizationRequest>>;
+
   /**
    * Fetch all pending authorization requests for which this identity is the target
    *
    * @note supports pagination
    */
-  public async getReceived(
-    paginationOpts?: PaginationOptions
-  ): Promise<ResultSet<AuthorizationRequest>> {
+  public async getReceived(opts?: {
+    pagination?: PaginationOptions;
+    filterByType?: AuthorizationType;
+  }): Promise<ResultSet<AuthorizationRequest>> {
     const {
       context: { polymeshApi },
       context,
@@ -41,12 +55,13 @@ export class Authorizations extends Namespace<Identity> {
       polymeshApi.query.identity.authorizations,
       {
         arg: signatory,
-        paginationOpts,
+        paginationOpts: opts?.pagination || undefined,
       }
     );
 
     const data = this.createAuthorizationRequests(
-      entries.map(([, auth]) => ({ auth, target: did }))
+      entries.map(([, auth]) => ({ auth, target: did })),
+      opts?.filterByType
     );
 
     return {
@@ -55,12 +70,26 @@ export class Authorizations extends Namespace<Identity> {
     };
   }
 
+  public async getSent(opts: {
+    pagination: PaginationOptions;
+  }): Promise<ResultSet<AuthorizationRequest>>;
+
+  public async getSent(opts: {
+    filterByType: AuthorizationType;
+  }): Promise<ResultSet<AuthorizationRequest>>;
+
+  public async getSent(opts?: {
+    pagination: PaginationOptions;
+    filterByType: AuthorizationType;
+  }): Promise<ResultSet<AuthorizationRequest>>;
+
   /**
    * Fetch all pending authorization requests issued by this identity
    */
-  public async getSent(
-    paginationOpts?: PaginationOptions
-  ): Promise<ResultSet<AuthorizationRequest>> {
+  public async getSent(opts?: {
+    pagination?: PaginationOptions;
+    filterByType?: AuthorizationType;
+  }): Promise<ResultSet<AuthorizationRequest>> {
     const {
       context: { polymeshApi },
       context,
@@ -73,7 +102,7 @@ export class Authorizations extends Namespace<Identity> {
       polymeshApi.query.identity.authorizationsGiven,
       {
         arg: sig,
-        paginationOpts,
+        paginationOpts: opts?.pagination,
       }
     );
 
@@ -89,7 +118,8 @@ export class Authorizations extends Namespace<Identity> {
       authorizations.map((auth, index) => ({
         auth,
         target: signatoryToSigner(authQueryParams[index][0]).value,
-      }))
+      })),
+      opts?.filterByType
     );
 
     return {
@@ -104,10 +134,11 @@ export class Authorizations extends Namespace<Identity> {
    * Create an array of AuthorizationRequests from an array of on-chain Authorizations
    */
   private createAuthorizationRequests(
-    auths: { auth: Authorization; target: string }[]
+    auths: { auth: Authorization; target: string }[],
+    filterByType?: AuthorizationType
   ): AuthorizationRequest[] {
     const { context } = this;
-    return auths
+    let result = auths
       .map(auth => {
         const {
           auth: { expiry, auth_id: authId, authorization_data: data, authorized_by: issuer },
@@ -122,9 +153,14 @@ export class Authorizations extends Namespace<Identity> {
           issuerDid: signatoryToSigner(issuer).value,
         };
       })
-      .filter(({ expiry }) => expiry === null || expiry > new Date())
-      .map(args => {
-        return new AuthorizationRequest(args, context);
-      });
+      .filter(({ expiry }) => expiry === null || expiry > new Date());
+
+    if (filterByType) {
+      result = result.filter(({ data }) => data.type === filterByType);
+    }
+
+    return result.map(args => {
+      return new AuthorizationRequest(args, context);
+    });
   }
 }
