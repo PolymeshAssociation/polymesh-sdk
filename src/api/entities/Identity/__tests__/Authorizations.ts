@@ -109,6 +109,7 @@ describe('Authorizations class', () => {
     });
 
     test('should retrieve all pending authorizations received by the identity filtered by an authorization type', async () => {
+      const filterType = AuthorizationType.TransferTicker;
       const authParams = [
         {
           authId: new BigNumber(1),
@@ -161,11 +162,11 @@ describe('Authorizations class', () => {
 
       const expectedAuthorizations = authParams
         .slice(0, -1)
-        .filter(({ data }) => data.type === AuthorizationType.TransferTicker)
+        .filter(({ data }) => data.type === filterType)
         .map(params => new AuthorizationRequest(params, context));
 
       const result = await authsNamespace.getReceived({
-        filterByType: AuthorizationType.TransferTicker,
+        filterByType: filterType,
       });
 
       expect(result).toEqual({ data: expectedAuthorizations, next: null });
@@ -264,6 +265,7 @@ describe('Authorizations class', () => {
     });
 
     test('should retrieve all pending authorizations sent by the identity filtered by an authorization type', async () => {
+      const filterType = AuthorizationType.TransferTicker;
       const authParams = [
         {
           authId: new BigNumber(1),
@@ -327,11 +329,11 @@ describe('Authorizations class', () => {
 
       const expectedAuthorizations = authParams
         .slice(0, -1)
-        .filter(({ data }) => data.type === AuthorizationType.TransferTicker)
+        .filter(({ data }) => data.type === filterType)
         .map(params => new AuthorizationRequest(params, context));
 
       const result = await authsNamespace.getSent({
-        filterByType: AuthorizationType.TransferTicker,
+        filterByType: filterType,
       });
 
       expect(result).toEqual({ data: expectedAuthorizations, next: null });
