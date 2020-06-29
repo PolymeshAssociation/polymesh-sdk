@@ -79,7 +79,7 @@ export class TokenHolders extends Namespace<SecurityToken> {
       );
     } else {
       data = entries.map(([storageKey, balance]) => {
-        const entrie = {
+        const entry = {
           identity: new Identity(
             { did: identityIdToString(storageKey.args[1] as IdentityId) },
             context
@@ -87,9 +87,9 @@ export class TokenHolders extends Namespace<SecurityToken> {
           balance: balanceToBigNumber(balance),
         };
         if (opts?.mintStatus) {
-          return { ...entrie, canMint: false };
+          return { ...entry, canMint: false };
         }
-        return entrie;
+        return entry;
       });
     }
 
