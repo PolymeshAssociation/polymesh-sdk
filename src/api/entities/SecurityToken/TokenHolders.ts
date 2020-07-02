@@ -41,7 +41,7 @@ export class TokenHolders extends Namespace<SecurityToken> {
       parent: { ticker },
     } = this;
 
-    let pagination: PaginationOptions | undefined;
+    let paginationOptions = paginationOpts;
     let canBeIssuedTo: boolean | undefined;
     let transferStatuses: TransferStatus[] = [];
 
