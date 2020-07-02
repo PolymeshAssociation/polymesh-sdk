@@ -42,14 +42,14 @@ export class TokenHolders extends Namespace<SecurityToken> {
     } = this;
 
     let pagination: PaginationOptions | undefined;
-    let canBeIssuedTo: Pick<TokenHolderOptions, 'canBeIssuedTo'> | undefined;
+    let canBeIssuedTo: boolean | undefined;
     let transferStatuses: TransferStatus[] = [];
 
     if (opts) {
       if ('size' in opts) {
         pagination = opts;
       } else {
-        canBeIssuedTo = opts;
+        ({ canBeIssuedTo } = opts);
       }
     }
 
