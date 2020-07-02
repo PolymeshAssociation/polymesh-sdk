@@ -227,7 +227,7 @@ describe('TokenHolders class', () => {
       expect(result).toEqual({ data: expectedHolders, next: null });
     });
 
-    test('should return whether each token holder can receive primary issuance to if canBeIssuedTo is passed as true', async () => {
+    test('should return whether each token holder can receive primary issuance if canBeIssuedTo is passed as true', async () => {
       dsMockUtils.createQueryStub('asset', 'balanceOf');
 
       const expectedHolders: (IdentityBalance &
