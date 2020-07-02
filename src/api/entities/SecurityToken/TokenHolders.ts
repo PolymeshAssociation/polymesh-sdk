@@ -47,7 +47,7 @@ export class TokenHolders extends Namespace<SecurityToken> {
 
     if (opts) {
       if ('size' in opts) {
-        pagination = opts;
+        paginationOptions = opts;
       } else {
         ({ canBeIssuedTo } = opts);
       }
@@ -56,16 +56,29 @@ export class TokenHolders extends Namespace<SecurityToken> {
     const rawTicker = stringToTicker(ticker, context);
     const { entries, lastKey: next } = await requestPaginated(query.asset.balanceOf, {
       arg: rawTicker,
-      paginationOpts: pagination || paginationOpts,
+      paginationOpts: paginationOptions,
     });
     const securityToken = new SecurityToken({ ticker }, context);
-    const areFrozen = await securityToken.transfers.areFrozen();
+
+    let data = entries.map(([storageKey, balance]) => {
+      const entry = {
+        identity: new Identity(
+          { did: identityIdToString(storageKey.args[1] as IdentityId) },
+          context
+        ),
+        balance: balanceToBigNumber(balance),
+      };
+      return entry;
+    });
 
     if (canBeIssuedTo) {
-      if (!areFrozen) {
-        const entriesChunks = chunk(entries, MAX_CONCURRENT_REQUESTS);
+      const entriesChunks = chunk(entries, MAX_CONCURRENT_REQUESTS);
+      const areFrozen = await securityToken.transfers.areFrozen();
 
-        await P.each(entriesChunks, async entriesChunk => {
+      await P.each(entriesChunks, async entriesChunk => {
+        if (areFrozen) {
+          data = data.map(entry => ({ ...entry, canBeIssuedTo: false }));
+        } else {
           transferStatuses = await Promise.all(
             entriesChunk.map(([storageKey]) =>
               securityToken.transfers.canMint({
@@ -74,26 +87,14 @@ export class TokenHolders extends Namespace<SecurityToken> {
               })
             )
           );
-        });
-      }
-    }
 
-    const data = entries.map(([storageKey, balance], i) => {
-      const entry = {
-        identity: new Identity(
-          { did: identityIdToString(storageKey.args[1] as IdentityId) },
-          context
-        ),
-        balance: balanceToBigNumber(balance),
-      };
-      if (canBeIssuedTo) {
-        if (areFrozen) {
-          return { ...entry, canBeIssuedTo: false };
+          data = data.map((entry, i) => ({
+            ...entry,
+            canBeIssuedTo: transferStatuses[i] === TransferStatus.Success,
+          }));
         }
-        return { ...entry, canBeIssuedTo: transferStatuses[i] === TransferStatus.Success };
-      }
-      return entry;
-    });
+      });
+    }
 
     return {
       data,
