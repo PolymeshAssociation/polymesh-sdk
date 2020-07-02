@@ -9,7 +9,7 @@ import { Context } from '~/context';
 import { IdentityId, Ticker } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { IdentityBalance, TokenHolderProperties,TransferStatus } from '~/types';
+import { IdentityBalance, TokenHolderProperties, TransferStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
