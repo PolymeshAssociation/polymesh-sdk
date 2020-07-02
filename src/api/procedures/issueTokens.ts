@@ -1,4 +1,5 @@
 import { Balance } from '@polkadot/types/interfaces';
+import P from 'bluebird';
 import { chunk } from 'lodash';
 
 import { SecurityToken } from '~/api/entities';
@@ -6,7 +7,12 @@ import { PolymeshError, Procedure } from '~/base';
 import { IdentityId, TxTags } from '~/polkadot';
 import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
 import { numberToBalance, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
-import { MAX_BATCH_ELEMENTS, MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import {
+  MAX_BATCH_ELEMENTS,
+  MAX_CONCURRENT_REQUESTS,
+  MAX_DECIMALS,
+  MAX_TOKEN_AMOUNT,
+} from '~/utils/constants';
 
 export interface IssueTokensParams {
   issuanceData: IssuanceData[];
@@ -72,28 +78,26 @@ export async function prepareIssueTokens(
   const balances: Balance[] = [];
   const canNotMintDids: Array<string> = [];
 
-  const issuanceDataChunks = chunk(issuanceData, 10);
+  const issuanceDataChunks = chunk(issuanceData, MAX_CONCURRENT_REQUESTS);
 
-  await Promise.all(
-    issuanceDataChunks.map(async issuanceDataChunk => {
-      // TODO: queryMulti
-      const transferStatuses = await Promise.all(
-        issuanceDataChunk.map(({ identity, amount }) =>
-          securityToken.transfers.canMint({ to: identity, amount })
-        )
-      );
+  await P.each(issuanceDataChunks, async issuanceDataChunk => {
+    // TODO: queryMulti
+    const transferStatuses = await Promise.all(
+      issuanceDataChunk.map(({ identity, amount }) =>
+        securityToken.transfers.canMint({ to: identity, amount })
+      )
+    );
 
-      transferStatuses.forEach((canTransfer, index) => {
-        const { identity, amount } = issuanceDataChunk[index];
-        investors.push(stringToIdentityId(valueToDid(identity), context));
-        balances.push(numberToBalance(amount, context));
+    transferStatuses.forEach((canTransfer, index) => {
+      const { identity, amount } = issuanceDataChunk[index];
+      investors.push(stringToIdentityId(valueToDid(identity), context));
+      balances.push(numberToBalance(amount, context));
 
-        if (canTransfer !== TransferStatus.Success) {
-          canNotMintDids.push(`${identity} [${canTransfer}]`);
-        }
-      });
-    })
-  );
+      if (canTransfer !== TransferStatus.Success) {
+        canNotMintDids.push(`${identity} [${canTransfer}]`);
+      }
+    });
+  });
 
   if (canNotMintDids.length) {
     throw new PolymeshError({

@@ -9,7 +9,7 @@ import { Context } from '~/context';
 import { IdentityId, Ticker } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { IdentityBalance, TransferStatus } from '~/types';
+import { IdentityBalance, TokenHolderProperties,TransferStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
@@ -109,10 +109,84 @@ describe('TokenHolders class', () => {
       expect(result).toEqual({ data: expectedHolders, next: null });
     });
 
-    test('should retrieve all the token holders with balance and mint status in false', async () => {
+    test('should retrieve the first page of results with only one token holder', async () => {
       dsMockUtils.createQueryStub('asset', 'balanceOf');
 
       const expectedHolders: IdentityBalance[] = [];
+
+      const balanceOfEntries: [StorageKey, Balance][] = [];
+
+      const context = dsMockUtils.getContextInstance();
+
+      const { identity, value } = fakeData[0];
+      const identityId = dsMockUtils.createMockIdentityId(identity);
+      const fakeBalance = dsMockUtils.createMockBalance(value);
+      const balance = new BigNumber(value);
+
+      identityIdToStringStub.withArgs(identityId).returns(identity);
+      balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
+
+      balanceOfEntries.push(
+        tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, fakeBalance)
+      );
+
+      expectedHolders.push({
+        identity: new Identity({ did: identity }, context),
+        balance,
+      });
+
+      requestPaginatedStub.resolves({ entries: balanceOfEntries, lastKey: 'someKey' });
+
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const tokenHolders = new TokenHolders(token, context);
+
+      const result = await tokenHolders.get({ size: 1 });
+
+      expect(result).toEqual({ data: expectedHolders, next: 'someKey' });
+    });
+
+    test('should retrieve all the token holders with balance', async () => {
+      dsMockUtils.createQueryStub('asset', 'balanceOf');
+
+      const expectedHolders: IdentityBalance[] = [];
+
+      const balanceOfEntries: [StorageKey, Balance][] = [];
+
+      const context = dsMockUtils.getContextInstance();
+
+      fakeData.forEach(({ identity, value }) => {
+        const identityId = dsMockUtils.createMockIdentityId(identity);
+        const fakeBalance = dsMockUtils.createMockBalance(value);
+        const balance = new BigNumber(value);
+
+        identityIdToStringStub.withArgs(identityId).returns(identity);
+        balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
+
+        balanceOfEntries.push(
+          tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, fakeBalance)
+        );
+
+        expectedHolders.push({
+          identity: new Identity({ did: identity }, context),
+          balance,
+        });
+      });
+
+      requestPaginatedStub.resolves({ entries: balanceOfEntries, lastKey: null });
+
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const tokenHolders = new TokenHolders(token, context);
+
+      const result = await tokenHolders.get();
+
+      expect(result).toEqual({ data: expectedHolders, next: null });
+    });
+
+    test('should have canBeIssuedTo set to false for all holders if transfers are frozen', async () => {
+      dsMockUtils.createQueryStub('asset', 'balanceOf');
+
+      const expectedHolders: (IdentityBalance &
+        Pick<TokenHolderProperties, 'canBeIssuedTo'>)[] = [];
 
       entityMockUtils.configureMocks({
         securityTokenOptions: {
@@ -139,7 +213,7 @@ describe('TokenHolders class', () => {
         expectedHolders.push({
           identity: new Identity({ did: identity }, context),
           balance,
-          canMint: false,
+          canBeIssuedTo: false,
         });
       });
 
@@ -148,15 +222,16 @@ describe('TokenHolders class', () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       const tokenHolders = new TokenHolders(token, context);
 
-      const result = await tokenHolders.get({ mintStatus: true });
+      const result = await tokenHolders.get({ canBeIssuedTo: true });
 
       expect(result).toEqual({ data: expectedHolders, next: null });
     });
 
-    test('should retrieve all the token holders with balance and canMint attribute setting in true', async () => {
+    test('should return whether each token holder can receive primary issuance to if canBeIssuedTo is passed as true', async () => {
       dsMockUtils.createQueryStub('asset', 'balanceOf');
 
-      const expectedHolders: IdentityBalance[] = [];
+      const expectedHolders: (IdentityBalance &
+        Pick<TokenHolderProperties, 'canBeIssuedTo'>)[] = [];
 
       entityMockUtils.configureMocks({
         securityTokenOptions: {
@@ -189,7 +264,7 @@ describe('TokenHolders class', () => {
         expectedHolders.push({
           identity: new Identity({ did: identity }, context),
           balance,
-          canMint: true,
+          canBeIssuedTo: true,
         });
       });
 
@@ -198,7 +273,7 @@ describe('TokenHolders class', () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       const tokenHolders = new TokenHolders(token, context);
 
-      const result = await tokenHolders.get({ mintStatus: true });
+      const result = await tokenHolders.get({ canBeIssuedTo: true });
 
       expect(result).toEqual({ data: expectedHolders, next: null });
     });

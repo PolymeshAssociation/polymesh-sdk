@@ -16,5 +16,12 @@ export interface SecurityTokenDetails {
 export interface IdentityBalance {
   identity: Identity;
   balance: BigNumber;
-  canMint?: boolean;
+}
+
+export interface TokenHolderOptions {
+  canBeIssuedTo: boolean;
+}
+
+export interface TokenHolderProperties {
+  canBeIssuedTo: boolean;
 }
