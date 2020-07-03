@@ -23,7 +23,9 @@ import { Query } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
+  ClaimType,
   CommonKeyring,
+  DidWithClaimData,
   Ensured,
   ErrorCode,
   MiddlewareConfig,
@@ -522,6 +524,82 @@ export class Polymesh {
     });
 
     return claimData;
+  }
+
+  /**
+   * Retrieve all dids with their claims
+   */
+  public async getDidsWithClaims(opts: {
+    dids?: (string | Identity)[];
+    trustedClaimIssuers?: (string | Identity)[];
+    scope?: string;
+    claimTypes?: ClaimType[];
+    size?: number;
+    start?: number;
+  }): Promise<DidWithClaimData[]> {
+    const {
+      context,
+      context: { middlewareApi },
+    } = this;
+
+    const { dids, trustedClaimIssuers, scope, claimTypes, size, start } = opts;
+
+    let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
+
+    try {
+      result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
+        didsWithClaims({
+          dids: dids?.map(did => valueToDid(did)),
+          scope,
+          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+            valueToDid(trustedClaimIssuer)
+          ),
+          claimTypes: claimTypes?.map(claimType => claimType.toString()),
+          count: size,
+          skip: start,
+        })
+      );
+    } catch (e) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `Error in middleware query: ${e.message}`,
+      });
+    }
+
+    const {
+      data: { didsWithClaims: didsWithClaimsList },
+    } = result;
+
+    const didsWithClaimsResult: DidWithClaimData[] = [];
+
+    didsWithClaimsList.forEach(({ did, claims }) => {
+      const claimData: ClaimData[] = [];
+      claims.forEach(
+        ({
+          targetDID,
+          issuer,
+          issuance_date: issuanceDate,
+          expiry,
+          type,
+          jurisdiction,
+          scope: claimScope,
+        }) => {
+          claimData.push({
+            target: new Identity({ did: targetDID }, context),
+            issuer: new Identity({ did: issuer }, context),
+            issuedAt: new Date(issuanceDate),
+            expiry: expiry ? new Date(expiry) : null,
+            claim: createClaim(type, jurisdiction, claimScope),
+          });
+        }
+      );
+      didsWithClaimsResult.push({
+        did,
+        claim: claimData,
+      });
+    });
+
+    return didsWithClaimsResult;
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

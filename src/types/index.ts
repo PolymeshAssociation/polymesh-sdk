@@ -217,6 +217,11 @@ export type ClaimData = {
   claim: Claim;
 };
 
+export type DidWithClaimData = {
+  did: string;
+  claim: ClaimData[];
+};
+
 export enum ConditionType {
   IsPresent = 'IsPresent',
   IsAbsent = 'IsAbsent',
