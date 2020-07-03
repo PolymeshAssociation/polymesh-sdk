@@ -10,7 +10,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TransferStatus } from '~/types';
 import * as utilsModule from '~/utils';
-import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import { MAX_DECIMALS } from '~/utils/constants';
 
 jest.mock(
   '~/api/entities/SecurityToken',
