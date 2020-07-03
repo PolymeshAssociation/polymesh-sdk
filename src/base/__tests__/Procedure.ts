@@ -232,13 +232,19 @@ describe('Procedure class', () => {
       const proc = new Procedure(func);
       const { free } = await context.accountBalance();
 
-      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
-        `Not enough POLYX balance to pay for this procedure's fees. Balance: ${free.toFormat()}, fees: ${new BigNumber(
-          fees.reduce((sum, fee) => sum + fee, 0)
-        )
-          .multipliedBy(coefficient)
-          .toFormat()}`
-      );
+      let error;
+
+      try {
+        await proc.prepare(procArgs, context);
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error.message).toBe("Not enough POLYX balance to pay for this procedure's fees");
+      expect(error.data).toMatchObject({
+        freeBalance: free,
+        fees: new BigNumber(fees.reduce((sum, fee) => sum + fee, 0)).multipliedBy(coefficient),
+      });
     });
 
     test('should throw an error if there is a batch transaction in the queue with no batch size', async () => {

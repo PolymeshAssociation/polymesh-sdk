@@ -33,15 +33,18 @@ export async function prepareTransferPolyX(
   let identityId: IdentityId;
 
   // TODO: queryMulti
-  const [accountBalance, identityIds] = await Promise.all([
+  const [{ free: freeBalance }, identityIds] = await Promise.all([
     context.accountBalance(),
     identity.keyToIdentityIds(stringToAccountKey(to, context)),
   ]);
 
-  if (amount.isGreaterThan(accountBalance.free)) {
+  if (amount.isGreaterThan(freeBalance)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Insufficient balance',
+      message: 'Insufficient free balance',
+      data: {
+        freeBalance,
+      },
     });
   }
 

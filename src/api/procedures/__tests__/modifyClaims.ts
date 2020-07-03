@@ -104,15 +104,22 @@ describe('modifyClaims procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if some of the supplied target dids don't exist", () => {
+  test("should throw an error if some of the supplied target dids don't exist", async () => {
     dsMockUtils.configureMocks({ contextOptions: { invalidDids: [otherDid] } });
 
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>();
     proc.context = mockContext;
 
-    return expect(prepareModifyClaims.call(proc, args)).rejects.toThrow(
-      `Some of the supplied identity IDs do not exist: ${otherDid}`
-    );
+    let error;
+
+    try {
+      await prepareModifyClaims.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Some of the supplied identity IDs do not exist');
+    expect(error.data).toMatchObject({ nonExistentDids: [otherDid] });
   });
 
   test('should add an add claims batch transaction to the queue', async () => {

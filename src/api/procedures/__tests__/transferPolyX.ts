@@ -49,7 +49,7 @@ describe('transferPolyX procedure', () => {
         to: 'someAccount',
         amount: new BigNumber(101),
       })
-    ).rejects.toThrow('Insufficient balance');
+    ).rejects.toThrow('Insufficient free balance');
   });
 
   test("should throw an error if destination account doesn't have an associated identity", () => {
