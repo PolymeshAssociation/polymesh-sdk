@@ -43,7 +43,6 @@ export class TokenHolders extends Namespace<SecurityToken> {
 
     let paginationOptions = paginationOpts;
     let canBeIssuedTo: boolean | undefined;
-    let transferStatuses: TransferStatus[] = [];
 
     if (opts) {
       if ('size' in opts) {
@@ -60,40 +59,40 @@ export class TokenHolders extends Namespace<SecurityToken> {
     });
     const securityToken = new SecurityToken({ ticker }, context);
 
-    let data = entries.map(([storageKey, balance]) => {
-      const entry = {
-        identity: new Identity(
-          { did: identityIdToString(storageKey.args[1] as IdentityId) },
-          context
-        ),
-        balance: balanceToBigNumber(balance),
-      };
-      return entry;
-    });
+    let data: { identity: Identity; balance: BigNumber; canBeIssuedTo?: boolean }[] = entries.map(
+      ([storageKey, balance]) => {
+        const entry = {
+          identity: new Identity(
+            { did: identityIdToString(storageKey.args[1] as IdentityId) },
+            context
+          ),
+          balance: balanceToBigNumber(balance),
+        };
+        return entry;
+      }
+    );
 
     if (canBeIssuedTo) {
-      const entriesChunks = chunk(entries, MAX_CONCURRENT_REQUESTS);
       const areFrozen = await securityToken.transfers.areFrozen();
 
-      await P.each(entriesChunks, async entriesChunk => {
-        if (areFrozen) {
-          data = data.map(entry => ({ ...entry, canBeIssuedTo: false }));
-        } else {
-          transferStatuses = await Promise.all(
-            entriesChunk.map(([storageKey]) =>
-              securityToken.transfers.canMint({
-                to: identityIdToString(storageKey.args[1] as IdentityId),
-                amount: new BigNumber(1),
-              })
-            )
-          );
+      if (areFrozen) {
+        data = data.map(dataElement => ({ ...dataElement, canBeIssuedTo: false }));
+      } else {
+        const dataChunks = chunk(data, MAX_CONCURRENT_REQUESTS);
 
-          data = data.map((entry, i) => ({
-            ...entry,
-            canBeIssuedTo: transferStatuses[i] === TransferStatus.Success,
-          }));
-        }
-      });
+        await P.each(dataChunks, async dataChunk => {
+          await Promise.all(
+            dataChunk.map(async dataElement => {
+              const status = await securityToken.transfers.canMint({
+                to: dataElement.identity,
+                amount: new BigNumber(1),
+              });
+
+              dataElement.canBeIssuedTo = status === TransferStatus.Success;
+            })
+          );
+        });
+      }
     }
 
     return {
