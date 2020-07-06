@@ -62,7 +62,11 @@ export async function prepareIssueTokens(
   if (supplyAfterMint.isGreaterThan(MAX_TOKEN_AMOUNT)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `This issuance operation will cause the total supply of "${ticker}" to exceed the maximum allowed (${MAX_TOKEN_AMOUNT.toFormat()})`,
+      message: `This issuance operation will cause the total supply of "${ticker}" to exceed the supply limit`,
+      data: {
+        currentSupply: totalSupply,
+        supplyLimit: MAX_TOKEN_AMOUNT,
+      },
     });
   }
 
@@ -70,7 +74,7 @@ export async function prepareIssueTokens(
 
   const investors: IdentityId[] = [];
   const balances: Balance[] = [];
-  const canNotMintDids: Array<string> = [];
+  const failed: Array<{ did: string; transferStatus: TransferStatus }> = [];
 
   const issuanceDataChunks = chunk(issuanceData, 10);
 
@@ -85,22 +89,24 @@ export async function prepareIssueTokens(
 
       transferStatuses.forEach((canTransfer, index) => {
         const { identity, amount } = issuanceDataChunk[index];
-        investors.push(stringToIdentityId(valueToDid(identity), context));
+        const did = valueToDid(identity);
+        investors.push(stringToIdentityId(did, context));
         balances.push(numberToBalance(amount, context));
 
         if (canTransfer !== TransferStatus.Success) {
-          canNotMintDids.push(`${identity} [${canTransfer}]`);
+          failed.push({ did, transferStatus: canTransfer });
         }
       });
     })
   );
 
-  if (canNotMintDids.length) {
+  if (failed.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `You can't issue tokens to some of the supplied identities: ${canNotMintDids.join(
-        ', '
-      )}`,
+      message: "You can't issue tokens to some of the supplied identities",
+      data: {
+        failed,
+      },
     });
   }
 

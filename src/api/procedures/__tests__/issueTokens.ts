@@ -10,7 +10,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TransferStatus } from '~/types';
 import * as utilsModule from '~/utils';
-import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import { MAX_DECIMALS } from '~/utils/constants';
 
 jest.mock(
   '~/api/entities/SecurityToken',
@@ -105,7 +105,7 @@ describe('issueTokens procedure', () => {
     );
   });
 
-  test('should throw an error if token supply is bigger than the limit total supply', () => {
+  test('should throw an error if token supply is bigger than the limit total supply', async () => {
     const args = {
       issuanceData: [
         {
@@ -129,13 +129,25 @@ describe('issueTokens procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
-      `This issuance operation will cause the total supply of "${ticker}" to exceed the maximum allowed (${MAX_TOKEN_AMOUNT.toFormat()})`
+    let error;
+
+    try {
+      await prepareIssueTokens.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe(
+      `This issuance operation will cause the total supply of "${ticker}" to exceed the supply limit`
     );
+    expect(error.data).toMatchObject({
+      currentSupply: limitTotalSupply,
+      supplyLimit: limitTotalSupply,
+    });
   });
 
-  test('should throw an error if canMint returns a status different from Success', () => {
-    const status = TransferStatus.Failure;
+  test('should throw an error if canMint returns a status different from Success', async () => {
+    const transferStatus = TransferStatus.Failure;
     const args = {
       issuanceData: [
         {
@@ -148,16 +160,25 @@ describe('issueTokens procedure', () => {
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        transfersCanMint: status,
+        transfersCanMint: transferStatus,
       },
     });
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
-      `You can't issue tokens to some of the supplied identities: ${args.issuanceData[0].identity} [${status}]`
-    );
+    let error;
+
+    try {
+      await prepareIssueTokens.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe("You can't issue tokens to some of the supplied identities");
+    expect(error.data).toMatchObject({
+      failed: [{ did: args.issuanceData[0].identity, transferStatus }],
+    });
   });
 
   test('should add a batch issue transaction to the queue', async () => {

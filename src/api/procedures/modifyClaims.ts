@@ -83,7 +83,10 @@ export async function prepareModifyClaims(
   if (nonExistentDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Some of the supplied identity IDs do not exist: ${nonExistentDids.join(', ')}`,
+      message: 'Some of the supplied identity IDs do not exist',
+      data: {
+        nonExistentDids,
+      },
     });
   }
 
@@ -129,9 +132,10 @@ export async function prepareModifyClaims(
         code: ErrorCode.ValidationError,
         message: `Attempt to ${
           operation === ClaimOperation.Edit ? 'edit' : 'revoke'
-        } claims that weren't issued by the current identity:
-        
-${nonExistentClaims.map(claimObj => JSON.stringify(claimObj, null, 2)).join('\n')}`,
+        } claims that weren't issued by the current identity`,
+        data: {
+          nonExistentClaims,
+        },
       });
     }
   }
