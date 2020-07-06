@@ -4,12 +4,15 @@ import { noop } from 'lodash';
 import sinon from 'sinon';
 
 import { PostTransactionValue } from '~/base';
-import { polymeshTransactionMockUtils } from '~/testUtils/mocks';
+import { Context } from '~/context';
+import { dsMockUtils, polymeshTransactionMockUtils } from '~/testUtils/mocks';
 import { TransactionQueueStatus, TransactionStatus } from '~/types';
 import { TransactionSpec } from '~/types/internal';
-import { delay } from '~/utils';
+import * as utilsModule from '~/utils';
 
 import { TransactionQueue } from '../TransactionQueue';
+
+const { delay } = utilsModule;
 
 jest.mock(
   '~/base/PolymeshTransaction',
@@ -19,12 +22,24 @@ jest.mock(
 );
 
 describe('Transaction Queue class', () => {
+  let context: Context;
+
   beforeAll(() => {
     polymeshTransactionMockUtils.initMocks();
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
   });
 
   afterEach(() => {
     polymeshTransactionMockUtils.reset();
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
   });
 
   describe('constructor', () => {
@@ -37,14 +52,12 @@ describe('Transaction Queue class', () => {
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
-      const fees = new BigNumber(3);
       const returnValue = 3;
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        fees,
-        returnValue
+        returnValue,
+        context
       );
-      expect(queue.fees).toBe(fees);
       expect(queue.transactions).toEqual(transactions);
     });
   });
@@ -65,13 +78,12 @@ describe('Transaction Queue class', () => {
       ];
 
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
-      const fees = new BigNumber(3);
 
       const returnValue = 3;
       let queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        fees,
-        returnValue
+        returnValue,
+        context
       );
 
       let returned = await queue.run();
@@ -90,8 +102,8 @@ describe('Transaction Queue class', () => {
 
       queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        fees,
-        returnPostTransactionValue
+        returnPostTransactionValue,
+        context
       );
 
       returned = await queue.run();
@@ -109,17 +121,18 @@ describe('Transaction Queue class', () => {
       ];
       let transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const fees = new BigNumber(3);
       let queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        fees,
-        returnValue
+        returnValue,
+        context
       );
 
       // Idle -> Running -> Succeeded
       expect(queue.status).toBe(TransactionQueueStatus.Idle);
 
       queue.run();
+
+      await delay(0);
 
       expect(queue.status).toBe(TransactionQueueStatus.Running);
 
@@ -137,11 +150,13 @@ describe('Transaction Queue class', () => {
       // Idle -> Running -> Failed
       queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        fees,
-        returnValue
+        returnValue,
+        context
       );
 
       queue.run().catch(noop);
+
+      await delay(0);
 
       polymeshTransactionMockUtils.updateTransactionStatus(
         transactions[0],
@@ -169,16 +184,53 @@ describe('Transaction Queue class', () => {
       polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const returnValue = 3;
-      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        fees,
-        returnValue
+        returnValue,
+        context
       );
 
       const runPromise = queue.run();
 
       return expect(runPromise).rejects.toThrow('Transaction Error');
+    });
+
+    test("should throw an error if the current account doesn't have enough balance to pay the transaction fees", () => {
+      const transactionSpecs = [
+        {
+          args: [1],
+          isCritical: false,
+          fees: {
+            protocol: new BigNumber(200),
+            gas: new BigNumber(200),
+          },
+          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+        },
+        {
+          args: ['someArg'],
+          isCritical: true,
+          autoresolve: TransactionStatus.Failed as TransactionStatus.Failed,
+        },
+      ];
+
+      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      dsMockUtils.setContextAccountBalance({
+        free: new BigNumber(100),
+        locked: new BigNumber(0),
+      });
+
+      const returnValue = 3;
+      const queue = new TransactionQueue(
+        (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
+        returnValue,
+        context
+      );
+
+      const runPromise = queue.run();
+
+      return expect(runPromise).rejects.toThrow(
+        "Not enough POLYX balance to pay for this procedure's fees"
+      );
     });
 
     test('should succeed if the only failures are from non-critical transactions', () => {
@@ -198,11 +250,10 @@ describe('Transaction Queue class', () => {
       polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const returnValue = 3;
-      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        fees,
-        returnValue
+        returnValue,
+        context
       );
 
       const runPromise = queue.run();
@@ -227,11 +278,10 @@ describe('Transaction Queue class', () => {
       polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const returnValue = 3;
-      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        fees,
-        returnValue
+        returnValue,
+        context
       );
 
       await queue.run();
@@ -251,11 +301,10 @@ describe('Transaction Queue class', () => {
       ];
       polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        fees,
-        returnValue
+        returnValue,
+        context
       );
 
       const listenerStub = sinon.stub();
@@ -277,11 +326,10 @@ describe('Transaction Queue class', () => {
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        fees,
-        returnValue
+        returnValue,
+        context
       );
 
       const listenerStub = sinon.stub();
@@ -314,11 +362,10 @@ describe('Transaction Queue class', () => {
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        fees,
-        returnValue
+        returnValue,
+        context
       );
 
       const listenerStub = sinon.stub();
@@ -353,11 +400,10 @@ describe('Transaction Queue class', () => {
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const fees = new BigNumber(3);
       const queue = new TransactionQueue(
         (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        fees,
-        returnValue
+        returnValue,
+        context
       );
 
       const listenerStub = sinon.stub();
@@ -384,6 +430,52 @@ describe('Transaction Queue class', () => {
 
       sinon.assert.calledWith(listenerStub.firstCall, TransactionStatus.Running);
       sinon.assert.callCount(listenerStub, 1);
+    });
+  });
+
+  describe('method: getMinFees', () => {
+    test('should return the sum of all transaction fees', async () => {
+      const transactionSpecs = [
+        {
+          args: [1],
+          isCritical: true,
+          fees: {
+            protocol: new BigNumber(100),
+            gas: new BigNumber(1),
+          },
+          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+        },
+        {
+          args: ['someArg'],
+          isCritical: true,
+          fees: {
+            protocol: new BigNumber(50),
+            gas: new BigNumber(2),
+          },
+          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+        },
+        {
+          args: [{ foo: 'bar' }],
+          isCritical: true,
+          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+        },
+      ];
+
+      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+
+      const returnValue = 3;
+      const queue = new TransactionQueue(
+        (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
+        returnValue,
+        context
+      );
+
+      const fees = await queue.getMinFees();
+
+      expect(fees).toEqual({
+        protocol: new BigNumber(150),
+        gas: new BigNumber(3),
+      });
     });
   });
 });

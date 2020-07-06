@@ -1,8 +1,5 @@
 import { AddressOrPair } from '@polkadot/api/types';
-import { stringUpperFirst } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
-import P from 'bluebird';
-import { reduce } from 'lodash';
 
 import { TransactionQueue } from '~/base';
 import { PolymeshError } from '~/base/PolymeshError';
@@ -17,7 +14,6 @@ import {
   ResolverFunctionArray,
   TransactionSpec,
 } from '~/types/internal';
-import { balanceToBigNumber, posRatioToBigNumber, stringToProtocolOp } from '~/utils';
 
 interface AddTransactionOpts<Values extends unknown[]> {
   fee?: BigNumber;
@@ -43,10 +39,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     args: Args
   ) => Promise<boolean> | boolean | Role[];
 
-  private transactions: (Omit<TransactionSpec, 'fee'> & {
-    fee: BigNumber | null;
-    batchSize: number | null;
-  })[] = [];
+  private transactions: TransactionSpec[] = [];
 
   public context = {} as Context;
 
@@ -93,12 +86,6 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    * @param context - context in which the resulting queue will run
    */
   public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
-    const {
-      polymeshApi: {
-        query: { protocolFee },
-      },
-    } = context;
-
     this.context = context;
 
     const checkRolesResult = await this.checkRoles(args);
@@ -117,62 +104,9 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       });
     }
 
-    const [returnValue, rawCoefficient, { free: freeBalance }] = await Promise.all([
-      this.prepareTransactions(args),
-      protocolFee.coefficient(),
-      context.accountBalance(),
-    ]);
-    const coefficient = posRatioToBigNumber(rawCoefficient);
-    const transactionsWithFees: TransactionSpec[] = await P.map(
-      this.transactions,
-      async transactionSpec => {
-        let { fee } = transactionSpec;
-        const { tx, batchSize } = transactionSpec;
+    const returnValue = await this.prepareTransactions(args);
 
-        if (!fee) {
-          const transaction = tx as PolymeshTx<unknown[]>; // can't be a PostTransactionValue because othewise fee would be already set manually
-          const { section: moduleName, method: extrinsicName } = transaction;
-          const batchRegex = RegExp('(b|s?B)atch');
-          if (batchRegex.exec(extrinsicName) && !batchSize) {
-            throw new PolymeshError({
-              code: ErrorCode.FatalError,
-              message:
-                'Did not set batch size for batch transaction. Please report this error to the Polymath team',
-            });
-          }
-
-          const protocolOp = `${stringUpperFirst(moduleName)}${stringUpperFirst(
-            extrinsicName.replace(batchRegex, '')
-          )}`;
-
-          try {
-            const rawFee = await protocolFee.baseFees(stringToProtocolOp(protocolOp, context));
-            fee = balanceToBigNumber(rawFee)
-              .multipliedBy(coefficient)
-              .multipliedBy(batchSize || 1);
-          } catch (err) {
-            fee = new BigNumber(0);
-          }
-        }
-
-        return { ...transactionSpec, fee };
-      }
-    );
-
-    const fees = reduce(transactionsWithFees, (sum, { fee }) => sum.plus(fee), new BigNumber(0));
-
-    if (freeBalance.lt(fees)) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "Not enough POLYX balance to pay for this procedure's fees",
-        data: {
-          freeBalance,
-          fees,
-        },
-      });
-    }
-
-    const transactionQueue = new TransactionQueue(transactionsWithFees, fees, returnValue);
+    const transactionQueue = new TransactionQueue(this.transactions, returnValue, context);
 
     this.cleanup();
 

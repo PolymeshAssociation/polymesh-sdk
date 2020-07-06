@@ -74,8 +74,7 @@ describe('issueTokens procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
       `Issuance amounts cannot have more than ${MAX_DECIMALS} decimals`
@@ -97,8 +96,7 @@ describe('issueTokens procedure', () => {
       ticker,
     };
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
       'Cannot issue decimal amounts of an indivisible token'
@@ -126,8 +124,7 @@ describe('issueTokens procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     let error;
 
@@ -164,8 +161,7 @@ describe('issueTokens procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     let error;
 
@@ -214,8 +210,7 @@ describe('issueTokens procedure', () => {
     });
 
     const transaction = dsMockUtils.createTxStub('asset', 'batchIssue');
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareIssueTokens.call(proc, args);
 

@@ -129,8 +129,7 @@ describe('setTokenDocuments procedure', () => {
     dsMockUtils.createQueryStub('identity', 'links', {
       entries: links.map(link => tuple([tokenSignatory, link.link_id], link)),
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(prepareSetTokenDocuments.call(proc, args)).rejects.toThrow(
       'The supplied document list is equal to the current one'
@@ -138,8 +137,7 @@ describe('setTokenDocuments procedure', () => {
   });
 
   test('should add a remove documents transaction and an add documents transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenDocuments.call(proc, args);
 
@@ -164,8 +162,7 @@ describe('setTokenDocuments procedure', () => {
     dsMockUtils.createQueryStub('identity', 'links', {
       entries: [],
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenDocuments.call(proc, args);
 
@@ -181,8 +178,7 @@ describe('setTokenDocuments procedure', () => {
   });
 
   test('should not add an add documents transaction if there are no documents passed as arguments', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenDocuments.call(proc, { ...args, documents: [] });
 

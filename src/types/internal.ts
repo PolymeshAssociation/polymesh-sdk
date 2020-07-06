@@ -90,9 +90,13 @@ export interface TransactionSpec<
    */
   isCritical: boolean;
   /**
-   * any fee associated with running the transaction (doesn't include gas)
+   * any protocol fees associated with running the transaction (not gas)
    */
-  fee: BigNumber;
+  fee: BigNumber | null;
+  /**
+   * number of elements in the batch (only applicable to batch transactions)
+   */
+  batchSize: number | null;
 }
 
 export enum SignerType {

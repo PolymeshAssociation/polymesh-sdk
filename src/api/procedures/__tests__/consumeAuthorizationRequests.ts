@@ -115,8 +115,9 @@ describe('consumeAuthorizationRequests procedure', () => {
   });
 
   test('should add a batch accept authorization transaction to the queue and ignore expired requests', async () => {
-    const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
+      mockContext
+    );
 
     const transaction = dsMockUtils.createTxStub('identity', 'batchAcceptAuthorization');
 
@@ -136,8 +137,9 @@ describe('consumeAuthorizationRequests procedure', () => {
   });
 
   test('should add a batch remove authorization transaction to the queue and ignore expired requests', async () => {
-    const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
+      mockContext
+    );
 
     const transaction = dsMockUtils.createTxStub('identity', 'batchRemoveAuthorization');
 
@@ -158,8 +160,9 @@ describe('consumeAuthorizationRequests procedure', () => {
 
   describe('isAuthorized', () => {
     test('should return whether the current identity is the target of all non-expired requests if trying to accept', () => {
-      const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>();
-      proc.context = mockContext;
+      const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
+        mockContext
+      );
       const { did } = mockContext.getCurrentIdentity();
       const constructorParams = [
         {
@@ -200,8 +203,9 @@ describe('consumeAuthorizationRequests procedure', () => {
     });
 
     test('should return whether the current identity is the target or issuer of all non-expired requests if trying to remove', () => {
-      const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>();
-      proc.context = mockContext;
+      const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
+        mockContext
+      );
       const { did } = mockContext.getCurrentIdentity();
       const constructorParams = [
         {

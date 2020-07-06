@@ -634,7 +634,7 @@ export function createTxStub<
 >(
   mod: ModuleName,
   tx: TransactionName,
-  autoresolve: MockTxStatus | false = MockTxStatus.Succeeded
+  opts: { autoresolve?: MockTxStatus | false; gas?: Balance } = {}
 ): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> & SinonStub {
   let runtimeModule = txModule[mod];
 
@@ -642,6 +642,9 @@ export function createTxStub<
     runtimeModule = {} as Extrinsics[ModuleName];
     txModule[mod] = runtimeModule;
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-use-before-define
+  const { autoresolve = MockTxStatus.Succeeded, gas = createMockBalance(1) } = opts;
 
   const transaction = (sinon.stub().returns({
     section: mod,
@@ -667,6 +670,8 @@ export function createTxStub<
 
       return Promise.resolve(unsubCallback);
     }),
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    paymentInfo: sinon.stub().resolves({ partialFee: gas }),
   }) as unknown) as Extrinsics[ModuleName][TransactionName];
 
   (transaction as any).section = mod;

@@ -91,10 +91,6 @@ describe('Procedure class', () => {
       };
       const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
       const tx2 = dsMockUtils.createTxStub('identity', 'registerDid');
-      const fee1 = new BigNumber(20);
-      const fee2 = new BigNumber(30);
-
-      const totalFees = fee1.plus(fee2);
 
       const returnValue = 'good';
 
@@ -102,21 +98,9 @@ describe('Procedure class', () => {
         this: Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<string> {
-        this.addTransaction(
-          tx1,
-          {
-            fee: fee1,
-          },
-          args.ticker
-        );
+        this.addTransaction(tx1, {}, args.ticker);
 
-        this.addTransaction(
-          tx2,
-          {
-            fee: fee2,
-          },
-          args.signingItems
-        );
+        this.addTransaction(tx2, {}, args.signingItems);
 
         return returnValue;
       };
@@ -134,8 +118,8 @@ describe('Procedure class', () => {
           sinon.match({ tx: tx1, args: [ticker] }),
           sinon.match({ tx: tx2, args: [signingItems] }),
         ]),
-        totalFees,
-        returnValue
+        returnValue,
+        context
       );
 
       const func2 = async function(
@@ -156,8 +140,8 @@ describe('Procedure class', () => {
           sinon.match({ tx: tx1, args: [ticker] }),
           sinon.match({ tx: tx2, args: [signingItems] }),
         ]),
-        totalFees,
-        returnValue
+        returnValue,
+        context
       );
     });
 
@@ -201,81 +185,6 @@ describe('Procedure class', () => {
 
       await expect(proc.prepare(procArgs, context)).rejects.toThrow(
         'Current account is not authorized to execute this procedure'
-      );
-    });
-
-    test("should fetch missing transaction fees and throw an error if the current account doesn't have enough balance", async () => {
-      const ticker = 'MY_TOKEN';
-      const signingItems = ['0x1', '0x2'];
-      const procArgs = {
-        ticker,
-        signingItems,
-      };
-      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const tx2 = dsMockUtils.createTxStub('identity', 'registerDid');
-
-      stringToProtocolOpStub.withArgs(protocolOps[1], context).throws(); // extrinsic without a fee
-
-      const returnValue = 'good';
-
-      const func = async function(
-        this: Procedure<typeof procArgs, string>,
-        args: typeof procArgs
-      ): Promise<string> {
-        this.addTransaction(tx1, {}, args.ticker);
-
-        this.addTransaction(tx2, {}, args.signingItems);
-
-        return returnValue;
-      };
-
-      const proc = new Procedure(func);
-      const { free } = await context.accountBalance();
-
-      let error;
-
-      try {
-        await proc.prepare(procArgs, context);
-      } catch (err) {
-        error = err;
-      }
-
-      expect(error.message).toBe("Not enough POLYX balance to pay for this procedure's fees");
-      expect(error.data).toMatchObject({
-        freeBalance: free,
-        fees: new BigNumber(fees.reduce((sum, fee) => sum + fee, 0)).multipliedBy(coefficient),
-      });
-    });
-
-    test('should throw an error if there is a batch transaction in the queue with no batch size', async () => {
-      const ticker = 'MY_TOKEN';
-      const signingItems = ['0x1', '0x2'];
-      const procArgs = {
-        ticker,
-        signingItems,
-      };
-      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const tx2 = dsMockUtils.createTxStub('identity', 'batchAcceptAuthorization');
-
-      stringToProtocolOpStub.withArgs(protocolOps[1], context).throws(); // extrinsic without a fee
-
-      const returnValue = 'good';
-
-      const func = async function(
-        this: Procedure<typeof procArgs, string>,
-        args: typeof procArgs
-      ): Promise<string> {
-        this.addTransaction(tx1, {}, args.ticker);
-
-        this.addTransaction(tx2, {}, args.signingItems);
-
-        return returnValue;
-      };
-
-      const proc = new Procedure(func);
-
-      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
-        'Did not set batch size for batch transaction. Please report this error to the Polymath team'
       );
     });
   });
@@ -345,6 +254,7 @@ describe('Procedure class', () => {
 
       const proc1 = new Procedure(async () => returnValue);
       const proc2 = new Procedure(async () => undefined);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       proc2.context = context;
       const result = await proc2.addProcedure(proc1);
 

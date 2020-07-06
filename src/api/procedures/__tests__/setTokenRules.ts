@@ -123,8 +123,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     assetRulesMapStub.withArgs(rawTicker).returns({
       rules: rawRules,
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(prepareSetTokenRules.call(proc, args)).rejects.toThrow(
       'The supplied rule list is equal to the current one'
@@ -136,8 +135,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     assetRulesMapStub.withArgs(rawTicker).returns({
       rules: currentRules,
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenRules.call(proc, args);
 
@@ -165,8 +163,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     assetRulesMapStub.withArgs(rawTicker).returns({
       rules: [],
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenRules.call(proc, args);
 
@@ -189,8 +186,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     assetRulesMapStub.withArgs(rawTicker).returns({
       rules: currentRules,
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenRules.call(proc, { ...args, rules: [] });
 
