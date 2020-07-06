@@ -37,14 +37,15 @@ export async function prepareTransferToken(
   const identityId = stringToIdentityId(did, context);
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const canTransfer = await securityToken.transfers.canTransfer({ to: did, amount });
+  const transferStatus = await securityToken.transfers.canTransfer({ to: did, amount });
 
-  if (canTransfer !== TransferStatus.Success) {
+  if (transferStatus !== TransferStatus.Success) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}".${
-        canTransfer !== TransferStatus.Failure ? ` Reason: ${canTransfer}` : ''
-      }`,
+      message: `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}"`,
+      data: {
+        transferStatus,
+      },
     });
   }
 

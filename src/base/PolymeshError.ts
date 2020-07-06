@@ -15,12 +15,23 @@ export const ErrorMessagesPerCode: {
 export class PolymeshError extends Error {
   public code: ErrorCode;
 
+  public data?: Record<string, unknown>;
+
   /**
    * @hidden
    */
-  constructor({ message, code }: { message?: string; code: ErrorCode }) {
+  constructor({
+    message,
+    code,
+    data,
+  }: {
+    message?: string;
+    code: ErrorCode;
+    data?: Record<string, unknown>;
+  }) {
     super(message || ErrorMessagesPerCode[code] || `Unknown error, code: ${code}`);
 
     this.code = code || ErrorCode.FatalError;
+    this.data = data;
   }
 }
