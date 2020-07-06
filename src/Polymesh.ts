@@ -25,9 +25,9 @@ import {
   ClaimData,
   ClaimType,
   CommonKeyring,
-  DidWithClaimData,
   Ensured,
   ErrorCode,
+  IdentityWithClaims,
   MiddlewareConfig,
   SubCallback,
   TickerReservationStatus,
@@ -527,34 +527,43 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all dids with their claims
+   * Retrieve a list of identities with claims associated to them. Can be filtered using parameters
+   *
+   * @param opts.targets - identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
+   * @param opts.scope - scope of the claims to fetch. Defaults to any scope
+   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
+   * @param opts.size - page size
+   * @param opts.start - page offset
    */
-  public async getDidsWithClaims(opts: {
-    dids?: (string | Identity)[];
-    trustedClaimIssuers?: (string | Identity)[];
-    scope?: string;
-    claimTypes?: ClaimType[];
-    size?: number;
-    start?: number;
-  }): Promise<DidWithClaimData[]> {
+  public async getIdentitiesWithClaims(
+    opts: {
+      targets?: (string | Identity)[];
+      trustedClaimIssuers?: (string | Identity)[];
+      scope?: string;
+      claimTypes?: ClaimType[];
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<IdentityWithClaims[]> {
     const {
       context,
       context: { middlewareApi },
     } = this;
 
-    const { dids, trustedClaimIssuers, scope, claimTypes, size, start } = opts;
+    const { targets, trustedClaimIssuers, scope, claimTypes, size, start } = opts;
 
     let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
 
     try {
       result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
         didsWithClaims({
-          dids: dids?.map(did => valueToDid(did)),
+          dids: targets?.map(target => valueToDid(target)),
           scope,
           trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
             valueToDid(trustedClaimIssuer)
           ),
-          claimTypes: claimTypes?.map(claimType => claimType.toString()),
+          claimTypes: claimTypes,
           count: size,
           skip: start,
         })
@@ -570,11 +579,9 @@ export class Polymesh {
       data: { didsWithClaims: didsWithClaimsList },
     } = result;
 
-    const didsWithClaimsResult: DidWithClaimData[] = [];
-
-    didsWithClaimsList.forEach(({ did, claims }) => {
-      const claimData: ClaimData[] = [];
-      claims.forEach(
+    return didsWithClaimsList.map(({ did, claims }) => ({
+      identity: new Identity({ did }, context),
+      claims: claims.map(
         ({
           targetDID,
           issuer,
@@ -583,23 +590,15 @@ export class Polymesh {
           type,
           jurisdiction,
           scope: claimScope,
-        }) => {
-          claimData.push({
-            target: new Identity({ did: targetDID }, context),
-            issuer: new Identity({ did: issuer }, context),
-            issuedAt: new Date(issuanceDate),
-            expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, claimScope),
-          });
-        }
-      );
-      didsWithClaimsResult.push({
-        did,
-        claim: claimData,
-      });
-    });
-
-    return didsWithClaimsResult;
+        }) => ({
+          target: new Identity({ did: targetDID }, context),
+          issuer: new Identity({ did: issuer }, context),
+          issuedAt: new Date(issuanceDate),
+          expiry: expiry ? new Date(expiry) : null,
+          claim: createClaim(type, jurisdiction, claimScope),
+        })
+      ),
+    }));
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

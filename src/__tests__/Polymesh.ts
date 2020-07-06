@@ -703,8 +703,8 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getDidsWithClaims', () => {
-    test('should return a list of dids with their claims', async () => {
+  describe('method: getIdentitiesWithClaims', () => {
+    test('should return a list of identities with claims associated to them', async () => {
       const context = dsMockUtils.getContextInstance();
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
@@ -718,8 +718,8 @@ describe('Polymesh Class', () => {
 
       const fakeClaims = [
         {
-          did: targetDid,
-          claim: [
+          identity: new Identity({ did: targetDid }, context),
+          claims: [
             {
               ...claim,
               expiry: new Date(date),
@@ -779,7 +779,7 @@ describe('Polymesh Class', () => {
           dids: [targetDid],
           scope: undefined,
           trustedClaimIssuers: [targetDid],
-          claimTypes: ['Accredited'],
+          claimTypes: [ClaimType.Accredited],
           count: undefined,
           skip: undefined,
         }),
@@ -788,8 +788,8 @@ describe('Polymesh Class', () => {
         }
       );
 
-      const result = await polymesh.getDidsWithClaims({
-        dids: [targetDid],
+      const result = await polymesh.getIdentitiesWithClaims({
+        targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
       });
@@ -811,7 +811,7 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.throwOnMiddlewareQuery();
 
-      return expect(polymesh.getDidsWithClaims({})).rejects.toThrow(
+      return expect(polymesh.getIdentitiesWithClaims()).rejects.toThrow(
         'Error in middleware query: Error'
       );
     });
