@@ -164,7 +164,11 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     if (freeBalance.lt(fees)) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: `Not enough POLYX balance to pay for this procedure's fees. Balance: ${freeBalance.toFormat()}, fees: ${fees.toFormat()}`,
+        message: "Not enough POLYX balance to pay for this procedure's fees",
+        data: {
+          freeBalance,
+          fees,
+        },
       });
     }
 

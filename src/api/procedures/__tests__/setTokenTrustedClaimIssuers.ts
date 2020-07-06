@@ -101,15 +101,22 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     );
   });
 
-  test("should throw an error if some of the supplied dids don't exist", () => {
-    const nonExistendDid = claimIssuerIdentities[1];
-    dsMockUtils.configureMocks({ contextOptions: { invalidDids: [nonExistendDid] } });
+  test("should throw an error if some of the supplied dids don't exist", async () => {
+    const nonExistentDid = claimIssuerIdentities[1];
+    dsMockUtils.configureMocks({ contextOptions: { invalidDids: [nonExistentDid] } });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    return expect(prepareSetTokenTrustedClaimIssuers.call(proc, args)).rejects.toThrow(
-      `Some of the supplied identity IDs do not exist: ${nonExistendDid}`
-    );
+    let error;
+
+    try {
+      await prepareSetTokenTrustedClaimIssuers.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Some of the supplied identity IDs do not exist');
+    expect(error.data).toMatchObject({ nonExistentDids: [nonExistentDid] });
   });
 
   test('should add a remove claim issuers transaction and an add claim issuers transaction to the queue', async () => {

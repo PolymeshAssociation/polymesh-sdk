@@ -63,39 +63,61 @@ describe('transferToken procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error with reason if transfer status is different than success and failure', () => {
+  test('should throw an error with reason if transfer status is different than success and failure', async () => {
     const amount = new BigNumber(100);
-    const status = TransferStatus.FundsLimitReached;
+    const transferStatus = TransferStatus.FundsLimitReached;
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        transfersCanTransfer: status,
+        transfersCanTransfer: transferStatus,
       },
     });
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
-    return expect(prepareTransferToken.call(proc, { ...args, amount })).rejects.toThrow(
-      `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}". Reason: ${status}`
+    let error;
+
+    try {
+      await prepareTransferToken.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe(
+      `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}"`
     );
+    expect(error.data).toMatchObject({ transferStatus });
   });
 
-  test('should throw an error without reason if transfer status is failure', () => {
+  test('should throw an error without reason if transfer status is failure', async () => {
     const amount = new BigNumber(100);
-    const status = TransferStatus.Failure;
+    const transferStatus = TransferStatus.Failure;
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        transfersCanTransfer: status,
+        transfersCanTransfer: transferStatus,
       },
     });
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
     proc.context = mockContext;
 
+    let error;
+
+    try {
+      await prepareTransferToken.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe(
+      `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}"`
+    );
+    expect(error.data).toMatchObject({ transferStatus });
+
     return expect(prepareTransferToken.call(proc, { ...args, amount })).rejects.toThrow(
-      `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}".`
+      `You are not allowed to transfer ${amount.toFormat()} "${ticker}" tokens to "${did}"`
     );
   });
 

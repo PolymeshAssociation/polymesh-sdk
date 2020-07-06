@@ -84,7 +84,7 @@ describe('reserveTicker procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the ticker is already reserved', () => {
+  test('should throw an error if the ticker is already reserved', async () => {
     const expiryDate = new Date(new Date().getTime() + 1000);
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),
@@ -94,12 +94,19 @@ describe('reserveTicker procedure', () => {
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
-    return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
-      `Ticker "${ticker}" already reserved. The current reservation will expire at ${expiryDate}`
-    );
+    let error;
+
+    try {
+      await prepareReserveTicker.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe(`Ticker "${ticker}" already reserved`);
+    expect(error.data).toMatchObject({ expiryDate });
   });
 
-  test('should throw an error if the current reservation is permanent', () => {
+  test('should throw an error if the current reservation is permanent', async () => {
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
@@ -108,9 +115,16 @@ describe('reserveTicker procedure', () => {
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
     proc.context = mockContext;
 
-    return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
-      `Ticker "${ticker}" already reserved. The current reservation will not expire`
-    );
+    let error;
+
+    try {
+      await prepareReserveTicker.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe(`Ticker "${ticker}" already reserved`);
+    expect(error.data).toMatchObject({ expiryDate: null });
   });
 
   test('should throw an error if a token with that ticker has already been launched', () => {

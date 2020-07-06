@@ -54,13 +54,12 @@ export async function prepareReserveTicker(
     });
   } else if (status === TickerReservationStatus.Reserved) {
     if (!extendPeriod) {
-      const isPermanent = expiryDate === null;
-
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: `Ticker "${ticker}" already reserved. The current reservation will ${
-          !isPermanent ? '' : 'not '
-        }expire${!isPermanent ? ` at ${expiryDate}` : ''}`,
+        message: `Ticker "${ticker}" already reserved`,
+        data: {
+          expiryDate,
+        },
       });
     }
   } else {

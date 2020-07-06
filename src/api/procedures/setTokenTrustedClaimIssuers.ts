@@ -54,7 +54,10 @@ export async function prepareSetTokenTrustedClaimIssuers(
   if (nonExistentDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Some of the supplied identity IDs do not exist: ${nonExistentDids.join(', ')}`,
+      message: 'Some of the supplied identity IDs do not exist',
+      data: {
+        nonExistentDids,
+      },
     });
   }
 
