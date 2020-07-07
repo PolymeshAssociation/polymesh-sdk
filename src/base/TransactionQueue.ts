@@ -166,8 +166,6 @@ export class TransactionQueue<
    *   This means fees can't be calculated for said transaction until previous transactions in the queue have run
    * - Protocol fees may vary between when this value is fetched and when the transaction is actually executed because of a
    *   governance vote
-   * - Gas fees may vary between when this value is fetched and when the transaction is actually executed because of
-   *   network demand
    */
   public async getMinFees(): Promise<Fees> {
     const allFees = await Promise.all(this.transactions.map(transaction => transaction.getFees()));
