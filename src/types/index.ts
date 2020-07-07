@@ -209,13 +209,18 @@ export function isScopedClaim(claim: Claim): claim is ScopedClaim {
   return type !== ClaimType.NoData && type !== ClaimType.CustomerDueDiligence;
 }
 
-export type ClaimData = {
+export interface ClaimData {
   target: Identity;
   issuer: Identity;
   issuedAt: Date;
   expiry: Date | null;
   claim: Claim;
-};
+}
+
+export interface IdentityWithClaims {
+  identity: Identity;
+  claims: ClaimData[];
+}
 
 export enum ConditionType {
   IsPresent = 'IsPresent',

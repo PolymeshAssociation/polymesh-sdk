@@ -703,6 +703,120 @@ describe('Polymesh Class', () => {
     });
   });
 
+  describe('method: getIdentitiesWithClaims', () => {
+    test('should return a list of identities with claims associated to them', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const date = 1589816265000;
+      const customerDueDiligenceType = 'CustomerDueDiligence';
+      const claim = {
+        target: new Identity({ did: targetDid }, context),
+        issuer: new Identity({ did: issuerDid }, context),
+        issuedAt: new Date(date),
+      };
+
+      const fakeClaims = [
+        {
+          identity: new Identity({ did: targetDid }, context),
+          claims: [
+            {
+              ...claim,
+              expiry: new Date(date),
+              claim: {
+                type: customerDueDiligenceType,
+              },
+            },
+            {
+              ...claim,
+              expiry: null,
+              claim: {
+                type: customerDueDiligenceType,
+              },
+            },
+          ],
+        },
+      ];
+      /* eslint-disable @typescript-eslint/camelcase */
+      const commonClaimData = {
+        targetDID: targetDid,
+        issuer: issuerDid,
+        issuance_date: date,
+        last_update_date: date,
+      };
+      const didsWithClaimsQueryResponse: IdentityWithClaims[] = [
+        {
+          did: targetDid,
+          claims: [
+            {
+              ...commonClaimData,
+              expiry: date,
+              type: customerDueDiligenceType,
+            },
+            {
+              ...commonClaimData,
+              expiry: null,
+              type: customerDueDiligenceType,
+            },
+          ],
+        },
+      ];
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({
+          dids: [targetDid],
+          scope: undefined,
+          trustedClaimIssuers: [targetDid],
+          claimTypes: [ClaimType.Accredited],
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
+      );
+
+      const result = await polymesh.getIdentitiesWithClaims({
+        targets: [targetDid],
+        trustedClaimIssuers: [targetDid],
+        claimTypes: [ClaimType.Accredited],
+      });
+
+      expect(result).toEqual(fakeClaims);
+    });
+
+    test('should throw if the middleware query fails', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      return expect(polymesh.getIdentitiesWithClaims()).rejects.toThrow(
+        'Error in middleware query: Error'
+      );
+    });
+  });
+
   describe('method: transferPolyX', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
