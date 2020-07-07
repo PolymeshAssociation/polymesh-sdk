@@ -66,8 +66,7 @@ describe('togglePauseRules procedure', () => {
   });
 
   test('should throw an error if pause is set to true and the rules are already paused', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
       prepareTogglePauseRules.call(proc, {
@@ -85,8 +84,7 @@ describe('togglePauseRules procedure', () => {
 
     boolToBooleanStub.returns(false);
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
       prepareTogglePauseRules.call(proc, {
@@ -104,8 +102,7 @@ describe('togglePauseRules procedure', () => {
 
     boolToBooleanStub.returns(false);
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('complianceManager', 'pauseAssetRules');
 
@@ -120,8 +117,7 @@ describe('togglePauseRules procedure', () => {
   });
 
   test('should add a resume asset rules transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('complianceManager', 'resumeAssetRules');
 

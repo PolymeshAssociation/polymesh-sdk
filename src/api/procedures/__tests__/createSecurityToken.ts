@@ -199,8 +199,7 @@ describe('createSecurityToken procedure', () => {
       expiryDate: null,
       status: TickerReservationStatus.TokenCreated,
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(prepareCreateSecurityToken.call(proc, args)).rejects.toThrow(
       `A Security Token with ticker "${ticker}" already exists`
@@ -213,8 +212,7 @@ describe('createSecurityToken procedure', () => {
       expiryDate: null,
       status: TickerReservationStatus.Free,
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(prepareCreateSecurityToken.call(proc, args)).rejects.toThrow(
       `You must first reserve ticker "${ticker}" in order to create a Security Token with it`
@@ -222,8 +220,7 @@ describe('createSecurityToken procedure', () => {
   });
 
   test('should add a token creation transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareCreateSecurityToken.call(proc, args);
 
@@ -262,8 +259,7 @@ describe('createSecurityToken procedure', () => {
   });
 
   test('should add a document add transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
     const tx = dsMockUtils.createTxStub('asset', 'addDocuments');
 
     const result = await prepareCreateSecurityToken.call(proc, { ...args, documents });

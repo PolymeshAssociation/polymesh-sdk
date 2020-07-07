@@ -41,8 +41,7 @@ describe('transferPolyX procedure', () => {
   test('should throw an error if the user has insufficient balance to transfer', () => {
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
 
-    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
 
     return expect(
       prepareTransferPolyX.call(proc, {
@@ -55,8 +54,7 @@ describe('transferPolyX procedure', () => {
   test("should throw an error if destination account doesn't have an associated identity", () => {
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
 
-    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
 
     return expect(
       prepareTransferPolyX.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
@@ -78,8 +76,7 @@ describe('transferPolyX procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
 
     return expect(
       prepareTransferPolyX.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
@@ -101,8 +98,7 @@ describe('transferPolyX procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
 
     return expect(
       prepareTransferPolyX.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
@@ -125,8 +121,7 @@ describe('transferPolyX procedure', () => {
     sinon.stub(utilsModule, 'numberToBalance').returns(rawAmount);
 
     const tx = dsMockUtils.createTxStub('balances', 'transfer');
-    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
 
     await prepareTransferPolyX.call(proc, {
       to,

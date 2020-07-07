@@ -100,8 +100,7 @@ describe('transferTokenOwnership procedure', () => {
   });
 
   test('should add an add authorization transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareTransferTokenOwnership.call(proc, args);
 
@@ -117,8 +116,7 @@ describe('transferTokenOwnership procedure', () => {
   });
 
   test('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareTransferTokenOwnership.call(proc, { ...args, expiry });
 

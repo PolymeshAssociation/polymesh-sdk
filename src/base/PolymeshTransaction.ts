@@ -1,13 +1,15 @@
 import { AddressOrPair } from '@polkadot/api/types';
 import { DispatchError } from '@polkadot/types/interfaces';
 import { ISubmittableResult, RegistryError } from '@polkadot/types/types';
+import { stringUpperFirst } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { TxTag } from 'polymesh-types/types';
 
 import { PolymeshError } from '~/base';
 import { PostTransactionValue } from '~/base/PostTransactionValue';
-import { ErrorCode, TransactionStatus } from '~/types';
+import { Context } from '~/context';
+import { ErrorCode, Fees, TransactionStatus } from '~/types';
 import {
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -15,7 +17,13 @@ import {
   PostTransactionValueArray,
   TransactionSpec,
 } from '~/types/internal';
-import { unwrapValue, unwrapValues } from '~/utils';
+import {
+  balanceToBigNumber,
+  posRatioToBigNumber,
+  stringToProtocolOp,
+  unwrapValue,
+  unwrapValues,
+} from '~/utils';
 
 enum Event {
   StatusChange = 'StatusChange',
@@ -68,12 +76,6 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
   public args: MapMaybePostTransactionValue<Args>;
 
   /**
-   *
-   * @param transactionSpec
-   */
-  public fee: BigNumber;
-
-  /**
    * @hidden
    *
    * underlying transaction to be executed
@@ -105,9 +107,26 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
 
   /**
    * @hidden
+   *
+   * used by procedures to set the fee manually in case the protocol op can't be
+   * dynamically generated from the transaction name
    */
-  constructor(transactionSpec: TransactionSpec<Args, Values>) {
-    const { postTransactionValues, tx, args, signer, isCritical, fee } = transactionSpec;
+  private protocolFee: BigNumber | null;
+
+  /**
+   * @hidden
+   *
+   * number of elements in the batch (only applicable to batch transactions)
+   */
+  private batchSize: number | null;
+
+  private context: Context;
+
+  /**
+   * @hidden
+   */
+  constructor(transactionSpec: TransactionSpec<Args, Values>, context: Context) {
+    const { postTransactionValues, tx, args, signer, isCritical, fee, batchSize } = transactionSpec;
 
     if (postTransactionValues) {
       this.postValues = postTransactionValues;
@@ -118,7 +137,9 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
     this.args = args;
     this.signer = signer;
     this.isCritical = isCritical;
-    this.fee = fee;
+    this.batchSize = batchSize;
+    this.protocolFee = fee;
+    this.context = context;
 
     this.setTag();
   }
@@ -172,6 +193,70 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
 
     return (): void => {
       this.emitter.removeListener(Event.StatusChange, listener);
+    };
+  }
+
+  /**
+   * Get all (protocol and gas) fees associated with this transaction. Returns null
+   * if the transaction is not ready yet (this can happen if it depends on the execution of a
+   * previous transaction in the queue)
+   */
+  public async getFees(): Promise<Fees | null> {
+    const {
+      tx,
+      args,
+      signer,
+      batchSize,
+      context: {
+        polymeshApi: { query },
+      },
+      context,
+    } = this;
+    let { protocolFee } = this;
+
+    let unwrappedTx;
+    let unwrappedArgs;
+
+    try {
+      unwrappedTx = unwrapValue(tx);
+      unwrappedArgs = unwrapValues(args);
+    } catch (err) {
+      return null;
+    }
+
+    const [rawCoefficient, { partialFee }] = await Promise.all([
+      query.protocolFee.coefficient(),
+      unwrappedTx(...unwrappedArgs).paymentInfo(signer),
+    ]);
+    const coefficient = posRatioToBigNumber(rawCoefficient);
+
+    if (!protocolFee) {
+      const { section: moduleName, method: extrinsicName } = unwrappedTx;
+      const batchRegex = RegExp('(b|s?B)atch');
+
+      if (batchRegex.exec(extrinsicName) && !batchSize) {
+        throw new PolymeshError({
+          code: ErrorCode.FatalError,
+          message:
+            'Did not set batch size for batch transaction. Please report this error to the Polymath team',
+        });
+      }
+
+      const protocolOp = `${stringUpperFirst(moduleName)}${stringUpperFirst(
+        extrinsicName.replace(batchRegex, '')
+      )}`;
+
+      try {
+        const rawFee = await query.protocolFee.baseFees(stringToProtocolOp(protocolOp, context));
+        protocolFee = balanceToBigNumber(rawFee);
+      } catch (err) {
+        protocolFee = new BigNumber(0);
+      }
+    }
+
+    return {
+      protocol: protocolFee.multipliedBy(coefficient).multipliedBy(batchSize || 1),
+      gas: balanceToBigNumber(partialFee),
     };
   }
 

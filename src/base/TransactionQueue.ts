@@ -2,7 +2,8 @@ import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
 
 import { PolymeshError, PolymeshTransaction, PostTransactionValue } from '~/base';
-import { ErrorCode, TransactionQueueStatus } from '~/types';
+import { Context } from '~/context';
+import { ErrorCode, Fees, TransactionQueueStatus } from '~/types';
 import { MaybePostTransactionValue, TransactionSpec } from '~/types/internal';
 
 enum Events {
@@ -45,11 +46,6 @@ export class TransactionQueue<
   public error?: PolymeshError;
 
   /**
-   * total cost of running the transactions in the queue (in POLYX). This does not include gas
-   */
-  public fees: BigNumber;
-
-  /**
    * @hidden
    * internal queue of transactions to be run
    */
@@ -73,6 +69,8 @@ export class TransactionQueue<
    */
   private hasRun: boolean;
 
+  private context: Context;
+
   /**
    * Create a transaction queue
    *
@@ -82,18 +80,17 @@ export class TransactionQueue<
    */
   constructor(
     transactions: TransactionSpecArray<TransactionArgs>,
-    fees: BigNumber,
-    returnValue: MaybePostTransactionValue<ReturnType>
+    returnValue: MaybePostTransactionValue<ReturnType>,
+    context: Context
   ) {
     this.emitter = new EventEmitter();
     this.returnValue = returnValue;
     this.hasRun = false;
-
-    this.fees = fees;
+    this.context = context;
     this.transactions = ([] as unknown) as PolymeshTransactionArray<TransactionArgs>;
 
     transactions.forEach(transaction => {
-      const txn = new PolymeshTransaction(transaction);
+      const txn = new PolymeshTransaction(transaction, context);
 
       txn.onStatusChange(updatedTransaction => {
         this.emitter.emit(Events.TransactionStatusChange, updatedTransaction, this);
@@ -114,6 +111,24 @@ export class TransactionQueue<
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'Cannot re-run a Transaction Queue',
+      });
+    }
+
+    const [{ free: freeBalance }, fees] = await Promise.all([
+      this.context.accountBalance(),
+      this.getMinFees(),
+    ]);
+
+    const { protocol, gas } = fees;
+
+    if (freeBalance.lt(protocol.plus(gas))) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "Not enough POLYX balance to pay for this procedure's fees",
+        data: {
+          freeBalance,
+          fees,
+        },
       });
     }
 
@@ -141,6 +156,30 @@ export class TransactionQueue<
     }
 
     return res;
+  }
+
+  /**
+   * Retrieves a lower bound of the fees required to execute this transaction queue.
+   *   Transaction fees can be higher at execution time for two reasons:
+   *
+   * - One or more transactions (or arguments) depend on the result of another transaction in the queue.
+   *   This means fees can't be calculated for said transaction until previous transactions in the queue have run
+   * - Protocol fees may vary between when this value is fetched and when the transaction is actually executed because of a
+   *   governance vote
+   */
+  public async getMinFees(): Promise<Fees> {
+    const allFees = await Promise.all(this.transactions.map(transaction => transaction.getFees()));
+
+    return allFees.reduce<Fees>(
+      (acc, next) => ({
+        protocol: acc.protocol.plus(next?.protocol ?? 0),
+        gas: acc.gas.plus(next?.gas ?? 0),
+      }),
+      {
+        protocol: new BigNumber(0),
+        gas: new BigNumber(0),
+      }
+    );
   }
 
   /**

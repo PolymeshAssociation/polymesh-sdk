@@ -93,8 +93,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
 
   test('should throw an error if the new list is the same as the current one', () => {
     trustedClaimIssuerStub.withArgs(rawTicker).returns(rawClaimIssuerDids);
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(prepareSetTokenTrustedClaimIssuers.call(proc, args)).rejects.toThrow(
       'The supplied claim issuer list is equal to the current one'
@@ -104,8 +103,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   test("should throw an error if some of the supplied dids don't exist", async () => {
     const nonExistentDid = claimIssuerIdentities[1];
     dsMockUtils.configureMocks({ contextOptions: { invalidDids: [nonExistentDid] } });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     let error;
 
@@ -122,8 +120,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   test('should add a remove claim issuers transaction and an add claim issuers transaction to the queue', async () => {
     const currentClaimIssuerDids = rawClaimIssuerDids.slice(0, -1);
     trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenTrustedClaimIssuers.call(proc, args);
 
@@ -145,8 +142,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   });
 
   test('should not add a remove claim issuers transaction if there are no default claim issuers set on the token', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenTrustedClaimIssuers.call(proc, args);
 
@@ -164,8 +160,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   test('should not add an add claim issuers transaction if there are no claim issuers passed as arguments', async () => {
     const currentClaimIssuerDids = rawClaimIssuerDids.slice(0, -1);
     trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenTrustedClaimIssuers.call(proc, {
       ...args,

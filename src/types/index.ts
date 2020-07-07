@@ -359,4 +359,9 @@ export interface NetworkProperties {
   version: number;
 }
 
+export interface Fees {
+  protocol: BigNumber;
+  gas: BigNumber;
+}
+
 export * from '~/api/entities/types';
