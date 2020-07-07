@@ -23,9 +23,11 @@ import { Query } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
+  ClaimType,
   CommonKeyring,
   Ensured,
   ErrorCode,
+  IdentityWithClaims,
   MiddlewareConfig,
   SubCallback,
   TickerReservationStatus,
@@ -522,6 +524,81 @@ export class Polymesh {
     });
 
     return claimData;
+  }
+
+  /**
+   * Retrieve a list of identities with claims associated to them. Can be filtered using parameters
+   *
+   * @param opts.targets - identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
+   * @param opts.scope - scope of the claims to fetch. Defaults to any scope
+   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   */
+  public async getIdentitiesWithClaims(
+    opts: {
+      targets?: (string | Identity)[];
+      trustedClaimIssuers?: (string | Identity)[];
+      scope?: string;
+      claimTypes?: ClaimType[];
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<IdentityWithClaims[]> {
+    const {
+      context,
+      context: { middlewareApi },
+    } = this;
+
+    const { targets, trustedClaimIssuers, scope, claimTypes, size, start } = opts;
+
+    let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
+
+    try {
+      result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
+        didsWithClaims({
+          dids: targets?.map(target => valueToDid(target)),
+          scope,
+          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+            valueToDid(trustedClaimIssuer)
+          ),
+          claimTypes: claimTypes,
+          count: size,
+          skip: start,
+        })
+      );
+    } catch (e) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `Error in middleware query: ${e.message}`,
+      });
+    }
+
+    const {
+      data: { didsWithClaims: didsWithClaimsList },
+    } = result;
+
+    return didsWithClaimsList.map(({ did, claims }) => ({
+      identity: new Identity({ did }, context),
+      claims: claims.map(
+        ({
+          targetDID,
+          issuer,
+          issuance_date: issuanceDate,
+          expiry,
+          type,
+          jurisdiction,
+          scope: claimScope,
+        }) => ({
+          target: new Identity({ did: targetDID }, context),
+          issuer: new Identity({ did: issuer }, context),
+          issuedAt: new Date(issuanceDate),
+          expiry: expiry ? new Date(expiry) : null,
+          claim: createClaim(type, jurisdiction, claimScope),
+        })
+      ),
+    }));
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
