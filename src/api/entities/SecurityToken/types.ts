@@ -17,3 +17,11 @@ export interface IdentityBalance {
   identity: Identity;
   balance: BigNumber;
 }
+
+export interface TokenHolderOptions {
+  canBeIssuedTo: boolean;
+}
+
+export interface TokenHolderProperties {
+  canBeIssuedTo: boolean;
+}
