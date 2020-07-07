@@ -27,6 +27,7 @@ import {
   Ensured,
   ErrorCode,
   MiddlewareConfig,
+  NetworkProperties,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
@@ -38,6 +39,7 @@ import {
   signerToSignatory,
   stringToTicker,
   tickerToString,
+  u32ToBigNumber,
   valueToDid,
 } from '~/utils';
 
@@ -60,7 +62,7 @@ function isUiKeyring(keyring: any): keyring is UiKeyring {
  * Main entry point of the Polymesh SDK
  */
 export class Polymesh {
-  public context: Context = {} as Context;
+  private context: Context = {} as Context;
 
   /**
    * @hidden
@@ -522,6 +524,28 @@ export class Polymesh {
     });
 
     return claimData;
+  }
+
+  /**
+   * Retrieve information for the current network
+   */
+  public async getNetworkProperties(): Promise<NetworkProperties> {
+    const {
+      context: {
+        polymeshApi: {
+          runtimeVersion: { specVersion },
+          rpc: {
+            system: { chain },
+          },
+        },
+      },
+    } = this;
+    const name = await chain();
+
+    return {
+      name: name.toString(),
+      version: u32ToBigNumber(specVersion).toNumber(),
+    };
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

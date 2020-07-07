@@ -897,6 +897,36 @@ describe('Polymesh Class', () => {
     });
   });
 
+  describe('method: getNetworkProperties', () => {
+    test('should return current network information', async () => {
+      const name = 'someName';
+      const version = 1;
+      const fakeResult = {
+        name,
+        version,
+      };
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+
+      dsMockUtils.setRuntimeVersion({ specVersion: dsMockUtils.createMockU32(version) });
+      dsMockUtils.createRpcStub('system', 'chain').resolves(dsMockUtils.createMockText(name));
+
+      const result = await polymesh.getNetworkProperties();
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
   describe('method: onConnectionError', () => {
     test('should call the supplied listener when the event is emitted and return an unsubscribe callback', async () => {
       const polkadot = dsMockUtils.getApiInstance();
