@@ -1,4 +1,5 @@
 import { Balance } from '@polkadot/types/interfaces';
+import P from 'bluebird';
 import { chunk } from 'lodash';
 
 import { SecurityToken } from '~/api/entities';
@@ -6,7 +7,12 @@ import { PolymeshError, Procedure } from '~/base';
 import { IdentityId, TxTags } from '~/polkadot';
 import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
 import { numberToBalance, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
-import { MAX_BATCH_ELEMENTS, MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import {
+  MAX_BATCH_ELEMENTS,
+  MAX_CONCURRENT_REQUESTS,
+  MAX_DECIMALS,
+  MAX_TOKEN_AMOUNT,
+} from '~/utils/constants';
 
 export interface IssueTokensParams {
   issuanceData: IssuanceData[];
@@ -76,29 +82,27 @@ export async function prepareIssueTokens(
   const balances: Balance[] = [];
   const failed: Array<{ did: string; transferStatus: TransferStatus }> = [];
 
-  const issuanceDataChunks = chunk(issuanceData, 10);
+  const issuanceDataChunks = chunk(issuanceData, MAX_CONCURRENT_REQUESTS);
 
-  await Promise.all(
-    issuanceDataChunks.map(async issuanceDataChunk => {
-      // TODO: queryMulti
-      const transferStatuses = await Promise.all(
-        issuanceDataChunk.map(({ identity, amount }) =>
-          securityToken.transfers.canMint({ to: identity, amount })
-        )
-      );
+  await P.each(issuanceDataChunks, async issuanceDataChunk => {
+    // TODO: queryMulti
+    const transferStatuses = await Promise.all(
+      issuanceDataChunk.map(({ identity, amount }) =>
+        securityToken.transfers.canMint({ to: identity, amount })
+      )
+    );
 
-      transferStatuses.forEach((canTransfer, index) => {
-        const { identity, amount } = issuanceDataChunk[index];
-        const did = valueToDid(identity);
-        investors.push(stringToIdentityId(did, context));
-        balances.push(numberToBalance(amount, context));
+    transferStatuses.forEach((canTransfer, index) => {
+      const { identity, amount } = issuanceDataChunk[index];
+      const did = valueToDid(identity);
+      investors.push(stringToIdentityId(did, context));
+      balances.push(numberToBalance(amount, context));
 
-        if (canTransfer !== TransferStatus.Success) {
-          failed.push({ did, transferStatus: canTransfer });
-        }
-      });
-    })
-  );
+      if (canTransfer !== TransferStatus.Success) {
+        failed.push({ did, transferStatus: canTransfer });
+      }
+    });
+  });
 
   if (failed.length) {
     throw new PolymeshError({

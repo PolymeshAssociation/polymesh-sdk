@@ -19,3 +19,4 @@ export const MAX_BATCH_ELEMENTS = {
 };
 export const IGNORE_CHECKSUM = true;
 export const SS58_FORMAT = 42;
+export const MAX_CONCURRENT_REQUESTS = 200;
