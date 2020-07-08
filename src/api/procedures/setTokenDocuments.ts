@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { chunk, differenceWith } from 'lodash';
+import { differenceWith } from 'lodash';
 import { Document, TxTags } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities';
@@ -7,13 +7,13 @@ import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType, TokenDocument } from '~/types';
 import { SignerType } from '~/types/internal';
 import {
+  batchArguments,
   documentToTokenDocument,
   signerToSignatory,
   stringToTicker,
   tickerToDid,
   tokenDocumentToDocument,
 } from '~/utils';
-import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 export interface SetTokenDocumentsParams {
   documents: TokenDocument[];
@@ -72,23 +72,23 @@ export async function prepareSetTokenDocuments(
   const rawTicker = stringToTicker(ticker, context);
 
   if (currentDocIds.length) {
-    chunk(currentDocIds, MAX_BATCH_ELEMENTS[TxTags.asset.RemoveDocuments]).forEach(docIdChunk => {
+    batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).forEach(docIdBatch => {
       this.addTransaction(
         tx.asset.removeDocuments,
-        { batchSize: docIdChunk.length },
+        { batchSize: docIdBatch.length },
         rawTicker,
-        docIdChunk
+        docIdBatch
       );
     });
   }
 
   if (rawDocuments.length) {
-    chunk(rawDocuments, MAX_BATCH_ELEMENTS[TxTags.asset.AddDocuments]).forEach(rawDocumentChunk => {
+    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
       this.addTransaction(
         tx.asset.addDocuments,
-        { batchSize: rawDocumentChunk.length },
+        { batchSize: rawDocumentBatch.length },
         rawTicker,
-        rawDocumentChunk
+        rawDocumentBatch
       );
     });
   }
