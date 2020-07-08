@@ -56,8 +56,7 @@ describe('modifyToken procedure', () => {
   });
 
   test('should throw an error if the user has not passed any arguments', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(prepareModifyToken.call(proc, ({} as unknown) as Params)).rejects.toThrow(
       'Nothing to modify'
@@ -69,8 +68,7 @@ describe('modifyToken procedure', () => {
       isDivisible: true,
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
       prepareModifyToken.call(proc, {
@@ -81,8 +79,7 @@ describe('modifyToken procedure', () => {
   });
 
   test('should throw an error if makeDivisible is set to false', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
       prepareModifyToken.call(proc, {
@@ -93,8 +90,7 @@ describe('modifyToken procedure', () => {
   });
 
   test('should throw an error if newName is the same name currently in the Security Token', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
       prepareModifyToken.call(proc, {
@@ -105,8 +101,7 @@ describe('modifyToken procedure', () => {
   });
 
   test('should throw an error if newFundingRound is the same funding round name currently in the Security Token', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
       prepareModifyToken.call(proc, {
@@ -117,8 +112,7 @@ describe('modifyToken procedure', () => {
   });
 
   test('should add a make divisible transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'makeDivisible');
 
@@ -136,8 +130,7 @@ describe('modifyToken procedure', () => {
     const rawAssetName = dsMockUtils.createMockAssetName(newName);
     stringToAssetNameStub.withArgs(newName, mockContext).returns(rawAssetName);
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'renameAsset');
 
@@ -155,8 +148,7 @@ describe('modifyToken procedure', () => {
     const rawFundingRound = dsMockUtils.createMockFundingRoundName(newFundingRound);
     stringToFundingRoundNameStub.withArgs(newFundingRound, mockContext).returns(rawFundingRound);
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'setFundingRound');
 

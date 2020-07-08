@@ -73,8 +73,7 @@ describe('transferToken procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     let error;
 
@@ -100,8 +99,7 @@ describe('transferToken procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     let error;
 
@@ -129,8 +127,7 @@ describe('transferToken procedure', () => {
     stringToIdentityIdStub.returns(rawDid);
 
     const tx = dsMockUtils.createTxStub('asset', 'transfer');
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     await prepareTransferToken.call(proc, { ...args, amount: new BigNumber(amount) });
 

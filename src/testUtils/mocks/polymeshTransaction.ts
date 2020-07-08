@@ -1,5 +1,6 @@
 /* istanbul ignore file */
 
+import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 
 import { PolymeshTransaction } from '~/base/PolymeshTransaction';
@@ -9,6 +10,10 @@ import { TransactionStatus } from '~/types';
 interface MockTransactionSpec {
   isCritical: boolean;
   autoresolve: TransactionStatus.Failed | TransactionStatus.Succeeded | false;
+  fees?: {
+    protocol: BigNumber;
+    gas: BigNumber;
+  };
 }
 
 interface TransactionMockData {
@@ -67,7 +72,7 @@ export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransac
   const error = 'Transaction Error';
   const updateStatusStub = sinon.stub();
 
-  const instances = specs.map(({ isCritical, autoresolve }) => {
+  const instances = specs.map(({ isCritical, autoresolve, fees = null }) => {
     const instance = {} as MockTransaction;
     if (autoresolve === TransactionStatus.Failed) {
       instance.run = (sinon.stub().rejects(new Error(error)) as unknown) as MockTransaction['run'];
@@ -112,6 +117,7 @@ export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransac
     }) as unknown) as MockTransaction['onStatusChange'];
 
     instance.status = autoresolve || TransactionStatus.Idle;
+    instance.getFees = sinon.stub().resolves(fees) as MockTransaction['getFees'];
 
     transactionMocksData.set(instance, {
       updateStatusStub,

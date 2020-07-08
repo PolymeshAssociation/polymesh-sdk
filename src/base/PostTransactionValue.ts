@@ -32,7 +32,7 @@ export class PostTransactionValue<Value> {
   /**
    * Retrieve the resolved value
    *
-   * @throws if the value is being accessed before the resolver function has run (should NEVER happen)
+   * @throws if the value is being accessed before the resolver function has run
    */
   public get value(): Value {
     const { _value, resolved } = this;

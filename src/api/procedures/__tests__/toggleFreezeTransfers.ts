@@ -60,8 +60,7 @@ describe('toggleFreezeTransfers procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
       prepareToggleFreezeTransfers.call(proc, {
@@ -72,8 +71,7 @@ describe('toggleFreezeTransfers procedure', () => {
   });
 
   test('should throw an error if freeze is set to false and the security token is already unfrozen', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
       prepareToggleFreezeTransfers.call(proc, {
@@ -84,8 +82,7 @@ describe('toggleFreezeTransfers procedure', () => {
   });
 
   test('should add a freeze transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'freeze');
 
@@ -106,8 +103,7 @@ describe('toggleFreezeTransfers procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'unfreeze');
 

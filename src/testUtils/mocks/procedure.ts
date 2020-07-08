@@ -3,6 +3,7 @@
 import sinon, { SinonStub } from 'sinon';
 
 import { Procedure } from '~/base/Procedure';
+import { Context } from '~/context';
 import { Mocked } from '~/testUtils/types';
 
 const mockInstanceContainer = {
@@ -73,8 +74,12 @@ export function reset(): void {
  * @hidden
  * Retrieve a Procedure instance
  */
-export function getInstance<T, U>(): Procedure<T, U> {
-  return (mockInstanceContainer.procedure as unknown) as Procedure<T, U>;
+export function getInstance<T, U>(context?: Context): Procedure<T, U> {
+  const { procedure } = mockInstanceContainer;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (procedure as any).context = context;
+
+  return (procedure as unknown) as Procedure<T, U>;
 }
 
 /**

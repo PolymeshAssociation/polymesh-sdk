@@ -107,8 +107,7 @@ describe('modifyClaims procedure', () => {
   test("should throw an error if some of the supplied target dids don't exist", async () => {
     dsMockUtils.configureMocks({ contextOptions: { invalidDids: [otherDid] } });
 
-    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
 
     let error;
 
@@ -123,8 +122,7 @@ describe('modifyClaims procedure', () => {
   });
 
   test('should add an add claims batch transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
 
     await prepareModifyClaims.call(proc, args);
 
@@ -185,8 +183,7 @@ describe('modifyClaims procedure', () => {
   });
 
   test("should throw an error if any of the claims that will be modified weren't issued by the current identity", async () => {
-    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
 
     dsMockUtils.createApolloQueryStub(
       didsWithClaims({
@@ -212,8 +209,7 @@ describe('modifyClaims procedure', () => {
   });
 
   test('should add a revoke claims batch transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
 
     dsMockUtils.createApolloQueryStub(
       didsWithClaims({

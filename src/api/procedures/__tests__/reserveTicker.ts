@@ -91,8 +91,9 @@ describe('reserveTicker procedure', () => {
       expiryDate,
       status: TickerReservationStatus.Reserved,
     });
-    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
+      mockContext
+    );
 
     let error;
 
@@ -112,8 +113,9 @@ describe('reserveTicker procedure', () => {
       expiryDate: null,
       status: TickerReservationStatus.Reserved,
     });
-    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
+      mockContext
+    );
 
     let error;
 
@@ -133,8 +135,9 @@ describe('reserveTicker procedure', () => {
       expiryDate: null,
       status: TickerReservationStatus.TokenCreated,
     });
-    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
+      mockContext
+    );
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
       `A Security Token with ticker "${ticker}" already exists`
@@ -148,8 +151,9 @@ describe('reserveTicker procedure', () => {
       expiryDate,
       status: TickerReservationStatus.Free,
     });
-    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
+      mockContext
+    );
 
     return expect(prepareReserveTicker.call(proc, { ...args, extendPeriod: true })).rejects.toThrow(
       'Ticker not reserved or the reservation has expired'
@@ -157,8 +161,9 @@ describe('reserveTicker procedure', () => {
   });
 
   test('should add a register ticker transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>();
-    proc.context = mockContext;
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
+      mockContext
+    );
 
     let result = await prepareReserveTicker.call(proc, args);
 
