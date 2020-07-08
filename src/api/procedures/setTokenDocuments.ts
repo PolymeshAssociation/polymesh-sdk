@@ -4,10 +4,12 @@ import { Document, TxTags } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode, Role, RoleType, TokenDocument } from '~/types';
+import { Link } from '~/polkadot/polymesh';
+import { ErrorCode, LinkType, Role, RoleType, TokenDocument } from '~/types';
 import { SignerType } from '~/types/internal';
 import {
   documentToTokenDocument,
+  linkTypeToMeshLinkType,
   signerToSignatory,
   stringToTicker,
   tickerToDid,
@@ -32,21 +34,23 @@ export async function prepareSetTokenDocuments(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { query, tx },
+      polymeshApi: { tx, rpc },
     },
     context,
   } = this;
   const { ticker, documents } = args;
 
-  const links = await query.identity.links.entries(
-    signerToSignatory({ type: SignerType.Identity, value: tickerToDid(ticker) }, context)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const currentDocLinks: Link[] = await (rpc as any).identity.getFilteredLinks(
+    signerToSignatory({ type: SignerType.Identity, value: tickerToDid(ticker) }, context),
+    true,
+    linkTypeToMeshLinkType(LinkType.DocumentOwnership, context)
   );
 
-  const currentDocLinks = links.filter(([, { link_data: linkData }]) => linkData.isDocumentOwned);
   const rawCurrentDocs: Document[] = [];
   const currentDocIds: u64[] = [];
 
-  currentDocLinks.forEach(([, { link_id: linkId, link_data: linkData }]) => {
+  currentDocLinks.forEach(({ link_id: linkId, link_data: linkData }) => {
     rawCurrentDocs.push(linkData.asDocumentOwned);
     currentDocIds.push(linkId);
   });

@@ -26,6 +26,7 @@ import {
   IdentifierType,
   IdentityId,
   JurisdictionName,
+  LinkType as MeshLinkType,
   PosRatio,
   ProtocolOp,
   Rule as MeshRule,
@@ -49,6 +50,7 @@ import {
   isMultiClaimCondition,
   isSingleClaimCondition,
   KnownTokenType,
+  LinkType,
   MultiClaimCondition,
   NextKey,
   PaginationOptions,
@@ -961,6 +963,13 @@ export function assetTransferRuleToRule(rule: AssetTransferRule): Rule {
  */
 export function stringToProtocolOp(protocolOp: string, context: Context): ProtocolOp {
   return context.polymeshApi.createType('ProtocolOp', protocolOp);
+}
+
+/**
+ * @hidden
+ */
+export function linkTypeToMeshLinkType(linkType: LinkType, context: Context): MeshLinkType {
+  return context.polymeshApi.createType('LinkType', linkType);
 }
 
 /**
