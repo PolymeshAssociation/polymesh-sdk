@@ -37,6 +37,7 @@ import {
 } from '~/types';
 import { ClaimOperation, SignerType } from '~/types/internal';
 import {
+  booleanToBool,
   createClaim,
   linkTypeToMeshLinkType,
   signerToSignatory,
@@ -299,13 +300,13 @@ export class Polymesh {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tickers: Link[] = await (rpc as any).identity.getFilteredLinks(
       signerToSignatory({ type: SignerType.Identity, value: identity }, context),
-      true,
+      booleanToBool(false, context),
       linkTypeToMeshLinkType(LinkType.TickerOwnership, context)
     );
 
     const tickerReservations = tickers.map(
-      data =>
-        new TickerReservation({ ticker: tickerToString(data.link_data.asTickerOwned) }, context)
+      link =>
+        new TickerReservation({ ticker: tickerToString(link.link_data.asTickerOwned) }, context)
     );
 
     return tickerReservations;
@@ -436,7 +437,7 @@ export class Polymesh {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const identityLinks: Link[] = await (rpc as any).identity.getFilteredLinks(
       signerToSignatory({ type: SignerType.Identity, value: identity }, context),
-      true,
+      booleanToBool(false, context),
       linkTypeToMeshLinkType(LinkType.AssetOwnership, context)
     );
 

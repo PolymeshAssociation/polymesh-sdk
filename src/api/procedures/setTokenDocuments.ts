@@ -8,6 +8,7 @@ import { Link } from '~/polkadot/polymesh';
 import { ErrorCode, LinkType, Role, RoleType, TokenDocument } from '~/types';
 import { SignerType } from '~/types/internal';
 import {
+  booleanToBool,
   documentToTokenDocument,
   linkTypeToMeshLinkType,
   signerToSignatory,
@@ -43,7 +44,7 @@ export async function prepareSetTokenDocuments(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentDocLinks: Link[] = await (rpc as any).identity.getFilteredLinks(
     signerToSignatory({ type: SignerType.Identity, value: tickerToDid(ticker) }, context),
-    true,
+    booleanToBool(true, context),
     linkTypeToMeshLinkType(LinkType.DocumentOwnership, context)
   );
 
