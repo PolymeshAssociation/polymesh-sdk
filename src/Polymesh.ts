@@ -43,6 +43,8 @@ import {
   valueToDid,
 } from '~/utils';
 
+import { Governance } from './Governance';
+
 interface ConnectParamsBase {
   nodeUrl: string;
   signer?: Signer;
@@ -64,11 +66,16 @@ function isUiKeyring(keyring: any): keyring is UiKeyring {
 export class Polymesh {
   public context: Context = {} as Context;
 
+  // Namespaces
+  public governance: Governance;
+
   /**
    * @hidden
    */
   private constructor(context: Context) {
     this.context = context;
+
+    this.governance = new Governance(context);
   }
 
   static async connect(params: ConnectParamsBase & { accountSeed: string }): Promise<Polymesh>;
