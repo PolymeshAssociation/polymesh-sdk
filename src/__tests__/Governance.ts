@@ -2,7 +2,7 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Governance } from '~/Governance';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils } from '~/testUtils/mocks';
 
 describe('Documents class', () => {
   beforeAll(() => {

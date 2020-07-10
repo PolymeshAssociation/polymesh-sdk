@@ -2,6 +2,9 @@ import { Identity } from '~/api/entities';
 import { Context } from '~/context';
 import { identityIdToString } from '~/utils';
 
+/**
+ * Handles all Governance related functionality
+ */
 export class Governance {
   private context: Context;
 
@@ -12,6 +15,9 @@ export class Governance {
     this.context = context;
   }
 
+  /**
+   * Retrieve a list of all active committee members
+   */
   public async getGovernanceCommitteeMembers(): Promise<Identity[]> {
     const {
       context: {
