@@ -603,7 +603,7 @@ export class Polymesh {
     }));
   }
 
-  /*
+  /**
    * Retrieve information for the current network
    */
   public async getNetworkProperties(): Promise<NetworkProperties> {
