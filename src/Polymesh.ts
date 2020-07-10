@@ -40,6 +40,7 @@ import {
   createClaim,
   signerToSignatory,
   stringToTicker,
+  textToString,
   tickerToString,
   u32ToBigNumber,
   valueToDid,
@@ -620,7 +621,7 @@ export class Polymesh {
     const name = await chain();
 
     return {
-      name: name.toString(),
+      name: textToString(name),
       version: u32ToBigNumber(specVersion).toNumber(),
     };
   }

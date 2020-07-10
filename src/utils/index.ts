@@ -1,5 +1,5 @@
 import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot/api/types';
-import { bool, Bytes, StorageKey, u8, u32, u64 } from '@polkadot/types';
+import { bool, Bytes, StorageKey, Text,u8, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
 import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
 import { stringToU8a, u8aConcat, u8aFixLength, u8aToString } from '@polkadot/util';
@@ -1010,6 +1010,13 @@ export function findEventRecord(
  */
 export function padTicker(ticker: string): string {
   return padEnd(ticker, MAX_TICKER_LENGTH, '\u0000');
+}
+
+/**
+ * @hidden
+ */
+export function textToString(value: Text): string {
+  return value.toString();
 }
 
 /**

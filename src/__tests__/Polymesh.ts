@@ -1025,14 +1025,6 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
-      });
-
       dsMockUtils.setRuntimeVersion({ specVersion: dsMockUtils.createMockU32(version) });
       dsMockUtils.createRpcStub('system', 'chain').resolves(dsMockUtils.createMockText(name));
 
