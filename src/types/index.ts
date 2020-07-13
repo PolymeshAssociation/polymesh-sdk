@@ -364,4 +364,11 @@ export interface Fees {
   gas: BigNumber;
 }
 
+export enum LinkType {
+  DocumentOwnership = 'DocumentOwnership',
+  TickerOwnership = 'TickerOwnership',
+  AssetOwnership = 'AssetOwnership',
+  NoData = 'NoData',
+}
+
 export * from '~/api/entities/types';
