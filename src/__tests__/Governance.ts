@@ -4,7 +4,7 @@ import { Identity } from '~/api/entities';
 import { Governance } from '~/Governance';
 import { dsMockUtils } from '~/testUtils/mocks';
 
-describe('Documents class', () => {
+describe('Governance class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
