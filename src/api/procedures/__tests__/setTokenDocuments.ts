@@ -1,6 +1,6 @@
 import { u64, Vec } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Document, Link, Signatory, Ticker } from 'polymesh-types/types';
+import { Document, Link, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -14,7 +14,6 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TokenDocument } from '~/types';
 import { PolymeshTx } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
 describe('setTokenDocuments procedure', () => {
@@ -27,8 +26,6 @@ describe('setTokenDocuments procedure', () => {
   let rawDocuments: Document[];
   let links: Link[];
   let args: Params;
-
-  let tokenSignatory: Signatory;
   let linkIds: u64[];
 
   beforeAll(() => {
@@ -62,9 +59,6 @@ describe('setTokenDocuments procedure', () => {
         content_hash: dsMockUtils.createMockDocumentHash(contentHash),
       })
     );
-    tokenSignatory = dsMockUtils.createMockSignatory({
-      Identity: dsMockUtils.createMockIdentityId('tokenDid'),
-    });
     linkIds = [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(2)];
     /* eslint-disable @typescript-eslint/camelcase */
     links = [
@@ -98,9 +92,7 @@ describe('setTokenDocuments procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    dsMockUtils.createQueryStub('identity', 'links', {
-      entries: [tuple([tokenSignatory, linkIds[0]], links[0])],
-    });
+    dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([links[0]]);
 
     removeDocumentsTransaction = dsMockUtils.createTxStub('asset', 'removeDocuments');
     addDocumentsTransaction = dsMockUtils.createTxStub('asset', 'addDocuments');
@@ -126,9 +118,7 @@ describe('setTokenDocuments procedure', () => {
   });
 
   test('should throw an error if the new list is the same as the current one', () => {
-    dsMockUtils.createQueryStub('identity', 'links', {
-      entries: links.map(link => tuple([tokenSignatory, link.link_id], link)),
-    });
+    dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns(links);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(prepareSetTokenDocuments.call(proc, args)).rejects.toThrow(
@@ -159,9 +149,7 @@ describe('setTokenDocuments procedure', () => {
   });
 
   test('should not add a remove documents transaction if there are no documents linked to the token', async () => {
-    dsMockUtils.createQueryStub('identity', 'links', {
-      entries: [],
-    });
+    dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([]);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenDocuments.call(proc, args);

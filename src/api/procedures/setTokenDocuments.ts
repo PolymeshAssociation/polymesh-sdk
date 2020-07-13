@@ -1,19 +1,22 @@
 import { u64 } from '@polkadot/types';
-import { chunk, differenceWith } from 'lodash';
+import { differenceWith } from 'lodash';
 import { Document, TxTags } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode, Role, RoleType, TokenDocument } from '~/types';
+import { Link } from '~/polkadot/polymesh';
+import { ErrorCode, LinkType, Role, RoleType, TokenDocument } from '~/types';
 import { SignerType } from '~/types/internal';
 import {
+  batchArguments,
+  booleanToBool,
   documentToTokenDocument,
+  linkTypeToMeshLinkType,
   signerToSignatory,
   stringToTicker,
   tickerToDid,
   tokenDocumentToDocument,
 } from '~/utils';
-import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 export interface SetTokenDocumentsParams {
   documents: TokenDocument[];
@@ -32,21 +35,23 @@ export async function prepareSetTokenDocuments(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { query, tx },
+      polymeshApi: { tx, rpc },
     },
     context,
   } = this;
   const { ticker, documents } = args;
 
-  const links = await query.identity.links.entries(
-    signerToSignatory({ type: SignerType.Identity, value: tickerToDid(ticker) }, context)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const currentDocLinks: Link[] = await (rpc as any).identity.getFilteredLinks(
+    signerToSignatory({ type: SignerType.Identity, value: tickerToDid(ticker) }, context),
+    booleanToBool(true, context),
+    linkTypeToMeshLinkType(LinkType.DocumentOwnership, context)
   );
 
-  const currentDocLinks = links.filter(([, { link_data: linkData }]) => linkData.isDocumentOwned);
   const rawCurrentDocs: Document[] = [];
   const currentDocIds: u64[] = [];
 
-  currentDocLinks.forEach(([, { link_id: linkId, link_data: linkData }]) => {
+  currentDocLinks.forEach(({ link_id: linkId, link_data: linkData }) => {
     rawCurrentDocs.push(linkData.asDocumentOwned);
     currentDocIds.push(linkId);
   });
@@ -72,23 +77,23 @@ export async function prepareSetTokenDocuments(
   const rawTicker = stringToTicker(ticker, context);
 
   if (currentDocIds.length) {
-    chunk(currentDocIds, MAX_BATCH_ELEMENTS[TxTags.asset.RemoveDocuments]).forEach(docIdChunk => {
+    batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).forEach(docIdBatch => {
       this.addTransaction(
         tx.asset.removeDocuments,
-        { batchSize: docIdChunk.length },
+        { batchSize: docIdBatch.length },
         rawTicker,
-        docIdChunk
+        docIdBatch
       );
     });
   }
 
   if (rawDocuments.length) {
-    chunk(rawDocuments, MAX_BATCH_ELEMENTS[TxTags.asset.AddDocuments]).forEach(rawDocumentChunk => {
+    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
       this.addTransaction(
         tx.asset.addDocuments,
-        { batchSize: rawDocumentChunk.length },
+        { batchSize: rawDocumentBatch.length },
         rawTicker,
-        rawDocumentChunk
+        rawDocumentBatch
       );
     });
   }
