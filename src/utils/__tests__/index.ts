@@ -21,6 +21,7 @@ import {
   IdentifierType,
   IdentityId,
   JurisdictionName,
+  LinkType as MeshLinkType,
   ProtocolOp,
   Signatory,
   Ticker,
@@ -40,6 +41,7 @@ import {
   ConditionTarget,
   ConditionType,
   KnownTokenType,
+  LinkType,
   TokenIdentifierType,
   TransferStatus,
 } from '~/types';
@@ -78,6 +80,7 @@ import {
   identifierTypeToString,
   identityIdToString,
   jurisdictionNameToString,
+  linkTypeToMeshLinkType,
   meshClaimToClaim,
   momentToDate,
   numberToBalance,
@@ -1885,6 +1888,35 @@ describe('stringToProtocolOp', () => {
       .returns(fakeResult);
 
     const result = stringToProtocolOp(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('linkTypeToMeshLinkType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('linkTypeToMeshLinkType should convert a LinkType enum to a polymesh LinkType object', () => {
+    const value = LinkType.DocumentOwnership;
+    const fakeResult = ('DocumentOwnership' as unknown) as MeshLinkType;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('LinkType', value)
+      .returns(fakeResult);
+
+    const result = linkTypeToMeshLinkType(value, context);
 
     expect(result).toEqual(fakeResult);
   });
