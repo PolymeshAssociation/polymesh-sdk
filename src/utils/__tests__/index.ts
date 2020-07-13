@@ -4,6 +4,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import * as decodeAddressModule from '@polkadot/util-crypto/address/decode';
 import * as encodeAddressModule from '@polkadot/util-crypto/address/encode';
 import BigNumber from 'bignumber.js';
+import { padEnd } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,
@@ -76,11 +77,12 @@ import {
   identityIdToString,
   jurisdictionNameToString,
   meshClaimToClaim,
+  moduleAddressToString,
   momentToDate,
   numberToBalance,
   numberToU32,
   numberToU64,
-  padTicker,
+  padString,
   posRatioToBigNumber,
   requestPaginated,
   ruleToAssetTransferRule,
@@ -189,6 +191,15 @@ describe('tickerToDid', () => {
     result = tickerToDid(ticker);
 
     expect(result).toBe('0xa643b102d0c58adb3d13a28ab260644f2d0b010dc73aab99a3802b843868ab64');
+  });
+});
+
+describe('moduleAddressToString', () => {
+  test('should convert a module address to an string', () => {
+    const moduleAddress = padEnd('someModuleName', 32, '\0');
+
+    const result = moduleAddressToString(moduleAddress);
+    expect(result).toBe('5Eg4TucMsdiyc9LjA3BT7VXioUqMoQ4vLn1VSUDsYsiJMdbN');
   });
 });
 
@@ -1887,12 +1898,12 @@ describe('stringToProtocolOp', () => {
   });
 });
 
-describe('padTicker', () => {
-  test('should pad the ticker string on the right side to cover the max ticker length', () => {
+describe('padString', () => {
+  test('should pad an string on the right side to cover the max ticker length', () => {
     const ticker = 'LONGTICKER';
-    const fakeResult = 'LONGTICKER\u0000\u0000';
+    const fakeResult = 'LONGTICKER\0\0';
 
-    const result = padTicker(ticker);
+    const result = padString(ticker, 12);
 
     expect(result).toBe(fakeResult);
   });

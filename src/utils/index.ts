@@ -132,6 +132,13 @@ export function tickerToDid(ticker: string): string {
 /**
  * @hidden
  */
+export function moduleAddressToString(moduleAddress: string): string {
+  return encodeAddress(stringToU8a(moduleAddress), SS58_FORMAT);
+}
+
+/**
+ * @hidden
+ */
 export function stringToAssetName(name: string, context: Context): AssetName {
   return context.polymeshApi.createType('AssetName', name);
 }
@@ -1008,8 +1015,8 @@ export function findEventRecord(
 /**
  * @hidden
  */
-export function padTicker(ticker: string): string {
-  return padEnd(ticker, MAX_TICKER_LENGTH, '\u0000');
+export function padString(value: string, length: number): string {
+  return padEnd(value, length, '\0');
 }
 
 /**

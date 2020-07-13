@@ -37,11 +37,15 @@ import {
 import { ClaimOperation, SignerType } from '~/types/internal';
 import {
   createClaim,
+  moduleAddressToString,
+  padString,
   signerToSignatory,
   stringToTicker,
   tickerToString,
   valueToDid,
 } from '~/utils';
+
+import { MAX_MODULE_LENGTH, TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
@@ -346,6 +350,13 @@ export class Polymesh {
       return new Identity(args, this.context);
     }
     return this.context.getCurrentIdentity();
+  }
+
+  /**
+   * Get the Treasury module address
+   */
+  public getTreasury(): string {
+    return moduleAddressToString(padString(TREASURY_MODULE_ADDRESS, MAX_MODULE_LENGTH));
   }
 
   /**
