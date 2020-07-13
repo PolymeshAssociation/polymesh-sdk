@@ -28,6 +28,7 @@ import {
   Ensured,
   ErrorCode,
   IdentityWithClaims,
+  LinkType,
   MiddlewareConfig,
   SubCallback,
   TickerReservationStatus,
@@ -36,7 +37,9 @@ import {
 } from '~/types';
 import { ClaimOperation, SignerType } from '~/types/internal';
 import {
+  booleanToBool,
   createClaim,
+  linkTypeToMeshLinkType,
   signerToSignatory,
   stringToTicker,
   tickerToString,
@@ -44,6 +47,7 @@ import {
 } from '~/utils';
 
 import { Governance } from './Governance';
+import { Link } from './polkadot/polymesh';
 
 interface ConnectParamsBase {
   nodeUrl: string;
@@ -286,11 +290,7 @@ export class Polymesh {
   }): Promise<TickerReservation[]> {
     const {
       context: {
-        polymeshApi: {
-          query: {
-            identity: { links },
-          },
-        },
+        polymeshApi: { rpc },
       },
       context,
     } = this;
@@ -303,16 +303,17 @@ export class Polymesh {
       identity = context.getCurrentIdentity().did;
     }
 
-    const tickers = await links.entries(
-      signerToSignatory({ type: SignerType.Identity, value: identity }, context)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tickers: Link[] = await (rpc as any).identity.getFilteredLinks(
+      signerToSignatory({ type: SignerType.Identity, value: identity }, context),
+      booleanToBool(false, context),
+      linkTypeToMeshLinkType(LinkType.TickerOwnership, context)
     );
 
-    const tickerReservations = tickers
-      .filter(([, data]) => data.link_data.isTickerOwned)
-      .map(([, data]) => {
-        const ticker = data.link_data.asTickerOwned;
-        return new TickerReservation({ ticker: tickerToString(ticker) }, context);
-      });
+    const tickerReservations = tickers.map(
+      link =>
+        new TickerReservation({ ticker: tickerToString(link.link_data.asTickerOwned) }, context)
+    );
 
     return tickerReservations;
   }
@@ -426,11 +427,7 @@ export class Polymesh {
   public async getSecurityTokens(args?: { did: string | Identity }): Promise<SecurityToken[]> {
     const {
       context: {
-        polymeshApi: {
-          query: {
-            identity: { links },
-          },
-        },
+        polymeshApi: { rpc },
       },
       context,
     } = this;
@@ -443,16 +440,16 @@ export class Polymesh {
       identity = context.getCurrentIdentity().did;
     }
 
-    const identityLinks = await links.entries(
-      signerToSignatory({ type: SignerType.Identity, value: identity }, context)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const identityLinks: Link[] = await (rpc as any).identity.getFilteredLinks(
+      signerToSignatory({ type: SignerType.Identity, value: identity }, context),
+      booleanToBool(false, context),
+      linkTypeToMeshLinkType(LinkType.AssetOwnership, context)
     );
 
-    const securityTokens = identityLinks
-      .filter(([, data]) => data.link_data.isAssetOwned)
-      .map(([, data]) => {
-        const ticker = data.link_data.asAssetOwned;
-        return new SecurityToken({ ticker: tickerToString(ticker) }, context);
-      });
+    const securityTokens = identityLinks.map(
+      data => new SecurityToken({ ticker: tickerToString(data.link_data.asAssetOwned) }, context)
+    );
 
     return securityTokens;
   }

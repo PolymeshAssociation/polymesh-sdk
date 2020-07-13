@@ -128,12 +128,12 @@ describe('modifyClaims procedure', () => {
 
     const rawAddClaimItems = [
       {
-        target: rawSomeDid,
+        target: rawOtherDid,
         claim: rawCddClaim,
         expiry: null,
       },
       {
-        target: rawOtherDid,
+        target: rawSomeDid,
         claim: rawCddClaim,
         expiry: null,
       },
@@ -234,12 +234,12 @@ describe('modifyClaims procedure', () => {
 
     const rawRevokeClaimItems = [
       {
-        target: rawSomeDid,
+        target: rawOtherDid,
         claim: rawCddClaim,
         expiry: null,
       },
       {
-        target: rawOtherDid,
+        target: rawSomeDid,
         claim: rawCddClaim,
         expiry: null,
       },

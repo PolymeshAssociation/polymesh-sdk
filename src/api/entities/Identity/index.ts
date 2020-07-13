@@ -4,6 +4,7 @@ import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
+import { CddStatus } from '~/polkadot';
 import {
   ErrorCode,
   isCddProviderRole,
@@ -191,7 +192,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     } = this;
     const identityId = stringToIdentityId(did, context);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (rpc as any).identity.isIdentityHasValidCdd(identityId);
+    const result: CddStatus = await (rpc as any).identity.isIdentityHasValidCdd(identityId);
     return cddStatusToBoolean(result);
   }
 

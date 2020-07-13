@@ -4,7 +4,7 @@ import { Identity } from '~/api/entities';
 import { Governance } from '~/Governance';
 import { dsMockUtils } from '~/testUtils/mocks';
 
-describe('Documents class', () => {
+describe('Governance class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -22,7 +22,7 @@ describe('Documents class', () => {
       sinon.restore();
     });
 
-    test('should retrieve a list of all active members identities', async () => {
+    test('should retrieve a list of the identities of all active members', async () => {
       const did = 'someDid';
       const context = dsMockUtils.getContextInstance();
       const expectedMembers = [new Identity({ did }, context)];
