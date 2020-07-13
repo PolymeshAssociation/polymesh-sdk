@@ -380,22 +380,17 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createQueryStub('identity', 'links', {
-        entries: [
-          [
-            ['someKey'],
-            dsMockUtils.createMockLink({
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: dsMockUtils.createMockLinkData({
-                TickerOwned: dsMockUtils.createMockTicker(fakeTicker),
-              }),
-              expiry: dsMockUtils.createMockOption(),
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: dsMockUtils.createMockU64(),
-            }),
-          ],
-        ],
-      });
+      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
+        dsMockUtils.createMockLink({
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          link_data: dsMockUtils.createMockLinkData({
+            TickerOwned: dsMockUtils.createMockTicker(fakeTicker),
+          }),
+          expiry: dsMockUtils.createMockOption(),
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          link_id: dsMockUtils.createMockU64(),
+        }),
+      ]);
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -413,22 +408,17 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createQueryStub('identity', 'links', {
-        entries: [
-          [
-            ['someKey'],
-            dsMockUtils.createMockLink({
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: dsMockUtils.createMockLinkData({
-                TickerOwned: dsMockUtils.createMockTicker(fakeTicker),
-              }),
-              expiry: dsMockUtils.createMockOption(),
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: dsMockUtils.createMockU64(),
-            }),
-          ],
-        ],
-      });
+      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
+        dsMockUtils.createMockLink({
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          link_data: dsMockUtils.createMockLinkData({
+            TickerOwned: dsMockUtils.createMockTicker(fakeTicker),
+          }),
+          expiry: dsMockUtils.createMockOption(),
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          link_id: dsMockUtils.createMockU64(),
+        }),
+      ]);
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -525,22 +515,17 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createQueryStub('identity', 'links', {
-        entries: [
-          [
-            ['someKey'],
-            dsMockUtils.createMockLink({
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: dsMockUtils.createMockLinkData({
-                AssetOwned: dsMockUtils.createMockTicker(fakeTicker),
-              }),
-              expiry: dsMockUtils.createMockOption(),
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: dsMockUtils.createMockU64(),
-            }),
-          ],
-        ],
-      });
+      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
+        dsMockUtils.createMockLink({
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          link_data: dsMockUtils.createMockLinkData({
+            AssetOwned: dsMockUtils.createMockTicker(fakeTicker),
+          }),
+          expiry: dsMockUtils.createMockOption(),
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          link_id: dsMockUtils.createMockU64(),
+        }),
+      ]);
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -558,22 +543,17 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createQueryStub('identity', 'links', {
-        entries: [
-          [
-            ['someKey'],
-            dsMockUtils.createMockLink({
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_data: dsMockUtils.createMockLinkData({
-                AssetOwned: dsMockUtils.createMockTicker(fakeTicker),
-              }),
-              expiry: dsMockUtils.createMockOption(),
-              // eslint-disable-next-line @typescript-eslint/camelcase
-              link_id: dsMockUtils.createMockU64(),
-            }),
-          ],
-        ],
-      });
+      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
+        dsMockUtils.createMockLink({
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          link_data: dsMockUtils.createMockLinkData({
+            AssetOwned: dsMockUtils.createMockTicker(fakeTicker),
+          }),
+          expiry: dsMockUtils.createMockOption(),
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          link_id: dsMockUtils.createMockU64(),
+        }),
+      ]);
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',

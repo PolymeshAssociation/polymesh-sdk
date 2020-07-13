@@ -4,7 +4,6 @@ import { SecurityToken } from '~/api/entities';
 import { setTokenDocuments } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
 import { Documents } from '../Documents';
@@ -89,37 +88,27 @@ describe('Documents class', () => {
         })
       );
 
-      const signatory = dsMockUtils.createMockSignatory({
-        Identity: dsMockUtils.createMockIdentityId('tokenDid'),
-      });
       const ids = [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(2)];
       /* eslint-disable @typescript-eslint/camelcase */
       const linkEntries = [
-        tuple(
-          [signatory, ids[0]],
-          dsMockUtils.createMockLink({
-            link_data: dsMockUtils.createMockLinkData({
-              DocumentOwned: rawDocuments[0],
-            }),
-            expiry: dsMockUtils.createMockOption(),
-            link_id: ids[0],
-          })
-        ),
-        tuple(
-          [signatory, ids[1]],
-          dsMockUtils.createMockLink({
-            link_data: dsMockUtils.createMockLinkData({
-              DocumentOwned: rawDocuments[1],
-            }),
-            expiry: dsMockUtils.createMockOption(),
-            link_id: ids[1],
-          })
-        ),
+        dsMockUtils.createMockLink({
+          link_data: dsMockUtils.createMockLinkData({
+            DocumentOwned: rawDocuments[0],
+          }),
+          expiry: dsMockUtils.createMockOption(),
+          link_id: ids[0],
+        }),
+        dsMockUtils.createMockLink({
+          link_data: dsMockUtils.createMockLinkData({
+            DocumentOwned: rawDocuments[1],
+          }),
+          expiry: dsMockUtils.createMockOption(),
+          link_id: ids[1],
+        }),
       ];
       /* eslint-enable @typescript-eslint/camelcase */
-      dsMockUtils.createQueryStub('identity', 'links', {
-        entries: linkEntries,
-      });
+
+      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns(linkEntries);
 
       const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
