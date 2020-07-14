@@ -1025,6 +1025,48 @@ describe('Polymesh Class', () => {
     });
   });
 
+  describe.only('method: getTreasuryBalance', () => {
+    let fakeBalance: AccountBalance;
+
+    beforeAll(() => {
+      fakeBalance = {
+        free: new BigNumber(500000),
+        locked: new BigNumber(0),
+      };
+      dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
+    });
+
+    test('should return the POLYX balance of the treasury account', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const result = await polymesh.getTreasuryBalance();
+      expect(result).toEqual(fakeBalance.free);
+    });
+
+    test.only('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+
+      const accountBalanceStub = dsMockUtils
+        .getContextInstance()
+        .accountBalance.resolves(unsubCallback);
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const callback = (() => 1 as unknown) as SubCallback<BigNumber>;
+      const result = await polymesh.getTreasuryBalance(callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(
+        accountBalanceStub,
+        '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR',
+        callback
+      );
+    });
+  });
+
   describe('method: onConnectionError', () => {
     test('should call the supplied listener when the event is emitted and return an unsubscribe callback', async () => {
       const polkadot = dsMockUtils.getApiInstance();
