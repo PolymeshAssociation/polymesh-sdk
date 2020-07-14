@@ -363,7 +363,7 @@ export class Polymesh {
   }
 
   /**
-   * Get the Treasury module address
+   * Get the treasury wallet address
    */
   public getTreasury(): string {
     return moduleAddressToString(padString(TREASURY_MODULE_ADDRESS, MAX_MODULE_LENGTH));
