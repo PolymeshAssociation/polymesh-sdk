@@ -106,6 +106,7 @@ import {
   stringToJurisdictionName,
   stringToProtocolOp,
   stringToTicker,
+  textToString,
   tickerToDid,
   tickerToString,
   tokenDocumentToDocument,
@@ -480,6 +481,16 @@ describe('stringToTicker and tickerToString', () => {
 
     const result = tickerToString(ticker);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('textToString', () => {
+  test('should convert polkadot Text object to string', () => {
+    const text = 'someText';
+    const mockText = dsMockUtils.createMockText(text);
+
+    const result = textToString(mockText);
+    expect(result).toEqual(text);
   });
 });
 
