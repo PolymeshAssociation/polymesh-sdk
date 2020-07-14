@@ -4,7 +4,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import * as decodeAddressModule from '@polkadot/util-crypto/address/decode';
 import * as encodeAddressModule from '@polkadot/util-crypto/address/encode';
 import BigNumber from 'bignumber.js';
-import { padEnd, range } from 'lodash';
+import { range } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,

@@ -140,13 +140,6 @@ export function tickerToDid(ticker: string): string {
 /**
  * @hidden
  */
-export function moduleAddressToString(moduleAddress: string): string {
-  return encodeAddress(stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)), SS58_FORMAT);
-}
-
-/**
- * @hidden
- */
 export function stringToAssetName(name: string, context: Context): AssetName {
   return context.polymeshApi.createType('AssetName', name);
 }
@@ -1032,6 +1025,13 @@ export function findEventRecord(
  */
 export function padString(value: string, length: number): string {
   return padEnd(value, length, '\0');
+}
+
+/**
+ * @hidden
+ */
+export function moduleAddressToString(moduleAddress: string): string {
+  return encodeAddress(stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)), SS58_FORMAT);
 }
 
 /**
