@@ -210,7 +210,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     } = this;
 
     const activeMembers = await committeeMembership.activeMembers();
-    return activeMembers.map(member => identityIdToString(member)).includes(did);
+    return activeMembers.map(identityIdToString).includes(did);
   }
 
   /**
