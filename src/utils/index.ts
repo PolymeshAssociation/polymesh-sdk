@@ -1,12 +1,12 @@
 import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot/api/types';
-import { bool, Bytes, StorageKey, u8, u32, u64 } from '@polkadot/types';
+import { bool, Bytes, StorageKey, Text, u8, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
 import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
 import { stringToU8a, u8aConcat, u8aFixLength, u8aToString } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { isEqual, padEnd } from 'lodash';
+import { chunk, groupBy, isEqual, map, padEnd } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,
@@ -26,6 +26,7 @@ import {
   IdentifierType,
   IdentityId,
   JurisdictionName,
+  LinkType as MeshLinkType,
   PosRatio,
   ProtocolOp,
   Rule as MeshRule,
@@ -49,6 +50,7 @@ import {
   isMultiClaimCondition,
   isSingleClaimCondition,
   KnownTokenType,
+  LinkType,
   MultiClaimCondition,
   NextKey,
   PaginationOptions,
@@ -68,7 +70,12 @@ import {
   SignerType,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { IGNORE_CHECKSUM, MAX_TICKER_LENGTH, SS58_FORMAT } from '~/utils/constants';
+import {
+  IGNORE_CHECKSUM,
+  MAX_BATCH_ELEMENTS,
+  MAX_TICKER_LENGTH,
+  SS58_FORMAT,
+} from '~/utils/constants';
 
 /**
  * @hidden
@@ -971,6 +978,13 @@ export function stringToProtocolOp(protocolOp: string, context: Context): Protoc
 }
 
 /**
+ * @hidden
+ */
+export function linkTypeToMeshLinkType(linkType: LinkType, context: Context): MeshLinkType {
+  return context.polymeshApi.createType('LinkType', linkType);
+}
+
+/**
  * Unwrap a Post Transaction Value
  */
 export function unwrapValue<T extends unknown>(value: MaybePostTransactionValue<T>): T {
@@ -1020,6 +1034,13 @@ export function padString(value: string, length: number): string {
 }
 
 /**
+ * @hidden
+ */
+export function textToString(value: Text): string {
+  return value.toString();
+}
+
+/**
  * Makes an entries request to the chain. If pagination options are supplied,
  * the request will be paginated. Otherwise, all entries will be requested at once
  */
@@ -1056,4 +1077,53 @@ export async function requestPaginated<F extends AnyFunction>(
     entries,
     lastKey,
   };
+}
+
+/**
+ * Separates an array into smaller batches
+ *
+ * @param args - elements to separate
+ * @param tag - transaction for which the elements are arguments. This serves to determine the size of the batches
+ * @param groupByFn - optional function that takes an element and returns a value by which to group the elements.
+ *   If supplied, all elements of the same group will be contained in the same batch
+ */
+export function batchArguments<Args>(
+  args: Args[],
+  tag: keyof typeof MAX_BATCH_ELEMENTS,
+  groupByFn?: (obj: Args) => string
+): Args[][] {
+  const batchLimit = MAX_BATCH_ELEMENTS[tag];
+
+  if (!groupByFn) {
+    return chunk(args, batchLimit);
+  }
+
+  const groups = map(groupBy(args, groupByFn), group => group).sort(
+    ({ length: first }, { length: second }) => first - second
+  );
+
+  const batches: Args[][] = [];
+
+  groups.forEach(group => {
+    if (group.length > batchLimit) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Batch size exceeds limit',
+        data: {
+          batch: group,
+          limit: batchLimit,
+        },
+      });
+    }
+    let batchIndex = batches.findIndex(batch => batch.length + group.length <= batchLimit);
+
+    if (batchIndex === -1) {
+      batchIndex = batches.length;
+      batches[batchIndex] = [];
+    }
+
+    batches[batchIndex] = [...batches[batchIndex], ...group];
+  });
+
+  return batches;
 }

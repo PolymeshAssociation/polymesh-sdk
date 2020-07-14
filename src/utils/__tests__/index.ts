@@ -4,7 +4,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import * as decodeAddressModule from '@polkadot/util-crypto/address/decode';
 import * as encodeAddressModule from '@polkadot/util-crypto/address/encode';
 import BigNumber from 'bignumber.js';
-import { padEnd } from 'lodash';
+import { padEnd , range } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,
@@ -21,9 +21,11 @@ import {
   IdentifierType,
   IdentityId,
   JurisdictionName,
+  LinkType as MeshLinkType,
   ProtocolOp,
   Signatory,
   Ticker,
+  TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -39,12 +41,13 @@ import {
   ConditionTarget,
   ConditionType,
   KnownTokenType,
+  LinkType,
   TokenIdentifierType,
   TransferStatus,
 } from '~/types';
 import { SignerType } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
   accountIdToString,
@@ -58,6 +61,7 @@ import {
   authorizationToAuthorizationData,
   authTargetToAuthIdentifier,
   balanceToBigNumber,
+  batchArguments,
   booleanToBool,
   boolToBoolean,
   bytesToString,
@@ -76,6 +80,7 @@ import {
   identifierTypeToString,
   identityIdToString,
   jurisdictionNameToString,
+  linkTypeToMeshLinkType,
   meshClaimToClaim,
   moduleAddressToString,
   momentToDate,
@@ -102,6 +107,7 @@ import {
   stringToJurisdictionName,
   stringToProtocolOp,
   stringToTicker,
+  textToString,
   tickerToDid,
   tickerToString,
   tokenDocumentToDocument,
@@ -485,6 +491,16 @@ describe('stringToTicker and tickerToString', () => {
 
     const result = tickerToString(ticker);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('textToString', () => {
+  test('should convert polkadot Text object to string', () => {
+    const text = 'someText';
+    const mockText = dsMockUtils.createMockText(text);
+
+    const result = textToString(mockText);
+    expect(result).toEqual(text);
   });
 });
 
@@ -1898,6 +1914,35 @@ describe('stringToProtocolOp', () => {
   });
 });
 
+describe('linkTypeToMeshLinkType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('linkTypeToMeshLinkType should convert a LinkType enum to a polymesh LinkType object', () => {
+    const value = LinkType.DocumentOwnership;
+    const fakeResult = ('DocumentOwnership' as unknown) as MeshLinkType;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('LinkType', value)
+      .returns(fakeResult);
+
+    const result = linkTypeToMeshLinkType(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
 describe('padString', () => {
   test('should pad an string on the right side to cover the max ticker length', () => {
     const ticker = 'LONGTICKER';
@@ -1943,5 +1988,53 @@ describe('requestPaginated', () => {
 
     expect(res.lastKey).toBeNull();
     sinon.assert.calledOnce(queryStub.entriesPaged);
+  });
+});
+
+describe('batchArguments', () => {
+  test('should return chunks of data', () => {
+    const tag = TxTags.asset.BatchIssue;
+    const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
+
+    const elements = range(0, 3 * expectedBatchLength + 1);
+
+    const batches = batchArguments(elements, tag);
+
+    expect(batches.length).toBe(4);
+    expect(batches[0].length).toBe(expectedBatchLength);
+    expect(batches[1].length).toBe(expectedBatchLength);
+    expect(batches[2].length).toBe(expectedBatchLength);
+    expect(batches[3].length).toBe(1);
+  });
+
+  test('should use a custom batching function to group elements', () => {
+    const tag = TxTags.asset.BatchIssue;
+    const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
+
+    const elements = range(0, 2 * expectedBatchLength);
+
+    let batches = batchArguments(elements, tag, element => `${element % 2}`); // separate odd from even
+
+    expect(batches.length).toBe(2);
+    expect(batches[0]).toEqual(range(0, 2 * expectedBatchLength, 2));
+    expect(batches[1]).toEqual(range(1, 2 * expectedBatchLength, 2));
+
+    batches = batchArguments(elements, tag, element => `${element % 3}`); // separate in 3 groups
+
+    expect(batches.length).toBe(3);
+    expect(batches[0].length).toBeLessThan(expectedBatchLength);
+    expect(batches[1].length).toBeLessThan(expectedBatchLength);
+    expect(batches[2].length).toBeLessThan(expectedBatchLength);
+  });
+
+  test('should throw an error if a custom batch has a size bigger than the limit', () => {
+    const tag = TxTags.asset.BatchIssue;
+    const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
+
+    const elements = range(0, 3 * expectedBatchLength);
+
+    expect(() => batchArguments(elements, tag, element => `${element % 2}`)).toThrowError(
+      'Batch size exceeds limit'
+    );
   });
 });
