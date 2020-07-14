@@ -655,9 +655,9 @@ export class Polymesh {
     const accountId = this.getTreasuryAddress();
 
     if (callback) {
-      return this.context.accountBalance(accountId, ({ free }) => {
+      return this.context.accountBalance(accountId, ({ free: freeBalance }) => {
         // eslint-disable-next-line standard/no-callback-literal
-        callback(free);
+        callback(freeBalance);
       });
     }
 
