@@ -1,6 +1,5 @@
 import BigNumber from 'bignumber.js';
-
-import { TxTags } from '~/polkadot';
+import { TxTags } from 'polymesh-types/types';
 
 export const MAX_DECIMALS = 6;
 export const MAX_TICKER_LENGTH = 12;

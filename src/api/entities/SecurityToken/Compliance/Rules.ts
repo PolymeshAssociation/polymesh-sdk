@@ -1,9 +1,9 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
+import { AssetTransferRules, IdentityId } from 'polymesh-types/types';
 
 import { setTokenRules, SetTokenRulesParams, togglePauseRules } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { AssetTransferRules, IdentityId } from '~/polkadot';
 import { Rule, SubCallback, UnsubCallback } from '~/types';
 import { assetTransferRuleToRule, identityIdToString, stringToTicker } from '~/utils';
 
@@ -32,14 +32,15 @@ export class Rules extends Namespace<SecurityToken> {
     return setTokenRules.prepare({ ticker, ...args }, context);
   }
 
-  public get(): Promise<Rule[]>;
-  public get(callback: SubCallback<Rule[]>): Promise<UnsubCallback>;
-
   /**
    * Retrieve all of the Security Token's transfer rules
    *
    * @note can be subscribed to
    */
+  public get(): Promise<Rule[]>;
+  public get(callback: SubCallback<Rule[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
   public async get(callback?: SubCallback<Rule[]>): Promise<Rule[] | UnsubCallback> {
     const {
       parent: { ticker },

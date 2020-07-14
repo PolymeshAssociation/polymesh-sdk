@@ -1,4 +1,5 @@
 import { Vec } from '@polkadot/types/codec';
+import { AssetTransferRules, IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -6,7 +7,6 @@ import { setTokenRules, togglePauseRules } from '~/api/procedures';
 import { Params } from '~/api/procedures/setTokenRules';
 import { Namespace, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { AssetTransferRules, IdentityId } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { ClaimType, ConditionTarget, ConditionType, Rule } from '~/types';
 

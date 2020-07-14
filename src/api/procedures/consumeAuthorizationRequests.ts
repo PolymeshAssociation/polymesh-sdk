@@ -1,8 +1,8 @@
 import { chunk } from 'lodash';
+import { TxTags } from 'polymesh-types/types';
 
 import { AuthorizationRequest } from '~/api/entities';
 import { Procedure } from '~/base';
-import { TxTags } from '~/polkadot';
 import { authTargetToAuthIdentifier, numberToU64 } from '~/utils';
 import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 

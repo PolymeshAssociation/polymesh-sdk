@@ -1,8 +1,8 @@
 import { chunk, difference } from 'lodash';
+import { TxTags } from 'polymesh-types/types';
 
 import { Identity, SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { TxTags } from '~/polkadot';
 import { ErrorCode, Role, RoleType } from '~/types';
 import { identityIdToString, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
 import { MAX_BATCH_ELEMENTS } from '~/utils/constants';

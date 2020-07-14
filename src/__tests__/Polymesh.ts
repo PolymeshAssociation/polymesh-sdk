@@ -364,6 +364,31 @@ describe('Polymesh Class', () => {
 
       expect(isTickerAvailable).toBeFalsy();
     });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      entityMockUtils.getTickerReservationDetailsStub().callsFake(async cbFunc => {
+        cbFunc({
+          owner: entityMockUtils.getIdentityInstance(),
+          expiryDate: new Date(),
+          status: TickerReservationStatus.Free,
+        });
+
+        return unsubCallback;
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const callback = sinon.stub();
+      const result = await polymesh.isTickerAvailable({ ticker: 'someTicker' }, callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, true);
+    });
   });
 
   describe('method: getTickerReservations', () => {

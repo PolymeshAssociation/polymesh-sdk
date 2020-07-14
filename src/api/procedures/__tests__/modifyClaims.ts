@@ -1,6 +1,11 @@
 import { Vec } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
-import { BatchAddClaimItem, BatchRevokeClaimItem, Claim as MeshClaim } from 'polymesh-types/types';
+import {
+  BatchAddClaimItem,
+  BatchRevokeClaimItem,
+  Claim as MeshClaim,
+  IdentityId,
+} from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -10,7 +15,6 @@ import {
 } from '~/api/procedures/modifyClaims';
 import { Context } from '~/context';
 import { didsWithClaims } from '~/middleware/queries';
-import { IdentityId } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Claim, ClaimType, RoleType } from '~/types';

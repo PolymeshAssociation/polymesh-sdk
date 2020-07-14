@@ -1,4 +1,5 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
+import { SecurityToken as MeshToken, TickerRegistration } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
 import { SecurityToken } from '~/api/entities/SecurityToken';
@@ -9,7 +10,6 @@ import {
 } from '~/api/procedures/createSecurityToken';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { SecurityToken as MeshToken, TickerRegistration } from '~/polkadot';
 import { SubCallback, UnsubCallback } from '~/types';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils';
 
@@ -54,14 +54,15 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
     this.ticker = ticker;
   }
 
-  public details(): Promise<TickerReservationDetails>;
-  public details(callback: SubCallback<TickerReservationDetails>): Promise<UnsubCallback>;
-
   /**
    * Retrieve the reservation's owner, expiry date and status
    *
    * @note can be subscribed to
    */
+  public details(): Promise<TickerReservationDetails>;
+  public details(callback: SubCallback<TickerReservationDetails>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
   public async details(
     callback?: SubCallback<TickerReservationDetails>
   ): Promise<TickerReservationDetails | UnsubCallback> {

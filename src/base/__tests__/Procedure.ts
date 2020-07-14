@@ -1,11 +1,11 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { PosRatio, ProtocolOp } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import * as baseModule from '~/base';
 import { Context } from '~/context';
-import { PosRatio, ProtocolOp } from '~/polkadot';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { KeyringPair, Role } from '~/types';
 import { MaybePostTransactionValue } from '~/types/internal';

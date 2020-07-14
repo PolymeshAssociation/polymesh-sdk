@@ -1,12 +1,12 @@
 import { StorageKey } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities/Identity';
 import { Namespace } from '~/base';
 import { Context } from '~/context';
-import { IdentityId, Ticker } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { IdentityBalance, TokenHolderProperties, TransferStatus } from '~/types';
