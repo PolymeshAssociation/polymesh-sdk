@@ -201,7 +201,7 @@ describe('tickerToDid', () => {
 });
 
 describe('moduleAddressToString', () => {
-  test('should convert a module address to an string', () => {
+  test('should convert a module address to a string', () => {
     const moduleAddress = padEnd('someModuleName', 32, '\0');
 
     const result = moduleAddressToString(moduleAddress);
