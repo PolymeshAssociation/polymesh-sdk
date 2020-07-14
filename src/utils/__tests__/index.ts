@@ -1944,7 +1944,7 @@ describe('linkTypeToMeshLinkType', () => {
 });
 
 describe('padString', () => {
-  test('should pad an string on the right side to cover the max ticker length', () => {
+  test('should pad a string on the right side to cover the supplied length', () => {
     const ticker = 'LONGTICKER';
     const fakeResult = 'LONGTICKER\0\0';
 
