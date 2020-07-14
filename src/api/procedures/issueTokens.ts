@@ -6,13 +6,14 @@ import { IdentityId, TxTags } from 'polymesh-types/types';
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
-import { numberToBalance, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
 import {
-  MAX_BATCH_ELEMENTS,
-  MAX_CONCURRENT_REQUESTS,
-  MAX_DECIMALS,
-  MAX_TOKEN_AMOUNT,
-} from '~/utils/constants';
+  batchArguments,
+  numberToBalance,
+  stringToIdentityId,
+  stringToTicker,
+  valueToDid,
+} from '~/utils';
+import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
 export interface IssueTokensParams {
   issuanceData: IssuanceData[];
@@ -114,16 +115,15 @@ export async function prepareIssueTokens(
     });
   }
 
-  const maxElements = MAX_BATCH_ELEMENTS[TxTags.asset.BatchIssue];
-  const investorChunks = chunk(investors, maxElements);
+  const investorBatches = batchArguments(investors, TxTags.asset.BatchIssue);
 
-  chunk(balances, maxElements).forEach((balanceChunk, index) => {
+  batchArguments(balances, TxTags.asset.BatchIssue).forEach((balanceBatch, index) => {
     this.addTransaction(
       asset.batchIssue,
       { batchSize: issuanceData.length },
       rawTicker,
-      investorChunks[index],
-      balanceChunk
+      investorBatches[index],
+      balanceBatch
     );
   });
 

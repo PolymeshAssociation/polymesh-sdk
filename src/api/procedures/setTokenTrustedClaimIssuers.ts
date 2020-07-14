@@ -1,11 +1,16 @@
-import { chunk, difference } from 'lodash';
-import { TxTags } from 'polymesh-types/types';
+import { difference } from 'lodash';
+import { IdentityId, TxTags } from 'polymesh-types/types';
 
 import { Identity, SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType } from '~/types';
-import { identityIdToString, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
-import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
+import {
+  batchArguments,
+  identityIdToString,
+  stringToIdentityId,
+  stringToTicker,
+  valueToDid,
+} from '~/utils';
 
 export interface SetTokenTrustedClaimIssuersParams {
   claimIssuerIdentities: (string | Identity)[];
@@ -62,29 +67,29 @@ export async function prepareSetTokenTrustedClaimIssuers(
   }
 
   if (rawCurrentClaimIssuers.length) {
-    chunk(
+    batchArguments<IdentityId>(
       rawCurrentClaimIssuers,
-      MAX_BATCH_ELEMENTS[TxTags.complianceManager.RemoveDefaultTrustedClaimIssuersBatch]
-    ).forEach(issuersChunk => {
+      TxTags.complianceManager.RemoveDefaultTrustedClaimIssuersBatch
+    ).forEach(issuersBatch => {
       this.addTransaction(
         tx.complianceManager.removeDefaultTrustedClaimIssuersBatch,
-        { batchSize: issuersChunk.length },
+        { batchSize: issuersBatch.length },
         rawTicker,
-        issuersChunk
+        issuersBatch
       );
     });
   }
 
   if (rawNewClaimIssuers.length) {
-    chunk(
+    batchArguments(
       rawNewClaimIssuers,
-      MAX_BATCH_ELEMENTS[TxTags.complianceManager.AddDefaultTrustedClaimIssuersBatch]
-    ).forEach(issuersChunk => {
+      TxTags.complianceManager.AddDefaultTrustedClaimIssuersBatch
+    ).forEach(issuersBatch => {
       this.addTransaction(
         tx.complianceManager.addDefaultTrustedClaimIssuersBatch,
-        { batchSize: issuersChunk.length },
+        { batchSize: issuersBatch.length },
         rawTicker,
-        issuersChunk
+        issuersBatch
       );
     });
   }

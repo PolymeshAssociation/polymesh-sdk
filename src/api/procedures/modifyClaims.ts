@@ -1,5 +1,5 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { chunk, cloneDeep, uniq } from 'lodash';
+import { cloneDeep, uniq } from 'lodash';
 import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure } from '~/base';
@@ -16,8 +16,14 @@ import {
   RoleType,
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
-import { claimToMeshClaim, dateToMoment, stringToIdentityId, valueToDid } from '~/utils';
-import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
+import {
+  batchArguments,
+  claimToMeshClaim,
+  dateToMoment,
+  identityIdToString,
+  stringToIdentityId,
+  valueToDid,
+} from '~/utils';
 
 interface AddClaimItem {
   target: IdentityId;
@@ -142,8 +148,10 @@ export async function prepareModifyClaims(
   const transaction =
     operation === ClaimOperation.Revoke ? identity.revokeClaimsBatch : identity.addClaimsBatch;
 
-  chunk(modifyClaimItems, MAX_BATCH_ELEMENTS[TxTags.identity.AddClaimsBatch]).forEach(itemChunk => {
-    this.addTransaction(transaction, { batchSize: itemChunk.length }, itemChunk);
+  batchArguments(modifyClaimItems, TxTags.identity.AddClaimsBatch, ({ target }) =>
+    identityIdToString(target)
+  ).forEach(itemBatch => {
+    this.addTransaction(transaction, { batchSize: itemBatch.length }, itemBatch);
   });
 }
 

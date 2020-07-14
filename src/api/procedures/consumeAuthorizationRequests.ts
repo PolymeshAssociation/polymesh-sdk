@@ -1,10 +1,8 @@
-import { chunk } from 'lodash';
 import { TxTags } from 'polymesh-types/types';
 
 import { AuthorizationRequest } from '~/api/entities';
 import { Procedure } from '~/base';
-import { authTargetToAuthIdentifier, numberToU64 } from '~/utils';
-import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
+import { authTargetToAuthIdentifier, batchArguments, numberToU64 } from '~/utils';
 
 export interface ConsumeParams {
   accept: boolean;
@@ -36,25 +34,23 @@ export async function prepareConsumeAuthorizationRequests(
 
   if (accept) {
     const requestIds = liveRequests.map(({ authId }) => numberToU64(authId, context));
-    chunk(requestIds, MAX_BATCH_ELEMENTS[TxTags.identity.BatchAcceptAuthorization]).forEach(
-      idChunk => {
-        this.addTransaction(
-          tx.identity.batchAcceptAuthorization,
-          { batchSize: idChunk.length },
-          idChunk
-        );
-      }
-    );
+    batchArguments(requestIds, TxTags.identity.BatchAcceptAuthorization).forEach(idBatch => {
+      this.addTransaction(
+        tx.identity.batchAcceptAuthorization,
+        { batchSize: idBatch.length },
+        idBatch
+      );
+    });
   } else {
     const authIdentifiers = liveRequests.map(({ authId, targetIdentity }) =>
       authTargetToAuthIdentifier({ authId, did: targetIdentity.did }, context)
     );
-    chunk(authIdentifiers, MAX_BATCH_ELEMENTS[TxTags.identity.BatchRemoveAuthorization]).forEach(
-      identifierChunk => {
+    batchArguments(authIdentifiers, TxTags.identity.BatchRemoveAuthorization).forEach(
+      identifierBatch => {
         this.addTransaction(
           tx.identity.batchRemoveAuthorization,
-          { batchSize: identifierChunk.length },
-          identifierChunk
+          { batchSize: identifierBatch.length },
+          identifierBatch
         );
       }
     );
