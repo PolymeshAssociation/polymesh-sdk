@@ -1945,11 +1945,12 @@ describe('linkTypeToMeshLinkType', () => {
 
 describe('padString', () => {
   test('should pad a string on the right side to cover the supplied length', () => {
-    const ticker = 'LONGTICKER\0\0';
+    const value = 'someString';
+    const fakeResult = `${value}\0\0`;
 
-    const result = padString(ticker, 12);
+    const result = padString(value, 12);
 
-    expect(result).toBe(ticker);
+    expect(result).toBe(fakeResult);
   });
 });
 
