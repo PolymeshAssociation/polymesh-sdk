@@ -197,6 +197,23 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Check whether this Identity is Governance Committee member
+   */
+  public async isGcMember(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { committeeMembership },
+        },
+      },
+      did,
+    } = this;
+
+    const activeMembers = await committeeMembership.activeMembers();
+    return activeMembers.map(identityIdToString).includes(did);
+  }
+
+  /**
    * Check whether this Identity possesses all specified roles
    */
   public async hasRoles(roles: Role[]): Promise<boolean> {
