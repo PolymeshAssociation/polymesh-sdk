@@ -43,7 +43,6 @@ import {
   createClaim,
   linkTypeToMeshLinkType,
   moduleAddressToString,
-  padString,
   signerToSignatory,
   stringToTicker,
   textToString,
@@ -54,7 +53,7 @@ import {
 
 import { Governance } from './Governance';
 import { Link } from './polkadot/polymesh';
-import { MAX_MODULE_LENGTH, TREASURY_MODULE_ADDRESS } from './utils/constants';
+import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
@@ -364,10 +363,10 @@ export class Polymesh {
   }
 
   /**
-   * Get the Treasury module address
+   * Get the treasury wallet address
    */
-  public getTreasury(): string {
-    return moduleAddressToString(padString(TREASURY_MODULE_ADDRESS, MAX_MODULE_LENGTH));
+  public getTreasuryAddress(): string {
+    return moduleAddressToString(TREASURY_MODULE_ADDRESS);
   }
 
   /**
@@ -653,7 +652,7 @@ export class Polymesh {
   public async getTreasuryBalance(
     callback?: SubCallback<BigNumber>
   ): Promise<BigNumber | UnsubCallback> {
-    const accountId = this.getTreasury();
+    const accountId = this.getTreasuryAddress();
 
     if (callback) {
       return this.context.accountBalance(accountId, ({ free }) => {

@@ -501,7 +501,7 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getTreasury', () => {
+  describe('method: getTreasuryAddress', () => {
     test('should return the Treasury module address', async () => {
       const treasuryAddress = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
       const polymesh = await Polymesh.connect({
@@ -509,7 +509,7 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      expect(polymesh.getTreasury()).toEqual(treasuryAddress);
+      expect(polymesh.getTreasuryAddress()).toEqual(treasuryAddress);
     });
   });
 
@@ -1025,7 +1025,7 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe.only('method: getTreasuryBalance', () => {
+  describe('method: getTreasuryBalance', () => {
     let fakeBalance: AccountBalance;
 
     beforeAll(() => {
@@ -1045,25 +1045,22 @@ describe('Polymesh Class', () => {
       expect(result).toEqual(fakeBalance.free);
     });
 
-    test.only('should allow subscription', async () => {
+    test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
 
-      const accountBalanceStub = dsMockUtils
-        .getContextInstance()
-        .accountBalance.resolves(unsubCallback);
+      dsMockUtils.getContextInstance().accountBalance.callsFake(async (_, cbFunc) => {
+        cbFunc(fakeBalance);
+        return unsubCallback;
+      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
       });
 
-      const callback = (() => 1 as unknown) as SubCallback<BigNumber>;
+      const callback = sinon.stub();
       const result = await polymesh.getTreasuryBalance(callback);
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(
-        accountBalanceStub,
-        '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR',
-        callback
-      );
+      sinon.assert.calledWithExactly(callback, fakeBalance.free);
     });
   });
 

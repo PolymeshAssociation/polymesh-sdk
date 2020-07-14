@@ -73,6 +73,7 @@ import { tuple } from '~/types/utils';
 import {
   IGNORE_CHECKSUM,
   MAX_BATCH_ELEMENTS,
+  MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
   SS58_FORMAT,
 } from '~/utils/constants';
@@ -134,13 +135,6 @@ export function tickerToDid(ticker: string): string {
   return blake2AsHex(
     u8aConcat(stringToU8a('SECURITY_TOKEN:'), u8aFixLength(stringToU8a(ticker), 96, true))
   );
-}
-
-/**
- * @hidden
- */
-export function moduleAddressToString(moduleAddress: string): string {
-  return encodeAddress(stringToU8a(moduleAddress), SS58_FORMAT);
 }
 
 /**
@@ -1031,6 +1025,13 @@ export function findEventRecord(
  */
 export function padString(value: string, length: number): string {
   return padEnd(value, length, '\0');
+}
+
+/**
+ * @hidden
+ */
+export function moduleAddressToString(moduleAddress: string): string {
+  return encodeAddress(stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)), SS58_FORMAT);
 }
 
 /**

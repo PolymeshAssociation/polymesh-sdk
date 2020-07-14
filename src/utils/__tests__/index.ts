@@ -4,7 +4,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import * as decodeAddressModule from '@polkadot/util-crypto/address/decode';
 import * as encodeAddressModule from '@polkadot/util-crypto/address/encode';
 import BigNumber from 'bignumber.js';
-import { padEnd , range } from 'lodash';
+import { range } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,
@@ -201,8 +201,8 @@ describe('tickerToDid', () => {
 });
 
 describe('moduleAddressToString', () => {
-  test('should convert a module address to an string', () => {
-    const moduleAddress = padEnd('someModuleName', 32, '\0');
+  test('should convert a module address to a string', () => {
+    const moduleAddress = 'someModuleName';
 
     const result = moduleAddressToString(moduleAddress);
     expect(result).toBe('5Eg4TucMsdiyc9LjA3BT7VXioUqMoQ4vLn1VSUDsYsiJMdbN');
@@ -1944,13 +1944,12 @@ describe('linkTypeToMeshLinkType', () => {
 });
 
 describe('padString', () => {
-  test('should pad an string on the right side to cover the max ticker length', () => {
-    const ticker = 'LONGTICKER';
-    const fakeResult = 'LONGTICKER\0\0';
+  test('should pad a string on the right side to cover the supplied length', () => {
+    const ticker = 'LONGTICKER\0\0';
 
     const result = padString(ticker, 12);
 
-    expect(result).toBe(fakeResult);
+    expect(result).toBe(ticker);
   });
 });
 
