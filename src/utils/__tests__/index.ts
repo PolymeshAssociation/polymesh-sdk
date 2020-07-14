@@ -202,7 +202,7 @@ describe('tickerToDid', () => {
 
 describe('moduleAddressToString', () => {
   test('should convert a module address to a string', () => {
-    const moduleAddress = padEnd('someModuleName', 32, '\0');
+    const moduleAddress = 'someModuleName';
 
     const result = moduleAddressToString(moduleAddress);
     expect(result).toBe('5Eg4TucMsdiyc9LjA3BT7VXioUqMoQ4vLn1VSUDsYsiJMdbN');
@@ -1945,12 +1945,11 @@ describe('linkTypeToMeshLinkType', () => {
 
 describe('padString', () => {
   test('should pad a string on the right side to cover the supplied length', () => {
-    const value = 'someString';
-    const fakeResult = 'LONGTICKER\0\0';
+    const ticker = 'LONGTICKER\0\0';
 
     const result = padString(ticker, 12);
 
-    expect(result).toBe(fakeResult);
+    expect(result).toBe(ticker);
   });
 });
 

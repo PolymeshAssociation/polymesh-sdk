@@ -73,6 +73,7 @@ import { tuple } from '~/types/utils';
 import {
   IGNORE_CHECKSUM,
   MAX_BATCH_ELEMENTS,
+  MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
   SS58_FORMAT,
 } from '~/utils/constants';
@@ -140,7 +141,7 @@ export function tickerToDid(ticker: string): string {
  * @hidden
  */
 export function moduleAddressToString(moduleAddress: string): string {
-  return encodeAddress(stringToU8a(moduleAddress), SS58_FORMAT);
+  return encodeAddress(stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)), SS58_FORMAT);
 }
 
 /**

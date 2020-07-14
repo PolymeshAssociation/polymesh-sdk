@@ -501,7 +501,7 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getTreasury', () => {
+  describe('method: getTreasuryAddress', () => {
     test('should return the Treasury module address', async () => {
       const treasuryAddress = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
       const polymesh = await Polymesh.connect({
@@ -509,7 +509,7 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      expect(polymesh.getTreasury()).toEqual(treasuryAddress);
+      expect(polymesh.getTreasuryAddress()).toEqual(treasuryAddress);
     });
   });
 
