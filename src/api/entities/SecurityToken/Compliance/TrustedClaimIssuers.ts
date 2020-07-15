@@ -1,7 +1,8 @@
+import { IdentityId } from 'polymesh-types/types';
+
 import { Identity } from '~/api/entities';
 import { setTokenTrustedClaimIssuers, SetTokenTrustedClaimIssuersParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { IdentityId } from '~/polkadot';
 import { SubCallback, UnsubCallback } from '~/types';
 import { identityIdToString, stringToTicker } from '~/utils';
 
@@ -26,14 +27,15 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
     return setTokenTrustedClaimIssuers.prepare({ ticker, ...args }, context);
   }
 
-  public get(): Promise<Identity[]>;
-  public get(callback: SubCallback<Identity[]>): Promise<UnsubCallback>;
-
   /**
    * Retrieve the current default trusted claim issuers of the Security Token
    *
    * @note can be subscribed to
    */
+  public get(): Promise<Identity[]>;
+  public get(callback: SubCallback<Identity[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
   public async get(callback?: SubCallback<Identity[]>): Promise<Identity[] | UnsubCallback> {
     const {
       context: {

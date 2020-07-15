@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk } from 'lodash';
+import { IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
 import { IdentityBalance } from '~/api/entities/types';
 import { Namespace } from '~/base';
-import { IdentityId } from '~/polkadot';
 import { PaginationOptions, ResultSet, TransferStatus } from '~/types';
 import { balanceToBigNumber, identityIdToString, requestPaginated, stringToTicker } from '~/utils';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
@@ -17,6 +17,13 @@ import { TokenHolderOptions, TokenHolderProperties } from './types';
  * Handles all Security Token Holders related functionality
  */
 export class TokenHolders extends Namespace<SecurityToken> {
+  /**
+   * Retrieve all the token holders with balance
+   *
+   * @param opts - object that represents whether extra properties should be fetched for each token holder
+   *
+   * @note supports pagination
+   */
   public async get(
     opts: Pick<TokenHolderOptions, 'canBeIssuedTo'>,
     paginationOpts?: PaginationOptions
@@ -24,11 +31,7 @@ export class TokenHolders extends Namespace<SecurityToken> {
 
   public async get(paginationOpts?: PaginationOptions): Promise<ResultSet<IdentityBalance>>;
 
-  /**
-   * Retrieve all the token holders with balance
-   *
-   * @param opts - object that represents whether extra properties should be fetched for each token holder
-   */
+  // eslint-disable-next-line require-jsdoc
   public async get(
     opts?: Pick<TokenHolderOptions, 'canBeIssuedTo'> | PaginationOptions,
     paginationOpts?: PaginationOptions

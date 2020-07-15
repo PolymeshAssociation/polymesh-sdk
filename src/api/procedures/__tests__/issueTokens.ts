@@ -1,11 +1,11 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareIssueTokens } from '~/api/procedures/issueTokens';
 import { Context } from '~/context';
-import { IdentityId, Ticker } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TransferStatus } from '~/types';

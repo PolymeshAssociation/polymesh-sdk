@@ -1,10 +1,10 @@
 import { Balance } from '@polkadot/types/interfaces';
 import P from 'bluebird';
 import { chunk } from 'lodash';
+import { IdentityId, TxTags } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { IdentityId, TxTags } from '~/polkadot';
 import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
 import {
   batchArguments,
