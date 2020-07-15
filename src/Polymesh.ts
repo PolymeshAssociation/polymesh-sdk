@@ -49,6 +49,7 @@ import {
   valueToDid,
 } from '~/utils';
 
+import { Governance } from './Governance';
 import { Link } from './polkadot/polymesh';
 
 interface ConnectParamsBase {
@@ -72,11 +73,16 @@ function isUiKeyring(keyring: any): keyring is UiKeyring {
 export class Polymesh {
   private context: Context = {} as Context;
 
+  // Namespaces
+  public governance: Governance;
+
   /**
    * @hidden
    */
   private constructor(context: Context) {
     this.context = context;
+
+    this.governance = new Governance(context);
   }
 
   /**

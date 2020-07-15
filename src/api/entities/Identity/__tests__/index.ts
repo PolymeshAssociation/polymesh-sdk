@@ -25,10 +25,12 @@ jest.mock(
 describe('Identity class', () => {
   let context: Context;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
+  let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
+    identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
   });
 
   beforeEach(() => {
@@ -135,10 +137,7 @@ describe('Identity class', () => {
 
       dsMockUtils.createQueryStub('cddServiceProviders', 'activeMembers').resolves([rawDid]);
 
-      sinon
-        .stub(utilsModule, 'identityIdToString')
-        .withArgs(rawDid)
-        .returns(did);
+      identityIdToStringStub.withArgs(rawDid).returns(did);
 
       let hasRole = await identity.hasRole(role);
 
@@ -283,6 +282,25 @@ describe('Identity class', () => {
       const result = await identity.hasValidCdd();
 
       expect(result).toEqual(statusResponse);
+    });
+  });
+
+  describe('method: isGcMember', () => {
+    test('should return whether the Identity is GC member', async () => {
+      const did = 'someDid';
+      const rawDid = dsMockUtils.createMockIdentityId(did);
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      identityIdToStringStub.withArgs(rawDid).returns(did);
+
+      dsMockUtils
+        .createQueryStub('committeeMembership', 'activeMembers')
+        .resolves([rawDid, dsMockUtils.createMockIdentityId('otherDid')]);
+
+      const result = await identity.isGcMember();
+
+      expect(result).toBeTruthy();
     });
   });
 });
