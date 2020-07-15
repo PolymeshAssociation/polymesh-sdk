@@ -656,7 +656,6 @@ export class Polymesh {
 
     if (callback) {
       return this.context.accountBalance(accountId, ({ free: freeBalance }) => {
-        // eslint-disable-next-line standard/no-callback-literal
         callback(freeBalance);
       });
     }
