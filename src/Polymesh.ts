@@ -5,6 +5,7 @@ import { ApolloClient, ApolloQueryResult } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
+import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
@@ -657,6 +658,30 @@ export class Polymesh {
       name: textToString(name),
       version: u32ToBigNumber(specVersion).toNumber(),
     };
+  }
+
+  /**
+   * Get the Treasury POLYX balance
+   *
+   * @note can be subscribed to
+   */
+  public getTreasuryBalance(): Promise<BigNumber>;
+  public getTreasuryBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getTreasuryBalance(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
+    const accountId = this.getTreasuryAddress();
+
+    if (callback) {
+      return this.context.accountBalance(accountId, ({ free: freeBalance }) => {
+        callback(freeBalance);
+      });
+    }
+
+    const { free } = await this.getAccountBalance({ accountId });
+    return free;
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
