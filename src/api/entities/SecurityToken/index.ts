@@ -163,8 +163,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     /* eslint-enable @typescript-eslint/camelcase */
 
     if (callback) {
-      return asset.tokens(ticker, token => {
-        callback(assembleResult(token));
+      return asset.tokens(ticker, securityToken => {
+        callback(assembleResult(securityToken));
       });
     }
 
@@ -195,8 +195,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     } = this;
 
     if (callback) {
-      return asset.fundingRound(ticker, fundingRound => {
-        callback(fundingRoundNameToString(fundingRound));
+      return asset.fundingRound(ticker, round => {
+        callback(fundingRoundNameToString(round));
       });
     }
 
@@ -240,8 +240,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     ]);
 
     if (callback) {
-      return asset.identifiers.multi<AssetIdentifier>(identifierTypes, assetIdentifiers => {
-        callback(assembleResult(assetIdentifiers));
+      return asset.identifiers.multi<AssetIdentifier>(identifierTypes, identifiers => {
+        callback(assembleResult(identifiers));
       });
     }
 

@@ -292,9 +292,9 @@ export class Polymesh {
     const reservation = new TickerReservation(args, this.context);
 
     if (callback) {
-      return reservation.details(({ status }) => {
+      return reservation.details(({ status: reservationStatus }) => {
         // eslint-disable-next-line standard/no-callback-literal
-        callback(status === TickerReservationStatus.Free);
+        callback(reservationStatus === TickerReservationStatus.Free);
       });
     }
     const { status } = await reservation.details();
