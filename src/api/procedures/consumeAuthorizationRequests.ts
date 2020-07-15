@@ -1,6 +1,7 @@
+import { TxTags } from 'polymesh-types/types';
+
 import { AuthorizationRequest } from '~/api/entities';
 import { Procedure } from '~/base';
-import { TxTags } from '~/polkadot';
 import { authTargetToAuthIdentifier, batchArguments, numberToU64 } from '~/utils';
 
 export interface ConsumeParams {

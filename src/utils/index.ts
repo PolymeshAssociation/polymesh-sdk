@@ -1094,6 +1094,26 @@ export async function requestPaginated<F extends AnyFunction>(
 }
 
 /**
+ * Makes a request to the chain. If a block hash is supplied,
+ * the request will be made at that block. Otherwise, the most recent block will be queried
+ */
+export async function requestAtBlock<F extends AnyFunction>(
+  query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,
+  opts: {
+    blockHash?: string;
+    args: Parameters<F>;
+  }
+): Promise<ObsInnerType<ReturnType<F>>> {
+  const { blockHash, args } = opts;
+
+  if (blockHash) {
+    return query.at(blockHash, ...args);
+  }
+
+  return query(...args);
+}
+
+/**
  * Separates an array into smaller batches
  *
  * @param args - elements to separate

@@ -89,6 +89,7 @@ import {
   numberToU64,
   padString,
   posRatioToBigNumber,
+  requestAtBlock,
   requestPaginated,
   ruleToAssetTransferRule,
   serialize,
@@ -2014,6 +2015,33 @@ describe('requestPaginated', () => {
 
     expect(res.lastKey).toBeNull();
     sinon.assert.calledOnce(queryStub.entriesPaged);
+  });
+});
+
+describe('requestAtBlock', () => {
+  test('should fetch and return the value at a certain block (current if left empty)', async () => {
+    const returnValue = dsMockUtils.createMockU32(5);
+    const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
+      returnValue,
+    });
+
+    const blockHash = 'someBlockHash';
+    const ticker = 'ticker';
+
+    let res = await requestAtBlock(queryStub, {
+      blockHash,
+      args: [ticker],
+    });
+
+    sinon.assert.calledWith(queryStub.at, blockHash, ticker);
+    expect(res).toBe(returnValue);
+
+    res = await requestAtBlock(queryStub, {
+      args: [ticker],
+    });
+
+    sinon.assert.calledWith(queryStub, ticker);
+    expect(res).toBe(returnValue);
   });
 });
 

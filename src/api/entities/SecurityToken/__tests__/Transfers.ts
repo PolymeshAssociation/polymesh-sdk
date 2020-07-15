@@ -1,13 +1,13 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
 import { toggleFreezeTransfers, transferToken } from '~/api/procedures';
 import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import { Namespace, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { IdentityId, Ticker } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransferStatus } from '~/types';

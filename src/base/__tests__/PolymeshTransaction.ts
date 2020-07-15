@@ -1,12 +1,13 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { PostTransactionValue } from '~/base';
-import { TxTags } from '~/polkadot';
+import { Context } from '~/context';
 import { dsMockUtils } from '~/testUtils/mocks';
-import { MockContext } from '~/testUtils/mocks/dataSources';
+import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -17,7 +18,7 @@ import { PolymeshTransaction } from '../PolymeshTransaction';
 const { delay } = utilsModule;
 
 describe('Polymesh Transaction class', () => {
-  let context: MockContext;
+  let context: Mocked<Context>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

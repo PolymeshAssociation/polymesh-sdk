@@ -1,8 +1,8 @@
 import { u64 } from '@polkadot/types';
+import { Authorization } from 'polymesh-types/types';
 
 import { AuthorizationRequest } from '~/api/entities';
 import { Namespace } from '~/base';
-import { Authorization } from '~/polkadot';
 import { PaginationOptions, ResultSet } from '~/types';
 import { SignerType } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -57,6 +57,8 @@ export class Authorizations extends Namespace<Identity> {
 
   /**
    * Fetch all pending authorization requests issued by this identity
+   *
+   * @note supports pagination
    */
   public async getSent(
     paginationOpts?: PaginationOptions

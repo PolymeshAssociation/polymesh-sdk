@@ -1,5 +1,5 @@
 import { ApolloQueryResult } from 'apollo-client';
-import { AssetIdentifier } from 'polymesh-types/types';
+import { AssetIdentifier, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
 import {
@@ -12,7 +12,15 @@ import { Entity, PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ErrorCode, EventIdentifier, TokenIdentifier, TokenIdentifierType } from '~/types';
+import {
+  Ensured,
+  ErrorCode,
+  EventIdentifier,
+  SubCallback,
+  TokenIdentifier,
+  TokenIdentifierType,
+  UnsubCallback,
+} from '~/types';
 import {
   assetIdentifierToString,
   assetNameToString,
@@ -119,8 +127,16 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
   /**
    * Retrieve the Security Token's name, total supply, whether it is divisible or not and the identity of the owner
+   *
+   * @note can be subscribed to
    */
-  public async details(): Promise<SecurityTokenDetails> {
+  public details(): Promise<SecurityTokenDetails>;
+  public details(callback: SubCallback<SecurityTokenDetails>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async details(
+    callback?: SubCallback<SecurityTokenDetails>
+  ): Promise<SecurityTokenDetails | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -132,22 +148,44 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     } = this;
 
     /* eslint-disable @typescript-eslint/camelcase */
-    const { name, total_supply, divisible, owner_did, asset_type } = await asset.tokens(ticker);
-
-    return {
+    const assembleResult = ({
+      name,
+      total_supply,
+      divisible,
+      owner_did,
+      asset_type,
+    }: MeshSecurityToken): SecurityTokenDetails => ({
       assetType: assetTypeToString(asset_type),
       isDivisible: boolToBoolean(divisible),
       name: assetNameToString(name),
       owner: new Identity({ did: identityIdToString(owner_did) }, context),
       totalSupply: balanceToBigNumber(total_supply),
-    };
+    });
     /* eslint-enable @typescript-eslint/camelcase */
+
+    if (callback) {
+      return asset.tokens(ticker, securityToken => {
+        callback(assembleResult(securityToken));
+      });
+    }
+
+    const token = await asset.tokens(ticker);
+
+    return assembleResult(token);
   }
 
   /**
    * Retrieve the Security Token's funding round
+   *
+   * @note can be subscribed to
    */
-  public async currentFundingRound(): Promise<string> {
+  public currentFundingRound(): Promise<string>;
+  public currentFundingRound(callback: SubCallback<string>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async currentFundingRound(
+    callback?: SubCallback<string>
+  ): Promise<string | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -157,14 +195,28 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       ticker,
     } = this;
 
+    if (callback) {
+      return asset.fundingRound(ticker, round => {
+        callback(fundingRoundNameToString(round));
+      });
+    }
+
     const fundingRound = await asset.fundingRound(ticker);
     return fundingRoundNameToString(fundingRound);
   }
 
   /**
    * Retrive the Security Token's asset identifiers list
+   *
+   * @note can be subscribed to
    */
-  public async getIdentifiers(): Promise<TokenIdentifier[]> {
+  public getIdentifiers(): Promise<TokenIdentifier[]>;
+  public getIdentifiers(callback?: SubCallback<TokenIdentifier[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getIdentifiers(
+    callback?: SubCallback<TokenIdentifier[]>
+  ): Promise<TokenIdentifier[] | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -176,25 +228,33 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     } = this;
 
     const tokenIdentifierTypes = Object.values(TokenIdentifierType);
+
+    const assembleResult = (identifiers: AssetIdentifier[]): TokenIdentifier[] =>
+      tokenIdentifierTypes.map((type, i) => ({
+        type,
+        value: assetIdentifierToString(identifiers[i]),
+      }));
+
     const identifierTypes = tokenIdentifierTypes.map(type => [
       ticker,
       tokenIdentifierTypeToIdentifierType(type, context),
     ]);
 
+    if (callback) {
+      return asset.identifiers.multi<AssetIdentifier>(identifierTypes, identifiers => {
+        callback(assembleResult(identifiers));
+      });
+    }
+
     const assetIdentifiers = await asset.identifiers.multi<AssetIdentifier>(identifierTypes);
 
-    const tokenIdentifiers = tokenIdentifierTypes.map((type, i) => ({
-      type,
-      value: assetIdentifierToString(assetIdentifiers[i]),
-    }));
-
-    return tokenIdentifiers;
+    return assembleResult(assetIdentifiers);
   }
 
   /**
    * Retrieve the identifier data (block number and event index) of the event that was emitted when the token was created
    *
-   * @note This data is harvested from the chain and stored in a database, so there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   * @note this data is harvested from the chain and stored in a database, so there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async createdAt(): Promise<EventIdentifier | null> {
     const {

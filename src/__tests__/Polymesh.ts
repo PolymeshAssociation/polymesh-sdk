@@ -365,6 +365,31 @@ describe('Polymesh Class', () => {
 
       expect(isTickerAvailable).toBeFalsy();
     });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      entityMockUtils.getTickerReservationDetailsStub().callsFake(async cbFunc => {
+        cbFunc({
+          owner: entityMockUtils.getIdentityInstance(),
+          expiryDate: new Date(),
+          status: TickerReservationStatus.Free,
+        });
+
+        return unsubCallback;
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const callback = sinon.stub();
+      const result = await polymesh.isTickerAvailable({ ticker: 'someTicker' }, callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, true);
+    });
   });
 
   describe('method: getTickerReservations', () => {
@@ -1068,6 +1093,45 @@ describe('Polymesh Class', () => {
 
       const result = await polymesh.getNetworkProperties();
       expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('method: getTreasuryBalance', () => {
+    let fakeBalance: AccountBalance;
+
+    beforeAll(() => {
+      fakeBalance = {
+        free: new BigNumber(500000),
+        locked: new BigNumber(0),
+      };
+      dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
+    });
+
+    test('should return the POLYX balance of the treasury account', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const result = await polymesh.getTreasuryBalance();
+      expect(result).toEqual(fakeBalance.free);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+
+      dsMockUtils.getContextInstance().accountBalance.callsFake(async (_, cbFunc) => {
+        cbFunc(fakeBalance);
+        return unsubCallback;
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const callback = sinon.stub();
+      const result = await polymesh.getTreasuryBalance(callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeBalance.free);
     });
   });
 

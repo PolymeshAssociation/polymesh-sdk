@@ -183,6 +183,7 @@ interface KeyringOptions {
 export interface StubQuery {
   entries: SinonStub;
   entriesPaged: SinonStub;
+  at: SinonStub;
   multi: SinonStub;
   size: SinonStub;
 }
@@ -747,6 +748,7 @@ export function createQueryStub<
     stub = (sinon.stub() as unknown) as Queries[ModuleName][QueryName] & SinonStub & StubQuery;
     stub.entries = sinon.stub();
     stub.entriesPaged = sinon.stub();
+    stub.at = sinon.stub();
     stub.multi = sinon.stub();
     stub.size = sinon.stub();
     runtimeModule[query] = stub;
@@ -774,6 +776,7 @@ export function createQueryStub<
   }
   if (opts?.returnValue) {
     stub.resolves(opts.returnValue);
+    stub.at.resolves(opts.returnValue);
   }
 
   return stub;

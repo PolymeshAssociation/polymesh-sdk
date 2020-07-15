@@ -1,11 +1,10 @@
 import { Moment } from '@polkadot/types/interfaces';
 import { cloneDeep, uniq } from 'lodash';
-import { Claim as MeshClaim, TxTags } from 'polymesh-types/types';
+import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure } from '~/base';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
-import { IdentityId } from '~/polkadot';
 import {
   Claim,
   ClaimTargets,
