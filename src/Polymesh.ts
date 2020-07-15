@@ -641,7 +641,7 @@ export class Polymesh {
   }
 
   /**
-   * Get the Treasury POLYX balance
+   * Get the treasury POLYX balance
    *
    * @note can be subscribed to
    */
