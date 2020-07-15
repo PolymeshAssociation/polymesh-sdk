@@ -21,10 +21,11 @@ import {
   boolToBoolean,
   fundingRoundNameToString,
   identityIdToString,
-  padTicker,
+  padString,
   tickerToDid,
   tokenIdentifierTypeToIdentifierType,
 } from '~/utils';
+import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import { Compliance } from './Compliance';
 import { Documents } from './Documents';
@@ -207,7 +208,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
         eventByIndexedArgs({
           moduleId: 'asset',
           eventId: 'AssetCreated',
-          eventArg1: padTicker(ticker),
+          eventArg1: padString(ticker, MAX_TICKER_LENGTH),
         })
       );
     } catch (e) {

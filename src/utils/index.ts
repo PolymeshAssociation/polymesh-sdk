@@ -73,6 +73,7 @@ import { tuple } from '~/types/utils';
 import {
   IGNORE_CHECKSUM,
   MAX_BATCH_ELEMENTS,
+  MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
   SS58_FORMAT,
 } from '~/utils/constants';
@@ -1022,8 +1023,15 @@ export function findEventRecord(
 /**
  * @hidden
  */
-export function padTicker(ticker: string): string {
-  return padEnd(ticker, MAX_TICKER_LENGTH, '\u0000');
+export function padString(value: string, length: number): string {
+  return padEnd(value, length, '\0');
+}
+
+/**
+ * @hidden
+ */
+export function moduleAddressToString(moduleAddress: string): string {
+  return encodeAddress(stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)), SS58_FORMAT);
 }
 
 /**

@@ -41,6 +41,7 @@ import {
   booleanToBool,
   createClaim,
   linkTypeToMeshLinkType,
+  moduleAddressToString,
   signerToSignatory,
   stringToTicker,
   textToString,
@@ -51,6 +52,7 @@ import {
 
 import { Governance } from './Governance';
 import { Link } from './polkadot/polymesh';
+import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
@@ -357,6 +359,13 @@ export class Polymesh {
       return new Identity(args, this.context);
     }
     return this.context.getCurrentIdentity();
+  }
+
+  /**
+   * Get the treasury wallet address
+   */
+  public getTreasuryAddress(): string {
+    return moduleAddressToString(TREASURY_MODULE_ADDRESS);
   }
 
   /**
