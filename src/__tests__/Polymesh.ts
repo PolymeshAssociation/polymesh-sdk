@@ -526,6 +526,18 @@ describe('Polymesh Class', () => {
     });
   });
 
+  describe('method: getTreasuryAddress', () => {
+    test('should return the Treasury module address', async () => {
+      const treasuryAddress = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      expect(polymesh.getTreasuryAddress()).toEqual(treasuryAddress);
+    });
+  });
+
   describe('method: getSecurityTokens', () => {
     beforeAll(() => {
       sinon.stub(utilsModule, 'signerToSignatory');

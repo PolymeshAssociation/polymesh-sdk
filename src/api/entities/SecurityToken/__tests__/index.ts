@@ -17,6 +17,7 @@ import { dsMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
+import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import { SecurityToken } from '../';
 
@@ -335,7 +336,7 @@ describe('SecurityToken class', () => {
       const variables = {
         moduleId: 'asset',
         eventId: 'AssetCreated',
-        eventArg1: utilsModule.padTicker(ticker),
+        eventArg1: utilsModule.padString(ticker, MAX_TICKER_LENGTH),
       };
       const fakeResult = { blockNumber: blockId, eventIndex: eventIdx };
       const context = dsMockUtils.getContextInstance();
@@ -356,7 +357,7 @@ describe('SecurityToken class', () => {
       const variables = {
         moduleId: 'asset',
         eventId: 'AssetCreated',
-        eventArg1: utilsModule.padTicker(ticker),
+        eventArg1: utilsModule.padString(ticker, MAX_TICKER_LENGTH),
       };
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
