@@ -105,7 +105,6 @@ import {
   stringToFundingRoundName,
   stringToIdentityId,
   stringToJurisdictionName,
-  stringToProtocolOp,
   stringToTicker,
   textToString,
   tickerToDid,
@@ -113,6 +112,7 @@ import {
   tokenDocumentToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
+  txTagToProtocolOp,
   u8ToTransferStatus,
   u64ToBigNumber,
   unserialize,
@@ -1885,7 +1885,7 @@ describe('canTransferResultToTransferStatus', () => {
   });
 });
 
-describe('stringToProtocolOp', () => {
+describe('txTagToProtocolOp', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1898,17 +1898,43 @@ describe('stringToProtocolOp', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToProtocolOp should convert a string to a polkadot ProtocolOp object', () => {
-    const value = 'someProtocolOp';
+  test('txTagToProtocolOp should convert a TxTag to a polkadot ProtocolOp object', () => {
+    const value = TxTags.identity.AcceptAuthorization;
     const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('ProtocolOp', value)
+      .withArgs('ProtocolOp', 'IdentityAcceptAuthorization')
       .returns(fakeResult);
 
-    const result = stringToProtocolOp(value, context);
+    const result = txTagToProtocolOp(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('txTagToProtocolOp should ignore "batch" prefixes and postfixes', () => {
+    let value = TxTags.identity.BatchAcceptAuthorization;
+    const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ProtocolOp', 'IdentityAcceptAuthorization')
+      .returns(fakeResult);
+
+    let result = txTagToProtocolOp(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = TxTags.identity.AddClaimsBatch;
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ProtocolOp', 'IdentityAddClaim')
+      .returns(fakeResult);
+
+    result = txTagToProtocolOp(value, context);
 
     expect(result).toEqual(fakeResult);
   });

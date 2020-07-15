@@ -1,6 +1,5 @@
 import BigNumber from 'bignumber.js';
-
-import { TxTags } from '~/polkadot';
+import { TxTags } from 'polymesh-types/types';
 
 export const MAX_DECIMALS = 6;
 export const MAX_TICKER_LENGTH = 12;
@@ -12,6 +11,7 @@ export const MAX_BATCH_ELEMENTS = {
   [TxTags.asset.AddDocuments]: 20,
   [TxTags.asset.RemoveDocuments]: 20,
   [TxTags.identity.BatchAcceptAuthorization]: 100,
+
   [TxTags.identity.BatchRemoveAuthorization]: 100,
   [TxTags.identity.AddClaimsBatch]: 200,
   [TxTags.identity.RevokeClaimsBatch]: 200,
@@ -22,3 +22,4 @@ export const IGNORE_CHECKSUM = true;
 export const SS58_FORMAT = 42;
 export const MAX_CONCURRENT_REQUESTS = 200;
 export const TREASURY_MODULE_ADDRESS = 'modlpm/trsry';
+export const BATCH_REGEX = RegExp('(b|s?B)atch');
