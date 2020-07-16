@@ -11,7 +11,7 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Class used to manage all the Governance Proposal functionality
+ * Represents a Polymesh Improvement Proposal (PIP)
  */
 export class Proposal extends Entity<UniqueIdentifiers> {
   /**
