@@ -24,8 +24,8 @@ export interface Metadata {
   proposer: Identity;
   createdAt: Date;
   endBlock: number;
-  description: string;
-  url: string;
+  description?: string;
+  url?: string;
   coolOff: number;
   lastStateUpdated: number;
   ayesBonded: BigNumber;
