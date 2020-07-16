@@ -5,6 +5,7 @@ import { ApolloClient, ApolloQueryResult } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
+import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
@@ -87,6 +88,9 @@ export class Polymesh {
     this.governance = new Governance(context);
   }
 
+  /**
+   * Create the instance and connect to the Polymesh node
+   */
   static async connect(params: ConnectParamsBase & { accountSeed: string }): Promise<Polymesh>;
 
   static async connect(
@@ -99,9 +103,7 @@ export class Polymesh {
 
   static async connect(params: ConnectParamsBase): Promise<Polymesh>;
 
-  /**
-   * Create the instance and connect to the Polymesh node
-   */
+  // eslint-disable-next-line require-jsdoc
   static async connect(
     params: ConnectParamsBase & {
       accountSeed?: string;
@@ -276,9 +278,28 @@ export class Polymesh {
 
   /**
    * Check if a ticker hasn't been reserved
+   *
+   * @note can be subscribed to
    */
-  public async isTickerAvailable(args: { ticker: string }): Promise<boolean> {
+  public isTickerAvailable(args: { ticker: string }): Promise<boolean>;
+  public isTickerAvailable(
+    args: { ticker: string },
+    callback: SubCallback<boolean>
+  ): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async isTickerAvailable(
+    args: { ticker: string },
+    callback?: SubCallback<boolean>
+  ): Promise<boolean | UnsubCallback> {
     const reservation = new TickerReservation(args, this.context);
+
+    if (callback) {
+      return reservation.details(({ status: reservationStatus }) => {
+        // eslint-disable-next-line standard/no-callback-literal
+        callback(reservationStatus === TickerReservationStatus.Free);
+      });
+    }
     const { status } = await reservation.details();
 
     return status === TickerReservationStatus.Free;
@@ -637,6 +658,30 @@ export class Polymesh {
       name: textToString(name),
       version: u32ToBigNumber(specVersion).toNumber(),
     };
+  }
+
+  /**
+   * Get the Treasury POLYX balance
+   *
+   * @note can be subscribed to
+   */
+  public getTreasuryBalance(): Promise<BigNumber>;
+  public getTreasuryBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getTreasuryBalance(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
+    const accountId = this.getTreasuryAddress();
+
+    if (callback) {
+      return this.context.accountBalance(accountId, ({ free: freeBalance }) => {
+        callback(freeBalance);
+      });
+    }
+
+    const { free } = await this.getAccountBalance({ accountId });
+    return free;
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

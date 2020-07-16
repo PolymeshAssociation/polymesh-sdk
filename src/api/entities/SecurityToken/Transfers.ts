@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
+import { CanTransferResult } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
 import { toggleFreezeTransfers, transferToken, TransferTokenParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { CanTransferResult } from '~/polkadot';
 import { SubCallback, TransferStatus, UnsubCallback } from '~/types';
 import {
   boolToBoolean,
@@ -44,14 +44,15 @@ export class Transfers extends Namespace<SecurityToken> {
     return toggleFreezeTransfers.prepare({ ticker, freeze: false }, context);
   }
 
-  public areFrozen(): Promise<boolean>;
-  public areFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
-
   /**
    * Check whether transfers are frozen for the Security Token
    *
    * @note can be subscribed to
    */
+  public areFrozen(): Promise<boolean>;
+  public areFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
   public async areFrozen(callback?: SubCallback<boolean>): Promise<boolean | UnsubCallback> {
     const {
       parent: { ticker },

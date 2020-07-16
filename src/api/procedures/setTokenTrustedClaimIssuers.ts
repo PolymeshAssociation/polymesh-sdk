@@ -1,8 +1,8 @@
 import { difference } from 'lodash';
+import { IdentityId, TxTags } from 'polymesh-types/types';
 
 import { Identity, SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { IdentityId, TxTags } from '~/polkadot';
 import { ErrorCode, Role, RoleType } from '~/types';
 import {
   batchArguments,

@@ -113,20 +113,6 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     return transactionQueue;
   }
 
-  public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
-    tx: PolymeshTx<TxArgs>,
-    options: AddTransactionOpts<Values>,
-    ...args: MapMaybePostTransactionValue<TxArgs>
-  ): PostTransactionValueArray<Values>;
-
-  public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
-    tx: PostTransactionValue<PolymeshTx<TxArgs>>,
-    options: Omit<AddTransactionOpts<Values>, 'fee'> & {
-      fee: BigNumber; // fee MUST be provided by hand if the transaction is a future value
-    },
-    ...args: MapMaybePostTransactionValue<TxArgs>
-  ): PostTransactionValueArray<Values>;
-
   /**
    * Appends a method (or [[PostTransactionValue]] that resolves to a method) into the TransactionQueue's queue. This defines
    * what will be run by the TransactionQueue when it is started.
@@ -144,6 +130,21 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    *
    * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options
    */
+  public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
+    tx: PolymeshTx<TxArgs>,
+    options: AddTransactionOpts<Values>,
+    ...args: MapMaybePostTransactionValue<TxArgs>
+  ): PostTransactionValueArray<Values>;
+
+  public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
+    tx: PostTransactionValue<PolymeshTx<TxArgs>>,
+    options: Omit<AddTransactionOpts<Values>, 'fee'> & {
+      fee: BigNumber; // fee MUST be provided by hand if the transaction is a future value
+    },
+    ...args: MapMaybePostTransactionValue<TxArgs>
+  ): PostTransactionValueArray<Values>;
+
+  // eslint-disable-next-line require-jsdoc
   public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
     transaction: MaybePostTransactionValue<PolymeshTx<TxArgs>>,
     options: AddTransactionOpts<Values>,
@@ -185,15 +186,6 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     return postTransactionValues;
   }
 
-  public async addProcedure<ProcArgs extends unknown, ReturnValue extends unknown>(
-    procedure: Procedure<ProcArgs, ReturnValue>,
-    args: ProcArgs
-  ): Promise<MaybePostTransactionValue<ReturnValue>>;
-
-  public async addProcedure<ReturnValue extends unknown>(
-    procedure: Procedure<void, ReturnValue>
-  ): Promise<MaybePostTransactionValue<ReturnValue>>;
-
   /**
    * Appends a Procedure into this Procedure's queue. This defines
    * what will be run by the Transaction Queue when it is started.
@@ -203,6 +195,16 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    *
    * @returns whichever value is returned by the passed Procedure
    */
+  public async addProcedure<ProcArgs extends unknown, ReturnValue extends unknown>(
+    procedure: Procedure<ProcArgs, ReturnValue>,
+    args: ProcArgs
+  ): Promise<MaybePostTransactionValue<ReturnValue>>;
+
+  public async addProcedure<ReturnValue extends unknown>(
+    procedure: Procedure<void, ReturnValue>
+  ): Promise<MaybePostTransactionValue<ReturnValue>>;
+
+  // eslint-disable-next-line require-jsdoc
   public async addProcedure<ProcArgs extends unknown, ReturnValue extends unknown>(
     procedure: Procedure<void | ProcArgs, ReturnValue>,
     args: ProcArgs = {} as ProcArgs
