@@ -283,6 +283,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
         blockNumber: result.data.eventByIndexedArgs.block_id!,
+        blockDatetime: result.data.eventByIndexedArgs.block!.datetime!,
         eventIndex: result.data.eventByIndexedArgs.event_idx!,
       };
       /* eslint-enabled @typescript-eslint/no-non-null-assertion */

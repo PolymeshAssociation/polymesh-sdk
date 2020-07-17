@@ -332,19 +332,25 @@ describe('SecurityToken class', () => {
     test('should return the event identifier object of the token creation', async () => {
       const ticker = 'SOMETICKER';
       const blockId = 1234;
+      const blockDatetime = new Date('4/14/2020');
       const eventIdx = 1;
       const variables = {
         moduleId: 'asset',
         eventId: 'AssetCreated',
         eventArg1: utilsModule.padString(ticker, MAX_TICKER_LENGTH),
       };
-      const fakeResult = { blockNumber: blockId, eventIndex: eventIdx };
+      const fakeResult = { blockNumber: blockId, blockDatetime, eventIndex: eventIdx };
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        eventByIndexedArgs: { block_id: blockId, event_idx: eventIdx },
+        /* eslint-disable @typescript-eslint/camelcase */
+        eventByIndexedArgs: {
+          block_id: blockId,
+          block: { datetime: blockDatetime },
+          event_idx: eventIdx,
+        },
+        /* eslint-enable @typescript-eslint/camelcase */
       });
 
       const result = await securityToken.createdAt();
