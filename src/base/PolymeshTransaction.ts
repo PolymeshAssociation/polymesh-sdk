@@ -1,7 +1,6 @@
 import { AddressOrPair } from '@polkadot/api/types';
 import { DispatchError } from '@polkadot/types/interfaces';
 import { ISubmittableResult, RegistryError } from '@polkadot/types/types';
-import { stringUpperFirst } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { TxTag } from 'polymesh-types/types';
@@ -17,13 +16,8 @@ import {
   PostTransactionValueArray,
   TransactionSpec,
 } from '~/types/internal';
-import {
-  balanceToBigNumber,
-  posRatioToBigNumber,
-  stringToProtocolOp,
-  unwrapValue,
-  unwrapValues,
-} from '~/utils';
+import { balanceToBigNumber, unwrapValue, unwrapValues } from '~/utils';
+import { BATCH_REGEX } from '~/utils/constants';
 
 enum Event {
   StatusChange = 'StatusChange',
@@ -47,12 +41,6 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
    * stores the transaction receipt (if successful)
    */
   public receipt?: ISubmittableResult;
-
-  /**
-   * type of transaction represented by this instance for display purposes.
-   * If the transaction isn't defined at design time, the tag won't be set (will be empty string) until the transaction is about to be run
-   */
-  public tag = '' as TxTag;
 
   /**
    * transaction hash (status: `Running`, `Succeeded`, `Failed`)
@@ -81,6 +69,14 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
    * underlying transaction to be executed
    */
   private tx: MaybePostTransactionValue<PolymeshTx<Args>>;
+
+  /**
+   * @hidden
+   *
+   * type of transaction represented by this instance for display purposes.
+   * If the transaction isn't defined at design time, the tag won't be set (will be empty string) until the transaction is about to be run
+   */
+  private _tag = '' as TxTag;
 
   /**
    * @hidden
@@ -202,16 +198,7 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
    * previous transaction in the queue)
    */
   public async getFees(): Promise<Fees | null> {
-    const {
-      tx,
-      args,
-      signer,
-      batchSize,
-      context: {
-        polymeshApi: { query },
-      },
-      context,
-    } = this;
+    const { tx, args, signer, batchSize, context } = this;
     let { protocolFee } = this;
 
     let unwrappedTx;
@@ -224,17 +211,12 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
       return null;
     }
 
-    const [rawCoefficient, { partialFee }] = await Promise.all([
-      query.protocolFee.coefficient(),
-      unwrappedTx(...unwrappedArgs).paymentInfo(signer),
-    ]);
-    const coefficient = posRatioToBigNumber(rawCoefficient);
+    const { partialFee } = await unwrappedTx(...unwrappedArgs).paymentInfo(signer);
 
     if (!protocolFee) {
-      const { section: moduleName, method: extrinsicName } = unwrappedTx;
-      const batchRegex = RegExp('(b|s?B)atch');
+      const { method: extrinsicName } = unwrappedTx;
 
-      if (batchRegex.exec(extrinsicName) && !batchSize) {
+      if (BATCH_REGEX.exec(extrinsicName) && !batchSize) {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
           message:
@@ -242,22 +224,23 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
         });
       }
 
-      const protocolOp = `${stringUpperFirst(moduleName)}${stringUpperFirst(
-        extrinsicName.replace(batchRegex, '')
-      )}`;
-
-      try {
-        const rawFee = await query.protocolFee.baseFees(stringToProtocolOp(protocolOp, context));
-        protocolFee = balanceToBigNumber(rawFee);
-      } catch (err) {
-        protocolFee = new BigNumber(0);
-      }
+      protocolFee = await context.getTransactionFees(this.tag);
     }
 
     return {
-      protocol: protocolFee.multipliedBy(coefficient).multipliedBy(batchSize || 1),
+      protocol: protocolFee.multipliedBy(batchSize || 1),
       gas: balanceToBigNumber(partialFee),
     };
+  }
+
+  /**
+   * type of transaction represented by this instance for display purposes.
+   * If the transaction isn't defined at design time, the tag won't be set (will be empty string) until the transaction is about to be run
+   */
+  public get tag(): TxTag {
+    this.setTag();
+
+    return this._tag;
   }
 
   /**
@@ -266,7 +249,7 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
    * Set transaction tag if available and it hasn't been set yet
    */
   private setTag(): void {
-    if (this.tag) {
+    if (this._tag) {
       return;
     }
 
@@ -282,7 +265,7 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
       transaction = tx;
     }
 
-    this.tag = `${transaction.section}.${transaction.method}` as TxTag;
+    this._tag = `${transaction.section}.${transaction.method}` as TxTag;
   }
 
   /**
