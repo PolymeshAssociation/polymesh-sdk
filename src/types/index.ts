@@ -372,3 +372,4 @@ export enum LinkType {
 }
 
 export * from '~/api/entities/types';
+export { TxTags } from 'polymesh-types/types';

@@ -648,8 +648,7 @@ export function createTxStub<
   const { autoresolve = MockTxStatus.Succeeded, gas = createMockBalance(1) } = opts;
 
   const transaction = (sinon.stub().returns({
-    section: mod,
-    method: tx,
+    method: tx, // should be a `Call` object, but this is enough for testing
     hash: tx,
     signAndSend: sinon.stub().callsFake((_, cback: StatusCallback) => {
       if (autoresolve === MockTxStatus.Rejected) {
