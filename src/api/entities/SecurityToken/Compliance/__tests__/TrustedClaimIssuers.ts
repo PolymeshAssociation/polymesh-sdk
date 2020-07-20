@@ -88,9 +88,7 @@ describe('TrustedClaimIssuers class', () => {
       claimIssuers = [];
 
       expectedDids.forEach(did => {
-        expectedTrustedClaimIssuers.push(
-          new TrustedClaimIssuer({ claimIssuerDid: did, ticker }, context)
-        );
+        expectedTrustedClaimIssuers.push(new TrustedClaimIssuer({ did, ticker }, context));
         claimIssuers.push(dsMockUtils.createMockIdentityId(did));
       });
 

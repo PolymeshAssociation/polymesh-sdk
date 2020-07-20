@@ -36,7 +36,7 @@ describe('TrustedClaimIssuer class', () => {
       const did = 'someDid';
       const ticker = 'SOMETICKER';
       const identity = new Identity({ did }, context);
-      const trustedClaimIssuer = new TrustedClaimIssuer({ claimIssuerDid: did, ticker }, context);
+      const trustedClaimIssuer = new TrustedClaimIssuer({ did, ticker }, context);
 
       expect(trustedClaimIssuer.ticker).toBe(ticker);
       expect(trustedClaimIssuer.identity).toEqual(identity);
@@ -45,34 +45,37 @@ describe('TrustedClaimIssuer class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(TrustedClaimIssuer.isUniqueIdentifiers({ claimIssuerDid: 'someDid' })).toBe(true);
+      expect(TrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid', ticker: 'symbol' })).toBe(
+        true
+      );
       expect(TrustedClaimIssuer.isUniqueIdentifiers({})).toBe(false);
-      expect(TrustedClaimIssuer.isUniqueIdentifiers({ claimIssuerDid: 1 })).toBe(false);
+      expect(TrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid' })).toBe(false);
+      expect(TrustedClaimIssuer.isUniqueIdentifiers({ did: 1 })).toBe(false);
     });
   });
 
   describe('method: addedAt', () => {
-    const claimIssuerDid = 'someDid';
+    const did = 'someDid';
     const ticker = 'SOMETICKER';
     const variables = {
       moduleId: 'complianceManager',
       eventId: 'TrustedDefaultClaimIssuerAdded',
       eventArg1: utilsModule.padString(ticker, MAX_TICKER_LENGTH),
-      eventArg2: claimIssuerDid,
+      eventArg2: did,
     };
 
     test('should return the event identifier object of the trusted claim issuer creation', async () => {
       const blockId = 1234;
-      const blockDatetime = new Date('4/14/2020');
+      const blockDate = new Date('4/14/2020');
       const eventIdx = 1;
-      const fakeResult = { blockNumber: blockId, blockDatetime, eventIndex: eventIdx };
-      const trustedClaimIssuer = new TrustedClaimIssuer({ claimIssuerDid, ticker }, context);
+      const fakeResult = { blockNumber: blockId, blockDate, eventIndex: eventIdx };
+      const trustedClaimIssuer = new TrustedClaimIssuer({ did, ticker }, context);
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
         /* eslint-disable @typescript-eslint/camelcase */
         eventByIndexedArgs: {
           block_id: blockId,
-          block: { datetime: blockDatetime },
+          block: { datetime: blockDate },
           event_idx: eventIdx,
         },
         /* eslint-enable @typescript-eslint/camelcase */
@@ -84,7 +87,7 @@ describe('TrustedClaimIssuer class', () => {
     });
 
     test('should return null if the query result is empty', async () => {
-      const trustedClaimIssuer = new TrustedClaimIssuer({ claimIssuerDid, ticker }, context);
+      const trustedClaimIssuer = new TrustedClaimIssuer({ did, ticker }, context);
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
       const result = await trustedClaimIssuer.addedAt();
@@ -92,7 +95,7 @@ describe('TrustedClaimIssuer class', () => {
     });
 
     test('should throw if the middleware query fails', async () => {
-      const trustedClaimIssuer = new TrustedClaimIssuer({ claimIssuerDid, ticker }, context);
+      const trustedClaimIssuer = new TrustedClaimIssuer({ did, ticker }, context);
 
       dsMockUtils.throwOnMiddlewareQuery();
 

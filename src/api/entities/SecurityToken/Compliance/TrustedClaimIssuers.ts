@@ -1,12 +1,12 @@
 import { IdentityId } from 'polymesh-types/types';
 
+import { TrustedClaimIssuer } from '~/api/entities/TrustedClaimIssuer';
 import { setTokenTrustedClaimIssuers, SetTokenTrustedClaimIssuersParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { SubCallback, UnsubCallback } from '~/types';
 import { identityIdToString, stringToTicker } from '~/utils';
 
 import { SecurityToken } from '../';
-import { TrustedClaimIssuer } from '~/api/entities/TrustedClaimIssuer';
 
 /**
  * Handles all Security Token Default Trusted Claim Issuers related functionality
@@ -54,10 +54,7 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
     const assembleResult = (issuers: IdentityId[]): TrustedClaimIssuer[] =>
       issuers.map(
         claimIssuer =>
-          new TrustedClaimIssuer(
-            { claimIssuerDid: identityIdToString(claimIssuer), ticker },
-            context
-          )
+          new TrustedClaimIssuer({ did: identityIdToString(claimIssuer), ticker }, context)
       );
 
     if (callback) {

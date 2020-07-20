@@ -10,10 +10,7 @@ import { padString } from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
 export interface UniqueIdentifiers {
-  claimIssuerDid: string;
-}
-
-export interface Params {
+  did: string;
   ticker: string;
 }
 
@@ -26,9 +23,9 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
    * Check if a value is of type [[UniqueIdentifiers]]
    */
   public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { claimIssuerDid } = identifier as UniqueIdentifiers;
+    const { did, ticker } = identifier as UniqueIdentifiers;
 
-    return typeof claimIssuerDid === 'string';
+    return typeof did === 'string' && typeof ticker === 'string';
   }
 
   /**
@@ -44,14 +41,12 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
   /**
    * @hidden
    */
-  public constructor(args: UniqueIdentifiers & Params, context: Context) {
-    const { ticker, ...identifiers } = args;
-
+  public constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { claimIssuerDid } = identifiers;
+    const { did, ticker } = identifiers;
 
-    this.identity = new Identity({ did: claimIssuerDid }, context);
+    this.identity = new Identity({ did }, context);
     this.ticker = ticker;
   }
 
@@ -89,7 +84,7 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
         blockNumber: result.data.eventByIndexedArgs.block_id!,
-        blockDatetime: result.data.eventByIndexedArgs.block!.datetime!,
+        blockDate: result.data.eventByIndexedArgs.block!.datetime,
         eventIndex: result.data.eventByIndexedArgs.event_idx!,
       };
       /* eslint-enabled @typescript-eslint/no-non-null-assertion */
