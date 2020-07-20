@@ -56,7 +56,7 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the identifier data (block number and event index) of the event that was emitted when the token was created
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
    *
    * @note this data is harvested from the chain and stored in a database, so there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
