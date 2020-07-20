@@ -6,7 +6,7 @@ import { SubCallback, UnsubCallback } from '~/types';
 import { identityIdToString, stringToTicker } from '~/utils';
 
 import { SecurityToken } from '../';
-import { TrustedClaimIssuer } from '../../TrustedClaimIssuer';
+import { TrustedClaimIssuer } from '~/api/entities/TrustedClaimIssuer';
 
 /**
  * Handles all Security Token Default Trusted Claim Issuers related functionality
