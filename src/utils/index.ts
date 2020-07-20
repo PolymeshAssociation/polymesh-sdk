@@ -2,7 +2,13 @@ import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot
 import { bool, Bytes, StorageKey, Text, u8, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
 import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
-import { stringToU8a, u8aConcat, u8aFixLength, u8aToString } from '@polkadot/util';
+import {
+  stringToU8a,
+  stringUpperFirst,
+  u8aConcat,
+  u8aFixLength,
+  u8aToString,
+} from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
@@ -33,6 +39,7 @@ import {
   RuleType,
   Signatory,
   Ticker,
+  TxTag,
 } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
@@ -71,6 +78,7 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
+  BATCH_REGEX,
   IGNORE_CHECKSUM,
   MAX_BATCH_ELEMENTS,
   MAX_MODULE_LENGTH,
@@ -967,8 +975,13 @@ export function assetTransferRuleToRule(rule: AssetTransferRule): Rule {
 /**
  * @hidden
  */
-export function stringToProtocolOp(protocolOp: string, context: Context): ProtocolOp {
-  return context.polymeshApi.createType('ProtocolOp', protocolOp);
+export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
+  const [moduleName, extrinsicName] = tag.split('.');
+  const value = `${stringUpperFirst(moduleName)}${stringUpperFirst(
+    extrinsicName.replace(BATCH_REGEX, '')
+  )}`;
+
+  return context.polymeshApi.createType('ProtocolOp', value);
 }
 
 /**

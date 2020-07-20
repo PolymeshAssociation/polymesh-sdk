@@ -1,7 +1,9 @@
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
+import { ProtocolOp, TxTags } from '~/polkadot';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountKey } from '~/testUtils/mocks/dataSources';
 import * as utilsModule from '~/utils';
@@ -655,5 +657,66 @@ describe('Context class', () => {
       expect(invalidDids).toEqual(inputDids.slice(2, 4));
     });
     /* eslint-enable @typescript-eslint/camelcase */
+  });
+
+  describe('method: getTransactionFees', () => {
+    test('should return the fees associated to the supplied transaction', async () => {
+      const pair = {
+        address: 'someAddress1',
+        meta: {},
+        publicKey: 'publicKey',
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          addFromSeed: pair,
+        },
+      });
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+      dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
+        returnValue: dsMockUtils.createMockPosRatio(1, 2),
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const txTagToProtocolOpStub = sinon.stub(utilsModule, 'txTagToProtocolOp');
+
+      txTagToProtocolOpStub
+        .withArgs(TxTags.asset.CreateAsset, context)
+        .returns(('someProtocolOp' as unknown) as ProtocolOp);
+      txTagToProtocolOpStub.withArgs(TxTags.asset.Freeze, context).throws(); // transaction without fees
+
+      dsMockUtils.createQueryStub('protocolFee', 'baseFees', {
+        returnValue: dsMockUtils.createMockBalance(500000000),
+      });
+
+      let result = await context.getTransactionFees(TxTags.asset.CreateAsset);
+
+      expect(result).toEqual(new BigNumber(250));
+
+      result = await context.getTransactionFees(TxTags.asset.Freeze);
+
+      expect(result).toEqual(new BigNumber(0));
+    });
+
+    test("should throw an error if the current pair isn't defined", async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      expect(() => context.getCurrentPair()).toThrow(
+        'There is no account associated with the current SDK instance'
+      );
+    });
   });
 });

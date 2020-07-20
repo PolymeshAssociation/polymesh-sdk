@@ -7,6 +7,7 @@ import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
+import { TxTag } from 'polymesh-types/types';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
@@ -380,6 +381,24 @@ export class Polymesh {
       return new Identity(args, this.context);
     }
     return this.context.getCurrentIdentity();
+  }
+
+  /**
+   * Return whether the supplied identity/DID exists
+   */
+  public async isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
+    const invalid = await this.context.getInvalidDids([valueToDid(args.identity)]);
+
+    return !invalid.length;
+  }
+
+  /**
+   * Retrieve the protocol fees associated with running a specific transaction
+   *
+   * @param args.tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
+   */
+  public getTransactionFees(args: { tag: TxTag }): Promise<BigNumber> {
+    return this.context.getTransactionFees(args.tag);
   }
 
   /**

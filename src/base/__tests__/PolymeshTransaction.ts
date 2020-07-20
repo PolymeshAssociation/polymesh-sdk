@@ -1,12 +1,13 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { PosRatio, ProtocolOp } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import { dsMockUtils } from '~/testUtils/mocks';
+import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -17,7 +18,7 @@ import { PolymeshTransaction } from '../PolymeshTransaction';
 const { delay } = utilsModule;
 
 describe('Polymesh Transaction class', () => {
-  let context: Context;
+  let context: Mocked<Context>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -357,55 +358,21 @@ describe('Polymesh Transaction class', () => {
   });
 
   describe('method: getFees', () => {
-    let posRatioToBigNumberStub: sinon.SinonStub<[PosRatio], BigNumber>;
     let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
-    let stringToProtocolOpStub: sinon.SinonStub<[string, Context], ProtocolOp>;
-    let protocolOps: string[];
-    let protocolFees: number[];
+    let protocolFees: BigNumber[];
     let gasFees: number[];
-    let numerator: number;
-    let denominator: number;
-    let rawCoefficient: PosRatio;
-    let rawProtocolFees: Balance[];
     let rawGasFees: Balance[];
-    let coefficient: BigNumber;
 
     beforeAll(() => {
-      posRatioToBigNumberStub = sinon.stub(utilsModule, 'posRatioToBigNumber');
       balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
-      stringToProtocolOpStub = sinon.stub(utilsModule, 'stringToProtocolOp');
-      protocolOps = ['AssetRegisterTicker', 'AssetCreateAsset'];
-      protocolFees = [250, 150];
+      protocolFees = [new BigNumber(250), new BigNumber(150)];
       gasFees = [5, 10];
-      numerator = 4;
-      denominator = 2;
-      rawCoefficient = dsMockUtils.createMockPosRatio(numerator, denominator);
-      rawProtocolFees = protocolFees.map(dsMockUtils.createMockBalance);
       rawGasFees = gasFees.map(dsMockUtils.createMockBalance);
-      coefficient = new BigNumber(numerator).dividedBy(new BigNumber(denominator));
     });
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
-        returnValue: rawCoefficient,
-      });
-      dsMockUtils
-        .createQueryStub('protocolFee', 'baseFees')
-        .withArgs('AssetRegisterTicker')
-        .resolves(rawProtocolFees[0]);
-      dsMockUtils
-        .createQueryStub('protocolFee', 'baseFees')
-        .withArgs('AssetCreateAsset')
-        .resolves(rawProtocolFees[1]);
-      posRatioToBigNumberStub.withArgs(rawCoefficient).returns(coefficient);
-      protocolOps.forEach(protocolOp =>
-        stringToProtocolOpStub
-          .withArgs(protocolOp, context)
-          .returns((protocolOp as unknown) as ProtocolOp)
-      );
-      rawProtocolFees.forEach((rawProtocolFee, index) =>
-        balanceToBigNumberStub.withArgs(rawProtocolFee).returns(new BigNumber(protocolFees[index]))
-      );
+      context.getTransactionFees.withArgs(TxTags.asset.RegisterTicker).resolves(protocolFees[0]);
+      context.getTransactionFees.withArgs(TxTags.asset.CreateAsset).resolves(protocolFees[1]);
       rawGasFees.forEach((rawGasFee, index) =>
         balanceToBigNumberStub.withArgs(rawGasFee).returns(new BigNumber(gasFees[index]))
       );
@@ -429,7 +396,7 @@ describe('Polymesh Transaction class', () => {
 
       let result = await transaction.getFees();
 
-      expect(result?.protocol).toEqual(new BigNumber(500));
+      expect(result?.protocol).toEqual(new BigNumber(250));
       expect(result?.gas).toEqual(new BigNumber(5));
 
       transaction = new PolymeshTransaction(
@@ -444,24 +411,7 @@ describe('Polymesh Transaction class', () => {
 
       result = await transaction.getFees();
 
-      expect(result?.protocol).toEqual(new BigNumber(300));
-      expect(result?.gas).toEqual(new BigNumber(10));
-
-      stringToProtocolOpStub.withArgs(protocolOps[1], context).throws(); // extrinsic without a fee
-
-      transaction = new PolymeshTransaction(
-        {
-          ...txSpec,
-          fee: null,
-          tx: tx2,
-          args,
-        },
-        context
-      );
-
-      result = await transaction.getFees();
-
-      expect(result?.protocol).toEqual(new BigNumber(0));
+      expect(result?.protocol).toEqual(new BigNumber(150));
       expect(result?.gas).toEqual(new BigNumber(10));
     });
 
