@@ -159,6 +159,7 @@ interface ContextOptions {
   validCdd?: boolean;
   tokenBalance?: BigNumber;
   invalidDids?: string[];
+  transactionFee?: BigNumber;
 }
 
 interface Pair {
@@ -187,7 +188,7 @@ export interface StubQuery {
   size: SinonStub;
 }
 
-type MockContext = Mocked<Context>;
+export type MockContext = Mocked<Context>;
 
 export enum MockTxStatus {
   Ready = 'Ready',
@@ -339,6 +340,7 @@ const defaultContextOptions: ContextOptions = {
   validCdd: true,
   tokenBalance: new BigNumber(1000),
   invalidDids: [],
+  transactionFee: new BigNumber(200),
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -390,6 +392,7 @@ function configureContext(opts: ContextOptions): void {
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
+    getTransactionFees: sinon.stub().resolves(opts.transactionFee),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);

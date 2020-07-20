@@ -4,7 +4,7 @@ import stringToU8a from '@polkadot/util/string/toU8a';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
 import BigNumber from 'bignumber.js';
-import { DidRecord, IdentityId } from 'polymesh-types/types';
+import { DidRecord, IdentityId, ProtocolOp, TxTag } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
@@ -19,8 +19,10 @@ import {
 import {
   balanceToBigNumber,
   identityIdToString,
+  posRatioToBigNumber,
   stringToAccountKey,
   stringToIdentityId,
+  txTagToProtocolOp,
   valueToDid,
 } from '~/utils';
 
@@ -324,6 +326,33 @@ export class Context {
     });
 
     return invalidDids;
+  }
+
+  /**
+   * Retrieve the protocol fees associated with running a specific transaction
+   *
+   * @param tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
+   */
+  public async getTransactionFees(tag: TxTag): Promise<BigNumber> {
+    const {
+      polymeshApi: {
+        query: { protocolFee },
+      },
+    } = this;
+
+    let protocolOp: ProtocolOp;
+    try {
+      protocolOp = txTagToProtocolOp(tag, this);
+    } catch (err) {
+      return new BigNumber(0);
+    }
+
+    const [baseFee, coefficient] = await Promise.all([
+      protocolFee.baseFees(protocolOp),
+      protocolFee.coefficient(),
+    ]);
+
+    return balanceToBigNumber(baseFee).multipliedBy(posRatioToBigNumber(coefficient));
   }
 
   /**

@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { PosRatio, ProtocolOp } from 'polymesh-types/types';
+import { PosRatio, ProtocolOp, TxTag, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import * as baseModule from '~/base';
@@ -35,8 +35,8 @@ describe('Procedure class', () => {
   describe('method: prepare', () => {
     let posRatioToBigNumberStub: sinon.SinonStub<[PosRatio], BigNumber>;
     let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
-    let stringToProtocolOpStub: sinon.SinonStub<[string, Context], ProtocolOp>;
-    let protocolOps: string[];
+    let txTagToProtocolOpStub: sinon.SinonStub<[TxTag, Context], ProtocolOp>;
+    let txTags: TxTag[];
     let fees: number[];
     let rawCoefficient: PosRatio;
     let rawFees: Balance[];
@@ -47,8 +47,8 @@ describe('Procedure class', () => {
     beforeAll(() => {
       posRatioToBigNumberStub = sinon.stub(utilsModule, 'posRatioToBigNumber');
       balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
-      stringToProtocolOpStub = sinon.stub(utilsModule, 'stringToProtocolOp');
-      protocolOps = ['AssetRegisterTicker', 'IdentityRegisterDid'];
+      txTagToProtocolOpStub = sinon.stub(utilsModule, 'txTagToProtocolOp');
+      txTags = [TxTags.asset.RegisterTicker, TxTags.identity.RegisterDid];
       fees = [250, 0];
       numerator = 7;
       denominator = 3;
@@ -71,10 +71,8 @@ describe('Procedure class', () => {
         .resolves(rawFees[1]);
 
       posRatioToBigNumberStub.withArgs(rawCoefficient).returns(coefficient);
-      protocolOps.forEach(protocolOp =>
-        stringToProtocolOpStub
-          .withArgs(protocolOp, context)
-          .returns((protocolOp as unknown) as ProtocolOp)
+      txTags.forEach(txTag =>
+        txTagToProtocolOpStub.withArgs(txTag, context).returns((txTag as unknown) as ProtocolOp)
       );
 
       rawFees.forEach((rawFee, index) =>

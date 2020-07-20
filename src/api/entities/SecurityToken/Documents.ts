@@ -1,6 +1,7 @@
+import { Link } from 'polymesh-types/types';
+
 import { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { Link } from '~/polkadot/polymesh';
 import { LinkType, TokenDocument } from '~/types';
 import { SignerType } from '~/types/internal';
 import {

@@ -3,6 +3,7 @@ import { Signer } from '@polkadot/api/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
+import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
@@ -523,6 +524,51 @@ describe('Polymesh Class', () => {
 
       expect(result instanceof Identity).toBe(true);
       expect(result).toMatchObject(new Identity(params, context));
+    });
+  });
+
+  describe('method: isIdentityValid', () => {
+    test('should return true if the supplied identity exists', async () => {
+      const did = 'someDid';
+      dsMockUtils.configureMocks({ contextOptions: { invalidDids: [] } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const result = await polymesh.isIdentityValid({ identity: did });
+
+      expect(result).toBe(true);
+    });
+
+    test('should return false if the supplied identity is invalid', async () => {
+      const did = 'someDid';
+      dsMockUtils.configureMocks({ contextOptions: { invalidDids: [did] } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const result = await polymesh.isIdentityValid({ identity: did });
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('method: getTransactionFees', () => {
+    test('should return the fees associated to the supplied transaction', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { transactionFee: new BigNumber(500) } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const fee = await polymesh.getTransactionFees({ tag: TxTags.asset.CreateAsset });
+
+      expect(fee).toEqual(new BigNumber(500));
     });
   });
 

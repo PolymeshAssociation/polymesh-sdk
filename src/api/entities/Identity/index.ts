@@ -1,10 +1,10 @@
 import { BigNumber } from 'bignumber.js';
+import { CddStatus } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
-import { CddStatus } from '~/polkadot';
 import {
   ErrorCode,
   isCddProviderRole,
