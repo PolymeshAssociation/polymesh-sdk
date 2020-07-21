@@ -1,4 +1,6 @@
-import { Identity } from '~/api/entities';
+import { Identity, Proposal } from '~/api/entities';
+import { createProposal, CreateProposalParams } from '~/api/procedures';
+import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { identityIdToString } from '~/utils';
 
@@ -31,5 +33,17 @@ export class Governance {
     const activeMembers = await committeeMembership.activeMembers();
 
     return activeMembers.map(member => new Identity({ did: identityIdToString(member) }, context));
+  }
+
+  /**
+   * Create a proposal
+   *
+   * @param args.discussionUrl - URL to the forum/messageboard/issue where the proposal is being discussed
+   * @param args.bondAmount - amount of POLYX that will be bonded initially in support of the proposal
+   * @param args.tag - tag associated with the transaction that will be executed if the proposal passes
+   * @param args.args - arguments passed to the transaction
+   */
+  public async createProposal(args: CreateProposalParams): Promise<TransactionQueue<Proposal>> {
+    return createProposal.prepare(args, this.context);
   }
 }

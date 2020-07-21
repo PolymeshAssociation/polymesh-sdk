@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
+import { ProtocolOp, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
-import { ProtocolOp, TxTags } from '~/polkadot';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountKey } from '~/testUtils/mocks/dataSources';
 import * as utilsModule from '~/utils';

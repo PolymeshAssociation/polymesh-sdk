@@ -372,5 +372,6 @@ export enum LinkType {
   NoData = 'NoData',
 }
 
+export { TxTags } from 'polymesh-types/types';
 export * from '~/api/entities/types';
 export * from '~/base/types';

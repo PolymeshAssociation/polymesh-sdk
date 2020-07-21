@@ -3,6 +3,7 @@ import { Signer } from '@polkadot/api/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
+import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
@@ -10,7 +11,6 @@ import { modifyClaims, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { didsWithClaims } from '~/middleware/queries';
 import { IdentityWithClaims } from '~/middleware/types';
-import { TxTags } from '~/polkadot';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
