@@ -992,6 +992,20 @@ export function linkTypeToMeshLinkType(linkType: LinkType, context: Context): Me
 }
 
 /**
+ * @hidden
+ */
+export function stringToText(url: string, context: Context): Text {
+  return context.polymeshApi.createType('Text', url);
+}
+
+/**
+ * @hidden
+ */
+export function textToString(value: Text): string {
+  return value.toString();
+}
+
+/**
  * Unwrap a Post Transaction Value
  */
 export function unwrapValue<T extends unknown>(value: MaybePostTransactionValue<T>): T {
@@ -1045,13 +1059,6 @@ export function padString(value: string, length: number): string {
  */
 export function moduleAddressToString(moduleAddress: string): string {
   return encodeAddress(stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)), SS58_FORMAT);
-}
-
-/**
- * @hidden
- */
-export function textToString(value: Text): string {
-  return value.toString();
 }
 
 /**

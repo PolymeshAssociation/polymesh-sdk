@@ -1,10 +1,9 @@
 import { u64 } from '@polkadot/types';
 import { differenceWith } from 'lodash';
-import { Document, TxTags } from 'polymesh-types/types';
+import { Document, Link, TxTags } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { Link } from '~/polkadot/polymesh';
 import { ErrorCode, LinkType, Role, RoleType, TokenDocument } from '~/types';
 import { SignerType } from '~/types/internal';
 import {

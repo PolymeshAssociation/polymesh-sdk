@@ -4,7 +4,13 @@ import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
-import { AuthorizationRequest, Identity, SecurityToken, TickerReservation } from '~/api/entities';
+import {
+  AuthorizationRequest,
+  Identity,
+  Proposal,
+  SecurityToken,
+  TickerReservation,
+} from '~/api/entities';
 import { Mocked } from '~/testUtils/types';
 import {
   Authorization,
@@ -20,12 +26,14 @@ const mockInstanceContainer = {
   tickerReservation: {} as MockTickerReservation,
   securityToken: {} as MockSecurityToken,
   authorizationRequest: {} as MockAuthorizationRequest,
+  proposal: {} as MockProposal,
 };
 
 type MockIdentity = Mocked<Identity>;
 type MockTickerReservation = Mocked<TickerReservation>;
 type MockSecurityToken = Mocked<SecurityToken>;
 type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
+type MockProposal = Mocked<Proposal>;
 
 interface IdentityOptions {
   did?: string;
@@ -56,10 +64,15 @@ interface AuthorizationRequestOptions {
   data?: Authorization;
 }
 
+interface ProposalOptions {
+  pipId?: BigNumber;
+}
+
 let identityConstructorStub: SinonStub;
 let tickerReservationConstructorStub: SinonStub;
 let securityTokenConstructorStub: SinonStub;
 let authorizationRequestConstructorStub: SinonStub;
+let proposalConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let identityGetPolyXBalanceStub: SinonStub;
@@ -108,6 +121,15 @@ const MockAuthorizationRequestClass = class {
   }
 };
 
+const MockProposalClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return proposalConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -126,6 +148,11 @@ export const mockSecurityTokenModule = (path: string) => (): object => ({
 export const mockAuthorizationRequestModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   AuthorizationRequest: MockAuthorizationRequestClass,
+});
+
+export const mockProposalModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Proposal: MockProposalClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -164,6 +191,37 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
   expiry: null,
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
+const defaultProposalOptions: ProposalOptions = {
+  pipId: new BigNumber(1),
+};
+let proposalOptions = defaultProposalOptions;
+
+/**
+ * @hidden
+ * Configure the Proposal instance
+ */
+function configureProposal(opts: ProposalOptions): void {
+  const proposal = ({
+    pipId: opts.pipId,
+  } as unknown) as MockProposal;
+
+  Object.assign(mockInstanceContainer.proposal, proposal);
+  proposalConstructorStub.callsFake(args => {
+    return merge({}, proposal, args);
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Proposal instance
+ */
+function initProposal(opts?: ProposalOptions): void {
+  proposalConstructorStub = sinon.stub();
+
+  proposalOptions = { ...defaultProposalOptions, ...opts };
+
+  configureProposal(proposalOptions);
+}
 
 /**
  * @hidden
@@ -311,6 +369,7 @@ export function configureMocks(opts?: {
   tickerReservationOptions?: TickerReservationOptions;
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
+  proposalOptions?: ProposalOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -337,6 +396,13 @@ export function configureMocks(opts?: {
   };
 
   configureAuthorizationRequest(tempAuthorizationRequestOptions);
+
+  const tempProposalOptions = {
+    ...defaultProposalOptions,
+    ...opts?.proposalOptions,
+  };
+
+  configureProposal(tempProposalOptions);
 }
 
 /**
@@ -349,6 +415,7 @@ export function initMocks(opts?: {
   tickerReservationOptions?: TickerReservationOptions;
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
+  proposalOptions?: ProposalOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -361,6 +428,9 @@ export function initMocks(opts?: {
 
   // Authorization Request
   initAuthorizationRequest(opts?.authorizationRequestOptions);
+
+  // Proposal
+  initProposal(opts?.proposalOptions);
 }
 
 /**
@@ -372,6 +442,7 @@ export function cleanup(): void {
   mockInstanceContainer.tickerReservation = {} as MockTickerReservation;
   mockInstanceContainer.securityToken = {} as MockSecurityToken;
   mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
+  mockInstanceContainer.proposal = {} as MockProposal;
 }
 
 /**
@@ -385,6 +456,7 @@ export function reset(): void {
     tickerReservationOptions,
     securityTokenOptions,
     authorizationRequestOptions,
+    proposalOptions,
   });
 }
 
@@ -548,4 +620,16 @@ export function getAuthorizationRequestInstance(
   }
 
   return mockInstanceContainer.authorizationRequest;
+}
+
+/**
+ * @hidden
+ * Retrieve a Proposal instance
+ */
+export function getProposalInstance(opts?: ProposalOptions): MockProposal {
+  if (opts) {
+    configureProposal(opts);
+  }
+
+  return mockInstanceContainer.proposal;
 }

@@ -106,6 +106,7 @@ import {
   stringToFundingRoundName,
   stringToIdentityId,
   stringToJurisdictionName,
+  stringToText,
   stringToTicker,
   textToString,
   tickerToDid,
@@ -495,8 +496,35 @@ describe('stringToTicker and tickerToString', () => {
   });
 });
 
-describe('textToString', () => {
-  test('should convert polkadot Text object to string', () => {
+describe('stringToText and textToString', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToText should convert a string to a polkadot Text object', () => {
+    const value = 'someText';
+    const fakeResult = ('convertedText' as unknown) as Text;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Text', value)
+      .returns(fakeResult);
+
+    const result = stringToText(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('textToString should convert polkadot Text object to string', () => {
     const text = 'someText';
     const mockText = dsMockUtils.createMockText(text);
 

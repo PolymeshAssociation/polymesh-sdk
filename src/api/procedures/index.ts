@@ -1,17 +1,18 @@
-export { reserveTicker, ReserveTickerParams } from './reserveTicker';
-export { modifyToken, ModifyTokenParams } from './modifyToken';
-export { toggleFreezeTransfers, ToggleFreezeTransfersParams } from './toggleFreezeTransfers';
-export { createSecurityToken, CreateSecurityTokenParams } from './createSecurityToken';
-export { setTokenDocuments, SetTokenDocumentsParams } from './setTokenDocuments';
-export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 export { consumeAuthorizationRequests, ConsumeParams } from './consumeAuthorizationRequests';
+export { createProposal, CreateProposalParams } from './createProposal';
+export { createSecurityToken, CreateSecurityTokenParams } from './createSecurityToken';
 export { issueTokens, IssueTokensParams } from './issueTokens';
+export { modifyClaims, ModifyClaimsParams } from './modifyClaims';
+export { modifyToken, ModifyTokenParams } from './modifyToken';
+export { reserveTicker, ReserveTickerParams } from './reserveTicker';
+export { setTokenDocuments, SetTokenDocumentsParams } from './setTokenDocuments';
+export { setTokenRules, SetTokenRulesParams } from './setTokenRules';
 export {
   setTokenTrustedClaimIssuers,
   SetTokenTrustedClaimIssuersParams,
 } from './setTokenTrustedClaimIssuers';
-export { setTokenRules, SetTokenRulesParams } from './setTokenRules';
-export { transferPolyX, TransferPolyXParams } from './transferPolyX';
-export { modifyClaims, ModifyClaimsParams } from './modifyClaims';
+export { toggleFreezeTransfers, ToggleFreezeTransfersParams } from './toggleFreezeTransfers';
 export { togglePauseRules, TogglePauseRulesParams } from './togglePauseRules';
+export { transferPolyX, TransferPolyXParams } from './transferPolyX';
 export { transferToken, TransferTokenParams } from './transferToken';
+export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
