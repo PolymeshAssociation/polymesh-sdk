@@ -16,7 +16,7 @@ export function didsWithClaims(
       $dids: [String!]
       $scope: String
       $trustedClaimIssuers: [String!]
-      $claimTypes: [String!]
+      $claimTypes: [ClaimTypeEnum!]
       $count: Int
       $skip: Int
     ) {
@@ -59,15 +59,15 @@ export function eventByIndexedArgs(
 ): GraphqlQuery<QueryEventsByIndexedArgsArgs> {
   const query = gql`
     query EventByIndexedArgsQuery(
-      $moduleId: String!
-      $eventId: String!
+      $moduleId: ModuleIdEnum!
+      $eventId: EventIdEnum!
       $eventArg0: String
       $eventArg1: String
       $eventArg2: String
     ) {
       eventByIndexedArgs(
-        moduleId: $moduleId
-        eventId: $eventId
+        moduleId: $ModuleIdEnum
+        eventId: $EventIdEnum
         eventArg0: $eventArg0
         eventArg1: $eventArg1
         eventArg2: $eventArg2
