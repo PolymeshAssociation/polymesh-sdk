@@ -1,3 +1,4 @@
+import { u32 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
@@ -15,12 +16,14 @@ describe('Governance class', () => {
   let context: Context;
   let governance: Governance;
   let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
+  let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
   let createProposalStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
     createProposalStub = sinon.stub(createProposal, 'prepare');
+    u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
   });
 
   beforeEach(() => {
@@ -85,6 +88,32 @@ describe('Governance class', () => {
       const result = await governance.minimumProposalDeposit();
 
       expect(result).toBe(amount);
+    });
+  });
+
+  describe('method: proposalTimeFrames', () => {
+    test('should return the number of blocks the proposal cool off period and proposal ballot are valid', async () => {
+      const coolOfPeriod = new BigNumber(100);
+      const proposalDuration = new BigNumber(600);
+
+      const mockCoolOfPeriod = dsMockUtils.createMockU32(coolOfPeriod.toNumber());
+      const mockProposalDuration = dsMockUtils.createMockU32(proposalDuration.toNumber());
+
+      dsMockUtils.createQueryStub('pips', 'proposalCoolOffPeriod', {
+        returnValue: mockCoolOfPeriod,
+      });
+
+      dsMockUtils.createQueryStub('pips', 'proposalDuration', {
+        returnValue: mockProposalDuration,
+      });
+
+      u32ToBigNumberStub.withArgs(mockCoolOfPeriod).returns(coolOfPeriod);
+      u32ToBigNumberStub.withArgs(mockProposalDuration).returns(proposalDuration);
+
+      const result = await governance.proposalTimeFrames();
+
+      expect(result.coolOff).toBe(coolOfPeriod.toNumber());
+      expect(result.duration).toBe(proposalDuration.toNumber());
     });
   });
 });

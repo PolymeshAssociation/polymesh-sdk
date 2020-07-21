@@ -4,7 +4,8 @@ import { Identity, Proposal } from '~/api/entities';
 import { createProposal, CreateProposalParams } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { balanceToBigNumber, identityIdToString } from '~/utils';
+import { ProposalTimeFrames } from '~/types';
+import { balanceToBigNumber, identityIdToString, u32ToBigNumber } from '~/utils';
 
 /**
  * Handles all Governance related functionality
@@ -64,5 +65,28 @@ export class Governance {
     const minimumProposalDeposit = await pips.minimumProposalDeposit();
 
     return balanceToBigNumber(minimumProposalDeposit);
+  }
+
+  /**
+   * Get how long in blocks the proposal cool off period and proposal ballot are valid
+   */
+  public async proposalTimeFrames(): Promise<ProposalTimeFrames> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+        },
+      },
+    } = this;
+
+    const [rawCoolOff, rawDuration] = await Promise.all([
+      pips.proposalCoolOffPeriod(),
+      pips.proposalDuration(),
+    ]);
+
+    return {
+      duration: u32ToBigNumber(rawDuration).toNumber(),
+      coolOff: u32ToBigNumber(rawCoolOff).toNumber(),
+    };
   }
 }
