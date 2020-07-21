@@ -4,6 +4,7 @@ import { Identity, Proposal } from '~/api/entities';
 import { createProposal, CreateProposalParams } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
+import { SubCallback, UnsubCallback } from '~/types';
 import { balanceToBigNumber, identityIdToString } from '~/utils';
 
 /**
@@ -51,8 +52,16 @@ export class Governance {
 
   /**
    * Get the minimum amount of POLYX to be used as a deposit for create a public referendum proposal
+   *
+   * @note can be subscribed to
    */
-  public async minimumProposalDeposit(): Promise<BigNumber> {
+  public async minimumProposalDeposit(): Promise<BigNumber>;
+  public async minimumProposalDeposit(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async minimumProposalDeposit(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -60,6 +69,12 @@ export class Governance {
         },
       },
     } = this;
+
+    if (callback) {
+      return pips.minimumProposalDeposit(res => {
+        callback(balanceToBigNumber(res));
+      });
+    }
 
     const minimumProposalDeposit = await pips.minimumProposalDeposit();
 
