@@ -72,19 +72,41 @@ describe('Governance class', () => {
   });
 
   describe('method: minimumProposalDeposit', () => {
+    let amount: BigNumber;
+    let fakeBalance: Balance;
+    let minimumProposalDepositStub: sinon.SinonStub;
+
+    beforeAll(() => {
+      amount = new BigNumber(5000);
+      fakeBalance = dsMockUtils.createMockBalance(amount.toNumber());
+    });
+
+    beforeEach(() => {
+      minimumProposalDepositStub = dsMockUtils.createQueryStub('pips', 'minimumProposalDeposit');
+      balanceToBigNumberStub.withArgs(fakeBalance).returns(amount);
+    });
+
     test('should return the minimum amount of POLYX to be used for create a referendum proposal', async () => {
-      const amount = new BigNumber(5000);
-      const mockBalance = dsMockUtils.createMockBalance(amount.toNumber());
-
-      dsMockUtils.createQueryStub('pips', 'minimumProposalDeposit', {
-        returnValue: mockBalance,
-      });
-
-      balanceToBigNumberStub.withArgs(mockBalance).returns(amount);
+      minimumProposalDepositStub.resolves(fakeBalance);
 
       const result = await governance.minimumProposalDeposit();
 
       expect(result).toBe(amount);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const callback = sinon.stub();
+
+      minimumProposalDepositStub.callsFake(async cbFunc => {
+        cbFunc(fakeBalance);
+        return unsubCallback;
+      });
+
+      const result = await governance.minimumProposalDeposit(callback);
+
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, amount);
     });
   });
 });
