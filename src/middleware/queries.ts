@@ -75,6 +75,9 @@ export function eventByIndexedArgs(
         block_id
         event_idx
         extrinsic_idx
+        block {
+          datetime
+        }
       }
     }
   `;

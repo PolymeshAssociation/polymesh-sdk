@@ -2,7 +2,7 @@ import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
-import { Identity } from '~/api/entities/Identity';
+import { TrustedClaimIssuer } from '~/api/entities/TrustedClaimIssuer';
 import { setTokenTrustedClaimIssuers } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { Context } from '~/context';
@@ -68,7 +68,7 @@ describe('TrustedClaimIssuers class', () => {
     let context: Context;
     let token: SecurityToken;
     let expectedDids: string[];
-    let expectedIdentities: Identity[];
+    let expectedTrustedClaimIssuers: TrustedClaimIssuer[];
     let claimIssuers: IdentityId[];
 
     let trustedClaimIssuerStub: sinon.SinonStub;
@@ -84,11 +84,11 @@ describe('TrustedClaimIssuers class', () => {
 
       expectedDids = ['someDid', 'otherDid', 'yetAnotherDid'];
 
-      expectedIdentities = [];
+      expectedTrustedClaimIssuers = [];
       claimIssuers = [];
 
       expectedDids.forEach(did => {
-        expectedIdentities.push(new Identity({ did }, context));
+        expectedTrustedClaimIssuers.push(new TrustedClaimIssuer({ did, ticker }, context));
         claimIssuers.push(dsMockUtils.createMockIdentityId(did));
       });
 
@@ -110,7 +110,7 @@ describe('TrustedClaimIssuers class', () => {
 
       const result = await trustedClaimIssuers.get();
 
-      expect(result).toEqual(expectedIdentities);
+      expect(result).toEqual(expectedTrustedClaimIssuers);
     });
 
     test('should allow subscription', async () => {
@@ -126,7 +126,7 @@ describe('TrustedClaimIssuers class', () => {
       const result = await trustedClaimIssuers.get(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, expectedIdentities);
+      sinon.assert.calledWithExactly(callback, expectedTrustedClaimIssuers);
     });
   });
 });

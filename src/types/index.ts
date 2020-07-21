@@ -330,6 +330,7 @@ export interface UiKeyring {
 
 export interface EventIdentifier {
   blockNumber: number;
+  blockDate: Date;
   eventIndex: number;
 }
 
