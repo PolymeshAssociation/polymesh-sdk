@@ -1,16 +1,8 @@
-import { Link } from 'polymesh-types/types';
-
 import { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { LinkType, TokenDocument } from '~/types';
+import { TokenDocument } from '~/types';
 import { SignerType } from '~/types/internal';
-import {
-  booleanToBool,
-  documentToTokenDocument,
-  linkTypeToMeshLinkType,
-  signerToSignatory,
-  tickerToDid,
-} from '~/utils';
+import { documentToTokenDocument, signerToSignatory, tickerToDid } from '~/utils';
 
 import { SecurityToken } from './';
 
@@ -39,21 +31,18 @@ export class Documents extends Namespace<SecurityToken> {
   public async get(): Promise<TokenDocument[]> {
     const {
       context: {
-        polymeshApi: { rpc },
+        polymeshApi: { query },
       },
       context,
       parent: { ticker },
     } = this;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const links: Link[] = await (rpc as any).identity.getFilteredLinks(
-      signerToSignatory({ type: SignerType.Identity, value: tickerToDid(ticker) }, context),
-      booleanToBool(false, context),
-      linkTypeToMeshLinkType(LinkType.DocumentOwnership, context)
+    const links = await query.identity.links.entries(
+      signerToSignatory({ type: SignerType.Identity, value: tickerToDid(ticker) }, context)
     );
 
-    return links.map(({ link_data: linkData }) =>
-      documentToTokenDocument(linkData.asDocumentOwned)
-    );
+    return links
+      .filter(([, { link_data: linkData }]) => linkData.isDocumentOwned)
+      .map(([, { link_data: linkData }]) => documentToTokenDocument(linkData.asDocumentOwned));
   }
 }
