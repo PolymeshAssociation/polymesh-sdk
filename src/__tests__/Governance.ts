@@ -1,3 +1,4 @@
+import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -8,33 +9,34 @@ import { Context } from '~/context';
 import { Governance } from '~/Governance';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { TxTags } from '~/types';
+import * as utilsModule from '~/utils';
 
 describe('Governance class', () => {
   let context: Context;
   let governance: Governance;
+  let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
+  let createProposalStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
-    context = dsMockUtils.getContextInstance();
+    balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
+    createProposalStub = sinon.stub(createProposal, 'prepare');
   });
 
   beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
     governance = new Governance(context);
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
   });
 
-  describe('method: getGovernanceCommitteeMembers', () => {
-    afterAll(() => {
-      sinon.restore();
-    });
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
 
+  describe('method: getGovernanceCommitteeMembers', () => {
     test('should retrieve a list of the identities of all active members', async () => {
       const did = 'someDid';
       const expectedMembers = [new Identity({ did }, context)];
@@ -61,14 +63,28 @@ describe('Governance class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Proposal>;
 
-      sinon
-        .stub(createProposal, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      createProposalStub.withArgs(args, context).resolves(expectedQueue);
 
       const queue = await governance.createProposal(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: minimumProposalDeposit', () => {
+    test('should return the minimum amount of POLYX to be used for create a referendum proposal', async () => {
+      const amount = new BigNumber(5000);
+      const mockBalance = dsMockUtils.createMockBalance(amount.toNumber());
+
+      dsMockUtils.createQueryStub('pips', 'minimumProposalDeposit', {
+        returnValue: mockBalance,
+      });
+
+      balanceToBigNumberStub.withArgs(mockBalance).returns(amount);
+
+      const result = await governance.minimumProposalDeposit();
+
+      expect(result).toBe(amount);
     });
   });
 });

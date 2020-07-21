@@ -1,8 +1,10 @@
+import BigNumber from 'bignumber.js';
+
 import { Identity, Proposal } from '~/api/entities';
 import { createProposal, CreateProposalParams } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { identityIdToString } from '~/utils';
+import { balanceToBigNumber, identityIdToString } from '~/utils';
 
 /**
  * Handles all Governance related functionality
@@ -45,5 +47,22 @@ export class Governance {
    */
   public async createProposal(args: CreateProposalParams): Promise<TransactionQueue<Proposal>> {
     return createProposal.prepare(args, this.context);
+  }
+
+  /**
+   * Get the minimum amount of POLYX to be used as a deposit for create a public referendum proposal
+   */
+  public async minimumProposalDeposit(): Promise<BigNumber> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+        },
+      },
+    } = this;
+
+    const minimumProposalDeposit = await pips.minimumProposalDeposit();
+
+    return balanceToBigNumber(minimumProposalDeposit);
   }
 }
