@@ -123,8 +123,8 @@ export class Governance {
           [pips.proposalCoolOffPeriod as QueryableStorageEntry<'promise'>],
           [pips.proposalDuration as QueryableStorageEntry<'promise'>],
         ],
-        ([rawCoolOff, rawDuration]) => {
-          callback(assembleResult(rawCoolOff, rawDuration));
+        ([rawCoolOffPeriod, rawProposalDuration]) => {
+          callback(assembleResult(rawCoolOffPeriod, rawProposalDuration));
         }
       );
     }
