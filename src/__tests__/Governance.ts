@@ -1,4 +1,4 @@
-import { u32 } from '@polkadot/types';
+import { u8, u32 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
@@ -16,8 +16,8 @@ describe('Governance class', () => {
   let context: Context;
   let governance: Governance;
   let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
-  let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
   let createProposalStub: sinon.SinonStub;
+  let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -114,28 +114,49 @@ describe('Governance class', () => {
   });
 
   describe('method: proposalTimeFrames', () => {
-    test('should return the number of blocks the proposal cool off period and proposal ballot are valid', async () => {
-      const coolOfPeriod = new BigNumber(100);
-      const proposalDuration = new BigNumber(600);
+    let queryMultiStub: sinon.SinonStub;
+    let coolOfPeriod: BigNumber;
+    let proposalDuration: BigNumber;
+    let mockCoolOfPeriod: u8;
+    let mockProposalDuration: u8;
 
-      const mockCoolOfPeriod = dsMockUtils.createMockU32(coolOfPeriod.toNumber());
-      const mockProposalDuration = dsMockUtils.createMockU32(proposalDuration.toNumber());
-
-      dsMockUtils.createQueryStub('pips', 'proposalCoolOffPeriod', {
-        returnValue: mockCoolOfPeriod,
-      });
-
-      dsMockUtils.createQueryStub('pips', 'proposalDuration', {
-        returnValue: mockProposalDuration,
-      });
-
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('pips', 'proposalCoolOffPeriod');
+      dsMockUtils.createQueryStub('pips', 'proposalDuration');
+      queryMultiStub = dsMockUtils.getQueryMultiStub();
+      coolOfPeriod = new BigNumber(100);
+      proposalDuration = new BigNumber(600);
+      mockCoolOfPeriod = dsMockUtils.createMockU32(coolOfPeriod.toNumber());
+      mockProposalDuration = dsMockUtils.createMockU32(proposalDuration.toNumber());
       u32ToBigNumberStub.withArgs(mockCoolOfPeriod).returns(coolOfPeriod);
       u32ToBigNumberStub.withArgs(mockProposalDuration).returns(proposalDuration);
+    });
+
+    test('should return the number of blocks the proposal cool off period and proposal ballot are valid', async () => {
+      queryMultiStub.resolves([mockCoolOfPeriod, mockProposalDuration]);
 
       const result = await governance.proposalTimeFrames();
 
       expect(result.coolOff).toBe(coolOfPeriod.toNumber());
       expect(result.duration).toBe(proposalDuration.toNumber());
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+
+      queryMultiStub.callsFake(async (_, cbFunc) => {
+        cbFunc([mockCoolOfPeriod, mockProposalDuration]);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await governance.proposalTimeFrames(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWith(callback, {
+        coolOff: coolOfPeriod.toNumber(),
+        duration: proposalDuration.toNumber(),
+      });
     });
   });
 });

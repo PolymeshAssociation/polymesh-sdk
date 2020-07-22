@@ -1,3 +1,5 @@
+import { QueryableStorageEntry } from '@polkadot/api/types';
+import { BlockNumber } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 
 import { Identity, Proposal } from '~/api/entities';
@@ -83,24 +85,56 @@ export class Governance {
 
   /**
    * Get how long in blocks the proposal cool off period and proposal ballot are valid
+   *
+   * @note can be subscribed to
    */
-  public async proposalTimeFrames(): Promise<ProposalTimeFrames> {
+  public async proposalTimeFrames(): Promise<ProposalTimeFrames>;
+  public async proposalTimeFrames(
+    callback: SubCallback<ProposalTimeFrames>
+  ): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async proposalTimeFrames(
+    callback?: SubCallback<ProposalTimeFrames>
+  ): Promise<ProposalTimeFrames | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
           query: { pips },
+          queryMulti,
         },
       },
     } = this;
 
-    const [rawCoolOff, rawDuration] = await Promise.all([
-      pips.proposalCoolOffPeriod(),
-      pips.proposalDuration(),
+    const assembleResult = (
+      coolOffPeriod: BlockNumber,
+      proposalDuration: BlockNumber
+    ): ProposalTimeFrames => {
+      return {
+        coolOff: u32ToBigNumber(coolOffPeriod).toNumber(),
+        duration: u32ToBigNumber(proposalDuration).toNumber(),
+      };
+    };
+
+    if (callback) {
+      // NOTE @shuffledex: the type assertions are necessary because queryMulti doesn't play nice with strict types
+      return queryMulti<[BlockNumber, BlockNumber]>(
+        [
+          [pips.proposalCoolOffPeriod as QueryableStorageEntry<'promise'>],
+          [pips.proposalDuration as QueryableStorageEntry<'promise'>],
+        ],
+        ([rawCoolOff, rawDuration]) => {
+          callback(assembleResult(rawCoolOff, rawDuration));
+        }
+      );
+    }
+
+    // NOTE @shuffledex: the type assertions are necessary because queryMulti doesn't play nice with strict types
+    const [rawCoolOff, rawDuration] = await queryMulti<[BlockNumber, BlockNumber]>([
+      [pips.proposalCoolOffPeriod as QueryableStorageEntry<'promise'>],
+      [pips.proposalDuration as QueryableStorageEntry<'promise'>],
     ]);
 
-    return {
-      duration: u32ToBigNumber(rawDuration).toNumber(),
-      coolOff: u32ToBigNumber(rawCoolOff).toNumber(),
-    };
+    return assembleResult(rawCoolOff, rawDuration);
   }
 }
