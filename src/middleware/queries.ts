@@ -66,8 +66,8 @@ export function eventByIndexedArgs(
       $eventArg2: String
     ) {
       eventByIndexedArgs(
-        moduleId: $ModuleIdEnum
-        eventId: $EventIdEnum
+        moduleId: $moduleId
+        eventId: $eventId
         eventArg0: $eventArg0
         eventArg1: $eventArg1
         eventArg2: $eventArg2
