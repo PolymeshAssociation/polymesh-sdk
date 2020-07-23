@@ -21,7 +21,7 @@ import {
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { didsWithClaims } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
@@ -619,7 +619,7 @@ export class Polymesh {
           trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
             valueToDid(trustedClaimIssuer)
           ),
-          claimTypes: claimTypes,
+          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
           count: size,
           skip: start,
         })
