@@ -1,5 +1,3 @@
-import BigNumber from 'bignumber.js';
-
 import { Entity } from '~/base';
 import { Context } from '~/context';
 import { dsMockUtils } from '~/testUtils/mocks';

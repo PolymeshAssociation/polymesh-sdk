@@ -61,7 +61,7 @@ describe('Governance class', () => {
       const fakeResult = [new Proposal({ pipId }, context)];
       const proposalsQueryResponse: MiddlewareProposal[] = [
         {
-          pipId: pipId,
+          pipId,
           proposer: proposerDid,
           createdAt,
           url: 'http://someUrl',
