@@ -1,5 +1,4 @@
 import { ApolloQueryResult } from 'apollo-client';
-import { BigNumber } from 'bignumber.js';
 
 import { Identity, Proposal } from '~/api/entities';
 import { createProposal, CreateProposalParams } from '~/api/procedures';
@@ -45,8 +44,8 @@ export class Governance {
    * Retrieve a list of proposals. Can be filtered using parameters
    *
    * @param opts.proposers - identities (or identity IDs) for which to fetch proposals (proposers). Defaults to all proposers
-   * @param opts.states - state of the proposal. Defaults to all states
-   * @param opts.orderBy - the order in witch the proposals are returned. Defaults to created at in ascendent order
+   * @param opts.states - state of the proposal
+   * @param opts.orderBy - the order in witch the proposals are returned
    * @param opts.size - page size
    * @param opts.start - page offset
    */
@@ -85,9 +84,7 @@ export class Governance {
       });
     }
 
-    return result.data.proposals.map(
-      ({ pipId }) => new Proposal({ pipId: new BigNumber(pipId) }, context)
-    );
+    return result.data.proposals.map(({ pipId }) => new Proposal({ pipId }, context));
   }
 
   /**

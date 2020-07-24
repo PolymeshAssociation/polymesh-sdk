@@ -4,6 +4,7 @@ import sinon from 'sinon';
 import { Identity, Proposal } from '~/api/entities';
 import { createProposal } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
+import { Context } from '~/context';
 import { Governance } from '~/Governance';
 import { proposals } from '~/middleware/queries';
 import { Proposal as MiddlewareProposal, ProposalState } from '~/middleware/types';
@@ -45,14 +46,19 @@ describe('Governance class', () => {
   });
 
   describe('method: getProposals', () => {
+    let context: Context;
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+    });
+
     test('should return a list of proposal entities', async () => {
       const pipId = 10;
       const proposerDid = 'someProposerDid';
       const createdAt = 50800;
       const coolOffPeriod = 100;
       const proposalPeriodTimeFrame = 600;
-      const context = dsMockUtils.getContextInstance();
-      const fakeResult = [new Proposal({ pipId: new BigNumber(pipId) }, context)];
+      const fakeResult = [new Proposal({ pipId }, context)];
       const proposalsQueryResponse: MiddlewareProposal[] = [
         {
           pipId: pipId,
@@ -93,7 +99,6 @@ describe('Governance class', () => {
     });
 
     test('should throw if the middleware query fails', async () => {
-      const context = dsMockUtils.getContextInstance();
       const governance = new Governance(context);
 
       dsMockUtils.throwOnMiddlewareQuery();

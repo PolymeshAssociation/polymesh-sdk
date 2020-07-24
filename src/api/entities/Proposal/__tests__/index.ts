@@ -31,7 +31,7 @@ describe('Proposal class', () => {
 
   describe('constructor', () => {
     test('should assign pipId to instance', () => {
-      const pipId = new BigNumber(10);
+      const pipId = 10;
       const proposal = new Proposal({ pipId }, context);
 
       expect(proposal.pipId).toBe(pipId);
@@ -40,9 +40,9 @@ describe('Proposal class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(Proposal.isUniqueIdentifiers({ pipId: new BigNumber(1) })).toBe(true);
+      expect(Proposal.isUniqueIdentifiers({ pipId: 10 })).toBe(true);
       expect(Proposal.isUniqueIdentifiers({})).toBe(false);
-      expect(Proposal.isUniqueIdentifiers({ pipId: 1 })).toBe(false);
+      expect(Proposal.isUniqueIdentifiers({ pipId: '10' })).toBe(false);
     });
   });
 });
