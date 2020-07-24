@@ -33,6 +33,12 @@ export interface Metadata {
   totalVotes: number;
 }
 
+export interface ProposalVote {
+  account: Identity;
+  vote: boolean;
+  weight: BigNumber;
+}
+
 export enum ProposalState {
   Pending = 'Pending',
   Cancelled = 'Cancelled',

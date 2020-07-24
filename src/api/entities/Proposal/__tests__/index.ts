@@ -1,20 +1,16 @@
 import BigNumber from 'bignumber.js';
 
+import { Identity } from '~/api/entities/Identity';
 import { Entity } from '~/base';
 import { Context } from '~/context';
+import { proposalVotes } from '~/middleware/queries';
 import { dsMockUtils } from '~/testUtils/mocks';
 
 import { Proposal } from '../';
 
 describe('Proposal class', () => {
-  let context: Context;
-
   beforeAll(() => {
     dsMockUtils.initMocks();
-  });
-
-  beforeEach(() => {
-    context = dsMockUtils.getContextInstance();
   });
 
   afterEach(() => {
@@ -32,6 +28,7 @@ describe('Proposal class', () => {
   describe('constructor', () => {
     test('should assign pipId to instance', () => {
       const pipId = new BigNumber(10);
+      const context = dsMockUtils.getContextInstance();
       const proposal = new Proposal({ pipId }, context);
 
       expect(proposal.pipId).toBe(pipId);
@@ -43,6 +40,61 @@ describe('Proposal class', () => {
       expect(Proposal.isUniqueIdentifiers({ pipId: new BigNumber(1) })).toBe(true);
       expect(Proposal.isUniqueIdentifiers({})).toBe(false);
       expect(Proposal.isUniqueIdentifiers({ pipId: 1 })).toBe(false);
+    });
+  });
+
+  describe('method: getVotes', () => {
+    let context: Context;
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+    });
+
+    test('should return the list of votes', async () => {
+      const pipId = 1;
+      const account = 'someDid';
+      const vote = false;
+      const weight = new BigNumber(10000000000);
+      const proposalVotesQueryResponse = [
+        {
+          account,
+          vote,
+          weight: weight.toNumber(),
+        },
+      ];
+      const fakeResult = [
+        {
+          account: new Identity({ did: account }, context),
+          vote,
+          weight,
+        },
+      ];
+
+      dsMockUtils.createApolloQueryStub(
+        proposalVotes({
+          pipId,
+          vote: undefined,
+          orderBy: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          proposalVotes: proposalVotesQueryResponse,
+        }
+      );
+
+      const proposal = new Proposal({ pipId: new BigNumber(pipId) }, context);
+      const result = await proposal.getVotes();
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should throw if the middleware query fails', async () => {
+      const proposal = new Proposal({ pipId: new BigNumber(1) }, context);
+
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      return expect(proposal.getVotes()).rejects.toThrow('Error in middleware query: Error');
     });
   });
 });
