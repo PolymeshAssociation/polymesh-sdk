@@ -14,7 +14,7 @@ import { ProposalVote } from './types';
  * Properties that uniquely identify a Proposal
  */
 export interface UniqueIdentifiers {
-  pipId: BigNumber;
+  pipId: number;
 }
 
 /**
@@ -28,13 +28,13 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { pipId } = identifier as UniqueIdentifiers;
 
-    return pipId instanceof BigNumber;
+    return typeof pipId === 'number';
   }
 
   /**
    * internal identifier
    */
-  public pipId: BigNumber;
+  public pipId: number;
 
   /**
    * @hidden
@@ -75,7 +75,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     try {
       result = await middlewareApi.query<Ensured<Query, 'proposalVotes'>>(
         proposalVotes({
-          pipId: pipId.toNumber(),
+          pipId,
           vote,
           orderBy,
           count: size,

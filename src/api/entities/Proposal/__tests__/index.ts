@@ -27,7 +27,7 @@ describe('Proposal class', () => {
 
   describe('constructor', () => {
     test('should assign pipId to instance', () => {
-      const pipId = new BigNumber(10);
+      const pipId = 10;
       const context = dsMockUtils.getContextInstance();
       const proposal = new Proposal({ pipId }, context);
 
@@ -37,21 +37,23 @@ describe('Proposal class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(Proposal.isUniqueIdentifiers({ pipId: new BigNumber(1) })).toBe(true);
+      expect(Proposal.isUniqueIdentifiers({ pipId: 10 })).toBe(true);
       expect(Proposal.isUniqueIdentifiers({})).toBe(false);
-      expect(Proposal.isUniqueIdentifiers({ pipId: 1 })).toBe(false);
+      expect(Proposal.isUniqueIdentifiers({ pipId: '10' })).toBe(false);
     });
   });
 
   describe('method: getVotes', () => {
+    const pipId = 1;
     let context: Context;
+    let proposal: Proposal;
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
+      proposal = new Proposal({ pipId }, context);
     });
 
     test('should return the list of votes', async () => {
-      const pipId = 1;
       const account = 'someDid';
       const vote = false;
       const weight = new BigNumber(10000000000);
@@ -83,15 +85,12 @@ describe('Proposal class', () => {
         }
       );
 
-      const proposal = new Proposal({ pipId: new BigNumber(pipId) }, context);
       const result = await proposal.getVotes();
 
       expect(result).toEqual(fakeResult);
     });
 
     test('should throw if the middleware query fails', async () => {
-      const proposal = new Proposal({ pipId: new BigNumber(1) }, context);
-
       dsMockUtils.throwOnMiddlewareQuery();
 
       return expect(proposal.getVotes()).rejects.toThrow('Error in middleware query: Error');
