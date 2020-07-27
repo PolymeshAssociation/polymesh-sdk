@@ -9,7 +9,7 @@ import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { TxTag } from 'polymesh-types/types';
 
-import { Identity, Proposal, SecurityToken, TickerReservation } from '~/api/entities';
+import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
   modifyClaims,
   ModifyClaimsParams,
