@@ -10,7 +10,7 @@ import { Identity, TickerReservation } from '~/api/entities';
 import { modifyClaims, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { didsWithClaims } from '~/middleware/queries';
-import { IdentityWithClaims } from '~/middleware/types';
+import { ClaimTypeEnum, IdentityWithClaims } from '~/middleware/types';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -656,9 +656,9 @@ describe('Polymesh Class', () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
-      const customerDueDiligenceType = 'CustomerDueDiligence';
-      const jurisdictionType = 'Jurisdiction';
-      const exemptedType = 'Exempted';
+      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
+      const jurisdictionType = ClaimTypeEnum.Jurisdiction;
+      const exemptedType = ClaimTypeEnum.Exempted;
       const claim = {
         target: new Identity({ did: targetDid }, context),
         issuer: new Identity({ did: issuerDid }, context),
@@ -772,7 +772,7 @@ describe('Polymesh Class', () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
-      const customerDueDiligenceType = 'CustomerDueDiligence';
+      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
       const claim = {
         target: new Identity({ did: targetDid }, context),
         issuer: new Identity({ did: issuerDid }, context),
@@ -842,7 +842,7 @@ describe('Polymesh Class', () => {
           dids: [targetDid],
           scope: undefined,
           trustedClaimIssuers: [targetDid],
-          claimTypes: [ClaimType.Accredited],
+          claimTypes: [ClaimTypeEnum.Accredited],
           count: undefined,
           skip: undefined,
         }),
