@@ -19,6 +19,7 @@ import {
   RefCount,
   RuntimeVersion,
 } from '@polkadot/types/interfaces';
+import { Call } from '@polkadot/types/interfaces/runtime';
 import { Codec, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { stringToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
@@ -52,7 +53,10 @@ import {
   LinkData,
   LinkedKeyInfo,
   Permission,
+  Pip,
+  PipsMetadata,
   PosRatio,
+  ProposalState,
   Rule,
   RuleType,
   Scope,
@@ -894,6 +898,20 @@ export function setContextAccountBalance(balance: AccountBalance): void {
 
 /**
  * @hidden
+ * Sets an address in the mocked Context
+ *
+ * @param address - new address account
+ */
+export function setContextAccountAddress(address: string): void {
+  mockInstanceContainer.contextInstance.getAccounts.returns([
+    {
+      address,
+    },
+  ]);
+}
+
+/**
+ * @hidden
  * Retrieve an instance of the mocked Polkadot API
  */
 export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> & EventEmitter {
@@ -1590,3 +1608,50 @@ export const setRuntimeVersion = (args: unknown): void => {
 };
 
 export const createMockText = (value: string): Text => createMockStringCodec(value) as Text;
+
+/**
+ * @hidden
+ */
+export const createMockProposalState = (
+  proposalState?: 'Pending' | 'Cancelled' | 'Killed' | 'Rejected' | 'Referendum' | { Custom: Bytes }
+): ProposalState => {
+  return createMockEnum(proposalState) as ProposalState;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPip = (
+  pip: { id: u32; proposal: any; state: ProposalState } = {
+    id: createMockU32(),
+    proposal: ('proposal' as unknown) as Call,
+    state: createMockProposalState(),
+  }
+): Pip =>
+  createMockCodec(
+    {
+      id: pip.id,
+      proposal: pip.proposal,
+      state: pip.state,
+    },
+    false
+  ) as Pip;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockProposalMetadata = (
+  metadata: { proposer: AccountKey; cool_off_until: u32 } = {
+    proposer: createMockAccountKey(),
+    cool_off_until: createMockU32(),
+  }
+): PipsMetadata =>
+  createMockCodec(
+    {
+      proposer: metadata.proposer,
+      cool_off_until: metadata.cool_off_until,
+    },
+    false
+  ) as PipsMetadata;

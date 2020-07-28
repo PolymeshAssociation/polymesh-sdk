@@ -2,7 +2,8 @@ import { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities/Identity';
-import { Entity, PolymeshError } from '~/base';
+import { editProposal, EditProposalParams } from '~/api/procedures';
+import { Entity, PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { proposalVotes } from '~/middleware/queries';
 import { ProposalVotesOrderByInput, Query } from '~/middleware/types';
@@ -96,5 +97,15 @@ export class Proposal extends Entity<UniqueIdentifiers> {
         weight: new BigNumber(weight),
       };
     });
+  }
+
+  /**
+   * Edit a proposal
+   *
+   * @param args.discussionUrl - URL to the forum/messageboard/issue where the proposal is being discussed
+   */
+  public async edit(args: EditProposalParams): Promise<TransactionQueue<void>> {
+    const { context, pipId } = this;
+    return editProposal.prepare({ pipId, ...args }, context);
   }
 }
