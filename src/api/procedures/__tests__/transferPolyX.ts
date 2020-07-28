@@ -19,7 +19,7 @@ describe('transferPolyX procedure', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    sinon.stub(utilsModule, 'stringToAccountKey').returns(dsMockUtils.createMockAccountKey());
+    sinon.stub(utilsModule, 'stringToAccountId').returns(dsMockUtils.createMockAccountId());
   });
 
   beforeEach(() => {

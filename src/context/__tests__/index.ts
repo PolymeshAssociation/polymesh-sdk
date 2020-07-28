@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
 import { dsMockUtils } from '~/testUtils/mocks';
-import { createMockAccountKey } from '~/testUtils/mocks/dataSources';
+import { createMockAccountId } from '~/testUtils/mocks/dataSources';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -354,7 +354,7 @@ describe('Context class', () => {
       const newPublicKey = 'newPublicKey';
       const newAddress = 'newAddress';
       const newIdentityId = 'newIdentityId';
-      const accountKey = dsMockUtils.createMockAccountKey(newAddress);
+      const accountId = dsMockUtils.createMockAccountId(newAddress);
       const newCurrentPair = {
         address: newAddress,
         meta: {},
@@ -385,7 +385,7 @@ describe('Context class', () => {
 
       dsMockUtils
         .createQueryStub('identity', 'keyToIdentityIds')
-        .withArgs(accountKey)
+        .withArgs(accountId)
         .returns(
           dsMockUtils.createMockOption(
             dsMockUtils.createMockLinkedKeyInfo({
@@ -401,9 +401,9 @@ describe('Context class', () => {
       });
 
       sinon
-        .stub(utilsModule, 'stringToAccountKey')
+        .stub(utilsModule, 'stringToAccountId')
         .withArgs(newAddress, context)
-        .returns(accountKey);
+        .returns(accountId);
 
       await context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY');
 
@@ -615,13 +615,13 @@ describe('Context class', () => {
         multi: [
           dsMockUtils.createMockDidRecord({
             roles: [],
-            master_key: createMockAccountKey('someKey'),
-            signing_items: [],
+            master_key: createMockAccountId('someId'),
+            signing_keys: [],
           }),
           dsMockUtils.createMockDidRecord({
             roles: [],
-            master_key: createMockAccountKey('otherKey'),
-            signing_items: [],
+            master_key: createMockAccountId('otherId'),
+            signing_keys: [],
           }),
           dsMockUtils.createMockDidRecord(),
           dsMockUtils.createMockDidRecord(),

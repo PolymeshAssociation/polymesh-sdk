@@ -1,15 +1,12 @@
-import { Link } from 'polymesh-types/types';
-
 import { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { LinkType, TokenDocument } from '~/types';
-import { SignerType } from '~/types/internal';
+import { DocumentName } from '~/polkadot';
+import { PaginationOptions, ResultSet, TokenDocument } from '~/types';
 import {
-  booleanToBool,
-  documentToTokenDocument,
-  linkTypeToMeshLinkType,
-  signerToSignatory,
-  tickerToDid,
+  documentNameToString,
+  documentToTokenDocumentData,
+  requestPaginated,
+  stringToTicker,
 } from '~/utils';
 
 import { SecurityToken } from './';
@@ -35,25 +32,31 @@ export class Documents extends Namespace<SecurityToken> {
 
   /**
    * Retrieve all documents linked to the Security Token
+   *
+   * @note supports pagination
    */
-  public async get(): Promise<TokenDocument[]> {
+  public async get(paginationOpts?: PaginationOptions): Promise<ResultSet<TokenDocument>> {
     const {
       context: {
-        polymeshApi: { rpc },
+        polymeshApi: { query },
       },
       context,
       parent: { ticker },
     } = this;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const links: Link[] = await (rpc as any).identity.getFilteredLinks(
-      signerToSignatory({ type: SignerType.Identity, value: tickerToDid(ticker) }, context),
-      booleanToBool(false, context),
-      linkTypeToMeshLinkType(LinkType.DocumentOwnership, context)
-    );
+    const { entries, lastKey: next } = await requestPaginated(query.asset.assetDocuments, {
+      arg: stringToTicker(ticker, context),
+      paginationOpts,
+    });
 
-    return links.map(({ link_data: linkData }) =>
-      documentToTokenDocument(linkData.asDocumentOwned)
-    );
+    const data: TokenDocument[] = entries.map(([key, doc]) => ({
+      ...documentToTokenDocumentData(doc),
+      name: documentNameToString(key.args[1] as DocumentName),
+    }));
+
+    return {
+      data,
+      next,
+    };
   }
 }

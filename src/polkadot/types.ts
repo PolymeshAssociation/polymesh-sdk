@@ -25,6 +25,7 @@ export enum IndicesTx {
   Transfer = 'indices.transfer',
   Free = 'indices.free',
   ForceTransfer = 'indices.forceTransfer',
+  Freeze = 'indices.freeze',
 }
 
 export enum BalancesTx {
@@ -54,6 +55,8 @@ export enum StakingTx {
   SetPayee = 'staking.setPayee',
   SetController = 'staking.setController',
   SetValidatorCount = 'staking.setValidatorCount',
+  IncreaseValidatorCount = 'staking.increaseValidatorCount',
+  ScaleValidatorCount = 'staking.scaleValidatorCount',
   AddPermissionedValidator = 'staking.addPermissionedValidator',
   RemovePermissionedValidator = 'staking.removePermissionedValidator',
   ValidateCddExpiryNominators = 'staking.validateCddExpiryNominators',
@@ -66,11 +69,12 @@ export enum StakingTx {
   ForceUnstake = 'staking.forceUnstake',
   ForceNewEraAlways = 'staking.forceNewEraAlways',
   CancelDeferredSlash = 'staking.cancelDeferredSlash',
-  PayoutNominator = 'staking.payoutNominator',
-  PayoutValidator = 'staking.payoutValidator',
+  PayoutStakers = 'staking.payoutStakers',
   Rebond = 'staking.rebond',
   SetHistoryDepth = 'staking.setHistoryDepth',
   ReapStash = 'staking.reapStash',
+  SubmitElectionSolution = 'staking.submitElectionSolution',
+  SubmitElectionSolutionUnsigned = 'staking.submitElectionSolutionUnsigned',
 }
 
 export enum SessionTx {
@@ -83,7 +87,7 @@ export enum FinalityTrackerTx {
 }
 
 export enum GrandpaTx {
-  ReportMisbehavior = 'grandpa.reportMisbehavior',
+  ReportEquivocation = 'grandpa.reportEquivocation',
 }
 
 export enum ImOnlineTx {
@@ -93,6 +97,7 @@ export enum ImOnlineTx {
 
 export enum SudoTx {
   Sudo = 'sudo.sudo',
+  SudoUncheckedWeight = 'sudo.sudoUncheckedWeight',
   SetKey = 'sudo.setKey',
   SudoAs = 'sudo.sudoAs',
 }
@@ -105,6 +110,8 @@ export enum MultiSigTx {
   CreateProposalAsKey = 'multiSig.createProposalAsKey',
   ApproveAsIdentity = 'multiSig.approveAsIdentity',
   ApproveAsKey = 'multiSig.approveAsKey',
+  RejectAsIdentity = 'multiSig.rejectAsIdentity',
+  RejectAsKey = 'multiSig.rejectAsKey',
   AcceptMultisigSignerAsIdentity = 'multiSig.acceptMultisigSignerAsIdentity',
   AcceptMultisigSignerAsKey = 'multiSig.acceptMultisigSignerAsKey',
   AddMultisigSigner = 'multiSig.addMultisigSigner',
@@ -132,8 +139,6 @@ export enum TreasuryTx {
 
 export enum PolymeshCommitteeTx {
   SetVoteThreshold = 'polymeshCommittee.setVoteThreshold',
-  Propose = 'polymeshCommittee.propose',
-  Vote = 'polymeshCommittee.vote',
   Close = 'polymeshCommittee.close',
   SetReleaseCoordinator = 'polymeshCommittee.setReleaseCoordinator',
   VoteEnactReferendum = 'polymeshCommittee.voteEnactReferendum',
@@ -163,6 +168,7 @@ export enum PipsTx {
   UnbondDeposit = 'pips.unbondDeposit',
   Vote = 'pips.vote',
   KillProposal = 'pips.killProposal',
+  PruneProposal = 'pips.pruneProposal',
   FastTrackProposal = 'pips.fastTrackProposal',
   EmergencyReferendum = 'pips.emergencyReferendum',
   EnactReferendum = 'pips.enactReferendum',
@@ -192,9 +198,8 @@ export enum AssetTx {
   TransferWithData = 'asset.transferWithData',
   TransferFromWithData = 'asset.transferFromWithData',
   IsIssuable = 'asset.isIssuable',
-  AddDocuments = 'asset.addDocuments',
-  RemoveDocuments = 'asset.removeDocuments',
-  UpdateDocuments = 'asset.updateDocuments',
+  BatchAddDocument = 'asset.batchAddDocument',
+  BatchRemoveDocument = 'asset.batchRemoveDocument',
   IncreaseCustodyAllowance = 'asset.increaseCustodyAllowance',
   IncreaseCustodyAllowanceOf = 'asset.increaseCustodyAllowanceOf',
   TransferByCustodian = 'asset.transferByCustodian',
@@ -203,6 +208,7 @@ export enum AssetTx {
   AddExtension = 'asset.addExtension',
   ArchiveExtension = 'asset.archiveExtension',
   UnarchiveExtension = 'asset.unarchiveExtension',
+  SetTreasuryDid = 'asset.setTreasuryDid',
 }
 
 export enum DividendTx {
@@ -216,7 +222,7 @@ export enum IdentityTx {
   RegisterDid = 'identity.registerDid',
   CddRegisterDid = 'identity.cddRegisterDid',
   InvalidateCddClaims = 'identity.invalidateCddClaims',
-  RemoveSigningItems = 'identity.removeSigningItems',
+  RemoveSigningKeys = 'identity.removeSigningKeys',
   SetMasterKey = 'identity.setMasterKey',
   AcceptMasterKey = 'identity.acceptMasterKey',
   ChangeCddRequirementForMkRotation = 'identity.changeCddRequirementForMkRotation',
@@ -225,23 +231,22 @@ export enum IdentityTx {
   LeaveIdentityAsKey = 'identity.leaveIdentityAsKey',
   LeaveIdentityAsIdentity = 'identity.leaveIdentityAsIdentity',
   AddClaim = 'identity.addClaim',
-  AddClaimsBatch = 'identity.addClaimsBatch',
+  BatchAddClaim = 'identity.batchAddClaim',
   ForwardedCall = 'identity.forwardedCall',
   RevokeClaim = 'identity.revokeClaim',
-  RevokeClaimsBatch = 'identity.revokeClaimsBatch',
+  BatchRevokeClaim = 'identity.batchRevokeClaim',
   SetPermissionToSigner = 'identity.setPermissionToSigner',
   FreezeSigningKeys = 'identity.freezeSigningKeys',
   UnfreezeSigningKeys = 'identity.unfreezeSigningKeys',
   GetMyDid = 'identity.getMyDid',
   GetCddOf = 'identity.getCddOf',
   AddAuthorization = 'identity.addAuthorization',
-  AddAuthorizationAsKey = 'identity.addAuthorizationAsKey',
   BatchAddAuthorization = 'identity.batchAddAuthorization',
   RemoveAuthorization = 'identity.removeAuthorization',
   BatchRemoveAuthorization = 'identity.batchRemoveAuthorization',
   AcceptAuthorization = 'identity.acceptAuthorization',
   BatchAcceptAuthorization = 'identity.batchAcceptAuthorization',
-  AddSigningItemsWithAuthorization = 'identity.addSigningItemsWithAuthorization',
+  BatchAddSigningKeyWithAuthorization = 'identity.batchAddSigningKeyWithAuthorization',
   RevokeOffchainAuthorization = 'identity.revokeOffchainAuthorization',
 }
 
@@ -254,13 +259,13 @@ export enum BridgeTx {
   ChangeBridgeLimit = 'bridge.changeBridgeLimit',
   ChangeBridgeExempted = 'bridge.changeBridgeExempted',
   ForceHandleBridgeTx = 'bridge.forceHandleBridgeTx',
-  ForceHandleBridgeTxs = 'bridge.forceHandleBridgeTxs',
+  BatchForceHandleBridgeTx = 'bridge.batchForceHandleBridgeTx',
   ProposeBridgeTx = 'bridge.proposeBridgeTx',
-  ProposeBridgeTxs = 'bridge.proposeBridgeTxs',
+  BatchProposeBridgeTx = 'bridge.batchProposeBridgeTx',
   HandleBridgeTx = 'bridge.handleBridgeTx',
-  HandleBridgeTxs = 'bridge.handleBridgeTxs',
-  FreezeTxs = 'bridge.freezeTxs',
-  UnfreezeTxs = 'bridge.unfreezeTxs',
+  BatchHandleBridgeTx = 'bridge.batchHandleBridgeTx',
+  BatchFreezeTx = 'bridge.batchFreezeTx',
+  BatchUnfreezeTx = 'bridge.batchUnfreezeTx',
 }
 
 export enum ComplianceManagerTx {
@@ -272,10 +277,10 @@ export enum ComplianceManagerTx {
   ResumeAssetRules = 'complianceManager.resumeAssetRules',
   AddDefaultTrustedClaimIssuer = 'complianceManager.addDefaultTrustedClaimIssuer',
   RemoveDefaultTrustedClaimIssuer = 'complianceManager.removeDefaultTrustedClaimIssuer',
-  AddDefaultTrustedClaimIssuersBatch = 'complianceManager.addDefaultTrustedClaimIssuersBatch',
-  RemoveDefaultTrustedClaimIssuersBatch = 'complianceManager.removeDefaultTrustedClaimIssuersBatch',
+  BatchAddDefaultTrustedClaimIssuer = 'complianceManager.batchAddDefaultTrustedClaimIssuer',
+  BatchRemoveDefaultTrustedClaimIssuer = 'complianceManager.batchRemoveDefaultTrustedClaimIssuer',
   ChangeAssetRule = 'complianceManager.changeAssetRule',
-  ChangeAssetRuleBatch = 'complianceManager.changeAssetRuleBatch',
+  BatchChangeAssetRule = 'complianceManager.batchChangeAssetRule',
 }
 
 export enum VotingTx {
@@ -304,6 +309,20 @@ export enum SimpleTokenTx {
   TransferFrom = 'simpleToken.transferFrom',
 }
 
+export enum SettlementTx {
+  CreateVenue = 'settlement.createVenue',
+  AddInstruction = 'settlement.addInstruction',
+  AuthorizeInstruction = 'settlement.authorizeInstruction',
+  UnauthorizeInstruction = 'settlement.unauthorizeInstruction',
+  RejectInstruction = 'settlement.rejectInstruction',
+  AuthorizeWithReceipts = 'settlement.authorizeWithReceipts',
+  ClaimReceipt = 'settlement.claimReceipt',
+  UnclaimReceipt = 'settlement.unclaimReceipt',
+  SetVenueFiltering = 'settlement.setVenueFiltering',
+  AllowVenues = 'settlement.allowVenues',
+  DisallowVenues = 'settlement.disallowVenues',
+}
+
 export enum CddServiceProvidersTx {
   DisableMember = 'cddServiceProviders.disableMember',
   AddMember = 'cddServiceProviders.addMember',
@@ -320,6 +339,19 @@ export enum ProtocolFeeTx {
 
 export enum UtilityTx {
   Batch = 'utility.batch',
+  RelayTx = 'utility.relayTx',
+}
+
+export enum PortfolioTx {
+  CreatePortfolio = 'portfolio.createPortfolio',
+  DeletePortfolio = 'portfolio.deletePortfolio',
+  MovePortfolio = 'portfolio.movePortfolio',
+  RenamePortfolio = 'portfolio.renamePortfolio',
+}
+
+export enum ConfidentialTx {
+  AddRangeProof = 'confidential.addRangeProof',
+  AddVerifyRangeProof = 'confidential.addVerifyRangeProof',
 }
 
 export type TxTag =
@@ -349,9 +381,12 @@ export type TxTag =
   | StoCappedTx
   | ExemptionTx
   | SimpleTokenTx
+  | SettlementTx
   | CddServiceProvidersTx
   | ProtocolFeeTx
-  | UtilityTx;
+  | UtilityTx
+  | PortfolioTx
+  | ConfidentialTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -380,7 +415,10 @@ export const TxTags = {
   stoCapped: StoCappedTx,
   exemption: ExemptionTx,
   simpleToken: SimpleTokenTx,
+  settlement: SettlementTx,
   cddServiceProviders: CddServiceProvidersTx,
   protocolFee: ProtocolFeeTx,
   utility: UtilityTx,
+  portfolio: PortfolioTx,
+  confidential: ConfidentialTx,
 };

@@ -1,12 +1,9 @@
 import { bool, Bytes, u64 } from '@polkadot/types';
 import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
-import * as decodeAddressModule from '@polkadot/util-crypto/address/decode';
-import * as encodeAddressModule from '@polkadot/util-crypto/address/encode';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
 import {
-  AccountKey,
   AssetIdentifier,
   AssetName,
   AssetTransferRule,
@@ -21,7 +18,7 @@ import {
   IdentifierType,
   IdentityId,
   JurisdictionName,
-  LinkType as MeshLinkType,
+  Permission as MeshPermission,
   ProtocolOp,
   Signatory,
   Ticker,
@@ -41,7 +38,7 @@ import {
   ConditionTarget,
   ConditionType,
   KnownTokenType,
-  LinkType,
+  Permission,
   TokenIdentifierType,
   TransferStatus,
 } from '~/types';
@@ -51,7 +48,6 @@ import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
   accountIdToString,
-  accountKeyToString,
   assetIdentifierToString,
   assetNameToString,
   assetTransferRuleToRule,
@@ -73,21 +69,22 @@ import {
   delay,
   documentHashToString,
   documentNameToString,
-  documentToTokenDocument,
+  documentToTokenDocumentData,
   documentUriToString,
   findEventRecord,
   fundingRoundNameToString,
   identifierTypeToString,
   identityIdToString,
   jurisdictionNameToString,
-  linkTypeToMeshLinkType,
   meshClaimToClaim,
+  meshPermissionToPermission,
   moduleAddressToString,
   momentToDate,
   numberToBalance,
   numberToU32,
   numberToU64,
   padString,
+  permissionToMeshPermission,
   posRatioToBigNumber,
   requestAtBlock,
   requestPaginated,
@@ -96,7 +93,6 @@ import {
   signatoryToSigner,
   signerToSignatory,
   stringToAccountId,
-  stringToAccountKey,
   stringToAssetIdentifier,
   stringToAssetName,
   stringToBytes,
@@ -111,7 +107,7 @@ import {
   textToString,
   tickerToDid,
   tickerToString,
-  tokenDocumentToDocument,
+  tokenDocumentDataToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
   txTagToProtocolOp,
@@ -264,55 +260,6 @@ describe('valueToDid', () => {
     const result = valueToDid(did);
 
     expect(result).toBe(did);
-  });
-});
-
-describe('stringToAccountKey and accountKeyToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-    sinon.restore();
-  });
-
-  test('stringToAccountKey should convert a string to a polkadot AccountKey object', () => {
-    const value = 'someAccountId';
-    const fakeResult = ('convertedAccountKey' as unknown) as AccountKey;
-    const context = dsMockUtils.getContextInstance();
-    const decodedValue = ('decodedAccountId' as unknown) as Uint8Array;
-
-    sinon
-      .stub(decodeAddressModule, 'default')
-      .withArgs(value)
-      .returns(decodedValue);
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AccountKey', decodedValue)
-      .returns(fakeResult);
-
-    const result = stringToAccountKey(value, context);
-
-    expect(result).toBe(fakeResult);
-  });
-
-  test('accountKeyToString should convert a polkadot AccountKey object to a string', () => {
-    const fakeResult = 'someAccountId';
-    const accountKey = dsMockUtils.createMockAccountKey(fakeResult);
-
-    sinon
-      .stub(encodeAddressModule, 'default')
-      .withArgs(accountKey)
-      .returns(fakeResult);
-
-    const result = accountKeyToString(accountKey);
-    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -1014,7 +961,7 @@ describe('stringToDocumentHash and documentHashToString', () => {
   });
 });
 
-describe('tokenDocumentToDocument and documentToTokenDocument', () => {
+describe('tokenDocumentDataToDocument and documentToTokenDocumentData', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1027,12 +974,10 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
     dsMockUtils.cleanup();
   });
 
-  test('tokenDocumentToDocument should convert a TokenDocument to a polkadot Document object', () => {
-    const name = 'someName';
+  test('tokenDocumentDataToDocument should convert a TokenDocumentData object to a polkadot Document object', () => {
     const uri = 'someUri';
     const contentHash = 'someHash';
     const value = {
-      name,
       uri,
       contentHash,
     };
@@ -1042,36 +987,32 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
     dsMockUtils
       .getCreateTypeStub()
       .withArgs('Document', {
-        name: stringToDocumentName(name, context),
         uri: stringToDocumentUri(uri, context),
         // eslint-disable-next-line @typescript-eslint/camelcase
         content_hash: stringToDocumentHash(contentHash, context),
       })
       .returns(fakeResult);
 
-    const result = tokenDocumentToDocument(value, context);
+    const result = tokenDocumentDataToDocument(value, context);
 
     expect(result).toEqual(fakeResult);
   });
 
-  test('documentToTokenDocument should convert a polkadot Document object to a TokenDocument', () => {
-    const name = 'someName';
+  test('documentToTokenDocumentData should convert a polkadot Document object to a TokenDocumentData object', () => {
     const uri = 'someUri';
     const contentHash = 'someHash';
     const fakeResult = {
-      name,
       uri,
       contentHash,
     };
     const mockDocument = {
-      name: dsMockUtils.createMockDocumentName(name),
       uri: dsMockUtils.createMockDocumentUri(uri),
       // eslint-disable-next-line @typescript-eslint/camelcase
       content_hash: dsMockUtils.createMockDocumentHash(contentHash),
     };
     const doc = dsMockUtils.createMockDocument(mockDocument);
 
-    const result = documentToTokenDocument(doc);
+    const result = documentToTokenDocumentData(doc);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -1239,21 +1180,13 @@ describe('signerToSignatory and signatoryToSigner', () => {
     let result = signatoryToSigner(signatory);
     expect(result).toEqual(fakeResult);
 
-    const accountKey = dsMockUtils.createMockAccountKey('someAccountKey');
-    const encodedAddress = 'someEncodedAddress';
-
     fakeResult = {
-      type: SignerType.AccountKey,
-      value: encodedAddress,
+      type: SignerType.Account,
+      value: 'someAccountId',
     };
     signatory = dsMockUtils.createMockSignatory({
-      AccountKey: accountKey,
+      Account: dsMockUtils.createMockAccountId(fakeResult.value),
     });
-
-    sinon
-      .stub(encodeAddressModule, 'default')
-      .withArgs(accountKey)
-      .returns(encodedAddress);
 
     result = signatoryToSigner(signatory);
     expect(result).toEqual(fakeResult);
@@ -1359,10 +1292,10 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     fakeResult = {
       type: AuthorizationType.JoinIdentity,
-      value: 'someIdentity',
+      value: [Permission.Operator],
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
-      JoinIdentity: dsMockUtils.createMockIdentityId(fakeResult.value),
+      JoinIdentity: [dsMockUtils.createMockPermission('Operator')],
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -1956,7 +1889,7 @@ describe('txTagToProtocolOp', () => {
 
     expect(result).toEqual(fakeResult);
 
-    value = TxTags.identity.AddClaimsBatch;
+    value = TxTags.identity.BatchAddClaim;
 
     dsMockUtils
       .getCreateTypeStub()
@@ -1969,7 +1902,7 @@ describe('txTagToProtocolOp', () => {
   });
 });
 
-describe('linkTypeToMeshLinkType', () => {
+describe('permissionToMeshPermission and meshPermissionToPermission', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1982,18 +1915,44 @@ describe('linkTypeToMeshLinkType', () => {
     dsMockUtils.cleanup();
   });
 
-  test('linkTypeToMeshLinkType should convert a LinkType enum to a polymesh LinkType object', () => {
-    const value = LinkType.DocumentOwnership;
-    const fakeResult = ('DocumentOwnership' as unknown) as MeshLinkType;
+  test('permissionToMeshPermission should convert a Permission to a polkadot Permission object', () => {
+    const value = Permission.Admin;
+    const fakeResult = ('convertedPermission' as unknown) as MeshPermission;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('LinkType', value)
+      .withArgs('Permission', value)
       .returns(fakeResult);
 
-    const result = linkTypeToMeshLinkType(value, context);
+    const result = permissionToMeshPermission(value, context);
 
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('meshPermissionToPermission should convert a polkadot Permission object to a Permission', () => {
+    let fakeResult = Permission.Admin;
+    let permission = dsMockUtils.createMockPermission(fakeResult);
+
+    let result = meshPermissionToPermission(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = Permission.Full;
+    permission = dsMockUtils.createMockPermission(fakeResult);
+
+    result = meshPermissionToPermission(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = Permission.Operator;
+    permission = dsMockUtils.createMockPermission(fakeResult);
+
+    result = meshPermissionToPermission(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = Permission.SpendFunds;
+    permission = dsMockUtils.createMockPermission(fakeResult);
+
+    result = meshPermissionToPermission(permission);
     expect(result).toEqual(fakeResult);
   });
 });

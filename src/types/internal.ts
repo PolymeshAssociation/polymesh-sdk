@@ -101,7 +101,7 @@ export interface TransactionSpec<
 
 export enum SignerType {
   Identity = 'Identity',
-  AccountKey = 'AccountKey',
+  Account = 'Account',
 }
 
 export interface Signer {
@@ -123,4 +123,9 @@ export enum ClaimOperation {
   Revoke = 'Revoke',
   Add = 'Add',
   Edit = 'Edit',
+}
+
+export interface TokenDocumentData {
+  uri: string;
+  contentHash: string;
 }

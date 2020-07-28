@@ -69,13 +69,13 @@ export async function prepareSetTokenTrustedClaimIssuers(
   if (rawCurrentClaimIssuers.length) {
     batchArguments<IdentityId>(
       rawCurrentClaimIssuers,
-      TxTags.complianceManager.RemoveDefaultTrustedClaimIssuersBatch
+      TxTags.complianceManager.BatchRemoveDefaultTrustedClaimIssuer
     ).forEach(issuersBatch => {
       this.addTransaction(
-        tx.complianceManager.removeDefaultTrustedClaimIssuersBatch,
+        tx.complianceManager.batchRemoveDefaultTrustedClaimIssuer,
         { batchSize: issuersBatch.length },
-        rawTicker,
-        issuersBatch
+        issuersBatch,
+        rawTicker
       );
     });
   }
@@ -83,13 +83,13 @@ export async function prepareSetTokenTrustedClaimIssuers(
   if (rawNewClaimIssuers.length) {
     batchArguments(
       rawNewClaimIssuers,
-      TxTags.complianceManager.AddDefaultTrustedClaimIssuersBatch
+      TxTags.complianceManager.BatchAddDefaultTrustedClaimIssuer
     ).forEach(issuersBatch => {
       this.addTransaction(
-        tx.complianceManager.addDefaultTrustedClaimIssuersBatch,
+        tx.complianceManager.batchAddDefaultTrustedClaimIssuer,
         { batchSize: issuersBatch.length },
-        rawTicker,
-        issuersBatch
+        issuersBatch,
+        rawTicker
       );
     });
   }

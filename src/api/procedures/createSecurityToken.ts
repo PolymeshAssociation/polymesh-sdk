@@ -5,6 +5,7 @@ import { SecurityToken, TickerReservation } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import {
   ErrorCode,
+  Identity,
   Role,
   RoleType,
   TickerReservationStatus,
@@ -12,17 +13,21 @@ import {
   TokenIdentifier,
   TokenType,
 } from '~/types';
+import { tuple } from '~/types/utils';
 import {
   batchArguments,
   booleanToBool,
   numberToBalance,
   stringToAssetIdentifier,
   stringToAssetName,
+  stringToDocumentName,
   stringToFundingRoundName,
+  stringToIdentityId,
   stringToTicker,
-  tokenDocumentToDocument,
+  tokenDocumentDataToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
+  valueToDid,
 } from '~/utils';
 
 export interface CreateSecurityTokenParams {
@@ -32,6 +37,7 @@ export interface CreateSecurityTokenParams {
   tokenType: TokenType;
   tokenIdentifiers?: TokenIdentifier[];
   fundingRound?: string;
+  treasury?: string | Identity;
   documents?: TokenDocument[];
 }
 
@@ -60,6 +66,7 @@ export async function prepareCreateSecurityToken(
     tokenType,
     tokenIdentifiers = [],
     fundingRound,
+    treasury,
     documents,
   } = args;
 
@@ -95,6 +102,7 @@ export async function prepareCreateSecurityToken(
     }
   );
   const rawFundingRound = fundingRound ? stringToFundingRoundName(fundingRound, context) : null;
+  const rawTreasury = treasury ? stringToIdentityId(valueToDid(treasury), context) : null;
 
   this.addTransaction(
     tx.asset.createAsset,
@@ -105,17 +113,23 @@ export async function prepareCreateSecurityToken(
     rawIsDivisible,
     rawType,
     rawIdentifiers,
-    rawFundingRound
+    rawFundingRound,
+    rawTreasury
   );
 
   if (documents) {
-    const rawDocuments = documents.map(document => tokenDocumentToDocument(document, context));
-    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
+    const rawDocuments = documents.map(({ name: documentName, ...documentData }) =>
+      tuple(
+        stringToDocumentName(documentName, context),
+        tokenDocumentDataToDocument(documentData, context)
+      )
+    );
+    batchArguments(rawDocuments, TxTags.asset.BatchAddDocument).forEach(rawDocumentBatch => {
       this.addTransaction(
-        tx.asset.addDocuments,
+        tx.asset.batchAddDocument,
         { isCritical: false, batchSize: rawDocumentBatch.length },
-        rawTicker,
-        rawDocumentBatch
+        rawDocumentBatch,
+        rawTicker
       );
     });
   }
