@@ -13,6 +13,7 @@ import { modifyToken, transferTokenOwnership } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs } from '~/middleware/queries';
+import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
@@ -335,8 +336,8 @@ describe('SecurityToken class', () => {
       const blockDate = new Date('4/14/2020');
       const eventIdx = 1;
       const variables = {
-        moduleId: 'asset',
-        eventId: 'AssetCreated',
+        moduleId: ModuleIdEnum.Asset,
+        eventId: EventIdEnum.AssetCreated,
         eventArg1: utilsModule.padString(ticker, MAX_TICKER_LENGTH),
       };
       const fakeResult = { blockNumber: blockId, blockDate, eventIndex: eventIdx };
@@ -361,8 +362,8 @@ describe('SecurityToken class', () => {
     test('should return null if the query result is empty', async () => {
       const ticker = 'SOMETICKER';
       const variables = {
-        moduleId: 'asset',
-        eventId: 'AssetCreated',
+        moduleId: ModuleIdEnum.Asset,
+        eventId: EventIdEnum.AssetCreated,
         eventArg1: utilsModule.padString(ticker, MAX_TICKER_LENGTH),
       };
       const context = dsMockUtils.getContextInstance();
