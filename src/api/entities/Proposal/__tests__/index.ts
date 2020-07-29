@@ -97,13 +97,10 @@ describe('Proposal class', () => {
 
   describe('method: edit', () => {
     test('should prepare the procedure with the correct arguments and context', async () => {
-      const pipId = 10;
-      const context = dsMockUtils.getContextInstance();
       const args = {
         discussionUrl: 'www.my-new-proposal.com',
         description: 'A new proposal description',
       };
-      const proposal = new Proposal({ pipId }, context);
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
