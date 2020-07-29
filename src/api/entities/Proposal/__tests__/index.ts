@@ -11,8 +11,17 @@ import { dsMockUtils } from '~/testUtils/mocks';
 import { Proposal } from '../';
 
 describe('Proposal class', () => {
+  const pipId = 10;
+  let context: Context;
+  let proposal: Proposal;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    proposal = new Proposal({ pipId }, context);
   });
 
   afterEach(() => {
@@ -29,10 +38,6 @@ describe('Proposal class', () => {
 
   describe('constructor', () => {
     test('should assign pipId to instance', () => {
-      const pipId = 10;
-      const context = dsMockUtils.getContextInstance();
-      const proposal = new Proposal({ pipId }, context);
-
       expect(proposal.pipId).toBe(pipId);
     });
   });
@@ -46,29 +51,20 @@ describe('Proposal class', () => {
   });
 
   describe('method: getVotes', () => {
-    const pipId = 1;
-    let context: Context;
-    let proposal: Proposal;
-
-    beforeEach(() => {
-      context = dsMockUtils.getContextInstance();
-      proposal = new Proposal({ pipId }, context);
-    });
-
     test('should return the list of votes', async () => {
-      const account = 'someDid';
+      const identityDid = 'someDid';
       const vote = false;
       const weight = new BigNumber(10000000000);
       const proposalVotesQueryResponse = [
         {
-          account,
+          account: identityDid,
           vote,
           weight: weight.toNumber(),
         },
       ];
       const fakeResult = [
         {
-          account: new Identity({ did: account }, context),
+          identity: new Identity({ did: identityDid }, context),
           vote,
           weight,
         },

@@ -375,4 +375,4 @@ export enum LinkType {
 export { TxTags } from 'polymesh-types/types';
 export * from '~/api/entities/types';
 export * from '~/base/types';
-export { ProposalState } from '~/middleware/types';
+export { ProposalState, ProposalVotesOrderByInput } from '~/middleware/types';

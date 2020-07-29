@@ -6,8 +6,8 @@ import { editProposal, EditProposalParams } from '~/api/procedures';
 import { Entity, PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { proposalVotes } from '~/middleware/queries';
-import { ProposalVotesOrderByInput, Query } from '~/middleware/types';
-import { Ensured, ErrorCode } from '~/types';
+import { Query } from '~/middleware/types';
+import { Ensured, ErrorCode, ProposalVotesOrderByInput } from '~/types';
 
 import { ProposalVote } from './types';
 
@@ -92,7 +92,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
 
     return result.data.proposalVotes.map(({ account: did, vote: proposalVote, weight }) => {
       return {
-        account: new Identity({ did }, context),
+        identity: new Identity({ did }, context),
         vote: proposalVote,
         weight: new BigNumber(weight),
       };
