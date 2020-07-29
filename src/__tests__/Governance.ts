@@ -12,16 +12,24 @@ import { dsMockUtils } from '~/testUtils/mocks';
 import { TxTags } from '~/types';
 
 describe('Governance class', () => {
+  let context: Context;
+  let governance: Governance;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
 
-  afterEach(() => {
-    dsMockUtils.reset();
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    governance = new Governance(context);
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
   });
 
   describe('method: getGovernanceCommitteeMembers', () => {
@@ -31,9 +39,7 @@ describe('Governance class', () => {
 
     test('should retrieve a list of the identities of all active members', async () => {
       const did = 'someDid';
-      const context = dsMockUtils.getContextInstance();
       const expectedMembers = [new Identity({ did }, context)];
-      const governance = new Governance(context);
 
       dsMockUtils.createQueryStub('committeeMembership', 'activeMembers', {
         returnValue: [dsMockUtils.createMockIdentityId('someDid')],
@@ -46,12 +52,6 @@ describe('Governance class', () => {
   });
 
   describe('method: getProposals', () => {
-    let context: Context;
-
-    beforeEach(() => {
-      context = dsMockUtils.getContextInstance();
-    });
-
     test('should return a list of proposal entities', async () => {
       const pipId = 10;
       const proposerDid = 'someProposerDid';
@@ -76,7 +76,6 @@ describe('Governance class', () => {
           totalNaysWeight: 0,
         },
       ];
-      const governance = new Governance(context);
 
       dsMockUtils.createApolloQueryStub(
         proposals({
@@ -99,8 +98,6 @@ describe('Governance class', () => {
     });
 
     test('should throw if the middleware query fails', async () => {
-      const governance = new Governance(context);
-
       dsMockUtils.throwOnMiddlewareQuery();
 
       return expect(governance.getProposals()).rejects.toThrow('Error in middleware query: Error');
@@ -116,8 +113,6 @@ describe('Governance class', () => {
         tag: TxTags.asset.RegisterTicker,
         args: ['someTicker'],
       };
-      const context = dsMockUtils.getContextInstance();
-      const governance = new Governance(context);
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Proposal>;
 
       sinon

@@ -5,8 +5,8 @@ import { createProposal, CreateProposalParams } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { proposals } from '~/middleware/queries';
-import { ProposalOrderByInput, ProposalState, Query } from '~/middleware/types';
-import { Ensured, ErrorCode } from '~/types';
+import { Query } from '~/middleware/types';
+import { Ensured, ErrorCode, ProposalOrderByInput, ProposalState } from '~/types';
 import { identityIdToString, valueToDid } from '~/utils';
 
 /**
@@ -43,9 +43,9 @@ export class Governance {
   /**
    * Retrieve a list of proposals. Can be filtered using parameters
    *
-   * @param opts.proposers - identities (or identity IDs) for which to fetch proposals (proposers). Defaults to all proposers
+   * @param opts.proposers - identities or identity IDs for which to fetch proposals (proposers). Defaults to all proposers
    * @param opts.states - state of the proposal
-   * @param opts.orderBy - the order in witch the proposals are returned
+   * @param opts.orderBy - the order in which the proposals are returned
    * @param opts.size - page size
    * @param opts.start - page offset
    */

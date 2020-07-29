@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { Entity } from '~/base';
 import { Context } from '~/context';
 
@@ -5,7 +7,7 @@ import { Context } from '~/context';
  * Properties that uniquely identify a Proposal
  */
 export interface UniqueIdentifiers {
-  pipId: number;
+  pipId: BigNumber;
 }
 
 /**
@@ -19,13 +21,13 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { pipId } = identifier as UniqueIdentifiers;
 
-    return typeof pipId === 'number';
+    return pipId instanceof BigNumber;
   }
 
   /**
    * internal identifier
    */
-  public pipId: number;
+  public pipId: BigNumber;
 
   /**
    * @hidden

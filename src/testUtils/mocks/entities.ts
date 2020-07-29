@@ -65,7 +65,7 @@ interface AuthorizationRequestOptions {
 }
 
 interface ProposalOptions {
-  pipId?: number;
+  pipId?: BigNumber;
 }
 
 let identityConstructorStub: SinonStub;
@@ -192,7 +192,7 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
 const defaultProposalOptions: ProposalOptions = {
-  pipId: 1,
+  pipId: new BigNumber(1),
 };
 let proposalOptions = defaultProposalOptions;
 
