@@ -123,7 +123,7 @@ export async function prepareModifyClaims(
             isSameScope = claim.scope === scope;
           }
 
-          return isSameScope && type === claim.type;
+          return isSameScope && ClaimType[type] === claim.type;
         });
 
         if (!claimExists) {

@@ -11,7 +11,7 @@ import {
 import { Entity, PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   Ensured,
   ErrorCode,
@@ -266,8 +266,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     try {
       result = await middlewareApi.query<Ensured<Query, 'eventByIndexedArgs'>>(
         eventByIndexedArgs({
-          moduleId: 'asset',
-          eventId: 'AssetCreated',
+          moduleId: ModuleIdEnum.Asset,
+          eventId: EventIdEnum.AssetCreated,
           eventArg1: padString(ticker, MAX_TICKER_LENGTH),
         })
       );
@@ -283,7 +283,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
         blockNumber: result.data.eventByIndexedArgs.block_id!,
-        blockDate: result.data.eventByIndexedArgs.block!.datetime,
+        blockDate: result.data.eventByIndexedArgs.block!.datetime!,
         eventIndex: result.data.eventByIndexedArgs.event_idx!,
       };
       /* eslint-enabled @typescript-eslint/no-non-null-assertion */
