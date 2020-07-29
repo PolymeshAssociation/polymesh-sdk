@@ -1,4 +1,5 @@
 import { ApolloQueryResult } from 'apollo-client';
+import BigNumber from 'bignumber.js';
 
 import { Identity, Proposal } from '~/api/entities';
 import { createProposal, CreateProposalParams } from '~/api/procedures';
@@ -84,7 +85,9 @@ export class Governance {
       });
     }
 
-    return result.data.proposals.map(({ pipId }) => new Proposal({ pipId }, context));
+    return result.data.proposals.map(
+      ({ pipId }) => new Proposal({ pipId: new BigNumber(pipId) }, context)
+    );
   }
 
   /**
