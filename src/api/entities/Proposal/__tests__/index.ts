@@ -62,7 +62,7 @@ describe('Proposal class', () => {
       proposal = new Proposal({ pipId }, context);
     });
 
-    test('should return true if the identity has voted the proposal', async () => {
+    test('should return true if the identity has voted on the proposal', async () => {
       const fakeResult = true;
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
@@ -77,7 +77,7 @@ describe('Proposal class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should return false if the identity has not voted the proposal', async () => {
+    test('should return false if the identity has not voted on the proposal', async () => {
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
       const result = await proposal.identityHasVoted({ did: 'someDid' });
       expect(result).toBeFalsy();

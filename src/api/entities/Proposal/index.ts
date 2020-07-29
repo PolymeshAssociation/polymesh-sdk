@@ -49,7 +49,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Check if an identity has voted the proposal
+   * Check if an identity has voted on the proposal
    *
    * @param args.did - identity representation or identity ID as stored in the blockchain
    */
