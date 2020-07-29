@@ -58,7 +58,7 @@ describe('Governance class', () => {
       const createdAt = 50800;
       const coolOffPeriod = 100;
       const proposalPeriodTimeFrame = 600;
-      const fakeResult = [new Proposal({ pipId }, context)];
+      const fakeResult = [new Proposal({ pipId: new BigNumber(pipId) }, context)];
       const proposalsQueryResponse: MiddlewareProposal[] = [
         {
           pipId,
