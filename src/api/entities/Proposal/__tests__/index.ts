@@ -51,16 +51,12 @@ describe('Proposal class', () => {
 
   describe('method: identityHasVoted', () => {
     const did = 'someDid';
-    const pipId = 10;
     const variables = {
       moduleId: ModuleIdEnum.Pips,
       eventId: EventIdEnum.Voted,
       eventArg0: did,
       eventArg2: pipId.toString(),
     };
-
-    let context: Context;
-    let proposal: Proposal;
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
