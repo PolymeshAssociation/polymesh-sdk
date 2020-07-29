@@ -15,25 +15,27 @@ describe('Governance class', () => {
   let context: Context;
   let governance: Governance;
   let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
-  let createProposalStub: sinon.SinonStub;
+  let fakeBalance: Balance;
+  const amount = new BigNumber(5000);
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
-    createProposalStub = sinon.stub(createProposal, 'prepare');
   });
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
     governance = new Governance(context);
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
+    fakeBalance = dsMockUtils.createMockBalance(amount.toNumber());
+    balanceToBigNumberStub.withArgs(fakeBalance).returns(amount);
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
   });
 
   describe('method: getGovernanceCommitteeMembers', () => {
@@ -63,7 +65,10 @@ describe('Governance class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Proposal>;
 
-      createProposalStub.withArgs(args, context).resolves(expectedQueue);
+      sinon
+        .stub(createProposal, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
 
       const queue = await governance.createProposal(args);
 
@@ -72,22 +77,8 @@ describe('Governance class', () => {
   });
 
   describe('method: minimumProposalDeposit', () => {
-    let amount: BigNumber;
-    let fakeBalance: Balance;
-    let minimumProposalDepositStub: sinon.SinonStub;
-
-    beforeAll(() => {
-      amount = new BigNumber(5000);
-      fakeBalance = dsMockUtils.createMockBalance(amount.toNumber());
-    });
-
-    beforeEach(() => {
-      minimumProposalDepositStub = dsMockUtils.createQueryStub('pips', 'minimumProposalDeposit');
-      balanceToBigNumberStub.withArgs(fakeBalance).returns(amount);
-    });
-
-    test('should return the minimum amount of POLYX to be used for create a referendum proposal', async () => {
-      minimumProposalDepositStub.resolves(fakeBalance);
+    test('should return the minimum proposal deposit', async () => {
+      dsMockUtils.createQueryStub('pips', 'minimumProposalDeposit').resolves(fakeBalance);
 
       const result = await governance.minimumProposalDeposit();
 
@@ -98,7 +89,7 @@ describe('Governance class', () => {
       const unsubCallback = 'unsubCallback';
       const callback = sinon.stub();
 
-      minimumProposalDepositStub.callsFake(async cbFunc => {
+      dsMockUtils.createQueryStub('pips', 'minimumProposalDeposit').callsFake(async cbFunc => {
         cbFunc(fakeBalance);
         return unsubCallback;
       });

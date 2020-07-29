@@ -51,7 +51,7 @@ export class Governance {
   }
 
   /**
-   * Get the minimum amount of POLYX to be used as a deposit for create a public referendum proposal
+   * Get the minimum amount of POLYX that has to be deposited when creating a proposal
    *
    * @note can be subscribed to
    */
