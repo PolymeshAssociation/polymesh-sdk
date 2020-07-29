@@ -5,8 +5,8 @@ import { Identity } from '~/api/entities/Identity';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
-import { EventIdEnum, ModuleIdEnum, ProposalVotesOrderByInput, Query } from '~/middleware/types';
-import { Ensured, ErrorCode } from '~/types';
+import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Ensured, ErrorCode, ProposalVotesOrderByInput } from '~/types';
 import { valueToDid } from '~/utils';
 
 import { ProposalVote } from './types';
@@ -136,7 +136,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
 
     return result.data.proposalVotes.map(({ account: did, vote: proposalVote, weight }) => {
       return {
-        account: new Identity({ did }, context),
+        identity: new Identity({ did }, context),
         vote: proposalVote,
         weight: new BigNumber(weight),
       };

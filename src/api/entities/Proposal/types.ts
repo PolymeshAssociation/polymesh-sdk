@@ -34,7 +34,7 @@ export interface Metadata {
 }
 
 export interface ProposalVote {
-  account: Identity;
+  identity: Identity;
   vote: boolean;
   weight: BigNumber;
 }
