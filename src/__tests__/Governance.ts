@@ -117,8 +117,8 @@ describe('Governance class', () => {
     let queryMultiStub: sinon.SinonStub;
     let coolOfPeriod: BigNumber;
     let proposalDuration: BigNumber;
-    let mockCoolOfPeriod: u8;
-    let mockProposalDuration: u8;
+    let rawCoolOfPeriod: u8;
+    let rawProposalDuration: u8;
 
     beforeEach(() => {
       dsMockUtils.createQueryStub('pips', 'proposalCoolOffPeriod');
@@ -126,14 +126,14 @@ describe('Governance class', () => {
       queryMultiStub = dsMockUtils.getQueryMultiStub();
       coolOfPeriod = new BigNumber(100);
       proposalDuration = new BigNumber(600);
-      mockCoolOfPeriod = dsMockUtils.createMockU32(coolOfPeriod.toNumber());
-      mockProposalDuration = dsMockUtils.createMockU32(proposalDuration.toNumber());
-      u32ToBigNumberStub.withArgs(mockCoolOfPeriod).returns(coolOfPeriod);
-      u32ToBigNumberStub.withArgs(mockProposalDuration).returns(proposalDuration);
+      rawCoolOfPeriod = dsMockUtils.createMockU32(coolOfPeriod.toNumber());
+      rawProposalDuration = dsMockUtils.createMockU32(proposalDuration.toNumber());
+      u32ToBigNumberStub.withArgs(rawCoolOfPeriod).returns(coolOfPeriod);
+      u32ToBigNumberStub.withArgs(rawProposalDuration).returns(proposalDuration);
     });
 
-    test('should return the number of blocks the proposal cool off period and proposal ballot are valid', async () => {
-      queryMultiStub.resolves([mockCoolOfPeriod, mockProposalDuration]);
+    test('should return the proposal time frames', async () => {
+      queryMultiStub.resolves([rawCoolOfPeriod, rawProposalDuration]);
 
       const result = await governance.proposalTimeFrames();
 
@@ -145,7 +145,7 @@ describe('Governance class', () => {
       const unsubCallback = 'unsubCallback';
 
       queryMultiStub.callsFake(async (_, cbFunc) => {
-        cbFunc([mockCoolOfPeriod, mockProposalDuration]);
+        cbFunc([rawCoolOfPeriod, rawProposalDuration]);
         return unsubCallback;
       });
 

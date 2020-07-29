@@ -53,7 +53,10 @@ export class Governance {
   }
 
   /**
-   * Get the minimum amount of POLYX to be used as a deposit for create a public referendum proposal
+   * Retrieve the proposal time frames. This includes:
+   *
+   * - Amount of blocks from proposal creation until the proposal can be voted on (cool off)
+   * - Amount of blocks from when cool off ends until the voting period is over (duration)
    *
    * @note can be subscribed to
    */
