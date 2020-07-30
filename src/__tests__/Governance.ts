@@ -2,12 +2,13 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity, Proposal } from '~/api/entities';
+import { ProposalState } from '~/api/entities/Proposal/types';
 import { createProposal } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { Governance } from '~/Governance';
 import { proposals } from '~/middleware/queries';
-import { Proposal as MiddlewareProposal, ProposalState } from '~/middleware/types';
+import { Proposal as MiddlewareProposal } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { TxTags } from '~/types';
 

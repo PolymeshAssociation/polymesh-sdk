@@ -2,12 +2,13 @@ import { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 
 import { Identity, Proposal } from '~/api/entities';
+import { ProposalState } from '~/api/entities/Proposal/types';
 import { createProposal, CreateProposalParams } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { proposals } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ErrorCode, ProposalOrderByInput, ProposalState } from '~/types';
+import { Ensured, ErrorCode, ProposalOrderByInput } from '~/types';
 import { identityIdToString, valueToDid } from '~/utils';
 
 /**
@@ -44,7 +45,7 @@ export class Governance {
   /**
    * Retrieve a list of proposals. Can be filtered using parameters
    *
-   * @param opts.proposers - identities or identity IDs for which to fetch proposals (proposers). Defaults to all proposers
+   * @param opts.proposers - identities (or identity IDs) for which to fetch proposals. Defaults to all proposers
    * @param opts.states - state of the proposal
    * @param opts.orderBy - the order in which the proposals are returned
    * @param opts.size - page size
