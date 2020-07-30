@@ -86,9 +86,7 @@ export class Governance {
       });
     }
 
-    return result.data.proposals.map(
-      ({ pipId }) => new Proposal({ pipId: new BigNumber(pipId) }, context)
-    );
+    return result.data.proposals.map(({ pipId }) => new Proposal({ pipId }, context));
   }
 
   /**
