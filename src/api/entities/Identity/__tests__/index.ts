@@ -1,12 +1,12 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { IdentityId, Ticker } from 'polymesh-types/types';
+import { AccountKey, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { Role, RoleType } from '~/types';
+import { Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
 import * as utilsModule from '~/utils';
 
 import { Identity } from '../';
@@ -26,11 +26,13 @@ describe('Identity class', () => {
   let context: Context;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
+  let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
     identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
+    accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
   });
 
   beforeEach(() => {
@@ -101,7 +103,7 @@ describe('Identity class', () => {
 
     test('hasRole should check whether the identity has the Ticker Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      const role = { type: RoleType.TickerOwner, ticker: 'someTicker' };
+      const role: TickerOwnerRole = { type: RoleType.TickerOwner, ticker: 'someTicker' };
 
       let hasRole = await identity.hasRole(role);
 
@@ -116,7 +118,7 @@ describe('Identity class', () => {
 
     test('hasRole should check whether the identity has the Token Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      const role = { type: RoleType.TokenOwner, ticker: 'someTicker' };
+      const role: TokenOwnerRole = { type: RoleType.TokenOwner, ticker: 'someTicker' };
 
       let hasRole = await identity.hasRole(role);
 
@@ -150,10 +152,34 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
+    test('hasRole should check whether the identity has the Proposal Owner role', async () => {
+      const did = 'someDid';
+      const mockAddress = '0xdummy';
+      const identity = new Identity({ did }, context);
+      const pipId = 10;
+      const role: Role = { type: RoleType.ProposalOwner, pipId };
+
+      dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockProposalMetadata({
+            proposer: dsMockUtils.createMockAccountKey(mockAddress),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            cool_off_until: dsMockUtils.createMockU32(),
+          })
+        ),
+      });
+
+      accountKeyToStringStub.returns(mockAddress);
+
+      const hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+    });
+
     test('hasRole should throw an error if the role is not recognized', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const type = 'Fake' as RoleType;
-      const role = { type, ticker: 'someTicker' };
+      const role = { type, ticker: 'someTicker' } as TokenOwnerRole;
 
       const hasRole = identity.hasRole(role);
 
@@ -162,7 +188,7 @@ describe('Identity class', () => {
 
     test('hasRoles should return true if the identity possesses all roles', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      const roles = [
+      const roles: TickerOwnerRole[] = [
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];
@@ -174,7 +200,7 @@ describe('Identity class', () => {
 
     test("hasRoles should return false if at least one role isn't possessed by the identity", async () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      const roles = [
+      const roles: TickerOwnerRole[] = [
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];

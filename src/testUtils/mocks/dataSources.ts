@@ -898,20 +898,6 @@ export function setContextAccountBalance(balance: AccountBalance): void {
 
 /**
  * @hidden
- * Set an address in the mocked Context
- *
- * @param address - new address account
- */
-export function setContextAccountAddress(address: string): void {
-  mockInstanceContainer.contextInstance.getAccounts.returns([
-    {
-      address,
-    },
-  ]);
-}
-
-/**
- * @hidden
  * Retrieve an instance of the mocked Polkadot API
  */
 export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> & EventEmitter {

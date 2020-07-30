@@ -1,6 +1,6 @@
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode, Role } from '~/types';
-import { accountKeyToString, stringToText, u32ToBigNumber } from '~/utils';
+import { ErrorCode, Role, RoleType } from '~/types';
+import { stringToText, u32ToBigNumber } from '~/utils';
 
 export type EditProposalParams =
   | {
@@ -49,15 +49,8 @@ export async function prepareEditProposal(
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const { state } = pip.unwrap();
-  const { proposer, cool_off_until: coolOff } = metadata.unwrap();
+  const { cool_off_until: coolOff } = metadata.unwrap();
   const { number: blockId } = header;
-
-  if (accountKeyToString(proposer) !== context.getAccounts()[0].address) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Only the owner of the proposal can edit it',
-    });
-  }
 
   if (!state.isPending) {
     throw new PolymeshError({
@@ -66,7 +59,7 @@ export async function prepareEditProposal(
     });
   }
 
-  if (u32ToBigNumber(blockId).gt(u32ToBigNumber(coolOff))) {
+  if (u32ToBigNumber(blockId).gte(u32ToBigNumber(coolOff))) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The proposal is mutable only during its cool off period',
@@ -85,8 +78,8 @@ export async function prepareEditProposal(
 /**
  * @hidden
  */
-export function getRequiredRoles(): Role[] {
-  return [];
+export function getRequiredRoles({ pipId }: Params): Role[] {
+  return [{ type: RoleType.ProposalOwner, pipId }];
 }
 
 export const editProposal = new Procedure(prepareEditProposal, getRequiredRoles);

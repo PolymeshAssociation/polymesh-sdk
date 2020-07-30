@@ -1,6 +1,6 @@
 import { Text, u32 } from '@polkadot/types';
+import { Call } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
-import { AccountKey } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getRequiredRoles, Params, prepareEditProposal } from '~/api/procedures/editProposal';
@@ -8,11 +8,11 @@ import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('editProposal procedure', () => {
-  const mockAddress = 'someAddress';
   const pipId = 10;
   const description = 'Some Proposal';
   const discussionUrl = 'www.proposal.com';
@@ -30,7 +30,6 @@ describe('editProposal procedure', () => {
 
   let mockContext: Mocked<Context>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
-  let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
   let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
   let addTransactionStub: sinon.SinonStub;
   let editProposalTransaction: PolymeshTx<unknown[]>;
@@ -41,20 +40,17 @@ describe('editProposal procedure', () => {
     entityMockUtils.initMocks();
 
     stringToTextStub = sinon.stub(utilsModule, 'stringToText');
-    accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
     u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
   });
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([proposal]);
 
-    dsMockUtils.setContextAccountAddress(mockAddress);
-
     dsMockUtils.createQueryStub('pips', 'proposals', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockPip({
           id: dsMockUtils.createMockU32(1),
-          proposal: {},
+          proposal: ('proposal' as unknown) as Call,
           state: dsMockUtils.createMockProposalState('Pending'),
         })
       ),
@@ -63,7 +59,7 @@ describe('editProposal procedure', () => {
     dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockProposalMetadata({
-          proposer: dsMockUtils.createMockAccountKey(mockAddress),
+          proposer: dsMockUtils.createMockAccountKey(),
           // eslint-disable-next-line @typescript-eslint/camelcase
           cool_off_until: rawCoolOff,
         })
@@ -80,8 +76,6 @@ describe('editProposal procedure', () => {
     stringToTextStub.withArgs(discussionUrl, mockContext).returns(rawDiscussionUrl);
     u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
     u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
-
-    accountKeyToStringStub.returns(mockAddress);
   });
 
   afterEach(() => {
@@ -104,27 +98,12 @@ describe('editProposal procedure', () => {
     );
   });
 
-  test('should throw an error if the proposer is not the proposal owner', async () => {
-    accountKeyToStringStub.returns('otherAddress');
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    let error;
-    try {
-      await prepareEditProposal.call(proc, { pipId, ...args });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('Only the owner of the proposal can edit it');
-  });
-
   test('should throw an error if the proposal is not in pending state', async () => {
     dsMockUtils.createQueryStub('pips', 'proposals', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockPip({
           id: dsMockUtils.createMockU32(1),
-          proposal: {},
+          proposal: ('proposal' as unknown) as Call,
           state: dsMockUtils.createMockProposalState('Referendum'),
         })
       ),
@@ -178,9 +157,7 @@ describe('editProposal procedure', () => {
 
     await prepareEditProposal.call(proc, {
       pipId,
-      ...{
-        description,
-      },
+      description,
     });
 
     sinon.assert.calledWith(
@@ -194,9 +171,7 @@ describe('editProposal procedure', () => {
 
     await prepareEditProposal.call(proc, {
       pipId,
-      ...{
-        discussionUrl,
-      },
+      discussionUrl,
     });
 
     sinon.assert.calledWith(
@@ -211,7 +186,12 @@ describe('editProposal procedure', () => {
 });
 
 describe('getRequiredRoles', () => {
-  test('should return an empty array', () => {
-    expect(getRequiredRoles()).toEqual([]);
+  test('should return a proposal owner role', () => {
+    const pipId = 10;
+    const args = {
+      pipId,
+    } as Params;
+
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.ProposalOwner, pipId }]);
   });
 });

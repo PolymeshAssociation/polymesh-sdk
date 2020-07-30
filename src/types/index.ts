@@ -64,6 +64,7 @@ export enum RoleType {
   TickerOwner = 'TickerOwner',
   TokenOwner = 'TokenOwner',
   CddProvider = 'CddProvider',
+  ProposalOwner = 'ProposalOwner',
 }
 
 export interface TickerOwnerRole {
@@ -101,7 +102,19 @@ export function isCddProviderRole(role: Role): role is CddProviderRole {
   return role.type === RoleType.CddProvider;
 }
 
-export type Role = TickerOwnerRole | TokenOwnerRole | CddProviderRole;
+export interface ProposalOwnerRole {
+  type: RoleType.ProposalOwner;
+  pipId: number;
+}
+
+/**
+ * @hidden
+ */
+export function isProposalOwnerRole(role: Role): role is ProposalOwnerRole {
+  return role.type === RoleType.ProposalOwner;
+}
+
+export type Role = TickerOwnerRole | TokenOwnerRole | CddProviderRole | ProposalOwnerRole;
 
 export enum KnownTokenType {
   EquityCommon = 'EquityCommon',
