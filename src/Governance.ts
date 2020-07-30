@@ -8,8 +8,8 @@ import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { proposals } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ErrorCode, ProposalOrderByInput } from '~/types';
-import { identityIdToString, valueToDid } from '~/utils';
+import { Ensured, ErrorCode, ProposalOrderByInput, SubCallback, UnsubCallback } from '~/types';
+import { balanceToBigNumber, identityIdToString, valueToDid } from '~/utils';
 
 /**
  * Handles all Governance related functionality
@@ -101,5 +101,36 @@ export class Governance {
    */
   public async createProposal(args: CreateProposalParams): Promise<TransactionQueue<Proposal>> {
     return createProposal.prepare(args, this.context);
+  }
+
+  /**
+   * Get the minimum amount of POLYX that has to be deposited when creating a proposal
+   *
+   * @note can be subscribed to
+   */
+  public async minimumProposalDeposit(): Promise<BigNumber>;
+  public async minimumProposalDeposit(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async minimumProposalDeposit(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+        },
+      },
+    } = this;
+
+    if (callback) {
+      return pips.minimumProposalDeposit(res => {
+        callback(balanceToBigNumber(res));
+      });
+    }
+
+    const minimumProposalDeposit = await pips.minimumProposalDeposit();
+
+    return balanceToBigNumber(minimumProposalDeposit);
   }
 }

@@ -1,3 +1,4 @@
+import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -11,18 +12,25 @@ import { proposals } from '~/middleware/queries';
 import { Proposal as MiddlewareProposal } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { TxTags } from '~/types';
+import * as utilsModule from '~/utils';
 
 describe('Governance class', () => {
   let context: Context;
   let governance: Governance;
+  let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
+  let fakeBalance: Balance;
+  const amount = new BigNumber(5000);
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
   });
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
     governance = new Governance(context);
+    fakeBalance = dsMockUtils.createMockBalance(amount.toNumber());
+    balanceToBigNumberStub.withArgs(fakeBalance).returns(amount);
   });
 
   afterAll(() => {
@@ -34,10 +42,6 @@ describe('Governance class', () => {
   });
 
   describe('method: getGovernanceCommitteeMembers', () => {
-    afterAll(() => {
-      sinon.restore();
-    });
-
     test('should retrieve a list of the identities of all active members', async () => {
       const did = 'someDid';
       const expectedMembers = [new Identity({ did }, context)];
@@ -124,6 +128,31 @@ describe('Governance class', () => {
       const queue = await governance.createProposal(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: minimumProposalDeposit', () => {
+    test('should return the minimum proposal deposit', async () => {
+      dsMockUtils.createQueryStub('pips', 'minimumProposalDeposit').resolves(fakeBalance);
+
+      const result = await governance.minimumProposalDeposit();
+
+      expect(result).toBe(amount);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const callback = sinon.stub();
+
+      dsMockUtils.createQueryStub('pips', 'minimumProposalDeposit').callsFake(async cbFunc => {
+        cbFunc(fakeBalance);
+        return unsubCallback;
+      });
+
+      const result = await governance.minimumProposalDeposit(callback);
+
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, amount);
     });
   });
 });
