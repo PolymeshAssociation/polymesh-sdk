@@ -95,19 +95,19 @@ describe('Proposal class', () => {
 
   describe('method: getVotes', () => {
     test('should return the list of votes', async () => {
-      const identityDid = 'someDid';
+      const did = 'someDid';
       const vote = false;
       const weight = new BigNumber(10000000000);
       const proposalVotesQueryResponse = [
         {
-          account: identityDid,
+          account: did,
           vote,
           weight: weight.toNumber(),
         },
       ];
       const fakeResult = [
         {
-          identity: new Identity({ did: identityDid }, context),
+          identity: new Identity({ did }, context),
           vote,
           weight,
         },
