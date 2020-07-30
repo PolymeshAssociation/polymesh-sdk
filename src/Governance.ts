@@ -53,10 +53,7 @@ export class Governance {
   }
 
   /**
-   * Retrieve the proposal time frames. This includes:
-   *
-   * - Amount of blocks from proposal creation until the proposal can be voted on (cool off)
-   * - Amount of blocks from when cool off ends until the voting period is over (duration)
+   * Get the minimum amount of POLYX that has to be deposited when creating a proposal
    *
    * @note can be subscribed to
    */
@@ -87,7 +84,10 @@ export class Governance {
   }
 
   /**
-   * Get how long in blocks the proposal cool off period and proposal ballot are valid
+   * Retrieve the proposal time frames. This includes:
+   *
+   * - Amount of blocks from proposal creation until the proposal can be voted on (cool off)
+   * - Amount of blocks from when cool off ends until the voting period is over (duration)
    *
    * @note can be subscribed to
    */
