@@ -898,7 +898,7 @@ export function setContextAccountBalance(balance: AccountBalance): void {
 
 /**
  * @hidden
- * Sets an address in the mocked Context
+ * Set an address in the mocked Context
  *
  * @param address - new address account
  */
