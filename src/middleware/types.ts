@@ -220,7 +220,7 @@ export type QueryProposalsArgs = {
 
 export type QueryProposalVotesArgs = {
   pipId: Scalars['Int'];
-  vote?: Maybe<Array<Scalars['Boolean']>>;
+  vote?: Maybe<Scalars['Boolean']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
   orderBy?: Maybe<ProposalVotesOrderByInput>;
