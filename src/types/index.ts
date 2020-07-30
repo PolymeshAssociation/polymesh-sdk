@@ -379,5 +379,6 @@ export {
   ProposalOrderByInput,
   ProposalState,
   ProposalOrderFields,
+  ProposalVotesOrderByInput,
   Order,
 } from '~/middleware/types';

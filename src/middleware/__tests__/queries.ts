@@ -5,9 +5,30 @@ import {
   Order,
   ProposalOrderFields,
   ProposalState,
+  ProposalVotesOrderFields,
 } from '~/middleware/types';
 
-import { didsWithClaims, eventByIndexedArgs, proposals } from '../queries';
+import { didsWithClaims, eventByIndexedArgs, proposals, proposalVotes } from '../queries';
+
+describe('proposalVotes', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      pipId: 10,
+      vote: false,
+      count: 50,
+      skip: 0,
+      orderBy: {
+        field: ProposalVotesOrderFields.Vote,
+        order: Order.Desc,
+      },
+    };
+
+    const result = proposalVotes(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
 
 describe('didsWithClaims', () => {
   test('should pass the variables to the grapqhl query', () => {

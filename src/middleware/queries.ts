@@ -4,8 +4,41 @@ import {
   QueryDidsWithClaimsArgs,
   QueryEventsByIndexedArgsArgs,
   QueryProposalsArgs,
+  QueryProposalVotesArgs,
 } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
+
+/**
+ * @hidden
+ *
+ * Get the current voters list for given pipId
+ */
+export function proposalVotes(
+  variables: QueryProposalVotesArgs
+): GraphqlQuery<QueryProposalVotesArgs> {
+  const query = gql`
+    query ProposalVotesQuery(
+      $pipId: Int!
+      $vote: Boolean!
+      $count: Int
+      $skip: Int
+      $orderBy: ProposalVotesOrderByInput
+    ) {
+      proposalVotes(pipId: $pipId, vote: $vote, count: $count, skip: $skip, orderBy: $orderBy) {
+        blockId
+        eventIdx
+        account
+        vote
+        weight
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
 
 /**
  * @hidden
