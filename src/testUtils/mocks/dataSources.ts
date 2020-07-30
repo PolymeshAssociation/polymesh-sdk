@@ -1623,7 +1623,7 @@ export const createMockProposalState = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPip = (
-  pip: { id: u32; proposal: any; state: ProposalState } = {
+  pip: { id: u32; proposal: Call; state: ProposalState } = {
     id: createMockU32(),
     proposal: ('proposal' as unknown) as Call,
     state: createMockProposalState(),
