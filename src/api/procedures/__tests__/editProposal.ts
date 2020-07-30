@@ -11,7 +11,7 @@ import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
-describe('edit procedure', () => {
+describe('editProposal procedure', () => {
   const mockAddress = 'someAddress';
   const pipId = 10;
   const description = 'Some Proposal';
