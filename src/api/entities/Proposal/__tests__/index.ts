@@ -3,7 +3,8 @@ import BigNumber from 'bignumber.js';
 import { Identity } from '~/api/entities/Identity';
 import { Entity } from '~/base';
 import { Context } from '~/context';
-import { proposalVotes } from '~/middleware/queries';
+import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
+import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 
 import { Proposal } from '../';
@@ -45,6 +46,50 @@ describe('Proposal class', () => {
       expect(Proposal.isUniqueIdentifiers({ pipId: 10 })).toBe(true);
       expect(Proposal.isUniqueIdentifiers({})).toBe(false);
       expect(Proposal.isUniqueIdentifiers({ pipId: '10' })).toBe(false);
+    });
+  });
+
+  describe('method: identityHasVoted', () => {
+    const did = 'someDid';
+    const variables = {
+      moduleId: ModuleIdEnum.Pips,
+      eventId: EventIdEnum.Voted,
+      eventArg0: did,
+      eventArg2: pipId.toString(),
+    };
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+      proposal = new Proposal({ pipId }, context);
+    });
+
+    test('should return true if the identity has voted on the proposal', async () => {
+      const fakeResult = true;
+
+      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
+        /* eslint-disable @typescript-eslint/camelcase */
+        eventByIndexedArgs: {
+          block_id: 'someBlockId',
+        },
+        /* eslint-enable @typescript-eslint/camelcase */
+      });
+
+      const result = await proposal.identityHasVoted();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should return false if the identity has not voted on the proposal', async () => {
+      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
+      const result = await proposal.identityHasVoted({ did: 'someDid' });
+      expect(result).toBeFalsy();
+    });
+
+    test('should throw if the middleware query fails', async () => {
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      return expect(proposal.identityHasVoted()).rejects.toThrow(
+        'Error in middleware query: Error'
+      );
     });
   });
 
