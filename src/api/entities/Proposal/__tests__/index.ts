@@ -5,7 +5,8 @@ import { Identity } from '~/api/entities/Identity';
 import { editProposal } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { proposalVotes } from '~/middleware/queries';
+import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
+import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 
 import { Proposal } from '../';
@@ -50,21 +51,65 @@ describe('Proposal class', () => {
     });
   });
 
+  describe('method: identityHasVoted', () => {
+    const did = 'someDid';
+    const variables = {
+      moduleId: ModuleIdEnum.Pips,
+      eventId: EventIdEnum.Voted,
+      eventArg0: did,
+      eventArg2: pipId.toString(),
+    };
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+      proposal = new Proposal({ pipId }, context);
+    });
+
+    test('should return true if the identity has voted on the proposal', async () => {
+      const fakeResult = true;
+
+      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
+        /* eslint-disable @typescript-eslint/camelcase */
+        eventByIndexedArgs: {
+          block_id: 'someBlockId',
+        },
+        /* eslint-enable @typescript-eslint/camelcase */
+      });
+
+      const result = await proposal.identityHasVoted();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should return false if the identity has not voted on the proposal', async () => {
+      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
+      const result = await proposal.identityHasVoted({ did: 'someDid' });
+      expect(result).toBeFalsy();
+    });
+
+    test('should throw if the middleware query fails', async () => {
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      return expect(proposal.identityHasVoted()).rejects.toThrow(
+        'Error in middleware query: Error'
+      );
+    });
+  });
+
   describe('method: getVotes', () => {
     test('should return the list of votes', async () => {
-      const identityDid = 'someDid';
+      const did = 'someDid';
       const vote = false;
       const weight = new BigNumber(10000000000);
       const proposalVotesQueryResponse = [
         {
-          account: identityDid,
+          account: did,
           vote,
           weight: weight.toNumber(),
         },
       ];
       const fakeResult = [
         {
-          identity: new Identity({ did: identityDid }, context),
+          identity: new Identity({ did }, context),
           vote,
           weight,
         },
