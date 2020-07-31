@@ -8,7 +8,6 @@ import { Context } from '~/context';
 import {
   ErrorCode,
   isCddProviderRole,
-  isProposalOwnerRole,
   isTickerOwnerRole,
   isTokenOwnerRole,
   Role,
@@ -16,7 +15,6 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
-  accountKeyToString,
   balanceToBigNumber,
   cddStatusToBoolean,
   identityIdToString,
@@ -133,19 +131,6 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const memberDids = activeMembers.map(identityIdToString);
 
       return memberDids.includes(did);
-    } else if (isProposalOwnerRole(role)) {
-      const {
-        polymeshApi: {
-          query: { pips },
-        },
-      } = context;
-
-      const { pipId } = role;
-
-      const metadata = await pips.proposalMetadata(pipId);
-      const { proposer } = metadata.unwrap();
-
-      return accountKeyToString(proposer) === context.getCurrentPair().address;
     }
 
     throw new PolymeshError({

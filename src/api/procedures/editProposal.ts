@@ -1,6 +1,6 @@
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode, Role, RoleType } from '~/types';
-import { stringToText, u32ToBigNumber } from '~/utils';
+import { ErrorCode } from '~/types';
+import { accountKeyToString, stringToText, u32ToBigNumber } from '~/utils';
 
 export type EditProposalParams =
   | {
@@ -78,8 +78,19 @@ export async function prepareEditProposal(
 /**
  * @hidden
  */
-export function getRequiredRoles({ pipId }: Params): Role[] {
-  return [{ type: RoleType.ProposalOwner, pipId }];
+export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): Promise<boolean> {
+  const {
+    context: {
+      polymeshApi: {
+        query: { pips },
+      },
+    },
+  } = this;
+
+  const metadata = await pips.proposalMetadata(pipId);
+  const { proposer } = metadata.unwrap();
+
+  return accountKeyToString(proposer) === this.context.getCurrentPair().address;
 }
 
-export const editProposal = new Procedure(prepareEditProposal, getRequiredRoles);
+export const editProposal = new Procedure(prepareEditProposal, isAuthorized);

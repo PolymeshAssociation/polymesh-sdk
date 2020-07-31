@@ -1,6 +1,6 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AccountKey, IdentityId, Ticker } from 'polymesh-types/types';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Entity } from '~/base';
@@ -26,13 +26,11 @@ describe('Identity class', () => {
   let context: Context;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
-  let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
     identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
-    accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
   });
 
   beforeEach(() => {
@@ -150,30 +148,6 @@ describe('Identity class', () => {
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
-    });
-
-    test('hasRole should check whether the identity has the Proposal Owner role', async () => {
-      const did = 'someDid';
-      const mockAddress = '0xdummy';
-      const identity = new Identity({ did }, context);
-      const pipId = 10;
-      const role: Role = { type: RoleType.ProposalOwner, pipId };
-
-      dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockProposalMetadata({
-            proposer: dsMockUtils.createMockAccountKey(mockAddress),
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            cool_off_until: dsMockUtils.createMockU32(),
-          })
-        ),
-      });
-
-      accountKeyToStringStub.returns(mockAddress);
-
-      const hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(true);
     });
 
     test('hasRole should throw an error if the role is not recognized', () => {

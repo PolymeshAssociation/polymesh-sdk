@@ -3,17 +3,18 @@ import { Call } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { getRequiredRoles, Params, prepareEditProposal } from '~/api/procedures/editProposal';
+import { isAuthorized, Params, prepareEditProposal } from '~/api/procedures/editProposal';
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
+import { AccountKey } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('editProposal procedure', () => {
   const pipId = 10;
+  const mockAddress = 'someAddress';
   const description = 'Some Proposal';
   const discussionUrl = 'www.proposal.com';
   const args = {
@@ -31,16 +32,22 @@ describe('editProposal procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
   let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
+  let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
   let addTransactionStub: sinon.SinonStub;
   let editProposalTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
-    dsMockUtils.initMocks();
+    dsMockUtils.initMocks({
+      contextOptions: {
+        currentPairAddress: mockAddress,
+      },
+    });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
     stringToTextStub = sinon.stub(utilsModule, 'stringToText');
     u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
+    accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
   });
 
   beforeEach(() => {
@@ -183,15 +190,26 @@ describe('editProposal procedure', () => {
       null
     );
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a proposal owner role', () => {
-    const pipId = 10;
-    const args = {
-      pipId,
-    } as Params;
+  describe('isAuthorized', () => {
+    test('should return whether the current account is the owner of the proposal', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.ProposalOwner, pipId }]);
+      accountKeyToStringStub.returns(mockAddress);
+
+      dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockProposalMetadata({
+            proposer: dsMockUtils.createMockAccountKey(mockAddress),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            cool_off_until: dsMockUtils.createMockU32(),
+          })
+        ),
+      });
+
+      const boundFunc = isAuthorized.bind(proc);
+      const result = await boundFunc({ pipId, ...args });
+      expect(result).toBe(true);
+    });
   });
 });

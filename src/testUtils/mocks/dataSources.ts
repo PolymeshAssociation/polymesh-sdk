@@ -164,6 +164,7 @@ interface ContextOptions {
   tokenBalance?: BigNumber;
   invalidDids?: string[];
   transactionFee?: BigNumber;
+  currentPairAddress?: string;
 }
 
 interface Pair {
@@ -345,6 +346,7 @@ const defaultContextOptions: ContextOptions = {
   tokenBalance: new BigNumber(1000),
   invalidDids: [],
   transactionFee: new BigNumber(200),
+  currentPairAddress: '0xdummy',
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -373,7 +375,7 @@ function configureContext(opts: ContextOptions): void {
       );
   const currentPair = opts.withSeed
     ? ({
-        address: '0xdummy',
+        address: opts.currentPairAddress,
         isLocked: false,
       } as KeyringPair)
     : undefined;
