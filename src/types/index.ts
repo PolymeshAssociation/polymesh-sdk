@@ -372,11 +372,6 @@ export enum LinkType {
   NoData = 'NoData',
 }
 
-export interface ProposalTimeFrames {
-  duration: number;
-  coolOff: number;
-}
-
 export { TxTags } from 'polymesh-types/types';
 export * from '~/api/entities/types';
 export * from '~/base/types';

@@ -4,20 +4,17 @@ import { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 
 import { Identity, Proposal } from '~/api/entities';
-import { ProposalState } from '~/api/entities/Proposal/types';
+import {
+  ProposalOrderByInput,
+  ProposalState,
+  ProposalTimeFrames,
+} from '~/api/entities/Proposal/types';
 import { createProposal, CreateProposalParams } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { proposals } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import {
-  Ensured,
-  ErrorCode,
-  ProposalOrderByInput,
-  ProposalTimeFrames,
-  SubCallback,
-  UnsubCallback,
-} from '~/types';
+import { Ensured, ErrorCode, SubCallback, UnsubCallback } from '~/types';
 import { balanceToBigNumber, identityIdToString, u32ToBigNumber, valueToDid } from '~/utils';
 
 /**
