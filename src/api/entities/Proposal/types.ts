@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities';
+import { ProposalState } from '~/middleware/types';
 
-export interface Proposal {
-  call: Call;
-  metadata: Metadata;
-  state: ProposalState;
+export interface CallArguments {
+  name: string;
+  value: string;
 }
 
 export interface Call {
@@ -13,11 +13,6 @@ export interface Call {
   functionalCall: string;
   extrinsic: string;
   module: string;
-}
-
-export interface CallArguments {
-  name: string;
-  value: string;
 }
 
 export interface Metadata {
@@ -33,16 +28,16 @@ export interface Metadata {
   totalVotes: number;
 }
 
+export interface Proposal {
+  call: Call;
+  metadata: Metadata;
+  state: ProposalState;
+}
+
 export interface ProposalVote {
   identity: Identity;
   vote: boolean;
   weight: BigNumber;
 }
 
-export enum ProposalState {
-  Pending = 'Pending',
-  Cancelled = 'Cancelled',
-  Killed = 'Killed',
-  Rejected = 'Rejected',
-  Referendum = 'Referendum',
-}
+export { ProposalVotesOrderByInput } from '~/middleware/types';

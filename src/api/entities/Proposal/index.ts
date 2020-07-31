@@ -7,10 +7,10 @@ import { Entity, PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, ErrorCode, ProposalVotesOrderByInput } from '~/types';
+import { Ensured, ErrorCode } from '~/types';
 import { valueToDid } from '~/utils';
 
-import { ProposalVote } from './types';
+import { ProposalVote, ProposalVotesOrderByInput } from './types';
 
 /**
  * Properties that uniquely identify a Proposal
