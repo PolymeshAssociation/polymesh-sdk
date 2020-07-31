@@ -23,3 +23,4 @@ export const SS58_FORMAT = 42;
 export const MAX_CONCURRENT_REQUESTS = 200;
 export const TREASURY_MODULE_ADDRESS = 'modlpm/trsry';
 export const BATCH_REGEX = RegExp('(b|s?B)atch');
+export const DEFAULT_GQL_PAGE_SIZE = 25;

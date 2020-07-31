@@ -47,7 +47,7 @@ export type Query = {
   /** Get all POLYX transfers sent by the given did and/or account */
   polyxTransfersSent: Array<PolyxTransfer>;
   /** Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers */
-  didsWithClaims: Array<IdentityWithClaims>;
+  didsWithClaims: IdentityWithClaimsResult;
   /** Get all tickers of tokens that were held at some point by the given did */
   tokensHeldByDid: Array<Scalars['String']>;
   /** Get all POLYX transfers (send) failed by the given account */
@@ -819,6 +819,12 @@ export type PolyxTransfer = {
   toDID: Scalars['String'];
   toAccount: Scalars['String'];
   balance: Scalars['Float'];
+};
+
+export type IdentityWithClaimsResult = {
+  __typename?: 'IdentityWithClaimsResult';
+  totalCount: Scalars['Int'];
+  items: Array<IdentityWithClaims>;
 };
 
 export type IdentityWithClaims = {

@@ -348,11 +348,12 @@ export interface PaginationOptions {
   start?: string;
 }
 
-export type NextKey = string | null;
+export type NextKey = string | number | null;
 
 export interface ResultSet<T> {
   data: T[];
   next: NextKey;
+  count?: number;
 }
 
 export interface NetworkProperties {
