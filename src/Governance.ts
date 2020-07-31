@@ -1,3 +1,5 @@
+import { QueryableStorageEntry } from '@polkadot/api/types';
+import { BlockNumber } from '@polkadot/types/interfaces/runtime';
 import { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 
@@ -8,8 +10,15 @@ import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { proposals } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ErrorCode, ProposalOrderByInput, SubCallback, UnsubCallback } from '~/types';
-import { balanceToBigNumber, identityIdToString, valueToDid } from '~/utils';
+import {
+  Ensured,
+  ErrorCode,
+  ProposalOrderByInput,
+  ProposalTimeFrames,
+  SubCallback,
+  UnsubCallback,
+} from '~/types';
+import { balanceToBigNumber, identityIdToString, u32ToBigNumber, valueToDid } from '~/utils';
 
 /**
  * Handles all Governance related functionality
@@ -130,5 +139,63 @@ export class Governance {
     const minimumProposalDeposit = await pips.minimumProposalDeposit();
 
     return balanceToBigNumber(minimumProposalDeposit);
+  }
+
+  /**
+   * Retrieve the proposal time frames. This includes:
+   *
+   * - Amount of blocks from proposal creation until the proposal can be voted on (cool off)
+   * - Amount of blocks from when cool off ends until the voting period is over (duration)
+   *
+   * @note can be subscribed to
+   */
+  public async proposalTimeFrames(): Promise<ProposalTimeFrames>;
+  public async proposalTimeFrames(
+    callback: SubCallback<ProposalTimeFrames>
+  ): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async proposalTimeFrames(
+    callback?: SubCallback<ProposalTimeFrames>
+  ): Promise<ProposalTimeFrames | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+          queryMulti,
+        },
+      },
+    } = this;
+
+    const assembleResult = (
+      coolOffPeriod: BlockNumber,
+      proposalDuration: BlockNumber
+    ): ProposalTimeFrames => {
+      return {
+        coolOff: u32ToBigNumber(coolOffPeriod).toNumber(),
+        duration: u32ToBigNumber(proposalDuration).toNumber(),
+      };
+    };
+
+    if (callback) {
+      // NOTE @shuffledex: the type assertions are necessary because queryMulti doesn't play nice with strict types
+      return queryMulti<[BlockNumber, BlockNumber]>(
+        [
+          [pips.proposalCoolOffPeriod as QueryableStorageEntry<'promise'>],
+          [pips.proposalDuration as QueryableStorageEntry<'promise'>],
+        ],
+        ([rawCoolOffPeriod, rawProposalDuration]) => {
+          callback(assembleResult(rawCoolOffPeriod, rawProposalDuration));
+        }
+      );
+    }
+
+    // NOTE @shuffledex: the type assertions are necessary because queryMulti doesn't play nice with strict types
+    const [rawCoolOff, rawDuration] = await queryMulti<[BlockNumber, BlockNumber]>([
+      [pips.proposalCoolOffPeriod as QueryableStorageEntry<'promise'>],
+      [pips.proposalDuration as QueryableStorageEntry<'promise'>],
+    ]);
+
+    return assembleResult(rawCoolOff, rawDuration);
   }
 }

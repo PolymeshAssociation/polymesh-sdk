@@ -1,3 +1,4 @@
+import { u8, u32 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
@@ -18,12 +19,14 @@ describe('Governance class', () => {
   let context: Context;
   let governance: Governance;
   let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
+  let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
   let fakeBalance: Balance;
   const amount = new BigNumber(5000);
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
+    u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
   });
 
   beforeEach(() => {
@@ -153,6 +156,53 @@ describe('Governance class', () => {
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, amount);
+    });
+  });
+
+  describe('method: proposalTimeFrames', () => {
+    let queryMultiStub: sinon.SinonStub;
+    let coolOfPeriod: BigNumber;
+    let proposalDuration: BigNumber;
+    let rawCoolOfPeriod: u8;
+    let rawProposalDuration: u8;
+
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('pips', 'proposalCoolOffPeriod');
+      dsMockUtils.createQueryStub('pips', 'proposalDuration');
+      queryMultiStub = dsMockUtils.getQueryMultiStub();
+      coolOfPeriod = new BigNumber(100);
+      proposalDuration = new BigNumber(600);
+      rawCoolOfPeriod = dsMockUtils.createMockU32(coolOfPeriod.toNumber());
+      rawProposalDuration = dsMockUtils.createMockU32(proposalDuration.toNumber());
+      u32ToBigNumberStub.withArgs(rawCoolOfPeriod).returns(coolOfPeriod);
+      u32ToBigNumberStub.withArgs(rawProposalDuration).returns(proposalDuration);
+    });
+
+    test('should return the proposal time frames', async () => {
+      queryMultiStub.resolves([rawCoolOfPeriod, rawProposalDuration]);
+
+      const result = await governance.proposalTimeFrames();
+
+      expect(result.coolOff).toBe(coolOfPeriod.toNumber());
+      expect(result.duration).toBe(proposalDuration.toNumber());
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+
+      queryMultiStub.callsFake(async (_, cbFunc) => {
+        cbFunc([rawCoolOfPeriod, rawProposalDuration]);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await governance.proposalTimeFrames(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWith(callback, {
+        coolOff: coolOfPeriod.toNumber(),
+        duration: proposalDuration.toNumber(),
+      });
     });
   });
 });
