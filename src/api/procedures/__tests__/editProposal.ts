@@ -208,8 +208,17 @@ describe('editProposal procedure', () => {
       });
 
       const boundFunc = isAuthorized.bind(proc);
-      const result = await boundFunc({ pipId, ...args });
+      let result = await boundFunc({ pipId, ...args });
       expect(result).toBe(true);
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          currentPairAddress: 'otherAddress',
+        },
+      });
+
+      result = await boundFunc({ pipId, ...args });
+      expect(result).toBe(false);
     });
   });
 });
