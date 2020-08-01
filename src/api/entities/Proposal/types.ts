@@ -40,4 +40,9 @@ export interface ProposalVote {
   weight: BigNumber;
 }
 
-export { ProposalVotesOrderByInput } from '~/middleware/types';
+export interface ProposalTimeFrames {
+  duration: number;
+  coolOff: number;
+}
+
+export { ProposalOrderByInput, ProposalState, ProposalVotesOrderByInput } from '~/middleware/types';
