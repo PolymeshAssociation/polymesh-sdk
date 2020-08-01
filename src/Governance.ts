@@ -1,13 +1,21 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { BlockNumber } from '@polkadot/types/interfaces/runtime';
+import { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 
 import { Identity, Proposal } from '~/api/entities';
+import {
+  ProposalOrderByInput,
+  ProposalState,
+  ProposalTimeFrames,
+} from '~/api/entities/Proposal/types';
 import { createProposal, CreateProposalParams } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { ProposalTimeFrames, SubCallback, UnsubCallback } from '~/types';
-import { balanceToBigNumber, identityIdToString, u32ToBigNumber } from '~/utils';
+import { proposals } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
+import { Ensured, ErrorCode, SubCallback, UnsubCallback } from '~/types';
+import { balanceToBigNumber, identityIdToString, u32ToBigNumber, valueToDid } from '~/utils';
 
 /**
  * Handles all Governance related functionality
@@ -38,6 +46,53 @@ export class Governance {
     const activeMembers = await committeeMembership.activeMembers();
 
     return activeMembers.map(member => new Identity({ did: identityIdToString(member) }, context));
+  }
+
+  /**
+   * Retrieve a list of proposals. Can be filtered using parameters
+   *
+   * @param opts.proposers - identities (or identity IDs) for which to fetch proposals. Defaults to all proposers
+   * @param opts.states - state of the proposal
+   * @param opts.orderBy - the order in which the proposals are returned
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   */
+  public async getProposals(
+    opts: {
+      proposers?: (string | Identity)[];
+      states?: ProposalState[];
+      orderBy?: ProposalOrderByInput;
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<Proposal[]> {
+    const {
+      context: { middlewareApi },
+      context,
+    } = this;
+
+    const { proposers, states, orderBy, size, start } = opts;
+
+    let result: ApolloQueryResult<Ensured<Query, 'proposals'>>;
+
+    try {
+      result = await middlewareApi.query<Ensured<Query, 'proposals'>>(
+        proposals({
+          proposers: proposers?.map(proposer => valueToDid(proposer)),
+          states,
+          orderBy,
+          count: size,
+          skip: start,
+        })
+      );
+    } catch (e) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: `Error in middleware query: ${e.message}`,
+      });
+    }
+
+    return result.data.proposals.map(({ pipId }) => new Proposal({ pipId }, context));
   }
 
   /**
