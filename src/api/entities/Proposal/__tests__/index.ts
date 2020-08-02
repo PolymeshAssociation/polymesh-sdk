@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities/Identity';
-import { editProposal } from '~/api/procedures';
+import { cancelProposal, editProposal } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
@@ -155,6 +155,21 @@ describe('Proposal class', () => {
         .resolves(expectedQueue);
 
       const queue = await proposal.edit(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: cancel', () => {
+    test('should prepare the procedure with the correct arguments and context', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(cancelProposal, 'prepare')
+        .withArgs({ pipId }, context)
+        .resolves(expectedQueue);
+
+      const queue = await proposal.cancel();
 
       expect(queue).toBe(expectedQueue);
     });

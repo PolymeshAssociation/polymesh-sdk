@@ -2,7 +2,7 @@ import { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities/Identity';
-import { editProposal, EditProposalParams } from '~/api/procedures';
+import { cancelProposal, editProposal, EditProposalParams } from '~/api/procedures';
 import { Entity, PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
@@ -152,5 +152,13 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   public async edit(args: EditProposalParams): Promise<TransactionQueue<void>> {
     const { context, pipId } = this;
     return editProposal.prepare({ pipId, ...args }, context);
+  }
+
+  /**
+   * Cancel a proposal
+   */
+  public async cancel(): Promise<TransactionQueue<void>> {
+    const { context, pipId } = this;
+    return cancelProposal.prepare({ pipId }, context);
   }
 }
