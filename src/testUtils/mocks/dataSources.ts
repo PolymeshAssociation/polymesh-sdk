@@ -1631,15 +1631,17 @@ export const createMockPip = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockProposalMetadata = (
-  metadata: { proposer: AccountKey; cool_off_until: u32 } = {
+  metadata: { proposer: AccountKey; cool_off_until: u32; end: u32 } = {
     proposer: createMockAccountKey(),
     cool_off_until: createMockU32(),
+    end: createMockU32(),
   }
 ): PipsMetadata =>
   createMockCodec(
     {
       proposer: metadata.proposer,
       cool_off_until: metadata.cool_off_until,
+      end: metadata.end,
     },
     false
   ) as PipsMetadata;

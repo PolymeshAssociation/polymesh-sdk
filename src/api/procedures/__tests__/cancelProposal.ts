@@ -1,8 +1,7 @@
-import { u32 } from '@polkadot/types';
 import { Call } from '@polkadot/types/interfaces/runtime';
-import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { ProposalStage } from '~/api/entities/Proposal/types';
 import { isAuthorized, Params, prepareCancelProposal } from '~/api/procedures/cancelProposal';
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
@@ -12,17 +11,17 @@ import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
+jest.mock(
+  '~/api/entities/Proposal',
+  require('~/testUtils/mocks/entities').mockProposalModule('~/api/entities/Proposal')
+);
+
 describe('cancelProposal procedure', () => {
   const pipId = 10;
   const mockAddress = 'someAddress';
   const proposal = ('proposal' as unknown) as PostTransactionValue<void>;
-  const coolOff = 555000;
-  const blockId = 500000;
-  const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-  const rawBlockId = dsMockUtils.createMockU32(blockId);
 
   let mockContext: Mocked<Context>;
-  let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
   let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
   let addTransactionStub: sinon.SinonStub;
   let cancelProposalTransaction: PolymeshTx<unknown[]>;
@@ -35,41 +34,15 @@ describe('cancelProposal procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
     accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
   });
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([proposal]);
 
-    dsMockUtils.createQueryStub('pips', 'proposals', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(1),
-          proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Pending'),
-        })
-      ),
-    });
-
-    dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockProposalMetadata({
-          proposer: dsMockUtils.createMockAccountKey(),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          cool_off_until: rawCoolOff,
-        })
-      ),
-    });
-
-    dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
-
     cancelProposalTransaction = dsMockUtils.createTxStub('pips', 'cancelProposal');
 
     mockContext = dsMockUtils.getContextInstance();
-
-    u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-    u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
   });
 
   afterEach(() => {
@@ -85,14 +58,14 @@ describe('cancelProposal procedure', () => {
   });
 
   test('should throw an error if the proposal is not in pending state', async () => {
-    dsMockUtils.createQueryStub('pips', 'proposals', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(1),
+    entityMockUtils.configureMocks({
+      proposalOptions: {
+        getDetails: dsMockUtils.createMockPip({
+          id: dsMockUtils.createMockU32(),
           proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Referendum'),
-        })
-      ),
+          state: dsMockUtils.createMockProposalState('Killed'),
+        }),
+      },
     });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -108,12 +81,15 @@ describe('cancelProposal procedure', () => {
   });
 
   test('should throw an error if the proposal is not in the cool off period', async () => {
-    const fakeBlockId = new BigNumber(600000);
-    const rawFakeBlockId = dsMockUtils.createMockU32(fakeBlockId.toNumber());
-
-    dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawFakeBlockId });
-
-    u32ToBigNumberStub.withArgs(rawFakeBlockId).returns(fakeBlockId);
+    entityMockUtils.configureMocks({
+      proposalOptions: {
+        getDetails: dsMockUtils.createMockPip({
+          id: dsMockUtils.createMockU32(),
+          proposal: ('proposal' as unknown) as Call,
+          state: dsMockUtils.createMockProposalState('Pending'),
+        }),
+      },
+    });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -128,6 +104,17 @@ describe('cancelProposal procedure', () => {
   });
 
   test('should add a cancel proposal transaction to the queue', async () => {
+    entityMockUtils.configureMocks({
+      proposalOptions: {
+        getStage: ProposalStage.CoolOff,
+        getDetails: dsMockUtils.createMockPip({
+          id: dsMockUtils.createMockU32(),
+          proposal: ('proposal' as unknown) as Call,
+          state: dsMockUtils.createMockProposalState('Pending'),
+        }),
+      },
+    });
+
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareCancelProposal.call(proc, { pipId });
@@ -147,6 +134,7 @@ describe('cancelProposal procedure', () => {
             proposer: dsMockUtils.createMockAccountKey(mockAddress),
             // eslint-disable-next-line @typescript-eslint/camelcase
             cool_off_until: dsMockUtils.createMockU32(),
+            end: dsMockUtils.createMockU32(),
           })
         ),
       });

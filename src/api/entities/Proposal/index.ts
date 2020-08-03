@@ -7,10 +7,11 @@ import { Entity, PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Pip } from '~/polkadot';
 import { Ensured, ErrorCode, ResultSet } from '~/types';
-import { valueToDid } from '~/utils';
+import { u32ToBigNumber, valueToDid } from '~/utils';
 
-import { ProposalVote, ProposalVotesOrderByInput } from './types';
+import { ProposalStage, ProposalVote, ProposalVotesOrderByInput } from './types';
 
 /**
  * Properties that uniquely identify a Proposal
@@ -166,5 +167,62 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   public async cancel(): Promise<TransactionQueue<void>> {
     const { context, pipId } = this;
     return cancelProposal.prepare({ pipId }, context);
+  }
+
+  /**
+   * Retrieve the proposal details
+   */
+  public async getDetails(): Promise<Pip> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+        },
+      },
+      pipId,
+    } = this;
+
+    const proposal = await pips.proposals(pipId);
+
+    return proposal.unwrap();
+  }
+
+  /**
+   * Retrieve the current stage of the proposal
+   */
+  public async getStage(): Promise<ProposalStage> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+          rpc,
+        },
+      },
+      pipId,
+    } = this;
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const [metadata, header] = await Promise.all([
+      pips.proposalMetadata(pipId),
+      (rpc as any).chain.getHeader(),
+    ]);
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+
+    const { end: rawEnd, cool_off_until: rawCoolOff } = metadata.unwrap();
+    const { number: rawBlockId } = header;
+
+    const blockId = u32ToBigNumber(rawBlockId);
+    const end = u32ToBigNumber(rawEnd);
+    const coolOff = u32ToBigNumber(rawCoolOff);
+
+    if (blockId.lt(coolOff)) {
+      return ProposalStage.CoolOff;
+    }
+
+    if (blockId.gte(coolOff) && blockId.lt(end)) {
+      return ProposalStage.Open;
+    }
+
+    return ProposalStage.Ended;
   }
 }

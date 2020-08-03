@@ -11,6 +11,8 @@ import {
   SecurityToken,
   TickerReservation,
 } from '~/api/entities';
+import { ProposalStage } from '~/api/entities/Proposal/types';
+import { Pip } from '~/polkadot';
 import { Mocked } from '~/testUtils/types';
 import {
   Authorization,
@@ -66,6 +68,8 @@ interface AuthorizationRequestOptions {
 
 interface ProposalOptions {
   pipId?: number;
+  getDetails?: Pip;
+  getStage?: ProposalStage;
 }
 
 let identityConstructorStub: SinonStub;
@@ -193,6 +197,8 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
 const defaultProposalOptions: ProposalOptions = {
   pipId: 1,
+  getDetails: ('pip' as unknown) as Pip,
+  getStage: ProposalStage.Open,
 };
 let proposalOptions = defaultProposalOptions;
 
@@ -203,6 +209,8 @@ let proposalOptions = defaultProposalOptions;
 function configureProposal(opts: ProposalOptions): void {
   const proposal = ({
     pipId: opts.pipId,
+    getDetails: sinon.stub().returns(opts.getDetails),
+    getStage: sinon.stub().returns(opts.getStage),
   } as unknown) as MockProposal;
 
   Object.assign(mockInstanceContainer.proposal, proposal);

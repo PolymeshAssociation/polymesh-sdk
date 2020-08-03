@@ -1,6 +1,8 @@
+import { Proposal } from '~/api/entities';
+import { ProposalStage } from '~/api/entities/Proposal/types';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
-import { accountKeyToString, u32ToBigNumber } from '~/utils';
+import { accountKeyToString } from '~/utils';
 
 export type Params = { pipId: number };
 
@@ -13,26 +15,17 @@ export async function prepareCancelProposal(
 ): Promise<void> {
   const {
     context: {
-      polymeshApi: {
-        tx,
-        query: { pips },
-        rpc,
-      },
+      polymeshApi: { tx },
     },
+    context,
   } = this;
   const { pipId } = args;
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const [pip, metadata, header] = await Promise.all([
-    pips.proposals(pipId),
-    pips.proposalMetadata(pipId),
-    (rpc as any).chain.getHeader(),
-  ]);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
+  const proposal = new Proposal({ pipId }, context);
 
-  const { state } = pip.unwrap();
-  const { cool_off_until: coolOff } = metadata.unwrap();
-  const { number: blockId } = header;
+  const [details, stage] = await Promise.all([proposal.getDetails(), proposal.getStage()]);
+
+  const { state } = details;
 
   if (!state.isPending) {
     throw new PolymeshError({
@@ -41,7 +34,7 @@ export async function prepareCancelProposal(
     });
   }
 
-  if (u32ToBigNumber(blockId).gte(u32ToBigNumber(coolOff))) {
+  if (stage !== ProposalStage.CoolOff) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The proposal can be canceled only during its cool off period',

@@ -1,8 +1,8 @@
-import { Text, u32 } from '@polkadot/types';
+import { Text } from '@polkadot/types';
 import { Call } from '@polkadot/types/interfaces/runtime';
-import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { ProposalStage } from '~/api/entities/Proposal/types';
 import { isAuthorized, Params, prepareEditProposal } from '~/api/procedures/editProposal';
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
@@ -11,6 +11,11 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
+
+jest.mock(
+  '~/api/entities/Proposal',
+  require('~/testUtils/mocks/entities').mockProposalModule('~/api/entities/Proposal')
+);
 
 describe('editProposal procedure', () => {
   const pipId = 10;
@@ -24,14 +29,9 @@ describe('editProposal procedure', () => {
   const proposal = ('proposal' as unknown) as PostTransactionValue<void>;
   const rawDescription = dsMockUtils.createMockText(description);
   const rawDiscussionUrl = dsMockUtils.createMockText(discussionUrl);
-  const coolOff = 555000;
-  const blockId = 500000;
-  const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-  const rawBlockId = dsMockUtils.createMockU32(blockId);
 
   let mockContext: Mocked<Context>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
-  let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
   let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
   let addTransactionStub: sinon.SinonStub;
   let editProposalTransaction: PolymeshTx<unknown[]>;
@@ -46,34 +46,11 @@ describe('editProposal procedure', () => {
     entityMockUtils.initMocks();
 
     stringToTextStub = sinon.stub(utilsModule, 'stringToText');
-    u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
     accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
   });
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([proposal]);
-
-    dsMockUtils.createQueryStub('pips', 'proposals', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(1),
-          proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Pending'),
-        })
-      ),
-    });
-
-    dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockProposalMetadata({
-          proposer: dsMockUtils.createMockAccountKey(),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          cool_off_until: rawCoolOff,
-        })
-      ),
-    });
-
-    dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
 
     editProposalTransaction = dsMockUtils.createTxStub('pips', 'amendProposal');
 
@@ -81,8 +58,6 @@ describe('editProposal procedure', () => {
 
     stringToTextStub.withArgs(description, mockContext).returns(rawDescription);
     stringToTextStub.withArgs(discussionUrl, mockContext).returns(rawDiscussionUrl);
-    u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-    u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
   });
 
   afterEach(() => {
@@ -106,14 +81,14 @@ describe('editProposal procedure', () => {
   });
 
   test('should throw an error if the proposal is not in pending state', async () => {
-    dsMockUtils.createQueryStub('pips', 'proposals', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(1),
+    entityMockUtils.configureMocks({
+      proposalOptions: {
+        getDetails: dsMockUtils.createMockPip({
+          id: dsMockUtils.createMockU32(),
           proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Referendum'),
-        })
-      ),
+          state: dsMockUtils.createMockProposalState('Killed'),
+        }),
+      },
     });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -129,12 +104,15 @@ describe('editProposal procedure', () => {
   });
 
   test('should throw an error if the proposal is not in the cool off period', async () => {
-    const fakeBlockId = new BigNumber(600000);
-    const rawFakeBlockId = dsMockUtils.createMockU32(fakeBlockId.toNumber());
-
-    dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawFakeBlockId });
-
-    u32ToBigNumberStub.withArgs(rawFakeBlockId).returns(fakeBlockId);
+    entityMockUtils.configureMocks({
+      proposalOptions: {
+        getDetails: dsMockUtils.createMockPip({
+          id: dsMockUtils.createMockU32(),
+          proposal: ('proposal' as unknown) as Call,
+          state: dsMockUtils.createMockProposalState('Pending'),
+        }),
+      },
+    });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -149,6 +127,17 @@ describe('editProposal procedure', () => {
   });
 
   test('should add an edit proposal transaction to the queue', async () => {
+    entityMockUtils.configureMocks({
+      proposalOptions: {
+        getStage: ProposalStage.CoolOff,
+        getDetails: dsMockUtils.createMockPip({
+          id: dsMockUtils.createMockU32(),
+          proposal: ('proposal' as unknown) as Call,
+          state: dsMockUtils.createMockProposalState('Pending'),
+        }),
+      },
+    });
+
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareEditProposal.call(proc, { pipId, ...args });
@@ -203,6 +192,7 @@ describe('editProposal procedure', () => {
             proposer: dsMockUtils.createMockAccountKey(mockAddress),
             // eslint-disable-next-line @typescript-eslint/camelcase
             cool_off_until: dsMockUtils.createMockU32(),
+            end: dsMockUtils.createMockU32(),
           })
         ),
       });
