@@ -1,7 +1,5 @@
-import { Call } from '@polkadot/types/interfaces/runtime';
 import sinon from 'sinon';
 
-import { ProposalStage } from '~/api/entities/Proposal/types';
 import { isAuthorized, Params, prepareCancelProposal } from '~/api/procedures/cancelProposal';
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
@@ -11,10 +9,7 @@ import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
-jest.mock(
-  '~/api/entities/Proposal',
-  require('~/testUtils/mocks/entities').mockProposalModule('~/api/entities/Proposal')
-);
+jest.mock('~/api/procedures/utils');
 
 describe('cancelProposal procedure', () => {
   const pipId = 10;
@@ -57,64 +52,7 @@ describe('cancelProposal procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the proposal is not in pending state', async () => {
-    entityMockUtils.configureMocks({
-      proposalOptions: {
-        getDetails: dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(),
-          proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Killed'),
-        }),
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    let error;
-    try {
-      await prepareCancelProposal.call(proc, { pipId });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('The proposal must be in pending state');
-  });
-
-  test('should throw an error if the proposal is not in the cool off period', async () => {
-    entityMockUtils.configureMocks({
-      proposalOptions: {
-        getDetails: dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(),
-          proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Pending'),
-        }),
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    let error;
-    try {
-      await prepareCancelProposal.call(proc, { pipId });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('The proposal can be canceled only during its cool off period');
-  });
-
   test('should add a cancel proposal transaction to the queue', async () => {
-    entityMockUtils.configureMocks({
-      proposalOptions: {
-        getStage: ProposalStage.CoolOff,
-        getDetails: dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(),
-          proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Pending'),
-        }),
-      },
-    });
-
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareCancelProposal.call(proc, { pipId });

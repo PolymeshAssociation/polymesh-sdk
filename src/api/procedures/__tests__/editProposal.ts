@@ -1,8 +1,6 @@
 import { Text } from '@polkadot/types';
-import { Call } from '@polkadot/types/interfaces/runtime';
 import sinon from 'sinon';
 
-import { ProposalStage } from '~/api/entities/Proposal/types';
 import { isAuthorized, Params, prepareEditProposal } from '~/api/procedures/editProposal';
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
@@ -16,6 +14,7 @@ jest.mock(
   '~/api/entities/Proposal',
   require('~/testUtils/mocks/entities').mockProposalModule('~/api/entities/Proposal')
 );
+jest.mock('~/api/procedures/utils');
 
 describe('editProposal procedure', () => {
   const pipId = 10;
@@ -80,64 +79,7 @@ describe('editProposal procedure', () => {
     );
   });
 
-  test('should throw an error if the proposal is not in pending state', async () => {
-    entityMockUtils.configureMocks({
-      proposalOptions: {
-        getDetails: dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(),
-          proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Killed'),
-        }),
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    let error;
-    try {
-      await prepareEditProposal.call(proc, { pipId, ...args });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('The proposal must be in pending state');
-  });
-
-  test('should throw an error if the proposal is not in the cool off period', async () => {
-    entityMockUtils.configureMocks({
-      proposalOptions: {
-        getDetails: dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(),
-          proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Pending'),
-        }),
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    let error;
-    try {
-      await prepareEditProposal.call(proc, { pipId, ...args });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('The proposal is mutable only during its cool off period');
-  });
-
   test('should add an edit proposal transaction to the queue', async () => {
-    entityMockUtils.configureMocks({
-      proposalOptions: {
-        getStage: ProposalStage.CoolOff,
-        getDetails: dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(),
-          proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Pending'),
-        }),
-      },
-    });
-
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareEditProposal.call(proc, { pipId, ...args });
