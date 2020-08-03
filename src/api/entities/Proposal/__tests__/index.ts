@@ -1,7 +1,9 @@
 import BigNumber from 'bignumber.js';
+import sinon from 'sinon';
 
 import { Identity } from '~/api/entities/Identity';
-import { Entity } from '~/base';
+import { editProposal } from '~/api/procedures';
+import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
@@ -137,6 +139,26 @@ describe('Proposal class', () => {
       dsMockUtils.throwOnMiddlewareQuery();
 
       return expect(proposal.getVotes()).rejects.toThrow('Error in middleware query: Error');
+    });
+  });
+
+  describe('method: edit', () => {
+    test('should prepare the procedure with the correct arguments and context', async () => {
+      const args = {
+        discussionUrl: 'www.my-new-proposal.com',
+        description: 'A new proposal description',
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(editProposal, 'prepare')
+        .withArgs({ pipId, ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await proposal.edit(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

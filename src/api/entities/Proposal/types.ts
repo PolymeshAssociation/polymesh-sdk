@@ -45,4 +45,9 @@ export interface ProposalTimeFrames {
   coolOff: number;
 }
 
-export { ProposalOrderByInput, ProposalState } from '~/middleware/types';
+export {
+  ProposalOrderByInput,
+  ProposalState,
+  ProposalOrderFields,
+  ProposalVotesOrderByInput,
+} from '~/middleware/types';
