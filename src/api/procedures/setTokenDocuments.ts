@@ -1,20 +1,17 @@
-import { u64 } from '@polkadot/types';
 import { differenceWith } from 'lodash';
-import { Document, Link, TxTags } from 'polymesh-types/types';
+import { DocumentName, TxTags } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode, LinkType, Role, RoleType, TokenDocument } from '~/types';
-import { SignerType } from '~/types/internal';
+import { ErrorCode, Role, RoleType, TokenDocument } from '~/types';
+import { tuple } from '~/types/utils';
 import {
   batchArguments,
-  booleanToBool,
-  documentToTokenDocument,
-  linkTypeToMeshLinkType,
-  signerToSignatory,
+  documentNameToString,
+  documentToTokenDocumentData,
+  stringToDocumentName,
   stringToTicker,
-  tickerToDid,
-  tokenDocumentToDocument,
+  tokenDocumentDataToDocument,
 } from '~/utils';
 
 export interface SetTokenDocumentsParams {
@@ -34,28 +31,27 @@ export async function prepareSetTokenDocuments(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { tx, rpc },
+      polymeshApi: { tx, query },
     },
     context,
   } = this;
   const { ticker, documents } = args;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const currentDocLinks: Link[] = await (rpc as any).identity.getFilteredLinks(
-    signerToSignatory({ type: SignerType.Identity, value: tickerToDid(ticker) }, context),
-    booleanToBool(true, context),
-    linkTypeToMeshLinkType(LinkType.DocumentOwnership, context)
+  const currentDocEntries = await query.asset.assetDocuments.entries(
+    stringToTicker(ticker, context)
   );
 
-  const rawCurrentDocs: Document[] = [];
-  const currentDocIds: u64[] = [];
+  const currentDocNames: DocumentName[] = [];
+  const currentDocs: TokenDocument[] = [];
 
-  currentDocLinks.forEach(({ link_id: linkId, link_data: linkData }) => {
-    rawCurrentDocs.push(linkData.asDocumentOwned);
-    currentDocIds.push(linkId);
+  currentDocEntries.forEach(([key, doc]) => {
+    const name = key.args[1] as DocumentName;
+    currentDocNames.push(name);
+    currentDocs.push({
+      ...documentToTokenDocumentData(doc),
+      name: documentNameToString(name),
+    });
   });
-
-  const currentDocs = rawCurrentDocs.map(rawDoc => documentToTokenDocument(rawDoc));
 
   const comparator = (a: TokenDocument, b: TokenDocument): boolean => {
     return a.name === b.name && a.uri === b.uri && a.contentHash === b.contentHash;
@@ -71,28 +67,30 @@ export async function prepareSetTokenDocuments(
     });
   }
 
-  const rawDocuments = documents.map(document => tokenDocumentToDocument(document, context));
+  const rawDocuments = documents.map(({ name, ...documentData }) =>
+    tuple(stringToDocumentName(name, context), tokenDocumentDataToDocument(documentData, context))
+  );
 
   const rawTicker = stringToTicker(ticker, context);
 
-  if (currentDocIds.length) {
-    batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).forEach(docIdBatch => {
+  if (currentDocNames.length) {
+    batchArguments(currentDocNames, TxTags.asset.BatchRemoveDocument).forEach(docNameBatch => {
       this.addTransaction(
-        tx.asset.removeDocuments,
-        { batchSize: docIdBatch.length },
-        rawTicker,
-        docIdBatch
+        tx.asset.batchRemoveDocument,
+        { batchSize: docNameBatch.length },
+        docNameBatch,
+        rawTicker
       );
     });
   }
 
   if (rawDocuments.length) {
-    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
+    batchArguments(rawDocuments, TxTags.asset.BatchAddDocument).forEach(rawDocumentBatch => {
       this.addTransaction(
-        tx.asset.addDocuments,
+        tx.asset.batchAddDocument,
         { batchSize: rawDocumentBatch.length },
-        rawTicker,
-        rawDocumentBatch
+        rawDocumentBatch,
+        rawTicker
       );
     });
   }

@@ -21,6 +21,7 @@ import {
   TickerReservationStatus,
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -403,27 +404,25 @@ describe('Polymesh Class', () => {
 
     test('should return a list of ticker reservations if did parameter is set', async () => {
       const fakeTicker = 'TEST';
+      const did = 'someDid';
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
-        dsMockUtils.createMockLink({
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_data: dsMockUtils.createMockLinkData({
-            TickerOwned: dsMockUtils.createMockTicker(fakeTicker),
-          }),
-          expiry: dsMockUtils.createMockOption(),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_id: dsMockUtils.createMockU64(),
-        }),
-      ]);
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+          ),
+        ],
+      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
       });
 
-      const tickerReservations = await polymesh.getTickerReservations({ did: 'someDid' });
+      const tickerReservations = await polymesh.getTickerReservations({ did });
 
       expect(tickerReservations).toHaveLength(1);
       expect(tickerReservations[0].ticker).toBe(fakeTicker);
@@ -431,20 +430,18 @@ describe('Polymesh Class', () => {
 
     test('should return a list of ticker reservations owned by the identity', async () => {
       const fakeTicker = 'TEST';
+      const did = 'someDid';
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
-        dsMockUtils.createMockLink({
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_data: dsMockUtils.createMockLinkData({
-            TickerOwned: dsMockUtils.createMockTicker(fakeTicker),
-          }),
-          expiry: dsMockUtils.createMockOption(),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_id: dsMockUtils.createMockU64(),
-        }),
-      ]);
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+          ),
+        ],
+      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -595,20 +592,18 @@ describe('Polymesh Class', () => {
 
     test('should return a list of security tokens owned by the supplied did', async () => {
       const fakeTicker = 'TEST';
+      const did = 'someDid';
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
-        dsMockUtils.createMockLink({
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_data: dsMockUtils.createMockLinkData({
-            AssetOwned: dsMockUtils.createMockTicker(fakeTicker),
-          }),
-          expiry: dsMockUtils.createMockOption(),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_id: dsMockUtils.createMockU64(),
-        }),
-      ]);
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+        ],
+      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -623,20 +618,18 @@ describe('Polymesh Class', () => {
 
     test('should return a list of security tokens owned by the current identity if no did is supplied', async () => {
       const fakeTicker = 'TEST';
+      const did = 'someDid';
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
-        dsMockUtils.createMockLink({
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_data: dsMockUtils.createMockLinkData({
-            AssetOwned: dsMockUtils.createMockTicker(fakeTicker),
-          }),
-          expiry: dsMockUtils.createMockOption(),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_id: dsMockUtils.createMockU64(),
-        }),
-      ]);
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+        ],
+      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',

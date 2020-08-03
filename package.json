@@ -12,7 +12,7 @@
     "generate:middleware-types": "graphql-codegen -r dotenv/config",
     "fetch-definitions": "node scripts/fetchDefinitions.js",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package polymesh-types --input ./src/polkadot",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://pme.polymath.network --output ./src/polkadot --strict",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://pmf.polymath.network --output ./src/polkadot --strict",
     "generate:tags": "node scripts/generateTxTags.js",
     "test": "jest --coverage",
     "build:ts": "ttsc -b",

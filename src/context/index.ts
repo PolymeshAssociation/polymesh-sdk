@@ -20,7 +20,7 @@ import {
   balanceToBigNumber,
   identityIdToString,
   posRatioToBigNumber,
-  stringToAccountKey,
+  stringToAccountId,
   stringToIdentityId,
   txTagToProtocolOp,
   valueToDid,
@@ -203,7 +203,7 @@ export class Context {
 
     try {
       identityIds = await identity.keyToIdentityIds(
-        stringToAccountKey(newCurrentPair.address, this)
+        stringToAccountId(newCurrentPair.address, this)
       );
 
       did = identityIds.unwrap().asUnique;

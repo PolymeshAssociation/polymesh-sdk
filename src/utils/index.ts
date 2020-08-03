@@ -9,12 +9,11 @@ import {
   u8aFixLength,
   u8aToString,
 } from '@polkadot/util';
-import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
+import { blake2AsHex, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, isEqual, map, padEnd } from 'lodash';
 import {
-  AccountKey,
   AssetIdentifier,
   AssetName,
   AssetTransferRule,
@@ -31,8 +30,9 @@ import {
   FundingRoundName,
   IdentifierType,
   IdentityId,
+  IssueAssetItem,
   JurisdictionName,
-  LinkType as MeshLinkType,
+  Permission as MeshPermission,
   PosRatio,
   ProtocolOp,
   Rule as MeshRule,
@@ -56,14 +56,14 @@ import {
   ErrorCode,
   isMultiClaimCondition,
   isSingleClaimCondition,
+  IssuanceData,
   KnownTokenType,
-  LinkType,
   MultiClaimCondition,
   NextKey,
   PaginationOptions,
+  Permission,
   Rule,
   SingleClaimCondition,
-  TokenDocument,
   TokenIdentifierType,
   TokenType,
   TransferStatus,
@@ -75,11 +75,11 @@ import {
   MaybePostTransactionValue,
   Signer,
   SignerType,
+  TokenDocumentData,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   BATCH_REGEX,
-  IGNORE_CHECKSUM,
   MAX_BATCH_ELEMENTS,
   MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
@@ -263,23 +263,6 @@ export function valueToDid(value: string | Identity): string {
 /**
  * @hidden
  */
-export function stringToAccountKey(accountKey: string, context: Context): AccountKey {
-  return context.polymeshApi.createType(
-    'AccountKey',
-    decodeAddress(accountKey, IGNORE_CHECKSUM, SS58_FORMAT)
-  );
-}
-
-/**
- * @hidden
- */
-export function accountKeyToString(accountKey: AccountKey): string {
-  return encodeAddress(accountKey, SS58_FORMAT);
-}
-
-/**
- * @hidden
- */
 export function signerToSignatory(signer: Signer, context: Context): Signatory {
   return context.polymeshApi.createType('Signatory', {
     [signer.type]: signer.value,
@@ -290,10 +273,10 @@ export function signerToSignatory(signer: Signer, context: Context): Signatory {
  * @hidden
  */
 export function signatoryToSigner(signatory: Signatory): Signer {
-  if (signatory.isAccountKey) {
+  if (signatory.isAccount) {
     return {
-      type: SignerType.AccountKey,
-      value: accountKeyToString(signatory.asAccountKey),
+      type: SignerType.Account,
+      value: accountIdToString(signatory.asAccount),
     };
   }
 
@@ -315,6 +298,35 @@ export function authorizationToAuthorizationData(
   return context.polymeshApi.createType('AuthorizationData', {
     [type]: value,
   });
+}
+
+/**
+ * @hidden
+ */
+export function permissionToMeshPermission(
+  permission: Permission,
+  context: Context
+): MeshPermission {
+  return context.polymeshApi.createType('Permission', permission);
+}
+
+/**
+ * @hidden
+ */
+export function meshPermissionToPermission(permission: MeshPermission): Permission {
+  if (permission.isAdmin) {
+    return Permission.Admin;
+  }
+
+  if (permission.isFull) {
+    return Permission.Full;
+  }
+
+  if (permission.isOperator) {
+    return Permission.Operator;
+  }
+
+  return Permission.SpendFunds;
 }
 
 /**
@@ -358,7 +370,7 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
   if (auth.isJoinIdentity) {
     return {
       type: AuthorizationType.JoinIdentity,
-      value: identityIdToString(auth.asJoinIdentity),
+      value: auth.asJoinIdentity.map(meshPermissionToPermission),
     };
   }
 
@@ -633,12 +645,11 @@ export function documentHashToString(docHash: DocumentHash): string {
 /**
  * @hidden
  */
-export function tokenDocumentToDocument(
-  { name, uri, contentHash }: TokenDocument,
+export function tokenDocumentDataToDocument(
+  { uri, contentHash }: TokenDocumentData,
   context: Context
 ): Document {
   return context.polymeshApi.createType('Document', {
-    name: stringToDocumentName(name, context),
     uri: stringToDocumentUri(uri, context),
     // eslint-disable-next-line @typescript-eslint/camelcase
     content_hash: stringToDocumentHash(contentHash, context),
@@ -648,12 +659,11 @@ export function tokenDocumentToDocument(
 /**
  * @hidden
  */
-export function documentToTokenDocument(
+export function documentToTokenDocumentData(
   // eslint-disable-next-line @typescript-eslint/camelcase
-  { name, uri, content_hash }: Document
-): TokenDocument {
+  { uri, content_hash }: Document
+): TokenDocumentData {
   return {
-    name: documentNameToString(name),
     uri: documentUriToString(uri),
     contentHash: documentHashToString(content_hash),
   };
@@ -987,13 +997,6 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
 /**
  * @hidden
  */
-export function linkTypeToMeshLinkType(linkType: LinkType, context: Context): MeshLinkType {
-  return context.polymeshApi.createType('LinkType', linkType);
-}
-
-/**
- * @hidden
- */
 export function stringToText(url: string, context: Context): Text {
   return context.polymeshApi.createType('Text', url);
 }
@@ -1003,6 +1006,21 @@ export function stringToText(url: string, context: Context): Text {
  */
 export function textToString(value: Text): string {
   return value.toString();
+}
+
+/**
+ * @hidden
+ */
+export function issuanceDataToIssueAssetItem(
+  issuanceData: IssuanceData,
+  context: Context
+): IssueAssetItem {
+  const { identity, amount } = issuanceData;
+  return context.polymeshApi.createType('IssueAssetItem', {
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    identity_did: stringToIdentityId(valueToDid(identity), context),
+    value: numberToBalance(amount, context),
+  });
 }
 
 /**

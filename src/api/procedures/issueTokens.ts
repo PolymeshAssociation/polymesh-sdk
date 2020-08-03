@@ -1,18 +1,11 @@
-import { Balance } from '@polkadot/types/interfaces';
 import P from 'bluebird';
 import { chunk } from 'lodash';
-import { IdentityId, TxTags } from 'polymesh-types/types';
+import { IssueAssetItem, TxTags } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
-import {
-  batchArguments,
-  numberToBalance,
-  stringToIdentityId,
-  stringToTicker,
-  valueToDid,
-} from '~/utils';
+import { batchArguments, issuanceDataToIssueAssetItem, stringToTicker, valueToDid } from '~/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
 export interface IssueTokensParams {
@@ -79,14 +72,12 @@ export async function prepareIssueTokens(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const investors: IdentityId[] = [];
-  const balances: Balance[] = [];
+  const issueAssetItems: IssueAssetItem[] = [];
   const failed: Array<{ did: string; transferStatus: TransferStatus }> = [];
 
   const issuanceDataChunks = chunk(issuanceData, MAX_CONCURRENT_REQUESTS);
 
   await P.each(issuanceDataChunks, async issuanceDataChunk => {
-    // TODO: queryMulti
     const transferStatuses = await Promise.all(
       issuanceDataChunk.map(({ identity, amount }) =>
         securityToken.transfers.canMint({ to: identity, amount })
@@ -94,10 +85,10 @@ export async function prepareIssueTokens(
     );
 
     transferStatuses.forEach((canTransfer, index) => {
-      const { identity, amount } = issuanceDataChunk[index];
+      const { identity } = issuanceDataChunk[index];
       const did = valueToDid(identity);
-      investors.push(stringToIdentityId(did, context));
-      balances.push(numberToBalance(amount, context));
+
+      issueAssetItems.push(issuanceDataToIssueAssetItem(issuanceDataChunk[index], context));
 
       if (canTransfer !== TransferStatus.Success) {
         failed.push({ did, transferStatus: canTransfer });
@@ -115,16 +106,8 @@ export async function prepareIssueTokens(
     });
   }
 
-  const investorBatches = batchArguments(investors, TxTags.asset.BatchIssue);
-
-  batchArguments(balances, TxTags.asset.BatchIssue).forEach((balanceBatch, index) => {
-    this.addTransaction(
-      asset.batchIssue,
-      { batchSize: issuanceData.length },
-      rawTicker,
-      investorBatches[index],
-      balanceBatch
-    );
+  batchArguments(issueAssetItems, TxTags.asset.BatchIssue).forEach(itemBatch => {
+    this.addTransaction(asset.batchIssue, { batchSize: issuanceData.length }, itemBatch, rawTicker);
   });
 
   return securityToken;
