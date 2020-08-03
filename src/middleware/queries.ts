@@ -3,6 +3,7 @@ import gql from 'graphql-tag';
 import {
   QueryDidsWithClaimsArgs,
   QueryEventsByIndexedArgsArgs,
+  QueryProposalsArgs,
   QueryProposalVotesArgs,
 } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
@@ -117,6 +118,54 @@ export function eventByIndexedArgs(
         block {
           datetime
         }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get all proposals optionally filtered by pipId, proposer or state
+ */
+export function proposals(
+  variables?: QueryProposalsArgs
+): GraphqlQuery<QueryProposalsArgs | undefined> {
+  const query = gql`
+    query ProposalsQuery(
+      $pipIds: [Int!]
+      $proposers: [String!]
+      $states: [ProposalState!]
+      $count: Int
+      $skip: Int
+      $orderBy: ProposalOrderByInput
+    ) {
+      proposals(
+        pipIds: $pipIds
+        proposers: $proposers
+        states: $states
+        count: $count
+        skip: $skip
+        orderBy: $orderBy
+      ) {
+        pipId
+        proposer
+        createdAt
+        url
+        description
+        coolOffEndBlock
+        endBlock
+        proposal
+        lastState
+        lastStateUpdatedAt
+        totalVotes
+        totalAyesWeight
+        totalNaysWeight
       }
     }
   `;

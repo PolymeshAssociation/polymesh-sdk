@@ -3,10 +3,12 @@ import {
   EventIdEnum,
   ModuleIdEnum,
   Order,
+  ProposalOrderFields,
+  ProposalState,
   ProposalVotesOrderFields,
 } from '~/middleware/types';
 
-import { didsWithClaims, eventByIndexedArgs, proposalVotes } from '../queries';
+import { didsWithClaims, eventByIndexedArgs, proposals, proposalVotes } from '../queries';
 
 describe('proposalVotes', () => {
   test('should pass the variables to the grapqhl query', () => {
@@ -55,6 +57,24 @@ describe('eventByIndexedArgs', () => {
     };
 
     const result = eventByIndexedArgs(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('proposals', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      proposers: ['someProposer'],
+      states: [ProposalState.Referendum],
+      orderBy: {
+        field: ProposalOrderFields.CreatedAt,
+        order: Order.Desc,
+      },
+    };
+
+    const result = proposals(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
