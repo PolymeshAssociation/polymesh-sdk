@@ -2130,7 +2130,7 @@ describe('calculateNextKey', () => {
     expect(nextKey).toBeNull();
   });
 
-  test('should return NextKey null as it is latest page', () => {
+  test('should return NextKey null as it is the last page', () => {
     const totalCount = 50;
     const currentPageSize = 30;
     const currentStart = 31;
