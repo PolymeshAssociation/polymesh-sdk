@@ -7,7 +7,7 @@ import { Entity, PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, ErrorCode } from '~/types';
+import { Ensured, ErrorCode, ResultSet } from '~/types';
 import { valueToDid } from '~/utils';
 
 import { ProposalVote, ProposalVotesOrderByInput } from './types';
@@ -108,7 +108,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       size?: number;
       start?: number;
     } = {}
-  ): Promise<ProposalVote[]> {
+  ): Promise<ResultSet<ProposalVote>> {
     const {
       context: { middlewareApi },
       pipId,
@@ -135,13 +135,19 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       });
     }
 
-    return result.data.proposalVotes.map(({ account: did, vote: proposalVote, weight }) => {
+    const data = result.data.proposalVotes.map(({ account: did, vote: proposalVote, weight }) => {
       return {
         identity: new Identity({ did }, context),
         vote: proposalVote,
         weight: new BigNumber(weight),
       };
     });
+
+    return {
+      data,
+      // TODO: replace by proper calculation once the query returns totalCount
+      next: null,
+    };
   }
 
   /**
