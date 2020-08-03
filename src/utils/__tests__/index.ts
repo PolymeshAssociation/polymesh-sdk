@@ -2123,7 +2123,7 @@ describe('batchArguments', () => {
 });
 
 describe('calculateNextKey', () => {
-  test('should return NextKey null as there are less element than default page size', () => {
+  test('should return NextKey null as there are less elements than the default page size', () => {
     const totalCount = 20;
     const nextKey = calculateNextKey(totalCount);
 
