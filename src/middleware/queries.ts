@@ -65,16 +65,19 @@ export function didsWithClaims(
         count: $count
         skip: $skip
       ) {
-        did
-        claims {
-          targetDID
-          issuer
-          issuance_date
-          last_update_date
-          expiry
-          type
-          jurisdiction
-          scope
+        totalCount
+        items {
+          did
+          claims {
+            targetDID
+            issuer
+            issuance_date
+            last_update_date
+            expiry
+            type
+            jurisdiction
+            scope
+          }
         }
       }
     }

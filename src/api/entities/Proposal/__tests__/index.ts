@@ -130,7 +130,9 @@ describe('Proposal class', () => {
 
       const result = await proposal.getVotes();
 
-      expect(result).toEqual(fakeResult);
+      expect(result.data).toEqual(fakeResult);
+      expect(result.next).toBeNull();
+      expect(result.count).toBeUndefined();
     });
 
     test('should throw if the middleware query fails', async () => {
