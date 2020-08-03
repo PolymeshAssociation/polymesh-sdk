@@ -16,7 +16,7 @@ import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TickerReservationStatus } from '~/types';
+import { TickerReservationStatus, TransactionArgumentType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -28,12 +28,14 @@ describe('createProposal procedure', () => {
   let discussionUrl: string;
   let bondAmount: BigNumber;
   let tag: TxTag;
-  let transactionArgs: [string];
+  let transactionArgs: [string, string, number];
   let args: CreateProposalParams;
 
   let rawDescription: Text;
   let rawDiscussionUrl: Text;
   let rawBondAmount: Balance;
+
+  let convertedBalance: Balance;
 
   let proposal: PostTransactionValue<Proposal>;
 
@@ -48,8 +50,8 @@ describe('createProposal procedure', () => {
     description = 'Some Proposal';
     discussionUrl = 'www.proposal.com';
     bondAmount = new BigNumber(1000);
-    tag = TxTags.asset.RegisterTicker;
-    transactionArgs = ['someTicker'];
+    tag = TxTags.asset.Transfer;
+    transactionArgs = ['someTicker', 'someDestinatary', 3000];
     args = {
       description,
       discussionUrl,
@@ -61,6 +63,7 @@ describe('createProposal procedure', () => {
     rawDescription = dsMockUtils.createMockText(description);
     rawDiscussionUrl = dsMockUtils.createMockText(discussionUrl);
     rawBondAmount = dsMockUtils.createMockBalance(bondAmount.toNumber());
+    convertedBalance = dsMockUtils.createMockBalance(transactionArgs[2]);
 
     proposal = ('proposal' as unknown) as PostTransactionValue<Proposal>;
   });
@@ -68,6 +71,7 @@ describe('createProposal procedure', () => {
   let addTransactionStub: sinon.SinonStub;
 
   let createProposalTransaction: PolymeshTx<unknown[]>;
+  let transferTransaction: sinon.SinonStub;
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([proposal]);
@@ -83,13 +87,25 @@ describe('createProposal procedure', () => {
     });
 
     createProposalTransaction = dsMockUtils.createTxStub('pips', 'propose');
-    dsMockUtils.createTxStub('asset', 'registerTicker');
+    transferTransaction = dsMockUtils.createTxStub('asset', 'transfer');
 
     mockContext = dsMockUtils.getContextInstance();
+    mockContext.getTransactionArguments.returns([
+      {
+        type: TransactionArgumentType.Text,
+      },
+      {
+        type: TransactionArgumentType.Did,
+      },
+      {
+        type: TransactionArgumentType.Balance,
+      },
+    ]);
 
     stringToTextStub.withArgs(description, mockContext).returns(rawDescription);
     stringToTextStub.withArgs(discussionUrl, mockContext).returns(rawDiscussionUrl);
     numberToBalanceStub.withArgs(bondAmount, mockContext).returns(rawBondAmount);
+    numberToBalanceStub.withArgs(transactionArgs[2], mockContext).returns(convertedBalance);
   });
 
   afterEach(() => {
@@ -106,9 +122,8 @@ describe('createProposal procedure', () => {
 
   test('should throw an error if the bond amount is greater than the current free balance', async () => {
     const freeBalance = new BigNumber(10);
-    dsMockUtils.configureMocks({
-      contextOptions: { balance: { free: freeBalance, locked: new BigNumber(0) } },
-    });
+    mockContext.accountBalance.resolves({ free: freeBalance, locked: new BigNumber(0) });
+
     const proc = procedureMockUtils.getInstance<CreateProposalParams, Proposal>(mockContext);
 
     let error;
@@ -142,18 +157,24 @@ describe('createProposal procedure', () => {
     expect(error.data).toMatchObject({ minBond });
   });
 
-  test('should add an create proposal transaction to the queue', async () => {
+  test('should add an create proposal transaction to the queue, transforming balance arguments', async () => {
     const proc = procedureMockUtils.getInstance<CreateProposalParams, Proposal>(mockContext);
 
     let result = await prepareCreateProposal.call(proc, args);
 
+    sinon.assert.calledWith(
+      transferTransaction,
+      transactionArgs[0],
+      transactionArgs[1],
+      convertedBalance
+    );
     sinon.assert.calledWith(
       addTransactionStub,
       createProposalTransaction,
       sinon.match({
         resolvers: sinon.match.array,
       }),
-      'registerTicker',
+      'transfer',
       rawBondAmount,
       rawDiscussionUrl,
       rawDescription,
@@ -168,12 +189,18 @@ describe('createProposal procedure', () => {
     });
 
     sinon.assert.calledWith(
+      transferTransaction,
+      transactionArgs[0],
+      transactionArgs[1],
+      convertedBalance
+    );
+    sinon.assert.calledWith(
       addTransactionStub,
       createProposalTransaction,
       sinon.match({
         resolvers: sinon.match.array,
       }),
-      'registerTicker',
+      'transfer',
       rawBondAmount,
       null,
       null,

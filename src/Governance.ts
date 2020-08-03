@@ -1,10 +1,11 @@
 import BigNumber from 'bignumber.js';
+import { TxTag } from 'polymesh-types/types';
 
 import { Identity, Proposal } from '~/api/entities';
 import { createProposal, CreateProposalParams } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { SubCallback, UnsubCallback } from '~/types';
+import { SubCallback, TransactionArgument, UnsubCallback } from '~/types';
 import { balanceToBigNumber, identityIdToString } from '~/utils';
 
 /**
@@ -36,6 +37,15 @@ export class Governance {
     const activeMembers = await committeeMembership.activeMembers();
 
     return activeMembers.map(member => new Identity({ did: identityIdToString(member) }, context));
+  }
+
+  /**
+   * Retrieve the types of arguments that a certain transaction requires to be run
+   *
+   * @param args.tag - tag associated with the transaction that will be executed if the proposal passes
+   */
+  public getTransactionArguments(args: { tag: TxTag }): TransactionArgument[] {
+    return this.context.getTransactionArguments(args);
   }
 
   /**

@@ -393,6 +393,7 @@ function configureContext(opts: ContextOptions): void {
     middlewareApi: mockInstanceContainer.apolloInstance,
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
+    getTransactionArguments: sinon.stub().returns([]),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
@@ -638,7 +639,11 @@ export function createTxStub<
 >(
   mod: ModuleName,
   tx: TransactionName,
-  opts: { autoresolve?: MockTxStatus | false; gas?: Balance } = {}
+  opts: {
+    autoresolve?: MockTxStatus | false;
+    gas?: Balance;
+    meta?: { args: Array<{ name: string; type: string }> };
+  } = {}
 ): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> & SinonStub {
   let runtimeModule = txModule[mod];
 
@@ -647,8 +652,12 @@ export function createTxStub<
     txModule[mod] = runtimeModule;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-use-before-define
-  const { autoresolve = MockTxStatus.Succeeded, gas = createMockBalance(1) } = opts;
+  const {
+    autoresolve = MockTxStatus.Succeeded,
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    gas = createMockBalance(1),
+    meta = { args: [] },
+  } = opts;
 
   const transaction = (sinon.stub().returns({
     method: tx, // should be a `Call` object, but this is enough for testing
@@ -679,6 +688,7 @@ export function createTxStub<
 
   (transaction as any).section = mod;
   (transaction as any).method = tx;
+  (transaction as any).meta = meta;
 
   runtimeModule[tx] = transaction;
 
