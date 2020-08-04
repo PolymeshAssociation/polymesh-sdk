@@ -35,6 +35,7 @@ import {
   txTagToProtocolOp,
   valueToDid,
 } from '~/utils';
+import { ROOT_TYPES } from '~/utils/constants';
 
 interface SignerData {
   currentPair: KeyringPair;
@@ -376,64 +377,6 @@ export class Context {
     } = this;
     const { types } = polymesh;
 
-    const didTypes = ['IdentityId'];
-
-    const addressTypes = [
-      'AccountId',
-      'AccountIdOf',
-      'LookupTarget',
-      'Address',
-      'AuthorityId',
-      'SessionKey',
-      'ValidatorId',
-      'AuthorityId',
-      'KeyType',
-      'SessionKey',
-    ];
-
-    const balanceTypes = ['Amount', 'AssetOf', 'Balance', 'BalanceOf'];
-
-    const numberTypes = ['u8', 'u16', 'u32', 'u64', 'u128', 'u256', 'U256', 'BlockNumber'];
-
-    const textTypes = ['String', 'Text', 'Ticker'];
-
-    const booleanTypes = ['bool'];
-
-    const dateTypes = ['Moment'];
-
-    const rootTypes: Record<
-      string,
-      | TransactionArgumentType.Did
-      | TransactionArgumentType.Address
-      | TransactionArgumentType.Balance
-      | TransactionArgumentType.Number
-      | TransactionArgumentType.Text
-      | TransactionArgumentType.Boolean
-      | TransactionArgumentType.Date
-    > = {};
-
-    didTypes.forEach(type => {
-      rootTypes[type] = TransactionArgumentType.Did;
-    });
-    addressTypes.forEach(type => {
-      rootTypes[type] = TransactionArgumentType.Address;
-    });
-    balanceTypes.forEach(type => {
-      rootTypes[type] = TransactionArgumentType.Balance;
-    });
-    numberTypes.forEach(type => {
-      rootTypes[type] = TransactionArgumentType.Number;
-    });
-    textTypes.forEach(type => {
-      rootTypes[type] = TransactionArgumentType.Text;
-    });
-    booleanTypes.forEach(type => {
-      rootTypes[type] = TransactionArgumentType.Boolean;
-    });
-    dateTypes.forEach(type => {
-      rootTypes[type] = TransactionArgumentType.Date;
-    });
-
     const [section, method] = args.tag.split('.');
 
     const getRootType = (
@@ -443,7 +386,7 @@ export class Context {
       | ArrayTransactionArgument
       | SimpleEnumTransactionArgument
       | ComplexTransactionArgument => {
-      const rootType = rootTypes[type];
+      const rootType = ROOT_TYPES[type];
 
       if (rootType) {
         return {
