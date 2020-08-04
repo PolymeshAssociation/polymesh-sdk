@@ -348,11 +348,12 @@ export interface PaginationOptions {
   start?: string;
 }
 
-export type NextKey = string | null;
+export type NextKey = string | number | null;
 
 export interface ResultSet<T> {
   data: T[];
   next: NextKey;
+  count?: number;
 }
 
 export interface NetworkProperties {
@@ -432,4 +433,4 @@ export type TransactionArgument = {
 export { TxTags } from 'polymesh-types/types';
 export * from '~/api/entities/types';
 export * from '~/base/types';
-export { ProposalVotesOrderByInput } from '~/middleware/types';
+export { Order } from '~/middleware/types';

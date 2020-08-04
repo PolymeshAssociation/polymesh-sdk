@@ -79,6 +79,7 @@ import {
 import { tuple } from '~/types/utils';
 import {
   BATCH_REGEX,
+  DEFAULT_GQL_PAGE_SIZE,
   IGNORE_CHECKSUM,
   MAX_BATCH_ELEMENTS,
   MAX_MODULE_LENGTH,
@@ -1167,4 +1168,20 @@ export function batchArguments<Args>(
   });
 
   return batches;
+}
+
+/**
+ * Calculates next page number for paginated GraphQL ResultSet.
+ * Returns null if there is no next page.
+ *
+ * @param size - page size requested
+ * @param start - start index requestd
+ * @param totalCount - total amount of elements returned by query
+ *
+ * @hidden
+ *
+ */
+export function calculateNextKey(totalCount: number, size?: number, start?: number): NextKey {
+  const next = (start ?? 0) + (size ?? DEFAULT_GQL_PAGE_SIZE);
+  return totalCount > next ? next : null;
 }

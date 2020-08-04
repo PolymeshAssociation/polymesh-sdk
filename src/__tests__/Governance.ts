@@ -1,12 +1,16 @@
+import { u8, u32 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity, Proposal } from '~/api/entities';
+import { ProposalState } from '~/api/entities/Proposal/types';
 import { createProposal } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { Governance } from '~/Governance';
+import { proposals } from '~/middleware/queries';
+import { Proposal as MiddlewareProposal } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
@@ -16,12 +20,14 @@ describe('Governance class', () => {
   let context: Mocked<Context>;
   let governance: Governance;
   let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
+  let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
   let fakeBalance: Balance;
   const amount = new BigNumber(5000);
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
+    u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
   });
 
   beforeEach(() => {
@@ -31,12 +37,12 @@ describe('Governance class', () => {
     balanceToBigNumberStub.withArgs(fakeBalance).returns(amount);
   });
 
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
   afterAll(() => {
     dsMockUtils.cleanup();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
   });
 
   describe('method: getGovernanceCommitteeMembers', () => {
@@ -64,6 +70,59 @@ describe('Governance class', () => {
     });
   });
 
+  describe('method: getProposals', () => {
+    test('should return a list of proposal entities', async () => {
+      const pipId = 10;
+      const proposerDid = 'someProposerDid';
+      const createdAt = 50800;
+      const coolOffPeriod = 100;
+      const proposalPeriodTimeFrame = 600;
+      const fakeResult = [new Proposal({ pipId }, context)];
+      const proposalsQueryResponse: MiddlewareProposal[] = [
+        {
+          pipId,
+          proposer: proposerDid,
+          createdAt,
+          url: 'http://someUrl',
+          description: 'some description',
+          coolOffEndBlock: createdAt + coolOffPeriod,
+          endBlock: createdAt + proposalPeriodTimeFrame,
+          proposal: '0x180500cc829c190000000000000000000000e8030000',
+          lastState: ProposalState.Referendum,
+          lastStateUpdatedAt: createdAt + proposalPeriodTimeFrame,
+          totalVotes: 0,
+          totalAyesWeight: 0,
+          totalNaysWeight: 0,
+        },
+      ];
+
+      dsMockUtils.createApolloQueryStub(
+        proposals({
+          proposers: [proposerDid],
+          states: undefined,
+          orderBy: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          proposals: proposalsQueryResponse,
+        }
+      );
+
+      const result = await governance.getProposals({
+        proposers: [proposerDid],
+      });
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should throw if the middleware query fails', async () => {
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      return expect(governance.getProposals()).rejects.toThrow('Error in middleware query: Error');
+    });
+  });
+
   describe('method: createProposal', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
@@ -73,7 +132,6 @@ describe('Governance class', () => {
         tag: TxTags.asset.RegisterTicker,
         args: ['someTicker'],
       };
-
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Proposal>;
 
       sinon
@@ -109,6 +167,53 @@ describe('Governance class', () => {
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, amount);
+    });
+  });
+
+  describe('method: proposalTimeFrames', () => {
+    let queryMultiStub: sinon.SinonStub;
+    let coolOfPeriod: BigNumber;
+    let proposalDuration: BigNumber;
+    let rawCoolOfPeriod: u8;
+    let rawProposalDuration: u8;
+
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('pips', 'proposalCoolOffPeriod');
+      dsMockUtils.createQueryStub('pips', 'proposalDuration');
+      queryMultiStub = dsMockUtils.getQueryMultiStub();
+      coolOfPeriod = new BigNumber(100);
+      proposalDuration = new BigNumber(600);
+      rawCoolOfPeriod = dsMockUtils.createMockU32(coolOfPeriod.toNumber());
+      rawProposalDuration = dsMockUtils.createMockU32(proposalDuration.toNumber());
+      u32ToBigNumberStub.withArgs(rawCoolOfPeriod).returns(coolOfPeriod);
+      u32ToBigNumberStub.withArgs(rawProposalDuration).returns(proposalDuration);
+    });
+
+    test('should return the proposal time frames', async () => {
+      queryMultiStub.resolves([rawCoolOfPeriod, rawProposalDuration]);
+
+      const result = await governance.proposalTimeFrames();
+
+      expect(result.coolOff).toBe(coolOfPeriod.toNumber());
+      expect(result.duration).toBe(proposalDuration.toNumber());
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+
+      queryMultiStub.callsFake(async (_, cbFunc) => {
+        cbFunc([rawCoolOfPeriod, rawProposalDuration]);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await governance.proposalTimeFrames(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWith(callback, {
+        coolOff: coolOfPeriod.toNumber(),
+        duration: proposalDuration.toNumber(),
+      });
     });
   });
 });

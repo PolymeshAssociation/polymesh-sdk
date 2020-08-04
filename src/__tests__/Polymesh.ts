@@ -10,7 +10,7 @@ import { Identity, TickerReservation } from '~/api/entities';
 import { modifyClaims, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { didsWithClaims } from '~/middleware/queries';
-import { ClaimTypeEnum, IdentityWithClaims } from '~/middleware/types';
+import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -697,32 +697,35 @@ describe('Polymesh Class', () => {
         issuance_date: date,
         last_update_date: date,
       };
-      const didsWithClaimsQueryResponse: IdentityWithClaims[] = [
-        {
-          did: targetDid,
-          claims: [
-            {
-              ...commonClaimData,
-              expiry: null,
-              type: customerDueDiligenceType,
-            },
-            {
-              ...commonClaimData,
-              expiry: date,
-              type: jurisdictionType,
-              jurisdiction: 'someJurisdiction',
-              scope: 'someScope',
-            },
-            {
-              ...commonClaimData,
-              expiry: null,
-              type: exemptedType,
-              jurisdiction: null,
-              scope: 'someScope',
-            },
-          ],
-        },
-      ];
+      const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
+        totalCount: 1,
+        items: [
+          {
+            did: targetDid,
+            claims: [
+              {
+                ...commonClaimData,
+                expiry: null,
+                type: customerDueDiligenceType,
+              },
+              {
+                ...commonClaimData,
+                expiry: date,
+                type: jurisdictionType,
+                jurisdiction: 'someJurisdiction',
+                scope: 'someScope',
+              },
+              {
+                ...commonClaimData,
+                expiry: null,
+                type: exemptedType,
+                jurisdiction: null,
+                scope: 'someScope',
+              },
+            ],
+          },
+        ],
+      };
       /* eslint-enabled @typescript-eslint/camelcase */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
@@ -737,15 +740,17 @@ describe('Polymesh Class', () => {
       });
 
       dsMockUtils.createApolloQueryStub(
-        didsWithClaims({ trustedClaimIssuers: ['someDid'], count: 100 }),
+        didsWithClaims({ trustedClaimIssuers: ['someDid'], count: 30, skip: 1 }),
         {
           didsWithClaims: didsWithClaimsQueryResponse,
         }
       );
 
-      const result = await polymesh.getIssuedClaims();
+      const result = await polymesh.getIssuedClaims({ start: 1, size: 30 });
 
-      expect(result).toEqual(fakeClaims);
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(1);
+      expect(result.next).toBeNull();
     });
 
     test('should throw if the middleware query fails', async () => {
@@ -807,23 +812,26 @@ describe('Polymesh Class', () => {
         issuance_date: date,
         last_update_date: date,
       };
-      const didsWithClaimsQueryResponse: IdentityWithClaims[] = [
-        {
-          did: targetDid,
-          claims: [
-            {
-              ...commonClaimData,
-              expiry: date,
-              type: customerDueDiligenceType,
-            },
-            {
-              ...commonClaimData,
-              expiry: null,
-              type: customerDueDiligenceType,
-            },
-          ],
-        },
-      ];
+      const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
+        totalCount: 25,
+        items: [
+          {
+            did: targetDid,
+            claims: [
+              {
+                ...commonClaimData,
+                expiry: date,
+                type: customerDueDiligenceType,
+              },
+              {
+                ...commonClaimData,
+                expiry: null,
+                type: customerDueDiligenceType,
+              },
+            ],
+          },
+        ],
+      };
       /* eslint-enabled @typescript-eslint/camelcase */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
@@ -843,7 +851,7 @@ describe('Polymesh Class', () => {
           scope: undefined,
           trustedClaimIssuers: [targetDid],
           claimTypes: [ClaimTypeEnum.Accredited],
-          count: undefined,
+          count: 1,
           skip: undefined,
         }),
         {
@@ -855,9 +863,12 @@ describe('Polymesh Class', () => {
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
+        size: 1,
       });
 
-      expect(result).toEqual(fakeClaims);
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toEqual(1);
     });
 
     test('should throw if the middleware query fails', async () => {

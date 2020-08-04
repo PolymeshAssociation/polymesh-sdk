@@ -65,6 +65,7 @@ import {
   booleanToBool,
   boolToBoolean,
   bytesToString,
+  calculateNextKey,
   canTransferResultToTransferStatus,
   cddStatusToBoolean,
   claimToMeshClaim,
@@ -2118,5 +2119,32 @@ describe('batchArguments', () => {
     expect(() => batchArguments(elements, tag, element => `${element % 2}`)).toThrowError(
       'Batch size exceeds limit'
     );
+  });
+});
+
+describe('calculateNextKey', () => {
+  test('should return NextKey null as there are less elements than the default page size', () => {
+    const totalCount = 20;
+    const nextKey = calculateNextKey(totalCount);
+
+    expect(nextKey).toBeNull();
+  });
+
+  test('should return NextKey null as it is the last page', () => {
+    const totalCount = 50;
+    const currentPageSize = 30;
+    const currentStart = 31;
+    const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
+
+    expect(nextKey).toBeNull();
+  });
+
+  test('should return NextKey', () => {
+    const totalCount = 50;
+    const currentPageSize = 30;
+    const currentStart = 0;
+    const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
+
+    expect(nextKey).toEqual(30);
   });
 });

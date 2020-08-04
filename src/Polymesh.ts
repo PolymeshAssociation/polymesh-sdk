@@ -33,6 +33,7 @@ import {
   LinkType,
   MiddlewareConfig,
   NetworkProperties,
+  ResultSet,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
@@ -41,6 +42,7 @@ import {
 import { ClaimOperation, SignerType } from '~/types/internal';
 import {
   booleanToBool,
+  calculateNextKey,
   createClaim,
   linkTypeToMeshLinkType,
   moduleAddressToString,
@@ -537,12 +539,18 @@ export class Polymesh {
   /**
    * Retrieve all claims issued by the current identity
    */
-  public async getIssuedClaims(): Promise<ClaimData[]> {
+  public async getIssuedClaims(
+    opts: {
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<ClaimData>> {
     const {
       context,
       context: { middlewareApi },
     } = this;
 
+    const { size, start } = opts;
     const { did } = context.getCurrentIdentity();
 
     let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
@@ -550,7 +558,8 @@ export class Polymesh {
       result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
         didsWithClaims({
           trustedClaimIssuers: [did],
-          count: 100,
+          count: size,
+          skip: start,
         })
       );
     } catch (e) {
@@ -561,14 +570,16 @@ export class Polymesh {
     }
 
     const {
-      data: { didsWithClaims: didsWithClaimsList },
+      data: {
+        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
+      },
     } = result;
-    const claimData: ClaimData[] = [];
+    const data: ClaimData[] = [];
 
     didsWithClaimsList.forEach(({ claims }) => {
       claims.forEach(
         ({ targetDID, issuer, issuance_date: issuanceDate, expiry, type, jurisdiction, scope }) => {
-          claimData.push({
+          data.push({
             target: new Identity({ did: targetDID }, context),
             issuer: new Identity({ did: issuer }, context),
             issuedAt: new Date(issuanceDate),
@@ -579,7 +590,13 @@ export class Polymesh {
       );
     });
 
-    return claimData;
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**
@@ -601,7 +618,7 @@ export class Polymesh {
       size?: number;
       start?: number;
     } = {}
-  ): Promise<IdentityWithClaims[]> {
+  ): Promise<ResultSet<IdentityWithClaims>> {
     const {
       context,
       context: { middlewareApi },
@@ -632,10 +649,12 @@ export class Polymesh {
     }
 
     const {
-      data: { didsWithClaims: didsWithClaimsList },
+      data: {
+        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
+      },
     } = result;
 
-    return didsWithClaimsList.map(({ did, claims }) => ({
+    const data = didsWithClaimsList.map(({ did, claims }) => ({
       identity: new Identity({ did }, context),
       claims: claims.map(
         ({
@@ -655,6 +674,14 @@ export class Polymesh {
         })
       ),
     }));
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**
