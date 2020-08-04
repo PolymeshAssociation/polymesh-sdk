@@ -19,6 +19,7 @@ import {
   RefCount,
   RuntimeVersion,
 } from '@polkadot/types/interfaces';
+import { Call } from '@polkadot/types/interfaces/runtime';
 import { Codec, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { stringToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
@@ -51,7 +52,10 @@ import {
   JurisdictionName,
   LinkedKeyInfo,
   Permission,
+  Pip,
+  PipsMetadata,
   PosRatio,
+  ProposalState,
   Rule,
   RuleType,
   Scope,
@@ -158,6 +162,7 @@ interface ContextOptions {
   tokenBalance?: BigNumber;
   invalidDids?: string[];
   transactionFee?: BigNumber;
+  currentPairAddress?: string;
 }
 
 interface Pair {
@@ -339,6 +344,7 @@ const defaultContextOptions: ContextOptions = {
   tokenBalance: new BigNumber(1000),
   invalidDids: [],
   transactionFee: new BigNumber(200),
+  currentPairAddress: '0xdummy',
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -367,7 +373,7 @@ function configureContext(opts: ContextOptions): void {
       );
   const currentPair = opts.withSeed
     ? ({
-        address: '0xdummy',
+        address: opts.currentPairAddress,
         isLocked: false,
       } as KeyringPair)
     : undefined;
@@ -391,6 +397,7 @@ function configureContext(opts: ContextOptions): void {
     middlewareApi: mockInstanceContainer.apolloInstance,
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
+    getTransactionArguments: sinon.stub().returns([]),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
@@ -636,7 +643,11 @@ export function createTxStub<
 >(
   mod: ModuleName,
   tx: TransactionName,
-  opts: { autoresolve?: MockTxStatus | false; gas?: Balance } = {}
+  opts: {
+    autoresolve?: MockTxStatus | false;
+    gas?: Balance;
+    meta?: { args: Array<{ name: string; type: string }> };
+  } = {}
 ): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> & SinonStub {
   let runtimeModule = txModule[mod];
 
@@ -645,8 +656,12 @@ export function createTxStub<
     txModule[mod] = runtimeModule;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-use-before-define
-  const { autoresolve = MockTxStatus.Succeeded, gas = createMockBalance(1) } = opts;
+  const {
+    autoresolve = MockTxStatus.Succeeded,
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    gas = createMockBalance(1),
+    meta = { args: [] },
+  } = opts;
 
   const transaction = (sinon.stub().returns({
     method: tx, // should be a `Call` object, but this is enough for testing
@@ -677,6 +692,7 @@ export function createTxStub<
 
   (transaction as any).section = mod;
   (transaction as any).method = tx;
+  (transaction as any).meta = meta;
 
   runtimeModule[tx] = transaction;
 
@@ -1573,3 +1589,50 @@ export const createMockIssueAssetItem = (issueAssetItem?: {
 export const setRuntimeVersion = (args: unknown): void => {
   mockInstanceContainer.apiInstance.runtimeVersion = args as RuntimeVersion;
 };
+
+/**
+ * @hidden
+ */
+export const createMockProposalState = (
+  proposalState?: 'Pending' | 'Cancelled' | 'Killed' | 'Rejected' | 'Referendum' | { Custom: Bytes }
+): ProposalState => {
+  return createMockEnum(proposalState) as ProposalState;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPip = (
+  pip: { id: u32; proposal: Call; state: ProposalState } = {
+    id: createMockU32(),
+    proposal: ('proposal' as unknown) as Call,
+    state: createMockProposalState(),
+  }
+): Pip =>
+  createMockCodec(
+    {
+      id: pip.id,
+      proposal: pip.proposal,
+      state: pip.state,
+    },
+    false
+  ) as Pip;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPipsMetadata = (
+  metadata: { proposer: AccountId; cool_off_until: u32 } = {
+    proposer: createMockAccountId(),
+    cool_off_until: createMockU32(),
+  }
+): PipsMetadata =>
+  createMockCodec(
+    {
+      proposer: metadata.proposer,
+      cool_off_until: metadata.cool_off_until,
+    },
+    false
+  ) as PipsMetadata;

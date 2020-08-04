@@ -31,6 +31,11 @@ module.exports = {
         tarballDir: 'npm-package/',
       },
     ],
-    '@semantic-release/github',
+    [
+      '@semantic-release/github',
+      {
+        assets: ['CHANGELOG.md'],
+      },
+    ],
   ],
 };

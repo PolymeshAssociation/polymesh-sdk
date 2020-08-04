@@ -16,3 +16,4 @@ export { togglePauseRules, TogglePauseRulesParams } from './togglePauseRules';
 export { transferPolyX, TransferPolyXParams } from './transferPolyX';
 export { transferToken, TransferTokenParams } from './transferToken';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
+export { editProposal, EditProposalParams } from './editProposal';
