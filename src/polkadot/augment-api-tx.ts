@@ -8,7 +8,7 @@ import { ProposalIndex } from '@polkadot/types/interfaces/collective';
 import { CodeHash, Gas, Schedule } from '@polkadot/types/interfaces/contracts';
 import { Proposal } from '@polkadot/types/interfaces/democracy';
 import { Extrinsic, Signature } from '@polkadot/types/interfaces/extrinsics';
-import { EquivocationProof, KeyOwnerProof } from '@polkadot/types/interfaces/grandpa';
+import { GrandpaEquivocationProof, KeyOwnerProof } from '@polkadot/types/interfaces/grandpa';
 import { Heartbeat } from '@polkadot/types/interfaces/imOnline';
 import {
   AccountId,
@@ -1569,7 +1569,7 @@ declare module '@polkadot/api/types/submittable' {
       reportEquivocation: AugmentedSubmittable<
         (
           equivocationProof:
-            | EquivocationProof
+            | GrandpaEquivocationProof
             | { setId?: any; equivocation?: any }
             | string
             | Uint8Array,
