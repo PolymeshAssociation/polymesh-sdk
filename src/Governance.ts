@@ -2,6 +2,7 @@ import { QueryableStorageEntry } from '@polkadot/api/types';
 import { BlockNumber } from '@polkadot/types/interfaces/runtime';
 import { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
+import { TxTag } from 'polymesh-types/types';
 
 import { Identity, Proposal } from '~/api/entities';
 import {
@@ -14,7 +15,7 @@ import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { proposals } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ErrorCode, SubCallback, UnsubCallback } from '~/types';
+import { Ensured, ErrorCode, SubCallback, TransactionArgument, UnsubCallback } from '~/types';
 import { balanceToBigNumber, identityIdToString, u32ToBigNumber, valueToDid } from '~/utils';
 
 /**
@@ -46,6 +47,15 @@ export class Governance {
     const activeMembers = await committeeMembership.activeMembers();
 
     return activeMembers.map(member => new Identity({ did: identityIdToString(member) }, context));
+  }
+
+  /**
+   * Retrieve the types of arguments that a certain transaction requires to be run
+   *
+   * @param args.tag - tag associated with the transaction that will be executed if the proposal passes
+   */
+  public getTransactionArguments(args: { tag: TxTag }): TransactionArgument[] {
+    return this.context.getTransactionArguments(args);
   }
 
   /**
