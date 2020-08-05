@@ -6,7 +6,7 @@ import sinon from 'sinon';
 import { Entity } from '~/base';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { Role, RoleType } from '~/types';
+import { Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
 import * as utilsModule from '~/utils';
 
 import { Identity } from '../';
@@ -101,7 +101,7 @@ describe('Identity class', () => {
 
     test('hasRole should check whether the identity has the Ticker Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      const role = { type: RoleType.TickerOwner, ticker: 'someTicker' };
+      const role: TickerOwnerRole = { type: RoleType.TickerOwner, ticker: 'someTicker' };
 
       let hasRole = await identity.hasRole(role);
 
@@ -116,7 +116,7 @@ describe('Identity class', () => {
 
     test('hasRole should check whether the identity has the Token Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      const role = { type: RoleType.TokenOwner, ticker: 'someTicker' };
+      const role: TokenOwnerRole = { type: RoleType.TokenOwner, ticker: 'someTicker' };
 
       let hasRole = await identity.hasRole(role);
 
@@ -153,7 +153,7 @@ describe('Identity class', () => {
     test('hasRole should throw an error if the role is not recognized', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const type = 'Fake' as RoleType;
-      const role = { type, ticker: 'someTicker' };
+      const role = { type, ticker: 'someTicker' } as TokenOwnerRole;
 
       const hasRole = identity.hasRole(role);
 
@@ -162,7 +162,7 @@ describe('Identity class', () => {
 
     test('hasRoles should return true if the identity possesses all roles', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      const roles = [
+      const roles: TickerOwnerRole[] = [
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];
@@ -174,7 +174,7 @@ describe('Identity class', () => {
 
     test("hasRoles should return false if at least one role isn't possessed by the identity", async () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      const roles = [
+      const roles: TickerOwnerRole[] = [
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];

@@ -4,7 +4,7 @@ import { Identity } from '~/api/entities/Identity';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, ErrorCode, EventIdentifier } from '~/types';
 import { padString } from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
@@ -66,8 +66,8 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
     try {
       result = await middlewareApi.query<Ensured<Query, 'eventByIndexedArgs'>>(
         eventByIndexedArgs({
-          moduleId: 'complianceManager',
-          eventId: 'TrustedDefaultClaimIssuerAdded',
+          moduleId: ModuleIdEnum.ComplianceManager,
+          eventId: EventIdEnum.TrustedDefaultClaimIssuerAdded,
           eventArg1: padString(ticker, MAX_TICKER_LENGTH),
           eventArg2: identity.did,
         })
@@ -84,7 +84,7 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
         blockNumber: result.data.eventByIndexedArgs.block_id!,
-        blockDate: result.data.eventByIndexedArgs.block!.datetime,
+        blockDate: result.data.eventByIndexedArgs.block!.datetime!,
         eventIndex: result.data.eventByIndexedArgs.event_idx!,
       };
       /* eslint-enabled @typescript-eslint/no-non-null-assertion */

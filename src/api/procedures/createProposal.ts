@@ -6,7 +6,7 @@ import { PipId, TxTag } from 'polymesh-types/types';
 import { Proposal } from '~/api/entities';
 import { PolymeshError, PostTransactionValue, Procedure } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode, Role } from '~/types';
+import { ErrorCode, Role, TransactionArgumentType } from '~/types';
 import {
   balanceToBigNumber,
   findEventRecord,
@@ -33,7 +33,7 @@ export const createProposalResolver = (context: Context) => (
   const data = eventRecord.event.data;
   const pipId = u32ToBigNumber(data[2] as PipId);
 
-  return new Proposal({ pipId }, context);
+  return new Proposal({ pipId: pipId.toNumber() }, context);
 };
 
 /**
@@ -54,8 +54,20 @@ export async function prepareCreateProposal(
   } = this;
   const { description, discussionUrl, bondAmount, tag, args: transactionArguments } = args;
   const [mod, transaction] = tag.split('.');
+
+  const argumentTypes = context.getTransactionArguments({ tag });
+  const convertedArguments = transactionArguments.map((arg, index) => {
+    const argType = argumentTypes[index];
+
+    if (argType.type === TransactionArgumentType.Balance) {
+      return numberToBalance(arg as number, context);
+    }
+
+    return arg;
+  });
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const call = ((tx as any)[mod][transaction](...transactionArguments) as SubmittableExtrinsic<
+  const call = ((tx as any)[mod][transaction](...convertedArguments) as SubmittableExtrinsic<
     'promise'
   >).method;
 

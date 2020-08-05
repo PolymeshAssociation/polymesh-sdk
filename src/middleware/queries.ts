@@ -1,7 +1,44 @@
 import gql from 'graphql-tag';
 
-import { QueryDidsWithClaimsArgs, QueryEventsByIndexedArgsArgs } from '~/middleware/types';
+import {
+  QueryDidsWithClaimsArgs,
+  QueryEventsByIndexedArgsArgs,
+  QueryProposalsArgs,
+  QueryProposalVotesArgs,
+} from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
+
+/**
+ * @hidden
+ *
+ * Get the current voters list for given pipId
+ */
+export function proposalVotes(
+  variables: QueryProposalVotesArgs
+): GraphqlQuery<QueryProposalVotesArgs> {
+  const query = gql`
+    query ProposalVotesQuery(
+      $pipId: Int!
+      $vote: Boolean!
+      $count: Int
+      $skip: Int
+      $orderBy: ProposalVotesOrderByInput
+    ) {
+      proposalVotes(pipId: $pipId, vote: $vote, count: $count, skip: $skip, orderBy: $orderBy) {
+        blockId
+        eventIdx
+        account
+        vote
+        weight
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
 
 /**
  * @hidden
@@ -16,7 +53,7 @@ export function didsWithClaims(
       $dids: [String!]
       $scope: String
       $trustedClaimIssuers: [String!]
-      $claimTypes: [String!]
+      $claimTypes: [ClaimTypeEnum!]
       $count: Int
       $skip: Int
     ) {
@@ -28,16 +65,19 @@ export function didsWithClaims(
         count: $count
         skip: $skip
       ) {
-        did
-        claims {
-          targetDID
-          issuer
-          issuance_date
-          last_update_date
-          expiry
-          type
-          jurisdiction
-          scope
+        totalCount
+        items {
+          did
+          claims {
+            targetDID
+            issuer
+            issuance_date
+            last_update_date
+            expiry
+            type
+            jurisdiction
+            scope
+          }
         }
       }
     }
@@ -59,8 +99,8 @@ export function eventByIndexedArgs(
 ): GraphqlQuery<QueryEventsByIndexedArgsArgs> {
   const query = gql`
     query EventByIndexedArgsQuery(
-      $moduleId: String!
-      $eventId: String!
+      $moduleId: ModuleIdEnum!
+      $eventId: EventIdEnum!
       $eventArg0: String
       $eventArg1: String
       $eventArg2: String
@@ -78,6 +118,54 @@ export function eventByIndexedArgs(
         block {
           datetime
         }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get all proposals optionally filtered by pipId, proposer or state
+ */
+export function proposals(
+  variables?: QueryProposalsArgs
+): GraphqlQuery<QueryProposalsArgs | undefined> {
+  const query = gql`
+    query ProposalsQuery(
+      $pipIds: [Int!]
+      $proposers: [String!]
+      $states: [ProposalState!]
+      $count: Int
+      $skip: Int
+      $orderBy: ProposalOrderByInput
+    ) {
+      proposals(
+        pipIds: $pipIds
+        proposers: $proposers
+        states: $states
+        count: $count
+        skip: $skip
+        orderBy: $orderBy
+      ) {
+        pipId
+        proposer
+        createdAt
+        url
+        description
+        coolOffEndBlock
+        endBlock
+        proposal
+        lastState
+        lastStateUpdatedAt
+        totalVotes
+        totalAyesWeight
+        totalNaysWeight
       }
     }
   `;

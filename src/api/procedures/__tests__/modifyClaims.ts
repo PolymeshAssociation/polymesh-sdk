@@ -161,18 +161,22 @@ describe('modifyClaims procedure', () => {
       didsWithClaims({
         trustedClaimIssuers: [mockContext.getCurrentIdentity().did],
         dids: [someDid, otherDid],
+        count: 2,
       }),
       {
-        didsWithClaims: [
-          {
-            did: someDid,
-            claims: [cddClaim, buyLockupClaim],
-          },
-          {
-            did: otherDid,
-            claims: [cddClaim],
-          },
-        ],
+        didsWithClaims: {
+          totalCount: 2,
+          items: [
+            {
+              did: someDid,
+              claims: [cddClaim, buyLockupClaim],
+            },
+            {
+              did: otherDid,
+              claims: [cddClaim],
+            },
+          ],
+        },
       }
     );
 
@@ -193,9 +197,13 @@ describe('modifyClaims procedure', () => {
       didsWithClaims({
         trustedClaimIssuers: [mockContext.getCurrentIdentity().did],
         dids: [someDid, otherDid],
+        count: 2,
       }),
       {
-        didsWithClaims: [],
+        didsWithClaims: {
+          totalCount: 0,
+          items: [],
+        },
       }
     );
 
@@ -219,18 +227,22 @@ describe('modifyClaims procedure', () => {
       didsWithClaims({
         trustedClaimIssuers: [mockContext.getCurrentIdentity().did],
         dids: [someDid, otherDid],
+        count: 2,
       }),
       {
-        didsWithClaims: [
-          {
-            did: someDid,
-            claims: [cddClaim, buyLockupClaim],
-          },
-          {
-            did: otherDid,
-            claims: [cddClaim],
-          },
-        ],
+        didsWithClaims: {
+          totalCount: 2,
+          items: [
+            {
+              did: someDid,
+              claims: [cddClaim, buyLockupClaim],
+            },
+            {
+              did: otherDid,
+              claims: [cddClaim],
+            },
+          ],
+        },
       }
     );
 

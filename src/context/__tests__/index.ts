@@ -6,6 +6,7 @@ import { Identity } from '~/api/entities';
 import { Context } from '~/context';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
+import { TransactionArgumentType } from '~/types';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -716,6 +717,293 @@ describe('Context class', () => {
 
       expect(() => context.getCurrentPair()).toThrow(
         'There is no account associated with the current SDK instance'
+      );
+    });
+  });
+
+  describe('method: getTransactionArguments', () => {
+    test('should return a representation of the arguments of a transaction', async () => {
+      const pair = {
+        address: 'someAddress1',
+        meta: {},
+        publicKey: 'publicKey',
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          addFromSeed: pair,
+        },
+      });
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+      dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
+        returnValue: dsMockUtils.createMockPosRatio(1, 2),
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.createTxStub('asset', 'registerTicker', {
+        meta: {
+          args: [
+            {
+              type: 'Ticker',
+              name: 'ticker',
+            },
+          ],
+        },
+      });
+
+      expect(context.getTransactionArguments({ tag: TxTags.asset.RegisterTicker })).toMatchObject([
+        {
+          name: 'ticker',
+          type: TransactionArgumentType.Text,
+          optional: false,
+        },
+      ]);
+
+      dsMockUtils.createTxStub('identity', 'addClaim', {
+        meta: {
+          args: [
+            {
+              type: 'IdentityId',
+              name: 'target',
+            },
+            {
+              type: 'Claim',
+              name: 'claim',
+            },
+            {
+              type: 'Option<Moment>',
+              name: 'expiry',
+            },
+          ],
+        },
+      });
+
+      expect(context.getTransactionArguments({ tag: TxTags.identity.AddClaim })).toMatchObject([
+        {
+          name: 'target',
+          type: TransactionArgumentType.Did,
+          optional: false,
+        },
+        {
+          name: 'claim',
+          type: TransactionArgumentType.RichEnum,
+          optional: false,
+          internal: [
+            {
+              name: 'Accredited',
+              type: TransactionArgumentType.Did,
+              optional: false,
+            },
+            {
+              name: 'Affiliate',
+              type: TransactionArgumentType.Did,
+              optional: false,
+            },
+            {
+              name: 'BuyLockup',
+              type: TransactionArgumentType.Did,
+              optional: false,
+            },
+            {
+              name: 'SellLockup',
+              type: TransactionArgumentType.Did,
+              optional: false,
+            },
+            {
+              name: 'CustomerDueDiligence',
+              type: TransactionArgumentType.Null,
+              optional: false,
+            },
+            {
+              name: 'KnowYourCustomer',
+              type: TransactionArgumentType.Did,
+              optional: false,
+            },
+            {
+              name: 'Jurisdiction',
+              type: TransactionArgumentType.Tuple,
+              optional: false,
+              internal: [
+                {
+                  name: '0',
+                  type: TransactionArgumentType.Text,
+                  optional: false,
+                },
+                {
+                  name: '1',
+                  type: TransactionArgumentType.Did,
+                  optional: false,
+                },
+              ],
+            },
+            {
+              name: 'Exempted',
+              type: TransactionArgumentType.Did,
+              optional: false,
+            },
+            {
+              name: 'Blocked',
+              type: TransactionArgumentType.Did,
+              optional: false,
+            },
+            {
+              name: 'NoData',
+              type: TransactionArgumentType.Null,
+              optional: false,
+            },
+          ],
+        },
+        {
+          name: 'expiry',
+          type: TransactionArgumentType.Date,
+          optional: true,
+        },
+      ]);
+
+      dsMockUtils.createTxStub('identity', 'cddRegisterDid', {
+        meta: {
+          args: [
+            {
+              type: 'Compact<Bytes>',
+              name: 'someArg',
+            },
+          ],
+        },
+      });
+
+      expect(
+        context.getTransactionArguments({ tag: TxTags.identity.CddRegisterDid })
+      ).toMatchObject([
+        {
+          type: TransactionArgumentType.Unknown,
+          name: 'someArg',
+          optional: false,
+        },
+      ]);
+
+      dsMockUtils.createTxStub('asset', 'createAsset', {
+        meta: {
+          args: [
+            {
+              type: 'Vec<IdentityId>',
+              name: 'dids',
+            },
+          ],
+        },
+      });
+
+      expect(context.getTransactionArguments({ tag: TxTags.asset.CreateAsset })).toMatchObject([
+        {
+          type: TransactionArgumentType.Array,
+          name: 'dids',
+          optional: false,
+          internal: {
+            name: '',
+            type: TransactionArgumentType.Did,
+            optional: false,
+          },
+        },
+      ]);
+
+      dsMockUtils.createTxStub('asset', 'batchRemoveDocument', {
+        meta: {
+          args: [
+            {
+              type: '[u8;32]',
+              name: 'someArg',
+            },
+          ],
+        },
+      });
+
+      expect(
+        context.getTransactionArguments({ tag: TxTags.asset.BatchRemoveDocument })
+      ).toMatchObject([
+        {
+          type: TransactionArgumentType.Text,
+          name: 'someArg',
+          optional: false,
+        },
+      ]);
+
+      dsMockUtils.createTxStub('asset', 'setFundingRound', {
+        meta: {
+          args: [
+            {
+              type: 'Permission',
+              name: 'permission',
+            },
+          ],
+        },
+      });
+
+      expect(context.getTransactionArguments({ tag: TxTags.asset.SetFundingRound })).toMatchObject([
+        {
+          type: TransactionArgumentType.SimpleEnum,
+          name: 'permission',
+          optional: false,
+          internal: ['Full', 'Admin', 'Operator', 'SpendFunds'],
+        },
+      ]);
+
+      dsMockUtils.createTxStub('asset', 'unfreeze', {
+        meta: {
+          args: [
+            {
+              type: 'Document',
+              name: 'document',
+            },
+          ],
+        },
+      });
+
+      expect(context.getTransactionArguments({ tag: TxTags.asset.Unfreeze })).toMatchObject([
+        {
+          type: TransactionArgumentType.Object,
+          name: 'document',
+          optional: false,
+          internal: [
+            {
+              name: 'uri',
+              type: TransactionArgumentType.Text,
+            },
+            {
+              name: 'content_hash',
+              type: TransactionArgumentType.Text,
+            },
+          ],
+        },
+      ]);
+
+      dsMockUtils.createTxStub('asset', 'archiveExtension', {
+        meta: {
+          args: [
+            {
+              type: 'UInt<8>',
+              name: 'someArg',
+            },
+          ],
+        },
+      });
+
+      expect(context.getTransactionArguments({ tag: TxTags.asset.ArchiveExtension })).toMatchObject(
+        [
+          {
+            type: TransactionArgumentType.Unknown,
+            name: 'someArg',
+            optional: false,
+          },
+        ]
       );
     });
   });

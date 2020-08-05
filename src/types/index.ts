@@ -1,5 +1,5 @@
 import { Keyring } from '@polkadot/api';
-import { IKeyringPair } from '@polkadot/types/types';
+import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities';
@@ -351,11 +351,12 @@ export interface PaginationOptions {
   start?: string;
 }
 
-export type NextKey = string | null;
+export type NextKey = string | number | null;
 
 export interface ResultSet<T> {
   data: T[];
   next: NextKey;
+  count?: number;
 }
 
 export interface NetworkProperties {
@@ -375,6 +376,64 @@ export enum Permission {
   SpendFunds = 'SpendFunds',
 }
 
+export enum TransactionArgumentType {
+  Did = 'Did',
+  Address = 'Address',
+  Text = 'Text',
+  Boolean = 'Boolean',
+  Number = 'Number',
+  Balance = 'Balance',
+  Date = 'Date',
+  Array = 'Array',
+  Tuple = 'Tuple',
+  SimpleEnum = 'SimpleEnum',
+  RichEnum = 'RichEnum',
+  Object = 'Object',
+  Unknown = 'Unknown',
+  Null = 'Null',
+}
+
+export interface PlainTransactionArgument {
+  type: Exclude<
+    TransactionArgumentType,
+    | TransactionArgumentType.Array
+    | TransactionArgumentType.Tuple
+    | TransactionArgumentType.SimpleEnum
+    | TransactionArgumentType.RichEnum
+    | TransactionArgumentType.Object
+  >;
+}
+
+export interface ArrayTransactionArgument {
+  type: TransactionArgumentType.Array;
+  internal: TransactionArgument;
+}
+
+export interface SimpleEnumTransactionArgument {
+  type: TransactionArgumentType.SimpleEnum;
+  internal: string[];
+}
+
+export interface ComplexTransactionArgument {
+  type:
+    | TransactionArgumentType.RichEnum
+    | TransactionArgumentType.Object
+    | TransactionArgumentType.Tuple;
+  internal: TransactionArgument[];
+}
+
+export type TransactionArgument = {
+  name: string;
+  optional: boolean;
+  _rawType: TypeDef;
+} & (
+  | PlainTransactionArgument
+  | ArrayTransactionArgument
+  | SimpleEnumTransactionArgument
+  | ComplexTransactionArgument
+);
+
 export { TxTags } from 'polymesh-types/types';
 export * from '~/api/entities/types';
 export * from '~/base/types';
+export { Order } from '~/middleware/types';

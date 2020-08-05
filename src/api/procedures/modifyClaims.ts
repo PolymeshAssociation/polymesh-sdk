@@ -97,9 +97,15 @@ export async function prepareModifyClaims(
 
   if (operation !== ClaimOperation.Add) {
     const {
-      data: { didsWithClaims: currentClaims },
+      data: {
+        didsWithClaims: { items: currentClaims },
+      },
     } = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({ dids: allTargets, trustedClaimIssuers: [context.getCurrentIdentity().did] })
+      didsWithClaims({
+        dids: allTargets,
+        trustedClaimIssuers: [context.getCurrentIdentity().did],
+        count: allTargets.length,
+      })
     );
     const claimsByDid = currentClaims.reduce<Record<string, MiddlewareClaim[]>>(
       (prev, { did, claims: didClaims }) => {
@@ -123,7 +129,7 @@ export async function prepareModifyClaims(
             isSameScope = claim.scope === scope;
           }
 
-          return isSameScope && type === claim.type;
+          return isSameScope && ClaimType[type] === claim.type;
         });
 
         if (!claimExists) {
