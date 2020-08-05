@@ -11,8 +11,7 @@ import {
   SecurityToken,
   TickerReservation,
 } from '~/api/entities';
-import { ProposalStage } from '~/api/entities/Proposal/types';
-import { Pip } from '~/polkadot';
+import { ProposalDetails, ProposalStage } from '~/api/entities/Proposal/types';
 import { Mocked } from '~/testUtils/types';
 import {
   Authorization,
@@ -68,7 +67,7 @@ interface AuthorizationRequestOptions {
 
 interface ProposalOptions {
   pipId?: number;
-  getDetails?: Pip;
+  getDetails?: ProposalDetails;
   getStage?: ProposalStage;
 }
 
@@ -197,7 +196,7 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
 const defaultProposalOptions: ProposalOptions = {
   pipId: 1,
-  getDetails: ('pip' as unknown) as Pip,
+  getDetails: ('pip' as unknown) as ProposalDetails,
   getStage: ProposalStage.Open,
 };
 let proposalOptions = defaultProposalOptions;

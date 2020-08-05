@@ -1,6 +1,7 @@
 import sinon from 'sinon';
 
 import { isAuthorized, Params, prepareCancelProposal } from '~/api/procedures/cancelProposal';
+import * as proceduresUtilsModule from '~/api/procedures/utils';
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import { AccountKey } from '~/polkadot';
@@ -8,8 +9,6 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
-
-jest.mock('~/api/procedures/utils');
 
 describe('cancelProposal procedure', () => {
   const pipId = 10;
@@ -20,6 +19,7 @@ describe('cancelProposal procedure', () => {
   let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
   let addTransactionStub: sinon.SinonStub;
   let cancelProposalTransaction: PolymeshTx<unknown[]>;
+  let assertProposalUnlockedStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -30,6 +30,7 @@ describe('cancelProposal procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
+    assertProposalUnlockedStub = sinon.stub(proceduresUtilsModule, 'assertProposalUnlocked');
   });
 
   beforeEach(() => {
@@ -58,6 +59,14 @@ describe('cancelProposal procedure', () => {
     await prepareCancelProposal.call(proc, { pipId });
 
     sinon.assert.calledWith(addTransactionStub, cancelProposalTransaction, {}, pipId);
+  });
+
+  test('should verifies that the assert function is called with the right arguments', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    await prepareCancelProposal.call(proc, { pipId });
+
+    sinon.assert.calledWith(assertProposalUnlockedStub, pipId, mockContext);
   });
 
   describe('isAuthorized', () => {

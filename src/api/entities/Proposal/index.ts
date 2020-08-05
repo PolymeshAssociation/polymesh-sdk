@@ -7,11 +7,10 @@ import { Entity, PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Pip } from '~/polkadot';
 import { Ensured, ErrorCode, ResultSet } from '~/types';
-import { u32ToBigNumber, valueToDid } from '~/utils';
+import { meshProposalStateToProposalState, u32ToBigNumber, valueToDid } from '~/utils';
 
-import { ProposalStage, ProposalVote, ProposalVotesOrderByInput } from './types';
+import { ProposalDetails, ProposalStage, ProposalVote, ProposalVotesOrderByInput } from './types';
 
 /**
  * Properties that uniquely identify a Proposal
@@ -162,7 +161,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Cancel a proposal
+   * Cancel the proposal
    */
   public async cancel(): Promise<TransactionQueue<void>> {
     const { context, pipId } = this;
@@ -172,7 +171,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve the proposal details
    */
-  public async getDetails(): Promise<Pip> {
+  public async getDetails(): Promise<ProposalDetails> {
     const {
       context: {
         polymeshApi: {
@@ -182,9 +181,17 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       pipId,
     } = this;
 
-    const proposal = await pips.proposals(pipId);
+    const rawProposal = await pips.proposals(pipId);
+    const {
+      state,
+      proposal: { sectionName, methodName },
+    } = rawProposal.unwrap();
 
-    return proposal.unwrap();
+    return {
+      state: meshProposalStateToProposalState(state),
+      module: sectionName,
+      method: methodName,
+    };
   }
 
   /**
@@ -219,7 +226,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       return ProposalStage.CoolOff;
     }
 
-    if (blockId.gte(coolOff) && blockId.lt(end)) {
+    if (blockId.lt(end)) {
       return ProposalStage.Open;
     }
 

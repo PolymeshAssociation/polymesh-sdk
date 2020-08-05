@@ -51,6 +51,12 @@ export enum ProposalStage {
   Ended = 'Ended',
 }
 
+export interface ProposalDetails {
+  state: ProposalState;
+  module: string;
+  method: string;
+}
+
 export {
   ProposalOrderByInput,
   ProposalState,

@@ -1,6 +1,4 @@
-import { Call } from '@polkadot/types/interfaces/runtime';
-
-import { ProposalStage } from '~/api/entities/Proposal/types';
+import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -44,11 +42,11 @@ describe('assertProposalUnlocked', () => {
   test('should throw an error if the proposal is not in pending state', async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
-        getDetails: dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(),
-          proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Killed'),
-        }),
+        getDetails: {
+          state: ProposalState.Killed,
+          module: 'someModule',
+          method: 'someMethod',
+        },
       },
     });
 
@@ -65,11 +63,12 @@ describe('assertProposalUnlocked', () => {
   test('should throw an error if the proposal is not in the cool off period', async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
-        getDetails: dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(),
-          proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Pending'),
-        }),
+        getDetails: {
+          state: ProposalState.Pending,
+          module: 'someModule',
+          method: 'someMethod',
+        },
+        getStage: ProposalStage.Open,
       },
     });
 
@@ -80,17 +79,17 @@ describe('assertProposalUnlocked', () => {
       error = err;
     }
 
-    expect(error.message).toBe('The proposal can be canceled only during its cool off period');
+    expect(error.message).toBe('The proposal must be in its cool-off period');
   });
 
-  test('should does not throw an error if the proposal is unlocked', async () => {
+  test('should not throw an error if the proposal is unlocked', async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
-        getDetails: dsMockUtils.createMockPip({
-          id: dsMockUtils.createMockU32(),
-          proposal: ('proposal' as unknown) as Call,
-          state: dsMockUtils.createMockProposalState('Pending'),
-        }),
+        getDetails: {
+          state: ProposalState.Pending,
+          module: 'someModule',
+          method: 'someMethod',
+        },
         getStage: ProposalStage.CoolOff,
       },
     });

@@ -2,6 +2,7 @@ import { Text } from '@polkadot/types';
 import sinon from 'sinon';
 
 import { isAuthorized, Params, prepareEditProposal } from '~/api/procedures/editProposal';
+import * as proceduresUtilsModule from '~/api/procedures/utils';
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import { AccountKey } from '~/polkadot';
@@ -9,12 +10,6 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
-
-jest.mock(
-  '~/api/entities/Proposal',
-  require('~/testUtils/mocks/entities').mockProposalModule('~/api/entities/Proposal')
-);
-jest.mock('~/api/procedures/utils');
 
 describe('editProposal procedure', () => {
   const pipId = 10;
@@ -34,6 +29,7 @@ describe('editProposal procedure', () => {
   let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
   let addTransactionStub: sinon.SinonStub;
   let editProposalTransaction: PolymeshTx<unknown[]>;
+  let assertProposalUnlockedStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -46,6 +42,7 @@ describe('editProposal procedure', () => {
 
     stringToTextStub = sinon.stub(utilsModule, 'stringToText');
     accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
+    assertProposalUnlockedStub = sinon.stub(proceduresUtilsModule, 'assertProposalUnlocked');
   });
 
   beforeEach(() => {
@@ -77,6 +74,14 @@ describe('editProposal procedure', () => {
     return expect(prepareEditProposal.call(proc, ({} as unknown) as Params)).rejects.toThrow(
       'Nothing to modify'
     );
+  });
+
+  test('should verifies that the assert function is called with the right arguments', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    await prepareEditProposal.call(proc, { pipId, ...args });
+
+    sinon.assert.calledWith(assertProposalUnlockedStub, pipId, mockContext);
   });
 
   test('should add an edit proposal transaction to the queue', async () => {

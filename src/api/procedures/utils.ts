@@ -1,5 +1,5 @@
 import { Proposal } from '~/api/entities';
-import { ProposalStage } from '~/api/entities/Proposal/types';
+import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError } from '~/base';
 import { Context } from '~/context';
 import { ErrorCode } from '~/types';
@@ -14,7 +14,7 @@ export async function assertProposalUnlocked(pipId: number, context: Context): P
 
   const { state } = details;
 
-  if (!state.isPending) {
+  if (state !== ProposalState.Pending) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The proposal must be in pending state',
@@ -24,7 +24,7 @@ export async function assertProposalUnlocked(pipId: number, context: Context): P
   if (stage !== ProposalStage.CoolOff) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The proposal can be canceled only during its cool off period',
+      message: 'The proposal must be in its cool-off period',
     });
   }
 }

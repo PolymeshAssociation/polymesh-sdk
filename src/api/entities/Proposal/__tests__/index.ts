@@ -9,7 +9,7 @@ import { cancelProposal, editProposal } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
-import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { EventIdEnum, ModuleIdEnum, ProposalState } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
 
@@ -183,20 +183,26 @@ describe('Proposal class', () => {
 
   describe('method: getDetails', () => {
     test('should return the proposal details', async () => {
-      const state = dsMockUtils.createMockProposalState('Pending');
+      const fakeState = ProposalState.Pending;
+      const mockState = dsMockUtils.createMockProposalState('Pending');
+
+      sinon
+        .stub(utilsModule, 'meshProposalStateToProposalState')
+        .withArgs(mockState)
+        .returns(fakeState);
 
       dsMockUtils.createQueryStub('pips', 'proposals', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockPip({
             id: dsMockUtils.createMockU32(),
             proposal: ('proposal' as unknown) as Call,
-            state,
+            state: mockState,
           })
         ),
       });
 
       const result = await proposal.getDetails();
-      expect(result.state).toEqual(state);
+      expect(result.state).toEqual(fakeState);
     });
   });
 
