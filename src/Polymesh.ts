@@ -34,16 +34,19 @@ import {
   MiddlewareConfig,
   NetworkProperties,
   ResultSet,
+  SignerType,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { ClaimOperation, SignerType } from '~/types/internal';
+import { ClaimOperation, Signer as PolySigner } from '~/types/internal';
 import {
+  accountKeyToString,
   booleanToBool,
   calculateNextKey,
   createClaim,
+  identityIdToString,
   linkTypeToMeshLinkType,
   moduleAddressToString,
   signerToSignatory,
@@ -55,7 +58,7 @@ import {
 } from '~/utils';
 
 import { Governance } from './Governance';
-import { Link } from './polkadot/polymesh';
+import { DidRecord, Link } from './polkadot/polymesh';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
@@ -728,6 +731,50 @@ export class Polymesh {
 
     const { free } = await this.getAccountBalance({ accountId });
     return free;
+  }
+
+  /**
+   * @note can be subscribed to
+   */
+  public async getMySigningKeys(): Promise<PolySigner[]>;
+  public async getMySigningKeys(callback: SubCallback<PolySigner[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getMySigningKeys(
+    callback?: SubCallback<PolySigner[]>
+  ): Promise<PolySigner[] | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+      context,
+    } = this;
+
+    const did = context.getCurrentIdentity().did;
+
+    const assembleResult = ({
+      master_key: masterKey,
+      signing_items: signingItems,
+    }: DidRecord): PolySigner[] => {
+      return signingItems.map(({ signer: rawSigner }) => {
+        return {
+          value: rawSigner.isAccountKey
+            ? accountKeyToString(rawSigner.asAccountKey)
+            : identityIdToString(rawSigner.asIdentity),
+          type: rawSigner.isAccountKey ? SignerType.AccountKey : SignerType.Identity,
+          isMasterKey: rawSigner.isAccountKey ? masterKey === rawSigner.asAccountKey : false,
+        };
+      });
+    };
+
+    if (callback) {
+      return identity.didRecords(did, records => callback(assembleResult(records)));
+    }
+
+    const didRecords = await identity.didRecords(did);
+    return assembleResult(didRecords);
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

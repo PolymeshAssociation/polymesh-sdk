@@ -42,10 +42,10 @@ import {
   ConditionType,
   KnownTokenType,
   LinkType,
+  SignerType,
   TokenIdentifierType,
   TransferStatus,
 } from '~/types';
-import { SignerType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
 

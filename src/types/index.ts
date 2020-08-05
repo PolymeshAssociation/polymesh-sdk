@@ -373,6 +373,12 @@ export enum LinkType {
   NoData = 'NoData',
 }
 
+export enum SignerType {
+  // eslint-disable-next-line no-shadow
+  Identity = 'Identity',
+  AccountKey = 'AccountKey',
+}
+
 export { TxTags } from 'polymesh-types/types';
 export * from '~/api/entities/types';
 export * from '~/base/types';

@@ -62,6 +62,7 @@ import {
   NextKey,
   PaginationOptions,
   Rule,
+  SignerType,
   SingleClaimCondition,
   TokenDocument,
   TokenIdentifierType,
@@ -74,7 +75,6 @@ import {
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
   Signer,
-  SignerType,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
