@@ -12,11 +12,12 @@ import { Governance } from '~/Governance';
 import { proposals } from '~/middleware/queries';
 import { Proposal as MiddlewareProposal } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
+import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
 import * as utilsModule from '~/utils';
 
 describe('Governance class', () => {
-  let context: Context;
+  let context: Mocked<Context>;
   let governance: Governance;
   let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
   let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
@@ -56,6 +57,16 @@ describe('Governance class', () => {
       const result = await governance.getGovernanceCommitteeMembers();
 
       expect(result).toEqual(expectedMembers);
+    });
+  });
+
+  describe('method: getTransactionArguments', () => {
+    test('should return the result of context.getTransactionArguments', () => {
+      context.getTransactionArguments.returns(['fakeArguments']);
+
+      expect(governance.getTransactionArguments({ tag: TxTags.asset.CreateAsset })).toEqual([
+        'fakeArguments',
+      ]);
     });
   });
 
