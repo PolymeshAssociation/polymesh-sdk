@@ -61,7 +61,7 @@ describe('cancelProposal procedure', () => {
     sinon.assert.calledWith(addTransactionStub, cancelProposalTransaction, {}, pipId);
   });
 
-  test('should verifies that the assert function is called with the right arguments', async () => {
+  test('should assert that the proposal is not locked', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareCancelProposal.call(proc, { pipId });
