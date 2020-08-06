@@ -3,6 +3,7 @@ import { IKeyringPair } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities';
+import { Signer } from '~/types/internal';
 
 export enum TransactionStatus {
   /**
@@ -377,6 +378,10 @@ export enum SignerType {
   // eslint-disable-next-line no-shadow
   Identity = 'Identity',
   AccountKey = 'AccountKey',
+}
+
+export interface SigningItem {
+  signer: Signer;
 }
 
 export { TxTags } from 'polymesh-types/types';

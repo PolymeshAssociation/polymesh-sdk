@@ -3,7 +3,7 @@ import { Signer } from '@polkadot/api/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
+import { AccountKey, DidRecord, IdentityId, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
@@ -17,6 +17,7 @@ import {
   AccountBalance,
   ClaimTargets,
   ClaimType,
+  SignerType,
   SubCallback,
   TickerReservationStatus,
 } from '~/types';
@@ -1143,6 +1144,83 @@ describe('Polymesh Class', () => {
       const result = await polymesh.getTreasuryBalance(callback);
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeBalance.free);
+    });
+  });
+
+  describe('method: getMySigningKeys', () => {
+    const did = 'someDid';
+    const accountKey = 'someAccountKey';
+    const fakeResult = [
+      { signer: { value: did, type: SignerType.Identity } },
+      { signer: { value: accountKey, type: SignerType.AccountKey } },
+    ];
+
+    let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
+    let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
+    let didRecordsStub: sinon.SinonStub;
+    let rawDidRecord: DidRecord;
+
+    beforeAll(() => {
+      accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
+      identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
+      accountKeyToStringStub.returns(accountKey);
+      identityIdToStringStub.returns(did);
+    });
+
+    beforeEach(() => {
+      didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
+      /* eslint-disable @typescript-eslint/camelcase */
+      rawDidRecord = dsMockUtils.createMockDidRecord({
+        roles: [],
+        master_key: dsMockUtils.createMockAccountKey(),
+        signing_items: [
+          dsMockUtils.createMockSigningItem({
+            signer: dsMockUtils.createMockSignatory({
+              Identity: dsMockUtils.createMockIdentityId(did),
+            }),
+            signer_type: dsMockUtils.createMockSignatoryType(),
+            permissions: [],
+          }),
+          dsMockUtils.createMockSigningItem({
+            signer: dsMockUtils.createMockSignatory({
+              AccountKey: dsMockUtils.createMockAccountKey(accountKey),
+            }),
+            signer_type: dsMockUtils.createMockSignatoryType(),
+            permissions: [],
+          }),
+        ],
+      });
+      /* eslint-enabled @typescript-eslint/camelcase */
+    });
+
+    test('should return a list of SigningItem', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      didRecordsStub.returns(rawDidRecord);
+
+      const result = await polymesh.getMySigningKeys();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const unsubCallback = 'unsubCallBack';
+
+      didRecordsStub.callsFake(async (_, cbFunc) => {
+        cbFunc(rawDidRecord);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await polymesh.getMySigningKeys(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeResult);
     });
   });
 

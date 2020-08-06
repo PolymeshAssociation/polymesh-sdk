@@ -35,12 +35,13 @@ import {
   NetworkProperties,
   ResultSet,
   SignerType,
+  SigningItem,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { ClaimOperation, Signer as PolySigner } from '~/types/internal';
+import { ClaimOperation } from '~/types/internal';
 import {
   accountKeyToString,
   booleanToBool,
@@ -734,15 +735,17 @@ export class Polymesh {
   }
 
   /**
+   * Get the list of signing keys related to the actual identity
+   *
    * @note can be subscribed to
    */
-  public async getMySigningKeys(): Promise<PolySigner[]>;
-  public async getMySigningKeys(callback: SubCallback<PolySigner[]>): Promise<UnsubCallback>;
+  public async getMySigningKeys(): Promise<SigningItem[]>;
+  public async getMySigningKeys(callback: SubCallback<SigningItem[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getMySigningKeys(
-    callback?: SubCallback<PolySigner[]>
-  ): Promise<PolySigner[] | UnsubCallback> {
+    callback?: SubCallback<SigningItem[]>
+  ): Promise<SigningItem[] | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -754,17 +757,15 @@ export class Polymesh {
 
     const did = context.getCurrentIdentity().did;
 
-    const assembleResult = ({
-      master_key: masterKey,
-      signing_items: signingItems,
-    }: DidRecord): PolySigner[] => {
+    const assembleResult = ({ signing_items: signingItems }: DidRecord): SigningItem[] => {
       return signingItems.map(({ signer: rawSigner }) => {
         return {
-          value: rawSigner.isAccountKey
-            ? accountKeyToString(rawSigner.asAccountKey)
-            : identityIdToString(rawSigner.asIdentity),
-          type: rawSigner.isAccountKey ? SignerType.AccountKey : SignerType.Identity,
-          isMasterKey: rawSigner.isAccountKey ? masterKey === rawSigner.asAccountKey : false,
+          signer: {
+            value: rawSigner.isAccountKey
+              ? accountKeyToString(rawSigner.asAccountKey)
+              : identityIdToString(rawSigner.asIdentity),
+            type: rawSigner.isAccountKey ? SignerType.AccountKey : SignerType.Identity,
+          },
         };
       });
     };
