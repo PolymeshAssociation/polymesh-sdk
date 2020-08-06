@@ -11,7 +11,7 @@ import {
   SecurityToken,
   TickerReservation,
 } from '~/api/entities';
-import { ProposalDetails, ProposalStage } from '~/api/entities/Proposal/types';
+import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 import { Mocked } from '~/testUtils/types';
 import {
   Authorization,
@@ -196,7 +196,11 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
 const defaultProposalOptions: ProposalOptions = {
   pipId: 1,
-  getDetails: ('pip' as unknown) as ProposalDetails,
+  getDetails: {
+    state: ProposalState.Referendum,
+    module: 'someModule',
+    method: 'someMethod',
+  },
   getStage: ProposalStage.Open,
 };
 let proposalOptions = defaultProposalOptions;
