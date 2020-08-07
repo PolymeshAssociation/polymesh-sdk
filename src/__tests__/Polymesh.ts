@@ -3,7 +3,7 @@ import { Signer } from '@polkadot/api/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
-import { AccountKey, DidRecord, IdentityId, TxTags } from 'polymesh-types/types';
+import { DidRecord, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
@@ -1151,20 +1151,25 @@ describe('Polymesh Class', () => {
     const did = 'someDid';
     const accountKey = 'someAccountKey';
     const fakeResult = [
-      { signer: { value: did, type: SignerType.Identity } },
-      { signer: { value: accountKey, type: SignerType.AccountKey } },
+      { value: did, type: SignerType.Identity },
+      { value: accountKey, type: SignerType.AccountKey },
     ];
+    const signerIdentityId = dsMockUtils.createMockSignatory({
+      Identity: dsMockUtils.createMockIdentityId(did),
+    });
+    const signerAccountKey = dsMockUtils.createMockSignatory({
+      AccountKey: dsMockUtils.createMockAccountKey(accountKey),
+    });
 
-    let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
-    let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let signatoryToSignerStub: sinon.SinonStub<[Signatory], any>;
     let didRecordsStub: sinon.SinonStub;
     let rawDidRecord: DidRecord;
 
     beforeAll(() => {
-      accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
-      identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
-      accountKeyToStringStub.returns(accountKey);
-      identityIdToStringStub.returns(did);
+      signatoryToSignerStub = sinon.stub(utilsModule, 'signatoryToSigner');
+      signatoryToSignerStub.withArgs(signerIdentityId).returns(fakeResult[0]);
+      signatoryToSignerStub.withArgs(signerAccountKey).returns(fakeResult[1]);
     });
 
     beforeEach(() => {
@@ -1175,16 +1180,12 @@ describe('Polymesh Class', () => {
         master_key: dsMockUtils.createMockAccountKey(),
         signing_items: [
           dsMockUtils.createMockSigningItem({
-            signer: dsMockUtils.createMockSignatory({
-              Identity: dsMockUtils.createMockIdentityId(did),
-            }),
+            signer: signerIdentityId,
             signer_type: dsMockUtils.createMockSignatoryType(),
             permissions: [],
           }),
           dsMockUtils.createMockSigningItem({
-            signer: dsMockUtils.createMockSignatory({
-              AccountKey: dsMockUtils.createMockAccountKey(accountKey),
-            }),
+            signer: signerAccountKey,
             signer_type: dsMockUtils.createMockSignatoryType(),
             permissions: [],
           }),
@@ -1193,7 +1194,7 @@ describe('Polymesh Class', () => {
       /* eslint-enabled @typescript-eslint/camelcase */
     });
 
-    test('should return a list of SigningItem', async () => {
+    test('should return a list of Signers', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
       });

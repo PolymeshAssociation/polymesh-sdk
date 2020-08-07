@@ -34,8 +34,8 @@ import {
   MiddlewareConfig,
   NetworkProperties,
   ResultSet,
+  Signer as MeshSigner,
   SignerType,
-  SigningItem,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
@@ -43,13 +43,12 @@ import {
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import {
-  accountKeyToString,
   booleanToBool,
   calculateNextKey,
   createClaim,
-  identityIdToString,
   linkTypeToMeshLinkType,
   moduleAddressToString,
+  signatoryToSigner,
   signerToSignatory,
   stringToTicker,
   textToString,
@@ -739,13 +738,13 @@ export class Polymesh {
    *
    * @note can be subscribed to
    */
-  public async getMySigningKeys(): Promise<SigningItem[]>;
-  public async getMySigningKeys(callback: SubCallback<SigningItem[]>): Promise<UnsubCallback>;
+  public async getMySigningKeys(): Promise<MeshSigner[]>;
+  public async getMySigningKeys(callback: SubCallback<MeshSigner[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getMySigningKeys(
-    callback?: SubCallback<SigningItem[]>
-  ): Promise<SigningItem[] | UnsubCallback> {
+    callback?: SubCallback<MeshSigner[]>
+  ): Promise<MeshSigner[] | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -757,17 +756,8 @@ export class Polymesh {
 
     const { did } = context.getCurrentIdentity();
 
-    const assembleResult = ({ signing_items: signingItems }: DidRecord): SigningItem[] => {
-      return signingItems.map(({ signer: rawSigner }) => {
-        return {
-          signer: {
-            value: rawSigner.isAccountKey
-              ? accountKeyToString(rawSigner.asAccountKey)
-              : identityIdToString(rawSigner.asIdentity),
-            type: rawSigner.isAccountKey ? SignerType.AccountKey : SignerType.Identity,
-          },
-        };
-      });
+    const assembleResult = ({ signing_items: signingItems }: DidRecord): MeshSigner[] => {
+      return signingItems.map(({ signer: rawSigner }) => signatoryToSigner(rawSigner));
     };
 
     if (callback) {

@@ -17,10 +17,11 @@ import {
   Authorization,
   AuthorizationType,
   RoleType,
+  Signer,
   SignerType,
   TickerReservationStatus,
 } from '~/types';
-import { PolymeshTx, Signer } from '~/types/internal';
+import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('transferTokenOwnership procedure', () => {
