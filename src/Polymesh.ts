@@ -13,6 +13,8 @@ import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
   modifyClaims,
   ModifyClaimsParams,
+  removeSigningItems,
+  RemoveSigningKeysParams,
   reserveTicker,
   ReserveTickerParams,
   transferPolyX,
@@ -776,6 +778,15 @@ export class Polymesh {
 
     const didRecords = await identity.didRecords(did);
     return assembleResult(didRecords);
+  }
+
+  /**
+   * Remove a list of signing keys associated with the current identity
+   *
+   * @param args.signingItems - array of SigningItem to be removed
+   */
+  public removeMySigningKeys(args: RemoveSigningKeysParams): Promise<TransactionQueue<void>> {
+    return removeSigningItems.prepare(args, this.context);
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
