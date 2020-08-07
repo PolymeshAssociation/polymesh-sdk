@@ -233,7 +233,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const did = context.getCurrentIdentity().did;
+    const { did } = context.getCurrentIdentity();
 
     const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
       return accountKeyToString(masterKey);
