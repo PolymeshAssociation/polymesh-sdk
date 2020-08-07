@@ -262,6 +262,13 @@ export interface Rule {
   conditions: Condition[];
 }
 
+export interface RuleCompliance {
+  rules: (Rule & {
+    complies: boolean;
+  })[];
+  complies: boolean;
+}
+
 /**
  * Specifies possible types of errors in the SDK
  */

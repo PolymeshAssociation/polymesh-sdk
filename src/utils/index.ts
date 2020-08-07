@@ -18,6 +18,7 @@ import {
   AssetIdentifier,
   AssetName,
   AssetTransferRule,
+  AssetTransferRulesResult,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
@@ -62,6 +63,7 @@ import {
   NextKey,
   PaginationOptions,
   Rule,
+  RuleCompliance,
   SingleClaimCondition,
   TokenDocument,
   TokenIdentifierType,
@@ -1004,6 +1006,24 @@ export function stringToText(url: string, context: Context): Text {
  */
 export function textToString(value: Text): string {
   return value.toString();
+}
+
+/**
+ * @hidden
+ */
+export function assetTransferRulesResultToRuleCompliance(
+  assetTransferRulesResult: AssetTransferRulesResult
+): RuleCompliance {
+  const { rules: transferRules, final_result: result } = assetTransferRulesResult;
+  const rules = transferRules.map(rule => ({
+    ...assetTransferRuleToRule(rule),
+    complies: boolToBoolean(rule.transfer_rule_result),
+  }));
+
+  return {
+    rules,
+    complies: boolToBoolean(result),
+  };
 }
 
 /**
