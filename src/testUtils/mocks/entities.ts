@@ -11,6 +11,7 @@ import {
   SecurityToken,
   TickerReservation,
 } from '~/api/entities';
+import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 import { Mocked } from '~/testUtils/types';
 import {
   Authorization,
@@ -66,6 +67,8 @@ interface AuthorizationRequestOptions {
 
 interface ProposalOptions {
   pipId?: number;
+  getDetails?: ProposalDetails;
+  getStage?: ProposalStage;
 }
 
 let identityConstructorStub: SinonStub;
@@ -193,6 +196,12 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
 const defaultProposalOptions: ProposalOptions = {
   pipId: 1,
+  getDetails: {
+    state: ProposalState.Referendum,
+    module: 'someModule',
+    method: 'someMethod',
+  },
+  getStage: ProposalStage.Open,
 };
 let proposalOptions = defaultProposalOptions;
 
@@ -203,6 +212,8 @@ let proposalOptions = defaultProposalOptions;
 function configureProposal(opts: ProposalOptions): void {
   const proposal = ({
     pipId: opts.pipId,
+    getDetails: sinon.stub().returns(opts.getDetails),
+    getStage: sinon.stub().returns(opts.getStage),
   } as unknown) as MockProposal;
 
   Object.assign(mockInstanceContainer.proposal, proposal);
