@@ -755,7 +755,7 @@ export class Polymesh {
       context,
     } = this;
 
-    const did = context.getCurrentIdentity().did;
+    const { did } = context.getCurrentIdentity();
 
     const assembleResult = ({ signing_items: signingItems }: DidRecord): SigningItem[] => {
       return signingItems.map(({ signer: rawSigner }) => {
