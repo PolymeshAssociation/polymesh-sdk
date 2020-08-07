@@ -735,7 +735,7 @@ export class Polymesh {
   }
 
   /**
-   * Get the list of signing keys related to the actual identity
+   * Get the list of signing keys related to the current identity
    *
    * @note can be subscribed to
    */
