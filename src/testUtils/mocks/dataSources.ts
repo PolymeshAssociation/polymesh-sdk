@@ -72,7 +72,7 @@ import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
 import { Context } from '~/context';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, KeyringPair } from '~/types';
+import { AccountBalance, KeyringPair, SignerType } from '~/types';
 import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
 
@@ -400,6 +400,16 @@ function configureContext(opts: ContextOptions): void {
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
+    getSigningKeys: sinon.stub().returns(
+      opts.withSeed
+        ? [
+            {
+              type: SignerType.AccountKey,
+              value: opts.currentPairAddress,
+            },
+          ]
+        : []
+    ),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);

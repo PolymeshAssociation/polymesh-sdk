@@ -1,5 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Signer } from '@polkadot/api/types';
+import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloClient, ApolloQueryResult } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
@@ -34,7 +34,7 @@ import {
   MiddlewareConfig,
   NetworkProperties,
   ResultSet,
-  Signer as MeshSigner,
+  Signer,
   SignerType,
   SubCallback,
   TickerReservationStatus,
@@ -48,7 +48,6 @@ import {
   createClaim,
   linkTypeToMeshLinkType,
   moduleAddressToString,
-  signatoryToSigner,
   signerToSignatory,
   stringToTicker,
   textToString,
@@ -58,12 +57,12 @@ import {
 } from '~/utils';
 
 import { Governance } from './Governance';
-import { DidRecord, Link } from './polkadot/polymesh';
+import { Link } from './polkadot/polymesh';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
-  signer?: Signer;
+  signer?: PolkadotSigner;
   middleware?: MiddlewareConfig;
 }
 
@@ -738,34 +737,20 @@ export class Polymesh {
    *
    * @note can be subscribed to
    */
-  public async getMySigningKeys(): Promise<MeshSigner[]>;
-  public async getMySigningKeys(callback: SubCallback<MeshSigner[]>): Promise<UnsubCallback>;
+  public async getMySigningKeys(): Promise<Signer[]>;
+  public async getMySigningKeys(callback: SubCallback<Signer[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getMySigningKeys(
-    callback?: SubCallback<MeshSigner[]>
-  ): Promise<MeshSigner[] | UnsubCallback> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { identity },
-        },
-      },
-      context,
-    } = this;
-
-    const { did } = context.getCurrentIdentity();
-
-    const assembleResult = ({ signing_items: signingItems }: DidRecord): MeshSigner[] => {
-      return signingItems.map(({ signer: rawSigner }) => signatoryToSigner(rawSigner));
-    };
+    callback?: SubCallback<Signer[]>
+  ): Promise<Signer[] | UnsubCallback> {
+    const { context } = this;
 
     if (callback) {
-      return identity.didRecords(did, records => callback(assembleResult(records)));
+      return context.getSigningKeys(callback);
     }
 
-    const didRecords = await identity.didRecords(did);
-    return assembleResult(didRecords);
+    return context.getSigningKeys();
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
