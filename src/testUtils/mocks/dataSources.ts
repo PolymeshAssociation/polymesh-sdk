@@ -364,7 +364,7 @@ function configureContext(opts: ContextOptions): void {
   const getCurrentIdentity = sinon.stub();
   opts.withSeed
     ? getCurrentIdentity.returns({
-        getPolyXBalance: sinon.stub().resolves(opts.balance),
+        getPolyXBalance: sinon.stub().resolves(opts.balance?.free),
         did: opts.did,
         hasRoles: sinon.stub().resolves(opts.hasRoles),
         hasValidCdd: sinon.stub().resolves(opts.validCdd),
