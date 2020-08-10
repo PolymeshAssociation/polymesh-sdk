@@ -10,7 +10,6 @@ import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
 import { PostTransactionValue } from '~/base';
-import { SignerType } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -98,11 +97,6 @@ export interface TransactionSpec<
    * number of elements in the batch (only applicable to batch transactions)
    */
   batchSize: number | null;
-}
-
-export interface Signer {
-  type: SignerType;
-  value: string;
 }
 
 export interface AuthTarget {

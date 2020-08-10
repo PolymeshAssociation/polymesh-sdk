@@ -19,6 +19,7 @@ import {
   ErrorCode,
   KeyringPair,
   PlainTransactionArgument,
+  Signer,
   SimpleEnumTransactionArgument,
   SubCallback,
   TransactionArgument,
@@ -29,6 +30,7 @@ import {
   balanceToBigNumber,
   identityIdToString,
   posRatioToBigNumber,
+  signatoryToSigner,
   stringToAccountKey,
   stringToIdentityId,
   textToString,
@@ -512,6 +514,36 @@ export class Context {
 
       return processType(typeDef, argName);
     });
+  }
+
+  /**
+   * Retrieve the list of signing keys related to the account
+   *
+   * @note can be subscribed to
+   */
+  public async getSigningKeys(): Promise<Signer[]>;
+  public async getSigningKeys(callback: SubCallback<Signer[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getSigningKeys(callback?: SubCallback<Signer[]>): Promise<Signer[] | UnsubCallback> {
+    const {
+      polymeshApi: {
+        query: { identity },
+      },
+    } = this;
+
+    const { did } = this.getCurrentIdentity();
+
+    const assembleResult = ({ signing_items: signingItems }: DidRecord): Signer[] => {
+      return signingItems.map(({ signer: rawSigner }) => signatoryToSigner(rawSigner));
+    };
+
+    if (callback) {
+      return identity.didRecords(did, records => callback(assembleResult(records)));
+    }
+
+    const didRecords = await identity.didRecords(did);
+    return assembleResult(didRecords);
   }
 
   /**

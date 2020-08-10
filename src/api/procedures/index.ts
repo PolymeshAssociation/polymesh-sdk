@@ -18,3 +18,4 @@ export { transferToken, TransferTokenParams } from './transferToken';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 export { editProposal, EditProposalParams } from './editProposal';
 export { removeSigningItems, RemoveSigningKeysParams } from './removeSigningItems';
+export { cancelProposal } from './cancelProposal';

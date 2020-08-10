@@ -34,6 +34,7 @@ import {
   JurisdictionName,
   LinkType as MeshLinkType,
   PosRatio,
+  ProposalState as MeshProposalState,
   ProtocolOp,
   Rule as MeshRule,
   RuleType,
@@ -43,6 +44,7 @@ import {
 } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
+import { ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import {
@@ -62,6 +64,7 @@ import {
   NextKey,
   PaginationOptions,
   Rule,
+  Signer,
   SignerType,
   SingleClaimCondition,
   TokenDocument,
@@ -74,7 +77,6 @@ import {
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
-  Signer,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -1184,4 +1186,27 @@ export function batchArguments<Args>(
 export function calculateNextKey(totalCount: number, size?: number, start?: number): NextKey {
   const next = (start ?? 0) + (size ?? DEFAULT_GQL_PAGE_SIZE);
   return totalCount > next ? next : null;
+}
+
+/**
+ * @hidden
+ */
+export function meshProposalStateToProposalState(proposalState: MeshProposalState): ProposalState {
+  if (proposalState.isPending) {
+    return ProposalState.Pending;
+  }
+
+  if (proposalState.isCancelled) {
+    return ProposalState.Cancelled;
+  }
+
+  if (proposalState.isKilled) {
+    return ProposalState.Killed;
+  }
+
+  if (proposalState.isRejected) {
+    return ProposalState.Rejected;
+  }
+
+  return ProposalState.Referendum;
 }

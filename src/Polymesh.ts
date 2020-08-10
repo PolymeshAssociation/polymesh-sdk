@@ -1,5 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Signer } from '@polkadot/api/types';
+import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloClient, ApolloQueryResult } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
@@ -36,8 +36,8 @@ import {
   MiddlewareConfig,
   NetworkProperties,
   ResultSet,
+  Signer,
   SignerType,
-  SigningItem,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
@@ -45,11 +45,9 @@ import {
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import {
-  accountKeyToString,
   booleanToBool,
   calculateNextKey,
   createClaim,
-  identityIdToString,
   linkTypeToMeshLinkType,
   moduleAddressToString,
   signerToSignatory,
@@ -61,12 +59,12 @@ import {
 } from '~/utils';
 
 import { Governance } from './Governance';
-import { DidRecord, Link } from './polkadot/polymesh';
+import { Link } from './polkadot/polymesh';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
-  signer?: Signer;
+  signer?: PolkadotSigner;
   middleware?: MiddlewareConfig;
 }
 
@@ -737,47 +735,24 @@ export class Polymesh {
   }
 
   /**
-   * Get the list of signing keys related to the actual identity
+   * Get the list of signing keys related to the current identity
    *
    * @note can be subscribed to
    */
-  public async getMySigningKeys(): Promise<SigningItem[]>;
-  public async getMySigningKeys(callback: SubCallback<SigningItem[]>): Promise<UnsubCallback>;
+  public async getMySigningKeys(): Promise<Signer[]>;
+  public async getMySigningKeys(callback: SubCallback<Signer[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getMySigningKeys(
-    callback?: SubCallback<SigningItem[]>
-  ): Promise<SigningItem[] | UnsubCallback> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { identity },
-        },
-      },
-      context,
-    } = this;
-
-    const did = context.getCurrentIdentity().did;
-
-    const assembleResult = ({ signing_items: signingItems }: DidRecord): SigningItem[] => {
-      return signingItems.map(({ signer: rawSigner }) => {
-        return {
-          signer: {
-            value: rawSigner.isAccountKey
-              ? accountKeyToString(rawSigner.asAccountKey)
-              : identityIdToString(rawSigner.asIdentity),
-            type: rawSigner.isAccountKey ? SignerType.AccountKey : SignerType.Identity,
-          },
-        };
-      });
-    };
+    callback?: SubCallback<Signer[]>
+  ): Promise<Signer[] | UnsubCallback> {
+    const { context } = this;
 
     if (callback) {
-      return identity.didRecords(did, records => callback(assembleResult(records)));
+      return context.getSigningKeys(callback);
     }
 
-    const didRecords = await identity.didRecords(did);
-    return assembleResult(didRecords);
+    return context.getSigningKeys();
   }
 
   /**

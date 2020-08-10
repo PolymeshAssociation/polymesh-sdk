@@ -1,7 +1,6 @@
-import { Text } from '@polkadot/types';
 import sinon from 'sinon';
 
-import { isAuthorized, Params, prepareEditProposal } from '~/api/procedures/editProposal';
+import { isAuthorized, Params, prepareCancelProposal } from '~/api/procedures/cancelProposal';
 import * as proceduresUtilsModule from '~/api/procedures/utils';
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
@@ -11,24 +10,15 @@ import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
-describe('editProposal procedure', () => {
+describe('cancelProposal procedure', () => {
   const pipId = 10;
   const mockAddress = 'someAddress';
-  const description = 'Some Proposal';
-  const discussionUrl = 'www.proposal.com';
-  const args = {
-    description,
-    discussionUrl,
-  };
   const proposal = ('proposal' as unknown) as PostTransactionValue<void>;
-  const rawDescription = dsMockUtils.createMockText(description);
-  const rawDiscussionUrl = dsMockUtils.createMockText(discussionUrl);
 
   let mockContext: Mocked<Context>;
-  let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
   let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
   let addTransactionStub: sinon.SinonStub;
-  let editProposalTransaction: PolymeshTx<unknown[]>;
+  let cancelProposalTransaction: PolymeshTx<unknown[]>;
   let assertProposalUnlockedStub: sinon.SinonStub;
 
   beforeAll(() => {
@@ -39,8 +29,6 @@ describe('editProposal procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-
-    stringToTextStub = sinon.stub(utilsModule, 'stringToText');
     accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
     assertProposalUnlockedStub = sinon.stub(proceduresUtilsModule, 'assertProposalUnlocked');
   });
@@ -48,12 +36,9 @@ describe('editProposal procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([proposal]);
 
-    editProposalTransaction = dsMockUtils.createTxStub('pips', 'amendProposal');
+    cancelProposalTransaction = dsMockUtils.createTxStub('pips', 'cancelProposal');
 
     mockContext = dsMockUtils.getContextInstance();
-
-    stringToTextStub.withArgs(description, mockContext).returns(rawDescription);
-    stringToTextStub.withArgs(discussionUrl, mockContext).returns(rawDiscussionUrl);
   });
 
   afterEach(() => {
@@ -68,63 +53,20 @@ describe('editProposal procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the user has not passed any arguments', () => {
+  test('should add a cancel proposal transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    return expect(prepareEditProposal.call(proc, ({} as unknown) as Params)).rejects.toThrow(
-      'Nothing to modify'
-    );
+    await prepareCancelProposal.call(proc, { pipId });
+
+    sinon.assert.calledWith(addTransactionStub, cancelProposalTransaction, {}, pipId);
   });
 
   test('should assert that the proposal is not locked', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareEditProposal.call(proc, { pipId, ...args });
+    await prepareCancelProposal.call(proc, { pipId });
 
     sinon.assert.calledWith(assertProposalUnlockedStub, pipId, mockContext);
-  });
-
-  test('should add an edit proposal transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    await prepareEditProposal.call(proc, { pipId, ...args });
-
-    sinon.assert.calledWith(
-      addTransactionStub,
-      editProposalTransaction,
-      {},
-      pipId,
-      rawDiscussionUrl,
-      rawDescription
-    );
-
-    await prepareEditProposal.call(proc, {
-      pipId,
-      description,
-    });
-
-    sinon.assert.calledWith(
-      addTransactionStub,
-      editProposalTransaction,
-      {},
-      pipId,
-      null,
-      rawDescription
-    );
-
-    await prepareEditProposal.call(proc, {
-      pipId,
-      discussionUrl,
-    });
-
-    sinon.assert.calledWith(
-      addTransactionStub,
-      editProposalTransaction,
-      {},
-      pipId,
-      rawDiscussionUrl,
-      null
-    );
   });
 
   describe('isAuthorized', () => {
@@ -145,7 +87,7 @@ describe('editProposal procedure', () => {
       });
 
       const boundFunc = isAuthorized.bind(proc);
-      let result = await boundFunc({ pipId, ...args });
+      let result = await boundFunc({ pipId });
       expect(result).toBe(true);
 
       dsMockUtils.configureMocks({
@@ -154,7 +96,7 @@ describe('editProposal procedure', () => {
         },
       });
 
-      result = await boundFunc({ pipId, ...args });
+      result = await boundFunc({ pipId });
       expect(result).toBe(false);
     });
   });

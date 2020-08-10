@@ -1,9 +1,9 @@
 import { Keyring } from '@polkadot/api';
-import { Signer } from '@polkadot/api/types';
+import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
-import { AccountKey, DidRecord, IdentityId, TxTags } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
@@ -17,6 +17,7 @@ import {
   AccountBalance,
   ClaimTargets,
   ClaimType,
+  Signer,
   SignerType,
   SubCallback,
   TickerReservationStatus,
@@ -161,7 +162,7 @@ describe('Polymesh Class', () => {
     test('should set an optional signer for the polkadot API', async () => {
       const accountSeed = 'Alice'.padEnd(32, ' ');
       const createStub = dsMockUtils.getContextCreateStub();
-      const signer = 'signer' as Signer;
+      const signer = 'signer' as PolkadotSigner;
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -1148,79 +1149,37 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getMySigningKeys', () => {
-    const did = 'someDid';
-    const accountKey = 'someAccountKey';
-    const fakeResult = [
-      { signer: { value: did, type: SignerType.Identity } },
-      { signer: { value: accountKey, type: SignerType.AccountKey } },
-    ];
+    test('should return a list of Signers', async () => {
+      const fakeResult = [
+        {
+          type: SignerType.AccountKey,
+          value: '0xdummy',
+        },
+      ];
 
-    let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
-    let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
-    let didRecordsStub: sinon.SinonStub;
-    let rawDidRecord: DidRecord;
-
-    beforeAll(() => {
-      accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
-      identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
-      accountKeyToStringStub.returns(accountKey);
-      identityIdToStringStub.returns(did);
-    });
-
-    beforeEach(() => {
-      didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
-      /* eslint-disable @typescript-eslint/camelcase */
-      rawDidRecord = dsMockUtils.createMockDidRecord({
-        roles: [],
-        master_key: dsMockUtils.createMockAccountKey(),
-        signing_items: [
-          dsMockUtils.createMockSigningItem({
-            signer: dsMockUtils.createMockSignatory({
-              Identity: dsMockUtils.createMockIdentityId(did),
-            }),
-            signer_type: dsMockUtils.createMockSignatoryType(),
-            permissions: [],
-          }),
-          dsMockUtils.createMockSigningItem({
-            signer: dsMockUtils.createMockSignatory({
-              AccountKey: dsMockUtils.createMockAccountKey(accountKey),
-            }),
-            signer_type: dsMockUtils.createMockSignatoryType(),
-            permissions: [],
-          }),
-        ],
-      });
-      /* eslint-enabled @typescript-eslint/camelcase */
-    });
-
-    test('should return a list of SigningItem', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
       });
-
-      didRecordsStub.returns(rawDidRecord);
 
       const result = await polymesh.getMySigningKeys();
       expect(result).toEqual(fakeResult);
     });
 
     test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      const getSigningKeysStub = dsMockUtils
+        .getContextInstance()
+        .getSigningKeys.resolves(unsubCallback);
+
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
       });
 
-      const unsubCallback = 'unsubCallBack';
-
-      didRecordsStub.callsFake(async (_, cbFunc) => {
-        cbFunc(rawDidRecord);
-        return unsubCallback;
-      });
-
-      const callback = sinon.stub();
+      const callback = (() => [] as unknown) as SubCallback<Signer[]>;
       const result = await polymesh.getMySigningKeys(callback);
-
-      expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeResult);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(getSigningKeysStub, callback);
     });
   });
 

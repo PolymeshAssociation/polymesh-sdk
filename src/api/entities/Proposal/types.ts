@@ -45,6 +45,18 @@ export interface ProposalTimeFrames {
   coolOff: number;
 }
 
+export enum ProposalStage {
+  CoolOff = 'CoolOff',
+  Open = 'Open',
+  Ended = 'Ended',
+}
+
+export interface ProposalDetails {
+  state: ProposalState;
+  module: string;
+  method: string;
+}
+
 export {
   ProposalOrderByInput,
   ProposalState,
