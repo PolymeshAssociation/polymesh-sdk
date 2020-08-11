@@ -4,7 +4,6 @@
   "theme": "gitbook",
   "exclude": ["**/{__tests__,polkadot,testUtils}/*", "**/sandbox.ts", "src/index.ts"],
   "excludeExternals": true,
-  "excludeNotExported": true,
   "excludePrivate": true,
   "ignoreCompilerErrors": true
 }

@@ -20,7 +20,7 @@
 
 • **claim**: *[Claim](../modules/types.md#claim)*
 
-*Defined in [src/types/index.ts:217](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L217)*
+*Defined in [src/types/index.ts:217](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L217)*
 
 ___
 
@@ -28,7 +28,7 @@ ___
 
 • **expiry**: *Date | null*
 
-*Defined in [src/types/index.ts:216](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L216)*
+*Defined in [src/types/index.ts:216](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L216)*
 
 ___
 
@@ -36,7 +36,7 @@ ___
 
 • **issuedAt**: *Date*
 
-*Defined in [src/types/index.ts:215](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L215)*
+*Defined in [src/types/index.ts:215](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L215)*
 
 ___
 
@@ -44,7 +44,7 @@ ___
 
 • **issuer**: *[Identity](../classes/api_entities_identity.identity.md)*
 
-*Defined in [src/types/index.ts:214](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L214)*
+*Defined in [src/types/index.ts:214](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L214)*
 
 ___
 
@@ -52,4 +52,4 @@ ___
 
 • **target**: *[Identity](../classes/api_entities_identity.identity.md)*
 
-*Defined in [src/types/index.ts:213](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L213)*
+*Defined in [src/types/index.ts:213](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L213)*

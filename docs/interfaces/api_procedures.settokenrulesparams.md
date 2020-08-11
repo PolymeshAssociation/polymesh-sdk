@@ -16,4 +16,4 @@
 
 • **rules**: *[Condition](../modules/types.md#condition)[][]*
 
-*Defined in [src/api/procedures/setTokenRules.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/procedures/setTokenRules.ts#L9)*
+*Defined in [src/api/procedures/setTokenRules.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/procedures/setTokenRules.ts#L9)*

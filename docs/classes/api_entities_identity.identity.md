@@ -40,7 +40,7 @@ Represents an identity in the Polymesh blockchain
 
 *Overrides void*
 
-*Defined in [src/api/entities/Identity/index.ts:55](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Identity/index.ts#L55)*
+*Defined in [src/api/entities/Identity/index.ts:55](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Identity/index.ts#L55)*
 
 Create an Identity entity
 
@@ -59,7 +59,7 @@ Name | Type |
 
 • **authorizations**: *[Authorizations](api_entities_identity.authorizations.md)*
 
-*Defined in [src/api/entities/Identity/index.ts:55](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Identity/index.ts#L55)*
+*Defined in [src/api/entities/Identity/index.ts:55](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Identity/index.ts#L55)*
 
 ___
 
@@ -69,7 +69,7 @@ ___
 
 *Inherited from [Entity](base.entity.md).[context](base.entity.md#protected-context)*
 
-*Defined in [src/base/Entity.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/base/Entity.ts#L49)*
+*Defined in [src/base/Entity.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/base/Entity.ts#L49)*
 
 ___
 
@@ -77,7 +77,7 @@ ___
 
 • **did**: *string*
 
-*Defined in [src/api/entities/Identity/index.ts:52](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Identity/index.ts#L52)*
+*Defined in [src/api/entities/Identity/index.ts:52](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Identity/index.ts#L52)*
 
 identity ID as stored in the blockchain
 
@@ -89,7 +89,7 @@ ___
 
 *Inherited from [Entity](base.entity.md).[uuid](base.entity.md#uuid)*
 
-*Defined in [src/base/Entity.ts:47](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/base/Entity.ts#L47)*
+*Defined in [src/base/Entity.ts:47](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/base/Entity.ts#L47)*
 
 ## Methods
 
@@ -97,7 +97,7 @@ ___
 
 ▸ **getMasterKey**(): *Promise‹string›*
 
-*Defined in [src/api/entities/Identity/index.ts:222](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Identity/index.ts#L222)*
+*Defined in [src/api/entities/Identity/index.ts:222](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Identity/index.ts#L222)*
 
 Retrieve the master key associated with the identity
 
@@ -107,7 +107,7 @@ Retrieve the master key associated with the identity
 
 ▸ **getMasterKey**(`callback`: [SubCallback](../modules/types.md#subcallback)‹string›): *Promise‹[UnsubCallback](../modules/types.md#unsubcallback)›*
 
-*Defined in [src/api/entities/Identity/index.ts:223](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Identity/index.ts#L223)*
+*Defined in [src/api/entities/Identity/index.ts:223](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Identity/index.ts#L223)*
 
 **Parameters:**
 
@@ -123,7 +123,7 @@ ___
 
 ▸ **getTokenBalance**(`args`: object): *Promise‹BigNumber›*
 
-*Defined in [src/api/entities/Identity/index.ts:143](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Identity/index.ts#L143)*
+*Defined in [src/api/entities/Identity/index.ts:143](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Identity/index.ts#L143)*
 
 Retrieve the balance of a particular Security Token
 
@@ -141,7 +141,7 @@ Name | Type |
 
 ▸ **getTokenBalance**(`args`: object, `callback`: [SubCallback](../modules/types.md#subcallback)‹BigNumber›): *Promise‹[UnsubCallback](../modules/types.md#unsubcallback)›*
 
-*Defined in [src/api/entities/Identity/index.ts:144](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Identity/index.ts#L144)*
+*Defined in [src/api/entities/Identity/index.ts:144](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Identity/index.ts#L144)*
 
 Retrieve the balance of a particular Security Token
 
@@ -165,7 +165,7 @@ ___
 
 ▸ **hasRole**(`role`: [Role](../modules/types.md#role)): *Promise‹boolean›*
 
-*Defined in [src/api/entities/Identity/index.ts:107](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Identity/index.ts#L107)*
+*Defined in [src/api/entities/Identity/index.ts:107](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Identity/index.ts#L107)*
 
 Check whether this Identity possesses the specified Role
 
@@ -183,7 +183,7 @@ ___
 
 ▸ **hasRoles**(`roles`: [Role](../modules/types.md#role)[]): *Promise‹boolean›*
 
-*Defined in [src/api/entities/Identity/index.ts:253](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Identity/index.ts#L253)*
+*Defined in [src/api/entities/Identity/index.ts:253](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Identity/index.ts#L253)*
 
 Check whether this Identity possesses all specified roles
 
@@ -201,7 +201,7 @@ ___
 
 ▸ **hasValidCdd**(): *Promise‹boolean›*
 
-*Defined in [src/api/entities/Identity/index.ts:186](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Identity/index.ts#L186)*
+*Defined in [src/api/entities/Identity/index.ts:186](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Identity/index.ts#L186)*
 
 Check whether this Identity has a valid CDD claim
 
@@ -213,7 +213,7 @@ ___
 
 ▸ **isGcMember**(): *Promise‹boolean›*
 
-*Defined in [src/api/entities/Identity/index.ts:203](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Identity/index.ts#L203)*
+*Defined in [src/api/entities/Identity/index.ts:203](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Identity/index.ts#L203)*
 
 Check whether this Identity is Governance Committee member
 
@@ -227,7 +227,7 @@ ___
 
 *Inherited from [Entity](base.entity.md).[generateUuid](base.entity.md#static-generateuuid)*
 
-*Defined in [src/base/Entity.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/base/Entity.ts#L15)*
+*Defined in [src/base/Entity.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/base/Entity.ts#L15)*
 
 Generate the Entity's UUID from its identifying properties
 
@@ -251,7 +251,7 @@ ___
 
 *Inherited from [Entity](base.entity.md).[unserialize](base.entity.md#static-unserialize)*
 
-*Defined in [src/base/Entity.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/base/Entity.ts#L24)*
+*Defined in [src/base/Entity.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/base/Entity.ts#L24)*
 
 Unserialize a UUID into its Unique Identifiers
 

@@ -17,7 +17,7 @@
 
 • **internal**: *[TransactionArgument](../modules/types.md#transactionargument)[]*
 
-*Defined in [src/types/index.ts:425](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L425)*
+*Defined in [src/types/index.ts:425](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L425)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **type**: *[RichEnum](../enums/types.transactionargumenttype.md#richenum) | [Object](../enums/types.transactionargumenttype.md#object) | [Tuple](../enums/types.transactionargumenttype.md#tuple)*
 
-*Defined in [src/types/index.ts:421](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L421)*
+*Defined in [src/types/index.ts:421](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L421)*

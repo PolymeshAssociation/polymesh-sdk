@@ -14,7 +14,7 @@
 
 • **Both**: = "Both"
 
-*Defined in [src/types/index.ts:179](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L179)*
+*Defined in [src/types/index.ts:179](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L179)*
 
 ___
 
@@ -22,7 +22,7 @@ ___
 
 • **Receiver**: = "Receiver"
 
-*Defined in [src/types/index.ts:178](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L178)*
+*Defined in [src/types/index.ts:178](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L178)*
 
 ___
 
@@ -30,4 +30,4 @@ ___
 
 • **Sender**: = "Sender"
 
-*Defined in [src/types/index.ts:177](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L177)*
+*Defined in [src/types/index.ts:177](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L177)*

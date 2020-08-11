@@ -17,7 +17,7 @@
 
 • **internal**: *string[]*
 
-*Defined in [src/types/index.ts:417](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L417)*
+*Defined in [src/types/index.ts:417](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L417)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **type**: *[SimpleEnum](../enums/types.transactionargumenttype.md#simpleenum)*
 
-*Defined in [src/types/index.ts:416](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L416)*
+*Defined in [src/types/index.ts:416](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L416)*

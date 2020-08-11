@@ -17,7 +17,7 @@
 
 • **gas**: *BigNumber*
 
-*Defined in [src/types/index.ts:366](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L366)*
+*Defined in [src/types/index.ts:366](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L366)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **protocol**: *BigNumber*
 
-*Defined in [src/types/index.ts:365](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L365)*
+*Defined in [src/types/index.ts:365](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L365)*

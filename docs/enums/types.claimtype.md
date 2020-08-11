@@ -21,7 +21,7 @@
 
 • **Accredited**: = "Accredited"
 
-*Defined in [src/types/index.ts:183](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L183)*
+*Defined in [src/types/index.ts:183](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L183)*
 
 ___
 
@@ -29,7 +29,7 @@ ___
 
 • **Affiliate**: = "Affiliate"
 
-*Defined in [src/types/index.ts:184](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L184)*
+*Defined in [src/types/index.ts:184](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L184)*
 
 ___
 
@@ -37,7 +37,7 @@ ___
 
 • **Blocked**: = "Blocked"
 
-*Defined in [src/types/index.ts:191](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L191)*
+*Defined in [src/types/index.ts:191](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L191)*
 
 ___
 
@@ -45,7 +45,7 @@ ___
 
 • **BuyLockup**: = "BuyLockup"
 
-*Defined in [src/types/index.ts:185](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L185)*
+*Defined in [src/types/index.ts:185](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L185)*
 
 ___
 
@@ -53,7 +53,7 @@ ___
 
 • **CustomerDueDiligence**: = "CustomerDueDiligence"
 
-*Defined in [src/types/index.ts:187](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L187)*
+*Defined in [src/types/index.ts:187](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L187)*
 
 ___
 
@@ -61,7 +61,7 @@ ___
 
 • **Exempted**: = "Exempted"
 
-*Defined in [src/types/index.ts:190](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L190)*
+*Defined in [src/types/index.ts:190](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L190)*
 
 ___
 
@@ -69,7 +69,7 @@ ___
 
 • **Jurisdiction**: = "Jurisdiction"
 
-*Defined in [src/types/index.ts:189](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L189)*
+*Defined in [src/types/index.ts:189](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L189)*
 
 ___
 
@@ -77,7 +77,7 @@ ___
 
 • **KnowYourCustomer**: = "KnowYourCustomer"
 
-*Defined in [src/types/index.ts:188](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L188)*
+*Defined in [src/types/index.ts:188](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L188)*
 
 ___
 
@@ -85,7 +85,7 @@ ___
 
 • **NoData**: = "NoData"
 
-*Defined in [src/types/index.ts:192](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L192)*
+*Defined in [src/types/index.ts:192](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L192)*
 
 ___
 
@@ -93,4 +93,4 @@ ___
 
 • **SellLockup**: = "SellLockup"
 
-*Defined in [src/types/index.ts:186](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L186)*
+*Defined in [src/types/index.ts:186](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L186)*

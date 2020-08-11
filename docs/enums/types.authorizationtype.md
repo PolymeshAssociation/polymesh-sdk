@@ -21,7 +21,7 @@ Type of authorization request
 
 • **AddMultiSigSigner**: = "AddMultiSigSigner"
 
-*Defined in [src/types/index.ts:156](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L156)*
+*Defined in [src/types/index.ts:156](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L156)*
 
 ___
 
@@ -29,7 +29,7 @@ ___
 
 • **AttestMasterKeyRotation**: = "AttestMasterKeyRotation"
 
-*Defined in [src/types/index.ts:153](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L153)*
+*Defined in [src/types/index.ts:153](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L153)*
 
 ___
 
@@ -37,7 +37,7 @@ ___
 
 • **Custom**: = "Custom"
 
-*Defined in [src/types/index.ts:159](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L159)*
+*Defined in [src/types/index.ts:159](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L159)*
 
 ___
 
@@ -45,7 +45,7 @@ ___
 
 • **JoinIdentity**: = "JoinIdentity"
 
-*Defined in [src/types/index.ts:158](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L158)*
+*Defined in [src/types/index.ts:158](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L158)*
 
 ___
 
@@ -53,7 +53,7 @@ ___
 
 • **NoData**: = "NoData"
 
-*Defined in [src/types/index.ts:160](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L160)*
+*Defined in [src/types/index.ts:160](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L160)*
 
 ___
 
@@ -61,7 +61,7 @@ ___
 
 • **RotateMasterKey**: = "RotateMasterKey"
 
-*Defined in [src/types/index.ts:154](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L154)*
+*Defined in [src/types/index.ts:154](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L154)*
 
 ___
 
@@ -69,7 +69,7 @@ ___
 
 • **TransferAssetOwnership**: = "TransferAssetOwnership"
 
-*Defined in [src/types/index.ts:157](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L157)*
+*Defined in [src/types/index.ts:157](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L157)*
 
 ___
 
@@ -77,4 +77,4 @@ ___
 
 • **TransferTicker**: = "TransferTicker"
 
-*Defined in [src/types/index.ts:155](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L155)*
+*Defined in [src/types/index.ts:155](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L155)*

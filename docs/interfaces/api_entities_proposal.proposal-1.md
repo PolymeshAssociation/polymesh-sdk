@@ -18,7 +18,7 @@
 
 • **call**: *[Call](api_entities_proposal.call.md)*
 
-*Defined in [src/api/entities/Proposal/types.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Proposal/types.ts#L32)*
+*Defined in [src/api/entities/Proposal/types.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Proposal/types.ts#L32)*
 
 ___
 
@@ -26,7 +26,7 @@ ___
 
 • **metadata**: *[Metadata](api_entities_proposal.metadata.md)*
 
-*Defined in [src/api/entities/Proposal/types.ts:33](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Proposal/types.ts#L33)*
+*Defined in [src/api/entities/Proposal/types.ts:33](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Proposal/types.ts#L33)*
 
 ___
 
@@ -34,4 +34,4 @@ ___
 
 • **state**: *[ProposalState](../modules/api_entities_proposal.md#proposalstate)*
 
-*Defined in [src/api/entities/Proposal/types.ts:34](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/Proposal/types.ts#L34)*
+*Defined in [src/api/entities/Proposal/types.ts:34](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/Proposal/types.ts#L34)*

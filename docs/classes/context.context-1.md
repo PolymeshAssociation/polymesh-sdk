@@ -40,7 +40,7 @@ Context in which the SDK is being used
 
 • **currentPair**? : *[KeyringPair](../interfaces/types.keyringpair.md)*
 
-*Defined in [src/context/index.ts:71](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L71)*
+*Defined in [src/context/index.ts:71](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L71)*
 
 ___
 
@@ -48,7 +48,7 @@ ___
 
 • **polymeshApi**: *ApiPromise*
 
-*Defined in [src/context/index.ts:69](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L69)*
+*Defined in [src/context/index.ts:69](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L69)*
 
 ## Accessors
 
@@ -56,7 +56,7 @@ ___
 
 • **get middlewareApi**(): *ApolloClient‹NormalizedCacheObject›*
 
-*Defined in [src/context/index.ts:554](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L554)*
+*Defined in [src/context/index.ts:554](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L554)*
 
 Retrieve the middleware client
 
@@ -70,7 +70,7 @@ Retrieve the middleware client
 
 ▸ **accountBalance**(`accountId?`: undefined | string): *Promise‹[AccountBalance](../interfaces/types.accountbalance.md)›*
 
-*Defined in [src/context/index.ts:234](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L234)*
+*Defined in [src/context/index.ts:234](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L234)*
 
 Retrieve the account level POLYX balance
 
@@ -86,7 +86,7 @@ Name | Type |
 
 ▸ **accountBalance**(`accountId`: string | undefined, `callback`: [SubCallback](../modules/types.md#subcallback)‹[AccountBalance](../interfaces/types.accountbalance.md)›): *Promise‹[UnsubCallback](../modules/types.md#unsubcallback)›*
 
-*Defined in [src/context/index.ts:235](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L235)*
+*Defined in [src/context/index.ts:235](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L235)*
 
 Retrieve the account level POLYX balance
 
@@ -105,13 +105,13 @@ ___
 
 ###  getAccounts
 
-▸ **getAccounts**(): *Array‹AccountData›*
+▸ **getAccounts**(): *Array‹[AccountData](../interfaces/context.accountdata.md)›*
 
-*Defined in [src/context/index.ts:186](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L186)*
+*Defined in [src/context/index.ts:186](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L186)*
 
 Retrieve a list of addresses associated with the account
 
-**Returns:** *Array‹AccountData›*
+**Returns:** *Array‹[AccountData](../interfaces/context.accountdata.md)›*
 
 ___
 
@@ -119,7 +119,7 @@ ___
 
 ▸ **getCurrentIdentity**(): *[Identity](api_entities_identity.identity.md)*
 
-*Defined in [src/context/index.ts:293](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L293)*
+*Defined in [src/context/index.ts:293](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L293)*
 
 Retrieve current Identity
 
@@ -133,7 +133,7 @@ ___
 
 ▸ **getCurrentPair**(): *[KeyringPair](../interfaces/types.keyringpair.md)*
 
-*Defined in [src/context/index.ts:311](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L311)*
+*Defined in [src/context/index.ts:311](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L311)*
 
 Retrieve current Keyring Pair
 
@@ -147,7 +147,7 @@ ___
 
 ▸ **getInvalidDids**(`identities`: (string | [Identity](api_entities_identity.identity.md)‹›)[]): *Promise‹string[]›*
 
-*Defined in [src/context/index.ts:326](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L326)*
+*Defined in [src/context/index.ts:326](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L326)*
 
 Check whether identities exist
 
@@ -165,7 +165,7 @@ ___
 
 ▸ **getSigningKeys**(): *Promise‹[Signer](../interfaces/types.signer.md)[]›*
 
-*Defined in [src/context/index.ts:524](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L524)*
+*Defined in [src/context/index.ts:524](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L524)*
 
 Retrieve the list of signing keys related to the account
 
@@ -175,7 +175,7 @@ Retrieve the list of signing keys related to the account
 
 ▸ **getSigningKeys**(`callback`: [SubCallback](../modules/types.md#subcallback)‹[Signer](../interfaces/types.signer.md)[]›): *Promise‹[UnsubCallback](../modules/types.md#unsubcallback)›*
 
-*Defined in [src/context/index.ts:525](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L525)*
+*Defined in [src/context/index.ts:525](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L525)*
 
 **Parameters:**
 
@@ -191,7 +191,7 @@ ___
 
 ▸ **getTransactionArguments**(`args`: object): *[TransactionArgument](../modules/types.md#transactionargument)[]*
 
-*Defined in [src/context/index.ts:376](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L376)*
+*Defined in [src/context/index.ts:376](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L376)*
 
 Retrieve the types of arguments that a certain transaction requires to be run
 
@@ -211,7 +211,7 @@ ___
 
 ▸ **getTransactionFees**(`tag`: TxTag): *Promise‹BigNumber›*
 
-*Defined in [src/context/index.ts:349](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L349)*
+*Defined in [src/context/index.ts:349](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L349)*
 
 Retrieve the protocol fees associated with running a specific transaction
 
@@ -229,7 +229,7 @@ ___
 
 ▸ **setPair**(`address`: string): *Promise‹void›*
 
-*Defined in [src/context/index.ts:196](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L196)*
+*Defined in [src/context/index.ts:196](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L196)*
 
 Set a pair as the current account keyring pair
 
@@ -247,7 +247,7 @@ ___
 
 ▸ **create**(`params`: object): *Promise‹[Context](context.context-1.md)›*
 
-*Defined in [src/context/index.ts:105](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L105)*
+*Defined in [src/context/index.ts:105](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L105)*
 
 Create the Context instance
 
@@ -265,7 +265,7 @@ Name | Type |
 
 ▸ **create**(`params`: object): *Promise‹[Context](context.context-1.md)›*
 
-*Defined in [src/context/index.ts:111](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L111)*
+*Defined in [src/context/index.ts:111](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L111)*
 
 Create the Context instance
 
@@ -283,7 +283,7 @@ Name | Type |
 
 ▸ **create**(`params`: object): *Promise‹[Context](context.context-1.md)›*
 
-*Defined in [src/context/index.ts:117](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L117)*
+*Defined in [src/context/index.ts:117](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L117)*
 
 Create the Context instance
 
@@ -301,7 +301,7 @@ Name | Type |
 
 ▸ **create**(`params`: object): *Promise‹[Context](context.context-1.md)›*
 
-*Defined in [src/context/index.ts:123](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/context/index.ts#L123)*
+*Defined in [src/context/index.ts:123](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L123)*
 
 Create the Context instance
 

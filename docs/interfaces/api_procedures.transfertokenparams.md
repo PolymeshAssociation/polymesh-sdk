@@ -17,7 +17,7 @@
 
 • **amount**: *BigNumber*
 
-*Defined in [src/api/procedures/transferToken.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/procedures/transferToken.ts#L10)*
+*Defined in [src/api/procedures/transferToken.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/procedures/transferToken.ts#L10)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **to**: *string | [Identity](../classes/api_entities_identity.identity.md)*
 
-*Defined in [src/api/procedures/transferToken.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/procedures/transferToken.ts#L9)*
+*Defined in [src/api/procedures/transferToken.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/procedures/transferToken.ts#L9)*

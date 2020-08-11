@@ -18,7 +18,7 @@
 
 • **expiryDate**: *Date | null*
 
-*Defined in [src/api/entities/TickerReservation/types.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/TickerReservation/types.ts#L11)*
+*Defined in [src/api/entities/TickerReservation/types.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/TickerReservation/types.ts#L11)*
 
 date at which the reservation expires, null if it never expires (permanent reservation or token already launched)
 
@@ -28,7 +28,7 @@ ___
 
 • **owner**: *[Identity](../classes/api_entities_identity.identity.md) | null*
 
-*Defined in [src/api/entities/TickerReservation/types.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/TickerReservation/types.ts#L7)*
+*Defined in [src/api/entities/TickerReservation/types.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/TickerReservation/types.ts#L7)*
 
 identity ID of the owner of the ticker, null if it hasn't been reserved
 
@@ -38,4 +38,4 @@ ___
 
 • **status**: *[TickerReservationStatus](../enums/api_entities_tickerreservation.tickerreservationstatus.md)*
 
-*Defined in [src/api/entities/TickerReservation/types.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/TickerReservation/types.ts#L12)*
+*Defined in [src/api/entities/TickerReservation/types.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/TickerReservation/types.ts#L12)*

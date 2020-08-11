@@ -16,4 +16,4 @@
 
 • **type**: *Exclude‹[TransactionArgumentType](../enums/types.transactionargumenttype.md), [Array](../enums/types.transactionargumenttype.md#array) | [Tuple](../enums/types.transactionargumenttype.md#tuple) | [SimpleEnum](../enums/types.transactionargumenttype.md#simpleenum) | [RichEnum](../enums/types.transactionargumenttype.md#richenum) | [Object](../enums/types.transactionargumenttype.md#object)›*
 
-*Defined in [src/types/index.ts:400](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L400)*
+*Defined in [src/types/index.ts:400](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L400)*

@@ -17,7 +17,7 @@
 
 • **ticker**: *string*
 
-*Defined in [src/types/index.ts:83](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L83)*
+*Defined in [src/types/index.ts:83](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L83)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **type**: *[TokenOwner](../enums/types.roletype.md#tokenowner)*
 
-*Defined in [src/types/index.ts:82](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L82)*
+*Defined in [src/types/index.ts:82](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L82)*

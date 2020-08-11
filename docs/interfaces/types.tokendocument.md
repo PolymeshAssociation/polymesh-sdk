@@ -20,7 +20,7 @@ Document attached to a token
 
 • **contentHash**: *string*
 
-*Defined in [src/types/index.ts:146](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L146)*
+*Defined in [src/types/index.ts:146](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L146)*
 
 ___
 
@@ -28,7 +28,7 @@ ___
 
 • **name**: *string*
 
-*Defined in [src/types/index.ts:144](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L144)*
+*Defined in [src/types/index.ts:144](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L144)*
 
 ___
 
@@ -36,4 +36,4 @@ ___
 
 • **uri**: *string*
 
-*Defined in [src/types/index.ts:145](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/index.ts#L145)*
+*Defined in [src/types/index.ts:145](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L145)*

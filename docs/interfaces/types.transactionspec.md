@@ -34,7 +34,7 @@ values that will be returned wrapped in [[PostTransactionValue]] after the trans
 
 • **args**: *[MapMaybePostTransactionValue](../modules/types.md#mapmaybeposttransactionvalue)‹Args›*
 
-*Defined in [src/types/internal.ts:79](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/internal.ts#L79)*
+*Defined in [src/types/internal.ts:79](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L79)*
 
 arguments that the transaction will receive (some of them can be [[PostTransactionValue]] from an earlier transaction)
 
@@ -44,7 +44,7 @@ ___
 
 • **batchSize**: *number | null*
 
-*Defined in [src/types/internal.ts:99](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/internal.ts#L99)*
+*Defined in [src/types/internal.ts:99](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L99)*
 
 number of elements in the batch (only applicable to batch transactions)
 
@@ -54,7 +54,7 @@ ___
 
 • **fee**: *BigNumber | null*
 
-*Defined in [src/types/internal.ts:95](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/internal.ts#L95)*
+*Defined in [src/types/internal.ts:95](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L95)*
 
 any protocol fees associated with running the transaction (not gas)
 
@@ -64,7 +64,7 @@ ___
 
 • **isCritical**: *boolean*
 
-*Defined in [src/types/internal.ts:91](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/internal.ts#L91)*
+*Defined in [src/types/internal.ts:91](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L91)*
 
 whether this tx failing makes the entire tx queue fail or not
 
@@ -74,7 +74,7 @@ ___
 
 • **postTransactionValues**? : *[PostTransactionValueArray](../modules/types.md#posttransactionvaluearray)‹Values›*
 
-*Defined in [src/types/internal.ts:83](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/internal.ts#L83)*
+*Defined in [src/types/internal.ts:83](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L83)*
 
 wrapped values that will be returned after this transaction is run
 
@@ -84,7 +84,7 @@ ___
 
 • **signer**: *AddressOrPair*
 
-*Defined in [src/types/internal.ts:87](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/internal.ts#L87)*
+*Defined in [src/types/internal.ts:87](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L87)*
 
 account that will sign the transaction
 
@@ -94,6 +94,6 @@ ___
 
 • **tx**: *[MaybePostTransactionValue](../modules/types.md#maybeposttransactionvalue)‹[PolymeshTx](../modules/types.md#polymeshtx)‹Args››*
 
-*Defined in [src/types/internal.ts:75](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/types/internal.ts#L75)*
+*Defined in [src/types/internal.ts:75](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L75)*
 
 underlying polkadot transaction object

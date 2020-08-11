@@ -18,6 +18,6 @@ Properties that uniquely identify a Security Token
 
 • **ticker**: *string*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:52](https://github.com/PolymathNetwork/polymesh-sdk/blob/d7c2770/src/api/entities/SecurityToken/index.ts#L52)*
+*Defined in [src/api/entities/SecurityToken/index.ts:52](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/SecurityToken/index.ts#L52)*
 
 ticker of the security token
