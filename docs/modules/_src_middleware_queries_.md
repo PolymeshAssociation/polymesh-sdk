@@ -1,3 +1,0 @@
-# Module: "src/middleware/queries"
-
-

@@ -1,3 +1,7 @@
+/**
+ * @packageDocumentation
+ * @module governance
+ */
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { BlockNumber } from '@polkadot/types/interfaces/runtime';
 import { ApolloQueryResult } from 'apollo-client';
