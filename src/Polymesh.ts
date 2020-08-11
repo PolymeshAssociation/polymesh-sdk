@@ -14,7 +14,6 @@ import {
   modifyClaims,
   ModifyClaimsParams,
   removeSigningItems,
-  RemoveSigningKeysParams,
   reserveTicker,
   ReserveTickerParams,
   transferPolyX,
@@ -757,10 +756,8 @@ export class Polymesh {
 
   /**
    * Remove a list of signing keys associated with the current identity
-   *
-   * @param args.signingItems - array of SigningItem to be removed
    */
-  public removeMySigningKeys(args: RemoveSigningKeysParams): Promise<TransactionQueue<void>> {
+  public removeMySigningKeys(args: Signer[]): Promise<TransactionQueue<void>> {
     return removeSigningItems.prepare(args, this.context);
   }
 

@@ -7,7 +7,7 @@ import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { modifyClaims, reserveTicker, transferPolyX } from '~/api/procedures';
+import { modifyClaims, removeSigningItems, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { didsWithClaims } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
@@ -1204,6 +1204,35 @@ describe('Polymesh Class', () => {
       polkadot.emit('error');
 
       sinon.assert.calledOnce(callback);
+    });
+  });
+
+  describe('method: removeMySigningKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const args = [
+        {
+          type: SignerType.AccountKey,
+          value: 'someAccountKey',
+        },
+      ];
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(removeSigningItems, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await polymesh.removeMySigningKeys(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 
