@@ -16,7 +16,7 @@
 
 • **Cancelled**: = "Cancelled"
 
-*Defined in [src/middleware/types.ts:937](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L937)*
+*Defined in [src/middleware/types.ts:937](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L937)*
 
 ___
 
@@ -24,7 +24,7 @@ ___
 
 • **Killed**: = "Killed"
 
-*Defined in [src/middleware/types.ts:938](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L938)*
+*Defined in [src/middleware/types.ts:938](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L938)*
 
 ___
 
@@ -32,7 +32,7 @@ ___
 
 • **Pending**: = "Pending"
 
-*Defined in [src/middleware/types.ts:936](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L936)*
+*Defined in [src/middleware/types.ts:936](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L936)*
 
 ___
 
@@ -40,7 +40,7 @@ ___
 
 • **Referendum**: = "Referendum"
 
-*Defined in [src/middleware/types.ts:940](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L940)*
+*Defined in [src/middleware/types.ts:940](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L940)*
 
 ___
 
@@ -48,4 +48,4 @@ ___
 
 • **Rejected**: = "Rejected"
 
-*Defined in [src/middleware/types.ts:939](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L939)*
+*Defined in [src/middleware/types.ts:939](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L939)*

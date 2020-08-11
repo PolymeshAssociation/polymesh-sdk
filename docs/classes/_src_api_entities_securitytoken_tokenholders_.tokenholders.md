@@ -27,7 +27,7 @@ Handles all Security Token Holders related functionality
 
 *Inherited from [Namespace](_src_base_namespace_.namespace.md).[context](_src_base_namespace_.namespace.md#protected-context)*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/base/Namespace.ts#L10)*
 
 ___
 
@@ -37,7 +37,7 @@ ___
 
 *Inherited from [Namespace](_src_base_namespace_.namespace.md).[parent](_src_base_namespace_.namespace.md#protected-parent)*
 
-*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/base/Namespace.ts#L8)*
+*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/base/Namespace.ts#L8)*
 
 ## Methods
 
@@ -45,7 +45,7 @@ ___
 
 ▸ **get**(`opts`: Pick‹[TokenHolderOptions](../interfaces/_src_api_entities_securitytoken_types_.tokenholderoptions.md), "canBeIssuedTo"›, `paginationOpts?`: [PaginationOptions](../interfaces/_src_types_index_.paginationoptions.md)): *Promise‹[ResultSet](../interfaces/_src_types_index_.resultset.md)‹[IdentityBalance](../interfaces/_src_api_entities_securitytoken_types_.identitybalance.md) & Pick‹[TokenHolderProperties](../interfaces/_src_api_entities_securitytoken_types_.tokenholderproperties.md), "canBeIssuedTo"›››*
 
-*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/TokenHolders.ts#L27)*
+*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/TokenHolders.ts#L27)*
 
 Retrieve all the token holders with balance
 
@@ -62,7 +62,7 @@ Name | Type | Description |
 
 ▸ **get**(`paginationOpts?`: [PaginationOptions](../interfaces/_src_types_index_.paginationoptions.md)): *Promise‹[ResultSet](../interfaces/_src_types_index_.resultset.md)‹[IdentityBalance](../interfaces/_src_api_entities_securitytoken_types_.identitybalance.md)››*
 
-*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/TokenHolders.ts#L32)*
+*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/TokenHolders.ts#L32)*
 
 **Parameters:**
 

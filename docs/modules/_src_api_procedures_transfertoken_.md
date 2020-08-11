@@ -20,7 +20,7 @@
 
 Ƭ **Params**: *[TransferTokenParams](../interfaces/_src_api_procedures_transfertoken_.transfertokenparams.md) & object*
 
-*Defined in [src/api/procedures/transferToken.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/transferToken.ts#L13)*
+*Defined in [src/api/procedures/transferToken.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/transferToken.ts#L13)*
 
 ## Variables
 
@@ -28,4 +28,4 @@
 
 • **transferToken**: *Procedure‹[Params](_src_api_procedures_transfertoken_.md#params), [SecurityToken](../classes/_src_api_entities_securitytoken_index_.securitytoken.md)‹››* = new Procedure(prepareTransferToken, getRequiredRoles)
 
-*Defined in [src/api/procedures/transferToken.ts:66](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/transferToken.ts#L66)*
+*Defined in [src/api/procedures/transferToken.ts:66](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/transferToken.ts#L66)*

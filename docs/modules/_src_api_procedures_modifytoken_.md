@@ -17,7 +17,7 @@
 
 Ƭ **ModifyTokenParams**: *object | object | object*
 
-*Defined in [src/api/procedures/modifyToken.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/modifyToken.ts#L6)*
+*Defined in [src/api/procedures/modifyToken.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/modifyToken.ts#L6)*
 
 ___
 
@@ -25,7 +25,7 @@ ___
 
 Ƭ **Params**: *object & [ModifyTokenParams](_src_api_procedures_modifytoken_.md#modifytokenparams)*
 
-*Defined in [src/api/procedures/modifyToken.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/modifyToken.ts#L11)*
+*Defined in [src/api/procedures/modifyToken.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/modifyToken.ts#L11)*
 
 ## Variables
 
@@ -33,4 +33,4 @@ ___
 
 • **modifyToken**: *Procedure‹[Params](_src_api_procedures_modifytoken_.md#params), [SecurityToken](../classes/_src_api_entities_securitytoken_index_.securitytoken.md)‹››* = new Procedure(prepareModifyToken, getRequiredRoles)
 
-*Defined in [src/api/procedures/modifyToken.ts:98](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/modifyToken.ts#L98)*
+*Defined in [src/api/procedures/modifyToken.ts:98](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/modifyToken.ts#L98)*

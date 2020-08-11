@@ -20,7 +20,7 @@
 
 Ƭ **Params**: *[SetTokenRulesParams](../interfaces/_src_api_procedures_settokenrules_.settokenrulesparams.md) & object*
 
-*Defined in [src/api/procedures/setTokenRules.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/setTokenRules.ts#L12)*
+*Defined in [src/api/procedures/setTokenRules.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/setTokenRules.ts#L12)*
 
 ## Variables
 
@@ -28,4 +28,4 @@
 
 • **setTokenRules**: *Procedure‹[Params](_src_api_procedures_settokenrules_.md#params), [SecurityToken](../classes/_src_api_entities_securitytoken_index_.securitytoken.md)‹››* = new Procedure(prepareSetTokenRules, getRequiredRoles)
 
-*Defined in [src/api/procedures/setTokenRules.ts:87](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/setTokenRules.ts#L87)*
+*Defined in [src/api/procedures/setTokenRules.ts:87](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/setTokenRules.ts#L87)*

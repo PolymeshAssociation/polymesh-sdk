@@ -22,7 +22,7 @@
 
 • **count**? : *undefined | number*
 
-*Defined in [src/types/index.ts:356](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L356)*
+*Defined in [src/types/index.ts:356](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L356)*
 
 ___
 
@@ -30,7 +30,7 @@ ___
 
 • **data**: *T[]*
 
-*Defined in [src/types/index.ts:354](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L354)*
+*Defined in [src/types/index.ts:354](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L354)*
 
 ___
 
@@ -38,4 +38,4 @@ ___
 
 • **next**: *[NextKey](../modules/_src_types_index_.md#nextkey)*
 
-*Defined in [src/types/index.ts:355](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L355)*
+*Defined in [src/types/index.ts:355](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L355)*

@@ -16,4 +16,4 @@
 
 • **createProposal**: *Procedure‹[CreateProposalParams](../interfaces/_src_api_procedures_createproposal_.createproposalparams.md), [Proposal](../classes/_src_api_entities_proposal_index_.proposal.md)‹››* = new Procedure(prepareCreateProposal, getRequiredRoles)
 
-*Defined in [src/api/procedures/createProposal.ts:123](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/createProposal.ts#L123)*
+*Defined in [src/api/procedures/createProposal.ts:123](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/createProposal.ts#L123)*

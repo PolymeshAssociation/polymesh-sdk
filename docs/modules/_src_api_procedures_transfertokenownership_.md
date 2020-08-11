@@ -20,7 +20,7 @@
 
 Ƭ **Params**: *object & [TransferTokenOwnershipParams](../interfaces/_src_api_procedures_transfertokenownership_.transfertokenownershipparams.md)*
 
-*Defined in [src/api/procedures/transferTokenOwnership.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/transferTokenOwnership.ts#L11)*
+*Defined in [src/api/procedures/transferTokenOwnership.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/transferTokenOwnership.ts#L11)*
 
 ## Variables
 
@@ -31,4 +31,4 @@
   getRequiredRoles
 )
 
-*Defined in [src/api/procedures/transferTokenOwnership.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/transferTokenOwnership.ts#L53)*
+*Defined in [src/api/procedures/transferTokenOwnership.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/transferTokenOwnership.ts#L53)*

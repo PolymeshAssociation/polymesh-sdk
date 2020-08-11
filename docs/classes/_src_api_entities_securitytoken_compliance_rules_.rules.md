@@ -31,7 +31,7 @@ Handles all Security Token Rules related functionality
 
 *Inherited from [Namespace](_src_base_namespace_.namespace.md).[context](_src_base_namespace_.namespace.md#protected-context)*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/base/Namespace.ts#L10)*
 
 ___
 
@@ -41,7 +41,7 @@ ___
 
 *Inherited from [Namespace](_src_base_namespace_.namespace.md).[parent](_src_base_namespace_.namespace.md#protected-parent)*
 
-*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/base/Namespace.ts#L8)*
+*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/base/Namespace.ts#L8)*
 
 ## Methods
 
@@ -49,7 +49,7 @@ ___
 
 ▸ **get**(): *Promise‹[Rule](../interfaces/_src_types_index_.rule.md)[]›*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:40](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/Compliance/Rules.ts#L40)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:40](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/Compliance/Rules.ts#L40)*
 
 Retrieve all of the Security Token's transfer rules
 
@@ -59,7 +59,7 @@ Retrieve all of the Security Token's transfer rules
 
 ▸ **get**(`callback`: [SubCallback](../modules/_src_types_index_.md#subcallback)‹[Rule](../interfaces/_src_types_index_.rule.md)[]›): *Promise‹[UnsubCallback](../modules/_src_types_index_.md#unsubcallback)›*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:41](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/Compliance/Rules.ts#L41)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:41](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/Compliance/Rules.ts#L41)*
 
 **Parameters:**
 
@@ -75,7 +75,7 @@ ___
 
 ▸ **pause**(): *Promise‹[TransactionQueue](_src_base_transactionqueue_.transactionqueue.md)‹[SecurityToken](_src_api_entities_securitytoken_index_.securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:111](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/Compliance/Rules.ts#L111)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:111](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/Compliance/Rules.ts#L111)*
 
 Pause all the Security Token's rules. This means that all transfers and token issuance will be allowed until rules are unpaused
 
@@ -87,7 +87,7 @@ ___
 
 ▸ **reset**(): *Promise‹[TransactionQueue](_src_base_transactionqueue_.transactionqueue.md)‹[SecurityToken](_src_api_entities_securitytoken_index_.securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:100](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/Compliance/Rules.ts#L100)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:100](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/Compliance/Rules.ts#L100)*
 
 Detele all the current rules for the Security Token.
 
@@ -99,7 +99,7 @@ ___
 
 ▸ **set**(`args`: [SetTokenRulesParams](../interfaces/_src_api_procedures_settokenrules_.settokenrulesparams.md)): *Promise‹[TransactionQueue](_src_base_transactionqueue_.transactionqueue.md)‹[SecurityToken](_src_api_entities_securitytoken_index_.securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/Compliance/Rules.ts#L27)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/Compliance/Rules.ts#L27)*
 
 Configure transfer rules for the Security Token. This operation will replace all existing rules with a new rule set
 
@@ -122,7 +122,7 @@ ___
 
 ▸ **unpause**(): *Promise‹[TransactionQueue](_src_base_transactionqueue_.transactionqueue.md)‹[SecurityToken](_src_api_entities_securitytoken_index_.securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:122](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/Compliance/Rules.ts#L122)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:122](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/Compliance/Rules.ts#L122)*
 
 Un-pause all the Security Token's current rules
 

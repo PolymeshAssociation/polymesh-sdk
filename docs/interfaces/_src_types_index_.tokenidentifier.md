@@ -19,7 +19,7 @@ Alphanumeric standardized security identifier
 
 • **type**: *[TokenIdentifierType](../enums/_src_types_index_.tokenidentifiertype.md)*
 
-*Defined in [src/types/index.ts:136](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L136)*
+*Defined in [src/types/index.ts:136](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L136)*
 
 ___
 
@@ -27,4 +27,4 @@ ___
 
 • **value**: *string*
 
-*Defined in [src/types/index.ts:137](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L137)*
+*Defined in [src/types/index.ts:137](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L137)*

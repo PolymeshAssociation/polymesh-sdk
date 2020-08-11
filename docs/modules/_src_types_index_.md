@@ -172,7 +172,7 @@ ___
 
 Ƭ **Authorization**: *object | object*
 
-*Defined in [src/types/index.ts:166](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L166)*
+*Defined in [src/types/index.ts:166](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L166)*
 
 Authorization request data corresponding to type
 
@@ -182,7 +182,7 @@ ___
 
 Ƭ **Claim**: *[ScopedClaim](_src_types_index_.md#scopedclaim) | [UnscopedClaim](_src_types_index_.md#unscopedclaim)*
 
-*Defined in [src/types/index.ts:201](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L201)*
+*Defined in [src/types/index.ts:201](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L201)*
 
 ___
 
@@ -190,7 +190,7 @@ ___
 
 Ƭ **CommonKeyring**: *Pick‹Keyring, "getPair" | "getPairs" | "addFromSeed" | "addFromUri"›*
 
-*Defined in [src/types/index.ts:325](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L325)*
+*Defined in [src/types/index.ts:325](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L325)*
 
 ___
 
@@ -198,7 +198,7 @@ ___
 
 Ƭ **Condition**: *[SingleClaimCondition](_src_types_index_.md#singleclaimcondition) | [MultiClaimCondition](_src_types_index_.md#multiclaimcondition)*
 
-*Defined in [src/types/index.ts:244](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L244)*
+*Defined in [src/types/index.ts:244](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L244)*
 
 ___
 
@@ -206,7 +206,7 @@ ___
 
 Ƭ **ConditionBase**: *object*
 
-*Defined in [src/types/index.ts:232](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L232)*
+*Defined in [src/types/index.ts:232](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L232)*
 
 #### Type declaration:
 
@@ -220,7 +220,7 @@ ___
 
 Ƭ **Ensured**: *Required‹Pick‹T, K››*
 
-*Defined in [src/types/index.ts:318](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L318)*
+*Defined in [src/types/index.ts:318](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L318)*
 
 ___
 
@@ -228,7 +228,7 @@ ___
 
 Ƭ **MultiClaimCondition**: *[ConditionBase](_src_types_index_.md#conditionbase) & object*
 
-*Defined in [src/types/index.ts:239](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L239)*
+*Defined in [src/types/index.ts:239](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L239)*
 
 ___
 
@@ -236,7 +236,7 @@ ___
 
 Ƭ **NextKey**: *string | number | null*
 
-*Defined in [src/types/index.ts:351](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L351)*
+*Defined in [src/types/index.ts:351](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L351)*
 
 ___
 
@@ -244,7 +244,7 @@ ___
 
 Ƭ **Role**: *[TickerOwnerRole](../interfaces/_src_types_index_.tickerownerrole.md) | [TokenOwnerRole](../interfaces/_src_types_index_.tokenownerrole.md) | [CddProviderRole](../interfaces/_src_types_index_.cddproviderrole.md)*
 
-*Defined in [src/types/index.ts:104](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L104)*
+*Defined in [src/types/index.ts:104](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L104)*
 
 ___
 
@@ -252,7 +252,7 @@ ___
 
 Ƭ **ScopedClaim**: *object | object*
 
-*Defined in [src/types/index.ts:195](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L195)*
+*Defined in [src/types/index.ts:195](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L195)*
 
 ___
 
@@ -260,7 +260,7 @@ ___
 
 Ƭ **SingleClaimCondition**: *[ConditionBase](_src_types_index_.md#conditionbase) & object*
 
-*Defined in [src/types/index.ts:234](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L234)*
+*Defined in [src/types/index.ts:234](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L234)*
 
 ___
 
@@ -268,7 +268,7 @@ ___
 
 Ƭ **SubCallback**: *function*
 
-*Defined in [src/types/index.ts:314](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L314)*
+*Defined in [src/types/index.ts:314](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L314)*
 
 #### Type declaration:
 
@@ -286,7 +286,7 @@ ___
 
 Ƭ **TokenType**: *[KnownTokenType](../enums/_src_types_index_.knowntokentype.md) | object*
 
-*Defined in [src/types/index.ts:121](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L121)*
+*Defined in [src/types/index.ts:121](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L121)*
 
 Type of security that the token represents
 
@@ -296,7 +296,7 @@ ___
 
 Ƭ **TransactionArgument**: *object & [PlainTransactionArgument](../interfaces/_src_types_index_.plaintransactionargument.md) | [ArrayTransactionArgument](../interfaces/_src_types_index_.arraytransactionargument.md) | [SimpleEnumTransactionArgument](../interfaces/_src_types_index_.simpleenumtransactionargument.md) | [ComplexTransactionArgument](../interfaces/_src_types_index_.complextransactionargument.md)*
 
-*Defined in [src/types/index.ts:428](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L428)*
+*Defined in [src/types/index.ts:428](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L428)*
 
 ___
 
@@ -304,7 +304,7 @@ ___
 
 Ƭ **UnscopedClaim**: *object*
 
-*Defined in [src/types/index.ts:199](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L199)*
+*Defined in [src/types/index.ts:199](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L199)*
 
 #### Type declaration:
 
@@ -316,7 +316,7 @@ ___
 
 Ƭ **UnsubCallback**: *function*
 
-*Defined in [src/types/index.ts:316](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L316)*
+*Defined in [src/types/index.ts:316](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L316)*
 
 #### Type declaration:
 

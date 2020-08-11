@@ -13,7 +13,7 @@
 
 Ƭ **PolymeshTransaction**: *InstanceType‹typeof PolymeshTransactionClass›*
 
-*Defined in [src/base/types.ts:4](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/base/types.ts#L4)*
+*Defined in [src/base/types.ts:4](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/base/types.ts#L4)*
 
 ___
 
@@ -21,4 +21,4 @@ ___
 
 Ƭ **TransactionQueue**: *InstanceType‹typeof TransactionQueueClass›*
 
-*Defined in [src/base/types.ts:5](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/base/types.ts#L5)*
+*Defined in [src/base/types.ts:5](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/base/types.ts#L5)*

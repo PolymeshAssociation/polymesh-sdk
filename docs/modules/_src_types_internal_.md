@@ -28,7 +28,7 @@
 
 Ƭ **Extrinsics**: *SubmittableExtrinsics‹"promise"›*
 
-*Defined in [src/types/internal.ts:17](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/internal.ts#L17)*
+*Defined in [src/types/internal.ts:17](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/internal.ts#L17)*
 
 Polkadot's `tx` submodule
 
@@ -38,7 +38,7 @@ ___
 
 Ƭ **MapMaybePostTransactionValue**: *object*
 
-*Defined in [src/types/internal.ts:58](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/internal.ts#L58)*
+*Defined in [src/types/internal.ts:58](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/internal.ts#L58)*
 
 Apply the [MaybePostTransactionValue](_src_types_internal_.md#maybeposttransactionvalue) type to all members of a tuple
 
@@ -50,7 +50,7 @@ ___
 
 Ƭ **MaybePostTransactionValue**: *PostTransactionValue‹T› | T*
 
-*Defined in [src/types/internal.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/internal.ts#L53)*
+*Defined in [src/types/internal.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/internal.ts#L53)*
 
 Either a specific type or a [[PostTransactionValue]] that wraps a value of that type
 
@@ -60,7 +60,7 @@ ___
 
 Ƭ **PolymeshTx**: *AugmentedSubmittable‹function›*
 
-*Defined in [src/types/internal.ts:29](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/internal.ts#L29)*
+*Defined in [src/types/internal.ts:29](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/internal.ts#L29)*
 
 Low level transaction method in the polkadot API
 
@@ -70,7 +70,7 @@ ___
 
 Ƭ **PostTransactionValueArray**: *object*
 
-*Defined in [src/types/internal.ts:46](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/internal.ts#L46)*
+*Defined in [src/types/internal.ts:46](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/internal.ts#L46)*
 
 Transforms a tuple of types into an array of [[PostTransactionValue]].
 For each type in the tuple, the corresponding [[PostTransactionValue]] resolves to that type
@@ -83,7 +83,7 @@ ___
 
 Ƭ **Queries**: *QueryableStorage‹"promise"›*
 
-*Defined in [src/types/internal.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/internal.ts#L22)*
+*Defined in [src/types/internal.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/internal.ts#L22)*
 
 Polkadot's `query` submodule
 
@@ -93,7 +93,7 @@ ___
 
 Ƭ **ResolverFunctionArray**: *object*
 
-*Defined in [src/types/internal.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/internal.ts#L36)*
+*Defined in [src/types/internal.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/internal.ts#L36)*
 
 Transforms a tuple of types into an array of resolver functions. For each type in the tuple, the corresponding resolver function returns that type wrapped in a promise
 

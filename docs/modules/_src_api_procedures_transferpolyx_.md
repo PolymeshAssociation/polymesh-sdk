@@ -16,4 +16,4 @@
 
 • **transferPolyX**: *Procedure‹[TransferPolyXParams](../interfaces/_src_api_procedures_transferpolyx_.transferpolyxparams.md), void›* = new Procedure(prepareTransferPolyX)
 
-*Defined in [src/api/procedures/transferPolyX.ts:86](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/transferPolyX.ts#L86)*
+*Defined in [src/api/procedures/transferPolyX.ts:86](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/transferPolyX.ts#L86)*

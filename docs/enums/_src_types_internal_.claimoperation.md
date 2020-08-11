@@ -14,7 +14,7 @@
 
 • **Add**: = "Add"
 
-*Defined in [src/types/internal.ts:114](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/internal.ts#L114)*
+*Defined in [src/types/internal.ts:114](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/internal.ts#L114)*
 
 ___
 
@@ -22,7 +22,7 @@ ___
 
 • **Edit**: = "Edit"
 
-*Defined in [src/types/internal.ts:115](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/internal.ts#L115)*
+*Defined in [src/types/internal.ts:115](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/internal.ts#L115)*
 
 ___
 
@@ -30,4 +30,4 @@ ___
 
 • **Revoke**: = "Revoke"
 
-*Defined in [src/types/internal.ts:113](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/internal.ts#L113)*
+*Defined in [src/types/internal.ts:113](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/internal.ts#L113)*

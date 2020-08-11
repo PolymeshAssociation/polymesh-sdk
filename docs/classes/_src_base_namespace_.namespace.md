@@ -39,7 +39,7 @@ Represents a namespace within an Entity with the purpose of grouping related fun
 
 • **context**: *[Context](_src_context_index_.context.md)*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/base/Namespace.ts#L10)*
 
 ___
 
@@ -47,4 +47,4 @@ ___
 
 • **parent**: *Parent*
 
-*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/base/Namespace.ts#L8)*
+*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/base/Namespace.ts#L8)*

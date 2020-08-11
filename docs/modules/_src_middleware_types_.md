@@ -72,7 +72,7 @@
 
 Ƭ **Account**: *object*
 
-*Defined in [src/middleware/types.ts:793](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L793)*
+*Defined in [src/middleware/types.ts:793](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L793)*
 
 #### Type declaration:
 
@@ -106,7 +106,7 @@ ___
 
 Ƭ **AccountTransactionsArgs**: *object*
 
-*Defined in [src/middleware/types.ts:808](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L808)*
+*Defined in [src/middleware/types.ts:808](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L808)*
 
 #### Type declaration:
 
@@ -120,7 +120,7 @@ ___
 
 Ƭ **Authorization**: *object*
 
-*Defined in [src/middleware/types.ts:891](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L891)*
+*Defined in [src/middleware/types.ts:891](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L891)*
 
 #### Type declaration:
 
@@ -150,7 +150,7 @@ ___
 
 Ƭ **Block**: *object*
 
-*Defined in [src/middleware/types.ts:247](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L247)*
+*Defined in [src/middleware/types.ts:247](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L247)*
 
 #### Type declaration:
 
@@ -252,7 +252,7 @@ ___
 
 Ƭ **ChainInfo**: *object*
 
-*Defined in [src/middleware/types.ts:229](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L229)*
+*Defined in [src/middleware/types.ts:229](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L229)*
 
 #### Type declaration:
 
@@ -290,7 +290,7 @@ ___
 
 Ƭ **Claim**: *object*
 
-*Defined in [src/middleware/types.ts:836](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L836)*
+*Defined in [src/middleware/types.ts:836](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L836)*
 
 #### Type declaration:
 
@@ -318,7 +318,7 @@ ___
 
 Ƭ **Event**: *object*
 
-*Defined in [src/middleware/types.ts:297](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L297)*
+*Defined in [src/middleware/types.ts:297](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L297)*
 
 #### Type declaration:
 
@@ -372,7 +372,7 @@ ___
 
 Ƭ **Extrinsic**: *object*
 
-*Defined in [src/middleware/types.ts:545](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L545)*
+*Defined in [src/middleware/types.ts:545](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L545)*
 
 #### Type declaration:
 
@@ -436,7 +436,7 @@ ___
 
 Ƭ **FailedPolyxTransfer**: *object*
 
-*Defined in [src/middleware/types.ts:848](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L848)*
+*Defined in [src/middleware/types.ts:848](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L848)*
 
 #### Type declaration:
 
@@ -460,7 +460,7 @@ ___
 
 Ƭ **FailedTokenTransfer**: *object*
 
-*Defined in [src/middleware/types.ts:869](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L869)*
+*Defined in [src/middleware/types.ts:869](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L869)*
 
 #### Type declaration:
 
@@ -486,7 +486,7 @@ ___
 
 Ƭ **IdentityWithClaims**: *object*
 
-*Defined in [src/middleware/types.ts:830](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L830)*
+*Defined in [src/middleware/types.ts:830](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L830)*
 
 #### Type declaration:
 
@@ -502,7 +502,7 @@ ___
 
 Ƭ **IdentityWithClaimsResult**: *object*
 
-*Defined in [src/middleware/types.ts:824](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L824)*
+*Defined in [src/middleware/types.ts:824](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L824)*
 
 #### Type declaration:
 
@@ -518,7 +518,7 @@ ___
 
 Ƭ **Maybe**: *T | null*
 
-*Defined in [src/middleware/types.ts:1](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L1)*
+*Defined in [src/middleware/types.ts:1](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L1)*
 
 ___
 
@@ -526,7 +526,7 @@ ___
 
 Ƭ **PolyxTransfer**: *object*
 
-*Defined in [src/middleware/types.ts:813](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L813)*
+*Defined in [src/middleware/types.ts:813](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L813)*
 
 #### Type declaration:
 
@@ -552,7 +552,7 @@ ___
 
 Ƭ **Proposal**: *object*
 
-*Defined in [src/middleware/types.ts:918](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L918)*
+*Defined in [src/middleware/types.ts:918](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L918)*
 
 #### Type declaration:
 
@@ -590,7 +590,7 @@ ___
 
 Ƭ **ProposalOrderByInput**: *object*
 
-*Defined in [src/middleware/types.ts:943](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L943)*
+*Defined in [src/middleware/types.ts:943](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L943)*
 
 #### Type declaration:
 
@@ -604,7 +604,7 @@ ___
 
 Ƭ **ProposalVote**: *object*
 
-*Defined in [src/middleware/types.ts:971](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L971)*
+*Defined in [src/middleware/types.ts:971](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L971)*
 
 #### Type declaration:
 
@@ -626,7 +626,7 @@ ___
 
 Ƭ **ProposalVotesOrderByInput**: *object*
 
-*Defined in [src/middleware/types.ts:960](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L960)*
+*Defined in [src/middleware/types.ts:960](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L960)*
 
 #### Type declaration:
 
@@ -640,7 +640,7 @@ ___
 
 Ƭ **Query**: *object*
 
-*Defined in [src/middleware/types.ts:18](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L18)*
+*Defined in [src/middleware/types.ts:18](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L18)*
 
 #### Type declaration:
 
@@ -708,7 +708,7 @@ ___
 
 Ƭ **QueryAccountByAddressArgs**: *object*
 
-*Defined in [src/middleware/types.ts:129](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L129)*
+*Defined in [src/middleware/types.ts:129](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L129)*
 
 #### Type declaration:
 
@@ -720,7 +720,7 @@ ___
 
 Ƭ **QueryAuthorizationsArgs**: *object*
 
-*Defined in [src/middleware/types.ts:191](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L191)*
+*Defined in [src/middleware/types.ts:191](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L191)*
 
 #### Type declaration:
 
@@ -740,7 +740,7 @@ ___
 
 Ƭ **QueryBlockByHashArgs**: *object*
 
-*Defined in [src/middleware/types.ts:86](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L86)*
+*Defined in [src/middleware/types.ts:86](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L86)*
 
 #### Type declaration:
 
@@ -752,7 +752,7 @@ ___
 
 Ƭ **QueryBlockByIdArgs**: *object*
 
-*Defined in [src/middleware/types.ts:82](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L82)*
+*Defined in [src/middleware/types.ts:82](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L82)*
 
 #### Type declaration:
 
@@ -764,7 +764,7 @@ ___
 
 Ƭ **QueryBlocksArgs**: *object*
 
-*Defined in [src/middleware/types.ts:77](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L77)*
+*Defined in [src/middleware/types.ts:77](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L77)*
 
 #### Type declaration:
 
@@ -778,7 +778,7 @@ ___
 
 Ƭ **QueryBridgedEventByTxHashArgs**: *object*
 
-*Defined in [src/middleware/types.ts:133](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L133)*
+*Defined in [src/middleware/types.ts:133](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L133)*
 
 #### Type declaration:
 
@@ -790,7 +790,7 @@ ___
 
 Ƭ **QueryDidsWithClaimsArgs**: *object*
 
-*Defined in [src/middleware/types.ts:144](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L144)*
+*Defined in [src/middleware/types.ts:144](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L144)*
 
 #### Type declaration:
 
@@ -812,7 +812,7 @@ ___
 
 Ƭ **QueryEventByIndexedArgsArgs**: *object*
 
-*Defined in [src/middleware/types.ts:97](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L97)*
+*Defined in [src/middleware/types.ts:97](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L97)*
 
 #### Type declaration:
 
@@ -832,7 +832,7 @@ ___
 
 Ƭ **QueryEventsArgs**: *object*
 
-*Defined in [src/middleware/types.ts:90](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L90)*
+*Defined in [src/middleware/types.ts:90](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L90)*
 
 #### Type declaration:
 
@@ -850,7 +850,7 @@ ___
 
 Ƭ **QueryEventsByIndexedArgsArgs**: *object*
 
-*Defined in [src/middleware/types.ts:105](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L105)*
+*Defined in [src/middleware/types.ts:105](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L105)*
 
 #### Type declaration:
 
@@ -874,7 +874,7 @@ ___
 
 Ƭ **QueryPolyxTransfersFailedArgs**: *object*
 
-*Defined in [src/middleware/types.ts:159](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L159)*
+*Defined in [src/middleware/types.ts:159](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L159)*
 
 #### Type declaration:
 
@@ -890,7 +890,7 @@ ___
 
 Ƭ **QueryPolyxTransfersReceivedArgs**: *object*
 
-*Defined in [src/middleware/types.ts:165](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L165)*
+*Defined in [src/middleware/types.ts:165](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L165)*
 
 #### Type declaration:
 
@@ -908,7 +908,7 @@ ___
 
 Ƭ **QueryPolyxTransfersSentArgs**: *object*
 
-*Defined in [src/middleware/types.ts:137](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L137)*
+*Defined in [src/middleware/types.ts:137](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L137)*
 
 #### Type declaration:
 
@@ -926,7 +926,7 @@ ___
 
 Ƭ **QueryProposalArgs**: *object*
 
-*Defined in [src/middleware/types.ts:208](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L208)*
+*Defined in [src/middleware/types.ts:208](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L208)*
 
 #### Type declaration:
 
@@ -938,7 +938,7 @@ ___
 
 Ƭ **QueryProposalVotesArgs**: *object*
 
-*Defined in [src/middleware/types.ts:221](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L221)*
+*Defined in [src/middleware/types.ts:221](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L221)*
 
 #### Type declaration:
 
@@ -958,7 +958,7 @@ ___
 
 Ƭ **QueryProposalsArgs**: *object*
 
-*Defined in [src/middleware/types.ts:212](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L212)*
+*Defined in [src/middleware/types.ts:212](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L212)*
 
 #### Type declaration:
 
@@ -980,7 +980,7 @@ ___
 
 Ƭ **QueryReferendumVotes2Args**: *object*
 
-*Defined in [src/middleware/types.ts:204](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L204)*
+*Defined in [src/middleware/types.ts:204](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L204)*
 
 #### Type declaration:
 
@@ -992,7 +992,7 @@ ___
 
 Ƭ **QueryReferendumVotesArgs**: *object*
 
-*Defined in [src/middleware/types.ts:199](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L199)*
+*Defined in [src/middleware/types.ts:199](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L199)*
 
 #### Type declaration:
 
@@ -1006,7 +1006,7 @@ ___
 
 Ƭ **QueryTokenTransfersFailedArgs**: *object*
 
-*Defined in [src/middleware/types.ts:184](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L184)*
+*Defined in [src/middleware/types.ts:184](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L184)*
 
 #### Type declaration:
 
@@ -1024,7 +1024,7 @@ ___
 
 Ƭ **QueryTokenTransfersReceivedArgs**: *object*
 
-*Defined in [src/middleware/types.ts:172](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L172)*
+*Defined in [src/middleware/types.ts:172](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L172)*
 
 #### Type declaration:
 
@@ -1040,7 +1040,7 @@ ___
 
 Ƭ **QueryTokenTransfersSentArgs**: *object*
 
-*Defined in [src/middleware/types.ts:178](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L178)*
+*Defined in [src/middleware/types.ts:178](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L178)*
 
 #### Type declaration:
 
@@ -1056,7 +1056,7 @@ ___
 
 Ƭ **QueryTokensHeldByDidArgs**: *object*
 
-*Defined in [src/middleware/types.ts:153](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L153)*
+*Defined in [src/middleware/types.ts:153](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L153)*
 
 #### Type declaration:
 
@@ -1072,7 +1072,7 @@ ___
 
 Ƭ **QueryTransactionByHashArgs**: *object*
 
-*Defined in [src/middleware/types.ts:120](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L120)*
+*Defined in [src/middleware/types.ts:120](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L120)*
 
 #### Type declaration:
 
@@ -1084,7 +1084,7 @@ ___
 
 Ƭ **QueryTransactionByIdArgs**: *object*
 
-*Defined in [src/middleware/types.ts:124](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L124)*
+*Defined in [src/middleware/types.ts:124](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L124)*
 
 #### Type declaration:
 
@@ -1098,7 +1098,7 @@ ___
 
 Ƭ **QueryTransactionsArgs**: *object*
 
-*Defined in [src/middleware/types.ts:115](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L115)*
+*Defined in [src/middleware/types.ts:115](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L115)*
 
 #### Type declaration:
 
@@ -1112,7 +1112,7 @@ ___
 
 Ƭ **Scalars**: *object*
 
-*Defined in [src/middleware/types.ts:3](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L3)*
+*Defined in [src/middleware/types.ts:3](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L3)*
 
 All built-in and custom scalars, mapped to their actual values
 
@@ -1142,7 +1142,7 @@ ___
 
 Ƭ **TokenTransfer**: *object*
 
-*Defined in [src/middleware/types.ts:858](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L858)*
+*Defined in [src/middleware/types.ts:858](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L858)*
 
 #### Type declaration:
 
@@ -1168,7 +1168,7 @@ ___
 
 Ƭ **VoteResult**: *object*
 
-*Defined in [src/middleware/types.ts:912](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/middleware/types.ts#L912)*
+*Defined in [src/middleware/types.ts:912](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/middleware/types.ts#L912)*
 
 #### Type declaration:
 

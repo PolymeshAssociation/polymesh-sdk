@@ -20,7 +20,7 @@
 
 Ƭ **Params**: *[SetTokenTrustedClaimIssuersParams](../interfaces/_src_api_procedures_settokentrustedclaimissuers_.settokentrustedclaimissuersparams.md) & object*
 
-*Defined in [src/api/procedures/setTokenTrustedClaimIssuers.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/setTokenTrustedClaimIssuers.ts#L19)*
+*Defined in [src/api/procedures/setTokenTrustedClaimIssuers.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/setTokenTrustedClaimIssuers.ts#L19)*
 
 ## Variables
 
@@ -31,4 +31,4 @@
   getRequiredRoles
 )
 
-*Defined in [src/api/procedures/setTokenTrustedClaimIssuers.ts:107](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/setTokenTrustedClaimIssuers.ts#L107)*
+*Defined in [src/api/procedures/setTokenTrustedClaimIssuers.ts:107](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/setTokenTrustedClaimIssuers.ts#L107)*

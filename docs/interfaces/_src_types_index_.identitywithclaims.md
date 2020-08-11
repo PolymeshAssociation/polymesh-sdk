@@ -17,7 +17,7 @@
 
 • **claims**: *[ClaimData](_src_types_index_.claimdata.md)[]*
 
-*Defined in [src/types/index.ts:222](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L222)*
+*Defined in [src/types/index.ts:222](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L222)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **identity**: *[Identity](../classes/_src_api_entities_identity_index_.identity.md)*
 
-*Defined in [src/types/index.ts:221](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L221)*
+*Defined in [src/types/index.ts:221](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L221)*

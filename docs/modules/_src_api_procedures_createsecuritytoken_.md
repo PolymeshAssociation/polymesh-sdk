@@ -20,7 +20,7 @@
 
 Ƭ **Params**: *[CreateSecurityTokenParams](../interfaces/_src_api_procedures_createsecuritytoken_.createsecuritytokenparams.md) & object*
 
-*Defined in [src/api/procedures/createSecurityToken.ts:38](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/createSecurityToken.ts#L38)*
+*Defined in [src/api/procedures/createSecurityToken.ts:38](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/createSecurityToken.ts#L38)*
 
 ## Variables
 
@@ -28,4 +28,4 @@
 
 • **createSecurityToken**: *Procedure‹[Params](_src_api_procedures_createsecuritytoken_.md#params), [SecurityToken](../classes/_src_api_entities_securitytoken_index_.securitytoken.md)‹››* = new Procedure(prepareCreateSecurityToken, getRequiredRoles)
 
-*Defined in [src/api/procedures/createSecurityToken.ts:133](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/procedures/createSecurityToken.ts#L133)*
+*Defined in [src/api/procedures/createSecurityToken.ts:133](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/procedures/createSecurityToken.ts#L133)*

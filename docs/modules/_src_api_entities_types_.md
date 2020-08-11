@@ -61,7 +61,7 @@ ___
 
 Ƭ **AuthorizationRequest**: *InstanceType‹typeof AuthorizationRequestClass›*
 
-*Defined in [src/api/entities/types.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/types.ts#L11)*
+*Defined in [src/api/entities/types.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/types.ts#L11)*
 
 ___
 
@@ -69,7 +69,7 @@ ___
 
 Ƭ **Identity**: *InstanceType‹typeof IdentityClass›*
 
-*Defined in [src/api/entities/types.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/types.ts#L12)*
+*Defined in [src/api/entities/types.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/types.ts#L12)*
 
 ___
 
@@ -77,7 +77,7 @@ ___
 
 Ƭ **Proposal**: *InstanceType‹typeof ProposalClass›*
 
-*Defined in [src/api/entities/types.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/types.ts#L13)*
+*Defined in [src/api/entities/types.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/types.ts#L13)*
 
 ___
 
@@ -85,7 +85,7 @@ ___
 
 Ƭ **SecurityToken**: *InstanceType‹typeof SecurityTokenClass›*
 
-*Defined in [src/api/entities/types.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/types.ts#L9)*
+*Defined in [src/api/entities/types.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/types.ts#L9)*
 
 ___
 
@@ -93,4 +93,4 @@ ___
 
 Ƭ **TickerReservation**: *InstanceType‹typeof TickerReservationClass›*
 
-*Defined in [src/api/entities/types.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/types.ts#L10)*
+*Defined in [src/api/entities/types.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/types.ts#L10)*

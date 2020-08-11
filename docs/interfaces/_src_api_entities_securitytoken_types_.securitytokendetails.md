@@ -20,7 +20,7 @@
 
 • **assetType**: *string*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/types.ts#L6)*
+*Defined in [src/api/entities/SecurityToken/types.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/types.ts#L6)*
 
 ___
 
@@ -28,7 +28,7 @@ ___
 
 • **isDivisible**: *boolean*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/types.ts#L7)*
+*Defined in [src/api/entities/SecurityToken/types.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/types.ts#L7)*
 
 ___
 
@@ -36,7 +36,7 @@ ___
 
 • **name**: *string*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/types.ts#L8)*
+*Defined in [src/api/entities/SecurityToken/types.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/types.ts#L8)*
 
 ___
 
@@ -44,7 +44,7 @@ ___
 
 • **owner**: *[Identity](../classes/_src_api_entities_identity_index_.identity.md)*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/types.ts#L9)*
+*Defined in [src/api/entities/SecurityToken/types.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/types.ts#L9)*
 
 ___
 
@@ -52,4 +52,4 @@ ___
 
 • **totalSupply**: *BigNumber*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/types.ts#L10)*
+*Defined in [src/api/entities/SecurityToken/types.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/types.ts#L10)*

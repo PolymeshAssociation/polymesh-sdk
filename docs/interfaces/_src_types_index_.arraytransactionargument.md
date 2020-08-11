@@ -17,7 +17,7 @@
 
 • **internal**: *[TransactionArgument](../modules/_src_types_index_.md#transactionargument)*
 
-*Defined in [src/types/index.ts:412](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L412)*
+*Defined in [src/types/index.ts:412](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L412)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **type**: *[Array](../enums/_src_types_index_.transactionargumenttype.md#array)*
 
-*Defined in [src/types/index.ts:411](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/types/index.ts#L411)*
+*Defined in [src/types/index.ts:411](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/types/index.ts#L411)*

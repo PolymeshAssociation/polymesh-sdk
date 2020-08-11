@@ -28,7 +28,7 @@ Handles all Security Token Document related functionality
 
 *Inherited from [Namespace](_src_base_namespace_.namespace.md).[context](_src_base_namespace_.namespace.md#protected-context)*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/base/Namespace.ts#L10)*
 
 ___
 
@@ -38,7 +38,7 @@ ___
 
 *Inherited from [Namespace](_src_base_namespace_.namespace.md).[parent](_src_base_namespace_.namespace.md#protected-parent)*
 
-*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/base/Namespace.ts#L8)*
+*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/base/Namespace.ts#L8)*
 
 ## Methods
 
@@ -46,7 +46,7 @@ ___
 
 ▸ **get**(): *Promise‹[TokenDocument](../interfaces/_src_types_index_.tokendocument.md)[]›*
 
-*Defined in [src/api/entities/SecurityToken/Documents.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/Documents.ts#L30)*
+*Defined in [src/api/entities/SecurityToken/Documents.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/Documents.ts#L30)*
 
 Retrieve all documents linked to the Security Token
 
@@ -58,7 +58,7 @@ ___
 
 ▸ **set**(`args`: [SetTokenDocumentsParams](../interfaces/_src_api_procedures_settokendocuments_.settokendocumentsparams.md)): *Promise‹[TransactionQueue](_src_base_transactionqueue_.transactionqueue.md)‹[SecurityToken](_src_api_entities_securitytoken_index_.securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Documents.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/2aa4a44/src/api/entities/SecurityToken/Documents.ts#L19)*
+*Defined in [src/api/entities/SecurityToken/Documents.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/6f0a424/src/api/entities/SecurityToken/Documents.ts#L19)*
 
 Assign a new list of documents to the Security Token by replacing the existing list of documents with the one passed in the parameters
 
