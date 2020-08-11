@@ -1,6 +1,10 @@
 {
   "mode": "modules",
   "out": "docs",
-  "exclude": "**/{__tests__,polkadot}/**/*",
+  "theme": "gitbook",
+  "exclude": ["**/{__tests__,polkadot,testUtils}/*", "**/sandbox.ts"],
+  "excludeExternals": true,
+  "excludeNotExported": true,
+  "excludePrivate": true,
   "ignoreCompilerErrors": true
 }
