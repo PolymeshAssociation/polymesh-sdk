@@ -1,5 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Signer } from '@polkadot/api/types';
+import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloClient, ApolloQueryResult } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
@@ -34,12 +34,14 @@ import {
   MiddlewareConfig,
   NetworkProperties,
   ResultSet,
+  Signer,
+  SignerType,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { ClaimOperation, SignerType } from '~/types/internal';
+import { ClaimOperation } from '~/types/internal';
 import {
   booleanToBool,
   calculateNextKey,
@@ -60,7 +62,7 @@ import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
-  signer?: Signer;
+  signer?: PolkadotSigner;
   middleware?: MiddlewareConfig;
 }
 
@@ -728,6 +730,27 @@ export class Polymesh {
 
     const { free } = await this.getAccountBalance({ accountId });
     return free;
+  }
+
+  /**
+   * Get the list of signing keys related to the current identity
+   *
+   * @note can be subscribed to
+   */
+  public async getMySigningKeys(): Promise<Signer[]>;
+  public async getMySigningKeys(callback: SubCallback<Signer[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getMySigningKeys(
+    callback?: SubCallback<Signer[]>
+  ): Promise<Signer[] | UnsubCallback> {
+    const { context } = this;
+
+    if (callback) {
+      return context.getSigningKeys(callback);
+    }
+
+    return context.getSigningKeys();
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

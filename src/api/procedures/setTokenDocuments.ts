@@ -4,8 +4,7 @@ import { Document, Link, TxTags } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode, LinkType, Role, RoleType, TokenDocument } from '~/types';
-import { SignerType } from '~/types/internal';
+import { ErrorCode, LinkType, Role, RoleType, SignerType, TokenDocument } from '~/types';
 import {
   batchArguments,
   booleanToBool,

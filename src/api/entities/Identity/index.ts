@@ -1,5 +1,5 @@
 import { BigNumber } from 'bignumber.js';
-import { CddStatus } from 'polymesh-types/types';
+import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
@@ -15,6 +15,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
+  accountKeyToString,
   balanceToBigNumber,
   cddStatusToBoolean,
   identityIdToString,
@@ -211,6 +212,39 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
     const activeMembers = await committeeMembership.activeMembers();
     return activeMembers.map(identityIdToString).includes(did);
+  }
+
+  /**
+   * Retrieve the master key associated with the identity
+   *
+   * @note can be subscribed to
+   */
+  public async getMasterKey(): Promise<string>;
+  public async getMasterKey(callback: SubCallback<string>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getMasterKey(callback?: SubCallback<string>): Promise<string | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+      context,
+    } = this;
+
+    const { did } = context.getCurrentIdentity();
+
+    const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
+      return accountKeyToString(masterKey);
+    };
+
+    if (callback) {
+      return identity.didRecords(did, records => callback(assembleResult(records)));
+    }
+
+    const didRecords = await identity.didRecords(did);
+    return assembleResult(didRecords);
   }
 
   /**

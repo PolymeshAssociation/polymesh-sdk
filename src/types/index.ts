@@ -373,6 +373,12 @@ export enum LinkType {
   NoData = 'NoData',
 }
 
+export enum SignerType {
+  // eslint-disable-next-line no-shadow
+  Identity = 'Identity',
+  AccountKey = 'AccountKey',
+}
+
 export enum TransactionArgumentType {
   Did = 'Did',
   Address = 'Address',
@@ -429,6 +435,11 @@ export type TransactionArgument = {
   | SimpleEnumTransactionArgument
   | ComplexTransactionArgument
 );
+
+export interface Signer {
+  type: SignerType;
+  value: string;
+}
 
 export { TxTags } from 'polymesh-types/types';
 export * from '~/api/entities/types';
