@@ -397,6 +397,9 @@ function configureContext(opts: ContextOptions): void {
     }),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
+    queryMiddleware: sinon
+      .stub()
+      .callsFake(query => mockInstanceContainer.apolloInstance.query(query)),
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),

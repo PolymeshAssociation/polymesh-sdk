@@ -373,15 +373,5 @@ describe('SecurityToken class', () => {
       const result = await securityToken.createdAt();
       expect(result).toBeNull();
     });
-
-    test('should throw if the middleware query fails', async () => {
-      const ticker = 'SOMETICKER';
-      const context = dsMockUtils.getContextInstance();
-      const securityToken = new SecurityToken({ ticker }, context);
-
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(securityToken.createdAt()).rejects.toThrow('Error in middleware query: Error');
-    });
   });
 });

@@ -5,8 +5,9 @@ import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
+import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
+import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
 import * as utilsModule from '~/utils';
 
 import { Identity } from '../';
@@ -354,6 +355,27 @@ describe('Identity class', () => {
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, accountKey);
+    });
+  });
+
+  describe('method: getTrustingTokens', () => {
+    const did = 'someDid';
+    const tickers = ['TOKEN1', 'TOKEN2'];
+
+    test('should return a list of security tokens', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloQueryStub(
+        tokensByTrustedClaimIssuer({ claimIssuerDid: did, order: Order.Asc }),
+        {
+          tokensByTrustedClaimIssuer: tickers,
+        }
+      );
+
+      const result = await identity.getTrustingTokens();
+
+      expect(result[0].ticker).toBe(tickers[0]);
+      expect(result[1].ticker).toBe(tickers[1]);
     });
   });
 });

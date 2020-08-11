@@ -5,11 +5,15 @@ import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
+import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
+  Ensured,
   ErrorCode,
   isCddProviderRole,
   isTickerOwnerRole,
   isTokenOwnerRole,
+  Order,
   Role,
   SubCallback,
   UnsubCallback,
@@ -254,5 +258,24 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const checkedRoles = await Promise.all(roles.map(this.hasRole.bind(this)));
 
     return checkedRoles.every(hasRole => hasRole);
+  }
+
+  /**
+   * Get the list of tokens for which this identity is a trusted claim issuer
+   */
+  public async getTrustingTokens(
+    args: { order: Order } = { order: Order.Asc }
+  ): Promise<SecurityToken[]> {
+    const { context, did } = this;
+
+    const { order } = args;
+
+    const {
+      data: { tokensByTrustedClaimIssuer: tickers },
+    } = await context.queryMiddleware<Ensured<Query, 'tokensByTrustedClaimIssuer'>>(
+      tokensByTrustedClaimIssuer({ claimIssuerDid: did, order })
+    );
+
+    return tickers.map(ticker => new SecurityToken({ ticker }, context));
   }
 }

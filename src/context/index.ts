@@ -4,13 +4,14 @@ import { AccountInfo } from '@polkadot/types/interfaces';
 import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
-import ApolloClient from 'apollo-client';
+import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { DidRecord, IdentityId, ProtocolOp, TxTag } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
+import { Query } from '~/middleware/types';
 import {
   AccountBalance,
   ArrayTransactionArgument,
@@ -26,6 +27,7 @@ import {
   TransactionArgumentType,
   UnsubCallback,
 } from '~/types';
+import { GraphqlQuery } from '~/types/internal';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -562,5 +564,25 @@ export class Context {
     }
 
     return _middlewareApi;
+  }
+
+  /**
+   *
+   * @param query
+   */
+  public async queryMiddleware<Result extends Partial<Query>>(
+    query: GraphqlQuery<unknown>
+  ): Promise<ApolloQueryResult<Result>> {
+    let result: ApolloQueryResult<Result>;
+    try {
+      result = await this.middlewareApi.query(query);
+    } catch (e) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `Error in middleware query: ${e.message}`,
+      });
+    }
+
+    return result;
   }
 }

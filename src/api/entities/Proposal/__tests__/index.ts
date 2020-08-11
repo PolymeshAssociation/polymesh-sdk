@@ -89,14 +89,6 @@ describe('Proposal class', () => {
       const result = await proposal.identityHasVoted({ did: 'someDid' });
       expect(result).toBeFalsy();
     });
-
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(proposal.identityHasVoted()).rejects.toThrow(
-        'Error in middleware query: Error'
-      );
-    });
   });
 
   describe('method: getVotes', () => {
@@ -137,12 +129,6 @@ describe('Proposal class', () => {
       expect(result.data).toEqual(fakeResult);
       expect(result.next).toBeNull();
       expect(result.count).toBeUndefined();
-    });
-
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(proposal.getVotes()).rejects.toThrow('Error in middleware query: Error');
     });
   });
 
