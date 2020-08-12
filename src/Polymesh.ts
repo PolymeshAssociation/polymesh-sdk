@@ -216,16 +216,16 @@ export class Polymesh {
     return transferPolyX.prepare(args, this.context);
   }
 
-  // TODO: uncomment for v2
-  /*
-   * Get the POLYX balance of the current account
-   * NOTE: We don't expose this method for Testnet v1
+  /**
+   * Get the POLYX balance of an identity
    */
-  /*
-  public getIdentityBalance(): Promise<BigNumber> {
-    return this.context.getCurrentIdentity().getPolyXBalance();
+  public getIdentityBalance(args?: { did: string | Identity }): Promise<BigNumber> {
+    let identityArgs;
+    if (args) {
+      identityArgs = { did: valueToDid(args.did) };
+    }
+    return this.getIdentity(identityArgs).getPolyXBalance();
   }
-  */
 
   /**
    * Get the free/locked POLYX balance of an account

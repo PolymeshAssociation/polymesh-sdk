@@ -71,40 +71,40 @@ export class Identity extends Entity<UniqueIdentifiers> {
     this.authorizations = new Authorizations(this, context);
   }
 
-  // TODO: uncomment for v2
-  // public getPolyXBalance(): Promise<BigNumber>;
-  // public getPolyXBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+  /**
+   * Retrieve the POLYX balance of this particular Identity
+   *
+   * @note can be subscribed to
+   */
+  public getPolyXBalance(): Promise<BigNumber>;
+  public getPolyXBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
 
-  // /**
-  //  * Retrieve the POLYX balance of this particular Identity
-  //  *
-  //  * @note can be subscribed to
-  //  */
-  // public async getPolyXBalance(
-  //   callback?: SubCallback<BigNumber>
-  // ): Promise<BigNumber | UnsubCallback> {
-  //   const {
-  //     did,
-  //     context,
-  //     context: {
-  //       polymeshApi: {
-  //         query: { balances },
-  //       },
-  //     },
-  //   } = this;
+  // eslint-disable-next-line require-jsdoc
+  public async getPolyXBalance(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
+    const {
+      did,
+      context,
+      context: {
+        polymeshApi: {
+          query: { balances },
+        },
+      },
+    } = this;
 
-  //   const rawIdentityId = stringToIdentityId(did, context);
+    const rawIdentityId = stringToIdentityId(did, context);
 
-  //   if (callback) {
-  //     return balances.identityBalance(rawIdentityId, res => {
-  //       callback(balanceToBigNumber(res));
-  //     });
-  //   }
+    if (callback) {
+      return balances.identityBalance(rawIdentityId, res => {
+        callback(balanceToBigNumber(res));
+      });
+    }
 
-  //   const balance = await balances.identityBalance(rawIdentityId);
+    const balance = await balances.identityBalance(rawIdentityId);
 
-  //   return balanceToBigNumber(balance);
-  // }
+    return balanceToBigNumber(balance);
+  }
 
   /**
    * Check whether this Identity possesses the specified Role
@@ -145,17 +145,18 @@ export class Identity extends Entity<UniqueIdentifiers> {
     });
   }
 
+  /**
+   * Retrieve the balance of a particular Security Token
+   *
+   * @note can be subscribed to
+   */
   public getTokenBalance(args: { ticker: string }): Promise<BigNumber>;
   public getTokenBalance(
     args: { ticker: string },
     callback: SubCallback<BigNumber>
   ): Promise<UnsubCallback>;
 
-  /**
-   * Retrieve the balance of a particular Security Token
-   *
-   * @note can be subscribed to
-   */
+  // eslint-disable-next-line require-jsdoc
   public async getTokenBalance(
     args: { ticker: string },
     callback?: SubCallback<BigNumber>
@@ -173,6 +174,15 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
     const rawTicker = stringToTicker(ticker, context);
     const rawIdentityId = stringToIdentityId(did, context);
+
+    const token = await asset.tokens(rawTicker);
+
+    if (token.owner_did.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `There is no Security Token with ticker "${ticker}"`,
+      });
+    }
 
     if (callback) {
       return asset.balanceOf(rawTicker, rawIdentityId, res => {
