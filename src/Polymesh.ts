@@ -20,8 +20,15 @@ import {
 } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { didsWithClaims } from '~/middleware/queries';
-import { ClaimTypeEnum, Query } from '~/middleware/types';
+import { didsWithClaims, transactions } from '~/middleware/queries';
+import {
+  CallIdEnum,
+  ClaimTypeEnum,
+  Extrinsic,
+  ModuleIdEnum,
+  Query,
+  TransactionOrderByInput,
+} from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
@@ -49,6 +56,7 @@ import {
   linkTypeToMeshLinkType,
   moduleAddressToString,
   signerToSignatory,
+  stringToAccountKey,
   stringToTicker,
   textToString,
   tickerToString,
@@ -682,6 +690,94 @@ export class Polymesh {
     return {
       name: textToString(name),
       version: u32ToBigNumber(specVersion).toNumber(),
+    };
+  }
+
+  /**
+   * Retrieve a list of transactions. Can be filtered using parameters
+   *
+   * @param opts.address - account address who generated the transaction
+   * @param opts.success - if transaction was successfully or not
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   */
+  public async getTransactionHistory(
+    opts: {
+      blockId?: number;
+      address?: string;
+      moduleId?: ModuleIdEnum;
+      callId?: CallIdEnum;
+      success?: boolean;
+      size?: number;
+      start?: number;
+      orderBy?: TransactionOrderByInput;
+    } = {}
+  ): Promise<ResultSet<Extrinsic>> {
+    const { context } = this;
+
+    const { blockId, address, moduleId, callId, success, size, start, orderBy } = opts;
+
+    /* eslint-disable @typescript-eslint/camelcase */
+    const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
+      transactions({
+        block_id: blockId,
+        address: address ? stringToAccountKey(address, context).toString() : undefined,
+        module_id: moduleId,
+        call_id: callId,
+        success,
+        count: size,
+        skip: start,
+        orderBy,
+      })
+    );
+
+    const {
+      data: {
+        transactions: { items: transactionList, totalCount: count },
+      },
+    } = result;
+
+    const data = transactionList.map(
+      ({
+        block_id,
+        extrinsic_idx,
+        extrinsic_version,
+        signed,
+        address: rawAddress,
+        nonce,
+        era,
+        call,
+        module_id,
+        call_id,
+        params,
+        success: txSuccess,
+        spec_version_id,
+        extrinsic_hash,
+      }) => ({
+        blockId: block_id,
+        extrinsicIdx: extrinsic_idx,
+        extrinsicVersion: extrinsic_version,
+        signed,
+        address: rawAddress,
+        nonce,
+        era,
+        call,
+        moduleId: module_id,
+        callId: call_id,
+        params,
+        success: txSuccess,
+        specVersionId: spec_version_id,
+        extrinsicHash: extrinsic_hash,
+      })
+    );
+    /* eslint-enable @typescript-eslint/camelcase */
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
     };
   }
 

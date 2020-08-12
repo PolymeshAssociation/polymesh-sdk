@@ -227,6 +227,7 @@ export function transactions(
         skip: $skip
         orderBy: $orderBy
       ) {
+        totalCount
         items {
           block_id
           extrinsic_idx
