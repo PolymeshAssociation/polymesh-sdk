@@ -38,18 +38,25 @@ jest.mock(
     '~/api/entities/TickerReservation'
   )
 );
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 describe('Polymesh Class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   describe('method: create', () => {
@@ -230,7 +237,12 @@ describe('Polymesh Class', () => {
         accountSeed: 'seed',
       });
 
-      const result = await polymesh.getIdentityBalance();
+      let result = await polymesh.getIdentityBalance();
+      expect(result).toEqual(fakeBalance);
+
+      entityMockUtils.configureMocks({ identityOptions: { getPolyXBalance: fakeBalance } });
+
+      result = await polymesh.getIdentityBalance({ did: 'someDid' });
       expect(result).toEqual(fakeBalance);
     });
   });
@@ -522,7 +534,6 @@ describe('Polymesh Class', () => {
       const result = polymesh.getIdentity(params);
       const context = dsMockUtils.getContextInstance();
 
-      expect(result instanceof Identity).toBe(true);
       expect(result).toMatchObject(new Identity(params, context));
     });
   });

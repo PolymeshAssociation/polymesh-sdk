@@ -217,8 +217,12 @@ export class Polymesh {
   /**
    * Get the POLYX balance of an identity
    */
-  public getIdentityBalance(args?: { did: string }): Promise<BigNumber> {
-    return this.getIdentity(args).getPolyXBalance();
+  public getIdentityBalance(args?: { did: string | Identity }): Promise<BigNumber> {
+    let identityArgs;
+    if (args) {
+      identityArgs = { did: valueToDid(args.did) };
+    }
+    return this.getIdentity(identityArgs).getPolyXBalance();
   }
 
   /**
