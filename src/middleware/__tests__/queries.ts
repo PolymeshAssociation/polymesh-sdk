@@ -14,6 +14,7 @@ import {
   proposals,
   proposalVotes,
   tokensByTrustedClaimIssuer,
+  transactions,
 } from '../queries';
 
 describe('proposalVotes', () => {
@@ -95,6 +96,23 @@ describe('tokensByTrustedClaimIssuer', () => {
     };
 
     const result = tokensByTrustedClaimIssuer(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('transactions', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    let result = transactions();
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toBeUndefined();
+
+    const variables = {
+      address: 'someAddress',
+    };
+    result = transactions(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
