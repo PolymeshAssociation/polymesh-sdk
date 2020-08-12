@@ -360,7 +360,7 @@ describe('Identity class', () => {
 
   describe('method: getTrustingTokens', () => {
     const did = 'someDid';
-    const tickers = ['TOKEN1', 'TOKEN2'];
+    const tickers = ['TOKEN1\0\0', 'TOKEN2\0\0'];
 
     test('should return a list of security tokens', async () => {
       const identity = new Identity({ did }, context);
@@ -374,8 +374,8 @@ describe('Identity class', () => {
 
       const result = await identity.getTrustingTokens();
 
-      expect(result[0].ticker).toBe(tickers[0]);
-      expect(result[1].ticker).toBe(tickers[1]);
+      expect(result[0].ticker).toBe('TOKEN1');
+      expect(result[1].ticker).toBe('TOKEN2');
     });
   });
 });

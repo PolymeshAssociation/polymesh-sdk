@@ -23,6 +23,7 @@ import {
   balanceToBigNumber,
   cddStatusToBoolean,
   identityIdToString,
+  removePadding,
   stringToIdentityId,
   stringToTicker,
 } from '~/utils';
@@ -276,6 +277,6 @@ export class Identity extends Entity<UniqueIdentifiers> {
       tokensByTrustedClaimIssuer({ claimIssuerDid: did, order })
     );
 
-    return tickers.map(ticker => new SecurityToken({ ticker }, context));
+    return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
   }
 }
