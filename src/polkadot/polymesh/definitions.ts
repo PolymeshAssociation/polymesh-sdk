@@ -379,7 +379,7 @@ export default {
     },
     AssetTransferRulesResult: {
       is_paused: 'bool',
-      rules: 'Vec<AssetTransferRule>',
+      rules: 'Vec<AssetTransferRuleResult>',
       final_result: 'bool',
     },
     Claim1stKey: {

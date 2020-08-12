@@ -57,7 +57,7 @@ export interface AssetTransferRules extends Struct {
 /** @name AssetTransferRulesResult */
 export interface AssetTransferRulesResult extends Struct {
   readonly is_paused: bool;
-  readonly rules: Vec<AssetTransferRule>;
+  readonly rules: Vec<AssetTransferRuleResult>;
   readonly final_result: bool;
 }
 

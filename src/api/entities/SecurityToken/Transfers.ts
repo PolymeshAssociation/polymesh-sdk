@@ -100,8 +100,7 @@ export class Transfers extends Namespace<SecurityToken> {
    * @param args.amount - amount of tokens to mint
    */
   public canMint(args: { to: string | Identity; amount: BigNumber }): Promise<TransferStatus> {
-    const { to, amount } = args;
-    return this._canTransfer({ from: null, to, amount });
+    return this._canTransfer({ ...args, from: null });
   }
 
   /**
