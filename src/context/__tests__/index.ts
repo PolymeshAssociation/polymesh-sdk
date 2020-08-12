@@ -1,12 +1,13 @@
 import BigNumber from 'bignumber.js';
-import { ProtocolOp, TxTags } from 'polymesh-types/types';
+import { DidRecord, ProtocolOp, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountKey } from '~/testUtils/mocks/dataSources';
-import { TransactionArgumentType } from '~/types';
+import { SignerType, TransactionArgumentType } from '~/types';
+import { GraphqlQuery } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -721,6 +722,96 @@ describe('Context class', () => {
     });
   });
 
+  describe('method: getSigningKeys', () => {
+    const did = 'someDid';
+    const accountKey = 'someAccountKey';
+    const fakeResult = [
+      { value: did, type: SignerType.Identity },
+      { value: accountKey, type: SignerType.AccountKey },
+    ];
+    const signerIdentityId = dsMockUtils.createMockSignatory({
+      Identity: dsMockUtils.createMockIdentityId(did),
+    });
+    const signerAccountKey = dsMockUtils.createMockSignatory({
+      AccountKey: dsMockUtils.createMockAccountKey(accountKey),
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let signatoryToSignerStub: sinon.SinonStub<[Signatory], any>;
+    let didRecordsStub: sinon.SinonStub;
+    let rawDidRecord: DidRecord;
+
+    beforeAll(() => {
+      signatoryToSignerStub = sinon.stub(utilsModule, 'signatoryToSigner');
+      signatoryToSignerStub.withArgs(signerIdentityId).returns(fakeResult[0]);
+      signatoryToSignerStub.withArgs(signerAccountKey).returns(fakeResult[1]);
+    });
+
+    beforeEach(() => {
+      didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
+      /* eslint-disable @typescript-eslint/camelcase */
+      rawDidRecord = dsMockUtils.createMockDidRecord({
+        roles: [],
+        master_key: dsMockUtils.createMockAccountKey(),
+        signing_items: [
+          dsMockUtils.createMockSigningItem({
+            signer: signerIdentityId,
+            signer_type: dsMockUtils.createMockSignatoryType(),
+            permissions: [],
+          }),
+          dsMockUtils.createMockSigningItem({
+            signer: signerAccountKey,
+            signer_type: dsMockUtils.createMockSignatoryType(),
+            permissions: [],
+          }),
+        ],
+      });
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+    });
+
+    test('should return a list of Signers', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      didRecordsStub.returns(rawDidRecord);
+
+      const result = await context.getSigningKeys();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const unsubCallback = 'unsubCallBack';
+
+      didRecordsStub.callsFake(async (_, cbFunc) => {
+        cbFunc(rawDidRecord);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await context.getSigningKeys(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeResult);
+    });
+  });
+
   describe('method: getTransactionArguments', () => {
     test('should return a representation of the arguments of a transaction', async () => {
       const pair = {
@@ -1005,6 +1096,49 @@ describe('Context class', () => {
           optional: false,
         },
       ]);
+    });
+  });
+
+  describe('method: queryMiddleware', () => {
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+    });
+
+    test('should throw if the middleware query fails', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      return expect(
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware query: Error');
+    });
+
+    test('should perform a middleware query and return the results', async () => {
+      const fakeResult = 'res';
+      const fakeQuery = ('fakeQuery' as unknown) as GraphqlQuery<unknown>;
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
+
+      const res = await context.queryMiddleware(fakeQuery);
+
+      expect(res.data).toBe(fakeResult);
     });
   });
 });

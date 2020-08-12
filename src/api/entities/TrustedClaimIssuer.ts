@@ -1,11 +1,9 @@
-import { ApolloQueryResult } from 'apollo-client';
-
 import { Identity } from '~/api/entities/Identity';
-import { Entity, PolymeshError } from '~/base';
+import { Entity } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, ErrorCode, EventIdentifier } from '~/types';
+import { Ensured, EventIdentifier } from '~/types';
 import { padString } from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
@@ -56,28 +54,16 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
    * @note this data is harvested from the chain and stored in a database, so there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async addedAt(): Promise<EventIdentifier | null> {
-    const {
-      context: { middlewareApi },
-      ticker,
-      identity,
-    } = this;
+    const { ticker, identity, context } = this;
 
-    let result: ApolloQueryResult<Ensured<Query, 'eventByIndexedArgs'>>;
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'eventByIndexedArgs'>>(
-        eventByIndexedArgs({
-          moduleId: ModuleIdEnum.ComplianceManager,
-          eventId: EventIdEnum.TrustedDefaultClaimIssuerAdded,
-          eventArg1: padString(ticker, MAX_TICKER_LENGTH),
-          eventArg2: identity.did,
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
+    const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+      eventByIndexedArgs({
+        moduleId: ModuleIdEnum.Compliancemanager,
+        eventId: EventIdEnum.TrustedDefaultClaimIssuerAdded,
+        eventArg1: padString(ticker, MAX_TICKER_LENGTH),
+        eventArg2: identity.did,
+      })
+    );
 
     if (result.data.eventByIndexedArgs) {
       // TODO remove null check once types fixed

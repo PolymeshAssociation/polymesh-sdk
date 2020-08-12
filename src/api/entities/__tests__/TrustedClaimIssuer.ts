@@ -59,7 +59,7 @@ describe('TrustedClaimIssuer class', () => {
     const did = 'someDid';
     const ticker = 'SOMETICKER';
     const variables = {
-      moduleId: ModuleIdEnum.ComplianceManager,
+      moduleId: ModuleIdEnum.Compliancemanager,
       eventId: EventIdEnum.TrustedDefaultClaimIssuerAdded,
       eventArg1: utilsModule.padString(ticker, MAX_TICKER_LENGTH),
       eventArg2: did,
@@ -93,16 +93,6 @@ describe('TrustedClaimIssuer class', () => {
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
       const result = await trustedClaimIssuer.addedAt();
       expect(result).toBeNull();
-    });
-
-    test('should throw if the middleware query fails', async () => {
-      const trustedClaimIssuer = new TrustedClaimIssuer({ did, ticker }, context);
-
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(trustedClaimIssuer.addedAt()).rejects.toThrow(
-        'Error in middleware query: Error'
-      );
     });
   });
 });

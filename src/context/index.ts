@@ -4,13 +4,14 @@ import { AccountInfo } from '@polkadot/types/interfaces';
 import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
-import ApolloClient from 'apollo-client';
+import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { DidRecord, IdentityId, ProtocolOp, TxTag } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
+import { Query } from '~/middleware/types';
 import {
   AccountBalance,
   ArrayTransactionArgument,
@@ -19,16 +20,19 @@ import {
   ErrorCode,
   KeyringPair,
   PlainTransactionArgument,
+  Signer,
   SimpleEnumTransactionArgument,
   SubCallback,
   TransactionArgument,
   TransactionArgumentType,
   UnsubCallback,
 } from '~/types';
+import { GraphqlQuery } from '~/types/internal';
 import {
   balanceToBigNumber,
   identityIdToString,
   posRatioToBigNumber,
+  signatoryToSigner,
   stringToAccountKey,
   stringToIdentityId,
   textToString,
@@ -515,6 +519,36 @@ export class Context {
   }
 
   /**
+   * Retrieve the list of signing keys related to the account
+   *
+   * @note can be subscribed to
+   */
+  public async getSigningKeys(): Promise<Signer[]>;
+  public async getSigningKeys(callback: SubCallback<Signer[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getSigningKeys(callback?: SubCallback<Signer[]>): Promise<Signer[] | UnsubCallback> {
+    const {
+      polymeshApi: {
+        query: { identity },
+      },
+    } = this;
+
+    const { did } = this.getCurrentIdentity();
+
+    const assembleResult = ({ signing_items: signingItems }: DidRecord): Signer[] => {
+      return signingItems.map(({ signer: rawSigner }) => signatoryToSigner(rawSigner));
+    };
+
+    if (callback) {
+      return identity.didRecords(did, records => callback(assembleResult(records)));
+    }
+
+    const didRecords = await identity.didRecords(did);
+    return assembleResult(didRecords);
+  }
+
+  /**
    * Retrieve the middleware client
    *
    * @throws if credentials are not set
@@ -530,5 +564,25 @@ export class Context {
     }
 
     return _middlewareApi;
+  }
+
+  /**
+   *
+   * @param query
+   */
+  public async queryMiddleware<Result extends Partial<Query>>(
+    query: GraphqlQuery<unknown>
+  ): Promise<ApolloQueryResult<Result>> {
+    let result: ApolloQueryResult<Result>;
+    try {
+      result = await this.middlewareApi.query(query);
+    } catch (e) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `Error in middleware query: ${e.message}`,
+      });
+    }
+
+    return result;
   }
 }

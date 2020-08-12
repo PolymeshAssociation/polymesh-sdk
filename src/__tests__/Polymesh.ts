@@ -1,5 +1,5 @@
 import { Keyring } from '@polkadot/api';
-import { Signer } from '@polkadot/api/types';
+import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
@@ -17,6 +17,8 @@ import {
   AccountBalance,
   ClaimTargets,
   ClaimType,
+  Signer,
+  SignerType,
   SubCallback,
   TickerReservationStatus,
 } from '~/types';
@@ -167,7 +169,7 @@ describe('Polymesh Class', () => {
     test('should set an optional signer for the polkadot API', async () => {
       const accountSeed = 'Alice'.padEnd(32, ' ');
       const createStub = dsMockUtils.getContextCreateStub();
-      const signer = 'signer' as Signer;
+      const signer = 'signer' as PolkadotSigner;
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -757,28 +759,24 @@ describe('Polymesh Class', () => {
         }
       );
 
-      const result = await polymesh.getIssuedClaims({ start: 1, size: 30 });
+      let result = await polymesh.getIssuedClaims({ start: 1, size: 30 });
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(1);
       expect(result.next).toBeNull();
-    });
 
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({ trustedClaimIssuers: ['someDid'], count: undefined, skip: undefined }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
+      );
 
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
+      result = await polymesh.getIssuedClaims();
 
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(polymesh.getIssuedClaims()).rejects.toThrow('Error in middleware query: Error');
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(1);
+      expect(result.next).toBeNull();
     });
   });
 
@@ -870,7 +868,7 @@ describe('Polymesh Class', () => {
         }
       );
 
-      const result = await polymesh.getIdentitiesWithClaims({
+      let result = await polymesh.getIdentitiesWithClaims({
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
@@ -880,25 +878,26 @@ describe('Polymesh Class', () => {
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(25);
       expect(result.next).toEqual(1);
-    });
 
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(polymesh.getIdentitiesWithClaims()).rejects.toThrow(
-        'Error in middleware query: Error'
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({
+          dids: undefined,
+          scope: undefined,
+          trustedClaimIssuers: undefined,
+          claimTypes: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
       );
+
+      result = await polymesh.getIdentitiesWithClaims();
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toEqual(null);
     });
   });
 
@@ -1154,6 +1153,41 @@ describe('Polymesh Class', () => {
       const result = await polymesh.getTreasuryBalance(callback);
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeBalance.free);
+    });
+  });
+
+  describe('method: getMySigningKeys', () => {
+    test('should return a list of Signers', async () => {
+      const fakeResult = [
+        {
+          type: SignerType.AccountKey,
+          value: '0xdummy',
+        },
+      ];
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const result = await polymesh.getMySigningKeys();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      const getSigningKeysStub = dsMockUtils
+        .getContextInstance()
+        .getSigningKeys.resolves(unsubCallback);
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const callback = (() => [] as unknown) as SubCallback<Signer[]>;
+      const result = await polymesh.getMySigningKeys(callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(getSigningKeysStub, callback);
     });
   });
 

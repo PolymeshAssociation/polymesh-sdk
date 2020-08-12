@@ -1,23 +1,29 @@
 import { BigNumber } from 'bignumber.js';
-import { CddStatus } from 'polymesh-types/types';
+import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
+import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
+  Ensured,
   ErrorCode,
   isCddProviderRole,
   isTickerOwnerRole,
   isTokenOwnerRole,
+  Order,
   Role,
   SubCallback,
   UnsubCallback,
 } from '~/types';
 import {
+  accountKeyToString,
   balanceToBigNumber,
   cddStatusToBoolean,
   identityIdToString,
+  removePadding,
   stringToIdentityId,
   stringToTicker,
 } from '~/utils';
@@ -224,11 +230,63 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Retrieve the master key associated with the identity
+   *
+   * @note can be subscribed to
+   */
+  public async getMasterKey(): Promise<string>;
+  public async getMasterKey(callback: SubCallback<string>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getMasterKey(callback?: SubCallback<string>): Promise<string | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+      context,
+    } = this;
+
+    const { did } = context.getCurrentIdentity();
+
+    const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
+      return accountKeyToString(masterKey);
+    };
+
+    if (callback) {
+      return identity.didRecords(did, records => callback(assembleResult(records)));
+    }
+
+    const didRecords = await identity.didRecords(did);
+    return assembleResult(didRecords);
+  }
+
+  /**
    * Check whether this Identity possesses all specified roles
    */
   public async hasRoles(roles: Role[]): Promise<boolean> {
     const checkedRoles = await Promise.all(roles.map(this.hasRole.bind(this)));
 
     return checkedRoles.every(hasRole => hasRole);
+  }
+
+  /**
+   * Get the list of tokens for which this identity is a trusted claim issuer
+   */
+  public async getTrustingTokens(
+    args: { order: Order } = { order: Order.Asc }
+  ): Promise<SecurityToken[]> {
+    const { context, did } = this;
+
+    const { order } = args;
+
+    const {
+      data: { tokensByTrustedClaimIssuer: tickers },
+    } = await context.queryMiddleware<Ensured<Query, 'tokensByTrustedClaimIssuer'>>(
+      tokensByTrustedClaimIssuer({ claimIssuerDid: did, order })
+    );
+
+    return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
   }
 }
