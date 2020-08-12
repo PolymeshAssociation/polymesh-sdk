@@ -1,7 +1,6 @@
 import { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { TokenDocument } from '~/types';
-import { SignerType } from '~/types/internal';
+import { SignerType, TokenDocument } from '~/types';
 import { documentToTokenDocument, signerToSignatory, tickerToDid } from '~/utils';
 
 import { SecurityToken } from './';

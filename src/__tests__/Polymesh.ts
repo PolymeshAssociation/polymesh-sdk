@@ -1,5 +1,5 @@
 import { Keyring } from '@polkadot/api';
-import { Signer } from '@polkadot/api/types';
+import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
@@ -17,6 +17,8 @@ import {
   AccountBalance,
   ClaimTargets,
   ClaimType,
+  Signer,
+  SignerType,
   SubCallback,
   TickerReservationStatus,
 } from '~/types';
@@ -160,7 +162,7 @@ describe('Polymesh Class', () => {
     test('should set an optional signer for the polkadot API', async () => {
       const accountSeed = 'Alice'.padEnd(32, ' ');
       const createStub = dsMockUtils.getContextCreateStub();
-      const signer = 'signer' as Signer;
+      const signer = 'signer' as PolkadotSigner;
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -1143,6 +1145,41 @@ describe('Polymesh Class', () => {
       const result = await polymesh.getTreasuryBalance(callback);
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeBalance.free);
+    });
+  });
+
+  describe('method: getMySigningKeys', () => {
+    test('should return a list of Signers', async () => {
+      const fakeResult = [
+        {
+          type: SignerType.AccountKey,
+          value: '0xdummy',
+        },
+      ];
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const result = await polymesh.getMySigningKeys();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      const getSigningKeysStub = dsMockUtils
+        .getContextInstance()
+        .getSigningKeys.resolves(unsubCallback);
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const callback = (() => [] as unknown) as SubCallback<Signer[]>;
+      const result = await polymesh.getMySigningKeys(callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(getSigningKeysStub, callback);
     });
   });
 

@@ -1,6 +1,6 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { IdentityId, Ticker } from 'polymesh-types/types';
+import { AccountKey, DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Entity } from '~/base';
@@ -301,6 +301,59 @@ describe('Identity class', () => {
       const result = await identity.isGcMember();
 
       expect(result).toBeTruthy();
+    });
+  });
+
+  describe('method: getMasterKey', () => {
+    const did = 'someDid';
+    const accountKey = 'someMasterKey';
+
+    let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
+    let didRecordsStub: sinon.SinonStub;
+    let rawDidRecord: DidRecord;
+
+    beforeAll(() => {
+      accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
+      accountKeyToStringStub.returns(accountKey);
+    });
+
+    beforeEach(() => {
+      didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
+      /* eslint-disable @typescript-eslint/camelcase */
+      rawDidRecord = dsMockUtils.createMockDidRecord({
+        roles: [],
+        master_key: dsMockUtils.createMockAccountKey(accountKey),
+        signing_items: [],
+      });
+      /* eslint-enabled @typescript-eslint/camelcase */
+    });
+
+    test('should return a MasterKey', async () => {
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      didRecordsStub.returns(rawDidRecord);
+
+      const result = await identity.getMasterKey();
+      expect(result).toEqual(accountKey);
+    });
+
+    test('should allow subscription', async () => {
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      const unsubCallback = 'unsubCallBack';
+
+      didRecordsStub.callsFake(async (_, cbFunc) => {
+        cbFunc(rawDidRecord);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await identity.getMasterKey(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, accountKey);
     });
   });
 });

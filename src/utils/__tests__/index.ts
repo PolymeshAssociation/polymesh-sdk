@@ -30,6 +30,7 @@ import {
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
+import { ProposalState } from '~/api/entities/Proposal/types';
 import { PostTransactionValue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import {
@@ -42,10 +43,10 @@ import {
   ConditionType,
   KnownTokenType,
   LinkType,
+  SignerType,
   TokenIdentifierType,
   TransferStatus,
 } from '~/types';
-import { SignerType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
@@ -84,6 +85,7 @@ import {
   jurisdictionNameToString,
   linkTypeToMeshLinkType,
   meshClaimToClaim,
+  meshProposalStateToProposalState,
   moduleAddressToString,
   momentToDate,
   numberToBalance,
@@ -2272,5 +2274,56 @@ describe('calculateNextKey', () => {
     const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
 
     expect(nextKey).toEqual(30);
+  });
+});
+
+describe('meshProposalStateToProposalState', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
+    let fakeResult: ProposalState = ProposalState.Cancelled;
+
+    let proposalState = dsMockUtils.createMockProposalState(fakeResult);
+
+    let result = meshProposalStateToProposalState(proposalState);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ProposalState.Killed;
+
+    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+
+    result = meshProposalStateToProposalState(proposalState);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ProposalState.Pending;
+
+    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+
+    result = meshProposalStateToProposalState(proposalState);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ProposalState.Referendum;
+
+    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+
+    result = meshProposalStateToProposalState(proposalState);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ProposalState.Rejected;
+
+    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+
+    result = meshProposalStateToProposalState(proposalState);
+    expect(result).toEqual(fakeResult);
   });
 });
