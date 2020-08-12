@@ -93,6 +93,7 @@ import {
   numberToU64,
   padString,
   posRatioToBigNumber,
+  removePadding,
   requestAtBlock,
   requestPaginated,
   ruleToAssetTransferRule,
@@ -2135,6 +2136,16 @@ describe('padString', () => {
     const result = padString(value, 12);
 
     expect(result).toBe(fakeResult);
+  });
+});
+
+describe('removePadding', () => {
+  test('should remove all null character padding from the input', () => {
+    const expected = 'someString';
+
+    const result = removePadding(`${expected}\0\0\0`);
+
+    expect(result).toBe(expected);
   });
 });
 

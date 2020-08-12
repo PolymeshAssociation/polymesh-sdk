@@ -1080,6 +1080,14 @@ export function padString(value: string, length: number): string {
 /**
  * @hidden
  */
+export function removePadding(value: string): string {
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/\u0000/g, '');
+}
+
+/**
+ * @hidden
+ */
 export function moduleAddressToString(moduleAddress: string): string {
   return encodeAddress(stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)), SS58_FORMAT);
 }

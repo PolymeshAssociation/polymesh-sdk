@@ -1,7 +1,7 @@
 schema:
   - ${MIDDLEWARE_LINK}:
-    headers:
-      x-api-key: ${MIDDLEWARE_KEY}
+      headers:
+        x-api-key: ${MIDDLEWARE_KEY}
 generates:
   ./src/middleware/types.ts:
     config:

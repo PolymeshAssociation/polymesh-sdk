@@ -7,6 +7,7 @@ import { Context } from '~/context';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountKey } from '~/testUtils/mocks/dataSources';
 import { SignerType, TransactionArgumentType } from '~/types';
+import { GraphqlQuery } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -1095,6 +1096,49 @@ describe('Context class', () => {
           optional: false,
         },
       ]);
+    });
+  });
+
+  describe('method: queryMiddleware', () => {
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+    });
+
+    test('should throw if the middleware query fails', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      return expect(
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware query: Error');
+    });
+
+    test('should perform a middleware query and return the results', async () => {
+      const fakeResult = 'res';
+      const fakeQuery = ('fakeQuery' as unknown) as GraphqlQuery<unknown>;
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
+
+      const res = await context.queryMiddleware(fakeQuery);
+
+      expect(res.data).toBe(fakeResult);
     });
   });
 });

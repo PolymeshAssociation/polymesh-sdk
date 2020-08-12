@@ -748,28 +748,24 @@ describe('Polymesh Class', () => {
         }
       );
 
-      const result = await polymesh.getIssuedClaims({ start: 1, size: 30 });
+      let result = await polymesh.getIssuedClaims({ start: 1, size: 30 });
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(1);
       expect(result.next).toBeNull();
-    });
 
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({ trustedClaimIssuers: ['someDid'], count: undefined, skip: undefined }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
+      );
 
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
+      result = await polymesh.getIssuedClaims();
 
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(polymesh.getIssuedClaims()).rejects.toThrow('Error in middleware query: Error');
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(1);
+      expect(result.next).toBeNull();
     });
   });
 
@@ -861,7 +857,7 @@ describe('Polymesh Class', () => {
         }
       );
 
-      const result = await polymesh.getIdentitiesWithClaims({
+      let result = await polymesh.getIdentitiesWithClaims({
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
@@ -871,25 +867,26 @@ describe('Polymesh Class', () => {
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(25);
       expect(result.next).toEqual(1);
-    });
 
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(polymesh.getIdentitiesWithClaims()).rejects.toThrow(
-        'Error in middleware query: Error'
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({
+          dids: undefined,
+          scope: undefined,
+          trustedClaimIssuers: undefined,
+          claimTypes: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
       );
+
+      result = await polymesh.getIdentitiesWithClaims();
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toEqual(null);
     });
   });
 
