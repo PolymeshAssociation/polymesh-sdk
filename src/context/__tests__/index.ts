@@ -4,9 +4,11 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
+import { didsWithClaims } from '~/middleware/queries';
+import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountKey } from '~/testUtils/mocks/dataSources';
-import { SignerType, TransactionArgumentType } from '~/types';
+import { ClaimType, SignerType, TransactionArgumentType } from '~/types';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -1095,6 +1097,117 @@ describe('Context class', () => {
           optional: false,
         },
       ]);
+    });
+  });
+
+  describe('method: issuedClaims', () => {
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+    });
+
+    test('should return a list of claims', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const date = 1589816265000;
+      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
+      const claim = {
+        target: new Identity({ did: targetDid }, context),
+        issuer: new Identity({ did: issuerDid }, context),
+        issuedAt: new Date(date),
+      };
+      const fakeClaims = [
+        {
+          ...claim,
+          expiry: new Date(date),
+          claim: {
+            type: customerDueDiligenceType,
+          },
+        },
+        {
+          ...claim,
+          expiry: null,
+          claim: {
+            type: customerDueDiligenceType,
+          },
+        },
+      ];
+      /* eslint-disable @typescript-eslint/camelcase */
+      const commonClaimData = {
+        targetDID: targetDid,
+        issuer: issuerDid,
+        issuance_date: date,
+        last_update_date: date,
+      };
+      const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
+        totalCount: 25,
+        items: [
+          {
+            did: targetDid,
+            claims: [
+              {
+                ...commonClaimData,
+                expiry: date,
+                type: customerDueDiligenceType,
+              },
+              {
+                ...commonClaimData,
+                expiry: null,
+                type: customerDueDiligenceType,
+              },
+            ],
+          },
+        ],
+      };
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({
+          dids: [targetDid],
+          trustedClaimIssuers: [targetDid],
+          claimTypes: [ClaimTypeEnum.Accredited],
+          count: 1,
+          skip: undefined,
+        }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
+      );
+
+      const result = await context.issuedClaims({
+        targets: [targetDid],
+        trustedClaimIssuers: [targetDid],
+        claimTypes: [ClaimType.Accredited],
+        size: 1,
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toEqual(1);
+    });
+
+    test('should throw if the middleware query fails', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      return expect(context.issuedClaims()).rejects.toThrow('Error in middleware query: Error');
     });
   });
 });

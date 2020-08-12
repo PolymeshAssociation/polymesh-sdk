@@ -15,8 +15,10 @@ import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   AccountBalance,
+  ClaimData,
   ClaimTargets,
   ClaimType,
+  ResultSet,
   Signer,
   SignerType,
   SubCallback,
@@ -655,121 +657,32 @@ describe('Polymesh Class', () => {
   describe('method: getIssuedClaims', () => {
     test('should return a list of issued claims', async () => {
       const context = dsMockUtils.getContextInstance();
-      const targetDid = 'someTargetDid';
-      const issuerDid = 'someIssuerDid';
-      const date = 1589816265000;
-      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
-      const jurisdictionType = ClaimTypeEnum.Jurisdiction;
-      const exemptedType = ClaimTypeEnum.Exempted;
-      const claim = {
-        target: new Identity({ did: targetDid }, context),
-        issuer: new Identity({ did: issuerDid }, context),
-        issuedAt: new Date(date),
-      };
-      const fakeClaims = [
-        {
-          ...claim,
-          expiry: null,
-          claim: {
-            type: customerDueDiligenceType,
-          },
-        },
-        {
-          ...claim,
-          expiry: new Date(date),
-          claim: {
-            type: jurisdictionType,
-            name: 'someJurisdiction',
-            scope: 'someScope',
-          },
-        },
-        {
-          ...claim,
-          expiry: null,
-          claim: {
-            type: exemptedType,
-            scope: 'someScope',
-          },
-        },
-      ];
-      /* eslint-disable @typescript-eslint/camelcase */
-      const commonClaimData = {
-        targetDID: targetDid,
-        issuer: issuerDid,
-        issuance_date: date,
-        last_update_date: date,
-      };
-      const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
-        totalCount: 1,
-        items: [
+      const issuedClaims: ResultSet<ClaimData> = {
+        data: [
           {
-            did: targetDid,
-            claims: [
-              {
-                ...commonClaimData,
-                expiry: null,
-                type: customerDueDiligenceType,
-              },
-              {
-                ...commonClaimData,
-                expiry: date,
-                type: jurisdictionType,
-                jurisdiction: 'someJurisdiction',
-                scope: 'someScope',
-              },
-              {
-                ...commonClaimData,
-                expiry: null,
-                type: exemptedType,
-                jurisdiction: null,
-                scope: 'someScope',
-              },
-            ],
+            target: new Identity({ did: 'someDid' }, context),
+            issuer: new Identity({ did: 'otherDid' }, context),
+            issuedAt: new Date(),
+            expiry: null,
+            claim: { type: ClaimType.NoData },
           },
         ],
+        next: 1,
+        count: 1,
       };
-      /* eslint-enabled @typescript-eslint/camelcase */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          issuedClaims,
+        },
+      });
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
       });
 
-      dsMockUtils.createApolloQueryStub(
-        didsWithClaims({ trustedClaimIssuers: ['someDid'], count: 30, skip: 1 }),
-        {
-          didsWithClaims: didsWithClaimsQueryResponse,
-        }
-      );
-
-      const result = await polymesh.getIssuedClaims({ start: 1, size: 30 });
-
-      expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(1);
-      expect(result.next).toBeNull();
-    });
-
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(polymesh.getIssuedClaims()).rejects.toThrow('Error in middleware query: Error');
+      const result = await polymesh.getIssuedClaims();
+      expect(result).toEqual(issuedClaims);
     });
   });
 

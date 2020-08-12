@@ -547,58 +547,18 @@ export class Polymesh {
       start?: number;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
-    const {
-      context,
-      context: { middlewareApi },
-    } = this;
+    const { context } = this;
 
     const { size, start } = opts;
     const { did } = context.getCurrentIdentity();
 
-    let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
-        didsWithClaims({
-          trustedClaimIssuers: [did],
-          count: size,
-          skip: start,
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
-      },
-    } = result;
-    const data: ClaimData[] = [];
-
-    didsWithClaimsList.forEach(({ claims }) => {
-      claims.forEach(
-        ({ targetDID, issuer, issuance_date: issuanceDate, expiry, type, jurisdiction, scope }) => {
-          data.push({
-            target: new Identity({ did: targetDID }, context),
-            issuer: new Identity({ did: issuer }, context),
-            issuedAt: new Date(issuanceDate),
-            expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, scope),
-          });
-        }
-      );
+    const result = await context.issuedClaims({
+      trustedClaimIssuers: [did],
+      size,
+      start,
     });
 
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
+    return result;
   }
 
   /**
