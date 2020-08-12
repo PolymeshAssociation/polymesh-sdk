@@ -1,13 +1,14 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { IdentityId, Ticker } from 'polymesh-types/types';
+import { AccountKey, DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
+import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
+import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
 import * as utilsModule from '~/utils';
 
 import { Identity } from '../';
@@ -353,6 +354,80 @@ describe('Identity class', () => {
       const result = await identity.isGcMember();
 
       expect(result).toBeTruthy();
+    });
+  });
+
+  describe('method: getMasterKey', () => {
+    const did = 'someDid';
+    const accountKey = 'someMasterKey';
+
+    let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
+    let didRecordsStub: sinon.SinonStub;
+    let rawDidRecord: DidRecord;
+
+    beforeAll(() => {
+      accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
+      accountKeyToStringStub.returns(accountKey);
+    });
+
+    beforeEach(() => {
+      didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
+      /* eslint-disable @typescript-eslint/camelcase */
+      rawDidRecord = dsMockUtils.createMockDidRecord({
+        roles: [],
+        master_key: dsMockUtils.createMockAccountKey(accountKey),
+        signing_items: [],
+      });
+      /* eslint-enabled @typescript-eslint/camelcase */
+    });
+
+    test('should return a MasterKey', async () => {
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      didRecordsStub.returns(rawDidRecord);
+
+      const result = await identity.getMasterKey();
+      expect(result).toEqual(accountKey);
+    });
+
+    test('should allow subscription', async () => {
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      const unsubCallback = 'unsubCallBack';
+
+      didRecordsStub.callsFake(async (_, cbFunc) => {
+        cbFunc(rawDidRecord);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await identity.getMasterKey(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, accountKey);
+    });
+  });
+
+  describe('method: getTrustingTokens', () => {
+    const did = 'someDid';
+    const tickers = ['TOKEN1\0\0', 'TOKEN2\0\0'];
+
+    test('should return a list of security tokens', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloQueryStub(
+        tokensByTrustedClaimIssuer({ claimIssuerDid: did, order: Order.Asc }),
+        {
+          tokensByTrustedClaimIssuer: tickers,
+        }
+      );
+
+      const result = await identity.getTrustingTokens();
+
+      expect(result[0].ticker).toBe('TOKEN1');
+      expect(result[1].ticker).toBe('TOKEN2');
     });
   });
 });

@@ -5,6 +5,7 @@ import {
   QueryEventsByIndexedArgsArgs,
   QueryProposalsArgs,
   QueryProposalVotesArgs,
+  QueryTokensByTrustedClaimIssuerArgs,
 } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
 
@@ -167,6 +168,26 @@ export function proposals(
         totalAyesWeight
         totalNaysWeight
       }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the tickers of all the tokens for which the passed DID is a trusted claim issuer
+ */
+export function tokensByTrustedClaimIssuer(
+  variables: QueryTokensByTrustedClaimIssuerArgs
+): GraphqlQuery<QueryTokensByTrustedClaimIssuerArgs> {
+  const query = gql`
+    query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!, $order: Order) {
+      tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid, order: $order)
     }
   `;
 

@@ -3,8 +3,7 @@ import { Authorization } from 'polymesh-types/types';
 
 import { AuthorizationRequest } from '~/api/entities';
 import { Namespace } from '~/base';
-import { PaginationOptions, ResultSet } from '~/types';
-import { SignerType } from '~/types/internal';
+import { PaginationOptions, ResultSet, SignerType } from '~/types';
 import { tuple } from '~/types/utils';
 import {
   authorizationDataToAuthorization,
