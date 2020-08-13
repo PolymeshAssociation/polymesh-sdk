@@ -31,7 +31,7 @@ export async function prepareRemoveSigningItems(
   if (isMasterKeyPresent) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You can not remove a master key',
+      message: 'You cannot remove the master key',
     });
   }
 
