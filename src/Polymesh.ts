@@ -24,7 +24,6 @@ import { didsWithClaims, transactions } from '~/middleware/queries';
 import {
   CallIdEnum,
   ClaimTypeEnum,
-  Extrinsic,
   ModuleIdEnum,
   Query,
   TransactionOrderByInput,
@@ -769,7 +768,7 @@ export class Polymesh {
           moduleId: module_id,
           callId: call_id,
           params,
-          success: txSuccess,
+          success: !!txSuccess,
           specVersionId: spec_version_id,
           extrinsicHash: extrinsic_hash,
         })

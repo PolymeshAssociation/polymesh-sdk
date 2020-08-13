@@ -235,7 +235,7 @@ export interface ExtrinsicData {
   moduleId?: ModuleIdEnum | null;
   callId?: CallIdEnum | null;
   params?: object | null;
-  success?: number | null;
+  success?: boolean | null;
   specVersionId?: number | null;
   extrinsicHash?: string | null;
 }
