@@ -12,11 +12,6 @@ import { Mocked } from '~/testUtils/types';
 import { Signer, SignerType } from '~/types';
 import * as utilsModule from '~/utils';
 
-jest.mock(
-  '~/api/entities/Identity',
-  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
-);
-
 describe('removeSigningItems procedure', () => {
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
@@ -87,22 +82,22 @@ describe('removeSigningItems procedure', () => {
           },
         ],
       })
-    ).rejects.toThrow('You can not remove a master key');
+    ).rejects.toThrow('You cannot remove the master key');
   });
 
   test('should throw an error if at least one of the signing key to remove is not present in the signing keys list', async () => {
     const proc = procedureMockUtils.getInstance<RemoveSigningItemsParams, void>(mockContext);
 
     await expect(prepareRemoveSigningItems.call(proc, args)).rejects.toThrow(
-      'You can not remove a signing key that is not present in your signing keys list'
+      'You cannot remove a signing key that is not present in your signing keys list'
     );
   });
 
   describe('isAuthorized', () => {
     test('should return whether the current address is the master key', async () => {
-      entityMockUtils.configureMocks({
-        identityOptions: {
-          getMasterKey: '0xdummy',
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          currentPairAddress: 'someAccountKey',
         },
       });
 
@@ -112,9 +107,9 @@ describe('removeSigningItems procedure', () => {
       let result = await boundFunc();
       expect(result).toBe(true);
 
-      entityMockUtils.configureMocks({
-        identityOptions: {
-          getMasterKey: 'otherAccountKey',
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          currentPairAddress: 'otherAccountKey',
         },
       });
 
