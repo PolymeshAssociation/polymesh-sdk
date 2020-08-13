@@ -573,29 +573,19 @@ export class Context {
       start?: number;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
-    const { middlewareApi } = this;
-
     const { targets, trustedClaimIssuers, claimTypes, size, start } = opts;
 
-    let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
-        didsWithClaims({
-          dids: targets?.map(target => valueToDid(target)),
-          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-            valueToDid(trustedClaimIssuer)
-          ),
-          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-          count: size,
-          skip: start,
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
+    const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
+      didsWithClaims({
+        dids: targets?.map(target => valueToDid(target)),
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          valueToDid(trustedClaimIssuer)
+        ),
+        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        count: size,
+        skip: start,
+      })
+    );
 
     const {
       data: {

@@ -1186,7 +1186,7 @@ describe('Context class', () => {
         }
       );
 
-      const result = await context.issuedClaims({
+      let result = await context.issuedClaims({
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
@@ -1196,20 +1196,25 @@ describe('Context class', () => {
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(25);
       expect(result.next).toEqual(1);
-    });
 
-    test('should throw if the middleware query fails', async () => {
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
-      });
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({
+          dids: undefined,
+          trustedClaimIssuers: undefined,
+          claimTypes: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
+      );
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      result = await context.issuedClaims();
 
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(context.issuedClaims()).rejects.toThrow('Error in middleware query: Error');
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toBeNull();
     });
   });
 
