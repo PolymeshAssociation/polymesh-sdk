@@ -169,6 +169,7 @@ interface ContextOptions {
   transactionFee?: BigNumber;
   currentPairAddress?: string;
   issuedClaims?: ResultSet<ClaimData>;
+  masterKey?: string;
 }
 
 interface Pair {
@@ -364,6 +365,7 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 0,
   },
+  masterKey: 'someAccountKey',
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -386,6 +388,7 @@ function configureContext(opts: ContextOptions): void {
         hasRoles: sinon.stub().resolves(opts.hasRoles),
         hasValidCdd: sinon.stub().resolves(opts.validCdd),
         getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
+        getMasterKey: sinon.stub().resolves(opts.masterKey),
       })
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')
