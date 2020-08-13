@@ -17,5 +17,5 @@ export { transferPolyX, TransferPolyXParams } from './transferPolyX';
 export { transferToken, TransferTokenParams } from './transferToken';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 export { editProposal, EditProposalParams } from './editProposal';
-export { removeSigningItems } from './removeSigningItems';
+export { removeSigningItems, RemoveSigningItemsParams } from './removeSigningItems';
 export { cancelProposal } from './cancelProposal';

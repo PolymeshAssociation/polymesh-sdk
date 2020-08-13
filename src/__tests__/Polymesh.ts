@@ -1224,7 +1224,7 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      const args = [
+      const signers = [
         {
           type: SignerType.AccountKey,
           value: 'someAccountKey',
@@ -1235,10 +1235,10 @@ describe('Polymesh Class', () => {
 
       sinon
         .stub(removeSigningItems, 'prepare')
-        .withArgs(args, context)
+        .withArgs({ signers }, context)
         .resolves(expectedQueue);
 
-      const queue = await polymesh.removeMySigningKeys(args);
+      const queue = await polymesh.removeMySigningKeys({ signers });
 
       expect(queue).toBe(expectedQueue);
     });

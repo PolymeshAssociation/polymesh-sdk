@@ -5,12 +5,16 @@ import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Signer } from '~/types';
 import { signerToSignatory } from '~/utils';
 
+export interface RemoveSigningItemsParams {
+  signers: Signer[];
+}
+
 /**
  * @hidden
  */
 export async function prepareRemoveSigningItems(
-  this: Procedure<Signer[]>,
-  args: Signer[]
+  this: Procedure<RemoveSigningItemsParams>,
+  args: RemoveSigningItemsParams
 ): Promise<void> {
   const {
     context: {
@@ -18,6 +22,8 @@ export async function prepareRemoveSigningItems(
     },
     context,
   } = this;
+
+  const { signers } = args;
 
   const did = context.getCurrentIdentity().did;
   const identity = new Identity({ did }, context);
@@ -27,7 +33,7 @@ export async function prepareRemoveSigningItems(
     context.getSigningKeys(),
   ]);
 
-  const isMasterKeyPresent = find(args, ({ value }) => value === masterKey);
+  const isMasterKeyPresent = find(signers, ({ value }) => value === masterKey);
 
   if (isMasterKeyPresent) {
     throw new PolymeshError({
@@ -36,8 +42,8 @@ export async function prepareRemoveSigningItems(
     });
   }
 
-  const notInTheList = [];
-  args.forEach(({ value: itemValue }) => {
+  const notInTheList: string[] = [];
+  signers.forEach(({ value: itemValue }) => {
     const isPresent = signingKeys.find(({ value }) => value === itemValue);
     if (!isPresent) {
       notInTheList.push(itemValue);
@@ -48,20 +54,23 @@ export async function prepareRemoveSigningItems(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'You can not remove a signing key that is not present in your signing keys list',
+      data: {
+        missing: notInTheList,
+      },
     });
   }
 
   this.addTransaction(
     tx.identity.removeSigningItems,
     {},
-    args.map(signingItems => signerToSignatory(signingItems, context))
+    signers.map(signingItems => signerToSignatory(signingItems, context))
   );
 }
 
 /**
  * @hidden
  */
-export async function isAuthorized(this: Procedure<Signer[]>): Promise<boolean> {
+export async function isAuthorized(this: Procedure<RemoveSigningItemsParams>): Promise<boolean> {
   const { context } = this;
 
   const did = context.getCurrentIdentity().did;
