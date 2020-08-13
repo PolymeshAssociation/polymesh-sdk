@@ -223,7 +223,7 @@ export interface IdentityWithClaims {
 }
 
 export interface ClaimScope {
-  scope: string;
+  scope: string | null;
   ticker?: string;
 }
 

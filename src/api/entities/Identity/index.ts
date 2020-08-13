@@ -295,6 +295,8 @@ export class Identity extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve all scopes in which claims have been made for this identity.
    *   If the scope is an asset DID, the corresponding ticker is returned as well
+   *
+   * @note a null scope means the identity has scopeless claims (like CDD for example)
    */
   public async getClaimScopes(): Promise<ClaimScope[]> {
     const { context, did } = this;
@@ -314,7 +316,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
       }
 
       return {
-        scope,
+        scope: scope ?? null,
         ticker,
       };
     });

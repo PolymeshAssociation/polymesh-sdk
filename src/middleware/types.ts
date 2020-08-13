@@ -890,7 +890,7 @@ export type Claim = {
 
 export type ClaimScope = {
   __typename?: 'ClaimScope';
-  scope: Scalars['String'];
+  scope?: Maybe<Scalars['String']>;
   ticker?: Maybe<Scalars['String']>;
 };
 
