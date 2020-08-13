@@ -1,10 +1,10 @@
+import { AccountKey } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { isAuthorized, Params, prepareCancelProposal } from '~/api/procedures/cancelProposal';
 import * as proceduresUtilsModule from '~/api/procedures/utils';
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
-import { AccountKey } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';

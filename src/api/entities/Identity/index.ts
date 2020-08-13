@@ -5,11 +5,15 @@ import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
+import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
+  Ensured,
   ErrorCode,
   isCddProviderRole,
   isTickerOwnerRole,
   isTokenOwnerRole,
+  Order,
   Role,
   SubCallback,
   UnsubCallback,
@@ -19,6 +23,7 @@ import {
   balanceToBigNumber,
   cddStatusToBoolean,
   identityIdToString,
+  removePadding,
   stringToIdentityId,
   stringToTicker,
 } from '~/utils';
@@ -66,40 +71,40 @@ export class Identity extends Entity<UniqueIdentifiers> {
     this.authorizations = new Authorizations(this, context);
   }
 
-  // TODO: uncomment for v2
-  // public getPolyXBalance(): Promise<BigNumber>;
-  // public getPolyXBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+  /**
+   * Retrieve the POLYX balance of this particular Identity
+   *
+   * @note can be subscribed to
+   */
+  public getPolyXBalance(): Promise<BigNumber>;
+  public getPolyXBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
 
-  // /**
-  //  * Retrieve the POLYX balance of this particular Identity
-  //  *
-  //  * @note can be subscribed to
-  //  */
-  // public async getPolyXBalance(
-  //   callback?: SubCallback<BigNumber>
-  // ): Promise<BigNumber | UnsubCallback> {
-  //   const {
-  //     did,
-  //     context,
-  //     context: {
-  //       polymeshApi: {
-  //         query: { balances },
-  //       },
-  //     },
-  //   } = this;
+  // eslint-disable-next-line require-jsdoc
+  public async getPolyXBalance(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
+    const {
+      did,
+      context,
+      context: {
+        polymeshApi: {
+          query: { balances },
+        },
+      },
+    } = this;
 
-  //   const rawIdentityId = stringToIdentityId(did, context);
+    const rawIdentityId = stringToIdentityId(did, context);
 
-  //   if (callback) {
-  //     return balances.identityBalance(rawIdentityId, res => {
-  //       callback(balanceToBigNumber(res));
-  //     });
-  //   }
+    if (callback) {
+      return balances.identityBalance(rawIdentityId, res => {
+        callback(balanceToBigNumber(res));
+      });
+    }
 
-  //   const balance = await balances.identityBalance(rawIdentityId);
+    const balance = await balances.identityBalance(rawIdentityId);
 
-  //   return balanceToBigNumber(balance);
-  // }
+    return balanceToBigNumber(balance);
+  }
 
   /**
    * Check whether this Identity possesses the specified Role
@@ -140,17 +145,18 @@ export class Identity extends Entity<UniqueIdentifiers> {
     });
   }
 
+  /**
+   * Retrieve the balance of a particular Security Token
+   *
+   * @note can be subscribed to
+   */
   public getTokenBalance(args: { ticker: string }): Promise<BigNumber>;
   public getTokenBalance(
     args: { ticker: string },
     callback: SubCallback<BigNumber>
   ): Promise<UnsubCallback>;
 
-  /**
-   * Retrieve the balance of a particular Security Token
-   *
-   * @note can be subscribed to
-   */
+  // eslint-disable-next-line require-jsdoc
   public async getTokenBalance(
     args: { ticker: string },
     callback?: SubCallback<BigNumber>
@@ -168,6 +174,15 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
     const rawTicker = stringToTicker(ticker, context);
     const rawIdentityId = stringToIdentityId(did, context);
+
+    const token = await asset.tokens(rawTicker);
+
+    if (token.owner_did.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `There is no Security Token with ticker "${ticker}"`,
+      });
+    }
 
     if (callback) {
       return asset.balanceOf(rawTicker, rawIdentityId, res => {
@@ -254,5 +269,24 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const checkedRoles = await Promise.all(roles.map(this.hasRole.bind(this)));
 
     return checkedRoles.every(hasRole => hasRole);
+  }
+
+  /**
+   * Get the list of tokens for which this identity is a trusted claim issuer
+   */
+  public async getTrustingTokens(
+    args: { order: Order } = { order: Order.Asc }
+  ): Promise<SecurityToken[]> {
+    const { context, did } = this;
+
+    const { order } = args;
+
+    const {
+      data: { tokensByTrustedClaimIssuer: tickers },
+    } = await context.queryMiddleware<Ensured<Query, 'tokensByTrustedClaimIssuer'>>(
+      tokensByTrustedClaimIssuer({ claimIssuerDid: did, order })
+    );
+
+    return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
   }
 }

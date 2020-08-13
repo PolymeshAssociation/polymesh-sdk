@@ -5,8 +5,10 @@ import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
+import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
+import { Mocked } from '~/testUtils/types';
+import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
 import * as utilsModule from '~/utils';
 
 import { Identity } from '../';
@@ -66,25 +68,49 @@ describe('Identity class', () => {
     });
   });
 
-  // TODO: uncomment for v2
-  // describe('method: getPolyXBalance', () => {
-  //   test("should return the identity's POLYX balance", async () => {
-  //     const did = 'someDid';
-  //     const fakeBalance = new BigNumber(100);
-  //     const rawIdentityId = dsMockUtils.createMockIdentityId(did);
-  //     const mockContext = dsMockUtils.getContextInstance();
+  describe('method: getPolyXBalance', () => {
+    let did: string;
+    let fakeBalance: BigNumber;
+    let rawIdentityId: IdentityId;
+    let mockContext: Mocked<Context>;
+    let identityBalanceStub: sinon.SinonStub;
 
-  //     stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
+    beforeAll(() => {
+      did = 'someDid';
+      fakeBalance = new BigNumber(100);
+      rawIdentityId = dsMockUtils.createMockIdentityId(did);
+      mockContext = dsMockUtils.getContextInstance();
+    });
 
-  //     dsMockUtils
-  //       .createQueryStub('balances', 'identityBalance')
-  //       .resolves(fakeBalance.times(Math.pow(10, 6)));
+    beforeEach(() => {
+      identityBalanceStub = dsMockUtils.createQueryStub('balances', 'identityBalance');
+      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
+    });
 
-  //     const identity = new Identity({ did }, context);
-  //     const result = await identity.getPolyXBalance();
-  //     expect(result).toEqual(fakeBalance);
-  //   });
-  // });
+    test("should return the identity's POLYX balance", async () => {
+      identityBalanceStub.resolves(fakeBalance.times(Math.pow(10, 6)));
+
+      const identity = new Identity({ did }, context);
+      const result = await identity.getPolyXBalance();
+      expect(result).toEqual(fakeBalance);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const callback = sinon.stub();
+
+      identityBalanceStub.callsFake(async (_a, cbFunc) => {
+        cbFunc(fakeBalance.times(Math.pow(10, 6)));
+        return unsubCallback;
+      });
+
+      const identity = new Identity({ did }, context);
+      const result = await identity.getPolyXBalance(callback);
+
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeBalance);
+    });
+  });
 
   describe('method: hasRole and hasRoles', () => {
     beforeAll(() => {
@@ -200,6 +226,7 @@ describe('Identity class', () => {
     let fakeBalance: Balance;
     let mockContext: Context;
     let balanceOfStub: sinon.SinonStub;
+    let tokensStub: sinon.SinonStub;
 
     let identity: Identity;
 
@@ -212,6 +239,7 @@ describe('Identity class', () => {
       fakeBalance = dsMockUtils.createMockBalance(fakeValue.toNumber());
       mockContext = dsMockUtils.getContextInstance();
       balanceOfStub = dsMockUtils.createQueryStub('asset', 'balanceOf');
+      tokensStub = dsMockUtils.createQueryStub('asset', 'tokens');
 
       stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
 
@@ -228,9 +256,20 @@ describe('Identity class', () => {
         .returns(fakeValue);
     });
 
-    // afterEach(() => {
-    //   balanceOfStub.reset();
-    // });
+    beforeEach(() => {
+      /* eslint-disable @typescript-eslint/camelcase */
+      tokensStub.withArgs(rawTicker).resolves(
+        dsMockUtils.createMockSecurityToken({
+          owner_did: dsMockUtils.createMockIdentityId('tokenOwner'),
+          total_supply: dsMockUtils.createMockBalance(3000),
+          divisible: dsMockUtils.createMockBool(true),
+          asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
+          link_id: dsMockUtils.createMockU64(1),
+          name: dsMockUtils.createMockAssetName('someToken'),
+        })
+      );
+      /* eslint-enable @typescript-eslint/camelcase */
+    });
 
     test('should return the balance of a given token', async () => {
       balanceOfStub.withArgs(rawTicker, rawIdentityId).resolves(fakeBalance);
@@ -253,6 +292,20 @@ describe('Identity class', () => {
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeValue);
+    });
+
+    test("should throw an error if the token doesn't exist", async () => {
+      tokensStub.withArgs(rawTicker).resolves(dsMockUtils.createMockSecurityToken());
+
+      let error;
+
+      try {
+        await identity.getTokenBalance({ ticker });
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error.message).toBe(`There is no Security Token with ticker "${ticker}"`);
     });
   });
 
@@ -354,6 +407,27 @@ describe('Identity class', () => {
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, accountKey);
+    });
+  });
+
+  describe('method: getTrustingTokens', () => {
+    const did = 'someDid';
+    const tickers = ['TOKEN1\0\0', 'TOKEN2\0\0'];
+
+    test('should return a list of security tokens', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloQueryStub(
+        tokensByTrustedClaimIssuer({ claimIssuerDid: did, order: Order.Asc }),
+        {
+          tokensByTrustedClaimIssuer: tickers,
+        }
+      );
+
+      const result = await identity.getTrustingTokens();
+
+      expect(result[0].ticker).toBe('TOKEN1');
+      expect(result[1].ticker).toBe('TOKEN2');
     });
   });
 });

@@ -32,6 +32,8 @@ import {
   AssetIdentifier,
   AssetName,
   AssetTransferRule,
+  AssetTransferRuleResult,
+  AssetTransferRulesResult,
   AssetType,
   AuthIdentifier,
   Authorization,
@@ -364,7 +366,7 @@ function configureContext(opts: ContextOptions): void {
   const getCurrentIdentity = sinon.stub();
   opts.withSeed
     ? getCurrentIdentity.returns({
-        getPolyXBalance: sinon.stub().resolves(opts.balance),
+        getPolyXBalance: sinon.stub().resolves(opts.balance?.free),
         did: opts.did,
         hasRoles: sinon.stub().resolves(opts.hasRoles),
         hasValidCdd: sinon.stub().resolves(opts.validCdd),
@@ -397,6 +399,9 @@ function configureContext(opts: ContextOptions): void {
     }),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
+    queryMiddleware: sinon
+      .stub()
+      .callsFake(query => mockInstanceContainer.apolloInstance.query(query)),
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
@@ -807,6 +812,8 @@ export function createQueryStub<
   return stub;
 }
 
+let count = 0;
+
 /**
  * @hidden
  * Create and return a rpc stub
@@ -832,6 +839,8 @@ export function createRpcStub(
   if (opts?.returnValue) {
     stub.resolves(opts.returnValue);
   }
+
+  (stub as any).count = count++;
 
   return stub;
 }
@@ -1541,6 +1550,51 @@ export const createMockAssetTransferRule = (
     },
     false
   ) as AssetTransferRule;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetTransferRuleResult = (
+  assetTransferRuleResult: {
+    sender_rules: Rule[];
+    receiver_rules: Rule[];
+    rule_id: u32;
+    transfer_rule_result: bool;
+  } = {
+    sender_rules: [],
+    receiver_rules: [],
+    rule_id: createMockU32(),
+    transfer_rule_result: createMockBool(),
+  }
+): AssetTransferRuleResult =>
+  createMockCodec(
+    {
+      sender_rules: assetTransferRuleResult.sender_rules,
+      receiver_rules: assetTransferRuleResult.receiver_rules,
+      rule_id: assetTransferRuleResult.rule_id,
+      transfer_rule_result: assetTransferRuleResult.transfer_rule_result,
+    },
+    false
+  ) as AssetTransferRuleResult;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetTransferRulesResult = (assetTransferRulesResult: {
+  is_paused: bool;
+  rules: AssetTransferRuleResult[];
+  final_result: bool;
+}): AssetTransferRulesResult =>
+  createMockCodec(
+    {
+      is_paused: assetTransferRulesResult.is_paused,
+      rules: assetTransferRulesResult.rules,
+      final_result: assetTransferRulesResult.final_result,
+    },
+    false
+  ) as AssetTransferRulesResult;
 
 /**
  * @hidden

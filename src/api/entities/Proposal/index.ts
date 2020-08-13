@@ -1,13 +1,12 @@
-import { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities/Identity';
 import { cancelProposal, editProposal, EditProposalParams } from '~/api/procedures';
-import { Entity, PolymeshError, TransactionQueue } from '~/base';
+import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, ErrorCode, ResultSet } from '~/types';
+import { Ensured, ResultSet } from '~/types';
 import { meshProposalStateToProposalState, u32ToBigNumber, valueToDid } from '~/utils';
 
 import { ProposalDetails, ProposalStage, ProposalVote, ProposalVotesOrderByInput } from './types';
@@ -55,11 +54,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
    * @param args.did - identity representation or identity ID as stored in the blockchain
    */
   public async identityHasVoted(args?: { did: string | Identity }): Promise<boolean> {
-    const {
-      context: { middlewareApi },
-      pipId,
-      context,
-    } = this;
+    const { pipId, context } = this;
 
     let identity: string;
 
@@ -69,22 +64,14 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       identity = context.getCurrentIdentity().did;
     }
 
-    let result: ApolloQueryResult<Ensured<Query, 'eventByIndexedArgs'>>;
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'eventByIndexedArgs'>>(
-        eventByIndexedArgs({
-          moduleId: ModuleIdEnum.Pips,
-          eventId: EventIdEnum.Voted,
-          eventArg0: identity,
-          eventArg2: pipId.toString(),
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
+    const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+      eventByIndexedArgs({
+        moduleId: ModuleIdEnum.Pips,
+        eventId: EventIdEnum.Voted,
+        eventArg0: identity,
+        eventArg2: pipId.toString(),
+      })
+    );
 
     if (result.data.eventByIndexedArgs) {
       return true;
@@ -109,31 +96,19 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       start?: number;
     } = {}
   ): Promise<ResultSet<ProposalVote>> {
-    const {
-      context: { middlewareApi },
-      pipId,
-      context,
-    } = this;
+    const { pipId, context } = this;
 
     const { vote, orderBy, size, start } = opts;
 
-    let result: ApolloQueryResult<Ensured<Query, 'proposalVotes'>>;
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'proposalVotes'>>(
-        proposalVotes({
-          pipId,
-          vote,
-          orderBy,
-          count: size,
-          skip: start,
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
+    const result = await context.queryMiddleware<Ensured<Query, 'proposalVotes'>>(
+      proposalVotes({
+        pipId,
+        vote,
+        orderBy,
+        count: size,
+        skip: start,
+      })
+    );
 
     const data = result.data.proposalVotes.map(({ account: did, vote: proposalVote, weight }) => {
       return {
