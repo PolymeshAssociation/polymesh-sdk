@@ -2,7 +2,7 @@ import sinon from 'sinon';
 
 import { isAuthorized, prepareRemoveSigningItems } from '~/api/procedures/removeSigningItems';
 import { Context } from '~/context';
-import { Signatory } from '~/polkadot';
+import { Signatory } from 'polymesh-types/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Signer, SignerType } from '~/types';
