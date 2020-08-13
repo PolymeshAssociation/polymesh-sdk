@@ -19,8 +19,7 @@ export async function prepareRemoveSigningItems(
     context,
   } = this;
 
-  const did = context.getCurrentIdentity().did;
-  const identity = new Identity({ did }, context);
+  const identity = context.getCurrentIdentity();
 
   const [masterKey, signingKeys] = await Promise.all([
     identity.getMasterKey(),
