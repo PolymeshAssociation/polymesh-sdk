@@ -63,8 +63,7 @@ export async function prepareRemoveSigningItems(
 export async function isAuthorized(this: Procedure<Signer[]>): Promise<boolean> {
   const { context } = this;
 
-  const did = context.getCurrentIdentity().did;
-  const identity = new Identity({ did }, context);
+  const identity = context.getCurrentIdentity();
   const masterKey = await identity.getMasterKey();
 
   return masterKey === context.getCurrentPair().address;
