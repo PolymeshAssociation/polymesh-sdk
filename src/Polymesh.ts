@@ -1,7 +1,7 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
-import { ApolloClient, ApolloQueryResult } from 'apollo-client';
+import { ApolloClient } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
@@ -216,16 +216,16 @@ export class Polymesh {
     return transferPolyX.prepare(args, this.context);
   }
 
-  // TODO: uncomment for v2
-  /*
-   * Get the POLYX balance of the current account
-   * NOTE: We don't expose this method for Testnet v1
+  /**
+   * Get the POLYX balance of an identity
    */
-  /*
-  public getIdentityBalance(): Promise<BigNumber> {
-    return this.context.getCurrentIdentity().getPolyXBalance();
+  public getIdentityBalance(args?: { did: string | Identity }): Promise<BigNumber> {
+    let identityArgs;
+    if (args) {
+      identityArgs = { did: valueToDid(args.did) };
+    }
+    return this.getIdentity(identityArgs).getPolyXBalance();
   }
-  */
 
   /**
    * Get the free/locked POLYX balance of an account
@@ -581,34 +581,22 @@ export class Polymesh {
       start?: number;
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
-    const {
-      context,
-      context: { middlewareApi },
-    } = this;
+    const { context } = this;
 
     const { targets, trustedClaimIssuers, scope, claimTypes, size, start } = opts;
 
-    let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
-
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
-        didsWithClaims({
-          dids: targets?.map(target => valueToDid(target)),
-          scope,
-          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-            valueToDid(trustedClaimIssuer)
-          ),
-          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-          count: size,
-          skip: start,
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
+    const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
+      didsWithClaims({
+        dids: targets?.map(target => valueToDid(target)),
+        scope,
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          valueToDid(trustedClaimIssuer)
+        ),
+        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        count: size,
+        skip: start,
+      })
+    );
 
     const {
       data: {

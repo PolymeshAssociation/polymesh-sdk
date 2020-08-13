@@ -32,6 +32,7 @@ import {
   TransactionArgumentType,
   UnsubCallback,
 } from '~/types';
+import { GraphqlQuery } from '~/types/internal';
 import {
   balanceToBigNumber,
   calculateNextKey,
@@ -642,5 +643,25 @@ export class Context {
     }
 
     return _middlewareApi;
+  }
+
+  /**
+   *
+   * @param query
+   */
+  public async queryMiddleware<Result extends Partial<Query>>(
+    query: GraphqlQuery<unknown>
+  ): Promise<ApolloQueryResult<Result>> {
+    let result: ApolloQueryResult<Result>;
+    try {
+      result = await this.middlewareApi.query(query);
+    } catch (e) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `Error in middleware query: ${e.message}`,
+      });
+    }
+
+    return result;
   }
 }

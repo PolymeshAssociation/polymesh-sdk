@@ -9,6 +9,7 @@ import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountKey } from '~/testUtils/mocks/dataSources';
 import { ClaimType, SignerType, TransactionArgumentType } from '~/types';
+import { GraphqlQuery } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -1117,6 +1118,7 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'Alice'.padEnd(32, ' '),
       });
+
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
@@ -1208,6 +1210,49 @@ describe('Context class', () => {
       dsMockUtils.throwOnMiddlewareQuery();
 
       return expect(context.issuedClaims()).rejects.toThrow('Error in middleware query: Error');
+    });
+  });
+
+  describe('method: queryMiddleware', () => {
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+    });
+
+    test('should throw if the middleware query fails', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      return expect(
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware query: Error');
+    });
+
+    test('should perform a middleware query and return the results', async () => {
+      const fakeResult = 'res';
+      const fakeQuery = ('fakeQuery' as unknown) as GraphqlQuery<unknown>;
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
+
+      const res = await context.queryMiddleware(fakeQuery);
+
+      expect(res.data).toBe(fakeResult);
     });
   });
 });
