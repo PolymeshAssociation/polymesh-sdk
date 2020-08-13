@@ -46,7 +46,7 @@ export async function prepareRemoveSigningItems(
   if (notInTheList.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You can not remove a signing key that is not present in your signing keys list',
+      message: 'You cannot remove a signing key that is not present in your signing keys list',
     });
   }
 
