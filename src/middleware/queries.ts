@@ -5,6 +5,7 @@ import {
   QueryEventsByIndexedArgsArgs,
   QueryProposalsArgs,
   QueryProposalVotesArgs,
+  QueryScopesByIdentityArgs,
   QueryTokensByTrustedClaimIssuerArgs,
 } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
@@ -188,6 +189,29 @@ export function tokensByTrustedClaimIssuer(
   const query = gql`
     query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!, $order: Order) {
       tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid, order: $order)
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the scopes (and ticker, if applicable) of claims issued on an identity
+ */
+export function scopesByIdentity(
+  variables: QueryScopesByIdentityArgs
+): GraphqlQuery<QueryScopesByIdentityArgs> {
+  const query = gql`
+    query ScopesByIdentityQuery($did: String!) {
+      scopesByIdentity(did: $did) {
+        scope
+        ticker
+      }
     }
   `;
 

@@ -5,10 +5,11 @@ import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
-import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { scopesByIdentity,tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import { ClaimScope as MiddlewareClaimScope,Query } from '~/middleware/types';
 import {
   ClaimData,
+  ClaimScope,
   ClaimType,
   Ensured,
   ErrorCode,
@@ -24,6 +25,7 @@ import {
 import {
   accountKeyToString,
   balanceToBigNumber,
+  calculateNextKey,
   cddStatusToBoolean,
   identityIdToString,
   removePadding,
@@ -289,6 +291,34 @@ export class Identity extends Entity<UniqueIdentifiers> {
     });
 
     return result;
+  }
+
+  /**
+   * Retrieve all scopes in which claims have been made for this identity.
+   *   If the scope is an asset DID, the corresponding ticker is returned as well
+   */
+  public async getClaimScopes(): Promise<ClaimScope[]> {
+    const { context, did } = this;
+
+    const {
+      data: { scopesByIdentity: scopes },
+    } = await context.queryMiddleware<Ensured<Query, 'scopesByIdentity'>>(
+      scopesByIdentity({ did })
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return scopes.map(({ scope, ticker: symbol }) => {
+      let ticker: string | undefined;
+
+      if (symbol) {
+        ticker = removePadding(symbol);
+      }
+
+      return {
+        scope,
+        ticker,
+      };
+    });
   }
 
   /**

@@ -5,7 +5,7 @@ import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
-import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import { scopesByIdentity,tokensByTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -467,6 +467,34 @@ describe('Identity class', () => {
 
       expect(result[0].ticker).toBe('TOKEN1');
       expect(result[1].ticker).toBe('TOKEN2');
+    });
+  });
+
+  describe('method: getClaimScopes', () => {
+    const did = 'someDid';
+    const scopes = [
+      {
+        scope: 'someScope',
+        ticker: 'TOKEN\0\0',
+      },
+      {
+        scope: 'otherScope',
+      },
+    ];
+
+    test('should return a list of scopes and tickers', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloQueryStub(scopesByIdentity({ did }), {
+        scopesByIdentity: scopes,
+      });
+
+      const result = await identity.getClaimScopes();
+
+      expect(result[0].ticker).toBe('TOKEN');
+      expect(result[0].scope).toBe('someScope');
+      expect(result[1].ticker).toBeUndefined();
+      expect(result[1].scope).toBe('otherScope');
     });
   });
 });

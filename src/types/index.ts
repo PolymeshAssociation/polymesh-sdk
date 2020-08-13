@@ -222,6 +222,11 @@ export interface IdentityWithClaims {
   claims: ClaimData[];
 }
 
+export interface ClaimScope {
+  scope: string;
+  ticker?: string;
+}
+
 export enum ConditionType {
   IsPresent = 'IsPresent',
   IsAbsent = 'IsAbsent',
