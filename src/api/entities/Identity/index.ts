@@ -8,12 +8,15 @@ import { Context } from '~/context';
 import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
+  ClaimData,
+  ClaimType,
   Ensured,
   ErrorCode,
   isCddProviderRole,
   isTickerOwnerRole,
   isTokenOwnerRole,
   Order,
+  ResultSet,
   Role,
   SubCallback,
   UnsubCallback,
@@ -260,6 +263,32 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
     const didRecords = await identity.didRecords(did);
     return assembleResult(didRecords);
+  }
+
+  /**
+   * Retrieve the list of cdd claims for the current identity
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   */
+  public async getCddClaims(
+    opts: {
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<ClaimData>> {
+    const { context, did } = this;
+
+    const { size, start } = opts;
+
+    const result = await context.issuedClaims({
+      targets: [did],
+      claimTypes: [ClaimType.CustomerDueDiligence],
+      size,
+      start,
+    });
+
+    return result;
   }
 
   /**

@@ -553,42 +553,13 @@ export class Polymesh {
     const { size, start } = opts;
     const { did } = context.getCurrentIdentity();
 
-    const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
-        trustedClaimIssuers: [did],
-        count: size,
-        skip: start,
-      })
-    );
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
-      },
-    } = result;
-    const data: ClaimData[] = [];
-
-    didsWithClaimsList.forEach(({ claims }) => {
-      claims.forEach(
-        ({ targetDID, issuer, issuance_date: issuanceDate, expiry, type, jurisdiction, scope }) => {
-          data.push({
-            target: new Identity({ did: targetDID }, context),
-            issuer: new Identity({ did: issuer }, context),
-            issuedAt: new Date(issuanceDate),
-            expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, scope),
-          });
-        }
-      );
+    const result = await context.issuedClaims({
+      trustedClaimIssuers: [did],
+      size,
+      start,
     });
 
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
+    return result;
   }
 
   /**

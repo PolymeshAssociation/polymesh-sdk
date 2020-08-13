@@ -8,7 +8,16 @@ import { Context } from '~/context';
 import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
+import {
+  ClaimData,
+  ClaimType,
+  Order,
+  ResultSet,
+  Role,
+  RoleType,
+  TickerOwnerRole,
+  TokenOwnerRole,
+} from '~/types';
 import * as utilsModule from '~/utils';
 
 import { Identity } from '../';
@@ -354,6 +363,36 @@ describe('Identity class', () => {
       const result = await identity.isGcMember();
 
       expect(result).toBeTruthy();
+    });
+  });
+
+  describe('method: getCddClaims', () => {
+    test('should return a list of cdd claims', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const issuedClaims: ResultSet<ClaimData> = {
+        data: [
+          {
+            target: new Identity({ did }, context),
+            issuer: new Identity({ did: 'otherDid' }, context),
+            issuedAt: new Date(),
+            expiry: null,
+            claim: { type: ClaimType.CustomerDueDiligence },
+          },
+        ],
+        next: 1,
+        count: 1,
+      };
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          issuedClaims,
+        },
+      });
+
+      const result = await identity.getCddClaims();
+      expect(result).toEqual(issuedClaims);
     });
   });
 
