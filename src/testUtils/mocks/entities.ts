@@ -42,6 +42,7 @@ interface IdentityOptions {
   hasRoles?: boolean;
   hasRole?: boolean;
   hasValidCdd?: boolean;
+  getMasterKey?: string;
 }
 
 interface TickerReservationOptions {
@@ -87,6 +88,7 @@ let securityTokenCurrentFundingRoundStub: SinonStub;
 let securityTokenTransfersAreFrozenStub: SinonStub;
 let securityTokenTransfersCanTransferStub: SinonStub;
 let securityTokenTransfersCanMintStub: SinonStub;
+let identityGetMasterKeyStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -162,6 +164,7 @@ const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   getPolyXBalance: new BigNumber(100),
   hasValidCdd: true,
+  getMasterKey: 'someAccountKey',
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultTickerReservationOptions: TickerReservationOptions = {
@@ -346,6 +349,7 @@ function configureIdentity(opts: IdentityOptions): void {
     hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
+    getMasterKey: identityGetMasterKeyStub.resolves(opts.getMasterKey),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -364,6 +368,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRolesStub = sinon.stub();
   identityHasRoleStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
+  identityGetMasterKeyStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -513,6 +518,14 @@ export function getIdentityHasRoleStub(): SinonStub {
  */
 export function getIdentityHasValidCddStub(): SinonStub {
   return identityHasValidCddStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Identity.getMasterKey` method
+ */
+export function getIdentityGetMasterKeyStub(): SinonStub {
+  return identityGetMasterKeyStub;
 }
 
 /**
