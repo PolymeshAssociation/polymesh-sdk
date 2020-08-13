@@ -1,6 +1,5 @@
 import { find } from 'lodash';
 
-import { Identity } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Signer } from '~/types';
 import { signerToSignatory } from '~/utils';
@@ -25,8 +24,8 @@ export async function prepareRemoveSigningItems(
 
   const { signers } = args;
 
-  const did = context.getCurrentIdentity().did;
-  const identity = new Identity({ did }, context);
+  const identity = context.getCurrentIdentity();
+  console.log(identity);
 
   const [masterKey, signingKeys] = await Promise.all([
     identity.getMasterKey(),
@@ -38,7 +37,7 @@ export async function prepareRemoveSigningItems(
   if (isMasterKeyPresent) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You can not remove a master key',
+      message: 'You cannot remove the master key',
     });
   }
 
@@ -53,7 +52,7 @@ export async function prepareRemoveSigningItems(
   if (notInTheList.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You can not remove a signing key that is not present in your signing keys list',
+      message: 'You cannot remove a signing key that is not present in your signing keys list',
       data: {
         missing: notInTheList,
       },
@@ -73,8 +72,7 @@ export async function prepareRemoveSigningItems(
 export async function isAuthorized(this: Procedure<RemoveSigningItemsParams>): Promise<boolean> {
   const { context } = this;
 
-  const did = context.getCurrentIdentity().did;
-  const identity = new Identity({ did }, context);
+  const identity = context.getCurrentIdentity();
   const masterKey = await identity.getMasterKey();
 
   return masterKey === context.getCurrentPair().address;

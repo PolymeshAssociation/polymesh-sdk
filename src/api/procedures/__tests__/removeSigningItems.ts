@@ -1,3 +1,4 @@
+import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -6,7 +7,6 @@ import {
   RemoveSigningItemsParams,
 } from '~/api/procedures/removeSigningItems';
 import { Context } from '~/context';
-import { Signatory } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Signer, SignerType } from '~/types';
