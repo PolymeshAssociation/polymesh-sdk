@@ -36,6 +36,7 @@ import {
   CommonKeyring,
   Ensured,
   ErrorCode,
+  ExtrinsicData,
   IdentityWithClaims,
   LinkType,
   MiddlewareConfig,
@@ -712,7 +713,7 @@ export class Polymesh {
       start?: number;
       orderBy?: TransactionOrderByInput;
     } = {}
-  ): Promise<ResultSet<Extrinsic>> {
+  ): Promise<ResultSet<ExtrinsicData>> {
     const { context } = this;
 
     const { blockId, address, moduleId, callId, success, size, start, orderBy } = opts;
@@ -737,7 +738,9 @@ export class Polymesh {
       },
     } = result;
 
-    const data = transactionList.map(
+    const data: ExtrinsicData[] = [];
+
+    transactionList.forEach(
       ({
         block_id,
         extrinsic_idx,
@@ -753,22 +756,23 @@ export class Polymesh {
         success: txSuccess,
         spec_version_id,
         extrinsic_hash,
-      }) => ({
-        blockId: block_id,
-        extrinsicIdx: extrinsic_idx,
-        extrinsicVersion: extrinsic_version,
-        signed,
-        address: rawAddress,
-        nonce,
-        era,
-        call,
-        moduleId: module_id,
-        callId: call_id,
-        params,
-        success: txSuccess,
-        specVersionId: spec_version_id,
-        extrinsicHash: extrinsic_hash,
-      })
+      }) =>
+        data.push({
+          blockId: block_id,
+          extrinsicIdx: extrinsic_idx,
+          extrinsicVersion: extrinsic_version,
+          signed,
+          address: rawAddress,
+          nonce,
+          era,
+          call,
+          moduleId: module_id,
+          callId: call_id,
+          params,
+          success: txSuccess,
+          specVersionId: spec_version_id,
+          extrinsicHash: extrinsic_hash,
+        })
     );
     /* eslint-enable @typescript-eslint/camelcase */
 

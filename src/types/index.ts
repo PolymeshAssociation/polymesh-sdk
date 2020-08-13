@@ -3,6 +3,7 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 
 export enum TransactionStatus {
   /**
@@ -220,6 +221,23 @@ export interface ClaimData {
 export interface IdentityWithClaims {
   identity: Identity;
   claims: ClaimData[];
+}
+
+export interface ExtrinsicData {
+  blockId?: number | null;
+  extrinsicIdx?: number | null;
+  extrinsicVersion?: string | null;
+  signed?: number | null;
+  address?: string | null;
+  nonce?: number | null;
+  era?: string | null;
+  call?: string | null;
+  moduleId?: ModuleIdEnum | null;
+  callId?: CallIdEnum | null;
+  params?: object | null;
+  success?: number | null;
+  specVersionId?: number | null;
+  extrinsicHash?: string | null;
 }
 
 export enum ConditionType {
