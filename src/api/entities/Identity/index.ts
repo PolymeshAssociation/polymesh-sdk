@@ -5,8 +5,8 @@ import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
-import { scopesByIdentity,tokensByTrustedClaimIssuer } from '~/middleware/queries';
-import { ClaimScope as MiddlewareClaimScope,Query } from '~/middleware/types';
+import { scopesByIdentity, tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   ClaimData,
   ClaimScope,
@@ -25,7 +25,6 @@ import {
 import {
   accountKeyToString,
   balanceToBigNumber,
-  calculateNextKey,
   cddStatusToBoolean,
   identityIdToString,
   removePadding,
