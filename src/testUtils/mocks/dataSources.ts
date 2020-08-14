@@ -72,9 +72,10 @@ import {
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
+import { Identity } from '~/api/entities';
 import { Context } from '~/context';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, KeyringPair, SignerType } from '~/types';
+import { AccountBalance, ClaimData, ClaimType, KeyringPair, ResultSet, SignerType } from '~/types';
 import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
 
@@ -167,6 +168,8 @@ interface ContextOptions {
   invalidDids?: string[];
   transactionFee?: BigNumber;
   currentPairAddress?: string;
+  issuedClaims?: ResultSet<ClaimData>;
+  masterKey?: string;
 }
 
 interface Pair {
@@ -349,6 +352,20 @@ const defaultContextOptions: ContextOptions = {
   invalidDids: [],
   transactionFee: new BigNumber(200),
   currentPairAddress: '0xdummy',
+  issuedClaims: {
+    data: [
+      {
+        target: ('targetIdentity' as unknown) as Identity,
+        issuer: ('issuerIdentity' as unknown) as Identity,
+        issuedAt: new Date(),
+        expiry: null,
+        claim: { type: ClaimType.NoData },
+      },
+    ],
+    next: 1,
+    count: 0,
+  },
+  masterKey: 'someAccountKey',
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -371,6 +388,7 @@ function configureContext(opts: ContextOptions): void {
         hasRoles: sinon.stub().resolves(opts.hasRoles),
         hasValidCdd: sinon.stub().resolves(opts.validCdd),
         getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
+        getMasterKey: sinon.stub().resolves(opts.masterKey),
       })
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')
@@ -415,6 +433,7 @@ function configureContext(opts: ContextOptions): void {
           ]
         : []
     ),
+    issuedClaims: sinon.stub().resolves(opts.issuedClaims),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);

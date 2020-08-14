@@ -50,7 +50,7 @@ export type Query = {
   /** Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers */
   didsWithClaims: IdentityWithClaimsResult;
   /** Get all scopes with at least one claim for a given identityId */
-  scopesByIdentity: Array<Maybe<Scalars['String']>>;
+  scopesByIdentity: Array<ClaimScope>;
   /** Get all token tickers where given Did is a default Trusted Claim Issuer */
   tokensByTrustedClaimIssuer: Array<Scalars['String']>;
   /** Get all tickers of tokens that were held at some point by the given did */
@@ -163,8 +163,6 @@ export type QueryDidsWithClaimsArgs = {
 
 export type QueryScopesByIdentityArgs = {
   did: Scalars['String'];
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
 };
 
 export type QueryTokensByTrustedClaimIssuerArgs = {
@@ -888,6 +886,12 @@ export type Claim = {
   type: ClaimTypeEnum;
   jurisdiction?: Maybe<Scalars['String']>;
   scope?: Maybe<Scalars['String']>;
+};
+
+export type ClaimScope = {
+  __typename?: 'ClaimScope';
+  scope?: Maybe<Scalars['String']>;
+  ticker?: Maybe<Scalars['String']>;
 };
 
 export type FailedPolyxTransfer = {

@@ -13,6 +13,7 @@ import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
   modifyClaims,
   ModifyClaimsParams,
+  removeSigningItems,
   reserveTicker,
   ReserveTickerParams,
   transferPolyX,
@@ -556,42 +557,13 @@ export class Polymesh {
     const { size, start } = opts;
     const { did } = context.getCurrentIdentity();
 
-    const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
-        trustedClaimIssuers: [did],
-        count: size,
-        skip: start,
-      })
-    );
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
-      },
-    } = result;
-    const data: ClaimData[] = [];
-
-    didsWithClaimsList.forEach(({ claims }) => {
-      claims.forEach(
-        ({ targetDID, issuer, issuance_date: issuanceDate, expiry, type, jurisdiction, scope }) => {
-          data.push({
-            target: new Identity({ did: targetDID }, context),
-            issuer: new Identity({ did: issuer }, context),
-            issuedAt: new Date(issuanceDate),
-            expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, scope),
-          });
-        }
-      );
+    const result = await context.issuedClaims({
+      trustedClaimIssuers: [did],
+      size,
+      start,
     });
 
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
+    return result;
   }
 
   /**
@@ -822,6 +794,13 @@ export class Polymesh {
     }
 
     return context.getSigningKeys();
+  }
+
+  /**
+   * Remove a list of signing keys associated with the current identity
+   */
+  public removeMySigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
+    return removeSigningItems.prepare(args, this.context);
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

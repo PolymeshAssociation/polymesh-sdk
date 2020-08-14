@@ -13,6 +13,7 @@ import {
   eventByIndexedArgs,
   proposals,
   proposalVotes,
+  scopesByIdentity,
   tokensByTrustedClaimIssuer,
   transactions,
 } from '../queries';
@@ -113,6 +114,18 @@ describe('transactions', () => {
       address: 'someAddress',
     };
     result = transactions(variables);
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('scopesByIdentity', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      did: 'someDid',
+    };
+
+    const result = scopesByIdentity(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

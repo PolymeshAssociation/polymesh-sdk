@@ -7,7 +7,7 @@ import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { modifyClaims, reserveTicker, transferPolyX } from '~/api/procedures';
+import { modifyClaims, removeSigningItems, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { didsWithClaims, transactions } from '~/middleware/queries';
 import {
@@ -21,8 +21,10 @@ import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   AccountBalance,
+  ClaimData,
   ClaimTargets,
   ClaimType,
+  ResultSet,
   Signer,
   SignerType,
   SubCallback,
@@ -672,117 +674,32 @@ describe('Polymesh Class', () => {
   describe('method: getIssuedClaims', () => {
     test('should return a list of issued claims', async () => {
       const context = dsMockUtils.getContextInstance();
-      const targetDid = 'someTargetDid';
-      const issuerDid = 'someIssuerDid';
-      const date = 1589816265000;
-      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
-      const jurisdictionType = ClaimTypeEnum.Jurisdiction;
-      const exemptedType = ClaimTypeEnum.Exempted;
-      const claim = {
-        target: new Identity({ did: targetDid }, context),
-        issuer: new Identity({ did: issuerDid }, context),
-        issuedAt: new Date(date),
-      };
-      const fakeClaims = [
-        {
-          ...claim,
-          expiry: null,
-          claim: {
-            type: customerDueDiligenceType,
-          },
-        },
-        {
-          ...claim,
-          expiry: new Date(date),
-          claim: {
-            type: jurisdictionType,
-            name: 'someJurisdiction',
-            scope: 'someScope',
-          },
-        },
-        {
-          ...claim,
-          expiry: null,
-          claim: {
-            type: exemptedType,
-            scope: 'someScope',
-          },
-        },
-      ];
-      /* eslint-disable @typescript-eslint/camelcase */
-      const commonClaimData = {
-        targetDID: targetDid,
-        issuer: issuerDid,
-        issuance_date: date,
-        last_update_date: date,
-      };
-      const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
-        totalCount: 1,
-        items: [
+      const issuedClaims: ResultSet<ClaimData> = {
+        data: [
           {
-            did: targetDid,
-            claims: [
-              {
-                ...commonClaimData,
-                expiry: null,
-                type: customerDueDiligenceType,
-              },
-              {
-                ...commonClaimData,
-                expiry: date,
-                type: jurisdictionType,
-                jurisdiction: 'someJurisdiction',
-                scope: 'someScope',
-              },
-              {
-                ...commonClaimData,
-                expiry: null,
-                type: exemptedType,
-                jurisdiction: null,
-                scope: 'someScope',
-              },
-            ],
+            target: new Identity({ did: 'someDid' }, context),
+            issuer: new Identity({ did: 'otherDid' }, context),
+            issuedAt: new Date(),
+            expiry: null,
+            claim: { type: ClaimType.NoData },
           },
         ],
+        next: 1,
+        count: 1,
       };
-      /* eslint-enabled @typescript-eslint/camelcase */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          issuedClaims,
+        },
+      });
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
       });
 
-      dsMockUtils.createApolloQueryStub(
-        didsWithClaims({ trustedClaimIssuers: ['someDid'], count: 30, skip: 1 }),
-        {
-          didsWithClaims: didsWithClaimsQueryResponse,
-        }
-      );
-
-      let result = await polymesh.getIssuedClaims({ start: 1, size: 30 });
-
-      expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(1);
-      expect(result.next).toBeNull();
-
-      dsMockUtils.createApolloQueryStub(
-        didsWithClaims({ trustedClaimIssuers: ['someDid'], count: undefined, skip: undefined }),
-        {
-          didsWithClaims: didsWithClaimsQueryResponse,
-        }
-      );
-
-      result = await polymesh.getIssuedClaims();
-
-      expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(1);
-      expect(result.next).toBeNull();
+      const result = await polymesh.getIssuedClaims();
+      expect(result).toEqual(issuedClaims);
     });
   });
 
@@ -1218,6 +1135,35 @@ describe('Polymesh Class', () => {
       polkadot.emit('error');
 
       sinon.assert.calledOnce(callback);
+    });
+  });
+
+  describe('method: removeMySigningKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const signers = [
+        {
+          type: SignerType.AccountKey,
+          value: 'someAccountKey',
+        },
+      ];
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(removeSigningItems, 'prepare')
+        .withArgs({ signers }, context)
+        .resolves(expectedQueue);
+
+      const queue = await polymesh.removeMySigningKeys({ signers });
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 

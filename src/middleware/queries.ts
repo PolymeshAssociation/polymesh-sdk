@@ -5,6 +5,7 @@ import {
   QueryEventsByIndexedArgsArgs,
   QueryProposalsArgs,
   QueryProposalVotesArgs,
+  QueryScopesByIdentityArgs,
   QueryTokensByTrustedClaimIssuerArgs,
   QueryTransactionsArgs,
 } from '~/middleware/types';
@@ -240,6 +241,29 @@ export function transactions(
           spec_version_id
           extrinsic_hash
         }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the scopes (and ticker, if applicable) of claims issued on an identity
+ */
+export function scopesByIdentity(
+  variables: QueryScopesByIdentityArgs
+): GraphqlQuery<QueryScopesByIdentityArgs> {
+  const query = gql`
+    query ScopesByIdentityQuery($did: String!) {
+      scopesByIdentity(did: $did) {
+        scope
+        ticker
       }
     }
   `;
