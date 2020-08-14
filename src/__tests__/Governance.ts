@@ -109,17 +109,28 @@ describe('Governance class', () => {
         }
       );
 
-      const result = await governance.getProposals({
+      let result = await governance.getProposals({
         proposers: [proposerDid],
       });
 
       expect(result).toEqual(fakeResult);
-    });
 
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.throwOnMiddlewareQuery();
+      dsMockUtils.createApolloQueryStub(
+        proposals({
+          proposers: undefined,
+          states: undefined,
+          orderBy: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          proposals: proposalsQueryResponse,
+        }
+      );
 
-      return expect(governance.getProposals()).rejects.toThrow('Error in middleware query: Error');
+      result = await governance.getProposals();
+
+      expect(result).toEqual(fakeResult);
     });
   });
 

@@ -17,6 +17,7 @@ import {
   AssetIdentifier,
   AssetName,
   AssetTransferRule,
+  AssetTransferRulesResult,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
@@ -34,6 +35,7 @@ import {
   JurisdictionName,
   Permission as MeshPermission,
   PosRatio,
+  ProposalState as MeshProposalState,
   ProtocolOp,
   Rule as MeshRule,
   RuleType,
@@ -43,6 +45,7 @@ import {
 } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
+import { ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import {
@@ -63,6 +66,9 @@ import {
   PaginationOptions,
   Permission,
   Rule,
+  RuleCompliance,
+  Signer,
+  SignerType,
   SingleClaimCondition,
   TokenIdentifierType,
   TokenType,
@@ -73,8 +79,6 @@ import {
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
-  Signer,
-  SignerType,
   TokenDocumentData,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -1025,6 +1029,24 @@ export function issuanceDataToIssueAssetItem(
 }
 
 /**
+ * @hidden
+ */
+export function assetTransferRulesResultToRuleCompliance(
+  assetTransferRulesResult: AssetTransferRulesResult
+): RuleCompliance {
+  const { rules: transferRules, final_result: result } = assetTransferRulesResult;
+  const rules = transferRules.map(rule => ({
+    ...assetTransferRuleToRule(rule),
+    complies: boolToBoolean(rule.transfer_rule_result),
+  }));
+
+  return {
+    rules,
+    complies: boolToBoolean(result),
+  };
+}
+
+/**
  * Unwrap a Post Transaction Value
  */
 export function unwrapValue<T extends unknown>(value: MaybePostTransactionValue<T>): T {
@@ -1071,6 +1093,14 @@ export function findEventRecord(
  */
 export function padString(value: string, length: number): string {
   return padEnd(value, length, '\0');
+}
+
+/**
+ * @hidden
+ */
+export function removePadding(value: string): string {
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/\u0000/g, '');
 }
 
 /**
@@ -1202,4 +1232,27 @@ export function batchArguments<Args>(
 export function calculateNextKey(totalCount: number, size?: number, start?: number): NextKey {
   const next = (start ?? 0) + (size ?? DEFAULT_GQL_PAGE_SIZE);
   return totalCount > next ? next : null;
+}
+
+/**
+ * @hidden
+ */
+export function meshProposalStateToProposalState(proposalState: MeshProposalState): ProposalState {
+  if (proposalState.isPending) {
+    return ProposalState.Pending;
+  }
+
+  if (proposalState.isCancelled) {
+    return ProposalState.Cancelled;
+  }
+
+  if (proposalState.isKilled) {
+    return ProposalState.Killed;
+  }
+
+  if (proposalState.isRejected) {
+    return ProposalState.Rejected;
+  }
+
+  return ProposalState.Referendum;
 }

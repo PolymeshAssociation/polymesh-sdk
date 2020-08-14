@@ -1,4 +1,5 @@
 export type Maybe<T> = T | null;
+export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: string;
@@ -34,8 +35,8 @@ export type Query = {
   eventByIndexedArgs?: Maybe<Event>;
   /** Get events by any of its indexed arguments */
   eventsByIndexedArgs?: Maybe<Array<Maybe<Event>>>;
-  /** Get non-system transactions */
-  transactions?: Maybe<Array<Maybe<Extrinsic>>>;
+  /** Get transactions */
+  transactions: ExtrinsicResult;
   /** Get transaction by hash */
   transactionByHash?: Maybe<Extrinsic>;
   /** Get transaction by number */
@@ -48,6 +49,10 @@ export type Query = {
   polyxTransfersSent: Array<PolyxTransfer>;
   /** Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers */
   didsWithClaims: IdentityWithClaimsResult;
+  /** Get all scopes with at least one claim for a given identityId */
+  scopesByIdentity: Array<ClaimScope>;
+  /** Get all token tickers where given Did is a default Trusted Claim Issuer */
+  tokensByTrustedClaimIssuer: Array<Scalars['String']>;
   /** Get all tickers of tokens that were held at some point by the given did */
   tokensHeldByDid: Array<Scalars['String']>;
   /** Get all POLYX transfers (send) failed by the given account */
@@ -113,8 +118,14 @@ export type QueryEventsByIndexedArgsArgs = {
 };
 
 export type QueryTransactionsArgs = {
+  block_id?: Maybe<Scalars['Int']>;
+  address?: Maybe<Scalars['String']>;
+  module_id?: Maybe<ModuleIdEnum>;
+  call_id?: Maybe<CallIdEnum>;
+  success?: Maybe<Scalars['Boolean']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
+  orderBy?: Maybe<TransactionOrderByInput>;
 };
 
 export type QueryTransactionByHashArgs = {
@@ -148,6 +159,15 @@ export type QueryDidsWithClaimsArgs = {
   claimTypes?: Maybe<Array<ClaimTypeEnum>>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryScopesByIdentityArgs = {
+  did: Scalars['String'];
+};
+
+export type QueryTokensByTrustedClaimIssuerArgs = {
+  claimIssuerDid: Scalars['String'];
+  order?: Maybe<Order>;
 };
 
 export type QueryTokensHeldByDidArgs = {
@@ -330,31 +350,31 @@ export enum ModuleIdEnum {
   Staking = 'staking',
   Offences = 'offences',
   Session = 'session',
-  FinalityTracker = 'finalityTracker',
+  Finalitytracker = 'finalitytracker',
   Grandpa = 'grandpa',
-  ImOnline = 'imOnline',
-  AuthorityDiscovery = 'authorityDiscovery',
-  RandomnessCollectiveFlip = 'randomnessCollectiveFlip',
-  TransactionPayment = 'transactionPayment',
+  Imonline = 'imonline',
+  Authoritydiscovery = 'authoritydiscovery',
+  Randomnesscollectiveflip = 'randomnesscollectiveflip',
+  Transactionpayment = 'transactionpayment',
   Sudo = 'sudo',
-  MultiSig = 'multiSig',
+  Multisig = 'multisig',
   Contracts = 'contracts',
   Treasury = 'treasury',
-  PolymeshCommittee = 'polymeshCommittee',
-  CommitteeMembership = 'committeeMembership',
+  Polymeshcommittee = 'polymeshcommittee',
+  Committeemembership = 'committeemembership',
   Pips = 'pips',
   Asset = 'asset',
   Dividend = 'dividend',
   Identity = 'identity',
   Bridge = 'bridge',
-  ComplianceManager = 'complianceManager',
+  Compliancemanager = 'compliancemanager',
   Voting = 'voting',
-  StoCapped = 'stoCapped',
+  Stocapped = 'stocapped',
   Exemption = 'exemption',
-  SimpleToken = 'simpleToken',
-  CddServiceProviders = 'cddServiceProviders',
+  Simpletoken = 'simpletoken',
+  Cddserviceproviders = 'cddserviceproviders',
   Statistic = 'statistic',
-  ProtocolFee = 'protocolFee',
+  Protocolfee = 'protocolfee',
   Utility = 'utility',
 }
 
@@ -810,6 +830,29 @@ export type AccountTransactionsArgs = {
   skip?: Maybe<Scalars['Int']>;
 };
 
+export type TransactionOrderByInput = {
+  field: TransactionOrderFields;
+  order: Order;
+};
+
+export enum TransactionOrderFields {
+  BlockId = 'block_id',
+  Address = 'address',
+  ModuleId = 'module_id',
+  CallId = 'call_id',
+}
+
+export enum Order {
+  Asc = 'ASC',
+  Desc = 'DESC',
+}
+
+export type ExtrinsicResult = {
+  __typename?: 'ExtrinsicResult';
+  totalCount: Scalars['Int'];
+  items: Array<Extrinsic>;
+};
+
 export type PolyxTransfer = {
   __typename?: 'PolyxTransfer';
   blockId: Scalars['Int'];
@@ -843,6 +886,12 @@ export type Claim = {
   type: ClaimTypeEnum;
   jurisdiction?: Maybe<Scalars['String']>;
   scope?: Maybe<Scalars['String']>;
+};
+
+export type ClaimScope = {
+  __typename?: 'ClaimScope';
+  scope?: Maybe<Scalars['String']>;
+  ticker?: Maybe<Scalars['String']>;
 };
 
 export type FailedPolyxTransfer = {
@@ -952,11 +1001,6 @@ export enum ProposalOrderFields {
   TotalVotes = 'totalVotes',
 }
 
-export enum Order {
-  Asc = 'ASC',
-  Desc = 'DESC',
-}
-
 export type ProposalVotesOrderByInput = {
   field: ProposalVotesOrderFields;
   order: Order;
@@ -975,6 +1019,12 @@ export type ProposalVote = {
   account: Scalars['String'];
   vote: Scalars['CustomBoolean'];
   weight: Scalars['BigInt'];
+};
+
+export type StringResult = {
+  __typename?: 'StringResult';
+  totalCount: Scalars['Int'];
+  items: Array<Scalars['String']>;
 };
 
 export enum CacheControlScope {

@@ -1,16 +1,15 @@
-import { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities/Identity';
-import { editProposal, EditProposalParams } from '~/api/procedures';
-import { Entity, PolymeshError, TransactionQueue } from '~/base';
+import { cancelProposal, editProposal, EditProposalParams } from '~/api/procedures';
+import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, ErrorCode, ResultSet } from '~/types';
-import { valueToDid } from '~/utils';
+import { Ensured, ResultSet } from '~/types';
+import { meshProposalStateToProposalState, u32ToBigNumber, valueToDid } from '~/utils';
 
-import { ProposalVote, ProposalVotesOrderByInput } from './types';
+import { ProposalDetails, ProposalStage, ProposalVote, ProposalVotesOrderByInput } from './types';
 
 /**
  * Properties that uniquely identify a Proposal
@@ -55,11 +54,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
    * @param args.did - identity representation or identity ID as stored in the blockchain
    */
   public async identityHasVoted(args?: { did: string | Identity }): Promise<boolean> {
-    const {
-      context: { middlewareApi },
-      pipId,
-      context,
-    } = this;
+    const { pipId, context } = this;
 
     let identity: string;
 
@@ -69,22 +64,14 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       identity = context.getCurrentIdentity().did;
     }
 
-    let result: ApolloQueryResult<Ensured<Query, 'eventByIndexedArgs'>>;
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'eventByIndexedArgs'>>(
-        eventByIndexedArgs({
-          moduleId: ModuleIdEnum.Pips,
-          eventId: EventIdEnum.Voted,
-          eventArg0: identity,
-          eventArg2: pipId.toString(),
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
+    const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+      eventByIndexedArgs({
+        moduleId: ModuleIdEnum.Pips,
+        eventId: EventIdEnum.Voted,
+        eventArg0: identity,
+        eventArg2: pipId.toString(),
+      })
+    );
 
     if (result.data.eventByIndexedArgs) {
       return true;
@@ -109,31 +96,19 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       start?: number;
     } = {}
   ): Promise<ResultSet<ProposalVote>> {
-    const {
-      context: { middlewareApi },
-      pipId,
-      context,
-    } = this;
+    const { pipId, context } = this;
 
     const { vote, orderBy, size, start } = opts;
 
-    let result: ApolloQueryResult<Ensured<Query, 'proposalVotes'>>;
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'proposalVotes'>>(
-        proposalVotes({
-          pipId,
-          vote,
-          orderBy,
-          count: size,
-          skip: start,
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
+    const result = await context.queryMiddleware<Ensured<Query, 'proposalVotes'>>(
+      proposalVotes({
+        pipId,
+        vote,
+        orderBy,
+        count: size,
+        skip: start,
+      })
+    );
 
     const data = result.data.proposalVotes.map(({ account: did, vote: proposalVote, weight }) => {
       return {
@@ -158,5 +133,78 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   public async edit(args: EditProposalParams): Promise<TransactionQueue<void>> {
     const { context, pipId } = this;
     return editProposal.prepare({ pipId, ...args }, context);
+  }
+
+  /**
+   * Cancel the proposal
+   */
+  public async cancel(): Promise<TransactionQueue<void>> {
+    const { context, pipId } = this;
+    return cancelProposal.prepare({ pipId }, context);
+  }
+
+  /**
+   * Retrieve the proposal details
+   */
+  public async getDetails(): Promise<ProposalDetails> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+        },
+      },
+      pipId,
+    } = this;
+
+    const rawProposal = await pips.proposals(pipId);
+    const {
+      state,
+      proposal: { sectionName, methodName },
+    } = rawProposal.unwrap();
+
+    return {
+      state: meshProposalStateToProposalState(state),
+      module: sectionName,
+      method: methodName,
+    };
+  }
+
+  /**
+   * Retrieve the current stage of the proposal
+   */
+  public async getStage(): Promise<ProposalStage> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+          rpc,
+        },
+      },
+      pipId,
+    } = this;
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const [metadata, header] = await Promise.all([
+      pips.proposalMetadata(pipId),
+      (rpc as any).chain.getHeader(),
+    ]);
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+
+    const { end: rawEnd, cool_off_until: rawCoolOff } = metadata.unwrap();
+    const { number: rawBlockId } = header;
+
+    const blockId = u32ToBigNumber(rawBlockId);
+    const end = u32ToBigNumber(rawEnd);
+    const coolOff = u32ToBigNumber(rawCoolOff);
+
+    if (blockId.lt(coolOff)) {
+      return ProposalStage.CoolOff;
+    }
+
+    if (blockId.lt(end)) {
+      return ProposalStage.Open;
+    }
+
+    return ProposalStage.Ended;
   }
 }

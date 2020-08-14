@@ -1,13 +1,17 @@
+import { u32 } from '@polkadot/types';
+import { Call } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities/Identity';
-import { editProposal } from '~/api/procedures';
+import { ProposalStage } from '~/api/entities/Proposal/types';
+import { cancelProposal, editProposal } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
-import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { EventIdEnum, ModuleIdEnum, ProposalState } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
+import * as utilsModule from '~/utils';
 
 import { Proposal } from '../';
 
@@ -85,14 +89,6 @@ describe('Proposal class', () => {
       const result = await proposal.identityHasVoted({ did: 'someDid' });
       expect(result).toBeFalsy();
     });
-
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(proposal.identityHasVoted()).rejects.toThrow(
-        'Error in middleware query: Error'
-      );
-    });
   });
 
   describe('method: getVotes', () => {
@@ -134,12 +130,6 @@ describe('Proposal class', () => {
       expect(result.next).toBeNull();
       expect(result.count).toBeUndefined();
     });
-
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(proposal.getVotes()).rejects.toThrow('Error in middleware query: Error');
-    });
   });
 
   describe('method: edit', () => {
@@ -159,6 +149,140 @@ describe('Proposal class', () => {
       const queue = await proposal.edit(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: cancel', () => {
+    test('should prepare the procedure with the correct arguments and context', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(cancelProposal, 'prepare')
+        .withArgs({ pipId }, context)
+        .resolves(expectedQueue);
+
+      const queue = await proposal.cancel();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getDetails', () => {
+    test('should return the proposal details', async () => {
+      const fakeState = ProposalState.Pending;
+      const mockState = dsMockUtils.createMockProposalState('Pending');
+
+      sinon
+        .stub(utilsModule, 'meshProposalStateToProposalState')
+        .withArgs(mockState)
+        .returns(fakeState);
+
+      dsMockUtils.createQueryStub('pips', 'proposals', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockPip({
+            id: dsMockUtils.createMockU32(),
+            proposal: ('proposal' as unknown) as Call,
+            state: mockState,
+          })
+        ),
+      });
+
+      const result = await proposal.getDetails();
+      expect(result.state).toEqual(fakeState);
+    });
+  });
+
+  describe('method: getStage', () => {
+    const coolOff = 555000;
+    let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
+
+    beforeAll(() => {
+      u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    test('should return coolOff as stage of the proposal', async () => {
+      const blockId = 500000;
+      const rawCoolOff = dsMockUtils.createMockU32(coolOff);
+      const rawBlockId = dsMockUtils.createMockU32(blockId);
+
+      dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockPipsMetadata({
+            proposer: dsMockUtils.createMockAccountId(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            cool_off_until: rawCoolOff,
+            end: dsMockUtils.createMockU32(),
+          })
+        ),
+      });
+
+      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
+
+      u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
+      u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
+
+      const result = await proposal.getStage();
+      expect(result).toEqual(ProposalStage.CoolOff);
+    });
+
+    test('should return open as stage of the proposal', async () => {
+      const blockId = 600000;
+      const end = 1000000;
+      const rawCoolOff = dsMockUtils.createMockU32(coolOff);
+      const rawBlockId = dsMockUtils.createMockU32(blockId);
+      const rawEnd = dsMockUtils.createMockU32(end);
+
+      dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockPipsMetadata({
+            proposer: dsMockUtils.createMockAccountId(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            cool_off_until: rawCoolOff,
+            end: rawEnd,
+          })
+        ),
+      });
+
+      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
+
+      u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
+      u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
+      u32ToBigNumberStub.withArgs(rawEnd).returns(new BigNumber(end));
+
+      const result = await proposal.getStage();
+      expect(result).toEqual(ProposalStage.Open);
+    });
+
+    test('should return ended as stage of the proposal', async () => {
+      const blockId = 1000000;
+      const end = 700000;
+      const rawCoolOff = dsMockUtils.createMockU32(coolOff);
+      const rawBlockId = dsMockUtils.createMockU32(blockId);
+      const rawEnd = dsMockUtils.createMockU32(end);
+
+      dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockPipsMetadata({
+            proposer: dsMockUtils.createMockAccountId(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            cool_off_until: rawCoolOff,
+            end: rawEnd,
+          })
+        ),
+      });
+
+      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
+
+      u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
+      u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
+      u32ToBigNumberStub.withArgs(rawEnd).returns(new BigNumber(end));
+
+      const result = await proposal.getStage();
+      expect(result).toEqual(ProposalStage.Ended);
     });
   });
 });

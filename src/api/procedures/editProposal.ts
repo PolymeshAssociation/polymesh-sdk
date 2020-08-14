@@ -1,6 +1,7 @@
+import { assertProposalUnlocked } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
-import { accountIdToString, stringToText, u32ToBigNumber } from '~/utils';
+import { accountIdToString, stringToText } from '~/utils';
 
 export type EditProposalParams =
   | {
@@ -23,11 +24,7 @@ export async function prepareEditProposal(
 ): Promise<void> {
   const {
     context: {
-      polymeshApi: {
-        tx,
-        query: { pips },
-        rpc,
-      },
+      polymeshApi: { tx },
     },
     context,
   } = this;
@@ -40,31 +37,7 @@ export async function prepareEditProposal(
     });
   }
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const [pip, metadata, header] = await Promise.all([
-    pips.proposals(pipId),
-    pips.proposalMetadata(pipId),
-    (rpc as any).chain.getHeader(),
-  ]);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
-
-  const { state } = pip.unwrap();
-  const { cool_off_until: coolOff } = metadata.unwrap();
-  const { number: blockId } = header;
-
-  if (!state.isPending) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The proposal must be in pending state',
-    });
-  }
-
-  if (u32ToBigNumber(blockId).gte(u32ToBigNumber(coolOff))) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The proposal is mutable only during its cool off period',
-    });
-  }
+  await assertProposalUnlocked(pipId, context);
 
   this.addTransaction(
     tx.pips.amendProposal,

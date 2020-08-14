@@ -99,16 +99,6 @@ export interface TransactionSpec<
   batchSize: number | null;
 }
 
-export enum SignerType {
-  Identity = 'Identity',
-  Account = 'Account',
-}
-
-export interface Signer {
-  type: SignerType;
-  value: string;
-}
-
 export interface AuthTarget {
   did: string;
   authId: BigNumber;
