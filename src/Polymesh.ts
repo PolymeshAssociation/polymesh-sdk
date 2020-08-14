@@ -279,6 +279,15 @@ export class Polymesh {
    * @param args.ticker - ticker symbol to reserve
    */
   public reserveTicker(args: ReserveTickerParams): Promise<TransactionQueue<TickerReservation>> {
+    const { ticker } = args;
+
+    if (ticker.length < 1 || ticker.length > 12 || ticker !== ticker.toUpperCase()) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The ticker symbol does not conform to the standards',
+      });
+    }
+
     return reserveTicker.prepare(args, this.context);
   }
 

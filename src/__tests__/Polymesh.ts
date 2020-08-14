@@ -311,6 +311,45 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: reserveTicker', () => {
+    test('should throw if ticker symbol is invalid', async () => {
+      let ticker = '';
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      let error;
+
+      try {
+        await polymesh.reserveTicker({ ticker });
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error.message).toBe('The ticker symbol does not conform to the standards');
+
+      ticker = 'ALONGLONGTICKERSYMBOL';
+
+      try {
+        await polymesh.reserveTicker({ ticker });
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error.message).toBe('The ticker symbol does not conform to the standards');
+
+      ticker = 'test';
+
+      try {
+        await polymesh.reserveTicker({ ticker });
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error.message).toBe('The ticker symbol does not conform to the standards');
+    });
+
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
 
@@ -319,7 +358,7 @@ describe('Polymesh Class', () => {
       });
 
       const args = {
-        ticker: 'someTicker',
+        ticker: 'SOMETICKER',
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
