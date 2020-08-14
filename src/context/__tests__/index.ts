@@ -726,7 +726,7 @@ describe('Context class', () => {
 
   describe('method: getSigningKeys', () => {
     const did = 'someDid';
-    const accountId = 'someAccountKey';
+    const accountId = 'someAccountId';
     const fakeResult = [
       { value: did, type: SignerType.Identity },
       { value: accountId, type: SignerType.Account },
@@ -734,7 +734,7 @@ describe('Context class', () => {
     const signerIdentityId = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(did),
     });
-    const signerAccountKey = dsMockUtils.createMockSignatory({
+    const signerAccountId = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId(accountId),
     });
 
@@ -746,7 +746,7 @@ describe('Context class', () => {
     beforeAll(() => {
       signatoryToSignerStub = sinon.stub(utilsModule, 'signatoryToSigner');
       signatoryToSignerStub.withArgs(signerIdentityId).returns(fakeResult[0]);
-      signatoryToSignerStub.withArgs(signerAccountKey).returns(fakeResult[1]);
+      signatoryToSignerStub.withArgs(signerAccountId).returns(fakeResult[1]);
     });
 
     beforeEach(() => {
@@ -761,7 +761,7 @@ describe('Context class', () => {
             permissions: [],
           }),
           dsMockUtils.createMockSigningKey({
-            signer: signerAccountKey,
+            signer: signerAccountId,
             permissions: [],
           }),
         ],

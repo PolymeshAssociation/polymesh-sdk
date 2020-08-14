@@ -363,7 +363,7 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 0,
   },
-  masterKey: 'someAccountKey',
+  masterKey: 'someAccountId',
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
