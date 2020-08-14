@@ -231,12 +231,8 @@ export function transactions(
         items {
           block_id
           extrinsic_idx
-          extrinsic_version
-          signed
           address
           nonce
-          era
-          call
           module_id
           call_id
           params

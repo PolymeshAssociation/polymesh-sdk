@@ -32,6 +32,7 @@ import sinon from 'sinon';
 import { Identity } from '~/api/entities';
 import { ProposalState } from '~/api/entities/Proposal/types';
 import { PostTransactionValue } from '~/base';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import {
   Authorization,
@@ -78,6 +79,7 @@ import {
   documentNameToString,
   documentToTokenDocument,
   documentUriToString,
+  extrinsicIdentifierToTxTag,
   findEventRecord,
   fundingRoundNameToString,
   identifierTypeToString,
@@ -119,6 +121,7 @@ import {
   tokenDocumentToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
+  txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToTransferStatus,
   u64ToBigNumber,
@@ -2096,6 +2099,28 @@ describe('txTagToProtocolOp', () => {
     result = txTagToProtocolOp(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
+  test('txTagToExtrinsicIdentifier should convert a TxTag enum to a ExtrinsicIdentifier object', () => {
+    const value = TxTags.identity.CddRegisterDid;
+
+    const result = txTagToExtrinsicIdentifier(value);
+
+    expect(result).toEqual({
+      moduleId: ModuleIdEnum.Identity,
+      callId: CallIdEnum.CddRegisterDid,
+    });
+  });
+
+  test('extrinsicIdentifierToTxTag should convert a ExtrinsicIdentifier object to a TxTag', () => {
+    const result = extrinsicIdentifierToTxTag({
+      moduleId: ModuleIdEnum.Identity,
+      callId: CallIdEnum.CddRegisterDid,
+    });
+
+    expect(result).toEqual(TxTags.identity.CddRegisterDid);
   });
 });
 

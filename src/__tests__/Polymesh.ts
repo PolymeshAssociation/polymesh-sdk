@@ -10,7 +10,13 @@ import { Identity, TickerReservation } from '~/api/entities';
 import { modifyClaims, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { didsWithClaims, transactions } from '~/middleware/queries';
-import { ClaimTypeEnum, ExtrinsicResult, IdentityWithClaimsResult } from '~/middleware/types';
+import {
+  CallIdEnum,
+  ClaimTypeEnum,
+  ExtrinsicResult,
+  IdentityWithClaimsResult,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -1244,11 +1250,22 @@ describe('Polymesh Class', () => {
       const context = dsMockUtils.getContextInstance();
       const address = 'someAddress';
       const accountKey = dsMockUtils.createMockAccountKey(address);
+      const txTag = TxTags.identity.CddRegisterDid;
+      const moduleId = ModuleIdEnum.Identity;
+      const callId = CallIdEnum.CddRegisterDid;
 
       sinon
         .stub(utilsModule, 'stringToAccountKey')
         .withArgs(address, context)
         .returns(accountKey);
+
+      sinon
+        .stub(utilsModule, 'txTagToExtrinsicIdentifier')
+        .withArgs(txTag)
+        .returns({
+          moduleId,
+          callId,
+        });
 
       /* eslint-disable @typescript-eslint/camelcase */
       const transactionsQueryResponse: ExtrinsicResult = {
@@ -1283,8 +1300,8 @@ describe('Polymesh Class', () => {
         transactions({
           block_id: undefined,
           address: accountKey.toString(),
-          module_id: undefined,
-          call_id: undefined,
+          module_id: moduleId,
+          call_id: callId,
           success: undefined,
           count: 2,
           skip: 1,
@@ -1297,6 +1314,7 @@ describe('Polymesh Class', () => {
 
       let result = await polymesh.getTransactionHistory({
         address,
+        txTag,
         size: 2,
         start: 1,
       });

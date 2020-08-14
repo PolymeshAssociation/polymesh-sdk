@@ -12,7 +12,7 @@ import {
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, groupBy, isEqual, map, padEnd } from 'lodash';
+import { camelCase, chunk, groupBy, isEqual, map, padEnd, snakeCase } from 'lodash';
 import {
   AccountKey,
   AssetIdentifier,
@@ -42,12 +42,14 @@ import {
   Signatory,
   Ticker,
   TxTag,
+  TxTags,
 } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
 import { ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
   Authorization,
   AuthorizationType,
@@ -76,6 +78,7 @@ import {
 } from '~/types';
 import {
   AuthTarget,
+  ExtrinsicIdentifier,
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -987,6 +990,32 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
   )}`;
 
   return context.polymeshApi.createType('ProtocolOp', value);
+}
+
+/**
+ * @hidden
+ */
+export function txTagToExtrinsicIdentifier(tag: TxTag): ExtrinsicIdentifier {
+  const [moduleName, extrinsicName] = tag.split('.');
+  return {
+    moduleId: moduleName.toLowerCase() as ModuleIdEnum,
+    callId: snakeCase(extrinsicName) as CallIdEnum,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentifier): TxTag {
+  const { moduleId, callId } = extrinsicIdentifier;
+  let moduleName;
+  for (const txTagItem in TxTags) {
+    if (txTagItem.toLowerCase() === moduleId) {
+      moduleName = txTagItem;
+    }
+  }
+
+  return `${moduleName}.${camelCase(callId)}` as TxTag;
 }
 
 /**

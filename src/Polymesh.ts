@@ -21,13 +21,7 @@ import {
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { didsWithClaims, transactions } from '~/middleware/queries';
-import {
-  CallIdEnum,
-  ClaimTypeEnum,
-  ModuleIdEnum,
-  Query,
-  TransactionOrderByInput,
-} from '~/middleware/types';
+import { ClaimTypeEnum, Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
@@ -53,6 +47,7 @@ import {
   booleanToBool,
   calculateNextKey,
   createClaim,
+  extrinsicIdentifierToTxTag,
   linkTypeToMeshLinkType,
   moduleAddressToString,
   signerToSignatory,
@@ -60,6 +55,7 @@ import {
   stringToTicker,
   textToString,
   tickerToString,
+  txTagToExtrinsicIdentifier,
   u32ToBigNumber,
   valueToDid,
 } from '~/utils';
@@ -705,8 +701,7 @@ export class Polymesh {
     opts: {
       blockId?: number;
       address?: string;
-      moduleId?: ModuleIdEnum;
-      callId?: CallIdEnum;
+      txTag?: TxTag;
       success?: boolean;
       size?: number;
       start?: number;
@@ -715,15 +710,20 @@ export class Polymesh {
   ): Promise<ResultSet<ExtrinsicData>> {
     const { context } = this;
 
-    const { blockId, address, moduleId, callId, success, size, start, orderBy } = opts;
+    const { blockId, address, txTag, success, size, start, orderBy } = opts;
+
+    let extrinsicIdentifier;
+    if (txTag) {
+      extrinsicIdentifier = txTagToExtrinsicIdentifier(txTag);
+    }
 
     /* eslint-disable @typescript-eslint/camelcase */
     const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
       transactions({
         block_id: blockId,
         address: address ? stringToAccountKey(address, context).toString() : undefined,
-        module_id: moduleId,
-        call_id: callId,
+        module_id: extrinsicIdentifier ? extrinsicIdentifier.moduleId : undefined,
+        call_id: extrinsicIdentifier ? extrinsicIdentifier.callId : undefined,
         success,
         count: size,
         skip: start,
@@ -743,35 +743,30 @@ export class Polymesh {
       ({
         block_id,
         extrinsic_idx,
-        extrinsic_version,
-        signed,
         address: rawAddress,
         nonce,
-        era,
-        call,
         module_id,
         call_id,
         params,
         success: txSuccess,
         spec_version_id,
         extrinsic_hash,
-      }) =>
+      }) => {
+        // TODO remove null check once types fixed
+        /* eslint-disable @typescript-eslint/no-non-null-assertion */
         data.push({
-          blockId: block_id,
-          extrinsicIdx: extrinsic_idx,
-          extrinsicVersion: extrinsic_version,
-          signed,
+          blockId: block_id!,
+          extrinsicIdx: extrinsic_idx!,
           address: rawAddress,
-          nonce,
-          era,
-          call,
-          moduleId: module_id,
-          callId: call_id,
+          nonce: nonce!,
+          txTag: extrinsicIdentifierToTxTag({ moduleId: module_id!, callId: call_id! }),
           params,
           success: !!txSuccess,
-          specVersionId: spec_version_id,
-          extrinsicHash: extrinsic_hash,
-        })
+          specVersionId: spec_version_id!,
+          extrinsicHash: extrinsic_hash!,
+        });
+        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+      }
     );
     /* eslint-enable @typescript-eslint/camelcase */
 
