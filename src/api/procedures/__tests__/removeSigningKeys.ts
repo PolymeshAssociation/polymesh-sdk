@@ -70,7 +70,7 @@ describe('removeSigningKeys procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, {}, [rawSignatory]);
   });
 
-  test('should throw an error if the current account is not the master key', async () => {
+  test('should throw an error if attempting to remove the master key', async () => {
     const proc = procedureMockUtils.getInstance<RemoveSigningKeysParams, void>(mockContext);
 
     await expect(
@@ -78,7 +78,7 @@ describe('removeSigningKeys procedure', () => {
         signers: [
           {
             type: SignerType.Account,
-            value: 'someAccount',
+            value: 'masterKey',
           },
         ],
       })
@@ -97,7 +97,7 @@ describe('removeSigningKeys procedure', () => {
     test('should return whether the current address is the master key', async () => {
       dsMockUtils.configureMocks({
         contextOptions: {
-          currentPairAddress: 'someAccountId',
+          currentPairAddress: 'masterKey',
         },
       });
 
