@@ -5,7 +5,7 @@ import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
-import { scopesByIdentity,tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import { scopesByIdentity, tokensByTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -478,7 +478,7 @@ describe('Identity class', () => {
         ticker: 'TOKEN\0\0',
       },
       {
-        scope: 'otherScope',
+        scope: null,
       },
     ];
 
@@ -494,7 +494,7 @@ describe('Identity class', () => {
       expect(result[0].ticker).toBe('TOKEN');
       expect(result[0].scope).toBe('someScope');
       expect(result[1].ticker).toBeUndefined();
-      expect(result[1].scope).toBe('otherScope');
+      expect(result[1].scope).toBeNull();
     });
   });
 });
