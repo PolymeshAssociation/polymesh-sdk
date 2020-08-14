@@ -27,6 +27,7 @@ import {
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
+import { ProposalState } from '~/api/entities/Proposal/types';
 import { PostTransactionValue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import {
@@ -39,10 +40,10 @@ import {
   ConditionType,
   KnownTokenType,
   Permission,
+  SignerType,
   TokenIdentifierType,
   TransferStatus,
 } from '~/types';
-import { SignerType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
@@ -50,6 +51,7 @@ import {
   accountIdToString,
   assetIdentifierToString,
   assetNameToString,
+  assetTransferRulesResultToRuleCompliance,
   assetTransferRuleToRule,
   assetTypeToString,
   authIdentifierToAuthTarget,
@@ -79,6 +81,7 @@ import {
   jurisdictionNameToString,
   meshClaimToClaim,
   meshPermissionToPermission,
+  meshProposalStateToProposalState,
   moduleAddressToString,
   momentToDate,
   numberToBalance,
@@ -87,6 +90,7 @@ import {
   padString,
   permissionToMeshPermission,
   posRatioToBigNumber,
+  removePadding,
   requestAtBlock,
   requestPaginated,
   ruleToAssetTransferRule,
@@ -1752,6 +1756,131 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
   });
 });
 
+describe('assetTransferRulesResultToRuleCompliance', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('assetTransferRulesResultToRuleCompliance should convert a polkadot AssetTransferRulesResult object to a RuleCompliance', () => {
+    const id = 1;
+    const tokenDid = 'someTokenDid';
+    const issuerDids = ['someDid', 'otherDid'];
+    const conditions: Condition[] = [
+      {
+        type: ConditionType.IsPresent,
+        target: ConditionTarget.Both,
+        claim: {
+          type: ClaimType.KnowYourCustomer,
+          scope: tokenDid,
+        },
+        trustedClaimIssuers: issuerDids,
+      },
+      {
+        type: ConditionType.IsAbsent,
+        target: ConditionTarget.Receiver,
+        claim: {
+          type: ClaimType.BuyLockup,
+          scope: tokenDid,
+        },
+        trustedClaimIssuers: issuerDids,
+      },
+      {
+        type: ConditionType.IsNoneOf,
+        target: ConditionTarget.Sender,
+        claims: [
+          {
+            type: ClaimType.Blocked,
+            scope: tokenDid,
+          },
+          {
+            type: ClaimType.SellLockup,
+            scope: tokenDid,
+          },
+        ],
+        trustedClaimIssuers: issuerDids,
+      },
+      {
+        type: ConditionType.IsAnyOf,
+        target: ConditionTarget.Both,
+        claims: [
+          {
+            type: ClaimType.Exempted,
+            scope: tokenDid,
+          },
+          {
+            type: ClaimType.CustomerDueDiligence,
+          },
+        ],
+        trustedClaimIssuers: issuerDids,
+      },
+    ];
+    const fakeResult = {
+      id,
+      conditions,
+    };
+
+    const scope = dsMockUtils.createMockScope(tokenDid);
+    const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
+    const rules = [
+      /* eslint-disable @typescript-eslint/camelcase */
+      dsMockUtils.createMockRule({
+        rule_type: dsMockUtils.createMockRuleType({
+          IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
+        }),
+        issuers,
+      }),
+      dsMockUtils.createMockRule({
+        rule_type: dsMockUtils.createMockRuleType({
+          IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
+        }),
+        issuers,
+      }),
+      dsMockUtils.createMockRule({
+        rule_type: dsMockUtils.createMockRuleType({
+          IsNoneOf: [
+            dsMockUtils.createMockClaim({ Blocked: scope }),
+            dsMockUtils.createMockClaim({ SellLockup: scope }),
+          ],
+        }),
+        issuers,
+      }),
+      dsMockUtils.createMockRule({
+        rule_type: dsMockUtils.createMockRuleType({
+          IsAnyOf: [
+            dsMockUtils.createMockClaim({ Exempted: scope }),
+            dsMockUtils.createMockClaim('CustomerDueDiligence'),
+          ],
+        }),
+        issuers,
+      }),
+    ];
+    const assetTransferRulesResult = dsMockUtils.createMockAssetTransferRulesResult({
+      is_paused: dsMockUtils.createMockBool(false),
+      rules: [
+        dsMockUtils.createMockAssetTransferRuleResult({
+          sender_rules: [rules[0], rules[2], rules[3]],
+          receiver_rules: [rules[0], rules[1], rules[3]],
+          rule_id: dsMockUtils.createMockU32(1),
+          transfer_rule_result: dsMockUtils.createMockBool(false),
+        }),
+      ],
+      final_result: dsMockUtils.createMockBool(false),
+    });
+    /* eslint-enable @typescript-eslint/camelcase */
+
+    const result = assetTransferRulesResultToRuleCompliance(assetTransferRulesResult);
+    expect(result.rules[0].conditions).toEqual(expect.arrayContaining(fakeResult.conditions));
+  });
+});
+
 describe('u8ToTransferStatus', () => {
   test('u8ToTransferStatus should convert a polkadot u8 object to a TransferStatus', () => {
     let result = u8ToTransferStatus(dsMockUtils.createMockU8(80));
@@ -1969,6 +2098,16 @@ describe('padString', () => {
   });
 });
 
+describe('removePadding', () => {
+  test('should remove all null character padding from the input', () => {
+    const expected = 'someString';
+
+    const result = removePadding(`${expected}\0\0\0`);
+
+    expect(result).toBe(expected);
+  });
+});
+
 describe('requestPaginated', () => {
   test('should fetch and return entries and the hex value of the last key', async () => {
     const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
@@ -2105,5 +2244,56 @@ describe('calculateNextKey', () => {
     const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
 
     expect(nextKey).toEqual(30);
+  });
+});
+
+describe('meshProposalStateToProposalState', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
+    let fakeResult: ProposalState = ProposalState.Cancelled;
+
+    let proposalState = dsMockUtils.createMockProposalState(fakeResult);
+
+    let result = meshProposalStateToProposalState(proposalState);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ProposalState.Killed;
+
+    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+
+    result = meshProposalStateToProposalState(proposalState);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ProposalState.Pending;
+
+    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+
+    result = meshProposalStateToProposalState(proposalState);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ProposalState.Referendum;
+
+    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+
+    result = meshProposalStateToProposalState(proposalState);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ProposalState.Rejected;
+
+    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+
+    result = meshProposalStateToProposalState(proposalState);
+    expect(result).toEqual(fakeResult);
   });
 });

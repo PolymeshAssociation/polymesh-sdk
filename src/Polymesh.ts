@@ -1,7 +1,7 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Signer } from '@polkadot/api/types';
+import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
-import { ApolloClient, ApolloQueryResult } from 'apollo-client';
+import { ApolloClient } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
@@ -13,6 +13,7 @@ import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
   modifyClaims,
   ModifyClaimsParams,
+  removeSigningItems,
   reserveTicker,
   ReserveTickerParams,
   transferPolyX,
@@ -33,6 +34,7 @@ import {
   MiddlewareConfig,
   NetworkProperties,
   ResultSet,
+  Signer,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
@@ -56,7 +58,7 @@ import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
-  signer?: Signer;
+  signer?: PolkadotSigner;
   middleware?: MiddlewareConfig;
 }
 
@@ -210,16 +212,16 @@ export class Polymesh {
     return transferPolyX.prepare(args, this.context);
   }
 
-  // TODO: uncomment for v2
-  /*
-   * Get the POLYX balance of the current account
-   * NOTE: We don't expose this method for Testnet v1
+  /**
+   * Get the POLYX balance of an identity
    */
-  /*
-  public getIdentityBalance(): Promise<BigNumber> {
-    return this.context.getCurrentIdentity().getPolyXBalance();
+  public getIdentityBalance(args?: { did: string | Identity }): Promise<BigNumber> {
+    let identityArgs;
+    if (args) {
+      identityArgs = { did: valueToDid(args.did) };
+    }
+    return this.getIdentity(identityArgs).getPolyXBalance();
   }
-  */
 
   /**
    * Get the free/locked POLYX balance of an account
@@ -542,58 +544,18 @@ export class Polymesh {
       start?: number;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
-    const {
-      context,
-      context: { middlewareApi },
-    } = this;
+    const { context } = this;
 
     const { size, start } = opts;
     const { did } = context.getCurrentIdentity();
 
-    let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
-        didsWithClaims({
-          trustedClaimIssuers: [did],
-          count: size,
-          skip: start,
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
-      },
-    } = result;
-    const data: ClaimData[] = [];
-
-    didsWithClaimsList.forEach(({ claims }) => {
-      claims.forEach(
-        ({ targetDID, issuer, issuance_date: issuanceDate, expiry, type, jurisdiction, scope }) => {
-          data.push({
-            target: new Identity({ did: targetDID }, context),
-            issuer: new Identity({ did: issuer }, context),
-            issuedAt: new Date(issuanceDate),
-            expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, scope),
-          });
-        }
-      );
+    const result = await context.issuedClaims({
+      trustedClaimIssuers: [did],
+      size,
+      start,
     });
 
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
+    return result;
   }
 
   /**
@@ -616,34 +578,22 @@ export class Polymesh {
       start?: number;
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
-    const {
-      context,
-      context: { middlewareApi },
-    } = this;
+    const { context } = this;
 
     const { targets, trustedClaimIssuers, scope, claimTypes, size, start } = opts;
 
-    let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
-
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
-        didsWithClaims({
-          dids: targets?.map(target => valueToDid(target)),
-          scope,
-          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-            valueToDid(trustedClaimIssuer)
-          ),
-          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-          count: size,
-          skip: start,
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
+    const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
+      didsWithClaims({
+        dids: targets?.map(target => valueToDid(target)),
+        scope,
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          valueToDid(trustedClaimIssuer)
+        ),
+        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        count: size,
+        skip: start,
+      })
+    );
 
     const {
       data: {
@@ -725,6 +675,34 @@ export class Polymesh {
 
     const { free } = await this.getAccountBalance({ accountId });
     return free;
+  }
+
+  /**
+   * Get the list of signing keys related to the current identity
+   *
+   * @note can be subscribed to
+   */
+  public async getMySigningKeys(): Promise<Signer[]>;
+  public async getMySigningKeys(callback: SubCallback<Signer[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getMySigningKeys(
+    callback?: SubCallback<Signer[]>
+  ): Promise<Signer[] | UnsubCallback> {
+    const { context } = this;
+
+    if (callback) {
+      return context.getSigningKeys(callback);
+    }
+
+    return context.getSigningKeys();
+  }
+
+  /**
+   * Remove a list of signing keys associated with the current identity
+   */
+  public removeMySigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
+    return removeSigningItems.prepare(args, this.context);
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

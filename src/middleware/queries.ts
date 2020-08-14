@@ -5,6 +5,8 @@ import {
   QueryEventsByIndexedArgsArgs,
   QueryProposalsArgs,
   QueryProposalVotesArgs,
+  QueryScopesByIdentityArgs,
+  QueryTokensByTrustedClaimIssuerArgs,
 } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
 
@@ -166,6 +168,49 @@ export function proposals(
         totalVotes
         totalAyesWeight
         totalNaysWeight
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the tickers of all the tokens for which the passed DID is a trusted claim issuer
+ */
+export function tokensByTrustedClaimIssuer(
+  variables: QueryTokensByTrustedClaimIssuerArgs
+): GraphqlQuery<QueryTokensByTrustedClaimIssuerArgs> {
+  const query = gql`
+    query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!, $order: Order) {
+      tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid, order: $order)
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the scopes (and ticker, if applicable) of claims issued on an identity
+ */
+export function scopesByIdentity(
+  variables: QueryScopesByIdentityArgs
+): GraphqlQuery<QueryScopesByIdentityArgs> {
+  const query = gql`
+    query ScopesByIdentityQuery($did: String!) {
+      scopesByIdentity(did: $did) {
+        scope
+        ticker
       }
     }
   `;

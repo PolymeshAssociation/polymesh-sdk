@@ -1,23 +1,33 @@
 import { BigNumber } from 'bignumber.js';
-import { CddStatus } from 'polymesh-types/types';
+import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
+import { scopesByIdentity, tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
+  ClaimData,
+  ClaimScope,
+  ClaimType,
+  Ensured,
   ErrorCode,
   isCddProviderRole,
   isTickerOwnerRole,
   isTokenOwnerRole,
+  Order,
+  ResultSet,
   Role,
   SubCallback,
   UnsubCallback,
 } from '~/types';
 import {
+  accountIdToString,
   balanceToBigNumber,
   cddStatusToBoolean,
   identityIdToString,
+  removePadding,
   stringToIdentityId,
   stringToTicker,
 } from '~/utils';
@@ -65,40 +75,40 @@ export class Identity extends Entity<UniqueIdentifiers> {
     this.authorizations = new Authorizations(this, context);
   }
 
-  // TODO: uncomment for v2
-  // public getPolyXBalance(): Promise<BigNumber>;
-  // public getPolyXBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+  /**
+   * Retrieve the POLYX balance of this particular Identity
+   *
+   * @note can be subscribed to
+   */
+  public getPolyXBalance(): Promise<BigNumber>;
+  public getPolyXBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
 
-  // /**
-  //  * Retrieve the POLYX balance of this particular Identity
-  //  *
-  //  * @note can be subscribed to
-  //  */
-  // public async getPolyXBalance(
-  //   callback?: SubCallback<BigNumber>
-  // ): Promise<BigNumber | UnsubCallback> {
-  //   const {
-  //     did,
-  //     context,
-  //     context: {
-  //       polymeshApi: {
-  //         query: { balances },
-  //       },
-  //     },
-  //   } = this;
+  // eslint-disable-next-line require-jsdoc
+  public async getPolyXBalance(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
+    const {
+      did,
+      context,
+      context: {
+        polymeshApi: {
+          query: { balances },
+        },
+      },
+    } = this;
 
-  //   const rawIdentityId = stringToIdentityId(did, context);
+    const rawIdentityId = stringToIdentityId(did, context);
 
-  //   if (callback) {
-  //     return balances.identityBalance(rawIdentityId, res => {
-  //       callback(balanceToBigNumber(res));
-  //     });
-  //   }
+    if (callback) {
+      return balances.identityBalance(rawIdentityId, res => {
+        callback(balanceToBigNumber(res));
+      });
+    }
 
-  //   const balance = await balances.identityBalance(rawIdentityId);
+    const balance = await balances.identityBalance(rawIdentityId);
 
-  //   return balanceToBigNumber(balance);
-  // }
+    return balanceToBigNumber(balance);
+  }
 
   /**
    * Check whether this Identity possesses the specified Role
@@ -139,17 +149,18 @@ export class Identity extends Entity<UniqueIdentifiers> {
     });
   }
 
+  /**
+   * Retrieve the balance of a particular Security Token
+   *
+   * @note can be subscribed to
+   */
   public getTokenBalance(args: { ticker: string }): Promise<BigNumber>;
   public getTokenBalance(
     args: { ticker: string },
     callback: SubCallback<BigNumber>
   ): Promise<UnsubCallback>;
 
-  /**
-   * Retrieve the balance of a particular Security Token
-   *
-   * @note can be subscribed to
-   */
+  // eslint-disable-next-line require-jsdoc
   public async getTokenBalance(
     args: { ticker: string },
     callback?: SubCallback<BigNumber>
@@ -167,6 +178,15 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
     const rawTicker = stringToTicker(ticker, context);
     const rawIdentityId = stringToIdentityId(did, context);
+
+    const token = await asset.tokens(rawTicker);
+
+    if (token.owner_did.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `There is no Security Token with ticker "${ticker}"`,
+      });
+    }
 
     if (callback) {
       return asset.balanceOf(rawTicker, rawIdentityId, res => {
@@ -214,11 +234,119 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Retrieve the master key associated with the identity
+   *
+   * @note can be subscribed to
+   */
+  public async getMasterKey(): Promise<string>;
+  public async getMasterKey(callback: SubCallback<string>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getMasterKey(callback?: SubCallback<string>): Promise<string | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+      context,
+    } = this;
+
+    const { did } = context.getCurrentIdentity();
+
+    const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
+      return accountIdToString(masterKey);
+    };
+
+    if (callback) {
+      return identity.didRecords(did, records => callback(assembleResult(records)));
+    }
+
+    const didRecords = await identity.didRecords(did);
+    return assembleResult(didRecords);
+  }
+
+  /**
+   * Retrieve the list of cdd claims for the current identity
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   */
+  public async getCddClaims(
+    opts: {
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<ClaimData>> {
+    const { context, did } = this;
+
+    const { size, start } = opts;
+
+    const result = await context.issuedClaims({
+      targets: [did],
+      claimTypes: [ClaimType.CustomerDueDiligence],
+      size,
+      start,
+    });
+
+    return result;
+  }
+
+  /**
+   * Retrieve all scopes in which claims have been made for this identity.
+   *   If the scope is an asset DID, the corresponding ticker is returned as well
+   *
+   * @note a null scope means the identity has scopeless claims (like CDD for example)
+   */
+  public async getClaimScopes(): Promise<ClaimScope[]> {
+    const { context, did } = this;
+
+    const {
+      data: { scopesByIdentity: scopes },
+    } = await context.queryMiddleware<Ensured<Query, 'scopesByIdentity'>>(
+      scopesByIdentity({ did })
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return scopes.map(({ scope, ticker: symbol }) => {
+      let ticker: string | undefined;
+
+      if (symbol) {
+        ticker = removePadding(symbol);
+      }
+
+      return {
+        scope: scope ?? null,
+        ticker,
+      };
+    });
+  }
+
+  /**
    * Check whether this Identity possesses all specified roles
    */
   public async hasRoles(roles: Role[]): Promise<boolean> {
     const checkedRoles = await Promise.all(roles.map(this.hasRole.bind(this)));
 
     return checkedRoles.every(hasRole => hasRole);
+  }
+
+  /**
+   * Get the list of tokens for which this identity is a trusted claim issuer
+   */
+  public async getTrustingTokens(
+    args: { order: Order } = { order: Order.Asc }
+  ): Promise<SecurityToken[]> {
+    const { context, did } = this;
+
+    const { order } = args;
+
+    const {
+      data: { tokensByTrustedClaimIssuer: tickers },
+    } = await context.queryMiddleware<Ensured<Query, 'tokensByTrustedClaimIssuer'>>(
+      tokensByTrustedClaimIssuer({ claimIssuerDid: did, order })
+    );
+
+    return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
   }
 }

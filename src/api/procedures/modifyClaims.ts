@@ -62,7 +62,6 @@ export async function prepareModifyClaims(
       polymeshApi: {
         tx: { identity },
       },
-      middlewareApi,
     },
     context,
   } = this;
@@ -100,7 +99,7 @@ export async function prepareModifyClaims(
       data: {
         didsWithClaims: { items: currentClaims },
       },
-    } = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
         dids: allTargets,
         trustedClaimIssuers: [context.getCurrentIdentity().did],

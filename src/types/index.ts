@@ -225,6 +225,11 @@ export interface IdentityWithClaims {
   claims: ClaimData[];
 }
 
+export interface ClaimScope {
+  scope: string | null;
+  ticker?: string;
+}
+
 export enum ConditionType {
   IsPresent = 'IsPresent',
   IsAbsent = 'IsAbsent',
@@ -263,6 +268,13 @@ export function isMultiClaimCondition(condition: Condition): condition is MultiC
 export interface Rule {
   id: number;
   conditions: Condition[];
+}
+
+export interface RuleCompliance {
+  rules: (Rule & {
+    complies: boolean;
+  })[];
+  complies: boolean;
 }
 
 /**
@@ -376,6 +388,12 @@ export enum Permission {
   SpendFunds = 'SpendFunds',
 }
 
+export enum SignerType {
+  // eslint-disable-next-line no-shadow
+  Identity = 'Identity',
+  Account = 'Account',
+}
+
 export enum TransactionArgumentType {
   Did = 'Did',
   Address = 'Address',
@@ -432,6 +450,11 @@ export type TransactionArgument = {
   | SimpleEnumTransactionArgument
   | ComplexTransactionArgument
 );
+
+export interface Signer {
+  type: SignerType;
+  value: string;
+}
 
 export { TxTags } from 'polymesh-types/types';
 export * from '~/api/entities/types';

@@ -1,5 +1,5 @@
 import { Keyring } from '@polkadot/api';
-import { Signer } from '@polkadot/api/types';
+import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
@@ -7,7 +7,7 @@ import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { modifyClaims, reserveTicker, transferPolyX } from '~/api/procedures';
+import { modifyClaims, removeSigningItems, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { didsWithClaims } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
@@ -15,8 +15,12 @@ import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   AccountBalance,
+  ClaimData,
   ClaimTargets,
   ClaimType,
+  ResultSet,
+  Signer,
+  SignerType,
   SubCallback,
   TickerReservationStatus,
 } from '~/types';
@@ -39,18 +43,25 @@ jest.mock(
     '~/api/entities/TickerReservation'
   )
 );
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 describe('Polymesh Class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   describe('method: create', () => {
@@ -161,7 +172,7 @@ describe('Polymesh Class', () => {
     test('should set an optional signer for the polkadot API', async () => {
       const accountSeed = 'Alice'.padEnd(32, ' ');
       const createStub = dsMockUtils.getContextCreateStub();
-      const signer = 'signer' as Signer;
+      const signer = 'signer' as PolkadotSigner;
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -216,13 +227,14 @@ describe('Polymesh Class', () => {
     });
   });
 
-  // TODO: uncomment the method after v1
-  /*
   describe('method: getIdentityBalance', () => {
     test("should return the identity's POLYX balance", async () => {
       const fakeBalance = new BigNumber(20);
       dsMockUtils.configureMocks({
-        contextOptions: { withSeed: true, balance: fakeBalance },
+        contextOptions: {
+          withSeed: true,
+          balance: { free: fakeBalance, locked: new BigNumber(0) },
+        },
       });
 
       const polymesh = await Polymesh.connect({
@@ -230,11 +242,15 @@ describe('Polymesh Class', () => {
         accountSeed: 'seed',
       });
 
-      const result = await polymesh.getIdentityBalance();
+      let result = await polymesh.getIdentityBalance();
+      expect(result).toEqual(fakeBalance);
+
+      entityMockUtils.configureMocks({ identityOptions: { getPolyXBalance: fakeBalance } });
+
+      result = await polymesh.getIdentityBalance({ did: 'someDid' });
       expect(result).toEqual(fakeBalance);
     });
   });
-  */
 
   describe('method: getAccountBalance', () => {
     test('should return the free and locked POLYX balance of the current account', async () => {
@@ -519,7 +535,6 @@ describe('Polymesh Class', () => {
       const result = polymesh.getIdentity(params);
       const context = dsMockUtils.getContextInstance();
 
-      expect(result instanceof Identity).toBe(true);
       expect(result).toMatchObject(new Identity(params, context));
     });
   });
@@ -646,121 +661,32 @@ describe('Polymesh Class', () => {
   describe('method: getIssuedClaims', () => {
     test('should return a list of issued claims', async () => {
       const context = dsMockUtils.getContextInstance();
-      const targetDid = 'someTargetDid';
-      const issuerDid = 'someIssuerDid';
-      const date = 1589816265000;
-      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
-      const jurisdictionType = ClaimTypeEnum.Jurisdiction;
-      const exemptedType = ClaimTypeEnum.Exempted;
-      const claim = {
-        target: new Identity({ did: targetDid }, context),
-        issuer: new Identity({ did: issuerDid }, context),
-        issuedAt: new Date(date),
-      };
-      const fakeClaims = [
-        {
-          ...claim,
-          expiry: null,
-          claim: {
-            type: customerDueDiligenceType,
-          },
-        },
-        {
-          ...claim,
-          expiry: new Date(date),
-          claim: {
-            type: jurisdictionType,
-            name: 'someJurisdiction',
-            scope: 'someScope',
-          },
-        },
-        {
-          ...claim,
-          expiry: null,
-          claim: {
-            type: exemptedType,
-            scope: 'someScope',
-          },
-        },
-      ];
-      /* eslint-disable @typescript-eslint/camelcase */
-      const commonClaimData = {
-        targetDID: targetDid,
-        issuer: issuerDid,
-        issuance_date: date,
-        last_update_date: date,
-      };
-      const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
-        totalCount: 1,
-        items: [
+      const issuedClaims: ResultSet<ClaimData> = {
+        data: [
           {
-            did: targetDid,
-            claims: [
-              {
-                ...commonClaimData,
-                expiry: null,
-                type: customerDueDiligenceType,
-              },
-              {
-                ...commonClaimData,
-                expiry: date,
-                type: jurisdictionType,
-                jurisdiction: 'someJurisdiction',
-                scope: 'someScope',
-              },
-              {
-                ...commonClaimData,
-                expiry: null,
-                type: exemptedType,
-                jurisdiction: null,
-                scope: 'someScope',
-              },
-            ],
+            target: new Identity({ did: 'someDid' }, context),
+            issuer: new Identity({ did: 'otherDid' }, context),
+            issuedAt: new Date(),
+            expiry: null,
+            claim: { type: ClaimType.NoData },
           },
         ],
+        next: 1,
+        count: 1,
       };
-      /* eslint-enabled @typescript-eslint/camelcase */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          issuedClaims,
+        },
+      });
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
       });
 
-      dsMockUtils.createApolloQueryStub(
-        didsWithClaims({ trustedClaimIssuers: ['someDid'], count: 30, skip: 1 }),
-        {
-          didsWithClaims: didsWithClaimsQueryResponse,
-        }
-      );
-
-      const result = await polymesh.getIssuedClaims({ start: 1, size: 30 });
-
-      expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(1);
-      expect(result.next).toBeNull();
-    });
-
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(polymesh.getIssuedClaims()).rejects.toThrow('Error in middleware query: Error');
+      const result = await polymesh.getIssuedClaims();
+      expect(result).toEqual(issuedClaims);
     });
   });
 
@@ -852,7 +778,7 @@ describe('Polymesh Class', () => {
         }
       );
 
-      const result = await polymesh.getIdentitiesWithClaims({
+      let result = await polymesh.getIdentitiesWithClaims({
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
@@ -862,25 +788,26 @@ describe('Polymesh Class', () => {
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(25);
       expect(result.next).toEqual(1);
-    });
 
-    test('should throw if the middleware query fails', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(polymesh.getIdentitiesWithClaims()).rejects.toThrow(
-        'Error in middleware query: Error'
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({
+          dids: undefined,
+          scope: undefined,
+          trustedClaimIssuers: undefined,
+          claimTypes: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
       );
+
+      result = await polymesh.getIdentitiesWithClaims();
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toEqual(null);
     });
   });
 
@@ -1139,6 +1066,41 @@ describe('Polymesh Class', () => {
     });
   });
 
+  describe('method: getMySigningKeys', () => {
+    test('should return a list of Signers', async () => {
+      const fakeResult = [
+        {
+          type: SignerType.Account,
+          value: '0xdummy',
+        },
+      ];
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const result = await polymesh.getMySigningKeys();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      const getSigningKeysStub = dsMockUtils
+        .getContextInstance()
+        .getSigningKeys.resolves(unsubCallback);
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      const callback = (() => [] as unknown) as SubCallback<Signer[]>;
+      const result = await polymesh.getMySigningKeys(callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(getSigningKeysStub, callback);
+    });
+  });
+
   describe('method: onConnectionError', () => {
     test('should call the supplied listener when the event is emitted and return an unsubscribe callback', async () => {
       const polkadot = dsMockUtils.getApiInstance();
@@ -1160,6 +1122,35 @@ describe('Polymesh Class', () => {
       polkadot.emit('error');
 
       sinon.assert.calledOnce(callback);
+    });
+  });
+
+  describe('method: removeMySigningKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const signers = [
+        {
+          type: SignerType.Account,
+          value: 'someAccountKey',
+        },
+      ];
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(removeSigningItems, 'prepare')
+        .withArgs({ signers }, context)
+        .resolves(expectedQueue);
+
+      const queue = await polymesh.removeMySigningKeys({ signers });
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 

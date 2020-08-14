@@ -8,7 +8,14 @@ import {
   ProposalVotesOrderFields,
 } from '~/middleware/types';
 
-import { didsWithClaims, eventByIndexedArgs, proposals, proposalVotes } from '../queries';
+import {
+  didsWithClaims,
+  eventByIndexedArgs,
+  proposals,
+  proposalVotes,
+  scopesByIdentity,
+  tokensByTrustedClaimIssuer,
+} from '../queries';
 
 describe('proposalVotes', () => {
   test('should pass the variables to the grapqhl query', () => {
@@ -75,6 +82,33 @@ describe('proposals', () => {
     };
 
     const result = proposals(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('tokensByTrustedClaimIssuer', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      claimIssuerDid: 'someDid',
+      order: Order.Asc,
+    };
+
+    const result = tokensByTrustedClaimIssuer(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('scopesByIdentity', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      did: 'someDid',
+    };
+
+    const result = scopesByIdentity(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

@@ -32,6 +32,8 @@ import {
   AssetName,
   AssetOwnershipRelation,
   AssetTransferRule,
+  AssetTransferRuleResult,
+  AssetTransferRulesResult,
   AssetType,
   AuthIdentifier,
   Authorization,
@@ -68,9 +70,10 @@ import {
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
+import { Identity } from '~/api/entities';
 import { Context } from '~/context';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, KeyringPair } from '~/types';
+import { AccountBalance, ClaimData, ClaimType, KeyringPair, ResultSet, SignerType } from '~/types';
 import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
 
@@ -163,6 +166,8 @@ interface ContextOptions {
   invalidDids?: string[];
   transactionFee?: BigNumber;
   currentPairAddress?: string;
+  issuedClaims?: ResultSet<ClaimData>;
+  masterKey?: string;
 }
 
 interface Pair {
@@ -345,6 +350,20 @@ const defaultContextOptions: ContextOptions = {
   invalidDids: [],
   transactionFee: new BigNumber(200),
   currentPairAddress: '0xdummy',
+  issuedClaims: {
+    data: [
+      {
+        target: ('targetIdentity' as unknown) as Identity,
+        issuer: ('issuerIdentity' as unknown) as Identity,
+        issuedAt: new Date(),
+        expiry: null,
+        claim: { type: ClaimType.NoData },
+      },
+    ],
+    next: 1,
+    count: 0,
+  },
+  masterKey: 'someAccountKey',
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -362,11 +381,12 @@ function configureContext(opts: ContextOptions): void {
   const getCurrentIdentity = sinon.stub();
   opts.withSeed
     ? getCurrentIdentity.returns({
-        getPolyXBalance: sinon.stub().resolves(opts.balance),
+        getPolyXBalance: sinon.stub().resolves(opts.balance?.free),
         did: opts.did,
         hasRoles: sinon.stub().resolves(opts.hasRoles),
         hasValidCdd: sinon.stub().resolves(opts.validCdd),
         getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
+        getMasterKey: sinon.stub().resolves(opts.masterKey),
       })
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')
@@ -395,9 +415,23 @@ function configureContext(opts: ContextOptions): void {
     }),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
+    queryMiddleware: sinon
+      .stub()
+      .callsFake(query => mockInstanceContainer.apolloInstance.query(query)),
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
+    getSigningKeys: sinon.stub().returns(
+      opts.withSeed
+        ? [
+            {
+              type: SignerType.Account,
+              value: opts.currentPairAddress,
+            },
+          ]
+        : []
+    ),
+    issuedClaims: sinon.stub().resolves(opts.issuedClaims),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
@@ -795,6 +829,8 @@ export function createQueryStub<
   return stub;
 }
 
+let count = 0;
+
 /**
  * @hidden
  * Create and return a rpc stub
@@ -820,6 +856,8 @@ export function createRpcStub(
   if (opts?.returnValue) {
     stub.resolves(opts.returnValue);
   }
+
+  (stub as any).count = count++;
 
   return stub;
 }
@@ -1515,6 +1553,54 @@ export const createMockAssetTransferRule = (assetTransferRule?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockAssetTransferRuleResult = (assetTransferRuleResult?: {
+  sender_rules: Rule[];
+  receiver_rules: Rule[];
+  rule_id: u32;
+  transfer_rule_result: bool;
+}): AssetTransferRuleResult => {
+  const result = assetTransferRuleResult || {
+    sender_rules: [],
+    receiver_rules: [],
+    rule_id: createMockU32(),
+    transfer_rule_result: createMockBool(),
+  };
+
+  return createMockCodec(
+    {
+      ...result,
+    },
+    !assetTransferRuleResult
+  ) as AssetTransferRuleResult;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetTransferRulesResult = (assetTransferRulesResult?: {
+  is_paused: bool;
+  rules: AssetTransferRuleResult[];
+  final_result: bool;
+}): AssetTransferRulesResult => {
+  const result = assetTransferRulesResult || {
+    is_paused: createMockBool(),
+    rules: createMockAssetTransferRuleResult(),
+    final_result: createMockBool(),
+  };
+
+  return createMockCodec(
+    {
+      ...result,
+    },
+    !assetTransferRulesResult
+  ) as AssetTransferRulesResult;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockDidRecord = (didRecord?: {
   roles: IdentityRole[];
   master_key: AccountId;
@@ -1603,36 +1689,60 @@ export const createMockProposalState = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPip = (
-  pip: { id: u32; proposal: Call; state: ProposalState } = {
+export const createMockPip = (pip?: { id: u32; proposal: Call; state: ProposalState }): Pip => {
+  const proposal = pip || {
     id: createMockU32(),
     proposal: ('proposal' as unknown) as Call,
     state: createMockProposalState(),
-  }
-): Pip =>
-  createMockCodec(
+  };
+
+  return createMockCodec(
     {
-      id: pip.id,
-      proposal: pip.proposal,
-      state: pip.state,
+      ...proposal,
     },
-    false
+    !pip
   ) as Pip;
+};
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPipsMetadata = (
-  metadata: { proposer: AccountId; cool_off_until: u32 } = {
+export const createMockPipsMetadata = (metadata?: {
+  proposer: AccountId;
+  cool_off_until: u32;
+  end: u32;
+}): PipsMetadata => {
+  const data = metadata || {
     proposer: createMockAccountId(),
     cool_off_until: createMockU32(),
-  }
-): PipsMetadata =>
-  createMockCodec(
+    end: createMockU32(),
+  };
+
+  return createMockCodec(
     {
-      proposer: metadata.proposer,
-      cool_off_until: metadata.cool_off_until,
+      ...data,
     },
-    false
+    !metadata
   ) as PipsMetadata;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSigningKey = (signingKey?: {
+  signer: Signatory;
+  permissions: Permission[];
+}): SigningKey => {
+  const key = signingKey || {
+    signer: createMockSignatory(),
+    permissions: [],
+  };
+  return createMockCodec(
+    {
+      ...key,
+    },
+    !signingKey
+  ) as SigningKey;
+};

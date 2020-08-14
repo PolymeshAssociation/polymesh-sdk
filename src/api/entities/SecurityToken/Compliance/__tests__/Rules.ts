@@ -1,5 +1,10 @@
 import { Vec } from '@polkadot/types/codec';
-import { AssetTransferRules, IdentityId } from 'polymesh-types/types';
+import {
+  AssetTransferRules,
+  AssetTransferRulesResult,
+  IdentityId,
+  Ticker,
+} from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -8,7 +13,9 @@ import { Params } from '~/api/procedures/setTokenRules';
 import { Namespace, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Mocked } from '~/testUtils/types';
 import { ClaimType, ConditionTarget, ConditionType, Rule } from '~/types';
+import * as utilsModule from '~/utils';
 
 import { Rules } from '../Rules';
 
@@ -293,6 +300,107 @@ describe('Rules class', () => {
       const queue = await rules.unpause();
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: checkTransfer/checkMint', () => {
+    let context: Mocked<Context>;
+    let token: SecurityToken;
+    let rules: Rules;
+    let currentDid: string;
+    let fromDid: string;
+    let toDid: string;
+    let rawFromDid: IdentityId;
+    let rawToDid: IdentityId;
+    let rawCurrentDid: IdentityId;
+    let rawTicker: Ticker;
+
+    let stringToIdentityIdStub: sinon.SinonStub;
+    let assetTransferRulesResultToRuleComplianceStub: sinon.SinonStub;
+    let stringToTickerStub: sinon.SinonStub;
+
+    beforeAll(() => {
+      fromDid = 'fromDid';
+      toDid = 'toDid';
+
+      stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
+      assetTransferRulesResultToRuleComplianceStub = sinon.stub(
+        utilsModule,
+        'assetTransferRulesResultToRuleCompliance'
+      );
+      stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    });
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+      token = entityMockUtils.getSecurityTokenInstance();
+      rules = new Rules(token, context);
+      currentDid = context.getCurrentIdentity().did;
+
+      rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
+      rawToDid = dsMockUtils.createMockIdentityId(toDid);
+      rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
+      rawTicker = dsMockUtils.createMockTicker(token.ticker);
+
+      stringToIdentityIdStub.withArgs(currentDid, context).returns(rawCurrentDid);
+      stringToIdentityIdStub.withArgs(fromDid, context).returns(rawFromDid);
+      stringToIdentityIdStub.withArgs(toDid, context).returns(rawToDid);
+      stringToTickerStub.withArgs(token.ticker, context).returns(rawTicker);
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('checkTransfer should return the current rules and whether the transfer complies', async () => {
+      const rawResponse = ('response' as unknown) as AssetTransferRulesResult;
+
+      dsMockUtils
+        .createRpcStub('compliance', 'canTransfer')
+        .withArgs(rawTicker, rawCurrentDid, rawToDid)
+        .resolves(rawResponse);
+
+      const fakeResult = 'result';
+
+      assetTransferRulesResultToRuleComplianceStub.withArgs(rawResponse).returns(fakeResult);
+
+      const result = await rules.checkTransfer({ to: toDid });
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('checkTransfer should return the current rules and whether the transfer complies with another identity', async () => {
+      const rawResponse = ('response' as unknown) as AssetTransferRulesResult;
+
+      dsMockUtils
+        .createRpcStub('compliance', 'canTransfer')
+        .withArgs(rawTicker, rawFromDid, rawToDid)
+        .resolves(rawResponse);
+
+      const fakeResult = 'result';
+
+      assetTransferRulesResultToRuleComplianceStub.withArgs(rawResponse).returns(fakeResult);
+
+      const result = await rules.checkTransfer({ from: fromDid, to: toDid });
+
+      expect(result).toBe(fakeResult);
+    });
+
+    test('checkMint should return the current rules and whether the mint complies', async () => {
+      const rawResponse = ('response' as unknown) as AssetTransferRulesResult;
+
+      dsMockUtils
+        .createRpcStub('compliance', 'canTransfer')
+        .withArgs(rawTicker, null, rawToDid)
+        .resolves(rawResponse);
+
+      const fakeResult = 'result';
+
+      assetTransferRulesResultToRuleComplianceStub.withArgs(rawResponse).returns(fakeResult);
+
+      const result = await rules.checkMint({ to: toDid });
+
+      expect(result).toBe(fakeResult);
     });
   });
 });
