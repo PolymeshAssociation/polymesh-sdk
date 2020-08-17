@@ -4,16 +4,16 @@ import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Signer } from '~/types';
 import { signerToSignatory } from '~/utils';
 
-export interface RemoveSigningItemsParams {
+export interface RemoveSigningKeysParams {
   signers: Signer[];
 }
 
 /**
  * @hidden
  */
-export async function prepareRemoveSigningItems(
-  this: Procedure<RemoveSigningItemsParams>,
-  args: RemoveSigningItemsParams
+export async function prepareRemoveSigningKeys(
+  this: Procedure<RemoveSigningKeysParams>,
+  args: RemoveSigningKeysParams
 ): Promise<void> {
   const {
     context: {
@@ -61,14 +61,14 @@ export async function prepareRemoveSigningItems(
   this.addTransaction(
     tx.identity.removeSigningKeys,
     {},
-    signers.map(signingItems => signerToSignatory(signingItems, context))
+    signers.map(signer => signerToSignatory(signer, context))
   );
 }
 
 /**
  * @hidden
  */
-export async function isAuthorized(this: Procedure<RemoveSigningItemsParams>): Promise<boolean> {
+export async function isAuthorized(this: Procedure<RemoveSigningKeysParams>): Promise<boolean> {
   const { context } = this;
 
   const identity = context.getCurrentIdentity();
@@ -77,4 +77,4 @@ export async function isAuthorized(this: Procedure<RemoveSigningItemsParams>): P
   return masterKey === context.getCurrentPair().address;
 }
 
-export const removeSigningItems = new Procedure(prepareRemoveSigningItems, isAuthorized);
+export const removeSigningKeys = new Procedure(prepareRemoveSigningKeys, isAuthorized);

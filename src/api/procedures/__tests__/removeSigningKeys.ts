@@ -3,16 +3,16 @@ import sinon from 'sinon';
 
 import {
   isAuthorized,
-  prepareRemoveSigningItems,
-  RemoveSigningItemsParams,
-} from '~/api/procedures/removeSigningItems';
+  prepareRemoveSigningKeys,
+  RemoveSigningKeysParams,
+} from '~/api/procedures/removeSigningKeys';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Signer, SignerType } from '~/types';
 import * as utilsModule from '~/utils';
 
-describe('removeSigningItems procedure', () => {
+describe('removeSigningKeys procedure', () => {
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
   let signerToSignatoryStub: sinon.SinonStub<[Signer, Context], Signatory>;
@@ -21,7 +21,7 @@ describe('removeSigningItems procedure', () => {
     signers: [
       {
         type: SignerType.Account,
-        value: 'someFakeAccountKey',
+        value: 'someFakeAccount',
       },
     ],
   };
@@ -61,24 +61,24 @@ describe('removeSigningItems procedure', () => {
 
     signerToSignatoryStub.returns(rawSignatory);
 
-    const proc = procedureMockUtils.getInstance<RemoveSigningItemsParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<RemoveSigningKeysParams, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('identity', 'removeSigningKeys');
 
-    await prepareRemoveSigningItems.call(proc, args);
+    await prepareRemoveSigningKeys.call(proc, args);
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, [rawSignatory]);
   });
 
-  test('should throw an error if the current account is not the master key', async () => {
-    const proc = procedureMockUtils.getInstance<RemoveSigningItemsParams, void>(mockContext);
+  test('should throw an error if attempting to remove the master key', async () => {
+    const proc = procedureMockUtils.getInstance<RemoveSigningKeysParams, void>(mockContext);
 
     await expect(
-      prepareRemoveSigningItems.call(proc, {
+      prepareRemoveSigningKeys.call(proc, {
         signers: [
           {
             type: SignerType.Account,
-            value: 'someAccountKey',
+            value: 'masterKey',
           },
         ],
       })
@@ -86,9 +86,9 @@ describe('removeSigningItems procedure', () => {
   });
 
   test('should throw an error if at least one of the signing key to remove is not present in the signing keys list', async () => {
-    const proc = procedureMockUtils.getInstance<RemoveSigningItemsParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<RemoveSigningKeysParams, void>(mockContext);
 
-    await expect(prepareRemoveSigningItems.call(proc, args)).rejects.toThrow(
+    await expect(prepareRemoveSigningKeys.call(proc, args)).rejects.toThrow(
       'You cannot remove a signing key that is not present in your signing keys list'
     );
   });
@@ -97,11 +97,11 @@ describe('removeSigningItems procedure', () => {
     test('should return whether the current address is the master key', async () => {
       dsMockUtils.configureMocks({
         contextOptions: {
-          currentPairAddress: 'someAccountKey',
+          currentPairAddress: 'masterKey',
         },
       });
 
-      const proc = procedureMockUtils.getInstance<RemoveSigningItemsParams, void>(mockContext);
+      const proc = procedureMockUtils.getInstance<RemoveSigningKeysParams, void>(mockContext);
 
       const boundFunc = isAuthorized.bind(proc);
       let result = await boundFunc();
@@ -109,7 +109,7 @@ describe('removeSigningItems procedure', () => {
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          currentPairAddress: 'otherAccountKey',
+          currentPairAddress: 'otherAccountId',
         },
       });
 

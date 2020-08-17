@@ -7,7 +7,7 @@ import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { modifyClaims, removeSigningItems, reserveTicker, transferPolyX } from '~/api/procedures';
+import { modifyClaims, removeSigningKeys, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { didsWithClaims } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
@@ -1137,14 +1137,14 @@ describe('Polymesh Class', () => {
       const signers = [
         {
           type: SignerType.Account,
-          value: 'someAccountKey',
+          value: 'someAccount',
         },
       ];
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       sinon
-        .stub(removeSigningItems, 'prepare')
+        .stub(removeSigningKeys, 'prepare')
         .withArgs({ signers }, context)
         .resolves(expectedQueue);
 
