@@ -1196,7 +1196,7 @@ describe('Polymesh Class', () => {
       const context = dsMockUtils.getContextInstance();
       const address = 'someAddress';
       const accountKey = dsMockUtils.createMockAccountKey(address);
-      const txTag = TxTags.identity.CddRegisterDid;
+      const tag = TxTags.identity.CddRegisterDid;
       const moduleId = ModuleIdEnum.Identity;
       const callId = CallIdEnum.CddRegisterDid;
 
@@ -1207,7 +1207,7 @@ describe('Polymesh Class', () => {
 
       sinon
         .stub(utilsModule, 'txTagToExtrinsicIdentifier')
-        .withArgs(txTag)
+        .withArgs(tag)
         .returns({
           moduleId,
           callId,
@@ -1260,7 +1260,7 @@ describe('Polymesh Class', () => {
 
       let result = await polymesh.getTransactionHistory({
         address,
-        txTag,
+        tag,
         size: 2,
         start: 1,
       });

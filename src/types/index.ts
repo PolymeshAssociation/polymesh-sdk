@@ -1,9 +1,9 @@
 import { Keyring } from '@polkadot/api';
 import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { TxTag } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
-import { TxTag } from 'polymesh-types/types';
 
 export enum TransactionStatus {
   /**
@@ -224,15 +224,15 @@ export interface IdentityWithClaims {
 }
 
 export interface ExtrinsicData {
-  blockId?: number;
-  extrinsicIdx?: number;
+  blockId: number;
+  extrinsicIdx: number;
   address?: string | null;
-  nonce?: number;
+  nonce: number;
   txTag: TxTag;
-  params?: object;
-  success?: boolean;
-  specVersionId?: number;
-  extrinsicHash?: string;
+  params: object;
+  success: boolean;
+  specVersionId: number;
+  extrinsicHash: string;
 }
 
 export interface ClaimScope {

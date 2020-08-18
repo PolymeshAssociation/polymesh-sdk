@@ -2104,23 +2104,35 @@ describe('txTagToProtocolOp', () => {
 
 describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
   test('txTagToExtrinsicIdentifier should convert a TxTag enum to a ExtrinsicIdentifier object', () => {
-    const value = TxTags.identity.CddRegisterDid;
-
-    const result = txTagToExtrinsicIdentifier(value);
+    let result = txTagToExtrinsicIdentifier(TxTags.identity.CddRegisterDid);
 
     expect(result).toEqual({
       moduleId: ModuleIdEnum.Identity,
       callId: CallIdEnum.CddRegisterDid,
     });
+
+    result = txTagToExtrinsicIdentifier(TxTags.finalityTracker.FinalHint);
+
+    expect(result).toEqual({
+      moduleId: ModuleIdEnum.Finalitytracker,
+      callId: CallIdEnum.FinalHint,
+    });
   });
 
   test('extrinsicIdentifierToTxTag should convert a ExtrinsicIdentifier object to a TxTag', () => {
-    const result = extrinsicIdentifierToTxTag({
+    let result = extrinsicIdentifierToTxTag({
       moduleId: ModuleIdEnum.Identity,
       callId: CallIdEnum.CddRegisterDid,
     });
 
     expect(result).toEqual(TxTags.identity.CddRegisterDid);
+
+    result = extrinsicIdentifierToTxTag({
+      moduleId: ModuleIdEnum.Finalitytracker,
+      callId: CallIdEnum.FinalHint,
+    });
+
+    expect(result).toEqual(TxTags.finalityTracker.FinalHint);
   });
 });
 

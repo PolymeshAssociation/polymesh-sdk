@@ -665,15 +665,16 @@ export class Polymesh {
    * Retrieve a list of transactions. Can be filtered using parameters
    *
    * @param opts.address - account that signed the transaction
+   * @param opts.tag - tag associated with the transaction
    * @param opts.success - whether the transaction was successful or not
    * @param opts.size - page size
    * @param opts.start - page offset
    */
   public async getTransactionHistory(
-    opts: {
+    filters: {
       blockId?: number;
       address?: string;
-      txTag?: TxTag;
+      tag?: TxTag;
       success?: boolean;
       size?: number;
       start?: number;
@@ -682,11 +683,14 @@ export class Polymesh {
   ): Promise<ResultSet<ExtrinsicData>> {
     const { context } = this;
 
-    const { blockId, address, txTag, success, size, start, orderBy } = opts;
+    const { blockId, address, tag, success, size, start, orderBy } = filters;
 
-    let extrinsicIdentifier;
-    if (txTag) {
-      extrinsicIdentifier = txTagToExtrinsicIdentifier(txTag);
+    let moduleId;
+    let callId;
+    if (tag) {
+      const extrinsicIdentifier = txTagToExtrinsicIdentifier(tag);
+      moduleId = extrinsicIdentifier.moduleId;
+      callId = extrinsicIdentifier.callId;
     }
 
     /* eslint-disable @typescript-eslint/camelcase */
@@ -694,8 +698,8 @@ export class Polymesh {
       transactions({
         block_id: blockId,
         address: address ? stringToAccountKey(address, context).toString() : undefined,
-        module_id: extrinsicIdentifier ? extrinsicIdentifier.moduleId : undefined,
-        call_id: extrinsicIdentifier ? extrinsicIdentifier.callId : undefined,
+        module_id: moduleId,
+        call_id: callId,
         success,
         count: size,
         skip: start,
