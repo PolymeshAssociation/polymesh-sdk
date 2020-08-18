@@ -3,7 +3,7 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities';
-import { TxTag } from '~/polkadot';
+import { TxTag } from 'polymesh-types/types';
 
 export enum TransactionStatus {
   /**
