@@ -41,6 +41,14 @@ export async function prepareReserveTicker(
   } = this;
   const { ticker, extendPeriod = false } = args;
 
+  if (ticker.length < 1 || ticker.length > 12 || ticker !== ticker.toUpperCase()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message:
+        'The ticker must be between 1 and 12 characters long and cannot contain lower case letters',
+    });
+  }
+
   const rawTicker = stringToTicker(ticker, context);
 
   const reservation = new TickerReservation({ ticker }, context);
