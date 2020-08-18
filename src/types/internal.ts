@@ -114,3 +114,9 @@ export enum ClaimOperation {
   Add = 'Add',
   Edit = 'Edit',
 }
+
+export enum TrustedClaimIssuerOperation {
+  Remove = 'Remove',
+  Add = 'Add',
+  Set = 'Set',
+}
