@@ -319,7 +319,7 @@ describe('Polymesh Class', () => {
       });
 
       const args = {
-        ticker: 'someTicker',
+        ticker: 'SOMETICKER',
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
