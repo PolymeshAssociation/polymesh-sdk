@@ -664,11 +664,11 @@ export class Polymesh {
   /**
    * Retrieve a list of transactions. Can be filtered using parameters
    *
-   * @param opts.address - account that signed the transaction
-   * @param opts.tag - tag associated with the transaction
-   * @param opts.success - whether the transaction was successful or not
-   * @param opts.size - page size
-   * @param opts.start - page offset
+   * @param filters.address - account that signed the transaction
+   * @param filters.tag - tag associated with the transaction
+   * @param filters.success - whether the transaction was successful or not
+   * @param filters.size - page size
+   * @param filters.start - page offset
    */
   public async getTransactionHistory(
     filters: {
@@ -688,9 +688,7 @@ export class Polymesh {
     let moduleId;
     let callId;
     if (tag) {
-      const extrinsicIdentifier = txTagToExtrinsicIdentifier(tag);
-      moduleId = extrinsicIdentifier.moduleId;
-      callId = extrinsicIdentifier.callId;
+      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
     }
 
     /* eslint-disable @typescript-eslint/camelcase */
