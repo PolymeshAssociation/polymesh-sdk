@@ -1224,7 +1224,6 @@ describe('Polymesh Class', () => {
           },
           {
             block_id: 2,
-            address: address,
             success: 1,
           },
         ],
@@ -1268,7 +1267,7 @@ describe('Polymesh Class', () => {
       expect(result.data[0].blockId).toEqual(1);
       expect(result.data[1].blockId).toEqual(2);
       expect(result.data[0].address).toEqual(address);
-      expect(result.data[1].address).toEqual(address);
+      expect(result.data[1].address).toBeNull();
       expect(result.data[0].success).toBeFalsy();
       expect(result.data[1].success).toBeTruthy();
       expect(result.count).toEqual(20);

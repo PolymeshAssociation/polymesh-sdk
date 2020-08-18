@@ -731,7 +731,7 @@ export class Polymesh {
         data.push({
           blockId: block_id!,
           extrinsicIdx: extrinsic_idx!,
-          address: rawAddress,
+          address: rawAddress ?? null,
           nonce: nonce!,
           txTag: extrinsicIdentifierToTxTag({ moduleId: module_id!, callId: call_id! }),
           params,

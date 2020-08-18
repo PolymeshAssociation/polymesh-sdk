@@ -226,7 +226,7 @@ export interface IdentityWithClaims {
 export interface ExtrinsicData {
   blockId: number;
   extrinsicIdx: number;
-  address?: string | null;
+  address: string | null;
   nonce: number;
   txTag: TxTag;
   params: object;
