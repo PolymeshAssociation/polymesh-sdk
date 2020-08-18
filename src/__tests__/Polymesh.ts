@@ -9,8 +9,14 @@ import sinon from 'sinon';
 import { Identity, TickerReservation } from '~/api/entities';
 import { modifyClaims, removeSigningItems, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
-import { didsWithClaims } from '~/middleware/queries';
-import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
+import { didsWithClaims, transactions } from '~/middleware/queries';
+import {
+  CallIdEnum,
+  ClaimTypeEnum,
+  ExtrinsicResult,
+  IdentityWithClaimsResult,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -1182,6 +1188,114 @@ describe('Polymesh Class', () => {
       polkadot.emit('disconnected');
 
       sinon.assert.calledOnce(callback);
+    });
+  });
+
+  describe('method: getTransactionHistory', () => {
+    test('should return a list of transactions', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const address = 'someAddress';
+      const accountKey = dsMockUtils.createMockAccountKey(address);
+      const tag = TxTags.identity.CddRegisterDid;
+      const moduleId = ModuleIdEnum.Identity;
+      const callId = CallIdEnum.CddRegisterDid;
+
+      sinon
+        .stub(utilsModule, 'stringToAccountKey')
+        .withArgs(address, context)
+        .returns(accountKey);
+
+      sinon
+        .stub(utilsModule, 'txTagToExtrinsicIdentifier')
+        .withArgs(tag)
+        .returns({
+          moduleId,
+          callId,
+        });
+
+      /* eslint-disable @typescript-eslint/camelcase */
+      const transactionsQueryResponse: ExtrinsicResult = {
+        totalCount: 20,
+        items: [
+          {
+            block_id: 1,
+            address: address,
+            success: 0,
+          },
+          {
+            block_id: 2,
+            success: 1,
+          },
+        ],
+      };
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      dsMockUtils.createApolloQueryStub(
+        transactions({
+          block_id: undefined,
+          address: accountKey.toString(),
+          module_id: moduleId,
+          call_id: callId,
+          success: undefined,
+          count: 2,
+          skip: 1,
+          orderBy: undefined,
+        }),
+        {
+          transactions: transactionsQueryResponse,
+        }
+      );
+
+      let result = await polymesh.getTransactionHistory({
+        address,
+        tag,
+        size: 2,
+        start: 1,
+      });
+
+      expect(result.data[0].blockId).toEqual(1);
+      expect(result.data[1].blockId).toEqual(2);
+      expect(result.data[0].address).toEqual(address);
+      expect(result.data[1].address).toBeNull();
+      expect(result.data[0].success).toBeFalsy();
+      expect(result.data[1].success).toBeTruthy();
+      expect(result.count).toEqual(20);
+      expect(result.next).toEqual(3);
+
+      dsMockUtils.createApolloQueryStub(
+        transactions({
+          block_id: undefined,
+          address: undefined,
+          module_id: undefined,
+          call_id: undefined,
+          success: undefined,
+          count: undefined,
+          skip: undefined,
+          orderBy: undefined,
+        }),
+        {
+          transactions: transactionsQueryResponse,
+        }
+      );
+
+      result = await polymesh.getTransactionHistory();
+
+      expect(result.data[0].blockId).toEqual(1);
+      expect(result.data[0].address).toEqual(address);
+      expect(result.data[0].success).toBeFalsy();
+      expect(result.count).toEqual(20);
+      expect(result.next).toBeNull();
     });
   });
 });

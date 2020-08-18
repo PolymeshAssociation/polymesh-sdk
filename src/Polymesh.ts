@@ -21,8 +21,8 @@ import {
 } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { didsWithClaims } from '~/middleware/queries';
-import { ClaimTypeEnum, Query } from '~/middleware/types';
+import { didsWithClaims, transactions } from '~/middleware/queries';
+import { ClaimTypeEnum, Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
@@ -30,6 +30,7 @@ import {
   CommonKeyring,
   Ensured,
   ErrorCode,
+  ExtrinsicData,
   IdentityWithClaims,
   LinkType,
   MiddlewareConfig,
@@ -47,12 +48,15 @@ import {
   booleanToBool,
   calculateNextKey,
   createClaim,
+  extrinsicIdentifierToTxTag,
   linkTypeToMeshLinkType,
   moduleAddressToString,
   signerToSignatory,
+  stringToAccountKey,
   stringToTicker,
   textToString,
   tickerToString,
+  txTagToExtrinsicIdentifier,
   u32ToBigNumber,
   valueToDid,
 } from '~/utils';
@@ -654,6 +658,98 @@ export class Polymesh {
     return {
       name: textToString(name),
       version: u32ToBigNumber(specVersion).toNumber(),
+    };
+  }
+
+  /**
+   * Retrieve a list of transactions. Can be filtered using parameters
+   *
+   * @param filters.address - account that signed the transaction
+   * @param filters.tag - tag associated with the transaction
+   * @param filters.success - whether the transaction was successful or not
+   * @param filters.size - page size
+   * @param filters.start - page offset
+   */
+  public async getTransactionHistory(
+    filters: {
+      blockId?: number;
+      address?: string;
+      tag?: TxTag;
+      success?: boolean;
+      size?: number;
+      start?: number;
+      orderBy?: TransactionOrderByInput;
+    } = {}
+  ): Promise<ResultSet<ExtrinsicData>> {
+    const { context } = this;
+
+    const { blockId, address, tag, success, size, start, orderBy } = filters;
+
+    let moduleId;
+    let callId;
+    if (tag) {
+      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
+    }
+
+    /* eslint-disable @typescript-eslint/camelcase */
+    const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
+      transactions({
+        block_id: blockId,
+        address: address ? stringToAccountKey(address, context).toString() : undefined,
+        module_id: moduleId,
+        call_id: callId,
+        success,
+        count: size,
+        skip: start,
+        orderBy,
+      })
+    );
+
+    const {
+      data: {
+        transactions: { items: transactionList, totalCount: count },
+      },
+    } = result;
+
+    const data: ExtrinsicData[] = [];
+
+    transactionList.forEach(
+      ({
+        block_id,
+        extrinsic_idx,
+        address: rawAddress,
+        nonce,
+        module_id,
+        call_id,
+        params,
+        success: txSuccess,
+        spec_version_id,
+        extrinsic_hash,
+      }) => {
+        // TODO remove null check once types fixed
+        /* eslint-disable @typescript-eslint/no-non-null-assertion */
+        data.push({
+          blockId: block_id!,
+          extrinsicIdx: extrinsic_idx!,
+          address: rawAddress ?? null,
+          nonce: nonce!,
+          txTag: extrinsicIdentifierToTxTag({ moduleId: module_id!, callId: call_id! }),
+          params,
+          success: !!txSuccess,
+          specVersionId: spec_version_id!,
+          extrinsicHash: extrinsic_hash!,
+        });
+        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+      }
+    );
+    /* eslint-enable @typescript-eslint/camelcase */
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
     };
   }
 
