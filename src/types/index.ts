@@ -330,8 +330,8 @@ export enum TransferStatus {
   FundsLimitReached = 'FundsLimitReached', // 168
 }
 
-export interface ClaimTargets {
-  targets: (string | Identity)[];
+export interface ClaimTarget {
+  target: string | Identity;
   claim: Claim;
   expiry?: Date;
 }

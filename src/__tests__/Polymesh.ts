@@ -22,7 +22,7 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   AccountBalance,
   ClaimData,
-  ClaimTargets,
+  ClaimTarget,
   ClaimType,
   ResultSet,
   Signer,
@@ -917,9 +917,9 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      const claims: ClaimTargets[] = [
+      const claims: ClaimTarget[] = [
         {
-          targets: ['someDid'],
+          target: 'someDid',
           claim: {
             type: ClaimType.Accredited,
             scope: 'someIdentityId',
@@ -955,9 +955,9 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      const claims: ClaimTargets[] = [
+      const claims: ClaimTarget[] = [
         {
-          targets: ['someDid'],
+          target: 'someDid',
           claim: {
             type: ClaimType.Accredited,
             scope: 'someIdentityId',
@@ -993,9 +993,9 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      const claims: ClaimTargets[] = [
+      const claims: ClaimTarget[] = [
         {
-          targets: ['someDid'],
+          target: 'someDid',
           claim: {
             type: ClaimType.Accredited,
             scope: 'someIdentityId',

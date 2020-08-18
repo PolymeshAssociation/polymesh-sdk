@@ -7,7 +7,7 @@ import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import {
   Claim,
-  ClaimTargets,
+  ClaimTarget,
   ClaimType,
   Ensured,
   ErrorCode,
@@ -32,17 +32,17 @@ interface AddClaimItem {
 }
 
 interface AddClaimsParams {
-  claims: ClaimTargets[];
+  claims: ClaimTarget[];
   operation: ClaimOperation.Add;
 }
 
 interface EditClaimsParams {
-  claims: ClaimTargets[];
+  claims: ClaimTarget[];
   operation: ClaimOperation.Edit;
 }
 
 interface RevokeClaimsParams {
-  claims: Omit<ClaimTargets, 'expiry'>[];
+  claims: Omit<ClaimTarget, 'expiry'>[];
   operation: ClaimOperation.Revoke;
 }
 
@@ -69,14 +69,12 @@ export async function prepareModifyClaims(
   const modifyClaimItems: AddClaimItem[] = [];
   let allTargets: string[] = [];
 
-  claims.forEach(({ targets, expiry, claim }: ClaimTargets) => {
-    targets.forEach(target => {
-      allTargets.push(valueToDid(target));
-      modifyClaimItems.push({
-        target: stringToIdentityId(valueToDid(target), context),
-        claim: claimToMeshClaim(claim, context),
-        expiry: expiry ? dateToMoment(expiry, context) : null,
-      });
+  claims.forEach(({ target, expiry, claim }: ClaimTarget) => {
+    allTargets.push(valueToDid(target));
+    modifyClaimItems.push({
+      target: stringToIdentityId(valueToDid(target), context),
+      claim: claimToMeshClaim(claim, context),
+      expiry: expiry ? dateToMoment(expiry, context) : null,
     });
   });
 
@@ -117,24 +115,22 @@ export async function prepareModifyClaims(
     );
 
     const nonExistentClaims: Claim[] = [];
-    claims.forEach(({ targets, claim }) => {
-      targets.forEach(target => {
-        const targetClaims = claimsByDid[valueToDid(target)] ?? [];
+    claims.forEach(({ target, claim }) => {
+      const targetClaims = claimsByDid[valueToDid(target)] ?? [];
 
-        const claimExists = !!targetClaims.find(({ scope, type }) => {
-          let isSameScope = true;
+      const claimExists = !!targetClaims.find(({ scope, type }) => {
+        let isSameScope = true;
 
-          if (isScopedClaim(claim)) {
-            isSameScope = claim.scope === scope;
-          }
-
-          return isSameScope && ClaimType[type] === claim.type;
-        });
-
-        if (!claimExists) {
-          nonExistentClaims.push(claim);
+        if (isScopedClaim(claim)) {
+          isSameScope = claim.scope === scope;
         }
+
+        return isSameScope && ClaimType[type] === claim.type;
       });
+
+      if (!claimExists) {
+        nonExistentClaims.push(claim);
+      }
     });
 
     if (nonExistentClaims.length) {

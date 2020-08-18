@@ -62,11 +62,15 @@ describe('modifyClaims procedure', () => {
     args = {
       claims: [
         {
-          targets: [someDid, otherDid],
+          target: someDid,
           claim: cddClaim,
         },
         {
-          targets: [someDid],
+          target: otherDid,
+          claim: cddClaim,
+        },
+        {
+          target: someDid,
           claim: buyLockupClaim,
           expiry,
         },
@@ -280,7 +284,7 @@ describe('getRequiredRoles', () => {
     const args = {
       claims: [
         {
-          targets: ['someDid'],
+          target: 'someDid',
           claim: { type: ClaimType.CustomerDueDiligence },
         },
       ],
@@ -293,7 +297,7 @@ describe('getRequiredRoles', () => {
     const args = {
       claims: [
         {
-          targets: ['someDid'],
+          target: 'someDid',
           claim: { type: ClaimType.Accredited, scope: 'someIdentityId' },
         },
       ],
