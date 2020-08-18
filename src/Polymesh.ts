@@ -664,7 +664,7 @@ export class Polymesh {
   /**
    * Retrieve a list of transactions. Can be filtered using parameters
    *
-   * @param opts.address - account address who generated the transaction
+   * @param opts.address - account that signed the transaction
    * @param opts.success - if transaction was successfully or not
    * @param opts.size - page size
    * @param opts.start - page offset
