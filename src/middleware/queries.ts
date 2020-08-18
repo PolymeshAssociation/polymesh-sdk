@@ -7,6 +7,7 @@ import {
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
   QueryTokensByTrustedClaimIssuerArgs,
+  QueryTransactionsArgs,
 } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
 
@@ -189,6 +190,58 @@ export function tokensByTrustedClaimIssuer(
   const query = gql`
     query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!, $order: Order) {
       tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid, order: $order)
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get transactions
+ */
+export function transactions(
+  variables?: QueryTransactionsArgs
+): GraphqlQuery<QueryTransactionsArgs | undefined> {
+  const query = gql`
+    query TransactionsQuery(
+      $block_id: Int
+      $address: String
+      $module_id: ModuleIdEnum
+      $call_id: CallIdEnum
+      $success: Boolean
+      $count: Int
+      $skip: Int
+      $orderBy: TransactionOrderByInput
+    ) {
+      transactions(
+        block_id: $block_id
+        address: $address
+        module_id: $module_id
+        call_id: $call_id
+        success: $success
+        count: $count
+        skip: $skip
+        orderBy: $orderBy
+      ) {
+        totalCount
+        items {
+          block_id
+          extrinsic_idx
+          address
+          nonce
+          module_id
+          call_id
+          params
+          success
+          spec_version_id
+          extrinsic_hash
+        }
+      }
     }
   `;
 

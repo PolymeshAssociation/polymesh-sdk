@@ -10,6 +10,7 @@ import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
 import { PostTransactionValue } from '~/base';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -119,4 +120,9 @@ export enum TrustedClaimIssuerOperation {
   Remove = 'Remove',
   Add = 'Add',
   Set = 'Set',
+}
+
+export interface ExtrinsicIdentifier {
+  moduleId: ModuleIdEnum;
+  callId: CallIdEnum;
 }

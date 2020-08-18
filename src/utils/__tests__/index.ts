@@ -32,6 +32,7 @@ import sinon from 'sinon';
 import { Identity } from '~/api/entities';
 import { ProposalState } from '~/api/entities/Proposal/types';
 import { PostTransactionValue } from '~/base';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import {
   Authorization,
@@ -78,6 +79,7 @@ import {
   documentNameToString,
   documentToTokenDocument,
   documentUriToString,
+  extrinsicIdentifierToTxTag,
   findEventRecord,
   fundingRoundNameToString,
   identifierTypeToString,
@@ -119,6 +121,7 @@ import {
   tokenDocumentToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
+  txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToTransferStatus,
   u64ToBigNumber,
@@ -2096,6 +2099,40 @@ describe('txTagToProtocolOp', () => {
     result = txTagToProtocolOp(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
+  test('txTagToExtrinsicIdentifier should convert a TxTag enum to a ExtrinsicIdentifier object', () => {
+    let result = txTagToExtrinsicIdentifier(TxTags.identity.CddRegisterDid);
+
+    expect(result).toEqual({
+      moduleId: ModuleIdEnum.Identity,
+      callId: CallIdEnum.CddRegisterDid,
+    });
+
+    result = txTagToExtrinsicIdentifier(TxTags.finalityTracker.FinalHint);
+
+    expect(result).toEqual({
+      moduleId: ModuleIdEnum.Finalitytracker,
+      callId: CallIdEnum.FinalHint,
+    });
+  });
+
+  test('extrinsicIdentifierToTxTag should convert a ExtrinsicIdentifier object to a TxTag', () => {
+    let result = extrinsicIdentifierToTxTag({
+      moduleId: ModuleIdEnum.Identity,
+      callId: CallIdEnum.CddRegisterDid,
+    });
+
+    expect(result).toEqual(TxTags.identity.CddRegisterDid);
+
+    result = extrinsicIdentifierToTxTag({
+      moduleId: ModuleIdEnum.Finalitytracker,
+      callId: CallIdEnum.FinalHint,
+    });
+
+    expect(result).toEqual(TxTags.finalityTracker.FinalHint);
   });
 });
 
