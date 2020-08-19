@@ -3,6 +3,7 @@ import gql from 'graphql-tag';
 import {
   QueryDidsWithClaimsArgs,
   QueryEventsByIndexedArgsArgs,
+  QueryIssuerDidsWithClaimsByTargetArgs,
   QueryProposalsArgs,
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
@@ -265,6 +266,38 @@ export function scopesByIdentity(
         scope
         ticker
       }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get issuer dids with at least one claim for given target
+ */
+export function issuerDidsWithClaimsByTarget(
+  variables?: QueryIssuerDidsWithClaimsByTargetArgs
+): GraphqlQuery<QueryIssuerDidsWithClaimsByTargetArgs | undefined> {
+  const query = gql`
+    query IssuerDidsWithClaimsByTargetQuery(
+      $target: String!
+      $scope: String
+      $trustedClaimIssuers: [String!]
+      $count: Int
+      $skip: Int
+    ) {
+      issuerDidsWithClaimsByTarget(
+        target: $target
+        scope: $scope
+        trustedClaimIssuers: $trustedClaimIssuers
+        count: $count
+        skip: $skip
+      )
     }
   `;
 

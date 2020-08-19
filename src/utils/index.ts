@@ -49,7 +49,11 @@ import { Identity } from '~/api/entities/Identity';
 import { ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
-import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum,
+  IdentityWithClaims as MiddlewareIdentityWithClaims,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import {
   Authorization,
   AuthorizationType,
@@ -59,6 +63,7 @@ import {
   ConditionTarget,
   ConditionType,
   ErrorCode,
+  IdentityWithClaims,
   isMultiClaimCondition,
   isSingleClaimCondition,
   KnownTokenType,
@@ -1266,4 +1271,33 @@ export function meshProposalStateToProposalState(proposalState: MeshProposalStat
   }
 
   return ProposalState.Referendum;
+}
+
+/**
+ * @hidden
+ */
+export function toIdentityWithClaims(
+  data: MiddlewareIdentityWithClaims[],
+  context: Context
+): IdentityWithClaims[] {
+  return data.map(({ did, claims }) => ({
+    identity: new Identity({ did }, context),
+    claims: claims.map(
+      ({
+        targetDID,
+        issuer,
+        issuance_date: issuanceDate,
+        expiry,
+        type,
+        jurisdiction,
+        scope: claimScope,
+      }) => ({
+        target: new Identity({ did: targetDID }, context),
+        issuer: new Identity({ did: issuer }, context),
+        issuedAt: new Date(issuanceDate),
+        expiry: expiry ? new Date(expiry) : null,
+        claim: createClaim(type, jurisdiction, claimScope),
+      })
+    ),
+  }));
 }
