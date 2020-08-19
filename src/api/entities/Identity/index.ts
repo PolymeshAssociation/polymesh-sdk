@@ -23,7 +23,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
-  accountKeyToString,
+  accountIdToString,
   balanceToBigNumber,
   cddStatusToBoolean,
   identityIdToString,
@@ -73,41 +73,6 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
     this.did = did;
     this.authorizations = new Authorizations(this, context);
-  }
-
-  /**
-   * Retrieve the POLYX balance of this particular Identity
-   *
-   * @note can be subscribed to
-   */
-  public getPolyXBalance(): Promise<BigNumber>;
-  public getPolyXBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getPolyXBalance(
-    callback?: SubCallback<BigNumber>
-  ): Promise<BigNumber | UnsubCallback> {
-    const {
-      did,
-      context,
-      context: {
-        polymeshApi: {
-          query: { balances },
-        },
-      },
-    } = this;
-
-    const rawIdentityId = stringToIdentityId(did, context);
-
-    if (callback) {
-      return balances.identityBalance(rawIdentityId, res => {
-        callback(balanceToBigNumber(res));
-      });
-    }
-
-    const balance = await balances.identityBalance(rawIdentityId);
-
-    return balanceToBigNumber(balance);
   }
 
   /**
@@ -255,7 +220,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const { did } = context.getCurrentIdentity();
 
     const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
-      return accountKeyToString(masterKey);
+      return accountIdToString(masterKey);
     };
 
     if (callback) {

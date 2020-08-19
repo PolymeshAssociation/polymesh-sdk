@@ -1,6 +1,6 @@
 import { Moment } from '@polkadot/types/interfaces';
 import { cloneDeep, uniq } from 'lodash';
-import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
+import { Claim as MeshClaim, IdentityId, TxTag, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure } from '~/base';
 import { didsWithClaims } from '~/middleware/queries';
@@ -146,14 +146,22 @@ export async function prepareModifyClaims(
     }
   }
 
-  const transaction =
-    operation === ClaimOperation.Revoke ? identity.revokeClaimsBatch : identity.addClaimsBatch;
+  let transaction: typeof identity.batchAddClaim | typeof identity.batchRevokeClaim;
+  let tag: TxTag;
 
-  batchArguments(modifyClaimItems, TxTags.identity.AddClaimsBatch, ({ target }) =>
-    identityIdToString(target)
-  ).forEach(itemBatch => {
-    this.addTransaction(transaction, { batchSize: itemBatch.length }, itemBatch);
-  });
+  if (operation === ClaimOperation.Revoke) {
+    transaction = identity.batchRevokeClaim;
+    tag = TxTags.identity.BatchRevokeClaim;
+  } else {
+    transaction = identity.batchAddClaim;
+    tag = TxTags.identity.BatchAddClaim;
+  }
+
+  batchArguments(modifyClaimItems, tag, ({ target }) => identityIdToString(target)).forEach(
+    itemBatch => {
+      this.addTransaction(transaction, { batchSize: itemBatch.length }, itemBatch);
+    }
+  );
 }
 
 /**

@@ -126,3 +126,8 @@ export interface ExtrinsicIdentifier {
   moduleId: ModuleIdEnum;
   callId: CallIdEnum;
 }
+
+export interface TokenDocumentData {
+  uri: string;
+  contentHash: string;
+}

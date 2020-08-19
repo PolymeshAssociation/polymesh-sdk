@@ -166,10 +166,13 @@ export enum AuthorizationType {
  */
 export type Authorization =
   | { type: AuthorizationType.NoData | AuthorizationType.AddMultiSigSigner }
+  | { type: AuthorizationType.JoinIdentity; value: Permission[] }
   | {
       type: Exclude<
         AuthorizationType,
-        AuthorizationType.NoData | AuthorizationType.AddMultiSigSigner
+        | AuthorizationType.NoData
+        | AuthorizationType.AddMultiSigSigner
+        | AuthorizationType.JoinIdentity
       >;
       value: string;
     };
@@ -391,17 +394,17 @@ export interface Fees {
   gas: BigNumber;
 }
 
-export enum LinkType {
-  DocumentOwnership = 'DocumentOwnership',
-  TickerOwnership = 'TickerOwnership',
-  AssetOwnership = 'AssetOwnership',
-  NoData = 'NoData',
+export enum Permission {
+  Full = 'Full',
+  Admin = 'Admin',
+  Operator = 'Operator',
+  SpendFunds = 'SpendFunds',
 }
 
 export enum SignerType {
   // eslint-disable-next-line no-shadow
   Identity = 'Identity',
-  AccountKey = 'AccountKey',
+  Account = 'Account',
 }
 
 export enum TransactionArgumentType {

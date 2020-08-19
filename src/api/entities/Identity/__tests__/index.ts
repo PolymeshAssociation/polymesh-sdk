@@ -1,13 +1,12 @@
-import { Balance } from '@polkadot/types/interfaces';
+import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AccountKey, DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
+import { DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
 import { scopesByIdentity, tokensByTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { Mocked } from '~/testUtils/types';
 import {
   ClaimData,
   ClaimType,
@@ -74,50 +73,6 @@ describe('Identity class', () => {
       expect(Identity.isUniqueIdentifiers({ did: 'someDid' })).toBe(true);
       expect(Identity.isUniqueIdentifiers({})).toBe(false);
       expect(Identity.isUniqueIdentifiers({ did: 3 })).toBe(false);
-    });
-  });
-
-  describe('method: getPolyXBalance', () => {
-    let did: string;
-    let fakeBalance: BigNumber;
-    let rawIdentityId: IdentityId;
-    let mockContext: Mocked<Context>;
-    let identityBalanceStub: sinon.SinonStub;
-
-    beforeAll(() => {
-      did = 'someDid';
-      fakeBalance = new BigNumber(100);
-      rawIdentityId = dsMockUtils.createMockIdentityId(did);
-      mockContext = dsMockUtils.getContextInstance();
-    });
-
-    beforeEach(() => {
-      identityBalanceStub = dsMockUtils.createQueryStub('balances', 'identityBalance');
-      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
-    });
-
-    test("should return the identity's POLYX balance", async () => {
-      identityBalanceStub.resolves(fakeBalance.times(Math.pow(10, 6)));
-
-      const identity = new Identity({ did }, context);
-      const result = await identity.getPolyXBalance();
-      expect(result).toEqual(fakeBalance);
-    });
-
-    test('should allow subscription', async () => {
-      const unsubCallback = 'unsubCallback';
-      const callback = sinon.stub();
-
-      identityBalanceStub.callsFake(async (_a, cbFunc) => {
-        cbFunc(fakeBalance.times(Math.pow(10, 6)));
-        return unsubCallback;
-      });
-
-      const identity = new Identity({ did }, context);
-      const result = await identity.getPolyXBalance(callback);
-
-      expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeBalance);
     });
   });
 
@@ -398,15 +353,15 @@ describe('Identity class', () => {
 
   describe('method: getMasterKey', () => {
     const did = 'someDid';
-    const accountKey = 'someMasterKey';
+    const accountId = 'someMasterKey';
 
-    let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
+    let accountIdToStringStub: sinon.SinonStub<[AccountId], string>;
     let didRecordsStub: sinon.SinonStub;
     let rawDidRecord: DidRecord;
 
     beforeAll(() => {
-      accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
-      accountKeyToStringStub.returns(accountKey);
+      accountIdToStringStub = sinon.stub(utilsModule, 'accountIdToString');
+      accountIdToStringStub.returns(accountId);
     });
 
     beforeEach(() => {
@@ -414,8 +369,8 @@ describe('Identity class', () => {
       /* eslint-disable @typescript-eslint/camelcase */
       rawDidRecord = dsMockUtils.createMockDidRecord({
         roles: [],
-        master_key: dsMockUtils.createMockAccountKey(accountKey),
-        signing_items: [],
+        master_key: dsMockUtils.createMockAccountId(accountId),
+        signing_keys: [],
       });
       /* eslint-enabled @typescript-eslint/camelcase */
     });
@@ -427,7 +382,7 @@ describe('Identity class', () => {
       didRecordsStub.returns(rawDidRecord);
 
       const result = await identity.getMasterKey();
-      expect(result).toEqual(accountKey);
+      expect(result).toEqual(accountId);
     });
 
     test('should allow subscription', async () => {
@@ -445,7 +400,7 @@ describe('Identity class', () => {
       const result = await identity.getMasterKey(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, accountKey);
+      sinon.assert.calledWithExactly(callback, accountId);
     });
   });
 

@@ -47,8 +47,8 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
 
   let addTransactionStub: sinon.SinonStub;
 
-  let removeDefaultTrustedClaimIssuersBatchTransaction: PolymeshTx<[Ticker, Vec<IdentityId>]>;
-  let addDefaultTrustedClaimIssuersBatchTransaction: PolymeshTx<[Ticker, Vec<IdentityId>]>;
+  let batchRemoveDefaultTrustedClaimIssuerTransaction: PolymeshTx<[Vec<IdentityId>, Ticker]>;
+  let batchAddDefaultTrustedClaimIssuerTransaction: PolymeshTx<[Vec<IdentityId>, Ticker]>;
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
@@ -61,13 +61,13 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
       }
     );
 
-    removeDefaultTrustedClaimIssuersBatchTransaction = dsMockUtils.createTxStub(
+    batchRemoveDefaultTrustedClaimIssuerTransaction = dsMockUtils.createTxStub(
       'complianceManager',
-      'removeDefaultTrustedClaimIssuersBatch'
+      'batchRemoveDefaultTrustedClaimIssuer'
     );
-    addDefaultTrustedClaimIssuersBatchTransaction = dsMockUtils.createTxStub(
+    batchAddDefaultTrustedClaimIssuerTransaction = dsMockUtils.createTxStub(
       'complianceManager',
-      'addDefaultTrustedClaimIssuersBatch'
+      'batchAddDefaultTrustedClaimIssuer'
     );
 
     mockContext = dsMockUtils.getContextInstance();
@@ -135,17 +135,17 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
-      removeDefaultTrustedClaimIssuersBatchTransaction,
+      batchRemoveDefaultTrustedClaimIssuerTransaction,
       { batchSize: currentClaimIssuerDids.length },
-      rawTicker,
-      currentClaimIssuerDids
+      currentClaimIssuerDids,
+      rawTicker
     );
     sinon.assert.calledWith(
       addTransactionStub.secondCall,
-      addDefaultTrustedClaimIssuersBatchTransaction,
+      batchAddDefaultTrustedClaimIssuerTransaction,
       { batchSize: rawClaimIssuerDids.length },
-      rawTicker,
-      rawClaimIssuerDids
+      rawClaimIssuerDids,
+      rawTicker
     );
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
@@ -160,10 +160,10 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
-      addDefaultTrustedClaimIssuersBatchTransaction,
+      batchAddDefaultTrustedClaimIssuerTransaction,
       { batchSize: rawClaimIssuerDids.length },
-      rawTicker,
-      rawClaimIssuerDids
+      rawClaimIssuerDids,
+      rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
@@ -182,10 +182,10 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
-      removeDefaultTrustedClaimIssuersBatchTransaction,
+      batchRemoveDefaultTrustedClaimIssuerTransaction,
       { batchSize: currentClaimIssuerDids.length },
-      rawTicker,
-      currentClaimIssuerDids
+      currentClaimIssuerDids,
+      rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
@@ -224,11 +224,11 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     });
 
     sinon.assert.calledWith(
-      addTransactionStub.firstCall,
-      removeDefaultTrustedClaimIssuersBatchTransaction,
+      addTransactionStub,
+      batchRemoveDefaultTrustedClaimIssuerTransaction,
       { batchSize: currentClaimIssuerDids.length },
-      rawTicker,
-      currentClaimIssuerDids
+      currentClaimIssuerDids,
+      rawTicker
     );
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
@@ -255,7 +255,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     expect(error.data).toMatchObject({ present: args.claimIssuerIdentities });
   });
 
-  test('should add a transaction to remove the supplied trusted claim issuers (remove)', async () => {
+  test('should add a transaction to add the supplied trusted claim issuers (add)', async () => {
     const currentClaimIssuerDids: IdentityId[] = [];
     trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
@@ -266,11 +266,11 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     });
 
     sinon.assert.calledWith(
-      addTransactionStub.firstCall,
-      addDefaultTrustedClaimIssuersBatchTransaction,
+      addTransactionStub,
+      batchAddDefaultTrustedClaimIssuerTransaction,
       { batchSize: rawClaimIssuerDids.length },
-      rawTicker,
-      rawClaimIssuerDids
+      rawClaimIssuerDids,
+      rawTicker
     );
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });

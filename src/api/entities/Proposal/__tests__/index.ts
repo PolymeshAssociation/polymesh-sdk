@@ -211,8 +211,8 @@ describe('Proposal class', () => {
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockProposalMetadata({
-            proposer: dsMockUtils.createMockAccountKey(),
+          dsMockUtils.createMockPipsMetadata({
+            proposer: dsMockUtils.createMockAccountId(),
             // eslint-disable-next-line @typescript-eslint/camelcase
             cool_off_until: rawCoolOff,
             end: dsMockUtils.createMockU32(),
@@ -238,8 +238,8 @@ describe('Proposal class', () => {
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockProposalMetadata({
-            proposer: dsMockUtils.createMockAccountKey(),
+          dsMockUtils.createMockPipsMetadata({
+            proposer: dsMockUtils.createMockAccountId(),
             // eslint-disable-next-line @typescript-eslint/camelcase
             cool_off_until: rawCoolOff,
             end: rawEnd,
@@ -266,8 +266,8 @@ describe('Proposal class', () => {
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockProposalMetadata({
-            proposer: dsMockUtils.createMockAccountKey(),
+          dsMockUtils.createMockPipsMetadata({
+            proposer: dsMockUtils.createMockAccountId(),
             // eslint-disable-next-line @typescript-eslint/camelcase
             cool_off_until: rawCoolOff,
             end: rawEnd,
