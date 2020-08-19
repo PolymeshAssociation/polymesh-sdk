@@ -40,7 +40,7 @@ import {
   identityIdToString,
   posRatioToBigNumber,
   signatoryToSigner,
-  stringToAccountKey,
+  stringToAccountId,
   stringToIdentityId,
   textToString,
   txTagToProtocolOp,
@@ -225,7 +225,7 @@ export class Context {
 
     try {
       identityIds = await identity.keyToIdentityIds(
-        stringToAccountKey(newCurrentPair.address, this)
+        stringToAccountId(newCurrentPair.address, this)
       );
 
       did = identityIds.unwrap().asUnique;
@@ -543,8 +543,8 @@ export class Context {
 
     const { did } = this.getCurrentIdentity();
 
-    const assembleResult = ({ signing_items: signingItems }: DidRecord): Signer[] => {
-      return signingItems.map(({ signer: rawSigner }) => signatoryToSigner(rawSigner));
+    const assembleResult = ({ signing_keys: signingKeys }: DidRecord): Signer[] => {
+      return signingKeys.map(({ signer: rawSigner }) => signatoryToSigner(rawSigner));
     };
 
     if (callback) {

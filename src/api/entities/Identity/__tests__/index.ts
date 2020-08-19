@@ -1,6 +1,6 @@
-import { Balance } from '@polkadot/types/interfaces';
+import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AccountKey, DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
+import { DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Entity } from '~/base';
@@ -398,15 +398,15 @@ describe('Identity class', () => {
 
   describe('method: getMasterKey', () => {
     const did = 'someDid';
-    const accountKey = 'someMasterKey';
+    const accountId = 'someMasterKey';
 
-    let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
+    let accountIdToStringStub: sinon.SinonStub<[AccountId], string>;
     let didRecordsStub: sinon.SinonStub;
     let rawDidRecord: DidRecord;
 
     beforeAll(() => {
-      accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
-      accountKeyToStringStub.returns(accountKey);
+      accountIdToStringStub = sinon.stub(utilsModule, 'accountIdToString');
+      accountIdToStringStub.returns(accountId);
     });
 
     beforeEach(() => {
@@ -414,8 +414,8 @@ describe('Identity class', () => {
       /* eslint-disable @typescript-eslint/camelcase */
       rawDidRecord = dsMockUtils.createMockDidRecord({
         roles: [],
-        master_key: dsMockUtils.createMockAccountKey(accountKey),
-        signing_items: [],
+        master_key: dsMockUtils.createMockAccountId(accountId),
+        signing_keys: [],
       });
       /* eslint-enabled @typescript-eslint/camelcase */
     });
@@ -427,7 +427,7 @@ describe('Identity class', () => {
       didRecordsStub.returns(rawDidRecord);
 
       const result = await identity.getMasterKey();
-      expect(result).toEqual(accountKey);
+      expect(result).toEqual(accountId);
     });
 
     test('should allow subscription', async () => {
@@ -445,7 +445,7 @@ describe('Identity class', () => {
       const result = await identity.getMasterKey(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, accountKey);
+      sinon.assert.calledWithExactly(callback, accountId);
     });
   });
 

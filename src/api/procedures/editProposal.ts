@@ -1,7 +1,7 @@
 import { assertProposalUnlocked } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
-import { accountKeyToString, stringToText } from '~/utils';
+import { accountIdToString, stringToText } from '~/utils';
 
 export type EditProposalParams =
   | {
@@ -63,7 +63,7 @@ export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): 
   const metadata = await pips.proposalMetadata(pipId);
   const { proposer } = metadata.unwrap();
 
-  return accountKeyToString(proposer) === this.context.getCurrentPair().address;
+  return accountIdToString(proposer) === this.context.getCurrentPair().address;
 }
 
 export const editProposal = new Procedure(prepareEditProposal, isAuthorized);

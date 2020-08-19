@@ -4,7 +4,7 @@ import { IdentityId } from 'polymesh-types/types';
 import { Identity } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
-import { identityIdToString, numberToBalance, stringToAccountKey } from '~/utils';
+import { identityIdToString, numberToBalance, stringToAccountId } from '~/utils';
 
 export interface TransferPolyXParams {
   to: string;
@@ -35,7 +35,7 @@ export async function prepareTransferPolyX(
   // TODO: queryMulti
   const [{ free: freeBalance }, identityIds] = await Promise.all([
     context.accountBalance(),
-    identity.keyToIdentityIds(stringToAccountKey(to, context)),
+    identity.keyToIdentityIds(stringToAccountId(to, context)),
   ]);
 
   if (amount.isGreaterThan(freeBalance)) {

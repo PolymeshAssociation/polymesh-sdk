@@ -1,6 +1,7 @@
-import { u64, Vec } from '@polkadot/types';
+import { Vec } from '@polkadot/types';
+import { ITuple } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { Document, Link, Ticker } from 'polymesh-types/types';
+import { Document, DocumentName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -13,20 +14,21 @@ import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TokenDocument } from '~/types';
-import { PolymeshTx } from '~/types/internal';
+import { PolymeshTx, TokenDocumentData } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
 describe('setTokenDocuments procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let tokenDocumentToDocumentStub: sinon.SinonStub<[TokenDocument, Context], Document>;
+  let tokenDocumentDataToDocumentStub: sinon.SinonStub<[TokenDocumentData, Context], Document>;
+  let stringToDocumentNameStub: sinon.SinonStub<[string, Context], DocumentName>;
   let ticker: string;
   let documents: TokenDocument[];
   let rawTicker: Ticker;
-  let rawDocuments: Document[];
-  let links: Link[];
+  let rawDocuments: [DocumentName, Document][];
+  let documentEntries: [[Ticker, DocumentName], Document][];
   let args: Params;
-  let linkIds: u64[];
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -36,7 +38,8 @@ describe('setTokenDocuments procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     sinon.stub(utilsModule, 'signerToSignatory');
-    tokenDocumentToDocumentStub = sinon.stub(utilsModule, 'tokenDocumentToDocument');
+    tokenDocumentDataToDocumentStub = sinon.stub(utilsModule, 'tokenDocumentDataToDocument');
+    stringToDocumentNameStub = sinon.stub(utilsModule, 'stringToDocumentName');
     ticker = 'someTicker';
     documents = [
       {
@@ -52,32 +55,16 @@ describe('setTokenDocuments procedure', () => {
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawDocuments = documents.map(({ name, uri, contentHash }) =>
-      dsMockUtils.createMockDocument({
-        name: dsMockUtils.createMockDocumentName(name),
-        uri: dsMockUtils.createMockDocumentUri(uri),
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        content_hash: dsMockUtils.createMockDocumentHash(contentHash),
-      })
+      tuple(
+        dsMockUtils.createMockDocumentName(name),
+        dsMockUtils.createMockDocument({
+          uri: dsMockUtils.createMockDocumentUri(uri),
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+        })
+      )
     );
-    linkIds = [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(2)];
-    /* eslint-disable @typescript-eslint/camelcase */
-    links = [
-      dsMockUtils.createMockLink({
-        link_data: dsMockUtils.createMockLinkData({
-          DocumentOwned: rawDocuments[0],
-        }),
-        expiry: dsMockUtils.createMockOption(),
-        link_id: linkIds[0],
-      }),
-      dsMockUtils.createMockLink({
-        link_data: dsMockUtils.createMockLinkData({
-          DocumentOwned: rawDocuments[1],
-        }),
-        expiry: dsMockUtils.createMockOption(),
-        link_id: linkIds[1],
-      }),
-    ];
-    /* eslint-enable @typescript-eslint/camelcase */
+    documentEntries = rawDocuments.map(([name, doc]) => tuple([rawTicker, name], doc));
     args = {
       ticker,
       documents,
@@ -86,22 +73,27 @@ describe('setTokenDocuments procedure', () => {
 
   let addTransactionStub: sinon.SinonStub;
 
-  let removeDocumentsTransaction: PolymeshTx<[Ticker, Vec<u64>]>;
-  let addDocumentsTransaction: PolymeshTx<[Ticker, Vec<Document>]>;
+  let batchRemoveDocumentTransaction: PolymeshTx<[Vec<DocumentName>, Ticker]>;
+  let batchAddDocumentTransaction: PolymeshTx<[Vec<ITuple<[DocumentName, Document]>>, Ticker]>;
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([links[0]]);
+    dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+      entries: [documentEntries[0]],
+    });
 
-    removeDocumentsTransaction = dsMockUtils.createTxStub('asset', 'removeDocuments');
-    addDocumentsTransaction = dsMockUtils.createTxStub('asset', 'addDocuments');
+    batchRemoveDocumentTransaction = dsMockUtils.createTxStub('asset', 'batchRemoveDocument');
+    batchAddDocumentTransaction = dsMockUtils.createTxStub('asset', 'batchAddDocument');
 
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    documents.forEach((document, index) => {
-      tokenDocumentToDocumentStub.withArgs(document, mockContext).returns(rawDocuments[index]);
+    documents.forEach(({ uri, contentHash, name }, index) => {
+      stringToDocumentNameStub.withArgs(name, mockContext).returns(rawDocuments[index][0]);
+      tokenDocumentDataToDocumentStub
+        .withArgs({ uri, contentHash }, mockContext)
+        .returns(rawDocuments[index][1]);
     });
   });
 
@@ -118,7 +110,7 @@ describe('setTokenDocuments procedure', () => {
   });
 
   test('should throw an error if the new list is the same as the current one', () => {
-    dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns(links);
+    dsMockUtils.createQueryStub('asset', 'assetDocuments', { entries: documentEntries });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(prepareSetTokenDocuments.call(proc, args)).rejects.toThrow(
@@ -133,33 +125,35 @@ describe('setTokenDocuments procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
-      removeDocumentsTransaction,
+      batchRemoveDocumentTransaction,
       { batchSize: 1 },
-      rawTicker,
-      [links[0].link_id]
+      [rawDocuments[0][0]],
+      rawTicker
     );
     sinon.assert.calledWith(
       addTransactionStub.secondCall,
-      addDocumentsTransaction,
+      batchAddDocumentTransaction,
       { batchSize: rawDocuments.length },
-      rawTicker,
-      rawDocuments
+      rawDocuments,
+      rawTicker
     );
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
 
   test('should not add a remove documents transaction if there are no documents linked to the token', async () => {
-    dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([]);
+    dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+      entries: [],
+    });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenDocuments.call(proc, args);
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
-      addDocumentsTransaction,
+      batchAddDocumentTransaction,
       { batchSize: rawDocuments.length },
-      rawTicker,
-      rawDocuments
+      rawDocuments,
+      rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
@@ -172,10 +166,10 @@ describe('setTokenDocuments procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
-      removeDocumentsTransaction,
+      batchRemoveDocumentTransaction,
       { batchSize: 1 },
-      rawTicker,
-      [links[0].link_id]
+      [rawDocuments[0][0]],
+      rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));

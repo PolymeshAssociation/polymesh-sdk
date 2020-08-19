@@ -23,7 +23,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
-  accountKeyToString,
+  accountIdToString,
   balanceToBigNumber,
   cddStatusToBoolean,
   identityIdToString,
@@ -255,7 +255,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const { did } = context.getCurrentIdentity();
 
     const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
-      return accountKeyToString(masterKey);
+      return accountIdToString(masterKey);
     };
 
     if (callback) {

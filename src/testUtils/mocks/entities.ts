@@ -164,7 +164,7 @@ const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   getPolyXBalance: new BigNumber(100),
   hasValidCdd: true,
-  getMasterKey: 'someAccountKey',
+  getMasterKey: 'someAccountId',
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultTickerReservationOptions: TickerReservationOptions = {
