@@ -8,14 +8,14 @@ export { reserveTicker, ReserveTickerParams } from './reserveTicker';
 export { setTokenDocuments, SetTokenDocumentsParams } from './setTokenDocuments';
 export { setTokenRules, SetTokenRulesParams } from './setTokenRules';
 export {
-  setTokenTrustedClaimIssuers,
-  SetTokenTrustedClaimIssuersParams,
-} from './setTokenTrustedClaimIssuers';
+  modifyTokenTrustedClaimIssuers,
+  ModifyTokenTrustedClaimIssuersParams,
+} from './modifyTokenTrustedClaimIssuers';
 export { toggleFreezeTransfers, ToggleFreezeTransfersParams } from './toggleFreezeTransfers';
 export { togglePauseRules, TogglePauseRulesParams } from './togglePauseRules';
 export { transferPolyX, TransferPolyXParams } from './transferPolyX';
 export { transferToken, TransferTokenParams } from './transferToken';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 export { editProposal, EditProposalParams } from './editProposal';
-export { removeSigningItems, RemoveSigningItemsParams } from './removeSigningItems';
+export { removeSigningKeys, RemoveSigningKeysParams } from './removeSigningKeys';
 export { cancelProposal } from './cancelProposal';

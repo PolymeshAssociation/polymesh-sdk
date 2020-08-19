@@ -1,7 +1,13 @@
 import { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { SignerType, TokenDocument } from '~/types';
-import { documentToTokenDocument, signerToSignatory, tickerToDid } from '~/utils';
+import { DocumentName } from '~/polkadot';
+import { PaginationOptions, ResultSet, TokenDocument } from '~/types';
+import {
+  documentNameToString,
+  documentToTokenDocumentData,
+  requestPaginated,
+  stringToTicker,
+} from '~/utils';
 
 import { SecurityToken } from './';
 
@@ -26,8 +32,10 @@ export class Documents extends Namespace<SecurityToken> {
 
   /**
    * Retrieve all documents linked to the Security Token
+   *
+   * @note supports pagination
    */
-  public async get(): Promise<TokenDocument[]> {
+  public async get(paginationOpts?: PaginationOptions): Promise<ResultSet<TokenDocument>> {
     const {
       context: {
         polymeshApi: { query },
@@ -36,12 +44,19 @@ export class Documents extends Namespace<SecurityToken> {
       parent: { ticker },
     } = this;
 
-    const links = await query.identity.links.entries(
-      signerToSignatory({ type: SignerType.Identity, value: tickerToDid(ticker) }, context)
-    );
+    const { entries, lastKey: next } = await requestPaginated(query.asset.assetDocuments, {
+      arg: stringToTicker(ticker, context),
+      paginationOpts,
+    });
 
-    return links
-      .filter(([, { link_data: linkData }]) => linkData.isDocumentOwned)
-      .map(([, { link_data: linkData }]) => documentToTokenDocument(linkData.asDocumentOwned));
+    const data: TokenDocument[] = entries.map(([key, doc]) => ({
+      ...documentToTokenDocumentData(doc),
+      name: documentNameToString(key.args[1] as DocumentName),
+    }));
+
+    return {
+      data,
+      next,
+    };
   }
 }

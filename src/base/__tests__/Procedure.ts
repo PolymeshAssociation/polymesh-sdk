@@ -82,10 +82,10 @@ describe('Procedure class', () => {
 
     test('should prepare and return a transaction queue with the corresponding transactions, arguments, fees and return value', async () => {
       const ticker = 'MY_TOKEN';
-      const signingItems = ['0x1', '0x2'];
+      const signingKeys = ['0x1', '0x2'];
       const procArgs = {
         ticker,
-        signingItems,
+        signingKeys,
       };
       const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
       const tx2 = dsMockUtils.createTxStub('identity', 'registerDid');
@@ -98,7 +98,7 @@ describe('Procedure class', () => {
       ): Promise<string> {
         this.addTransaction(tx1, {}, args.ticker);
 
-        this.addTransaction(tx2, {}, args.signingItems);
+        this.addTransaction(tx2, {}, args.signingKeys);
 
         return returnValue;
       };
@@ -114,7 +114,7 @@ describe('Procedure class', () => {
         constructorSpy,
         sinon.match([
           sinon.match({ tx: tx1, args: [ticker] }),
-          sinon.match({ tx: tx2, args: [signingItems] }),
+          sinon.match({ tx: tx2, args: [signingKeys] }),
         ]),
         returnValue,
         context
@@ -136,7 +136,7 @@ describe('Procedure class', () => {
         constructorSpy,
         sinon.match([
           sinon.match({ tx: tx1, args: [ticker] }),
-          sinon.match({ tx: tx2, args: [signingItems] }),
+          sinon.match({ tx: tx2, args: [signingKeys] }),
         ]),
         returnValue,
         context
@@ -145,10 +145,10 @@ describe('Procedure class', () => {
 
     test('should throw any errors encountered during preparation', () => {
       const ticker = 'MY_TOKEN';
-      const signingItems = ['0x1', '0x2'];
+      const signingKeys = ['0x1', '0x2'];
       const procArgs = {
         ticker,
-        signingItems,
+        signingKeys,
       };
 
       const errorMsg = 'failed';
@@ -163,10 +163,10 @@ describe('Procedure class', () => {
 
     test("should throw an error if the caller doesn't have the appropriate roles", async () => {
       const ticker = 'MY_TOKEN';
-      const signingItems = ['0x1', '0x2'];
+      const signingKeys = ['0x1', '0x2'];
       const procArgs = {
         ticker,
-        signingItems,
+        signingKeys,
       };
       const func = async function(this: Procedure<typeof procArgs, string>): Promise<string> {
         return 'success';

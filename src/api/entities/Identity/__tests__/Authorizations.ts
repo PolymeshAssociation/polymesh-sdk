@@ -78,9 +78,7 @@ describe('Authorizations class', () => {
             authorization_data: dsMockUtils.createMockAuthorizationData({
               TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
             }),
-            authorized_by: dsMockUtils.createMockSignatory({
-              Identity: dsMockUtils.createMockIdentityId(issuerDid),
-            }),
+            authorized_by: dsMockUtils.createMockIdentityId(issuerDid),
           })
         )
       );
@@ -93,7 +91,8 @@ describe('Authorizations class', () => {
 
       const expectedAuthorizations = authParams
         .slice(0, -1)
-        .map(params => new AuthorizationRequest(params, context));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map(params => new AuthorizationRequest(params as any, context));
 
       const result = await authsNamespace.getReceived();
 
@@ -147,9 +146,7 @@ describe('Authorizations class', () => {
         authorization_data: dsMockUtils.createMockAuthorizationData({
           TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
         }),
-        authorized_by: dsMockUtils.createMockSignatory({
-          Identity: dsMockUtils.createMockIdentityId(did),
-        }),
+        authorized_by: dsMockUtils.createMockIdentityId(did),
       }));
       /* eslint-enable @typescript-eslint/camelcase */
 
@@ -178,7 +175,8 @@ describe('Authorizations class', () => {
 
       const expectedAuthorizations = authParams
         .slice(0, -1)
-        .map(params => new AuthorizationRequest(params, context));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map(params => new AuthorizationRequest(params as any, context));
 
       const result = await authsNamespace.getSent();
 
