@@ -116,6 +116,12 @@ export enum ClaimOperation {
   Edit = 'Edit',
 }
 
+export enum TrustedClaimIssuerOperation {
+  Remove = 'Remove',
+  Add = 'Add',
+  Set = 'Set',
+}
+
 export interface ExtrinsicIdentifier {
   moduleId: ModuleIdEnum;
   callId: CallIdEnum;

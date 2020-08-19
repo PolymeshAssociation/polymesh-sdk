@@ -1,9 +1,13 @@
 import { IdentityId } from 'polymesh-types/types';
 
 import { TrustedClaimIssuer } from '~/api/entities/TrustedClaimIssuer';
-import { setTokenTrustedClaimIssuers, SetTokenTrustedClaimIssuersParams } from '~/api/procedures';
+import {
+  modifyTokenTrustedClaimIssuers,
+  ModifyTokenTrustedClaimIssuersParams,
+} from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { SubCallback, UnsubCallback } from '~/types';
+import { TrustedClaimIssuerOperation } from '~/types/internal';
 import { identityIdToString, stringToTicker } from '~/utils';
 
 import { SecurityToken } from '../';
@@ -17,14 +21,51 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
    *
    * This requires two transactions
    *
-   * @param args.claimIssuerDids - array if identity IDs of the default claim issuers
+   * @param args.claimIssuerDids - array of identity IDs of the default claim issuers
    */
-  public set(args: SetTokenTrustedClaimIssuersParams): Promise<TransactionQueue<SecurityToken>> {
+  public set(args: ModifyTokenTrustedClaimIssuersParams): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
       context,
     } = this;
-    return setTokenTrustedClaimIssuers.prepare({ ticker, ...args }, context);
+    return modifyTokenTrustedClaimIssuers.prepare(
+      { ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
+      context
+    );
+  }
+
+  /**
+   * Add the supplied identities to the Security Token's list of trusted claim issuers
+   *
+   * @param args.claimIssuerDids - array of identity IDs of the default claim issuers
+   */
+  public add(args: ModifyTokenTrustedClaimIssuersParams): Promise<TransactionQueue<SecurityToken>> {
+    const {
+      parent: { ticker },
+      context,
+    } = this;
+    return modifyTokenTrustedClaimIssuers.prepare(
+      { ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
+      context
+    );
+  }
+
+  /**
+   * Remove the supplied identities from the Security Token's list of trusted claim issuers   *
+   *
+   * @param args.claimIssuerDids - array of identity IDs of the default claim issuers
+   */
+  public remove(
+    args: ModifyTokenTrustedClaimIssuersParams
+  ): Promise<TransactionQueue<SecurityToken>> {
+    const {
+      parent: { ticker },
+      context,
+    } = this;
+    return modifyTokenTrustedClaimIssuers.prepare(
+      { ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
+      context
+    );
   }
 
   /**
