@@ -50,6 +50,7 @@ import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
   accountIdToString,
+  addressToKey,
   assetIdentifierToString,
   assetNameToString,
   assetTransferRulesResultToRuleCompliance,
@@ -81,6 +82,7 @@ import {
   identifierTypeToString,
   identityIdToString,
   jurisdictionNameToString,
+  keyToAddress,
   meshClaimToClaim,
   meshPermissionToPermission,
   meshProposalStateToProposalState,
@@ -212,6 +214,23 @@ describe('moduleAddressToString', () => {
 
     const result = moduleAddressToString(moduleAddress);
     expect(result).toBe('5Eg4TucMsdiyc9LjA3BT7VXioUqMoQ4vLn1VSUDsYsiJMdbN');
+  });
+});
+
+describe('keyToAddress and addressToKey', () => {
+  const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+  const publicKey = '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
+
+  test('addressToKey should decode an address into a public key', () => {
+    const result = addressToKey(address);
+
+    expect(result).toBe(publicKey);
+  });
+
+  test('keyToAddress should encode a public key into an address', () => {
+    const result = keyToAddress(publicKey);
+
+    expect(result).toBe(address);
   });
 });
 

@@ -76,41 +76,6 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the POLYX balance of this particular Identity
-   *
-   * @note can be subscribed to
-   */
-  public getPolyXBalance(): Promise<BigNumber>;
-  public getPolyXBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getPolyXBalance(
-    callback?: SubCallback<BigNumber>
-  ): Promise<BigNumber | UnsubCallback> {
-    const {
-      did,
-      context,
-      context: {
-        polymeshApi: {
-          query: { balances },
-        },
-      },
-    } = this;
-
-    const rawIdentityId = stringToIdentityId(did, context);
-
-    if (callback) {
-      return balances.identityBalance(rawIdentityId, res => {
-        callback(balanceToBigNumber(res));
-      });
-    }
-
-    const balance = await balances.identityBalance(rawIdentityId);
-
-    return balanceToBigNumber(balance);
-  }
-
-  /**
    * Check whether this Identity possesses the specified Role
    */
   public async hasRole(role: Role): Promise<boolean> {

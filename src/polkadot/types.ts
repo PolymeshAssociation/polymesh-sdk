@@ -31,10 +31,7 @@ export enum IndicesTx {
 export enum BalancesTx {
   Transfer = 'balances.transfer',
   TransferWithMemo = 'balances.transferWithMemo',
-  TopUpIdentityBalance = 'balances.topUpIdentityBalance',
-  ReclaimIdentityBalance = 'balances.reclaimIdentityBalance',
-  ChangeChargeDidFlag = 'balances.changeChargeDidFlag',
-  TopUpBrrBalance = 'balances.topUpBrrBalance',
+  DepositBlockRewardReserveBalance = 'balances.depositBlockRewardReserveBalance',
   SetBalance = 'balances.setBalance',
   ForceTransfer = 'balances.forceTransfer',
   BurnAccountBalance = 'balances.burnAccountBalance',
@@ -292,21 +289,12 @@ export enum VotingTx {
 export enum StoCappedTx {
   LaunchSto = 'stoCapped.launchSto',
   BuyTokens = 'stoCapped.buyTokens',
-  ModifyAllowedTokens = 'stoCapped.modifyAllowedTokens',
-  BuyTokensBySimpleToken = 'stoCapped.buyTokensBySimpleToken',
   PauseSto = 'stoCapped.pauseSto',
   UnpauseSto = 'stoCapped.unpauseSto',
 }
 
 export enum ExemptionTx {
   ModifyExemptionList = 'exemption.modifyExemptionList',
-}
-
-export enum SimpleTokenTx {
-  CreateToken = 'simpleToken.createToken',
-  Approve = 'simpleToken.approve',
-  Transfer = 'simpleToken.transfer',
-  TransferFrom = 'simpleToken.transferFrom',
 }
 
 export enum SettlementTx {
@@ -380,7 +368,6 @@ export type TxTag =
   | VotingTx
   | StoCappedTx
   | ExemptionTx
-  | SimpleTokenTx
   | SettlementTx
   | CddServiceProvidersTx
   | ProtocolFeeTx
@@ -414,7 +401,6 @@ export const TxTags = {
   voting: VotingTx,
   stoCapped: StoCappedTx,
   exemption: ExemptionTx,
-  simpleToken: SimpleTokenTx,
   settlement: SettlementTx,
   cddServiceProviders: CddServiceProvidersTx,
   protocolFee: ProtocolFeeTx,

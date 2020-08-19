@@ -217,17 +217,6 @@ export class Polymesh {
   }
 
   /**
-   * Get the POLYX balance of an identity
-   */
-  public getIdentityBalance(args?: { did: string | Identity }): Promise<BigNumber> {
-    let identityArgs;
-    if (args) {
-      identityArgs = { did: valueToDid(args.did) };
-    }
-    return this.getIdentity(identityArgs).getPolyXBalance();
-  }
-
-  /**
    * Get the free/locked POLYX balance of an account
    *
    * @param args.accountId - defaults to the current account

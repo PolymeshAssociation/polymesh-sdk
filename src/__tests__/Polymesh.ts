@@ -233,31 +233,6 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getIdentityBalance', () => {
-    test("should return the identity's POLYX balance", async () => {
-      const fakeBalance = new BigNumber(20);
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          withSeed: true,
-          balance: { free: fakeBalance, locked: new BigNumber(0) },
-        },
-      });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountSeed: 'seed',
-      });
-
-      let result = await polymesh.getIdentityBalance();
-      expect(result).toEqual(fakeBalance);
-
-      entityMockUtils.configureMocks({ identityOptions: { getPolyXBalance: fakeBalance } });
-
-      result = await polymesh.getIdentityBalance({ did: 'someDid' });
-      expect(result).toEqual(fakeBalance);
-    });
-  });
-
   describe('method: getAccountBalance', () => {
     test('should return the free and locked POLYX balance of the current account', async () => {
       const fakeBalance = {
