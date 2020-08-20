@@ -1,6 +1,5 @@
-import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { IdentityId, Ticker } from 'polymesh-types/types';
+import { IssueAssetItem, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
@@ -192,21 +191,24 @@ describe('issueTokens procedure', () => {
       ticker,
     };
 
-    const investors: IdentityId[] = [];
-    const balances: Balance[] = [];
+    const items: IssueAssetItem[] = [];
 
-    const stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
-    const numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
+    const issuanceDataToIssueAssetItemStub = sinon.stub(
+      utilsModule,
+      'issuanceDataToIssueAssetItem'
+    );
 
     args.issuanceData.forEach(({ identity, amount }) => {
       const identityId = dsMockUtils.createMockIdentityId(`${identity}Identity`);
       const balance = dsMockUtils.createMockBalance(amount.toNumber());
+      const item = dsMockUtils.createMockIssueAssetItem({
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        identity_did: identityId,
+        value: balance,
+      });
+      items.push(item);
 
-      investors.push(identityId);
-      balances.push(balance);
-
-      stringToIdentityIdStub.withArgs(identity, mockContext).returns(identityId);
-      numberToBalanceStub.withArgs(amount, mockContext).returns(balance);
+      issuanceDataToIssueAssetItemStub.withArgs({ identity, amount }, mockContext).returns(item);
     });
 
     const transaction = dsMockUtils.createTxStub('asset', 'batchIssue');
@@ -218,9 +220,8 @@ describe('issueTokens procedure', () => {
       addTransactionStub,
       transaction,
       { batchSize: args.issuanceData.length },
-      rawTicker,
-      investors,
-      balances
+      items,
+      rawTicker
     );
     expect(result.ticker).toBe(ticker);
   });

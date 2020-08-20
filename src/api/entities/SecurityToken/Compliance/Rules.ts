@@ -9,6 +9,7 @@ import { Rule, RuleCompliance, SubCallback, UnsubCallback } from '~/types';
 import {
   assetTransferRulesResultToRuleCompliance,
   assetTransferRuleToRule,
+  boolToBoolean,
   identityIdToString,
   stringToIdentityId,
   stringToTicker,
@@ -159,6 +160,27 @@ export class Rules extends Namespace<SecurityToken> {
       ...args,
       from: null,
     });
+  }
+
+  /**
+   * Check whether compliance rules are paused or not
+   */
+  public async arePaused(): Promise<boolean> {
+    const {
+      parent: { ticker },
+      context: {
+        polymeshApi: {
+          query: { complianceManager },
+        },
+      },
+      context,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const { is_paused: isPaused } = await complianceManager.assetRulesMap(rawTicker);
+
+    return boolToBoolean(isPaused);
   }
 
   /**

@@ -1,5 +1,5 @@
 import { Procedure } from '~/base';
-import { accountKeyToString } from '~/utils';
+import { accountIdToString } from '~/utils';
 
 import { assertProposalUnlocked } from './utils';
 
@@ -40,7 +40,7 @@ export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): 
   const metadata = await pips.proposalMetadata(pipId);
   const { proposer } = metadata.unwrap();
 
-  return accountKeyToString(proposer) === this.context.getCurrentPair().address;
+  return accountIdToString(proposer) === this.context.getCurrentPair().address;
 }
 
 export const cancelProposal = new Procedure(prepareCancelProposal, isAuthorized);

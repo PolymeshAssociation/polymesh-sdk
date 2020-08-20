@@ -7,7 +7,7 @@ import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { modifyClaims, removeSigningItems, reserveTicker, transferPolyX } from '~/api/procedures';
+import { modifyClaims, removeSigningKeys, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { didsWithClaims, transactions } from '~/middleware/queries';
 import {
@@ -32,6 +32,7 @@ import {
   TickerReservationStatus,
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -233,31 +234,6 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getIdentityBalance', () => {
-    test("should return the identity's POLYX balance", async () => {
-      const fakeBalance = new BigNumber(20);
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          withSeed: true,
-          balance: { free: fakeBalance, locked: new BigNumber(0) },
-        },
-      });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountSeed: 'seed',
-      });
-
-      let result = await polymesh.getIdentityBalance();
-      expect(result).toEqual(fakeBalance);
-
-      entityMockUtils.configureMocks({ identityOptions: { getPolyXBalance: fakeBalance } });
-
-      result = await polymesh.getIdentityBalance({ did: 'someDid' });
-      expect(result).toEqual(fakeBalance);
-    });
-  });
-
   describe('method: getAccountBalance', () => {
     test('should return the free and locked POLYX balance of the current account', async () => {
       const fakeBalance = {
@@ -426,27 +402,25 @@ describe('Polymesh Class', () => {
 
     test('should return a list of ticker reservations if did parameter is set', async () => {
       const fakeTicker = 'TEST';
+      const did = 'someDid';
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
-        dsMockUtils.createMockLink({
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_data: dsMockUtils.createMockLinkData({
-            TickerOwned: dsMockUtils.createMockTicker(fakeTicker),
-          }),
-          expiry: dsMockUtils.createMockOption(),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_id: dsMockUtils.createMockU64(),
-        }),
-      ]);
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+          ),
+        ],
+      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
       });
 
-      const tickerReservations = await polymesh.getTickerReservations({ did: 'someDid' });
+      const tickerReservations = await polymesh.getTickerReservations({ did });
 
       expect(tickerReservations).toHaveLength(1);
       expect(tickerReservations[0].ticker).toBe(fakeTicker);
@@ -454,20 +428,18 @@ describe('Polymesh Class', () => {
 
     test('should return a list of ticker reservations owned by the identity', async () => {
       const fakeTicker = 'TEST';
+      const did = 'someDid';
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
-        dsMockUtils.createMockLink({
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_data: dsMockUtils.createMockLinkData({
-            TickerOwned: dsMockUtils.createMockTicker(fakeTicker),
-          }),
-          expiry: dsMockUtils.createMockOption(),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_id: dsMockUtils.createMockU64(),
-        }),
-      ]);
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+          ),
+        ],
+      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -617,20 +589,18 @@ describe('Polymesh Class', () => {
 
     test('should return a list of security tokens owned by the supplied did', async () => {
       const fakeTicker = 'TEST';
+      const did = 'someDid';
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
-        dsMockUtils.createMockLink({
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_data: dsMockUtils.createMockLinkData({
-            AssetOwned: dsMockUtils.createMockTicker(fakeTicker),
-          }),
-          expiry: dsMockUtils.createMockOption(),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_id: dsMockUtils.createMockU64(),
-        }),
-      ]);
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+        ],
+      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -645,20 +615,18 @@ describe('Polymesh Class', () => {
 
     test('should return a list of security tokens owned by the current identity if no did is supplied', async () => {
       const fakeTicker = 'TEST';
+      const did = 'someDid';
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createRpcStub('identity', 'getFilteredLinks').returns([
-        dsMockUtils.createMockLink({
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_data: dsMockUtils.createMockLinkData({
-            AssetOwned: dsMockUtils.createMockTicker(fakeTicker),
-          }),
-          expiry: dsMockUtils.createMockOption(),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          link_id: dsMockUtils.createMockU64(),
-        }),
-      ]);
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+        ],
+      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -1075,7 +1043,7 @@ describe('Polymesh Class', () => {
     test('should return a list of Signers', async () => {
       const fakeResult = [
         {
-          type: SignerType.AccountKey,
+          type: SignerType.Account,
           value: '0xdummy',
         },
       ];
@@ -1141,15 +1109,15 @@ describe('Polymesh Class', () => {
 
       const signers = [
         {
-          type: SignerType.AccountKey,
-          value: 'someAccountKey',
+          type: SignerType.Account,
+          value: 'someAccount',
         },
       ];
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       sinon
-        .stub(removeSigningItems, 'prepare')
+        .stub(removeSigningKeys, 'prepare')
         .withArgs({ signers }, context)
         .resolves(expectedQueue);
 
@@ -1185,17 +1153,16 @@ describe('Polymesh Class', () => {
 
   describe('method: getTransactionHistory', () => {
     test('should return a list of transactions', async () => {
-      const context = dsMockUtils.getContextInstance();
       const address = 'someAddress';
-      const accountKey = dsMockUtils.createMockAccountKey(address);
+      const key = 'someKey';
       const tag = TxTags.identity.CddRegisterDid;
       const moduleId = ModuleIdEnum.Identity;
       const callId = CallIdEnum.CddRegisterDid;
 
       sinon
-        .stub(utilsModule, 'stringToAccountKey')
-        .withArgs(address, context)
-        .returns(accountKey);
+        .stub(utilsModule, 'addressToKey')
+        .withArgs(address)
+        .returns(key);
 
       sinon
         .stub(utilsModule, 'txTagToExtrinsicIdentifier')
@@ -1236,7 +1203,7 @@ describe('Polymesh Class', () => {
       dsMockUtils.createApolloQueryStub(
         transactions({
           block_id: undefined,
-          address: accountKey.toString(),
+          address: key,
           module_id: moduleId,
           call_id: callId,
           success: undefined,

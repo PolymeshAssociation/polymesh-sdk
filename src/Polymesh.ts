@@ -7,13 +7,13 @@ import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
-import { TxTag } from 'polymesh-types/types';
+import { Ticker, TxTag } from 'polymesh-types/types';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
   modifyClaims,
   ModifyClaimsParams,
-  removeSigningItems,
+  removeSigningKeys,
   reserveTicker,
   ReserveTickerParams,
   transferPolyX,
@@ -32,12 +32,10 @@ import {
   ErrorCode,
   ExtrinsicData,
   IdentityWithClaims,
-  LinkType,
   MiddlewareConfig,
   NetworkProperties,
   ResultSet,
   Signer,
-  SignerType,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
@@ -45,13 +43,11 @@ import {
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import {
-  booleanToBool,
+  addressToKey,
   calculateNextKey,
   extrinsicIdentifierToTxTag,
-  linkTypeToMeshLinkType,
   moduleAddressToString,
-  signerToSignatory,
-  stringToAccountKey,
+  stringToIdentityId,
   stringToTicker,
   textToString,
   tickerToString,
@@ -62,7 +58,6 @@ import {
 } from '~/utils';
 
 import { Governance } from './Governance';
-import { Link } from './polkadot/polymesh';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
@@ -222,17 +217,6 @@ export class Polymesh {
   }
 
   /**
-   * Get the POLYX balance of an identity
-   */
-  public getIdentityBalance(args?: { did: string | Identity }): Promise<BigNumber> {
-    let identityArgs;
-    if (args) {
-      identityArgs = { did: valueToDid(args.did) };
-    }
-    return this.getIdentity(identityArgs).getPolyXBalance();
-  }
-
-  /**
    * Get the free/locked POLYX balance of an account
    *
    * @param args.accountId - defaults to the current account
@@ -316,8 +300,8 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all the ticker reservations currently owned by an identity. This includes
-   * Security Tokens that have already been launched
+   * Retrieve all the ticker reservations currently owned by an identity. This doesn't include tokens that
+   *   have already been launched
    *
    * @param args.did - identity representation or identity ID as stored in the blockchain
    */
@@ -326,7 +310,7 @@ export class Polymesh {
   }): Promise<TickerReservation[]> {
     const {
       context: {
-        polymeshApi: { rpc },
+        polymeshApi: { query },
       },
       context,
     } = this;
@@ -339,17 +323,17 @@ export class Polymesh {
       identity = context.getCurrentIdentity().did;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tickers: Link[] = await (rpc as any).identity.getFilteredLinks(
-      signerToSignatory({ type: SignerType.Identity, value: identity }, context),
-      booleanToBool(false, context),
-      linkTypeToMeshLinkType(LinkType.TickerOwnership, context)
+    const entries = await query.asset.assetOwnershipRelations.entries(
+      stringToIdentityId(identity, context)
     );
 
-    const tickerReservations = tickers.map(
-      link =>
-        new TickerReservation({ ticker: tickerToString(link.link_data.asTickerOwned) }, context)
-    );
+    const tickerReservations: TickerReservation[] = entries
+      .filter(([, relation]) => relation.isTickerOwned)
+      .map(([key]) => {
+        const ticker = tickerToString(key.args[1] as Ticker);
+
+        return new TickerReservation({ ticker }, context);
+      });
 
     return tickerReservations;
   }
@@ -488,7 +472,7 @@ export class Polymesh {
   public async getSecurityTokens(args?: { did: string | Identity }): Promise<SecurityToken[]> {
     const {
       context: {
-        polymeshApi: { rpc },
+        polymeshApi: { query },
       },
       context,
     } = this;
@@ -501,16 +485,17 @@ export class Polymesh {
       identity = context.getCurrentIdentity().did;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const identityLinks: Link[] = await (rpc as any).identity.getFilteredLinks(
-      signerToSignatory({ type: SignerType.Identity, value: identity }, context),
-      booleanToBool(false, context),
-      linkTypeToMeshLinkType(LinkType.AssetOwnership, context)
+    const entries = await query.asset.assetOwnershipRelations.entries(
+      stringToIdentityId(identity, context)
     );
 
-    const securityTokens = identityLinks.map(
-      data => new SecurityToken({ ticker: tickerToString(data.link_data.asAssetOwned) }, context)
-    );
+    const securityTokens: SecurityToken[] = entries
+      .filter(([, relation]) => relation.isAssetOwned)
+      .map(([key]) => {
+        const ticker = tickerToString(key.args[1] as Ticker);
+
+        return new SecurityToken({ ticker }, context);
+      });
 
     return securityTokens;
   }
@@ -676,7 +661,7 @@ export class Polymesh {
     const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
       transactions({
         block_id: blockId,
-        address: address ? stringToAccountKey(address, context).toString() : undefined,
+        address: address ? addressToKey(address) : undefined,
         module_id: moduleId,
         call_id: callId,
         success,
@@ -783,7 +768,7 @@ export class Polymesh {
    * Remove a list of signing keys associated with the current identity
    */
   public removeMySigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
-    return removeSigningItems.prepare(args, this.context);
+    return removeSigningKeys.prepare(args, this.context);
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
