@@ -1280,8 +1280,12 @@ export function toIdentityWithClaims(
   data: MiddlewareIdentityWithClaims[],
   context: Context
 ): IdentityWithClaims[] {
+  // NOTE: this require statement is necessary to avoid a circular dependency
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { Identity: IdentityClass } = require('../api/entities/Identity');
+
   return data.map(({ did, claims }) => ({
-    identity: new Identity({ did }, context),
+    identity: new IdentityClass({ did }, context),
     claims: claims.map(
       ({
         targetDID,
@@ -1292,8 +1296,8 @@ export function toIdentityWithClaims(
         jurisdiction,
         scope: claimScope,
       }) => ({
-        target: new Identity({ did: targetDID }, context),
-        issuer: new Identity({ did: issuer }, context),
+        target: new IdentityClass({ did: targetDID }, context),
+        issuer: new IdentityClass({ did: issuer }, context),
         issuedAt: new Date(issuanceDate),
         expiry: expiry ? new Date(expiry) : null,
         claim: createClaim(type, jurisdiction, claimScope),

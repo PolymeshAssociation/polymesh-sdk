@@ -24,6 +24,7 @@ import {
   ClaimData,
   ClaimTarget,
   ClaimType,
+  IdentityWithClaims,
   ResultSet,
   Signer,
   SignerType,
@@ -709,14 +710,12 @@ describe('Polymesh Class', () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
-      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
       const claim = {
         target: new Identity({ did: targetDid }, context),
         issuer: new Identity({ did: issuerDid }, context),
         issuedAt: new Date(date),
       };
-
-      const fakeClaims = [
+      const fakeClaims: IdentityWithClaims[] = [
         {
           identity: new Identity({ did: targetDid }, context),
           claims: [
@@ -724,14 +723,7 @@ describe('Polymesh Class', () => {
               ...claim,
               expiry: new Date(date),
               claim: {
-                type: customerDueDiligenceType,
-              },
-            },
-            {
-              ...claim,
-              expiry: null,
-              claim: {
-                type: customerDueDiligenceType,
+                type: ClaimType.CustomerDueDiligence,
               },
             },
           ],
@@ -753,12 +745,7 @@ describe('Polymesh Class', () => {
               {
                 ...commonClaimData,
                 expiry: date,
-                type: customerDueDiligenceType,
-              },
-              {
-                ...commonClaimData,
-                expiry: null,
-                type: customerDueDiligenceType,
+                type: ClaimTypeEnum.CustomerDueDiligence,
               },
             ],
           },
@@ -776,6 +763,11 @@ describe('Polymesh Class', () => {
           key: 'someKey',
         },
       });
+
+      sinon
+        .stub(utilsModule, 'toIdentityWithClaims')
+        .withArgs(didsWithClaimsQueryResponse.items, context)
+        .returns(fakeClaims);
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
