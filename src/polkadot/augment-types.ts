@@ -418,6 +418,7 @@ import {
   ParaPastCodeMeta,
   ParaScheduling,
   ParachainDispatchOrigin,
+  RelayChainBlockNumber,
   Remark,
   Retriable,
   Scheduling,
@@ -427,6 +428,7 @@ import {
   SubId,
   UpwardMessage,
   ValidationCode,
+  ValidationFunctionParams,
   ValidatorSignature,
   ValidityAttestation,
   WinningData,
@@ -434,6 +436,7 @@ import {
 } from '@polkadot/types/interfaces/parachains';
 import { RuntimeDispatchInfo } from '@polkadot/types/interfaces/payment';
 import { Approvals } from '@polkadot/types/interfaces/poll';
+import { ProxyAnnouncement, ProxyDefinition, ProxyType } from '@polkadot/types/interfaces/proxy';
 import { AccountStatus, AccountValidity } from '@polkadot/types/interfaces/purchase';
 import { ActiveRecovery, RecoveryConfig } from '@polkadot/types/interfaces/recovery';
 import { RpcMethods } from '@polkadot/types/interfaces/rpc';
@@ -448,6 +451,8 @@ import {
   Block,
   BlockNumber,
   Call,
+  CallHash,
+  CallHashOf,
   ChangesTrieConfiguration,
   Consensus,
   ConsensusEngineId,
@@ -456,11 +461,16 @@ import {
   ExtrinsicsWeight,
   Fixed128,
   Fixed64,
+  FixedI128,
+  FixedI64,
+  FixedU128,
+  FixedU64,
   H160,
   H256,
   H512,
   Hash,
   Header,
+  I32F32,
   Index,
   Justification,
   KeyTypeId,
@@ -473,6 +483,7 @@ import {
   OpaqueCall,
   Origin,
   Pays,
+  PerU16,
   Perbill,
   Percent,
   Permill,
@@ -480,13 +491,13 @@ import {
   Phantom,
   PhantomData,
   PreRuntime,
-  ProxyType,
   Releases,
   RuntimeDbWeight,
   Seal,
   SealV0,
   SignedBlock,
   StorageData,
+  U32F32,
   ValidatorId,
   Weight,
   WeightMultiplier,
@@ -524,7 +535,9 @@ import {
 import {
   ActiveEraInfo,
   CompactAssignments,
+  CompactAssignmentsTo257,
   CompactScore,
+  CompactScoreCompact,
   ElectionCompute,
   ElectionResult,
   ElectionScore,
@@ -541,8 +554,9 @@ import {
   MomentOf,
   Nominations,
   NominatorIndex,
+  NominatorIndexCompact,
   OffchainAccuracy,
-  PerU16,
+  OffchainAccuracyCompact,
   PhragmenScore,
   Points,
   RewardDestination,
@@ -559,6 +573,7 @@ import {
   UnappliedSlashOther,
   UnlockChunk,
   ValidatorIndex,
+  ValidatorIndexCompact,
   ValidatorPrefs,
   ValidatorPrefsTo145,
   ValidatorPrefsTo196,
@@ -621,7 +636,7 @@ import {
   TreasuryProposal,
 } from '@polkadot/types/interfaces/treasury';
 import { Multiplier } from '@polkadot/types/interfaces/txpayment';
-import { CallHash, Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
+import { Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
 import { VestingInfo } from '@polkadot/types/interfaces/vesting';
 import {
   AssetDidResult,
@@ -831,6 +846,50 @@ declare module '@polkadot/types/types/registry' {
     Raw: Raw;
     'Option<Raw>': Option<Raw>;
     'Vec<Raw>': Vec<Raw>;
+    Fixed64: Fixed64;
+    'Option<Fixed64>': Option<Fixed64>;
+    'Vec<Fixed64>': Vec<Fixed64>;
+    FixedI64: FixedI64;
+    'Option<FixedI64>': Option<FixedI64>;
+    'Vec<FixedI64>': Vec<FixedI64>;
+    FixedU64: FixedU64;
+    'Option<FixedU64>': Option<FixedU64>;
+    'Vec<FixedU64>': Vec<FixedU64>;
+    Fixed128: Fixed128;
+    'Option<Fixed128>': Option<Fixed128>;
+    'Vec<Fixed128>': Vec<Fixed128>;
+    FixedI128: FixedI128;
+    'Option<FixedI128>': Option<FixedI128>;
+    'Vec<FixedI128>': Vec<FixedI128>;
+    FixedU128: FixedU128;
+    'Option<FixedU128>': Option<FixedU128>;
+    'Vec<FixedU128>': Vec<FixedU128>;
+    I32F32: I32F32;
+    'Option<I32F32>': Option<I32F32>;
+    'Vec<I32F32>': Vec<I32F32>;
+    U32F32: U32F32;
+    'Option<U32F32>': Option<U32F32>;
+    'Vec<U32F32>': Vec<U32F32>;
+    PerU16: PerU16;
+    'Compact<PerU16>': Compact<PerU16>;
+    'Option<PerU16>': Option<PerU16>;
+    'Vec<PerU16>': Vec<PerU16>;
+    Perbill: Perbill;
+    'Compact<Perbill>': Compact<Perbill>;
+    'Option<Perbill>': Option<Perbill>;
+    'Vec<Perbill>': Vec<Perbill>;
+    Percent: Percent;
+    'Compact<Percent>': Compact<Percent>;
+    'Option<Percent>': Option<Percent>;
+    'Vec<Percent>': Vec<Percent>;
+    Permill: Permill;
+    'Compact<Permill>': Compact<Permill>;
+    'Option<Permill>': Option<Permill>;
+    'Vec<Permill>': Vec<Permill>;
+    Perquintill: Perquintill;
+    'Compact<Perquintill>': Compact<Perquintill>;
+    'Option<Perquintill>': Option<Perquintill>;
+    'Vec<Perquintill>': Vec<Perquintill>;
     AccountId: AccountId;
     'Option<AccountId>': Option<AccountId>;
     'Vec<AccountId>': Vec<AccountId>;
@@ -864,6 +923,12 @@ declare module '@polkadot/types/types/registry' {
     Call: Call;
     'Option<Call>': Option<Call>;
     'Vec<Call>': Vec<Call>;
+    CallHash: CallHash;
+    'Option<CallHash>': Option<CallHash>;
+    'Vec<CallHash>': Vec<CallHash>;
+    CallHashOf: CallHashOf;
+    'Option<CallHashOf>': Option<CallHashOf>;
+    'Vec<CallHashOf>': Vec<CallHashOf>;
     ChangesTrieConfiguration: ChangesTrieConfiguration;
     'Option<ChangesTrieConfiguration>': Option<ChangesTrieConfiguration>;
     'Vec<ChangesTrieConfiguration>': Vec<ChangesTrieConfiguration>;
@@ -879,12 +944,6 @@ declare module '@polkadot/types/types/registry' {
     ExtrinsicsWeight: ExtrinsicsWeight;
     'Option<ExtrinsicsWeight>': Option<ExtrinsicsWeight>;
     'Vec<ExtrinsicsWeight>': Vec<ExtrinsicsWeight>;
-    Fixed64: Fixed64;
-    'Option<Fixed64>': Option<Fixed64>;
-    'Vec<Fixed64>': Vec<Fixed64>;
-    Fixed128: Fixed128;
-    'Option<Fixed128>': Option<Fixed128>;
-    'Vec<Fixed128>': Vec<Fixed128>;
     H160: H160;
     'Option<H160>': Option<H160>;
     'Vec<H160>': Vec<H160>;
@@ -939,31 +998,12 @@ declare module '@polkadot/types/types/registry' {
     Pays: Pays;
     'Option<Pays>': Option<Pays>;
     'Vec<Pays>': Vec<Pays>;
-    Perbill: Perbill;
-    'Compact<Perbill>': Compact<Perbill>;
-    'Option<Perbill>': Option<Perbill>;
-    'Vec<Perbill>': Vec<Perbill>;
-    Percent: Percent;
-    'Compact<Percent>': Compact<Percent>;
-    'Option<Percent>': Option<Percent>;
-    'Vec<Percent>': Vec<Percent>;
-    Permill: Permill;
-    'Compact<Permill>': Compact<Permill>;
-    'Option<Permill>': Option<Permill>;
-    'Vec<Permill>': Vec<Permill>;
-    Perquintill: Perquintill;
-    'Compact<Perquintill>': Compact<Perquintill>;
-    'Option<Perquintill>': Option<Perquintill>;
-    'Vec<Perquintill>': Vec<Perquintill>;
     Phantom: Phantom;
     'Option<Phantom>': Option<Phantom>;
     'Vec<Phantom>': Vec<Phantom>;
     PhantomData: PhantomData;
     'Option<PhantomData>': Option<PhantomData>;
     'Vec<PhantomData>': Vec<PhantomData>;
-    ProxyType: ProxyType;
-    'Option<ProxyType>': Option<ProxyType>;
-    'Vec<ProxyType>': Vec<ProxyType>;
     Releases: Releases;
     'Option<Releases>': Option<Releases>;
     'Vec<Releases>': Vec<Releases>;
@@ -1492,6 +1532,15 @@ declare module '@polkadot/types/types/registry' {
     Reporter: Reporter;
     'Option<Reporter>': Option<Reporter>;
     'Vec<Reporter>': Vec<Reporter>;
+    ProxyDefinition: ProxyDefinition;
+    'Option<ProxyDefinition>': Option<ProxyDefinition>;
+    'Vec<ProxyDefinition>': Vec<ProxyDefinition>;
+    ProxyType: ProxyType;
+    'Option<ProxyType>': Option<ProxyType>;
+    'Vec<ProxyType>': Vec<ProxyType>;
+    ProxyAnnouncement: ProxyAnnouncement;
+    'Option<ProxyAnnouncement>': Option<ProxyAnnouncement>;
+    'Vec<ProxyAnnouncement>': Vec<ProxyAnnouncement>;
     ActiveRecovery: ActiveRecovery;
     'Option<ActiveRecovery>': Option<ActiveRecovery>;
     'Vec<ActiveRecovery>': Vec<ActiveRecovery>;
@@ -1587,9 +1636,15 @@ declare module '@polkadot/types/types/registry' {
     CompactAssignments: CompactAssignments;
     'Option<CompactAssignments>': Option<CompactAssignments>;
     'Vec<CompactAssignments>': Vec<CompactAssignments>;
+    CompactAssignmentsTo257: CompactAssignmentsTo257;
+    'Option<CompactAssignmentsTo257>': Option<CompactAssignmentsTo257>;
+    'Vec<CompactAssignmentsTo257>': Vec<CompactAssignmentsTo257>;
     CompactScore: CompactScore;
     'Option<CompactScore>': Option<CompactScore>;
     'Vec<CompactScore>': Vec<CompactScore>;
+    CompactScoreCompact: CompactScoreCompact;
+    'Option<CompactScoreCompact>': Option<CompactScoreCompact>;
+    'Vec<CompactScoreCompact>': Vec<CompactScoreCompact>;
     ElectionCompute: ElectionCompute;
     'Option<ElectionCompute>': Option<ElectionCompute>;
     'Vec<ElectionCompute>': Vec<ElectionCompute>;
@@ -1637,13 +1692,15 @@ declare module '@polkadot/types/types/registry' {
     'Compact<NominatorIndex>': Compact<NominatorIndex>;
     'Option<NominatorIndex>': Option<NominatorIndex>;
     'Vec<NominatorIndex>': Vec<NominatorIndex>;
+    NominatorIndexCompact: NominatorIndexCompact;
+    'Option<NominatorIndexCompact>': Option<NominatorIndexCompact>;
+    'Vec<NominatorIndexCompact>': Vec<NominatorIndexCompact>;
     OffchainAccuracy: OffchainAccuracy;
     'Option<OffchainAccuracy>': Option<OffchainAccuracy>;
     'Vec<OffchainAccuracy>': Vec<OffchainAccuracy>;
-    PerU16: PerU16;
-    'Compact<PerU16>': Compact<PerU16>;
-    'Option<PerU16>': Option<PerU16>;
-    'Vec<PerU16>': Vec<PerU16>;
+    OffchainAccuracyCompact: OffchainAccuracyCompact;
+    'Option<OffchainAccuracyCompact>': Option<OffchainAccuracyCompact>;
+    'Vec<OffchainAccuracyCompact>': Vec<OffchainAccuracyCompact>;
     PhragmenScore: PhragmenScore;
     'Option<PhragmenScore>': Option<PhragmenScore>;
     'Vec<PhragmenScore>': Vec<PhragmenScore>;
@@ -1692,6 +1749,9 @@ declare module '@polkadot/types/types/registry' {
     'Compact<ValidatorIndex>': Compact<ValidatorIndex>;
     'Option<ValidatorIndex>': Option<ValidatorIndex>;
     'Vec<ValidatorIndex>': Vec<ValidatorIndex>;
+    ValidatorIndexCompact: ValidatorIndexCompact;
+    'Option<ValidatorIndexCompact>': Option<ValidatorIndexCompact>;
+    'Vec<ValidatorIndexCompact>': Vec<ValidatorIndexCompact>;
     ValidatorPrefs: ValidatorPrefs;
     'Option<ValidatorPrefs>': Option<ValidatorPrefs>;
     'Vec<ValidatorPrefs>': Vec<ValidatorPrefs>;
@@ -1841,9 +1901,6 @@ declare module '@polkadot/types/types/registry' {
     Multiplier: Multiplier;
     'Option<Multiplier>': Option<Multiplier>;
     'Vec<Multiplier>': Vec<Multiplier>;
-    CallHash: CallHash;
-    'Option<CallHash>': Option<CallHash>;
-    'Vec<CallHash>': Vec<CallHash>;
     Multisig: Multisig;
     'Option<Multisig>': Option<Multisig>;
     'Vec<Multisig>': Vec<Multisig>;
@@ -1942,6 +1999,9 @@ declare module '@polkadot/types/types/registry' {
     ParaScheduling: ParaScheduling;
     'Option<ParaScheduling>': Option<ParaScheduling>;
     'Vec<ParaScheduling>': Vec<ParaScheduling>;
+    RelayChainBlockNumber: RelayChainBlockNumber;
+    'Option<RelayChainBlockNumber>': Option<RelayChainBlockNumber>;
+    'Vec<RelayChainBlockNumber>': Vec<RelayChainBlockNumber>;
     Remark: Remark;
     'Option<Remark>': Option<Remark>;
     'Vec<Remark>': Vec<Remark>;
@@ -1967,6 +2027,9 @@ declare module '@polkadot/types/types/registry' {
     UpwardMessage: UpwardMessage;
     'Option<UpwardMessage>': Option<UpwardMessage>;
     'Vec<UpwardMessage>': Vec<UpwardMessage>;
+    ValidationFunctionParams: ValidationFunctionParams;
+    'Option<ValidationFunctionParams>': Option<ValidationFunctionParams>;
+    'Vec<ValidationFunctionParams>': Vec<ValidationFunctionParams>;
     ValidationCode: ValidationCode;
     'Option<ValidationCode>': Option<ValidationCode>;
     'Vec<ValidationCode>': Vec<ValidationCode>;
