@@ -5,7 +5,11 @@ import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
-import { scopesByIdentity, tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import {
+  scopesByIdentity,
+  tokensByTrustedClaimIssuer,
+  tokensHeldByDid,
+} from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   ClaimData,
@@ -422,6 +426,27 @@ describe('Identity class', () => {
 
       expect(result[0].ticker).toBe('TOKEN1');
       expect(result[1].ticker).toBe('TOKEN2');
+    });
+  });
+
+  describe('method: getAssetsWithBalance', () => {
+    const did = 'someDid';
+    const tickers = ['TOKEN1', 'TOKEN2'];
+
+    test('should return a list of security tokens', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloQueryStub(
+        tokensHeldByDid({ did, count: undefined, skip: undefined, order: Order.Asc }),
+        {
+          tokensHeldByDid: { items: tickers, totalCount: 2 },
+        }
+      );
+
+      const result = await identity.getAssetsWithBalance();
+
+      expect(result.data[0].ticker).toBe(tickers[0]);
+      expect(result.data[1].ticker).toBe(tickers[1]);
     });
   });
 

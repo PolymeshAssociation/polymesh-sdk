@@ -210,7 +210,10 @@ export function tokensHeldByDid(
 ): GraphqlQuery<QueryTokensHeldByDidArgs | undefined> {
   const query = gql`
     query TokensHeldByDidQuery($did: String!, $count: Int, $skip: Int, $order: Order) {
-      tokensHeldByDid(did: $did, count: $count, skip: $skip, order: $order)
+      tokensHeldByDid(did: $did, count: $count, skip: $skip, order: $order) {
+        totalCount
+        items
+      }
     }
   `;
 
