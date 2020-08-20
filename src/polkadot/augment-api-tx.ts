@@ -277,7 +277,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `funding_round` - name of the funding round.
        *
        * # Weight
-       * `1_000_000_000 + 20_000 * identifiers.len()`
+       * `3_000_000_000 + 20_000 * identifiers.len()`
        **/
       createAsset: AugmentedSubmittable<
         (
@@ -1211,7 +1211,7 @@ declare module '@polkadot/api/types/submittable' {
        * * ticker - Symbol of the asset.
        *
        * # Weight
-       * `read_and_write_weight + 12_000_000 + 100_000 * asset_rules.len().max(values.len())`
+       * `read_and_write_weight + 720_000_000 + 100_000 * asset_rules.len().max(values.len())`
        **/
       batchChangeAssetRule: AugmentedSubmittable<
         (
@@ -2781,7 +2781,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `legs` - Legs included in this instruction.
        *
        * # Weight
-       * `200_000 + 100_000 * legs.len()`
+       * `950_000_000 + 1_000_000 * legs.len()`
        **/
       addInstruction: AugmentedSubmittable<
         (
@@ -2805,7 +2805,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `venues` - Array of venues that are allowed to create instructions for the token in question.
        *
        * # Weight
-       * `200_000 + 50_000 * venues.len()`
+       * `200_000_000 + 500_000 * venues.len()`
        **/
       allowVenues: AugmentedSubmittable<
         (
@@ -2872,7 +2872,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `signers` - Array of signers that are allowed to sign receipts for this venue
        *
        * # Weight
-       * `200_000 + 50_000 * signers.len()`
+       * `200_000_000 + 5_000_000 * signers.len()`
        **/
       createVenue: AugmentedSubmittable<
         (
@@ -2887,7 +2887,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `venues` - Array of venues that are no longer allowed to create instructions for the token in question.
        *
        * # Weight
-       * `200_000 + 50_000 * venues.len()`
+       * `200_000_000 + 500_000 * venues.len()`
        **/
       disallowVenues: AugmentedSubmittable<
         (
