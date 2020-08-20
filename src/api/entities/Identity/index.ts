@@ -5,7 +5,11 @@ import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
-import { scopesByIdentity, tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import {
+  scopesByIdentity,
+  tokensByTrustedClaimIssuer,
+  tokensHeldByDid,
+} from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   ClaimData,
@@ -25,6 +29,7 @@ import {
 import {
   accountIdToString,
   balanceToBigNumber,
+  calculateNextKey,
   cddStatusToBoolean,
   identityIdToString,
   removePadding,
@@ -285,6 +290,49 @@ export class Identity extends Entity<UniqueIdentifiers> {
         ticker,
       };
     });
+  }
+
+  /**
+   * Retrieve all assets with balance
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   */
+  public async getAssetsWithBalance(
+    opts: {
+      order?: Order;
+      size?: number;
+      start?: number;
+    } = { order: Order.Asc }
+  ): Promise<ResultSet<SecurityToken>> {
+    const { context, did } = this;
+
+    const { size, start, order } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'tokensHeldByDid'>>(
+      tokensHeldByDid({
+        did,
+        count: size,
+        skip: start,
+        order,
+      })
+    );
+
+    const {
+      data: {
+        tokensHeldByDid: { items: tokensHeldByDidList, totalCount: count },
+      },
+    } = result;
+
+    const data = tokensHeldByDidList.map(ticker => new SecurityToken({ ticker }, context));
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**
