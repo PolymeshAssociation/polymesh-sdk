@@ -460,7 +460,7 @@ describe('Identity class', () => {
   });
 
   describe('method: getClaims', () => {
-    test('should return a list of claims issued', async () => {
+    test('should return a list of claims issued with this identity as the target', async () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
       const issuerDid = 'someIssuerDid';
