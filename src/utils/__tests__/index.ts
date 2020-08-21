@@ -116,7 +116,7 @@ import {
   textToString,
   tickerToDid,
   tickerToString,
-  toIdentityWithClaims,
+  toIdentityWithClaimsArray,
   tokenDocumentDataToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
@@ -2355,7 +2355,7 @@ describe('meshProposalStateToProposalState', () => {
   });
 });
 
-describe('toIdentityWithClaims', () => {
+describe('toIdentityWithClaimsArray', () => {
   test('should return an IdentityWithClaims array object', () => {
     const context = dsMockUtils.getContextInstance();
     const targetDid = 'someTargetDid';
@@ -2414,7 +2414,7 @@ describe('toIdentityWithClaims', () => {
     ];
     /* eslint-enabled @typescript-eslint/camelcase */
 
-    const result = toIdentityWithClaims(fakeMiddlewareIdentityWithClaims, context);
+    const result = toIdentityWithClaimsArray(fakeMiddlewareIdentityWithClaims, context);
 
     expect(result).toEqual(fakeResult);
   });

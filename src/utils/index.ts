@@ -1310,7 +1310,7 @@ export function meshProposalStateToProposalState(proposalState: MeshProposalStat
 /**
  * @hidden
  */
-export function toIdentityWithClaims(
+export function toIdentityWithClaimsArray(
   data: MiddlewareIdentityWithClaims[],
   context: Context
 ): IdentityWithClaims[] {

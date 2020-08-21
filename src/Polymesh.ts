@@ -51,7 +51,7 @@ import {
   stringToTicker,
   textToString,
   tickerToString,
-  toIdentityWithClaims,
+  toIdentityWithClaimsArray,
   txTagToExtrinsicIdentifier,
   u32ToBigNumber,
   valueToDid,
@@ -594,7 +594,7 @@ export class Polymesh {
       },
     } = result;
 
-    const data = toIdentityWithClaims(didsWithClaimsList, context);
+    const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
 
     const next = calculateNextKey(count, size, start);
 

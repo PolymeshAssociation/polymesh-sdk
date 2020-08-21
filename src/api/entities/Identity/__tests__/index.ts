@@ -511,7 +511,7 @@ describe('Identity class', () => {
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
       sinon
-        .stub(utilsModule, 'toIdentityWithClaims')
+        .stub(utilsModule, 'toIdentityWithClaimsArray')
         .withArgs(issuerDidsWithClaimsByTargetQueryResponse.items, context)
         .returns(fakeClaims);
 

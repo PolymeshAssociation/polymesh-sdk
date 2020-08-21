@@ -733,7 +733,7 @@ describe('Polymesh Class', () => {
       });
 
       sinon
-        .stub(utilsModule, 'toIdentityWithClaims')
+        .stub(utilsModule, 'toIdentityWithClaimsArray')
         .withArgs(didsWithClaimsQueryResponse.items, context)
         .returns(fakeClaims);
 

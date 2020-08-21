@@ -36,7 +36,7 @@ import {
   removePadding,
   stringToIdentityId,
   stringToTicker,
-  toIdentityWithClaims,
+  toIdentityWithClaimsArray,
   valueToDid,
 } from '~/utils';
 
@@ -361,7 +361,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
       },
     } = result;
 
-    const data = toIdentityWithClaims(issuerDidsWithClaimsByTargetList, context);
+    const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
 
     const next = calculateNextKey(count, size, start);
 

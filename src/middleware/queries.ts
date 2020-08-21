@@ -281,7 +281,7 @@ export function scopesByIdentity(
  * Get issuer dids with at least one claim for given target
  */
 export function issuerDidsWithClaimsByTarget(
-  variables?: QueryIssuerDidsWithClaimsByTargetArgs
+  variables: QueryIssuerDidsWithClaimsByTargetArgs
 ): GraphqlQuery<QueryIssuerDidsWithClaimsByTargetArgs | undefined> {
   const query = gql`
     query IssuerDidsWithClaimsByTargetQuery(
