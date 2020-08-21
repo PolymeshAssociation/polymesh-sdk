@@ -228,7 +228,7 @@ describe('Identity class', () => {
           total_supply: dsMockUtils.createMockBalance(3000),
           divisible: dsMockUtils.createMockBool(true),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
-          link_id: dsMockUtils.createMockU64(1),
+          treasury_did: dsMockUtils.createMockOption(),
           name: dsMockUtils.createMockAssetName('someToken'),
         })
       );
