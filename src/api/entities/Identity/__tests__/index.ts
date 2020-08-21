@@ -429,7 +429,7 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getAssetsWithBalance', () => {
+  describe('method: getHeldTokens', () => {
     const did = 'someDid';
     const tickers = ['TOKEN1', 'TOKEN2'];
 
@@ -443,7 +443,7 @@ describe('Identity class', () => {
         }
       );
 
-      const result = await identity.getAssetsWithBalance();
+      const result = await identity.getHeldTokens();
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);

@@ -206,7 +206,7 @@ export function tokensByTrustedClaimIssuer(
  * Get all tickers of tokens that were held at some point by the given did
  */
 export function tokensHeldByDid(
-  variables?: QueryTokensHeldByDidArgs
+  variables: QueryTokensHeldByDidArgs
 ): GraphqlQuery<QueryTokensHeldByDidArgs | undefined> {
   const query = gql`
     query TokensHeldByDidQuery($did: String!, $count: Int, $skip: Int, $order: Order) {

@@ -293,12 +293,11 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve all assets with balance
+   * Retrieve a list of all tokens which were held at one point by this identity
    *
-   * @param opts.size - page size
-   * @param opts.start - page offset
+   * @note supports pagination
    */
-  public async getAssetsWithBalance(
+  public async getHeldTokens(
     opts: {
       order?: Order;
       size?: number;
