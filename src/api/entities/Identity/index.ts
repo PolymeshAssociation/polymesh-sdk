@@ -325,6 +325,8 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
   /**
    * Retrieve all claims issued about this identity, grouped by claim issuer
+   *
+   * @note supports pagination
    */
   public async getClaims(
     opts: {
