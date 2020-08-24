@@ -232,17 +232,13 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     const opts: any = {
       args: [],
     };
-    let result;
 
-    if (stage === ProposalStage.Open) {
-      result = await requestAtBlock(pips.quorumThreshold, opts);
-    } else {
+    if (stage !== ProposalStage.Open) {
       const blockHash = await chain.getBlockHash(u32ToBigNumber(endBlock).toString());
-      result = await requestAtBlock(pips.quorumThreshold, {
-        ...opts,
-        blockHash,
-      });
+      opts.blockHash = blockHash;
     }
+
+    const result = await requestAtBlock(pips.quorumThreshold, opts);
 
     return balanceToBigNumber(result);
   }
