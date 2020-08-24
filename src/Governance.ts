@@ -15,13 +15,7 @@ import { Context } from '~/context';
 import { proposals } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Ensured, SubCallback, TransactionArgument, UnsubCallback } from '~/types';
-import {
-  addressToKey,
-  balanceToBigNumber,
-  identityIdToString,
-  u32ToBigNumber,
-  valueToDid,
-} from '~/utils';
+import { addressToKey, balanceToBigNumber, identityIdToString, u32ToBigNumber } from '~/utils';
 
 /**
  * Handles all Governance related functionality
