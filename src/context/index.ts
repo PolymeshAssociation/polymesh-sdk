@@ -569,11 +569,12 @@ export class Context {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
       claimTypes?: ClaimType[];
+      includeExpired?: boolean;
       size?: number;
       start?: number;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
-    const { targets, trustedClaimIssuers, claimTypes, size, start } = opts;
+    const { targets, trustedClaimIssuers, claimTypes, includeExpired, size, start } = opts;
 
     const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
@@ -582,6 +583,7 @@ export class Context {
           valueToDid(trustedClaimIssuer)
         ),
         claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        includeExpired,
         count: size,
         skip: start,
       })

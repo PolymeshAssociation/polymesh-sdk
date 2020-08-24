@@ -250,6 +250,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const result = await context.issuedClaims({
       targets: [did],
       claimTypes: [ClaimType.CustomerDueDiligence],
+      includeExpired: true,
       size,
       start,
     });
