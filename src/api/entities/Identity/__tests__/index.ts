@@ -5,11 +5,17 @@ import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
-import { scopesByIdentity, tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import {
+  issuerDidsWithClaimsByTarget,
+  scopesByIdentity,
+  tokensByTrustedClaimIssuer,
+} from '~/middleware/queries';
+import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   ClaimData,
   ClaimType,
+  IdentityWithClaims,
   Order,
   ResultSet,
   Role,
@@ -450,6 +456,105 @@ describe('Identity class', () => {
       expect(result[0].scope).toBe('someScope');
       expect(result[1].ticker).toBeUndefined();
       expect(result[1].scope).toBeNull();
+    });
+  });
+
+  describe('method: getClaims', () => {
+    test('should return a list of claims issued with this identity as the target', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const issuerDid = 'someIssuerDid';
+      const date = 1589816265000;
+      const claim = {
+        target: new Identity({ did }, context),
+        issuer: new Identity({ did: issuerDid }, context),
+        issuedAt: new Date(date),
+      };
+      const fakeClaims: IdentityWithClaims[] = [
+        {
+          identity: new Identity({ did }, context),
+          claims: [
+            {
+              ...claim,
+              expiry: new Date(date),
+              claim: {
+                type: ClaimType.CustomerDueDiligence,
+              },
+            },
+          ],
+        },
+      ];
+      /* eslint-disable @typescript-eslint/camelcase */
+      const commonClaimData = {
+        targetDID: did,
+        issuer: issuerDid,
+        issuance_date: date,
+        last_update_date: date,
+      };
+      const issuerDidsWithClaimsByTargetQueryResponse: IdentityWithClaimsResult = {
+        totalCount: 25,
+        items: [
+          {
+            did,
+            claims: [
+              {
+                ...commonClaimData,
+                expiry: date,
+                type: ClaimTypeEnum.CustomerDueDiligence,
+              },
+            ],
+          },
+        ],
+      };
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      sinon
+        .stub(utilsModule, 'toIdentityWithClaimsArray')
+        .withArgs(issuerDidsWithClaimsByTargetQueryResponse.items, context)
+        .returns(fakeClaims);
+
+      dsMockUtils.createApolloQueryStub(
+        issuerDidsWithClaimsByTarget({
+          target: did,
+          scope: undefined,
+          trustedClaimIssuers: [did],
+          count: 1,
+          skip: undefined,
+        }),
+        {
+          issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
+        }
+      );
+
+      let result = await identity.getClaims({
+        trustedClaimIssuers: [did],
+        size: 1,
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toEqual(1);
+
+      dsMockUtils.createApolloQueryStub(
+        issuerDidsWithClaimsByTarget({
+          target: did,
+          scope: undefined,
+          trustedClaimIssuers: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
+        }
+      );
+
+      result = await identity.getClaims();
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toBeNull();
     });
   });
 });
