@@ -50,7 +50,11 @@ import { Identity } from '~/api/entities/Identity';
 import { ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
-import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum,
+  IdentityWithClaims as MiddlewareIdentityWithClaims,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import {
   Authorization,
   AuthorizationType,
@@ -60,6 +64,7 @@ import {
   ConditionTarget,
   ConditionType,
   ErrorCode,
+  IdentityWithClaims,
   isMultiClaimCondition,
   isSingleClaimCondition,
   IssuanceData,
@@ -1300,4 +1305,37 @@ export function meshProposalStateToProposalState(proposalState: MeshProposalStat
   }
 
   return ProposalState.Referendum;
+}
+
+/**
+ * @hidden
+ */
+export function toIdentityWithClaimsArray(
+  data: MiddlewareIdentityWithClaims[],
+  context: Context
+): IdentityWithClaims[] {
+  // NOTE: this require statement is necessary to avoid a circular dependency
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { Identity: IdentityClass } = require('../api/entities/Identity');
+
+  return data.map(({ did, claims }) => ({
+    identity: new IdentityClass({ did }, context),
+    claims: claims.map(
+      ({
+        targetDID,
+        issuer,
+        issuance_date: issuanceDate,
+        expiry,
+        type,
+        jurisdiction,
+        scope: claimScope,
+      }) => ({
+        target: new IdentityClass({ did: targetDID }, context),
+        issuer: new IdentityClass({ did: issuer }, context),
+        issuedAt: new Date(issuanceDate),
+        expiry: expiry ? new Date(expiry) : null,
+        claim: createClaim(type, jurisdiction, claimScope),
+      })
+    ),
+  }));
 }

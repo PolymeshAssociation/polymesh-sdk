@@ -5,7 +5,11 @@ import { SecurityToken } from '~/api/entities/SecurityToken';
 import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
-import { scopesByIdentity, tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import {
+  issuerDidsWithClaimsByTarget,
+  scopesByIdentity,
+  tokensByTrustedClaimIssuer,
+} from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   ClaimData,
@@ -13,6 +17,7 @@ import {
   ClaimType,
   Ensured,
   ErrorCode,
+  IdentityWithClaims,
   isCddProviderRole,
   isTickerOwnerRole,
   isTokenOwnerRole,
@@ -25,11 +30,14 @@ import {
 import {
   accountIdToString,
   balanceToBigNumber,
+  calculateNextKey,
   cddStatusToBoolean,
   identityIdToString,
   removePadding,
   stringToIdentityId,
   stringToTicker,
+  toIdentityWithClaimsArray,
+  valueToDid,
 } from '~/utils';
 
 import { Authorizations } from './Authorizations';
@@ -314,5 +322,54 @@ export class Identity extends Entity<UniqueIdentifiers> {
     );
 
     return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
+  }
+
+  /**
+   * Retrieve all claims issued about this identity, grouped by claim issuer
+   *
+   * @note supports pagination
+   */
+  public async getClaims(
+    opts: {
+      scope?: string;
+      trustedClaimIssuers?: (string | Identity)[];
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<IdentityWithClaims>> {
+    const { context, did } = this;
+
+    const { trustedClaimIssuers, scope, size, start } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
+      issuerDidsWithClaimsByTarget({
+        target: did,
+        scope,
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          valueToDid(trustedClaimIssuer)
+        ),
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: {
+        issuerDidsWithClaimsByTarget: {
+          items: issuerDidsWithClaimsByTargetList,
+          totalCount: count,
+        },
+      },
+    } = result;
+
+    const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }

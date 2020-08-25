@@ -11,6 +11,7 @@ import {
 import {
   didsWithClaims,
   eventByIndexedArgs,
+  issuerDidsWithClaimsByTarget,
   proposals,
   proposalVotes,
   scopesByIdentity,
@@ -126,6 +127,21 @@ describe('scopesByIdentity', () => {
     };
 
     const result = scopesByIdentity(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('issuerDidsWithClaimsByTarget', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      target: 'someDid',
+      scope: 'someScope',
+      trustedClaimIssuers: ['aTrustedClaimIssuer'],
+    };
+
+    const result = issuerDidsWithClaimsByTarget(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
