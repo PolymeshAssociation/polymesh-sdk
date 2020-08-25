@@ -11,10 +11,11 @@
 * [IssueTokensParams](api_procedures.md#issuetokensparams)
 * [ModifyClaimsParams](api_procedures.md#modifyclaimsparams)
 * [ModifyTokenParams](api_procedures.md#modifytokenparams)
+* [ModifyTokenTrustedClaimIssuersParams](api_procedures.md#modifytokentrustedclaimissuersparams)
+* [RemoveSigningKeysParams](api_procedures.md#removesigningkeysparams)
 * [ReserveTickerParams](api_procedures.md#reservetickerparams)
 * [SetTokenDocumentsParams](api_procedures.md#settokendocumentsparams)
 * [SetTokenRulesParams](api_procedures.md#settokenrulesparams)
-* [SetTokenTrustedClaimIssuersParams](api_procedures.md#settokentrustedclaimissuersparams)
 * [ToggleFreezeTransfersParams](api_procedures.md#togglefreezetransfersparams)
 * [TogglePauseRulesParams](api_procedures.md#togglepauserulesparams)
 * [TransferPolyXParams](api_procedures.md#transferpolyxparams)
@@ -28,10 +29,11 @@
 * [issueTokens](api_procedures.md#issuetokens)
 * [modifyClaims](api_procedures.md#modifyclaims)
 * [modifyToken](api_procedures.md#modifytoken)
+* [modifyTokenTrustedClaimIssuers](api_procedures.md#modifytokentrustedclaimissuers)
+* [removeSigningKeys](api_procedures.md#removesigningkeys)
 * [reserveTicker](api_procedures.md#reserveticker)
 * [setTokenDocuments](api_procedures.md#settokendocuments)
 * [setTokenRules](api_procedures.md#settokenrules)
-* [setTokenTrustedClaimIssuers](api_procedures.md#settokentrustedclaimissuers)
 * [toggleFreezeTransfers](api_procedures.md#togglefreezetransfers)
 * [togglePauseRules](api_procedures.md#togglepauserules)
 * [transferPolyX](api_procedures.md#transferpolyx)
@@ -47,11 +49,12 @@
 * [CreateSecurityTokenParams](../interfaces/api_procedures.createsecuritytokenparams.md)
 * [EditClaimsParams](../interfaces/api_procedures.editclaimsparams.md)
 * [IssueTokensParams](../interfaces/api_procedures.issuetokensparams.md)
+* [ModifyTokenTrustedClaimIssuersParams](../interfaces/api_procedures.modifytokentrustedclaimissuersparams.md)
+* [RemoveSigningKeysParams](../interfaces/api_procedures.removesigningkeysparams.md)
 * [ReserveTickerParams](../interfaces/api_procedures.reservetickerparams.md)
 * [RevokeClaimsParams](../interfaces/api_procedures.revokeclaimsparams.md)
 * [SetTokenDocumentsParams](../interfaces/api_procedures.settokendocumentsparams.md)
 * [SetTokenRulesParams](../interfaces/api_procedures.settokenrulesparams.md)
-* [SetTokenTrustedClaimIssuersParams](../interfaces/api_procedures.settokentrustedclaimissuersparams.md)
 * [ToggleFreezeTransfersParams](../interfaces/api_procedures.togglefreezetransfersparams.md)
 * [TogglePauseRulesParams](../interfaces/api_procedures.togglepauserulesparams.md)
 * [TransferPolyXParams](../interfaces/api_procedures.transferpolyxparams.md)
@@ -87,10 +90,11 @@
 * [issueTokens](api_procedures.md#const-issuetokens)
 * [modifyClaims](api_procedures.md#const-modifyclaims)
 * [modifyToken](api_procedures.md#const-modifytoken)
+* [modifyTokenTrustedClaimIssuers](api_procedures.md#const-modifytokentrustedclaimissuers)
+* [removeSigningKeys](api_procedures.md#const-removesigningkeys)
 * [reserveTicker](api_procedures.md#const-reserveticker)
 * [setTokenDocuments](api_procedures.md#const-settokendocuments)
 * [setTokenRules](api_procedures.md#const-settokenrules)
-* [setTokenTrustedClaimIssuers](api_procedures.md#const-settokentrustedclaimissuers)
 * [toggleFreezeTransfers](api_procedures.md#const-togglefreezetransfers)
 * [togglePauseRules](api_procedures.md#const-togglepauserules)
 * [transferPolyX](api_procedures.md#const-transferpolyx)
@@ -145,6 +149,18 @@ ___
 
 ___
 
+###  ModifyTokenTrustedClaimIssuersParams
+
+• **ModifyTokenTrustedClaimIssuersParams**:
+
+___
+
+###  RemoveSigningKeysParams
+
+• **RemoveSigningKeysParams**:
+
+___
+
 ###  ReserveTickerParams
 
 • **ReserveTickerParams**:
@@ -160,12 +176,6 @@ ___
 ###  SetTokenRulesParams
 
 • **SetTokenRulesParams**:
-
-___
-
-###  SetTokenTrustedClaimIssuersParams
-
-• **SetTokenTrustedClaimIssuersParams**:
 
 ___
 
@@ -247,6 +257,18 @@ ___
 
 ___
 
+###  modifyTokenTrustedClaimIssuers
+
+• **modifyTokenTrustedClaimIssuers**:
+
+___
+
+###  removeSigningKeys
+
+• **removeSigningKeys**:
+
+___
+
 ###  reserveTicker
 
 • **reserveTicker**:
@@ -262,12 +284,6 @@ ___
 ###  setTokenRules
 
 • **setTokenRules**:
-
-___
-
-###  setTokenTrustedClaimIssuers
-
-• **setTokenTrustedClaimIssuers**:
 
 ___
 
@@ -305,7 +321,7 @@ ___
 
 Ƭ **ConsumeAuthorizationRequestsParams**: *[ConsumeParams](../interfaces/api_procedures.consumeparams.md) & object*
 
-*Defined in [src/api/procedures/consumeAuthorizationRequests.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/consumeAuthorizationRequests.ts#L11)*
+*Defined in [src/api/procedures/consumeAuthorizationRequests.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/consumeAuthorizationRequests.ts#L11)*
 
 ___
 
@@ -313,7 +329,7 @@ ___
 
 Ƭ **EditProposalParams**: *object | object*
 
-*Defined in [src/api/procedures/editProposal.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/editProposal.ts#L6)*
+*Defined in [src/api/procedures/editProposal.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/editProposal.ts#L6)*
 
 ___
 
@@ -321,7 +337,7 @@ ___
 
 Ƭ **ModifyClaimsParams**: *[AddClaimsParams](../interfaces/api_procedures.addclaimsparams.md) | [EditClaimsParams](../interfaces/api_procedures.editclaimsparams.md) | [RevokeClaimsParams](../interfaces/api_procedures.revokeclaimsparams.md)*
 
-*Defined in [src/api/procedures/modifyClaims.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/modifyClaims.ts#L49)*
+*Defined in [src/api/procedures/modifyClaims.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/modifyClaims.ts#L49)*
 
 ___
 
@@ -329,7 +345,7 @@ ___
 
 Ƭ **ModifyTokenParams**: *object | object | object*
 
-*Defined in [src/api/procedures/modifyToken.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/modifyToken.ts#L6)*
+*Defined in [src/api/procedures/modifyToken.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/modifyToken.ts#L6)*
 
 ___
 
@@ -337,7 +353,7 @@ ___
 
 Ƭ **Params**: *[CreateSecurityTokenParams](../interfaces/api_procedures.createsecuritytokenparams.md) & object*
 
-*Defined in [src/api/procedures/createSecurityToken.ts:38](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/createSecurityToken.ts#L38)*
+*Defined in [src/api/procedures/createSecurityToken.ts:44](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/createSecurityToken.ts#L44)*
 
 ___
 
@@ -345,7 +361,7 @@ ___
 
 Ƭ **Params**: *[IssueTokensParams](../interfaces/api_procedures.issuetokensparams.md) & object*
 
-*Defined in [src/api/procedures/issueTokens.ts:21](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/issueTokens.ts#L21)*
+*Defined in [src/api/procedures/issueTokens.ts:14](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/issueTokens.ts#L14)*
 
 ___
 
@@ -353,7 +369,7 @@ ___
 
 Ƭ **Params**: *object & [ModifyTokenParams](api_procedures.md#modifytokenparams)*
 
-*Defined in [src/api/procedures/modifyToken.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/modifyToken.ts#L11)*
+*Defined in [src/api/procedures/modifyToken.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/modifyToken.ts#L11)*
 
 ___
 
@@ -361,7 +377,7 @@ ___
 
 Ƭ **Params**: *[SetTokenDocumentsParams](../interfaces/api_procedures.settokendocumentsparams.md) & object*
 
-*Defined in [src/api/procedures/setTokenDocuments.ts:23](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/setTokenDocuments.ts#L23)*
+*Defined in [src/api/procedures/setTokenDocuments.ts:21](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/setTokenDocuments.ts#L21)*
 
 ___
 
@@ -369,15 +385,15 @@ ___
 
 Ƭ **Params**: *[SetTokenRulesParams](../interfaces/api_procedures.settokenrulesparams.md) & object*
 
-*Defined in [src/api/procedures/setTokenRules.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/setTokenRules.ts#L12)*
+*Defined in [src/api/procedures/setTokenRules.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/setTokenRules.ts#L12)*
 
 ___
 
 ###  Params
 
-Ƭ **Params**: *[SetTokenTrustedClaimIssuersParams](../interfaces/api_procedures.settokentrustedclaimissuersparams.md) & object*
+Ƭ **Params**: *[ModifyTokenTrustedClaimIssuersParams](../interfaces/api_procedures.modifytokentrustedclaimissuersparams.md) & object*
 
-*Defined in [src/api/procedures/setTokenTrustedClaimIssuers.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/setTokenTrustedClaimIssuers.ts#L19)*
+*Defined in [src/api/procedures/modifyTokenTrustedClaimIssuers.ts:20](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/modifyTokenTrustedClaimIssuers.ts#L20)*
 
 ___
 
@@ -385,7 +401,7 @@ ___
 
 Ƭ **Params**: *[ToggleFreezeTransfersParams](../interfaces/api_procedures.togglefreezetransfersparams.md) & object*
 
-*Defined in [src/api/procedures/toggleFreezeTransfers.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/toggleFreezeTransfers.ts#L10)*
+*Defined in [src/api/procedures/toggleFreezeTransfers.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/toggleFreezeTransfers.ts#L10)*
 
 ___
 
@@ -393,7 +409,7 @@ ___
 
 Ƭ **Params**: *[TogglePauseRulesParams](../interfaces/api_procedures.togglepauserulesparams.md) & object*
 
-*Defined in [src/api/procedures/togglePauseRules.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/togglePauseRules.ts#L10)*
+*Defined in [src/api/procedures/togglePauseRules.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/togglePauseRules.ts#L10)*
 
 ___
 
@@ -401,7 +417,7 @@ ___
 
 Ƭ **Params**: *[TransferTokenParams](../interfaces/api_procedures.transfertokenparams.md) & object*
 
-*Defined in [src/api/procedures/transferToken.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/transferToken.ts#L13)*
+*Defined in [src/api/procedures/transferToken.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/transferToken.ts#L13)*
 
 ___
 
@@ -409,7 +425,7 @@ ___
 
 Ƭ **Params**: *object & [TransferTokenOwnershipParams](../interfaces/api_procedures.transfertokenownershipparams.md)*
 
-*Defined in [src/api/procedures/transferTokenOwnership.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/transferTokenOwnership.ts#L11)*
+*Defined in [src/api/procedures/transferTokenOwnership.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/transferTokenOwnership.ts#L11)*
 
 ___
 
@@ -417,7 +433,7 @@ ___
 
 Ƭ **Params**: *object & [EditProposalParams](api_procedures.md#editproposalparams)*
 
-*Defined in [src/api/procedures/editProposal.ts:16](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/editProposal.ts#L16)*
+*Defined in [src/api/procedures/editProposal.ts:16](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/editProposal.ts#L16)*
 
 ___
 
@@ -425,7 +441,7 @@ ___
 
 Ƭ **Params**: *object*
 
-*Defined in [src/api/procedures/cancelProposal.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/cancelProposal.ts#L6)*
+*Defined in [src/api/procedures/cancelProposal.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/cancelProposal.ts#L6)*
 
 #### Type declaration:
 
@@ -437,7 +453,7 @@ ___
 
 • **cancelProposal**: *Procedure‹[Params](api_procedures.md#params), void›* = new Procedure(prepareCancelProposal, isAuthorized)
 
-*Defined in [src/api/procedures/cancelProposal.ts:46](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/cancelProposal.ts#L46)*
+*Defined in [src/api/procedures/cancelProposal.ts:46](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/cancelProposal.ts#L46)*
 
 ___
 
@@ -448,7 +464,7 @@ ___
   isAuthorized
 )
 
-*Defined in [src/api/procedures/consumeAuthorizationRequests.ts:79](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/consumeAuthorizationRequests.ts#L79)*
+*Defined in [src/api/procedures/consumeAuthorizationRequests.ts:79](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/consumeAuthorizationRequests.ts#L79)*
 
 ___
 
@@ -456,7 +472,7 @@ ___
 
 • **createProposal**: *Procedure‹[CreateProposalParams](../interfaces/api_procedures.createproposalparams.md), [Proposal](../classes/api_entities_proposal.proposal.md)‹››* = new Procedure(prepareCreateProposal, getRequiredRoles)
 
-*Defined in [src/api/procedures/createProposal.ts:123](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/createProposal.ts#L123)*
+*Defined in [src/api/procedures/createProposal.ts:123](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/createProposal.ts#L123)*
 
 ___
 
@@ -464,7 +480,7 @@ ___
 
 • **createSecurityToken**: *Procedure‹[Params](api_procedures.md#params), [SecurityToken](../classes/api_entities_securitytoken.securitytoken.md)‹››* = new Procedure(prepareCreateSecurityToken, getRequiredRoles)
 
-*Defined in [src/api/procedures/createSecurityToken.ts:133](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/createSecurityToken.ts#L133)*
+*Defined in [src/api/procedures/createSecurityToken.ts:147](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/createSecurityToken.ts#L147)*
 
 ___
 
@@ -472,7 +488,7 @@ ___
 
 • **editProposal**: *Procedure‹[Params](api_procedures.md#params), void›* = new Procedure(prepareEditProposal, isAuthorized)
 
-*Defined in [src/api/procedures/editProposal.ts:69](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/editProposal.ts#L69)*
+*Defined in [src/api/procedures/editProposal.ts:69](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/editProposal.ts#L69)*
 
 ___
 
@@ -480,7 +496,7 @@ ___
 
 • **issueTokens**: *Procedure‹[Params](api_procedures.md#params), [SecurityToken](../classes/api_entities_securitytoken.securitytoken.md)‹››* = new Procedure(prepareIssueTokens, getRequiredRoles)
 
-*Defined in [src/api/procedures/issueTokens.ts:140](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/issueTokens.ts#L140)*
+*Defined in [src/api/procedures/issueTokens.ts:123](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/issueTokens.ts#L123)*
 
 ___
 
@@ -488,7 +504,7 @@ ___
 
 • **modifyClaims**: *Procedure‹[ModifyClaimsParams](api_procedures.md#modifyclaimsparams), void›* = new Procedure(prepareModifyClaims, getRequiredRoles)
 
-*Defined in [src/api/procedures/modifyClaims.ts:174](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/modifyClaims.ts#L174)*
+*Defined in [src/api/procedures/modifyClaims.ts:177](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/modifyClaims.ts#L177)*
 
 ___
 
@@ -496,7 +512,26 @@ ___
 
 • **modifyToken**: *Procedure‹[Params](api_procedures.md#params), [SecurityToken](../classes/api_entities_securitytoken.securitytoken.md)‹››* = new Procedure(prepareModifyToken, getRequiredRoles)
 
-*Defined in [src/api/procedures/modifyToken.ts:98](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/modifyToken.ts#L98)*
+*Defined in [src/api/procedures/modifyToken.ts:98](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/modifyToken.ts#L98)*
+
+___
+
+### `Const` modifyTokenTrustedClaimIssuers
+
+• **modifyTokenTrustedClaimIssuers**: *Procedure‹[Params](api_procedures.md#params), [SecurityToken](../classes/api_entities_securitytoken.securitytoken.md)‹››* = new Procedure(
+  prepareModifyTokenTrustedClaimIssuers,
+  getRequiredRoles
+)
+
+*Defined in [src/api/procedures/modifyTokenTrustedClaimIssuers.ts:148](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/modifyTokenTrustedClaimIssuers.ts#L148)*
+
+___
+
+### `Const` removeSigningKeys
+
+• **removeSigningKeys**: *Procedure‹[RemoveSigningKeysParams](../interfaces/api_procedures.removesigningkeysparams.md), void›* = new Procedure(prepareRemoveSigningKeys, isAuthorized)
+
+*Defined in [src/api/procedures/removeSigningKeys.ts:80](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/removeSigningKeys.ts#L80)*
 
 ___
 
@@ -504,7 +539,7 @@ ___
 
 • **reserveTicker**: *Procedure‹[ReserveTickerParams](../interfaces/api_procedures.reservetickerparams.md), [TickerReservation](../classes/api_entities_tickerreservation.tickerreservation.md)‹››* = new Procedure(prepareReserveTicker, getRequiredRoles)
 
-*Defined in [src/api/procedures/reserveTicker.ts:93](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/reserveTicker.ts#L93)*
+*Defined in [src/api/procedures/reserveTicker.ts:101](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/reserveTicker.ts#L101)*
 
 ___
 
@@ -512,7 +547,7 @@ ___
 
 • **setTokenDocuments**: *Procedure‹[Params](api_procedures.md#params), [SecurityToken](../classes/api_entities_securitytoken.securitytoken.md)‹››* = new Procedure(prepareSetTokenDocuments, getRequiredRoles)
 
-*Defined in [src/api/procedures/setTokenDocuments.ts:109](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/setTokenDocuments.ts#L109)*
+*Defined in [src/api/procedures/setTokenDocuments.ts:108](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/setTokenDocuments.ts#L108)*
 
 ___
 
@@ -520,18 +555,7 @@ ___
 
 • **setTokenRules**: *Procedure‹[Params](api_procedures.md#params), [SecurityToken](../classes/api_entities_securitytoken.securitytoken.md)‹››* = new Procedure(prepareSetTokenRules, getRequiredRoles)
 
-*Defined in [src/api/procedures/setTokenRules.ts:87](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/setTokenRules.ts#L87)*
-
-___
-
-### `Const` setTokenTrustedClaimIssuers
-
-• **setTokenTrustedClaimIssuers**: *Procedure‹[Params](api_procedures.md#params), [SecurityToken](../classes/api_entities_securitytoken.securitytoken.md)‹››* = new Procedure(
-  prepareSetTokenTrustedClaimIssuers,
-  getRequiredRoles
-)
-
-*Defined in [src/api/procedures/setTokenTrustedClaimIssuers.ts:107](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/setTokenTrustedClaimIssuers.ts#L107)*
+*Defined in [src/api/procedures/setTokenRules.ts:87](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/setTokenRules.ts#L87)*
 
 ___
 
@@ -539,7 +563,7 @@ ___
 
 • **toggleFreezeTransfers**: *Procedure‹[Params](api_procedures.md#params), [SecurityToken](../classes/api_entities_securitytoken.securitytoken.md)‹››* = new Procedure(prepareToggleFreezeTransfers, getRequiredRoles)
 
-*Defined in [src/api/procedures/toggleFreezeTransfers.ts:65](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/toggleFreezeTransfers.ts#L65)*
+*Defined in [src/api/procedures/toggleFreezeTransfers.ts:65](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/toggleFreezeTransfers.ts#L65)*
 
 ___
 
@@ -547,7 +571,7 @@ ___
 
 • **togglePauseRules**: *Procedure‹[Params](api_procedures.md#params), [SecurityToken](../classes/api_entities_securitytoken.securitytoken.md)‹››* = new Procedure(prepareTogglePauseRules, getRequiredRoles)
 
-*Defined in [src/api/procedures/togglePauseRules.ts:56](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/togglePauseRules.ts#L56)*
+*Defined in [src/api/procedures/togglePauseRules.ts:56](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/togglePauseRules.ts#L56)*
 
 ___
 
@@ -555,7 +579,7 @@ ___
 
 • **transferPolyX**: *Procedure‹[TransferPolyXParams](../interfaces/api_procedures.transferpolyxparams.md), void›* = new Procedure(prepareTransferPolyX)
 
-*Defined in [src/api/procedures/transferPolyX.ts:86](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/transferPolyX.ts#L86)*
+*Defined in [src/api/procedures/transferPolyX.ts:86](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/transferPolyX.ts#L86)*
 
 ___
 
@@ -563,7 +587,7 @@ ___
 
 • **transferToken**: *Procedure‹[Params](api_procedures.md#params), [SecurityToken](../classes/api_entities_securitytoken.securitytoken.md)‹››* = new Procedure(prepareTransferToken, getRequiredRoles)
 
-*Defined in [src/api/procedures/transferToken.ts:66](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/transferToken.ts#L66)*
+*Defined in [src/api/procedures/transferToken.ts:66](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/transferToken.ts#L66)*
 
 ___
 
@@ -574,7 +598,7 @@ ___
   getRequiredRoles
 )
 
-*Defined in [src/api/procedures/transferTokenOwnership.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/transferTokenOwnership.ts#L53)*
+*Defined in [src/api/procedures/transferTokenOwnership.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/transferTokenOwnership.ts#L53)*
 
 ## Functions
 
@@ -582,7 +606,7 @@ ___
 
 ▸ **isLive**(`__namedParameters`: object): *boolean*
 
-*Defined in [src/api/procedures/consumeAuthorizationRequests.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/consumeAuthorizationRequests.ts#L15)*
+*Defined in [src/api/procedures/consumeAuthorizationRequests.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/consumeAuthorizationRequests.ts#L15)*
 
 **Parameters:**
 

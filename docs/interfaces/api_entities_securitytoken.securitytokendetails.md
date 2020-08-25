@@ -13,6 +13,7 @@
 * [name](api_entities_securitytoken.securitytokendetails.md#name)
 * [owner](api_entities_securitytoken.securitytokendetails.md#owner)
 * [totalSupply](api_entities_securitytoken.securitytokendetails.md#totalsupply)
+* [treasuryIdentity](api_entities_securitytoken.securitytokendetails.md#treasuryidentity)
 
 ## Properties
 
@@ -20,7 +21,7 @@
 
 • **assetType**: *string*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/types.ts#L6)*
+*Defined in [src/api/entities/SecurityToken/types.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/types.ts#L6)*
 
 ___
 
@@ -28,7 +29,7 @@ ___
 
 • **isDivisible**: *boolean*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/types.ts#L7)*
+*Defined in [src/api/entities/SecurityToken/types.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/types.ts#L7)*
 
 ___
 
@@ -36,7 +37,7 @@ ___
 
 • **name**: *string*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/types.ts#L8)*
+*Defined in [src/api/entities/SecurityToken/types.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/types.ts#L8)*
 
 ___
 
@@ -44,7 +45,7 @@ ___
 
 • **owner**: *[Identity](../classes/api_entities_identity.identity.md)*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/types.ts#L9)*
+*Defined in [src/api/entities/SecurityToken/types.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/types.ts#L9)*
 
 ___
 
@@ -52,4 +53,12 @@ ___
 
 • **totalSupply**: *BigNumber*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/types.ts#L10)*
+*Defined in [src/api/entities/SecurityToken/types.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/types.ts#L10)*
+
+___
+
+###  treasuryIdentity
+
+• **treasuryIdentity**: *[Identity](../classes/api_entities_identity.identity.md) | null*
+
+*Defined in [src/api/entities/SecurityToken/types.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/types.ts#L11)*

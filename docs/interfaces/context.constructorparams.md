@@ -19,7 +19,7 @@
 
 • **keyring**: *[CommonKeyring](../modules/types.md#commonkeyring)*
 
-*Defined in [src/context/index.ts:50](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L50)*
+*Defined in [src/context/index.ts:59](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L59)*
 
 ___
 
@@ -27,7 +27,7 @@ ___
 
 • **middlewareApi**: *ApolloClient‹NormalizedCacheObject› | null*
 
-*Defined in [src/context/index.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L49)*
+*Defined in [src/context/index.ts:58](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L58)*
 
 ___
 
@@ -35,7 +35,7 @@ ___
 
 • **pair**? : *[SignerData](context.signerdata.md)*
 
-*Defined in [src/context/index.ts:51](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L51)*
+*Defined in [src/context/index.ts:60](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L60)*
 
 ___
 
@@ -43,4 +43,4 @@ ___
 
 • **polymeshApi**: *ApiPromise*
 
-*Defined in [src/context/index.ts:48](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L48)*
+*Defined in [src/context/index.ts:57](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L57)*

@@ -15,7 +15,7 @@
 
 • **CreatedAt**: = "createdAt"
 
-*Defined in [src/middleware/types.ts:949](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L949)*
+*Defined in [src/middleware/types.ts:1060](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L1060)*
 
 ___
 
@@ -23,7 +23,7 @@ ___
 
 • **EndBlock**: = "endBlock"
 
-*Defined in [src/middleware/types.ts:950](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L950)*
+*Defined in [src/middleware/types.ts:1061](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L1061)*
 
 ___
 
@@ -31,7 +31,7 @@ ___
 
 • **LastState**: = "lastState"
 
-*Defined in [src/middleware/types.ts:951](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L951)*
+*Defined in [src/middleware/types.ts:1062](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L1062)*
 
 ___
 
@@ -39,4 +39,4 @@ ___
 
 • **TotalVotes**: = "totalVotes"
 
-*Defined in [src/middleware/types.ts:952](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L952)*
+*Defined in [src/middleware/types.ts:1063](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L1063)*

@@ -27,7 +27,7 @@ Handles all Security Token Issuance related functionality
 
 *Inherited from [Namespace](base.namespace.md).[context](base.namespace.md#protected-context)*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/Namespace.ts#L10)*
 
 ___
 
@@ -37,7 +37,7 @@ ___
 
 *Inherited from [Namespace](base.namespace.md).[parent](base.namespace.md#protected-parent)*
 
-*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L8)*
+*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/Namespace.ts#L8)*
 
 ## Methods
 
@@ -45,7 +45,7 @@ ___
 
 ▸ **issue**(`args`: object): *Promise‹[TransactionQueue](base.transactionqueue.md)‹[SecurityToken](api_entities_securitytoken.securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Issuance.ts:16](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/Issuance.ts#L16)*
+*Defined in [src/api/entities/SecurityToken/Issuance.ts:16](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/Issuance.ts#L16)*
 
 Issue a certain amount of tokens to one or multiple identities. The receiving identities must comply with any receiver rules set on the token
 

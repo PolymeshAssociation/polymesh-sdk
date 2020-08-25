@@ -18,4 +18,4 @@ Properties that uniquely identify an Identity
 
 • **did**: *string*
 
-*Defined in [src/api/entities/Identity/index.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/Identity/index.ts#L32)*
+*Defined in [src/api/entities/Identity/index.ts:50](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/Identity/index.ts#L50)*

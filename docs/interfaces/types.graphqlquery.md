@@ -21,7 +21,7 @@
 
 • **query**: *DocumentNode*
 
-*Defined in [src/types/internal.ts:108](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/internal.ts#L108)*
+*Defined in [src/types/internal.ts:109](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/internal.ts#L109)*
 
 ___
 
@@ -29,4 +29,4 @@ ___
 
 • **variables**: *Variables*
 
-*Defined in [src/types/internal.ts:109](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/internal.ts#L109)*
+*Defined in [src/types/internal.ts:110](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/internal.ts#L110)*

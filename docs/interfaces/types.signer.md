@@ -17,7 +17,7 @@
 
 • **type**: *[SignerType](../enums/types.signertype.md)*
 
-*Defined in [src/types/index.ts:440](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L440)*
+*Defined in [src/types/index.ts:468](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/index.ts#L468)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **value**: *string*
 
-*Defined in [src/types/index.ts:441](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L441)*
+*Defined in [src/types/index.ts:469](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/index.ts#L469)*

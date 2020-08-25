@@ -12,4 +12,4 @@
 
 • **StatusChange**: = "StatusChange"
 
-*Defined in [src/base/PolymeshTransaction.ts:23](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/PolymeshTransaction.ts#L23)*
+*Defined in [src/base/PolymeshTransaction.ts:23](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/PolymeshTransaction.ts#L23)*

@@ -16,4 +16,4 @@
 
 • **keyring**: *[CommonKeyring](../modules/types.md#commonkeyring)*
 
-*Defined in [src/types/index.ts:328](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L328)*
+*Defined in [src/types/index.ts:356](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/index.ts#L356)*

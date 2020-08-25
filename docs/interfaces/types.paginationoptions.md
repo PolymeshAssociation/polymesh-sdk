@@ -17,7 +17,7 @@
 
 • **size**: *number*
 
-*Defined in [src/types/index.ts:347](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L347)*
+*Defined in [src/types/index.ts:375](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/index.ts#L375)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **start**? : *undefined | string*
 
-*Defined in [src/types/index.ts:348](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L348)*
+*Defined in [src/types/index.ts:376](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/index.ts#L376)*

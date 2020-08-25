@@ -31,6 +31,8 @@ Context in which the SDK is being used
 * [getSigningKeys](context.context-1.md#getsigningkeys)
 * [getTransactionArguments](context.context-1.md#gettransactionarguments)
 * [getTransactionFees](context.context-1.md#gettransactionfees)
+* [issuedClaims](context.context-1.md#issuedclaims)
+* [queryMiddleware](context.context-1.md#querymiddleware)
 * [setPair](context.context-1.md#setpair)
 * [create](context.context-1.md#static-create)
 
@@ -40,7 +42,7 @@ Context in which the SDK is being used
 
 • **currentPair**? : *[KeyringPair](../interfaces/types.keyringpair.md)*
 
-*Defined in [src/context/index.ts:71](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L71)*
+*Defined in [src/context/index.ts:80](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L80)*
 
 ___
 
@@ -48,7 +50,7 @@ ___
 
 • **polymeshApi**: *ApiPromise*
 
-*Defined in [src/context/index.ts:69](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L69)*
+*Defined in [src/context/index.ts:78](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L78)*
 
 ## Accessors
 
@@ -56,7 +58,7 @@ ___
 
 • **get middlewareApi**(): *ApolloClient‹NormalizedCacheObject›*
 
-*Defined in [src/context/index.ts:554](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L554)*
+*Defined in [src/context/index.ts:627](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L627)*
 
 Retrieve the middleware client
 
@@ -70,7 +72,7 @@ Retrieve the middleware client
 
 ▸ **accountBalance**(`accountId?`: undefined | string): *Promise‹[AccountBalance](../interfaces/types.accountbalance.md)›*
 
-*Defined in [src/context/index.ts:234](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L234)*
+*Defined in [src/context/index.ts:243](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L243)*
 
 Retrieve the account level POLYX balance
 
@@ -86,7 +88,7 @@ Name | Type |
 
 ▸ **accountBalance**(`accountId`: string | undefined, `callback`: [SubCallback](../modules/types.md#subcallback)‹[AccountBalance](../interfaces/types.accountbalance.md)›): *Promise‹[UnsubCallback](../modules/types.md#unsubcallback)›*
 
-*Defined in [src/context/index.ts:235](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L235)*
+*Defined in [src/context/index.ts:244](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L244)*
 
 Retrieve the account level POLYX balance
 
@@ -107,7 +109,7 @@ ___
 
 ▸ **getAccounts**(): *Array‹[AccountData](../interfaces/context.accountdata.md)›*
 
-*Defined in [src/context/index.ts:186](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L186)*
+*Defined in [src/context/index.ts:195](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L195)*
 
 Retrieve a list of addresses associated with the account
 
@@ -119,7 +121,7 @@ ___
 
 ▸ **getCurrentIdentity**(): *[Identity](api_entities_identity.identity.md)*
 
-*Defined in [src/context/index.ts:293](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L293)*
+*Defined in [src/context/index.ts:302](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L302)*
 
 Retrieve current Identity
 
@@ -133,7 +135,7 @@ ___
 
 ▸ **getCurrentPair**(): *[KeyringPair](../interfaces/types.keyringpair.md)*
 
-*Defined in [src/context/index.ts:311](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L311)*
+*Defined in [src/context/index.ts:320](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L320)*
 
 Retrieve current Keyring Pair
 
@@ -147,7 +149,7 @@ ___
 
 ▸ **getInvalidDids**(`identities`: (string | [Identity](api_entities_identity.identity.md)‹›)[]): *Promise‹string[]›*
 
-*Defined in [src/context/index.ts:326](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L326)*
+*Defined in [src/context/index.ts:335](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L335)*
 
 Check whether identities exist
 
@@ -165,7 +167,7 @@ ___
 
 ▸ **getSigningKeys**(): *Promise‹[Signer](../interfaces/types.signer.md)[]›*
 
-*Defined in [src/context/index.ts:524](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L524)*
+*Defined in [src/context/index.ts:533](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L533)*
 
 Retrieve the list of signing keys related to the account
 
@@ -175,7 +177,7 @@ Retrieve the list of signing keys related to the account
 
 ▸ **getSigningKeys**(`callback`: [SubCallback](../modules/types.md#subcallback)‹[Signer](../interfaces/types.signer.md)[]›): *Promise‹[UnsubCallback](../modules/types.md#unsubcallback)›*
 
-*Defined in [src/context/index.ts:525](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L525)*
+*Defined in [src/context/index.ts:534](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L534)*
 
 **Parameters:**
 
@@ -191,7 +193,7 @@ ___
 
 ▸ **getTransactionArguments**(`args`: object): *[TransactionArgument](../modules/types.md#transactionargument)[]*
 
-*Defined in [src/context/index.ts:376](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L376)*
+*Defined in [src/context/index.ts:385](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L385)*
 
 Retrieve the types of arguments that a certain transaction requires to be run
 
@@ -211,7 +213,7 @@ ___
 
 ▸ **getTransactionFees**(`tag`: TxTag): *Promise‹BigNumber›*
 
-*Defined in [src/context/index.ts:349](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L349)*
+*Defined in [src/context/index.ts:358](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L358)*
 
 Retrieve the protocol fees associated with running a specific transaction
 
@@ -225,11 +227,56 @@ Name | Type | Description |
 
 ___
 
+###  issuedClaims
+
+▸ **issuedClaims**(`opts`: object): *Promise‹[ResultSet](../interfaces/types.resultset.md)‹[ClaimData](../interfaces/types.claimdata.md)››*
+
+*Defined in [src/context/index.ts:567](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L567)*
+
+Retrieve a list of claims. Can be filtered using parameters
+
+**Parameters:**
+
+▪`Default value`  **opts**: *object*= {}
+
+Name | Type | Description |
+------ | ------ | ------ |
+`claimTypes?` | [ClaimType](../enums/types.claimtype.md)[] | types of the claims to fetch. Defaults to any type |
+`includeExpired?` | undefined &#124; false &#124; true | - |
+`size?` | undefined &#124; number | page size |
+`start?` | undefined &#124; number | page offset  |
+`targets?` | (string &#124; [Identity](api_entities_identity.identity.md)‹›)[] | identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets |
+`trustedClaimIssuers?` | (string &#124; [Identity](api_entities_identity.identity.md)‹›)[] | identity IDs of claim issuers. Defaults to all claim issuers |
+
+**Returns:** *Promise‹[ResultSet](../interfaces/types.resultset.md)‹[ClaimData](../interfaces/types.claimdata.md)››*
+
+___
+
+###  queryMiddleware
+
+▸ **queryMiddleware**‹**Result**›(`query`: [GraphqlQuery](../interfaces/types.graphqlquery.md)‹unknown›): *Promise‹ApolloQueryResult‹Result››*
+
+*Defined in [src/context/index.ts:644](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L644)*
+
+**Type parameters:**
+
+▪ **Result**: *Partial‹[Query](../modules/middleware.md#query)›*
+
+**Parameters:**
+
+Name | Type | Description |
+------ | ------ | ------ |
+`query` | [GraphqlQuery](../interfaces/types.graphqlquery.md)‹unknown› |   |
+
+**Returns:** *Promise‹ApolloQueryResult‹Result››*
+
+___
+
 ###  setPair
 
 ▸ **setPair**(`address`: string): *Promise‹void›*
 
-*Defined in [src/context/index.ts:196](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L196)*
+*Defined in [src/context/index.ts:205](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L205)*
 
 Set a pair as the current account keyring pair
 
@@ -247,7 +294,7 @@ ___
 
 ▸ **create**(`params`: object): *Promise‹[Context](context.context-1.md)›*
 
-*Defined in [src/context/index.ts:105](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L105)*
+*Defined in [src/context/index.ts:114](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L114)*
 
 Create the Context instance
 
@@ -265,7 +312,7 @@ Name | Type |
 
 ▸ **create**(`params`: object): *Promise‹[Context](context.context-1.md)›*
 
-*Defined in [src/context/index.ts:111](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L111)*
+*Defined in [src/context/index.ts:120](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L120)*
 
 Create the Context instance
 
@@ -283,7 +330,7 @@ Name | Type |
 
 ▸ **create**(`params`: object): *Promise‹[Context](context.context-1.md)›*
 
-*Defined in [src/context/index.ts:117](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L117)*
+*Defined in [src/context/index.ts:126](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L126)*
 
 Create the Context instance
 
@@ -301,7 +348,7 @@ Name | Type |
 
 ▸ **create**(`params`: object): *Promise‹[Context](context.context-1.md)›*
 
-*Defined in [src/context/index.ts:123](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L123)*
+*Defined in [src/context/index.ts:132](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L132)*
 
 Create the Context instance
 

@@ -15,9 +15,9 @@
 
 ###  claims
 
-• **claims**: *Omit‹[ClaimTargets](types.claimtargets.md), "expiry"›[]*
+• **claims**: *Omit‹[ClaimTarget](types.claimtarget.md), "expiry"›[]*
 
-*Defined in [src/api/procedures/modifyClaims.ts:45](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/modifyClaims.ts#L45)*
+*Defined in [src/api/procedures/modifyClaims.ts:45](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/modifyClaims.ts#L45)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **operation**: *[Revoke](../enums/types.claimoperation.md#revoke)*
 
-*Defined in [src/api/procedures/modifyClaims.ts:46](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/modifyClaims.ts#L46)*
+*Defined in [src/api/procedures/modifyClaims.ts:46](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/modifyClaims.ts#L46)*

@@ -18,4 +18,4 @@ Properties that uniquely identify a TickerReservation
 
 • **ticker**: *string*
 
-*Defined in [src/api/entities/TickerReservation/index.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/TickerReservation/index.ts#L22)*
+*Defined in [src/api/entities/TickerReservation/index.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/TickerReservation/index.ts#L22)*

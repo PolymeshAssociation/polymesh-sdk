@@ -17,7 +17,7 @@
 
 • **address**: *string*
 
-*Defined in [src/context/index.ts:55](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L55)*
+*Defined in [src/context/index.ts:64](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L64)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **name**? : *undefined | string*
 
-*Defined in [src/context/index.ts:56](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L56)*
+*Defined in [src/context/index.ts:65](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/context/index.ts#L65)*

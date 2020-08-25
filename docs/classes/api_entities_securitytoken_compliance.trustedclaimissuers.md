@@ -17,7 +17,9 @@ Handles all Security Token Default Trusted Claim Issuers related functionality
 
 ### Methods
 
+* [add](api_entities_securitytoken_compliance.trustedclaimissuers.md#add)
 * [get](api_entities_securitytoken_compliance.trustedclaimissuers.md#get)
+* [remove](api_entities_securitytoken_compliance.trustedclaimissuers.md#remove)
 * [set](api_entities_securitytoken_compliance.trustedclaimissuers.md#set)
 
 ## Properties
@@ -28,7 +30,7 @@ Handles all Security Token Default Trusted Claim Issuers related functionality
 
 *Inherited from [Namespace](base.namespace.md).[context](base.namespace.md#protected-context)*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/Namespace.ts#L10)*
 
 ___
 
@@ -38,15 +40,33 @@ ___
 
 *Inherited from [Namespace](base.namespace.md).[parent](base.namespace.md#protected-parent)*
 
-*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L8)*
+*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/Namespace.ts#L8)*
 
 ## Methods
+
+###  add
+
+▸ **add**(`args`: [ModifyTokenTrustedClaimIssuersParams](../interfaces/api_procedures.modifytokentrustedclaimissuersparams.md)): *Promise‹[TransactionQueue](base.transactionqueue.md)‹[SecurityToken](api_entities_securitytoken.securitytoken.md)››*
+
+*Defined in [src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts:42](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts#L42)*
+
+Add the supplied identities to the Security Token's list of trusted claim issuers
+
+**Parameters:**
+
+Name | Type |
+------ | ------ |
+`args` | [ModifyTokenTrustedClaimIssuersParams](../interfaces/api_procedures.modifytokentrustedclaimissuersparams.md) |
+
+**Returns:** *Promise‹[TransactionQueue](base.transactionqueue.md)‹[SecurityToken](api_entities_securitytoken.securitytoken.md)››*
+
+___
 
 ###  get
 
 ▸ **get**(): *Promise‹[TrustedClaimIssuer](api_entities.trustedclaimissuer.md)[]›*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts:35](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts#L35)*
+*Defined in [src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts:76](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts#L76)*
 
 Retrieve the current default trusted claim issuers of the Security Token
 
@@ -56,7 +76,7 @@ Retrieve the current default trusted claim issuers of the Security Token
 
 ▸ **get**(`callback`: [SubCallback](../modules/types.md#subcallback)‹[TrustedClaimIssuer](api_entities.trustedclaimissuer.md)[]›): *Promise‹[UnsubCallback](../modules/types.md#unsubcallback)›*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts#L36)*
+*Defined in [src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts:77](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts#L77)*
 
 **Parameters:**
 
@@ -68,11 +88,29 @@ Name | Type |
 
 ___
 
+###  remove
+
+▸ **remove**(`args`: [ModifyTokenTrustedClaimIssuersParams](../interfaces/api_procedures.modifytokentrustedclaimissuersparams.md)): *Promise‹[TransactionQueue](base.transactionqueue.md)‹[SecurityToken](api_entities_securitytoken.securitytoken.md)››*
+
+*Defined in [src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts:58](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts#L58)*
+
+Remove the supplied identities from the Security Token's list of trusted claim issuers   *
+
+**Parameters:**
+
+Name | Type |
+------ | ------ |
+`args` | [ModifyTokenTrustedClaimIssuersParams](../interfaces/api_procedures.modifytokentrustedclaimissuersparams.md) |
+
+**Returns:** *Promise‹[TransactionQueue](base.transactionqueue.md)‹[SecurityToken](api_entities_securitytoken.securitytoken.md)››*
+
+___
+
 ###  set
 
-▸ **set**(`args`: [SetTokenTrustedClaimIssuersParams](../interfaces/api_procedures.settokentrustedclaimissuersparams.md)): *Promise‹[TransactionQueue](base.transactionqueue.md)‹[SecurityToken](api_entities_securitytoken.securitytoken.md)››*
+▸ **set**(`args`: [ModifyTokenTrustedClaimIssuersParams](../interfaces/api_procedures.modifytokentrustedclaimissuersparams.md)): *Promise‹[TransactionQueue](base.transactionqueue.md)‹[SecurityToken](api_entities_securitytoken.securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts#L22)*
+*Defined in [src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts:26](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/Compliance/TrustedClaimIssuers.ts#L26)*
 
 Assign a new default list of trusted claim issuers to the Security Token by replacing the existing ones with the list passed as a parameter
 
@@ -82,6 +120,6 @@ This requires two transactions
 
 Name | Type |
 ------ | ------ |
-`args` | [SetTokenTrustedClaimIssuersParams](../interfaces/api_procedures.settokentrustedclaimissuersparams.md) |
+`args` | [ModifyTokenTrustedClaimIssuersParams](../interfaces/api_procedures.modifytokentrustedclaimissuersparams.md) |
 
 **Returns:** *Promise‹[TransactionQueue](base.transactionqueue.md)‹[SecurityToken](api_entities_securitytoken.securitytoken.md)››*

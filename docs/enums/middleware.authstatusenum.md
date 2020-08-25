@@ -16,7 +16,7 @@
 
 • **Consumed**: = "Consumed"
 
-*Defined in [src/middleware/types.ts:906](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L906)*
+*Defined in [src/middleware/types.ts:1017](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L1017)*
 
 ___
 
@@ -24,7 +24,7 @@ ___
 
 • **Expired**: = "Expired"
 
-*Defined in [src/middleware/types.ts:909](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L909)*
+*Defined in [src/middleware/types.ts:1020](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L1020)*
 
 ___
 
@@ -32,7 +32,7 @@ ___
 
 • **Pending**: = "Pending"
 
-*Defined in [src/middleware/types.ts:905](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L905)*
+*Defined in [src/middleware/types.ts:1016](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L1016)*
 
 ___
 
@@ -40,7 +40,7 @@ ___
 
 • **Rejected**: = "Rejected"
 
-*Defined in [src/middleware/types.ts:907](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L907)*
+*Defined in [src/middleware/types.ts:1018](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L1018)*
 
 ___
 
@@ -48,4 +48,4 @@ ___
 
 • **Revoked**: = "Revoked"
 
-*Defined in [src/middleware/types.ts:908](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L908)*
+*Defined in [src/middleware/types.ts:1019](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L1019)*

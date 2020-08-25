@@ -18,7 +18,7 @@
 
 • **identity**: *[Identity](../classes/api_entities_identity.identity.md)*
 
-*Defined in [src/api/entities/Proposal/types.ts:38](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/Proposal/types.ts#L38)*
+*Defined in [src/api/entities/Proposal/types.ts:38](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/Proposal/types.ts#L38)*
 
 ___
 
@@ -26,7 +26,7 @@ ___
 
 • **vote**: *boolean*
 
-*Defined in [src/api/entities/Proposal/types.ts:39](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/Proposal/types.ts#L39)*
+*Defined in [src/api/entities/Proposal/types.ts:39](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/Proposal/types.ts#L39)*
 
 ___
 
@@ -34,4 +34,4 @@ ___
 
 • **weight**: *BigNumber*
 
-*Defined in [src/api/entities/Proposal/types.ts:40](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/Proposal/types.ts#L40)*
+*Defined in [src/api/entities/Proposal/types.ts:40](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/Proposal/types.ts#L40)*

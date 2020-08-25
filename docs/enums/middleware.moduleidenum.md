@@ -5,37 +5,40 @@
 ### Enumeration members
 
 * [Asset](middleware.moduleidenum.md#asset)
-* [AuthorityDiscovery](middleware.moduleidenum.md#authoritydiscovery)
+* [Authoritydiscovery](middleware.moduleidenum.md#authoritydiscovery)
 * [Authorship](middleware.moduleidenum.md#authorship)
 * [Babe](middleware.moduleidenum.md#babe)
 * [Balances](middleware.moduleidenum.md#balances)
 * [Bridge](middleware.moduleidenum.md#bridge)
-* [CddServiceProviders](middleware.moduleidenum.md#cddserviceproviders)
-* [CommitteeMembership](middleware.moduleidenum.md#committeemembership)
-* [ComplianceManager](middleware.moduleidenum.md#compliancemanager)
+* [Cddserviceproviders](middleware.moduleidenum.md#cddserviceproviders)
+* [Committeemembership](middleware.moduleidenum.md#committeemembership)
+* [Compliancemanager](middleware.moduleidenum.md#compliancemanager)
+* [Confidential](middleware.moduleidenum.md#confidential)
 * [Contracts](middleware.moduleidenum.md#contracts)
 * [Dividend](middleware.moduleidenum.md#dividend)
 * [Exemption](middleware.moduleidenum.md#exemption)
-* [FinalityTracker](middleware.moduleidenum.md#finalitytracker)
+* [Finalitytracker](middleware.moduleidenum.md#finalitytracker)
 * [Grandpa](middleware.moduleidenum.md#grandpa)
+* [Historical](middleware.moduleidenum.md#historical)
 * [Identity](middleware.moduleidenum.md#identity)
-* [ImOnline](middleware.moduleidenum.md#imonline)
+* [Imonline](middleware.moduleidenum.md#imonline)
 * [Indices](middleware.moduleidenum.md#indices)
-* [MultiSig](middleware.moduleidenum.md#multisig)
+* [Multisig](middleware.moduleidenum.md#multisig)
 * [Offences](middleware.moduleidenum.md#offences)
 * [Pips](middleware.moduleidenum.md#pips)
-* [PolymeshCommittee](middleware.moduleidenum.md#polymeshcommittee)
-* [ProtocolFee](middleware.moduleidenum.md#protocolfee)
-* [RandomnessCollectiveFlip](middleware.moduleidenum.md#randomnesscollectiveflip)
+* [Polymeshcommittee](middleware.moduleidenum.md#polymeshcommittee)
+* [Portfolio](middleware.moduleidenum.md#portfolio)
+* [Protocolfee](middleware.moduleidenum.md#protocolfee)
+* [Randomnesscollectiveflip](middleware.moduleidenum.md#randomnesscollectiveflip)
 * [Session](middleware.moduleidenum.md#session)
-* [SimpleToken](middleware.moduleidenum.md#simpletoken)
+* [Settlement](middleware.moduleidenum.md#settlement)
 * [Staking](middleware.moduleidenum.md#staking)
 * [Statistic](middleware.moduleidenum.md#statistic)
-* [StoCapped](middleware.moduleidenum.md#stocapped)
+* [Stocapped](middleware.moduleidenum.md#stocapped)
 * [Sudo](middleware.moduleidenum.md#sudo)
 * [System](middleware.moduleidenum.md#system)
 * [Timestamp](middleware.moduleidenum.md#timestamp)
-* [TransactionPayment](middleware.moduleidenum.md#transactionpayment)
+* [Transactionpayment](middleware.moduleidenum.md#transactionpayment)
 * [Treasury](middleware.moduleidenum.md#treasury)
 * [Utility](middleware.moduleidenum.md#utility)
 * [Voting](middleware.moduleidenum.md#voting)
@@ -46,15 +49,15 @@
 
 • **Asset**: = "asset"
 
-*Defined in [src/middleware/types.ts:346](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L346)*
+*Defined in [src/middleware/types.ts:374](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L374)*
 
 ___
 
-###  AuthorityDiscovery
+###  Authoritydiscovery
 
-• **AuthorityDiscovery**: = "authorityDiscovery"
+• **Authoritydiscovery**: = "authoritydiscovery"
 
-*Defined in [src/middleware/types.ts:336](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L336)*
+*Defined in [src/middleware/types.ts:364](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L364)*
 
 ___
 
@@ -62,7 +65,7 @@ ___
 
 • **Authorship**: = "authorship"
 
-*Defined in [src/middleware/types.ts:329](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L329)*
+*Defined in [src/middleware/types.ts:357](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L357)*
 
 ___
 
@@ -70,7 +73,7 @@ ___
 
 • **Babe**: = "babe"
 
-*Defined in [src/middleware/types.ts:325](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L325)*
+*Defined in [src/middleware/types.ts:352](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L352)*
 
 ___
 
@@ -78,7 +81,7 @@ ___
 
 • **Balances**: = "balances"
 
-*Defined in [src/middleware/types.ts:328](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L328)*
+*Defined in [src/middleware/types.ts:355](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L355)*
 
 ___
 
@@ -86,31 +89,39 @@ ___
 
 • **Bridge**: = "bridge"
 
-*Defined in [src/middleware/types.ts:349](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L349)*
+*Defined in [src/middleware/types.ts:377](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L377)*
 
 ___
 
-###  CddServiceProviders
+###  Cddserviceproviders
 
-• **CddServiceProviders**: = "cddServiceProviders"
+• **Cddserviceproviders**: = "cddserviceproviders"
 
-*Defined in [src/middleware/types.ts:355](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L355)*
-
-___
-
-###  CommitteeMembership
-
-• **CommitteeMembership**: = "committeeMembership"
-
-*Defined in [src/middleware/types.ts:344](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L344)*
+*Defined in [src/middleware/types.ts:383](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L383)*
 
 ___
 
-###  ComplianceManager
+###  Committeemembership
 
-• **ComplianceManager**: = "complianceManager"
+• **Committeemembership**: = "committeemembership"
 
-*Defined in [src/middleware/types.ts:350](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L350)*
+*Defined in [src/middleware/types.ts:372](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L372)*
+
+___
+
+###  Compliancemanager
+
+• **Compliancemanager**: = "compliancemanager"
+
+*Defined in [src/middleware/types.ts:378](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L378)*
+
+___
+
+###  Confidential
+
+• **Confidential**: = "confidential"
+
+*Defined in [src/middleware/types.ts:388](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L388)*
 
 ___
 
@@ -118,7 +129,7 @@ ___
 
 • **Contracts**: = "contracts"
 
-*Defined in [src/middleware/types.ts:341](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L341)*
+*Defined in [src/middleware/types.ts:369](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L369)*
 
 ___
 
@@ -126,7 +137,7 @@ ___
 
 • **Dividend**: = "dividend"
 
-*Defined in [src/middleware/types.ts:347](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L347)*
+*Defined in [src/middleware/types.ts:375](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L375)*
 
 ___
 
@@ -134,15 +145,15 @@ ___
 
 • **Exemption**: = "exemption"
 
-*Defined in [src/middleware/types.ts:353](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L353)*
+*Defined in [src/middleware/types.ts:381](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L381)*
 
 ___
 
-###  FinalityTracker
+###  Finalitytracker
 
-• **FinalityTracker**: = "finalityTracker"
+• **Finalitytracker**: = "finalitytracker"
 
-*Defined in [src/middleware/types.ts:333](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L333)*
+*Defined in [src/middleware/types.ts:361](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L361)*
 
 ___
 
@@ -150,7 +161,15 @@ ___
 
 • **Grandpa**: = "grandpa"
 
-*Defined in [src/middleware/types.ts:334](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L334)*
+*Defined in [src/middleware/types.ts:362](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L362)*
+
+___
+
+###  Historical
+
+• **Historical**: = "historical"
+
+*Defined in [src/middleware/types.ts:366](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L366)*
 
 ___
 
@@ -158,15 +177,15 @@ ___
 
 • **Identity**: = "identity"
 
-*Defined in [src/middleware/types.ts:348](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L348)*
+*Defined in [src/middleware/types.ts:376](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L376)*
 
 ___
 
-###  ImOnline
+###  Imonline
 
-• **ImOnline**: = "imOnline"
+• **Imonline**: = "imonline"
 
-*Defined in [src/middleware/types.ts:335](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L335)*
+*Defined in [src/middleware/types.ts:363](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L363)*
 
 ___
 
@@ -174,15 +193,15 @@ ___
 
 • **Indices**: = "indices"
 
-*Defined in [src/middleware/types.ts:327](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L327)*
+*Defined in [src/middleware/types.ts:354](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L354)*
 
 ___
 
-###  MultiSig
+###  Multisig
 
-• **MultiSig**: = "multiSig"
+• **Multisig**: = "multisig"
 
-*Defined in [src/middleware/types.ts:340](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L340)*
+*Defined in [src/middleware/types.ts:368](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L368)*
 
 ___
 
@@ -190,7 +209,7 @@ ___
 
 • **Offences**: = "offences"
 
-*Defined in [src/middleware/types.ts:331](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L331)*
+*Defined in [src/middleware/types.ts:359](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L359)*
 
 ___
 
@@ -198,31 +217,39 @@ ___
 
 • **Pips**: = "pips"
 
-*Defined in [src/middleware/types.ts:345](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L345)*
+*Defined in [src/middleware/types.ts:373](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L373)*
 
 ___
 
-###  PolymeshCommittee
+###  Polymeshcommittee
 
-• **PolymeshCommittee**: = "polymeshCommittee"
+• **Polymeshcommittee**: = "polymeshcommittee"
 
-*Defined in [src/middleware/types.ts:343](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L343)*
-
-___
-
-###  ProtocolFee
-
-• **ProtocolFee**: = "protocolFee"
-
-*Defined in [src/middleware/types.ts:357](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L357)*
+*Defined in [src/middleware/types.ts:371](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L371)*
 
 ___
 
-###  RandomnessCollectiveFlip
+###  Portfolio
 
-• **RandomnessCollectiveFlip**: = "randomnessCollectiveFlip"
+• **Portfolio**: = "portfolio"
 
-*Defined in [src/middleware/types.ts:337](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L337)*
+*Defined in [src/middleware/types.ts:387](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L387)*
+
+___
+
+###  Protocolfee
+
+• **Protocolfee**: = "protocolfee"
+
+*Defined in [src/middleware/types.ts:385](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L385)*
+
+___
+
+###  Randomnesscollectiveflip
+
+• **Randomnesscollectiveflip**: = "randomnesscollectiveflip"
+
+*Defined in [src/middleware/types.ts:365](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L365)*
 
 ___
 
@@ -230,15 +257,15 @@ ___
 
 • **Session**: = "session"
 
-*Defined in [src/middleware/types.ts:332](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L332)*
+*Defined in [src/middleware/types.ts:360](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L360)*
 
 ___
 
-###  SimpleToken
+###  Settlement
 
-• **SimpleToken**: = "simpleToken"
+• **Settlement**: = "settlement"
 
-*Defined in [src/middleware/types.ts:354](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L354)*
+*Defined in [src/middleware/types.ts:382](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L382)*
 
 ___
 
@@ -246,7 +273,7 @@ ___
 
 • **Staking**: = "staking"
 
-*Defined in [src/middleware/types.ts:330](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L330)*
+*Defined in [src/middleware/types.ts:358](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L358)*
 
 ___
 
@@ -254,15 +281,15 @@ ___
 
 • **Statistic**: = "statistic"
 
-*Defined in [src/middleware/types.ts:356](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L356)*
+*Defined in [src/middleware/types.ts:384](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L384)*
 
 ___
 
-###  StoCapped
+###  Stocapped
 
-• **StoCapped**: = "stoCapped"
+• **Stocapped**: = "stocapped"
 
-*Defined in [src/middleware/types.ts:352](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L352)*
+*Defined in [src/middleware/types.ts:380](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L380)*
 
 ___
 
@@ -270,7 +297,7 @@ ___
 
 • **Sudo**: = "sudo"
 
-*Defined in [src/middleware/types.ts:339](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L339)*
+*Defined in [src/middleware/types.ts:367](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L367)*
 
 ___
 
@@ -278,7 +305,7 @@ ___
 
 • **System**: = "system"
 
-*Defined in [src/middleware/types.ts:324](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L324)*
+*Defined in [src/middleware/types.ts:351](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L351)*
 
 ___
 
@@ -286,15 +313,15 @@ ___
 
 • **Timestamp**: = "timestamp"
 
-*Defined in [src/middleware/types.ts:326](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L326)*
+*Defined in [src/middleware/types.ts:353](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L353)*
 
 ___
 
-###  TransactionPayment
+###  Transactionpayment
 
-• **TransactionPayment**: = "transactionPayment"
+• **Transactionpayment**: = "transactionpayment"
 
-*Defined in [src/middleware/types.ts:338](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L338)*
+*Defined in [src/middleware/types.ts:356](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L356)*
 
 ___
 
@@ -302,7 +329,7 @@ ___
 
 • **Treasury**: = "treasury"
 
-*Defined in [src/middleware/types.ts:342](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L342)*
+*Defined in [src/middleware/types.ts:370](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L370)*
 
 ___
 
@@ -310,7 +337,7 @@ ___
 
 • **Utility**: = "utility"
 
-*Defined in [src/middleware/types.ts:358](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L358)*
+*Defined in [src/middleware/types.ts:386](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L386)*
 
 ___
 
@@ -318,4 +345,4 @@ ___
 
 • **Voting**: = "voting"
 
-*Defined in [src/middleware/types.ts:351](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L351)*
+*Defined in [src/middleware/types.ts:379](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/middleware/types.ts#L379)*

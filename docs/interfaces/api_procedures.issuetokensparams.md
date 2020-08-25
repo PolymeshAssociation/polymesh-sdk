@@ -16,4 +16,4 @@
 
 • **issuanceData**: *[IssuanceData](types.issuancedata.md)[]*
 
-*Defined in [src/api/procedures/issueTokens.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/issueTokens.ts#L19)*
+*Defined in [src/api/procedures/issueTokens.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/procedures/issueTokens.ts#L12)*

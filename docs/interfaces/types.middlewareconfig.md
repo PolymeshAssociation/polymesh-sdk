@@ -17,7 +17,7 @@
 
 • **key**: *string*
 
-*Defined in [src/types/index.ts:322](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L322)*
+*Defined in [src/types/index.ts:350](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/index.ts#L350)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **link**: *string*
 
-*Defined in [src/types/index.ts:321](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L321)*
+*Defined in [src/types/index.ts:349](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/index.ts#L349)*

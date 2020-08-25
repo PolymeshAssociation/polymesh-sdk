@@ -29,6 +29,7 @@
 
 ### Type aliases
 
+* [PolymeshError](base.md#polymesherror)
 * [PolymeshTransaction](base.md#polymeshtransaction)
 * [PolymeshTransactionArray](base.md#polymeshtransactionarray)
 * [TransactionQueue](base.md#transactionqueue)
@@ -70,11 +71,19 @@ ___
 
 ## Type aliases
 
+###  PolymeshError
+
+Ƭ **PolymeshError**: *InstanceType‹typeof PolymeshErrorClass›*
+
+*Defined in [src/base/types.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/types.ts#L7)*
+
+___
+
 ###  PolymeshTransaction
 
 Ƭ **PolymeshTransaction**: *InstanceType‹typeof PolymeshTransactionClass›*
 
-*Defined in [src/base/types.ts:4](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/types.ts#L4)*
+*Defined in [src/base/types.ts:5](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/types.ts#L5)*
 
 ___
 
@@ -82,7 +91,7 @@ ___
 
 Ƭ **PolymeshTransactionArray**: *object*
 
-*Defined in [src/base/TransactionQueue.ts:14](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/TransactionQueue.ts#L14)*
+*Defined in [src/base/TransactionQueue.ts:14](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/TransactionQueue.ts#L14)*
 
 #### Type declaration:
 
@@ -92,7 +101,7 @@ ___
 
 Ƭ **TransactionQueue**: *InstanceType‹typeof TransactionQueueClass›*
 
-*Defined in [src/base/types.ts:5](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/types.ts#L5)*
+*Defined in [src/base/types.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/types.ts#L6)*
 
 ___
 
@@ -100,7 +109,7 @@ ___
 
 Ƭ **TransactionSpecArray**: *object*
 
-*Defined in [src/base/TransactionQueue.ts:20](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/TransactionQueue.ts#L20)*
+*Defined in [src/base/TransactionQueue.ts:20](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/TransactionQueue.ts#L20)*
 
 #### Type declaration:
 
@@ -110,22 +119,22 @@ ___
 
 ### ▪ **ErrorMessagesPerCode**: *object*
 
-*Defined in [src/base/PolymeshError.ts:3](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/PolymeshError.ts#L3)*
+*Defined in [src/base/PolymeshError.ts:3](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/PolymeshError.ts#L3)*
 
 ###  [ErrorCode.TransactionAborted]
 
 • **[ErrorCode.TransactionAborted]**: *string* = "The transaction was removed from the transaction pool. This might mean that it was malformed (nonce too large/nonce too small/duplicated or invalid transaction)"
 
-*Defined in [src/base/PolymeshError.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/PolymeshError.ts#L7)*
+*Defined in [src/base/PolymeshError.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/PolymeshError.ts#L7)*
 
 ###  [ErrorCode.TransactionRejectedByUser]
 
 • **[ErrorCode.TransactionRejectedByUser]**: *string* = "The user canceled the transaction signature"
 
-*Defined in [src/base/PolymeshError.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/PolymeshError.ts#L9)*
+*Defined in [src/base/PolymeshError.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/PolymeshError.ts#L9)*
 
 ###  [ErrorCode.TransactionReverted]
 
 • **[ErrorCode.TransactionReverted]**: *string* = "The transaction execution reverted due to an error"
 
-*Defined in [src/base/PolymeshError.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/PolymeshError.ts#L6)*
+*Defined in [src/base/PolymeshError.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/PolymeshError.ts#L6)*

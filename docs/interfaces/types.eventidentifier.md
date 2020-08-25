@@ -18,7 +18,7 @@
 
 • **blockDate**: *Date*
 
-*Defined in [src/types/index.ts:333](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L333)*
+*Defined in [src/types/index.ts:361](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/index.ts#L361)*
 
 ___
 
@@ -26,7 +26,7 @@ ___
 
 • **blockNumber**: *number*
 
-*Defined in [src/types/index.ts:332](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L332)*
+*Defined in [src/types/index.ts:360](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/index.ts#L360)*
 
 ___
 
@@ -34,4 +34,4 @@ ___
 
 • **eventIndex**: *number*
 
-*Defined in [src/types/index.ts:334](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L334)*
+*Defined in [src/types/index.ts:362](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/types/index.ts#L362)*

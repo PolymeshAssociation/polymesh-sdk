@@ -2,7 +2,7 @@
   "mode": "modules",
   "out": "docs",
   "theme": "gitbook",
-  "exclude": ["**/{__tests__,polkadot,testUtils}/*", "**/sandbox.ts", "src/index.ts"],
+  "exclude": ["**/{__tests__,polkadot,testUtils}/*", "**/sandbox.ts", "src/index.ts", "**/test.ts"],
   "excludeExternals": true,
   "excludePrivate": true,
   "ignoreCompilerErrors": true

@@ -16,4 +16,4 @@
 
 • **authId**: *BigNumber*
 
-*Defined in [src/api/entities/AuthorizationRequest.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/AuthorizationRequest.ts#L10)*
+*Defined in [src/api/entities/AuthorizationRequest.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/AuthorizationRequest.ts#L10)*

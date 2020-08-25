@@ -28,7 +28,7 @@ Handles all Identity Authorization related functionality
 
 *Inherited from [Namespace](base.namespace.md).[context](base.namespace.md#protected-context)*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/Namespace.ts#L10)*
 
 ___
 
@@ -38,7 +38,7 @@ ___
 
 *Inherited from [Namespace](base.namespace.md).[parent](base.namespace.md#protected-parent)*
 
-*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L8)*
+*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/Namespace.ts#L8)*
 
 ## Methods
 
@@ -46,7 +46,7 @@ ___
 
 ▸ **getReceived**(`paginationOpts?`: [PaginationOptions](../interfaces/types.paginationoptions.md)): *Promise‹[ResultSet](../interfaces/types.resultset.md)‹[AuthorizationRequest](api_entities.authorizationrequest.md)››*
 
-*Defined in [src/api/entities/Identity/Authorizations.ts:28](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/Identity/Authorizations.ts#L28)*
+*Defined in [src/api/entities/Identity/Authorizations.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/Identity/Authorizations.ts#L30)*
 
 Fetch all pending authorization requests for which this identity is the target
 
@@ -66,7 +66,7 @@ ___
 
 ▸ **getSent**(`paginationOpts?`: [PaginationOptions](../interfaces/types.paginationoptions.md)): *Promise‹[ResultSet](../interfaces/types.resultset.md)‹[AuthorizationRequest](api_entities.authorizationrequest.md)››*
 
-*Defined in [src/api/entities/Identity/Authorizations.ts:62](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/Identity/Authorizations.ts#L62)*
+*Defined in [src/api/entities/Identity/Authorizations.ts:64](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/Identity/Authorizations.ts#L64)*
 
 Fetch all pending authorization requests issued by this identity
 

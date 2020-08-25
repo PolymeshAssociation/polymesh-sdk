@@ -27,7 +27,7 @@ Handles all Security Token Holders related functionality
 
 *Inherited from [Namespace](base.namespace.md).[context](base.namespace.md#protected-context)*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/Namespace.ts#L10)*
 
 ___
 
@@ -37,7 +37,7 @@ ___
 
 *Inherited from [Namespace](base.namespace.md).[parent](base.namespace.md#protected-parent)*
 
-*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L8)*
+*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/Namespace.ts#L8)*
 
 ## Methods
 
@@ -45,7 +45,7 @@ ___
 
 ▸ **get**(`opts`: Pick‹[TokenHolderOptions](../interfaces/api_entities_securitytoken.tokenholderoptions.md), "canBeIssuedTo"›, `paginationOpts?`: [PaginationOptions](../interfaces/types.paginationoptions.md)): *Promise‹[ResultSet](../interfaces/types.resultset.md)‹[IdentityBalance](../interfaces/api_entities_securitytoken.identitybalance.md) & Pick‹[TokenHolderProperties](../interfaces/api_entities_securitytoken.tokenholderproperties.md), "canBeIssuedTo"›››*
 
-*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/TokenHolders.ts#L27)*
+*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/TokenHolders.ts#L27)*
 
 Retrieve all the token holders with balance
 
@@ -62,7 +62,7 @@ Name | Type | Description |
 
 ▸ **get**(`paginationOpts?`: [PaginationOptions](../interfaces/types.paginationoptions.md)): *Promise‹[ResultSet](../interfaces/types.resultset.md)‹[IdentityBalance](../interfaces/api_entities_securitytoken.identitybalance.md)››*
 
-*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/TokenHolders.ts#L32)*
+*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/TokenHolders.ts#L32)*
 
 **Parameters:**
 

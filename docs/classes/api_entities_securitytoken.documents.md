@@ -28,7 +28,7 @@ Handles all Security Token Document related functionality
 
 *Inherited from [Namespace](base.namespace.md).[context](base.namespace.md#protected-context)*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/Namespace.ts#L10)*
 
 ___
 
@@ -38,19 +38,27 @@ ___
 
 *Inherited from [Namespace](base.namespace.md).[parent](base.namespace.md#protected-parent)*
 
-*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L8)*
+*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/base/Namespace.ts#L8)*
 
 ## Methods
 
 ###  get
 
-▸ **get**(): *Promise‹[TokenDocument](../interfaces/types.tokendocument.md)[]›*
+▸ **get**(`paginationOpts?`: [PaginationOptions](../interfaces/types.paginationoptions.md)): *Promise‹[ResultSet](../interfaces/types.resultset.md)‹[TokenDocument](../interfaces/types.tokendocument.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Documents.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/Documents.ts#L30)*
+*Defined in [src/api/entities/SecurityToken/Documents.ts:38](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/Documents.ts#L38)*
 
 Retrieve all documents linked to the Security Token
 
-**Returns:** *Promise‹[TokenDocument](../interfaces/types.tokendocument.md)[]›*
+**`note`** supports pagination
+
+**Parameters:**
+
+Name | Type |
+------ | ------ |
+`paginationOpts?` | [PaginationOptions](../interfaces/types.paginationoptions.md) |
+
+**Returns:** *Promise‹[ResultSet](../interfaces/types.resultset.md)‹[TokenDocument](../interfaces/types.tokendocument.md)››*
 
 ___
 
@@ -58,7 +66,7 @@ ___
 
 ▸ **set**(`args`: [SetTokenDocumentsParams](../interfaces/api_procedures.settokendocumentsparams.md)): *Promise‹[TransactionQueue](base.transactionqueue.md)‹[SecurityToken](api_entities_securitytoken.securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Documents.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/Documents.ts#L19)*
+*Defined in [src/api/entities/SecurityToken/Documents.ts:25](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/SecurityToken/Documents.ts#L25)*
 
 Assign a new list of documents to the Security Token by replacing the existing list of documents with the one passed in the parameters
 

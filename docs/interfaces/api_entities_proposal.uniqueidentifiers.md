@@ -18,4 +18,4 @@ Properties that uniquely identify a Proposal
 
 • **pipId**: *number*
 
-*Defined in [src/api/entities/Proposal/index.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/Proposal/index.ts#L19)*
+*Defined in [src/api/entities/Proposal/index.ts:18](https://github.com/PolymathNetwork/polymesh-sdk/blob/7e9a732/src/api/entities/Proposal/index.ts#L18)*
