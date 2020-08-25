@@ -16,6 +16,7 @@ import {
   proposalVotes,
   scopesByIdentity,
   tokensByTrustedClaimIssuer,
+  tokensHeldByDid,
   transactions,
 } from '../queries';
 
@@ -98,6 +99,19 @@ describe('tokensByTrustedClaimIssuer', () => {
     };
 
     const result = tokensByTrustedClaimIssuer(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('tokensHeldByDid', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      did: 'someDid',
+    };
+
+    const result = tokensHeldByDid(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

@@ -9,6 +9,7 @@ import {
   issuerDidsWithClaimsByTarget,
   scopesByIdentity,
   tokensByTrustedClaimIssuer,
+  tokensHeldByDid,
 } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
@@ -294,6 +295,48 @@ export class Identity extends Entity<UniqueIdentifiers> {
         ticker,
       };
     });
+  }
+
+  /**
+   * Retrieve a list of all tokens which were held at one point by this identity
+   *
+   * @note supports pagination
+   */
+  public async getHeldTokens(
+    opts: {
+      order?: Order;
+      size?: number;
+      start?: number;
+    } = { order: Order.Asc }
+  ): Promise<ResultSet<SecurityToken>> {
+    const { context, did } = this;
+
+    const { size, start, order } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'tokensHeldByDid'>>(
+      tokensHeldByDid({
+        did,
+        count: size,
+        skip: start,
+        order,
+      })
+    );
+
+    const {
+      data: {
+        tokensHeldByDid: { items: tokensHeldByDidList, totalCount: count },
+      },
+    } = result;
+
+    const data = tokensHeldByDidList.map(ticker => new SecurityToken({ ticker }, context));
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**

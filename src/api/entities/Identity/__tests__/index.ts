@@ -9,6 +9,7 @@ import {
   issuerDidsWithClaimsByTarget,
   scopesByIdentity,
   tokensByTrustedClaimIssuer,
+  tokensHeldByDid,
 } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -428,6 +429,27 @@ describe('Identity class', () => {
 
       expect(result[0].ticker).toBe('TOKEN1');
       expect(result[1].ticker).toBe('TOKEN2');
+    });
+  });
+
+  describe('method: getHeldTokens', () => {
+    const did = 'someDid';
+    const tickers = ['TOKEN1', 'TOKEN2'];
+
+    test('should return a list of security tokens', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloQueryStub(
+        tokensHeldByDid({ did, count: undefined, skip: undefined, order: Order.Asc }),
+        {
+          tokensHeldByDid: { items: tickers, totalCount: 2 },
+        }
+      );
+
+      const result = await identity.getHeldTokens();
+
+      expect(result.data[0].ticker).toBe(tickers[0]);
+      expect(result.data[1].ticker).toBe(tickers[1]);
     });
   });
 
