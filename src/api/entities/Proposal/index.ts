@@ -1,4 +1,4 @@
-import { u32 } from '@polkadot/types';
+import { BlockHash } from '@polkadot/types/interfaces/chain';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities/Identity';
@@ -195,7 +195,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     const { end: rawEnd, cool_off_until: rawCoolOff } = metadata.unwrap();
     const { number: rawBlockId } = header;
 
-    const blockId = u32ToBigNumber((rawBlockId as unknown) as u32);
+    const blockId = u32ToBigNumber(rawBlockId.unwrap());
     const end = u32ToBigNumber(rawEnd);
     const coolOff = u32ToBigNumber(rawCoolOff);
 
@@ -228,13 +228,12 @@ export class Proposal extends Entity<UniqueIdentifiers> {
 
     const { end: endBlock } = metadata.unwrap();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const opts: any = {
+    const opts: { args: []; blockHash?: BlockHash } = {
       args: [],
     };
 
     if (stage !== ProposalStage.Open) {
-      const blockHash = await chain.getBlockHash(u32ToBigNumber(endBlock).toString());
+      const blockHash = await chain.getBlockHash(endBlock);
       opts.blockHash = blockHash;
     }
 

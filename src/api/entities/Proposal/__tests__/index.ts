@@ -209,7 +209,8 @@ describe('Proposal class', () => {
     test('should return coolOff as stage of the proposal', async () => {
       const blockId = 500000;
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const rawBlockId = dsMockUtils.createMockU32(blockId);
+      const mockBlockId = dsMockUtils.createMockU32(blockId);
+      const rawBlockId = dsMockUtils.createMockOption(mockBlockId);
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
@@ -225,7 +226,7 @@ describe('Proposal class', () => {
       dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
 
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
+      u32ToBigNumberStub.withArgs(mockBlockId).returns(new BigNumber(blockId));
 
       const result = await proposal.getStage();
       expect(result).toEqual(ProposalStage.CoolOff);
@@ -235,7 +236,8 @@ describe('Proposal class', () => {
       const blockId = 600000;
       const end = 1000000;
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const rawBlockId = dsMockUtils.createMockU32(blockId);
+      const mockBlockId = dsMockUtils.createMockU32(blockId);
+      const rawBlockId = dsMockUtils.createMockOption(mockBlockId);
       const rawEnd = dsMockUtils.createMockU32(end);
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
@@ -252,7 +254,7 @@ describe('Proposal class', () => {
       dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
 
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
+      u32ToBigNumberStub.withArgs(mockBlockId).returns(new BigNumber(blockId));
       u32ToBigNumberStub.withArgs(rawEnd).returns(new BigNumber(end));
 
       const result = await proposal.getStage();
@@ -263,7 +265,8 @@ describe('Proposal class', () => {
       const blockId = 1000000;
       const end = 700000;
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const rawBlockId = dsMockUtils.createMockU32(blockId);
+      const mockBlockId = dsMockUtils.createMockU32(blockId);
+      const rawBlockId = dsMockUtils.createMockOption(mockBlockId);
       const rawEnd = dsMockUtils.createMockU32(end);
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
@@ -280,7 +283,7 @@ describe('Proposal class', () => {
       dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
 
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
+      u32ToBigNumberStub.withArgs(mockBlockId).returns(new BigNumber(blockId));
       u32ToBigNumberStub.withArgs(rawEnd).returns(new BigNumber(end));
 
       const result = await proposal.getStage();
@@ -308,7 +311,6 @@ describe('Proposal class', () => {
 
       requestAtBlockStub.returns(rawBalance);
       balanceToBigNumberStub.withArgs(rawBalance).returns(fakeResult);
-      u32ToBigNumberStub.withArgs(rawEnd).returns(new BigNumber(end));
     });
 
     afterEach(() => {
@@ -329,7 +331,6 @@ describe('Proposal class', () => {
       sinon.stub(proposal, 'getStage').resolves(ProposalStage.Ended);
 
       dsMockUtils.createRpcStub('chain', 'getBlockHash').returns(rawBlockHash);
-      u32ToBigNumberStub.withArgs(rawBlockHash).returns(blockHash);
 
       const result = await proposal.minimumBondedAmount();
       expect(result).toBe(fakeResult);
