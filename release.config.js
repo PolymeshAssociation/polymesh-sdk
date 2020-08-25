@@ -6,6 +6,10 @@ module.exports = {
       name: 'beta',
       prerelease: true,
     },
+    {
+      name: 'alpha',
+      prerelease: true,
+    },
   ],
   /*
    * In this order the **prepare** step of @semantic-release/npm will run first

@@ -5,18 +5,19 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
-import { ApolloClient, ApolloQueryResult } from 'apollo-client';
+import { ApolloClient } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
-import { TxTag } from 'polymesh-types/types';
+import { Ticker, TxTag } from 'polymesh-types/types';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
   modifyClaims,
   ModifyClaimsParams,
+  removeSigningKeys,
   reserveTicker,
   ReserveTickerParams,
   transferPolyX,
@@ -24,8 +25,8 @@ import {
 } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { didsWithClaims } from '~/middleware/queries';
-import { ClaimTypeEnum, Query } from '~/middleware/types';
+import { didsWithClaims, transactions } from '~/middleware/queries';
+import { ClaimTypeEnum, Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
@@ -33,13 +34,12 @@ import {
   CommonKeyring,
   Ensured,
   ErrorCode,
+  ExtrinsicData,
   IdentityWithClaims,
-  LinkType,
   MiddlewareConfig,
   NetworkProperties,
   ResultSet,
   Signer,
-  SignerType,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
@@ -47,21 +47,21 @@ import {
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import {
-  booleanToBool,
+  addressToKey,
   calculateNextKey,
-  createClaim,
-  linkTypeToMeshLinkType,
+  extrinsicIdentifierToTxTag,
   moduleAddressToString,
-  signerToSignatory,
+  stringToIdentityId,
   stringToTicker,
   textToString,
   tickerToString,
+  toIdentityWithClaimsArray,
+  txTagToExtrinsicIdentifier,
   u32ToBigNumber,
   valueToDid,
 } from '~/utils';
 
 import { Governance } from './Governance';
-import { Link } from './polkadot/polymesh';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
@@ -220,17 +220,6 @@ export class Polymesh {
     return transferPolyX.prepare(args, this.context);
   }
 
-  // TODO: uncomment for v2
-  /*
-   * Get the POLYX balance of the current account
-   * NOTE: We don't expose this method for Testnet v1
-   */
-  /*
-  public getIdentityBalance(): Promise<BigNumber> {
-    return this.context.getCurrentIdentity().getPolyXBalance();
-  }
-  */
-
   /**
    * Get the free/locked POLYX balance of an account
    *
@@ -315,8 +304,8 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all the ticker reservations currently owned by an identity. This includes
-   * Security Tokens that have already been launched
+   * Retrieve all the ticker reservations currently owned by an identity. This doesn't include tokens that
+   *   have already been launched
    *
    * @param args.did - identity representation or identity ID as stored in the blockchain
    */
@@ -325,7 +314,7 @@ export class Polymesh {
   }): Promise<TickerReservation[]> {
     const {
       context: {
-        polymeshApi: { rpc },
+        polymeshApi: { query },
       },
       context,
     } = this;
@@ -338,17 +327,17 @@ export class Polymesh {
       identity = context.getCurrentIdentity().did;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tickers: Link[] = await (rpc as any).identity.getFilteredLinks(
-      signerToSignatory({ type: SignerType.Identity, value: identity }, context),
-      booleanToBool(false, context),
-      linkTypeToMeshLinkType(LinkType.TickerOwnership, context)
+    const entries = await query.asset.assetOwnershipRelations.entries(
+      stringToIdentityId(identity, context)
     );
 
-    const tickerReservations = tickers.map(
-      link =>
-        new TickerReservation({ ticker: tickerToString(link.link_data.asTickerOwned) }, context)
-    );
+    const tickerReservations: TickerReservation[] = entries
+      .filter(([, relation]) => relation.isTickerOwned)
+      .map(([key]) => {
+        const ticker = tickerToString(key.args[1] as Ticker);
+
+        return new TickerReservation({ ticker }, context);
+      });
 
     return tickerReservations;
   }
@@ -487,7 +476,7 @@ export class Polymesh {
   public async getSecurityTokens(args?: { did: string | Identity }): Promise<SecurityToken[]> {
     const {
       context: {
-        polymeshApi: { rpc },
+        polymeshApi: { query },
       },
       context,
     } = this;
@@ -500,16 +489,17 @@ export class Polymesh {
       identity = context.getCurrentIdentity().did;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const identityLinks: Link[] = await (rpc as any).identity.getFilteredLinks(
-      signerToSignatory({ type: SignerType.Identity, value: identity }, context),
-      booleanToBool(false, context),
-      linkTypeToMeshLinkType(LinkType.AssetOwnership, context)
+    const entries = await query.asset.assetOwnershipRelations.entries(
+      stringToIdentityId(identity, context)
     );
 
-    const securityTokens = identityLinks.map(
-      data => new SecurityToken({ ticker: tickerToString(data.link_data.asAssetOwned) }, context)
-    );
+    const securityTokens: SecurityToken[] = entries
+      .filter(([, relation]) => relation.isAssetOwned)
+      .map(([key]) => {
+        const ticker = tickerToString(key.args[1] as Ticker);
+
+        return new SecurityToken({ ticker }, context);
+      });
 
     return securityTokens;
   }
@@ -551,58 +541,18 @@ export class Polymesh {
       start?: number;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
-    const {
-      context,
-      context: { middlewareApi },
-    } = this;
+    const { context } = this;
 
     const { size, start } = opts;
     const { did } = context.getCurrentIdentity();
 
-    let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
-        didsWithClaims({
-          trustedClaimIssuers: [did],
-          count: size,
-          skip: start,
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
-      },
-    } = result;
-    const data: ClaimData[] = [];
-
-    didsWithClaimsList.forEach(({ claims }) => {
-      claims.forEach(
-        ({ targetDID, issuer, issuance_date: issuanceDate, expiry, type, jurisdiction, scope }) => {
-          data.push({
-            target: new Identity({ did: targetDID }, context),
-            issuer: new Identity({ did: issuer }, context),
-            issuedAt: new Date(issuanceDate),
-            expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, scope),
-          });
-        }
-      );
+    const result = await context.issuedClaims({
+      trustedClaimIssuers: [did],
+      size,
+      start,
     });
 
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
+    return result;
   }
 
   /**
@@ -625,34 +575,22 @@ export class Polymesh {
       start?: number;
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
-    const {
-      context,
-      context: { middlewareApi },
-    } = this;
+    const { context } = this;
 
     const { targets, trustedClaimIssuers, scope, claimTypes, size, start } = opts;
 
-    let result: ApolloQueryResult<Ensured<Query, 'didsWithClaims'>>;
-
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
-        didsWithClaims({
-          dids: targets?.map(target => valueToDid(target)),
-          scope,
-          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-            valueToDid(trustedClaimIssuer)
-          ),
-          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-          count: size,
-          skip: start,
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
+    const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
+      didsWithClaims({
+        dids: targets?.map(target => valueToDid(target)),
+        scope,
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          valueToDid(trustedClaimIssuer)
+        ),
+        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        count: size,
+        skip: start,
+      })
+    );
 
     const {
       data: {
@@ -660,26 +598,7 @@ export class Polymesh {
       },
     } = result;
 
-    const data = didsWithClaimsList.map(({ did, claims }) => ({
-      identity: new Identity({ did }, context),
-      claims: claims.map(
-        ({
-          targetDID,
-          issuer,
-          issuance_date: issuanceDate,
-          expiry,
-          type,
-          jurisdiction,
-          scope: claimScope,
-        }) => ({
-          target: new Identity({ did: targetDID }, context),
-          issuer: new Identity({ did: issuer }, context),
-          issuedAt: new Date(issuanceDate),
-          expiry: expiry ? new Date(expiry) : null,
-          claim: createClaim(type, jurisdiction, claimScope),
-        })
-      ),
-    }));
+    const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
 
     const next = calculateNextKey(count, size, start);
 
@@ -709,6 +628,98 @@ export class Polymesh {
     return {
       name: textToString(name),
       version: u32ToBigNumber(specVersion).toNumber(),
+    };
+  }
+
+  /**
+   * Retrieve a list of transactions. Can be filtered using parameters
+   *
+   * @param filters.address - account that signed the transaction
+   * @param filters.tag - tag associated with the transaction
+   * @param filters.success - whether the transaction was successful or not
+   * @param filters.size - page size
+   * @param filters.start - page offset
+   */
+  public async getTransactionHistory(
+    filters: {
+      blockId?: number;
+      address?: string;
+      tag?: TxTag;
+      success?: boolean;
+      size?: number;
+      start?: number;
+      orderBy?: TransactionOrderByInput;
+    } = {}
+  ): Promise<ResultSet<ExtrinsicData>> {
+    const { context } = this;
+
+    const { blockId, address, tag, success, size, start, orderBy } = filters;
+
+    let moduleId;
+    let callId;
+    if (tag) {
+      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
+    }
+
+    /* eslint-disable @typescript-eslint/camelcase */
+    const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
+      transactions({
+        block_id: blockId,
+        address: address ? addressToKey(address) : undefined,
+        module_id: moduleId,
+        call_id: callId,
+        success,
+        count: size,
+        skip: start,
+        orderBy,
+      })
+    );
+
+    const {
+      data: {
+        transactions: { items: transactionList, totalCount: count },
+      },
+    } = result;
+
+    const data: ExtrinsicData[] = [];
+
+    transactionList.forEach(
+      ({
+        block_id,
+        extrinsic_idx,
+        address: rawAddress,
+        nonce,
+        module_id,
+        call_id,
+        params,
+        success: txSuccess,
+        spec_version_id,
+        extrinsic_hash,
+      }) => {
+        // TODO remove null check once types fixed
+        /* eslint-disable @typescript-eslint/no-non-null-assertion */
+        data.push({
+          blockId: block_id!,
+          extrinsicIdx: extrinsic_idx!,
+          address: rawAddress ?? null,
+          nonce: nonce!,
+          txTag: extrinsicIdentifierToTxTag({ moduleId: module_id!, callId: call_id! }),
+          params,
+          success: !!txSuccess,
+          specVersionId: spec_version_id!,
+          extrinsicHash: extrinsic_hash!,
+        });
+        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+      }
+    );
+    /* eslint-enable @typescript-eslint/camelcase */
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
     };
   }
 
@@ -755,6 +766,13 @@ export class Polymesh {
     }
 
     return context.getSigningKeys();
+  }
+
+  /**
+   * Remove a list of signing keys associated with the current identity
+   */
+  public removeMySigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
+    return removeSigningKeys.prepare(args, this.context);
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

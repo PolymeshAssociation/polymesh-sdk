@@ -14,7 +14,7 @@
 
 • **BlockId**: = "block_id"
 
-*Defined in [src/middleware/types.ts:966](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L966)*
+*Defined in [src/middleware/types.ts:966](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L966)*
 
 ___
 
@@ -22,7 +22,7 @@ ___
 
 • **Vote**: = "vote"
 
-*Defined in [src/middleware/types.ts:967](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L967)*
+*Defined in [src/middleware/types.ts:967](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L967)*
 
 ___
 
@@ -30,4 +30,4 @@ ___
 
 • **Weight**: = "weight"
 
-*Defined in [src/middleware/types.ts:968](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L968)*
+*Defined in [src/middleware/types.ts:968](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L968)*

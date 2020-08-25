@@ -17,7 +17,7 @@
 
 • **did**: *string*
 
-*Defined in [src/api/entities/TrustedClaimIssuer.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/TrustedClaimIssuer.ts#L13)*
+*Defined in [src/api/entities/TrustedClaimIssuer.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/TrustedClaimIssuer.ts#L13)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **ticker**: *string*
 
-*Defined in [src/api/entities/TrustedClaimIssuer.ts:14](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/TrustedClaimIssuer.ts#L14)*
+*Defined in [src/api/entities/TrustedClaimIssuer.ts:14](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/TrustedClaimIssuer.ts#L14)*

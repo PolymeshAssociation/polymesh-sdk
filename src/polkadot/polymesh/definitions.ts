@@ -8,7 +8,6 @@ export default {
     DocumentUri: 'Text',
     DocumentHash: 'Text',
     Document: {
-      name: 'DocumentName',
       uri: 'DocumentUri',
       content_hash: 'DocumentHash',
     },
@@ -33,16 +32,24 @@ export default {
         Isin: '',
       },
     },
+    AssetOwnershipRelation: {
+      _enum: {
+        NotOwned: '',
+        TickerOwned: '',
+        AssetOwned: '',
+      },
+    },
     AssetName: 'Text',
     AssetIdentifier: 'Text',
     FundingRoundName: 'Text',
+    VenueDetails: 'Text',
     SecurityToken: {
       name: 'AssetName',
       total_supply: 'Balance',
       owner_did: 'IdentityId',
       divisible: 'bool',
       asset_type: 'AssetType',
-      link_id: 'u64',
+      treasury_did: 'Option<IdentityId>',
     },
     LinkedKeyInfo: {
       _enum: {
@@ -50,38 +57,21 @@ export default {
         Group: 'Vec<IdentityId>',
       },
     },
-    AccountKey: '[u8;32]',
     Permission: {
       _enum: ['Full', 'Admin', 'Operator', 'SpendFunds'],
-    },
-    Link: {
-      link_data: 'LinkData',
-      expiry: 'Option<Moment>',
-      link_id: 'u64',
-    },
-    LinkData: {
-      _enum: {
-        DocumentOwned: 'Document',
-        TickerOwned: 'Ticker',
-        AssetOwned: 'Ticker',
-      },
-    },
-    SignatoryType: {
-      _enum: ['External', 'Identity', 'MultiSig', 'Relayer'],
     },
     Signatory: {
       _enum: {
         Identity: 'IdentityId',
-        AccountKey: 'AccountKey',
+        Account: 'AccountId',
       },
     },
-    SigningItem: {
+    SigningKey: {
       signer: 'Signatory',
-      signer_type: 'SignatoryType',
       permissions: 'Vec<Permission>',
     },
-    SigningItemWithAuth: {
-      signing_item: 'SigningItem',
+    SigningKeyWithAuth: {
+      signing_key: 'SigningKey',
       auth_signature: 'Signature',
     },
     IdentityRole: {
@@ -100,12 +90,12 @@ export default {
     },
     PreAuthorizedKeyInfo: {
       target_id: 'IdentityId',
-      signing_item: 'SigningItem',
+      signing_key: 'SigningKey',
     },
     DidRecord: {
       roles: 'Vec<IdentityRole>',
-      master_key: 'AccountKey',
-      signing_items: 'Vec<SigningItem>',
+      master_key: 'AccountId',
+      signing_keys: 'Vec<SigningKey>',
     },
     JurisdictionName: 'Text',
     Scope: 'IdentityId',
@@ -212,7 +202,6 @@ export default {
     TickerRegistration: {
       owner: 'IdentityId',
       expiry: 'Option<Moment>',
-      link_id: 'u64',
     },
     TickerRegistrationConfig: {
       max_ticker_length: 'u8',
@@ -241,7 +230,7 @@ export default {
     Url: 'Text',
     PipDescription: 'Text',
     PipsMetadata: {
-      proposer: 'AccountKey',
+      proposer: 'AccountId',
       id: 'PipId',
       end: 'u32',
       url: 'Option<Url>',
@@ -254,7 +243,7 @@ export default {
       amount: 'Balance',
     },
     DepositInfo: {
-      owner: 'AccountKey',
+      owner: 'AccountId',
       amount: 'Balance',
     },
     PolymeshVotes: {
@@ -294,13 +283,16 @@ export default {
       next_ticker: 'Option<Ticker>',
       previous_ticker: 'Option<Ticker>',
     },
-    OffChainSignature: 'H512',
-    PermissionedValidator: {
-      compliance: 'Compliance',
+    OffChainSignature: {
+      _enum: {
+        Ed25519: 'H512',
+        Sr25519: 'H512',
+        Ecdsa: 'H512',
+      },
     },
     Authorization: {
       authorization_data: 'AuthorizationData',
-      authorized_by: 'Signatory',
+      authorized_by: 'IdentityId',
       expiry: 'Option<Moment>',
       auth_id: 'u64',
     },
@@ -309,19 +301,16 @@ export default {
         AttestMasterKeyRotation: 'IdentityId',
         RotateMasterKey: 'IdentityId',
         TransferTicker: 'Ticker',
-        AddMultiSigSigner: '',
+        AddMultiSigSigner: 'AccountId',
         TransferAssetOwnership: 'Ticker',
-        JoinIdentity: 'IdentityId',
-        Custom: 'Vec<u8>',
+        JoinIdentity: 'Vec<Permission>',
+        Custom: 'Ticker',
         NoData: '',
       },
     },
     AuthIdentifier: {
       signatory: 'Signatory',
       auth_id: 'u64',
-    },
-    Compliance: {
-      _enum: ['Pending', 'Active'],
     },
     SmartExtensionType: {
       _enum: {
@@ -334,7 +323,7 @@ export default {
     SmartExtension: {
       extension_type: 'SmartExtensionType',
       extension_name: 'SmartExtensionName',
-      extension_id: 'IdentityId',
+      extension_id: 'AccountId',
       is_archive: 'bool',
     },
     ProportionMatch: {
@@ -354,7 +343,7 @@ export default {
     Memo: '[u8;32]',
     IssueRecipient: {
       _enum: {
-        Account: 'AccountKey',
+        Account: 'AccountId',
         Identity: 'IdentityId',
       },
     },
@@ -379,7 +368,7 @@ export default {
     },
     AssetTransferRulesResult: {
       is_paused: 'bool',
-      rules: 'Vec<AssetTransferRule>',
+      rules: 'Vec<AssetTransferRuleResult>',
       final_result: 'bool',
     },
     Claim1stKey: {
@@ -414,7 +403,7 @@ export default {
       _enum: [
         'AssetRegisterTicker',
         'AssetIssue',
-        'AssetAddDocuments',
+        'AssetAddDocument',
         'AssetCreateAsset',
         'DividendNew',
         'ComplianceManagerAddActiveRule',
@@ -422,7 +411,7 @@ export default {
         'IdentityCddRegisterDid',
         'IdentityAddClaim',
         'IdentitySetMasterKey',
-        'IdentityAddSigningItemsWithAuthorization',
+        'IdentityAddSigningKeysWithAuthorization',
         'PipsPropose',
         'VotingAddBallot',
       ],
@@ -440,8 +429,8 @@ export default {
       },
     },
     DidRecordsSuccess: {
-      master_key: 'AccountKey',
-      signing_items: 'Vec<SigningItem>',
+      master_key: 'AccountId',
+      signing_key: 'Vec<SigningKey>',
     },
     DidRecords: {
       _enum: {
@@ -471,8 +460,7 @@ export default {
       vote: 'Vote',
     },
     HistoricalVotingByAddress: 'Vec<VoteByPip>',
-    HistoricalVotingById: 'Vec<(AccountKey, HistoricalVotingByAddress)>',
-    Weight: 'u32',
+    HistoricalVotingById: 'Vec<(AccountId, HistoricalVotingByAddress)>',
     BridgeTxDetail: {
       amount: 'Balance',
       status: 'BridgeTxStatus',
@@ -501,12 +489,32 @@ export default {
         Err: 'Vec<u8>',
       },
     },
-    LinkType: {
+    AuthorizationType: {
       _enum: {
-        DocumentOwnership: '',
-        TickerOwnership: '',
-        AssetOwnership: '',
+        AttestMasterKeyRotation: '',
+        RotateMasterKey: '',
+        TransferTicker: '',
+        AddMultiSigSigner: '',
+        TransferAssetOwnership: '',
+        JoinIdentity: '',
+        Custom: '',
         NoData: '',
+      },
+    },
+    ProposalDetails: {
+      approvals: 'u64',
+      rejections: 'u64',
+      status: 'ProposalStatus',
+      expiry: 'Option<Moment>',
+      auto_close: 'bool',
+    },
+    ProposalStatus: {
+      _enum: {
+        Invalid: '',
+        ActiveOrExpired: '',
+        ExecutionSuccessful: '',
+        ExecutionFailed: '',
+        Rejected: '',
       },
     },
     DidStatus: {
@@ -516,14 +524,110 @@ export default {
         CddVerified: '',
       },
     },
+    IssueAssetItem: {
+      identity_did: 'IdentityId',
+      value: 'Balance',
+    },
+    PortfolioName: 'Vec<u8>',
+    PortfolioNumber: 'u64',
+    PortfolioKind: {
+      _enum: {
+        Default: '',
+        User: 'PortfolioNumber',
+      },
+    },
+    PortfolioId: {
+      did: 'IdentityId',
+      kind: 'PortfolioKind',
+    },
+    ProverTickerKey: {
+      prover: 'IdentityId',
+      ticker: 'Ticker',
+    },
+    TickerRangeProof: {
+      initial_message: '[u8; 32]',
+      final_response: 'Vec<u8>',
+      max_two_exp: 'u32',
+    },
+    InstructionStatus: {
+      _enum: {
+        Unknown: '',
+        Pending: '',
+      },
+    },
+    LegStatus: {
+      _enum: {
+        PendingTokenLock: '',
+        ExecutionPending: '',
+        ExecutionToBeSkipped: '(AccountId, u64)',
+      },
+    },
+    AuthorizationStatus: {
+      _enum: {
+        Unknown: '',
+        Pending: '',
+        Authorized: '',
+        Rejected: '',
+      },
+    },
+    SettlementType: {
+      _enum: {
+        SettleOnAuthorization: '',
+        SettleOnBlock: 'BlockNumber',
+      },
+    },
+    Instruction: {
+      instruction_id: 'u64',
+      venue_id: 'u64',
+      status: 'InstructionStatus',
+      settlement_type: 'SettlementType',
+      created_at: 'Option<Moment>',
+      valid_from: 'Option<Moment>',
+    },
+    Leg: {
+      from: 'IdentityId',
+      to: 'IdentityId',
+      asset: 'Ticker',
+      amount: 'Balance',
+    },
+    Venue: {
+      creator: 'IdentityId',
+      instructions: 'Vec<u64>',
+      details: 'Vec<u8>',
+    },
+    Receipt: {
+      receipt_uid: 'u64',
+      from: 'IdentityId',
+      to: 'IdentityId',
+      asset: 'Ticker',
+      amount: 'Balance',
+    },
+    ReceiptDetails: {
+      receipt_uid: 'u64',
+      leg_id: 'u64',
+      signer: 'AccountId',
+      signature: 'OffChainSignature',
+    },
+    UniqueCall: {
+      nonce: 'u64',
+      call: 'Call',
+    },
+    MovePortfolioItem: {
+      ticker: 'Ticker',
+      amount: 'Balance',
+    },
+    WeightToFeeCoefficient: {
+      coeffInteger: 'Balance',
+      coeffFrac: 'Perbill',
+      negative: 'bool',
+      degree: 'u8',
+    },
   },
   rpc: {
     compliance: {
       canTransfer: {
         description:
-          'Checks whether a transaction with given ' +
-          'parameters is compliant to the compliance ' +
-          'manager rules',
+          'Checks whether a transaction with given parameters is compliant to the compliance manager rules',
         params: [
           {
             name: 'ticker',
@@ -541,6 +645,11 @@ export default {
             isOptional: false,
           },
           {
+            name: 'treasury_did',
+            type: 'Option<IdentityId>',
+            isOptional: false,
+          },
+          {
             name: 'blockHash',
             type: 'Hash',
             isOptional: true,
@@ -551,7 +660,7 @@ export default {
     },
     identity: {
       isIdentityHasValidCdd: {
-        description: 'use to tell whether the given ' + 'did has valid cdd claim or not',
+        description: 'use to tell whether the given did has valid cdd claim or not',
         params: [
           {
             name: 'did',
@@ -603,35 +712,6 @@ export default {
         ],
         type: 'DidRecords',
       },
-      getFilteredLinks: {
-        description:
-          'Retrieve links data for a given ' +
-          'signatory and filtered using the given ' +
-          'Link type',
-        params: [
-          {
-            name: 'signatory',
-            type: 'Signatory',
-            isOptional: false,
-          },
-          {
-            name: 'allow_expired',
-            type: 'bool',
-            isOptional: false,
-          },
-          {
-            name: 'link_type',
-            type: 'LinkType',
-            isOptional: true,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'Vec<Link>',
-      },
       getDidStatus: {
         description: 'Retrieve status of the DID',
         params: [
@@ -647,6 +727,33 @@ export default {
           },
         ],
         type: 'Vec<DidStatus>',
+      },
+      getFilteredAuthorizations: {
+        description:
+          'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
+        params: [
+          {
+            name: 'signatory',
+            type: 'Signatory',
+            isOptional: false,
+          },
+          {
+            name: 'allow_expired',
+            type: 'bool',
+            isOptional: false,
+          },
+          {
+            name: 'auth_type',
+            type: 'AuthorizationType',
+            isOptional: true,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'Vec<Authorization>',
       },
     },
     pips: {
@@ -764,8 +871,7 @@ export default {
     },
     asset: {
       canTransfer: {
-        description:
-          'Checks whether a transaction with ' + 'given parameters can take place or ' + 'not',
+        description: 'Checks whether a transaction with given parameters can take place or not',
         params: [
           {
             name: 'sender',
@@ -799,6 +905,30 @@ export default {
           },
         ],
         type: 'CanTransferResult',
+      },
+    },
+    portfolio: {
+      getPortfolios: {
+        description: 'Gets all user-defined portfolio names of an identity',
+        params: [
+          {
+            name: 'did',
+            type: 'IdentityId',
+            isOptional: false,
+          },
+        ],
+        type: 'GetPortfoliosResult',
+      },
+      getPortfolioAssets: {
+        description: 'Gets the balances of all assets in a given portfolio',
+        params: [
+          {
+            name: 'portfolio_id',
+            type: 'PortfolioId',
+            isOptional: false,
+          },
+        ],
+        type: 'GetPortfolioAssetsResult',
       },
     },
   },

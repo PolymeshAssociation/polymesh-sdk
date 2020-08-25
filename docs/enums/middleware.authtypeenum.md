@@ -19,7 +19,7 @@
 
 • **AddMultiSigSigner**: = "AddMultiSigSigner"
 
-*Defined in [src/middleware/types.ts:884](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L884)*
+*Defined in [src/middleware/types.ts:884](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L884)*
 
 ___
 
@@ -27,7 +27,7 @@ ___
 
 • **AttestMasterKeyRotation**: = "AttestMasterKeyRotation"
 
-*Defined in [src/middleware/types.ts:881](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L881)*
+*Defined in [src/middleware/types.ts:881](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L881)*
 
 ___
 
@@ -35,7 +35,7 @@ ___
 
 • **Custom**: = "Custom"
 
-*Defined in [src/middleware/types.ts:887](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L887)*
+*Defined in [src/middleware/types.ts:887](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L887)*
 
 ___
 
@@ -43,7 +43,7 @@ ___
 
 • **JoinIdentity**: = "JoinIdentity"
 
-*Defined in [src/middleware/types.ts:886](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L886)*
+*Defined in [src/middleware/types.ts:886](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L886)*
 
 ___
 
@@ -51,7 +51,7 @@ ___
 
 • **NoData**: = "NoData"
 
-*Defined in [src/middleware/types.ts:888](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L888)*
+*Defined in [src/middleware/types.ts:888](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L888)*
 
 ___
 
@@ -59,7 +59,7 @@ ___
 
 • **RotateMasterKey**: = "RotateMasterKey"
 
-*Defined in [src/middleware/types.ts:882](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L882)*
+*Defined in [src/middleware/types.ts:882](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L882)*
 
 ___
 
@@ -67,7 +67,7 @@ ___
 
 • **TransferAssetOwnership**: = "TransferAssetOwnership"
 
-*Defined in [src/middleware/types.ts:885](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L885)*
+*Defined in [src/middleware/types.ts:885](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L885)*
 
 ___
 
@@ -75,4 +75,4 @@ ___
 
 • **TransferTicker**: = "TransferTicker"
 
-*Defined in [src/middleware/types.ts:883](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L883)*
+*Defined in [src/middleware/types.ts:883](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L883)*

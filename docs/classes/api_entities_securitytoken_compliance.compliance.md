@@ -25,7 +25,7 @@ Handles all Security Token Compliance related functionality
 
 *Inherited from [Namespace](base.namespace.md).[context](base.namespace.md#protected-context)*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L10)*
 
 ___
 
@@ -35,7 +35,7 @@ ___
 
 *Inherited from [Namespace](base.namespace.md).[parent](base.namespace.md#protected-parent)*
 
-*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/base/Namespace.ts#L8)*
+*Defined in [src/base/Namespace.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/Namespace.ts#L8)*
 
 ___
 
@@ -43,7 +43,7 @@ ___
 
 • **rules**: *[Rules](api_entities_securitytoken_compliance.rules.md)*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/index.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/SecurityToken/Compliance/index.ts#L13)*
+*Defined in [src/api/entities/SecurityToken/Compliance/index.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/Compliance/index.ts#L13)*
 
 ___
 
@@ -51,4 +51,4 @@ ___
 
 • **trustedClaimIssuers**: *[TrustedClaimIssuers](api_entities_securitytoken_compliance.trustedclaimissuers.md)*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/index.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/SecurityToken/Compliance/index.ts#L12)*
+*Defined in [src/api/entities/SecurityToken/Compliance/index.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/SecurityToken/Compliance/index.ts#L12)*

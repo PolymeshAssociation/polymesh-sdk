@@ -17,7 +17,7 @@
 
 • **currentPair**: *[KeyringPair](types.keyringpair.md)*
 
-*Defined in [src/context/index.ts:43](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L43)*
+*Defined in [src/context/index.ts:43](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L43)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **did**: *IdentityId*
 
-*Defined in [src/context/index.ts:44](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/context/index.ts#L44)*
+*Defined in [src/context/index.ts:44](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/context/index.ts#L44)*

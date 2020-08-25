@@ -19,7 +19,7 @@
 
 • **data**: *[Authorization](../modules/middleware.md#authorization)*
 
-*Defined in [src/api/entities/AuthorizationRequest.ts:17](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/AuthorizationRequest.ts#L17)*
+*Defined in [src/api/entities/AuthorizationRequest.ts:17](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/AuthorizationRequest.ts#L17)*
 
 ___
 
@@ -27,7 +27,7 @@ ___
 
 • **expiry**: *Date | null*
 
-*Defined in [src/api/entities/AuthorizationRequest.ts:16](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/AuthorizationRequest.ts#L16)*
+*Defined in [src/api/entities/AuthorizationRequest.ts:16](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/AuthorizationRequest.ts#L16)*
 
 ___
 
@@ -35,7 +35,7 @@ ___
 
 • **issuerDid**: *string*
 
-*Defined in [src/api/entities/AuthorizationRequest.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/AuthorizationRequest.ts#L15)*
+*Defined in [src/api/entities/AuthorizationRequest.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/AuthorizationRequest.ts#L15)*
 
 ___
 
@@ -43,4 +43,4 @@ ___
 
 • **targetDid**: *string*
 
-*Defined in [src/api/entities/AuthorizationRequest.ts:14](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/entities/AuthorizationRequest.ts#L14)*
+*Defined in [src/api/entities/AuthorizationRequest.ts:14](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/entities/AuthorizationRequest.ts#L14)*

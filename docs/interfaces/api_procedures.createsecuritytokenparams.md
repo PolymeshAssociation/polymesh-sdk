@@ -22,7 +22,7 @@
 
 • **documents**? : *[TokenDocument](types.tokendocument.md)[]*
 
-*Defined in [src/api/procedures/createSecurityToken.ts:35](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/procedures/createSecurityToken.ts#L35)*
+*Defined in [src/api/procedures/createSecurityToken.ts:35](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/createSecurityToken.ts#L35)*
 
 ___
 
@@ -30,7 +30,7 @@ ___
 
 • **fundingRound**? : *undefined | string*
 
-*Defined in [src/api/procedures/createSecurityToken.ts:34](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/procedures/createSecurityToken.ts#L34)*
+*Defined in [src/api/procedures/createSecurityToken.ts:34](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/createSecurityToken.ts#L34)*
 
 ___
 
@@ -38,7 +38,7 @@ ___
 
 • **isDivisible**: *boolean*
 
-*Defined in [src/api/procedures/createSecurityToken.ts:31](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/procedures/createSecurityToken.ts#L31)*
+*Defined in [src/api/procedures/createSecurityToken.ts:31](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/createSecurityToken.ts#L31)*
 
 ___
 
@@ -46,7 +46,7 @@ ___
 
 • **name**: *string*
 
-*Defined in [src/api/procedures/createSecurityToken.ts:29](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/procedures/createSecurityToken.ts#L29)*
+*Defined in [src/api/procedures/createSecurityToken.ts:29](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/createSecurityToken.ts#L29)*
 
 ___
 
@@ -54,7 +54,7 @@ ___
 
 • **tokenIdentifiers**? : *[TokenIdentifier](types.tokenidentifier.md)[]*
 
-*Defined in [src/api/procedures/createSecurityToken.ts:33](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/procedures/createSecurityToken.ts#L33)*
+*Defined in [src/api/procedures/createSecurityToken.ts:33](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/createSecurityToken.ts#L33)*
 
 ___
 
@@ -62,7 +62,7 @@ ___
 
 • **tokenType**: *[TokenType](../modules/types.md#tokentype)*
 
-*Defined in [src/api/procedures/createSecurityToken.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/procedures/createSecurityToken.ts#L32)*
+*Defined in [src/api/procedures/createSecurityToken.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/createSecurityToken.ts#L32)*
 
 ___
 
@@ -70,4 +70,4 @@ ___
 
 • **totalSupply**: *BigNumber*
 
-*Defined in [src/api/procedures/createSecurityToken.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/api/procedures/createSecurityToken.ts#L30)*
+*Defined in [src/api/procedures/createSecurityToken.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/api/procedures/createSecurityToken.ts#L30)*

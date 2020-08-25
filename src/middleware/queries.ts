@@ -3,8 +3,13 @@ import gql from 'graphql-tag';
 import {
   QueryDidsWithClaimsArgs,
   QueryEventsByIndexedArgsArgs,
+  QueryIssuerDidsWithClaimsByTargetArgs,
   QueryProposalsArgs,
   QueryProposalVotesArgs,
+  QueryScopesByIdentityArgs,
+  QueryTokensByTrustedClaimIssuerArgs,
+  QueryTokensHeldByDidArgs,
+  QueryTransactionsArgs,
 } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
 
@@ -54,6 +59,7 @@ export function didsWithClaims(
       $scope: String
       $trustedClaimIssuers: [String!]
       $claimTypes: [ClaimTypeEnum!]
+      $includeExpired: Boolean
       $count: Int
       $skip: Int
     ) {
@@ -62,6 +68,7 @@ export function didsWithClaims(
         scope: $scope
         trustedClaimIssuers: $trustedClaimIssuers
         claimTypes: $claimTypes
+        includeExpired: $includeExpired
         count: $count
         skip: $skip
       ) {
@@ -167,6 +174,156 @@ export function proposals(
         totalAyesWeight
         totalNaysWeight
       }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the tickers of all the tokens for which the passed DID is a trusted claim issuer
+ */
+export function tokensByTrustedClaimIssuer(
+  variables: QueryTokensByTrustedClaimIssuerArgs
+): GraphqlQuery<QueryTokensByTrustedClaimIssuerArgs> {
+  const query = gql`
+    query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!, $order: Order) {
+      tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid, order: $order)
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get all tickers of tokens that were held at some point by the given did
+ */
+export function tokensHeldByDid(
+  variables: QueryTokensHeldByDidArgs
+): GraphqlQuery<QueryTokensHeldByDidArgs> {
+  const query = gql`
+    query TokensHeldByDidQuery($did: String!, $count: Int, $skip: Int, $order: Order) {
+      tokensHeldByDid(did: $did, count: $count, skip: $skip, order: $order) {
+        totalCount
+        items
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get transactions
+ */
+export function transactions(
+  variables?: QueryTransactionsArgs
+): GraphqlQuery<QueryTransactionsArgs | undefined> {
+  const query = gql`
+    query TransactionsQuery(
+      $block_id: Int
+      $address: String
+      $module_id: ModuleIdEnum
+      $call_id: CallIdEnum
+      $success: Boolean
+      $count: Int
+      $skip: Int
+      $orderBy: TransactionOrderByInput
+    ) {
+      transactions(
+        block_id: $block_id
+        address: $address
+        module_id: $module_id
+        call_id: $call_id
+        success: $success
+        count: $count
+        skip: $skip
+        orderBy: $orderBy
+      ) {
+        totalCount
+        items {
+          block_id
+          extrinsic_idx
+          address
+          nonce
+          module_id
+          call_id
+          params
+          success
+          spec_version_id
+          extrinsic_hash
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the scopes (and ticker, if applicable) of claims issued on an identity
+ */
+export function scopesByIdentity(
+  variables: QueryScopesByIdentityArgs
+): GraphqlQuery<QueryScopesByIdentityArgs> {
+  const query = gql`
+    query ScopesByIdentityQuery($did: String!) {
+      scopesByIdentity(did: $did) {
+        scope
+        ticker
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get issuer dids with at least one claim for given target
+ */
+export function issuerDidsWithClaimsByTarget(
+  variables: QueryIssuerDidsWithClaimsByTargetArgs
+): GraphqlQuery<QueryIssuerDidsWithClaimsByTargetArgs> {
+  const query = gql`
+    query IssuerDidsWithClaimsByTargetQuery(
+      $target: String!
+      $scope: String
+      $trustedClaimIssuers: [String!]
+      $count: Int
+      $skip: Int
+    ) {
+      issuerDidsWithClaimsByTarget(
+        target: $target
+        scope: $scope
+        trustedClaimIssuers: $trustedClaimIssuers
+        count: $count
+        skip: $skip
+      )
     }
   `;
 

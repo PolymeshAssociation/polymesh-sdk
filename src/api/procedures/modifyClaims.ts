@@ -1,13 +1,13 @@
 import { Moment } from '@polkadot/types/interfaces';
 import { cloneDeep, uniq } from 'lodash';
-import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
+import { Claim as MeshClaim, IdentityId, TxTag, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure } from '~/base';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import {
   Claim,
-  ClaimTargets,
+  ClaimTarget,
   ClaimType,
   Ensured,
   ErrorCode,
@@ -32,17 +32,17 @@ interface AddClaimItem {
 }
 
 interface AddClaimsParams {
-  claims: ClaimTargets[];
+  claims: ClaimTarget[];
   operation: ClaimOperation.Add;
 }
 
 interface EditClaimsParams {
-  claims: ClaimTargets[];
+  claims: ClaimTarget[];
   operation: ClaimOperation.Edit;
 }
 
 interface RevokeClaimsParams {
-  claims: Omit<ClaimTargets, 'expiry'>[];
+  claims: Omit<ClaimTarget, 'expiry'>[];
   operation: ClaimOperation.Revoke;
 }
 
@@ -62,7 +62,6 @@ export async function prepareModifyClaims(
       polymeshApi: {
         tx: { identity },
       },
-      middlewareApi,
     },
     context,
   } = this;
@@ -70,14 +69,12 @@ export async function prepareModifyClaims(
   const modifyClaimItems: AddClaimItem[] = [];
   let allTargets: string[] = [];
 
-  claims.forEach(({ targets, expiry, claim }: ClaimTargets) => {
-    targets.forEach(target => {
-      allTargets.push(valueToDid(target));
-      modifyClaimItems.push({
-        target: stringToIdentityId(valueToDid(target), context),
-        claim: claimToMeshClaim(claim, context),
-        expiry: expiry ? dateToMoment(expiry, context) : null,
-      });
+  claims.forEach(({ target, expiry, claim }: ClaimTarget) => {
+    allTargets.push(valueToDid(target));
+    modifyClaimItems.push({
+      target: stringToIdentityId(valueToDid(target), context),
+      claim: claimToMeshClaim(claim, context),
+      expiry: expiry ? dateToMoment(expiry, context) : null,
     });
   });
 
@@ -100,7 +97,7 @@ export async function prepareModifyClaims(
       data: {
         didsWithClaims: { items: currentClaims },
       },
-    } = await middlewareApi.query<Ensured<Query, 'didsWithClaims'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
         dids: allTargets,
         trustedClaimIssuers: [context.getCurrentIdentity().did],
@@ -118,24 +115,22 @@ export async function prepareModifyClaims(
     );
 
     const nonExistentClaims: Claim[] = [];
-    claims.forEach(({ targets, claim }) => {
-      targets.forEach(target => {
-        const targetClaims = claimsByDid[valueToDid(target)] ?? [];
+    claims.forEach(({ target, claim }) => {
+      const targetClaims = claimsByDid[valueToDid(target)] ?? [];
 
-        const claimExists = !!targetClaims.find(({ scope, type }) => {
-          let isSameScope = true;
+      const claimExists = !!targetClaims.find(({ scope, type }) => {
+        let isSameScope = true;
 
-          if (isScopedClaim(claim)) {
-            isSameScope = claim.scope === scope;
-          }
-
-          return isSameScope && ClaimType[type] === claim.type;
-        });
-
-        if (!claimExists) {
-          nonExistentClaims.push(claim);
+        if (isScopedClaim(claim)) {
+          isSameScope = claim.scope === scope;
         }
+
+        return isSameScope && ClaimType[type] === claim.type;
       });
+
+      if (!claimExists) {
+        nonExistentClaims.push(claim);
+      }
     });
 
     if (nonExistentClaims.length) {
@@ -151,14 +146,22 @@ export async function prepareModifyClaims(
     }
   }
 
-  const transaction =
-    operation === ClaimOperation.Revoke ? identity.revokeClaimsBatch : identity.addClaimsBatch;
+  let transaction: typeof identity.batchAddClaim | typeof identity.batchRevokeClaim;
+  let tag: TxTag;
 
-  batchArguments(modifyClaimItems, TxTags.identity.AddClaimsBatch, ({ target }) =>
-    identityIdToString(target)
-  ).forEach(itemBatch => {
-    this.addTransaction(transaction, { batchSize: itemBatch.length }, itemBatch);
-  });
+  if (operation === ClaimOperation.Revoke) {
+    transaction = identity.batchRevokeClaim;
+    tag = TxTags.identity.BatchRevokeClaim;
+  } else {
+    transaction = identity.batchAddClaim;
+    tag = TxTags.identity.BatchAddClaim;
+  }
+
+  batchArguments(modifyClaimItems, tag, ({ target }) => identityIdToString(target)).forEach(
+    itemBatch => {
+      this.addTransaction(transaction, { batchSize: itemBatch.length }, itemBatch);
+    }
+  );
 }
 
 /**

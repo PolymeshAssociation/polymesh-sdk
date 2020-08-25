@@ -64,6 +64,7 @@ describe('SecurityToken class', () => {
     let isDivisible: boolean;
     let owner: string;
     let assetType: 'EquityCommon';
+    let treasuryIdentity: string;
 
     let rawToken: MeshSecurityToken;
 
@@ -76,6 +77,7 @@ describe('SecurityToken class', () => {
       isDivisible = true;
       owner = '0x0wn3r';
       assetType = 'EquityCommon';
+      treasuryIdentity = '0xtr34sury';
     });
 
     beforeEach(() => {
@@ -85,8 +87,10 @@ describe('SecurityToken class', () => {
         name: dsMockUtils.createMockAssetName(ticker),
         asset_type: dsMockUtils.createMockAssetType(assetType),
         divisible: dsMockUtils.createMockBool(isDivisible),
-        link_id: dsMockUtils.createMockU64(3),
         total_supply: dsMockUtils.createMockBalance(totalSupply),
+        treasury_did: dsMockUtils.createMockOption(
+          dsMockUtils.createMockIdentityId(treasuryIdentity)
+        ),
         /* eslint-enable @typescript-eslint/camelcase */
       });
       context = dsMockUtils.getContextInstance();
@@ -106,10 +110,13 @@ describe('SecurityToken class', () => {
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
+      expect(details.treasuryIdentity?.did).toBe(treasuryIdentity);
     });
 
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/camelcase
+      (rawToken as any).treasury_did = dsMockUtils.createMockOption();
 
       dsMockUtils.createQueryStub('asset', 'tokens').callsFake(async (_, cbFunc) => {
         cbFunc(rawToken);
@@ -127,6 +134,7 @@ describe('SecurityToken class', () => {
         name: ticker,
         owner: new Identity({ did: owner }, context),
         totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
+        treasuryIdentity: null,
       });
     });
   });
@@ -372,16 +380,6 @@ describe('SecurityToken class', () => {
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
       const result = await securityToken.createdAt();
       expect(result).toBeNull();
-    });
-
-    test('should throw if the middleware query fails', async () => {
-      const ticker = 'SOMETICKER';
-      const context = dsMockUtils.getContextInstance();
-      const securityToken = new SecurityToken({ ticker }, context);
-
-      dsMockUtils.throwOnMiddlewareQuery();
-
-      return expect(securityToken.createdAt()).rejects.toThrow('Error in middleware query: Error');
     });
   });
 });

@@ -13,7 +13,7 @@
 
 • **StatusChange**: = "StatusChange"
 
-*Defined in [src/base/TransactionQueue.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/base/TransactionQueue.ts#L10)*
+*Defined in [src/base/TransactionQueue.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/TransactionQueue.ts#L10)*
 
 ___
 
@@ -21,4 +21,4 @@ ___
 
 • **TransactionStatusChange**: = "TransactionStatusChange"
 
-*Defined in [src/base/TransactionQueue.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/base/TransactionQueue.ts#L11)*
+*Defined in [src/base/TransactionQueue.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/base/TransactionQueue.ts#L11)*

@@ -1,6 +1,7 @@
 import { Keyring } from '@polkadot/api';
 import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { TxTag } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 
@@ -165,10 +166,13 @@ export enum AuthorizationType {
  */
 export type Authorization =
   | { type: AuthorizationType.NoData | AuthorizationType.AddMultiSigSigner }
+  | { type: AuthorizationType.JoinIdentity; value: Permission[] }
   | {
       type: Exclude<
         AuthorizationType,
-        AuthorizationType.NoData | AuthorizationType.AddMultiSigSigner
+        | AuthorizationType.NoData
+        | AuthorizationType.AddMultiSigSigner
+        | AuthorizationType.JoinIdentity
       >;
       value: string;
     };
@@ -222,6 +226,23 @@ export interface IdentityWithClaims {
   claims: ClaimData[];
 }
 
+export interface ExtrinsicData {
+  blockId: number;
+  extrinsicIdx: number;
+  address: string | null;
+  nonce: number;
+  txTag: TxTag;
+  params: object;
+  success: boolean;
+  specVersionId: number;
+  extrinsicHash: string;
+}
+
+export interface ClaimScope {
+  scope: string | null;
+  ticker?: string;
+}
+
 export enum ConditionType {
   IsPresent = 'IsPresent',
   IsAbsent = 'IsAbsent',
@@ -260,6 +281,13 @@ export function isMultiClaimCondition(condition: Condition): condition is MultiC
 export interface Rule {
   id: number;
   conditions: Condition[];
+}
+
+export interface RuleCompliance {
+  rules: (Rule & {
+    complies: boolean;
+  })[];
+  complies: boolean;
 }
 
 /**
@@ -305,8 +333,8 @@ export enum TransferStatus {
   FundsLimitReached = 'FundsLimitReached', // 168
 }
 
-export interface ClaimTargets {
-  targets: (string | Identity)[];
+export interface ClaimTarget {
+  target: string | Identity;
   claim: Claim;
   expiry?: Date;
 }
@@ -366,17 +394,17 @@ export interface Fees {
   gas: BigNumber;
 }
 
-export enum LinkType {
-  DocumentOwnership = 'DocumentOwnership',
-  TickerOwnership = 'TickerOwnership',
-  AssetOwnership = 'AssetOwnership',
-  NoData = 'NoData',
+export enum Permission {
+  Full = 'Full',
+  Admin = 'Admin',
+  Operator = 'Operator',
+  SpendFunds = 'SpendFunds',
 }
 
 export enum SignerType {
   // eslint-disable-next-line no-shadow
   Identity = 'Identity',
-  AccountKey = 'AccountKey',
+  Account = 'Account',
 }
 
 export enum TransactionArgumentType {
@@ -442,6 +470,7 @@ export interface Signer {
 }
 
 export { TxTags } from 'polymesh-types/types';
+export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export * from '~/api/entities/types';
 export * from '~/base/types';
 export { Order } from '~/middleware/types';

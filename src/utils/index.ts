@@ -7,17 +7,18 @@ import {
   stringUpperFirst,
   u8aConcat,
   u8aFixLength,
+  u8aToHex,
   u8aToString,
 } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, groupBy, isEqual, map, padEnd } from 'lodash';
+import { camelCase, chunk, groupBy, isEqual, map, padEnd, snakeCase } from 'lodash';
 import {
-  AccountKey,
   AssetIdentifier,
   AssetName,
   AssetTransferRule,
+  AssetTransferRulesResult,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
@@ -31,8 +32,9 @@ import {
   FundingRoundName,
   IdentifierType,
   IdentityId,
+  IssueAssetItem,
   JurisdictionName,
-  LinkType as MeshLinkType,
+  Permission as MeshPermission,
   PosRatio,
   ProposalState as MeshProposalState,
   ProtocolOp,
@@ -41,12 +43,18 @@ import {
   Signatory,
   Ticker,
   TxTag,
+  TxTags,
 } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
 import { ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
+import {
+  CallIdEnum,
+  IdentityWithClaims as MiddlewareIdentityWithClaims,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import {
   Authorization,
   AuthorizationType,
@@ -56,27 +64,31 @@ import {
   ConditionTarget,
   ConditionType,
   ErrorCode,
+  IdentityWithClaims,
   isMultiClaimCondition,
   isSingleClaimCondition,
+  IssuanceData,
   KnownTokenType,
-  LinkType,
   MultiClaimCondition,
   NextKey,
   PaginationOptions,
+  Permission,
   Rule,
+  RuleCompliance,
   Signer,
   SignerType,
   SingleClaimCondition,
-  TokenDocument,
   TokenIdentifierType,
   TokenType,
   TransferStatus,
 } from '~/types';
 import {
   AuthTarget,
+  ExtrinsicIdentifier,
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
+  TokenDocumentData,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -266,23 +278,6 @@ export function valueToDid(value: string | Identity): string {
 /**
  * @hidden
  */
-export function stringToAccountKey(accountKey: string, context: Context): AccountKey {
-  return context.polymeshApi.createType(
-    'AccountKey',
-    decodeAddress(accountKey, IGNORE_CHECKSUM, SS58_FORMAT)
-  );
-}
-
-/**
- * @hidden
- */
-export function accountKeyToString(accountKey: AccountKey): string {
-  return encodeAddress(accountKey, SS58_FORMAT);
-}
-
-/**
- * @hidden
- */
 export function signerToSignatory(signer: Signer, context: Context): Signatory {
   return context.polymeshApi.createType('Signatory', {
     [signer.type]: signer.value,
@@ -293,10 +288,10 @@ export function signerToSignatory(signer: Signer, context: Context): Signatory {
  * @hidden
  */
 export function signatoryToSigner(signatory: Signatory): Signer {
-  if (signatory.isAccountKey) {
+  if (signatory.isAccount) {
     return {
-      type: SignerType.AccountKey,
-      value: accountKeyToString(signatory.asAccountKey),
+      type: SignerType.Account,
+      value: accountIdToString(signatory.asAccount),
     };
   }
 
@@ -318,6 +313,35 @@ export function authorizationToAuthorizationData(
   return context.polymeshApi.createType('AuthorizationData', {
     [type]: value,
   });
+}
+
+/**
+ * @hidden
+ */
+export function permissionToMeshPermission(
+  permission: Permission,
+  context: Context
+): MeshPermission {
+  return context.polymeshApi.createType('Permission', permission);
+}
+
+/**
+ * @hidden
+ */
+export function meshPermissionToPermission(permission: MeshPermission): Permission {
+  if (permission.isAdmin) {
+    return Permission.Admin;
+  }
+
+  if (permission.isFull) {
+    return Permission.Full;
+  }
+
+  if (permission.isOperator) {
+    return Permission.Operator;
+  }
+
+  return Permission.SpendFunds;
 }
 
 /**
@@ -361,7 +385,7 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
   if (auth.isJoinIdentity) {
     return {
       type: AuthorizationType.JoinIdentity,
-      value: identityIdToString(auth.asJoinIdentity),
+      value: auth.asJoinIdentity.map(meshPermissionToPermission),
     };
   }
 
@@ -636,12 +660,11 @@ export function documentHashToString(docHash: DocumentHash): string {
 /**
  * @hidden
  */
-export function tokenDocumentToDocument(
-  { name, uri, contentHash }: TokenDocument,
+export function tokenDocumentDataToDocument(
+  { uri, contentHash }: TokenDocumentData,
   context: Context
 ): Document {
   return context.polymeshApi.createType('Document', {
-    name: stringToDocumentName(name, context),
     uri: stringToDocumentUri(uri, context),
     // eslint-disable-next-line @typescript-eslint/camelcase
     content_hash: stringToDocumentHash(contentHash, context),
@@ -651,12 +674,11 @@ export function tokenDocumentToDocument(
 /**
  * @hidden
  */
-export function documentToTokenDocument(
+export function documentToTokenDocumentData(
   // eslint-disable-next-line @typescript-eslint/camelcase
-  { name, uri, content_hash }: Document
-): TokenDocument {
+  { uri, content_hash }: Document
+): TokenDocumentData {
   return {
-    name: documentNameToString(name),
     uri: documentUriToString(uri),
     contentHash: documentHashToString(content_hash),
   };
@@ -990,8 +1012,27 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
 /**
  * @hidden
  */
-export function linkTypeToMeshLinkType(linkType: LinkType, context: Context): MeshLinkType {
-  return context.polymeshApi.createType('LinkType', linkType);
+export function txTagToExtrinsicIdentifier(tag: TxTag): ExtrinsicIdentifier {
+  const [moduleName, extrinsicName] = tag.split('.');
+  return {
+    moduleId: moduleName.toLowerCase() as ModuleIdEnum,
+    callId: snakeCase(extrinsicName) as CallIdEnum,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentifier): TxTag {
+  const { moduleId, callId } = extrinsicIdentifier;
+  let moduleName;
+  for (const txTagItem in TxTags) {
+    if (txTagItem.toLowerCase() === moduleId) {
+      moduleName = txTagItem;
+    }
+  }
+
+  return `${moduleName}.${camelCase(callId)}` as TxTag;
 }
 
 /**
@@ -1006,6 +1047,39 @@ export function stringToText(url: string, context: Context): Text {
  */
 export function textToString(value: Text): string {
   return value.toString();
+}
+
+/**
+ * @hidden
+ */
+export function issuanceDataToIssueAssetItem(
+  issuanceData: IssuanceData,
+  context: Context
+): IssueAssetItem {
+  const { identity, amount } = issuanceData;
+  return context.polymeshApi.createType('IssueAssetItem', {
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    identity_did: stringToIdentityId(valueToDid(identity), context),
+    value: numberToBalance(amount, context),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function assetTransferRulesResultToRuleCompliance(
+  assetTransferRulesResult: AssetTransferRulesResult
+): RuleCompliance {
+  const { rules: transferRules, final_result: result } = assetTransferRulesResult;
+  const rules = transferRules.map(rule => ({
+    ...assetTransferRuleToRule(rule),
+    complies: boolToBoolean(rule.transfer_rule_result),
+  }));
+
+  return {
+    rules,
+    complies: boolToBoolean(result),
+  };
 }
 
 /**
@@ -1060,8 +1134,30 @@ export function padString(value: string, length: number): string {
 /**
  * @hidden
  */
+export function removePadding(value: string): string {
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/\u0000/g, '');
+}
+
+/**
+ * @hidden
+ */
 export function moduleAddressToString(moduleAddress: string): string {
   return encodeAddress(stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)), SS58_FORMAT);
+}
+
+/**
+ * @hidden
+ */
+export function keyToAddress(key: string): string {
+  return encodeAddress(key, SS58_FORMAT);
+}
+
+/**
+ * @hidden
+ */
+export function addressToKey(address: string): string {
+  return u8aToHex(decodeAddress(address, IGNORE_CHECKSUM, SS58_FORMAT));
 }
 
 /**
@@ -1209,4 +1305,37 @@ export function meshProposalStateToProposalState(proposalState: MeshProposalStat
   }
 
   return ProposalState.Referendum;
+}
+
+/**
+ * @hidden
+ */
+export function toIdentityWithClaimsArray(
+  data: MiddlewareIdentityWithClaims[],
+  context: Context
+): IdentityWithClaims[] {
+  // NOTE: this require statement is necessary to avoid a circular dependency
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { Identity: IdentityClass } = require('../api/entities/Identity');
+
+  return data.map(({ did, claims }) => ({
+    identity: new IdentityClass({ did }, context),
+    claims: claims.map(
+      ({
+        targetDID,
+        issuer,
+        issuance_date: issuanceDate,
+        expiry,
+        type,
+        jurisdiction,
+        scope: claimScope,
+      }) => ({
+        target: new IdentityClass({ did: targetDID }, context),
+        issuer: new IdentityClass({ did: issuer }, context),
+        issuedAt: new Date(issuanceDate),
+        expiry: expiry ? new Date(expiry) : null,
+        claim: createClaim(type, jurisdiction, claimScope),
+      })
+    ),
+  }));
 }

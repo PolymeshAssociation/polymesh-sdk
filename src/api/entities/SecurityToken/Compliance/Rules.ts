@@ -1,11 +1,20 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
-import { AssetTransferRules, IdentityId } from 'polymesh-types/types';
+import { AssetTransferRules, AssetTransferRulesResult, IdentityId } from 'polymesh-types/types';
 
+import { Identity } from '~/api/entities';
 import { setTokenRules, SetTokenRulesParams, togglePauseRules } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { Rule, SubCallback, UnsubCallback } from '~/types';
-import { assetTransferRuleToRule, identityIdToString, stringToTicker } from '~/utils';
+import { Rule, RuleCompliance, SubCallback, UnsubCallback } from '~/types';
+import {
+  assetTransferRulesResultToRuleCompliance,
+  assetTransferRuleToRule,
+  boolToBoolean,
+  identityIdToString,
+  stringToIdentityId,
+  stringToTicker,
+  valueToDid,
+} from '~/utils';
 
 import { SecurityToken } from '../';
 
@@ -125,5 +134,85 @@ export class Rules extends Namespace<SecurityToken> {
       context,
     } = this;
     return togglePauseRules.prepare({ ticker, pause: false }, context);
+  }
+
+  /**
+   * Check whether transferring from one identity to another complies with all the rules of this asset
+   *
+   * @param args.from - sender identity (optional, defaults to the current identity)
+   * @param args.to - receiver identity
+   */
+  public async checkTransfer(args: {
+    from?: string | Identity;
+    to: string | Identity;
+  }): Promise<RuleCompliance> {
+    const { from = this.context.getCurrentIdentity(), to } = args;
+    return this._checkTransfer({ from, to });
+  }
+
+  /**
+   * Check whether minting to an identity complies with all the rules of this asset
+   *
+   * @param args.to - receiver identity
+   */
+  public async checkMint(args: { to: string | Identity }): Promise<RuleCompliance> {
+    return this._checkTransfer({
+      ...args,
+      from: null,
+    });
+  }
+
+  /**
+   * Check whether compliance rules are paused or not
+   */
+  public async arePaused(): Promise<boolean> {
+    const {
+      parent: { ticker },
+      context: {
+        polymeshApi: {
+          query: { complianceManager },
+        },
+      },
+      context,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const { is_paused: isPaused } = await complianceManager.assetRulesMap(rawTicker);
+
+    return boolToBoolean(isPaused);
+  }
+
+  /**
+   * @hidden
+   */
+  private async _checkTransfer(args: {
+    from?: null | string | Identity;
+    to: string | Identity;
+  }): Promise<RuleCompliance> {
+    const {
+      parent: { ticker },
+      context: {
+        polymeshApi: { rpc },
+      },
+      context,
+    } = this;
+
+    const { from, to } = args;
+
+    let fromDid = null;
+    if (from) {
+      fromDid = stringToIdentityId(valueToDid(from), context);
+    }
+    const toDid = valueToDid(to);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res: AssetTransferRulesResult = await (rpc as any).compliance.canTransfer(
+      stringToTicker(ticker, context),
+      fromDid,
+      stringToIdentityId(toDid, context)
+    );
+
+    return assetTransferRulesResultToRuleCompliance(res);
   }
 }

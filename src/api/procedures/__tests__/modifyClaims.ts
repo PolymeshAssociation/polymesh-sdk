@@ -28,8 +28,8 @@ describe('modifyClaims procedure', () => {
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let addTransactionStub: sinon.SinonStub;
-  let addClaimsBatchTransaction: PolymeshTx<[Vec<BatchAddClaimItem>]>;
-  let revokeClaimsBatchTransaction: PolymeshTx<[Vec<BatchRevokeClaimItem>]>;
+  let batchAddClaimTransaction: PolymeshTx<[Vec<BatchAddClaimItem>]>;
+  let batchRevokeClaimTransaction: PolymeshTx<[Vec<BatchRevokeClaimItem>]>;
 
   let someDid: string;
   let otherDid: string;
@@ -62,11 +62,15 @@ describe('modifyClaims procedure', () => {
     args = {
       claims: [
         {
-          targets: [someDid, otherDid],
+          target: someDid,
           claim: cddClaim,
         },
         {
-          targets: [someDid],
+          target: otherDid,
+          claim: cddClaim,
+        },
+        {
+          target: someDid,
           claim: buyLockupClaim,
           expiry,
         },
@@ -86,8 +90,8 @@ describe('modifyClaims procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
-    addClaimsBatchTransaction = dsMockUtils.createTxStub('identity', 'addClaimsBatch');
-    revokeClaimsBatchTransaction = dsMockUtils.createTxStub('identity', 'revokeClaimsBatch');
+    batchAddClaimTransaction = dsMockUtils.createTxStub('identity', 'batchAddClaim');
+    batchRevokeClaimTransaction = dsMockUtils.createTxStub('identity', 'batchRevokeClaim');
     claimToMeshClaimStub.withArgs(cddClaim, mockContext).returns(rawCddClaim);
     claimToMeshClaimStub.withArgs(buyLockupClaim, mockContext).returns(rawBuyLockupClaim);
     stringToIdentityIdStub.withArgs(someDid, mockContext).returns(rawSomeDid);
@@ -150,7 +154,7 @@ describe('modifyClaims procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      addClaimsBatchTransaction,
+      batchAddClaimTransaction,
       { batchSize: rawAddClaimItems.length },
       rawAddClaimItems
     );
@@ -184,7 +188,7 @@ describe('modifyClaims procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      addClaimsBatchTransaction,
+      batchAddClaimTransaction,
       { batchSize: rawAddClaimItems.length },
       rawAddClaimItems
     );
@@ -268,7 +272,7 @@ describe('modifyClaims procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      revokeClaimsBatchTransaction,
+      batchRevokeClaimTransaction,
       { batchSize: rawRevokeClaimItems.length },
       rawRevokeClaimItems
     );
@@ -280,7 +284,7 @@ describe('getRequiredRoles', () => {
     const args = {
       claims: [
         {
-          targets: ['someDid'],
+          target: 'someDid',
           claim: { type: ClaimType.CustomerDueDiligence },
         },
       ],
@@ -293,7 +297,7 @@ describe('getRequiredRoles', () => {
     const args = {
       claims: [
         {
-          targets: ['someDid'],
+          target: 'someDid',
           claim: { type: ClaimType.Accredited, scope: 'someIdentityId' },
         },
       ],

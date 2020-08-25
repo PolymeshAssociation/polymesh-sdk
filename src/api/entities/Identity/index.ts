@@ -6,21 +6,39 @@ import { TickerReservation } from '~/api/entities/TickerReservation';
 import { Entity, PolymeshError } from '~/base';
 import { Context } from '~/context';
 import {
+  issuerDidsWithClaimsByTarget,
+  scopesByIdentity,
+  tokensByTrustedClaimIssuer,
+  tokensHeldByDid,
+} from '~/middleware/queries';
+import { Query } from '~/middleware/types';
+import {
+  ClaimData,
+  ClaimScope,
+  ClaimType,
+  Ensured,
   ErrorCode,
+  IdentityWithClaims,
   isCddProviderRole,
   isTickerOwnerRole,
   isTokenOwnerRole,
+  Order,
+  ResultSet,
   Role,
   SubCallback,
   UnsubCallback,
 } from '~/types';
 import {
-  accountKeyToString,
+  accountIdToString,
   balanceToBigNumber,
+  calculateNextKey,
   cddStatusToBoolean,
   identityIdToString,
+  removePadding,
   stringToIdentityId,
   stringToTicker,
+  toIdentityWithClaimsArray,
+  valueToDid,
 } from '~/utils';
 
 import { Authorizations } from './Authorizations';
@@ -66,41 +84,6 @@ export class Identity extends Entity<UniqueIdentifiers> {
     this.authorizations = new Authorizations(this, context);
   }
 
-  // TODO: uncomment for v2
-  // public getPolyXBalance(): Promise<BigNumber>;
-  // public getPolyXBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
-
-  // /**
-  //  * Retrieve the POLYX balance of this particular Identity
-  //  *
-  //  * @note can be subscribed to
-  //  */
-  // public async getPolyXBalance(
-  //   callback?: SubCallback<BigNumber>
-  // ): Promise<BigNumber | UnsubCallback> {
-  //   const {
-  //     did,
-  //     context,
-  //     context: {
-  //       polymeshApi: {
-  //         query: { balances },
-  //       },
-  //     },
-  //   } = this;
-
-  //   const rawIdentityId = stringToIdentityId(did, context);
-
-  //   if (callback) {
-  //     return balances.identityBalance(rawIdentityId, res => {
-  //       callback(balanceToBigNumber(res));
-  //     });
-  //   }
-
-  //   const balance = await balances.identityBalance(rawIdentityId);
-
-  //   return balanceToBigNumber(balance);
-  // }
-
   /**
    * Check whether this Identity possesses the specified Role
    */
@@ -140,17 +123,18 @@ export class Identity extends Entity<UniqueIdentifiers> {
     });
   }
 
+  /**
+   * Retrieve the balance of a particular Security Token
+   *
+   * @note can be subscribed to
+   */
   public getTokenBalance(args: { ticker: string }): Promise<BigNumber>;
   public getTokenBalance(
     args: { ticker: string },
     callback: SubCallback<BigNumber>
   ): Promise<UnsubCallback>;
 
-  /**
-   * Retrieve the balance of a particular Security Token
-   *
-   * @note can be subscribed to
-   */
+  // eslint-disable-next-line require-jsdoc
   public async getTokenBalance(
     args: { ticker: string },
     callback?: SubCallback<BigNumber>
@@ -168,6 +152,15 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
     const rawTicker = stringToTicker(ticker, context);
     const rawIdentityId = stringToIdentityId(did, context);
+
+    const token = await asset.tokens(rawTicker);
+
+    if (token.owner_did.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `There is no Security Token with ticker "${ticker}"`,
+      });
+    }
 
     if (callback) {
       return asset.balanceOf(rawTicker, rawIdentityId, res => {
@@ -236,7 +229,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const { did } = context.getCurrentIdentity();
 
     const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
-      return accountKeyToString(masterKey);
+      return accountIdToString(masterKey);
     };
 
     if (callback) {
@@ -248,11 +241,178 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Retrieve the list of cdd claims for the current identity
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   */
+  public async getCddClaims(
+    opts: {
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<ClaimData>> {
+    const { context, did } = this;
+
+    const { size, start } = opts;
+
+    const result = await context.issuedClaims({
+      targets: [did],
+      claimTypes: [ClaimType.CustomerDueDiligence],
+      includeExpired: true,
+      size,
+      start,
+    });
+
+    return result;
+  }
+
+  /**
+   * Retrieve all scopes in which claims have been made for this identity.
+   *   If the scope is an asset DID, the corresponding ticker is returned as well
+   *
+   * @note a null scope means the identity has scopeless claims (like CDD for example)
+   */
+  public async getClaimScopes(): Promise<ClaimScope[]> {
+    const { context, did } = this;
+
+    const {
+      data: { scopesByIdentity: scopes },
+    } = await context.queryMiddleware<Ensured<Query, 'scopesByIdentity'>>(
+      scopesByIdentity({ did })
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return scopes.map(({ scope, ticker: symbol }) => {
+      let ticker: string | undefined;
+
+      if (symbol) {
+        ticker = removePadding(symbol);
+      }
+
+      return {
+        scope: scope ?? null,
+        ticker,
+      };
+    });
+  }
+
+  /**
+   * Retrieve a list of all tokens which were held at one point by this identity
+   *
+   * @note supports pagination
+   */
+  public async getHeldTokens(
+    opts: {
+      order?: Order;
+      size?: number;
+      start?: number;
+    } = { order: Order.Asc }
+  ): Promise<ResultSet<SecurityToken>> {
+    const { context, did } = this;
+
+    const { size, start, order } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'tokensHeldByDid'>>(
+      tokensHeldByDid({
+        did,
+        count: size,
+        skip: start,
+        order,
+      })
+    );
+
+    const {
+      data: {
+        tokensHeldByDid: { items: tokensHeldByDidList, totalCount: count },
+      },
+    } = result;
+
+    const data = tokensHeldByDidList.map(ticker => new SecurityToken({ ticker }, context));
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
    * Check whether this Identity possesses all specified roles
    */
   public async hasRoles(roles: Role[]): Promise<boolean> {
     const checkedRoles = await Promise.all(roles.map(this.hasRole.bind(this)));
 
     return checkedRoles.every(hasRole => hasRole);
+  }
+
+  /**
+   * Get the list of tokens for which this identity is a trusted claim issuer
+   */
+  public async getTrustingTokens(
+    args: { order: Order } = { order: Order.Asc }
+  ): Promise<SecurityToken[]> {
+    const { context, did } = this;
+
+    const { order } = args;
+
+    const {
+      data: { tokensByTrustedClaimIssuer: tickers },
+    } = await context.queryMiddleware<Ensured<Query, 'tokensByTrustedClaimIssuer'>>(
+      tokensByTrustedClaimIssuer({ claimIssuerDid: did, order })
+    );
+
+    return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
+  }
+
+  /**
+   * Retrieve all claims issued about this identity, grouped by claim issuer
+   *
+   * @note supports pagination
+   */
+  public async getClaims(
+    opts: {
+      scope?: string;
+      trustedClaimIssuers?: (string | Identity)[];
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<IdentityWithClaims>> {
+    const { context, did } = this;
+
+    const { trustedClaimIssuers, scope, size, start } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
+      issuerDidsWithClaimsByTarget({
+        target: did,
+        scope,
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          valueToDid(trustedClaimIssuer)
+        ),
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: {
+        issuerDidsWithClaimsByTarget: {
+          items: issuerDidsWithClaimsByTargetList,
+          totalCount: count,
+        },
+      },
+    } = result;
+
+    const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }

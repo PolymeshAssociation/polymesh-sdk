@@ -13,7 +13,7 @@
 
 • **Private**: = "PRIVATE"
 
-*Defined in [src/middleware/types.ts:982](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L982)*
+*Defined in [src/middleware/types.ts:982](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L982)*
 
 ___
 
@@ -21,4 +21,4 @@ ___
 
 • **Public**: = "PUBLIC"
 
-*Defined in [src/middleware/types.ts:981](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L981)*
+*Defined in [src/middleware/types.ts:981](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L981)*

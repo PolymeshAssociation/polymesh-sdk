@@ -4,7 +4,6 @@
  */
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { BlockNumber } from '@polkadot/types/interfaces/runtime';
-import { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
@@ -15,11 +14,11 @@ import {
   ProposalTimeFrames,
 } from '~/api/entities/Proposal/types';
 import { createProposal, CreateProposalParams } from '~/api/procedures';
-import { PolymeshError, TransactionQueue } from '~/base';
+import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { proposals } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ErrorCode, SubCallback, TransactionArgument, UnsubCallback } from '~/types';
+import { Ensured, SubCallback, TransactionArgument, UnsubCallback } from '~/types';
 import { balanceToBigNumber, identityIdToString, u32ToBigNumber, valueToDid } from '~/utils';
 
 /**
@@ -80,31 +79,19 @@ export class Governance {
       start?: number;
     } = {}
   ): Promise<Proposal[]> {
-    const {
-      context: { middlewareApi },
-      context,
-    } = this;
+    const { context } = this;
 
     const { proposers, states, orderBy, size, start } = opts;
 
-    let result: ApolloQueryResult<Ensured<Query, 'proposals'>>;
-
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'proposals'>>(
-        proposals({
-          proposers: proposers?.map(proposer => valueToDid(proposer)),
-          states,
-          orderBy,
-          count: size,
-          skip: start,
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
+    const result = await context.queryMiddleware<Ensured<Query, 'proposals'>>(
+      proposals({
+        proposers: proposers?.map(proposer => valueToDid(proposer)),
+        states,
+        orderBy,
+        count: size,
+        skip: start,
+      })
+    );
 
     return result.data.proposals.map(({ pipId }) => new Proposal({ pipId }, context));
   }

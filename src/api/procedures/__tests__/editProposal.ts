@@ -1,11 +1,11 @@
 import { Text } from '@polkadot/types';
+import { AccountId } from '@polkadot/types/interfaces/runtime';
 import sinon from 'sinon';
 
 import { isAuthorized, Params, prepareEditProposal } from '~/api/procedures/editProposal';
 import * as proceduresUtilsModule from '~/api/procedures/utils';
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
-import { AccountKey } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';
@@ -26,7 +26,7 @@ describe('editProposal procedure', () => {
 
   let mockContext: Mocked<Context>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
-  let accountKeyToStringStub: sinon.SinonStub<[AccountKey], string>;
+  let accountIdToStringStub: sinon.SinonStub<[AccountId], string>;
   let addTransactionStub: sinon.SinonStub;
   let editProposalTransaction: PolymeshTx<unknown[]>;
   let assertProposalUnlockedStub: sinon.SinonStub;
@@ -41,7 +41,7 @@ describe('editProposal procedure', () => {
     entityMockUtils.initMocks();
 
     stringToTextStub = sinon.stub(utilsModule, 'stringToText');
-    accountKeyToStringStub = sinon.stub(utilsModule, 'accountKeyToString');
+    accountIdToStringStub = sinon.stub(utilsModule, 'accountIdToString');
     assertProposalUnlockedStub = sinon.stub(proceduresUtilsModule, 'assertProposalUnlocked');
   });
 
@@ -131,12 +131,12 @@ describe('editProposal procedure', () => {
     test('should return whether the current account is the owner of the proposal', async () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-      accountKeyToStringStub.returns(mockAddress);
+      accountIdToStringStub.returns(mockAddress);
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockProposalMetadata({
-            proposer: dsMockUtils.createMockAccountKey(mockAddress),
+          dsMockUtils.createMockPipsMetadata({
+            proposer: dsMockUtils.createMockAccountId(mockAddress),
             // eslint-disable-next-line @typescript-eslint/camelcase
             cool_off_until: dsMockUtils.createMockU32(),
             end: dsMockUtils.createMockU32(),

@@ -13,7 +13,7 @@
 
 • **Asc**: = "ASC"
 
-*Defined in [src/middleware/types.ts:956](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L956)*
+*Defined in [src/middleware/types.ts:956](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L956)*
 
 ___
 
@@ -21,4 +21,4 @@ ___
 
 • **Desc**: = "DESC"
 
-*Defined in [src/middleware/types.ts:957](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/middleware/types.ts#L957)*
+*Defined in [src/middleware/types.ts:957](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/middleware/types.ts#L957)*

@@ -7,10 +7,12 @@ import { PaginationOptions, ResultSet, SignerType } from '~/types';
 import { tuple } from '~/types/utils';
 import {
   authorizationDataToAuthorization,
+  identityIdToString,
   momentToDate,
   requestPaginated,
   signatoryToSigner,
   signerToSignatory,
+  stringToIdentityId,
   u64ToBigNumber,
 } from '~/utils';
 
@@ -68,12 +70,10 @@ export class Authorizations extends Namespace<Identity> {
       parent: { did },
     } = this;
 
-    const sig = signerToSignatory({ type: SignerType.Identity, value: did }, context);
-
     const { entries, lastKey: next } = await requestPaginated(
       polymeshApi.query.identity.authorizationsGiven,
       {
-        arg: sig,
+        arg: stringToIdentityId(did, context),
         paginationOpts,
       }
     );
@@ -120,7 +120,7 @@ export class Authorizations extends Namespace<Identity> {
           expiry: expiry.isSome ? momentToDate(expiry.unwrap()) : null,
           data: authorizationDataToAuthorization(data),
           targetDid: target,
-          issuerDid: signatoryToSigner(issuer).value,
+          issuerDid: identityIdToString(issuer),
         };
       })
       .filter(({ expiry }) => expiry === null || expiry > new Date())

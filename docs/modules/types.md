@@ -183,7 +183,7 @@ ___
 
 Ƭ **Authorization**: *object | object*
 
-*Defined in [src/types/index.ts:166](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L166)*
+*Defined in [src/types/index.ts:166](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L166)*
 
 Authorization request data corresponding to type
 
@@ -193,7 +193,7 @@ ___
 
 Ƭ **Claim**: *[ScopedClaim](types.md#scopedclaim) | [UnscopedClaim](types.md#unscopedclaim)*
 
-*Defined in [src/types/index.ts:201](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L201)*
+*Defined in [src/types/index.ts:201](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L201)*
 
 ___
 
@@ -201,7 +201,7 @@ ___
 
 Ƭ **CommonKeyring**: *Pick‹Keyring, "getPair" | "getPairs" | "addFromSeed" | "addFromUri"›*
 
-*Defined in [src/types/index.ts:325](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L325)*
+*Defined in [src/types/index.ts:325](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L325)*
 
 ___
 
@@ -209,7 +209,7 @@ ___
 
 Ƭ **Condition**: *[SingleClaimCondition](types.md#singleclaimcondition) | [MultiClaimCondition](types.md#multiclaimcondition)*
 
-*Defined in [src/types/index.ts:244](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L244)*
+*Defined in [src/types/index.ts:244](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L244)*
 
 ___
 
@@ -217,7 +217,7 @@ ___
 
 Ƭ **ConditionBase**: *object*
 
-*Defined in [src/types/index.ts:232](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L232)*
+*Defined in [src/types/index.ts:232](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L232)*
 
 #### Type declaration:
 
@@ -231,7 +231,7 @@ ___
 
 Ƭ **Ensured**: *Required‹Pick‹T, K››*
 
-*Defined in [src/types/index.ts:318](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L318)*
+*Defined in [src/types/index.ts:318](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L318)*
 
 ___
 
@@ -239,7 +239,7 @@ ___
 
 Ƭ **Extrinsics**: *SubmittableExtrinsics‹"promise"›*
 
-*Defined in [src/types/internal.ts:17](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L17)*
+*Defined in [src/types/internal.ts:17](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/internal.ts#L17)*
 
 Polkadot's `tx` submodule
 
@@ -249,7 +249,7 @@ ___
 
 Ƭ **MapMaybePostTransactionValue**: *object*
 
-*Defined in [src/types/internal.ts:58](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L58)*
+*Defined in [src/types/internal.ts:58](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/internal.ts#L58)*
 
 Apply the [MaybePostTransactionValue](types.md#maybeposttransactionvalue) type to all members of a tuple
 
@@ -261,7 +261,7 @@ ___
 
 Ƭ **MaybePostTransactionValue**: *PostTransactionValue‹T› | T*
 
-*Defined in [src/types/internal.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L53)*
+*Defined in [src/types/internal.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/internal.ts#L53)*
 
 Either a specific type or a [[PostTransactionValue]] that wraps a value of that type
 
@@ -271,7 +271,7 @@ ___
 
 Ƭ **MultiClaimCondition**: *[ConditionBase](types.md#conditionbase) & object*
 
-*Defined in [src/types/index.ts:239](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L239)*
+*Defined in [src/types/index.ts:239](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L239)*
 
 ___
 
@@ -279,7 +279,7 @@ ___
 
 Ƭ **NextKey**: *string | number | null*
 
-*Defined in [src/types/index.ts:351](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L351)*
+*Defined in [src/types/index.ts:351](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L351)*
 
 ___
 
@@ -287,7 +287,7 @@ ___
 
 Ƭ **PolymeshTx**: *AugmentedSubmittable‹function›*
 
-*Defined in [src/types/internal.ts:29](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L29)*
+*Defined in [src/types/internal.ts:29](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/internal.ts#L29)*
 
 Low level transaction method in the polkadot API
 
@@ -297,7 +297,7 @@ ___
 
 Ƭ **PostTransactionValueArray**: *object*
 
-*Defined in [src/types/internal.ts:46](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L46)*
+*Defined in [src/types/internal.ts:46](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/internal.ts#L46)*
 
 Transforms a tuple of types into an array of [[PostTransactionValue]].
 For each type in the tuple, the corresponding [[PostTransactionValue]] resolves to that type
@@ -310,7 +310,7 @@ ___
 
 Ƭ **Queries**: *QueryableStorage‹"promise"›*
 
-*Defined in [src/types/internal.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L22)*
+*Defined in [src/types/internal.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/internal.ts#L22)*
 
 Polkadot's `query` submodule
 
@@ -320,7 +320,7 @@ ___
 
 Ƭ **ResolverFunctionArray**: *object*
 
-*Defined in [src/types/internal.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/internal.ts#L36)*
+*Defined in [src/types/internal.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/internal.ts#L36)*
 
 Transforms a tuple of types into an array of resolver functions. For each type in the tuple, the corresponding resolver function returns that type wrapped in a promise
 
@@ -332,7 +332,7 @@ ___
 
 Ƭ **Role**: *[TickerOwnerRole](../interfaces/types.tickerownerrole.md) | [TokenOwnerRole](../interfaces/types.tokenownerrole.md) | [CddProviderRole](../interfaces/types.cddproviderrole.md)*
 
-*Defined in [src/types/index.ts:104](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L104)*
+*Defined in [src/types/index.ts:104](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L104)*
 
 ___
 
@@ -340,7 +340,7 @@ ___
 
 Ƭ **ScopedClaim**: *object | object*
 
-*Defined in [src/types/index.ts:195](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L195)*
+*Defined in [src/types/index.ts:195](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L195)*
 
 ___
 
@@ -348,7 +348,7 @@ ___
 
 Ƭ **SingleClaimCondition**: *[ConditionBase](types.md#conditionbase) & object*
 
-*Defined in [src/types/index.ts:234](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L234)*
+*Defined in [src/types/index.ts:234](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L234)*
 
 ___
 
@@ -356,7 +356,7 @@ ___
 
 Ƭ **SubCallback**: *function*
 
-*Defined in [src/types/index.ts:314](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L314)*
+*Defined in [src/types/index.ts:314](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L314)*
 
 #### Type declaration:
 
@@ -374,7 +374,7 @@ ___
 
 Ƭ **TokenType**: *[KnownTokenType](../enums/types.knowntokentype.md) | object*
 
-*Defined in [src/types/index.ts:121](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L121)*
+*Defined in [src/types/index.ts:121](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L121)*
 
 Type of security that the token represents
 
@@ -384,7 +384,7 @@ ___
 
 Ƭ **TransactionArgument**: *object & [PlainTransactionArgument](../interfaces/types.plaintransactionargument.md) | [ArrayTransactionArgument](../interfaces/types.arraytransactionargument.md) | [SimpleEnumTransactionArgument](../interfaces/types.simpleenumtransactionargument.md) | [ComplexTransactionArgument](../interfaces/types.complextransactionargument.md)*
 
-*Defined in [src/types/index.ts:428](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L428)*
+*Defined in [src/types/index.ts:428](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L428)*
 
 ___
 
@@ -392,7 +392,7 @@ ___
 
 Ƭ **UnscopedClaim**: *object*
 
-*Defined in [src/types/index.ts:199](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L199)*
+*Defined in [src/types/index.ts:199](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L199)*
 
 #### Type declaration:
 
@@ -404,7 +404,7 @@ ___
 
 Ƭ **UnsubCallback**: *function*
 
-*Defined in [src/types/index.ts:316](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d34df1/src/types/index.ts#L316)*
+*Defined in [src/types/index.ts:316](https://github.com/PolymathNetwork/polymesh-sdk/blob/73feada/src/types/index.ts#L316)*
 
 #### Type declaration:
 

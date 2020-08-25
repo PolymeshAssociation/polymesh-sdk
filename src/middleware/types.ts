@@ -1,4 +1,5 @@
 export type Maybe<T> = T | null;
+export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: string;
@@ -34,8 +35,8 @@ export type Query = {
   eventByIndexedArgs?: Maybe<Event>;
   /** Get events by any of its indexed arguments */
   eventsByIndexedArgs?: Maybe<Array<Maybe<Event>>>;
-  /** Get non-system transactions */
-  transactions?: Maybe<Array<Maybe<Extrinsic>>>;
+  /** Get transactions */
+  transactions: ExtrinsicResult;
   /** Get transaction by hash */
   transactionByHash?: Maybe<Extrinsic>;
   /** Get transaction by number */
@@ -48,8 +49,14 @@ export type Query = {
   polyxTransfersSent: Array<PolyxTransfer>;
   /** Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers */
   didsWithClaims: IdentityWithClaimsResult;
+  /** Get issuer dids with at least one claim for given target */
+  issuerDidsWithClaimsByTarget: IdentityWithClaimsResult;
+  /** Get all scopes with at least one claim for a given identityId */
+  scopesByIdentity: Array<ClaimScope>;
+  /** Get all token tickers where given Did is a default Trusted Claim Issuer */
+  tokensByTrustedClaimIssuer: Array<Scalars['String']>;
   /** Get all tickers of tokens that were held at some point by the given did */
-  tokensHeldByDid: Array<Scalars['String']>;
+  tokensHeldByDid: StringResult;
   /** Get all POLYX transfers (send) failed by the given account */
   polyxTransfersFailed: Array<FailedPolyxTransfer>;
   /** Get all POLYX transfers received by the given did and/or account */
@@ -62,10 +69,8 @@ export type Query = {
   tokenTransfersFailed: Array<FailedTokenTransfer>;
   /** Get all authorizations with their status optionally filtered by did, account key or type */
   authorizations: Array<Authorization>;
-  /** Get the current vote results for given proposal hashes */
-  referendumVotes: VoteResult;
   /** Get the current vote results for given pipId */
-  referendumVotes2: VoteResult;
+  referendumVotes: VoteResult;
   /** Get a proposal by its pipId */
   proposal: Proposal;
   /** Get all proposals optionally filtered by pipId, proposer or state */
@@ -113,8 +118,14 @@ export type QueryEventsByIndexedArgsArgs = {
 };
 
 export type QueryTransactionsArgs = {
+  block_id?: Maybe<Scalars['Int']>;
+  address?: Maybe<Scalars['String']>;
+  module_id?: Maybe<ModuleIdEnum>;
+  call_id?: Maybe<CallIdEnum>;
+  success?: Maybe<Scalars['Boolean']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
+  orderBy?: Maybe<TransactionOrderByInput>;
 };
 
 export type QueryTransactionByHashArgs = {
@@ -146,14 +157,35 @@ export type QueryDidsWithClaimsArgs = {
   scope?: Maybe<Scalars['String']>;
   trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
   claimTypes?: Maybe<Array<ClaimTypeEnum>>;
+  includeExpired?: Maybe<Scalars['Boolean']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryIssuerDidsWithClaimsByTargetArgs = {
+  target: Scalars['String'];
+  scope?: Maybe<Scalars['String']>;
+  trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
+  claimTypes?: Maybe<Array<ClaimTypeEnum>>;
+  includeExpired?: Maybe<Scalars['Boolean']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryScopesByIdentityArgs = {
+  did: Scalars['String'];
+};
+
+export type QueryTokensByTrustedClaimIssuerArgs = {
+  claimIssuerDid: Scalars['String'];
+  order?: Maybe<Order>;
 };
 
 export type QueryTokensHeldByDidArgs = {
   did: Scalars['String'];
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
+  order?: Maybe<Order>;
 };
 
 export type QueryPolyxTransfersFailedArgs = {
@@ -197,11 +229,6 @@ export type QueryAuthorizationsArgs = {
 };
 
 export type QueryReferendumVotesArgs = {
-  ayesHash: Scalars['String'];
-  naysHash: Scalars['String'];
-};
-
-export type QueryReferendumVotes2Args = {
   proposalId: Scalars['Int'];
 };
 
@@ -326,36 +353,39 @@ export enum ModuleIdEnum {
   Timestamp = 'timestamp',
   Indices = 'indices',
   Balances = 'balances',
+  Transactionpayment = 'transactionpayment',
   Authorship = 'authorship',
   Staking = 'staking',
   Offences = 'offences',
   Session = 'session',
-  FinalityTracker = 'finalityTracker',
+  Finalitytracker = 'finalitytracker',
   Grandpa = 'grandpa',
-  ImOnline = 'imOnline',
-  AuthorityDiscovery = 'authorityDiscovery',
-  RandomnessCollectiveFlip = 'randomnessCollectiveFlip',
-  TransactionPayment = 'transactionPayment',
+  Imonline = 'imonline',
+  Authoritydiscovery = 'authoritydiscovery',
+  Randomnesscollectiveflip = 'randomnesscollectiveflip',
+  Historical = 'historical',
   Sudo = 'sudo',
-  MultiSig = 'multiSig',
+  Multisig = 'multisig',
   Contracts = 'contracts',
   Treasury = 'treasury',
-  PolymeshCommittee = 'polymeshCommittee',
-  CommitteeMembership = 'committeeMembership',
+  Polymeshcommittee = 'polymeshcommittee',
+  Committeemembership = 'committeemembership',
   Pips = 'pips',
   Asset = 'asset',
   Dividend = 'dividend',
   Identity = 'identity',
   Bridge = 'bridge',
-  ComplianceManager = 'complianceManager',
+  Compliancemanager = 'compliancemanager',
   Voting = 'voting',
-  StoCapped = 'stoCapped',
+  Stocapped = 'stocapped',
   Exemption = 'exemption',
-  SimpleToken = 'simpleToken',
-  CddServiceProviders = 'cddServiceProviders',
+  Settlement = 'settlement',
+  Cddserviceproviders = 'cddserviceproviders',
   Statistic = 'statistic',
-  ProtocolFee = 'protocolFee',
+  Protocolfee = 'protocolfee',
   Utility = 'utility',
+  Portfolio = 'portfolio',
+  Confidential = 'confidential',
 }
 
 export enum EventIdEnum {
@@ -366,13 +396,24 @@ export enum EventIdEnum {
   KilledAccount = 'KilledAccount',
   IndexAssigned = 'IndexAssigned',
   IndexFreed = 'IndexFreed',
+  IndexFrozen = 'IndexFrozen',
   Endowed = 'Endowed',
   Transfer = 'Transfer',
   BalanceSet = 'BalanceSet',
   AccountBalanceBurned = 'AccountBalanceBurned',
-  Rewarded = 'Rewarded',
-  Slashed = 'Slashed',
+  Reserved = 'Reserved',
+  Unreserved = 'Unreserved',
+  ReserveRepatriated = 'ReserveRepatriated',
+  EraPayout = 'EraPayout',
+  Reward = 'Reward',
+  Slash = 'Slash',
   OldSlashingReportDiscarded = 'OldSlashingReportDiscarded',
+  StakingElection = 'StakingElection',
+  SolutionStored = 'SolutionStored',
+  Bonded = 'Bonded',
+  Unbonded = 'Unbonded',
+  Nominated = 'Nominated',
+  Withdrawn = 'Withdrawn',
   PermissionedValidatorAdded = 'PermissionedValidatorAdded',
   PermissionedValidatorRemoved = 'PermissionedValidatorRemoved',
   PermissionedValidatorStatusChanged = 'PermissionedValidatorStatusChanged',
@@ -380,9 +421,6 @@ export enum EventIdEnum {
   IndividualCommissionEnabled = 'IndividualCommissionEnabled',
   GlobalCommissionUpdated = 'GlobalCommissionUpdated',
   MinimumBondThresholdUpdated = 'MinimumBondThresholdUpdated',
-  Bonded = 'Bonded',
-  Unbonded = 'Unbonded',
-  Nominated = 'Nominated',
   Offence = 'Offence',
   NewSession = 'NewSession',
   NewAuthorities = 'NewAuthorities',
@@ -403,6 +441,8 @@ export enum EventIdEnum {
   MultiSigSignerRemoved = 'MultiSigSignerRemoved',
   MultiSigSignaturesRequiredChanged = 'MultiSigSignaturesRequiredChanged',
   ProposalApproved = 'ProposalApproved',
+  ProposalRejectionVote = 'ProposalRejectionVote',
+  ProposalRejected = 'ProposalRejected',
   Instantiated = 'Instantiated',
   Evicted = 'Evicted',
   Restored = 'Restored',
@@ -432,7 +472,8 @@ export enum EventIdEnum {
   Dummy = 'Dummy',
   HistoricalPipsPruned = 'HistoricalPipsPruned',
   ProposalCreated = 'ProposalCreated',
-  ProposalAmended = 'ProposalAmended',
+  ProposalDetailsAmended = 'ProposalDetailsAmended',
+  ProposalBondAdjusted = 'ProposalBondAdjusted',
   ProposalStateUpdated = 'ProposalStateUpdated',
   PipClosed = 'PipClosed',
   ReferendumCreated = 'ReferendumCreated',
@@ -466,13 +507,16 @@ export enum EventIdEnum {
   ExtensionArchived = 'ExtensionArchived',
   ExtensionUnArchived = 'ExtensionUnArchived',
   CheckpointCreated = 'CheckpointCreated',
+  TreasuryDidSet = 'TreasuryDidSet',
+  DocumentAdded = 'DocumentAdded',
+  DocumentRemoved = 'DocumentRemoved',
   DividendCreated = 'DividendCreated',
   DividendCanceled = 'DividendCanceled',
   DividendPaidOutToUser = 'DividendPaidOutToUser',
   DividendRemainingClaimed = 'DividendRemainingClaimed',
   DidCreated = 'DidCreated',
-  SigningItemsAdded = 'SigningItemsAdded',
-  SigningItemsRemoved = 'SigningItemsRemoved',
+  SigningKeysAdded = 'SigningKeysAdded',
+  SigningKeysRemoved = 'SigningKeysRemoved',
   SignerLeft = 'SignerLeft',
   SigningPermissionsUpdated = 'SigningPermissionsUpdated',
   MasterKeyUpdated = 'MasterKeyUpdated',
@@ -481,16 +525,12 @@ export enum EventIdEnum {
   DidStatus = 'DidStatus',
   CddStatus = 'CddStatus',
   AssetDidRegistered = 'AssetDidRegistered',
-  AuthorizationAddedByIdentity = 'AuthorizationAddedByIdentity',
-  AuthorizationAddedByKey = 'AuthorizationAddedByKey',
+  AuthorizationAdded = 'AuthorizationAdded',
   AuthorizationRevoked = 'AuthorizationRevoked',
   AuthorizationRejected = 'AuthorizationRejected',
   AuthorizationConsumed = 'AuthorizationConsumed',
   OffChainAuthorizationRevoked = 'OffChainAuthorizationRevoked',
   CddRequirementForMasterKeyUpdated = 'CddRequirementForMasterKeyUpdated',
-  LinkAdded = 'LinkAdded',
-  LinkRemoved = 'LinkRemoved',
-  LinkUpdated = 'LinkUpdated',
   CddClaimsInvalidated = 'CddClaimsInvalidated',
   SigningKeysFrozen = 'SigningKeysFrozen',
   SigningKeysUnfrozen = 'SigningKeysUnfrozen',
@@ -502,7 +542,7 @@ export enum EventIdEnum {
   Unfrozen = 'Unfrozen',
   FrozenTx = 'FrozenTx',
   UnfrozenTx = 'UnfrozenTx',
-  WhiteListUpdated = 'WhiteListUpdated',
+  ExemptedUpdated = 'ExemptedUpdated',
   BridgeLimitUpdated = 'BridgeLimitUpdated',
   TxsHandled = 'TxsHandled',
   BridgeTxScheduled = 'BridgeTxScheduled',
@@ -518,15 +558,34 @@ export enum EventIdEnum {
   BallotCreated = 'BallotCreated',
   VoteCast = 'VoteCast',
   BallotCancelled = 'BallotCancelled',
-  ModifyAllowedTokens = 'ModifyAllowedTokens',
   AssetPurchased = 'AssetPurchased',
   ExemptionListModified = 'ExemptionListModified',
-  TokenCreated = 'TokenCreated',
+  VenueCreated = 'VenueCreated',
+  InstructionCreated = 'InstructionCreated',
+  InstructionAuthorized = 'InstructionAuthorized',
+  InstructionUnauthorized = 'InstructionUnauthorized',
+  InstructionRejected = 'InstructionRejected',
+  ReceiptClaimed = 'ReceiptClaimed',
+  ReceiptUnclaimed = 'ReceiptUnclaimed',
+  VenueFiltering = 'VenueFiltering',
+  VenuesAllowed = 'VenuesAllowed',
+  VenuesBlocked = 'VenuesBlocked',
+  LegFailedExecution = 'LegFailedExecution',
+  InstructionFailed = 'InstructionFailed',
+  InstructionExecuted = 'InstructionExecuted',
+  VenueUnauthorized = 'VenueUnauthorized',
   FeeSet = 'FeeSet',
   CoefficientSet = 'CoefficientSet',
   FeeCharged = 'FeeCharged',
   BatchInterrupted = 'BatchInterrupted',
   BatchCompleted = 'BatchCompleted',
+  PortfolioCreated = 'PortfolioCreated',
+  PortfolioDeleted = 'PortfolioDeleted',
+  MovedBetweenPortfolios = 'MovedBetweenPortfolios',
+  PortfolioRenamed = 'PortfolioRenamed',
+  UserPortfolios = 'UserPortfolios',
+  RangeProofAdded = 'RangeProofAdded',
+  RangeProofVerified = 'RangeProofVerified',
 }
 
 export enum ClaimTypeEnum {
@@ -589,11 +648,9 @@ export enum CallIdEnum {
   Transfer = 'transfer',
   Free = 'free',
   ForceTransfer = 'force_transfer',
+  Freeze = 'freeze',
   TransferWithMemo = 'transfer_with_memo',
-  TopUpIdentityBalance = 'top_up_identity_balance',
-  ReclaimIdentityBalance = 'reclaim_identity_balance',
-  ChangeChargeDidFlag = 'change_charge_did_flag',
-  TopUpBrrBalance = 'top_up_brr_balance',
+  DepositBlockRewardReserveBalance = 'deposit_block_reward_reserve_balance',
   SetBalance = 'set_balance',
   BurnAccountBalance = 'burn_account_balance',
   SetUncles = 'set_uncles',
@@ -607,6 +664,8 @@ export enum CallIdEnum {
   SetPayee = 'set_payee',
   SetController = 'set_controller',
   SetValidatorCount = 'set_validator_count',
+  IncreaseValidatorCount = 'increase_validator_count',
+  ScaleValidatorCount = 'scale_validator_count',
   AddPermissionedValidator = 'add_permissioned_validator',
   RemovePermissionedValidator = 'remove_permissioned_validator',
   ValidateCddExpiryNominators = 'validate_cdd_expiry_nominators',
@@ -619,18 +678,20 @@ export enum CallIdEnum {
   ForceUnstake = 'force_unstake',
   ForceNewEraAlways = 'force_new_era_always',
   CancelDeferredSlash = 'cancel_deferred_slash',
-  PayoutNominator = 'payout_nominator',
-  PayoutValidator = 'payout_validator',
+  PayoutStakers = 'payout_stakers',
   Rebond = 'rebond',
   SetHistoryDepth = 'set_history_depth',
   ReapStash = 'reap_stash',
+  SubmitElectionSolution = 'submit_election_solution',
+  SubmitElectionSolutionUnsigned = 'submit_election_solution_unsigned',
   SetKeys = 'set_keys',
   PurgeKeys = 'purge_keys',
   FinalHint = 'final_hint',
-  ReportMisbehavior = 'report_misbehavior',
+  ReportEquivocation = 'report_equivocation',
   Heartbeat = 'heartbeat',
   SetSlashingParams = 'set_slashing_params',
   Sudo = 'sudo',
+  SudoUncheckedWeight = 'sudo_unchecked_weight',
   SetKey = 'set_key',
   SudoAs = 'sudo_as',
   CreateMultisig = 'create_multisig',
@@ -640,6 +701,8 @@ export enum CallIdEnum {
   CreateProposalAsKey = 'create_proposal_as_key',
   ApproveAsIdentity = 'approve_as_identity',
   ApproveAsKey = 'approve_as_key',
+  RejectAsIdentity = 'reject_as_identity',
+  RejectAsKey = 'reject_as_key',
   AcceptMultisigSignerAsIdentity = 'accept_multisig_signer_as_identity',
   AcceptMultisigSignerAsKey = 'accept_multisig_signer_as_key',
   AddMultisigSigner = 'add_multisig_signer',
@@ -658,8 +721,6 @@ export enum CallIdEnum {
   Disbursement = 'disbursement',
   Reimbursement = 'reimbursement',
   SetVoteThreshold = 'set_vote_threshold',
-  Propose = 'propose',
-  Vote = 'vote',
   Close = 'close',
   SetReleaseCoordinator = 'set_release_coordinator',
   VoteEnactReferendum = 'vote_enact_referendum',
@@ -676,11 +737,14 @@ export enum CallIdEnum {
   SetProposalDuration = 'set_proposal_duration',
   SetProposalCoolOffPeriod = 'set_proposal_cool_off_period',
   SetDefaultEnactmentPeriod = 'set_default_enactment_period',
+  Propose = 'propose',
   AmendProposal = 'amend_proposal',
   CancelProposal = 'cancel_proposal',
   BondAdditionalDeposit = 'bond_additional_deposit',
   UnbondDeposit = 'unbond_deposit',
+  Vote = 'vote',
   KillProposal = 'kill_proposal',
+  PruneProposal = 'prune_proposal',
   FastTrackProposal = 'fast_track_proposal',
   EmergencyReferendum = 'emergency_referendum',
   EnactReferendum = 'enact_referendum',
@@ -690,7 +754,6 @@ export enum CallIdEnum {
   AcceptTickerTransfer = 'accept_ticker_transfer',
   AcceptAssetOwnershipTransfer = 'accept_asset_ownership_transfer',
   CreateAsset = 'create_asset',
-  Freeze = 'freeze',
   Unfreeze = 'unfreeze',
   RenameAsset = 'rename_asset',
   ControllerTransfer = 'controller_transfer',
@@ -706,9 +769,8 @@ export enum CallIdEnum {
   TransferWithData = 'transfer_with_data',
   TransferFromWithData = 'transfer_from_with_data',
   IsIssuable = 'is_issuable',
-  AddDocuments = 'add_documents',
-  RemoveDocuments = 'remove_documents',
-  UpdateDocuments = 'update_documents',
+  BatchAddDocument = 'batch_add_document',
+  BatchRemoveDocument = 'batch_remove_document',
   IncreaseCustodyAllowance = 'increase_custody_allowance',
   IncreaseCustodyAllowanceOf = 'increase_custody_allowance_of',
   TransferByCustodian = 'transfer_by_custodian',
@@ -717,13 +779,14 @@ export enum CallIdEnum {
   AddExtension = 'add_extension',
   ArchiveExtension = 'archive_extension',
   UnarchiveExtension = 'unarchive_extension',
+  SetTreasuryDid = 'set_treasury_did',
   New = 'new',
   Cancel = 'cancel',
   ClaimUnclaimed = 'claim_unclaimed',
   RegisterDid = 'register_did',
   CddRegisterDid = 'cdd_register_did',
   InvalidateCddClaims = 'invalidate_cdd_claims',
-  RemoveSigningItems = 'remove_signing_items',
+  RemoveSigningKeys = 'remove_signing_keys',
   SetMasterKey = 'set_master_key',
   AcceptMasterKey = 'accept_master_key',
   ChangeCddRequirementForMkRotation = 'change_cdd_requirement_for_mk_rotation',
@@ -732,37 +795,36 @@ export enum CallIdEnum {
   LeaveIdentityAsKey = 'leave_identity_as_key',
   LeaveIdentityAsIdentity = 'leave_identity_as_identity',
   AddClaim = 'add_claim',
-  AddClaimsBatch = 'add_claims_batch',
+  BatchAddClaim = 'batch_add_claim',
   ForwardedCall = 'forwarded_call',
   RevokeClaim = 'revoke_claim',
-  RevokeClaimsBatch = 'revoke_claims_batch',
+  BatchRevokeClaim = 'batch_revoke_claim',
   SetPermissionToSigner = 'set_permission_to_signer',
   FreezeSigningKeys = 'freeze_signing_keys',
   UnfreezeSigningKeys = 'unfreeze_signing_keys',
   GetMyDid = 'get_my_did',
   GetCddOf = 'get_cdd_of',
   AddAuthorization = 'add_authorization',
-  AddAuthorizationAsKey = 'add_authorization_as_key',
   BatchAddAuthorization = 'batch_add_authorization',
   RemoveAuthorization = 'remove_authorization',
   BatchRemoveAuthorization = 'batch_remove_authorization',
   AcceptAuthorization = 'accept_authorization',
   BatchAcceptAuthorization = 'batch_accept_authorization',
-  AddSigningItemsWithAuthorization = 'add_signing_items_with_authorization',
+  BatchAddSigningKeyWithAuthorization = 'batch_add_signing_key_with_authorization',
   RevokeOffchainAuthorization = 'revoke_offchain_authorization',
   ChangeController = 'change_controller',
   ChangeAdmin = 'change_admin',
   ChangeTimelock = 'change_timelock',
   ChangeBridgeLimit = 'change_bridge_limit',
-  ChangeBridgeWhitelist = 'change_bridge_whitelist',
+  ChangeBridgeExempted = 'change_bridge_exempted',
   ForceHandleBridgeTx = 'force_handle_bridge_tx',
-  ForceHandleBridgeTxs = 'force_handle_bridge_txs',
+  BatchForceHandleBridgeTx = 'batch_force_handle_bridge_tx',
   ProposeBridgeTx = 'propose_bridge_tx',
-  ProposeBridgeTxs = 'propose_bridge_txs',
+  BatchProposeBridgeTx = 'batch_propose_bridge_tx',
   HandleBridgeTx = 'handle_bridge_tx',
-  HandleBridgeTxs = 'handle_bridge_txs',
-  FreezeTxs = 'freeze_txs',
-  UnfreezeTxs = 'unfreeze_txs',
+  BatchHandleBridgeTx = 'batch_handle_bridge_tx',
+  BatchFreezeTx = 'batch_freeze_tx',
+  BatchUnfreezeTx = 'batch_unfreeze_tx',
   AddActiveRule = 'add_active_rule',
   RemoveActiveRule = 'remove_active_rule',
   ReplaceAssetRules = 'replace_asset_rules',
@@ -771,23 +833,38 @@ export enum CallIdEnum {
   ResumeAssetRules = 'resume_asset_rules',
   AddDefaultTrustedClaimIssuer = 'add_default_trusted_claim_issuer',
   RemoveDefaultTrustedClaimIssuer = 'remove_default_trusted_claim_issuer',
-  AddDefaultTrustedClaimIssuersBatch = 'add_default_trusted_claim_issuers_batch',
-  RemoveDefaultTrustedClaimIssuersBatch = 'remove_default_trusted_claim_issuers_batch',
+  BatchAddDefaultTrustedClaimIssuer = 'batch_add_default_trusted_claim_issuer',
+  BatchRemoveDefaultTrustedClaimIssuer = 'batch_remove_default_trusted_claim_issuer',
   ChangeAssetRule = 'change_asset_rule',
-  ChangeAssetRuleBatch = 'change_asset_rule_batch',
+  BatchChangeAssetRule = 'batch_change_asset_rule',
   AddBallot = 'add_ballot',
   CancelBallot = 'cancel_ballot',
   LaunchSto = 'launch_sto',
   BuyTokens = 'buy_tokens',
-  ModifyAllowedTokens = 'modify_allowed_tokens',
-  BuyTokensBySimpleToken = 'buy_tokens_by_simple_token',
   PauseSto = 'pause_sto',
   UnpauseSto = 'unpause_sto',
   ModifyExemptionList = 'modify_exemption_list',
-  CreateToken = 'create_token',
+  CreateVenue = 'create_venue',
+  AddInstruction = 'add_instruction',
+  AuthorizeInstruction = 'authorize_instruction',
+  UnauthorizeInstruction = 'unauthorize_instruction',
+  RejectInstruction = 'reject_instruction',
+  AuthorizeWithReceipts = 'authorize_with_receipts',
+  ClaimReceipt = 'claim_receipt',
+  UnclaimReceipt = 'unclaim_receipt',
+  SetVenueFiltering = 'set_venue_filtering',
+  AllowVenues = 'allow_venues',
+  DisallowVenues = 'disallow_venues',
   ChangeCoefficient = 'change_coefficient',
   ChangeBaseFee = 'change_base_fee',
   Batch = 'batch',
+  RelayTx = 'relay_tx',
+  CreatePortfolio = 'create_portfolio',
+  DeletePortfolio = 'delete_portfolio',
+  MovePortfolio = 'move_portfolio',
+  RenamePortfolio = 'rename_portfolio',
+  AddRangeProof = 'add_range_proof',
+  AddVerifyRangeProof = 'add_verify_range_proof',
 }
 
 export type Account = {
@@ -808,6 +885,29 @@ export type Account = {
 export type AccountTransactionsArgs = {
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
+};
+
+export type TransactionOrderByInput = {
+  field: TransactionOrderFields;
+  order: Order;
+};
+
+export enum TransactionOrderFields {
+  BlockId = 'block_id',
+  Address = 'address',
+  ModuleId = 'module_id',
+  CallId = 'call_id',
+}
+
+export enum Order {
+  Asc = 'ASC',
+  Desc = 'DESC',
+}
+
+export type ExtrinsicResult = {
+  __typename?: 'ExtrinsicResult';
+  totalCount: Scalars['Int'];
+  items: Array<Extrinsic>;
 };
 
 export type PolyxTransfer = {
@@ -843,6 +943,18 @@ export type Claim = {
   type: ClaimTypeEnum;
   jurisdiction?: Maybe<Scalars['String']>;
   scope?: Maybe<Scalars['String']>;
+};
+
+export type ClaimScope = {
+  __typename?: 'ClaimScope';
+  scope?: Maybe<Scalars['String']>;
+  ticker?: Maybe<Scalars['String']>;
+};
+
+export type StringResult = {
+  __typename?: 'StringResult';
+  totalCount: Scalars['Int'];
+  items: Array<Scalars['String']>;
 };
 
 export type FailedPolyxTransfer = {
@@ -891,8 +1003,7 @@ export enum AuthTypeEnum {
 export type Authorization = {
   __typename?: 'Authorization';
   authId: Scalars['Int'];
-  fromDID?: Maybe<Scalars['String']>;
-  fromKey?: Maybe<Scalars['String']>;
+  fromDID: Scalars['String'];
   toDID?: Maybe<Scalars['String']>;
   toKey?: Maybe<Scalars['String']>;
   type: AuthTypeEnum;
@@ -924,7 +1035,7 @@ export type Proposal = {
   description: Scalars['String'];
   coolOffEndBlock: Scalars['Int'];
   endBlock: Scalars['Int'];
-  proposal: Scalars['String'];
+  proposal?: Maybe<Scalars['String']>;
   lastState: ProposalState;
   lastStateUpdatedAt: Scalars['Int'];
   totalVotes: Scalars['Int'];
@@ -950,11 +1061,6 @@ export enum ProposalOrderFields {
   EndBlock = 'endBlock',
   LastState = 'lastState',
   TotalVotes = 'totalVotes',
-}
-
-export enum Order {
-  Asc = 'ASC',
-  Desc = 'DESC',
 }
 
 export type ProposalVotesOrderByInput = {

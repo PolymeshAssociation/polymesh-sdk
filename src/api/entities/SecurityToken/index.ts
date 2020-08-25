@@ -1,4 +1,3 @@
-import { ApolloQueryResult } from 'apollo-client';
 import { AssetIdentifier, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
@@ -8,13 +7,12 @@ import {
   transferTokenOwnership,
   TransferTokenOwnershipParams,
 } from '~/api/procedures';
-import { Entity, PolymeshError, TransactionQueue } from '~/base';
+import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   Ensured,
-  ErrorCode,
   EventIdentifier,
   SubCallback,
   TokenIdentifier,
@@ -154,12 +152,16 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       divisible,
       owner_did,
       asset_type,
+      treasury_did,
     }: MeshSecurityToken): SecurityTokenDetails => ({
       assetType: assetTypeToString(asset_type),
       isDivisible: boolToBoolean(divisible),
       name: assetNameToString(name),
       owner: new Identity({ did: identityIdToString(owner_did) }, context),
       totalSupply: balanceToBigNumber(total_supply),
+      treasuryIdentity: treasury_did.isSome
+        ? new Identity({ did: identityIdToString(treasury_did.unwrap()) }, context)
+        : null,
     });
     /* eslint-enable @typescript-eslint/camelcase */
 
@@ -257,26 +259,15 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * @note this data is harvested from the chain and stored in a database, so there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async createdAt(): Promise<EventIdentifier | null> {
-    const {
-      context: { middlewareApi },
-      ticker,
-    } = this;
+    const { ticker, context } = this;
 
-    let result: ApolloQueryResult<Ensured<Query, 'eventByIndexedArgs'>>;
-    try {
-      result = await middlewareApi.query<Ensured<Query, 'eventByIndexedArgs'>>(
-        eventByIndexedArgs({
-          moduleId: ModuleIdEnum.Asset,
-          eventId: EventIdEnum.AssetCreated,
-          eventArg1: padString(ticker, MAX_TICKER_LENGTH),
-        })
-      );
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: `Error in middleware query: ${e.message}`,
-      });
-    }
+    const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+      eventByIndexedArgs({
+        moduleId: ModuleIdEnum.Asset,
+        eventId: EventIdEnum.AssetCreated,
+        eventArg1: padString(ticker, MAX_TICKER_LENGTH),
+      })
+    );
 
     if (result.data.eventByIndexedArgs) {
       // TODO remove null check once types fixed

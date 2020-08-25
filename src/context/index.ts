@@ -4,21 +4,27 @@ import { AccountInfo } from '@polkadot/types/interfaces';
 import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import stringToU8a from '@polkadot/util/string/toU8a';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
-import ApolloClient from 'apollo-client';
+import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { DidRecord, IdentityId, ProtocolOp, TxTag } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
+import { didsWithClaims } from '~/middleware/queries';
+import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   AccountBalance,
   ArrayTransactionArgument,
+  ClaimData,
+  ClaimType,
   CommonKeyring,
   ComplexTransactionArgument,
+  Ensured,
   ErrorCode,
   KeyringPair,
   PlainTransactionArgument,
+  ResultSet,
   Signer,
   SimpleEnumTransactionArgument,
   SubCallback,
@@ -26,12 +32,15 @@ import {
   TransactionArgumentType,
   UnsubCallback,
 } from '~/types';
+import { GraphqlQuery } from '~/types/internal';
 import {
   balanceToBigNumber,
+  calculateNextKey,
+  createClaim,
   identityIdToString,
   posRatioToBigNumber,
   signatoryToSigner,
-  stringToAccountKey,
+  stringToAccountId,
   stringToIdentityId,
   textToString,
   txTagToProtocolOp,
@@ -216,7 +225,7 @@ export class Context {
 
     try {
       identityIds = await identity.keyToIdentityIds(
-        stringToAccountKey(newCurrentPair.address, this)
+        stringToAccountId(newCurrentPair.address, this)
       );
 
       did = identityIds.unwrap().asUnique;
@@ -534,8 +543,8 @@ export class Context {
 
     const { did } = this.getCurrentIdentity();
 
-    const assembleResult = ({ signing_items: signingItems }: DidRecord): Signer[] => {
-      return signingItems.map(({ signer: rawSigner }) => signatoryToSigner(rawSigner));
+    const assembleResult = ({ signing_keys: signingKeys }: DidRecord): Signer[] => {
+      return signingKeys.map(({ signer: rawSigner }) => signatoryToSigner(rawSigner));
     };
 
     if (callback) {
@@ -544,6 +553,70 @@ export class Context {
 
     const didRecords = await identity.didRecords(did);
     return assembleResult(didRecords);
+  }
+
+  /**
+   * Retrieve a list of claims. Can be filtered using parameters
+   *
+   * @param opts.targets - identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
+   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   */
+  public async issuedClaims(
+    opts: {
+      targets?: (string | Identity)[];
+      trustedClaimIssuers?: (string | Identity)[];
+      claimTypes?: ClaimType[];
+      includeExpired?: boolean;
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<ClaimData>> {
+    const { targets, trustedClaimIssuers, claimTypes, includeExpired, size, start } = opts;
+
+    const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
+      didsWithClaims({
+        dids: targets?.map(target => valueToDid(target)),
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          valueToDid(trustedClaimIssuer)
+        ),
+        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        includeExpired,
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: {
+        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
+      },
+    } = result;
+    const data: ClaimData[] = [];
+
+    didsWithClaimsList.forEach(({ claims }) => {
+      claims.forEach(
+        ({ targetDID, issuer, issuance_date: issuanceDate, expiry, type, jurisdiction, scope }) => {
+          data.push({
+            target: new Identity({ did: targetDID }, this),
+            issuer: new Identity({ did: issuer }, this),
+            issuedAt: new Date(issuanceDate),
+            expiry: expiry ? new Date(expiry) : null,
+            claim: createClaim(type, jurisdiction, scope),
+          });
+        }
+      );
+    });
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**
@@ -562,5 +635,25 @@ export class Context {
     }
 
     return _middlewareApi;
+  }
+
+  /**
+   *
+   * @param query
+   */
+  public async queryMiddleware<Result extends Partial<Query>>(
+    query: GraphqlQuery<unknown>
+  ): Promise<ApolloQueryResult<Result>> {
+    let result: ApolloQueryResult<Result>;
+    try {
+      result = await this.middlewareApi.query(query);
+    } catch (e) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `Error in middleware query: ${e.message}`,
+      });
+    }
+
+    return result;
   }
 }
