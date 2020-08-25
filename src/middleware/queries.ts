@@ -207,7 +207,7 @@ export function tokensByTrustedClaimIssuer(
  */
 export function tokensHeldByDid(
   variables: QueryTokensHeldByDidArgs
-): GraphqlQuery<QueryTokensHeldByDidArgs | undefined> {
+): GraphqlQuery<QueryTokensHeldByDidArgs> {
   const query = gql`
     query TokensHeldByDidQuery($did: String!, $count: Int, $skip: Int, $order: Order) {
       tokensHeldByDid(did: $did, count: $count, skip: $skip, order: $order) {
