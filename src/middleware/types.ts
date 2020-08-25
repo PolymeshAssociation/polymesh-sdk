@@ -69,10 +69,8 @@ export type Query = {
   tokenTransfersFailed: Array<FailedTokenTransfer>;
   /** Get all authorizations with their status optionally filtered by did, account key or type */
   authorizations: Array<Authorization>;
-  /** Get the current vote results for given proposal hashes */
-  referendumVotes: VoteResult;
   /** Get the current vote results for given pipId */
-  referendumVotes2: VoteResult;
+  referendumVotes: VoteResult;
   /** Get a proposal by its pipId */
   proposal: Proposal;
   /** Get all proposals optionally filtered by pipId, proposer or state */
@@ -159,6 +157,7 @@ export type QueryDidsWithClaimsArgs = {
   scope?: Maybe<Scalars['String']>;
   trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
   claimTypes?: Maybe<Array<ClaimTypeEnum>>;
+  includeExpired?: Maybe<Scalars['Boolean']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
@@ -168,6 +167,7 @@ export type QueryIssuerDidsWithClaimsByTargetArgs = {
   scope?: Maybe<Scalars['String']>;
   trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
   claimTypes?: Maybe<Array<ClaimTypeEnum>>;
+  includeExpired?: Maybe<Scalars['Boolean']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
@@ -229,11 +229,6 @@ export type QueryAuthorizationsArgs = {
 };
 
 export type QueryReferendumVotesArgs = {
-  ayesHash: Scalars['String'];
-  naysHash: Scalars['String'];
-};
-
-export type QueryReferendumVotes2Args = {
   proposalId: Scalars['Int'];
 };
 
@@ -1040,7 +1035,7 @@ export type Proposal = {
   description: Scalars['String'];
   coolOffEndBlock: Scalars['Int'];
   endBlock: Scalars['Int'];
-  proposal: Scalars['String'];
+  proposal?: Maybe<Scalars['String']>;
   lastState: ProposalState;
   lastStateUpdatedAt: Scalars['Int'];
   totalVotes: Scalars['Int'];

@@ -45,13 +45,13 @@ import { ClaimOperation } from '~/types/internal';
 import {
   addressToKey,
   calculateNextKey,
-  createClaim,
   extrinsicIdentifierToTxTag,
   moduleAddressToString,
   stringToIdentityId,
   stringToTicker,
   textToString,
   tickerToString,
+  toIdentityWithClaimsArray,
   txTagToExtrinsicIdentifier,
   u32ToBigNumber,
   valueToDid,
@@ -594,26 +594,7 @@ export class Polymesh {
       },
     } = result;
 
-    const data = didsWithClaimsList.map(({ did, claims }) => ({
-      identity: new Identity({ did }, context),
-      claims: claims.map(
-        ({
-          targetDID,
-          issuer,
-          issuance_date: issuanceDate,
-          expiry,
-          type,
-          jurisdiction,
-          scope: claimScope,
-        }) => ({
-          target: new Identity({ did: targetDID }, context),
-          issuer: new Identity({ did: issuer }, context),
-          issuedAt: new Date(issuanceDate),
-          expiry: expiry ? new Date(expiry) : null,
-          claim: createClaim(type, jurisdiction, claimScope),
-        })
-      ),
-    }));
+    const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
 
     const next = calculateNextKey(count, size, start);
 

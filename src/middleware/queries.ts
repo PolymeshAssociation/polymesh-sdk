@@ -3,6 +3,7 @@ import gql from 'graphql-tag';
 import {
   QueryDidsWithClaimsArgs,
   QueryEventsByIndexedArgsArgs,
+  QueryIssuerDidsWithClaimsByTargetArgs,
   QueryProposalsArgs,
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
@@ -57,6 +58,7 @@ export function didsWithClaims(
       $scope: String
       $trustedClaimIssuers: [String!]
       $claimTypes: [ClaimTypeEnum!]
+      $includeExpired: Boolean
       $count: Int
       $skip: Int
     ) {
@@ -65,6 +67,7 @@ export function didsWithClaims(
         scope: $scope
         trustedClaimIssuers: $trustedClaimIssuers
         claimTypes: $claimTypes
+        includeExpired: $includeExpired
         count: $count
         skip: $skip
       ) {
@@ -265,6 +268,38 @@ export function scopesByIdentity(
         scope
         ticker
       }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get issuer dids with at least one claim for given target
+ */
+export function issuerDidsWithClaimsByTarget(
+  variables: QueryIssuerDidsWithClaimsByTargetArgs
+): GraphqlQuery<QueryIssuerDidsWithClaimsByTargetArgs> {
+  const query = gql`
+    query IssuerDidsWithClaimsByTargetQuery(
+      $target: String!
+      $scope: String
+      $trustedClaimIssuers: [String!]
+      $count: Int
+      $skip: Int
+    ) {
+      issuerDidsWithClaimsByTarget(
+        target: $target
+        scope: $scope
+        trustedClaimIssuers: $trustedClaimIssuers
+        count: $count
+        skip: $skip
+      )
     }
   `;
 
