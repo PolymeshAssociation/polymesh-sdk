@@ -470,6 +470,7 @@ export interface Signer {
 }
 
 export { TxTags } from 'polymesh-types/types';
+export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export * from '~/api/entities/types';
 export * from '~/base/types';
 export { Order } from '~/middleware/types';
