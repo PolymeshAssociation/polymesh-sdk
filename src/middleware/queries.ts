@@ -282,7 +282,7 @@ export function scopesByIdentity(
  */
 export function issuerDidsWithClaimsByTarget(
   variables: QueryIssuerDidsWithClaimsByTargetArgs
-): GraphqlQuery<QueryIssuerDidsWithClaimsByTargetArgs | undefined> {
+): GraphqlQuery<QueryIssuerDidsWithClaimsByTargetArgs> {
   const query = gql`
     query IssuerDidsWithClaimsByTargetQuery(
       $target: String!
