@@ -58,6 +58,7 @@ export function didsWithClaims(
       $scope: String
       $trustedClaimIssuers: [String!]
       $claimTypes: [ClaimTypeEnum!]
+      $includeExpired: Boolean
       $count: Int
       $skip: Int
     ) {
@@ -66,6 +67,7 @@ export function didsWithClaims(
         scope: $scope
         trustedClaimIssuers: $trustedClaimIssuers
         claimTypes: $claimTypes
+        includeExpired: $includeExpired
         count: $count
         skip: $skip
       ) {
