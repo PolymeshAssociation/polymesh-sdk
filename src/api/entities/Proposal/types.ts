@@ -3,37 +3,6 @@ import BigNumber from 'bignumber.js';
 import { Identity } from '~/api/entities';
 import { ProposalState } from '~/middleware/types';
 
-export interface CallArguments {
-  name: string;
-  value: string;
-}
-
-export interface Call {
-  args: CallArguments[];
-  functionalCall: string;
-  extrinsic: string;
-  module: string;
-}
-
-export interface Metadata {
-  proposer: Identity;
-  createdAt: Date;
-  endBlock: number;
-  description?: string;
-  url?: string;
-  coolOff: number;
-  lastStateUpdated: number;
-  ayesBonded: BigNumber;
-  naysBonded: BigNumber;
-  totalVotes: number;
-}
-
-export interface Proposal {
-  call: Call;
-  metadata: Metadata;
-  state: ProposalState;
-}
-
 export interface ProposalVote {
   identity: Identity;
   vote: boolean;
@@ -51,10 +20,25 @@ export enum ProposalStage {
   Ended = 'Ended',
 }
 
-export interface ProposalDetails {
-  state: ProposalState;
-  module: string;
+export interface Call {
   method: string;
+  module: string;
+}
+
+export interface ProposalDetails {
+  pipId: number;
+  proposer: string;
+  createdAt: number;
+  url: string;
+  description: string;
+  coolOffEndBlock: number;
+  endBlock: number;
+  call?: Call;
+  lastState: ProposalState;
+  lastStateUpdatedAt: number;
+  totalVotes: number;
+  totalAyesWeight: BigNumber;
+  totalNaysWeight: BigNumber;
 }
 
 export {

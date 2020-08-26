@@ -4,17 +4,21 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity, Proposal } from '~/api/entities';
-import { ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalDetails, ProposalState } from '~/api/entities/Proposal/types';
 import { createProposal } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { Governance } from '~/Governance';
 import { proposals } from '~/middleware/queries';
-import { Proposal as MiddlewareProposal } from '~/middleware/types';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
 import * as utilsModule from '~/utils';
+
+jest.mock(
+  '~/api/entities/Proposal',
+  require('~/testUtils/mocks/entities').mockProposalModule('~/api/entities/Proposal')
+);
 
 describe('Governance class', () => {
   let context: Mocked<Context>;
@@ -26,6 +30,7 @@ describe('Governance class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
     balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
     u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
   });
@@ -39,10 +44,12 @@ describe('Governance class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   describe('method: getGovernanceCommitteeMembers', () => {
@@ -71,28 +78,25 @@ describe('Governance class', () => {
   });
 
   describe('method: getProposals', () => {
-    test('should return a list of proposal entities', async () => {
+    test('should return a list of proposal entities with details', async () => {
       const pipId = 10;
       const proposerDid = 'someProposerDid';
-      const createdAt = 50800;
-      const coolOffPeriod = 100;
-      const proposalPeriodTimeFrame = 600;
-      const fakeResult = [new Proposal({ pipId }, context)];
-      const proposalsQueryResponse: MiddlewareProposal[] = [
+      const details = {
+        lastState: ProposalState.Referendum,
+        call: {
+          module: 'someModule',
+          method: 'someMethod',
+        },
+      };
+      entityMockUtils.configureMocks({
+        proposalOptions: {
+          getDetails: details as ProposalDetails,
+        },
+      });
+      const fakeResult = [{ proposal: new Proposal({ pipId }, context), details }];
+      const proposalsQueryResponse = [
         {
           pipId,
-          proposer: proposerDid,
-          createdAt,
-          url: 'http://someUrl',
-          description: 'some description',
-          coolOffEndBlock: createdAt + coolOffPeriod,
-          endBlock: createdAt + proposalPeriodTimeFrame,
-          proposal: '0x180500cc829c190000000000000000000000e8030000',
-          lastState: ProposalState.Referendum,
-          lastStateUpdatedAt: createdAt + proposalPeriodTimeFrame,
-          totalVotes: 0,
-          totalAyesWeight: 0,
-          totalNaysWeight: 0,
         },
       ];
 

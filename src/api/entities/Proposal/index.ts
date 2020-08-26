@@ -4,10 +4,10 @@ import { Identity } from '~/api/entities/Identity';
 import { cancelProposal, editProposal, EditProposalParams } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
+import { eventByIndexedArgs, proposal, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, ResultSet } from '~/types';
-import { meshProposalStateToProposalState, u32ToBigNumber, valueToDid } from '~/utils';
+import { meshProposalToCall, u32ToBigNumber, valueToDid } from '~/utils';
 
 import { ProposalDetails, ProposalStage, ProposalVote, ProposalVotesOrderByInput } from './types';
 
@@ -147,25 +147,46 @@ export class Proposal extends Entity<UniqueIdentifiers> {
    * Retrieve the proposal details
    */
   public async getDetails(): Promise<ProposalDetails> {
+    const { context, pipId } = this;
+
     const {
-      context: {
-        polymeshApi: {
-          query: { pips },
+      data: {
+        proposal: {
+          pipId: id,
+          proposer,
+          createdAt,
+          url,
+          description,
+          coolOffEndBlock,
+          endBlock,
+          proposal: rawProposal,
+          lastState,
+          lastStateUpdatedAt,
+          totalVotes,
+          totalAyesWeight,
+          totalNaysWeight,
         },
       },
-      pipId,
-    } = this;
-
-    const rawProposal = await pips.proposals(pipId);
-    const {
-      state,
-      proposal: { sectionName, methodName },
-    } = rawProposal.unwrap();
+    } = await context.queryMiddleware<Ensured<Query, 'proposal'>>(
+      proposal({
+        pipId,
+      })
+    );
 
     return {
-      state: meshProposalStateToProposalState(state),
-      module: sectionName,
-      method: methodName,
+      pipId: id,
+      proposer,
+      createdAt,
+      url,
+      description,
+      coolOffEndBlock,
+      endBlock,
+      call: rawProposal ? meshProposalToCall(rawProposal, context) : undefined,
+      lastState,
+      lastStateUpdatedAt,
+      totalVotes,
+      totalAyesWeight: new BigNumber(totalAyesWeight),
+      totalNaysWeight: new BigNumber(totalNaysWeight),
     };
   }
 

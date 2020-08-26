@@ -14,7 +14,13 @@ import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { proposals } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, SubCallback, TransactionArgument, UnsubCallback } from '~/types';
+import {
+  Ensured,
+  ProposalWithDetails,
+  SubCallback,
+  TransactionArgument,
+  UnsubCallback,
+} from '~/types';
 import { balanceToBigNumber, identityIdToString, u32ToBigNumber, valueToDid } from '~/utils';
 
 /**
@@ -58,7 +64,9 @@ export class Governance {
   }
 
   /**
-   * Retrieve a list of proposals. Can be filtered using parameters
+   * Retrieve a list of proposals and their respective details. Can be filtered using parameters
+   *
+   * @note details for a single proposal can be fetched using the `Proposal` entity's `getDetails` method
    *
    * @param opts.proposers - identities (or identity IDs) for which to fetch proposals. Defaults to all proposers
    * @param opts.states - state of the proposal
@@ -74,7 +82,7 @@ export class Governance {
       size?: number;
       start?: number;
     } = {}
-  ): Promise<Proposal[]> {
+  ): Promise<ProposalWithDetails[]> {
     const { context } = this;
 
     const { proposers, states, orderBy, size, start } = opts;
@@ -89,7 +97,17 @@ export class Governance {
       })
     );
 
-    return result.data.proposals.map(({ pipId }) => new Proposal({ pipId }, context));
+    const proposalsWithDetails = await Promise.all(
+      result.data.proposals.map(async ({ pipId }) => {
+        const proposal = new Proposal({ pipId }, context);
+        return {
+          proposal,
+          details: await proposal.getDetails(),
+        };
+      })
+    );
+
+    return proposalsWithDetails;
   }
 
   /**

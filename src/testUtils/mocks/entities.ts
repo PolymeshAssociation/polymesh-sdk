@@ -200,10 +200,12 @@ let authorizationRequestOptions = defaultAuthorizationRequestOptions;
 const defaultProposalOptions: ProposalOptions = {
   pipId: 1,
   getDetails: {
-    state: ProposalState.Referendum,
-    module: 'someModule',
-    method: 'someMethod',
-  },
+    lastState: ProposalState.Referendum,
+    call: {
+      module: 'someModule',
+      method: 'someMethod',
+    },
+  } as ProposalDetails,
   getStage: ProposalStage.Open,
 };
 let proposalOptions = defaultProposalOptions;

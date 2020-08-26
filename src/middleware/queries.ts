@@ -4,6 +4,7 @@ import {
   QueryDidsWithClaimsArgs,
   QueryEventsByIndexedArgsArgs,
   QueryIssuerDidsWithClaimsByTargetArgs,
+  QueryProposalArgs,
   QueryProposalsArgs,
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
@@ -324,6 +325,38 @@ export function issuerDidsWithClaimsByTarget(
         count: $count
         skip: $skip
       )
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get a proposal by its pipId
+ */
+export function proposal(variables: QueryProposalArgs): GraphqlQuery<QueryProposalArgs> {
+  const query = gql`
+    query ProposalQuery($pipId: Int!) {
+      proposal(pipId: $pipId) {
+        pipId
+        proposer
+        createdAt
+        url
+        description
+        coolOffEndBlock
+        endBlock
+        proposal
+        lastState
+        lastStateUpdatedAt
+        totalVotes
+        totalAyesWeight
+        totalNaysWeight
+      }
     }
   `;
 

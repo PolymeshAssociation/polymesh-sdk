@@ -3,7 +3,8 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities';
+import { Identity, Proposal } from '~/api/entities';
+import { ProposalDetails } from '~/api/entities/Proposal/types';
 
 export enum TransactionStatus {
   /**
@@ -467,6 +468,11 @@ export type TransactionArgument = {
 export interface Signer {
   type: SignerType;
   value: string;
+}
+
+export interface ProposalWithDetails {
+  proposal: Proposal;
+  details: ProposalDetails;
 }
 
 export { TxTags } from 'polymesh-types/types';

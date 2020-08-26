@@ -1,5 +1,4 @@
 import { u32 } from '@polkadot/types';
-import { Call } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -8,7 +7,7 @@ import { ProposalStage } from '~/api/entities/Proposal/types';
 import { cancelProposal, editProposal } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
+import { eventByIndexedArgs, proposal as queryProposal, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, ProposalState } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
@@ -169,26 +168,53 @@ describe('Proposal class', () => {
 
   describe('method: getDetails', () => {
     test('should return the proposal details', async () => {
-      const fakeState = ProposalState.Pending;
-      const mockState = dsMockUtils.createMockProposalState('Pending');
+      const totalAyesWeight = new BigNumber(10);
+      const totalNaysWeight = new BigNumber(20);
+      const rawProposal = '0x110000';
+      const variables = { pipId };
+      const fakeCall = { method: 'disbursement', module: 'treasury' };
+      const fakeProposal = {
+        pipId,
+        proposer: 'someProposer',
+        createdAt: 150000,
+        url: 'http://someUrl',
+        description: 'some description',
+        coolOffEndBlock: 160000,
+        endBlock: 165000,
+        lastState: ProposalState.Pending,
+        lastStateUpdatedAt: 163000,
+        totalVotes: 0,
+        totalAyesWeight: totalAyesWeight.toNumber(),
+        totalNaysWeight: totalNaysWeight.toNumber(),
+      };
 
-      sinon
-        .stub(utilsModule, 'meshProposalStateToProposalState')
-        .withArgs(mockState)
-        .returns(fakeState);
-
-      dsMockUtils.createQueryStub('pips', 'proposals', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockPip({
-            id: dsMockUtils.createMockU32(),
-            proposal: ('proposal' as unknown) as Call,
-            state: mockState,
-          })
-        ),
+      dsMockUtils.createApolloQueryStub(queryProposal(variables), {
+        proposal: { ...fakeProposal, proposal: rawProposal },
       });
 
-      const result = await proposal.getDetails();
-      expect(result.state).toEqual(fakeState);
+      sinon
+        .stub(utilsModule, 'meshProposalToCall')
+        .withArgs(rawProposal, context)
+        .returns(fakeCall);
+
+      let result = await proposal.getDetails();
+      expect(result).toEqual({
+        ...fakeProposal,
+        totalAyesWeight,
+        totalNaysWeight,
+        call: fakeCall,
+      });
+
+      dsMockUtils.createApolloQueryStub(queryProposal(variables), {
+        proposal: { ...fakeProposal },
+      });
+
+      result = await proposal.getDetails();
+      expect(result).toEqual({
+        ...fakeProposal,
+        totalAyesWeight,
+        totalNaysWeight,
+      });
     });
   });
 

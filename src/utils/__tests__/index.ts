@@ -86,6 +86,7 @@ import {
   meshClaimToClaim,
   meshPermissionToPermission,
   meshProposalStateToProposalState,
+  meshProposalToCall,
   moduleAddressToString,
   momentToDate,
   numberToBalance,
@@ -2416,6 +2417,38 @@ describe('toIdentityWithClaimsArray', () => {
 
     const result = toIdentityWithClaimsArray(fakeMiddlewareIdentityWithClaims, context);
 
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('meshProposalToCall', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshProposalToCall should convert a hexa string to a Call object', () => {
+    const hexa = '0x110000';
+    const fakeResult = { method: 'disbursement', module: 'treasury' };
+    const mockResult = {
+      methodName: fakeResult.method,
+      sectionName: fakeResult.module,
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Proposal', hexa)
+      .returns(mockResult);
+
+    const result = meshProposalToCall(hexa, context);
     expect(result).toEqual(fakeResult);
   });
 });
