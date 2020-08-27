@@ -152,7 +152,6 @@ export function unserialize<UniqueIdentifiers extends object>(id: string): Uniqu
 }
 
 /**
- * @hidden
  * Generate a Security Token's DID from a ticker
  */
 export function tickerToDid(ticker: string): string {
@@ -1084,6 +1083,8 @@ export function assetTransferRulesResultToRuleCompliance(
 }
 
 /**
+ * @hidden
+ *
  * Unwrap a Post Transaction Value
  */
 export function unwrapValue<T extends unknown>(value: MaybePostTransactionValue<T>): T {
@@ -1095,6 +1096,8 @@ export function unwrapValue<T extends unknown>(value: MaybePostTransactionValue<
 }
 
 /**
+ * @hidden
+ *
  * Unwrap all Post Transaction Values present in a tuple
  */
 export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactionValue<T>): T {
@@ -1162,6 +1165,8 @@ export function addressToKey(address: string): string {
 }
 
 /**
+ * @hidden
+ *
  * Makes an entries request to the chain. If pagination options are supplied,
  * the request will be paginated. Otherwise, all entries will be requested at once
  */
@@ -1201,6 +1206,8 @@ export async function requestPaginated<F extends AnyFunction>(
 }
 
 /**
+ * @hidden
+ *
  * Makes a request to the chain. If a block hash is supplied,
  * the request will be made at that block. Otherwise, the most recent block will be queried
  */
@@ -1221,6 +1228,8 @@ export async function requestAtBlock<F extends AnyFunction>(
 }
 
 /**
+ * @hidden
+ *
  * Separates an array into smaller batches
  *
  * @param args - elements to separate
@@ -1270,6 +1279,8 @@ export function batchArguments<Args>(
 }
 
 /**
+ * @hidden
+ *
  * Calculates next page number for paginated GraphQL ResultSet.
  * Returns null if there is no next page.
  *
