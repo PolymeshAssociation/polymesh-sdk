@@ -2,6 +2,8 @@ import { Entity } from '~/base';
 import { Context } from '~/context';
 
 /**
+ * @hidden
+ *
  * Represents a namespace within an Entity with the purpose of grouping related functionality
  */
 export class Namespace<Parent extends Entity<{}>> {

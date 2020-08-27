@@ -25,6 +25,7 @@ interface AddTransactionOpts<Values extends unknown[]> {
 
 /**
  * @hidden
+ *
  * Represents an operation performed on the Polymesh blockchain.
  * A Procedure can be prepared to yield a [[TransactionQueue]] that can be run
  */

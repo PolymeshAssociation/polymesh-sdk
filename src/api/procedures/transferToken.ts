@@ -10,6 +10,9 @@ export interface TransferTokenParams {
   amount: BigNumber;
 }
 
+/**
+ * @hidden
+ */
 export type Params = TransferTokenParams & {
   ticker: string;
 };
@@ -63,4 +66,7 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 
+/**
+ * @hidden
+ */
 export const transferToken = new Procedure(prepareTransferToken, getRequiredRoles);

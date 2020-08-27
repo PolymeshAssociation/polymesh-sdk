@@ -17,6 +17,9 @@ export interface ModifyTokenTrustedClaimIssuersParams {
   claimIssuerIdentities: (string | Identity)[];
 }
 
+/**
+ * @hidden
+ */
 export type Params = ModifyTokenTrustedClaimIssuersParams & {
   ticker: string;
   operation: TrustedClaimIssuerOperation;
@@ -145,6 +148,9 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 
+/**
+ * @hidden
+ */
 export const modifyTokenTrustedClaimIssuers = new Procedure(
   prepareModifyTokenTrustedClaimIssuers,
   getRequiredRoles

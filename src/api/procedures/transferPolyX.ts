@@ -83,4 +83,7 @@ export async function prepareTransferPolyX(
   this.addTransaction(tx.balances.transfer, {}, to, numberToBalance(amount, context));
 }
 
+/**
+ * @hidden
+ */
 export const transferPolyX = new Procedure(prepareTransferPolyX);

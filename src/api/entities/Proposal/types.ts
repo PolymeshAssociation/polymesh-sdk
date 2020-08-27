@@ -28,12 +28,6 @@ export interface Metadata {
   totalVotes: number;
 }
 
-export interface Proposal {
-  call: Call;
-  metadata: Metadata;
-  state: ProposalState;
-}
-
 export interface ProposalVote {
   identity: Identity;
   vote: boolean;

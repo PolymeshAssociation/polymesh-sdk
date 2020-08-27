@@ -77,4 +77,7 @@ export async function isAuthorized(this: Procedure<RemoveSigningKeysParams>): Pr
   return masterKey === context.getCurrentPair().address;
 }
 
+/**
+ * @hidden
+ */
 export const removeSigningKeys = new Procedure(prepareRemoveSigningKeys, isAuthorized);
