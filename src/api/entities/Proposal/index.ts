@@ -1,7 +1,13 @@
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities/Identity';
-import { cancelProposal, editProposal, EditProposalParams } from '~/api/procedures';
+import {
+  cancelProposal,
+  editProposal,
+  EditProposalParams,
+  voteProposal,
+  VoteProposalParams,
+} from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
@@ -206,5 +212,16 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     }
 
     return ProposalStage.Ended;
+  }
+
+  /**
+   * Vote the proposal
+   *
+   * @param args.vote - the actual vote. True for aye and false for nay
+   * @param args.deposit - minimum deposit value
+   */
+  public async vote(args: VoteProposalParams): Promise<TransactionQueue<void>> {
+    const { context, pipId } = this;
+    return voteProposal.prepare({ pipId, ...args }, context);
   }
 }
