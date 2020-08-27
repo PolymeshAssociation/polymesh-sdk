@@ -6,11 +6,17 @@ import { Context } from '~/context';
 import { ErrorCode, Fees, TransactionQueueStatus } from '~/types';
 import { MaybePostTransactionValue, TransactionSpec } from '~/types/internal';
 
+/**
+ * @hidden
+ */
 enum Events {
   StatusChange = 'StatusChange',
   TransactionStatusChange = 'TransactionStatusChange',
 }
 
+/**
+ * @hidden
+ */
 type PolymeshTransactionArray<TransactionArgs extends unknown[][]> = {
   [K in keyof TransactionArgs]: TransactionArgs[K] extends TransactionArgs[number]
     ? PolymeshTransaction<TransactionArgs[K]>

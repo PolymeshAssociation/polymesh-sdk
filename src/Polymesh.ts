@@ -1,7 +1,3 @@
-/**
- * @packageDocumentation
- * @module polymesh
- */
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';

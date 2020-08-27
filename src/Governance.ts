@@ -1,7 +1,3 @@
-/**
- * @packageDocumentation
- * @module governance
- */
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { BlockNumber } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';

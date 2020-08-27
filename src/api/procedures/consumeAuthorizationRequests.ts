@@ -8,10 +8,16 @@ export interface ConsumeParams {
   accept: boolean;
 }
 
+/**
+ * @hidden
+ */
 export type ConsumeAuthorizationRequestsParams = ConsumeParams & {
   authRequests: AuthorizationRequest[];
 };
 
+/**
+ * @hidden
+ */
 const isLive = ({ expiry }: AuthorizationRequest): boolean =>
   expiry === null || expiry > new Date();
 
@@ -76,6 +82,9 @@ export function isAuthorized(
   });
 }
 
+/**
+ * @hidden
+ */
 export const consumeAuthorizationRequests = new Procedure(
   prepareConsumeAuthorizationRequests,
   isAuthorized

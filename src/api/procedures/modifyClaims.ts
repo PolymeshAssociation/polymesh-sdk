@@ -174,4 +174,7 @@ export function getRequiredRoles({ claims }: ModifyClaimsParams): Role[] {
   return [];
 }
 
+/**
+ * @hidden
+ */
 export const modifyClaims = new Procedure(prepareModifyClaims, getRequiredRoles);
