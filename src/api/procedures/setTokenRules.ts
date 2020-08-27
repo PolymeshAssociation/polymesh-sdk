@@ -9,6 +9,9 @@ export interface SetTokenRulesParams {
   rules: Condition[][];
 }
 
+/**
+ * @hidden
+ */
 export type Params = SetTokenRulesParams & {
   ticker: string;
 };
@@ -84,4 +87,7 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 
+/**
+ * @hidden
+ */
 export const setTokenRules = new Procedure(prepareSetTokenRules, getRequiredRoles);

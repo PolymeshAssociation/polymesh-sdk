@@ -7,6 +7,9 @@ export interface ToggleFreezeTransfersParams {
   freeze: boolean;
 }
 
+/**
+ * @hidden
+ */
 export type Params = ToggleFreezeTransfersParams & {
   ticker: string;
 };
@@ -62,4 +65,7 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 
+/**
+ * @hidden
+ */
 export const toggleFreezeTransfers = new Procedure(prepareToggleFreezeTransfers, getRequiredRoles);

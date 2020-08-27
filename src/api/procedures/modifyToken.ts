@@ -8,6 +8,9 @@ export type ModifyTokenParams =
   | { makeDivisible: true; name?: string; fundingRound?: string }
   | { makeDivisible?: true; name?: string; fundingRound: string };
 
+/**
+ * @hidden
+ */
 export type Params = { ticker: string } & ModifyTokenParams;
 
 /**
@@ -95,4 +98,7 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 
+/**
+ * @hidden
+ */
 export const modifyToken = new Procedure(prepareModifyToken, getRequiredRoles);

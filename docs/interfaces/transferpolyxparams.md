@@ -1,0 +1,28 @@
+# Interface: TransferPolyXParams
+
+## Hierarchy
+
+* **TransferPolyXParams**
+
+## Index
+
+### Properties
+
+* [amount](transferpolyxparams.md#amount)
+* [to](transferpolyxparams.md#to)
+
+## Properties
+
+###  amount
+
+• **amount**: *BigNumber*
+
+*Defined in [src/api/procedures/transferPolyX.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/api/procedures/transferPolyX.ts#L11)*
+
+___
+
+###  to
+
+• **to**: *string*
+
+*Defined in [src/api/procedures/transferPolyX.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/api/procedures/transferPolyX.ts#L10)*

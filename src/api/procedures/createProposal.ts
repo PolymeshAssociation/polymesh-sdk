@@ -120,4 +120,7 @@ export function getRequiredRoles(): Role[] {
   return [];
 }
 
+/**
+ * @hidden
+ */
 export const createProposal = new Procedure(prepareCreateProposal, getRequiredRoles);

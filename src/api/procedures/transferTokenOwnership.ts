@@ -8,6 +8,9 @@ export interface TransferTokenOwnershipParams {
   expiry?: Date;
 }
 
+/**
+ * @hidden
+ */
 export type Params = { ticker: string } & TransferTokenOwnershipParams;
 
 /**
@@ -50,6 +53,9 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 
+/**
+ * @hidden
+ */
 export const transferTokenOwnership = new Procedure(
   prepareTransferTokenOwnership,
   getRequiredRoles

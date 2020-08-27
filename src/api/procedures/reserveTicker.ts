@@ -98,4 +98,7 @@ export function getRequiredRoles({ ticker, extendPeriod }: ReserveTickerParams):
   return extendPeriod ? [{ type: RoleType.TickerOwner, ticker }] : [];
 }
 
+/**
+ * @hidden
+ */
 export const reserveTicker = new Procedure(prepareReserveTicker, getRequiredRoles);

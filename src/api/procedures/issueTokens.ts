@@ -11,6 +11,10 @@ import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils
 export interface IssueTokensParams {
   issuanceData: IssuanceData[];
 }
+
+/**
+ * @hidden
+ */
 export type Params = IssueTokensParams & {
   ticker: string;
 };
@@ -120,4 +124,7 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 
+/**
+ * @hidden
+ */
 export const issueTokens = new Procedure(prepareIssueTokens, getRequiredRoles);
