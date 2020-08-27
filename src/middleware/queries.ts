@@ -8,6 +8,7 @@ import {
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
   QueryTokensByTrustedClaimIssuerArgs,
+  QueryTokensHeldByDidArgs,
   QueryTransactionsArgs,
 } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
@@ -193,6 +194,29 @@ export function tokensByTrustedClaimIssuer(
   const query = gql`
     query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!, $order: Order) {
       tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid, order: $order)
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get all tickers of tokens that were held at some point by the given did
+ */
+export function tokensHeldByDid(
+  variables: QueryTokensHeldByDidArgs
+): GraphqlQuery<QueryTokensHeldByDidArgs> {
+  const query = gql`
+    query TokensHeldByDidQuery($did: String!, $count: Int, $skip: Int, $order: Order) {
+      tokensHeldByDid(did: $did, count: $count, skip: $skip, order: $order) {
+        totalCount
+        items
+      }
     }
   `;
 
