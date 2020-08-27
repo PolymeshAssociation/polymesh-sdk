@@ -14,7 +14,7 @@
 
 • **CoolOff**: = "CoolOff"
 
-*Defined in [src/api/entities/Proposal/types.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/555a252/src/api/entities/Proposal/types.ts#L49)*
+*Defined in [src/api/entities/Proposal/types.ts:43](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/api/entities/Proposal/types.ts#L43)*
 
 ___
 
@@ -22,7 +22,7 @@ ___
 
 • **Ended**: = "Ended"
 
-*Defined in [src/api/entities/Proposal/types.ts:51](https://github.com/PolymathNetwork/polymesh-sdk/blob/555a252/src/api/entities/Proposal/types.ts#L51)*
+*Defined in [src/api/entities/Proposal/types.ts:45](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/api/entities/Proposal/types.ts#L45)*
 
 ___
 
@@ -30,4 +30,4 @@ ___
 
 • **Open**: = "Open"
 
-*Defined in [src/api/entities/Proposal/types.ts:50](https://github.com/PolymathNetwork/polymesh-sdk/blob/555a252/src/api/entities/Proposal/types.ts#L50)*
+*Defined in [src/api/entities/Proposal/types.ts:44](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/api/entities/Proposal/types.ts#L44)*
