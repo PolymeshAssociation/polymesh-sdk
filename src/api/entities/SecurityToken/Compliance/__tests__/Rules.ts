@@ -367,11 +367,11 @@ describe('Rules class', () => {
       stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
       context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance();
       rules = new Rules(token, context);
-      currentDid = context.getCurrentIdentity().did;
+      ({ did: currentDid } = await context.getCurrentIdentity());
 
       rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
       rawToDid = dsMockUtils.createMockIdentityId(toDid);

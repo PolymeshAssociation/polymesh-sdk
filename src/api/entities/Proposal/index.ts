@@ -61,7 +61,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     if (args) {
       identity = valueToDid(args.did);
     } else {
-      identity = context.getCurrentIdentity().did;
+      ({ did: identity } = await context.getCurrentIdentity());
     }
 
     const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(

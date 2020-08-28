@@ -7,7 +7,7 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
-import { DidRecord, IdentityId, ProtocolOp, TxTag } from 'polymesh-types/types';
+import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
@@ -48,16 +48,11 @@ import {
 } from '~/utils';
 import { ROOT_TYPES } from '~/utils/constants';
 
-interface SignerData {
-  currentPair: KeyringPair;
-  did: IdentityId;
-}
-
 interface ConstructorParams {
   polymeshApi: ApiPromise;
   middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   keyring: CommonKeyring;
-  pair?: SignerData;
+  pair?: KeyringPair;
 }
 
 interface AccountData {
@@ -78,8 +73,6 @@ export class Context {
   public polymeshApi: ApiPromise;
 
   public currentPair?: KeyringPair;
-
-  private currentIdentity?: Identity;
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
@@ -106,8 +99,7 @@ export class Context {
     this.keyring = keyring;
 
     if (pair) {
-      this.currentPair = pair.currentPair;
-      this.currentIdentity = new Identity({ did: pair.did.toString() }, this);
+      this.currentPair = pair;
     }
   }
 
@@ -166,24 +158,12 @@ export class Context {
     }
 
     if (currentPair) {
-      try {
-        const identityIds = await polymeshApi.query.identity.keyToIdentityIds(
-          currentPair.publicKey
-        );
-        const did = identityIds.unwrap().asUnique;
-
-        return new Context({
-          polymeshApi,
-          middlewareApi,
-          keyring,
-          pair: { currentPair, did },
-        });
-      } catch (err) {
-        throw new PolymeshError({
-          code: ErrorCode.IdentityNotPresent,
-          message: 'There is no Identity associated to this account',
-        });
-      }
+      return new Context({
+        polymeshApi,
+        middlewareApi,
+        keyring,
+        pair: currentPair,
+      });
     }
 
     return new Context({ polymeshApi, middlewareApi, keyring });
@@ -203,16 +183,9 @@ export class Context {
    * Set a pair as the current account keyring pair
    */
   public async setPair(address: string): Promise<void> {
-    const {
-      keyring,
-      polymeshApi: {
-        query: { identity },
-      },
-    } = this;
+    const { keyring } = this;
 
     let newCurrentPair;
-    let identityIds;
-    let did;
 
     try {
       newCurrentPair = keyring.getPair(address);
@@ -223,21 +196,7 @@ export class Context {
       });
     }
 
-    try {
-      identityIds = await identity.keyToIdentityIds(
-        stringToAccountId(newCurrentPair.address, this)
-      );
-
-      did = identityIds.unwrap().asUnique;
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.IdentityNotPresent,
-        message: 'There is no Identity associated to this account',
-      });
-    }
-
     this.currentPair = newCurrentPair;
-    this.currentIdentity = new Identity({ did: identityIdToString(did) }, this);
   }
 
   public accountBalance(accountId?: string): Promise<AccountBalance>;
@@ -299,17 +258,34 @@ export class Context {
    *
    * @throws if there is no identity associated to the current account (or there is no current account associated to the SDK instance)
    */
-  public getCurrentIdentity(): Identity {
-    const { currentIdentity } = this;
+  public async getCurrentIdentity(): Promise<Identity> {
+    const {
+      currentPair,
+      polymeshApi: {
+        query: { identity },
+      },
+    } = this;
 
-    if (!currentIdentity) {
+    if (!currentPair) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'There is no account associated with the SDK',
+      });
+    }
+
+    try {
+      const identityIdWrapper = await identity.keyToIdentityIds(
+        stringToAccountId(currentPair.address, this)
+      );
+      const did = identityIdToString(identityIdWrapper.unwrap().asUnique);
+
+      return new Identity({ did }, this);
+    } catch (err) {
       throw new PolymeshError({
         code: ErrorCode.IdentityNotPresent,
         message: 'The current account does not have an associated identity',
       });
     }
-
-    return currentIdentity;
   }
 
   /**
@@ -541,7 +517,7 @@ export class Context {
       },
     } = this;
 
-    const { did } = this.getCurrentIdentity();
+    const { did } = await this.getCurrentIdentity();
 
     const assembleResult = ({ signing_keys: signingKeys }: DidRecord): Signer[] => {
       return signingKeys.map(({ signer: rawSigner }) => signatoryToSigner(rawSigner));
