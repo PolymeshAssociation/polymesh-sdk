@@ -17,7 +17,7 @@
 
 • **amount**: *BigNumber*
 
-*Defined in [src/api/procedures/transferPolyX.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/api/procedures/transferPolyX.ts#L11)*
+*Defined in [src/api/procedures/transferPolyX.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/procedures/transferPolyX.ts#L11)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **to**: *string*
 
-*Defined in [src/api/procedures/transferPolyX.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/api/procedures/transferPolyX.ts#L10)*
+*Defined in [src/api/procedures/transferPolyX.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/procedures/transferPolyX.ts#L10)*

@@ -208,6 +208,23 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Check whether this Identity is a cdd provider
+   */
+  public async isCddProvider(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { cddServiceProviders },
+        },
+      },
+      did,
+    } = this;
+
+    const activeMembers = await cddServiceProviders.activeMembers();
+    return activeMembers.map(identityIdToString).includes(did);
+  }
+
+  /**
    * Retrieve the master key associated with the identity
    *
    * @note can be subscribed to

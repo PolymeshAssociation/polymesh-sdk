@@ -328,6 +328,25 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: isCddProvider', () => {
+    test('should return whether the Identity is cdd provider', async () => {
+      const did = 'someDid';
+      const rawDid = dsMockUtils.createMockIdentityId(did);
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      identityIdToStringStub.withArgs(rawDid).returns(did);
+
+      dsMockUtils
+        .createQueryStub('cddServiceProviders', 'activeMembers')
+        .resolves([rawDid, dsMockUtils.createMockIdentityId('otherDid')]);
+
+      const result = await identity.isCddProvider();
+
+      expect(result).toBeTruthy();
+    });
+  });
+
   describe('method: getCddClaims', () => {
     test('should return a list of cdd claims', async () => {
       const did = 'someDid';
