@@ -44,6 +44,8 @@ describe('modifyClaims procedure', () => {
   let rawOtherDid: IdentityId;
   let rawExpiry: Moment;
 
+  const includeExpired = true;
+
   beforeAll(() => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
@@ -165,6 +167,7 @@ describe('modifyClaims procedure', () => {
       didsWithClaims({
         trustedClaimIssuers: [mockContext.getCurrentIdentity().did],
         dids: [someDid, otherDid],
+        includeExpired,
         count: 2,
       }),
       {
@@ -201,6 +204,7 @@ describe('modifyClaims procedure', () => {
       didsWithClaims({
         trustedClaimIssuers: [mockContext.getCurrentIdentity().did],
         dids: [someDid, otherDid],
+        includeExpired,
         count: 2,
       }),
       {
@@ -231,6 +235,7 @@ describe('modifyClaims procedure', () => {
       didsWithClaims({
         trustedClaimIssuers: [mockContext.getCurrentIdentity().did],
         dids: [someDid, otherDid],
+        includeExpired,
         count: 2,
       }),
       {

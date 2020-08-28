@@ -101,6 +101,7 @@ export async function prepareModifyClaims(
       didsWithClaims({
         dids: allTargets,
         trustedClaimIssuers: [context.getCurrentIdentity().did],
+        includeExpired: true,
         count: allTargets.length,
       })
     );

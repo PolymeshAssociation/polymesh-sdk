@@ -558,6 +558,7 @@ export class Polymesh {
    * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
    * @param opts.scope - scope of the claims to fetch. Defaults to any scope
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
+   * @param opts.includeExpired - default to true
    * @param opts.size - page size
    * @param opts.start - page offset
    */
@@ -567,13 +568,14 @@ export class Polymesh {
       trustedClaimIssuers?: (string | Identity)[];
       scope?: string;
       claimTypes?: ClaimType[];
+      includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = {}
+    } = { includeExpired: true }
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
 
-    const { targets, trustedClaimIssuers, scope, claimTypes, size, start } = opts;
+    const { targets, trustedClaimIssuers, scope, claimTypes, includeExpired, size, start } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
@@ -583,6 +585,7 @@ export class Polymesh {
           valueToDid(trustedClaimIssuer)
         ),
         claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        includeExpired,
         count: size,
         skip: start,
       })

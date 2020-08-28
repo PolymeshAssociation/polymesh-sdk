@@ -542,6 +542,7 @@ describe('Identity class', () => {
           target: did,
           scope: undefined,
           trustedClaimIssuers: [did],
+          includeExpired: false,
           count: 1,
           skip: undefined,
         }),
@@ -552,6 +553,7 @@ describe('Identity class', () => {
 
       let result = await identity.getClaims({
         trustedClaimIssuers: [did],
+        includeExpired: false,
         size: 1,
       });
 
@@ -564,6 +566,7 @@ describe('Identity class', () => {
           target: did,
           scope: undefined,
           trustedClaimIssuers: undefined,
+          includeExpired: true,
           count: undefined,
           skip: undefined,
         }),
