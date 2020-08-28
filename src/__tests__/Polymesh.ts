@@ -502,8 +502,12 @@ describe('Polymesh Class', () => {
       });
 
       const context = dsMockUtils.getContextInstance();
+      const [result, currentIdentity] = await Promise.all([
+        polymesh.getIdentity(),
+        context.getCurrentIdentity(),
+      ]);
 
-      expect(polymesh.getIdentity()).toEqual(context.getCurrentIdentity());
+      expect(result).toEqual(currentIdentity);
     });
 
     test('should return an identity object with the passed did', async () => {
@@ -514,7 +518,7 @@ describe('Polymesh Class', () => {
 
       const params = { did: 'testDid' };
 
-      const result = polymesh.getIdentity(params);
+      const result = await polymesh.getIdentity(params);
       const context = dsMockUtils.getContextInstance();
 
       expect(result).toMatchObject(new Identity(params, context));

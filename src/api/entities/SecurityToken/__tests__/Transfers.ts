@@ -161,7 +161,7 @@ describe('Transfers class', () => {
     });
 
     test('should return a status value representing whether the transaction can be made from the current identity', async () => {
-      const currentDid = mockContext.getCurrentIdentity().did;
+      const { did: currentDid } = await mockContext.getCurrentIdentity();
 
       const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
       const rawDummyAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);

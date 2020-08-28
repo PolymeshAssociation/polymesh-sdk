@@ -146,7 +146,7 @@ export class Rules extends Namespace<SecurityToken> {
     from?: string | Identity;
     to: string | Identity;
   }): Promise<RuleCompliance> {
-    const { from = this.context.getCurrentIdentity(), to } = args;
+    const { from = await this.context.getCurrentIdentity(), to } = args;
     return this._checkTransfer({ from, to });
   }
 

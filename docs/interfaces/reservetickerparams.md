@@ -17,7 +17,7 @@
 
 • **extendPeriod**? : *undefined | false | true*
 
-*Defined in [src/api/procedures/reserveTicker.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/api/procedures/reserveTicker.ts#L12)*
+*Defined in [src/api/procedures/reserveTicker.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/7a4dc5b/src/api/procedures/reserveTicker.ts#L12)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **ticker**: *string*
 
-*Defined in [src/api/procedures/reserveTicker.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/api/procedures/reserveTicker.ts#L11)*
+*Defined in [src/api/procedures/reserveTicker.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/7a4dc5b/src/api/procedures/reserveTicker.ts#L11)*

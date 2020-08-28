@@ -226,17 +226,19 @@ export class Identity extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const { did } = context.getCurrentIdentity();
+    const { did } = await context.getCurrentIdentity();
 
     const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
       return accountIdToString(masterKey);
     };
 
+    const rawDid = stringToIdentityId(did, context);
+
     if (callback) {
-      return identity.didRecords(did, records => callback(assembleResult(records)));
+      return identity.didRecords(rawDid, records => callback(assembleResult(records)));
     }
 
-    const didRecords = await identity.didRecords(did);
+    const didRecords = await identity.didRecords(rawDid);
     return assembleResult(didRecords);
   }
 
