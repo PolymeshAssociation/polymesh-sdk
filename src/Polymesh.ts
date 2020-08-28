@@ -320,7 +320,7 @@ export class Polymesh {
     if (args) {
       identity = valueToDid(args.did);
     } else {
-      identity = context.getCurrentIdentity().did;
+      ({ did: identity } = await context.getCurrentIdentity());
     }
 
     const entries = await query.asset.assetOwnershipRelations.entries(
@@ -369,7 +369,7 @@ export class Polymesh {
   /**
    * Create an identity instance from a DID. If no DID is passed, the current identity is returned
    */
-  public getIdentity(args?: { did: string }): Identity {
+  public async getIdentity(args?: { did: string }): Promise<Identity> {
     if (args) {
       return new Identity(args, this.context);
     }
@@ -482,7 +482,7 @@ export class Polymesh {
     if (args) {
       identity = valueToDid(args.did);
     } else {
-      identity = context.getCurrentIdentity().did;
+      ({ did: identity } = await context.getCurrentIdentity());
     }
 
     const entries = await query.asset.assetOwnershipRelations.entries(
@@ -540,7 +540,7 @@ export class Polymesh {
     const { context } = this;
 
     const { size, start } = opts;
-    const { did } = context.getCurrentIdentity();
+    const { did } = await context.getCurrentIdentity();
 
     const result = await context.issuedClaims({
       trustedClaimIssuers: [did],

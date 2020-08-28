@@ -66,11 +66,11 @@ export async function prepareConsumeAuthorizationRequests(
 /**
  * @hidden
  */
-export function isAuthorized(
+export async function isAuthorized(
   this: Procedure<ConsumeAuthorizationRequestsParams>,
   { authRequests, accept }: ConsumeAuthorizationRequestsParams
-): boolean {
-  const { did } = this.context.getCurrentIdentity();
+): Promise<boolean> {
+  const { did } = await this.context.getCurrentIdentity();
 
   return authRequests.filter(isLive).every(({ targetIdentity, issuerIdentity }) => {
     let condition = did === targetIdentity.did;

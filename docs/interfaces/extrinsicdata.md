@@ -24,7 +24,7 @@
 
 • **address**: *string | null*
 
-*Defined in [src/types/index.ts:232](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/types/index.ts#L232)*
+*Defined in [src/types/index.ts:232](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/types/index.ts#L232)*
 
 ___
 
@@ -32,7 +32,7 @@ ___
 
 • **blockId**: *number*
 
-*Defined in [src/types/index.ts:230](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/types/index.ts#L230)*
+*Defined in [src/types/index.ts:230](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/types/index.ts#L230)*
 
 ___
 
@@ -40,7 +40,7 @@ ___
 
 • **extrinsicHash**: *string*
 
-*Defined in [src/types/index.ts:238](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/types/index.ts#L238)*
+*Defined in [src/types/index.ts:238](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/types/index.ts#L238)*
 
 ___
 
@@ -48,7 +48,7 @@ ___
 
 • **extrinsicIdx**: *number*
 
-*Defined in [src/types/index.ts:231](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/types/index.ts#L231)*
+*Defined in [src/types/index.ts:231](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/types/index.ts#L231)*
 
 ___
 
@@ -56,7 +56,7 @@ ___
 
 • **nonce**: *number*
 
-*Defined in [src/types/index.ts:233](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/types/index.ts#L233)*
+*Defined in [src/types/index.ts:233](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/types/index.ts#L233)*
 
 ___
 
@@ -64,7 +64,7 @@ ___
 
 • **params**: *object*
 
-*Defined in [src/types/index.ts:235](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/types/index.ts#L235)*
+*Defined in [src/types/index.ts:235](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/types/index.ts#L235)*
 
 ___
 
@@ -72,7 +72,7 @@ ___
 
 • **specVersionId**: *number*
 
-*Defined in [src/types/index.ts:237](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/types/index.ts#L237)*
+*Defined in [src/types/index.ts:237](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/types/index.ts#L237)*
 
 ___
 
@@ -80,7 +80,7 @@ ___
 
 • **success**: *boolean*
 
-*Defined in [src/types/index.ts:236](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/types/index.ts#L236)*
+*Defined in [src/types/index.ts:236](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/types/index.ts#L236)*
 
 ___
 
@@ -88,4 +88,4 @@ ___
 
 • **txTag**: *TxTag*
 
-*Defined in [src/types/index.ts:234](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/types/index.ts#L234)*
+*Defined in [src/types/index.ts:234](https://github.com/PolymathNetwork/polymesh-sdk/blob/da3a97f/src/types/index.ts#L234)*

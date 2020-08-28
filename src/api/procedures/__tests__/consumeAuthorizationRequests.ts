@@ -159,11 +159,11 @@ describe('consumeAuthorizationRequests procedure', () => {
   });
 
   describe('isAuthorized', () => {
-    test('should return whether the current identity is the target of all non-expired requests if trying to accept', () => {
+    test('should return whether the current identity is the target of all non-expired requests if trying to accept', async () => {
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
         mockContext
       );
-      const { did } = mockContext.getCurrentIdentity();
+      const { did } = await mockContext.getCurrentIdentity();
       const constructorParams = [
         {
           authId: new BigNumber(1),
@@ -192,21 +192,23 @@ describe('consumeAuthorizationRequests procedure', () => {
       } as ConsumeAuthorizationRequestsParams;
 
       const boundFunc = isAuthorized.bind(proc);
-      expect(boundFunc(args)).toBe(true);
+      let result = await boundFunc(args);
+      expect(result).toBe(true);
 
       args.authRequests[0].targetIdentity = new Identity(
         { did: 'notTheCurrentIdentity' },
         mockContext
       );
 
-      expect(boundFunc(args)).toBe(false);
+      result = await boundFunc(args);
+      expect(result).toBe(false);
     });
 
-    test('should return whether the current identity is the target or issuer of all non-expired requests if trying to remove', () => {
+    test('should return whether the current identity is the target or issuer of all non-expired requests if trying to remove', async () => {
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
         mockContext
       );
-      const { did } = mockContext.getCurrentIdentity();
+      const { did } = await mockContext.getCurrentIdentity();
       const constructorParams = [
         {
           authId: new BigNumber(1),
@@ -244,14 +246,16 @@ describe('consumeAuthorizationRequests procedure', () => {
       } as ConsumeAuthorizationRequestsParams;
 
       const boundFunc = isAuthorized.bind(proc);
-      expect(boundFunc(args)).toBe(true);
+      let result = await boundFunc(args);
+      expect(result).toBe(true);
 
       args.authRequests[0].targetIdentity = new Identity(
         { did: 'notTheCurrentIdentity' },
         mockContext
       );
 
-      expect(boundFunc(args)).toBe(false);
+      result = await boundFunc(args);
+      expect(result).toBe(false);
     });
   });
 });

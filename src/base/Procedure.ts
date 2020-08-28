@@ -93,7 +93,8 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     let allowed: boolean;
 
     if (typeof checkRolesResult !== 'boolean') {
-      allowed = await context.getCurrentIdentity().hasRoles(checkRolesResult);
+      const identity = await context.getCurrentIdentity();
+      allowed = await identity.hasRoles(checkRolesResult);
     } else {
       allowed = checkRolesResult;
     }

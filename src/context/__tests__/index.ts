@@ -113,7 +113,7 @@ describe('Context class', () => {
       return expect(context).rejects.toThrow(new Error('Seed must be 32 characters in length'));
     });
 
-    test('should create a Context class from a seed with Pair and Identity attached', async () => {
+    test('should create a Context object from a seed with Pair attached', async () => {
       const newPair = {
         address: 'someAddress1',
         meta: {},
@@ -124,13 +124,6 @@ describe('Context class', () => {
           addFromSeed: newPair,
         },
       });
-      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
-      });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -138,24 +131,15 @@ describe('Context class', () => {
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      sinon.assert.calledOnce(keyToIdentityIdsStub);
       expect(context.currentPair).toEqual(newPair);
-      sinon.assert.match(context.getCurrentIdentity() instanceof Identity, true);
     });
 
-    test('should create a Context class from a keyring with Pair and Identity attached', async () => {
+    test('should create a Context object from a keyring with Pair attached', async () => {
       const pairs = [{ address: 'someAddress', meta: {}, publicKey: 'publicKey' }];
       dsMockUtils.configureMocks({
         keyringOptions: {
           getPairs: pairs,
         },
-      });
-      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
       });
 
       const context = await Context.create({
@@ -164,12 +148,10 @@ describe('Context class', () => {
         keyring: dsMockUtils.getKeyringInstance(),
       });
 
-      sinon.assert.calledOnce(keyToIdentityIdsStub);
       expect(context.currentPair).toEqual(pairs[0]);
-      sinon.assert.match(context.getCurrentIdentity() instanceof Identity, true);
     });
 
-    test('should create a Context class from a uri with Pair and Identity attached', async () => {
+    test('should create a Context object from a uri with Pair attached', async () => {
       const newPair = {
         address: 'someAddress',
         meta: {},
@@ -180,13 +162,6 @@ describe('Context class', () => {
           addFromUri: newPair,
         },
       });
-      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
-      });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -194,12 +169,10 @@ describe('Context class', () => {
         uri: '//Alice',
       });
 
-      sinon.assert.calledOnce(keyToIdentityIdsStub);
       expect(context.currentPair).toEqual(newPair);
-      sinon.assert.match(context.getCurrentIdentity() instanceof Identity, true);
     });
 
-    test('should create a Context class without Pair and Identity attached', async () => {
+    test('should create a Context object without Pair attached', async () => {
       const newPair = {
         address: 'someAddress',
         meta: {},
@@ -209,13 +182,6 @@ describe('Context class', () => {
         keyringOptions: {
           addFromSeed: newPair,
         },
-      });
-      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
       });
 
       const context = await Context.create({
@@ -223,33 +189,7 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      sinon.assert.notCalled(keyToIdentityIdsStub);
       expect(context.currentPair).toBe(undefined);
-      expect(() => context.getCurrentIdentity()).toThrow();
-    });
-
-    test('should throw if the account seed is not assotiated with an IdentityId ', () => {
-      const newPair = {
-        address: 'someAddress',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          addFromSeed: newPair,
-        },
-      });
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds');
-
-      const context = Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
-      });
-
-      return expect(context).rejects.toThrow(
-        new Error('There is no Identity associated to this account')
-      );
     });
   });
 
@@ -307,57 +247,10 @@ describe('Context class', () => {
       );
     });
 
-    test("should throw error if the address doesn't have an associated identity", async () => {
+    test('should set new value for currentPair', async () => {
       const publicKey = 'publicKey';
       const newPublicKey = 'newPublicKey';
       const newAddress = 'newAddress';
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          addFromSeed: {
-            address: 'address',
-            meta: {},
-            publicKey,
-          },
-          getPair: {
-            address: newAddress,
-            meta: {},
-            publicKey: newPublicKey,
-          },
-        },
-      });
-
-      dsMockUtils
-        .createQueryStub('identity', 'keyToIdentityIds')
-        .withArgs(publicKey)
-        .returns(
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockLinkedKeyInfo({
-              Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
-            })
-          )
-        );
-
-      dsMockUtils
-        .createQueryStub('identity', 'keyToIdentityIds')
-        .withArgs(newPublicKey)
-        .returns(dsMockUtils.createMockOption());
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
-      });
-
-      await expect(context.setPair(newAddress)).rejects.toThrow(
-        'There is no Identity associated to this account'
-      );
-    });
-
-    test('should set new values for currentPair and getCurrentIdentity', async () => {
-      const publicKey = 'publicKey';
-      const newPublicKey = 'newPublicKey';
-      const newAddress = 'newAddress';
-      const newIdentityId = 'newIdentityId';
       const accountId = dsMockUtils.createMockAccountId(newAddress);
       const newCurrentPair = {
         address: newAddress,
@@ -376,28 +269,6 @@ describe('Context class', () => {
         },
       });
 
-      dsMockUtils
-        .createQueryStub('identity', 'keyToIdentityIds')
-        .withArgs(publicKey)
-        .returns(
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockLinkedKeyInfo({
-              Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
-            })
-          )
-        );
-
-      dsMockUtils
-        .createQueryStub('identity', 'keyToIdentityIds')
-        .withArgs(accountId)
-        .returns(
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockLinkedKeyInfo({
-              Unique: dsMockUtils.createMockIdentityId(newIdentityId),
-            })
-          )
-        );
-
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -412,7 +283,6 @@ describe('Context class', () => {
       await context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY');
 
       expect(context.currentPair).toEqual(newCurrentPair);
-      expect(context.getCurrentIdentity().did).toEqual(newIdentityId);
     });
   });
 
@@ -552,18 +422,30 @@ describe('Context class', () => {
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      const result = context.getCurrentIdentity();
+      const result = await context.getCurrentIdentity();
       expect(result.did).toBe(did);
     });
 
-    test("should throw an error if the current identity isn't defined", async () => {
+    test("should throw an error if the current account doesn't have an identity", async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      return expect(context.getCurrentIdentity()).rejects.toThrow(
+        'The current account does not have an associated identity'
+      );
+    });
+
+    test('should throw an error if there is no account associated with the SDK', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      expect(() => context.getCurrentIdentity()).toThrow(
-        'The current account does not have an associated identity'
+      return expect(context.getCurrentIdentity()).rejects.toThrow(
+        'There is no account associated with the SDK'
       );
     });
   });
