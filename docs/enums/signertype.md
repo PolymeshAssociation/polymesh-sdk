@@ -13,7 +13,7 @@
 
 • **Account**: = "Account"
 
-*Defined in [src/types/index.ts:407](https://github.com/PolymathNetwork/polymesh-sdk/blob/7a4dc5b/src/types/index.ts#L407)*
+*Defined in [src/types/index.ts:407](https://github.com/PolymathNetwork/polymesh-sdk/blob/2fbef52/src/types/index.ts#L407)*
 
 ___
 
@@ -21,4 +21,4 @@ ___
 
 • **Identity**: = "Identity"
 
-*Defined in [src/types/index.ts:406](https://github.com/PolymathNetwork/polymesh-sdk/blob/7a4dc5b/src/types/index.ts#L406)*
+*Defined in [src/types/index.ts:406](https://github.com/PolymathNetwork/polymesh-sdk/blob/2fbef52/src/types/index.ts#L406)*

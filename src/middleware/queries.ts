@@ -325,7 +325,22 @@ export function issuerDidsWithClaimsByTarget(
         includeExpired: $includeExpired
         count: $count
         skip: $skip
-      )
+      ) {
+        totalCount
+        items {
+          did
+          claims {
+            targetDID
+            issuer
+            issuance_date
+            last_update_date
+            expiry
+            type
+            jurisdiction
+            scope
+          }
+        }
+      }
     }
   `;
 

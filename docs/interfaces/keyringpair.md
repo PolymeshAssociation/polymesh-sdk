@@ -31,7 +31,7 @@ ___
 
 • **isLocked**: *boolean*
 
-*Defined in [src/types/index.ts:366](https://github.com/PolymathNetwork/polymesh-sdk/blob/7a4dc5b/src/types/index.ts#L366)*
+*Defined in [src/types/index.ts:366](https://github.com/PolymathNetwork/polymesh-sdk/blob/2fbef52/src/types/index.ts#L366)*
 
 ___
 
