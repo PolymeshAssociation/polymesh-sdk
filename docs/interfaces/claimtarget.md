@@ -18,7 +18,7 @@
 
 • **claim**: *[Claim](../globals.md#claim)*
 
-*Defined in [src/types/index.ts:338](https://github.com/PolymathNetwork/polymesh-sdk/blob/2fbef52/src/types/index.ts#L338)*
+*Defined in [src/types/index.ts:338](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L338)*
 
 ___
 
@@ -26,7 +26,7 @@ ___
 
 • **expiry**? : *[Date](../enums/transactionargumenttype.md#date)*
 
-*Defined in [src/types/index.ts:339](https://github.com/PolymathNetwork/polymesh-sdk/blob/2fbef52/src/types/index.ts#L339)*
+*Defined in [src/types/index.ts:339](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L339)*
 
 ___
 
@@ -34,4 +34,4 @@ ___
 
 • **target**: *string | [Identity](../classes/identity.md)*
 
-*Defined in [src/types/index.ts:337](https://github.com/PolymathNetwork/polymesh-sdk/blob/2fbef52/src/types/index.ts#L337)*
+*Defined in [src/types/index.ts:337](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L337)*

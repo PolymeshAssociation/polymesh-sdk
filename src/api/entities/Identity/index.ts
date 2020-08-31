@@ -372,7 +372,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve all claims issued about this identity, grouped by claim issuer
    *
-   * @param opts.includeExpired - default to true
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
    */

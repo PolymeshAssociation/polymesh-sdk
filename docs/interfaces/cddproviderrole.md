@@ -16,4 +16,4 @@
 
 • **type**: *[CddProvider](../enums/roletype.md#cddprovider)*
 
-*Defined in [src/types/index.ts:95](https://github.com/PolymathNetwork/polymesh-sdk/blob/2fbef52/src/types/index.ts#L95)*
+*Defined in [src/types/index.ts:95](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L95)*

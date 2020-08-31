@@ -558,7 +558,7 @@ export class Polymesh {
    * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
    * @param opts.scope - scope of the claims to fetch. Defaults to any scope
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
-   * @param opts.includeExpired - default to true
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
    * @param opts.size - page size
    * @param opts.start - page offset
    */
