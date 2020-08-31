@@ -17,7 +17,7 @@
 
 • **did**: *string*
 
-*Defined in [src/api/procedures/transferTokenOwnership.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/a07dd9c/src/api/procedures/transferTokenOwnership.ts#L7)*
+*Defined in [src/api/procedures/transferTokenOwnership.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d341d9/src/api/procedures/transferTokenOwnership.ts#L7)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **expiry**? : *[Date](../enums/transactionargumenttype.md#date)*
 
-*Defined in [src/api/procedures/transferTokenOwnership.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/a07dd9c/src/api/procedures/transferTokenOwnership.ts#L8)*
+*Defined in [src/api/procedures/transferTokenOwnership.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d341d9/src/api/procedures/transferTokenOwnership.ts#L8)*

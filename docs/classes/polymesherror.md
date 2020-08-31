@@ -25,7 +25,7 @@ Wraps an error to give more information about its type
 
 • **code**: *[ErrorCode](../enums/errorcode.md)*
 
-*Defined in [src/base/PolymeshError.ts:16](https://github.com/PolymathNetwork/polymesh-sdk/blob/a07dd9c/src/base/PolymeshError.ts#L16)*
+*Defined in [src/base/PolymeshError.ts:16](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d341d9/src/base/PolymeshError.ts#L16)*
 
 ___
 
@@ -33,7 +33,7 @@ ___
 
 • **data**? : *Record‹string, unknown›*
 
-*Defined in [src/base/PolymeshError.ts:18](https://github.com/PolymathNetwork/polymesh-sdk/blob/a07dd9c/src/base/PolymeshError.ts#L18)*
+*Defined in [src/base/PolymeshError.ts:18](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d341d9/src/base/PolymeshError.ts#L18)*
 
 ___
 

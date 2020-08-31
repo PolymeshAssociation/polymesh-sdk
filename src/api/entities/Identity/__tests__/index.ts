@@ -329,7 +329,7 @@ describe('Identity class', () => {
   });
 
   describe('method: isCddProvider', () => {
-    test('should return whether the Identity is cdd provider', async () => {
+    test('should return whether the Identity is a CDD provider', async () => {
       const did = 'someDid';
       const rawDid = dsMockUtils.createMockIdentityId(did);
       const mockContext = dsMockUtils.getContextInstance();
