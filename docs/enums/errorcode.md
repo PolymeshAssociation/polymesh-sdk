@@ -22,7 +22,7 @@ Specifies possible types of errors in the SDK
 
 • **FatalError**: = "FatalError"
 
-*Defined in [src/types/index.ts:300](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/types/index.ts#L300)*
+*Defined in [src/types/index.ts:300](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L300)*
 
 ___
 
@@ -30,7 +30,7 @@ ___
 
 • **IdentityNotPresent**: = "IdentityNotPresent"
 
-*Defined in [src/types/index.ts:305](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/types/index.ts#L305)*
+*Defined in [src/types/index.ts:305](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L305)*
 
 ___
 
@@ -38,7 +38,7 @@ ___
 
 • **InvalidUuid**: = "InvalidUuid"
 
-*Defined in [src/types/index.ts:301](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/types/index.ts#L301)*
+*Defined in [src/types/index.ts:301](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L301)*
 
 ___
 
@@ -46,7 +46,7 @@ ___
 
 • **MiddlewareError**: = "MiddlewareError"
 
-*Defined in [src/types/index.ts:304](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/types/index.ts#L304)*
+*Defined in [src/types/index.ts:304](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L304)*
 
 ___
 
@@ -54,7 +54,7 @@ ___
 
 • **NotAuthorized**: = "NotAuthorized"
 
-*Defined in [src/types/index.ts:303](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/types/index.ts#L303)*
+*Defined in [src/types/index.ts:303](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L303)*
 
 ___
 
@@ -62,7 +62,7 @@ ___
 
 • **TransactionAborted**: = "TransactionAborted"
 
-*Defined in [src/types/index.ts:297](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/types/index.ts#L297)*
+*Defined in [src/types/index.ts:297](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L297)*
 
 ___
 
@@ -70,7 +70,7 @@ ___
 
 • **TransactionRejectedByUser**: = "TransactionRejectedByUser"
 
-*Defined in [src/types/index.ts:298](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/types/index.ts#L298)*
+*Defined in [src/types/index.ts:298](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L298)*
 
 ___
 
@@ -78,7 +78,7 @@ ___
 
 • **TransactionReverted**: = "TransactionReverted"
 
-*Defined in [src/types/index.ts:299](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/types/index.ts#L299)*
+*Defined in [src/types/index.ts:299](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L299)*
 
 ___
 
@@ -86,4 +86,4 @@ ___
 
 • **ValidationError**: = "ValidationError"
 
-*Defined in [src/types/index.ts:302](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/types/index.ts#L302)*
+*Defined in [src/types/index.ts:302](https://github.com/PolymathNetwork/polymesh-sdk/blob/b7c3540/src/types/index.ts#L302)*
