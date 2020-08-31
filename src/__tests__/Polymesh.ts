@@ -7,7 +7,13 @@ import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { modifyClaims, removeSigningKeys, reserveTicker, transferPolyX } from '~/api/procedures';
+import {
+  modifyClaims,
+  registerIdentity,
+  removeSigningKeys,
+  reserveTicker,
+  transferPolyX,
+} from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { didsWithClaims, transactions } from '~/middleware/queries';
 import {
@@ -1126,6 +1132,32 @@ describe('Polymesh Class', () => {
         .resolves(expectedQueue);
 
       const queue = await polymesh.removeMySigningKeys({ signers });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: registerIdentity', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const args = {
+        target: 'someTarget',
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(registerIdentity, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await polymesh.registerIdentity(args);
 
       expect(queue).toBe(expectedQueue);
     });
