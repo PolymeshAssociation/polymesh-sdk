@@ -16,4 +16,4 @@
 
 • **accept**: *boolean*
 
-*Defined in [src/api/procedures/consumeAuthorizationRequests.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/4b9adaf/src/api/procedures/consumeAuthorizationRequests.ts#L8)*
+*Defined in [src/api/procedures/consumeAuthorizationRequests.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/deb40bf/src/api/procedures/consumeAuthorizationRequests.ts#L8)*

@@ -44,6 +44,8 @@ describe('modifyClaims procedure', () => {
   let rawOtherDid: IdentityId;
   let rawExpiry: Moment;
 
+  const includeExpired = true;
+
   beforeAll(() => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
@@ -131,6 +133,7 @@ describe('modifyClaims procedure', () => {
 
   test('should add an add claims batch transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
+    const { did } = await mockContext.getCurrentIdentity();
 
     await prepareModifyClaims.call(proc, args);
 
@@ -163,8 +166,9 @@ describe('modifyClaims procedure', () => {
 
     dsMockUtils.createApolloQueryStub(
       didsWithClaims({
-        trustedClaimIssuers: [mockContext.getCurrentIdentity().did],
+        trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
+        includeExpired,
         count: 2,
       }),
       {
@@ -196,11 +200,13 @@ describe('modifyClaims procedure', () => {
 
   test("should throw an error if any of the claims that will be modified weren't issued by the current identity", async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
+    const { did } = await mockContext.getCurrentIdentity();
 
     dsMockUtils.createApolloQueryStub(
       didsWithClaims({
-        trustedClaimIssuers: [mockContext.getCurrentIdentity().did],
+        trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
+        includeExpired,
         count: 2,
       }),
       {
@@ -226,11 +232,13 @@ describe('modifyClaims procedure', () => {
 
   test('should add a revoke claims batch transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
+    const { did } = await mockContext.getCurrentIdentity();
 
     dsMockUtils.createApolloQueryStub(
       didsWithClaims({
-        trustedClaimIssuers: [mockContext.getCurrentIdentity().did],
+        trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
+        includeExpired,
         count: 2,
       }),
       {

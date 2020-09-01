@@ -208,6 +208,23 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Check whether this Identity is a CDD provider
+   */
+  public async isCddProvider(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { cddServiceProviders },
+        },
+      },
+      did,
+    } = this;
+
+    const activeMembers = await cddServiceProviders.activeMembers();
+    return activeMembers.map(identityIdToString).includes(did);
+  }
+
+  /**
    * Retrieve the master key associated with the identity
    *
    * @note can be subscribed to
@@ -226,17 +243,19 @@ export class Identity extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const { did } = context.getCurrentIdentity();
+    const { did } = await context.getCurrentIdentity();
 
     const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
       return accountIdToString(masterKey);
     };
 
+    const rawDid = stringToIdentityId(did, context);
+
     if (callback) {
-      return identity.didRecords(did, records => callback(assembleResult(records)));
+      return identity.didRecords(rawDid, records => callback(assembleResult(records)));
     }
 
-    const didRecords = await identity.didRecords(did);
+    const didRecords = await identity.didRecords(rawDid);
     return assembleResult(didRecords);
   }
 
@@ -370,19 +389,22 @@ export class Identity extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve all claims issued about this identity, grouped by claim issuer
    *
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
+   *
    * @note supports pagination
    */
   public async getClaims(
     opts: {
       scope?: string;
       trustedClaimIssuers?: (string | Identity)[];
+      includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = {}
+    } = { includeExpired: true }
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context, did } = this;
 
-    const { trustedClaimIssuers, scope, size, start } = opts;
+    const { trustedClaimIssuers, scope, includeExpired, size, start } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
       issuerDidsWithClaimsByTarget({
@@ -391,6 +413,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
           valueToDid(trustedClaimIssuer)
         ),
+        includeExpired,
         count: size,
         skip: start,
       })
