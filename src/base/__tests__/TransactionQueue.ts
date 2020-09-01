@@ -1,18 +1,17 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { noop } from 'lodash';
+import P from 'bluebird';
+import { noop, range } from 'lodash';
 import sinon from 'sinon';
 
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
+import { fakePromise } from '~/testUtils';
 import { dsMockUtils, polymeshTransactionMockUtils } from '~/testUtils/mocks';
 import { TransactionQueueStatus, TransactionStatus } from '~/types';
 import { TransactionSpec } from '~/types/internal';
-import * as utilsModule from '~/utils';
 
 import { TransactionQueue } from '../TransactionQueue';
-
-const { delay } = utilsModule;
 
 jest.mock(
   '~/base/PolymeshTransaction',
@@ -23,6 +22,8 @@ jest.mock(
 
 describe('Transaction Queue class', () => {
   let context: Context;
+
+  jest.useFakeTimers();
 
   beforeAll(() => {
     polymeshTransactionMockUtils.initMocks();
@@ -88,6 +89,12 @@ describe('Transaction Queue class', () => {
 
       let returned = await queue.run();
 
+      await P.each(range(6), async () => {
+        await fakePromise();
+
+        jest.advanceTimersByTime(2000);
+      });
+
       expect(returned).toBe(returnValue);
       transactions.forEach(transaction => {
         sinon.assert.calledOnce(transaction.run);
@@ -107,6 +114,12 @@ describe('Transaction Queue class', () => {
       );
 
       returned = await queue.run();
+
+      await P.each(range(6), async () => {
+        await fakePromise();
+
+        jest.advanceTimersByTime(2000);
+      });
 
       expect(returned).toBe(returnValue);
     });
@@ -132,7 +145,7 @@ describe('Transaction Queue class', () => {
 
       queue.run();
 
-      await delay(0);
+      await fakePromise();
 
       expect(queue.status).toBe(TransactionQueueStatus.Running);
 
@@ -141,7 +154,13 @@ describe('Transaction Queue class', () => {
         TransactionStatus.Succeeded
       );
 
-      await delay(0);
+      await fakePromise();
+
+      await P.each(range(6), async () => {
+        await fakePromise();
+
+        jest.advanceTimersByTime(2000);
+      });
 
       expect(queue.status).toBe(TransactionQueueStatus.Succeeded);
 
@@ -156,13 +175,19 @@ describe('Transaction Queue class', () => {
 
       queue.run().catch(noop);
 
-      await delay(0);
+      await fakePromise();
 
       polymeshTransactionMockUtils.updateTransactionStatus(
         transactions[0],
         TransactionStatus.Failed
       );
-      await delay(0);
+      await fakePromise();
+
+      await P.each(range(6), async () => {
+        await fakePromise();
+
+        jest.advanceTimersByTime(2000);
+      });
 
       expect(queue.status).toBe(TransactionQueueStatus.Failed);
     });
@@ -233,7 +258,7 @@ describe('Transaction Queue class', () => {
       );
     });
 
-    test('should succeed if the only failures are from non-critical transactions', () => {
+    test('should succeed if the only failures are from non-critical transactions', async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -256,9 +281,21 @@ describe('Transaction Queue class', () => {
         context
       );
 
-      const runPromise = queue.run();
+      let err;
 
-      return expect(runPromise).resolves.not.toThrow();
+      try {
+        await queue.run();
+      } catch (e) {
+        err = e;
+      }
+
+      await P.each(range(6), async () => {
+        await fakePromise();
+
+        jest.advanceTimersByTime(2000);
+      });
+
+      expect(err).toBeUndefined();
     });
 
     test('should throw an error if attempting to run a queue that has already run', async () => {
@@ -286,6 +323,12 @@ describe('Transaction Queue class', () => {
 
       await queue.run();
 
+      await P.each(range(6), async () => {
+        await fakePromise();
+
+        jest.advanceTimersByTime(2000);
+      });
+
       return expect(queue.run()).rejects.toThrow('Cannot re-run a Transaction Queue');
     });
   });
@@ -312,6 +355,12 @@ describe('Transaction Queue class', () => {
 
       await queue.run();
 
+      await P.each(range(6), async () => {
+        await fakePromise();
+
+        jest.advanceTimersByTime(2000);
+      });
+
       sinon.assert.calledWith(listenerStub.firstCall, TransactionQueueStatus.Running);
       sinon.assert.calledWith(listenerStub.secondCall, TransactionQueueStatus.Succeeded);
     });
@@ -337,7 +386,13 @@ describe('Transaction Queue class', () => {
 
       queue.run();
 
-      await delay(0);
+      await fakePromise();
+
+      await P.each(range(6), async () => {
+        await fakePromise();
+
+        jest.advanceTimersByTime(2000);
+      });
 
       unsub();
 
@@ -386,6 +441,12 @@ describe('Transaction Queue class', () => {
 
       await runPromise;
 
+      await P.each(range(6), async () => {
+        await fakePromise();
+
+        jest.advanceTimersByTime(2000);
+      });
+
       sinon.assert.calledWith(listenerStub.firstCall, TransactionStatus.Running);
       sinon.assert.calledWith(listenerStub.secondCall, TransactionStatus.Succeeded);
     });
@@ -417,7 +478,7 @@ describe('Transaction Queue class', () => {
         transactions[0],
         TransactionStatus.Running
       );
-      await delay(0);
+      await fakePromise();
 
       unsub();
 
@@ -427,6 +488,12 @@ describe('Transaction Queue class', () => {
       );
 
       await runPromise;
+
+      await P.each(range(6), async () => {
+        await fakePromise();
+
+        jest.advanceTimersByTime(2000);
+      });
 
       sinon.assert.calledWith(listenerStub.firstCall, TransactionStatus.Running);
       sinon.assert.callCount(listenerStub, 1);

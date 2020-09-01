@@ -9,7 +9,7 @@ import sinon from 'sinon';
 import { Identity, TickerReservation } from '~/api/entities';
 import { modifyClaims, removeSigningKeys, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
-import { didsWithClaims, transactions } from '~/middleware/queries';
+import { didsWithClaims, heartbeat,transactions } from '~/middleware/queries';
 import {
   CallIdEnum,
   ClaimTypeEnum,
@@ -162,6 +162,8 @@ describe('Polymesh Class', () => {
         key: 'someKey',
       };
 
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri,
@@ -174,6 +176,60 @@ describe('Polymesh Class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
         uri: accountUri,
       });
+    });
+
+    test('should throw an error if the middleware credentials are incorrect', async () => {
+      const accountUri = '//uri';
+      const middleware = {
+        link: 'wrong',
+        key: 'alsoWrong',
+      };
+
+      dsMockUtils.throwOnMiddlewareQuery(new Error('Forbidden'));
+
+      let err;
+      try {
+        await Polymesh.connect({
+          nodeUrl: 'wss://some.url',
+          accountUri,
+          middleware,
+        });
+      } catch (e) {
+        err = e;
+      }
+
+      expect(err.message).toBe('Incorrect middleware URL or API key');
+
+      dsMockUtils.throwOnMiddlewareQuery(new Error('Missing Authentication Token'));
+      err = undefined;
+
+      try {
+        await Polymesh.connect({
+          nodeUrl: 'wss://some.url',
+          accountUri,
+          middleware,
+        });
+      } catch (e) {
+        err = e;
+      }
+
+      expect(err.message).toBe('Incorrect middleware URL or API key');
+
+      // other errors are caught when performing queries later on
+      dsMockUtils.throwOnMiddlewareQuery(new Error('Anything else'));
+      err = undefined;
+
+      try {
+        await Polymesh.connect({
+          nodeUrl: 'wss://some.url',
+          accountUri,
+          middleware,
+        });
+      } catch (e) {
+        err = e;
+      }
+
+      expect(err).toBeUndefined();
     });
 
     test('should set an optional signer for the polkadot API', async () => {
@@ -726,6 +782,7 @@ describe('Polymesh Class', () => {
       /* eslint-enabled @typescript-eslint/camelcase */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -1194,6 +1251,7 @@ describe('Polymesh Class', () => {
       /* eslint-enabled @typescript-eslint/camelcase */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',

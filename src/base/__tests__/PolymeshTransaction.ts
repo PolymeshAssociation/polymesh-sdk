@@ -6,6 +6,7 @@ import sinon from 'sinon';
 
 import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
+import { fakePromise } from '~/testUtils';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
@@ -14,8 +15,6 @@ import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
 import { PolymeshTransaction } from '../PolymeshTransaction';
-
-const { delay } = utilsModule;
 
 describe('Polymesh Transaction class', () => {
   let context: Mocked<Context>;
@@ -131,19 +130,19 @@ describe('Polymesh Transaction class', () => {
 
       dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.Ready);
 
-      await delay(0);
+      await fakePromise();
 
       expect(transaction.status).toBe(TransactionStatus.Running);
 
       dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.Intermediate);
 
-      await delay(0);
+      await fakePromise();
 
       expect(transaction.status).toBe(TransactionStatus.Running);
 
       dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.Succeeded);
 
-      await delay(0);
+      await fakePromise();
 
       expect(transaction.status).toBe(TransactionStatus.Succeeded);
     });
@@ -347,7 +346,7 @@ describe('Polymesh Transaction class', () => {
 
       transaction.run();
 
-      await delay(0);
+      await fakePromise();
 
       unsub();
 

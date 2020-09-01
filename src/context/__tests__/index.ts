@@ -1121,9 +1121,15 @@ describe('Context class', () => {
 
       dsMockUtils.throwOnMiddlewareQuery();
 
-      return expect(
+      await expect(
         context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Error');
+
+      dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
+
+      await expect(
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware query: Some Message');
     });
 
     test('should perform a middleware query and return the results', async () => {
@@ -1304,6 +1310,28 @@ describe('Context class', () => {
       const res = await context.queryMiddleware(fakeQuery);
 
       expect(res.data).toBe(fakeResult);
+    });
+  });
+
+  describe('method: getLatestBlock', () => {
+    test('should return the latest block', async () => {
+      const blockNumber = 100;
+
+      dsMockUtils.createRpcStub('chain', 'getHeader', {
+        returnValue: {
+          number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = await context.getLatestBlock();
+
+      expect(result).toEqual(new BigNumber(blockNumber));
     });
   });
 });

@@ -105,7 +105,7 @@ export interface AuthTarget {
   authId: BigNumber;
 }
 
-export interface GraphqlQuery<Variables> {
+export interface GraphqlQuery<Variables = undefined> {
   query: DocumentNode;
   variables: Variables;
 }
