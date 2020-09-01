@@ -43,7 +43,6 @@
   * [AddClaimsParams](interfaces/addclaimsparams.md)
   * [AddTransactionOpts](interfaces/addtransactionopts.md)
   * [ArrayTransactionArgument](interfaces/arraytransactionargument.md)
-  * [Call](interfaces/call.md)
   * [CddProviderRole](interfaces/cddproviderrole.md)
   * [ClaimData](interfaces/claimdata.md)
   * [ClaimScope](interfaces/claimscope.md)

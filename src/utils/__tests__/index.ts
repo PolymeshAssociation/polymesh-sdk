@@ -86,7 +86,7 @@ import {
   meshClaimToClaim,
   meshPermissionToPermission,
   meshProposalStateToProposalState,
-  meshProposalToCall,
+  middlewareProposalToTxTag,
   moduleAddressToString,
   momentToDate,
   numberToBalance,
@@ -2421,7 +2421,7 @@ describe('toIdentityWithClaimsArray', () => {
   });
 });
 
-describe('meshProposalToCall', () => {
+describe('middlewareProposalToTxTag', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2434,12 +2434,12 @@ describe('meshProposalToCall', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshProposalToCall should convert a hexa string to a Call object', () => {
+  test('middlewareProposalToTxTag should convert a hex string to a TxTag type', () => {
     const hexa = '0x110000';
-    const fakeResult = { method: 'disbursement', module: 'treasury' };
+    const fakeResult = TxTags.treasury.Disbursement;
     const mockResult = {
-      methodName: fakeResult.method,
-      sectionName: fakeResult.module,
+      methodName: 'disbursement',
+      sectionName: 'treasury',
     };
     const context = dsMockUtils.getContextInstance();
 
@@ -2448,7 +2448,7 @@ describe('meshProposalToCall', () => {
       .withArgs('Proposal', hexa)
       .returns(mockResult);
 
-    const result = meshProposalToCall(hexa, context);
+    const result = middlewareProposalToTxTag(hexa, context);
     expect(result).toEqual(fakeResult);
   });
 });

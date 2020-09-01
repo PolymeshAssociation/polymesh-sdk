@@ -8,8 +8,9 @@ import { ProposalStage } from '~/api/entities/Proposal/types';
 import { cancelProposal, editProposal } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { eventByIndexedArgs, proposal as queryProposal, proposalVotes } from '~/middleware/queries';
+import { eventByIndexedArgs, proposal as proposalQuery, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, ProposalState } from '~/middleware/types';
+import { TxTag } from '~/polkadot';
 import { dsMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
 
@@ -175,16 +176,17 @@ describe('Proposal class', () => {
 
   describe('method: getDetails', () => {
     test('should return the proposal details', async () => {
+      const proposer = 'someProposer';
+      const url = 'http://someUrl';
       const totalAyesWeight = new BigNumber(10);
       const totalNaysWeight = new BigNumber(20);
       const rawProposal = '0x110000';
       const variables = { pipId };
-      const fakeCall = { method: 'disbursement', module: 'treasury' };
+      const fakeTxTag = 'someModule.someMethod' as TxTag;
       const fakeProposal = {
-        pipId,
-        proposer: 'someProposer',
+        proposerAddress: proposer,
         createdAt: 150000,
-        url: 'http://someUrl',
+        discussionUrl: url,
         description: 'some description',
         coolOffEndBlock: 160000,
         endBlock: 165000,
@@ -195,25 +197,25 @@ describe('Proposal class', () => {
         totalNaysWeight: totalNaysWeight.toNumber(),
       };
 
-      dsMockUtils.createApolloQueryStub(queryProposal(variables), {
-        proposal: { ...fakeProposal, proposal: rawProposal },
+      dsMockUtils.createApolloQueryStub(proposalQuery(variables), {
+        proposal: { ...fakeProposal, proposal: rawProposal, proposer, url },
       });
 
       sinon
-        .stub(utilsModule, 'meshProposalToCall')
+        .stub(utilsModule, 'middlewareProposalToTxTag')
         .withArgs(rawProposal, context)
-        .returns(fakeCall);
+        .returns(fakeTxTag);
 
       let result = await proposal.getDetails();
       expect(result).toEqual({
         ...fakeProposal,
         totalAyesWeight,
         totalNaysWeight,
-        call: fakeCall,
+        transaction: fakeTxTag,
       });
 
-      dsMockUtils.createApolloQueryStub(queryProposal(variables), {
-        proposal: { ...fakeProposal },
+      dsMockUtils.createApolloQueryStub(proposalQuery(variables), {
+        proposal: { ...fakeProposal, proposer, url },
       });
 
       result = await proposal.getDetails();

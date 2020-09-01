@@ -21,7 +21,13 @@ import {
   TransactionArgument,
   UnsubCallback,
 } from '~/types';
-import { addressToKey, balanceToBigNumber, identityIdToString, u32ToBigNumber } from '~/utils';
+import {
+  addressToKey,
+  balanceToBigNumber,
+  identityIdToString,
+  middlewareProposalToTxTag,
+  u32ToBigNumber,
+} from '~/utils';
 
 /**
  * Handles all Governance related functionality
@@ -97,14 +103,42 @@ export class Governance {
       })
     );
 
-    const proposalsWithDetails = await Promise.all(
-      result.data.proposals.map(async ({ pipId }) => {
+    const proposalsWithDetails = result.data.proposals.map(
+      ({
+        pipId,
+        proposer: proposerAddress,
+        createdAt,
+        url: discussionUrl,
+        description,
+        coolOffEndBlock,
+        endBlock,
+        proposal: rawProposal,
+        lastState,
+        lastStateUpdatedAt,
+        totalVotes,
+        totalAyesWeight,
+        totalNaysWeight,
+      }) => {
         const proposal = new Proposal({ pipId }, context);
         return {
           proposal,
-          details: await proposal.getDetails(),
+          details: {
+            pipId,
+            proposerAddress,
+            createdAt,
+            discussionUrl,
+            description,
+            coolOffEndBlock,
+            endBlock,
+            transaction: rawProposal ? middlewareProposalToTxTag(rawProposal, context) : undefined,
+            lastState,
+            lastStateUpdatedAt,
+            totalVotes,
+            totalAyesWeight: new BigNumber(totalAyesWeight),
+            totalNaysWeight: new BigNumber(totalNaysWeight),
+          },
         };
-      })
+      }
     );
 
     return proposalsWithDetails;

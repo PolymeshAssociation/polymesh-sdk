@@ -23,7 +23,7 @@ Handles all Governance related functionality
 
 ▸ **createProposal**(`args`: [CreateProposalParams](../interfaces/createproposalparams.md)): *Promise‹[TransactionQueue](transactionqueue.md)‹[Proposal](proposal.md)››*
 
-*Defined in [src/Governance.ts:121](https://github.com/PolymathNetwork/polymesh-sdk/blob/4660ab0/src/Governance.ts#L121)*
+*Defined in [src/Governance.ts:155](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/Governance.ts#L155)*
 
 Create a proposal
 
@@ -41,7 +41,7 @@ ___
 
 ▸ **getGovernanceCommitteeMembers**(): *Promise‹[Identity](identity.md)[]›*
 
-*Defined in [src/Governance.ts:42](https://github.com/PolymathNetwork/polymesh-sdk/blob/4660ab0/src/Governance.ts#L42)*
+*Defined in [src/Governance.ts:48](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/Governance.ts#L48)*
 
 Retrieve a list of all active committee members
 
@@ -53,7 +53,7 @@ ___
 
 ▸ **getProposals**(`opts`: object): *Promise‹[ProposalWithDetails](../interfaces/proposalwithdetails.md)[]›*
 
-*Defined in [src/Governance.ts:77](https://github.com/PolymathNetwork/polymesh-sdk/blob/4660ab0/src/Governance.ts#L77)*
+*Defined in [src/Governance.ts:83](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/Governance.ts#L83)*
 
 Retrieve a list of proposals and their respective details. Can be filtered using parameters
 
@@ -79,7 +79,7 @@ ___
 
 ▸ **getTransactionArguments**(`args`: object): *[TransactionArgument](../globals.md#transactionargument)[]*
 
-*Defined in [src/Governance.ts:62](https://github.com/PolymathNetwork/polymesh-sdk/blob/4660ab0/src/Governance.ts#L62)*
+*Defined in [src/Governance.ts:68](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/Governance.ts#L68)*
 
 Retrieve the types of arguments that a certain transaction requires to be run
 
@@ -99,7 +99,7 @@ ___
 
 ▸ **minimumProposalDeposit**(): *Promise‹BigNumber›*
 
-*Defined in [src/Governance.ts:130](https://github.com/PolymathNetwork/polymesh-sdk/blob/4660ab0/src/Governance.ts#L130)*
+*Defined in [src/Governance.ts:164](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/Governance.ts#L164)*
 
 Get the minimum amount of POLYX that has to be deposited when creating a proposal
 
@@ -109,7 +109,7 @@ Get the minimum amount of POLYX that has to be deposited when creating a proposa
 
 ▸ **minimumProposalDeposit**(`callback`: [SubCallback](../globals.md#subcallback)‹BigNumber›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/Governance.ts:131](https://github.com/PolymathNetwork/polymesh-sdk/blob/4660ab0/src/Governance.ts#L131)*
+*Defined in [src/Governance.ts:165](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/Governance.ts#L165)*
 
 **Parameters:**
 
@@ -125,7 +125,7 @@ ___
 
 ▸ **proposalTimeFrames**(): *Promise‹[ProposalTimeFrames](../interfaces/proposaltimeframes.md)›*
 
-*Defined in [src/Governance.ts:164](https://github.com/PolymathNetwork/polymesh-sdk/blob/4660ab0/src/Governance.ts#L164)*
+*Defined in [src/Governance.ts:198](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/Governance.ts#L198)*
 
 Retrieve the proposal time frames. This includes:
 
@@ -138,7 +138,7 @@ Retrieve the proposal time frames. This includes:
 
 ▸ **proposalTimeFrames**(`callback`: [SubCallback](../globals.md#subcallback)‹[ProposalTimeFrames](../interfaces/proposaltimeframes.md)›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/Governance.ts:165](https://github.com/PolymathNetwork/polymesh-sdk/blob/4660ab0/src/Governance.ts#L165)*
+*Defined in [src/Governance.ts:199](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/Governance.ts#L199)*
 
 **Parameters:**
 

@@ -13,12 +13,9 @@ jest.mock(
 describe('assertProposalUnlocked', () => {
   const pipId = 10;
   const mockAddress = 'someAddress';
-  const details = {
-    call: {
-      module: 'someModule',
-      method: 'someMethod',
-    },
-  } as ProposalDetails;
+  const details = ({
+    transaction: 'someModule.someMethod',
+  } as unknown) as ProposalDetails;
 
   let mockContext: Mocked<Context>;
 

@@ -48,7 +48,7 @@ import {
 } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
-import { Call, ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import {
@@ -1355,10 +1355,16 @@ export function toIdentityWithClaimsArray(
 /**
  * @hidden
  */
-export function meshProposalToCall(bytes: string, context: Context): Call {
-  const call = context.polymeshApi.createType('Proposal', bytes);
-  return {
-    method: call.methodName,
-    module: call.sectionName,
-  };
+export function middlewareProposalToTxTag(bytes: string, context: Context): TxTag {
+  const proposal = context.polymeshApi.createType('Proposal', bytes);
+  const { sectionName, methodName } = proposal;
+
+  let moduleName;
+  for (const txTagItem in TxTags) {
+    if (txTagItem.toLowerCase() === sectionName.toLowerCase()) {
+      moduleName = txTagItem;
+    }
+  }
+
+  return `${moduleName}.${camelCase(methodName)}` as TxTag;
 }

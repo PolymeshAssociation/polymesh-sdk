@@ -17,7 +17,7 @@
 
 • **claims**: *[ClaimTarget](claimtarget.md)[]*
 
-*Defined in [src/api/procedures/modifyClaims.ts:35](https://github.com/PolymathNetwork/polymesh-sdk/blob/4660ab0/src/api/procedures/modifyClaims.ts#L35)*
+*Defined in [src/api/procedures/modifyClaims.ts:35](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/procedures/modifyClaims.ts#L35)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **operation**: *Add*
 
-*Defined in [src/api/procedures/modifyClaims.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/4660ab0/src/api/procedures/modifyClaims.ts#L36)*
+*Defined in [src/api/procedures/modifyClaims.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/procedures/modifyClaims.ts#L36)*

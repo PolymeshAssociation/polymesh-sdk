@@ -10,7 +10,7 @@ import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, ResultSet } from '~/types';
 import {
   balanceToBigNumber,
-  meshProposalToCall,
+  middlewareProposalToTxTag,
   requestAtBlock,
   u32ToBigNumber,
   valueToDid,
@@ -159,10 +159,9 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     const {
       data: {
         proposal: {
-          pipId: id,
-          proposer,
+          proposer: proposerAddress,
           createdAt,
-          url,
+          url: discussionUrl,
           description,
           coolOffEndBlock,
           endBlock,
@@ -181,14 +180,13 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     );
 
     return {
-      pipId: id,
-      proposer,
+      proposerAddress,
       createdAt,
-      url,
+      discussionUrl,
       description,
       coolOffEndBlock,
       endBlock,
-      call: rawProposal ? meshProposalToCall(rawProposal, context) : undefined,
+      transaction: rawProposal ? middlewareProposalToTxTag(rawProposal, context) : undefined,
       lastState,
       lastStateUpdatedAt,
       totalVotes,

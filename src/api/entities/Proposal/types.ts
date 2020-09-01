@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities';
 import { ProposalState } from '~/middleware/types';
+import { TxTag } from '~/polkadot';
 
 export interface ProposalVote {
   identity: Identity;
@@ -20,20 +21,14 @@ export enum ProposalStage {
   Ended = 'Ended',
 }
 
-export interface Call {
-  method: string;
-  module: string;
-}
-
 export interface ProposalDetails {
-  pipId: number;
-  proposer: string;
+  proposerAddress: string;
   createdAt: number;
-  url: string;
+  discussionUrl: string;
   description: string;
   coolOffEndBlock: number;
   endBlock: number;
-  call?: Call;
+  transaction?: TxTag;
   lastState: ProposalState;
   lastStateUpdatedAt: number;
   totalVotes: number;

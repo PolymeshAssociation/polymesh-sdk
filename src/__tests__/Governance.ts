@@ -4,21 +4,17 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity, Proposal } from '~/api/entities';
-import { ProposalDetails, ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalState } from '~/api/entities/Proposal/types';
 import { createProposal } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { Governance } from '~/Governance';
 import { proposals } from '~/middleware/queries';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { TxTag } from '~/polkadot';
+import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
 import * as utilsModule from '~/utils';
-
-jest.mock(
-  '~/api/entities/Proposal',
-  require('~/testUtils/mocks/entities').mockProposalModule('~/api/entities/Proposal')
-);
 
 describe('Governance class', () => {
   let context: Mocked<Context>;
@@ -30,7 +26,6 @@ describe('Governance class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
-    entityMockUtils.initMocks();
     balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
     u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
   });
@@ -44,12 +39,10 @@ describe('Governance class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
-    entityMockUtils.reset();
   });
 
   describe('method: getGovernanceCommitteeMembers', () => {
@@ -78,46 +71,72 @@ describe('Governance class', () => {
   });
 
   describe('method: getProposals', () => {
-    test('should return a list of proposal entities with details', async () => {
+    test('should return a list of proposal entities', async () => {
       const pipId = 10;
-      const proposerDid = 'someProposerDid';
-      const details = {
+      const url = 'http://someUrl';
+      const address = 'someAddress';
+      const proposer = '0xsomeAddress';
+      const createdAt = 50800;
+      const coolOffPeriod = 100;
+      const proposalPeriodTimeFrame = 600;
+      const proposal = '0x180500cc829c190000000000000000000000e8030000';
+      const fakeTransaction = 'methodName.sectionName' as TxTag;
+      const totalAyesWeight = new BigNumber(0);
+      const totalNaysWeight = new BigNumber(0);
+      const proposalsQueryResponse = {
+        pipId,
+        proposerAddress: proposer,
+        createdAt,
+        discussionUrl: url,
+        description: 'some description',
+        coolOffEndBlock: createdAt + coolOffPeriod,
+        endBlock: createdAt + proposalPeriodTimeFrame,
         lastState: ProposalState.Referendum,
-        call: {
-          module: 'someModule',
-          method: 'someMethod',
-        },
+        lastStateUpdatedAt: createdAt + proposalPeriodTimeFrame,
+        totalVotes: 0,
+        totalAyesWeight: totalAyesWeight.toNumber(),
+        totalNaysWeight: totalNaysWeight.toNumber(),
       };
-      entityMockUtils.configureMocks({
-        proposalOptions: {
-          getDetails: details as ProposalDetails,
-        },
-      });
-      const fakeResult = [{ proposal: new Proposal({ pipId }, context), details }];
-      const proposalsQueryResponse = [
-        {
-          pipId,
-        },
-      ];
+      const proposalInstance = new Proposal({ pipId }, context);
+
+      sinon
+        .stub(utilsModule, 'addressToKey')
+        .withArgs(address)
+        .returns(proposer);
+
+      sinon
+        .stub(utilsModule, 'middlewareProposalToTxTag')
+        .withArgs(proposal, context)
+        .returns(fakeTransaction);
 
       dsMockUtils.createApolloQueryStub(
         proposals({
-          proposers: [proposerDid],
+          proposers: [proposer],
           states: undefined,
           orderBy: undefined,
           count: undefined,
           skip: undefined,
         }),
         {
-          proposals: proposalsQueryResponse,
+          proposals: [{ ...proposalsQueryResponse, proposal, proposer, url }],
         }
       );
 
       let result = await governance.getProposals({
-        proposers: [proposerDid],
+        proposers: [address],
       });
 
-      expect(result).toEqual(fakeResult);
+      expect(result).toEqual([
+        {
+          proposal: proposalInstance,
+          details: {
+            ...proposalsQueryResponse,
+            transaction: fakeTransaction,
+            totalAyesWeight,
+            totalNaysWeight,
+          },
+        },
+      ]);
 
       dsMockUtils.createApolloQueryStub(
         proposals({
@@ -128,13 +147,22 @@ describe('Governance class', () => {
           skip: undefined,
         }),
         {
-          proposals: proposalsQueryResponse,
+          proposals: [{ ...proposalsQueryResponse, proposer, url }],
         }
       );
 
       result = await governance.getProposals();
 
-      expect(result).toEqual(fakeResult);
+      expect(result).toEqual([
+        {
+          proposal: proposalInstance,
+          details: {
+            ...proposalsQueryResponse,
+            totalAyesWeight,
+            totalNaysWeight,
+          },
+        },
+      ]);
     });
   });
 
