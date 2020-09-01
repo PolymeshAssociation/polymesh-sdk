@@ -181,15 +181,15 @@ export class Proposal extends Entity<UniqueIdentifiers> {
 
     return {
       proposerAddress,
-      createdAt,
+      createdAt: new BigNumber(createdAt),
       discussionUrl,
       description,
-      coolOffEndBlock,
-      endBlock,
-      transaction: rawProposal ? middlewareProposalToTxTag(rawProposal, context) : undefined,
+      coolOffEndBlock: new BigNumber(coolOffEndBlock),
+      endBlock: new BigNumber(endBlock),
+      transaction: rawProposal ? middlewareProposalToTxTag(rawProposal, context) : null,
       lastState,
-      lastStateUpdatedAt,
-      totalVotes,
+      lastStateUpdatedAt: new BigNumber(lastStateUpdatedAt),
+      totalVotes: new BigNumber(totalVotes),
       totalAyesWeight: new BigNumber(totalAyesWeight),
       totalNaysWeight: new BigNumber(totalNaysWeight),
     };

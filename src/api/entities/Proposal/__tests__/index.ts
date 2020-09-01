@@ -178,6 +178,11 @@ describe('Proposal class', () => {
     test('should return the proposal details', async () => {
       const proposer = 'someProposer';
       const url = 'http://someUrl';
+      const createdAt = new BigNumber(150000);
+      const coolOffEndBlock = new BigNumber(160000);
+      const endBlock = new BigNumber(165000);
+      const lastStateUpdatedAt = new BigNumber(163000);
+      const totalVotes = new BigNumber(30);
       const totalAyesWeight = new BigNumber(10);
       const totalNaysWeight = new BigNumber(20);
       const rawProposal = '0x110000';
@@ -185,14 +190,14 @@ describe('Proposal class', () => {
       const fakeTxTag = 'someModule.someMethod' as TxTag;
       const fakeProposal = {
         proposerAddress: proposer,
-        createdAt: 150000,
+        createdAt: createdAt.toNumber(),
         discussionUrl: url,
         description: 'some description',
-        coolOffEndBlock: 160000,
-        endBlock: 165000,
+        coolOffEndBlock: coolOffEndBlock.toNumber(),
+        endBlock: endBlock.toNumber(),
         lastState: ProposalState.Pending,
-        lastStateUpdatedAt: 163000,
-        totalVotes: 0,
+        lastStateUpdatedAt: lastStateUpdatedAt.toNumber(),
+        totalVotes: totalVotes.toNumber(),
         totalAyesWeight: totalAyesWeight.toNumber(),
         totalNaysWeight: totalNaysWeight.toNumber(),
       };
@@ -209,6 +214,11 @@ describe('Proposal class', () => {
       let result = await proposal.getDetails();
       expect(result).toEqual({
         ...fakeProposal,
+        createdAt,
+        coolOffEndBlock,
+        endBlock,
+        lastStateUpdatedAt,
+        totalVotes,
         totalAyesWeight,
         totalNaysWeight,
         transaction: fakeTxTag,
@@ -221,6 +231,12 @@ describe('Proposal class', () => {
       result = await proposal.getDetails();
       expect(result).toEqual({
         ...fakeProposal,
+        transaction: null,
+        createdAt,
+        coolOffEndBlock,
+        endBlock,
+        lastStateUpdatedAt,
+        totalVotes,
         totalAyesWeight,
         totalNaysWeight,
       });

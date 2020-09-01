@@ -23,15 +23,15 @@ export enum ProposalStage {
 
 export interface ProposalDetails {
   proposerAddress: string;
-  createdAt: number;
+  createdAt: BigNumber;
   discussionUrl: string;
   description: string;
-  coolOffEndBlock: number;
-  endBlock: number;
-  transaction?: TxTag;
+  coolOffEndBlock: BigNumber;
+  endBlock: BigNumber;
+  transaction: TxTag | null;
   lastState: ProposalState;
-  lastStateUpdatedAt: number;
-  totalVotes: number;
+  lastStateUpdatedAt: BigNumber;
+  totalVotes: BigNumber;
   totalAyesWeight: BigNumber;
   totalNaysWeight: BigNumber;
 }

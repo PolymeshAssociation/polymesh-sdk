@@ -19,23 +19,23 @@
 * [totalAyesWeight](proposaldetails.md#totalayesweight)
 * [totalNaysWeight](proposaldetails.md#totalnaysweight)
 * [totalVotes](proposaldetails.md#totalvotes)
-* [transaction](proposaldetails.md#optional-transaction)
+* [transaction](proposaldetails.md#transaction)
 
 ## Properties
 
 ###  coolOffEndBlock
 
-• **coolOffEndBlock**: *number*
+• **coolOffEndBlock**: *BigNumber*
 
-*Defined in [src/api/entities/Proposal/types.ts:29](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L29)*
+*Defined in [src/api/entities/Proposal/types.ts:29](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L29)*
 
 ___
 
 ###  createdAt
 
-• **createdAt**: *number*
+• **createdAt**: *BigNumber*
 
-*Defined in [src/api/entities/Proposal/types.ts:26](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L26)*
+*Defined in [src/api/entities/Proposal/types.ts:26](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L26)*
 
 ___
 
@@ -43,7 +43,7 @@ ___
 
 • **description**: *string*
 
-*Defined in [src/api/entities/Proposal/types.ts:28](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L28)*
+*Defined in [src/api/entities/Proposal/types.ts:28](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L28)*
 
 ___
 
@@ -51,15 +51,15 @@ ___
 
 • **discussionUrl**: *string*
 
-*Defined in [src/api/entities/Proposal/types.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L27)*
+*Defined in [src/api/entities/Proposal/types.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L27)*
 
 ___
 
 ###  endBlock
 
-• **endBlock**: *number*
+• **endBlock**: *BigNumber*
 
-*Defined in [src/api/entities/Proposal/types.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L30)*
+*Defined in [src/api/entities/Proposal/types.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L30)*
 
 ___
 
@@ -67,15 +67,15 @@ ___
 
 • **lastState**: *ProposalState*
 
-*Defined in [src/api/entities/Proposal/types.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L32)*
+*Defined in [src/api/entities/Proposal/types.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L32)*
 
 ___
 
 ###  lastStateUpdatedAt
 
-• **lastStateUpdatedAt**: *number*
+• **lastStateUpdatedAt**: *BigNumber*
 
-*Defined in [src/api/entities/Proposal/types.ts:33](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L33)*
+*Defined in [src/api/entities/Proposal/types.ts:33](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L33)*
 
 ___
 
@@ -83,7 +83,7 @@ ___
 
 • **proposerAddress**: *string*
 
-*Defined in [src/api/entities/Proposal/types.ts:25](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L25)*
+*Defined in [src/api/entities/Proposal/types.ts:25](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L25)*
 
 ___
 
@@ -91,7 +91,7 @@ ___
 
 • **totalAyesWeight**: *BigNumber*
 
-*Defined in [src/api/entities/Proposal/types.ts:35](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L35)*
+*Defined in [src/api/entities/Proposal/types.ts:35](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L35)*
 
 ___
 
@@ -99,20 +99,20 @@ ___
 
 • **totalNaysWeight**: *BigNumber*
 
-*Defined in [src/api/entities/Proposal/types.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L36)*
+*Defined in [src/api/entities/Proposal/types.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L36)*
 
 ___
 
 ###  totalVotes
 
-• **totalVotes**: *number*
+• **totalVotes**: *BigNumber*
 
-*Defined in [src/api/entities/Proposal/types.ts:34](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L34)*
+*Defined in [src/api/entities/Proposal/types.ts:34](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L34)*
 
 ___
 
-### `Optional` transaction
+###  transaction
 
-• **transaction**? : *TxTag*
+• **transaction**: *TxTag | null*
 
-*Defined in [src/api/entities/Proposal/types.ts:31](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/api/entities/Proposal/types.ts#L31)*
+*Defined in [src/api/entities/Proposal/types.ts:31](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/api/entities/Proposal/types.ts#L31)*

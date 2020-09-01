@@ -76,24 +76,26 @@ describe('Governance class', () => {
       const url = 'http://someUrl';
       const address = 'someAddress';
       const proposer = '0xsomeAddress';
-      const createdAt = 50800;
-      const coolOffPeriod = 100;
-      const proposalPeriodTimeFrame = 600;
+      const createdAt = new BigNumber(50800);
+      const coolOffEndBlock = new BigNumber(51000);
+      const endBlock = new BigNumber(56000);
+      const lastStateUpdatedAt = new BigNumber(50900);
       const proposal = '0x180500cc829c190000000000000000000000e8030000';
       const fakeTransaction = 'methodName.sectionName' as TxTag;
+      const totalVotes = new BigNumber(0);
       const totalAyesWeight = new BigNumber(0);
       const totalNaysWeight = new BigNumber(0);
       const proposalsQueryResponse = {
         pipId,
         proposerAddress: proposer,
-        createdAt,
+        createdAt: createdAt.toNumber(),
         discussionUrl: url,
         description: 'some description',
-        coolOffEndBlock: createdAt + coolOffPeriod,
-        endBlock: createdAt + proposalPeriodTimeFrame,
+        coolOffEndBlock: coolOffEndBlock.toNumber(),
+        endBlock: endBlock.toNumber(),
         lastState: ProposalState.Referendum,
-        lastStateUpdatedAt: createdAt + proposalPeriodTimeFrame,
-        totalVotes: 0,
+        lastStateUpdatedAt: lastStateUpdatedAt.toNumber(),
+        totalVotes: totalVotes.toNumber(),
         totalAyesWeight: totalAyesWeight.toNumber(),
         totalNaysWeight: totalNaysWeight.toNumber(),
       };
@@ -132,6 +134,11 @@ describe('Governance class', () => {
           details: {
             ...proposalsQueryResponse,
             transaction: fakeTransaction,
+            createdAt,
+            coolOffEndBlock,
+            endBlock,
+            lastStateUpdatedAt,
+            totalVotes,
             totalAyesWeight,
             totalNaysWeight,
           },
@@ -158,6 +165,12 @@ describe('Governance class', () => {
           proposal: proposalInstance,
           details: {
             ...proposalsQueryResponse,
+            transaction: null,
+            createdAt,
+            coolOffEndBlock,
+            endBlock,
+            lastStateUpdatedAt,
+            totalVotes,
             totalAyesWeight,
             totalNaysWeight,
           },

@@ -15,7 +15,7 @@
 
 • **Failed**: = "Failed"
 
-*Defined in [src/types/index.ts:55](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/types/index.ts#L55)*
+*Defined in [src/types/index.ts:55](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/types/index.ts#L55)*
 
 a critical transaction's execution failed.
 This might mean the transaction was rejected,
@@ -27,7 +27,7 @@ ___
 
 • **Idle**: = "Idle"
 
-*Defined in [src/types/index.ts:45](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/types/index.ts#L45)*
+*Defined in [src/types/index.ts:45](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/types/index.ts#L45)*
 
 the queue is prepped to run
 
@@ -37,7 +37,7 @@ ___
 
 • **Running**: = "Running"
 
-*Defined in [src/types/index.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/types/index.ts#L49)*
+*Defined in [src/types/index.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/types/index.ts#L49)*
 
 transactions in the queue are being executed
 
@@ -47,7 +47,7 @@ ___
 
 • **Succeeded**: = "Succeeded"
 
-*Defined in [src/types/index.ts:60](https://github.com/PolymathNetwork/polymesh-sdk/blob/ac1f14a/src/types/index.ts#L60)*
+*Defined in [src/types/index.ts:60](https://github.com/PolymathNetwork/polymesh-sdk/blob/59d9411/src/types/index.ts#L60)*
 
 the queue finished running all of its transactions. Non-critical transactions
 might still have failed
