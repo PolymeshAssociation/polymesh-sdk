@@ -9,7 +9,7 @@ import sinon from 'sinon';
 import { Identity, TickerReservation } from '~/api/entities';
 import { modifyClaims, removeSigningKeys, reserveTicker, transferPolyX } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
-import { didsWithClaims, heartbeat,transactions } from '~/middleware/queries';
+import { didsWithClaims, heartbeat, transactions } from '~/middleware/queries';
 import {
   CallIdEnum,
   ClaimTypeEnum,
@@ -804,6 +804,7 @@ describe('Polymesh Class', () => {
           scope: undefined,
           trustedClaimIssuers: [targetDid],
           claimTypes: [ClaimTypeEnum.Accredited],
+          includeExpired: false,
           count: 1,
           skip: undefined,
         }),
@@ -816,6 +817,7 @@ describe('Polymesh Class', () => {
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
+        includeExpired: false,
         size: 1,
       });
 
@@ -829,6 +831,7 @@ describe('Polymesh Class', () => {
           scope: undefined,
           trustedClaimIssuers: undefined,
           claimTypes: undefined,
+          includeExpired: true,
           count: undefined,
           skip: undefined,
         }),

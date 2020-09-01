@@ -1,4 +1,5 @@
 import { u32 } from '@polkadot/types';
+import { Balance } from '@polkadot/types/interfaces';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
@@ -19,9 +20,15 @@ describe('Proposal class', () => {
   const pipId = 10;
   let context: Context;
   let proposal: Proposal;
+  let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
+  let requestAtBlockStub: sinon.SinonStub;
+  let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
+    requestAtBlockStub = sinon.stub(utilsModule, 'requestAtBlock');
+    balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
   });
 
   beforeEach(() => {
@@ -194,11 +201,6 @@ describe('Proposal class', () => {
 
   describe('method: getStage', () => {
     const coolOff = 555000;
-    let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
-
-    beforeAll(() => {
-      u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
-    });
 
     afterEach(() => {
       dsMockUtils.reset();
@@ -277,6 +279,52 @@ describe('Proposal class', () => {
 
       const result = await proposal.getStage();
       expect(result).toEqual(ProposalStage.Ended);
+    });
+  });
+
+  describe('method: minimumBondedAmount', () => {
+    const fakeResult = new BigNumber(100000);
+    const rawBalance = dsMockUtils.createMockBalance(fakeResult.toNumber());
+    const end = 150000;
+    const rawEnd = dsMockUtils.createMockU32(end);
+
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockPipsMetadata({
+            proposer: dsMockUtils.createMockAccountId(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            cool_off_until: dsMockUtils.createMockU32(),
+            end: rawEnd,
+          })
+        ),
+      });
+
+      requestAtBlockStub.returns(rawBalance);
+      balanceToBigNumberStub.withArgs(rawBalance).returns(fakeResult);
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    test('should return the minimum bonded amount from the current storage', async () => {
+      sinon.stub(proposal, 'getStage').resolves(ProposalStage.Open);
+
+      const result = await proposal.minimumBondedAmount();
+      expect(result).toBe(fakeResult);
+    });
+
+    test('should return the minimum bonded amount from the historic storage', async () => {
+      const blockHash = new BigNumber(123456);
+      const rawBlockHash = dsMockUtils.createMockU32(blockHash.toNumber());
+
+      sinon.stub(proposal, 'getStage').resolves(ProposalStage.Ended);
+
+      dsMockUtils.createRpcStub('chain', 'getBlockHash').returns(rawBlockHash);
+
+      const result = await proposal.minimumBondedAmount();
+      expect(result).toBe(fakeResult);
     });
   });
 });

@@ -33,6 +33,7 @@ Represents an identity in the Polymesh blockchain
 * [hasRole](identity.md#hasrole)
 * [hasRoles](identity.md#hasroles)
 * [hasValidCdd](identity.md#hasvalidcdd)
+* [isCddProvider](identity.md#iscddprovider)
 * [isGcMember](identity.md#isgcmember)
 * [generateUuid](identity.md#static-generateuuid)
 * [unserialize](identity.md#static-unserialize)
@@ -45,7 +46,7 @@ Represents an identity in the Polymesh blockchain
 
 *Overrides void*
 
-*Defined in [src/api/entities/Identity/index.ts:73](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L73)*
+*Defined in [src/api/entities/Identity/index.ts:73](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L73)*
 
 Create an Identity entity
 
@@ -64,7 +65,7 @@ Name | Type |
 
 • **authorizations**: *[Authorizations](authorizations.md)*
 
-*Defined in [src/api/entities/Identity/index.ts:73](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L73)*
+*Defined in [src/api/entities/Identity/index.ts:73](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L73)*
 
 ___
 
@@ -74,7 +75,7 @@ ___
 
 *Inherited from [Entity](entity.md).[context](entity.md#protected-context)*
 
-*Defined in [src/base/Entity.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/base/Entity.ts#L49)*
+*Defined in [src/base/Entity.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/base/Entity.ts#L49)*
 
 ___
 
@@ -82,7 +83,7 @@ ___
 
 • **did**: *string*
 
-*Defined in [src/api/entities/Identity/index.ts:70](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L70)*
+*Defined in [src/api/entities/Identity/index.ts:70](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L70)*
 
 identity ID as stored in the blockchain
 
@@ -94,7 +95,7 @@ ___
 
 *Inherited from [Entity](entity.md).[uuid](entity.md#uuid)*
 
-*Defined in [src/base/Entity.ts:47](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/base/Entity.ts#L47)*
+*Defined in [src/base/Entity.ts:47](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/base/Entity.ts#L47)*
 
 ## Methods
 
@@ -102,7 +103,7 @@ ___
 
 ▸ **getCddClaims**(`opts`: object): *Promise‹[ResultSet](../interfaces/resultset.md)‹[ClaimData](../interfaces/claimdata.md)››*
 
-*Defined in [src/api/entities/Identity/index.ts:251](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L251)*
+*Defined in [src/api/entities/Identity/index.ts:268](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L268)*
 
 Retrieve the list of cdd claims for the current identity
 
@@ -123,7 +124,7 @@ ___
 
 ▸ **getClaimScopes**(): *Promise‹[ClaimScope](../interfaces/claimscope.md)[]›*
 
-*Defined in [src/api/entities/Identity/index.ts:279](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L279)*
+*Defined in [src/api/entities/Identity/index.ts:296](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L296)*
 
 Retrieve all scopes in which claims have been made for this identity.
   If the scope is an asset DID, the corresponding ticker is returned as well
@@ -140,7 +141,7 @@ ___
 
 ▸ **getClaims**(`opts`: object): *Promise‹[ResultSet](../interfaces/resultset.md)‹[IdentityWithClaims](../interfaces/identitywithclaims.md)››*
 
-*Defined in [src/api/entities/Identity/index.ts:380](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L380)*
+*Defined in [src/api/entities/Identity/index.ts:399](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L399)*
 
 Retrieve all claims issued about this identity, grouped by claim issuer
 
@@ -148,14 +149,15 @@ Retrieve all claims issued about this identity, grouped by claim issuer
 
 **Parameters:**
 
-▪`Default value`  **opts**: *object*= {}
+▪`Default value`  **opts**: *object*= { includeExpired: true }
 
-Name | Type |
------- | ------ |
-`scope?` | undefined &#124; string |
-`size?` | undefined &#124; number |
-`start?` | undefined &#124; number |
-`trustedClaimIssuers?` | (string &#124; [Identity](identity.md)‹›)[] |
+Name | Type | Description |
+------ | ------ | ------ |
+`includeExpired?` | undefined &#124; false &#124; true | whether to include expired claims. Defaults to true  |
+`scope?` | undefined &#124; string | - |
+`size?` | undefined &#124; number | - |
+`start?` | undefined &#124; number | - |
+`trustedClaimIssuers?` | (string &#124; [Identity](identity.md)‹›)[] | - |
 
 **Returns:** *Promise‹[ResultSet](../interfaces/resultset.md)‹[IdentityWithClaims](../interfaces/identitywithclaims.md)››*
 
@@ -165,7 +167,7 @@ ___
 
 ▸ **getHeldTokens**(`opts`: object): *Promise‹[ResultSet](../interfaces/resultset.md)‹[SecurityToken](securitytoken.md)››*
 
-*Defined in [src/api/entities/Identity/index.ts:308](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L308)*
+*Defined in [src/api/entities/Identity/index.ts:325](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L325)*
 
 Retrieve a list of all tokens which were held at one point by this identity
 
@@ -189,7 +191,7 @@ ___
 
 ▸ **getMasterKey**(): *Promise‹string›*
 
-*Defined in [src/api/entities/Identity/index.ts:215](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L215)*
+*Defined in [src/api/entities/Identity/index.ts:232](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L232)*
 
 Retrieve the master key associated with the identity
 
@@ -199,7 +201,7 @@ Retrieve the master key associated with the identity
 
 ▸ **getMasterKey**(`callback`: [SubCallback](../globals.md#subcallback)‹string›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/api/entities/Identity/index.ts:216](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L216)*
+*Defined in [src/api/entities/Identity/index.ts:233](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L233)*
 
 **Parameters:**
 
@@ -215,7 +217,7 @@ ___
 
 ▸ **getTokenBalance**(`args`: object): *Promise‹BigNumber›*
 
-*Defined in [src/api/entities/Identity/index.ts:131](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L131)*
+*Defined in [src/api/entities/Identity/index.ts:131](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L131)*
 
 Retrieve the balance of a particular Security Token
 
@@ -233,7 +235,7 @@ Name | Type |
 
 ▸ **getTokenBalance**(`args`: object, `callback`: [SubCallback](../globals.md#subcallback)‹BigNumber›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/api/entities/Identity/index.ts:132](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L132)*
+*Defined in [src/api/entities/Identity/index.ts:132](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L132)*
 
 **Parameters:**
 
@@ -253,7 +255,7 @@ ___
 
 ▸ **getTrustingTokens**(`args`: object): *Promise‹[SecurityToken](securitytoken.md)[]›*
 
-*Defined in [src/api/entities/Identity/index.ts:359](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L359)*
+*Defined in [src/api/entities/Identity/index.ts:376](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L376)*
 
 Get the list of tokens for which this identity is a trusted claim issuer
 
@@ -275,7 +277,7 @@ ___
 
 ▸ **hasRole**(`role`: [Role](../globals.md#role)): *Promise‹boolean›*
 
-*Defined in [src/api/entities/Identity/index.ts:90](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L90)*
+*Defined in [src/api/entities/Identity/index.ts:90](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L90)*
 
 Check whether this Identity possesses the specified Role
 
@@ -293,7 +295,7 @@ ___
 
 ▸ **hasRoles**(`roles`: [Role](../globals.md#role)[]): *Promise‹boolean›*
 
-*Defined in [src/api/entities/Identity/index.ts:348](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L348)*
+*Defined in [src/api/entities/Identity/index.ts:365](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L365)*
 
 Check whether this Identity possesses all specified roles
 
@@ -311,9 +313,21 @@ ___
 
 ▸ **hasValidCdd**(): *Promise‹boolean›*
 
-*Defined in [src/api/entities/Identity/index.ts:179](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L179)*
+*Defined in [src/api/entities/Identity/index.ts:179](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L179)*
 
 Check whether this Identity has a valid CDD claim
+
+**Returns:** *Promise‹boolean›*
+
+___
+
+###  isCddProvider
+
+▸ **isCddProvider**(): *Promise‹boolean›*
+
+*Defined in [src/api/entities/Identity/index.ts:213](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L213)*
+
+Check whether this Identity is a CDD provider
 
 **Returns:** *Promise‹boolean›*
 
@@ -323,7 +337,7 @@ ___
 
 ▸ **isGcMember**(): *Promise‹boolean›*
 
-*Defined in [src/api/entities/Identity/index.ts:196](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/api/entities/Identity/index.ts#L196)*
+*Defined in [src/api/entities/Identity/index.ts:196](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Identity/index.ts#L196)*
 
 Check whether this Identity is Governance Committee member
 
@@ -337,7 +351,7 @@ ___
 
 *Inherited from [Entity](entity.md).[generateUuid](entity.md#static-generateuuid)*
 
-*Defined in [src/base/Entity.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/base/Entity.ts#L15)*
+*Defined in [src/base/Entity.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/base/Entity.ts#L15)*
 
 Generate the Entity's UUID from its identifying properties
 
@@ -361,7 +375,7 @@ ___
 
 *Inherited from [Entity](entity.md).[unserialize](entity.md#static-unserialize)*
 
-*Defined in [src/base/Entity.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/e182811/src/base/Entity.ts#L24)*
+*Defined in [src/base/Entity.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/base/Entity.ts#L24)*
 
 Unserialize a UUID into its Unique Identifiers
 
