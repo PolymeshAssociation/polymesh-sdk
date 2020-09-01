@@ -1,6 +1,7 @@
 import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot/api/types';
 import { bool, Bytes, StorageKey, Text, u8, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
+import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
 import {
   stringToU8a,
@@ -1213,7 +1214,7 @@ export async function requestPaginated<F extends AnyFunction>(
 export async function requestAtBlock<F extends AnyFunction>(
   query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,
   opts: {
-    blockHash?: string;
+    blockHash?: string | BlockHash;
     args: Parameters<F>;
   }
 ): Promise<ObsInnerType<ReturnType<F>>> {
