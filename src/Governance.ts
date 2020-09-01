@@ -123,7 +123,6 @@ export class Governance {
         return {
           proposal,
           details: {
-            pipId,
             proposerAddress,
             createdAt: new BigNumber(createdAt),
             discussionUrl,

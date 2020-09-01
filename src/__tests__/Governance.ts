@@ -86,7 +86,6 @@ describe('Governance class', () => {
       const totalAyesWeight = new BigNumber(0);
       const totalNaysWeight = new BigNumber(0);
       const proposalsQueryResponse = {
-        pipId,
         proposerAddress: proposer,
         createdAt: createdAt.toNumber(),
         discussionUrl: url,
@@ -120,7 +119,7 @@ describe('Governance class', () => {
           skip: undefined,
         }),
         {
-          proposals: [{ ...proposalsQueryResponse, proposal, proposer, url }],
+          proposals: [{ ...proposalsQueryResponse, pipId, proposal, proposer, url }],
         }
       );
 
@@ -154,7 +153,7 @@ describe('Governance class', () => {
           skip: undefined,
         }),
         {
-          proposals: [{ ...proposalsQueryResponse, proposer, url }],
+          proposals: [{ ...proposalsQueryResponse, pipId, proposer, url }],
         }
       );
 

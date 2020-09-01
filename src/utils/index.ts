@@ -1356,15 +1356,10 @@ export function toIdentityWithClaimsArray(
  * @hidden
  */
 export function middlewareProposalToTxTag(bytes: string, context: Context): TxTag {
-  const proposal = context.polymeshApi.createType('Proposal', bytes);
-  const { sectionName, methodName } = proposal;
+  const { sectionName, methodName } = context.polymeshApi.createType('Proposal', bytes);
 
-  let moduleName;
-  for (const txTagItem in TxTags) {
-    if (txTagItem.toLowerCase() === sectionName.toLowerCase()) {
-      moduleName = txTagItem;
-    }
-  }
-
-  return `${moduleName}.${camelCase(methodName)}` as TxTag;
+  return extrinsicIdentifierToTxTag({
+    moduleId: sectionName.toLowerCase() as ModuleIdEnum,
+    callId: methodName as CallIdEnum,
+  });
 }
