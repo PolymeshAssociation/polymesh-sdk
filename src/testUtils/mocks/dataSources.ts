@@ -381,7 +381,7 @@ let keyringOptions: KeyringOptions = defaultKeyringOptions;
 function configureContext(opts: ContextOptions): void {
   const getCurrentIdentity = sinon.stub();
   opts.withSeed
-    ? getCurrentIdentity.returns({
+    ? getCurrentIdentity.resolves({
         getPolyXBalance: sinon.stub().resolves(opts.balance?.free),
         did: opts.did,
         hasRoles: sinon.stub().resolves(opts.hasRoles),

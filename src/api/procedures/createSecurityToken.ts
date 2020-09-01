@@ -41,6 +41,9 @@ export interface CreateSecurityTokenParams {
   documents?: TokenDocument[];
 }
 
+/**
+ * @hidden
+ */
 export type Params = CreateSecurityTokenParams & {
   ticker: string;
 };
@@ -144,4 +147,7 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TickerOwner, ticker }];
 }
 
+/**
+ * @hidden
+ */
 export const createSecurityToken = new Procedure(prepareCreateSecurityToken, getRequiredRoles);

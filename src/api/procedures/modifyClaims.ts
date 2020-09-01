@@ -93,6 +93,7 @@ export async function prepareModifyClaims(
   }
 
   if (operation !== ClaimOperation.Add) {
+    const { did: currentDid } = await context.getCurrentIdentity();
     const {
       data: {
         didsWithClaims: { items: currentClaims },
@@ -100,7 +101,8 @@ export async function prepareModifyClaims(
     } = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
         dids: allTargets,
-        trustedClaimIssuers: [context.getCurrentIdentity().did],
+        trustedClaimIssuers: [currentDid],
+        includeExpired: true,
         count: allTargets.length,
       })
     );
@@ -174,4 +176,7 @@ export function getRequiredRoles({ claims }: ModifyClaimsParams): Role[] {
   return [];
 }
 
+/**
+ * @hidden
+ */
 export const modifyClaims = new Procedure(prepareModifyClaims, getRequiredRoles);

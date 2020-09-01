@@ -21,7 +21,7 @@ import {
   TransactionArgument,
   UnsubCallback,
 } from '~/types';
-import { balanceToBigNumber, identityIdToString, u32ToBigNumber, valueToDid } from '~/utils';
+import { addressToKey, balanceToBigNumber, identityIdToString, u32ToBigNumber } from '~/utils';
 
 /**
  * Handles all Governance related functionality
@@ -68,7 +68,7 @@ export class Governance {
    *
    * @note details for a single proposal can be fetched using the `Proposal` entity's `getDetails` method
    *
-   * @param opts.proposers - identities (or identity IDs) for which to fetch proposals. Defaults to all proposers
+   * @param opts.proposers -  accounts for which to fetch proposals. Defaults to all proposers
    * @param opts.states - state of the proposal
    * @param opts.orderBy - the order in which the proposals are returned
    * @param opts.size - page size
@@ -76,7 +76,7 @@ export class Governance {
    */
   public async getProposals(
     opts: {
-      proposers?: (string | Identity)[];
+      proposers?: string[];
       states?: ProposalState[];
       orderBy?: ProposalOrderByInput;
       size?: number;
@@ -89,7 +89,7 @@ export class Governance {
 
     const result = await context.queryMiddleware<Ensured<Query, 'proposals'>>(
       proposals({
-        proposers: proposers?.map(proposer => valueToDid(proposer)),
+        proposers: proposers?.map(proposer => addressToKey(proposer)),
         states,
         orderBy,
         count: size,

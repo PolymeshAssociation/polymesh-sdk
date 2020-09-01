@@ -7,6 +7,9 @@ export interface TogglePauseRulesParams {
   pause: boolean;
 }
 
+/**
+ * @hidden
+ */
 export type Params = TogglePauseRulesParams & {
   ticker: string;
 };
@@ -53,4 +56,7 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 
+/**
+ * @hidden
+ */
 export const togglePauseRules = new Procedure(prepareTogglePauseRules, getRequiredRoles);

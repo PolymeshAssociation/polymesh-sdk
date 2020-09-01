@@ -57,7 +57,7 @@ export async function prepareTransferPolyX(
     });
   }
 
-  const senderIdentity = context.getCurrentIdentity();
+  const senderIdentity = await context.getCurrentIdentity();
   const receiverIdentity = new Identity({ did: identityIdToString(identityId) }, context);
 
   // TODO: queryMulti
@@ -83,4 +83,7 @@ export async function prepareTransferPolyX(
   this.addTransaction(tx.balances.transfer, {}, to, numberToBalance(amount, context));
 }
 
+/**
+ * @hidden
+ */
 export const transferPolyX = new Procedure(prepareTransferPolyX);

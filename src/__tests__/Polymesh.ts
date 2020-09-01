@@ -502,8 +502,12 @@ describe('Polymesh Class', () => {
       });
 
       const context = dsMockUtils.getContextInstance();
+      const [result, currentIdentity] = await Promise.all([
+        polymesh.getIdentity(),
+        context.getCurrentIdentity(),
+      ]);
 
-      expect(polymesh.getIdentity()).toEqual(context.getCurrentIdentity());
+      expect(result).toEqual(currentIdentity);
     });
 
     test('should return an identity object with the passed did', async () => {
@@ -514,7 +518,7 @@ describe('Polymesh Class', () => {
 
       const params = { did: 'testDid' };
 
-      const result = polymesh.getIdentity(params);
+      const result = await polymesh.getIdentity(params);
       const context = dsMockUtils.getContextInstance();
 
       expect(result).toMatchObject(new Identity(params, context));
@@ -743,6 +747,7 @@ describe('Polymesh Class', () => {
           scope: undefined,
           trustedClaimIssuers: [targetDid],
           claimTypes: [ClaimTypeEnum.Accredited],
+          includeExpired: false,
           count: 1,
           skip: undefined,
         }),
@@ -755,6 +760,7 @@ describe('Polymesh Class', () => {
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
+        includeExpired: false,
         size: 1,
       });
 
@@ -768,6 +774,7 @@ describe('Polymesh Class', () => {
           scope: undefined,
           trustedClaimIssuers: undefined,
           claimTypes: undefined,
+          includeExpired: true,
           count: undefined,
           skip: undefined,
         }),
