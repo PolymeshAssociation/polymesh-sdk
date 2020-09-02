@@ -172,7 +172,7 @@ describe('voteProposal procedure', () => {
     expect(error.data).toMatchObject({ freeBalance });
   });
 
-  test('should add an vote proposal transaction to the queue', async () => {
+  test('should add a vote proposal transaction to the queue', async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {
