@@ -295,7 +295,7 @@ describe('Proposal class', () => {
     test('should prepare the procedure with the correct arguments and context', async () => {
       const args = {
         vote: true,
-        deposit: new BigNumber(1000),
+        bondAmount: new BigNumber(1000),
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;

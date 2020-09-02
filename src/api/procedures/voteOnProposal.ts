@@ -8,7 +8,7 @@ import { booleanToBool, numberToBalance } from '~/utils';
 
 export type VoteOnProposalParams = {
   vote: boolean;
-  deposit: BigNumber;
+  bondAmount: BigNumber;
 };
 
 export type Params = { pipId: number } & VoteOnProposalParams;
@@ -26,7 +26,7 @@ export async function prepareVoteOnProposal(
     },
     context,
   } = this;
-  const { pipId, vote, deposit } = args;
+  const { pipId, vote, bondAmount } = args;
 
   const proposal = new Proposal({ pipId }, context);
 
@@ -60,7 +60,7 @@ export async function prepareVoteOnProposal(
     });
   }
 
-  if (deposit.isGreaterThan(freeBalance)) {
+  if (bondAmount.isGreaterThan(freeBalance)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: "The Identity doesn't have enough balance",
@@ -75,7 +75,7 @@ export async function prepareVoteOnProposal(
     {},
     pipId,
     booleanToBool(vote, context),
-    numberToBalance(deposit, context)
+    numberToBalance(bondAmount, context)
   );
 }
 

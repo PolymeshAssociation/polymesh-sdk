@@ -20,13 +20,13 @@ describe('voteOnProposal procedure', () => {
   const pipId = 10;
   const mockAddress = 'someAddress';
   const vote = true;
-  const deposit = new BigNumber(10);
+  const bondAmount = new BigNumber(10);
   const args = {
     vote,
-    deposit,
+    bondAmount,
   };
   const rawVote = dsMockUtils.createMockBool(vote);
-  const rawDeposit = dsMockUtils.createMockBalance(deposit.toNumber());
+  const rawBondAmount = dsMockUtils.createMockBalance(bondAmount.toNumber());
 
   let mockContext: Mocked<Context>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
@@ -55,7 +55,7 @@ describe('voteOnProposal procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     booleanToBoolStub.withArgs(vote, mockContext).returns(rawVote);
-    numberToBalanceStub.withArgs(deposit, mockContext).returns(rawDeposit);
+    numberToBalanceStub.withArgs(bondAmount, mockContext).returns(rawBondAmount);
   });
 
   afterEach(() => {
@@ -163,7 +163,11 @@ describe('voteOnProposal procedure', () => {
     let error;
 
     try {
-      await prepareVoteOnProposal.call(proc, { pipId, ...args, deposit: new BigNumber(1000000) });
+      await prepareVoteOnProposal.call(proc, {
+        pipId,
+        ...args,
+        bondAmount: new BigNumber(1000000),
+      });
     } catch (err) {
       error = err;
     }
@@ -194,7 +198,7 @@ describe('voteOnProposal procedure', () => {
       {},
       pipId,
       rawVote,
-      rawDeposit
+      rawBondAmount
     );
   });
 });
