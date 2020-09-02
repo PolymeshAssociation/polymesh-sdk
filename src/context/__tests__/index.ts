@@ -1125,6 +1125,12 @@ describe('Context class', () => {
         context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Error');
 
+      dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
+
+      await expect(
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware query: Error');
+
       dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
 
       await expect(

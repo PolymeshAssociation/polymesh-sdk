@@ -626,7 +626,7 @@ export class Context {
     try {
       result = await this.middlewareApi.query(query);
     } catch (err) {
-      const resultMessage = err.networkError?.result.message;
+      const resultMessage = err.networkError?.result?.message;
       const { message: errorMessage } = err;
       const message = resultMessage ?? errorMessage;
       throw new PolymeshError({

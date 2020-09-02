@@ -16,4 +16,4 @@
 
 • **signers**: *[Signer](signer.md)[]*
 
-*Defined in [src/api/procedures/removeSigningKeys.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/api/procedures/removeSigningKeys.ts#L8)*
+*Defined in [src/api/procedures/removeSigningKeys.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/0827a10/src/api/procedures/removeSigningKeys.ts#L8)*

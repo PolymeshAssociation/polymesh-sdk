@@ -17,7 +17,7 @@
 
 • **complies**: *boolean*
 
-*Defined in [src/types/index.ts:290](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/types/index.ts#L290)*
+*Defined in [src/types/index.ts:290](https://github.com/PolymathNetwork/polymesh-sdk/blob/0827a10/src/types/index.ts#L290)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **rules**: *[Rule](rule.md) & object[]*
 
-*Defined in [src/types/index.ts:287](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/types/index.ts#L287)*
+*Defined in [src/types/index.ts:287](https://github.com/PolymathNetwork/polymesh-sdk/blob/0827a10/src/types/index.ts#L287)*
