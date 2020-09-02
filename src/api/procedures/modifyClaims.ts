@@ -102,6 +102,7 @@ export async function prepareModifyClaims(
       didsWithClaims({
         dids: allTargets,
         trustedClaimIssuers: [currentDid],
+        includeExpired: true,
         count: allTargets.length,
       })
     );

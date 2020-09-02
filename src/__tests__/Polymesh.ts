@@ -753,6 +753,7 @@ describe('Polymesh Class', () => {
           scope: undefined,
           trustedClaimIssuers: [targetDid],
           claimTypes: [ClaimTypeEnum.Accredited],
+          includeExpired: false,
           count: 1,
           skip: undefined,
         }),
@@ -765,6 +766,7 @@ describe('Polymesh Class', () => {
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
+        includeExpired: false,
         size: 1,
       });
 
@@ -778,6 +780,7 @@ describe('Polymesh Class', () => {
           scope: undefined,
           trustedClaimIssuers: undefined,
           claimTypes: undefined,
+          includeExpired: true,
           count: undefined,
           skip: undefined,
         }),

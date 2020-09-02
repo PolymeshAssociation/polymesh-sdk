@@ -1,3 +1,4 @@
+import { BlockHash } from '@polkadot/types/interfaces/chain';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities/Identity';
@@ -7,7 +8,13 @@ import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, ResultSet } from '~/types';
-import { meshProposalStateToProposalState, u32ToBigNumber, valueToDid } from '~/utils';
+import {
+  balanceToBigNumber,
+  meshProposalStateToProposalState,
+  requestAtBlock,
+  u32ToBigNumber,
+  valueToDid,
+} from '~/utils';
 
 import { ProposalDetails, ProposalStage, ProposalVote, ProposalVotesOrderByInput } from './types';
 
@@ -177,23 +184,18 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       context: {
         polymeshApi: {
           query: { pips },
-          rpc,
+          rpc: { chain },
         },
       },
       pipId,
     } = this;
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    const [metadata, header] = await Promise.all([
-      pips.proposalMetadata(pipId),
-      (rpc as any).chain.getHeader(),
-    ]);
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+    const [metadata, header] = await Promise.all([pips.proposalMetadata(pipId), chain.getHeader()]);
 
     const { end: rawEnd, cool_off_until: rawCoolOff } = metadata.unwrap();
     const { number: rawBlockId } = header;
 
-    const blockId = u32ToBigNumber(rawBlockId);
+    const blockId = u32ToBigNumber(rawBlockId.unwrap());
     const end = u32ToBigNumber(rawEnd);
     const coolOff = u32ToBigNumber(rawCoolOff);
 
@@ -206,5 +208,37 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     }
 
     return ProposalStage.Ended;
+  }
+
+  /**
+   * Retrieve the minimum amount of POLYX that must be bonded by aye votes for the proposal to be considered valid
+   */
+  public async minimumBondedAmount(): Promise<BigNumber> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+          rpc: { chain },
+        },
+      },
+      pipId,
+    } = this;
+
+    const [stage, metadata] = await Promise.all([this.getStage(), pips.proposalMetadata(pipId)]);
+
+    const { end: endBlock } = metadata.unwrap();
+
+    const opts: { args: []; blockHash?: BlockHash } = {
+      args: [],
+    };
+
+    if (stage !== ProposalStage.Open) {
+      const blockHash = await chain.getBlockHash(endBlock);
+      opts.blockHash = blockHash;
+    }
+
+    const result = await requestAtBlock(pips.quorumThreshold, opts);
+
+    return balanceToBigNumber(result);
   }
 }

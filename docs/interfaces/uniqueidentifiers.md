@@ -24,7 +24,7 @@ Properties that uniquely identify a Proposal
 
 • **authId**: *BigNumber*
 
-*Defined in [src/api/entities/AuthorizationRequest.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/a07dd9c/src/api/entities/AuthorizationRequest.ts#L10)*
+*Defined in [src/api/entities/AuthorizationRequest.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/35ecc64/src/api/entities/AuthorizationRequest.ts#L10)*
 
 ___
 
@@ -32,9 +32,9 @@ ___
 
 • **did**: *string*
 
-*Defined in [src/api/entities/TrustedClaimIssuer.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/a07dd9c/src/api/entities/TrustedClaimIssuer.ts#L11)*
+*Defined in [src/api/entities/TrustedClaimIssuer.ts:11](https://github.com/PolymathNetwork/polymesh-sdk/blob/35ecc64/src/api/entities/TrustedClaimIssuer.ts#L11)*
 
-*Defined in [src/api/entities/Identity/index.ts:50](https://github.com/PolymathNetwork/polymesh-sdk/blob/a07dd9c/src/api/entities/Identity/index.ts#L50)*
+*Defined in [src/api/entities/Identity/index.ts:50](https://github.com/PolymathNetwork/polymesh-sdk/blob/35ecc64/src/api/entities/Identity/index.ts#L50)*
 
 ___
 
@@ -42,7 +42,7 @@ ___
 
 • **pipId**: *number*
 
-*Defined in [src/api/entities/Proposal/index.ts:18](https://github.com/PolymathNetwork/polymesh-sdk/blob/a07dd9c/src/api/entities/Proposal/index.ts#L18)*
+*Defined in [src/api/entities/Proposal/index.ts:25](https://github.com/PolymathNetwork/polymesh-sdk/blob/35ecc64/src/api/entities/Proposal/index.ts#L25)*
 
 ___
 
@@ -50,10 +50,10 @@ ___
 
 • **ticker**: *string*
 
-*Defined in [src/api/entities/TrustedClaimIssuer.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/a07dd9c/src/api/entities/TrustedClaimIssuer.ts#L12)*
+*Defined in [src/api/entities/TrustedClaimIssuer.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/35ecc64/src/api/entities/TrustedClaimIssuer.ts#L12)*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:50](https://github.com/PolymathNetwork/polymesh-sdk/blob/a07dd9c/src/api/entities/SecurityToken/index.ts#L50)*
+*Defined in [src/api/entities/SecurityToken/index.ts:50](https://github.com/PolymathNetwork/polymesh-sdk/blob/35ecc64/src/api/entities/SecurityToken/index.ts#L50)*
 
-*Defined in [src/api/entities/TickerReservation/index.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/a07dd9c/src/api/entities/TickerReservation/index.ts#L22)*
+*Defined in [src/api/entities/TickerReservation/index.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/35ecc64/src/api/entities/TickerReservation/index.ts#L22)*
 
 ticker of the security token

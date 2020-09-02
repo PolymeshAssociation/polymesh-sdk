@@ -329,7 +329,7 @@ describe('Identity class', () => {
   });
 
   describe('method: isCddProvider', () => {
-    test('should return whether the Identity is cdd provider', async () => {
+    test('should return whether the Identity is a CDD provider', async () => {
       const did = 'someDid';
       const rawDid = dsMockUtils.createMockIdentityId(did);
       const mockContext = dsMockUtils.getContextInstance();
@@ -561,6 +561,7 @@ describe('Identity class', () => {
           target: did,
           scope: undefined,
           trustedClaimIssuers: [did],
+          includeExpired: false,
           count: 1,
           skip: undefined,
         }),
@@ -571,6 +572,7 @@ describe('Identity class', () => {
 
       let result = await identity.getClaims({
         trustedClaimIssuers: [did],
+        includeExpired: false,
         size: 1,
       });
 
@@ -583,6 +585,7 @@ describe('Identity class', () => {
           target: did,
           scope: undefined,
           trustedClaimIssuers: undefined,
+          includeExpired: true,
           count: undefined,
           skip: undefined,
         }),

@@ -314,6 +314,7 @@ export function issuerDidsWithClaimsByTarget(
       $target: String!
       $scope: String
       $trustedClaimIssuers: [String!]
+      $includeExpired: Boolean
       $count: Int
       $skip: Int
     ) {
@@ -321,9 +322,25 @@ export function issuerDidsWithClaimsByTarget(
         target: $target
         scope: $scope
         trustedClaimIssuers: $trustedClaimIssuers
+        includeExpired: $includeExpired
         count: $count
         skip: $skip
-      )
+      ) {
+        totalCount
+        items {
+          did
+          claims {
+            targetDID
+            issuer
+            issuance_date
+            last_update_date
+            expiry
+            type
+            jurisdiction
+            scope
+          }
+        }
+      }
     }
   `;
 
