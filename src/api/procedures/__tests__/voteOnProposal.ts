@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
-import { Params, prepareVoteProposal } from '~/api/procedures/voteProposal';
+import { Params, prepareVoteOnProposal } from '~/api/procedures/voteOnProposal';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -16,7 +16,7 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockProposalModule('~/api/entities/Proposal')
 );
 
-describe('voteProposal procedure', () => {
+describe('voteOnProposal procedure', () => {
   const pipId = 10;
   const mockAddress = 'someAddress';
   const vote = true;
@@ -32,7 +32,7 @@ describe('voteProposal procedure', () => {
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context], Balance>;
   let addTransactionStub: sinon.SinonStub;
-  let voteProposalTransaction: PolymeshTx<unknown[]>;
+  let voteOnProposalTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -50,7 +50,7 @@ describe('voteProposal procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    voteProposalTransaction = dsMockUtils.createTxStub('pips', 'vote');
+    voteOnProposalTransaction = dsMockUtils.createTxStub('pips', 'vote');
 
     mockContext = dsMockUtils.getContextInstance();
 
@@ -86,7 +86,7 @@ describe('voteProposal procedure', () => {
     let error;
 
     try {
-      await prepareVoteProposal.call(proc, { pipId, ...args });
+      await prepareVoteOnProposal.call(proc, { pipId, ...args });
     } catch (err) {
       error = err;
     }
@@ -111,7 +111,7 @@ describe('voteProposal procedure', () => {
     let error;
 
     try {
-      await prepareVoteProposal.call(proc, { pipId, ...args });
+      await prepareVoteOnProposal.call(proc, { pipId, ...args });
     } catch (err) {
       error = err;
     }
@@ -136,15 +136,15 @@ describe('voteProposal procedure', () => {
     let error;
 
     try {
-      await prepareVoteProposal.call(proc, { pipId, ...args });
+      await prepareVoteOnProposal.call(proc, { pipId, ...args });
     } catch (err) {
       error = err;
     }
 
-    expect(error.message).toBe('The identity has already voted this proposal');
+    expect(error.message).toBe('The Identity has already voted on this proposal');
   });
 
-  test('should throw an error if the identity doesn't have enough balance', async () => {
+  test("should throw an error if the identity doesn't have enough balance", async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {
@@ -163,12 +163,12 @@ describe('voteProposal procedure', () => {
     let error;
 
     try {
-      await prepareVoteProposal.call(proc, { pipId, ...args, deposit: new BigNumber(1000000) });
+      await prepareVoteOnProposal.call(proc, { pipId, ...args, deposit: new BigNumber(1000000) });
     } catch (err) {
       error = err;
     }
 
-    expect(error.message).toBe('The identity has not enough balance');
+    expect(error.message).toBe("The Identity doesn't have enough balance");
     expect(error.data).toMatchObject({ freeBalance });
   });
 
@@ -186,11 +186,11 @@ describe('voteProposal procedure', () => {
     });
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareVoteProposal.call(proc, { pipId, ...args });
+    await prepareVoteOnProposal.call(proc, { pipId, ...args });
 
     sinon.assert.calledWith(
       addTransactionStub,
-      voteProposalTransaction,
+      voteOnProposalTransaction,
       {},
       pipId,
       rawVote,

@@ -6,17 +6,17 @@ import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
 import { booleanToBool, numberToBalance } from '~/utils';
 
-export type VoteProposalParams = {
+export type VoteOnProposalParams = {
   vote: boolean;
   deposit: BigNumber;
 };
 
-export type Params = { pipId: number } & VoteProposalParams;
+export type Params = { pipId: number } & VoteOnProposalParams;
 
 /**
  * @hidden
  */
-export async function prepareVoteProposal(
+export async function prepareVoteOnProposal(
   this: Procedure<Params, void>,
   args: Params
 ): Promise<void> {
@@ -56,14 +56,14 @@ export async function prepareVoteProposal(
   if (hasVoted) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The identity has already voted this proposal',
+      message: 'The Identity has already voted on this proposal',
     });
   }
 
   if (deposit.isGreaterThan(freeBalance)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The identity has not enough balance',
+      message: "The Identity doesn't have enough balance",
       data: {
         freeBalance,
       },
@@ -79,4 +79,4 @@ export async function prepareVoteProposal(
   );
 }
 
-export const voteProposal = new Procedure(prepareVoteProposal);
+export const voteOnProposal = new Procedure(prepareVoteOnProposal);

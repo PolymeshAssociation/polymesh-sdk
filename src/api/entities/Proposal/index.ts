@@ -6,8 +6,8 @@ import {
   cancelProposal,
   editProposal,
   EditProposalParams,
-  voteProposal,
-  VoteProposalParams,
+  voteOnProposal,
+  VoteOnProposalParams,
 } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
@@ -222,9 +222,9 @@ export class Proposal extends Entity<UniqueIdentifiers> {
    * @param args.vote - the actual vote. True for aye and false for nay
    * @param args.bondAmount - amount of POLYX to bond for this vote. Bonded POLYX will provide weight to the vote
    */
-  public async vote(args: VoteProposalParams): Promise<TransactionQueue<void>> {
+  public async vote(args: VoteOnProposalParams): Promise<TransactionQueue<void>> {
     const { context, pipId } = this;
-    return voteProposal.prepare({ pipId, ...args }, context);
+    return voteOnProposal.prepare({ pipId, ...args }, context);
   }
 
   /**

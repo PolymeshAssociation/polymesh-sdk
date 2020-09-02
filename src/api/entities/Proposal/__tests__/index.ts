@@ -6,7 +6,7 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities/Identity';
 import { ProposalStage } from '~/api/entities/Proposal/types';
-import { cancelProposal, editProposal, voteProposal } from '~/api/procedures';
+import { cancelProposal, editProposal, voteOnProposal } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
@@ -301,7 +301,7 @@ describe('Proposal class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       sinon
-        .stub(voteProposal, 'prepare')
+        .stub(voteOnProposal, 'prepare')
         .withArgs({ pipId, ...args }, context)
         .resolves(expectedQueue);
 
