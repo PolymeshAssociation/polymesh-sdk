@@ -144,7 +144,7 @@ describe('voteProposal procedure', () => {
     expect(error.message).toBe('The identity has already voted this proposal');
   });
 
-  test('should throw an error if the identity has not enough balance', async () => {
+  test('should throw an error if the identity doesn't have enough balance', async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {
