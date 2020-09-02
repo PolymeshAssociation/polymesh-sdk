@@ -2,7 +2,13 @@ import { BlockHash } from '@polkadot/types/interfaces/chain';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities/Identity';
-import { cancelProposal, editProposal, EditProposalParams } from '~/api/procedures';
+import {
+  cancelProposal,
+  editProposal,
+  EditProposalParams,
+  voteOnProposal,
+  VoteOnProposalParams,
+} from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
@@ -208,6 +214,17 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     }
 
     return ProposalStage.Ended;
+  }
+
+  /**
+   * Vote on the proposal
+   *
+   * @param args.vote - the actual vote. True for aye and false for nay
+   * @param args.bondAmount - amount of POLYX to bond for this vote. Bonded POLYX will provide weight to the vote
+   */
+  public async vote(args: VoteOnProposalParams): Promise<TransactionQueue<void>> {
+    const { context, pipId } = this;
+    return voteOnProposal.prepare({ pipId, ...args }, context);
   }
 
   /**
