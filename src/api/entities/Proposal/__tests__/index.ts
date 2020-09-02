@@ -6,7 +6,7 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities/Identity';
 import { ProposalStage } from '~/api/entities/Proposal/types';
-import { cancelProposal, editProposal } from '~/api/procedures';
+import { cancelProposal, editProposal, voteOnProposal } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
@@ -279,6 +279,26 @@ describe('Proposal class', () => {
 
       const result = await proposal.getStage();
       expect(result).toEqual(ProposalStage.Ended);
+    });
+  });
+
+  describe('method: vote', () => {
+    test('should prepare the procedure with the correct arguments and context', async () => {
+      const args = {
+        vote: true,
+        bondAmount: new BigNumber(1000),
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(voteOnProposal, 'prepare')
+        .withArgs({ pipId, ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await proposal.vote(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 
