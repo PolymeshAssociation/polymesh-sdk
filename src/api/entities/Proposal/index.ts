@@ -220,7 +220,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
    * Vote on the proposal
    *
    * @param args.vote - the actual vote. True for aye and false for nay
-   * @param args.deposit - minimum deposit value
+   * @param args.bondAmount - amount of POLYX to bond for this vote. Bonded POLYX will provide weight to the vote
    */
   public async vote(args: VoteProposalParams): Promise<TransactionQueue<void>> {
     const { context, pipId } = this;
