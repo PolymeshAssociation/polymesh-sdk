@@ -5,19 +5,10 @@ import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
-import { scopesByIdentity, tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {
-  ClaimData,
-  ClaimType,
-  Order,
-  ResultSet,
-  Role,
-  RoleType,
-  TickerOwnerRole,
-  TokenOwnerRole,
-} from '~/types';
+import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
 import * as utilsModule from '~/utils';
 
 import { Identity } from '../';
@@ -366,36 +357,6 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getCddClaims', () => {
-    test('should return a list of cdd claims', async () => {
-      const did = 'someDid';
-      const identity = new Identity({ did }, context);
-
-      const issuedClaims: ResultSet<ClaimData> = {
-        data: [
-          {
-            target: new Identity({ did }, context),
-            issuer: new Identity({ did: 'otherDid' }, context),
-            issuedAt: new Date(),
-            expiry: null,
-            claim: { type: ClaimType.CustomerDueDiligence },
-          },
-        ],
-        next: 1,
-        count: 1,
-      };
-
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          issuedClaims,
-        },
-      });
-
-      const result = await identity.getCddClaims();
-      expect(result).toEqual(issuedClaims);
-    });
-  });
-
   describe('method: getMasterKey', () => {
     const did = 'someDid';
     const accountId = 'someMasterKey';
@@ -467,34 +428,6 @@ describe('Identity class', () => {
 
       expect(result[0].ticker).toBe('TOKEN1');
       expect(result[1].ticker).toBe('TOKEN2');
-    });
-  });
-
-  describe('method: getClaimScopes', () => {
-    const did = 'someDid';
-    const scopes = [
-      {
-        scope: 'someScope',
-        ticker: 'TOKEN\0\0',
-      },
-      {
-        scope: null,
-      },
-    ];
-
-    test('should return a list of scopes and tickers', async () => {
-      const identity = new Identity({ did }, context);
-
-      dsMockUtils.createApolloQueryStub(scopesByIdentity({ did }), {
-        scopesByIdentity: scopes,
-      });
-
-      const result = await identity.getClaimScopes();
-
-      expect(result[0].ticker).toBe('TOKEN');
-      expect(result[0].scope).toBe('someScope');
-      expect(result[1].ticker).toBeUndefined();
-      expect(result[1].scope).toBeNull();
     });
   });
 });

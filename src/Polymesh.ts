@@ -11,8 +11,6 @@ import { Ticker, TxTag } from 'polymesh-types/types';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
-  modifyClaims,
-  ModifyClaimsParams,
   removeSigningKeys,
   reserveTicker,
   ReserveTickerParams,
@@ -20,30 +18,21 @@ import {
   TransferPolyXParams,
 } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
+import { Claims } from '~/Claims';
 import { Context } from '~/context';
-import { didsWithClaims } from '~/middleware/queries';
-import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   AccountBalance,
-  ClaimData,
-  ClaimType,
   CommonKeyring,
-  Ensured,
   ErrorCode,
-  IdentityWithClaims,
   MiddlewareConfig,
   NetworkProperties,
-  ResultSet,
   Signer,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { ClaimOperation } from '~/types/internal';
 import {
-  calculateNextKey,
-  createClaim,
   moduleAddressToString,
   stringToIdentityId,
   stringToTicker,
@@ -79,6 +68,7 @@ export class Polymesh {
 
   // Namespaces
   public governance: Governance;
+  public claims: Claims;
 
   /**
    * @hidden
@@ -87,6 +77,7 @@ export class Polymesh {
     this.context = context;
 
     this.governance = new Governance(context);
+    this.claims = new Claims(context);
   }
 
   /**
@@ -409,35 +400,6 @@ export class Polymesh {
   }
 
   /**
-   * Add claims to identities
-   *
-   * @param args.claims - array of claims to be added
-   */
-  public addClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Add }, this.context);
-  }
-
-  /**
-   * Edit claims associated to identities (only the expiry date can be modified)
-   *
-   * * @param args.claims - array of claims to be edited
-   */
-  public editClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Edit }, this.context);
-  }
-
-  /**
-   * Revoke claims from identities
-   *
-   * @param args.claims - array of claims to be revoked
-   */
-  public revokeClaims(
-    args: Omit<ModifyClaimsParams, 'operation'>
-  ): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Revoke }, this.context);
-  }
-
-  /**
    * Handle connection errors
    *
    * @returns an unsubscribe callback
@@ -533,102 +495,6 @@ export class Polymesh {
       code: ErrorCode.FatalError,
       message: `There is no Security Token with ticker "${ticker}"`,
     });
-  }
-
-  /**
-   * Retrieve all claims issued by the current identity
-   */
-  public async getIssuedClaims(
-    opts: {
-      size?: number;
-      start?: number;
-    } = {}
-  ): Promise<ResultSet<ClaimData>> {
-    const { context } = this;
-
-    const { size, start } = opts;
-    const { did } = context.getCurrentIdentity();
-
-    const result = await context.issuedClaims({
-      trustedClaimIssuers: [did],
-      size,
-      start,
-    });
-
-    return result;
-  }
-
-  /**
-   * Retrieve a list of identities with claims associated to them. Can be filtered using parameters
-   *
-   * @param opts.targets - identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets
-   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
-   * @param opts.scope - scope of the claims to fetch. Defaults to any scope
-   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   */
-  public async getIdentitiesWithClaims(
-    opts: {
-      targets?: (string | Identity)[];
-      trustedClaimIssuers?: (string | Identity)[];
-      scope?: string;
-      claimTypes?: ClaimType[];
-      size?: number;
-      start?: number;
-    } = {}
-  ): Promise<ResultSet<IdentityWithClaims>> {
-    const { context } = this;
-
-    const { targets, trustedClaimIssuers, scope, claimTypes, size, start } = opts;
-
-    const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
-        dids: targets?.map(target => valueToDid(target)),
-        scope,
-        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          valueToDid(trustedClaimIssuer)
-        ),
-        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-        count: size,
-        skip: start,
-      })
-    );
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
-      },
-    } = result;
-
-    const data = didsWithClaimsList.map(({ did, claims }) => ({
-      identity: new Identity({ did }, context),
-      claims: claims.map(
-        ({
-          targetDID,
-          issuer,
-          issuance_date: issuanceDate,
-          expiry,
-          type,
-          jurisdiction,
-          scope: claimScope,
-        }) => ({
-          target: new Identity({ did: targetDID }, context),
-          issuer: new Identity({ did: issuer }, context),
-          issuedAt: new Date(issuanceDate),
-          expiry: expiry ? new Date(expiry) : null,
-          claim: createClaim(type, jurisdiction, claimScope),
-        })
-      ),
-    }));
-
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
   }
 
   /**
