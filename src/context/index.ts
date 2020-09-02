@@ -11,7 +11,7 @@ import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
-import { didsWithClaims } from '~/middleware/queries';
+import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   AccountBalance,
@@ -636,6 +636,32 @@ export class Context {
     }
 
     return result;
+  }
+
+  /**
+   * Return whether the middleware was enabled at startup
+   */
+  public isMiddlewareEnabled(): boolean {
+    try {
+      // eslint-disable-next-line no-unused-expressions
+      this.middlewareApi;
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  /**
+   * Return whether the middleware is enabled and online
+   */
+  public async isMiddlewareAvailable(): Promise<boolean> {
+    try {
+      this.middlewareApi.query(heartbeat());
+    } catch (err) {
+      return false;
+    }
+
+    return true;
   }
 
   /**

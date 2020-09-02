@@ -4,7 +4,7 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
-import { didsWithClaims } from '~/middleware/queries';
+import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
@@ -1332,6 +1332,62 @@ describe('Context class', () => {
       const result = await context.getLatestBlock();
 
       expect(result).toEqual(new BigNumber(blockNumber));
+    });
+  });
+
+  describe('methd: isMiddlewareEnabled', () => {
+    test('should return true if the middleware is enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = context.isMiddlewareEnabled();
+
+      expect(result).toBe(true);
+    });
+
+    test('should return false if the middleware is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = context.isMiddlewareEnabled();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('methd: isMiddlewareAvailable', () => {
+    test('should return true if the middleware is available', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
+      const result = await context.isMiddlewareAvailable();
+
+      expect(result).toBe(true);
+    });
+
+    test('should return false if the middleware is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      const result = await context.isMiddlewareAvailable();
+
+      expect(result).toBe(false);
     });
   });
 });

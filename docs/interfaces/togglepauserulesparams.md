@@ -16,4 +16,4 @@
 
 • **pause**: *boolean*
 
-*Defined in [src/api/procedures/togglePauseRules.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/procedures/togglePauseRules.ts#L7)*
+*Defined in [src/api/procedures/togglePauseRules.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/api/procedures/togglePauseRules.ts#L7)*

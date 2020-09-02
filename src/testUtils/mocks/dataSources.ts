@@ -170,6 +170,8 @@ interface ContextOptions {
   issuedClaims?: ResultSet<ClaimData>;
   masterKey?: string;
   latestBlock?: BigNumber;
+  middlewareEnabled?: boolean;
+  middlewareAvailable?: boolean;
 }
 
 interface Pair {
@@ -367,6 +369,8 @@ const defaultContextOptions: ContextOptions = {
   },
   masterKey: 'masterKey',
   latestBlock: new BigNumber(100),
+  middlewareEnabled: true,
+  middlewareAvailable: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -436,6 +440,8 @@ function configureContext(opts: ContextOptions): void {
     ),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
+    isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
+    isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);

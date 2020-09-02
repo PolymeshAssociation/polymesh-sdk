@@ -789,6 +789,13 @@ export class Polymesh {
     return removeSigningKeys.prepare(args, this.context);
   }
 
+  /**
+   * Retrieve the number of the latest block in the chain
+   */
+  public getLatestBlock(): Promise<BigNumber> {
+    return this.context.getLatestBlock();
+  }
+
   // TODO @monitz87: remove when the dApp team no longer needs it
   /* istanbul ignore next: only for testing purposes */
   /**

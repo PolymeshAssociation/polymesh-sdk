@@ -1322,4 +1322,26 @@ describe('Polymesh Class', () => {
       expect(result.next).toBeNull();
     });
   });
+
+  describe('method: getLatestBlock', () => {
+    test('should return the latest block number', async () => {
+      const blockNumber = new BigNumber(100);
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true, latestBlock: blockNumber } });
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      const result = await polymesh.getLatestBlock();
+
+      expect(result).toEqual(blockNumber);
+    });
+  });
 });

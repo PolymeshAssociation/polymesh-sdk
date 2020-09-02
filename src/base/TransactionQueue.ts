@@ -235,11 +235,19 @@ export class TransactionQueue<
    * Subscribe to the results of this queue being processed by the harvester (and as such, available to the middleware)
    *
    * @param listener - callback function that will be called whenever the middleware is updated with the latest data.
-   *   If there is an error (timeout or middleware unavailable/not accessible) it will be passed to this callback
+   *   If there is an error (timeout or middleware offline) it will be passed to this callback
    *
    * @returns unsubscribe function
+   * @throws if the middleware wasn't enabled when instantiating the SDK client
    */
   public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): () => void {
+    if (!this.context.isMiddlewareEnabled()) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Cannot subscribe without an enabled middleware connection',
+      });
+    }
+
     this.emitter.on(Event.ProcessedByMiddleware, listener);
 
     return (): void => {
@@ -300,11 +308,7 @@ export class TransactionQueue<
   private async emitWhenMiddlewareIsSynced(): Promise<void> {
     const { context } = this;
 
-    // if the getter throws an error, it means there is no middleware client
-    try {
-      // eslint-disable-next-line no-unused-expressions
-      context.middlewareApi;
-    } catch (err) {
+    if (!context.isMiddlewareEnabled()) {
       return;
     }
 

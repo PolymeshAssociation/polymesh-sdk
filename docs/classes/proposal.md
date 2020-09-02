@@ -36,7 +36,7 @@ Represents a Polymesh Improvement Proposal (PIP)
 
 *Inherited from [Entity](entity.md).[context](entity.md#protected-context)*
 
-*Defined in [src/base/Entity.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/base/Entity.ts#L49)*
+*Defined in [src/base/Entity.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/base/Entity.ts#L49)*
 
 ___
 
@@ -44,7 +44,7 @@ ___
 
 • **pipId**: *number*
 
-*Defined in [src/api/entities/Proposal/index.ts:45](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Proposal/index.ts#L45)*
+*Defined in [src/api/entities/Proposal/index.ts:45](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/api/entities/Proposal/index.ts#L45)*
 
 internal identifier
 
@@ -56,7 +56,7 @@ ___
 
 *Inherited from [Entity](entity.md).[uuid](entity.md#uuid)*
 
-*Defined in [src/base/Entity.ts:47](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/base/Entity.ts#L47)*
+*Defined in [src/base/Entity.ts:47](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/base/Entity.ts#L47)*
 
 ## Methods
 
@@ -64,7 +64,7 @@ ___
 
 ▸ **cancel**(): *Promise‹[TransactionQueue](transactionqueue.md)‹void››*
 
-*Defined in [src/api/entities/Proposal/index.ts:152](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Proposal/index.ts#L152)*
+*Defined in [src/api/entities/Proposal/index.ts:152](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/api/entities/Proposal/index.ts#L152)*
 
 Cancel the proposal
 
@@ -76,7 +76,7 @@ ___
 
 ▸ **edit**(`args`: [EditProposalParams](../globals.md#editproposalparams)): *Promise‹[TransactionQueue](transactionqueue.md)‹void››*
 
-*Defined in [src/api/entities/Proposal/index.ts:144](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Proposal/index.ts#L144)*
+*Defined in [src/api/entities/Proposal/index.ts:144](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/api/entities/Proposal/index.ts#L144)*
 
 Edit a proposal
 
@@ -94,7 +94,7 @@ ___
 
 ▸ **getDetails**(): *Promise‹[ProposalDetails](../interfaces/proposaldetails.md)›*
 
-*Defined in [src/api/entities/Proposal/index.ts:160](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Proposal/index.ts#L160)*
+*Defined in [src/api/entities/Proposal/index.ts:160](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/api/entities/Proposal/index.ts#L160)*
 
 Retrieve the proposal details
 
@@ -106,7 +106,7 @@ ___
 
 ▸ **getStage**(): *Promise‹[ProposalStage](../enums/proposalstage.md)›*
 
-*Defined in [src/api/entities/Proposal/index.ts:186](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Proposal/index.ts#L186)*
+*Defined in [src/api/entities/Proposal/index.ts:186](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/api/entities/Proposal/index.ts#L186)*
 
 Retrieve the current stage of the proposal
 
@@ -118,7 +118,7 @@ ___
 
 ▸ **getVotes**(`opts`: object): *Promise‹[ResultSet](../interfaces/resultset.md)‹[ProposalVote](../interfaces/proposalvote.md)››*
 
-*Defined in [src/api/entities/Proposal/index.ts:102](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Proposal/index.ts#L102)*
+*Defined in [src/api/entities/Proposal/index.ts:102](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/api/entities/Proposal/index.ts#L102)*
 
 Retrieve all the votes of the proposal. Can be filtered using parameters
 
@@ -143,7 +143,7 @@ ___
 
 ▸ **identityHasVoted**(`args?`: undefined | object): *Promise‹boolean›*
 
-*Defined in [src/api/entities/Proposal/index.ts:65](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Proposal/index.ts#L65)*
+*Defined in [src/api/entities/Proposal/index.ts:65](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/api/entities/Proposal/index.ts#L65)*
 
 Check if an identity has voted on the proposal
 
@@ -163,7 +163,7 @@ ___
 
 ▸ **minimumBondedAmount**(): *Promise‹BigNumber›*
 
-*Defined in [src/api/entities/Proposal/index.ts:223](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/api/entities/Proposal/index.ts#L223)*
+*Defined in [src/api/entities/Proposal/index.ts:223](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/api/entities/Proposal/index.ts#L223)*
 
 Retrieve the minimum amount of POLYX that must be bonded by aye votes for the proposal to be considered valid
 
@@ -177,7 +177,7 @@ ___
 
 *Inherited from [Entity](entity.md).[generateUuid](entity.md#static-generateuuid)*
 
-*Defined in [src/base/Entity.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/base/Entity.ts#L15)*
+*Defined in [src/base/Entity.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/base/Entity.ts#L15)*
 
 Generate the Entity's UUID from its identifying properties
 
@@ -201,7 +201,7 @@ ___
 
 *Inherited from [Entity](entity.md).[unserialize](entity.md#static-unserialize)*
 
-*Defined in [src/base/Entity.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/15b0e6c/src/base/Entity.ts#L24)*
+*Defined in [src/base/Entity.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/2085ef5/src/base/Entity.ts#L24)*
 
 Unserialize a UUID into its Unique Identifiers
 
