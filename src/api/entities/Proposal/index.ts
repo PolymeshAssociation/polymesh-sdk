@@ -217,7 +217,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Vote the proposal
+   * Vote on the proposal
    *
    * @param args.vote - the actual vote. True for aye and false for nay
    * @param args.deposit - minimum deposit value
