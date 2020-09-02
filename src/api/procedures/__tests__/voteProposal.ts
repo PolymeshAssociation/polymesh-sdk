@@ -119,7 +119,7 @@ describe('voteProposal procedure', () => {
     expect(error.message).toBe('The proposal must not be in its cool-off period');
   });
 
-  test('should throw an error if the identity has already voted the proposal', async () => {
+  test('should throw an error if the identity has already voted on the proposal', async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {
