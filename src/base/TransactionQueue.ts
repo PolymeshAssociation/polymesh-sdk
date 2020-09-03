@@ -237,6 +237,7 @@ export class TransactionQueue<
    * @param listener - callback function that will be called whenever the middleware is updated with the latest data.
    *   If there is an error (timeout or middleware offline) it will be passed to this callback
    *
+   * @note this event will be fired even if the queue fails
    * @returns unsubscribe function
    * @throws if the middleware wasn't enabled when instantiating the SDK client
    */

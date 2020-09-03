@@ -20,7 +20,7 @@
 
 • **args**: *unknown[]*
 
-*Defined in [src/api/procedures/createProposal.ts:23](https://github.com/PolymathNetwork/polymesh-sdk/blob/ffcdfce/src/api/procedures/createProposal.ts#L23)*
+*Defined in [src/api/procedures/createProposal.ts:23](https://github.com/PolymathNetwork/polymesh-sdk/blob/f7de000/src/api/procedures/createProposal.ts#L23)*
 
 ___
 
@@ -28,7 +28,7 @@ ___
 
 • **bondAmount**: *BigNumber*
 
-*Defined in [src/api/procedures/createProposal.ts:21](https://github.com/PolymathNetwork/polymesh-sdk/blob/ffcdfce/src/api/procedures/createProposal.ts#L21)*
+*Defined in [src/api/procedures/createProposal.ts:21](https://github.com/PolymathNetwork/polymesh-sdk/blob/f7de000/src/api/procedures/createProposal.ts#L21)*
 
 ___
 
@@ -36,7 +36,7 @@ ___
 
 • **description**? : *undefined | string*
 
-*Defined in [src/api/procedures/createProposal.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/ffcdfce/src/api/procedures/createProposal.ts#L19)*
+*Defined in [src/api/procedures/createProposal.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/f7de000/src/api/procedures/createProposal.ts#L19)*
 
 ___
 
@@ -44,7 +44,7 @@ ___
 
 • **discussionUrl**? : *undefined | string*
 
-*Defined in [src/api/procedures/createProposal.ts:20](https://github.com/PolymathNetwork/polymesh-sdk/blob/ffcdfce/src/api/procedures/createProposal.ts#L20)*
+*Defined in [src/api/procedures/createProposal.ts:20](https://github.com/PolymathNetwork/polymesh-sdk/blob/f7de000/src/api/procedures/createProposal.ts#L20)*
 
 ___
 
@@ -52,4 +52,4 @@ ___
 
 • **tag**: *TxTag*
 
-*Defined in [src/api/procedures/createProposal.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/ffcdfce/src/api/procedures/createProposal.ts#L22)*
+*Defined in [src/api/procedures/createProposal.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/f7de000/src/api/procedures/createProposal.ts#L22)*
