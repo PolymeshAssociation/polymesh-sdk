@@ -17,7 +17,7 @@
 
 • **conditions**: *[Condition](../globals.md#condition)[]*
 
-*Defined in [src/types/index.ts:283](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/types/index.ts#L283)*
+*Defined in [src/types/index.ts:283](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/types/index.ts#L283)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **id**: *number*
 
-*Defined in [src/types/index.ts:282](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/types/index.ts#L282)*
+*Defined in [src/types/index.ts:282](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/types/index.ts#L282)*
