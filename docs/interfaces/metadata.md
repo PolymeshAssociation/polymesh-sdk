@@ -25,7 +25,7 @@
 
 • **ayesBonded**: *BigNumber*
 
-*Defined in [src/api/entities/Proposal/types.ts:26](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/Proposal/types.ts#L26)*
+*Defined in [src/api/entities/Proposal/types.ts:26](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/Proposal/types.ts#L26)*
 
 ___
 
@@ -33,7 +33,7 @@ ___
 
 • **coolOff**: *number*
 
-*Defined in [src/api/entities/Proposal/types.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/Proposal/types.ts#L24)*
+*Defined in [src/api/entities/Proposal/types.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/Proposal/types.ts#L24)*
 
 ___
 
@@ -41,7 +41,7 @@ ___
 
 • **createdAt**: *Date*
 
-*Defined in [src/api/entities/Proposal/types.ts:20](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/Proposal/types.ts#L20)*
+*Defined in [src/api/entities/Proposal/types.ts:20](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/Proposal/types.ts#L20)*
 
 ___
 
@@ -49,7 +49,7 @@ ___
 
 • **description**? : *undefined | string*
 
-*Defined in [src/api/entities/Proposal/types.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/Proposal/types.ts#L22)*
+*Defined in [src/api/entities/Proposal/types.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/Proposal/types.ts#L22)*
 
 ___
 
@@ -57,7 +57,7 @@ ___
 
 • **endBlock**: *number*
 
-*Defined in [src/api/entities/Proposal/types.ts:21](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/Proposal/types.ts#L21)*
+*Defined in [src/api/entities/Proposal/types.ts:21](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/Proposal/types.ts#L21)*
 
 ___
 
@@ -65,7 +65,7 @@ ___
 
 • **lastStateUpdated**: *number*
 
-*Defined in [src/api/entities/Proposal/types.ts:25](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/Proposal/types.ts#L25)*
+*Defined in [src/api/entities/Proposal/types.ts:25](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/Proposal/types.ts#L25)*
 
 ___
 
@@ -73,7 +73,7 @@ ___
 
 • **naysBonded**: *BigNumber*
 
-*Defined in [src/api/entities/Proposal/types.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/Proposal/types.ts#L27)*
+*Defined in [src/api/entities/Proposal/types.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/Proposal/types.ts#L27)*
 
 ___
 
@@ -81,7 +81,7 @@ ___
 
 • **proposer**: *[Identity](../classes/identity.md)*
 
-*Defined in [src/api/entities/Proposal/types.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/Proposal/types.ts#L19)*
+*Defined in [src/api/entities/Proposal/types.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/Proposal/types.ts#L19)*
 
 ___
 
@@ -89,7 +89,7 @@ ___
 
 • **totalVotes**: *number*
 
-*Defined in [src/api/entities/Proposal/types.ts:28](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/Proposal/types.ts#L28)*
+*Defined in [src/api/entities/Proposal/types.ts:28](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/Proposal/types.ts#L28)*
 
 ___
 
@@ -97,4 +97,4 @@ ___
 
 • **url**? : *undefined | string*
 
-*Defined in [src/api/entities/Proposal/types.ts:23](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/Proposal/types.ts#L23)*
+*Defined in [src/api/entities/Proposal/types.ts:23](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/Proposal/types.ts#L23)*

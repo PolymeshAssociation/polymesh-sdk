@@ -32,7 +32,7 @@ Handles all Security Token Transfer related functionality
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/base/Namespace.ts#L12)*
+*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/base/Namespace.ts#L12)*
 
 ___
 
@@ -42,7 +42,7 @@ ___
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/base/Namespace.ts#L10)*
 
 ## Methods
 
@@ -50,7 +50,7 @@ ___
 
 ▸ **areFrozen**(): *Promise‹boolean›*
 
-*Defined in [src/api/entities/SecurityToken/Transfers.ts:52](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/SecurityToken/Transfers.ts#L52)*
+*Defined in [src/api/entities/SecurityToken/Transfers.ts:52](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/Transfers.ts#L52)*
 
 Check whether transfers are frozen for the Security Token
 
@@ -60,7 +60,7 @@ Check whether transfers are frozen for the Security Token
 
 ▸ **areFrozen**(`callback`: [SubCallback](../globals.md#subcallback)‹boolean›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/api/entities/SecurityToken/Transfers.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/SecurityToken/Transfers.ts#L53)*
+*Defined in [src/api/entities/SecurityToken/Transfers.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/Transfers.ts#L53)*
 
 **Parameters:**
 
@@ -76,7 +76,7 @@ ___
 
 ▸ **canMint**(`args`: object): *Promise‹[TransferStatus](../enums/transferstatus.md)›*
 
-*Defined in [src/api/entities/SecurityToken/Transfers.ts:102](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/SecurityToken/Transfers.ts#L102)*
+*Defined in [src/api/entities/SecurityToken/Transfers.ts:102](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/Transfers.ts#L102)*
 
 Check whether it is possible to mint a certain amount of this asset
 
@@ -97,7 +97,7 @@ ___
 
 ▸ **canTransfer**(`args`: object): *Promise‹[TransferStatus](../enums/transferstatus.md)›*
 
-*Defined in [src/api/entities/SecurityToken/Transfers.ts:87](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/SecurityToken/Transfers.ts#L87)*
+*Defined in [src/api/entities/SecurityToken/Transfers.ts:87](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/Transfers.ts#L87)*
 
 Check whether it is possible to transfer a certain amount of this asset between two identities
 
@@ -119,7 +119,7 @@ ___
 
 ▸ **freeze**(): *Promise‹[TransactionQueue](transactionqueue.md)‹[SecurityToken](securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Transfers.ts:28](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/SecurityToken/Transfers.ts#L28)*
+*Defined in [src/api/entities/SecurityToken/Transfers.ts:28](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/Transfers.ts#L28)*
 
 Freezes transfers and minting of the Security Token
 
@@ -131,7 +131,7 @@ ___
 
 ▸ **transfer**(`args`: [TransferTokenParams](../interfaces/transfertokenparams.md)): *Promise‹[TransactionQueue](transactionqueue.md)‹[SecurityToken](securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Transfers.ts:151](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/SecurityToken/Transfers.ts#L151)*
+*Defined in [src/api/entities/SecurityToken/Transfers.ts:151](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/Transfers.ts#L151)*
 
 Transfer an amount of the token to another identity.
 
@@ -149,7 +149,7 @@ ___
 
 ▸ **unfreeze**(): *Promise‹[TransactionQueue](transactionqueue.md)‹[SecurityToken](securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Transfers.ts:39](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/entities/SecurityToken/Transfers.ts#L39)*
+*Defined in [src/api/entities/SecurityToken/Transfers.ts:39](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/Transfers.ts#L39)*
 
 Unfreeze transfers and minting of the Security Token
 

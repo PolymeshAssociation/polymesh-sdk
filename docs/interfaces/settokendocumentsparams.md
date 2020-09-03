@@ -16,4 +16,4 @@
 
 • **documents**: *[TokenDocument](tokendocument.md)[]*
 
-*Defined in [src/api/procedures/setTokenDocuments.ts:18](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/procedures/setTokenDocuments.ts#L18)*
+*Defined in [src/api/procedures/setTokenDocuments.ts:18](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/procedures/setTokenDocuments.ts#L18)*
