@@ -18,7 +18,7 @@
 
 • **claim**: *MeshClaim*
 
-*Defined in [src/api/procedures/modifyClaims.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/9ab6f40/src/api/procedures/modifyClaims.ts#L30)*
+*Defined in [src/api/procedures/modifyClaims.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/2ca45cb/src/api/procedures/modifyClaims.ts#L30)*
 
 ___
 
@@ -26,7 +26,7 @@ ___
 
 • **expiry**: *Moment | null*
 
-*Defined in [src/api/procedures/modifyClaims.ts:31](https://github.com/PolymathNetwork/polymesh-sdk/blob/9ab6f40/src/api/procedures/modifyClaims.ts#L31)*
+*Defined in [src/api/procedures/modifyClaims.ts:31](https://github.com/PolymathNetwork/polymesh-sdk/blob/2ca45cb/src/api/procedures/modifyClaims.ts#L31)*
 
 ___
 
@@ -34,4 +34,4 @@ ___
 
 • **target**: *IdentityId*
 
-*Defined in [src/api/procedures/modifyClaims.ts:29](https://github.com/PolymathNetwork/polymesh-sdk/blob/9ab6f40/src/api/procedures/modifyClaims.ts#L29)*
+*Defined in [src/api/procedures/modifyClaims.ts:29](https://github.com/PolymathNetwork/polymesh-sdk/blob/2ca45cb/src/api/procedures/modifyClaims.ts#L29)*
