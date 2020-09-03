@@ -65,6 +65,8 @@ export class Proposal extends Entity<UniqueIdentifiers> {
    * Check if an identity has voted on the proposal
    *
    * @param args.did - identity representation or identity ID as stored in the blockchain
+   *
+   * @note uses the middleware
    */
   public async identityHasVoted(args?: { did: string | Identity }): Promise<boolean> {
     const { pipId, context } = this;
@@ -100,6 +102,8 @@ export class Proposal extends Entity<UniqueIdentifiers> {
    * @param opts.orderBy - the order in witch the votes are returned
    * @param opts.size - number of votes in each requested page (default: 25)
    * @param opts.start - page offset
+   *
+   * @note uses the middleware
    */
   public async getVotes(
     opts: {
@@ -190,26 +194,29 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       context: {
         polymeshApi: {
           query: { pips },
-          rpc: { chain },
         },
       },
+      context,
       pipId,
     } = this;
 
-    const [metadata, header] = await Promise.all([pips.proposalMetadata(pipId), chain.getHeader()]);
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const [metadata, blockNumber] = await Promise.all([
+      pips.proposalMetadata(pipId),
+      context.getLatestBlock(),
+    ]);
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     const { end: rawEnd, cool_off_until: rawCoolOff } = metadata.unwrap();
-    const { number: rawBlockId } = header;
 
-    const blockId = u32ToBigNumber(rawBlockId.unwrap());
     const end = u32ToBigNumber(rawEnd);
     const coolOff = u32ToBigNumber(rawCoolOff);
 
-    if (blockId.lt(coolOff)) {
+    if (blockNumber.lt(coolOff)) {
       return ProposalStage.CoolOff;
     }
 
-    if (blockId.lt(end)) {
+    if (blockNumber.lt(end)) {
       return ProposalStage.Open;
     }
 

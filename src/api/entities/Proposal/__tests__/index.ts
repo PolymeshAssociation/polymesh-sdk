@@ -207,10 +207,10 @@ describe('Proposal class', () => {
     });
 
     test('should return coolOff as stage of the proposal', async () => {
-      const blockId = 500000;
+      const blockNumber = new BigNumber(500000);
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const mockBlockId = dsMockUtils.createMockU32(blockId);
-      const rawBlockId = dsMockUtils.createMockOption(mockBlockId);
+
+      dsMockUtils.initMocks({ contextOptions: { latestBlock: blockNumber } });
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
@@ -223,22 +223,19 @@ describe('Proposal class', () => {
         ),
       });
 
-      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
-
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(mockBlockId).returns(new BigNumber(blockId));
 
       const result = await proposal.getStage();
       expect(result).toEqual(ProposalStage.CoolOff);
     });
 
     test('should return open as stage of the proposal', async () => {
-      const blockId = 600000;
+      const blockNumber = new BigNumber(600000);
       const end = 1000000;
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const mockBlockId = dsMockUtils.createMockU32(blockId);
-      const rawBlockId = dsMockUtils.createMockOption(mockBlockId);
       const rawEnd = dsMockUtils.createMockU32(end);
+
+      dsMockUtils.initMocks({ contextOptions: { latestBlock: blockNumber } });
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
@@ -251,10 +248,7 @@ describe('Proposal class', () => {
         ),
       });
 
-      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
-
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(mockBlockId).returns(new BigNumber(blockId));
       u32ToBigNumberStub.withArgs(rawEnd).returns(new BigNumber(end));
 
       const result = await proposal.getStage();
@@ -262,12 +256,12 @@ describe('Proposal class', () => {
     });
 
     test('should return ended as stage of the proposal', async () => {
-      const blockId = 1000000;
+      const blockNumber = new BigNumber(1000000);
       const end = 700000;
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const mockBlockId = dsMockUtils.createMockU32(blockId);
-      const rawBlockId = dsMockUtils.createMockOption(mockBlockId);
       const rawEnd = dsMockUtils.createMockU32(end);
+
+      dsMockUtils.initMocks({ contextOptions: { latestBlock: blockNumber } });
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
@@ -280,10 +274,7 @@ describe('Proposal class', () => {
         ),
       });
 
-      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
-
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(mockBlockId).returns(new BigNumber(blockId));
       u32ToBigNumberStub.withArgs(rawEnd).returns(new BigNumber(end));
 
       const result = await proposal.getStage();

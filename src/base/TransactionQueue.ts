@@ -1,17 +1,23 @@
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 import { EventEmitter } from 'events';
+import { range } from 'lodash';
 
 import { PolymeshError, PolymeshTransaction, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
-import { ErrorCode, Fees, TransactionQueueStatus } from '~/types';
+import { latestProcessedBlock } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
+import { Ensured, ErrorCode, Fees, TransactionQueueStatus } from '~/types';
 import { MaybePostTransactionValue, TransactionSpec } from '~/types/internal';
+import { delay } from '~/utils';
 
 /**
  * @hidden
  */
-enum Events {
+enum Event {
   StatusChange = 'StatusChange',
   TransactionStatusChange = 'TransactionStatusChange',
+  ProcessedByMiddleware = 'ProcessedByMiddleware',
 }
 
 /**
@@ -99,7 +105,7 @@ export class TransactionQueue<
       const txn = new PolymeshTransaction(transaction, context);
 
       txn.onStatusChange(updatedTransaction => {
-        this.emitter.emit(Events.TransactionStatusChange, updatedTransaction, this);
+        this.emitter.emit(Event.TransactionStatusChange, updatedTransaction, this);
       });
 
       this.transactions.push(txn);
@@ -120,8 +126,10 @@ export class TransactionQueue<
       });
     }
 
+    const { context } = this;
+
     const [{ free: freeBalance }, fees] = await Promise.all([
-      this.context.accountBalance(),
+      context.accountBalance(),
       this.getMinFees(),
     ]);
 
@@ -159,6 +167,7 @@ export class TransactionQueue<
       throw err;
     } finally {
       this.hasRun = true;
+      this.emitWhenMiddlewareIsSynced();
     }
 
     return res;
@@ -195,11 +204,13 @@ export class TransactionQueue<
    *
    * @returns unsubscribe function
    */
-  public onStatusChange(listener: (transactionQueue: this) => void): () => void {
-    this.emitter.on(Events.StatusChange, listener);
+  public onStatusChange(
+    listener: (transactionQueue: this, err?: PolymeshError) => void
+  ): () => void {
+    this.emitter.on(Event.StatusChange, listener);
 
     return (): void => {
-      this.emitter.removeListener(Events.StatusChange, listener);
+      this.emitter.removeListener(Event.StatusChange, listener);
     };
   }
 
@@ -213,10 +224,35 @@ export class TransactionQueue<
   public onTransactionStatusChange<TxArgs extends unknown[], Values extends unknown[]>(
     listener: (transaction: PolymeshTransaction<TxArgs, Values>, transactionQueue: this) => void
   ): () => void {
-    this.emitter.on(Events.TransactionStatusChange, listener);
+    this.emitter.on(Event.TransactionStatusChange, listener);
 
     return (): void => {
-      this.emitter.removeListener(Events.TransactionStatusChange, listener);
+      this.emitter.removeListener(Event.TransactionStatusChange, listener);
+    };
+  }
+
+  /**
+   * Subscribe to the results of this queue being processed by the harvester (and as such, available to the middleware)
+   *
+   * @param listener - callback function that will be called whenever the middleware is updated with the latest data.
+   *   If there is an error (timeout or middleware offline) it will be passed to this callback
+   *
+   * @note this event will be fired even if the queue fails
+   * @returns unsubscribe function
+   * @throws if the middleware wasn't enabled when instantiating the SDK client
+   */
+  public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): () => void {
+    if (!this.context.isMiddlewareEnabled()) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Cannot subscribe without an enabled middleware connection',
+      });
+    }
+
+    this.emitter.on(Event.ProcessedByMiddleware, listener);
+
+    return (): void => {
+      this.emitter.removeListener(Event.ProcessedByMiddleware, listener);
     };
   }
 
@@ -234,11 +270,11 @@ export class TransactionQueue<
     switch (status) {
       case TransactionQueueStatus.Running:
       case TransactionQueueStatus.Succeeded: {
-        this.emitter.emit(Events.StatusChange, this);
+        this.emitter.emit(Event.StatusChange, this);
         return;
       }
       case TransactionQueueStatus.Failed: {
-        this.emitter.emit(Events.StatusChange, this, this.error);
+        this.emitter.emit(Event.StatusChange, this, this.error);
       }
     }
   }
@@ -262,5 +298,52 @@ export class TransactionQueue<
     }
 
     await this.executeTransactionQueue();
+  }
+
+  /**
+   * Poll the middleware every 2 seconds to see if it has already processed the
+   *   block that reflects the changes brought on by this queue being run. If so,
+   *   emit the corresponding event. After 5 retries (or if the middleware can't be reached),
+   *   the event is emitted with an error
+   */
+  private async emitWhenMiddlewareIsSynced(): Promise<void> {
+    const { context } = this;
+
+    if (!context.isMiddlewareEnabled()) {
+      return;
+    }
+
+    const blockNumber = await context.getLatestBlock();
+
+    let done = false;
+
+    P.each(range(6), async i => {
+      if (done) {
+        return;
+      }
+
+      try {
+        const {
+          data: {
+            latestBlock: { id: processedBlock },
+          },
+        } = await context.queryMiddleware<Ensured<Query, 'latestBlock'>>(latestProcessedBlock());
+
+        if (blockNumber.lte(processedBlock)) {
+          done = true;
+          this.emitter.emit(Event.ProcessedByMiddleware);
+          return;
+        }
+      } catch (err) {}
+
+      if (i === 5) {
+        this.emitter.emit(
+          Event.ProcessedByMiddleware,
+          new PolymeshError({ code: ErrorCode.MiddlewareError, message: 'Timed out' })
+        );
+      }
+
+      return delay(2000);
+    });
   }
 }
