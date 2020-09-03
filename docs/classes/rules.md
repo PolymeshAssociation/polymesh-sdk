@@ -34,7 +34,7 @@ Handles all Security Token Rules related functionality
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/base/Namespace.ts#L12)*
+*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/base/Namespace.ts#L12)*
 
 ___
 
@@ -44,7 +44,7 @@ ___
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/base/Namespace.ts#L10)*
 
 ## Methods
 
@@ -52,7 +52,7 @@ ___
 
 ▸ **arePaused**(): *Promise‹boolean›*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:168](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/entities/SecurityToken/Compliance/Rules.ts#L168)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:168](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/entities/SecurityToken/Compliance/Rules.ts#L168)*
 
 Check whether compliance rules are paused or not
 
@@ -64,7 +64,7 @@ ___
 
 ▸ **checkMint**(`args`: object): *Promise‹[RuleCompliance](../interfaces/rulecompliance.md)›*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:158](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/entities/SecurityToken/Compliance/Rules.ts#L158)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:158](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/entities/SecurityToken/Compliance/Rules.ts#L158)*
 
 Check whether minting to an identity complies with all the rules of this asset
 
@@ -84,7 +84,7 @@ ___
 
 ▸ **checkTransfer**(`args`: object): *Promise‹[RuleCompliance](../interfaces/rulecompliance.md)›*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:145](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/entities/SecurityToken/Compliance/Rules.ts#L145)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:145](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/entities/SecurityToken/Compliance/Rules.ts#L145)*
 
 Check whether transferring from one identity to another complies with all the rules of this asset
 
@@ -105,7 +105,7 @@ ___
 
 ▸ **get**(): *Promise‹[Rule](../interfaces/rule.md)[]›*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/entities/SecurityToken/Compliance/Rules.ts#L49)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/entities/SecurityToken/Compliance/Rules.ts#L49)*
 
 Retrieve all of the Security Token's transfer rules
 
@@ -115,7 +115,7 @@ Retrieve all of the Security Token's transfer rules
 
 ▸ **get**(`callback`: [SubCallback](../globals.md#subcallback)‹[Rule](../interfaces/rule.md)[]›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:50](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/entities/SecurityToken/Compliance/Rules.ts#L50)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:50](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/entities/SecurityToken/Compliance/Rules.ts#L50)*
 
 **Parameters:**
 
@@ -131,7 +131,7 @@ ___
 
 ▸ **pause**(): *Promise‹[TransactionQueue](transactionqueue.md)‹[SecurityToken](securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:120](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/entities/SecurityToken/Compliance/Rules.ts#L120)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:120](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/entities/SecurityToken/Compliance/Rules.ts#L120)*
 
 Pause all the Security Token's rules. This means that all transfers and token issuance will be allowed until rules are unpaused
 
@@ -143,7 +143,7 @@ ___
 
 ▸ **reset**(): *Promise‹[TransactionQueue](transactionqueue.md)‹[SecurityToken](securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:109](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/entities/SecurityToken/Compliance/Rules.ts#L109)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:109](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/entities/SecurityToken/Compliance/Rules.ts#L109)*
 
 Detele all the current rules for the Security Token.
 
@@ -155,7 +155,7 @@ ___
 
 ▸ **set**(`args`: [SetTokenRulesParams](../interfaces/settokenrulesparams.md)): *Promise‹[TransactionQueue](transactionqueue.md)‹[SecurityToken](securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/entities/SecurityToken/Compliance/Rules.ts#L36)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/entities/SecurityToken/Compliance/Rules.ts#L36)*
 
 Configure transfer rules for the Security Token. This operation will replace all existing rules with a new rule set
 
@@ -178,7 +178,7 @@ ___
 
 ▸ **unpause**(): *Promise‹[TransactionQueue](transactionqueue.md)‹[SecurityToken](securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:131](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/entities/SecurityToken/Compliance/Rules.ts#L131)*
+*Defined in [src/api/entities/SecurityToken/Compliance/Rules.ts:131](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/entities/SecurityToken/Compliance/Rules.ts#L131)*
 
 Un-pause all the Security Token's current rules
 

@@ -148,7 +148,7 @@
 
 Ƭ **Authorization**: *object | object | object*
 
-*Defined in [src/types/index.ts:168](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L168)*
+*Defined in [src/types/index.ts:168](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L168)*
 
 Authorization request data corresponding to type
 
@@ -158,7 +158,7 @@ ___
 
 Ƭ **Claim**: *[ScopedClaim](globals.md#scopedclaim) | [UnscopedClaim](globals.md#unscopedclaim)*
 
-*Defined in [src/types/index.ts:206](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L206)*
+*Defined in [src/types/index.ts:206](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L206)*
 
 ___
 
@@ -166,7 +166,7 @@ ___
 
 Ƭ **CommonKeyring**: *Pick‹Keyring, "getPair" | "getPairs" | "addFromSeed" | "addFromUri"›*
 
-*Defined in [src/types/index.ts:354](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L354)*
+*Defined in [src/types/index.ts:354](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L354)*
 
 ___
 
@@ -174,7 +174,7 @@ ___
 
 Ƭ **Condition**: *[SingleClaimCondition](globals.md#singleclaimcondition) | [MultiClaimCondition](globals.md#multiclaimcondition)*
 
-*Defined in [src/types/index.ts:266](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L266)*
+*Defined in [src/types/index.ts:266](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L266)*
 
 ___
 
@@ -182,7 +182,7 @@ ___
 
 Ƭ **ConditionBase**: *object*
 
-*Defined in [src/types/index.ts:254](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L254)*
+*Defined in [src/types/index.ts:254](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L254)*
 
 #### Type declaration:
 
@@ -196,7 +196,7 @@ ___
 
 Ƭ **EditProposalParams**: *object | object*
 
-*Defined in [src/api/procedures/editProposal.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/procedures/editProposal.ts#L6)*
+*Defined in [src/api/procedures/editProposal.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/procedures/editProposal.ts#L6)*
 
 ___
 
@@ -204,7 +204,7 @@ ___
 
 Ƭ **Ensured**: *Required‹Pick‹T, K››*
 
-*Defined in [src/types/index.ts:347](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L347)*
+*Defined in [src/types/index.ts:347](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L347)*
 
 ___
 
@@ -212,7 +212,7 @@ ___
 
 Ƭ **ModifyClaimsParams**: *[AddClaimsParams](interfaces/addclaimsparams.md) | [EditClaimsParams](interfaces/editclaimsparams.md) | [RevokeClaimsParams](interfaces/revokeclaimsparams.md)*
 
-*Defined in [src/api/procedures/modifyClaims.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/procedures/modifyClaims.ts#L49)*
+*Defined in [src/api/procedures/modifyClaims.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/procedures/modifyClaims.ts#L49)*
 
 ___
 
@@ -220,7 +220,7 @@ ___
 
 Ƭ **ModifyTokenParams**: *object | object | object*
 
-*Defined in [src/api/procedures/modifyToken.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/procedures/modifyToken.ts#L6)*
+*Defined in [src/api/procedures/modifyToken.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/procedures/modifyToken.ts#L6)*
 
 ___
 
@@ -228,7 +228,7 @@ ___
 
 Ƭ **MultiClaimCondition**: *[ConditionBase](globals.md#conditionbase) & object*
 
-*Defined in [src/types/index.ts:261](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L261)*
+*Defined in [src/types/index.ts:261](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L261)*
 
 ___
 
@@ -236,7 +236,7 @@ ___
 
 Ƭ **Mutable**: *object*
 
-*Defined in [src/types/utils/index.ts:1](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/utils/index.ts#L1)*
+*Defined in [src/types/utils/index.ts:1](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/utils/index.ts#L1)*
 
 #### Type declaration:
 
@@ -246,7 +246,7 @@ ___
 
 Ƭ **NextKey**: *string | number | null*
 
-*Defined in [src/types/index.ts:380](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L380)*
+*Defined in [src/types/index.ts:380](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L380)*
 
 ___
 
@@ -254,7 +254,7 @@ ___
 
 Ƭ **Role**: *[TickerOwnerRole](interfaces/tickerownerrole.md) | [TokenOwnerRole](interfaces/tokenownerrole.md) | [CddProviderRole](interfaces/cddproviderrole.md)*
 
-*Defined in [src/types/index.ts:106](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L106)*
+*Defined in [src/types/index.ts:106](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L106)*
 
 ___
 
@@ -262,7 +262,7 @@ ___
 
 Ƭ **ScopedClaim**: *object | object*
 
-*Defined in [src/types/index.ts:200](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L200)*
+*Defined in [src/types/index.ts:200](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L200)*
 
 ___
 
@@ -270,7 +270,7 @@ ___
 
 Ƭ **SingleClaimCondition**: *[ConditionBase](globals.md#conditionbase) & object*
 
-*Defined in [src/types/index.ts:256](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L256)*
+*Defined in [src/types/index.ts:256](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L256)*
 
 ___
 
@@ -278,7 +278,7 @@ ___
 
 Ƭ **SubCallback**: *function*
 
-*Defined in [src/types/index.ts:343](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L343)*
+*Defined in [src/types/index.ts:343](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L343)*
 
 #### Type declaration:
 
@@ -296,7 +296,7 @@ ___
 
 Ƭ **TokenType**: *[KnownTokenType](enums/knowntokentype.md) | object*
 
-*Defined in [src/types/index.ts:123](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L123)*
+*Defined in [src/types/index.ts:123](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L123)*
 
 Type of security that the token represents
 
@@ -306,7 +306,7 @@ ___
 
 Ƭ **TransactionArgument**: *object & [PlainTransactionArgument](interfaces/plaintransactionargument.md) | [ArrayTransactionArgument](interfaces/arraytransactionargument.md) | [SimpleEnumTransactionArgument](interfaces/simpleenumtransactionargument.md) | [ComplexTransactionArgument](interfaces/complextransactionargument.md)*
 
-*Defined in [src/types/index.ts:457](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L457)*
+*Defined in [src/types/index.ts:457](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L457)*
 
 ___
 
@@ -314,7 +314,7 @@ ___
 
 Ƭ **TransactionSpecArray**: *object*
 
-*Defined in [src/base/TransactionQueue.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/base/TransactionQueue.ts#L32)*
+*Defined in [src/base/TransactionQueue.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/base/TransactionQueue.ts#L32)*
 
 #### Type declaration:
 
@@ -324,7 +324,7 @@ ___
 
 Ƭ **UnscopedClaim**: *object*
 
-*Defined in [src/types/index.ts:204](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L204)*
+*Defined in [src/types/index.ts:204](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L204)*
 
 #### Type declaration:
 
@@ -336,7 +336,7 @@ ___
 
 Ƭ **UnsubCallback**: *function*
 
-*Defined in [src/types/index.ts:345](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L345)*
+*Defined in [src/types/index.ts:345](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L345)*
 
 #### Type declaration:
 
@@ -348,7 +348,7 @@ ___
 
 Ƭ **VoteOnProposalParams**: *object*
 
-*Defined in [src/api/procedures/voteOnProposal.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/procedures/voteOnProposal.ts#L9)*
+*Defined in [src/api/procedures/voteOnProposal.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/procedures/voteOnProposal.ts#L9)*
 
 #### Type declaration:
 
@@ -362,7 +362,7 @@ ___
 
 • **voteOnProposal**: *Procedure‹Params, void›* = new Procedure(prepareVoteOnProposal)
 
-*Defined in [src/api/procedures/voteOnProposal.ts:82](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/procedures/voteOnProposal.ts#L82)*
+*Defined in [src/api/procedures/voteOnProposal.ts:82](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/api/procedures/voteOnProposal.ts#L82)*
 
 ## Functions
 
@@ -370,7 +370,7 @@ ___
 
 ▸ **tickerToDid**(`ticker`: string): *string*
 
-*Defined in [src/utils/index.ts:160](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/utils/index.ts#L160)*
+*Defined in [src/utils/index.ts:160](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/utils/index.ts#L160)*
 
 Generate a Security Token's DID from a ticker
 
@@ -388,7 +388,7 @@ ___
 
 ▸ **tuple**‹**T**›(...`args`: T): *T*
 
-*Defined in [src/types/utils/index.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/utils/index.ts#L10)*
+*Defined in [src/types/utils/index.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/utils/index.ts#L10)*
 
 Create a literal tuple type from a list of arguments
 
@@ -410,22 +410,22 @@ Name | Type | Description |
 
 ### ▪ **ErrorMessagesPerCode**: *object*
 
-*Defined in [src/base/PolymeshError.ts:3](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/base/PolymeshError.ts#L3)*
+*Defined in [src/base/PolymeshError.ts:3](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/base/PolymeshError.ts#L3)*
 
 ###  [ErrorCode.TransactionAborted]
 
 • **[ErrorCode.TransactionAborted]**: *string* = "The transaction was removed from the transaction pool. This might mean that it was malformed (nonce too large/nonce too small/duplicated or invalid transaction)"
 
-*Defined in [src/base/PolymeshError.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/base/PolymeshError.ts#L7)*
+*Defined in [src/base/PolymeshError.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/base/PolymeshError.ts#L7)*
 
 ###  [ErrorCode.TransactionRejectedByUser]
 
 • **[ErrorCode.TransactionRejectedByUser]**: *string* = "The user canceled the transaction signature"
 
-*Defined in [src/base/PolymeshError.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/base/PolymeshError.ts#L9)*
+*Defined in [src/base/PolymeshError.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/base/PolymeshError.ts#L9)*
 
 ###  [ErrorCode.TransactionReverted]
 
 • **[ErrorCode.TransactionReverted]**: *string* = "The transaction execution reverted due to an error"
 
-*Defined in [src/base/PolymeshError.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/base/PolymeshError.ts#L6)*
+*Defined in [src/base/PolymeshError.ts:6](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/base/PolymeshError.ts#L6)*
