@@ -82,6 +82,8 @@ export class Claims {
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
    * @param opts.size - page size
    * @param opts.start - page offset
+   *
+   * @note uses the middleware
    */
   public async getIdentitiesWithClaims(
     opts: {
