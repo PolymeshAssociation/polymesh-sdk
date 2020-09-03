@@ -18,7 +18,7 @@
 
 • **method**: *string*
 
-*Defined in [src/api/entities/Proposal/types.ts:51](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d341d9/src/api/entities/Proposal/types.ts#L51)*
+*Defined in [src/api/entities/Proposal/types.ts:51](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/api/entities/Proposal/types.ts#L51)*
 
 ___
 
@@ -26,7 +26,7 @@ ___
 
 • **module**: *string*
 
-*Defined in [src/api/entities/Proposal/types.ts:50](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d341d9/src/api/entities/Proposal/types.ts#L50)*
+*Defined in [src/api/entities/Proposal/types.ts:50](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/api/entities/Proposal/types.ts#L50)*
 
 ___
 
@@ -34,4 +34,4 @@ ___
 
 • **state**: *ProposalState*
 
-*Defined in [src/api/entities/Proposal/types.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d341d9/src/api/entities/Proposal/types.ts#L49)*
+*Defined in [src/api/entities/Proposal/types.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/api/entities/Proposal/types.ts#L49)*

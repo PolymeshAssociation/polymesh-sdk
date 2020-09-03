@@ -39,6 +39,7 @@ import {
   createClaim,
   identityIdToString,
   posRatioToBigNumber,
+  requestAtBlock,
   signatoryToSigner,
   stringToAccountId,
   stringToIdentityId,
@@ -167,6 +168,28 @@ export class Context {
     }
 
     return new Context({ polymeshApi, middlewareApi, keyring });
+  }
+
+  /**
+   * Get if the current node is archive or not
+   */
+  public async isCurrentNodeArchive(): Promise<boolean> {
+    const {
+      polymeshApi: {
+        query: { balances, system },
+      },
+    } = this;
+
+    try {
+      const blockHash = await system.blockHash(0);
+      await requestAtBlock(balances.totalIssuance, {
+        args: [],
+        blockHash,
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**

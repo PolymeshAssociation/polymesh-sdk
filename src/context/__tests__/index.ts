@@ -1306,4 +1306,35 @@ describe('Context class', () => {
       expect(res.data).toBe(fakeResult);
     });
   });
+
+  describe('method: isCurrentNodeArchive', () => {
+    let requestAtBlockStub: sinon.SinonStub;
+
+    beforeAll(() => {
+      requestAtBlockStub = sinon.stub(utilsModule, 'requestAtBlock');
+    });
+
+    test('should return whether the current node is archive or not', async () => {
+      dsMockUtils.createQueryStub('balances', 'totalIssuance', {
+        returnValue: dsMockUtils.createMockBalance(),
+      });
+      dsMockUtils.createQueryStub('system', 'blockHash', {
+        returnValue: dsMockUtils.createMockHash(),
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      requestAtBlockStub.resolves(dsMockUtils.createMockBalance());
+      let result = await context.isCurrentNodeArchive();
+      expect(result).toBeTruthy();
+
+      requestAtBlockStub.throws();
+      result = await context.isCurrentNodeArchive();
+      expect(result).toBeFalsy();
+    });
+  });
 });
