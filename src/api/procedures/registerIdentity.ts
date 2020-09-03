@@ -1,10 +1,20 @@
+import { ISubmittableResult } from '@polkadot/types/types';
+
 import { Identity } from '~/api/entities';
-import { Procedure } from '~/base';
+import { PostTransactionValue, Procedure } from '~/base';
+import { Context } from '~/context';
+import { IdentityId } from '~/polkadot';
 import { Role, RoleType, SigningKey } from '~/types';
-import { dateToMoment, signingKeyToMeshSigningKey, valueToDid } from '~/utils';
+import {
+  dateToMoment,
+  findEventRecord,
+  identityIdToString,
+  signingKeyToMeshSigningKey,
+  stringToAccountId,
+} from '~/utils';
 
 export interface RegisterIdentityParams {
-  target: string | Identity;
+  targetAccount: string;
   expiry?: Date;
   signingKeys?: SigningKey[];
 }
@@ -12,10 +22,23 @@ export interface RegisterIdentityParams {
 /**
  * @hidden
  */
+export const createRegisterIdentityResolver = (context: Context) => (
+  receipt: ISubmittableResult
+): Identity => {
+  const eventRecord = findEventRecord(receipt, 'identity', 'DidCreated');
+  const data = eventRecord.event.data;
+  const did = identityIdToString(data[0] as IdentityId);
+
+  return new Identity({ did }, context);
+};
+
+/**
+ * @hidden
+ */
 export async function prepareRegisterIdentity(
-  this: Procedure<RegisterIdentityParams, void>,
+  this: Procedure<RegisterIdentityParams, Identity>,
   args: RegisterIdentityParams
-): Promise<void> {
+): Promise<PostTransactionValue<Identity>> {
   const {
     context: {
       polymeshApi: {
@@ -24,15 +47,25 @@ export async function prepareRegisterIdentity(
     },
     context,
   } = this;
-  const { target, expiry, signingKeys = [] } = args;
+  const { targetAccount, expiry, signingKeys = [] } = args;
 
-  const rawTarget = valueToDid(target);
+  const rawTargetAccount = stringToAccountId(targetAccount, context);
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
   const rawSigningKeys = signingKeys.map(signingKey =>
     signingKeyToMeshSigningKey(signingKey, context)
   );
 
-  this.addTransaction(identity.cddRegisterDid, {}, rawTarget, rawExpiry, rawSigningKeys);
+  const [newIdentity] = this.addTransaction(
+    identity.cddRegisterDid,
+    {
+      resolvers: [createRegisterIdentityResolver(context)],
+    },
+    rawTargetAccount,
+    rawExpiry,
+    rawSigningKeys
+  );
+
+  return newIdentity;
 }
 
 /**

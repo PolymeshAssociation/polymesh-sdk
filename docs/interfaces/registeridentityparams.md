@@ -10,7 +10,7 @@
 
 * [expiry](registeridentityparams.md#optional-expiry)
 * [signingKeys](registeridentityparams.md#optional-signingkeys)
-* [target](registeridentityparams.md#target)
+* [targetAccount](registeridentityparams.md#targetaccount)
 
 ## Properties
 
@@ -18,7 +18,7 @@
 
 • **expiry**? : *[Date](../enums/transactionargumenttype.md#date)*
 
-*Defined in [src/api/procedures/registerIdentity.ts:8](https://github.com/PolymathNetwork/polymesh-sdk/blob/6aee3c9/src/api/procedures/registerIdentity.ts#L8)*
+*Defined in [src/api/procedures/registerIdentity.ts:18](https://github.com/PolymathNetwork/polymesh-sdk/blob/9ab6f40/src/api/procedures/registerIdentity.ts#L18)*
 
 ___
 
@@ -26,12 +26,12 @@ ___
 
 • **signingKeys**? : *[SigningKey](signingkey.md)[]*
 
-*Defined in [src/api/procedures/registerIdentity.ts:9](https://github.com/PolymathNetwork/polymesh-sdk/blob/6aee3c9/src/api/procedures/registerIdentity.ts#L9)*
+*Defined in [src/api/procedures/registerIdentity.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/9ab6f40/src/api/procedures/registerIdentity.ts#L19)*
 
 ___
 
-###  target
+###  targetAccount
 
-• **target**: *string | [Identity](../classes/identity.md)*
+• **targetAccount**: *string*
 
-*Defined in [src/api/procedures/registerIdentity.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/6aee3c9/src/api/procedures/registerIdentity.ts#L7)*
+*Defined in [src/api/procedures/registerIdentity.ts:17](https://github.com/PolymathNetwork/polymesh-sdk/blob/9ab6f40/src/api/procedures/registerIdentity.ts#L17)*

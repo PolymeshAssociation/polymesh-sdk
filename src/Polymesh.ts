@@ -796,7 +796,7 @@ export class Polymesh {
    *
    * @note must be a CDD provider
    */
-  public registerIdentity(args: RegisterIdentityParams): Promise<TransactionQueue<void>> {
+  public registerIdentity(args: RegisterIdentityParams): Promise<TransactionQueue<Identity>> {
     return registerIdentity.prepare(args, this.context);
   }
 

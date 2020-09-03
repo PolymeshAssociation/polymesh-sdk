@@ -1207,10 +1207,10 @@ describe('Polymesh Class', () => {
       });
 
       const args = {
-        target: 'someTarget',
+        targetAccount: 'someTarget',
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Identity>;
 
       sinon
         .stub(registerIdentity, 'prepare')

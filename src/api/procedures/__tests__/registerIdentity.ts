@@ -1,35 +1,46 @@
-import { Moment } from '@polkadot/types/interfaces';
+import { AccountId, Moment } from '@polkadot/types/interfaces';
+import { ISubmittableResult } from '@polkadot/types/types';
 import { SigningKey as MeshSigningKey } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { RegisterIdentityParams } from '~/api/procedures';
-import { getRequiredRoles, prepareRegisterIdentity } from '~/api/procedures/registerIdentity';
+import {
+  createRegisterIdentityResolver,
+  getRequiredRoles,
+  prepareRegisterIdentity,
+} from '~/api/procedures/registerIdentity';
+import { PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Permission, RoleType, SignerType, SigningKey } from '~/types';
+import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('registerIdentity procedure', () => {
   let mockContext: Mocked<Context>;
-  let valueToDidStub: sinon.SinonStub<[string | Identity], string>;
+  let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let signingKeyToMeshSigningKeyStub: sinon.SinonStub<[SigningKey, Context], MeshSigningKey>;
   let addTransactionStub: sinon.SinonStub;
+  let registerIdentityTransaction: PolymeshTx<unknown[]>;
+  let identity: PostTransactionValue<Identity>;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
-    valueToDidStub = sinon.stub(utilsModule, 'valueToDid');
+    stringToAccountIdStub = sinon.stub(utilsModule, 'stringToAccountId');
     dateToMomentStub = sinon.stub(utilsModule, 'dateToMoment');
     signingKeyToMeshSigningKeyStub = sinon.stub(utilsModule, 'signingKeyToMeshSigningKey');
+    identity = ('identity' as unknown) as PostTransactionValue<Identity>;
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([identity]);
+    registerIdentityTransaction = dsMockUtils.createTxStub('identity', 'cddRegisterDid');
   });
 
   afterEach(() => {
@@ -45,7 +56,7 @@ describe('registerIdentity procedure', () => {
   });
 
   test('should add a cddRegisterIdentity transaction to the queue', async () => {
-    const target = 'someTarget';
+    const targetAccount = 'someAccount';
     const expiry = new Date('10/10/2050');
     const signingKeys = [
       {
@@ -57,32 +68,83 @@ describe('registerIdentity procedure', () => {
       },
     ];
     const args = {
-      target,
+      targetAccount,
       expiry,
       signingKeys,
     };
+    const rawAccountId = dsMockUtils.createMockAccountId(targetAccount);
     const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
-    const rawSigningKeys = dsMockUtils.createMockSigningKey({
-      signer: dsMockUtils.createMockSignatory(),
+    const rawSigningKey = dsMockUtils.createMockSigningKey({
+      signer: dsMockUtils.createMockSignatory({
+        Identity: dsMockUtils.createMockIdentityId(signingKeys[0].signer.value),
+      }),
       permissions: [dsMockUtils.createMockPermission(signingKeys[0].permissions[0])],
     });
 
-    const transaction = dsMockUtils.createTxStub('identity', 'cddRegisterDid');
-    const proc = procedureMockUtils.getInstance<RegisterIdentityParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<RegisterIdentityParams, Identity>(mockContext);
 
-    valueToDidStub.withArgs(target).returns(target);
+    stringToAccountIdStub.withArgs(targetAccount, mockContext).returns(rawAccountId);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
-    signingKeyToMeshSigningKeyStub.withArgs(signingKeys[0], mockContext).returns(rawSigningKeys);
+    signingKeyToMeshSigningKeyStub.withArgs(signingKeys[0], mockContext).returns(rawSigningKey);
 
-    await prepareRegisterIdentity.call(proc, args);
+    let result = await prepareRegisterIdentity.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, target, rawExpiry, [
-      rawSigningKeys,
-    ]);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      registerIdentityTransaction,
+      sinon.match({
+        resolvers: sinon.match.array,
+      }),
+      rawAccountId,
+      rawExpiry,
+      [rawSigningKey]
+    );
+    expect(result).toBe(identity);
 
-    await prepareRegisterIdentity.call(proc, { target });
+    result = await prepareRegisterIdentity.call(proc, { targetAccount });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, target, null, []);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      registerIdentityTransaction,
+      sinon.match({
+        resolvers: sinon.match.array,
+      }),
+      rawAccountId,
+      null,
+      []
+    );
+  });
+});
+
+describe('createRegisterIdentityResolver', () => {
+  const findEventRecordStub = sinon.stub(utilsModule, 'findEventRecord');
+  const did = 'someDid';
+  const rawDid = dsMockUtils.createMockIdentityId(did);
+
+  beforeAll(() => {
+    entityMockUtils.initMocks({
+      identityOptions: {
+        did,
+      },
+    });
+  });
+
+  beforeEach(() => {
+    findEventRecordStub.returns(
+      dsMockUtils.createMockEventRecord([rawDid, 'accountId', 'signingItem'])
+    );
+  });
+
+  afterEach(() => {
+    findEventRecordStub.reset();
+  });
+
+  test('should return the new Identity', () => {
+    const fakeContext = {} as Context;
+
+    const result = createRegisterIdentityResolver(fakeContext)({} as ISubmittableResult);
+
+    expect(result.did).toEqual(did);
   });
 });
 
