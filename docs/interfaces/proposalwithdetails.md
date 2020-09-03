@@ -17,7 +17,7 @@
 
 • **details**: *[ProposalDetails](proposaldetails.md)*
 
-*Defined in [src/types/index.ts:475](https://github.com/PolymathNetwork/polymesh-sdk/blob/14db4c2/src/types/index.ts#L475)*
+*Defined in [src/types/index.ts:475](https://github.com/PolymathNetwork/polymesh-sdk/blob/eac2196/src/types/index.ts#L475)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **proposal**: *[Proposal](../classes/proposal.md)*
 
-*Defined in [src/types/index.ts:474](https://github.com/PolymathNetwork/polymesh-sdk/blob/14db4c2/src/types/index.ts#L474)*
+*Defined in [src/types/index.ts:474](https://github.com/PolymathNetwork/polymesh-sdk/blob/eac2196/src/types/index.ts#L474)*

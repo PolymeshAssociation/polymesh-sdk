@@ -382,3 +382,41 @@ export function proposal(variables: QueryProposalArgs): GraphqlQuery<QueryPropos
     variables,
   };
 }
+
+/**
+ * @hidden
+ *
+ * Fetch the number of the latest block that has been processed by the middleware
+ */
+export function latestProcessedBlock(): GraphqlQuery {
+  const query = gql`
+    query {
+      latestBlock {
+        id
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Middleware heartbeat
+ */
+export function heartbeat(): GraphqlQuery {
+  const query = gql`
+    query {
+      heartbeat
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}

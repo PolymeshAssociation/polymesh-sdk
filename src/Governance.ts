@@ -79,6 +79,8 @@ export class Governance {
    * @param opts.orderBy - the order in which the proposals are returned
    * @param opts.size - page size
    * @param opts.start - page offset
+   *
+   * @note uses the middleware
    */
   public async getProposals(
     opts: {

@@ -5,7 +5,7 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities/Identity';
 import { ProposalStage } from '~/api/entities/Proposal/types';
-import { cancelProposal, editProposal } from '~/api/procedures';
+import { cancelProposal, editProposal, voteOnProposal } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposal as proposalQuery, proposalVotes } from '~/middleware/queries';
@@ -241,10 +241,10 @@ describe('Proposal class', () => {
     });
 
     test('should return coolOff as stage of the proposal', async () => {
-      const blockId = 500000;
+      const blockNumber = new BigNumber(500000);
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const mockBlockId = dsMockUtils.createMockU32(blockId);
-      const rawBlockId = dsMockUtils.createMockOption(mockBlockId);
+
+      dsMockUtils.initMocks({ contextOptions: { latestBlock: blockNumber } });
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
@@ -257,22 +257,19 @@ describe('Proposal class', () => {
         ),
       });
 
-      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
-
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(mockBlockId).returns(new BigNumber(blockId));
 
       const result = await proposal.getStage();
       expect(result).toEqual(ProposalStage.CoolOff);
     });
 
     test('should return open as stage of the proposal', async () => {
-      const blockId = 600000;
+      const blockNumber = new BigNumber(600000);
       const end = 1000000;
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const mockBlockId = dsMockUtils.createMockU32(blockId);
-      const rawBlockId = dsMockUtils.createMockOption(mockBlockId);
       const rawEnd = dsMockUtils.createMockU32(end);
+
+      dsMockUtils.initMocks({ contextOptions: { latestBlock: blockNumber } });
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
@@ -285,10 +282,7 @@ describe('Proposal class', () => {
         ),
       });
 
-      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
-
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(mockBlockId).returns(new BigNumber(blockId));
       u32ToBigNumberStub.withArgs(rawEnd).returns(new BigNumber(end));
 
       const result = await proposal.getStage();
@@ -296,12 +290,12 @@ describe('Proposal class', () => {
     });
 
     test('should return ended as stage of the proposal', async () => {
-      const blockId = 1000000;
+      const blockNumber = new BigNumber(1000000);
       const end = 700000;
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const mockBlockId = dsMockUtils.createMockU32(blockId);
-      const rawBlockId = dsMockUtils.createMockOption(mockBlockId);
       const rawEnd = dsMockUtils.createMockU32(end);
+
+      dsMockUtils.initMocks({ contextOptions: { latestBlock: blockNumber } });
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
@@ -314,14 +308,31 @@ describe('Proposal class', () => {
         ),
       });
 
-      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
-
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(mockBlockId).returns(new BigNumber(blockId));
       u32ToBigNumberStub.withArgs(rawEnd).returns(new BigNumber(end));
 
       const result = await proposal.getStage();
       expect(result).toEqual(ProposalStage.Ended);
+    });
+  });
+
+  describe('method: vote', () => {
+    test('should prepare the procedure with the correct arguments and context', async () => {
+      const args = {
+        vote: true,
+        bondAmount: new BigNumber(1000),
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(voteOnProposal, 'prepare')
+        .withArgs({ pipId, ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await proposal.vote(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 

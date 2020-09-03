@@ -103,6 +103,8 @@ import {
   SS58_FORMAT,
 } from '~/utils/constants';
 
+export { cryptoWaitReady } from '@polkadot/util-crypto';
+
 /**
  * @hidden
  * Promisified version of a timeout
