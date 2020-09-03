@@ -23,7 +23,7 @@ import {
 } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { didsWithClaims, transactions } from '~/middleware/queries';
+import { didsWithClaims, heartbeat, transactions } from '~/middleware/queries';
 import { ClaimTypeEnum, Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
@@ -120,17 +120,18 @@ export class Polymesh {
     }
   ): Promise<Polymesh> {
     const { nodeUrl, accountSeed, keyring, accountUri, signer, middleware } = params;
-    let polymeshApi: ApiPromise;
-    let middlewareApi: ApolloClient<NormalizedCacheObject> | null = null;
+    let context: Context;
 
     try {
       const { types, rpc } = polymesh;
 
-      polymeshApi = await ApiPromise.create({
+      const polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
         types,
         rpc,
       });
+
+      let middlewareApi: ApolloClient<NormalizedCacheObject> | null = null;
 
       if (middleware) {
         middlewareApi = new ApolloClient({
@@ -164,8 +165,6 @@ export class Polymesh {
         polymeshApi.setSigner(signer);
       }
 
-      let context: Context;
-
       if (accountSeed) {
         context = await Context.create({
           polymeshApi,
@@ -196,16 +195,32 @@ export class Polymesh {
           middlewareApi,
         });
       }
-
-      return new Polymesh(context);
-    } catch (e) {
-      const { message, code } = e;
+    } catch (err) {
+      const { message, code } = err;
       throw new PolymeshError({
         code,
         message: `Error while connecting to "${nodeUrl}": "${message ||
           'The node couldn’t be reached'}"`,
       });
     }
+
+    if (middleware) {
+      try {
+        await context.queryMiddleware(heartbeat());
+      } catch (err) {
+        if (
+          err.message.indexOf('Forbidden') > -1 ||
+          err.message.indexOf('Missing Authentication Token') > -1
+        ) {
+          throw new PolymeshError({
+            code: ErrorCode.NotAuthorized,
+            message: 'Incorrect middleware URL or API key',
+          });
+        }
+      }
+    }
+
+    return new Polymesh(context);
   }
 
   /**
@@ -781,6 +796,13 @@ export class Polymesh {
    */
   public registerIdentity(args: RegisterIdentityParams): Promise<TransactionQueue<void>> {
     return registerIdentity.prepare(args, this.context);
+  }
+
+  /**
+   * Retrieve the number of the latest block in the chain
+   */
+  public getLatestBlock(): Promise<BigNumber> {
+    return this.context.getLatestBlock();
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

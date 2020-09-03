@@ -290,6 +290,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
    * Retrieve all scopes in which claims have been made for this identity.
    *   If the scope is an asset DID, the corresponding ticker is returned as well
    *
+   * @note uses the middleware
    * @note a null scope means the identity has scopeless claims (like CDD for example)
    */
   public async getClaimScopes(): Promise<ClaimScope[]> {
@@ -369,6 +370,8 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
   /**
    * Get the list of tokens for which this identity is a trusted claim issuer
+   *
+   * @note uses the middleware
    */
   public async getTrustingTokens(
     args: { order: Order } = { order: Order.Asc }

@@ -22,7 +22,7 @@ export type Query = {
   heartbeat: Scalars['Boolean'];
   /** Get the chain  information */
   chainInfo?: Maybe<ChainInfo>;
-  latestBlock?: Maybe<Block>;
+  latestBlock?: Block;
   /** Get all blocks */
   blocks?: Maybe<Array<Maybe<Block>>>;
   /** Get a block by block number */
@@ -274,7 +274,7 @@ export type ChainInfo = {
 export type Block = {
   __typename?: 'Block';
   /** Block details */
-  id?: Maybe<Scalars['Int']>;
+  id: Scalars['Int'];
   parent_id?: Maybe<Scalars['Int']>;
   hash?: Maybe<Scalars['String']>;
   parent_hash?: Maybe<Scalars['String']>;
