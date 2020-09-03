@@ -2,7 +2,7 @@ name: Docs
 
 on:
   push:
-    branches: [master, beta, alpha, feat/MSDK-273-doc-generation]
+    branches: [master, beta, alpha]
 
 jobs:
   docs:
