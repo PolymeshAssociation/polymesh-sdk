@@ -155,6 +155,7 @@ export class Claims {
    * @param args.target - identities (or identity IDs) for which to fetch claim scopes
    *
    * @note a null scope means the identity has scopeless claims (like CDD for example)
+   * @note uses the middleware
    */
   public async getClaimScopes(args: { target: string | Identity }): Promise<ClaimScope[]> {
     const { context } = this;
