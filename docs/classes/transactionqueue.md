@@ -38,7 +38,7 @@ Class to manage procedural transaction queues
 
 \+ **new TransactionQueue**(`transactions`: [TransactionSpecArray](../globals.md#transactionspecarray)‹TransactionArgs›, `returnValue`: MaybePostTransactionValue‹ReturnType›, `context`: Context): *[TransactionQueue](transactionqueue.md)*
 
-*Defined in [src/base/TransactionQueue.ts:84](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/TransactionQueue.ts#L84)*
+*Defined in [src/base/TransactionQueue.ts:84](https://github.com/PolymathNetwork/polymesh-sdk/blob/1832b6e/src/base/TransactionQueue.ts#L84)*
 
 Create a transaction queue
 
@@ -58,7 +58,7 @@ Name | Type | Description |
 
 • **error**? : *[PolymeshError](polymesherror.md)*
 
-*Defined in [src/base/TransactionQueue.ts:58](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/TransactionQueue.ts#L58)*
+*Defined in [src/base/TransactionQueue.ts:58](https://github.com/PolymathNetwork/polymesh-sdk/blob/1832b6e/src/base/TransactionQueue.ts#L58)*
 
 optional error information
 
@@ -68,7 +68,7 @@ ___
 
 • **status**: *[TransactionQueueStatus](../enums/transactionqueuestatus.md)* = TransactionQueueStatus.Idle
 
-*Defined in [src/base/TransactionQueue.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/TransactionQueue.ts#L53)*
+*Defined in [src/base/TransactionQueue.ts:53](https://github.com/PolymathNetwork/polymesh-sdk/blob/1832b6e/src/base/TransactionQueue.ts#L53)*
 
 status of the queue
 
@@ -78,7 +78,7 @@ ___
 
 • **transactions**: *PolymeshTransactionArray‹TransactionArgs›*
 
-*Defined in [src/base/TransactionQueue.ts:48](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/TransactionQueue.ts#L48)*
+*Defined in [src/base/TransactionQueue.ts:48](https://github.com/PolymathNetwork/polymesh-sdk/blob/1832b6e/src/base/TransactionQueue.ts#L48)*
 
 transactions that will be run in the queue
 
@@ -88,7 +88,7 @@ transactions that will be run in the queue
 
 ▸ **getMinFees**(): *Promise‹[Fees](../interfaces/fees.md)›*
 
-*Defined in [src/base/TransactionQueue.ts:185](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/TransactionQueue.ts#L185)*
+*Defined in [src/base/TransactionQueue.ts:185](https://github.com/PolymathNetwork/polymesh-sdk/blob/1832b6e/src/base/TransactionQueue.ts#L185)*
 
 Retrieves a lower bound of the fees required to execute this transaction queue.
   Transaction fees can be higher at execution time for two reasons:
@@ -106,7 +106,7 @@ ___
 
 ▸ **onProcessedByMiddleware**(`listener`: function): *function*
 
-*Defined in [src/base/TransactionQueue.ts:244](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/TransactionQueue.ts#L244)*
+*Defined in [src/base/TransactionQueue.ts:244](https://github.com/PolymathNetwork/polymesh-sdk/blob/1832b6e/src/base/TransactionQueue.ts#L244)*
 
 Subscribe to the results of this queue being processed by the harvester (and as such, available to the middleware)
 
@@ -141,7 +141,7 @@ ___
 
 ▸ **onStatusChange**(`listener`: function): *function*
 
-*Defined in [src/base/TransactionQueue.ts:207](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/TransactionQueue.ts#L207)*
+*Defined in [src/base/TransactionQueue.ts:207](https://github.com/PolymathNetwork/polymesh-sdk/blob/1832b6e/src/base/TransactionQueue.ts#L207)*
 
 Subscribe to status changes on the Transaction Queue
 
@@ -172,7 +172,7 @@ ___
 
 ▸ **onTransactionStatusChange**‹**TxArgs**, **Values**›(`listener`: function): *function*
 
-*Defined in [src/base/TransactionQueue.ts:224](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/TransactionQueue.ts#L224)*
+*Defined in [src/base/TransactionQueue.ts:224](https://github.com/PolymathNetwork/polymesh-sdk/blob/1832b6e/src/base/TransactionQueue.ts#L224)*
 
 Subscribe to status changes on individual transactions
 
@@ -209,7 +209,7 @@ ___
 
 ▸ **run**(): *Promise‹ReturnType›*
 
-*Defined in [src/base/TransactionQueue.ts:121](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/TransactionQueue.ts#L121)*
+*Defined in [src/base/TransactionQueue.ts:121](https://github.com/PolymathNetwork/polymesh-sdk/blob/1832b6e/src/base/TransactionQueue.ts#L121)*
 
 Run the transactions in the queue in sequential order. If a transaction fails or the user refuses to sign it, one of two things can happen:
 

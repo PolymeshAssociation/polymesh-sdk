@@ -1,6 +1,2 @@
 docs linguist-generated=true
 docs -diff -merge
-src/middleware linguist-generated=true
-src/middleware -diff -merge
-src/polkadot linguist-generated=true
-src/polkadot -diff -merge
