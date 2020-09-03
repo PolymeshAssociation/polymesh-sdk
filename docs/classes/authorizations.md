@@ -28,7 +28,7 @@ Handles all Identity Authorization related functionality
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/eac2196/src/base/Namespace.ts#L12)*
+*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/base/Namespace.ts#L12)*
 
 ___
 
@@ -38,7 +38,7 @@ ___
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/eac2196/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/base/Namespace.ts#L10)*
 
 ## Methods
 
@@ -46,7 +46,7 @@ ___
 
 ▸ **getReceived**(`paginationOpts?`: [PaginationOptions](../interfaces/paginationoptions.md)): *Promise‹[ResultSet](../interfaces/resultset.md)‹[AuthorizationRequest](authorizationrequest.md)››*
 
-*Defined in [src/api/entities/Identity/Authorizations.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/eac2196/src/api/entities/Identity/Authorizations.ts#L30)*
+*Defined in [src/api/entities/Identity/Authorizations.ts:30](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/entities/Identity/Authorizations.ts#L30)*
 
 Fetch all pending authorization requests for which this identity is the target
 
@@ -66,7 +66,7 @@ ___
 
 ▸ **getSent**(`paginationOpts?`: [PaginationOptions](../interfaces/paginationoptions.md)): *Promise‹[ResultSet](../interfaces/resultset.md)‹[AuthorizationRequest](authorizationrequest.md)››*
 
-*Defined in [src/api/entities/Identity/Authorizations.ts:64](https://github.com/PolymathNetwork/polymesh-sdk/blob/eac2196/src/api/entities/Identity/Authorizations.ts#L64)*
+*Defined in [src/api/entities/Identity/Authorizations.ts:64](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/api/entities/Identity/Authorizations.ts#L64)*
 
 Fetch all pending authorization requests issued by this identity
 

@@ -14,7 +14,7 @@
 
 • **Cins**: = "Cins"
 
-*Defined in [src/types/index.ts:128](https://github.com/PolymathNetwork/polymesh-sdk/blob/eac2196/src/types/index.ts#L128)*
+*Defined in [src/types/index.ts:128](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L128)*
 
 ___
 
@@ -22,7 +22,7 @@ ___
 
 • **Cusip**: = "Cusip"
 
-*Defined in [src/types/index.ts:127](https://github.com/PolymathNetwork/polymesh-sdk/blob/eac2196/src/types/index.ts#L127)*
+*Defined in [src/types/index.ts:127](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L127)*
 
 ___
 
@@ -30,4 +30,4 @@ ___
 
 • **Isin**: = "Isin"
 
-*Defined in [src/types/index.ts:126](https://github.com/PolymathNetwork/polymesh-sdk/blob/eac2196/src/types/index.ts#L126)*
+*Defined in [src/types/index.ts:126](https://github.com/PolymathNetwork/polymesh-sdk/blob/a6abd82/src/types/index.ts#L126)*
