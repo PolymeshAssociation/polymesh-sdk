@@ -19,7 +19,7 @@ Represents an amount of tokens to be issued to an identity
 
 • **amount**: *BigNumber*
 
-*Defined in [src/types/index.ts:313](https://github.com/PolymathNetwork/polymesh-sdk/blob/f7de000/src/types/index.ts#L313)*
+*Defined in [src/types/index.ts:313](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/types/index.ts#L313)*
 
 ___
 
@@ -27,4 +27,4 @@ ___
 
 • **identity**: *string | [Identity](../classes/identity.md)*
 
-*Defined in [src/types/index.ts:312](https://github.com/PolymathNetwork/polymesh-sdk/blob/f7de000/src/types/index.ts#L312)*
+*Defined in [src/types/index.ts:312](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/types/index.ts#L312)*
