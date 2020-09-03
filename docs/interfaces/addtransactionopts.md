@@ -24,7 +24,7 @@
 
 • **batchSize**? : *undefined | number*
 
-*Defined in [src/base/Procedure.ts:23](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/base/Procedure.ts#L23)*
+*Defined in [src/base/Procedure.ts:23](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/Procedure.ts#L23)*
 
 ___
 
@@ -32,7 +32,7 @@ ___
 
 • **fee**? : *BigNumber*
 
-*Defined in [src/base/Procedure.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/base/Procedure.ts#L19)*
+*Defined in [src/base/Procedure.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/Procedure.ts#L19)*
 
 ___
 
@@ -40,7 +40,7 @@ ___
 
 • **isCritical**? : *undefined | false | true*
 
-*Defined in [src/base/Procedure.ts:21](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/base/Procedure.ts#L21)*
+*Defined in [src/base/Procedure.ts:21](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/Procedure.ts#L21)*
 
 ___
 
@@ -48,7 +48,7 @@ ___
 
 • **resolvers**? : *ResolverFunctionArray‹Values›*
 
-*Defined in [src/base/Procedure.ts:20](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/base/Procedure.ts#L20)*
+*Defined in [src/base/Procedure.ts:20](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/Procedure.ts#L20)*
 
 ___
 
@@ -56,4 +56,4 @@ ___
 
 • **signer**? : *AddressOrPair*
 
-*Defined in [src/base/Procedure.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/base/Procedure.ts#L22)*
+*Defined in [src/base/Procedure.ts:22](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/Procedure.ts#L22)*

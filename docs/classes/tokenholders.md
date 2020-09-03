@@ -27,7 +27,7 @@ Handles all Security Token Holders related functionality
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/base/Namespace.ts#L12)*
+*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/Namespace.ts#L12)*
 
 ___
 
@@ -37,7 +37,7 @@ ___
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/base/Namespace.ts#L10)*
 
 ## Methods
 
@@ -45,7 +45,7 @@ ___
 
 ▸ **get**(`opts`: Pick‹[TokenHolderOptions](../interfaces/tokenholderoptions.md), "canBeIssuedTo"›, `paginationOpts?`: [PaginationOptions](../interfaces/paginationoptions.md)): *Promise‹[ResultSet](../interfaces/resultset.md)‹[IdentityBalance](../interfaces/identitybalance.md) & Pick‹[TokenHolderProperties](../interfaces/tokenholderproperties.md), "canBeIssuedTo"›››*
 
-*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/api/entities/SecurityToken/TokenHolders.ts#L27)*
+*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/api/entities/SecurityToken/TokenHolders.ts#L27)*
 
 Retrieve all the token holders with balance
 
@@ -62,7 +62,7 @@ Name | Type | Description |
 
 ▸ **get**(`paginationOpts?`: [PaginationOptions](../interfaces/paginationoptions.md)): *Promise‹[ResultSet](../interfaces/resultset.md)‹[IdentityBalance](../interfaces/identitybalance.md)››*
 
-*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/e5ab20b/src/api/entities/SecurityToken/TokenHolders.ts#L32)*
+*Defined in [src/api/entities/SecurityToken/TokenHolders.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/257c8c9/src/api/entities/SecurityToken/TokenHolders.ts#L32)*
 
 **Parameters:**
 
