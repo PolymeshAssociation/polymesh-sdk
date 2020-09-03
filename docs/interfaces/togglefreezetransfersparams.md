@@ -16,4 +16,4 @@
 
 • **freeze**: *boolean*
 
-*Defined in [src/api/procedures/toggleFreezeTransfers.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/1832b6e/src/api/procedures/toggleFreezeTransfers.ts#L7)*
+*Defined in [src/api/procedures/toggleFreezeTransfers.ts:7](https://github.com/PolymathNetwork/polymesh-sdk/blob/273f2cb/src/api/procedures/toggleFreezeTransfers.ts#L7)*
