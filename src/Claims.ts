@@ -183,7 +183,7 @@ export class Claims {
   }
 
   /**
-   * Retrieve the list of cdd claims for a target identity
+   * Retrieve the list of CDD claims for a target Identity
    *
    * @param opts.target - identities (or identity IDs) for which to fetch claim scopes
    * @param opts.size - page size
