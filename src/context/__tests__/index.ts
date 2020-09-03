@@ -4,7 +4,7 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
-import { didsWithClaims } from '~/middleware/queries';
+import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
@@ -1121,9 +1121,21 @@ describe('Context class', () => {
 
       dsMockUtils.throwOnMiddlewareQuery();
 
-      return expect(
+      await expect(
         context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Error');
+
+      dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
+
+      await expect(
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware query: Error');
+
+      dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
+
+      await expect(
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware query: Some Message');
     });
 
     test('should perform a middleware query and return the results', async () => {
@@ -1335,6 +1347,84 @@ describe('Context class', () => {
       requestAtBlockStub.throws();
       result = await context.isCurrentNodeArchive();
       expect(result).toBeFalsy();
+    });
+  });
+
+  describe('method: getLatestBlock', () => {
+    test('should return the latest block', async () => {
+      const blockNumber = 100;
+
+      dsMockUtils.createRpcStub('chain', 'getHeader', {
+        returnValue: {
+          number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = await context.getLatestBlock();
+
+      expect(result).toEqual(new BigNumber(blockNumber));
+    });
+  });
+
+  describe('methd: isMiddlewareEnabled', () => {
+    test('should return true if the middleware is enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = context.isMiddlewareEnabled();
+
+      expect(result).toBe(true);
+    });
+
+    test('should return false if the middleware is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = context.isMiddlewareEnabled();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('methd: isMiddlewareAvailable', () => {
+    test('should return true if the middleware is available', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
+      const result = await context.isMiddlewareAvailable();
+
+      expect(result).toBe(true);
+    });
+
+    test('should return false if the middleware is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      const result = await context.isMiddlewareAvailable();
+
+      expect(result).toBe(false);
     });
   });
 });

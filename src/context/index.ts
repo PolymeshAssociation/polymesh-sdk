@@ -11,7 +11,7 @@ import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
-import { didsWithClaims } from '~/middleware/queries';
+import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   AccountBalance,
@@ -45,6 +45,7 @@ import {
   stringToIdentityId,
   textToString,
   txTagToProtocolOp,
+  u32ToBigNumber,
   valueToDid,
 } from '~/utils';
 import { ROOT_TYPES } from '~/utils/constants';
@@ -562,6 +563,8 @@ export class Context {
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
    * @param opts.size - page size
    * @param opts.start - page offset
+   *
+   * @note uses the middleware
    */
   public async issuedClaims(
     opts: {
@@ -637,8 +640,7 @@ export class Context {
   }
 
   /**
-   *
-   * @param query
+   * Make a query to the middleware server using the apollo client
    */
   public async queryMiddleware<Result extends Partial<Query>>(
     query: GraphqlQuery<unknown>
@@ -646,13 +648,45 @@ export class Context {
     let result: ApolloQueryResult<Result>;
     try {
       result = await this.middlewareApi.query(query);
-    } catch (e) {
+    } catch (err) {
+      const resultMessage = err.networkError?.result?.message;
+      const { message: errorMessage } = err;
+      const message = resultMessage ?? errorMessage;
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: `Error in middleware query: ${e.message}`,
+        code: ErrorCode.MiddlewareError,
+        message: `Error in middleware query: ${message}`,
       });
     }
 
     return result;
+  }
+
+  /**
+   * Return whether the middleware was enabled at startup
+   */
+  public isMiddlewareEnabled(): boolean {
+    return !!this._middlewareApi;
+  }
+
+  /**
+   * Return whether the middleware is enabled and online
+   */
+  public async isMiddlewareAvailable(): Promise<boolean> {
+    try {
+      this.middlewareApi.query(heartbeat());
+    } catch (err) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Retrieve the latest block number
+   */
+  public async getLatestBlock(): Promise<BigNumber> {
+    const { number } = await this.polymeshApi.rpc.chain.getHeader();
+
+    return u32ToBigNumber(number.unwrap());
   }
 }

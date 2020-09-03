@@ -25,7 +25,7 @@
 
 • **Address**: = "Address"
 
-*Defined in [src/types/index.ts:412](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L412)*
+*Defined in [src/types/index.ts:412](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L412)*
 
 ___
 
@@ -33,7 +33,7 @@ ___
 
 • **Array**: = "Array"
 
-*Defined in [src/types/index.ts:418](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L418)*
+*Defined in [src/types/index.ts:418](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L418)*
 
 ___
 
@@ -41,7 +41,7 @@ ___
 
 • **Balance**: = "Balance"
 
-*Defined in [src/types/index.ts:416](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L416)*
+*Defined in [src/types/index.ts:416](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L416)*
 
 ___
 
@@ -49,7 +49,7 @@ ___
 
 • **Boolean**: = "Boolean"
 
-*Defined in [src/types/index.ts:414](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L414)*
+*Defined in [src/types/index.ts:414](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L414)*
 
 ___
 
@@ -57,7 +57,7 @@ ___
 
 • **Date**: = "Date"
 
-*Defined in [src/types/index.ts:417](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L417)*
+*Defined in [src/types/index.ts:417](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L417)*
 
 ___
 
@@ -65,7 +65,7 @@ ___
 
 • **Did**: = "Did"
 
-*Defined in [src/types/index.ts:411](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L411)*
+*Defined in [src/types/index.ts:411](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L411)*
 
 ___
 
@@ -73,7 +73,7 @@ ___
 
 • **Null**: = "Null"
 
-*Defined in [src/types/index.ts:424](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L424)*
+*Defined in [src/types/index.ts:424](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L424)*
 
 ___
 
@@ -81,7 +81,7 @@ ___
 
 • **Number**: = "Number"
 
-*Defined in [src/types/index.ts:415](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L415)*
+*Defined in [src/types/index.ts:415](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L415)*
 
 ___
 
@@ -89,7 +89,7 @@ ___
 
 • **Object**: = "Object"
 
-*Defined in [src/types/index.ts:422](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L422)*
+*Defined in [src/types/index.ts:422](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L422)*
 
 ___
 
@@ -97,7 +97,7 @@ ___
 
 • **RichEnum**: = "RichEnum"
 
-*Defined in [src/types/index.ts:421](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L421)*
+*Defined in [src/types/index.ts:421](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L421)*
 
 ___
 
@@ -105,7 +105,7 @@ ___
 
 • **SimpleEnum**: = "SimpleEnum"
 
-*Defined in [src/types/index.ts:420](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L420)*
+*Defined in [src/types/index.ts:420](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L420)*
 
 ___
 
@@ -113,7 +113,7 @@ ___
 
 • **Text**: = "Text"
 
-*Defined in [src/types/index.ts:413](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L413)*
+*Defined in [src/types/index.ts:413](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L413)*
 
 ___
 
@@ -121,7 +121,7 @@ ___
 
 • **Tuple**: = "Tuple"
 
-*Defined in [src/types/index.ts:419](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L419)*
+*Defined in [src/types/index.ts:419](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L419)*
 
 ___
 
@@ -129,4 +129,4 @@ ___
 
 • **Unknown**: = "Unknown"
 
-*Defined in [src/types/index.ts:423](https://github.com/PolymathNetwork/polymesh-sdk/blob/ad17cbf/src/types/index.ts#L423)*
+*Defined in [src/types/index.ts:423](https://github.com/PolymathNetwork/polymesh-sdk/blob/0073002/src/types/index.ts#L423)*
