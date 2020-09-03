@@ -1,0 +1,26 @@
+name: Docs
+
+on:
+  push:
+    branches: [master, beta, alpha]
+
+jobs:
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+      - name: install dependencies
+        run: yarn --frozen-lockfile
+      - name: generate docs
+        run: yarn build:docs
+      - name: commit docs
+        uses: EndBug/add-and-commit@v4
+        with:
+          add: 'docs'
+          message: 'docs: autogenerate documentation'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
