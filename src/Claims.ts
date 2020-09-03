@@ -188,6 +188,8 @@ export class Claims {
    * @param opts.target - identities (or identity IDs) for which to fetch claim scopes
    * @param opts.size - page size
    * @param opts.start - page offset
+   *
+   * @note uses the middleware
    */
   public async getCddClaims(opts: {
     target: string | Identity;
