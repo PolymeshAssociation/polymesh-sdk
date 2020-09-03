@@ -25,7 +25,7 @@ import {
   addressToKey,
   balanceToBigNumber,
   identityIdToString,
-  middlewareProposalToTxTag,
+  middlewareProposalToProposalDetails,
   u32ToBigNumber,
 } from '~/utils';
 
@@ -103,42 +103,14 @@ export class Governance {
       })
     );
 
-    const proposalsWithDetails = result.data.proposals.map(
-      ({
-        pipId,
-        proposer: proposerAddress,
-        createdAt,
-        url: discussionUrl,
-        description,
-        coolOffEndBlock,
-        endBlock,
-        proposal: rawProposal,
-        lastState,
-        lastStateUpdatedAt,
-        totalVotes,
-        totalAyesWeight,
-        totalNaysWeight,
-      }) => {
-        const proposal = new Proposal({ pipId }, context);
-        return {
-          proposal,
-          details: {
-            proposerAddress,
-            createdAt: new BigNumber(createdAt),
-            discussionUrl,
-            description,
-            coolOffEndBlock: new BigNumber(coolOffEndBlock),
-            endBlock: new BigNumber(endBlock),
-            transaction: rawProposal ? middlewareProposalToTxTag(rawProposal, context) : null,
-            lastState,
-            lastStateUpdatedAt: new BigNumber(lastStateUpdatedAt),
-            totalVotes: new BigNumber(totalVotes),
-            totalAyesWeight: new BigNumber(totalAyesWeight),
-            totalNaysWeight: new BigNumber(totalNaysWeight),
-          },
-        };
-      }
-    );
+    const proposalsWithDetails = result.data.proposals.map(rawProposal => {
+      const { pipId } = rawProposal;
+      const proposal = new Proposal({ pipId }, context);
+      return {
+        proposal,
+        details: middlewareProposalToProposalDetails(rawProposal, context),
+      };
+    });
 
     return proposalsWithDetails;
   }

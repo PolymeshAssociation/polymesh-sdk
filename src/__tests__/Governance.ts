@@ -99,16 +99,39 @@ describe('Governance class', () => {
         totalNaysWeight: totalNaysWeight.toNumber(),
       };
       const proposalInstance = new Proposal({ pipId }, context);
+      const fakeResult = [
+        {
+          proposal: proposalInstance,
+          details: {
+            ...proposalsQueryResponse,
+            transaction: fakeTransaction,
+            createdAt,
+            coolOffEndBlock,
+            endBlock,
+            lastStateUpdatedAt,
+            totalVotes,
+            totalAyesWeight,
+            totalNaysWeight,
+          },
+        },
+      ];
 
       sinon
         .stub(utilsModule, 'addressToKey')
         .withArgs(address)
         .returns(proposer);
 
-      sinon
-        .stub(utilsModule, 'middlewareProposalToTxTag')
-        .withArgs(proposal, context)
-        .returns(fakeTransaction);
+      sinon.stub(utilsModule, 'middlewareProposalToProposalDetails').returns({
+        ...proposalsQueryResponse,
+        transaction: fakeTransaction,
+        createdAt,
+        coolOffEndBlock,
+        endBlock,
+        lastStateUpdatedAt,
+        totalVotes,
+        totalAyesWeight,
+        totalNaysWeight,
+      });
 
       dsMockUtils.createApolloQueryStub(
         proposals({
@@ -127,22 +150,7 @@ describe('Governance class', () => {
         proposers: [address],
       });
 
-      expect(result).toEqual([
-        {
-          proposal: proposalInstance,
-          details: {
-            ...proposalsQueryResponse,
-            transaction: fakeTransaction,
-            createdAt,
-            coolOffEndBlock,
-            endBlock,
-            lastStateUpdatedAt,
-            totalVotes,
-            totalAyesWeight,
-            totalNaysWeight,
-          },
-        },
-      ]);
+      expect(result).toEqual(fakeResult);
 
       dsMockUtils.createApolloQueryStub(
         proposals({
@@ -159,22 +167,7 @@ describe('Governance class', () => {
 
       result = await governance.getProposals();
 
-      expect(result).toEqual([
-        {
-          proposal: proposalInstance,
-          details: {
-            ...proposalsQueryResponse,
-            transaction: null,
-            createdAt,
-            coolOffEndBlock,
-            endBlock,
-            lastStateUpdatedAt,
-            totalVotes,
-            totalAyesWeight,
-            totalNaysWeight,
-          },
-        },
-      ]);
+      expect(result).toEqual(fakeResult);
     });
   });
 

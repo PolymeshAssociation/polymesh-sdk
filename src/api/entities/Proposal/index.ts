@@ -10,7 +10,7 @@ import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, ResultSet } from '~/types';
 import {
   balanceToBigNumber,
-  middlewareProposalToTxTag,
+  middlewareProposalToProposalDetails,
   requestAtBlock,
   u32ToBigNumber,
   valueToDid,
@@ -157,42 +157,14 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     const { context, pipId } = this;
 
     const {
-      data: {
-        proposal: {
-          proposer: proposerAddress,
-          createdAt,
-          url: discussionUrl,
-          description,
-          coolOffEndBlock,
-          endBlock,
-          proposal: rawProposal,
-          lastState,
-          lastStateUpdatedAt,
-          totalVotes,
-          totalAyesWeight,
-          totalNaysWeight,
-        },
-      },
+      data: { proposal: rawProposal },
     } = await context.queryMiddleware<Ensured<Query, 'proposal'>>(
       proposal({
         pipId,
       })
     );
 
-    return {
-      proposerAddress,
-      createdAt: new BigNumber(createdAt),
-      discussionUrl,
-      description,
-      coolOffEndBlock: new BigNumber(coolOffEndBlock),
-      endBlock: new BigNumber(endBlock),
-      transaction: rawProposal ? middlewareProposalToTxTag(rawProposal, context) : null,
-      lastState,
-      lastStateUpdatedAt: new BigNumber(lastStateUpdatedAt),
-      totalVotes: new BigNumber(totalVotes),
-      totalAyesWeight: new BigNumber(totalAyesWeight),
-      totalNaysWeight: new BigNumber(totalNaysWeight),
-    };
+    return middlewareProposalToProposalDetails(rawProposal, context);
   }
 
   /**

@@ -14,7 +14,7 @@
 
 • **CddProvider**: = "CddProvider"
 
-*Defined in [src/types/index.ts:68](https://github.com/PolymathNetwork/polymesh-sdk/blob/41410c6/src/types/index.ts#L68)*
+*Defined in [src/types/index.ts:68](https://github.com/PolymathNetwork/polymesh-sdk/blob/14db4c2/src/types/index.ts#L68)*
 
 ___
 
@@ -22,7 +22,7 @@ ___
 
 • **TickerOwner**: = "TickerOwner"
 
-*Defined in [src/types/index.ts:66](https://github.com/PolymathNetwork/polymesh-sdk/blob/41410c6/src/types/index.ts#L66)*
+*Defined in [src/types/index.ts:66](https://github.com/PolymathNetwork/polymesh-sdk/blob/14db4c2/src/types/index.ts#L66)*
 
 ___
 
@@ -30,4 +30,4 @@ ___
 
 • **TokenOwner**: = "TokenOwner"
 
-*Defined in [src/types/index.ts:67](https://github.com/PolymathNetwork/polymesh-sdk/blob/41410c6/src/types/index.ts#L67)*
+*Defined in [src/types/index.ts:67](https://github.com/PolymathNetwork/polymesh-sdk/blob/14db4c2/src/types/index.ts#L67)*

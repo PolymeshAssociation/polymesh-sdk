@@ -10,7 +10,7 @@ import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposal as proposalQuery, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, ProposalState } from '~/middleware/types';
-import { TxTag } from '~/polkadot';
+import { TxTags } from '~/polkadot';
 import { dsMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
 
@@ -176,8 +176,11 @@ describe('Proposal class', () => {
 
   describe('method: getDetails', () => {
     test('should return the proposal details', async () => {
+      const variables = { pipId };
       const proposer = 'someProposer';
       const url = 'http://someUrl';
+      const description = 'some description';
+      const lastState = ProposalState.Pending;
       const createdAt = new BigNumber(150000);
       const coolOffEndBlock = new BigNumber(160000);
       const endBlock = new BigNumber(165000);
@@ -186,60 +189,47 @@ describe('Proposal class', () => {
       const totalAyesWeight = new BigNumber(10);
       const totalNaysWeight = new BigNumber(20);
       const rawProposal = '0x110000';
-      const variables = { pipId };
-      const fakeTxTag = 'someModule.someMethod' as TxTag;
       const fakeProposal = {
-        proposerAddress: proposer,
+        pipId,
+        proposer,
         createdAt: createdAt.toNumber(),
-        discussionUrl: url,
-        description: 'some description',
+        url,
+        description,
         coolOffEndBlock: coolOffEndBlock.toNumber(),
         endBlock: endBlock.toNumber(),
-        lastState: ProposalState.Pending,
+        proposal: rawProposal,
+        lastState,
         lastStateUpdatedAt: lastStateUpdatedAt.toNumber(),
         totalVotes: totalVotes.toNumber(),
-        totalAyesWeight: totalAyesWeight.toNumber(),
-        totalNaysWeight: totalNaysWeight.toNumber(),
+        totalAyesWeight: totalAyesWeight,
+        totalNaysWeight: totalNaysWeight,
+      };
+      const fakeResult = {
+        proposerAddress: proposer,
+        createdAt,
+        discussionUrl: url,
+        description,
+        coolOffEndBlock,
+        endBlock,
+        transaction: TxTags.treasury.Disbursement,
+        lastState,
+        lastStateUpdatedAt,
+        totalVotes,
+        totalAyesWeight,
+        totalNaysWeight,
       };
 
       dsMockUtils.createApolloQueryStub(proposalQuery(variables), {
-        proposal: { ...fakeProposal, proposal: rawProposal, proposer, url },
+        proposal: fakeProposal,
       });
 
       sinon
-        .stub(utilsModule, 'middlewareProposalToTxTag')
-        .withArgs(rawProposal, context)
-        .returns(fakeTxTag);
+        .stub(utilsModule, 'middlewareProposalToProposalDetails')
+        .withArgs(fakeProposal, context)
+        .returns(fakeResult);
 
-      let result = await proposal.getDetails();
-      expect(result).toEqual({
-        ...fakeProposal,
-        createdAt,
-        coolOffEndBlock,
-        endBlock,
-        lastStateUpdatedAt,
-        totalVotes,
-        totalAyesWeight,
-        totalNaysWeight,
-        transaction: fakeTxTag,
-      });
-
-      dsMockUtils.createApolloQueryStub(proposalQuery(variables), {
-        proposal: { ...fakeProposal, proposer, url },
-      });
-
-      result = await proposal.getDetails();
-      expect(result).toEqual({
-        ...fakeProposal,
-        transaction: null,
-        createdAt,
-        coolOffEndBlock,
-        endBlock,
-        lastStateUpdatedAt,
-        totalVotes,
-        totalAyesWeight,
-        totalNaysWeight,
-      });
+      const result = await proposal.getDetails();
+      expect(result).toEqual(fakeResult);
     });
   });
 
