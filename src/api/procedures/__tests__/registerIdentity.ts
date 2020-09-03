@@ -44,7 +44,7 @@ describe('registerIdentity procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a registerIdentity transaction to the queue', async () => {
+  test('should add a cddRegisterIdentity transaction to the queue', async () => {
     const target = 'someTarget';
     const expiry = new Date('10/10/2050');
     const signingKeys = [
