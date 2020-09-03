@@ -642,13 +642,7 @@ export class Context {
    * Return whether the middleware was enabled at startup
    */
   public isMiddlewareEnabled(): boolean {
-    try {
-      // eslint-disable-next-line no-unused-expressions
-      this.middlewareApi;
-      return true;
-    } catch (err) {
-      return false;
-    }
+    return !!this._middlewareApi;
   }
 
   /**
