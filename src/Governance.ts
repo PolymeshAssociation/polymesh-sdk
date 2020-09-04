@@ -194,4 +194,35 @@ export class Governance {
 
     return assembleResult(rawCoolOff, rawDuration);
   }
+
+  /**
+   * Returns the minimum stake a proposal must gather in order to be considered by the committe
+   *
+   * @note can be subscribed to
+   */
+  public async currentMinimumBondedAmount(): Promise<BigNumber>;
+  public async currentMinimumBondedAmount(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async currentMinimumBondedAmount(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+        },
+      },
+    } = this;
+
+    if (callback) {
+      return pips.quorumThreshold(res => {
+        callback(balanceToBigNumber(res));
+      });
+    }
+
+    const quorumThreshold = await pips.quorumThreshold();
+
+    return balanceToBigNumber(quorumThreshold);
+  }
 }
