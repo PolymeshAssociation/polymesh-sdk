@@ -38,10 +38,11 @@ describe('Claims Class', () => {
 
   describe('method: getIssuedClaims', () => {
     test('should return a list of issued claims', async () => {
+      const target = 'someDid';
       const issuedClaims: ResultSet<ClaimData> = {
         data: [
           {
-            target: new Identity({ did: 'someDid' }, context),
+            target: new Identity({ did: target }, context),
             issuer: new Identity({ did: 'otherDid' }, context),
             issuedAt: new Date(),
             expiry: null,
@@ -58,7 +59,10 @@ describe('Claims Class', () => {
         },
       });
 
-      const result = await claims.getIssuedClaims();
+      let result = await claims.getIssuedClaims();
+      expect(result).toEqual(issuedClaims);
+
+      result = await claims.getIssuedClaims({ target });
       expect(result).toEqual(issuedClaims);
     });
   });

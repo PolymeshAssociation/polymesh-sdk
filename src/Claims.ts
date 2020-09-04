@@ -51,18 +51,24 @@ export class Claims {
   }
 
   /**
-   * Retrieve all claims issued by the current identity
+   * Retrieve all claims issued by an Identity
+   *
+   * @param opts.target - identity (optional, defaults to the current identity)
+   *
+   * @note uses the middleware
    */
   public async getIssuedClaims(
     opts: {
+      target?: string | Identity;
       size?: number;
       start?: number;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
 
-    const { size, start } = opts;
-    const { did } = context.getCurrentIdentity();
+    const { target, size, start } = opts;
+
+    const did = target ? valueToDid(target) : context.getCurrentIdentity().did;
 
     const result = await context.issuedClaims({
       trustedClaimIssuers: [did],
