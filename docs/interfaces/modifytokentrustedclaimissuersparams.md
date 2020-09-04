@@ -16,4 +16,4 @@
 
 • **claimIssuerIdentities**: *(string | [Identity](../classes/identity.md)‹›)[]*
 
-*Defined in [src/api/procedures/modifyTokenTrustedClaimIssuers.ts:17](https://github.com/PolymathNetwork/polymesh-sdk/blob/2ca45cb/src/api/procedures/modifyTokenTrustedClaimIssuers.ts#L17)*
+*Defined in [src/api/procedures/modifyTokenTrustedClaimIssuers.ts:17](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d6f865/src/api/procedures/modifyTokenTrustedClaimIssuers.ts#L17)*

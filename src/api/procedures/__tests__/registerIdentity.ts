@@ -113,6 +113,7 @@ describe('registerIdentity procedure', () => {
       null,
       []
     );
+    expect(result).toBe(identity);
   });
 });
 

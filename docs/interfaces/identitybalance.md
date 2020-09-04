@@ -19,7 +19,7 @@ Represents the balance of a token holder
 
 • **balance**: *BigNumber*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/2ca45cb/src/api/entities/SecurityToken/types.ts#L19)*
+*Defined in [src/api/entities/SecurityToken/types.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d6f865/src/api/entities/SecurityToken/types.ts#L19)*
 
 ___
 
@@ -27,4 +27,4 @@ ___
 
 • **identity**: *[Identity](../classes/identity.md)*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:18](https://github.com/PolymathNetwork/polymesh-sdk/blob/2ca45cb/src/api/entities/SecurityToken/types.ts#L18)*
+*Defined in [src/api/entities/SecurityToken/types.ts:18](https://github.com/PolymathNetwork/polymesh-sdk/blob/6d6f865/src/api/entities/SecurityToken/types.ts#L18)*
