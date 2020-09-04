@@ -295,7 +295,10 @@ describe('Claims Class', () => {
         },
       });
 
-      const result = await claims.getCddClaims({ target });
+      let result = await claims.getCddClaims({ target });
+      expect(result).toEqual(issuedClaims);
+
+      result = await claims.getCddClaims();
       expect(result).toEqual(issuedClaims);
     });
   });
@@ -313,11 +316,24 @@ describe('Claims Class', () => {
         },
       ];
 
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          did: target,
+        },
+      });
+
       dsMockUtils.createApolloQueryStub(scopesByIdentity({ did: target }), {
         scopesByIdentity: scopes,
       });
 
-      const result = await claims.getClaimScopes({ target });
+      let result = await claims.getClaimScopes({ target });
+
+      expect(result[0].ticker).toBe('TOKEN');
+      expect(result[0].scope).toBe('someScope');
+      expect(result[1].ticker).toBeUndefined();
+      expect(result[1].scope).toBeNull();
+
+      result = await claims.getClaimScopes();
 
       expect(result[0].ticker).toBe('TOKEN');
       expect(result[0].scope).toBe('someScope');

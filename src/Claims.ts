@@ -158,19 +158,21 @@ export class Claims {
    * Retrieve all scopes in which claims have been made for the target identity.
    *   If the scope is an asset DID, the corresponding ticker is returned as well
    *
-   * @param args.target - identitiy for which to fetch claim scopes
+   * @param opts.target - identity for which to fetch claim scopes (optional, defaults to the current identity)
    *
    * @note a null scope means the identity has scopeless claims (like CDD for example)
    * @note uses the middleware
    */
-  public async getClaimScopes(args: { target: string | Identity }): Promise<ClaimScope[]> {
+  public async getClaimScopes(opts: { target?: string | Identity } = {}): Promise<ClaimScope[]> {
     const { context } = this;
-    const { target } = args;
+    const { target } = opts;
+
+    const did = target ? valueToDid(target) : context.getCurrentIdentity().did;
 
     const {
       data: { scopesByIdentity: scopes },
     } = await context.queryMiddleware<Ensured<Query, 'scopesByIdentity'>>(
-      scopesByIdentity({ did: valueToDid(target) })
+      scopesByIdentity({ did })
     );
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -191,22 +193,26 @@ export class Claims {
   /**
    * Retrieve the list of CDD claims for a target Identity
    *
-   * @param opts.target - identity for which to fetch claim scopes
+   * @param opts.target - identity for which to fetch claim scopes (optional, defaults to the current identity)
    * @param opts.size - page size
    * @param opts.start - page offset
    *
    * @note uses the middleware
    */
-  public async getCddClaims(opts: {
-    target: string | Identity;
-    size?: number;
-    start?: number;
-  }): Promise<ResultSet<ClaimData>> {
+  public async getCddClaims(
+    opts: {
+      target?: string | Identity;
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
     const { target, size, start } = opts;
 
+    const did = target ? valueToDid(target) : context.getCurrentIdentity().did;
+
     const result = await context.issuedClaims({
-      targets: [valueToDid(target)],
+      targets: [did],
       claimTypes: [ClaimType.CustomerDueDiligence],
       size,
       start,
