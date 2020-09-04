@@ -158,7 +158,7 @@ export class Claims {
    * Retrieve all scopes in which claims have been made for the target identity.
    *   If the scope is an asset DID, the corresponding ticker is returned as well
    *
-   * @param args.target - identities (or identity IDs) for which to fetch claim scopes
+   * @param args.target - identitiy for which to fetch claim scopes
    *
    * @note a null scope means the identity has scopeless claims (like CDD for example)
    * @note uses the middleware
@@ -191,7 +191,7 @@ export class Claims {
   /**
    * Retrieve the list of CDD claims for a target Identity
    *
-   * @param opts.target - identities (or identity IDs) for which to fetch claim scopes
+   * @param opts.target - identity for which to fetch claim scopes
    * @param opts.size - page size
    * @param opts.start - page offset
    *
