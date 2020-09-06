@@ -469,6 +469,11 @@ export interface Signer {
   value: string;
 }
 
+export interface SigningKey {
+  signer: Signer;
+  permissions: Permission[];
+}
+
 export { TxTags } from 'polymesh-types/types';
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export * from '~/api/entities/types';
