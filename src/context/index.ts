@@ -38,6 +38,7 @@ import {
   calculateNextKey,
   createClaim,
   identityIdToString,
+  numberToU32,
   posRatioToBigNumber,
   requestAtBlock,
   signatoryToSigner,
@@ -182,12 +183,12 @@ export class Context {
     } = this;
 
     try {
-      const blockHash = await system.blockHash(0);
-      await requestAtBlock(balances.totalIssuance, {
+      const blockHash = await system.blockHash(numberToU32(0, this));
+      const balance = await requestAtBlock(balances.totalIssuance, {
         args: [],
         blockHash,
       });
-      return true;
+      return balanceToBigNumber(balance).gt(new BigNumber(0));
     } catch (e) {
       return false;
     }

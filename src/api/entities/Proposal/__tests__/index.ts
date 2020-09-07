@@ -341,7 +341,9 @@ describe('Proposal class', () => {
 
       sinon.stub(proposal, 'getStage').resolves(ProposalStage.Ended);
 
-      dsMockUtils.createRpcStub('chain', 'getBlockHash').returns(rawBlockHash);
+      dsMockUtils.createQueryStub('system', 'blockHash', {
+        returnValue: rawBlockHash,
+      });
 
       const result = await proposal.minimumBondedAmount();
       expect(result).toBe(fakeResult);

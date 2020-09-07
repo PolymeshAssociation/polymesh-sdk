@@ -16,4 +16,4 @@
 
 • **keyring**: *[CommonKeyring](../globals.md#commonkeyring)*
 
-*Defined in [src/types/index.ts:356](https://github.com/PolymathNetwork/polymesh-sdk/blob/3b32ccad/src/types/index.ts#L356)*
+*Defined in [src/types/index.ts:356](https://github.com/PolymathNetwork/polymesh-sdk/blob/7527396d/src/types/index.ts#L356)*
