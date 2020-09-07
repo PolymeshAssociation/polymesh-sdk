@@ -19,4 +19,5 @@ export { transferTokenOwnership, TransferTokenOwnershipParams } from './transfer
 export { editProposal, EditProposalParams } from './editProposal';
 export { removeSigningKeys, RemoveSigningKeysParams } from './removeSigningKeys';
 export { cancelProposal } from './cancelProposal';
+export { registerIdentity, RegisterIdentityParams } from './registerIdentity';
 export { voteOnProposal, VoteOnProposalParams } from './voteOnProposal';
