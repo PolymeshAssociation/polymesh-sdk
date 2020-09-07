@@ -23,7 +23,7 @@ Handles all Governance related functionality
 
 ▸ **createProposal**(`args`: [CreateProposalParams](../interfaces/createproposalparams.md)): *Promise‹[TransactionQueue](transactionqueue.md)‹[Proposal](proposal.md)››*
 
-*Defined in [src/Governance.ts:105](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/Governance.ts#L105)*
+*Defined in [src/Governance.ts:128](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/Governance.ts#L128)*
 
 Create a proposal
 
@@ -41,7 +41,7 @@ ___
 
 ▸ **getGovernanceCommitteeMembers**(): *Promise‹[Identity](identity.md)[]›*
 
-*Defined in [src/Governance.ts:36](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/Governance.ts#L36)*
+*Defined in [src/Governance.ts:48](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/Governance.ts#L48)*
 
 Retrieve a list of all active committee members
 
@@ -51,11 +51,13 @@ ___
 
 ###  getProposals
 
-▸ **getProposals**(`opts`: object): *Promise‹[Proposal](proposal.md)[]›*
+▸ **getProposals**(`opts`: object): *Promise‹[ProposalWithDetails](../interfaces/proposalwithdetails.md)[]›*
 
-*Defined in [src/Governance.ts:71](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/Governance.ts#L71)*
+*Defined in [src/Governance.ts:85](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/Governance.ts#L85)*
 
-Retrieve a list of proposals. Can be filtered using parameters
+Retrieve a list of proposals and their respective details. Can be filtered using parameters
+
+**`note`** details for a single proposal can be fetched using the `Proposal` entity's `getDetails` method
 
 **`note`** uses the middleware
 
@@ -71,7 +73,7 @@ Name | Type | Description |
 `start?` | undefined &#124; number | page offset  |
 `states?` | ProposalState[] | state of the proposal |
 
-**Returns:** *Promise‹[Proposal](proposal.md)[]›*
+**Returns:** *Promise‹[ProposalWithDetails](../interfaces/proposalwithdetails.md)[]›*
 
 ___
 
@@ -79,7 +81,7 @@ ___
 
 ▸ **getTransactionArguments**(`args`: object): *[TransactionArgument](../globals.md#transactionargument)[]*
 
-*Defined in [src/Governance.ts:56](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/Governance.ts#L56)*
+*Defined in [src/Governance.ts:68](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/Governance.ts#L68)*
 
 Retrieve the types of arguments that a certain transaction requires to be run
 
@@ -99,7 +101,7 @@ ___
 
 ▸ **minimumProposalDeposit**(): *Promise‹BigNumber›*
 
-*Defined in [src/Governance.ts:114](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/Governance.ts#L114)*
+*Defined in [src/Governance.ts:137](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/Governance.ts#L137)*
 
 Get the minimum amount of POLYX that has to be deposited when creating a proposal
 
@@ -109,7 +111,7 @@ Get the minimum amount of POLYX that has to be deposited when creating a proposa
 
 ▸ **minimumProposalDeposit**(`callback`: [SubCallback](../globals.md#subcallback)‹BigNumber›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/Governance.ts:115](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/Governance.ts#L115)*
+*Defined in [src/Governance.ts:138](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/Governance.ts#L138)*
 
 **Parameters:**
 
@@ -125,7 +127,7 @@ ___
 
 ▸ **proposalTimeFrames**(): *Promise‹[ProposalTimeFrames](../interfaces/proposaltimeframes.md)›*
 
-*Defined in [src/Governance.ts:148](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/Governance.ts#L148)*
+*Defined in [src/Governance.ts:171](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/Governance.ts#L171)*
 
 Retrieve the proposal time frames. This includes:
 
@@ -138,7 +140,7 @@ Retrieve the proposal time frames. This includes:
 
 ▸ **proposalTimeFrames**(`callback`: [SubCallback](../globals.md#subcallback)‹[ProposalTimeFrames](../interfaces/proposaltimeframes.md)›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/Governance.ts:149](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/Governance.ts#L149)*
+*Defined in [src/Governance.ts:172](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/Governance.ts#L172)*
 
 **Parameters:**
 

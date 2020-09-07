@@ -20,6 +20,7 @@ import {
   TickerReservationDetails,
   TickerReservationStatus,
   TransferStatus,
+  TxTags,
 } from '~/types';
 
 const mockInstanceContainer = {
@@ -201,10 +202,9 @@ let authorizationRequestOptions = defaultAuthorizationRequestOptions;
 const defaultProposalOptions: ProposalOptions = {
   pipId: 1,
   getDetails: {
-    state: ProposalState.Referendum,
-    module: 'someModule',
-    method: 'someMethod',
-  },
+    lastState: ProposalState.Referendum,
+    transaction: TxTags.treasury.Disbursement,
+  } as ProposalDetails,
   getStage: ProposalStage.Open,
   identityHasVoted: false,
 };

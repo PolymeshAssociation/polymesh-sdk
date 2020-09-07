@@ -17,7 +17,7 @@
 
 • **scope**: *string | null*
 
-*Defined in [src/types/index.ts:242](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/types/index.ts#L242)*
+*Defined in [src/types/index.ts:243](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/types/index.ts#L243)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **ticker**? : *undefined | string*
 
-*Defined in [src/types/index.ts:243](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/types/index.ts#L243)*
+*Defined in [src/types/index.ts:244](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/types/index.ts#L244)*

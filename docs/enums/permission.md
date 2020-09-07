@@ -15,7 +15,7 @@
 
 • **Admin**: = "Admin"
 
-*Defined in [src/types/index.ts:399](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/types/index.ts#L399)*
+*Defined in [src/types/index.ts:400](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/types/index.ts#L400)*
 
 ___
 
@@ -23,7 +23,7 @@ ___
 
 • **Full**: = "Full"
 
-*Defined in [src/types/index.ts:398](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/types/index.ts#L398)*
+*Defined in [src/types/index.ts:399](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/types/index.ts#L399)*
 
 ___
 
@@ -31,7 +31,7 @@ ___
 
 • **Operator**: = "Operator"
 
-*Defined in [src/types/index.ts:400](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/types/index.ts#L400)*
+*Defined in [src/types/index.ts:401](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/types/index.ts#L401)*
 
 ___
 
@@ -39,4 +39,4 @@ ___
 
 • **SpendFunds**: = "SpendFunds"
 
-*Defined in [src/types/index.ts:401](https://github.com/PolymathNetwork/polymesh-sdk/blob/395653d/src/types/index.ts#L401)*
+*Defined in [src/types/index.ts:402](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/types/index.ts#L402)*
