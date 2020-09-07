@@ -1,0 +1,44 @@
+name: Docs
+
+on:
+  push:
+    branches: [beta, alpha]
+  release:
+    types: [released]
+
+jobs:
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+      - name: install dependencies
+        run: yarn --frozen-lockfile
+      - name: generate docs
+        run: yarn build:docs
+      - name: determine branch name
+        uses: actions/github-script@v3
+        id: setBranch
+        with:
+          script: |
+            const name = process.env.GITHUB_REF.replace(/refs\/tags\//, '').split('.')[0];
+            return `docs/${name}`;
+          result-encoding: string
+      - name: create branch
+        uses: peterjgrainger/action-create-branch@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          branch: ${{ steps.setBranch.outputs.result }}
+        continue-on-error: true
+      - name: commit docs
+        uses: EndBug/add-and-commit@v4
+        with:
+          add: 'docs'
+          message: 'docs: autogenerate documentation'
+          ref: ${{ steps.setBranch.outputs.result }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
