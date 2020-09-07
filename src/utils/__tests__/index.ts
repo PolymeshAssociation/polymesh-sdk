@@ -87,7 +87,6 @@ import {
   meshPermissionToPermission,
   meshProposalStateToProposalState,
   middlewareProposalToProposalDetails,
-  middlewareProposalToTxTag,
   moduleAddressToString,
   momentToDate,
   numberToBalance,
@@ -123,6 +122,7 @@ import {
   tokenDocumentDataToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
+  transactionHexToTxTag,
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToTransferStatus,
@@ -2423,7 +2423,7 @@ describe('toIdentityWithClaimsArray', () => {
   });
 });
 
-describe('middlewareProposalToTxTag', () => {
+describe('transactionHexToTxTag', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2436,7 +2436,7 @@ describe('middlewareProposalToTxTag', () => {
     dsMockUtils.cleanup();
   });
 
-  test('middlewareProposalToTxTag should convert a hex string to a TxTag type', () => {
+  test('transactionHexToTxTag should convert a hex string to a TxTag type', () => {
     const hex = '0x110000';
     const fakeResult = TxTags.treasury.Disbursement;
     const mockResult = {
@@ -2451,7 +2451,7 @@ describe('middlewareProposalToTxTag', () => {
       .withArgs('Proposal', hex)
       .returns(mockResult);
 
-    const result = middlewareProposalToTxTag(hex, context);
+    const result = transactionHexToTxTag(hex, context);
     expect(result).toEqual(fakeResult);
   });
 });

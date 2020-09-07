@@ -14,7 +14,7 @@
 
 • **Free**: = "Free"
 
-*Defined in [src/api/entities/TickerReservation/types.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/36c7bf5/src/api/entities/TickerReservation/types.ts#L19)*
+*Defined in [src/api/entities/TickerReservation/types.ts:19](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/api/entities/TickerReservation/types.ts#L19)*
 
 ticker hasn't been reserved or previous reservation expired
 
@@ -24,7 +24,7 @@ ___
 
 • **Reserved**: = "Reserved"
 
-*Defined in [src/api/entities/TickerReservation/types.ts:23](https://github.com/PolymathNetwork/polymesh-sdk/blob/36c7bf5/src/api/entities/TickerReservation/types.ts#L23)*
+*Defined in [src/api/entities/TickerReservation/types.ts:23](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/api/entities/TickerReservation/types.ts#L23)*
 
 ticker is currently reserved
 
@@ -34,6 +34,6 @@ ___
 
 • **TokenCreated**: = "TokenCreated"
 
-*Defined in [src/api/entities/TickerReservation/types.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/36c7bf5/src/api/entities/TickerReservation/types.ts#L27)*
+*Defined in [src/api/entities/TickerReservation/types.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/api/entities/TickerReservation/types.ts#L27)*
 
 a Security Token using this ticker has already been created

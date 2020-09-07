@@ -121,17 +121,7 @@ describe('Governance class', () => {
         .withArgs(address)
         .returns(proposer);
 
-      sinon.stub(utilsModule, 'middlewareProposalToProposalDetails').returns({
-        ...proposalsQueryResponse,
-        transaction: fakeTransaction,
-        createdAt,
-        coolOffEndBlock,
-        endBlock,
-        lastStateUpdatedAt,
-        totalVotes,
-        totalAyesWeight,
-        totalNaysWeight,
-      });
+      sinon.stub(utilsModule, 'middlewareProposalToProposalDetails').returns(fakeResult[0].details);
 
       dsMockUtils.createApolloQueryStub(
         proposals({

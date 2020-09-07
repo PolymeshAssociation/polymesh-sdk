@@ -17,7 +17,7 @@
 
 • **permissions**: *[Permission](../enums/permission.md)[]*
 
-*Defined in [src/types/index.ts:480](https://github.com/PolymathNetwork/polymesh-sdk/blob/36c7bf5/src/types/index.ts#L480)*
+*Defined in [src/types/index.ts:480](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/types/index.ts#L480)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **signer**: *[Signer](signer.md)*
 
-*Defined in [src/types/index.ts:479](https://github.com/PolymathNetwork/polymesh-sdk/blob/36c7bf5/src/types/index.ts#L479)*
+*Defined in [src/types/index.ts:479](https://github.com/PolymathNetwork/polymesh-sdk/blob/90db508/src/types/index.ts#L479)*

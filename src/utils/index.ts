@@ -1360,7 +1360,7 @@ export function toIdentityWithClaimsArray(
 /**
  * @hidden
  */
-export function middlewareProposalToTxTag(bytes: string, context: Context): TxTag {
+export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
   const { sectionName, methodName } = context.polymeshApi.createType('Proposal', bytes);
 
   return extrinsicIdentifierToTxTag({
@@ -1398,7 +1398,7 @@ export function middlewareProposalToProposalDetails(
     description,
     coolOffEndBlock: new BigNumber(coolOffEndBlock),
     endBlock: new BigNumber(endBlock),
-    transaction: rawProposal ? middlewareProposalToTxTag(rawProposal, context) : null,
+    transaction: rawProposal ? transactionHexToTxTag(rawProposal, context) : null,
     lastState,
     lastStateUpdatedAt: new BigNumber(lastStateUpdatedAt),
     totalVotes: new BigNumber(totalVotes),
