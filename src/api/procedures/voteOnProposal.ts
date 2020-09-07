@@ -37,9 +37,9 @@ export async function prepareVoteOnProposal(
     context.accountBalance(),
   ]);
 
-  const { state } = details;
+  const { lastState } = details;
 
-  if (state !== ProposalState.Pending) {
+  if (lastState !== ProposalState.Pending) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The proposal must be in pending state',

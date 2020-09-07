@@ -10,7 +10,7 @@ import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { Governance } from '~/Governance';
 import { proposals } from '~/middleware/queries';
-import { Proposal as MiddlewareProposal } from '~/middleware/types';
+import { TxTag } from '~/polkadot';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
@@ -73,45 +73,66 @@ describe('Governance class', () => {
   describe('method: getProposals', () => {
     test('should return a list of proposal entities', async () => {
       const pipId = 10;
+      const url = 'http://someUrl';
       const address = 'someAddress';
-      const keyAddress = '0xsomeAddress';
-      const createdAt = 50800;
-      const coolOffPeriod = 100;
-      const proposalPeriodTimeFrame = 600;
-      const fakeResult = [new Proposal({ pipId }, context)];
-      const proposalsQueryResponse: MiddlewareProposal[] = [
+      const proposer = '0xsomeAddress';
+      const createdAt = new BigNumber(50800);
+      const coolOffEndBlock = new BigNumber(51000);
+      const endBlock = new BigNumber(56000);
+      const lastStateUpdatedAt = new BigNumber(50900);
+      const proposal = '0x180500cc829c190000000000000000000000e8030000';
+      const fakeTransaction = 'methodName.sectionName' as TxTag;
+      const totalVotes = new BigNumber(0);
+      const totalAyesWeight = new BigNumber(0);
+      const totalNaysWeight = new BigNumber(0);
+      const proposalsQueryResponse = {
+        proposerAddress: proposer,
+        createdAt: createdAt.toNumber(),
+        discussionUrl: url,
+        description: 'some description',
+        coolOffEndBlock: coolOffEndBlock.toNumber(),
+        endBlock: endBlock.toNumber(),
+        lastState: ProposalState.Referendum,
+        lastStateUpdatedAt: lastStateUpdatedAt.toNumber(),
+        totalVotes: totalVotes.toNumber(),
+        totalAyesWeight: totalAyesWeight.toNumber(),
+        totalNaysWeight: totalNaysWeight.toNumber(),
+      };
+      const proposalInstance = new Proposal({ pipId }, context);
+      const fakeResult = [
         {
-          pipId,
-          proposer: keyAddress,
-          createdAt,
-          url: 'http://someUrl',
-          description: 'some description',
-          coolOffEndBlock: createdAt + coolOffPeriod,
-          endBlock: createdAt + proposalPeriodTimeFrame,
-          proposal: '0x180500cc829c190000000000000000000000e8030000',
-          lastState: ProposalState.Referendum,
-          lastStateUpdatedAt: createdAt + proposalPeriodTimeFrame,
-          totalVotes: 0,
-          totalAyesWeight: 0,
-          totalNaysWeight: 0,
+          proposal: proposalInstance,
+          details: {
+            ...proposalsQueryResponse,
+            transaction: fakeTransaction,
+            createdAt,
+            coolOffEndBlock,
+            endBlock,
+            lastStateUpdatedAt,
+            totalVotes,
+            totalAyesWeight,
+            totalNaysWeight,
+          },
         },
       ];
 
       sinon
         .stub(utilsModule, 'addressToKey')
         .withArgs(address)
-        .returns(keyAddress);
+        .returns(proposer);
+
+      sinon.stub(utilsModule, 'middlewareProposalToProposalDetails').returns(fakeResult[0].details);
 
       dsMockUtils.createApolloQueryStub(
         proposals({
-          proposers: [keyAddress],
+          proposers: [proposer],
           states: undefined,
           orderBy: undefined,
           count: undefined,
           skip: undefined,
         }),
         {
-          proposals: proposalsQueryResponse,
+          proposals: [{ ...proposalsQueryResponse, pipId, proposal, proposer, url }],
         }
       );
 
@@ -130,7 +151,7 @@ describe('Governance class', () => {
           skip: undefined,
         }),
         {
-          proposals: proposalsQueryResponse,
+          proposals: [{ ...proposalsQueryResponse, pipId, proposer, url }],
         }
       );
 

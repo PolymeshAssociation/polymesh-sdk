@@ -3,7 +3,7 @@ import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 import { Params, prepareVoteOnProposal } from '~/api/procedures/voteOnProposal';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -74,10 +74,8 @@ describe('voteOnProposal procedure', () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {
-          state: ProposalState.Cancelled,
-          module: 'someModule',
-          method: 'someMethod',
-        },
+          lastState: ProposalState.Cancelled,
+        } as ProposalDetails,
       },
     });
 
@@ -98,10 +96,8 @@ describe('voteOnProposal procedure', () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {
-          state: ProposalState.Pending,
-          module: 'someModule',
-          method: 'someMethod',
-        },
+          lastState: ProposalState.Pending,
+        } as ProposalDetails,
         getStage: ProposalStage.CoolOff,
       },
     });
@@ -122,12 +118,10 @@ describe('voteOnProposal procedure', () => {
   test('should throw an error if the identity has already voted on the proposal', async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
-        getDetails: {
-          state: ProposalState.Pending,
-          module: 'someModule',
-          method: 'someMethod',
-        },
         identityHasVoted: true,
+        getDetails: {
+          lastState: ProposalState.Pending,
+        } as ProposalDetails,
       },
     });
 
@@ -148,10 +142,8 @@ describe('voteOnProposal procedure', () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {
-          state: ProposalState.Pending,
-          module: 'someModule',
-          method: 'someMethod',
-        },
+          lastState: ProposalState.Pending,
+        } as ProposalDetails,
       },
     });
 
@@ -179,13 +171,11 @@ describe('voteOnProposal procedure', () => {
   test('should add a vote proposal transaction to the queue', async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
-        getDetails: {
-          state: ProposalState.Pending,
-          module: 'someModule',
-          method: 'someMethod',
-        },
         getStage: ProposalStage.Open,
         identityHasVoted: false,
+        getDetails: {
+          lastState: ProposalState.Pending,
+        } as ProposalDetails,
       },
     });
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
