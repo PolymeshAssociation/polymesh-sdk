@@ -49,13 +49,14 @@ import {
 } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
-import { ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalDetails, ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
 import {
   CallIdEnum,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
+  Proposal,
 } from '~/middleware/types';
 import {
   Authorization,
@@ -1354,6 +1355,56 @@ export function toIdentityWithClaimsArray(
       })
     ),
   }));
+}
+
+/**
+ * @hidden
+ */
+export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
+  const { sectionName, methodName } = context.polymeshApi.createType('Proposal', bytes);
+
+  return extrinsicIdentifierToTxTag({
+    moduleId: sectionName.toLowerCase() as ModuleIdEnum,
+    callId: methodName as CallIdEnum,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function middlewareProposalToProposalDetails(
+  proposal: Proposal,
+  context: Context
+): ProposalDetails {
+  const {
+    proposer: proposerAddress,
+    createdAt,
+    url: discussionUrl,
+    description,
+    coolOffEndBlock,
+    endBlock,
+    proposal: rawProposal,
+    lastState,
+    lastStateUpdatedAt,
+    totalVotes,
+    totalAyesWeight,
+    totalNaysWeight,
+  } = proposal;
+
+  return {
+    proposerAddress,
+    createdAt: new BigNumber(createdAt),
+    discussionUrl,
+    description,
+    coolOffEndBlock: new BigNumber(coolOffEndBlock),
+    endBlock: new BigNumber(endBlock),
+    transaction: rawProposal ? transactionHexToTxTag(rawProposal, context) : null,
+    lastState,
+    lastStateUpdatedAt: new BigNumber(lastStateUpdatedAt),
+    totalVotes: new BigNumber(totalVotes),
+    totalAyesWeight: new BigNumber(totalAyesWeight),
+    totalNaysWeight: new BigNumber(totalNaysWeight),
+  };
 }
 
 /**
