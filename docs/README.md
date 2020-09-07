@@ -4,58 +4,70 @@
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/standard/semistandard)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=PolymathNetwork_polymesh-sdk&metric=coverage)](https://sonarcloud.io/dashboard?id=PolymathNetwork_polymesh-sdk)
 
-# Polymesh SDK
+## @polymathnetwork/polymesh-sdk
 
-A Javascript SDK for interacting with the Polymesh blockchain for the browser and Node.js
+## Getting Started
 
-**NOTE**: This repo uses `yarn` instead of `npm` for dependencies
+### Purpose
 
-Things included in the repo:
+The Polymesh SDK's main goal is to provide external developers with a set of tools that will allow them to build powerful applications that interact with the Polymesh protocol. It focuses on abstracting away all the complexities of the Polymesh blockchain and expose a simple but complete interface. The result is a feature-rich, user-friendly node.js library.
 
-- Typescript (duh)
-- Absolute imports (allow you to `import { foo } from ~/bar;` instead of `import { foo } from ../../../../bar;`. The default character is `~` but it can be changed in `tsconfig.json`)
-- Eslint to enforce code style rules
-- Prettier to format code on save
-- Semantic release for automatic versioning
-- Commitizen
-- Husky to enforce conventional commits and format the code using prettier before committing
+### Before moving on
 
-## Scripts
+This document assumes you are already familiar with [Security Tokens](https://thesecuritytokenstandard.org/) in general and [Polymath](https://www.polymath.network/) as well as [Polymesh](https://polymath.network/polymesh) in particular.
 
-- `yarn generate:polkadot-types` generates polkadot types to interact with the latest Polymesh blockchain version
-- `yarn test` runs tests and outputs the coverage report
-- `yarn build:ts` compiles typescript files into javascript and type declarations. Outputs to `dist/` directory
-- `yarn build:docs` builds a documentation page from tsdoc comments in the code. Outputs to `docs/` directory
-- `yarn commit` runs the commit formatting tool (should replace normal commits)
-- `yarn semantic-release` runs semantic release to calculate version numbers based on the nature of changes since the last version (used in CI pipelines)
-- `yarn lint` runs the linter on all .ts files and outputs all errors
-- `yarn format` runs prettier-eslint on all .ts files and rewrites the files with well formatted code
-- `yarn ts-node` run a ts script without prior compilation
+### Technical Pre-requisites
 
-## Usage
+In order to use the Polymath SDK, you must install [node](https://nodejs.org/) \(version 10\) and [npm](https://www.npmjs.com/). The library is written in [typescript](https://www.typescriptlang.org/), but can also be used in plain javascript. This document will assume you are using typescript, but the translation to javascript is very simple.
 
-Connect to a Polymesh node with an account URI
+### How to use
 
-```ts
-import { Polymesh } from './src/Polymesh';
+#### Installation
 
-const api = await Polymesh.connect({
-  nodeUrl: 'ws://polymesh.node',
-  accountUri: '//User',
-});
+`npm i @polymathnetwork/polymesh-sdk --save`
+
+Or, if you're using yarn
+
+`yarn add @polymathnetwork/polymesh-sdk`
+
+#### Initializing the client
+
+Before you can start registering Tickers and creating Security Tokens, you have to connect the Polymesh SDK client to a Polymesh node. This is a pretty straightforward process:
+
+```typescript
+import { Polymesh } from '@polymathnetwork/polymesh-sdk';
+
+async function run() {
+  const polyClient = await Polymesh.connect({
+    nodeUrl: 'https://some-node-url.com',
+    accountSeed: 'YOUWISH',
+  });
+
+  // do stuff with the client
+}
 ```
 
-Get your account balance
+Here is an overview of the parameters passed to the `connect` function:
 
-```ts
-const balance = await api.getAccountBalance();
+- `nodeUrl` is a URL that points to a running Polymesh node
+- `accountSeed` is the seed (akin to a private key) of the account that will be performing transactions
+
+**NOTE:** if using the SDK on a browser environment \(i.e. with the Polymesh wallet browser extension\), there is no need to provide the account seed. Instead, you pass a Keyring object that contains the address, and a signer for that address (which you would typically get from the wallet extension)
+
+```typescript
+import { Polymesh, Keyring } from '@polymathnetwork/polymesh-sdk';
+
+async function run() {
+  const keyring = new Keyring();
+  keyring.addFromAddress(accountAddress);
+  const signer = getSignerFromExtension(); // this is not an existing function, how you get this depends on the extension
+
+  const polyClient = await Polymesh.connect({
+    nodeUrl: 'https://some-node-url.com',
+    keyring,
+    signer,
+  });
+
+  // do stuff with the client
+}
 ```
-
-Reserve a Ticker
-
-```ts
-const ticker = await api.reserveTicker({ ticker: 'MY_TICKER_SYMBOL' });
-await ticker.run();
-```
-
-**To be continued...**

@@ -17,7 +17,7 @@
 
 • **free**: *BigNumber*
 
-*Defined in [src/types/index.ts:371](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L371)*
+*Defined in [src/types/index.ts:371](https://github.com/PolymathNetwork/polymesh-sdk/blob/36c7bf5/src/types/index.ts#L371)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **locked**: *BigNumber*
 
-*Defined in [src/types/index.ts:372](https://github.com/PolymathNetwork/polymesh-sdk/blob/91d79c8/src/types/index.ts#L372)*
+*Defined in [src/types/index.ts:372](https://github.com/PolymathNetwork/polymesh-sdk/blob/36c7bf5/src/types/index.ts#L372)*

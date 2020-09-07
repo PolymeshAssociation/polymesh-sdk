@@ -13,6 +13,8 @@ import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
   modifyClaims,
   ModifyClaimsParams,
+  registerIdentity,
+  RegisterIdentityParams,
   removeSigningKeys,
   reserveTicker,
   ReserveTickerParams,
@@ -787,6 +789,15 @@ export class Polymesh {
    */
   public removeMySigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
     return removeSigningKeys.prepare(args, this.context);
+  }
+
+  /**
+   * Register an Identity
+   *
+   * @note must be a CDD provider
+   */
+  public registerIdentity(args: RegisterIdentityParams): Promise<TransactionQueue<Identity>> {
+    return registerIdentity.prepare(args, this.context);
   }
 
   /**
