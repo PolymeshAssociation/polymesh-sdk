@@ -5,10 +5,25 @@ import sinon from 'sinon';
 
 import { Entity } from '~/base';
 import { Context } from '~/context';
-import { tokensByTrustedClaimIssuer } from '~/middleware/queries';
+import {
+  issuerDidsWithClaimsByTarget,
+  scopesByIdentity,
+  tokensByTrustedClaimIssuer,
+  tokensHeldByDid,
+} from '~/middleware/queries';
+import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { Mocked } from '~/testUtils/types';
-import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
+import {
+  ClaimData,
+  ClaimType,
+  IdentityWithClaims,
+  Order,
+  ResultSet,
+  Role,
+  RoleType,
+  TickerOwnerRole,
+  TokenOwnerRole,
+} from '~/types';
 import * as utilsModule from '~/utils';
 
 import { Identity } from '../';
@@ -65,50 +80,6 @@ describe('Identity class', () => {
       expect(Identity.isUniqueIdentifiers({ did: 'someDid' })).toBe(true);
       expect(Identity.isUniqueIdentifiers({})).toBe(false);
       expect(Identity.isUniqueIdentifiers({ did: 3 })).toBe(false);
-    });
-  });
-
-  describe('method: getPolyXBalance', () => {
-    let did: string;
-    let fakeBalance: BigNumber;
-    let rawIdentityId: IdentityId;
-    let mockContext: Mocked<Context>;
-    let identityBalanceStub: sinon.SinonStub;
-
-    beforeAll(() => {
-      did = 'someDid';
-      fakeBalance = new BigNumber(100);
-      rawIdentityId = dsMockUtils.createMockIdentityId(did);
-      mockContext = dsMockUtils.getContextInstance();
-    });
-
-    beforeEach(() => {
-      identityBalanceStub = dsMockUtils.createQueryStub('balances', 'identityBalance');
-      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
-    });
-
-    test("should return the identity's POLYX balance", async () => {
-      identityBalanceStub.resolves(fakeBalance.times(Math.pow(10, 6)));
-
-      const identity = new Identity({ did }, context);
-      const result = await identity.getPolyXBalance();
-      expect(result).toEqual(fakeBalance);
-    });
-
-    test('should allow subscription', async () => {
-      const unsubCallback = 'unsubCallback';
-      const callback = sinon.stub();
-
-      identityBalanceStub.callsFake(async (_a, cbFunc) => {
-        cbFunc(fakeBalance.times(Math.pow(10, 6)));
-        return unsubCallback;
-      });
-
-      const identity = new Identity({ did }, context);
-      const result = await identity.getPolyXBalance(callback);
-
-      expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeBalance);
     });
   });
 
@@ -264,7 +235,7 @@ describe('Identity class', () => {
           total_supply: dsMockUtils.createMockBalance(3000),
           divisible: dsMockUtils.createMockBool(true),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
-          link_id: dsMockUtils.createMockU64(1),
+          treasury_did: dsMockUtils.createMockOption(),
           name: dsMockUtils.createMockAssetName('someToken'),
         })
       );
@@ -357,6 +328,55 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: isCddProvider', () => {
+    test('should return whether the Identity is a CDD provider', async () => {
+      const did = 'someDid';
+      const rawDid = dsMockUtils.createMockIdentityId(did);
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      identityIdToStringStub.withArgs(rawDid).returns(did);
+
+      dsMockUtils
+        .createQueryStub('cddServiceProviders', 'activeMembers')
+        .resolves([rawDid, dsMockUtils.createMockIdentityId('otherDid')]);
+
+      const result = await identity.isCddProvider();
+
+      expect(result).toBeTruthy();
+    });
+  });
+
+  describe('method: getCddClaims', () => {
+    test('should return a list of cdd claims', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const issuedClaims: ResultSet<ClaimData> = {
+        data: [
+          {
+            target: new Identity({ did }, context),
+            issuer: new Identity({ did: 'otherDid' }, context),
+            issuedAt: new Date(),
+            expiry: null,
+            claim: { type: ClaimType.CustomerDueDiligence },
+          },
+        ],
+        next: 1,
+        count: 1,
+      };
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          issuedClaims,
+        },
+      });
+
+      const result = await identity.getCddClaims();
+      expect(result).toEqual(issuedClaims);
+    });
+  });
+
   describe('method: getMasterKey', () => {
     const did = 'someDid';
     const accountId = 'someMasterKey';
@@ -428,6 +448,157 @@ describe('Identity class', () => {
 
       expect(result[0].ticker).toBe('TOKEN1');
       expect(result[1].ticker).toBe('TOKEN2');
+    });
+  });
+
+  describe('method: getHeldTokens', () => {
+    const did = 'someDid';
+    const tickers = ['TOKEN1', 'TOKEN2'];
+
+    test('should return a list of security tokens', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloQueryStub(
+        tokensHeldByDid({ did, count: undefined, skip: undefined, order: Order.Asc }),
+        {
+          tokensHeldByDid: { items: tickers, totalCount: 2 },
+        }
+      );
+
+      const result = await identity.getHeldTokens();
+
+      expect(result.data[0].ticker).toBe(tickers[0]);
+      expect(result.data[1].ticker).toBe(tickers[1]);
+    });
+  });
+
+  describe('method: getClaimScopes', () => {
+    const did = 'someDid';
+    const scopes = [
+      {
+        scope: 'someScope',
+        ticker: 'TOKEN\0\0',
+      },
+      {
+        scope: null,
+      },
+    ];
+
+    test('should return a list of scopes and tickers', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloQueryStub(scopesByIdentity({ did }), {
+        scopesByIdentity: scopes,
+      });
+
+      const result = await identity.getClaimScopes();
+
+      expect(result[0].ticker).toBe('TOKEN');
+      expect(result[0].scope).toBe('someScope');
+      expect(result[1].ticker).toBeUndefined();
+      expect(result[1].scope).toBeNull();
+    });
+  });
+
+  describe('method: getClaims', () => {
+    test('should return a list of claims issued with this identity as the target', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const issuerDid = 'someIssuerDid';
+      const date = 1589816265000;
+      const claim = {
+        target: new Identity({ did }, context),
+        issuer: new Identity({ did: issuerDid }, context),
+        issuedAt: new Date(date),
+      };
+      const fakeClaims: IdentityWithClaims[] = [
+        {
+          identity: new Identity({ did }, context),
+          claims: [
+            {
+              ...claim,
+              expiry: new Date(date),
+              claim: {
+                type: ClaimType.CustomerDueDiligence,
+              },
+            },
+          ],
+        },
+      ];
+      /* eslint-disable @typescript-eslint/camelcase */
+      const commonClaimData = {
+        targetDID: did,
+        issuer: issuerDid,
+        issuance_date: date,
+        last_update_date: date,
+      };
+      const issuerDidsWithClaimsByTargetQueryResponse: IdentityWithClaimsResult = {
+        totalCount: 25,
+        items: [
+          {
+            did,
+            claims: [
+              {
+                ...commonClaimData,
+                expiry: date,
+                type: ClaimTypeEnum.CustomerDueDiligence,
+              },
+            ],
+          },
+        ],
+      };
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      sinon
+        .stub(utilsModule, 'toIdentityWithClaimsArray')
+        .withArgs(issuerDidsWithClaimsByTargetQueryResponse.items, context)
+        .returns(fakeClaims);
+
+      dsMockUtils.createApolloQueryStub(
+        issuerDidsWithClaimsByTarget({
+          target: did,
+          scope: undefined,
+          trustedClaimIssuers: [did],
+          includeExpired: false,
+          count: 1,
+          skip: undefined,
+        }),
+        {
+          issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
+        }
+      );
+
+      let result = await identity.getClaims({
+        trustedClaimIssuers: [did],
+        includeExpired: false,
+        size: 1,
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toEqual(1);
+
+      dsMockUtils.createApolloQueryStub(
+        issuerDidsWithClaimsByTarget({
+          target: did,
+          scope: undefined,
+          trustedClaimIssuers: undefined,
+          includeExpired: true,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
+        }
+      );
+
+      result = await identity.getClaims();
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toBeNull();
     });
   });
 });

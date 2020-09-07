@@ -152,12 +152,16 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       divisible,
       owner_did,
       asset_type,
+      treasury_did,
     }: MeshSecurityToken): SecurityTokenDetails => ({
       assetType: assetTypeToString(asset_type),
       isDivisible: boolToBoolean(divisible),
       name: assetNameToString(name),
       owner: new Identity({ did: identityIdToString(owner_did) }, context),
       totalSupply: balanceToBigNumber(total_supply),
+      treasuryIdentity: treasury_did.isSome
+        ? new Identity({ did: identityIdToString(treasury_did.unwrap()) }, context)
+        : null,
     });
     /* eslint-enable @typescript-eslint/camelcase */
 
@@ -252,7 +256,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
    *
-   * @note this data is harvested from the chain and stored in a database, so there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   * @note uses the middleware
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async createdAt(): Promise<EventIdentifier | null> {
     const { ticker, context } = this;

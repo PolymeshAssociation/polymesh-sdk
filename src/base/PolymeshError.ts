@@ -35,3 +35,12 @@ export class PolymeshError extends Error {
     this.data = data;
   }
 }
+
+/**
+ * @hidden
+ */
+export function isPolymeshError(err: unknown): err is PolymeshError {
+  const error = err as PolymeshError;
+
+  return typeof error.code === 'string' && typeof error.message === 'string';
+}

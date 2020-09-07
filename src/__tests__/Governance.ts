@@ -73,7 +73,8 @@ describe('Governance class', () => {
   describe('method: getProposals', () => {
     test('should return a list of proposal entities', async () => {
       const pipId = 10;
-      const proposerDid = 'someProposerDid';
+      const address = 'someAddress';
+      const keyAddress = '0xsomeAddress';
       const createdAt = 50800;
       const coolOffPeriod = 100;
       const proposalPeriodTimeFrame = 600;
@@ -81,7 +82,7 @@ describe('Governance class', () => {
       const proposalsQueryResponse: MiddlewareProposal[] = [
         {
           pipId,
-          proposer: proposerDid,
+          proposer: keyAddress,
           createdAt,
           url: 'http://someUrl',
           description: 'some description',
@@ -96,9 +97,14 @@ describe('Governance class', () => {
         },
       ];
 
+      sinon
+        .stub(utilsModule, 'addressToKey')
+        .withArgs(address)
+        .returns(keyAddress);
+
       dsMockUtils.createApolloQueryStub(
         proposals({
-          proposers: [proposerDid],
+          proposers: [keyAddress],
           states: undefined,
           orderBy: undefined,
           count: undefined,
@@ -110,7 +116,7 @@ describe('Governance class', () => {
       );
 
       let result = await governance.getProposals({
-        proposers: [proposerDid],
+        proposers: [address],
       });
 
       expect(result).toEqual(fakeResult);

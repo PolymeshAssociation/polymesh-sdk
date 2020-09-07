@@ -5,6 +5,7 @@ import { ErrorCode } from '~/types';
 
 /**
  * @hidden
+ *
  * Represents a value or method that doesn't exist at the moment, but will exist once a certain transaction
  * has been run
  */

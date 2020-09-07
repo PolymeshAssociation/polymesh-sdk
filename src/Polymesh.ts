@@ -11,6 +11,10 @@ import { Ticker, TxTag } from 'polymesh-types/types';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
+  modifyClaims,
+  ModifyClaimsParams,
+  registerIdentity,
+  RegisterIdentityParams,
   removeSigningKeys,
   reserveTicker,
   ReserveTickerParams,
@@ -20,10 +24,14 @@ import {
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Claims } from '~/Claims';
 import { Context } from '~/context';
+import { didsWithClaims, heartbeat, transactions } from '~/middleware/queries';
+import { ClaimTypeEnum, Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
   CommonKeyring,
   ErrorCode,
+  ExtrinsicData,
+  IdentityWithClaims,
   MiddlewareConfig,
   NetworkProperties,
   Signer,
@@ -33,11 +41,16 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
+  addressToKey,
+  calculateNextKey,
+  extrinsicIdentifierToTxTag,
   moduleAddressToString,
   stringToIdentityId,
   stringToTicker,
   textToString,
   tickerToString,
+  toIdentityWithClaimsArray,
+  txTagToExtrinsicIdentifier,
   u32ToBigNumber,
   valueToDid,
 } from '~/utils';
@@ -105,17 +118,18 @@ export class Polymesh {
     }
   ): Promise<Polymesh> {
     const { nodeUrl, accountSeed, keyring, accountUri, signer, middleware } = params;
-    let polymeshApi: ApiPromise;
-    let middlewareApi: ApolloClient<NormalizedCacheObject> | null = null;
+    let context: Context;
 
     try {
       const { types, rpc } = polymesh;
 
-      polymeshApi = await ApiPromise.create({
+      const polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
         types,
         rpc,
       });
+
+      let middlewareApi: ApolloClient<NormalizedCacheObject> | null = null;
 
       if (middleware) {
         middlewareApi = new ApolloClient({
@@ -149,8 +163,6 @@ export class Polymesh {
         polymeshApi.setSigner(signer);
       }
 
-      let context: Context;
-
       if (accountSeed) {
         context = await Context.create({
           polymeshApi,
@@ -181,16 +193,32 @@ export class Polymesh {
           middlewareApi,
         });
       }
-
-      return new Polymesh(context);
-    } catch (e) {
-      const { message, code } = e;
+    } catch (err) {
+      const { message, code } = err;
       throw new PolymeshError({
         code,
         message: `Error while connecting to "${nodeUrl}": "${message ||
           'The node couldn’t be reached'}"`,
       });
     }
+
+    if (middleware) {
+      try {
+        await context.queryMiddleware(heartbeat());
+      } catch (err) {
+        if (
+          err.message.indexOf('Forbidden') > -1 ||
+          err.message.indexOf('Missing Authentication Token') > -1
+        ) {
+          throw new PolymeshError({
+            code: ErrorCode.NotAuthorized,
+            message: 'Incorrect middleware URL or API key',
+          });
+        }
+      }
+    }
+
+    return new Polymesh(context);
   }
 
   /**
@@ -201,17 +229,6 @@ export class Polymesh {
    */
   public transferPolyX(args: TransferPolyXParams): Promise<TransactionQueue<void>> {
     return transferPolyX.prepare(args, this.context);
-  }
-
-  /**
-   * Get the POLYX balance of an identity
-   */
-  public getIdentityBalance(args?: { did: string | Identity }): Promise<BigNumber> {
-    let identityArgs;
-    if (args) {
-      identityArgs = { did: valueToDid(args.did) };
-    }
-    return this.getIdentity(identityArgs).getPolyXBalance();
   }
 
   /**
@@ -318,7 +335,7 @@ export class Polymesh {
     if (args) {
       identity = valueToDid(args.did);
     } else {
-      identity = context.getCurrentIdentity().did;
+      ({ did: identity } = await context.getCurrentIdentity());
     }
 
     const entries = await query.asset.assetOwnershipRelations.entries(
@@ -367,7 +384,7 @@ export class Polymesh {
   /**
    * Create an identity instance from a DID. If no DID is passed, the current identity is returned
    */
-  public getIdentity(args?: { did: string }): Identity {
+  public async getIdentity(args?: { did: string }): Promise<Identity> {
     if (args) {
       return new Identity(args, this.context);
     }
@@ -451,7 +468,7 @@ export class Polymesh {
     if (args) {
       identity = valueToDid(args.did);
     } else {
-      identity = context.getCurrentIdentity().did;
+      ({ did: identity } = await context.getCurrentIdentity());
     }
 
     const entries = await query.asset.assetOwnershipRelations.entries(
@@ -498,6 +515,86 @@ export class Polymesh {
   }
 
   /**
+   * Retrieve all claims issued by the current identity
+   */
+  public async getIssuedClaims(
+    opts: {
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<ClaimData>> {
+    const { context } = this;
+
+    const { size, start } = opts;
+    const { did } = await context.getCurrentIdentity();
+
+    const result = await context.issuedClaims({
+      trustedClaimIssuers: [did],
+      size,
+      start,
+    });
+
+    return result;
+  }
+
+  /**
+   * Retrieve a list of identities with claims associated to them. Can be filtered using parameters
+   *
+   * @param opts.targets - identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
+   * @param opts.scope - scope of the claims to fetch. Defaults to any scope
+   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   */
+  public async getIdentitiesWithClaims(
+    opts: {
+      targets?: (string | Identity)[];
+      trustedClaimIssuers?: (string | Identity)[];
+      scope?: string;
+      claimTypes?: ClaimType[];
+      includeExpired?: boolean;
+      size?: number;
+      start?: number;
+    } = { includeExpired: true }
+  ): Promise<ResultSet<IdentityWithClaims>> {
+    const { context } = this;
+
+    const { targets, trustedClaimIssuers, scope, claimTypes, includeExpired, size, start } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
+      didsWithClaims({
+        dids: targets?.map(target => valueToDid(target)),
+        scope,
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          valueToDid(trustedClaimIssuer)
+        ),
+        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        includeExpired,
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: {
+        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
+      },
+    } = result;
+
+    const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
    * Retrieve information for the current network
    */
   public async getNetworkProperties(): Promise<NetworkProperties> {
@@ -516,6 +613,98 @@ export class Polymesh {
     return {
       name: textToString(name),
       version: u32ToBigNumber(specVersion).toNumber(),
+    };
+  }
+
+  /**
+   * Retrieve a list of transactions. Can be filtered using parameters
+   *
+   * @param filters.address - account that signed the transaction
+   * @param filters.tag - tag associated with the transaction
+   * @param filters.success - whether the transaction was successful or not
+   * @param filters.size - page size
+   * @param filters.start - page offset
+   */
+  public async getTransactionHistory(
+    filters: {
+      blockId?: number;
+      address?: string;
+      tag?: TxTag;
+      success?: boolean;
+      size?: number;
+      start?: number;
+      orderBy?: TransactionOrderByInput;
+    } = {}
+  ): Promise<ResultSet<ExtrinsicData>> {
+    const { context } = this;
+
+    const { blockId, address, tag, success, size, start, orderBy } = filters;
+
+    let moduleId;
+    let callId;
+    if (tag) {
+      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
+    }
+
+    /* eslint-disable @typescript-eslint/camelcase */
+    const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
+      transactions({
+        block_id: blockId,
+        address: address ? addressToKey(address) : undefined,
+        module_id: moduleId,
+        call_id: callId,
+        success,
+        count: size,
+        skip: start,
+        orderBy,
+      })
+    );
+
+    const {
+      data: {
+        transactions: { items: transactionList, totalCount: count },
+      },
+    } = result;
+
+    const data: ExtrinsicData[] = [];
+
+    transactionList.forEach(
+      ({
+        block_id,
+        extrinsic_idx,
+        address: rawAddress,
+        nonce,
+        module_id,
+        call_id,
+        params,
+        success: txSuccess,
+        spec_version_id,
+        extrinsic_hash,
+      }) => {
+        // TODO remove null check once types fixed
+        /* eslint-disable @typescript-eslint/no-non-null-assertion */
+        data.push({
+          blockId: block_id!,
+          extrinsicIdx: extrinsic_idx!,
+          address: rawAddress ?? null,
+          nonce: nonce!,
+          txTag: extrinsicIdentifierToTxTag({ moduleId: module_id!, callId: call_id! }),
+          params,
+          success: !!txSuccess,
+          specVersionId: spec_version_id!,
+          extrinsicHash: extrinsic_hash!,
+        });
+        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+      }
+    );
+    /* eslint-enable @typescript-eslint/camelcase */
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
     };
   }
 
@@ -569,6 +758,22 @@ export class Polymesh {
    */
   public removeMySigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
     return removeSigningKeys.prepare(args, this.context);
+  }
+
+  /**
+   * Register an Identity
+   *
+   * @note must be a CDD provider
+   */
+  public registerIdentity(args: RegisterIdentityParams): Promise<TransactionQueue<Identity>> {
+    return registerIdentity.prepare(args, this.context);
+  }
+
+  /**
+   * Retrieve the number of the latest block in the chain
+   */
+  public getLatestBlock(): Promise<BigNumber> {
+    return this.context.getLatestBlock();
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

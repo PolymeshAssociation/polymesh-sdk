@@ -13,6 +13,9 @@ export type EditProposalParams =
       discussionUrl?: string;
     };
 
+/**
+ * @hidden
+ */
 export type Params = { pipId: number } & EditProposalParams;
 
 /**
@@ -66,4 +69,7 @@ export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): 
   return accountIdToString(proposer) === this.context.getCurrentPair().address;
 }
 
+/**
+ * @hidden
+ */
 export const editProposal = new Procedure(prepareEditProposal, isAuthorized);

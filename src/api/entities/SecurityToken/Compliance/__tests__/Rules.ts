@@ -303,6 +303,42 @@ describe('Rules class', () => {
     });
   });
 
+  describe('method: arePaused', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return whether compliance rules are paused or not', async () => {
+      const fakeResult = false;
+      const context = dsMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const rawTicker = dsMockUtils.createMockTicker(token.ticker);
+      const mockBool = dsMockUtils.createMockBool(fakeResult);
+
+      const rules = new Rules(token, context);
+
+      sinon
+        .stub(utilsModule, 'stringToTicker')
+        .withArgs(token.ticker, context)
+        .returns(rawTicker);
+
+      sinon
+        .stub(utilsModule, 'boolToBoolean')
+        .withArgs(mockBool)
+        .returns(fakeResult);
+
+      dsMockUtils
+        .createQueryStub('complianceManager', 'assetRulesMap')
+        .withArgs(rawTicker)
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        .resolves({ is_paused: mockBool });
+
+      const result = await rules.arePaused();
+
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
   describe('method: checkTransfer/checkMint', () => {
     let context: Mocked<Context>;
     let token: SecurityToken;
@@ -331,11 +367,11 @@ describe('Rules class', () => {
       stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
       context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance();
       rules = new Rules(token, context);
-      currentDid = context.getCurrentIdentity().did;
+      ({ did: currentDid } = await context.getCurrentIdentity());
 
       rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
       rawToDid = dsMockUtils.createMockIdentityId(toDid);

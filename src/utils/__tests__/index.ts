@@ -29,6 +29,7 @@ import sinon from 'sinon';
 import { Identity } from '~/api/entities';
 import { ProposalState } from '~/api/entities/Proposal/types';
 import { PostTransactionValue } from '~/base';
+import { CallIdEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import {
   Authorization,
@@ -49,6 +50,7 @@ import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
   accountIdToString,
+  addressToKey,
   assetIdentifierToString,
   assetNameToString,
   assetTransferRulesResultToRuleCompliance,
@@ -74,11 +76,13 @@ import {
   documentNameToString,
   documentToTokenDocumentData,
   documentUriToString,
+  extrinsicIdentifierToTxTag,
   findEventRecord,
   fundingRoundNameToString,
   identifierTypeToString,
   identityIdToString,
   jurisdictionNameToString,
+  keyToAddress,
   meshClaimToClaim,
   meshPermissionToPermission,
   meshProposalStateToProposalState,
@@ -97,6 +101,7 @@ import {
   serialize,
   signatoryToSigner,
   signerToSignatory,
+  signingKeyToMeshSigningKey,
   stringToAccountId,
   stringToAssetIdentifier,
   stringToAssetName,
@@ -112,9 +117,11 @@ import {
   textToString,
   tickerToDid,
   tickerToString,
+  toIdentityWithClaimsArray,
   tokenDocumentDataToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
+  txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToTransferStatus,
   u64ToBigNumber,
@@ -209,6 +216,23 @@ describe('moduleAddressToString', () => {
 
     const result = moduleAddressToString(moduleAddress);
     expect(result).toBe('5Eg4TucMsdiyc9LjA3BT7VXioUqMoQ4vLn1VSUDsYsiJMdbN');
+  });
+});
+
+describe('keyToAddress and addressToKey', () => {
+  const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+  const publicKey = '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
+
+  test('addressToKey should decode an address into a public key', () => {
+    const result = addressToKey(address);
+
+    expect(result).toBe(publicKey);
+  });
+
+  test('keyToAddress should encode a public key into an address', () => {
+    const result = keyToAddress(publicKey);
+
+    expect(result).toBe(address);
   });
 });
 
@@ -2032,6 +2056,40 @@ describe('txTagToProtocolOp', () => {
   });
 });
 
+describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
+  test('txTagToExtrinsicIdentifier should convert a TxTag enum to a ExtrinsicIdentifier object', () => {
+    let result = txTagToExtrinsicIdentifier(TxTags.identity.CddRegisterDid);
+
+    expect(result).toEqual({
+      moduleId: ModuleIdEnum.Identity,
+      callId: CallIdEnum.CddRegisterDid,
+    });
+
+    result = txTagToExtrinsicIdentifier(TxTags.finalityTracker.FinalHint);
+
+    expect(result).toEqual({
+      moduleId: ModuleIdEnum.Finalitytracker,
+      callId: CallIdEnum.FinalHint,
+    });
+  });
+
+  test('extrinsicIdentifierToTxTag should convert a ExtrinsicIdentifier object to a TxTag', () => {
+    let result = extrinsicIdentifierToTxTag({
+      moduleId: ModuleIdEnum.Identity,
+      callId: CallIdEnum.CddRegisterDid,
+    });
+
+    expect(result).toEqual(TxTags.identity.CddRegisterDid);
+
+    result = extrinsicIdentifierToTxTag({
+      moduleId: ModuleIdEnum.Finalitytracker,
+      callId: CallIdEnum.FinalHint,
+    });
+
+    expect(result).toEqual(TxTags.finalityTracker.FinalHint);
+  });
+});
+
 describe('permissionToMeshPermission and meshPermissionToPermission', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -2294,6 +2352,117 @@ describe('meshProposalStateToProposalState', () => {
     proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
     result = meshProposalStateToProposalState(proposalState);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('toIdentityWithClaimsArray', () => {
+  test('should return an IdentityWithClaims array object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const targetDid = 'someTargetDid';
+    const issuerDid = 'someIssuerDid';
+    const date = 1589816265000;
+    const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
+    const claim = {
+      target: new Identity({ did: targetDid }, context),
+      issuer: new Identity({ did: issuerDid }, context),
+      issuedAt: new Date(date),
+    };
+    const fakeResult = [
+      {
+        identity: new Identity({ did: targetDid }, context),
+        claims: [
+          {
+            ...claim,
+            expiry: new Date(date),
+            claim: {
+              type: customerDueDiligenceType,
+            },
+          },
+          {
+            ...claim,
+            expiry: null,
+            claim: {
+              type: customerDueDiligenceType,
+            },
+          },
+        ],
+      },
+    ];
+    /* eslint-disable @typescript-eslint/camelcase */
+    const commonClaimData = {
+      targetDID: targetDid,
+      issuer: issuerDid,
+      issuance_date: date,
+      last_update_date: date,
+    };
+    const fakeMiddlewareIdentityWithClaims = [
+      {
+        did: targetDid,
+        claims: [
+          {
+            ...commonClaimData,
+            expiry: date,
+            type: customerDueDiligenceType,
+          },
+          {
+            ...commonClaimData,
+            expiry: null,
+            type: customerDueDiligenceType,
+          },
+        ],
+      },
+    ];
+    /* eslint-enabled @typescript-eslint/camelcase */
+
+    const result = toIdentityWithClaimsArray(fakeMiddlewareIdentityWithClaims, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('signingKeyToMeshSigningKey', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('signingKeyToMeshSigningKey should convert a SigningKey to a polkadot SigningKey', () => {
+    const signingKey = {
+      signer: {
+        type: SignerType.Account,
+        value: 'someAccont',
+      },
+      permissions: [Permission.Full],
+    };
+    const mockAccountId = dsMockUtils.createMockAccountId(signingKey.signer.value);
+    const mockSignatory = dsMockUtils.createMockSignatory({ Account: mockAccountId });
+    const mockPermission = dsMockUtils.createMockPermission(signingKey.permissions[0]);
+    const fakeResult = dsMockUtils.createMockSigningKey({
+      signer: mockSignatory,
+      permissions: [mockPermission],
+    });
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('SigningKey', {
+        signer: signerToSignatory(signingKey.signer, context),
+        permissions: signingKey.permissions.map(permission =>
+          permissionToMeshPermission(permission, context)
+        ),
+      })
+      .returns(fakeResult);
+
+    const result = signingKeyToMeshSigningKey(signingKey, context);
+
     expect(result).toEqual(fakeResult);
   });
 });

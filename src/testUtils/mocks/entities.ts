@@ -70,6 +70,7 @@ interface ProposalOptions {
   pipId?: number;
   getDetails?: ProposalDetails;
   getStage?: ProposalStage;
+  identityHasVoted?: boolean;
 }
 
 let identityConstructorStub: SinonStub;
@@ -205,6 +206,7 @@ const defaultProposalOptions: ProposalOptions = {
     method: 'someMethod',
   },
   getStage: ProposalStage.Open,
+  identityHasVoted: false,
 };
 let proposalOptions = defaultProposalOptions;
 
@@ -217,6 +219,7 @@ function configureProposal(opts: ProposalOptions): void {
     pipId: opts.pipId,
     getDetails: sinon.stub().returns(opts.getDetails),
     getStage: sinon.stub().returns(opts.getStage),
+    identityHasVoted: sinon.stub().returns(opts.identityHasVoted),
   } as unknown) as MockProposal;
 
   Object.assign(mockInstanceContainer.proposal, proposal);

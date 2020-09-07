@@ -1,11 +1,12 @@
 import { u32 } from '@polkadot/types';
+import { Balance } from '@polkadot/types/interfaces';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities/Identity';
 import { ProposalStage } from '~/api/entities/Proposal/types';
-import { cancelProposal, editProposal } from '~/api/procedures';
+import { cancelProposal, editProposal, voteOnProposal } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
@@ -19,9 +20,15 @@ describe('Proposal class', () => {
   const pipId = 10;
   let context: Context;
   let proposal: Proposal;
+  let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
+  let requestAtBlockStub: sinon.SinonStub;
+  let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
+    requestAtBlockStub = sinon.stub(utilsModule, 'requestAtBlock');
+    balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
   });
 
   beforeEach(() => {
@@ -194,20 +201,16 @@ describe('Proposal class', () => {
 
   describe('method: getStage', () => {
     const coolOff = 555000;
-    let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
-
-    beforeAll(() => {
-      u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
-    });
 
     afterEach(() => {
       dsMockUtils.reset();
     });
 
     test('should return coolOff as stage of the proposal', async () => {
-      const blockId = 500000;
+      const blockNumber = new BigNumber(500000);
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const rawBlockId = dsMockUtils.createMockU32(blockId);
+
+      dsMockUtils.initMocks({ contextOptions: { latestBlock: blockNumber } });
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
@@ -220,21 +223,19 @@ describe('Proposal class', () => {
         ),
       });
 
-      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
-
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
 
       const result = await proposal.getStage();
       expect(result).toEqual(ProposalStage.CoolOff);
     });
 
     test('should return open as stage of the proposal', async () => {
-      const blockId = 600000;
+      const blockNumber = new BigNumber(600000);
       const end = 1000000;
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const rawBlockId = dsMockUtils.createMockU32(blockId);
       const rawEnd = dsMockUtils.createMockU32(end);
+
+      dsMockUtils.initMocks({ contextOptions: { latestBlock: blockNumber } });
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
@@ -247,10 +248,7 @@ describe('Proposal class', () => {
         ),
       });
 
-      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
-
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
       u32ToBigNumberStub.withArgs(rawEnd).returns(new BigNumber(end));
 
       const result = await proposal.getStage();
@@ -258,11 +256,12 @@ describe('Proposal class', () => {
     });
 
     test('should return ended as stage of the proposal', async () => {
-      const blockId = 1000000;
+      const blockNumber = new BigNumber(1000000);
       const end = 700000;
       const rawCoolOff = dsMockUtils.createMockU32(coolOff);
-      const rawBlockId = dsMockUtils.createMockU32(blockId);
       const rawEnd = dsMockUtils.createMockU32(end);
+
+      dsMockUtils.initMocks({ contextOptions: { latestBlock: blockNumber } });
 
       dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
         returnValue: dsMockUtils.createMockOption(
@@ -275,14 +274,77 @@ describe('Proposal class', () => {
         ),
       });
 
-      dsMockUtils.createRpcStub('chain', 'getHeader').returns({ number: rawBlockId });
-
       u32ToBigNumberStub.withArgs(rawCoolOff).returns(new BigNumber(coolOff));
-      u32ToBigNumberStub.withArgs(rawBlockId).returns(new BigNumber(blockId));
       u32ToBigNumberStub.withArgs(rawEnd).returns(new BigNumber(end));
 
       const result = await proposal.getStage();
       expect(result).toEqual(ProposalStage.Ended);
+    });
+  });
+
+  describe('method: vote', () => {
+    test('should prepare the procedure with the correct arguments and context', async () => {
+      const args = {
+        vote: true,
+        bondAmount: new BigNumber(1000),
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(voteOnProposal, 'prepare')
+        .withArgs({ pipId, ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await proposal.vote(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: minimumBondedAmount', () => {
+    const fakeResult = new BigNumber(100000);
+    const rawBalance = dsMockUtils.createMockBalance(fakeResult.toNumber());
+    const end = 150000;
+    const rawEnd = dsMockUtils.createMockU32(end);
+
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('pips', 'proposalMetadata', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockPipsMetadata({
+            proposer: dsMockUtils.createMockAccountId(),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            cool_off_until: dsMockUtils.createMockU32(),
+            end: rawEnd,
+          })
+        ),
+      });
+
+      requestAtBlockStub.returns(rawBalance);
+      balanceToBigNumberStub.withArgs(rawBalance).returns(fakeResult);
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    test('should return the minimum bonded amount from the current storage', async () => {
+      sinon.stub(proposal, 'getStage').resolves(ProposalStage.Open);
+
+      const result = await proposal.minimumBondedAmount();
+      expect(result).toBe(fakeResult);
+    });
+
+    test('should return the minimum bonded amount from the historic storage', async () => {
+      const blockHash = new BigNumber(123456);
+      const rawBlockHash = dsMockUtils.createMockU32(blockHash.toNumber());
+
+      sinon.stub(proposal, 'getStage').resolves(ProposalStage.Ended);
+
+      dsMockUtils.createRpcStub('chain', 'getBlockHash').returns(rawBlockHash);
+
+      const result = await proposal.minimumBondedAmount();
+      expect(result).toBe(fakeResult);
     });
   });
 });
