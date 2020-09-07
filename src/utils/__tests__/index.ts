@@ -86,6 +86,7 @@ import {
   meshClaimToClaim,
   meshPermissionToPermission,
   meshProposalStateToProposalState,
+  middlewareProposalToProposalDetails,
   moduleAddressToString,
   momentToDate,
   numberToBalance,
@@ -121,6 +122,7 @@ import {
   tokenDocumentDataToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
+  transactionHexToTxTag,
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToTransferStatus,
@@ -2418,6 +2420,115 @@ describe('toIdentityWithClaimsArray', () => {
     const result = toIdentityWithClaimsArray(fakeMiddlewareIdentityWithClaims, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('transactionHexToTxTag', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('transactionHexToTxTag should convert a hex string to a TxTag type', () => {
+    const hex = '0x110000';
+    const fakeResult = TxTags.treasury.Disbursement;
+    const mockResult = {
+      methodName: 'disbursement',
+      sectionName: 'treasury',
+    };
+
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Proposal', hex)
+      .returns(mockResult);
+
+    const result = transactionHexToTxTag(hex, context);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('middlewareProposalToProposalDetails', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should return a ProposalDetails object', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const proposer = 'someProposer';
+    const url = 'http://someUrl';
+    const description = 'some description';
+    const lastState = ProposalState.Pending;
+    const createdAt = new BigNumber(150000);
+    const coolOffEndBlock = new BigNumber(160000);
+    const endBlock = new BigNumber(165000);
+    const lastStateUpdatedAt = new BigNumber(163000);
+    const totalVotes = new BigNumber(30);
+    const totalAyesWeight = new BigNumber(10);
+    const totalNaysWeight = new BigNumber(20);
+    const rawProposal = '0x110000';
+    const fakeProposal = {
+      pipId: 0,
+      proposer,
+      createdAt: createdAt.toNumber(),
+      url,
+      description,
+      coolOffEndBlock: coolOffEndBlock.toNumber(),
+      endBlock: endBlock.toNumber(),
+      proposal: rawProposal,
+      lastState,
+      lastStateUpdatedAt: lastStateUpdatedAt.toNumber(),
+      totalVotes: totalVotes.toNumber(),
+      totalAyesWeight: totalAyesWeight,
+      totalNaysWeight: totalNaysWeight,
+    };
+    const fakeResult = {
+      proposerAddress: proposer,
+      createdAt,
+      discussionUrl: url,
+      description,
+      coolOffEndBlock,
+      endBlock,
+      transaction: 'treasury.disbursement',
+      lastState,
+      lastStateUpdatedAt,
+      totalVotes,
+      totalAyesWeight,
+      totalNaysWeight,
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Proposal', rawProposal)
+      .returns({
+        methodName: 'disbursement',
+        sectionName: 'treasury',
+      });
+
+    let result = middlewareProposalToProposalDetails(fakeProposal, context);
+
+    expect(result).toEqual(fakeResult);
+
+    result = middlewareProposalToProposalDetails({ ...fakeProposal, proposal: undefined }, context);
+
+    expect(result).toEqual({ ...fakeResult, transaction: null });
   });
 });
 
