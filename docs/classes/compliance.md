@@ -25,7 +25,7 @@ Handles all Security Token Compliance related functionality
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/base/Namespace.ts#L12)*
+*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/9f2b951/src/base/Namespace.ts#L12)*
 
 ___
 
@@ -35,7 +35,7 @@ ___
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/9f2b951/src/base/Namespace.ts#L10)*
 
 ___
 
@@ -43,7 +43,7 @@ ___
 
 • **rules**: *[Rules](rules.md)*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/index.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/Compliance/index.ts#L13)*
+*Defined in [src/api/entities/SecurityToken/Compliance/index.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/9f2b951/src/api/entities/SecurityToken/Compliance/index.ts#L13)*
 
 ___
 
@@ -51,4 +51,4 @@ ___
 
 • **trustedClaimIssuers**: *[TrustedClaimIssuers](trustedclaimissuers.md)*
 
-*Defined in [src/api/entities/SecurityToken/Compliance/index.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/Compliance/index.ts#L12)*
+*Defined in [src/api/entities/SecurityToken/Compliance/index.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/9f2b951/src/api/entities/SecurityToken/Compliance/index.ts#L12)*
