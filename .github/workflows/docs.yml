@@ -24,7 +24,7 @@ jobs:
         id: setBranch
         with:
           script: |
-            const name = process.env.GITHUB_REF.replace(/refs\/tags\//, '').split('.')[0];
+            const name = process.env.GITHUB_REF.replace(/refs\/.+?\//, '').split('.')[0];
             return `docs/${name}`;
           result-encoding: string
       - name: create branch
