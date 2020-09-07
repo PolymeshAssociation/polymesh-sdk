@@ -2,11 +2,21 @@ import { Identity } from '~/api/entities';
 import { modifyClaims, ModifyClaimsParams } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
-import { didsWithClaims, scopesByIdentity } from '~/middleware/queries';
+import {
+  didsWithClaims,
+  issuerDidsWithClaimsByTarget,
+  scopesByIdentity,
+} from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import { ClaimData, ClaimScope, ClaimType, Ensured, IdentityWithClaims, ResultSet } from '~/types';
 import { ClaimOperation } from '~/types/internal';
-import { calculateNextKey, createClaim, removePadding, valueToDid } from '~/utils';
+import {
+  calculateNextKey,
+  createClaim,
+  removePadding,
+  toIdentityWithClaimsArray,
+  valueToDid,
+} from '~/utils';
 
 /**
  * Handles all Claims related functionality
@@ -68,7 +78,13 @@ export class Claims {
 
     const { target, size, start } = opts;
 
-    const did = target ? valueToDid(target) : context.getCurrentIdentity().did;
+    let did;
+    if (target) {
+      did = valueToDid(target);
+    } else {
+      const { did: identityId } = await context.getCurrentIdentity();
+      did = identityId;
+    }
 
     const result = await context.issuedClaims({
       trustedClaimIssuers: [did],
@@ -167,7 +183,13 @@ export class Claims {
     const { context } = this;
     const { target } = opts;
 
-    const did = target ? valueToDid(target) : context.getCurrentIdentity().did;
+    let did;
+    if (target) {
+      did = valueToDid(target);
+    } else {
+      const { did: identityId } = await context.getCurrentIdentity();
+      did = identityId;
+    }
 
     const {
       data: { scopesByIdentity: scopes },
@@ -209,7 +231,13 @@ export class Claims {
     const { context } = this;
     const { target, size, start } = opts;
 
-    const did = target ? valueToDid(target) : context.getCurrentIdentity().did;
+    let did;
+    if (target) {
+      did = valueToDid(target);
+    } else {
+      const { did: identityId } = await context.getCurrentIdentity();
+      did = identityId;
+    }
 
     const result = await context.issuedClaims({
       targets: [did],
@@ -219,5 +247,68 @@ export class Claims {
     });
 
     return result;
+  }
+
+  /**
+   * Retrieve all claims issued about an identity, grouped by claim issuer
+   *
+   * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current identity)
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
+   *
+   * @note supports pagination
+   */
+  public async getTargetingClaims(
+    opts: {
+      target?: string | Identity;
+      scope?: string;
+      trustedClaimIssuers?: (string | Identity)[];
+      includeExpired?: boolean;
+      size?: number;
+      start?: number;
+    } = { includeExpired: true }
+  ): Promise<ResultSet<IdentityWithClaims>> {
+    const { context } = this;
+
+    const { target, trustedClaimIssuers, scope, includeExpired, size, start } = opts;
+
+    let did;
+    if (target) {
+      did = valueToDid(target);
+    } else {
+      const { did: identityId } = await context.getCurrentIdentity();
+      did = identityId;
+    }
+
+    const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
+      issuerDidsWithClaimsByTarget({
+        target: did,
+        scope,
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          valueToDid(trustedClaimIssuer)
+        ),
+        includeExpired,
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: {
+        issuerDidsWithClaimsByTarget: {
+          items: issuerDidsWithClaimsByTargetList,
+          totalCount: count,
+        },
+      },
+    } = result;
+
+    const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }

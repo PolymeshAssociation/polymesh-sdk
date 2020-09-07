@@ -18,7 +18,7 @@
 
 • **middleware**? : *[MiddlewareConfig](middlewareconfig.md)*
 
-*Defined in [src/Polymesh.ts:64](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L64)*
+*Defined in [src/Polymesh.ts:62](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L62)*
 
 ___
 
@@ -26,7 +26,7 @@ ___
 
 • **nodeUrl**: *string*
 
-*Defined in [src/Polymesh.ts:62](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L62)*
+*Defined in [src/Polymesh.ts:60](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L60)*
 
 ___
 
@@ -34,4 +34,4 @@ ___
 
 • **signer**? : *PolkadotSigner*
 
-*Defined in [src/Polymesh.ts:63](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L63)*
+*Defined in [src/Polymesh.ts:61](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L61)*

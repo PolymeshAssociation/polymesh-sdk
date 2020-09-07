@@ -17,7 +17,7 @@
 
 • **coolOff**: *number*
 
-*Defined in [src/api/entities/Proposal/types.ts:39](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/api/entities/Proposal/types.ts#L39)*
+*Defined in [src/api/entities/Proposal/types.ts:39](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/api/entities/Proposal/types.ts#L39)*
 
 ___
 
@@ -25,4 +25,4 @@ ___
 
 • **duration**: *number*
 
-*Defined in [src/api/entities/Proposal/types.ts:38](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/api/entities/Proposal/types.ts#L38)*
+*Defined in [src/api/entities/Proposal/types.ts:38](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/api/entities/Proposal/types.ts#L38)*

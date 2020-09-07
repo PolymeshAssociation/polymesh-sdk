@@ -20,7 +20,7 @@
 
 • **Commodity**: = "Commodity"
 
-*Defined in [src/types/index.ts:110](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/types/index.ts#L110)*
+*Defined in [src/types/index.ts:110](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/types/index.ts#L110)*
 
 ___
 
@@ -28,7 +28,7 @@ ___
 
 • **Derivative**: = "Derivative"
 
-*Defined in [src/types/index.ts:116](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/types/index.ts#L116)*
+*Defined in [src/types/index.ts:116](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/types/index.ts#L116)*
 
 ___
 
@@ -36,7 +36,7 @@ ___
 
 • **EquityCommon**: = "EquityCommon"
 
-*Defined in [src/types/index.ts:108](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/types/index.ts#L108)*
+*Defined in [src/types/index.ts:108](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/types/index.ts#L108)*
 
 ___
 
@@ -44,7 +44,7 @@ ___
 
 • **EquityPreferred**: = "EquityPreferred"
 
-*Defined in [src/types/index.ts:109](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/types/index.ts#L109)*
+*Defined in [src/types/index.ts:109](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/types/index.ts#L109)*
 
 ___
 
@@ -52,7 +52,7 @@ ___
 
 • **FixedIncome**: = "FixedIncome"
 
-*Defined in [src/types/index.ts:111](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/types/index.ts#L111)*
+*Defined in [src/types/index.ts:111](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/types/index.ts#L111)*
 
 ___
 
@@ -60,7 +60,7 @@ ___
 
 • **Fund**: = "Fund"
 
-*Defined in [src/types/index.ts:113](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/types/index.ts#L113)*
+*Defined in [src/types/index.ts:113](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/types/index.ts#L113)*
 
 ___
 
@@ -68,7 +68,7 @@ ___
 
 • **Reit**: = "Reit"
 
-*Defined in [src/types/index.ts:112](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/types/index.ts#L112)*
+*Defined in [src/types/index.ts:112](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/types/index.ts#L112)*
 
 ___
 
@@ -76,7 +76,7 @@ ___
 
 • **RevenueShareAgreement**: = "RevenueShareAgreement"
 
-*Defined in [src/types/index.ts:114](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/types/index.ts#L114)*
+*Defined in [src/types/index.ts:114](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/types/index.ts#L114)*
 
 ___
 
@@ -84,4 +84,4 @@ ___
 
 • **StructuredProduct**: = "StructuredProduct"
 
-*Defined in [src/types/index.ts:115](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/types/index.ts#L115)*
+*Defined in [src/types/index.ts:115](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/types/index.ts#L115)*

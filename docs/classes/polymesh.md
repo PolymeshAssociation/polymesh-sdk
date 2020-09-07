@@ -20,9 +20,7 @@ Main entry point of the Polymesh SDK
 ### Methods
 
 * [getAccountBalance](polymesh.md#getaccountbalance)
-* [getIdentitiesWithClaims](polymesh.md#getidentitieswithclaims)
 * [getIdentity](polymesh.md#getidentity)
-* [getIssuedClaims](polymesh.md#getissuedclaims)
 * [getLatestBlock](polymesh.md#getlatestblock)
 * [getMySigningKeys](polymesh.md#getmysigningkeys)
 * [getNetworkProperties](polymesh.md#getnetworkproperties)
@@ -50,7 +48,7 @@ Main entry point of the Polymesh SDK
 
 • **claims**: *[Claims](claims.md)*
 
-*Defined in [src/Polymesh.ts:84](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L84)*
+*Defined in [src/Polymesh.ts:82](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L82)*
 
 ___
 
@@ -58,7 +56,7 @@ ___
 
 • **governance**: *[Governance](governance.md)*
 
-*Defined in [src/Polymesh.ts:83](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L83)*
+*Defined in [src/Polymesh.ts:81](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L81)*
 
 ## Accessors
 
@@ -66,7 +64,7 @@ ___
 
 • **get _polkadotApi**(): *ApiPromise*
 
-*Defined in [src/Polymesh.ts:784](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L784)*
+*Defined in [src/Polymesh.ts:702](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L702)*
 
 Polkadot client
 
@@ -78,7 +76,7 @@ Polkadot client
 
 ▸ **getAccountBalance**(`args?`: undefined | object): *Promise‹[AccountBalance](../interfaces/accountbalance.md)›*
 
-*Defined in [src/Polymesh.ts:241](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L241)*
+*Defined in [src/Polymesh.ts:239](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L239)*
 
 Get the free/locked POLYX balance of an account
 
@@ -94,7 +92,7 @@ Name | Type |
 
 ▸ **getAccountBalance**(`callback`: [SubCallback](../globals.md#subcallback)‹[AccountBalance](../interfaces/accountbalance.md)›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/Polymesh.ts:242](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L242)*
+*Defined in [src/Polymesh.ts:240](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L240)*
 
 **Parameters:**
 
@@ -106,7 +104,7 @@ Name | Type |
 
 ▸ **getAccountBalance**(`args`: object, `callback`: [SubCallback](../globals.md#subcallback)‹[AccountBalance](../interfaces/accountbalance.md)›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/Polymesh.ts:243](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L243)*
+*Defined in [src/Polymesh.ts:241](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L241)*
 
 **Parameters:**
 
@@ -122,37 +120,11 @@ Name | Type |
 
 ___
 
-###  getIdentitiesWithClaims
-
-▸ **getIdentitiesWithClaims**(`opts`: object): *Promise‹[ResultSet](../interfaces/resultset.md)‹[IdentityWithClaims](../interfaces/identitywithclaims.md)››*
-
-*Defined in [src/Polymesh.ts:551](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L551)*
-
-Retrieve a list of identities with claims associated to them. Can be filtered using parameters
-
-**Parameters:**
-
-▪`Default value`  **opts**: *object*= { includeExpired: true }
-
-Name | Type | Description |
------- | ------ | ------ |
-`claimTypes?` | [ClaimType](../enums/claimtype.md)[] | types of the claims to fetch. Defaults to any type |
-`includeExpired?` | undefined &#124; false &#124; true | whether to include expired claims. Defaults to true |
-`scope?` | undefined &#124; string | scope of the claims to fetch. Defaults to any scope |
-`size?` | undefined &#124; number | page size |
-`start?` | undefined &#124; number | page offset  |
-`targets?` | (string &#124; [Identity](identity.md)‹›)[] | identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets |
-`trustedClaimIssuers?` | (string &#124; [Identity](identity.md)‹›)[] | identity IDs of claim issuers. Defaults to all claim issuers |
-
-**Returns:** *Promise‹[ResultSet](../interfaces/resultset.md)‹[IdentityWithClaims](../interfaces/identitywithclaims.md)››*
-
-___
-
 ###  getIdentity
 
 ▸ **getIdentity**(`args?`: undefined | object): *Promise‹[Identity](identity.md)›*
 
-*Defined in [src/Polymesh.ts:387](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L387)*
+*Defined in [src/Polymesh.ts:385](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L385)*
 
 Create an identity instance from a DID. If no DID is passed, the current identity is returned
 
@@ -166,32 +138,11 @@ Name | Type |
 
 ___
 
-###  getIssuedClaims
-
-▸ **getIssuedClaims**(`opts`: object): *Promise‹[ResultSet](../interfaces/resultset.md)‹[ClaimData](../interfaces/claimdata.md)››*
-
-*Defined in [src/Polymesh.ts:520](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L520)*
-
-Retrieve all claims issued by the current identity
-
-**Parameters:**
-
-▪`Default value`  **opts**: *object*= {}
-
-Name | Type |
------- | ------ |
-`size?` | undefined &#124; number |
-`start?` | undefined &#124; number |
-
-**Returns:** *Promise‹[ResultSet](../interfaces/resultset.md)‹[ClaimData](../interfaces/claimdata.md)››*
-
-___
-
 ###  getLatestBlock
 
 ▸ **getLatestBlock**(): *Promise‹BigNumber›*
 
-*Defined in [src/Polymesh.ts:775](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L775)*
+*Defined in [src/Polymesh.ts:693](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L693)*
 
 Retrieve the number of the latest block in the chain
 
@@ -203,7 +154,7 @@ ___
 
 ▸ **getMySigningKeys**(): *Promise‹[Signer](../interfaces/signer.md)[]›*
 
-*Defined in [src/Polymesh.ts:740](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L740)*
+*Defined in [src/Polymesh.ts:658](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L658)*
 
 Get the list of signing keys related to the current identity
 
@@ -213,7 +164,7 @@ Get the list of signing keys related to the current identity
 
 ▸ **getMySigningKeys**(`callback`: [SubCallback](../globals.md#subcallback)‹[Signer](../interfaces/signer.md)[]›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/Polymesh.ts:741](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L741)*
+*Defined in [src/Polymesh.ts:659](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L659)*
 
 **Parameters:**
 
@@ -229,7 +180,7 @@ ___
 
 ▸ **getNetworkProperties**(): *Promise‹[NetworkProperties](../interfaces/networkproperties.md)›*
 
-*Defined in [src/Polymesh.ts:600](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L600)*
+*Defined in [src/Polymesh.ts:518](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L518)*
 
 Retrieve information for the current network
 
@@ -241,7 +192,7 @@ ___
 
 ▸ **getSecurityToken**(`args`: object): *Promise‹[SecurityToken](securitytoken.md)›*
 
-*Defined in [src/Polymesh.ts:494](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L494)*
+*Defined in [src/Polymesh.ts:492](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L492)*
 
 Retrieve a Security Token
 
@@ -261,7 +212,7 @@ ___
 
 ▸ **getSecurityTokens**(`args?`: undefined | object): *Promise‹[SecurityToken](securitytoken.md)[]›*
 
-*Defined in [src/Polymesh.ts:458](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L458)*
+*Defined in [src/Polymesh.ts:456](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L456)*
 
 Retrieve all the Security Tokens owned by an identity
 
@@ -279,7 +230,7 @@ ___
 
 ▸ **getTickerReservation**(`args`: object): *Promise‹[TickerReservation](tickerreservation.md)›*
 
-*Defined in [src/Polymesh.ts:361](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L361)*
+*Defined in [src/Polymesh.ts:359](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L359)*
 
 Retrieve a Ticker Reservation
 
@@ -299,7 +250,7 @@ ___
 
 ▸ **getTickerReservations**(`args?`: undefined | object): *Promise‹[TickerReservation](tickerreservation.md)[]›*
 
-*Defined in [src/Polymesh.ts:323](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L323)*
+*Defined in [src/Polymesh.ts:321](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L321)*
 
 Retrieve all the ticker reservations currently owned by an identity. This doesn't include tokens that
   have already been launched
@@ -318,7 +269,7 @@ ___
 
 ▸ **getTransactionFees**(`args`: object): *Promise‹BigNumber›*
 
-*Defined in [src/Polymesh.ts:408](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L408)*
+*Defined in [src/Polymesh.ts:406](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L406)*
 
 Retrieve the protocol fees associated with running a specific transaction
 
@@ -338,7 +289,7 @@ ___
 
 ▸ **getTransactionHistory**(`filters`: object): *Promise‹[ResultSet](../interfaces/resultset.md)‹[ExtrinsicData](../interfaces/extrinsicdata.md)››*
 
-*Defined in [src/Polymesh.ts:628](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L628)*
+*Defined in [src/Polymesh.ts:546](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L546)*
 
 Retrieve a list of transactions. Can be filtered using parameters
 
@@ -364,7 +315,7 @@ ___
 
 ▸ **getTreasuryAddress**(): *string*
 
-*Defined in [src/Polymesh.ts:415](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L415)*
+*Defined in [src/Polymesh.ts:413](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L413)*
 
 Get the treasury wallet address
 
@@ -376,7 +327,7 @@ ___
 
 ▸ **getTreasuryBalance**(): *Promise‹BigNumber›*
 
-*Defined in [src/Polymesh.ts:716](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L716)*
+*Defined in [src/Polymesh.ts:634](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L634)*
 
 Get the Treasury POLYX balance
 
@@ -386,7 +337,7 @@ Get the Treasury POLYX balance
 
 ▸ **getTreasuryBalance**(`callback`: [SubCallback](../globals.md#subcallback)‹BigNumber›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/Polymesh.ts:717](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L717)*
+*Defined in [src/Polymesh.ts:635](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L635)*
 
 **Parameters:**
 
@@ -402,7 +353,7 @@ ___
 
 ▸ **isIdentityValid**(`args`: object): *Promise‹boolean›*
 
-*Defined in [src/Polymesh.ts:397](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L397)*
+*Defined in [src/Polymesh.ts:395](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L395)*
 
 Return whether the supplied identity/DID exists
 
@@ -422,7 +373,7 @@ ___
 
 ▸ **isTickerAvailable**(`args`: object): *Promise‹boolean›*
 
-*Defined in [src/Polymesh.ts:293](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L293)*
+*Defined in [src/Polymesh.ts:291](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L291)*
 
 Check if a ticker hasn't been reserved
 
@@ -440,7 +391,7 @@ Name | Type |
 
 ▸ **isTickerAvailable**(`args`: object, `callback`: [SubCallback](../globals.md#subcallback)‹boolean›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/Polymesh.ts:294](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L294)*
+*Defined in [src/Polymesh.ts:292](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L292)*
 
 **Parameters:**
 
@@ -460,7 +411,7 @@ ___
 
 ▸ **onConnectionError**(`callback`: function): *function*
 
-*Defined in [src/Polymesh.ts:424](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L424)*
+*Defined in [src/Polymesh.ts:422](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L422)*
 
 Handle connection errors
 
@@ -488,7 +439,7 @@ ___
 
 ▸ **onDisconnect**(`callback`: function): *function*
 
-*Defined in [src/Polymesh.ts:441](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L441)*
+*Defined in [src/Polymesh.ts:439](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L439)*
 
 Handle disconnection
 
@@ -516,7 +467,7 @@ ___
 
 ▸ **registerIdentity**(`args`: [RegisterIdentityParams](../interfaces/registeridentityparams.md)): *Promise‹[TransactionQueue](transactionqueue.md)‹[Identity](identity.md)››*
 
-*Defined in [src/Polymesh.ts:768](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L768)*
+*Defined in [src/Polymesh.ts:686](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L686)*
 
 Register an Identity
 
@@ -536,7 +487,7 @@ ___
 
 ▸ **removeMySigningKeys**(`args`: object): *Promise‹[TransactionQueue](transactionqueue.md)‹void››*
 
-*Defined in [src/Polymesh.ts:759](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L759)*
+*Defined in [src/Polymesh.ts:677](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L677)*
 
 Remove a list of signing keys associated with the current identity
 
@@ -556,7 +507,7 @@ ___
 
 ▸ **reserveTicker**(`args`: [ReserveTickerParams](../interfaces/reservetickerparams.md)): *Promise‹[TransactionQueue](transactionqueue.md)‹[TickerReservation](tickerreservation.md)››*
 
-*Defined in [src/Polymesh.ts:284](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L284)*
+*Defined in [src/Polymesh.ts:282](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L282)*
 
 Reserve a ticker symbol to later use in the creation of a Security Token.
 The ticker will expire after a set amount of time, after which other users can reserve it
@@ -575,7 +526,7 @@ ___
 
 ▸ **transferPolyX**(`args`: [TransferPolyXParams](../interfaces/transferpolyxparams.md)): *Promise‹[TransactionQueue](transactionqueue.md)‹void››*
 
-*Defined in [src/Polymesh.ts:230](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L230)*
+*Defined in [src/Polymesh.ts:228](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L228)*
 
 Transfer an amount of POLYX to a specified account
 
@@ -593,7 +544,7 @@ ___
 
 ▸ **connect**(`params`: [ConnectParamsBase](../interfaces/connectparamsbase.md) & object): *Promise‹[Polymesh](polymesh.md)›*
 
-*Defined in [src/Polymesh.ts:99](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L99)*
+*Defined in [src/Polymesh.ts:97](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L97)*
 
 Create the instance and connect to the Polymesh node
 
@@ -607,7 +558,7 @@ Name | Type |
 
 ▸ **connect**(`params`: [ConnectParamsBase](../interfaces/connectparamsbase.md) & object): *Promise‹[Polymesh](polymesh.md)›*
 
-*Defined in [src/Polymesh.ts:101](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L101)*
+*Defined in [src/Polymesh.ts:99](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L99)*
 
 **Parameters:**
 
@@ -619,7 +570,7 @@ Name | Type |
 
 ▸ **connect**(`params`: [ConnectParamsBase](../interfaces/connectparamsbase.md) & object): *Promise‹[Polymesh](polymesh.md)›*
 
-*Defined in [src/Polymesh.ts:107](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L107)*
+*Defined in [src/Polymesh.ts:105](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L105)*
 
 **Parameters:**
 
@@ -631,7 +582,7 @@ Name | Type |
 
 ▸ **connect**(`params`: [ConnectParamsBase](../interfaces/connectparamsbase.md)): *Promise‹[Polymesh](polymesh.md)›*
 
-*Defined in [src/Polymesh.ts:109](https://github.com/PolymathNetwork/polymesh-sdk/blob/1d4e6bb/src/Polymesh.ts#L109)*
+*Defined in [src/Polymesh.ts:107](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Polymesh.ts#L107)*
 
 **Parameters:**
 

@@ -11,8 +11,6 @@ import { Ticker, TxTag } from 'polymesh-types/types';
 
 import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
-  modifyClaims,
-  ModifyClaimsParams,
   registerIdentity,
   RegisterIdentityParams,
   removeSigningKeys,
@@ -24,16 +22,17 @@ import {
 import { PolymeshError, TransactionQueue } from '~/base';
 import { Claims } from '~/Claims';
 import { Context } from '~/context';
-import { didsWithClaims, heartbeat, transactions } from '~/middleware/queries';
-import { ClaimTypeEnum, Query, TransactionOrderByInput } from '~/middleware/types';
+import { heartbeat, transactions } from '~/middleware/queries';
+import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
   CommonKeyring,
+  Ensured,
   ErrorCode,
   ExtrinsicData,
-  IdentityWithClaims,
   MiddlewareConfig,
   NetworkProperties,
+  ResultSet,
   Signer,
   SubCallback,
   TickerReservationStatus,
@@ -49,7 +48,6 @@ import {
   stringToTicker,
   textToString,
   tickerToString,
-  toIdentityWithClaimsArray,
   txTagToExtrinsicIdentifier,
   u32ToBigNumber,
   valueToDid,
@@ -512,86 +510,6 @@ export class Polymesh {
       code: ErrorCode.FatalError,
       message: `There is no Security Token with ticker "${ticker}"`,
     });
-  }
-
-  /**
-   * Retrieve all claims issued by the current identity
-   */
-  public async getIssuedClaims(
-    opts: {
-      size?: number;
-      start?: number;
-    } = {}
-  ): Promise<ResultSet<ClaimData>> {
-    const { context } = this;
-
-    const { size, start } = opts;
-    const { did } = await context.getCurrentIdentity();
-
-    const result = await context.issuedClaims({
-      trustedClaimIssuers: [did],
-      size,
-      start,
-    });
-
-    return result;
-  }
-
-  /**
-   * Retrieve a list of identities with claims associated to them. Can be filtered using parameters
-   *
-   * @param opts.targets - identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets
-   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
-   * @param opts.scope - scope of the claims to fetch. Defaults to any scope
-   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
-   * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   */
-  public async getIdentitiesWithClaims(
-    opts: {
-      targets?: (string | Identity)[];
-      trustedClaimIssuers?: (string | Identity)[];
-      scope?: string;
-      claimTypes?: ClaimType[];
-      includeExpired?: boolean;
-      size?: number;
-      start?: number;
-    } = { includeExpired: true }
-  ): Promise<ResultSet<IdentityWithClaims>> {
-    const { context } = this;
-
-    const { targets, trustedClaimIssuers, scope, claimTypes, includeExpired, size, start } = opts;
-
-    const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
-        dids: targets?.map(target => valueToDid(target)),
-        scope,
-        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          valueToDid(trustedClaimIssuer)
-        ),
-        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-        includeExpired,
-        count: size,
-        skip: start,
-      })
-    );
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
-      },
-    } = result;
-
-    const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
-
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
   }
 
   /**
