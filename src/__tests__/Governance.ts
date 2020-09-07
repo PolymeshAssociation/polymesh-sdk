@@ -254,4 +254,29 @@ describe('Governance class', () => {
       });
     });
   });
+
+  describe('method: minimumBondedAmount', () => {
+    test('should return the minimum proposal threshold', async () => {
+      dsMockUtils.createQueryStub('pips', 'quorumThreshold').resolves(fakeBalance);
+
+      const result = await governance.minimumBondedAmount();
+
+      expect(result).toBe(amount);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const callback = sinon.stub();
+
+      dsMockUtils.createQueryStub('pips', 'quorumThreshold').callsFake(async cbFunc => {
+        cbFunc(fakeBalance);
+        return unsubCallback;
+      });
+
+      const result = await governance.minimumBondedAmount(callback);
+
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, amount);
+    });
+  });
 });
