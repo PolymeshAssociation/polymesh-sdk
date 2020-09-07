@@ -101,6 +101,7 @@ import {
   serialize,
   signatoryToSigner,
   signerToSignatory,
+  signingKeyToMeshSigningKey,
   stringToAccountId,
   stringToAssetIdentifier,
   stringToAssetName,
@@ -2415,6 +2416,52 @@ describe('toIdentityWithClaimsArray', () => {
     /* eslint-enabled @typescript-eslint/camelcase */
 
     const result = toIdentityWithClaimsArray(fakeMiddlewareIdentityWithClaims, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('signingKeyToMeshSigningKey', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('signingKeyToMeshSigningKey should convert a SigningKey to a polkadot SigningKey', () => {
+    const signingKey = {
+      signer: {
+        type: SignerType.Account,
+        value: 'someAccont',
+      },
+      permissions: [Permission.Full],
+    };
+    const mockAccountId = dsMockUtils.createMockAccountId(signingKey.signer.value);
+    const mockSignatory = dsMockUtils.createMockSignatory({ Account: mockAccountId });
+    const mockPermission = dsMockUtils.createMockPermission(signingKey.permissions[0]);
+    const fakeResult = dsMockUtils.createMockSigningKey({
+      signer: mockSignatory,
+      permissions: [mockPermission],
+    });
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('SigningKey', {
+        signer: signerToSignatory(signingKey.signer, context),
+        permissions: signingKey.permissions.map(permission =>
+          permissionToMeshPermission(permission, context)
+        ),
+      })
+      .returns(fakeResult);
+
+    const result = signingKeyToMeshSigningKey(signingKey, context);
 
     expect(result).toEqual(fakeResult);
   });
