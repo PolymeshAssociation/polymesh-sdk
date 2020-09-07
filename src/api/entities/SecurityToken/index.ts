@@ -4,6 +4,8 @@ import { Identity } from '~/api/entities/Identity';
 import {
   modifyToken,
   ModifyTokenParams,
+  setTreasuryDid,
+  SetTreasuryDidParams,
   transferTokenOwnership,
   TransferTokenOwnershipParams,
 } from '~/api/procedures';
@@ -282,5 +284,15 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     }
 
     return null;
+  }
+
+  /**
+   * Sets a treasury DID for this token
+   *
+   * @param args.target - identity to set as treasury. Empty to reset it
+   */
+  public setTreasury(args: SetTreasuryDidParams): Promise<TransactionQueue<void>> {
+    const { ticker } = this;
+    return setTreasuryDid.prepare({ ticker, ...args }, this.context);
   }
 }

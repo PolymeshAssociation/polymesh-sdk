@@ -29,6 +29,7 @@ Class used to manage all the Security Token functionality
 * [details](securitytoken.md#details)
 * [getIdentifiers](securitytoken.md#getidentifiers)
 * [modify](securitytoken.md#modify)
+* [setTreasury](securitytoken.md#settreasury)
 * [transferOwnership](securitytoken.md#transferownership)
 * [generateUuid](securitytoken.md#static-generateuuid)
 * [unserialize](securitytoken.md#static-unserialize)
@@ -39,7 +40,7 @@ Class used to manage all the Security Token functionality
 
 • **compliance**: *[Compliance](compliance.md)*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:82](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L82)*
+*Defined in [src/api/entities/SecurityToken/index.ts:84](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L84)*
 
 ___
 
@@ -49,7 +50,7 @@ ___
 
 *Inherited from [Entity](entity.md).[context](entity.md#protected-context)*
 
-*Defined in [src/base/Entity.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/base/Entity.ts#L49)*
+*Defined in [src/base/Entity.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/base/Entity.ts#L49)*
 
 ___
 
@@ -57,7 +58,7 @@ ___
 
 • **did**: *string*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:70](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L70)*
+*Defined in [src/api/entities/SecurityToken/index.ts:72](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L72)*
 
 identity id of the Security Token
 
@@ -67,7 +68,7 @@ ___
 
 • **documents**: *[Documents](documents.md)*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:78](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L78)*
+*Defined in [src/api/entities/SecurityToken/index.ts:80](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L80)*
 
 ___
 
@@ -75,7 +76,7 @@ ___
 
 • **issuance**: *[Issuance](issuance.md)*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:81](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L81)*
+*Defined in [src/api/entities/SecurityToken/index.ts:83](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L83)*
 
 ___
 
@@ -83,7 +84,7 @@ ___
 
 • **ticker**: *string*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:75](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L75)*
+*Defined in [src/api/entities/SecurityToken/index.ts:77](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L77)*
 
 ticker of the Security Token
 
@@ -93,7 +94,7 @@ ___
 
 • **tokenHolders**: *[TokenHolders](tokenholders.md)*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:80](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L80)*
+*Defined in [src/api/entities/SecurityToken/index.ts:82](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L82)*
 
 ___
 
@@ -101,7 +102,7 @@ ___
 
 • **transfers**: *[Transfers](transfers.md)*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:79](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L79)*
+*Defined in [src/api/entities/SecurityToken/index.ts:81](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L81)*
 
 ___
 
@@ -111,7 +112,7 @@ ___
 
 *Inherited from [Entity](entity.md).[uuid](entity.md#uuid)*
 
-*Defined in [src/base/Entity.ts:47](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/base/Entity.ts#L47)*
+*Defined in [src/base/Entity.ts:47](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/base/Entity.ts#L47)*
 
 ## Methods
 
@@ -119,7 +120,7 @@ ___
 
 ▸ **createdAt**(): *Promise‹[EventIdentifier](../interfaces/eventidentifier.md) | null›*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:262](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L262)*
+*Defined in [src/api/entities/SecurityToken/index.ts:264](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L264)*
 
 Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
 
@@ -135,7 +136,7 @@ ___
 
 ▸ **currentFundingRound**(): *Promise‹string›*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:184](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L184)*
+*Defined in [src/api/entities/SecurityToken/index.ts:186](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L186)*
 
 Retrieve the Security Token's funding round
 
@@ -145,7 +146,7 @@ Retrieve the Security Token's funding round
 
 ▸ **currentFundingRound**(`callback`: [SubCallback](../globals.md#subcallback)‹string›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:185](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L185)*
+*Defined in [src/api/entities/SecurityToken/index.ts:187](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L187)*
 
 **Parameters:**
 
@@ -161,7 +162,7 @@ ___
 
 ▸ **details**(): *Promise‹[SecurityTokenDetails](../interfaces/securitytokendetails.md)›*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:131](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L131)*
+*Defined in [src/api/entities/SecurityToken/index.ts:133](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L133)*
 
 Retrieve the Security Token's name, total supply, whether it is divisible or not and the identity of the owner
 
@@ -171,7 +172,7 @@ Retrieve the Security Token's name, total supply, whether it is divisible or not
 
 ▸ **details**(`callback`: [SubCallback](../globals.md#subcallback)‹[SecurityTokenDetails](../interfaces/securitytokendetails.md)›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:132](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L132)*
+*Defined in [src/api/entities/SecurityToken/index.ts:134](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L134)*
 
 **Parameters:**
 
@@ -187,7 +188,7 @@ ___
 
 ▸ **getIdentifiers**(): *Promise‹[TokenIdentifier](../interfaces/tokenidentifier.md)[]›*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:215](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L215)*
+*Defined in [src/api/entities/SecurityToken/index.ts:217](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L217)*
 
 Retrive the Security Token's asset identifiers list
 
@@ -197,7 +198,7 @@ Retrive the Security Token's asset identifiers list
 
 ▸ **getIdentifiers**(`callback?`: [SubCallback](../globals.md#subcallback)‹[TokenIdentifier](../interfaces/tokenidentifier.md)[]›): *Promise‹[UnsubCallback](../globals.md#unsubcallback)›*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:216](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L216)*
+*Defined in [src/api/entities/SecurityToken/index.ts:218](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L218)*
 
 **Parameters:**
 
@@ -213,7 +214,7 @@ ___
 
 ▸ **modify**(`args`: [ModifyTokenParams](../globals.md#modifytokenparams)): *Promise‹[TransactionQueue](transactionqueue.md)‹[SecurityToken](securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:121](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L121)*
+*Defined in [src/api/entities/SecurityToken/index.ts:123](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L123)*
 
 Modify some properties of the Security Token
 
@@ -229,11 +230,29 @@ Name | Type |
 
 ___
 
+###  setTreasury
+
+▸ **setTreasury**(`args`: [SetTreasuryDidParams](../globals.md#settreasurydidparams)): *Promise‹[TransactionQueue](transactionqueue.md)‹void››*
+
+*Defined in [src/api/entities/SecurityToken/index.ts:294](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L294)*
+
+Sets a treasury DID for this token
+
+**Parameters:**
+
+Name | Type |
+------ | ------ |
+`args` | [SetTreasuryDidParams](../globals.md#settreasurydidparams) |
+
+**Returns:** *Promise‹[TransactionQueue](transactionqueue.md)‹void››*
+
+___
+
 ###  transferOwnership
 
 ▸ **transferOwnership**(`args`: [TransferTokenOwnershipParams](../interfaces/transfertokenownershipparams.md)): *Promise‹[TransactionQueue](transactionqueue.md)‹[SecurityToken](securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/index.ts:108](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/api/entities/SecurityToken/index.ts#L108)*
+*Defined in [src/api/entities/SecurityToken/index.ts:110](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/api/entities/SecurityToken/index.ts#L110)*
 
 Transfer ownership of the Security Token to another identity. This generates an authorization request that must be accepted
 by the destinatary
@@ -254,7 +273,7 @@ ___
 
 *Inherited from [Entity](entity.md).[generateUuid](entity.md#static-generateuuid)*
 
-*Defined in [src/base/Entity.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/base/Entity.ts#L15)*
+*Defined in [src/base/Entity.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/base/Entity.ts#L15)*
 
 Generate the Entity's UUID from its identifying properties
 
@@ -278,7 +297,7 @@ ___
 
 *Inherited from [Entity](entity.md).[unserialize](entity.md#static-unserialize)*
 
-*Defined in [src/base/Entity.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/1538712/src/base/Entity.ts#L24)*
+*Defined in [src/base/Entity.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/bcdc2ee/src/base/Entity.ts#L24)*
 
 Unserialize a UUID into its Unique Identifiers
 

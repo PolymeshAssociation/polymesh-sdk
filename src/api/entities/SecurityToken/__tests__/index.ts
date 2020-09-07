@@ -9,7 +9,7 @@ import {
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
-import { modifyToken, transferTokenOwnership } from '~/api/procedures';
+import { modifyToken, setTreasuryDid, transferTokenOwnership } from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs } from '~/middleware/queries';
@@ -380,6 +380,29 @@ describe('SecurityToken class', () => {
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
       const result = await securityToken.createdAt();
       expect(result).toBeNull();
+    });
+  });
+
+  describe('method: setTreasury', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'TEST';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      const args = {
+        target: 'someDid',
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(setTreasuryDid, 'prepare')
+        .withArgs({ ticker, ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await securityToken.setTreasury(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });
