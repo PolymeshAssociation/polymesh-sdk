@@ -172,7 +172,7 @@ export class Context {
   }
 
   /**
-   * Get if the current node is archive or not
+   * Retrieve whether the current node is an archive node (contains a full history from genesis onward) or not
    */
   public async isCurrentNodeArchive(): Promise<boolean> {
     const {
