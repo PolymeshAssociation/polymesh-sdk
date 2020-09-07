@@ -238,7 +238,7 @@ describe('Governance class', () => {
     test('should return the minimum proposal threshold', async () => {
       dsMockUtils.createQueryStub('pips', 'quorumThreshold').resolves(fakeBalance);
 
-      const result = await governance.currentMinimumBondedAmount();
+      const result = await governance.minimumBondedAmount();
 
       expect(result).toBe(amount);
     });
@@ -252,7 +252,7 @@ describe('Governance class', () => {
         return unsubCallback;
       });
 
-      const result = await governance.currentMinimumBondedAmount(callback);
+      const result = await governance.minimumBondedAmount(callback);
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, amount);

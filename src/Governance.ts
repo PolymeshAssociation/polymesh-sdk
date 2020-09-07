@@ -200,11 +200,11 @@ export class Governance {
    *
    * @note can be subscribed to
    */
-  public async currentMinimumBondedAmount(): Promise<BigNumber>;
-  public async currentMinimumBondedAmount(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+  public async minimumBondedAmount(): Promise<BigNumber>;
+  public async minimumBondedAmount(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async currentMinimumBondedAmount(
+  public async minimumBondedAmount(
     callback?: SubCallback<BigNumber>
   ): Promise<BigNumber | UnsubCallback> {
     const {
