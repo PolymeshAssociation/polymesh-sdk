@@ -193,7 +193,7 @@ export class Claims {
   /**
    * Retrieve the list of CDD claims for a target Identity
    *
-   * @param opts.target - identity for which to fetch claim scopes (optional, defaults to the current identity)
+   * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current identity)
    * @param opts.size - page size
    * @param opts.start - page offset
    *
