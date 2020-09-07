@@ -196,7 +196,7 @@ export class Governance {
   }
 
   /**
-   * Returns the minimum stake a proposal must gather in order to be considered by the committe
+   * Returns the minimum stake a proposal must gather in order to be considered by the committee
    *
    * @note can be subscribed to
    */
