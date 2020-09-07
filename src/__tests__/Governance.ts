@@ -234,7 +234,7 @@ describe('Governance class', () => {
     });
   });
 
-  describe('method: currentMinimumBondedAmount', () => {
+  describe('method: minimumBondedAmount', () => {
     test('should return the minimum proposal threshold', async () => {
       dsMockUtils.createQueryStub('pips', 'quorumThreshold').resolves(fakeBalance);
 
