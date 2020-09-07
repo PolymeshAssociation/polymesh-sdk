@@ -42,6 +42,7 @@ import {
   Rule as MeshRule,
   RuleType,
   Signatory,
+  SigningKey as MeshSigningKey,
   Ticker,
   TxTag,
   TxTags,
@@ -78,6 +79,7 @@ import {
   RuleCompliance,
   Signer,
   SignerType,
+  SigningKey,
   SingleClaimCondition,
   TokenIdentifierType,
   TokenType,
@@ -1352,4 +1354,20 @@ export function toIdentityWithClaimsArray(
       })
     ),
   }));
+}
+
+/**
+ * @hidden
+ */
+export function signingKeyToMeshSigningKey(
+  signingKey: SigningKey,
+  context: Context
+): MeshSigningKey {
+  const { polymeshApi } = context;
+  const { signer, permissions } = signingKey;
+
+  return polymeshApi.createType('SigningKey', {
+    signer: signerToSignatory(signer, context),
+    permissions: permissions.map(permission => permissionToMeshPermission(permission, context)),
+  });
 }

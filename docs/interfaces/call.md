@@ -19,7 +19,7 @@
 
 • **args**: *[CallArguments](callarguments.md)[]*
 
-*Defined in [src/api/entities/Proposal/types.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/5ff5294/src/api/entities/Proposal/types.ts#L12)*
+*Defined in [src/api/entities/Proposal/types.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/3b32ccad/src/api/entities/Proposal/types.ts#L12)*
 
 ___
 
@@ -27,7 +27,7 @@ ___
 
 • **extrinsic**: *string*
 
-*Defined in [src/api/entities/Proposal/types.ts:14](https://github.com/PolymathNetwork/polymesh-sdk/blob/5ff5294/src/api/entities/Proposal/types.ts#L14)*
+*Defined in [src/api/entities/Proposal/types.ts:14](https://github.com/PolymathNetwork/polymesh-sdk/blob/3b32ccad/src/api/entities/Proposal/types.ts#L14)*
 
 ___
 
@@ -35,7 +35,7 @@ ___
 
 • **functionalCall**: *string*
 
-*Defined in [src/api/entities/Proposal/types.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/5ff5294/src/api/entities/Proposal/types.ts#L13)*
+*Defined in [src/api/entities/Proposal/types.ts:13](https://github.com/PolymathNetwork/polymesh-sdk/blob/3b32ccad/src/api/entities/Proposal/types.ts#L13)*
 
 ___
 
@@ -43,4 +43,4 @@ ___
 
 • **module**: *string*
 
-*Defined in [src/api/entities/Proposal/types.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/5ff5294/src/api/entities/Proposal/types.ts#L15)*
+*Defined in [src/api/entities/Proposal/types.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/3b32ccad/src/api/entities/Proposal/types.ts#L15)*

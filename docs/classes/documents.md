@@ -28,7 +28,7 @@ Handles all Security Token Document related functionality
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/5ff5294/src/base/Namespace.ts#L12)*
+*Defined in [src/base/Namespace.ts:12](https://github.com/PolymathNetwork/polymesh-sdk/blob/3b32ccad/src/base/Namespace.ts#L12)*
 
 ___
 
@@ -38,7 +38,7 @@ ___
 
 *Inherited from void*
 
-*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/5ff5294/src/base/Namespace.ts#L10)*
+*Defined in [src/base/Namespace.ts:10](https://github.com/PolymathNetwork/polymesh-sdk/blob/3b32ccad/src/base/Namespace.ts#L10)*
 
 ## Methods
 
@@ -46,7 +46,7 @@ ___
 
 ▸ **get**(`paginationOpts?`: [PaginationOptions](../interfaces/paginationoptions.md)): *Promise‹[ResultSet](../interfaces/resultset.md)‹[TokenDocument](../interfaces/tokendocument.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Documents.ts:38](https://github.com/PolymathNetwork/polymesh-sdk/blob/5ff5294/src/api/entities/SecurityToken/Documents.ts#L38)*
+*Defined in [src/api/entities/SecurityToken/Documents.ts:38](https://github.com/PolymathNetwork/polymesh-sdk/blob/3b32ccad/src/api/entities/SecurityToken/Documents.ts#L38)*
 
 Retrieve all documents linked to the Security Token
 
@@ -66,7 +66,7 @@ ___
 
 ▸ **set**(`args`: [SetTokenDocumentsParams](../interfaces/settokendocumentsparams.md)): *Promise‹[TransactionQueue](transactionqueue.md)‹[SecurityToken](securitytoken.md)››*
 
-*Defined in [src/api/entities/SecurityToken/Documents.ts:25](https://github.com/PolymathNetwork/polymesh-sdk/blob/5ff5294/src/api/entities/SecurityToken/Documents.ts#L25)*
+*Defined in [src/api/entities/SecurityToken/Documents.ts:25](https://github.com/PolymathNetwork/polymesh-sdk/blob/3b32ccad/src/api/entities/SecurityToken/Documents.ts#L25)*
 
 Assign a new list of documents to the Security Token by replacing the existing list of documents with the one passed in the parameters
 
