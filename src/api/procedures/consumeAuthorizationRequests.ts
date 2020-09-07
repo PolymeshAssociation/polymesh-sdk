@@ -8,10 +8,16 @@ export interface ConsumeParams {
   accept: boolean;
 }
 
+/**
+ * @hidden
+ */
 export type ConsumeAuthorizationRequestsParams = ConsumeParams & {
   authRequests: AuthorizationRequest[];
 };
 
+/**
+ * @hidden
+ */
 const isLive = ({ expiry }: AuthorizationRequest): boolean =>
   expiry === null || expiry > new Date();
 
@@ -60,11 +66,11 @@ export async function prepareConsumeAuthorizationRequests(
 /**
  * @hidden
  */
-export function isAuthorized(
+export async function isAuthorized(
   this: Procedure<ConsumeAuthorizationRequestsParams>,
   { authRequests, accept }: ConsumeAuthorizationRequestsParams
-): boolean {
-  const { did } = this.context.getCurrentIdentity();
+): Promise<boolean> {
+  const { did } = await this.context.getCurrentIdentity();
 
   return authRequests.filter(isLive).every(({ targetIdentity, issuerIdentity }) => {
     let condition = did === targetIdentity.did;
@@ -76,6 +82,9 @@ export function isAuthorized(
   });
 }
 
+/**
+ * @hidden
+ */
 export const consumeAuthorizationRequests = new Procedure(
   prepareConsumeAuthorizationRequests,
   isAuthorized

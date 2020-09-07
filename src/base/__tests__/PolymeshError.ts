@@ -1,6 +1,6 @@
 import { ErrorCode } from '~/types';
 
-import { PolymeshError } from '../PolymeshError';
+import { isPolymeshError, PolymeshError } from '../PolymeshError';
 
 describe('Polymesh Error class', () => {
   test('should extend error', () => {
@@ -24,5 +24,17 @@ describe('Polymesh Error class', () => {
       expect(err.code).toBe(code);
       expect(err.message).toBe(`Unknown error, code: ${code}`);
     });
+  });
+});
+
+describe('isPolymeshError', () => {
+  test('should return whether the input is a PolymeshError object', () => {
+    let result = isPolymeshError(new PolymeshError({ code: ErrorCode.FatalError }));
+
+    expect(result).toBe(true);
+
+    result = isPolymeshError('Hello');
+
+    expect(result).toBe(false);
   });
 });

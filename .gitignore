@@ -7,6 +7,5 @@ npm-package/
 coverage/
 test.ts
 sandbox.ts
-docs/
 tsconfig.dev.json
 .env

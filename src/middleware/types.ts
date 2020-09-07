@@ -22,7 +22,7 @@ export type Query = {
   heartbeat: Scalars['Boolean'];
   /** Get the chain  information */
   chainInfo?: Maybe<ChainInfo>;
-  latestBlock?: Maybe<Block>;
+  latestBlock?: Block;
   /** Get all blocks */
   blocks?: Maybe<Array<Maybe<Block>>>;
   /** Get a block by block number */
@@ -49,12 +49,14 @@ export type Query = {
   polyxTransfersSent: Array<PolyxTransfer>;
   /** Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers */
   didsWithClaims: IdentityWithClaimsResult;
+  /** Get issuer dids with at least one claim for given target */
+  issuerDidsWithClaimsByTarget: IdentityWithClaimsResult;
   /** Get all scopes with at least one claim for a given identityId */
   scopesByIdentity: Array<ClaimScope>;
   /** Get all token tickers where given Did is a default Trusted Claim Issuer */
   tokensByTrustedClaimIssuer: Array<Scalars['String']>;
   /** Get all tickers of tokens that were held at some point by the given did */
-  tokensHeldByDid: Array<Scalars['String']>;
+  tokensHeldByDid: StringResult;
   /** Get all POLYX transfers (send) failed by the given account */
   polyxTransfersFailed: Array<FailedPolyxTransfer>;
   /** Get all POLYX transfers received by the given did and/or account */
@@ -67,10 +69,8 @@ export type Query = {
   tokenTransfersFailed: Array<FailedTokenTransfer>;
   /** Get all authorizations with their status optionally filtered by did, account key or type */
   authorizations: Array<Authorization>;
-  /** Get the current vote results for given proposal hashes */
-  referendumVotes: VoteResult;
   /** Get the current vote results for given pipId */
-  referendumVotes2: VoteResult;
+  referendumVotes: VoteResult;
   /** Get a proposal by its pipId */
   proposal: Proposal;
   /** Get all proposals optionally filtered by pipId, proposer or state */
@@ -157,6 +157,17 @@ export type QueryDidsWithClaimsArgs = {
   scope?: Maybe<Scalars['String']>;
   trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
   claimTypes?: Maybe<Array<ClaimTypeEnum>>;
+  includeExpired?: Maybe<Scalars['Boolean']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryIssuerDidsWithClaimsByTargetArgs = {
+  target: Scalars['String'];
+  scope?: Maybe<Scalars['String']>;
+  trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
+  claimTypes?: Maybe<Array<ClaimTypeEnum>>;
+  includeExpired?: Maybe<Scalars['Boolean']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
@@ -174,6 +185,7 @@ export type QueryTokensHeldByDidArgs = {
   did: Scalars['String'];
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
+  order?: Maybe<Order>;
 };
 
 export type QueryPolyxTransfersFailedArgs = {
@@ -217,11 +229,6 @@ export type QueryAuthorizationsArgs = {
 };
 
 export type QueryReferendumVotesArgs = {
-  ayesHash: Scalars['String'];
-  naysHash: Scalars['String'];
-};
-
-export type QueryReferendumVotes2Args = {
   proposalId: Scalars['Int'];
 };
 
@@ -267,7 +274,7 @@ export type ChainInfo = {
 export type Block = {
   __typename?: 'Block';
   /** Block details */
-  id?: Maybe<Scalars['Int']>;
+  id: Scalars['Int'];
   parent_id?: Maybe<Scalars['Int']>;
   hash?: Maybe<Scalars['String']>;
   parent_hash?: Maybe<Scalars['String']>;
@@ -944,6 +951,12 @@ export type ClaimScope = {
   ticker?: Maybe<Scalars['String']>;
 };
 
+export type StringResult = {
+  __typename?: 'StringResult';
+  totalCount: Scalars['Int'];
+  items: Array<Scalars['String']>;
+};
+
 export type FailedPolyxTransfer = {
   __typename?: 'FailedPolyxTransfer';
   blockId: Scalars['Int'];
@@ -1022,7 +1035,7 @@ export type Proposal = {
   description: Scalars['String'];
   coolOffEndBlock: Scalars['Int'];
   endBlock: Scalars['Int'];
-  proposal: Scalars['String'];
+  proposal?: Maybe<Scalars['String']>;
   lastState: ProposalState;
   lastStateUpdatedAt: Scalars['Int'];
   totalVotes: Scalars['Int'];
@@ -1068,12 +1081,6 @@ export type ProposalVote = {
   account: Scalars['String'];
   vote: Scalars['CustomBoolean'];
   weight: Scalars['BigInt'];
-};
-
-export type StringResult = {
-  __typename?: 'StringResult';
-  totalCount: Scalars['Int'];
-  items: Array<Scalars['String']>;
 };
 
 export enum CacheControlScope {

@@ -1,18 +1,20 @@
 import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot/api/types';
 import { bool, Bytes, StorageKey, Text, u8, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, EventRecord, Moment } from '@polkadot/types/interfaces';
+import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
 import {
   stringToU8a,
   stringUpperFirst,
   u8aConcat,
   u8aFixLength,
+  u8aToHex,
   u8aToString,
 } from '@polkadot/util';
-import { blake2AsHex, encodeAddress } from '@polkadot/util-crypto';
+import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, groupBy, isEqual, map, padEnd } from 'lodash';
+import { camelCase, chunk, groupBy, isEqual, map, padEnd, snakeCase } from 'lodash';
 import {
   AssetIdentifier,
   AssetName,
@@ -40,14 +42,21 @@ import {
   Rule as MeshRule,
   RuleType,
   Signatory,
+  SigningKey as MeshSigningKey,
   Ticker,
   TxTag,
+  TxTags,
 } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
 import { ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError, PostTransactionValue } from '~/base';
 import { Context } from '~/context';
+import {
+  CallIdEnum,
+  IdentityWithClaims as MiddlewareIdentityWithClaims,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import {
   Authorization,
   AuthorizationType,
@@ -57,6 +66,7 @@ import {
   ConditionTarget,
   ConditionType,
   ErrorCode,
+  IdentityWithClaims,
   isMultiClaimCondition,
   isSingleClaimCondition,
   IssuanceData,
@@ -69,6 +79,7 @@ import {
   RuleCompliance,
   Signer,
   SignerType,
+  SigningKey,
   SingleClaimCondition,
   TokenIdentifierType,
   TokenType,
@@ -76,6 +87,7 @@ import {
 } from '~/types';
 import {
   AuthTarget,
+  ExtrinsicIdentifier,
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -85,11 +97,14 @@ import { tuple } from '~/types/utils';
 import {
   BATCH_REGEX,
   DEFAULT_GQL_PAGE_SIZE,
+  IGNORE_CHECKSUM,
   MAX_BATCH_ELEMENTS,
   MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
   SS58_FORMAT,
 } from '~/utils/constants';
+
+export { cryptoWaitReady } from '@polkadot/util-crypto';
 
 /**
  * @hidden
@@ -141,7 +156,6 @@ export function unserialize<UniqueIdentifiers extends object>(id: string): Uniqu
 }
 
 /**
- * @hidden
  * Generate a Security Token's DID from a ticker
  */
 export function tickerToDid(ticker: string): string {
@@ -1002,6 +1016,32 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
 /**
  * @hidden
  */
+export function txTagToExtrinsicIdentifier(tag: TxTag): ExtrinsicIdentifier {
+  const [moduleName, extrinsicName] = tag.split('.');
+  return {
+    moduleId: moduleName.toLowerCase() as ModuleIdEnum,
+    callId: snakeCase(extrinsicName) as CallIdEnum,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentifier): TxTag {
+  const { moduleId, callId } = extrinsicIdentifier;
+  let moduleName;
+  for (const txTagItem in TxTags) {
+    if (txTagItem.toLowerCase() === moduleId) {
+      moduleName = txTagItem;
+    }
+  }
+
+  return `${moduleName}.${camelCase(callId)}` as TxTag;
+}
+
+/**
+ * @hidden
+ */
 export function stringToText(url: string, context: Context): Text {
   return context.polymeshApi.createType('Text', url);
 }
@@ -1047,6 +1087,8 @@ export function assetTransferRulesResultToRuleCompliance(
 }
 
 /**
+ * @hidden
+ *
  * Unwrap a Post Transaction Value
  */
 export function unwrapValue<T extends unknown>(value: MaybePostTransactionValue<T>): T {
@@ -1058,6 +1100,8 @@ export function unwrapValue<T extends unknown>(value: MaybePostTransactionValue<
 }
 
 /**
+ * @hidden
+ *
  * Unwrap all Post Transaction Values present in a tuple
  */
 export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactionValue<T>): T {
@@ -1111,6 +1155,22 @@ export function moduleAddressToString(moduleAddress: string): string {
 }
 
 /**
+ * @hidden
+ */
+export function keyToAddress(key: string): string {
+  return encodeAddress(key, SS58_FORMAT);
+}
+
+/**
+ * @hidden
+ */
+export function addressToKey(address: string): string {
+  return u8aToHex(decodeAddress(address, IGNORE_CHECKSUM, SS58_FORMAT));
+}
+
+/**
+ * @hidden
+ *
  * Makes an entries request to the chain. If pagination options are supplied,
  * the request will be paginated. Otherwise, all entries will be requested at once
  */
@@ -1150,13 +1210,15 @@ export async function requestPaginated<F extends AnyFunction>(
 }
 
 /**
+ * @hidden
+ *
  * Makes a request to the chain. If a block hash is supplied,
  * the request will be made at that block. Otherwise, the most recent block will be queried
  */
 export async function requestAtBlock<F extends AnyFunction>(
   query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,
   opts: {
-    blockHash?: string;
+    blockHash?: string | BlockHash;
     args: Parameters<F>;
   }
 ): Promise<ObsInnerType<ReturnType<F>>> {
@@ -1170,6 +1232,8 @@ export async function requestAtBlock<F extends AnyFunction>(
 }
 
 /**
+ * @hidden
+ *
  * Separates an array into smaller batches
  *
  * @param args - elements to separate
@@ -1219,6 +1283,8 @@ export function batchArguments<Args>(
 }
 
 /**
+ * @hidden
+ *
  * Calculates next page number for paginated GraphQL ResultSet.
  * Returns null if there is no next page.
  *
@@ -1255,4 +1321,53 @@ export function meshProposalStateToProposalState(proposalState: MeshProposalStat
   }
 
   return ProposalState.Referendum;
+}
+
+/**
+ * @hidden
+ */
+export function toIdentityWithClaimsArray(
+  data: MiddlewareIdentityWithClaims[],
+  context: Context
+): IdentityWithClaims[] {
+  // NOTE: this require statement is necessary to avoid a circular dependency
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { Identity: IdentityClass } = require('../api/entities/Identity');
+
+  return data.map(({ did, claims }) => ({
+    identity: new IdentityClass({ did }, context),
+    claims: claims.map(
+      ({
+        targetDID,
+        issuer,
+        issuance_date: issuanceDate,
+        expiry,
+        type,
+        jurisdiction,
+        scope: claimScope,
+      }) => ({
+        target: new IdentityClass({ did: targetDID }, context),
+        issuer: new IdentityClass({ did: issuer }, context),
+        issuedAt: new Date(issuanceDate),
+        expiry: expiry ? new Date(expiry) : null,
+        claim: createClaim(type, jurisdiction, claimScope),
+      })
+    ),
+  }));
+}
+
+/**
+ * @hidden
+ */
+export function signingKeyToMeshSigningKey(
+  signingKey: SigningKey,
+  context: Context
+): MeshSigningKey {
+  const { polymeshApi } = context;
+  const { signer, permissions } = signingKey;
+
+  return polymeshApi.createType('SigningKey', {
+    signer: signerToSignatory(signer, context),
+    permissions: permissions.map(permission => permissionToMeshPermission(permission, context)),
+  });
 }

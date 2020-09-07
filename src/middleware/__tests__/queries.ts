@@ -11,10 +11,13 @@ import {
 import {
   didsWithClaims,
   eventByIndexedArgs,
+  issuerDidsWithClaimsByTarget,
   proposals,
   proposalVotes,
   scopesByIdentity,
   tokensByTrustedClaimIssuer,
+  tokensHeldByDid,
+  transactions,
 } from '../queries';
 
 describe('proposalVotes', () => {
@@ -102,6 +105,35 @@ describe('tokensByTrustedClaimIssuer', () => {
   });
 });
 
+describe('tokensHeldByDid', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      did: 'someDid',
+    };
+
+    const result = tokensHeldByDid(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('transactions', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    let result = transactions();
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toBeUndefined();
+
+    const variables = {
+      address: 'someAddress',
+    };
+    result = transactions(variables);
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
 describe('scopesByIdentity', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
@@ -109,6 +141,21 @@ describe('scopesByIdentity', () => {
     };
 
     const result = scopesByIdentity(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('issuerDidsWithClaimsByTarget', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      target: 'someDid',
+      scope: 'someScope',
+      trustedClaimIssuers: ['aTrustedClaimIssuer'],
+    };
+
+    const result = issuerDidsWithClaimsByTarget(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

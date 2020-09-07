@@ -1,6 +1,22 @@
 {
-  "mode": "modules",
+  "mode": "file",
   "out": "docs",
-  "exclude": "**/{__tests__,polkadot}/**/*",
+  "theme": "gitbook",
+  "exclude": [
+    "**/{__tests__,polkadot,testUtils,middleware}/*",
+    "**/sandbox.ts",
+    "src/index.ts",
+    "src/api/entities/types.ts",
+    "src/api/entities/index.ts",
+    "src/api/procedures/index.ts",
+    "src/api/procedures/utils.ts",
+    "src/types/internal.ts",
+    "src/utils/constants.ts",
+    "src/base/index.ts",
+    "src/base/types.ts",
+    "src/context/index.ts"
+  ],
+  "excludeExternals": true,
+  "excludePrivate": true,
   "ignoreCompilerErrors": true
 }

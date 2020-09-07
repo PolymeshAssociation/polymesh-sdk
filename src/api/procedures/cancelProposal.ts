@@ -3,6 +3,9 @@ import { accountIdToString } from '~/utils';
 
 import { assertProposalUnlocked } from './utils';
 
+/**
+ * @hidden
+ */
 export type Params = { pipId: number };
 
 /**
@@ -43,4 +46,7 @@ export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): 
   return accountIdToString(proposer) === this.context.getCurrentPair().address;
 }
 
+/**
+ * @hidden
+ */
 export const cancelProposal = new Procedure(prepareCancelProposal, isAuthorized);

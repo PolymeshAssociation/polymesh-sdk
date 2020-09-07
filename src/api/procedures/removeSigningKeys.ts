@@ -24,7 +24,7 @@ export async function prepareRemoveSigningKeys(
 
   const { signers } = args;
 
-  const identity = context.getCurrentIdentity();
+  const identity = await context.getCurrentIdentity();
 
   const [masterKey, signingKeys] = await Promise.all([
     identity.getMasterKey(),
@@ -71,10 +71,13 @@ export async function prepareRemoveSigningKeys(
 export async function isAuthorized(this: Procedure<RemoveSigningKeysParams>): Promise<boolean> {
   const { context } = this;
 
-  const identity = context.getCurrentIdentity();
+  const identity = await context.getCurrentIdentity();
   const masterKey = await identity.getMasterKey();
 
   return masterKey === context.getCurrentPair().address;
 }
 
+/**
+ * @hidden
+ */
 export const removeSigningKeys = new Procedure(prepareRemoveSigningKeys, isAuthorized);

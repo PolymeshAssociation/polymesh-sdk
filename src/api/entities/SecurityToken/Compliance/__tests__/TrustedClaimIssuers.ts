@@ -3,10 +3,11 @@ import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
 import { TrustedClaimIssuer } from '~/api/entities/TrustedClaimIssuer';
-import { setTokenTrustedClaimIssuers } from '~/api/procedures';
+import { modifyTokenTrustedClaimIssuers } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 import { TrustedClaimIssuers } from '../TrustedClaimIssuers';
@@ -51,11 +52,80 @@ describe('TrustedClaimIssuers class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
       sinon
-        .stub(setTokenTrustedClaimIssuers, 'prepare')
-        .withArgs({ ticker: token.ticker, ...args }, context)
+        .stub(modifyTokenTrustedClaimIssuers, 'prepare')
+        .withArgs(
+          { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
+          context
+        )
         .resolves(expectedQueue);
 
-      const queue = await trustedClaimIssuers.set(args);
+      const queue = await trustedClaimIssuers.set({
+        ...args,
+      });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: add', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
+
+      const args = {
+        claimIssuerIdentities: ['someDid', 'otherDid'],
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      sinon
+        .stub(modifyTokenTrustedClaimIssuers, 'prepare')
+        .withArgs(
+          { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await trustedClaimIssuers.add({
+        ...args,
+      });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: remove', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
+
+      const args = {
+        claimIssuerIdentities: ['someDid', 'otherDid'],
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      sinon
+        .stub(modifyTokenTrustedClaimIssuers, 'prepare')
+        .withArgs(
+          { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await trustedClaimIssuers.remove({
+        ...args,
+      });
 
       expect(queue).toBe(expectedQueue);
     });

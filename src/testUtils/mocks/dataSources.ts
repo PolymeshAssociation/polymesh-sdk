@@ -4,7 +4,8 @@
 
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { Signer } from '@polkadot/api/types';
-import { bool, Bytes, Enum, Option, Text, u8, u32, u64 } from '@polkadot/types';
+import { bool, Bytes, Compact, Enum, Option, Text, u8, u32, u64 } from '@polkadot/types';
+import { CompactEncodable } from '@polkadot/types/codec/Compact';
 import {
   AccountData,
   AccountId,
@@ -95,7 +96,7 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
   } as Mutable<ApiPromise> & EventEmitter;
 }
 
-const apolloConstructorStub = sinon.stub();
+let apolloConstructorStub: SinonStub;
 
 const MockApolloClientClass = class {
   /**
@@ -110,7 +111,7 @@ const mockInstanceContainer = {
   contextInstance: {} as MockContext,
   apiInstance: createApi(),
   keyringInstance: {} as Mutable<Keyring>,
-  apolloInstance: new MockApolloClientClass() as ApolloClient<NormalizedCacheObject>,
+  apolloInstance: {} as ApolloClient<NormalizedCacheObject>,
 };
 
 let apiPromiseCreateStub: SinonStub;
@@ -168,6 +169,9 @@ interface ContextOptions {
   currentPairAddress?: string;
   issuedClaims?: ResultSet<ClaimData>;
   masterKey?: string;
+  latestBlock?: BigNumber;
+  middlewareEnabled?: boolean;
+  middlewareAvailable?: boolean;
 }
 
 interface Pair {
@@ -363,8 +367,10 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 0,
   },
-
   masterKey: 'masterKey',
+  latestBlock: new BigNumber(100),
+  middlewareEnabled: true,
+  middlewareAvailable: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -381,7 +387,7 @@ let keyringOptions: KeyringOptions = defaultKeyringOptions;
 function configureContext(opts: ContextOptions): void {
   const getCurrentIdentity = sinon.stub();
   opts.withSeed
-    ? getCurrentIdentity.returns({
+    ? getCurrentIdentity.resolves({
         getPolyXBalance: sinon.stub().resolves(opts.balance?.free),
         did: opts.did,
         hasRoles: sinon.stub().resolves(opts.hasRoles),
@@ -433,6 +439,9 @@ function configureContext(opts: ContextOptions): void {
         : []
     ),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
+    getLatestBlock: sinon.stub().resolves(opts.latestBlock),
+    isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
+    isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
@@ -636,6 +645,9 @@ export function initMocks(opts?: {
   // Keyring
   initKeyring(opts?.keyringOptions);
 
+  // Apollo
+  apolloConstructorStub = sinon.stub().returns(mockInstanceContainer.apolloInstance);
+
   txMocksData.clear();
   errorStub = sinon.stub().throws(new Error('Error'));
 }
@@ -648,9 +660,7 @@ export function cleanup(): void {
   mockInstanceContainer.apiInstance = createApi();
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.keyringInstance = {} as Mutable<Keyring>;
-  mockInstanceContainer.apolloInstance = new MockApolloClientClass() as ApolloClient<
-    NormalizedCacheObject
-  >;
+  mockInstanceContainer.apolloInstance = {} as ApolloClient<NormalizedCacheObject>;
 }
 
 /**
@@ -914,8 +924,13 @@ export function updateTxStatus<
  * @hidden
  * Make calls to `Middleware.query` throw an error
  */
-export function throwOnMiddlewareQuery(): void {
+export function throwOnMiddlewareQuery(err?: object): void {
   const instance = mockInstanceContainer.apolloInstance;
+
+  if (err) {
+    errorStub.throws(err);
+  }
+
   instance.query = errorStub;
 }
 
@@ -1108,6 +1123,22 @@ export const createMockOption = <T extends Codec>(wrapped: T | null = null): Opt
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockCompact = <T extends CompactEncodable>(
+  wrapped: T | null = null
+): Compact<T> =>
+  createMockCodec(
+    {
+      unwrap: () => wrapped as T,
+      isNone: !wrapped,
+      isSome: !!wrapped,
+    },
+    !wrapped
+  ) as Compact<T>;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockMoment = (millis?: number): Moment =>
   createMockNumberCodec(millis) as Moment;
 
@@ -1246,7 +1277,7 @@ export const createMockSecurityToken = (token?: {
   owner_did: IdentityId;
   divisible: bool;
   asset_type: AssetType;
-  link_id: u64;
+  treasury_did: Option<IdentityId>;
 }): SecurityToken => {
   const st = token || {
     name: createMockAssetName(),
@@ -1254,7 +1285,7 @@ export const createMockSecurityToken = (token?: {
     owner_did: createMockIdentityId(),
     divisible: createMockBool(),
     asset_type: createMockAssetType(),
-    link_id: createMockU64(),
+    treasury_did: createMockOption(createMockIdentityId()),
   };
   return createMockCodec({ ...st }, !token) as SecurityToken;
 };

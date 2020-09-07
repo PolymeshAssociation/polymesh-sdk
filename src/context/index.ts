@@ -7,11 +7,11 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
-import { DidRecord, IdentityId, ProtocolOp, TxTag } from 'polymesh-types/types';
+import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
-import { didsWithClaims } from '~/middleware/queries';
+import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   AccountBalance,
@@ -44,20 +44,16 @@ import {
   stringToIdentityId,
   textToString,
   txTagToProtocolOp,
+  u32ToBigNumber,
   valueToDid,
 } from '~/utils';
 import { ROOT_TYPES } from '~/utils/constants';
-
-interface SignerData {
-  currentPair: KeyringPair;
-  did: IdentityId;
-}
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
   middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   keyring: CommonKeyring;
-  pair?: SignerData;
+  pair?: KeyringPair;
 }
 
 interface AccountData {
@@ -78,8 +74,6 @@ export class Context {
   public polymeshApi: ApiPromise;
 
   public currentPair?: KeyringPair;
-
-  private currentIdentity?: Identity;
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
@@ -106,8 +100,7 @@ export class Context {
     this.keyring = keyring;
 
     if (pair) {
-      this.currentPair = pair.currentPair;
-      this.currentIdentity = new Identity({ did: pair.did.toString() }, this);
+      this.currentPair = pair;
     }
   }
 
@@ -166,24 +159,12 @@ export class Context {
     }
 
     if (currentPair) {
-      try {
-        const identityIds = await polymeshApi.query.identity.keyToIdentityIds(
-          currentPair.publicKey
-        );
-        const did = identityIds.unwrap().asUnique;
-
-        return new Context({
-          polymeshApi,
-          middlewareApi,
-          keyring,
-          pair: { currentPair, did },
-        });
-      } catch (err) {
-        throw new PolymeshError({
-          code: ErrorCode.IdentityNotPresent,
-          message: 'There is no Identity associated to this account',
-        });
-      }
+      return new Context({
+        polymeshApi,
+        middlewareApi,
+        keyring,
+        pair: currentPair,
+      });
     }
 
     return new Context({ polymeshApi, middlewareApi, keyring });
@@ -203,16 +184,9 @@ export class Context {
    * Set a pair as the current account keyring pair
    */
   public async setPair(address: string): Promise<void> {
-    const {
-      keyring,
-      polymeshApi: {
-        query: { identity },
-      },
-    } = this;
+    const { keyring } = this;
 
     let newCurrentPair;
-    let identityIds;
-    let did;
 
     try {
       newCurrentPair = keyring.getPair(address);
@@ -223,21 +197,7 @@ export class Context {
       });
     }
 
-    try {
-      identityIds = await identity.keyToIdentityIds(
-        stringToAccountId(newCurrentPair.address, this)
-      );
-
-      did = identityIds.unwrap().asUnique;
-    } catch (e) {
-      throw new PolymeshError({
-        code: ErrorCode.IdentityNotPresent,
-        message: 'There is no Identity associated to this account',
-      });
-    }
-
     this.currentPair = newCurrentPair;
-    this.currentIdentity = new Identity({ did: identityIdToString(did) }, this);
   }
 
   public accountBalance(accountId?: string): Promise<AccountBalance>;
@@ -299,17 +259,34 @@ export class Context {
    *
    * @throws if there is no identity associated to the current account (or there is no current account associated to the SDK instance)
    */
-  public getCurrentIdentity(): Identity {
-    const { currentIdentity } = this;
+  public async getCurrentIdentity(): Promise<Identity> {
+    const {
+      currentPair,
+      polymeshApi: {
+        query: { identity },
+      },
+    } = this;
 
-    if (!currentIdentity) {
+    if (!currentPair) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'There is no account associated with the SDK',
+      });
+    }
+
+    try {
+      const identityIdWrapper = await identity.keyToIdentityIds(
+        stringToAccountId(currentPair.address, this)
+      );
+      const did = identityIdToString(identityIdWrapper.unwrap().asUnique);
+
+      return new Identity({ did }, this);
+    } catch (err) {
       throw new PolymeshError({
         code: ErrorCode.IdentityNotPresent,
         message: 'The current account does not have an associated identity',
       });
     }
-
-    return currentIdentity;
   }
 
   /**
@@ -541,7 +518,7 @@ export class Context {
       },
     } = this;
 
-    const { did } = this.getCurrentIdentity();
+    const { did } = await this.getCurrentIdentity();
 
     const assembleResult = ({ signing_keys: signingKeys }: DidRecord): Signer[] => {
       return signingKeys.map(({ signer: rawSigner }) => signatoryToSigner(rawSigner));
@@ -563,17 +540,20 @@ export class Context {
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
    * @param opts.size - page size
    * @param opts.start - page offset
+   *
+   * @note uses the middleware
    */
   public async issuedClaims(
     opts: {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
       claimTypes?: ClaimType[];
+      includeExpired?: boolean;
       size?: number;
       start?: number;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
-    const { targets, trustedClaimIssuers, claimTypes, size, start } = opts;
+    const { targets, trustedClaimIssuers, claimTypes, includeExpired, size, start } = opts;
 
     const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
@@ -582,6 +562,7 @@ export class Context {
           valueToDid(trustedClaimIssuer)
         ),
         claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        includeExpired,
         count: size,
         skip: start,
       })
@@ -636,8 +617,7 @@ export class Context {
   }
 
   /**
-   *
-   * @param query
+   * Make a query to the middleware server using the apollo client
    */
   public async queryMiddleware<Result extends Partial<Query>>(
     query: GraphqlQuery<unknown>
@@ -645,13 +625,45 @@ export class Context {
     let result: ApolloQueryResult<Result>;
     try {
       result = await this.middlewareApi.query(query);
-    } catch (e) {
+    } catch (err) {
+      const resultMessage = err.networkError?.result?.message;
+      const { message: errorMessage } = err;
+      const message = resultMessage ?? errorMessage;
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: `Error in middleware query: ${e.message}`,
+        code: ErrorCode.MiddlewareError,
+        message: `Error in middleware query: ${message}`,
       });
     }
 
     return result;
+  }
+
+  /**
+   * Return whether the middleware was enabled at startup
+   */
+  public isMiddlewareEnabled(): boolean {
+    return !!this._middlewareApi;
+  }
+
+  /**
+   * Return whether the middleware is enabled and online
+   */
+  public async isMiddlewareAvailable(): Promise<boolean> {
+    try {
+      this.middlewareApi.query(heartbeat());
+    } catch (err) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Retrieve the latest block number
+   */
+  public async getLatestBlock(): Promise<BigNumber> {
+    const { number } = await this.polymeshApi.rpc.chain.getHeader();
+
+    return u32ToBigNumber(number.unwrap());
   }
 }

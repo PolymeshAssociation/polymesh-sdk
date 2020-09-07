@@ -84,12 +84,12 @@ export class Transfers extends Namespace<SecurityToken> {
    * @param args.to - receiver identity
    * @param args.amount - amount of tokens to transfer
    */
-  public canTransfer(args: {
+  public async canTransfer(args: {
     from?: string | Identity;
     to: string | Identity;
     amount: BigNumber;
   }): Promise<TransferStatus> {
-    const { from = this.context.getCurrentIdentity(), to, amount } = args;
+    const { from = await this.context.getCurrentIdentity(), to, amount } = args;
     return this._canTransfer({ from, to, amount });
   }
 

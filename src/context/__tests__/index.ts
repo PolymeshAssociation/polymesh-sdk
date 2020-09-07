@@ -4,7 +4,7 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { Context } from '~/context';
-import { didsWithClaims } from '~/middleware/queries';
+import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
@@ -113,7 +113,7 @@ describe('Context class', () => {
       return expect(context).rejects.toThrow(new Error('Seed must be 32 characters in length'));
     });
 
-    test('should create a Context class from a seed with Pair and Identity attached', async () => {
+    test('should create a Context object from a seed with Pair attached', async () => {
       const newPair = {
         address: 'someAddress1',
         meta: {},
@@ -124,13 +124,6 @@ describe('Context class', () => {
           addFromSeed: newPair,
         },
       });
-      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
-      });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -138,24 +131,15 @@ describe('Context class', () => {
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      sinon.assert.calledOnce(keyToIdentityIdsStub);
       expect(context.currentPair).toEqual(newPair);
-      sinon.assert.match(context.getCurrentIdentity() instanceof Identity, true);
     });
 
-    test('should create a Context class from a keyring with Pair and Identity attached', async () => {
+    test('should create a Context object from a keyring with Pair attached', async () => {
       const pairs = [{ address: 'someAddress', meta: {}, publicKey: 'publicKey' }];
       dsMockUtils.configureMocks({
         keyringOptions: {
           getPairs: pairs,
         },
-      });
-      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
       });
 
       const context = await Context.create({
@@ -164,12 +148,10 @@ describe('Context class', () => {
         keyring: dsMockUtils.getKeyringInstance(),
       });
 
-      sinon.assert.calledOnce(keyToIdentityIdsStub);
       expect(context.currentPair).toEqual(pairs[0]);
-      sinon.assert.match(context.getCurrentIdentity() instanceof Identity, true);
     });
 
-    test('should create a Context class from a uri with Pair and Identity attached', async () => {
+    test('should create a Context object from a uri with Pair attached', async () => {
       const newPair = {
         address: 'someAddress',
         meta: {},
@@ -180,13 +162,6 @@ describe('Context class', () => {
           addFromUri: newPair,
         },
       });
-      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
-      });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -194,12 +169,10 @@ describe('Context class', () => {
         uri: '//Alice',
       });
 
-      sinon.assert.calledOnce(keyToIdentityIdsStub);
       expect(context.currentPair).toEqual(newPair);
-      sinon.assert.match(context.getCurrentIdentity() instanceof Identity, true);
     });
 
-    test('should create a Context class without Pair and Identity attached', async () => {
+    test('should create a Context object without Pair attached', async () => {
       const newPair = {
         address: 'someAddress',
         meta: {},
@@ -209,13 +182,6 @@ describe('Context class', () => {
         keyringOptions: {
           addFromSeed: newPair,
         },
-      });
-      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
       });
 
       const context = await Context.create({
@@ -223,33 +189,7 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      sinon.assert.notCalled(keyToIdentityIdsStub);
       expect(context.currentPair).toBe(undefined);
-      expect(() => context.getCurrentIdentity()).toThrow();
-    });
-
-    test('should throw if the account seed is not assotiated with an IdentityId ', () => {
-      const newPair = {
-        address: 'someAddress',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          addFromSeed: newPair,
-        },
-      });
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds');
-
-      const context = Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
-      });
-
-      return expect(context).rejects.toThrow(
-        new Error('There is no Identity associated to this account')
-      );
     });
   });
 
@@ -307,57 +247,10 @@ describe('Context class', () => {
       );
     });
 
-    test("should throw error if the address doesn't have an associated identity", async () => {
+    test('should set new value for currentPair', async () => {
       const publicKey = 'publicKey';
       const newPublicKey = 'newPublicKey';
       const newAddress = 'newAddress';
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          addFromSeed: {
-            address: 'address',
-            meta: {},
-            publicKey,
-          },
-          getPair: {
-            address: newAddress,
-            meta: {},
-            publicKey: newPublicKey,
-          },
-        },
-      });
-
-      dsMockUtils
-        .createQueryStub('identity', 'keyToIdentityIds')
-        .withArgs(publicKey)
-        .returns(
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockLinkedKeyInfo({
-              Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
-            })
-          )
-        );
-
-      dsMockUtils
-        .createQueryStub('identity', 'keyToIdentityIds')
-        .withArgs(newPublicKey)
-        .returns(dsMockUtils.createMockOption());
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
-      });
-
-      await expect(context.setPair(newAddress)).rejects.toThrow(
-        'There is no Identity associated to this account'
-      );
-    });
-
-    test('should set new values for currentPair and getCurrentIdentity', async () => {
-      const publicKey = 'publicKey';
-      const newPublicKey = 'newPublicKey';
-      const newAddress = 'newAddress';
-      const newIdentityId = 'newIdentityId';
       const accountId = dsMockUtils.createMockAccountId(newAddress);
       const newCurrentPair = {
         address: newAddress,
@@ -376,28 +269,6 @@ describe('Context class', () => {
         },
       });
 
-      dsMockUtils
-        .createQueryStub('identity', 'keyToIdentityIds')
-        .withArgs(publicKey)
-        .returns(
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockLinkedKeyInfo({
-              Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
-            })
-          )
-        );
-
-      dsMockUtils
-        .createQueryStub('identity', 'keyToIdentityIds')
-        .withArgs(accountId)
-        .returns(
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockLinkedKeyInfo({
-              Unique: dsMockUtils.createMockIdentityId(newIdentityId),
-            })
-          )
-        );
-
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -412,7 +283,6 @@ describe('Context class', () => {
       await context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY');
 
       expect(context.currentPair).toEqual(newCurrentPair);
-      expect(context.getCurrentIdentity().did).toEqual(newIdentityId);
     });
   });
 
@@ -552,18 +422,30 @@ describe('Context class', () => {
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      const result = context.getCurrentIdentity();
+      const result = await context.getCurrentIdentity();
       expect(result.did).toBe(did);
     });
 
-    test("should throw an error if the current identity isn't defined", async () => {
+    test("should throw an error if the current account doesn't have an identity", async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      return expect(context.getCurrentIdentity()).rejects.toThrow(
+        'The current account does not have an associated identity'
+      );
+    });
+
+    test('should throw an error if there is no account associated with the SDK', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      expect(() => context.getCurrentIdentity()).toThrow(
-        'The current account does not have an associated identity'
+      return expect(context.getCurrentIdentity()).rejects.toThrow(
+        'There is no account associated with the SDK'
       );
     });
   });
@@ -1176,6 +1058,7 @@ describe('Context class', () => {
           dids: [targetDid],
           trustedClaimIssuers: [targetDid],
           claimTypes: [ClaimTypeEnum.Accredited],
+          includeExpired: true,
           count: 1,
           skip: undefined,
         }),
@@ -1188,6 +1071,7 @@ describe('Context class', () => {
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
+        includeExpired: true,
         size: 1,
       });
 
@@ -1200,6 +1084,182 @@ describe('Context class', () => {
           dids: undefined,
           trustedClaimIssuers: undefined,
           claimTypes: undefined,
+          includeExpired: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
+      );
+
+      result = await context.issuedClaims();
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toBeNull();
+    });
+  });
+
+  describe('method: queryMiddleware', () => {
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+    });
+
+    test('should throw if the middleware query fails', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      await expect(
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware query: Error');
+
+      dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
+
+      await expect(
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware query: Error');
+
+      dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
+
+      await expect(
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware query: Some Message');
+    });
+
+    test('should perform a middleware query and return the results', async () => {
+      const fakeResult = 'res';
+      const fakeQuery = ('fakeQuery' as unknown) as GraphqlQuery<unknown>;
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
+
+      const res = await context.queryMiddleware(fakeQuery);
+
+      expect(res.data).toBe(fakeResult);
+    });
+  });
+
+  describe('method: issuedClaims', () => {
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+    });
+
+    test('should return a list of claims', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const date = 1589816265000;
+      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
+      const claim = {
+        target: new Identity({ did: targetDid }, context),
+        issuer: new Identity({ did: issuerDid }, context),
+        issuedAt: new Date(date),
+      };
+      const fakeClaims = [
+        {
+          ...claim,
+          expiry: new Date(date),
+          claim: {
+            type: customerDueDiligenceType,
+          },
+        },
+        {
+          ...claim,
+          expiry: null,
+          claim: {
+            type: customerDueDiligenceType,
+          },
+        },
+      ];
+      /* eslint-disable @typescript-eslint/camelcase */
+      const commonClaimData = {
+        targetDID: targetDid,
+        issuer: issuerDid,
+        issuance_date: date,
+        last_update_date: date,
+      };
+      const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
+        totalCount: 25,
+        items: [
+          {
+            did: targetDid,
+            claims: [
+              {
+                ...commonClaimData,
+                expiry: date,
+                type: customerDueDiligenceType,
+              },
+              {
+                ...commonClaimData,
+                expiry: null,
+                type: customerDueDiligenceType,
+              },
+            ],
+          },
+        ],
+      };
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({
+          dids: [targetDid],
+          trustedClaimIssuers: [targetDid],
+          claimTypes: [ClaimTypeEnum.Accredited],
+          includeExpired: true,
+          count: 1,
+          skip: undefined,
+        }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
+      );
+
+      let result = await context.issuedClaims({
+        targets: [targetDid],
+        trustedClaimIssuers: [targetDid],
+        claimTypes: [ClaimType.Accredited],
+        includeExpired: true,
+        size: 1,
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toEqual(1);
+
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({
+          dids: undefined,
+          trustedClaimIssuers: undefined,
+          claimTypes: undefined,
+          includeExpired: undefined,
           count: undefined,
           skip: undefined,
         }),
@@ -1256,6 +1316,84 @@ describe('Context class', () => {
       const res = await context.queryMiddleware(fakeQuery);
 
       expect(res.data).toBe(fakeResult);
+    });
+  });
+
+  describe('method: getLatestBlock', () => {
+    test('should return the latest block', async () => {
+      const blockNumber = 100;
+
+      dsMockUtils.createRpcStub('chain', 'getHeader', {
+        returnValue: {
+          number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = await context.getLatestBlock();
+
+      expect(result).toEqual(new BigNumber(blockNumber));
+    });
+  });
+
+  describe('methd: isMiddlewareEnabled', () => {
+    test('should return true if the middleware is enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = context.isMiddlewareEnabled();
+
+      expect(result).toBe(true);
+    });
+
+    test('should return false if the middleware is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = context.isMiddlewareEnabled();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('methd: isMiddlewareAvailable', () => {
+    test('should return true if the middleware is available', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
+      const result = await context.isMiddlewareAvailable();
+
+      expect(result).toBe(true);
+    });
+
+    test('should return false if the middleware is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      dsMockUtils.throwOnMiddlewareQuery();
+
+      const result = await context.isMiddlewareAvailable();
+
+      expect(result).toBe(false);
     });
   });
 });

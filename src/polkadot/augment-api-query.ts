@@ -116,7 +116,6 @@ import {
   STO,
   SecurityToken,
   Signatory,
-  SimpleTokenRecord,
   SmartExtension,
   SmartExtensionType,
   TargetIdAuthorization,
@@ -453,20 +452,6 @@ declare module '@polkadot/api/types/storage' {
     };
     balances: {
       /**
-       * Signing key => Charge Fee to did?. Default is false i.e. the fee will be charged from user balance
-       **/
-      chargeDid: AugmentedQuery<
-        ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<bool>
-      >;
-      /**
-       * Balance held by the identity. It can be spent by its signing keys.
-       **/
-      identityBalance: AugmentedQuery<
-        ApiType,
-        (arg: IdentityId | string | Uint8Array) => Observable<Balance>
-      >;
-      /**
        * Any liquidity locks on some account balances.
        * NOTE: Should only be accessed when setting, changing and freeing a lock.
        **/
@@ -757,7 +742,7 @@ declare module '@polkadot/api/types/storage' {
       /**
        * It stores the current gas fee payer for the current transaction
        **/
-      currentPayer: AugmentedQuery<ApiType, () => Observable<Option<Signatory>>>;
+      currentPayer: AugmentedQuery<ApiType, () => Observable<Option<AccountId>>>;
       /**
        * DID -> identity info
        **/
@@ -1351,41 +1336,6 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<bool>
       >;
     };
-    simpleToken: {
-      /**
-       * Mapping from (ticker, owner DID, spender DID) to allowance amount
-       **/
-      allowance: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentityId | string | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<Balance>
-      >;
-      /**
-       * Mapping from (ticker, owner DID) to their balance
-       **/
-      balanceOf: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId]>
-            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
-        ) => Observable<Balance>
-      >;
-      /**
-       * The details associated with each simple token
-       **/
-      tokens: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<SimpleTokenRecord>
-      >;
-    };
     staking: {
       /**
        * The active era information, it holds index and start.
@@ -1671,22 +1621,6 @@ declare module '@polkadot/api/types/storage' {
     };
     stoCapped: {
       /**
-       * List of SimpleToken tokens which will be accepted as the fund raised type for the STO
-       * (asset_ticker, sto_id, index) -> simple_token_ticker
-       **/
-      allowedTokens: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, u32, u32]>
-            | [
-                Ticker | string | Uint8Array,
-                u32 | AnyNumber | Uint8Array,
-                u32 | AnyNumber | Uint8Array
-              ]
-        ) => Observable<Ticker>
-      >;
-      /**
        * To track the investment data of the investor corresponds to ticker
        * (asset_ticker, sto_id, DID) -> Investment structure
        **/
@@ -1703,16 +1637,15 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Investment>
       >;
       /**
-       * To track the investment amount of the investor corresponds to ticker using SimpleToken
-       * (asset_ticker, simple_token_ticker, sto_id, accountId) -> Invested balance
+       * To track the investment amount of the investor corresponds to ticker
+       * (asset_ticker, sto_id, accountId) -> Invested balance
        **/
       simpleTokenSpent: AugmentedQuery<
         ApiType,
         (
           arg:
-            | ITuple<[Ticker, Ticker, u32, IdentityId]>
+            | ITuple<[Ticker, u32, IdentityId]>
             | [
-                Ticker | string | Uint8Array,
                 Ticker | string | Uint8Array,
                 u32 | AnyNumber | Uint8Array,
                 IdentityId | string | Uint8Array
@@ -1733,32 +1666,6 @@ declare module '@polkadot/api/types/storage' {
         (
           arg: ITuple<[Ticker, u32]> | [Ticker | string | Uint8Array, u32 | AnyNumber | Uint8Array]
         ) => Observable<STO>
-      >;
-      /**
-       * To track the index of the token address for the given STO
-       * (Asset_ticker, sto_id, simple_token_ticker) -> index
-       **/
-      tokenIndexForSto: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, u32, Ticker]>
-            | [
-                Ticker | string | Uint8Array,
-                u32 | AnyNumber | Uint8Array,
-                Ticker | string | Uint8Array
-              ]
-        ) => Observable<Option<u32>>
-      >;
-      /**
-       * To track the no of different tokens allowed as fund raised type for the given STO
-       * (asset_ticker, sto_id) -> count
-       **/
-      tokensCountForSto: AugmentedQuery<
-        ApiType,
-        (
-          arg: ITuple<[Ticker, u32]> | [Ticker | string | Uint8Array, u32 | AnyNumber | Uint8Array]
-        ) => Observable<u32>
       >;
     };
     sudo: {

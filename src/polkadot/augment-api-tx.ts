@@ -167,7 +167,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `documents` Documents to be attached to `ticker`.
        *
        * # Weight
-       * `200_000 + 60_000 * documents.len()`
+       * `500_000_000 + 600_000 * documents.len()`
        **/
       batchAddDocument: AugmentedSubmittable<
         (
@@ -191,7 +191,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `values` Array of the Amount of tokens that get issued.
        *
        * # Weight
-       * `300_000 + 400_000 * issue_asset_items.len().max(values.len())`
+       * `800_000_000 + 900_000 * issue_asset_items.len().max(values.len())`
        **/
       batchIssue: AugmentedSubmittable<
         (
@@ -210,7 +210,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `doc_names` Documents to be removed from `ticker`.
        *
        * # Weight
-       * `200_000 + 60_000 * do_ids.len()`
+       * `500_000_000 + 600_000 * do_ids.len()`
        **/
       batchRemoveDocument: AugmentedSubmittable<
         (
@@ -277,7 +277,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `funding_round` - name of the funding round.
        *
        * # Weight
-       * `400_000 + 20_000 * identifiers.len()`
+       * `3_000_000_000 + 20_000 * identifiers.len()`
        **/
       createAsset: AugmentedSubmittable<
         (
@@ -682,10 +682,10 @@ declare module '@polkadot/api/types/submittable' {
         (amount: Balance | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Change setting that governs if user pays fee via their own balance or identity's balance.
+       * Move some POLYX from balance of self to balance of BRR.
        **/
-      changeChargeDidFlag: AugmentedSubmittable<
-        (chargeDid: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>
+      depositBlockRewardReserveBalance: AugmentedSubmittable<
+        (value: Compact<Balance> | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * Exactly as `transfer`, except the origin must be root and the source account may be
@@ -700,22 +700,6 @@ declare module '@polkadot/api/types/submittable' {
         (
           source: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
           dest: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
-          value: Compact<Balance> | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Claim back POLYX from an identity. Can only be called by master key of the identity.
-       * no-op when,
-       * - value is zero
-       * # <weight>
-       * - Base Weight : 1_000_000
-       * - DB Weight: 1 Read and 1 Write to the destination identityId.
-       * - Origin account is already in memory, so no DB operations for them.
-       * #</weight>
-       **/
-      reclaimIdentityBalance: AugmentedSubmittable<
-        (
-          did: IdentityId | string | Uint8Array,
           value: Compact<Balance> | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
@@ -742,28 +726,6 @@ declare module '@polkadot/api/types/submittable' {
           who: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
           newFree: Compact<Balance> | AnyNumber | Uint8Array,
           newReserved: Compact<Balance> | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Move some POLYX from balance of self to balance of BRR.
-       **/
-      topUpBrrBalance: AugmentedSubmittable<
-        (value: Compact<Balance> | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Move some POLYX from balance of self to balance of an identity.
-       * no-op when,
-       * - value is zero
-       * # <weight>
-       * - Base Weight : 1_000_000
-       * - DB Weight: 1 Read and 1 Write to the destination identityId,
-       * - Origin account is already in memory, so no DB operations for them.
-       * #</weight>
-       **/
-      topUpIdentityBalance: AugmentedSubmittable<
-        (
-          did: IdentityId | string | Uint8Array,
-          value: Compact<Balance> | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -821,7 +783,7 @@ declare module '@polkadot/api/types/submittable' {
        * the vector of results (In event) which has the same length as the `bridge_txs` have
        *
        * # Weight
-       * `50_000 + 200_000 * bridge_txs.len()`
+       * `600_000_000 + 200_000 * bridge_txs.len()`
        **/
       batchForceHandleBridgeTx: AugmentedSubmittable<
         (
@@ -840,7 +802,7 @@ declare module '@polkadot/api/types/submittable' {
        * If any bridge txn is already handled then this function will just ignore it and process next one.
        *
        * # Weight
-       * `50_000 + 200_000 * bridge_txs.len()`
+       * `400_000_000 + 2_000_000 * bridge_txs.len()`
        **/
       batchFreezeTx: AugmentedSubmittable<
         (
@@ -859,7 +821,7 @@ declare module '@polkadot/api/types/submittable' {
        * It deposits an event (i.e TxsHandled) which consist the result of every BridgeTx.
        *
        * # Weight
-       * `50_000 + 200_000 * bridge_txs.len()`
+       * `900_000_000 + 2_000_000 * bridge_txs.len()`
        **/
       batchHandleBridgeTx: AugmentedSubmittable<
         (
@@ -879,7 +841,7 @@ declare module '@polkadot/api/types/submittable' {
        * proposals are not processed.
        *
        * # Weight
-       * `100_000 + 700_000 * bridge_txs.len()`
+       * `500_000_000 + 7_000_000 * bridge_txs.len()`
        **/
       batchProposeBridgeTx: AugmentedSubmittable<
         (
@@ -898,7 +860,7 @@ declare module '@polkadot/api/types/submittable' {
        * If any bridge txn is already handled then this function will just ignore it and process next one.
        *
        * # Weight
-       * `50_000 + 700_000 * bridge_txs.len()`
+       * `400_000_000 + 7_000_000 * bridge_txs.len()`
        **/
       batchUnfreezeTx: AugmentedSubmittable<
         (
@@ -1232,7 +1194,7 @@ declare module '@polkadot/api/types/submittable' {
        * * trusted_issuers - Vector of IdentityId of the trusted claim issuers.
        *
        * # Weight
-       * `50_000 + 250_000 * trusted_issuers.len().max(values.len())`
+       * `read_and_write_weight + 30_000_000 + 250_000 * trusted_issuers.len().max(values.len())`
        **/
       batchAddDefaultTrustedClaimIssuer: AugmentedSubmittable<
         (
@@ -1249,7 +1211,7 @@ declare module '@polkadot/api/types/submittable' {
        * * ticker - Symbol of the asset.
        *
        * # Weight
-       * `100_000 + 100_000 * asset_rules.len().max(values.len())`
+       * `read_and_write_weight + 720_000_000 + 100_000 * asset_rules.len().max(values.len())`
        **/
       batchChangeAssetRule: AugmentedSubmittable<
         (
@@ -1274,7 +1236,7 @@ declare module '@polkadot/api/types/submittable' {
        * * trusted_issuers - Vector of IdentityId of the trusted claim issuers.
        *
        * # Weight
-       * `50_000 + 250_000 * trusted_issuers.len().max(values.len())`
+       * `100_000_000 + 250_000 * trusted_issuers.len().max(values.len())`
        **/
       batchRemoveDefaultTrustedClaimIssuer: AugmentedSubmittable<
         (
@@ -1351,7 +1313,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `DuplicateAssetRules` if `asset_rules` contains multiple entries with the same `rule_id`.
        *
        * # Weight
-       * `150_000 + 50_000 * asset_rules.len()`
+       * `read_and_write_weight + 100_000_000 + 500_000 * asset_rules.len()`
        **/
       replaceAssetRules: AugmentedSubmittable<
         (
@@ -1653,7 +1615,7 @@ declare module '@polkadot/api/types/submittable' {
        * It will just skip that particular authorization.
        *
        * # Weight
-       * `100_000 + 500_000 * auth_ids.len()`
+       * `2_000_000_000 + 5_000_000 * auth_ids.len()`
        **/
       batchAcceptAuthorization: AugmentedSubmittable<
         (authIds: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]) => SubmittableExtrinsic<ApiType>
@@ -1662,7 +1624,7 @@ declare module '@polkadot/api/types/submittable' {
        * Adds an array of authorizations.
        *
        * # Weight
-       * `150_000 + 50_000 * auths.len()`
+       * `900_000_000 + 50_000 * auths.len()`
        **/
       batchAddAuthorization: AugmentedSubmittable<
         (
@@ -1692,7 +1654,7 @@ declare module '@polkadot/api/types/submittable' {
        * `did_issuer`'s signing key.
        *
        * # Weight
-       * `300_000 + 100_000 * claims.len()`
+       * `950_000_000 + 1_000_000 * claims.len()`
        **/
       batchAddClaim: AugmentedSubmittable<
         (
@@ -1721,7 +1683,7 @@ declare module '@polkadot/api/types/submittable' {
        * - Keys should be able to linked to any identity.
        *
        * # Weight
-       * `400_000 + 200_000 * auths.len()`
+       * `2_000_000_000 + 2_000_000 * auths.len()`
        **/
       batchAddSigningKeyWithAuthorization: AugmentedSubmittable<
         (
@@ -1740,7 +1702,7 @@ declare module '@polkadot/api/types/submittable' {
        * Removes an array of authorizations.
        *
        * # Weight
-       * `150_000 + 50_000 * auths.len()`
+       * `900_000_000 + 1_000_000 * auths.len()`
        **/
       batchRemoveAuthorization: AugmentedSubmittable<
         (
@@ -1757,7 +1719,7 @@ declare module '@polkadot/api/types/submittable' {
        * * did_and_claim_data - Vector of the identities & the corresponding claim data whom claim needs to be revoked
        *
        * # Weight
-       * `100_000 + 150_000 * claims.len()`
+       * `500_000_000 + 150_000 * claims.len()`
        **/
       batchRevokeClaim: AugmentedSubmittable<
         (
@@ -1777,7 +1739,7 @@ declare module '@polkadot/api/types/submittable' {
        * - External signing keys can be linked to just one identity.
        *
        * # Weight
-       * `400_000 + 60_000 * signing_keys.len()`
+       * `7_000_000_000 + 600_000 * signing_keys.len()`
        **/
       cddRegisterDid: AugmentedSubmittable<
         (
@@ -1884,7 +1846,7 @@ declare module '@polkadot/api/types/submittable' {
        * It can only called by master key owner.
        *
        * # Weight
-       * `400_000 + 60_000 * signers_to_remove.len()`
+       * `950_000_000 + 60_000 * signers_to_remove.len()`
        **/
       removeSigningKeys: AugmentedSubmittable<
         (
@@ -1943,7 +1905,7 @@ declare module '@polkadot/api/types/submittable' {
        * Only the master key of an identity is able to set signing key permissions.
        *
        * # Weight
-       * `400_000 + 30_000 * permissions.len()`
+       * `600_000_000 + 300_000 * permissions.len()`
        **/
       setPermissionToSigner: AugmentedSubmittable<
         (
@@ -2173,7 +2135,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `signers` - Signatories to add.
        *
        * # Weight
-       * `100_000 + 300_000 * signers.len()`
+       * `900_000_000 + 3_000_000 * signers.len()`
        **/
       addMultisigSignersViaCreator: AugmentedSubmittable<
         (
@@ -2224,7 +2186,7 @@ declare module '@polkadot/api/types/submittable' {
        * * sigs_required - Number of signature required for a given multisig.
        *
        * # Weight
-       * `200_000 + 300_000 * signers.len()`
+       * `900_000_000 + 3_000_000 * signers.len()`
        **/
       changeAllSignersAndSigsRequired: AugmentedSubmittable<
         (
@@ -2402,7 +2364,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `signers` - Signatories to remove.
        *
        * # Weight
-       * `150_000 + 150_000 * signers.len()`
+       * `900_000_000 + 3_000_000 * signers.len()`
        **/
       removeMultisigSignersViaCreator: AugmentedSubmittable<
         (
@@ -2677,9 +2639,21 @@ declare module '@polkadot/api/types/submittable' {
           d: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
+      /**
+       * Enact the referendum
+       *
+       * # Arguments
+       * * `id` - Pip Id that need to be enacted
+       **/
       voteEnactReferendum: AugmentedSubmittable<
         (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
+      /**
+       * Reject the referendum
+       *
+       * # Arguments
+       * * `id` - Pip Id that need to be rejected
+       **/
       voteRejectReferendum: AugmentedSubmittable<
         (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
@@ -2807,7 +2781,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `legs` - Legs included in this instruction.
        *
        * # Weight
-       * `200_000 + 100_000 * legs.len()`
+       * `950_000_000 + 1_000_000 * legs.len()`
        **/
       addInstruction: AugmentedSubmittable<
         (
@@ -2831,7 +2805,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `venues` - Array of venues that are allowed to create instructions for the token in question.
        *
        * # Weight
-       * `200_000 + 50_000 * venues.len()`
+       * `200_000_000 + 500_000 * venues.len()`
        **/
       allowVenues: AugmentedSubmittable<
         (
@@ -2898,7 +2872,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `signers` - Array of signers that are allowed to sign receipts for this venue
        *
        * # Weight
-       * `200_000 + 50_000 * signers.len()`
+       * `200_000_000 + 5_000_000 * signers.len()`
        **/
       createVenue: AugmentedSubmittable<
         (
@@ -2913,7 +2887,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `venues` - Array of venues that are no longer allowed to create instructions for the token in question.
        *
        * # Weight
-       * `200_000 + 50_000 * venues.len()`
+       * `200_000_000 + 500_000 * venues.len()`
        **/
       disallowVenues: AugmentedSubmittable<
         (
@@ -2963,48 +2937,6 @@ declare module '@polkadot/api/types/submittable' {
         (
           instructionId: u64 | AnyNumber | Uint8Array,
           legId: u64 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-    };
-    simpleToken: {
-      /**
-       * Approve another identity to transfer tokens on behalf of the caller
-       **/
-      approve: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          spenderDid: IdentityId | string | Uint8Array,
-          value: Balance | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Create a new token and mint a balance to the issuing identity
-       **/
-      createToken: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          totalSupply: Balance | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Transfer tokens to another identity
-       **/
-      transfer: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          toDid: IdentityId | string | Uint8Array,
-          amount: Balance | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Transfer tokens to another identity using the approval mechanic
-       **/
-      transferFrom: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          fromDid: IdentityId | string | Uint8Array,
-          toDid: IdentityId | string | Uint8Array,
-          amount: Balance | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
     };
@@ -3715,24 +3647,6 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Used to buy tokens using stable coins
-       *
-       * # Arguments
-       * * `origin` Signing key of the investor
-       * * `ticker` Ticker of the token
-       * * `sto_id` A unique identifier to know which STO investor wants to invest in
-       * * `value` Amount of POLYX wants to invest in
-       * * `simple_token_ticker` Ticker of the simple token
-       **/
-      buyTokensBySimpleToken: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          stoId: u32 | AnyNumber | Uint8Array,
-          value: Balance | AnyNumber | Uint8Array,
-          simpleTokenTicker: Ticker | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
        * Used to initialize the STO for a given asset
        *
        * # Arguments
@@ -3743,7 +3657,6 @@ declare module '@polkadot/api/types/submittable' {
        * * `rate` Rate of asset in terms of native currency
        * * `start_date` Unix timestamp at when STO starts
        * * `end_date` Unix timestamp at when STO ends
-       * * `simple_token_ticker` Ticker of the simple token
        **/
       launchSto: AugmentedSubmittable<
         (
@@ -3752,26 +3665,7 @@ declare module '@polkadot/api/types/submittable' {
           cap: Balance | AnyNumber | Uint8Array,
           rate: u128 | AnyNumber | Uint8Array,
           startDate: Moment | AnyNumber | Uint8Array,
-          endDate: Moment | AnyNumber | Uint8Array,
-          simpleTokenTicker: Ticker | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Modify the list of allowed tokens (stable coins) corresponds to given token/asset
-       *
-       * # Arguments
-       * * `origin` Signing key of the token owner
-       * * `ticker` Ticker of the token
-       * * `sto_id` A unique identifier to know which STO investor wants to invest in.
-       * * `simple_token_ticker` Ticker of the stable coin
-       * * `modify_status` Boolean to know whether the provided simple token ticker will be used or not.
-       **/
-      modifyAllowedTokens: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          stoId: u32 | AnyNumber | Uint8Array,
-          simpleTokenTicker: Ticker | string | Uint8Array,
-          modifyStatus: bool | boolean | Uint8Array
+          endDate: Moment | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -4103,7 +3997,7 @@ declare module '@polkadot/api/types/submittable' {
        * - `call`: Call to be relayed on behalf of target
        *
        * # Weight
-       * - The weight of the call to be relayed plus a static 250_000.
+       * - The weight of the call to be relayed plus a static 900_000_000.
        **/
       relayTx: AugmentedSubmittable<
         (

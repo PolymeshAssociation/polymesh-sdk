@@ -1,6 +1,7 @@
 import { Keyring } from '@polkadot/api';
 import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { TxTag } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
 
@@ -225,6 +226,18 @@ export interface IdentityWithClaims {
   claims: ClaimData[];
 }
 
+export interface ExtrinsicData {
+  blockId: number;
+  extrinsicIdx: number;
+  address: string | null;
+  nonce: number;
+  txTag: TxTag;
+  params: object;
+  success: boolean;
+  specVersionId: number;
+  extrinsicHash: string;
+}
+
 export interface ClaimScope {
   scope: string | null;
   ticker?: string;
@@ -320,8 +333,8 @@ export enum TransferStatus {
   FundsLimitReached = 'FundsLimitReached', // 168
 }
 
-export interface ClaimTargets {
-  targets: (string | Identity)[];
+export interface ClaimTarget {
+  target: string | Identity;
   claim: Claim;
   expiry?: Date;
 }
@@ -456,7 +469,13 @@ export interface Signer {
   value: string;
 }
 
+export interface SigningKey {
+  signer: Signer;
+  permissions: Permission[];
+}
+
 export { TxTags } from 'polymesh-types/types';
+export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export * from '~/api/entities/types';
 export * from '~/base/types';
 export { Order } from '~/middleware/types';

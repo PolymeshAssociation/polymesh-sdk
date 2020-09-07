@@ -1,13 +1,26 @@
+import { BlockHash } from '@polkadot/types/interfaces/chain';
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/api/entities/Identity';
-import { cancelProposal, editProposal, EditProposalParams } from '~/api/procedures';
+import {
+  cancelProposal,
+  editProposal,
+  EditProposalParams,
+  voteOnProposal,
+  VoteOnProposalParams,
+} from '~/api/procedures';
 import { Entity, TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, ResultSet } from '~/types';
-import { meshProposalStateToProposalState, u32ToBigNumber, valueToDid } from '~/utils';
+import {
+  balanceToBigNumber,
+  meshProposalStateToProposalState,
+  requestAtBlock,
+  u32ToBigNumber,
+  valueToDid,
+} from '~/utils';
 
 import { ProposalDetails, ProposalStage, ProposalVote, ProposalVotesOrderByInput } from './types';
 
@@ -52,6 +65,8 @@ export class Proposal extends Entity<UniqueIdentifiers> {
    * Check if an identity has voted on the proposal
    *
    * @param args.did - identity representation or identity ID as stored in the blockchain
+   *
+   * @note uses the middleware
    */
   public async identityHasVoted(args?: { did: string | Identity }): Promise<boolean> {
     const { pipId, context } = this;
@@ -61,7 +76,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     if (args) {
       identity = valueToDid(args.did);
     } else {
-      identity = context.getCurrentIdentity().did;
+      ({ did: identity } = await context.getCurrentIdentity());
     }
 
     const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
@@ -87,6 +102,8 @@ export class Proposal extends Entity<UniqueIdentifiers> {
    * @param opts.orderBy - the order in witch the votes are returned
    * @param opts.size - number of votes in each requested page (default: 25)
    * @param opts.start - page offset
+   *
+   * @note uses the middleware
    */
   public async getVotes(
     opts: {
@@ -177,34 +194,75 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       context: {
         polymeshApi: {
           query: { pips },
-          rpc,
+        },
+      },
+      context,
+      pipId,
+    } = this;
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const [metadata, blockNumber] = await Promise.all([
+      pips.proposalMetadata(pipId),
+      context.getLatestBlock(),
+    ]);
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+
+    const { end: rawEnd, cool_off_until: rawCoolOff } = metadata.unwrap();
+
+    const end = u32ToBigNumber(rawEnd);
+    const coolOff = u32ToBigNumber(rawCoolOff);
+
+    if (blockNumber.lt(coolOff)) {
+      return ProposalStage.CoolOff;
+    }
+
+    if (blockNumber.lt(end)) {
+      return ProposalStage.Open;
+    }
+
+    return ProposalStage.Ended;
+  }
+
+  /**
+   * Vote on the proposal
+   *
+   * @param args.vote - the actual vote. True for aye and false for nay
+   * @param args.bondAmount - amount of POLYX to bond for this vote. Bonded POLYX will provide weight to the vote
+   */
+  public async vote(args: VoteOnProposalParams): Promise<TransactionQueue<void>> {
+    const { context, pipId } = this;
+    return voteOnProposal.prepare({ pipId, ...args }, context);
+  }
+
+  /**
+   * Retrieve the minimum amount of POLYX that must be bonded by aye votes for the proposal to be considered valid
+   */
+  public async minimumBondedAmount(): Promise<BigNumber> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+          rpc: { chain },
         },
       },
       pipId,
     } = this;
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    const [metadata, header] = await Promise.all([
-      pips.proposalMetadata(pipId),
-      (rpc as any).chain.getHeader(),
-    ]);
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+    const [stage, metadata] = await Promise.all([this.getStage(), pips.proposalMetadata(pipId)]);
 
-    const { end: rawEnd, cool_off_until: rawCoolOff } = metadata.unwrap();
-    const { number: rawBlockId } = header;
+    const { end: endBlock } = metadata.unwrap();
 
-    const blockId = u32ToBigNumber(rawBlockId);
-    const end = u32ToBigNumber(rawEnd);
-    const coolOff = u32ToBigNumber(rawCoolOff);
+    const opts: { args: []; blockHash?: BlockHash } = {
+      args: [],
+    };
 
-    if (blockId.lt(coolOff)) {
-      return ProposalStage.CoolOff;
+    if (stage !== ProposalStage.Open) {
+      const blockHash = await chain.getBlockHash(endBlock);
+      opts.blockHash = blockHash;
     }
 
-    if (blockId.lt(end)) {
-      return ProposalStage.Open;
-    }
+    const result = await requestAtBlock(pips.quorumThreshold, opts);
 
-    return ProposalStage.Ended;
+    return balanceToBigNumber(result);
   }
 }

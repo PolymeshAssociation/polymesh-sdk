@@ -25,6 +25,7 @@ interface AddTransactionOpts<Values extends unknown[]> {
 
 /**
  * @hidden
+ *
  * Represents an operation performed on the Polymesh blockchain.
  * A Procedure can be prepared to yield a [[TransactionQueue]] that can be run
  */
@@ -92,7 +93,8 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     let allowed: boolean;
 
     if (typeof checkRolesResult !== 'boolean') {
-      allowed = await context.getCurrentIdentity().hasRoles(checkRolesResult);
+      const identity = await context.getCurrentIdentity();
+      allowed = await identity.hasRoles(checkRolesResult);
     } else {
       allowed = checkRolesResult;
     }

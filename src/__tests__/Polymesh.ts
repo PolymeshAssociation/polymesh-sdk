@@ -7,17 +7,30 @@ import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
-import { modifyClaims, removeSigningKeys, reserveTicker, transferPolyX } from '~/api/procedures';
+import {
+  modifyClaims,
+  registerIdentity,
+  removeSigningKeys,
+  reserveTicker,
+  transferPolyX,
+} from '~/api/procedures';
 import { TransactionQueue } from '~/base';
-import { didsWithClaims } from '~/middleware/queries';
-import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
+import { didsWithClaims, heartbeat, transactions } from '~/middleware/queries';
+import {
+  CallIdEnum,
+  ClaimTypeEnum,
+  ExtrinsicResult,
+  IdentityWithClaimsResult,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   AccountBalance,
   ClaimData,
-  ClaimTargets,
+  ClaimTarget,
   ClaimType,
+  IdentityWithClaims,
   ResultSet,
   Signer,
   SignerType,
@@ -155,6 +168,8 @@ describe('Polymesh Class', () => {
         key: 'someKey',
       };
 
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri,
@@ -167,6 +182,60 @@ describe('Polymesh Class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
         uri: accountUri,
       });
+    });
+
+    test('should throw an error if the middleware credentials are incorrect', async () => {
+      const accountUri = '//uri';
+      const middleware = {
+        link: 'wrong',
+        key: 'alsoWrong',
+      };
+
+      dsMockUtils.throwOnMiddlewareQuery(new Error('Forbidden'));
+
+      let err;
+      try {
+        await Polymesh.connect({
+          nodeUrl: 'wss://some.url',
+          accountUri,
+          middleware,
+        });
+      } catch (e) {
+        err = e;
+      }
+
+      expect(err.message).toBe('Incorrect middleware URL or API key');
+
+      dsMockUtils.throwOnMiddlewareQuery(new Error('Missing Authentication Token'));
+      err = undefined;
+
+      try {
+        await Polymesh.connect({
+          nodeUrl: 'wss://some.url',
+          accountUri,
+          middleware,
+        });
+      } catch (e) {
+        err = e;
+      }
+
+      expect(err.message).toBe('Incorrect middleware URL or API key');
+
+      // other errors are caught when performing queries later on
+      dsMockUtils.throwOnMiddlewareQuery(new Error('Anything else'));
+      err = undefined;
+
+      try {
+        await Polymesh.connect({
+          nodeUrl: 'wss://some.url',
+          accountUri,
+          middleware,
+        });
+      } catch (e) {
+        err = e;
+      }
+
+      expect(err).toBeUndefined();
     });
 
     test('should set an optional signer for the polkadot API', async () => {
@@ -224,31 +293,6 @@ describe('Polymesh Class', () => {
       return expect(polymeshApiPromise).rejects.toThrow(
         `Error while connecting to "${nodeUrl}": "Error"`
       );
-    });
-  });
-
-  describe('method: getIdentityBalance', () => {
-    test("should return the identity's POLYX balance", async () => {
-      const fakeBalance = new BigNumber(20);
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          withSeed: true,
-          balance: { free: fakeBalance, locked: new BigNumber(0) },
-        },
-      });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountSeed: 'seed',
-      });
-
-      let result = await polymesh.getIdentityBalance();
-      expect(result).toEqual(fakeBalance);
-
-      entityMockUtils.configureMocks({ identityOptions: { getPolyXBalance: fakeBalance } });
-
-      result = await polymesh.getIdentityBalance({ did: 'someDid' });
-      expect(result).toEqual(fakeBalance);
     });
   });
 
@@ -320,7 +364,7 @@ describe('Polymesh Class', () => {
       });
 
       const args = {
-        ticker: 'someTicker',
+        ticker: 'SOMETICKER',
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
@@ -520,8 +564,12 @@ describe('Polymesh Class', () => {
       });
 
       const context = dsMockUtils.getContextInstance();
+      const [result, currentIdentity] = await Promise.all([
+        polymesh.getIdentity(),
+        context.getCurrentIdentity(),
+      ]);
 
-      expect(polymesh.getIdentity()).toEqual(context.getCurrentIdentity());
+      expect(result).toEqual(currentIdentity);
     });
 
     test('should return an identity object with the passed did', async () => {
@@ -532,7 +580,7 @@ describe('Polymesh Class', () => {
 
       const params = { did: 'testDid' };
 
-      const result = polymesh.getIdentity(params);
+      const result = await polymesh.getIdentity(params);
       const context = dsMockUtils.getContextInstance();
 
       expect(result).toMatchObject(new Identity(params, context));
@@ -696,14 +744,12 @@ describe('Polymesh Class', () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
-      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
       const claim = {
         target: new Identity({ did: targetDid }, context),
         issuer: new Identity({ did: issuerDid }, context),
         issuedAt: new Date(date),
       };
-
-      const fakeClaims = [
+      const fakeClaims: IdentityWithClaims[] = [
         {
           identity: new Identity({ did: targetDid }, context),
           claims: [
@@ -711,14 +757,7 @@ describe('Polymesh Class', () => {
               ...claim,
               expiry: new Date(date),
               claim: {
-                type: customerDueDiligenceType,
-              },
-            },
-            {
-              ...claim,
-              expiry: null,
-              claim: {
-                type: customerDueDiligenceType,
+                type: ClaimType.CustomerDueDiligence,
               },
             },
           ],
@@ -740,12 +779,7 @@ describe('Polymesh Class', () => {
               {
                 ...commonClaimData,
                 expiry: date,
-                type: customerDueDiligenceType,
-              },
-              {
-                ...commonClaimData,
-                expiry: null,
-                type: customerDueDiligenceType,
+                type: ClaimTypeEnum.CustomerDueDiligence,
               },
             ],
           },
@@ -754,6 +788,7 @@ describe('Polymesh Class', () => {
       /* eslint-enabled @typescript-eslint/camelcase */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -764,12 +799,18 @@ describe('Polymesh Class', () => {
         },
       });
 
+      sinon
+        .stub(utilsModule, 'toIdentityWithClaimsArray')
+        .withArgs(didsWithClaimsQueryResponse.items, context)
+        .returns(fakeClaims);
+
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
           dids: [targetDid],
           scope: undefined,
           trustedClaimIssuers: [targetDid],
           claimTypes: [ClaimTypeEnum.Accredited],
+          includeExpired: false,
           count: 1,
           skip: undefined,
         }),
@@ -782,6 +823,7 @@ describe('Polymesh Class', () => {
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
+        includeExpired: false,
         size: 1,
       });
 
@@ -795,6 +837,7 @@ describe('Polymesh Class', () => {
           scope: undefined,
           trustedClaimIssuers: undefined,
           claimTypes: undefined,
+          includeExpired: true,
           count: undefined,
           skip: undefined,
         }),
@@ -849,7 +892,7 @@ describe('Polymesh Class', () => {
           name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
-          link_id: dsMockUtils.createMockU64(),
+          treasury_did: dsMockUtils.createMockOption(),
           total_supply: dsMockUtils.createMockBalance(),
           /* eslint-enable @typescript-eslint/camelcase */
         }),
@@ -874,7 +917,7 @@ describe('Polymesh Class', () => {
           name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
-          link_id: dsMockUtils.createMockU64(),
+          treasury_did: dsMockUtils.createMockOption(),
           total_supply: dsMockUtils.createMockBalance(),
           /* eslint-enable @typescript-eslint/camelcase */
         }),
@@ -904,9 +947,9 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      const claims: ClaimTargets[] = [
+      const claims: ClaimTarget[] = [
         {
-          targets: ['someDid'],
+          target: 'someDid',
           claim: {
             type: ClaimType.Accredited,
             scope: 'someIdentityId',
@@ -942,9 +985,9 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      const claims: ClaimTargets[] = [
+      const claims: ClaimTarget[] = [
         {
-          targets: ['someDid'],
+          target: 'someDid',
           claim: {
             type: ClaimType.Accredited,
             scope: 'someIdentityId',
@@ -980,9 +1023,9 @@ describe('Polymesh Class', () => {
         accountUri: '//uri',
       });
 
-      const claims: ClaimTargets[] = [
+      const claims: ClaimTarget[] = [
         {
-          targets: ['someDid'],
+          target: 'someDid',
           claim: {
             type: ClaimType.Accredited,
             scope: 'someIdentityId',
@@ -1154,6 +1197,32 @@ describe('Polymesh Class', () => {
     });
   });
 
+  describe('method: registerIdentity', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const args = {
+        targetAccount: 'someTarget',
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Identity>;
+
+      sinon
+        .stub(registerIdentity, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await polymesh.registerIdentity(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: onDisconnect', () => {
     test('should call the supplied listener when the event is emitted and return an unsubscribe callback', async () => {
       const polkadot = dsMockUtils.getApiInstance();
@@ -1175,6 +1244,136 @@ describe('Polymesh Class', () => {
       polkadot.emit('disconnected');
 
       sinon.assert.calledOnce(callback);
+    });
+  });
+
+  describe('method: getTransactionHistory', () => {
+    test('should return a list of transactions', async () => {
+      const address = 'someAddress';
+      const key = 'someKey';
+      const tag = TxTags.identity.CddRegisterDid;
+      const moduleId = ModuleIdEnum.Identity;
+      const callId = CallIdEnum.CddRegisterDid;
+
+      sinon
+        .stub(utilsModule, 'addressToKey')
+        .withArgs(address)
+        .returns(key);
+
+      sinon
+        .stub(utilsModule, 'txTagToExtrinsicIdentifier')
+        .withArgs(tag)
+        .returns({
+          moduleId,
+          callId,
+        });
+
+      /* eslint-disable @typescript-eslint/camelcase */
+      const transactionsQueryResponse: ExtrinsicResult = {
+        totalCount: 20,
+        items: [
+          {
+            block_id: 1,
+            address: address,
+            success: 0,
+          },
+          {
+            block_id: 2,
+            success: 1,
+          },
+        ],
+      };
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      dsMockUtils.createApolloQueryStub(
+        transactions({
+          block_id: undefined,
+          address: key,
+          module_id: moduleId,
+          call_id: callId,
+          success: undefined,
+          count: 2,
+          skip: 1,
+          orderBy: undefined,
+        }),
+        {
+          transactions: transactionsQueryResponse,
+        }
+      );
+
+      let result = await polymesh.getTransactionHistory({
+        address,
+        tag,
+        size: 2,
+        start: 1,
+      });
+
+      expect(result.data[0].blockId).toEqual(1);
+      expect(result.data[1].blockId).toEqual(2);
+      expect(result.data[0].address).toEqual(address);
+      expect(result.data[1].address).toBeNull();
+      expect(result.data[0].success).toBeFalsy();
+      expect(result.data[1].success).toBeTruthy();
+      expect(result.count).toEqual(20);
+      expect(result.next).toEqual(3);
+
+      dsMockUtils.createApolloQueryStub(
+        transactions({
+          block_id: undefined,
+          address: undefined,
+          module_id: undefined,
+          call_id: undefined,
+          success: undefined,
+          count: undefined,
+          skip: undefined,
+          orderBy: undefined,
+        }),
+        {
+          transactions: transactionsQueryResponse,
+        }
+      );
+
+      result = await polymesh.getTransactionHistory();
+
+      expect(result.data[0].blockId).toEqual(1);
+      expect(result.data[0].address).toEqual(address);
+      expect(result.data[0].success).toBeFalsy();
+      expect(result.count).toEqual(20);
+      expect(result.next).toBeNull();
+    });
+  });
+
+  describe('method: getLatestBlock', () => {
+    test('should return the latest block number', async () => {
+      const blockNumber = new BigNumber(100);
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true, latestBlock: blockNumber } });
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      const result = await polymesh.getLatestBlock();
+
+      expect(result).toEqual(blockNumber);
     });
   });
 });

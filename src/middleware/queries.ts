@@ -3,10 +3,13 @@ import gql from 'graphql-tag';
 import {
   QueryDidsWithClaimsArgs,
   QueryEventsByIndexedArgsArgs,
+  QueryIssuerDidsWithClaimsByTargetArgs,
   QueryProposalsArgs,
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
   QueryTokensByTrustedClaimIssuerArgs,
+  QueryTokensHeldByDidArgs,
+  QueryTransactionsArgs,
 } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
 
@@ -56,6 +59,7 @@ export function didsWithClaims(
       $scope: String
       $trustedClaimIssuers: [String!]
       $claimTypes: [ClaimTypeEnum!]
+      $includeExpired: Boolean
       $count: Int
       $skip: Int
     ) {
@@ -64,6 +68,7 @@ export function didsWithClaims(
         scope: $scope
         trustedClaimIssuers: $trustedClaimIssuers
         claimTypes: $claimTypes
+        includeExpired: $includeExpired
         count: $count
         skip: $skip
       ) {
@@ -201,6 +206,81 @@ export function tokensByTrustedClaimIssuer(
 /**
  * @hidden
  *
+ * Get all tickers of tokens that were held at some point by the given did
+ */
+export function tokensHeldByDid(
+  variables: QueryTokensHeldByDidArgs
+): GraphqlQuery<QueryTokensHeldByDidArgs> {
+  const query = gql`
+    query TokensHeldByDidQuery($did: String!, $count: Int, $skip: Int, $order: Order) {
+      tokensHeldByDid(did: $did, count: $count, skip: $skip, order: $order) {
+        totalCount
+        items
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get transactions
+ */
+export function transactions(
+  variables?: QueryTransactionsArgs
+): GraphqlQuery<QueryTransactionsArgs | undefined> {
+  const query = gql`
+    query TransactionsQuery(
+      $block_id: Int
+      $address: String
+      $module_id: ModuleIdEnum
+      $call_id: CallIdEnum
+      $success: Boolean
+      $count: Int
+      $skip: Int
+      $orderBy: TransactionOrderByInput
+    ) {
+      transactions(
+        block_id: $block_id
+        address: $address
+        module_id: $module_id
+        call_id: $call_id
+        success: $success
+        count: $count
+        skip: $skip
+        orderBy: $orderBy
+      ) {
+        totalCount
+        items {
+          block_id
+          extrinsic_idx
+          address
+          nonce
+          module_id
+          call_id
+          params
+          success
+          spec_version_id
+          extrinsic_hash
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
  * Get the scopes (and ticker, if applicable) of claims issued on an identity
  */
 export function scopesByIdentity(
@@ -218,5 +298,92 @@ export function scopesByIdentity(
   return {
     query,
     variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get issuer dids with at least one claim for given target
+ */
+export function issuerDidsWithClaimsByTarget(
+  variables: QueryIssuerDidsWithClaimsByTargetArgs
+): GraphqlQuery<QueryIssuerDidsWithClaimsByTargetArgs> {
+  const query = gql`
+    query IssuerDidsWithClaimsByTargetQuery(
+      $target: String!
+      $scope: String
+      $trustedClaimIssuers: [String!]
+      $includeExpired: Boolean
+      $count: Int
+      $skip: Int
+    ) {
+      issuerDidsWithClaimsByTarget(
+        target: $target
+        scope: $scope
+        trustedClaimIssuers: $trustedClaimIssuers
+        includeExpired: $includeExpired
+        count: $count
+        skip: $skip
+      ) {
+        totalCount
+        items {
+          did
+          claims {
+            targetDID
+            issuer
+            issuance_date
+            last_update_date
+            expiry
+            type
+            jurisdiction
+            scope
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Fetch the number of the latest block that has been processed by the middleware
+ */
+export function latestProcessedBlock(): GraphqlQuery {
+  const query = gql`
+    query {
+      latestBlock {
+        id
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Middleware heartbeat
+ */
+export function heartbeat(): GraphqlQuery {
+  const query = gql`
+    query {
+      heartbeat
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
   };
 }
