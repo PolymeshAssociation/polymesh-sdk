@@ -15,6 +15,7 @@ import {
   DispatchErrorModule,
   EventRecord,
   ExtrinsicStatus,
+  Hash,
   Index,
   Moment,
   RefCount,
@@ -1185,6 +1186,11 @@ export const createMockU64 = (value?: number): u64 => createMockNumberCodec(valu
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockBytes = (value?: string): Bytes => createMockU8ACodec(value) as Bytes;
+
+/**
+ * @hidden
+ */
+export const createMockHash = (value?: string): Hash => createMockStringCodec(value) as Hash;
 
 /**
  * @hidden

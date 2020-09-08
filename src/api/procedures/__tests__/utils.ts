@@ -1,4 +1,4 @@
-import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -13,6 +13,9 @@ jest.mock(
 describe('assertProposalUnlocked', () => {
   const pipId = 10;
   const mockAddress = 'someAddress';
+  const details = ({
+    transaction: 'someModule.someMethod',
+  } as unknown) as ProposalDetails;
 
   let mockContext: Mocked<Context>;
 
@@ -43,9 +46,8 @@ describe('assertProposalUnlocked', () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {
-          state: ProposalState.Killed,
-          module: 'someModule',
-          method: 'someMethod',
+          ...details,
+          lastState: ProposalState.Killed,
         },
       },
     });
@@ -64,9 +66,8 @@ describe('assertProposalUnlocked', () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {
-          state: ProposalState.Pending,
-          module: 'someModule',
-          method: 'someMethod',
+          ...details,
+          lastState: ProposalState.Pending,
         },
         getStage: ProposalStage.Open,
       },
@@ -86,9 +87,8 @@ describe('assertProposalUnlocked', () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {
-          state: ProposalState.Pending,
-          module: 'someModule',
-          method: 'someMethod',
+          ...details,
+          lastState: ProposalState.Pending,
         },
         getStage: ProposalStage.CoolOff,
       },
