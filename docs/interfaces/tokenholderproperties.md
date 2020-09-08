@@ -16,4 +16,4 @@
 
 • **canBeIssuedTo**: *boolean*
 
-*Defined in [src/api/entities/SecurityToken/types.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/api/entities/SecurityToken/types.ts#L27)*
+*Defined in [src/api/entities/SecurityToken/types.ts:27](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/api/entities/SecurityToken/types.ts#L27)*

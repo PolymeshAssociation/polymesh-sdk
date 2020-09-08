@@ -25,7 +25,7 @@ Handles all Claims related functionality
 
 ▸ **addClaims**(`args`: Omit‹[ModifyClaimsParams](../globals.md#modifyclaimsparams), "operation"›): *Promise‹[TransactionQueue](transactionqueue.md)‹void››*
 
-*Defined in [src/Claims.ts:39](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Claims.ts#L39)*
+*Defined in [src/Claims.ts:39](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/Claims.ts#L39)*
 
 Add claims to identities
 
@@ -43,7 +43,7 @@ ___
 
 ▸ **editClaims**(`args`: Omit‹[ModifyClaimsParams](../globals.md#modifyclaimsparams), "operation"›): *Promise‹[TransactionQueue](transactionqueue.md)‹void››*
 
-*Defined in [src/Claims.ts:48](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Claims.ts#L48)*
+*Defined in [src/Claims.ts:48](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/Claims.ts#L48)*
 
 Edit claims associated to identities (only the expiry date can be modified)
 
@@ -63,9 +63,11 @@ ___
 
 ▸ **getCddClaims**(`opts`: object): *Promise‹[ResultSet](../interfaces/resultset.md)‹[ClaimData](../interfaces/claimdata.md)››*
 
-*Defined in [src/Claims.ts:224](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Claims.ts#L224)*
+*Defined in [src/Claims.ts:227](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/Claims.ts#L227)*
 
 Retrieve the list of CDD claims for a target Identity
+
+**`note`** supports pagination
 
 **`note`** uses the middleware
 
@@ -87,7 +89,7 @@ ___
 
 ▸ **getClaimScopes**(`opts`: object): *Promise‹[ClaimScope](../interfaces/claimscope.md)[]›*
 
-*Defined in [src/Claims.ts:182](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Claims.ts#L182)*
+*Defined in [src/Claims.ts:184](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/Claims.ts#L184)*
 
 Retrieve all scopes in which claims have been made for the target identity.
   If the scope is an asset DID, the corresponding ticker is returned as well
@@ -112,9 +114,11 @@ ___
 
 ▸ **getIdentitiesWithClaims**(`opts`: object): *Promise‹[ResultSet](../interfaces/resultset.md)‹[IdentityWithClaims](../interfaces/identitywithclaims.md)››*
 
-*Defined in [src/Claims.ts:110](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Claims.ts#L110)*
+*Defined in [src/Claims.ts:112](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/Claims.ts#L112)*
 
 Retrieve a list of identities with claims associated to them. Can be filtered using parameters
+
+**`note`** supports pagination
 
 **`note`** uses the middleware
 
@@ -139,9 +143,11 @@ ___
 
 ▸ **getIssuedClaims**(`opts`: object): *Promise‹[ResultSet](../interfaces/resultset.md)‹[ClaimData](../interfaces/claimdata.md)››*
 
-*Defined in [src/Claims.ts:70](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Claims.ts#L70)*
+*Defined in [src/Claims.ts:71](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/Claims.ts#L71)*
 
 Retrieve all claims issued by an Identity
+
+**`note`** supports pagination
 
 **`note`** uses the middleware
 
@@ -163,11 +169,13 @@ ___
 
 ▸ **getTargetingClaims**(`opts`: object): *Promise‹[ResultSet](../interfaces/resultset.md)‹[IdentityWithClaims](../interfaces/identitywithclaims.md)››*
 
-*Defined in [src/Claims.ts:260](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Claims.ts#L260)*
+*Defined in [src/Claims.ts:263](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/Claims.ts#L263)*
 
 Retrieve all claims issued about an identity, grouped by claim issuer
 
 **`note`** supports pagination
+
+**`note`** uses the middleware
 
 **Parameters:**
 
@@ -179,7 +187,7 @@ Name | Type | Description |
 `scope?` | undefined &#124; string | - |
 `size?` | undefined &#124; number | - |
 `start?` | undefined &#124; number | - |
-`target?` | string &#124; [Identity](identity.md) | identity for which to fetch CDD claims (optional, defaults to the current identity) |
+`target?` | string &#124; [Identity](identity.md) | identity for which to fetch targeting claims (optional, defaults to the current identity) |
 `trustedClaimIssuers?` | (string &#124; [Identity](identity.md)‹›)[] | - |
 
 **Returns:** *Promise‹[ResultSet](../interfaces/resultset.md)‹[IdentityWithClaims](../interfaces/identitywithclaims.md)››*
@@ -190,7 +198,7 @@ ___
 
 ▸ **revokeClaims**(`args`: Omit‹[ModifyClaimsParams](../globals.md#modifyclaimsparams), "operation"›): *Promise‹[TransactionQueue](transactionqueue.md)‹void››*
 
-*Defined in [src/Claims.ts:57](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/Claims.ts#L57)*
+*Defined in [src/Claims.ts:57](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/Claims.ts#L57)*
 
 Revoke claims from identities
 

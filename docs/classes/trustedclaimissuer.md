@@ -31,7 +31,7 @@ Represents a trusted claim issuer for a specific token in the Polymesh blockchai
 
 *Inherited from [Entity](entity.md).[context](entity.md#protected-context)*
 
-*Defined in [src/base/Entity.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/base/Entity.ts#L49)*
+*Defined in [src/base/Entity.ts:49](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/base/Entity.ts#L49)*
 
 ___
 
@@ -39,7 +39,7 @@ ___
 
 • **identity**: *[Identity](identity.md)*
 
-*Defined in [src/api/entities/TrustedClaimIssuer.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/api/entities/TrustedClaimIssuer.ts#L32)*
+*Defined in [src/api/entities/TrustedClaimIssuer.ts:32](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/api/entities/TrustedClaimIssuer.ts#L32)*
 
 identity of the trusted claim issuer
 
@@ -49,7 +49,7 @@ ___
 
 • **ticker**: *string*
 
-*Defined in [src/api/entities/TrustedClaimIssuer.ts:37](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/api/entities/TrustedClaimIssuer.ts#L37)*
+*Defined in [src/api/entities/TrustedClaimIssuer.ts:37](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/api/entities/TrustedClaimIssuer.ts#L37)*
 
 ticker of the Security Token
 
@@ -61,7 +61,7 @@ ___
 
 *Inherited from [Entity](entity.md).[uuid](entity.md#uuid)*
 
-*Defined in [src/base/Entity.ts:47](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/base/Entity.ts#L47)*
+*Defined in [src/base/Entity.ts:47](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/base/Entity.ts#L47)*
 
 ## Methods
 
@@ -69,7 +69,7 @@ ___
 
 ▸ **addedAt**(): *Promise‹[EventIdentifier](../interfaces/eventidentifier.md) | null›*
 
-*Defined in [src/api/entities/TrustedClaimIssuer.ts:57](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/api/entities/TrustedClaimIssuer.ts#L57)*
+*Defined in [src/api/entities/TrustedClaimIssuer.ts:57](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/api/entities/TrustedClaimIssuer.ts#L57)*
 
 Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
 
@@ -87,7 +87,7 @@ ___
 
 *Inherited from [Entity](entity.md).[generateUuid](entity.md#static-generateuuid)*
 
-*Defined in [src/base/Entity.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/base/Entity.ts#L15)*
+*Defined in [src/base/Entity.ts:15](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/base/Entity.ts#L15)*
 
 Generate the Entity's UUID from its identifying properties
 
@@ -111,7 +111,7 @@ ___
 
 *Inherited from [Entity](entity.md).[unserialize](entity.md#static-unserialize)*
 
-*Defined in [src/base/Entity.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/b42f319/src/base/Entity.ts#L24)*
+*Defined in [src/base/Entity.ts:24](https://github.com/PolymathNetwork/polymesh-sdk/blob/374efb41/src/base/Entity.ts#L24)*
 
 Unserialize a UUID into its Unique Identifiers
 

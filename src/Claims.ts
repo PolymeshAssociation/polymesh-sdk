@@ -65,6 +65,7 @@ export class Claims {
    *
    * @param opts.target - identity (optional, defaults to the current identity)
    *
+   * @note supports pagination
    * @note uses the middleware
    */
   public async getIssuedClaims(
@@ -105,6 +106,7 @@ export class Claims {
    * @param opts.size - page size
    * @param opts.start - page offset
    *
+   * @note supports pagination
    * @note uses the middleware
    */
   public async getIdentitiesWithClaims(
