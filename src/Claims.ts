@@ -219,6 +219,7 @@ export class Claims {
    * @param opts.size - page size
    * @param opts.start - page offset
    *
+   * @note supports pagination
    * @note uses the middleware
    */
   public async getCddClaims(
