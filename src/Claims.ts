@@ -251,7 +251,7 @@ export class Claims {
   /**
    * Retrieve all claims issued about an identity, grouped by claim issuer
    *
-   * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current identity)
+   * @param opts.target - identity for which to fetch targeting claims (optional, defaults to the current identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
