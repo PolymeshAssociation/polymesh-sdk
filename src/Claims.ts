@@ -235,8 +235,7 @@ export class Claims {
     if (target) {
       did = valueToDid(target);
     } else {
-      const { did: identityId } = await context.getCurrentIdentity();
-      did = identityId;
+      ({ did } = await context.getCurrentIdentity());
     }
 
     const result = await context.issuedClaims({
