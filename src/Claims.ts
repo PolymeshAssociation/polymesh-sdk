@@ -256,6 +256,7 @@ export class Claims {
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
+   * @note uses the middleware
    */
   public async getTargetingClaims(
     opts: {
