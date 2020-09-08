@@ -232,8 +232,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     const {
       context: {
         polymeshApi: {
-          query: { pips },
-          rpc: { chain },
+          query: { pips, system },
         },
       },
       pipId,
@@ -248,7 +247,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     };
 
     if (stage !== ProposalStage.Open) {
-      const blockHash = await chain.getBlockHash(endBlock);
+      const blockHash = await system.blockHash(endBlock);
       opts.blockHash = blockHash;
     }
 
