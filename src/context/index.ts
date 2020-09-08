@@ -38,7 +38,9 @@ import {
   calculateNextKey,
   createClaim,
   identityIdToString,
+  numberToU32,
   posRatioToBigNumber,
+  requestAtBlock,
   signatoryToSigner,
   stringToAccountId,
   stringToIdentityId,
@@ -168,6 +170,28 @@ export class Context {
     }
 
     return new Context({ polymeshApi, middlewareApi, keyring });
+  }
+
+  /**
+   * Retrieve whether the current node is an archive node (contains a full history from genesis onward) or not
+   */
+  public async isCurrentNodeArchive(): Promise<boolean> {
+    const {
+      polymeshApi: {
+        query: { balances, system },
+      },
+    } = this;
+
+    try {
+      const blockHash = await system.blockHash(numberToU32(0, this));
+      const balance = await requestAtBlock(balances.totalIssuance, {
+        args: [],
+        blockHash,
+      });
+      return balanceToBigNumber(balance).gt(new BigNumber(0));
+    } catch (e) {
+      return false;
+    }
   }
 
   /**
