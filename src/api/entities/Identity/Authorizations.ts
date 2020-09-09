@@ -3,10 +3,12 @@ import { Authorization } from 'polymesh-types/types';
 
 import { AuthorizationRequest } from '~/api/entities';
 import { Namespace } from '~/base';
-import { PaginationOptions, ResultSet, SignerType } from '~/types';
+import { AuthorizationType, PaginationOptions, ResultSet, SignerType } from '~/types';
 import { tuple } from '~/types/utils';
 import {
   authorizationDataToAuthorization,
+  authorizationTypeToMeshAuthorizationType,
+  booleanToBool,
   identityIdToString,
   momentToDate,
   requestPaginated,
@@ -25,35 +27,51 @@ export class Authorizations extends Namespace<Identity> {
   /**
    * Fetch all pending authorization requests for which this identity is the target
    *
-   * @note supports pagination
+   * @param opts.includeExpired - whether to include expired authorizations. Defaults to true
    */
-  public async getReceived(
-    paginationOpts?: PaginationOptions
-  ): Promise<ResultSet<AuthorizationRequest>> {
+  public async getReceived(opts: {
+    filterByType: AuthorizationType;
+  }): Promise<AuthorizationRequest[]>;
+
+  public async getReceived(opts: { includeExpired: boolean }): Promise<AuthorizationRequest[]>;
+
+  public async getReceived(opts?: {
+    filterByType: AuthorizationType;
+    includeExpired: boolean;
+  }): Promise<AuthorizationRequest[]>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getReceived(opts?: {
+    filterByType?: AuthorizationType;
+    includeExpired?: boolean;
+  }): Promise<AuthorizationRequest[]> {
     const {
-      context: { polymeshApi },
       context,
       parent: { did },
+      context: {
+        polymeshApi: { rpc },
+      },
     } = this;
 
     const signatory = signerToSignatory({ type: SignerType.Identity, value: did }, context);
+    const rawBoolean = booleanToBool(opts?.includeExpired ?? true, context);
+    const rawAuthorizationType = opts?.filterByType
+      ? authorizationTypeToMeshAuthorizationType(opts.filterByType, context)
+      : undefined;
 
-    const { entries, lastKey: next } = await requestPaginated(
-      polymeshApi.query.identity.authorizations,
-      {
-        arg: signatory,
-        paginationOpts,
-      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: Authorization[] = await (rpc as any).identity.getFilteredAuthorizations(
+      signatory,
+      rawBoolean,
+      rawAuthorizationType
     );
 
     const data = this.createAuthorizationRequests(
-      entries.map(([, auth]) => ({ auth, target: did }))
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      result.map(auth => ({ auth, target: did }))
     );
 
-    return {
-      data,
-      next,
-    };
+    return data;
   }
 
   /**
@@ -65,26 +83,25 @@ export class Authorizations extends Namespace<Identity> {
     paginationOpts?: PaginationOptions
   ): Promise<ResultSet<AuthorizationRequest>> {
     const {
-      context: { polymeshApi },
       context,
       parent: { did },
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
     } = this;
 
-    const { entries, lastKey: next } = await requestPaginated(
-      polymeshApi.query.identity.authorizationsGiven,
-      {
-        arg: stringToIdentityId(did, context),
-        paginationOpts,
-      }
-    );
+    const { entries, lastKey: next } = await requestPaginated(identity.authorizationsGiven, {
+      arg: stringToIdentityId(did, context),
+      paginationOpts,
+    });
 
     const authQueryParams = entries.map(([storageKey, signatory]) =>
       tuple(signatory, storageKey.args[1] as u64)
     );
 
-    const authorizations = await polymeshApi.query.identity.authorizations.multi<Authorization>(
-      authQueryParams
-    );
+    const authorizations = await identity.authorizations.multi<Authorization>(authQueryParams);
 
     const data = this.createAuthorizationRequests(
       authorizations.map((auth, index) => ({
@@ -108,24 +125,22 @@ export class Authorizations extends Namespace<Identity> {
     auths: { auth: Authorization; target: string }[]
   ): AuthorizationRequest[] {
     const { context } = this;
-    return auths
-      .map(auth => {
-        const {
-          auth: { expiry, auth_id: authId, authorization_data: data, authorized_by: issuer },
-          target,
-        } = auth;
+    return auths.map(auth => {
+      const {
+        auth: { expiry, auth_id: authId, authorization_data: data, authorized_by: issuer },
+        target,
+      } = auth;
 
-        return {
+      return new AuthorizationRequest(
+        {
           authId: u64ToBigNumber(authId),
           expiry: expiry.isSome ? momentToDate(expiry.unwrap()) : null,
           data: authorizationDataToAuthorization(data),
           targetDid: target,
           issuerDid: identityIdToString(issuer),
-        };
-      })
-      .filter(({ expiry }) => expiry === null || expiry > new Date())
-      .map(args => {
-        return new AuthorizationRequest(args, context);
-      });
+        },
+        context
+      );
+    });
   }
 }

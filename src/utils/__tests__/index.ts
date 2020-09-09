@@ -10,6 +10,7 @@ import {
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  AuthorizationType as MeshAuthorizationType,
   Claim as MeshClaim,
   DocumentHash,
   DocumentName,
@@ -59,6 +60,7 @@ import {
   authIdentifierToAuthTarget,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
+  authorizationTypeToMeshAuthorizationType,
   authTargetToAuthIdentifier,
   balanceToBigNumber,
   batchArguments,
@@ -2143,6 +2145,35 @@ describe('permissionToMeshPermission and meshPermissionToPermission', () => {
     permission = dsMockUtils.createMockPermission(fakeResult);
 
     result = meshPermissionToPermission(permission);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('authorizationTypeToMeshAuthorizationType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('authorizationTypeToMeshAuthorizationType should convert a AuthorizationType to a polkadot AuthorizationType object', () => {
+    const value = AuthorizationType.TransferTicker;
+    const fakeResult = ('convertedAuthorizationType' as unknown) as MeshAuthorizationType;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationType', value)
+      .returns(fakeResult);
+
+    const result = authorizationTypeToMeshAuthorizationType(value, context);
+
     expect(result).toEqual(fakeResult);
   });
 });
