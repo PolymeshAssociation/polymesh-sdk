@@ -115,6 +115,8 @@ describe('Authorizations class', () => {
         filterByType: AuthorizationType.NoData,
         includeExpired: false,
       });
+
+      expect(result).toEqual(expectedAuthorizations);
     });
   });
 
