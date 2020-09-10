@@ -228,6 +228,7 @@ export class Polymesh {
    *
    * @param args.to - account id that will receive the POLYX
    * @param args.amount - amount of POLYX to be transferred
+   * @param args.memo - identifier string to help differentiate transfers
    */
   public transferPolyX(args: TransferPolyXParams): Promise<TransactionQueue<void>> {
     return transferPolyX.prepare(args, this.context);
