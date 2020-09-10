@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { Memo } from 'polymesh-types/polymesh';
 import sinon from 'sinon';
 
 import { prepareTransferPolyX, TransferPolyXParams } from '~/api/procedures/transferPolyX';
@@ -108,7 +109,9 @@ describe('transferPolyX procedure', () => {
   test('should add a balance transfer transaction to the queue', async () => {
     const to = 'someAccount';
     const amount = new BigNumber(99);
+    const memo = 'someMessage';
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    const rawMemo = ('memo' as unknown) as Memo;
 
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
       dsMockUtils.createMockOption(
@@ -119,8 +122,9 @@ describe('transferPolyX procedure', () => {
     );
 
     sinon.stub(utilsModule, 'numberToBalance').returns(rawAmount);
+    sinon.stub(utilsModule, 'stringToMemo').returns(rawMemo);
 
-    const tx = dsMockUtils.createTxStub('balances', 'transfer');
+    let tx = dsMockUtils.createTxStub('balances', 'transfer');
     const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
 
     await prepareTransferPolyX.call(proc, {
@@ -129,5 +133,22 @@ describe('transferPolyX procedure', () => {
     });
 
     sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), tx, {}, to, rawAmount);
+
+    tx = dsMockUtils.createTxStub('balances', 'transferWithMemo');
+
+    await prepareTransferPolyX.call(proc, {
+      to,
+      amount,
+      memo,
+    });
+
+    sinon.assert.calledWith(
+      procedureMockUtils.getAddTransactionStub(),
+      tx,
+      {},
+      to,
+      rawAmount,
+      rawMemo
+    );
   });
 });
