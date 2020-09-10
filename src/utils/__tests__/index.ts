@@ -3,6 +3,7 @@ import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
+import { Memo } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
@@ -115,6 +116,7 @@ import {
   stringToFundingRoundName,
   stringToIdentityId,
   stringToJurisdictionName,
+  stringToMemo,
   stringToText,
   stringToTicker,
   textToString,
@@ -330,6 +332,35 @@ describe('numberToBalance and balanceToBigNumber', () => {
 
     const result = balanceToBigNumber(balance);
     expect(result).toEqual(new BigNumber(fakeResult).div(Math.pow(10, 6)));
+  });
+});
+
+describe('stringToMemo', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToMemo should convert a string to a polkadot Memo object', () => {
+    const value = 'someDescription';
+    const fakeResult = ('memoDescription' as unknown) as Memo;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Memo', value)
+      .returns(fakeResult);
+
+    const result = stringToMemo(value, context);
+
+    expect(result).toEqual(fakeResult);
   });
 });
 
