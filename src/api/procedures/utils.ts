@@ -12,9 +12,9 @@ export async function assertProposalUnlocked(pipId: number, context: Context): P
 
   const [details, stage] = await Promise.all([proposal.getDetails(), proposal.getStage()]);
 
-  const { state } = details;
+  const { lastState } = details;
 
-  if (state !== ProposalState.Pending) {
+  if (lastState !== ProposalState.Pending) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The proposal must be in pending state',

@@ -14,8 +14,20 @@ import { TransactionQueue } from '~/base';
 import { Context } from '~/context';
 import { proposals } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, SubCallback, TransactionArgument, UnsubCallback } from '~/types';
-import { addressToKey, balanceToBigNumber, identityIdToString, u32ToBigNumber } from '~/utils';
+import {
+  Ensured,
+  ProposalWithDetails,
+  SubCallback,
+  TransactionArgument,
+  UnsubCallback,
+} from '~/types';
+import {
+  addressToKey,
+  balanceToBigNumber,
+  identityIdToString,
+  middlewareProposalToProposalDetails,
+  u32ToBigNumber,
+} from '~/utils';
 
 /**
  * Handles all Governance related functionality
@@ -58,7 +70,9 @@ export class Governance {
   }
 
   /**
-   * Retrieve a list of proposals. Can be filtered using parameters
+   * Retrieve a list of proposals and their respective details. Can be filtered using parameters
+   *
+   * @note details for a single proposal can be fetched using the `Proposal` entity's `getDetails` method
    *
    * @param opts.proposers -  accounts for which to fetch proposals. Defaults to all proposers
    * @param opts.states - state of the proposal
@@ -76,7 +90,7 @@ export class Governance {
       size?: number;
       start?: number;
     } = {}
-  ): Promise<Proposal[]> {
+  ): Promise<ProposalWithDetails[]> {
     const { context } = this;
 
     const { proposers, states, orderBy, size, start } = opts;
@@ -91,7 +105,16 @@ export class Governance {
       })
     );
 
-    return result.data.proposals.map(({ pipId }) => new Proposal({ pipId }, context));
+    const proposalsWithDetails = result.data.proposals.map(rawProposal => {
+      const { pipId } = rawProposal;
+      const proposal = new Proposal({ pipId }, context);
+      return {
+        proposal,
+        details: middlewareProposalToProposalDetails(rawProposal, context),
+      };
+    });
+
+    return proposalsWithDetails;
   }
 
   /**
@@ -193,5 +216,36 @@ export class Governance {
     ]);
 
     return assembleResult(rawCoolOff, rawDuration);
+  }
+
+  /**
+   * Returns the minimum stake a proposal must gather in order to be considered by the committee
+   *
+   * @note can be subscribed to
+   */
+  public async minimumBondedAmount(): Promise<BigNumber>;
+  public async minimumBondedAmount(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async minimumBondedAmount(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { pips },
+        },
+      },
+    } = this;
+
+    if (callback) {
+      return pips.quorumThreshold(res => {
+        callback(balanceToBigNumber(res));
+      });
+    }
+
+    const quorumThreshold = await pips.quorumThreshold();
+
+    return balanceToBigNumber(quorumThreshold);
   }
 }

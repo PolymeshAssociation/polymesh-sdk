@@ -1,3 +1,5 @@
+import { u32 } from '@polkadot/types';
+import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import { DidRecord, ProtocolOp, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -1316,6 +1318,52 @@ describe('Context class', () => {
       const res = await context.queryMiddleware(fakeQuery);
 
       expect(res.data).toBe(fakeResult);
+    });
+  });
+
+  describe('method: isCurrentNodeArchive', () => {
+    let requestAtBlockStub: sinon.SinonStub;
+    let numberToU32Stub: sinon.SinonStub<[number | BigNumber, Context], u32>;
+    let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
+    const balance = new BigNumber(100);
+    const rawBalance = dsMockUtils.createMockBalance(balance.toNumber());
+
+    beforeAll(() => {
+      requestAtBlockStub = sinon.stub(utilsModule, 'requestAtBlock');
+      numberToU32Stub = sinon.stub(utilsModule, 'numberToU32');
+      balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
+    });
+
+    test('should return whether the current node is archive or not', async () => {
+      dsMockUtils.createQueryStub('balances', 'totalIssuance', {
+        returnValue: rawBalance,
+      });
+      dsMockUtils.createQueryStub('system', 'blockHash', {
+        returnValue: dsMockUtils.createMockHash(),
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      numberToU32Stub.withArgs(0, context).returns(dsMockUtils.createMockU32());
+      balanceToBigNumberStub.returns(balance);
+
+      requestAtBlockStub.resolves(dsMockUtils.createMockBalance());
+      let result = await context.isCurrentNodeArchive();
+      expect(result).toBeTruthy();
+
+      balanceToBigNumberStub.returns(new BigNumber(0));
+
+      requestAtBlockStub.resolves(dsMockUtils.createMockBalance());
+      result = await context.isCurrentNodeArchive();
+      expect(result).toBeFalsy();
+
+      requestAtBlockStub.throws();
+      result = await context.isCurrentNodeArchive();
+      expect(result).toBeFalsy();
     });
   });
 
