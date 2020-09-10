@@ -1221,11 +1221,18 @@ export async function requestAtBlock<F extends AnyFunction>(
   opts: {
     blockHash?: string | BlockHash;
     args: Parameters<F>;
-  }
+  },
+  context: Context
 ): Promise<ObsInnerType<ReturnType<F>>> {
   const { blockHash, args } = opts;
 
   if (blockHash) {
+    if (!context.isArchiveNode) {
+      throw new PolymeshError({
+        code: ErrorCode.QueryAborted,
+        message: 'The node must be archive to execute the query',
+      });
+    }
     return query.at(blockHash, ...args);
   }
 

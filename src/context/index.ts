@@ -77,6 +77,8 @@ export class Context {
 
   public currentPair?: KeyringPair;
 
+  public isArchiveNode = false;
+
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
   /**
@@ -143,6 +145,7 @@ export class Context {
 
     let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
     let currentPair: KeyringPair | undefined;
+    let context: Context;
 
     if (passedKeyring) {
       keyring = passedKeyring;
@@ -161,15 +164,19 @@ export class Context {
     }
 
     if (currentPair) {
-      return new Context({
+      context = new Context({
         polymeshApi,
         middlewareApi,
         keyring,
         pair: currentPair,
       });
+    } else {
+      context = new Context({ polymeshApi, middlewareApi, keyring });
     }
 
-    return new Context({ polymeshApi, middlewareApi, keyring });
+    context.isArchiveNode = await context.isCurrentNodeArchive();
+
+    return context;
   }
 
   /**
@@ -184,10 +191,14 @@ export class Context {
 
     try {
       const blockHash = await system.blockHash(numberToU32(0, this));
-      const balance = await requestAtBlock(balances.totalIssuance, {
-        args: [],
-        blockHash,
-      });
+      const balance = await requestAtBlock(
+        balances.totalIssuance,
+        {
+          args: [],
+          blockHash,
+        },
+        this
+      );
       return balanceToBigNumber(balance).gt(new BigNumber(0));
     } catch (e) {
       return false;

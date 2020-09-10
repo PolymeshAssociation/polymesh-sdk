@@ -173,6 +173,7 @@ interface ContextOptions {
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
   middlewareAvailable?: boolean;
+  isArchiveNode?: boolean;
 }
 
 interface Pair {
@@ -372,6 +373,7 @@ const defaultContextOptions: ContextOptions = {
   latestBlock: new BigNumber(100),
   middlewareEnabled: true,
   middlewareAvailable: true,
+  isArchiveNode: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -443,6 +445,7 @@ function configureContext(opts: ContextOptions): void {
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
     isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
+    isArchiveNode: opts.isArchiveNode,
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);

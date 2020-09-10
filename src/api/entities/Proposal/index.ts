@@ -230,6 +230,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
    */
   public async minimumBondedAmount(): Promise<BigNumber> {
     const {
+      context,
       context: {
         polymeshApi: {
           query: { pips, system },
@@ -251,7 +252,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       opts.blockHash = blockHash;
     }
 
-    const result = await requestAtBlock(pips.quorumThreshold, opts);
+    const result = await requestAtBlock(pips.quorumThreshold, opts, context);
 
     return balanceToBigNumber(result);
   }
