@@ -17,7 +17,7 @@ import * as utilsModule from '~/utils';
 import { Proposal } from '../';
 
 describe('Proposal class', () => {
-  const pipId = 10;
+  const pipId = new BigNumber(10);
   let context: Context;
   let proposal: Proposal;
   let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
@@ -56,7 +56,7 @@ describe('Proposal class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(Proposal.isUniqueIdentifiers({ pipId: 10 })).toBe(true);
+      expect(Proposal.isUniqueIdentifiers({ pipId })).toBe(true);
       expect(Proposal.isUniqueIdentifiers({})).toBe(false);
       expect(Proposal.isUniqueIdentifiers({ pipId: '10' })).toBe(false);
     });
@@ -120,7 +120,7 @@ describe('Proposal class', () => {
 
       dsMockUtils.createApolloQueryStub(
         proposalVotes({
-          pipId,
+          pipId: pipId.toNumber(),
           vote: undefined,
           orderBy: undefined,
           count: undefined,
@@ -176,7 +176,7 @@ describe('Proposal class', () => {
 
   describe('method: getDetails', () => {
     test('should return the proposal details', async () => {
-      const variables = { pipId };
+      const variables = { pipId: pipId.toNumber() };
       const proposer = 'someProposer';
       const url = 'http://someUrl';
       const description = 'some description';
@@ -190,7 +190,7 @@ describe('Proposal class', () => {
       const totalNaysWeight = new BigNumber(20);
       const rawProposal = '0x110000';
       const fakeProposal = {
-        pipId,
+        pipId: pipId.toNumber(),
         proposer,
         createdAt: createdAt.toNumber(),
         url,

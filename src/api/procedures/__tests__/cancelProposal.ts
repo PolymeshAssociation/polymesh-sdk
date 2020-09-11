@@ -1,4 +1,5 @@
 import { AccountId } from '@polkadot/types/interfaces';
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { isAuthorized, Params, prepareCancelProposal } from '~/api/procedures/cancelProposal';
@@ -11,7 +12,7 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('cancelProposal procedure', () => {
-  const pipId = 10;
+  const pipId = new BigNumber(10);
   const mockAddress = 'someAddress';
   const proposal = ('proposal' as unknown) as PostTransactionValue<void>;
 
@@ -56,9 +57,15 @@ describe('cancelProposal procedure', () => {
   test('should add a cancel proposal transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
+    const rawPipId = dsMockUtils.createMockPipId(pipId);
+    sinon
+      .stub(utilsModule, 'numberToPipId')
+      .withArgs(pipId, mockContext)
+      .returns(rawPipId);
+
     await prepareCancelProposal.call(proc, { pipId });
 
-    sinon.assert.calledWith(addTransactionStub, cancelProposalTransaction, {}, pipId);
+    sinon.assert.calledWith(addTransactionStub, cancelProposalTransaction, {}, rawPipId);
   });
 
   test('should assert that the proposal is not locked', async () => {

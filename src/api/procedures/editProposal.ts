@@ -1,7 +1,9 @@
+import BigNumber from 'bignumber.js';
+
 import { assertProposalUnlocked } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
-import { accountIdToString, stringToText } from '~/utils';
+import { accountIdToString, numberToPipId, stringToText } from '~/utils';
 
 export type EditProposalParams =
   | {
@@ -16,7 +18,7 @@ export type EditProposalParams =
 /**
  * @hidden
  */
-export type Params = { pipId: number } & EditProposalParams;
+export type Params = { pipId: BigNumber } & EditProposalParams;
 
 /**
  * @hidden
@@ -45,7 +47,7 @@ export async function prepareEditProposal(
   this.addTransaction(
     tx.pips.amendProposal,
     {},
-    pipId,
+    numberToPipId(pipId, context),
     discussionUrl ? stringToText(discussionUrl, context) : null,
     description ? stringToText(description, context) : null
   );
@@ -56,6 +58,7 @@ export async function prepareEditProposal(
  */
 export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): Promise<boolean> {
   const {
+    context,
     context: {
       polymeshApi: {
         query: { pips },
@@ -63,7 +66,7 @@ export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): 
     },
   } = this;
 
-  const metadata = await pips.proposalMetadata(pipId);
+  const metadata = await pips.proposalMetadata(numberToPipId(pipId, context));
   const { proposer } = metadata.unwrap();
 
   return accountIdToString(proposer) === this.context.getCurrentPair().address;
