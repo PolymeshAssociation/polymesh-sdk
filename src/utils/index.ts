@@ -15,7 +15,7 @@ import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { camelCase, chunk, groupBy, isEqual, map, padEnd, snakeCase } from 'lodash';
-import { Memo } from 'polymesh-types/polymesh';
+import { Memo, PipId } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
@@ -1053,6 +1053,13 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
  */
 export function stringToText(url: string, context: Context): Text {
   return context.polymeshApi.createType('Text', url);
+}
+
+/**
+ * @hidden
+ */
+export function numberToPipId(id: number | BigNumber, context: Context): PipId {
+  return context.polymeshApi.createType('PipId', new BigNumber(id).toString());
 }
 
 /**

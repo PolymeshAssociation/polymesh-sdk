@@ -3,7 +3,7 @@ import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
-import { Memo } from 'polymesh-types/polymesh';
+import { Memo, PipId } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
@@ -91,6 +91,7 @@ import {
   moduleAddressToString,
   momentToDate,
   numberToBalance,
+  numberToPipId,
   numberToU32,
   numberToU64,
   padString,
@@ -502,6 +503,35 @@ describe('stringToTicker and tickerToString', () => {
 
     const result = tickerToString(ticker);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('numberToPipId', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('numberToPipId should convert a number to a polkadot pipId object', () => {
+    const value = new BigNumber(100);
+    const fakeResult = ('100' as unknown) as PipId;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PipId', value.toString())
+      .returns(fakeResult);
+
+    const result = numberToPipId(value, context);
+
+    expect(result).toBe(fakeResult);
   });
 });
 

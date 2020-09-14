@@ -1,12 +1,14 @@
+import BigNumber from 'bignumber.js';
+
 import { Procedure } from '~/base';
-import { accountIdToString } from '~/utils';
+import { accountIdToString, numberToPipId } from '~/utils';
 
 import { assertProposalUnlocked } from './utils';
 
 /**
  * @hidden
  */
-export type Params = { pipId: number };
+export type Params = { pipId: BigNumber };
 
 /**
  * @hidden
@@ -25,7 +27,7 @@ export async function prepareCancelProposal(
 
   await assertProposalUnlocked(pipId, context);
 
-  this.addTransaction(tx.pips.cancelProposal, {}, pipId);
+  this.addTransaction(tx.pips.cancelProposal, {}, numberToPipId(pipId, context));
 }
 
 /**
@@ -33,6 +35,7 @@ export async function prepareCancelProposal(
  */
 export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): Promise<boolean> {
   const {
+    context,
     context: {
       polymeshApi: {
         query: { pips },
@@ -40,7 +43,7 @@ export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): 
     },
   } = this;
 
-  const metadata = await pips.proposalMetadata(pipId);
+  const metadata = await pips.proposalMetadata(numberToPipId(pipId, context));
   const { proposer } = metadata.unwrap();
 
   return accountIdToString(proposer) === this.context.getCurrentPair().address;
