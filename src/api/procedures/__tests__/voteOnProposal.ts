@@ -17,7 +17,7 @@ jest.mock(
 );
 
 describe('voteOnProposal procedure', () => {
-  const pipId = 10;
+  const pipId = new BigNumber(10);
   const mockAddress = 'someAddress';
   const vote = true;
   const bondAmount = new BigNumber(10);
@@ -178,6 +178,13 @@ describe('voteOnProposal procedure', () => {
         } as ProposalDetails,
       },
     });
+
+    const rawPipId = dsMockUtils.createMockPipId(pipId);
+    sinon
+      .stub(utilsModule, 'numberToPipId')
+      .withArgs(pipId, mockContext)
+      .returns(rawPipId);
+
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareVoteOnProposal.call(proc, { pipId, ...args });
@@ -186,7 +193,7 @@ describe('voteOnProposal procedure', () => {
       addTransactionStub,
       voteOnProposalTransaction,
       {},
-      pipId,
+      rawPipId,
       rawVote,
       rawBondAmount
     );

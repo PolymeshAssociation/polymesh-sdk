@@ -57,6 +57,7 @@ import {
   LinkedKeyInfo,
   Permission,
   Pip,
+  PipId,
   PipsMetadata,
   PosRatio,
   ProposalState,
@@ -1787,3 +1788,9 @@ export const createMockSigningKey = (signingKey?: {
     !signingKey
   ) as SigningKey;
 };
+
+/**
+ * @hidden
+ */
+export const createMockPipId = (id: number | BigNumber): PipId =>
+  createMockU32(new BigNumber(id).toNumber()) as PipId;

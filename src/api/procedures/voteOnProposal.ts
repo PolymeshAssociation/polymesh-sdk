@@ -4,14 +4,14 @@ import { Proposal } from '~/api/entities';
 import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
-import { booleanToBool, numberToBalance } from '~/utils';
+import { booleanToBool, numberToBalance, numberToPipId } from '~/utils';
 
 export type VoteOnProposalParams = {
   vote: boolean;
   bondAmount: BigNumber;
 };
 
-export type Params = { pipId: number } & VoteOnProposalParams;
+export type Params = { pipId: BigNumber } & VoteOnProposalParams;
 
 /**
  * @hidden
@@ -73,7 +73,7 @@ export async function prepareVoteOnProposal(
   this.addTransaction(
     tx.pips.vote,
     {},
-    pipId,
+    numberToPipId(pipId, context),
     booleanToBool(vote, context),
     numberToBalance(bondAmount, context)
   );
