@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 import { Context } from '~/context';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -11,7 +13,7 @@ jest.mock(
 );
 
 describe('assertProposalUnlocked', () => {
-  const pipId = 10;
+  const pipId = new BigNumber(10);
   const mockAddress = 'someAddress';
   const details = ({
     transaction: 'someModule.someMethod',

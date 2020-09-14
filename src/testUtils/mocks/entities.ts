@@ -68,7 +68,7 @@ interface AuthorizationRequestOptions {
 }
 
 interface ProposalOptions {
-  pipId?: number;
+  pipId?: BigNumber;
   getDetails?: ProposalDetails;
   getStage?: ProposalStage;
   identityHasVoted?: boolean;
@@ -200,7 +200,7 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
 const defaultProposalOptions: ProposalOptions = {
-  pipId: 1,
+  pipId: new BigNumber(1),
   getDetails: {
     lastState: ProposalState.Referendum,
     transaction: TxTags.treasury.Disbursement,
