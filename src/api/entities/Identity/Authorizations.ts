@@ -27,22 +27,21 @@ export class Authorizations extends Namespace<Identity> {
   /**
    * Fetch all pending authorization requests for which this identity is the target
    *
+   * @param opts.type - fetch only authorizations of this type. Fetches all types if not passed
    * @param opts.includeExpired - whether to include expired authorizations. Defaults to true
    */
-  public async getReceived(opts: {
-    filterByType: AuthorizationType;
-  }): Promise<AuthorizationRequest[]>;
+  public async getReceived(opts: { type: AuthorizationType }): Promise<AuthorizationRequest[]>;
 
   public async getReceived(opts: { includeExpired: boolean }): Promise<AuthorizationRequest[]>;
 
   public async getReceived(opts?: {
-    filterByType: AuthorizationType;
+    type: AuthorizationType;
     includeExpired: boolean;
   }): Promise<AuthorizationRequest[]>;
 
   // eslint-disable-next-line require-jsdoc
   public async getReceived(opts?: {
-    filterByType?: AuthorizationType;
+    type?: AuthorizationType;
     includeExpired?: boolean;
   }): Promise<AuthorizationRequest[]> {
     const {
@@ -55,8 +54,8 @@ export class Authorizations extends Namespace<Identity> {
 
     const signatory = signerToSignatory({ type: SignerType.Identity, value: did }, context);
     const rawBoolean = booleanToBool(opts?.includeExpired ?? true, context);
-    const rawAuthorizationType = opts?.filterByType
-      ? authorizationTypeToMeshAuthorizationType(opts.filterByType, context)
+    const rawAuthorizationType = opts?.type
+      ? authorizationTypeToMeshAuthorizationType(opts.type, context)
       : undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,10 +65,7 @@ export class Authorizations extends Namespace<Identity> {
       rawAuthorizationType
     );
 
-    const data = this.createAuthorizationRequests(
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      result.map(auth => ({ auth, target: did }))
-    );
+    const data = this.createAuthorizationRequests(result.map(auth => ({ auth, target: did })));
 
     return data;
   }

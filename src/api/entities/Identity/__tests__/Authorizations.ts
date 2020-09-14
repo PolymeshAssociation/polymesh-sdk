@@ -112,7 +112,7 @@ describe('Authorizations class', () => {
       expect(result).toEqual(expectedAuthorizations);
 
       result = await authsNamespace.getReceived({
-        filterByType: AuthorizationType.NoData,
+        type: AuthorizationType.NoData,
         includeExpired: false,
       });
 
