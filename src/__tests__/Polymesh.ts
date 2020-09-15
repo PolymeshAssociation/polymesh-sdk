@@ -8,36 +8,17 @@ import sinon from 'sinon';
 
 import { Identity, TickerReservation } from '~/api/entities';
 import {
-  modifyClaims,
   registerIdentity,
   removeSigningKeys,
   reserveTicker,
   transferPolyX,
 } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
-import { didsWithClaims, heartbeat, transactions } from '~/middleware/queries';
-import {
-  CallIdEnum,
-  ClaimTypeEnum,
-  ExtrinsicResult,
-  IdentityWithClaimsResult,
-  ModuleIdEnum,
-} from '~/middleware/types';
+import { heartbeat, transactions } from '~/middleware/queries';
+import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import {
-  AccountBalance,
-  ClaimData,
-  ClaimTarget,
-  ClaimType,
-  IdentityWithClaims,
-  ResultSet,
-  Signer,
-  SignerType,
-  SubCallback,
-  TickerReservationStatus,
-} from '~/types';
-import { ClaimOperation } from '~/types/internal';
+import { AccountBalance, Signer, SignerType, SubCallback, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
@@ -706,154 +687,6 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getIssuedClaims', () => {
-    test('should return a list of issued claims', async () => {
-      const context = dsMockUtils.getContextInstance();
-      const issuedClaims: ResultSet<ClaimData> = {
-        data: [
-          {
-            target: new Identity({ did: 'someDid' }, context),
-            issuer: new Identity({ did: 'otherDid' }, context),
-            issuedAt: new Date(),
-            expiry: null,
-            claim: { type: ClaimType.NoData },
-          },
-        ],
-        next: 1,
-        count: 1,
-      };
-
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          issuedClaims,
-        },
-      });
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const result = await polymesh.getIssuedClaims();
-      expect(result).toEqual(issuedClaims);
-    });
-  });
-
-  describe('method: getIdentitiesWithClaims', () => {
-    test('should return a list of identities with claims associated to them', async () => {
-      const context = dsMockUtils.getContextInstance();
-      const targetDid = 'someTargetDid';
-      const issuerDid = 'someIssuerDid';
-      const date = 1589816265000;
-      const claim = {
-        target: new Identity({ did: targetDid }, context),
-        issuer: new Identity({ did: issuerDid }, context),
-        issuedAt: new Date(date),
-      };
-      const fakeClaims: IdentityWithClaims[] = [
-        {
-          identity: new Identity({ did: targetDid }, context),
-          claims: [
-            {
-              ...claim,
-              expiry: new Date(date),
-              claim: {
-                type: ClaimType.CustomerDueDiligence,
-              },
-            },
-          ],
-        },
-      ];
-      /* eslint-disable @typescript-eslint/camelcase */
-      const commonClaimData = {
-        targetDID: targetDid,
-        issuer: issuerDid,
-        issuance_date: date,
-        last_update_date: date,
-      };
-      const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
-        totalCount: 25,
-        items: [
-          {
-            did: targetDid,
-            claims: [
-              {
-                ...commonClaimData,
-                expiry: date,
-                type: ClaimTypeEnum.CustomerDueDiligence,
-              },
-            ],
-          },
-        ],
-      };
-      /* eslint-enabled @typescript-eslint/camelcase */
-
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      sinon
-        .stub(utilsModule, 'toIdentityWithClaimsArray')
-        .withArgs(didsWithClaimsQueryResponse.items, context)
-        .returns(fakeClaims);
-
-      dsMockUtils.createApolloQueryStub(
-        didsWithClaims({
-          dids: [targetDid],
-          scope: undefined,
-          trustedClaimIssuers: [targetDid],
-          claimTypes: [ClaimTypeEnum.Accredited],
-          includeExpired: false,
-          count: 1,
-          skip: undefined,
-        }),
-        {
-          didsWithClaims: didsWithClaimsQueryResponse,
-        }
-      );
-
-      let result = await polymesh.getIdentitiesWithClaims({
-        targets: [targetDid],
-        trustedClaimIssuers: [targetDid],
-        claimTypes: [ClaimType.Accredited],
-        includeExpired: false,
-        size: 1,
-      });
-
-      expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
-      expect(result.next).toEqual(1);
-
-      dsMockUtils.createApolloQueryStub(
-        didsWithClaims({
-          dids: undefined,
-          scope: undefined,
-          trustedClaimIssuers: undefined,
-          claimTypes: undefined,
-          includeExpired: true,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          didsWithClaims: didsWithClaimsQueryResponse,
-        }
-      );
-
-      result = await polymesh.getIdentitiesWithClaims();
-
-      expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
-      expect(result.next).toEqual(null);
-    });
-  });
-
   describe('method: transferPolyX', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
@@ -931,120 +764,6 @@ describe('Polymesh Class', () => {
       return expect(polymesh.getSecurityToken({ ticker })).rejects.toThrow(
         `There is no Security Token with ticker "${ticker}"`
       );
-    });
-  });
-
-  describe('method: addClaims', () => {
-    afterAll(() => {
-      sinon.restore();
-    });
-
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = dsMockUtils.getContextInstance();
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const claims: ClaimTarget[] = [
-        {
-          target: 'someDid',
-          claim: {
-            type: ClaimType.Accredited,
-            scope: 'someIdentityId',
-          },
-        },
-      ];
-
-      const args = { claims };
-
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
-
-      sinon
-        .stub(modifyClaims, 'prepare')
-        .withArgs({ ...args, operation: ClaimOperation.Add }, context)
-        .resolves(expectedQueue);
-
-      const queue = await polymesh.addClaims(args);
-
-      expect(queue).toBe(expectedQueue);
-    });
-  });
-
-  describe('method: editClaims', () => {
-    afterAll(() => {
-      sinon.restore();
-    });
-
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = dsMockUtils.getContextInstance();
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const claims: ClaimTarget[] = [
-        {
-          target: 'someDid',
-          claim: {
-            type: ClaimType.Accredited,
-            scope: 'someIdentityId',
-          },
-        },
-      ];
-
-      const args = { claims };
-
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
-
-      sinon
-        .stub(modifyClaims, 'prepare')
-        .withArgs({ ...args, operation: ClaimOperation.Edit }, context)
-        .resolves(expectedQueue);
-
-      const queue = await polymesh.editClaims(args);
-
-      expect(queue).toBe(expectedQueue);
-    });
-  });
-
-  describe('method: revokeClaims', () => {
-    afterAll(() => {
-      sinon.restore();
-    });
-
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = dsMockUtils.getContextInstance();
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const claims: ClaimTarget[] = [
-        {
-          target: 'someDid',
-          claim: {
-            type: ClaimType.Accredited,
-            scope: 'someIdentityId',
-          },
-        },
-      ];
-
-      const args = { claims };
-
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
-
-      sinon
-        .stub(modifyClaims, 'prepare')
-        .withArgs({ ...args, operation: ClaimOperation.Revoke }, context)
-        .resolves(expectedQueue);
-
-      const queue = await polymesh.revokeClaims(args);
-
-      expect(queue).toBe(expectedQueue);
     });
   });
 
