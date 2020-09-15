@@ -1,14 +1,11 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Identity } from '~/api/entities/Identity';
+import { AuthorizationRequest, Identity } from '~/api/entities';
 import { consumeAuthorizationRequests } from '~/api/procedures';
-import { Entity, TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, Entity, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Authorization, AuthorizationType } from '~/types';
-
-import { AuthorizationRequest } from '../AuthorizationRequest';
 
 describe('AuthorizationRequest class', () => {
   let context: Context;
@@ -42,12 +39,12 @@ describe('AuthorizationRequest class', () => {
       const expiry = new Date();
       const data = ('something' as unknown) as Authorization;
       const authRequest = new AuthorizationRequest(
-        { targetDid, issuerDid, expiry, data, authId: new BigNumber(1) },
+        { target: targetIdentity, issuer: issuerIdentity, expiry, data, authId: new BigNumber(1) },
         context
       );
 
-      expect(authRequest.targetIdentity).toEqual(targetIdentity);
-      expect(authRequest.issuerIdentity).toEqual(issuerIdentity);
+      expect(authRequest.target).toEqual(targetIdentity);
+      expect(authRequest.issuer).toEqual(issuerIdentity);
       expect(authRequest.expiry).toBe(expiry);
       expect(authRequest.data).toBe(data);
     });
@@ -71,8 +68,8 @@ describe('AuthorizationRequest class', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          targetDid: 'someDid',
-          issuerDid: 'otherDid',
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
           data: { type: AuthorizationType.NoData },
         },
         context
@@ -106,8 +103,8 @@ describe('AuthorizationRequest class', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          targetDid: 'someDid',
-          issuerDid: 'otherDid',
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
           data: { type: AuthorizationType.NoData },
         },
         context

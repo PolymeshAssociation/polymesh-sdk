@@ -1,7 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import sinon from 'sinon';
 
-import { PostTransactionValue } from '../PostTransactionValue';
+import { PostTransactionValue } from '~/base';
 
 describe('Post Transaction Value class', () => {
   describe('method: run', () => {

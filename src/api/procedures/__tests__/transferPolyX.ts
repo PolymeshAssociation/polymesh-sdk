@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { prepareTransferPolyX, TransferPolyXParams } from '~/api/procedures/transferPolyX';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import * as utilsModule from '~/utils';

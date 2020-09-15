@@ -1,5 +1,4 @@
-import { Namespace } from '~/base';
-import { Context } from '~/context';
+import { Context, Namespace } from '~/base';
 
 import { SecurityToken } from '../';
 import { Rules } from './Rules';

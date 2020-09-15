@@ -4,7 +4,7 @@ import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareSetTokenRules } from '~/api/procedures/setTokenRules';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Condition, RoleType, Rule } from '~/types';

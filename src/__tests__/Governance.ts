@@ -1,16 +1,15 @@
 import { u8, u32 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import { TxTag } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity, Proposal } from '~/api/entities';
 import { ProposalState } from '~/api/entities/Proposal/types';
 import { createProposal } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, TransactionQueue } from '~/base';
 import { Governance } from '~/Governance';
 import { proposals } from '~/middleware/queries';
-import { TxTag } from '~/polkadot';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';

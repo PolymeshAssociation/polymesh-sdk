@@ -4,8 +4,7 @@ import BigNumber from 'bignumber.js';
 import { PipId, TxTag } from 'polymesh-types/types';
 
 import { Proposal } from '~/api/entities';
-import { PolymeshError, PostTransactionValue, Procedure } from '~/base';
-import { Context } from '~/context';
+import { Context, PolymeshError, PostTransactionValue, Procedure } from '~/base';
 import { ErrorCode, Role, TransactionArgumentType } from '~/types';
 import {
   balanceToBigNumber,

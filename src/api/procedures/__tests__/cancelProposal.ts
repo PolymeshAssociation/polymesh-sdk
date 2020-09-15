@@ -3,8 +3,7 @@ import sinon from 'sinon';
 
 import { isAuthorized, Params, prepareCancelProposal } from '~/api/procedures/cancelProposal';
 import * as proceduresUtilsModule from '~/api/procedures/utils';
-import { PostTransactionValue } from '~/base';
-import { Context } from '~/context';
+import { Context, PostTransactionValue } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';

@@ -3,7 +3,7 @@ import P from 'bluebird';
 import { chunk } from 'lodash';
 import { IdentityId } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities/Identity';
+import { Identity } from '~/api/entities';
 import { IdentityBalance } from '~/api/entities/types';
 import { Namespace } from '~/base';
 import { PaginationOptions, ResultSet, TransferStatus } from '~/types';

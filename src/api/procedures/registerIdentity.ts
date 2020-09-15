@@ -1,9 +1,8 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import { IdentityId } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities';
-import { PostTransactionValue, Procedure } from '~/base';
-import { Context } from '~/context';
-import { IdentityId } from '~/polkadot';
+import { Context, PostTransactionValue, Procedure } from '~/base';
 import { Role, RoleType, SigningKey } from '~/types';
 import {
   dateToMoment,

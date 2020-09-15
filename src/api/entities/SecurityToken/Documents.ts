@@ -1,6 +1,7 @@
+import { DocumentName } from 'polymesh-types/types';
+
 import { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
-import { DocumentName } from '~/polkadot';
 import { PaginationOptions, ResultSet, TokenDocument } from '~/types';
 import {
   documentNameToString,

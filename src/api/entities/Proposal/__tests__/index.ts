@@ -1,20 +1,17 @@
 import { u32 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity } from '~/api/entities/Identity';
+import { Identity, Proposal } from '~/api/entities';
 import { ProposalStage } from '~/api/entities/Proposal/types';
 import { cancelProposal, editProposal, voteOnProposal } from '~/api/procedures';
-import { Entity, TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, Entity, TransactionQueue } from '~/base';
 import { eventByIndexedArgs, proposal as proposalQuery, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, ProposalState } from '~/middleware/types';
-import { TxTags } from '~/polkadot';
 import { dsMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
-
-import { Proposal } from '../';
 
 describe('Proposal class', () => {
   const pipId = 10;
@@ -93,7 +90,7 @@ describe('Proposal class', () => {
 
     test('should return false if the identity has not voted on the proposal', async () => {
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
-      const result = await proposal.identityHasVoted({ did: 'someDid' });
+      const result = await proposal.identityHasVoted({ identity: 'someDid' });
       expect(result).toBeFalsy();
     });
   });

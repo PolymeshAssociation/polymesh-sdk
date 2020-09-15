@@ -3,13 +3,13 @@ import BigNumber from 'bignumber.js';
 import { AuthIdentifier } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { AuthorizationRequest, Identity } from '~/api/entities';
+import { Account, AuthorizationRequest, Identity } from '~/api/entities';
 import {
   ConsumeAuthorizationRequestsParams,
   isAuthorized,
   prepareConsumeAuthorizationRequests,
 } from '~/api/procedures/consumeAuthorizationRequests';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType } from '~/types';
@@ -23,8 +23,8 @@ describe('consumeAuthorizationRequests procedure', () => {
   let authParams: {
     authId: BigNumber;
     expiry: Date | null;
-    issuerDid: string;
-    targetDid: string;
+    issuer: Identity;
+    target: Identity | Account;
     data: Authorization;
   }[];
   let auths: AuthorizationRequest[];
@@ -48,8 +48,8 @@ describe('consumeAuthorizationRequests procedure', () => {
       {
         authId: new BigNumber(1),
         expiry: new Date('10/14/3040'),
-        targetDid: 'targetDid1',
-        issuerDid: 'issuerDid1',
+        target: new Identity({ did: 'targetDid1' }, mockContext),
+        issuer: new Identity({ did: 'issuerDid1' }, mockContext),
         data: {
           type: AuthorizationType.TransferAssetOwnership,
           value: 'someTicker1',
@@ -58,8 +58,8 @@ describe('consumeAuthorizationRequests procedure', () => {
       {
         authId: new BigNumber(2),
         expiry: null,
-        targetDid: 'targetDid2',
-        issuerDid: 'issuerDid2',
+        target: new Identity({ did: 'targetDid2' }, mockContext),
+        issuer: new Identity({ did: 'issuerDid2' }, mockContext),
         data: {
           type: AuthorizationType.TransferAssetOwnership,
           value: 'someTicker2',
@@ -68,8 +68,8 @@ describe('consumeAuthorizationRequests procedure', () => {
       {
         authId: new BigNumber(3),
         expiry: new Date('10/14/1987'), // expired
-        targetDid: 'targetDid3',
-        issuerDid: 'issuerDid3',
+        target: new Identity({ did: 'targetDid3' }, mockContext),
+        issuer: new Identity({ did: 'issuerDid3' }, mockContext),
         data: {
           type: AuthorizationType.TransferAssetOwnership,
           value: 'someTicker3',
@@ -80,7 +80,9 @@ describe('consumeAuthorizationRequests procedure', () => {
     rawAuthIds = [];
     rawAuthIdentifiers = [];
     authParams.forEach(params => {
-      const { authId, targetDid } = params;
+      const { authId, target } = params;
+
+      const signerValue = utilsModule.signerToSignerValue(target);
 
       auths.push(new AuthorizationRequest(params, mockContext));
 
@@ -92,12 +94,12 @@ describe('consumeAuthorizationRequests procedure', () => {
         // eslint-disable-next-line @typescript-eslint/camelcase
         auth_id: dsMockUtils.createMockU64(authId.toNumber()),
         signatory: dsMockUtils.createMockSignatory({
-          Identity: dsMockUtils.createMockIdentityId(targetDid),
+          Identity: dsMockUtils.createMockIdentityId(signerValue.value),
         }),
       });
       rawAuthIdentifiers.push(rawAuthIdentifier);
       authTargetToAuthIdentifierStub
-        .withArgs({ authId, did: targetDid }, mockContext)
+        .withArgs({ authId, target: signerValue }, mockContext)
         .returns(rawAuthIdentifier);
     });
   });
@@ -168,8 +170,8 @@ describe('consumeAuthorizationRequests procedure', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          targetDid: did,
-          issuerDid: 'issuerDid1',
+          target: new Identity({ did }, mockContext),
+          issuer: new Identity({ did: 'issuerDid1' }, mockContext),
           data: {
             type: AuthorizationType.NoData,
           } as Authorization,
@@ -177,8 +179,8 @@ describe('consumeAuthorizationRequests procedure', () => {
         {
           authId: new BigNumber(2),
           expiry: new Date('10/14/1987'), // expired
-          targetDid: 'notTheCurrentIdentity',
-          issuerDid: 'issuerDid2',
+          target: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
+          issuer: new Identity({ did: 'issuerDid2' }, mockContext),
           data: {
             type: AuthorizationType.NoData,
           } as Authorization,
@@ -195,10 +197,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       let result = await boundFunc(args);
       expect(result).toBe(true);
 
-      args.authRequests[0].targetIdentity = new Identity(
-        { did: 'notTheCurrentIdentity' },
-        mockContext
-      );
+      args.authRequests[0].target = new Identity({ did: 'notTheCurrentIdentity' }, mockContext);
 
       result = await boundFunc(args);
       expect(result).toBe(false);
@@ -213,8 +212,8 @@ describe('consumeAuthorizationRequests procedure', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          targetDid: did,
-          issuerDid: 'notTheCurrentIdentity',
+          target: new Identity({ did }, mockContext),
+          issuer: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
           data: {
             type: AuthorizationType.NoData,
           } as Authorization,
@@ -222,8 +221,8 @@ describe('consumeAuthorizationRequests procedure', () => {
         {
           authId: new BigNumber(2),
           expiry: new Date('10/14/3040'),
-          targetDid: 'notTheCurrentIdentity',
-          issuerDid: did,
+          target: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
+          issuer: new Identity({ did }, mockContext),
           data: {
             type: AuthorizationType.NoData,
           } as Authorization,
@@ -231,8 +230,8 @@ describe('consumeAuthorizationRequests procedure', () => {
         {
           authId: new BigNumber(3),
           expiry: new Date('10/14/1987'), // expired
-          targetDid: 'notTheCurrentIdentity',
-          issuerDid: 'notTheCurrentIdentity',
+          target: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
+          issuer: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
           data: {
             type: AuthorizationType.NoData,
           } as Authorization,
@@ -249,10 +248,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       let result = await boundFunc(args);
       expect(result).toBe(true);
 
-      args.authRequests[0].targetIdentity = new Identity(
-        { did: 'notTheCurrentIdentity' },
-        mockContext
-      );
+      args.authRequests[0].target = new Identity({ did: 'notTheCurrentIdentity' }, mockContext);
 
       result = await boundFunc(args);
       expect(result).toBe(false);

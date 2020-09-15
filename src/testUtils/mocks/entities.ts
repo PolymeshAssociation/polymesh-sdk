@@ -5,7 +5,10 @@ import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
 import {
+  Account,
   AuthorizationRequest,
+  CurrentAccount,
+  CurrentIdentity,
   Identity,
   Proposal,
   SecurityToken,
@@ -14,9 +17,12 @@ import {
 import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 import { Mocked } from '~/testUtils/types';
 import {
+  AccountBalance,
   Authorization,
   AuthorizationType,
+  ExtrinsicData,
   SecurityTokenDetails,
+  SigningKey,
   TickerReservationDetails,
   TickerReservationStatus,
   TransferStatus,
@@ -25,13 +31,19 @@ import {
 
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
+  currentIdentity: {} as MockCurrentIdentity,
   tickerReservation: {} as MockTickerReservation,
   securityToken: {} as MockSecurityToken,
   authorizationRequest: {} as MockAuthorizationRequest,
   proposal: {} as MockProposal,
+  account: {} as MockAccount,
+  currentAccount: {} as MockCurrentAccount,
 };
 
 type MockIdentity = Mocked<Identity>;
+type MockCurrentIdentity = Mocked<CurrentIdentity>;
+type MockAccount = Mocked<Account>;
+type MockCurrentAccount = Mocked<CurrentAccount>;
 type MockTickerReservation = Mocked<TickerReservation>;
 type MockSecurityToken = Mocked<SecurityToken>;
 type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
@@ -39,16 +51,19 @@ type MockProposal = Mocked<Proposal>;
 
 interface IdentityOptions {
   did?: string;
-  getPolyXBalance?: BigNumber;
   hasRoles?: boolean;
   hasRole?: boolean;
   hasValidCdd?: boolean;
   getMasterKey?: string;
 }
 
+interface CurrentIdentityOptions extends IdentityOptions {
+  getSigningKeys?: SigningKey[];
+}
+
 interface TickerReservationOptions {
   ticker?: string;
-  details?: TickerReservationDetails;
+  details?: Partial<TickerReservationDetails>;
 }
 
 interface SecurityTokenOptions {
@@ -74,23 +89,48 @@ interface ProposalOptions {
   identityHasVoted?: boolean;
 }
 
+interface AccountOptions {
+  address?: string;
+  key?: string;
+  getBalance?: AccountBalance;
+  getIdentity?: Identity;
+  getTransactionHistory?: ExtrinsicData[];
+}
+
+interface CurrentAccountOptions extends AccountOptions {
+  getIdentity?: CurrentIdentity;
+}
+
 let identityConstructorStub: SinonStub;
+let currentIdentityConstructorStub: SinonStub;
+let accountConstructorStub: SinonStub;
+let currentAccountConstructorStub: SinonStub;
 let tickerReservationConstructorStub: SinonStub;
 let securityTokenConstructorStub: SinonStub;
 let authorizationRequestConstructorStub: SinonStub;
 let proposalConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
-let identityGetPolyXBalanceStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
+let identityGetMasterKeyStub: SinonStub;
+let currentIdentityHasRolesStub: SinonStub;
+let currentIdentityHasRoleStub: SinonStub;
+let currentIdentityHasValidCddStub: SinonStub;
+let currentIdentityGetMasterKeyStub: SinonStub;
+let currentIdentityGetSigningKeysStub: SinonStub;
+let accountGetBalanceStub: SinonStub;
+let accountGetIdentityStub: SinonStub;
+let accountGetTransactionHistoryStub: SinonStub;
+let currentAccountGetBalanceStub: SinonStub;
+let currentAccountGetIdentityStub: SinonStub;
+let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
 let securityTokenTransfersAreFrozenStub: SinonStub;
 let securityTokenTransfersCanTransferStub: SinonStub;
 let securityTokenTransfersCanMintStub: SinonStub;
-let identityGetMasterKeyStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -98,6 +138,33 @@ const MockIdentityClass = class {
    */
   constructor(...args: unknown[]) {
     return identityConstructorStub(...args);
+  }
+};
+
+const MockCurrentIdentityClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return currentIdentityConstructorStub(...args);
+  }
+};
+
+const MockAccountClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return accountConstructorStub(...args);
+  }
+};
+
+const MockCurrentAccountClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return currentAccountConstructorStub(...args);
   }
 };
 
@@ -142,6 +209,21 @@ export const mockIdentityModule = (path: string) => (): object => ({
   Identity: MockIdentityClass,
 });
 
+export const mockCurrentIdentityModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  CurrentIdentity: MockCurrentIdentityClass,
+});
+
+export const mockAccountModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Account: MockAccountClass,
+});
+
+export const mockCurrentAccountModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  CurrentAccount: MockCurrentAccountClass,
+});
+
 export const mockTickerReservationModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   TickerReservation: MockTickerReservationClass,
@@ -164,15 +246,40 @@ export const mockProposalModule = (path: string) => (): object => ({
 
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
-  getPolyXBalance: new BigNumber(100),
   hasValidCdd: true,
-  getMasterKey: 'someAccountId',
+  getMasterKey: 'someAddress',
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
+const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
+  did: 'someDid',
+  hasValidCdd: true,
+  getMasterKey: 'someAddress',
+  getSigningKeys: [],
+};
+let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
+const defaultAccountOptions: AccountOptions = {
+  address: 'someAddress',
+  key: 'someKey',
+  getBalance: {
+    free: new BigNumber(100),
+    locked: new BigNumber(10),
+  },
+  getTransactionHistory: [],
+};
+let accountOptions: AccountOptions = defaultAccountOptions;
+const defaultCurrentAccountOptions: CurrentAccountOptions = {
+  address: 'someAddress',
+  key: 'someKey',
+  getBalance: {
+    free: new BigNumber(100),
+    locked: new BigNumber(10),
+  },
+  getTransactionHistory: [],
+};
+let currentAccountOptions: CurrentAccountOptions = defaultCurrentAccountOptions;
 const defaultTickerReservationOptions: TickerReservationOptions = {
   ticker: 'SOME_TICKER',
   details: {
-    owner: mockInstanceContainer.identity,
     expiryDate: new Date(),
     status: TickerReservationStatus.Reserved,
   },
@@ -184,7 +291,6 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     name: 'TOKEN_NAME',
     totalSupply: new BigNumber(1000000),
     isDivisible: false,
-    owner: mockInstanceContainer.identity,
   },
   currentFundingRound: 'Series A',
   transfersAreFrozen: false,
@@ -275,9 +381,10 @@ function initAuthorizationRequest(opts?: AuthorizationRequestOptions): void {
  * Configure the Security Token instance
  */
 function configureSecurityToken(opts: SecurityTokenOptions): void {
+  const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const securityToken = ({
     ticker: opts.ticker,
-    details: securityTokenDetailsStub.resolves(opts.details),
+    details: securityTokenDetailsStub.resolves(details),
     currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(opts.currentFundingRound),
     transfers: {
       areFrozen: securityTokenTransfersAreFrozenStub.resolves(opts.transfersAreFrozen),
@@ -314,9 +421,10 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
  * Configure the Ticker Reservation instance
  */
 function configureTickerReservation(opts: TickerReservationOptions): void {
+  const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const tickerReservation = ({
     ticker: opts.ticker,
-    details: tickerReservationDetailsStub.resolves(opts.details),
+    details: tickerReservationDetailsStub.resolves(details),
   } as unknown) as MockTickerReservation;
 
   Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
@@ -348,7 +456,6 @@ function initTickerReservation(opts?: TickerReservationOptions): void {
 function configureIdentity(opts: IdentityOptions): void {
   const identity = ({
     did: opts.did,
-    getPolyXBalance: identityGetPolyXBalanceStub.resolves(opts.getPolyXBalance),
     hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
@@ -367,7 +474,6 @@ function configureIdentity(opts: IdentityOptions): void {
  */
 function initIdentity(opts?: IdentityOptions): void {
   identityConstructorStub = sinon.stub();
-  identityGetPolyXBalanceStub = sinon.stub();
   identityHasRolesStub = sinon.stub();
   identityHasRoleStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
@@ -380,11 +486,125 @@ function initIdentity(opts?: IdentityOptions): void {
 
 /**
  * @hidden
+ * Configure the CurrentIdentity instance
+ */
+function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
+  const identity = ({
+    did: opts.did,
+    hasRoles: currentIdentityHasRolesStub.resolves(opts.hasRoles),
+    hasRole: currentIdentityHasRoleStub.resolves(opts.hasRole),
+    hasValidCdd: currentIdentityHasValidCddStub.resolves(opts.hasValidCdd),
+    getMasterKey: currentIdentityGetMasterKeyStub.resolves(opts.getMasterKey),
+    getSigningKeys: currentIdentityGetSigningKeysStub.resolves(opts.getSigningKeys),
+  } as unknown) as MockIdentity;
+
+  Object.assign(mockInstanceContainer.currentIdentity, identity);
+  currentIdentityConstructorStub.callsFake(args => {
+    return merge({}, identity, args);
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the CurrentIdentity instance
+ */
+function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
+  currentIdentityConstructorStub = sinon.stub();
+  currentIdentityHasRolesStub = sinon.stub();
+  currentIdentityHasRoleStub = sinon.stub();
+  currentIdentityHasValidCddStub = sinon.stub();
+  currentIdentityGetMasterKeyStub = sinon.stub();
+  currentIdentityGetSigningKeysStub = sinon.stub();
+
+  currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
+
+  configureCurrentIdentity(currentIdentityOptions);
+}
+
+/**
+ * @hidden
+ * Configure the Account instance
+ */
+function configureAccount(opts: AccountOptions): void {
+  const account = ({
+    address: opts.address,
+    key: opts.key,
+    getBalance: accountGetBalanceStub.resolves(opts.getBalance),
+    getIdentity: accountGetIdentityStub.resolves(
+      opts.getIdentity || mockInstanceContainer.identity
+    ),
+    getTransactionHistory: accountGetTransactionHistoryStub.resolves(opts.getTransactionHistory),
+  } as unknown) as MockAccount;
+
+  Object.assign(mockInstanceContainer.account, account);
+  accountConstructorStub.callsFake(args => {
+    return merge({}, account, args);
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Account instance
+ */
+function initAccount(opts?: AccountOptions): void {
+  accountConstructorStub = sinon.stub();
+  accountGetBalanceStub = sinon.stub();
+  accountGetIdentityStub = sinon.stub();
+  accountGetTransactionHistoryStub = sinon.stub();
+
+  accountOptions = { ...defaultAccountOptions, ...opts };
+
+  configureAccount(accountOptions);
+}
+
+/**
+ * @hidden
+ * Configure the Current Account instance
+ */
+function configureCurrentAccount(opts: CurrentAccountOptions): void {
+  const account = ({
+    address: opts.address,
+    key: opts.key,
+    getBalance: currentAccountGetBalanceStub.resolves(opts.getBalance),
+    getIdentity: currentAccountGetIdentityStub.resolves(
+      opts.getIdentity || mockInstanceContainer.currentIdentity
+    ),
+    getTransactionHistory: currentAccountGetTransactionHistoryStub.resolves(
+      opts.getTransactionHistory
+    ),
+  } as unknown) as MockAccount;
+
+  Object.assign(mockInstanceContainer.currentAccount, account);
+  currentAccountConstructorStub.callsFake(args => {
+    return merge({}, account, args);
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Current Account instance
+ */
+function initCurrentAccount(opts?: CurrentAccountOptions): void {
+  currentAccountConstructorStub = sinon.stub();
+  currentAccountGetBalanceStub = sinon.stub();
+  currentAccountGetIdentityStub = sinon.stub();
+  currentAccountGetTransactionHistoryStub = sinon.stub();
+
+  currentAccountOptions = { ...defaultCurrentAccountOptions, ...opts };
+
+  configureCurrentAccount(currentAccountOptions);
+}
+
+/**
+ * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
 export function configureMocks(opts?: {
   identityOptions?: IdentityOptions;
+  currentIdentityOptions?: CurrentIdentityOptions;
+  accountOptions?: AccountOptions;
+  currentAccountOptions?: CurrentAccountOptions;
   tickerReservationOptions?: TickerReservationOptions;
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
@@ -393,6 +613,24 @@ export function configureMocks(opts?: {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
   configureIdentity(tempIdentityOptions);
+
+  const tempCurrentIdentityOptions = {
+    ...defaultCurrentIdentityOptions,
+    ...opts?.currentIdentityOptions,
+  };
+
+  configureCurrentIdentity(tempCurrentIdentityOptions);
+
+  const tempAccountOptions = { ...defaultAccountOptions, ...opts?.accountOptions };
+
+  configureAccount(tempAccountOptions);
+
+  const tempCurrentAccountOptions = {
+    ...defaultCurrentAccountOptions,
+    ...opts?.currentAccountOptions,
+  };
+
+  configureCurrentAccount(tempCurrentAccountOptions);
 
   const tempTickerReservationOptions = {
     ...defaultTickerReservationOptions,
@@ -431,6 +669,9 @@ export function configureMocks(opts?: {
  */
 export function initMocks(opts?: {
   identityOptions?: IdentityOptions;
+  currentIdentityOptions?: CurrentIdentityOptions;
+  accountOptions?: AccountOptions;
+  currentAccountOptions?: CurrentAccountOptions;
   tickerReservationOptions?: TickerReservationOptions;
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
@@ -438,6 +679,15 @@ export function initMocks(opts?: {
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
+
+  // Current Identity
+  initCurrentIdentity(opts?.currentIdentityOptions);
+
+  // Account
+  initAccount(opts?.accountOptions);
+
+  // Current Account
+  initCurrentAccount(opts?.currentAccountOptions);
 
   // Ticker Reservation
   initTickerReservation(opts?.tickerReservationOptions);
@@ -458,6 +708,9 @@ export function initMocks(opts?: {
  */
 export function cleanup(): void {
   mockInstanceContainer.identity = {} as MockIdentity;
+  mockInstanceContainer.currentIdentity = {} as MockCurrentIdentity;
+  mockInstanceContainer.account = {} as MockAccount;
+  mockInstanceContainer.currentAccount = {} as MockCurrentAccount;
   mockInstanceContainer.tickerReservation = {} as MockTickerReservation;
   mockInstanceContainer.securityToken = {} as MockSecurityToken;
   mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
@@ -472,6 +725,9 @@ export function reset(): void {
   cleanup();
   initMocks({
     identityOptions,
+    currentIdentityOptions,
+    accountOptions,
+    currentAccountOptions,
     tickerReservationOptions,
     securityTokenOptions,
     authorizationRequestOptions,
@@ -489,14 +745,6 @@ export function getIdentityInstance(opts?: IdentityOptions): MockIdentity {
   }
 
   return mockInstanceContainer.identity;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.getPolyXBalance` method
- */
-export function getIdentityGetPolyXBalanceStub(): SinonStub {
-  return identityGetPolyXBalanceStub;
 }
 
 /**
@@ -533,10 +781,126 @@ export function getIdentityGetMasterKeyStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve a Current Identity instance
+ */
+export function getCurrentIdentityInstance(opts?: CurrentIdentityOptions): MockCurrentIdentity {
+  if (opts) {
+    configureCurrentIdentity(opts);
+  }
+
+  return mockInstanceContainer.currentIdentity;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.hasRoles` method
+ */
+export function getCurrentIdentityHasRolesStub(): SinonStub {
+  return currentIdentityHasRolesStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.hasRoles` method
+ */
+export function getCurrentIdentityHasRoleStub(): SinonStub {
+  return currentIdentityHasRoleStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.hasValidCdd` method
+ */
+export function getCurrentIdentityHasValidCddStub(): SinonStub {
+  return currentIdentityHasValidCddStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.getMasterKey` method
+ */
+export function getCurrentIdentityGetMasterKeyStub(): SinonStub {
+  return currentIdentityGetMasterKeyStub;
+}
+
+/**
+ * @hidden
+ * Retrieve an Account instance
+ */
+export function getAccountInstance(opts?: AccountOptions): MockAccount {
+  if (opts) {
+    configureAccount(opts);
+  }
+
+  return mockInstanceContainer.account;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Account.getBalance` method
+ */
+export function getAccountGetBalanceStub(): SinonStub {
+  return accountGetBalanceStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Account.getIdentity` method
+ */
+export function getAccountGetIdentityStub(): SinonStub {
+  return accountGetIdentityStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Account.getTransactionHistory` method
+ */
+export function getAccountGetTransactionHistoryStub(): SinonStub {
+  return accountGetTransactionHistoryStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a Current Account instance
+ */
+export function getCurrentAccountInstance(opts?: CurrentAccountOptions): MockCurrentAccount {
+  if (opts) {
+    configureCurrentAccount(opts);
+  }
+
+  return mockInstanceContainer.currentAccount;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentAccount.getBalance` method
+ */
+export function getCurrentAccountGetBalanceStub(): SinonStub {
+  return currentAccountGetBalanceStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentAccount.getIdentity` method
+ */
+export function getCurrentAccountGetIdentityStub(): SinonStub {
+  return currentAccountGetIdentityStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentAccount.getTransactionHistory` method
+ */
+export function getCurrentAccountGetTransactionHistoryStub(): SinonStub {
+  return currentAccountGetTransactionHistoryStub;
+}
+
+/**
+ * @hidden
  * Retrieve a Ticker Reservation instance
  */
 export function getTickerReservationInstance(
-  opts: TickerReservationOptions
+  opts?: TickerReservationOptions
 ): MockTickerReservation {
   if (opts) {
     configureTickerReservation(opts);

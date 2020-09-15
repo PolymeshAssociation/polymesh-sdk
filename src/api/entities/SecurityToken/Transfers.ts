@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { CanTransferResult } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities/Identity';
+import { Identity } from '~/api/entities';
 import { toggleFreezeTransfers, transferToken, TransferTokenParams } from '~/api/procedures';
 import { Namespace, TransactionQueue } from '~/base';
 import { SubCallback, TransferStatus, UnsubCallback } from '~/types';

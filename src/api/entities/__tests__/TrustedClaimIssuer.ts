@@ -1,13 +1,10 @@
-import { Entity } from '~/base';
-import { Context } from '~/context';
+import { Identity, TrustedClaimIssuer } from '~/api/entities';
+import { Context, Entity } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
-
-import { Identity } from '../Identity';
-import { TrustedClaimIssuer } from '../TrustedClaimIssuer';
 
 describe('TrustedClaimIssuer class', () => {
   let context: Context;

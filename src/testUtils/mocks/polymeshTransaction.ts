@@ -3,7 +3,7 @@
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 
-import { PolymeshTransaction } from '~/base/PolymeshTransaction';
+import { PolymeshTransaction } from '~/base';
 import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
 

@@ -9,22 +9,20 @@ import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { Ticker, TxTag } from 'polymesh-types/types';
 
-import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
+import { Account, Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
   modifyClaims,
   ModifyClaimsParams,
   registerIdentity,
   RegisterIdentityParams,
-  removeSigningKeys,
   reserveTicker,
   ReserveTickerParams,
   transferPolyX,
   TransferPolyXParams,
 } from '~/api/procedures';
-import { PolymeshError, TransactionQueue } from '~/base';
-import { Context } from '~/context';
-import { didsWithClaims, heartbeat, transactions } from '~/middleware/queries';
-import { ClaimTypeEnum, Query, TransactionOrderByInput } from '~/middleware/types';
+import { Context, PolymeshError, TransactionQueue } from '~/base';
+import { didsWithClaims, heartbeat } from '~/middleware/queries';
+import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
@@ -32,12 +30,10 @@ import {
   CommonKeyring,
   Ensured,
   ErrorCode,
-  ExtrinsicData,
   IdentityWithClaims,
   MiddlewareConfig,
   NetworkProperties,
   ResultSet,
-  Signer,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
@@ -45,16 +41,13 @@ import {
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import {
-  addressToKey,
   calculateNextKey,
-  extrinsicIdentifierToTxTag,
   moduleAddressToString,
   stringToIdentityId,
   stringToTicker,
   textToString,
   tickerToString,
   toIdentityWithClaimsArray,
-  txTagToExtrinsicIdentifier,
   u32ToBigNumber,
   valueToDid,
 } from '~/utils';
@@ -236,24 +229,24 @@ export class Polymesh {
   /**
    * Get the free/locked POLYX balance of an account
    *
-   * @param args.accountId - defaults to the current account
+   * @param args.account - defaults to the current account
    *
    * @note can be subscribed to
    */
-  public getAccountBalance(args?: { accountId: string }): Promise<AccountBalance>;
+  public getAccountBalance(args?: { account: string | Account }): Promise<AccountBalance>;
   public getAccountBalance(callback: SubCallback<AccountBalance>): Promise<UnsubCallback>;
   public getAccountBalance(
-    args: { accountId: string },
+    args: { account: string | Account },
     callback: SubCallback<AccountBalance>
   ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public getAccountBalance(
-    args?: { accountId: string } | SubCallback<AccountBalance>,
+    args?: { account: string | Account } | SubCallback<AccountBalance>,
     callback?: SubCallback<AccountBalance>
   ): Promise<AccountBalance | UnsubCallback> {
     const { context } = this;
-    let accountId: string | undefined;
+    let account: string | Account | undefined;
     let cb: SubCallback<AccountBalance> | undefined = callback;
 
     switch (typeof args) {
@@ -265,16 +258,22 @@ export class Polymesh {
         break;
       }
       default: {
-        ({ accountId } = args);
+        ({ account } = args);
         break;
       }
     }
 
-    if (cb) {
-      return context.accountBalance(accountId, cb);
+    if (!account) {
+      account = context.getCurrentAccount();
+    } else if (typeof account === 'string') {
+      account = new Account({ address: account }, context);
     }
 
-    return context.accountBalance(accountId);
+    if (cb) {
+      return account.getBalance(cb);
+    }
+
+    return account.getBalance();
   }
 
   /**
@@ -320,10 +319,10 @@ export class Polymesh {
    * Retrieve all the ticker reservations currently owned by an identity. This doesn't include tokens that
    *   have already been launched
    *
-   * @param args.did - identity representation or identity ID as stored in the blockchain
+   * @param args.owner - identity representation or identity ID as stored in the blockchain
    */
   public async getTickerReservations(args?: {
-    did: string | Identity;
+    owner: string | Identity;
   }): Promise<TickerReservation[]> {
     const {
       context: {
@@ -335,7 +334,7 @@ export class Polymesh {
     let identity: string;
 
     if (args) {
-      identity = valueToDid(args.did);
+      identity = valueToDid(args.owner);
     } else {
       ({ did: identity } = await context.getCurrentIdentity());
     }
@@ -384,13 +383,30 @@ export class Polymesh {
   }
 
   /**
-   * Create an identity instance from a DID. If no DID is passed, the current identity is returned
+   * Create an Identity instance from a DID
    */
-  public async getIdentity(args?: { did: string }): Promise<Identity> {
-    if (args) {
-      return new Identity(args, this.context);
-    }
+  public getIdentity(args: { did: string }): Identity {
+    return new Identity(args, this.context);
+  }
+
+  /**
+   * Retrieve the Identity associated to the current Account
+   */
+  public getCurrentIdentity(): Promise<Identity> {
     return this.context.getCurrentIdentity();
+  }
+
+  /**
+   * Create an Account instance from an address. If no address is passed, the current Account is returned
+   */
+  public getAccount(args?: { address: string }): Account {
+    const { context } = this;
+
+    if (args) {
+      return new Account(args, context);
+    }
+
+    return context.getCurrentAccount();
   }
 
   /**
@@ -414,8 +430,8 @@ export class Polymesh {
   /**
    * Get the treasury wallet address
    */
-  public getTreasuryAddress(): string {
-    return moduleAddressToString(TREASURY_MODULE_ADDRESS);
+  public getTreasuryAccount(): Account {
+    return new Account({ address: moduleAddressToString(TREASURY_MODULE_ADDRESS) }, this.context);
   }
 
   /**
@@ -482,11 +498,11 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all the Security Tokens owned by an identity
+   * Retrieve all the Security Tokens owned by an Identity
    *
-   * @param args.did - identity representation or identity ID as stored in the blockchain
+   * @param args.owner - identity representation or identity ID as stored in the blockchain
    */
-  public async getSecurityTokens(args?: { did: string | Identity }): Promise<SecurityToken[]> {
+  public async getSecurityTokens(args?: { owner: string | Identity }): Promise<SecurityToken[]> {
     const {
       context: {
         polymeshApi: { query },
@@ -497,7 +513,7 @@ export class Polymesh {
     let identity: string;
 
     if (args) {
-      identity = valueToDid(args.did);
+      identity = valueToDid(args.owner);
     } else {
       ({ did: identity } = await context.getCurrentIdentity());
     }
@@ -648,98 +664,6 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve a list of transactions. Can be filtered using parameters
-   *
-   * @param filters.address - account that signed the transaction
-   * @param filters.tag - tag associated with the transaction
-   * @param filters.success - whether the transaction was successful or not
-   * @param filters.size - page size
-   * @param filters.start - page offset
-   */
-  public async getTransactionHistory(
-    filters: {
-      blockId?: number;
-      address?: string;
-      tag?: TxTag;
-      success?: boolean;
-      size?: number;
-      start?: number;
-      orderBy?: TransactionOrderByInput;
-    } = {}
-  ): Promise<ResultSet<ExtrinsicData>> {
-    const { context } = this;
-
-    const { blockId, address, tag, success, size, start, orderBy } = filters;
-
-    let moduleId;
-    let callId;
-    if (tag) {
-      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
-    }
-
-    /* eslint-disable @typescript-eslint/camelcase */
-    const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
-      transactions({
-        block_id: blockId,
-        address: address ? addressToKey(address) : undefined,
-        module_id: moduleId,
-        call_id: callId,
-        success,
-        count: size,
-        skip: start,
-        orderBy,
-      })
-    );
-
-    const {
-      data: {
-        transactions: { items: transactionList, totalCount: count },
-      },
-    } = result;
-
-    const data: ExtrinsicData[] = [];
-
-    transactionList.forEach(
-      ({
-        block_id,
-        extrinsic_idx,
-        address: rawAddress,
-        nonce,
-        module_id,
-        call_id,
-        params,
-        success: txSuccess,
-        spec_version_id,
-        extrinsic_hash,
-      }) => {
-        // TODO remove null check once types fixed
-        /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        data.push({
-          blockId: block_id!,
-          extrinsicIdx: extrinsic_idx!,
-          address: rawAddress ?? null,
-          nonce: nonce!,
-          txTag: extrinsicIdentifierToTxTag({ moduleId: module_id!, callId: call_id! }),
-          params,
-          success: !!txSuccess,
-          specVersionId: spec_version_id!,
-          extrinsicHash: extrinsic_hash!,
-        });
-        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
-      }
-    );
-    /* eslint-enable @typescript-eslint/camelcase */
-
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
-  }
-
-  /**
    * Get the Treasury POLYX balance
    *
    * @note can be subscribed to
@@ -751,44 +675,16 @@ export class Polymesh {
   public async getTreasuryBalance(
     callback?: SubCallback<BigNumber>
   ): Promise<BigNumber | UnsubCallback> {
-    const accountId = this.getTreasuryAddress();
+    const account = this.getTreasuryAccount();
 
     if (callback) {
-      return this.context.accountBalance(accountId, ({ free: freeBalance }) => {
+      return account.getBalance(({ free: freeBalance }) => {
         callback(freeBalance);
       });
     }
 
-    const { free } = await this.getAccountBalance({ accountId });
+    const { free } = await account.getBalance();
     return free;
-  }
-
-  /**
-   * Get the list of signing keys related to the current identity
-   *
-   * @note can be subscribed to
-   */
-  public async getMySigningKeys(): Promise<Signer[]>;
-  public async getMySigningKeys(callback: SubCallback<Signer[]>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getMySigningKeys(
-    callback?: SubCallback<Signer[]>
-  ): Promise<Signer[] | UnsubCallback> {
-    const { context } = this;
-
-    if (callback) {
-      return context.getSigningKeys(callback);
-    }
-
-    return context.getSigningKeys();
-  }
-
-  /**
-   * Remove a list of signing keys associated with the current identity
-   */
-  public removeMySigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
-    return removeSigningKeys.prepare(args, this.context);
   }
 
   /**

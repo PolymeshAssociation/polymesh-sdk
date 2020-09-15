@@ -10,11 +10,10 @@ import {
   getRequiredRoles,
   prepareRegisterIdentity,
 } from '~/api/procedures/registerIdentity';
-import { PostTransactionValue } from '~/base';
-import { Context } from '~/context';
+import { Context, PostTransactionValue } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Permission, RoleType, SignerType, SigningKey } from '~/types';
+import { Permission, RoleType, SigningKey } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -60,10 +59,7 @@ describe('registerIdentity procedure', () => {
     const expiry = new Date('10/10/2050');
     const signingKeys = [
       {
-        signer: {
-          type: SignerType.Identity,
-          value: 'someValue',
-        },
+        signer: new Identity({ did: 'someValue' }, mockContext),
         permissions: [Permission.Full],
       },
     ];
@@ -76,7 +72,7 @@ describe('registerIdentity procedure', () => {
     const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
     const rawSigningKey = dsMockUtils.createMockSigningKey({
       signer: dsMockUtils.createMockSignatory({
-        Identity: dsMockUtils.createMockIdentityId(signingKeys[0].signer.value),
+        Identity: dsMockUtils.createMockIdentityId(signingKeys[0].signer.did),
       }),
       permissions: [dsMockUtils.createMockPermission(signingKeys[0].permissions[0])],
     });

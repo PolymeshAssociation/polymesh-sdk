@@ -1,6 +1,6 @@
 import { IdentityId } from 'polymesh-types/types';
 
-import { TrustedClaimIssuer } from '~/api/entities/TrustedClaimIssuer';
+import { TrustedClaimIssuer } from '~/api/entities';
 import {
   modifyTokenTrustedClaimIssuers,
   ModifyTokenTrustedClaimIssuersParams,

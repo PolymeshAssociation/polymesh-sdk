@@ -3,8 +3,7 @@ import P from 'bluebird';
 import { EventEmitter } from 'events';
 import { range } from 'lodash';
 
-import { PolymeshError, PolymeshTransaction, PostTransactionValue } from '~/base';
-import { Context } from '~/context';
+import { Context, PolymeshError, PolymeshTransaction, PostTransactionValue } from '~/base';
 import { latestProcessedBlock } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Ensured, ErrorCode, Fees, TransactionQueueStatus } from '~/types';

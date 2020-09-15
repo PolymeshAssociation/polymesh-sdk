@@ -1,5 +1,7 @@
 import { ErrorCode } from '~/types';
 
+console.log('PolymeshError');
+
 export const ErrorMessagesPerCode: {
   [errorCode: string]: string;
 } = {

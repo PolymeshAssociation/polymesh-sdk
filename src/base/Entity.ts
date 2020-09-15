@@ -1,7 +1,8 @@
-import { PolymeshError } from '~/base';
-import { Context } from '~/context';
+import { Context, PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
 import { serialize, unserialize } from '~/utils';
+
+console.log('HERE WE ARE');
 
 /**
  * Represents an object or resource in the Polymesh Ecosystem with its own set of properties and functionality

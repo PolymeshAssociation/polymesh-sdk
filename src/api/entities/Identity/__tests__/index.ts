@@ -3,8 +3,8 @@ import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Entity } from '~/base';
-import { Context } from '~/context';
+import { Identity } from '~/api/entities';
+import { Context, Entity } from '~/base';
 import {
   issuerDidsWithClaimsByTarget,
   scopesByIdentity,
@@ -25,8 +25,6 @@ import {
   TokenOwnerRole,
 } from '~/types';
 import * as utilsModule from '~/utils';
-
-import { Identity } from '../';
 
 jest.mock(
   '~/api/entities/TickerReservation',

@@ -4,15 +4,12 @@ import P from 'bluebird';
 import { noop, range } from 'lodash';
 import sinon from 'sinon';
 
-import { PostTransactionValue } from '~/base';
-import { Context } from '~/context';
+import { Context, PostTransactionValue, TransactionQueue } from '~/base';
 import { latestProcessedBlock } from '~/middleware/queries';
 import { fakePromise } from '~/testUtils';
 import { dsMockUtils, polymeshTransactionMockUtils } from '~/testUtils/mocks';
 import { TransactionQueueStatus, TransactionStatus } from '~/types';
 import { TransactionSpec } from '~/types/internal';
-
-import { TransactionQueue } from '../TransactionQueue';
 
 jest.mock(
   '~/base/PolymeshTransaction',

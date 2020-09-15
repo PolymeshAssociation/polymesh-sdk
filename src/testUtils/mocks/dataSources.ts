@@ -73,10 +73,17 @@ import {
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
 import { Identity } from '~/api/entities';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, ClaimData, ClaimType, KeyringPair, ResultSet, SignerType } from '~/types';
-import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
+import {
+  AccountBalance,
+  ClaimData,
+  ClaimType,
+  ExtrinsicData,
+  KeyringPair,
+  ResultSet,
+} from '~/types';
+import { Extrinsics, GraphqlQuery, PolymeshTx, Queries, SignerType } from '~/types/internal';
 import { Mutable } from '~/types/utils';
 
 let apiEmitter: EventEmitter;
@@ -170,6 +177,8 @@ interface ContextOptions {
   currentPairAddress?: string;
   issuedClaims?: ResultSet<ClaimData>;
   masterKey?: string;
+  signingKeys?: SigningKey[];
+  transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
   middlewareAvailable?: boolean;
@@ -366,9 +375,15 @@ const defaultContextOptions: ContextOptions = {
       },
     ],
     next: 1,
-    count: 0,
+    count: 1,
   },
   masterKey: 'masterKey',
+  signingKeys: [],
+  transactionHistory: {
+    data: [],
+    next: null,
+    count: 1,
+  },
   latestBlock: new BigNumber(100),
   middlewareEnabled: true,
   middlewareAvailable: true,
@@ -387,18 +402,27 @@ let keyringOptions: KeyringOptions = defaultKeyringOptions;
  */
 function configureContext(opts: ContextOptions): void {
   const getCurrentIdentity = sinon.stub();
+  const identity = {
+    did: opts.did,
+    hasRoles: sinon.stub().resolves(opts.hasRoles),
+    hasValidCdd: sinon.stub().resolves(opts.validCdd),
+    getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
+    getMasterKey: sinon.stub().resolves(opts.masterKey),
+    getSigningKeys: sinon.stub().resolves(opts.signingKeys),
+  };
   opts.withSeed
-    ? getCurrentIdentity.resolves({
-        getPolyXBalance: sinon.stub().resolves(opts.balance?.free),
-        did: opts.did,
-        hasRoles: sinon.stub().resolves(opts.hasRoles),
-        hasValidCdd: sinon.stub().resolves(opts.validCdd),
-        getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-        getMasterKey: sinon.stub().resolves(opts.masterKey),
-      })
+    ? getCurrentIdentity.resolves(identity)
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')
       );
+  const getCurrentAccount = sinon.stub();
+  opts.withSeed
+    ? getCurrentAccount.returns({
+        getBalance: sinon.stub().resolves(opts.balance),
+        getIdentity: sinon.stub().resolves(identity),
+        getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
+      })
+    : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
   const currentPair = opts.withSeed
     ? ({
         address: opts.currentPairAddress,
@@ -415,6 +439,7 @@ function configureContext(opts: ContextOptions): void {
   const contextInstance = ({
     currentPair,
     getCurrentIdentity,
+    getCurrentAccount,
     getCurrentPair,
     accountBalance: sinon.stub().resolves(opts.balance),
     getAccounts: sinon.stub().returns([]),

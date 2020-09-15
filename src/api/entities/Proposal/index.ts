@@ -1,7 +1,7 @@
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import BigNumber from 'bignumber.js';
 
-import { Identity } from '~/api/entities/Identity';
+import { Identity } from '~/api/entities';
 import {
   cancelProposal,
   editProposal,
@@ -9,8 +9,7 @@ import {
   voteOnProposal,
   VoteOnProposalParams,
 } from '~/api/procedures';
-import { Entity, TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, Entity, TransactionQueue } from '~/base';
 import { eventByIndexedArgs, proposal, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, ResultSet } from '~/types';
@@ -62,19 +61,19 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Check if an identity has voted on the proposal
+   * Check if an Identity has voted on the proposal
    *
-   * @param args.did - identity representation or identity ID as stored in the blockchain
+   * @param args.identity - identity representation or Identity ID as stored in the blockchain
    *
    * @note uses the middleware
    */
-  public async identityHasVoted(args?: { did: string | Identity }): Promise<boolean> {
+  public async identityHasVoted(args?: { identity: string | Identity }): Promise<boolean> {
     const { pipId, context } = this;
 
     let identity: string;
 
     if (args) {
-      identity = valueToDid(args.did);
+      identity = valueToDid(args.identity);
     } else {
       ({ did: identity } = await context.getCurrentIdentity());
     }

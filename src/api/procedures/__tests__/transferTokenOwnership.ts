@@ -10,23 +10,16 @@ import {
   Params,
   prepareTransferTokenOwnership,
 } from '~/api/procedures/transferTokenOwnership';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {
-  Authorization,
-  AuthorizationType,
-  RoleType,
-  Signer,
-  SignerType,
-  TickerReservationStatus,
-} from '~/types';
-import { PolymeshTx } from '~/types/internal';
+import { Authorization, AuthorizationType, RoleType, TickerReservationStatus } from '~/types';
+import { PolymeshTx, SignerType, SignerValue } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('transferTokenOwnership procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerToSignatoryStub: sinon.SinonStub<[Signer, Context], Signatory>;
+  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let authorizationToAuthorizationDataStub: sinon.SinonStub<
     [Authorization, Context],
     AuthorizationData
@@ -46,7 +39,7 @@ describe('transferTokenOwnership procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerToSignatoryStub = sinon.stub(utilsModule, 'signerToSignatory');
+    signerValueToSignatoryStub = sinon.stub(utilsModule, 'signerValueToSignatory');
     authorizationToAuthorizationDataStub = sinon.stub(
       utilsModule,
       'authorizationToAuthorizationData'
@@ -64,7 +57,7 @@ describe('transferTokenOwnership procedure', () => {
     rawMoment = dsMockUtils.createMockMoment(expiry.getTime());
     args = {
       ticker,
-      did,
+      target: did,
     };
   });
 
@@ -85,7 +78,7 @@ describe('transferTokenOwnership procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    signerToSignatoryStub
+    signerValueToSignatoryStub
       .withArgs({ type: SignerType.Identity, value: did }, mockContext)
       .returns(rawSignatory);
     authorizationToAuthorizationDataStub

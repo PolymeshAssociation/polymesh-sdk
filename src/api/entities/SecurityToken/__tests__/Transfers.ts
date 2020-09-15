@@ -6,8 +6,7 @@ import sinon, { SinonStub } from 'sinon';
 
 import { toggleFreezeTransfers, transferToken } from '~/api/procedures';
 import { Params } from '~/api/procedures/toggleFreezeTransfers';
-import { Namespace, TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, Namespace, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransferStatus } from '~/types';

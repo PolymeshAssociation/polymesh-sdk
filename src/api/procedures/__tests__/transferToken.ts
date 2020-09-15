@@ -5,7 +5,7 @@ import sinon from 'sinon';
 
 import { Identity, SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareTransferToken } from '~/api/procedures/transferToken';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TransferStatus } from '~/types';

@@ -61,12 +61,13 @@ export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): 
         query: { pips },
       },
     },
+    context,
   } = this;
 
   const metadata = await pips.proposalMetadata(pipId);
   const { proposer } = metadata.unwrap();
 
-  return accountIdToString(proposer) === this.context.getCurrentPair().address;
+  return accountIdToString(proposer) === context.getCurrentPair().address;
 }
 
 /**

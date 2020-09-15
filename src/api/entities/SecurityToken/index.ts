@@ -1,14 +1,13 @@
 import { AssetIdentifier, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities/Identity';
+import { Identity } from '~/api/entities';
 import {
   modifyToken,
   ModifyTokenParams,
   transferTokenOwnership,
   TransferTokenOwnershipParams,
 } from '~/api/procedures';
-import { Entity, TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, Entity, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {

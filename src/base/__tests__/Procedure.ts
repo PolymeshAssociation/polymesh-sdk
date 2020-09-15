@@ -5,17 +5,16 @@ import { PosRatio, ProtocolOp, TxTag, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import * as baseModule from '~/base';
-import { Context } from '~/context';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { KeyringPair, Role } from '~/types';
 import { MaybePostTransactionValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
-import { Procedure } from '../Procedure';
+const { Procedure } = baseModule;
 
 describe('Procedure class', () => {
-  let context: Context;
+  let context: baseModule.Context;
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -35,7 +34,7 @@ describe('Procedure class', () => {
   describe('method: prepare', () => {
     let posRatioToBigNumberStub: sinon.SinonStub<[PosRatio], BigNumber>;
     let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
-    let txTagToProtocolOpStub: sinon.SinonStub<[TxTag, Context], ProtocolOp>;
+    let txTagToProtocolOpStub: sinon.SinonStub<[TxTag, baseModule.Context], ProtocolOp>;
     let txTags: TxTag[];
     let fees: number[];
     let rawCoefficient: PosRatio;
@@ -93,7 +92,7 @@ describe('Procedure class', () => {
       const returnValue = 'good';
 
       const func1 = async function(
-        this: Procedure<typeof procArgs, string>,
+        this: baseModule.Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<string> {
         this.addTransaction(tx1, {}, args.ticker);
@@ -121,7 +120,7 @@ describe('Procedure class', () => {
       );
 
       const func2 = async function(
-        this: Procedure<typeof procArgs, string>,
+        this: baseModule.Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<MaybePostTransactionValue<string>> {
         return this.addProcedure(proc1, args);
@@ -152,7 +151,9 @@ describe('Procedure class', () => {
       };
 
       const errorMsg = 'failed';
-      const func = async function(this: Procedure<typeof procArgs, string>): Promise<string> {
+      const func = async function(
+        this: baseModule.Procedure<typeof procArgs, string>
+      ): Promise<string> {
         throw new Error(errorMsg);
       };
 
@@ -168,7 +169,9 @@ describe('Procedure class', () => {
         ticker,
         signingKeys,
       };
-      const func = async function(this: Procedure<typeof procArgs, string>): Promise<string> {
+      const func = async function(
+        this: baseModule.Procedure<typeof procArgs, string>
+      ): Promise<string> {
         return 'success';
       };
 
