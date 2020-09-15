@@ -1244,8 +1244,8 @@ export async function requestAtBlock<F extends AnyFunction>(
   if (blockHash) {
     if (!context.isArchiveNode) {
       throw new PolymeshError({
-        code: ErrorCode.QueryAborted,
-        message: 'The node must be archive to execute the query',
+        code: ErrorCode.DataUnavailable,
+        message: 'Cannot query previous blocks in a non-archive node',
       });
     }
     return query.at(blockHash, ...args);

@@ -304,7 +304,7 @@ export enum ErrorCode {
   NotAuthorized = 'NotAuthorized',
   MiddlewareError = 'MiddlewareError',
   IdentityNotPresent = 'IdentityNotPresent',
-  QueryAborted = 'QueryAborted',
+  DataUnavailable = 'DataUnavailable',
 }
 
 /**

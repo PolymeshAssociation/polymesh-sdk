@@ -40,7 +40,6 @@ import {
   identityIdToString,
   numberToU32,
   posRatioToBigNumber,
-  requestAtBlock,
   signatoryToSigner,
   stringToAccountId,
   stringToIdentityId,
@@ -77,6 +76,9 @@ export class Context {
 
   public currentPair?: KeyringPair;
 
+  /**
+   * Retrieve whether the current node is an archive node (contains a full history from genesis onward) or not
+   */
   public isArchiveNode = false;
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
@@ -180,9 +182,9 @@ export class Context {
   }
 
   /**
-   * Retrieve whether the current node is an archive node (contains a full history from genesis onward) or not
+   * @hidden
    */
-  public async isCurrentNodeArchive(): Promise<boolean> {
+  private async isCurrentNodeArchive(): Promise<boolean> {
     const {
       polymeshApi: {
         query: { balances, system },
@@ -191,14 +193,7 @@ export class Context {
 
     try {
       const blockHash = await system.blockHash(numberToU32(0, this));
-      const balance = await requestAtBlock(
-        balances.totalIssuance,
-        {
-          args: [],
-          blockHash,
-        },
-        this
-      );
+      const balance = await balances.totalIssuance.at(blockHash);
       return balanceToBigNumber(balance).gt(new BigNumber(0));
     } catch (e) {
       return false;

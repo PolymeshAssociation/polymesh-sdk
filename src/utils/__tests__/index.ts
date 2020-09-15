@@ -2321,7 +2321,7 @@ describe('requestAtBlock', () => {
         },
         context
       )
-    ).rejects.toThrow('The node must be archive to execute the query');
+    ).rejects.toThrow('Cannot query previous blocks in a non-archive node');
   });
 });
 

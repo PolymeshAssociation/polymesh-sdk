@@ -1,5 +1,3 @@
-import { u32 } from '@polkadot/types';
-import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import { DidRecord, ProtocolOp, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -105,6 +103,15 @@ describe('Context class', () => {
   });
 
   describe('method: create', () => {
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('balances', 'totalIssuance', {
+        returnValue: dsMockUtils.createMockBalance(100),
+      });
+      dsMockUtils.createQueryStub('system', 'blockHash', {
+        returnValue: dsMockUtils.createMockHash(),
+      });
+    });
+
     test('should throw if seed parameter is not a 32 length string', async () => {
       const context = Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1321,6 +1328,7 @@ describe('Context class', () => {
     });
   });
 
+  /*
   describe('method: isCurrentNodeArchive', () => {
     let requestAtBlockStub: sinon.SinonStub;
     let numberToU32Stub: sinon.SinonStub<[number | BigNumber, Context], u32>;
@@ -1366,6 +1374,7 @@ describe('Context class', () => {
       expect(result).toBeFalsy();
     });
   });
+  */
 
   describe('method: getLatestBlock', () => {
     test('should return the latest block', async () => {
