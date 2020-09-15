@@ -40,6 +40,7 @@ import {
   AuthIdentifier,
   Authorization,
   AuthorizationData,
+  AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
   CddStatus,
   Claim,
@@ -1420,6 +1421,24 @@ export const createMockIdentifierType = (
   identifierType?: 'Isin' | 'Cusip' | 'Cins'
 ): IdentifierType => {
   return createMockEnum(identifierType) as IdentifierType;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAuthorizationType = (
+  authorizationType?:
+    | 'AttestMasterKeyRotation'
+    | 'RotateMasterKey'
+    | 'TransferTicker'
+    | 'AddMultiSigSigner'
+    | 'TransferAssetOwnership'
+    | 'JoinIdentity'
+    | 'Custom'
+    | 'NoData'
+): MeshAuthorizationType => {
+  return createMockEnum(authorizationType) as MeshAuthorizationType;
 };
 
 /**
