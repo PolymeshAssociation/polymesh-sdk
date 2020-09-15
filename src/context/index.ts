@@ -77,7 +77,7 @@ export class Context {
   public currentPair?: KeyringPair;
 
   /**
-   * Retrieve whether the current node is an archive node (contains a full history from genesis onward) or not
+   * Whether the current node is an archive node (contains a full history from genesis onward) or not
    */
   public isArchiveNode = false;
 
