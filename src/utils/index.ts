@@ -24,6 +24,7 @@ import {
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
   CddStatus,
   Claim as MeshClaim,
@@ -319,6 +320,16 @@ export function authorizationToAuthorizationData(
   return context.polymeshApi.createType('AuthorizationData', {
     [type]: value,
   });
+}
+
+/**
+ * @hidden
+ */
+export function authorizationTypeToMeshAuthorizationType(
+  authorizationType: AuthorizationType,
+  context: Context
+): MeshAuthorizationType {
+  return context.polymeshApi.createType('AuthorizationType', authorizationType);
 }
 
 /**
