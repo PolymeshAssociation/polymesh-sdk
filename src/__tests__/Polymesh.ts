@@ -1254,6 +1254,8 @@ describe('Polymesh Class', () => {
       const tag = TxTags.identity.CddRegisterDid;
       const moduleId = ModuleIdEnum.Identity;
       const callId = CallIdEnum.CddRegisterDid;
+      const someBlockNumber = new BigNumber(100);
+      const otherBlockNumber = new BigNumber(200);
 
       sinon
         .stub(utilsModule, 'addressToKey')
@@ -1273,12 +1275,12 @@ describe('Polymesh Class', () => {
         totalCount: 20,
         items: [
           {
-            block_id: 1,
+            block_id: someBlockNumber.toNumber(),
             address: address,
             success: 0,
           },
           {
-            block_id: 2,
+            block_id: otherBlockNumber.toNumber(),
             success: 1,
           },
         ],
@@ -1299,7 +1301,7 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.createApolloQueryStub(
         transactions({
-          block_id: undefined,
+          block_id: someBlockNumber.toNumber(),
           address: key,
           module_id: moduleId,
           call_id: callId,
@@ -1314,14 +1316,15 @@ describe('Polymesh Class', () => {
       );
 
       let result = await polymesh.getTransactionHistory({
+        blockNumber: someBlockNumber,
         address,
         tag,
         size: 2,
         start: 1,
       });
 
-      expect(result.data[0].blockId).toEqual(1);
-      expect(result.data[1].blockId).toEqual(2);
+      expect(result.data[0].blockNumber).toEqual(someBlockNumber);
+      expect(result.data[1].blockNumber).toEqual(otherBlockNumber);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[1].address).toBeNull();
       expect(result.data[0].success).toBeFalsy();
@@ -1347,7 +1350,7 @@ describe('Polymesh Class', () => {
 
       result = await polymesh.getTransactionHistory();
 
-      expect(result.data[0].blockId).toEqual(1);
+      expect(result.data[0].blockNumber).toEqual(someBlockNumber);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[0].success).toBeFalsy();
       expect(result.count).toEqual(20);

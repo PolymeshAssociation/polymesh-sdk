@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { Entity } from '~/base';
 import { Context } from '~/context';
 import { eventByIndexedArgs } from '~/middleware/queries';
@@ -66,16 +68,16 @@ describe('TrustedClaimIssuer class', () => {
     };
 
     test('should return the event identifier object of the trusted claim issuer creation', async () => {
-      const blockId = 1234;
+      const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const eventIdx = 1;
-      const fakeResult = { blockNumber: blockId, blockDate, eventIndex: eventIdx };
+      const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
       const trustedClaimIssuer = new TrustedClaimIssuer({ did, ticker }, context);
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
         /* eslint-disable @typescript-eslint/camelcase */
         eventByIndexedArgs: {
-          block_id: blockId,
+          block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
           event_idx: eventIdx,
         },
