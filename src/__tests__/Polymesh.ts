@@ -31,7 +31,10 @@ jest.mock(
   '@polkadot/api',
   require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
 );
-jest.mock('~/context', require('~/testUtils/mocks/dataSources').mockContextModule('~/context'));
+jest.mock(
+  '~/base/Context',
+  require('~/testUtils/mocks/dataSources').mockContextModule('~/base/Context')
+);
 jest.mock(
   'apollo-client',
   require('~/testUtils/mocks/dataSources').mockApolloModule('apollo-client')

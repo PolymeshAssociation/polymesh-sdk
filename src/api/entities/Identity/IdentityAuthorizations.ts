@@ -8,8 +8,6 @@ import { requestPaginated, signatoryToSignerValue, stringToIdentityId } from '~/
 
 import { Authorizations } from '../common/namespaces/Authorizations';
 
-console.log('AUTHORIZATIONS', Authorizations);
-
 /**
  * Handles all Identity Authorization related functionality
  */

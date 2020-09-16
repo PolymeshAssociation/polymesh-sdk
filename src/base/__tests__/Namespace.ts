@@ -1,4 +1,5 @@
-import { Context, Entity, Namespace } from '~/base';
+import { Entity, Namespace } from '~/api/entities';
+import { Context } from '~/base';
 
 describe('Namespace class', () => {
   describe('constructor', () => {

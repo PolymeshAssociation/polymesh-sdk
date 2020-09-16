@@ -1,8 +1,7 @@
 import sinon from 'sinon';
 
+import { Entity } from '~/api/entities';
 import * as utils from '~/utils';
-
-import { Entity } from '../Entity';
 
 describe('Entity class', () => {
   describe('method: generateUuid', () => {

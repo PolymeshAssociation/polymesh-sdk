@@ -1,16 +1,14 @@
 import { IdentityId } from 'polymesh-types/types';
 
-import { TrustedClaimIssuer } from '~/api/entities';
+import { Namespace, SecurityToken, TrustedClaimIssuer } from '~/api/entities';
 import {
   modifyTokenTrustedClaimIssuers,
   ModifyTokenTrustedClaimIssuersParams,
 } from '~/api/procedures';
-import { Namespace, TransactionQueue } from '~/base';
+import { TransactionQueue } from '~/base';
 import { SubCallback, UnsubCallback } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import { identityIdToString, stringToTicker } from '~/utils';
-
-import { SecurityToken } from '../';
 
 /**
  * Handles all Security Token Default Trusted Claim Issuers related functionality

@@ -4,9 +4,10 @@ import BigNumber from 'bignumber.js';
 import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
+import { Namespace } from '~/api/entities';
 import { toggleFreezeTransfers, transferToken } from '~/api/procedures';
 import { Params } from '~/api/procedures/toggleFreezeTransfers';
-import { Context, Namespace, TransactionQueue } from '~/base';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransferStatus } from '~/types';

@@ -1,6 +1,6 @@
-import { Context, Namespace } from '~/base';
+import { Namespace, SecurityToken } from '~/api/entities';
+import { Context } from '~/base';
 
-import { SecurityToken } from '../';
 import { Rules } from './Rules';
 import { TrustedClaimIssuers } from './TrustedClaimIssuers';
 

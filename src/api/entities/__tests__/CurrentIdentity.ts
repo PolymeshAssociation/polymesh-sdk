@@ -5,7 +5,6 @@ import { removeSigningKeys } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { SigningKey, SubCallback } from '~/types';
-import { SignerType } from '~/types/internal';
 
 describe('CurrentIdentity class', () => {
   let context: Context;
@@ -37,10 +36,12 @@ describe('CurrentIdentity class', () => {
     test('should return a list of Signers', async () => {
       const fakeResult = [
         {
-          type: SignerType.Account,
-          value: '0xdummy',
+          signer: entityMockUtils.getAccountInstance({ address: 'someAddress' }),
+          permissions: [],
         },
       ];
+
+      dsMockUtils.configureMocks({ contextOptions: { signingKeys: fakeResult } });
 
       const did = 'someDid';
 

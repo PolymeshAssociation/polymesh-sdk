@@ -2,9 +2,9 @@ import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
 import { AssetTransferRules, AssetTransferRulesResult, IdentityId } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities';
+import { Identity, Namespace, SecurityToken } from '~/api/entities';
 import { setTokenRules, SetTokenRulesParams, togglePauseRules } from '~/api/procedures';
-import { Namespace, TransactionQueue } from '~/base';
+import { TransactionQueue } from '~/base';
 import { Rule, RuleCompliance, SubCallback, UnsubCallback } from '~/types';
 import {
   assetTransferRulesResultToRuleCompliance,
@@ -15,8 +15,6 @@ import {
   stringToTicker,
   valueToDid,
 } from '~/utils';
-
-import { SecurityToken } from '../';
 
 /**
  * Handles all Security Token Rules related functionality

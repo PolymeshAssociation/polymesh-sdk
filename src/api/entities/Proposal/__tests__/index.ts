@@ -4,10 +4,10 @@ import BigNumber from 'bignumber.js';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity, Proposal } from '~/api/entities';
+import { Entity, Identity, Proposal } from '~/api/entities';
 import { ProposalStage } from '~/api/entities/Proposal/types';
 import { cancelProposal, editProposal, voteOnProposal } from '~/api/procedures';
-import { Context, Entity, TransactionQueue } from '~/base';
+import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs, proposal as proposalQuery, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, ProposalState } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';

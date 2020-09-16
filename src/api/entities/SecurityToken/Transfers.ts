@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 import { CanTransferResult } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities';
+import { Identity, Namespace, SecurityToken } from '~/api/entities';
 import { toggleFreezeTransfers, transferToken, TransferTokenParams } from '~/api/procedures';
-import { Namespace, TransactionQueue } from '~/base';
+import { TransactionQueue } from '~/base';
 import { SubCallback, TransferStatus, UnsubCallback } from '~/types';
 import {
   boolToBoolean,
@@ -15,8 +15,6 @@ import {
   valueToDid,
 } from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
-
-import { SecurityToken } from './';
 
 /**
  * Handles all Security Token Transfer related functionality

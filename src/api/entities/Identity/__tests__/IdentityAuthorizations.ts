@@ -2,8 +2,7 @@ import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { AuthorizationRequest, Identity } from '~/api/entities';
-import { Namespace } from '~/base';
+import { AuthorizationRequest, Identity, Namespace } from '~/api/entities';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType } from '~/types';
 import { tuple } from '~/types/utils';

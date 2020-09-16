@@ -13,8 +13,6 @@ import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
-console.log('POLYMESH TRANSACTION');
-
 describe('Polymesh Transaction class', () => {
   let context: Mocked<Context>;
 

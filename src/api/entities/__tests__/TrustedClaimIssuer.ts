@@ -1,5 +1,5 @@
-import { Identity, TrustedClaimIssuer } from '~/api/entities';
-import { Context, Entity } from '~/base';
+import { Entity, Identity, TrustedClaimIssuer } from '~/api/entities';
+import { Context } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';

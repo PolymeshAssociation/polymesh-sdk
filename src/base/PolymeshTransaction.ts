@@ -17,8 +17,6 @@ import {
 import { balanceToBigNumber, unwrapValue, unwrapValues } from '~/utils';
 import { BATCH_REGEX } from '~/utils/constants';
 
-console.log('PolymeshTransaction');
-
 /**
  * @hidden
  */

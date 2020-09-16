@@ -8,9 +8,9 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity } from '~/api/entities';
+import { Entity, Identity } from '~/api/entities';
 import { modifyToken, transferTokenOwnership } from '~/api/procedures';
-import { Context, Entity, TransactionQueue } from '~/base';
+import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';

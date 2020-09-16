@@ -7,10 +7,10 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities';
+import { Namespace, SecurityToken } from '~/api/entities';
 import { setTokenRules, togglePauseRules } from '~/api/procedures';
 import { Params } from '~/api/procedures/setTokenRules';
-import { Context, Namespace, TransactionQueue } from '~/base';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ClaimType, ConditionTarget, ConditionType, Rule } from '~/types';

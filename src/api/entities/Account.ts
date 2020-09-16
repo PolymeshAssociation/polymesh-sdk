@@ -1,7 +1,7 @@
 import { TxTag } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities';
-import { Context, Entity, PolymeshError } from '~/base';
+import { Entity, Identity } from '~/api/entities';
+import { Context, PolymeshError } from '~/base';
 import { transactions } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
@@ -146,7 +146,7 @@ export class Account extends Entity<UniqueIdentifiers> {
     const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
       transactions({
         block_id: blockId,
-        address: address ? addressToKey(address) : undefined,
+        address: addressToKey(address),
         module_id: moduleId,
         call_id: callId,
         success,

@@ -1,6 +1,6 @@
-import { Context, Entity } from '~/base';
+import { Entity } from '~/api/entities';
+import { Context } from '~/base';
 
-console.log('WHAT?');
 /**
  * @hidden
  *

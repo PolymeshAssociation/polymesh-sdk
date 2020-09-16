@@ -64,8 +64,6 @@ interface AccountData {
   name?: string;
 }
 
-console.log('Context');
-
 /**
  * Context in which the SDK is being used
  *

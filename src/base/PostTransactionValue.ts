@@ -3,8 +3,6 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import { PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
 
-console.log('PTV');
-
 /**
  * @hidden
  *

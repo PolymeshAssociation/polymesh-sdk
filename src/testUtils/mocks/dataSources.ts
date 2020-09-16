@@ -65,7 +65,7 @@ import {
   Scope,
   SecurityToken,
   Signatory,
-  SigningKey,
+  SigningKey as MeshSigningKey,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
@@ -82,8 +82,9 @@ import {
   ExtrinsicData,
   KeyringPair,
   ResultSet,
+  SigningKey,
 } from '~/types';
-import { Extrinsics, GraphqlQuery, PolymeshTx, Queries, SignerType } from '~/types/internal';
+import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
 
 let apiEmitter: EventEmitter;
@@ -454,16 +455,7 @@ function configureContext(opts: ContextOptions): void {
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
-    getSigningKeys: sinon.stub().returns(
-      opts.withSeed
-        ? [
-            {
-              type: SignerType.Account,
-              value: opts.currentPairAddress,
-            },
-          ]
-        : []
-    ),
+    getSigningKeys: sinon.stub().returns(opts.signingKeys),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
@@ -1667,7 +1659,7 @@ export const createMockAssetTransferRulesResult = (assetTransferRulesResult?: {
 export const createMockDidRecord = (didRecord?: {
   roles: IdentityRole[];
   master_key: AccountId;
-  signing_keys: SigningKey[];
+  signing_keys: MeshSigningKey[];
 }): DidRecord => {
   const record = didRecord || {
     roles: [],
@@ -1797,7 +1789,7 @@ export const createMockPipsMetadata = (metadata?: {
 export const createMockSigningKey = (signingKey?: {
   signer: Signatory;
   permissions: Permission[];
-}): SigningKey => {
+}): MeshSigningKey => {
   const key = signingKey || {
     signer: createMockSignatory(),
     permissions: [],
@@ -1807,5 +1799,5 @@ export const createMockSigningKey = (signingKey?: {
       ...key,
     },
     !signingKey
-  ) as SigningKey;
+  ) as MeshSigningKey;
 };

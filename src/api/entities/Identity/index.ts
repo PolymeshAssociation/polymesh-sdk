@@ -1,8 +1,8 @@
 import { BigNumber } from 'bignumber.js';
 import { CddStatus, DidRecord } from 'polymesh-types/types';
 
-import { SecurityToken, TickerReservation } from '~/api/entities';
-import { Context, Entity, PolymeshError } from '~/base';
+import { Entity, SecurityToken, TickerReservation } from '~/api/entities';
+import { Context, PolymeshError } from '~/base';
 import {
   issuerDidsWithClaimsByTarget,
   scopesByIdentity,

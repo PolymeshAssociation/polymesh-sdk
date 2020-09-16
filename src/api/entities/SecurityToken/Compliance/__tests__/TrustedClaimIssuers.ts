@@ -1,9 +1,9 @@
 import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken, TrustedClaimIssuer } from '~/api/entities';
+import { Namespace, SecurityToken, TrustedClaimIssuer } from '~/api/entities';
 import { modifyTokenTrustedClaimIssuers } from '~/api/procedures';
-import { Context, Namespace, TransactionQueue } from '~/base';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsModule from '~/utils';

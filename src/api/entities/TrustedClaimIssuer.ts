@@ -1,5 +1,5 @@
-import { Identity } from '~/api/entities';
-import { Context, Entity } from '~/base';
+import { Entity, Identity } from '~/api/entities';
+import { Context } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier } from '~/types';

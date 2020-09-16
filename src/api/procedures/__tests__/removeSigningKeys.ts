@@ -1,6 +1,7 @@
 import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { Account } from '~/api/entities';
 import {
   isAuthorized,
   prepareRemoveSigningKeys,
@@ -10,13 +11,14 @@ import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Signer } from '~/types';
-import { SignerValue } from '~/types/internal';
+import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('removeSigningKeys procedure', () => {
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
+  let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
 
   let args: { signers: Signer[] };
 
@@ -25,6 +27,7 @@ describe('removeSigningKeys procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     signerValueToSignatoryStub = sinon.stub(utilsModule, 'signerValueToSignatory');
+    signerToSignerValueStub = sinon.stub(utilsModule, 'signerToSignerValue');
   });
 
   beforeEach(() => {
@@ -50,14 +53,16 @@ describe('removeSigningKeys procedure', () => {
 
   test('should add a remove signing items transaction to the queue', async () => {
     const { signers } = args;
+    const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
 
     const rawSignatory = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId(utilsModule.signerToSignerValue(signers[0]).value),
+      Account: dsMockUtils.createMockAccountId(signerValue.value),
     });
 
-    mockContext.getSigningKeys.resolves(signers);
+    mockContext.getSigningKeys.resolves(signers.map(signer => ({ signer, permissions: [] })));
 
-    signerValueToSignatoryStub.returns(rawSignatory);
+    signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
+    signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
 
     const proc = procedureMockUtils.getInstance<RemoveSigningKeysParams, void>(mockContext);
 
@@ -70,15 +75,25 @@ describe('removeSigningKeys procedure', () => {
 
   test('should throw an error if attempting to remove the master key', async () => {
     const proc = procedureMockUtils.getInstance<RemoveSigningKeysParams, void>(mockContext);
+    const signer = entityMockUtils.getAccountInstance({ address: 'masterKey' });
+
+    signerToSignerValueStub
+      .withArgs(signer)
+      .returns({ type: SignerType.Account, value: signer.address });
 
     await expect(
       prepareRemoveSigningKeys.call(proc, {
-        signers: [entityMockUtils.getAccountInstance({ address: 'masterKey' })],
+        signers: [signer],
       })
     ).rejects.toThrow('You cannot remove the master key');
   });
 
   test('should throw an error if at least one of the signing key to remove is not present in the signing keys list', async () => {
+    const { signers } = args;
+    const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
+
+    signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
+
     const proc = procedureMockUtils.getInstance<RemoveSigningKeysParams, void>(mockContext);
 
     await expect(prepareRemoveSigningKeys.call(proc, args)).rejects.toThrow(

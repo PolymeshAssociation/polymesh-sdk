@@ -1,7 +1,7 @@
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import BigNumber from 'bignumber.js';
 
-import { Identity } from '~/api/entities';
+import { Entity, Identity } from '~/api/entities';
 import {
   cancelProposal,
   editProposal,
@@ -9,7 +9,7 @@ import {
   voteOnProposal,
   VoteOnProposalParams,
 } from '~/api/procedures';
-import { Context, Entity, TransactionQueue } from '~/base';
+import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs, proposal, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, ResultSet } from '~/types';

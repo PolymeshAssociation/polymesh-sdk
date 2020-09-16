@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 
-import { Identity } from '~/api/entities';
+import { Entity, Identity } from '~/api/entities';
 import { acceptJoinIdentityAuthorization, consumeAuthorizationRequests } from '~/api/procedures';
-import { Context, Entity, TransactionQueue } from '~/base';
+import { Context, TransactionQueue } from '~/base';
 import { Authorization, AuthorizationType, Signer } from '~/types';
 
 export interface UniqueIdentifiers {

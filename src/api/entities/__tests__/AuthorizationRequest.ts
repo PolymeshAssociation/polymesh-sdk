@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { AuthorizationRequest, Identity } from '~/api/entities';
+import { AuthorizationRequest, Entity, Identity } from '~/api/entities';
 import { consumeAuthorizationRequests } from '~/api/procedures';
-import { Context, Entity, TransactionQueue } from '~/base';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Authorization, AuthorizationType } from '~/types';
 

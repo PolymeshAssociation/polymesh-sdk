@@ -12,8 +12,6 @@ import {
   TransactionSpec,
 } from '~/types/internal';
 
-console.log('CODINGOS');
-
 interface AddTransactionOpts<Values extends unknown[]> {
   fee?: BigNumber;
   resolvers?: ResolverFunctionArray<Values>;

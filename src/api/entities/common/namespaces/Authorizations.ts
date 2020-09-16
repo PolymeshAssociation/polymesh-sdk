@@ -1,8 +1,7 @@
 import { Authorization } from 'polymesh-types/types';
 
-import { Account, AuthorizationRequest, Identity } from '~/api/entities';
-import { Namespace } from '~/base';
-import { PaginationOptions, ResultSet } from '~/types';
+import { AuthorizationRequest, Identity, Namespace } from '~/api/entities';
+import { PaginationOptions, ResultSet, Signer } from '~/types';
 import { SignerValue } from '~/types/internal';
 import {
   authorizationDataToAuthorization,
@@ -15,12 +14,10 @@ import {
   u64ToBigNumber,
 } from '~/utils';
 
-console.log('NAMESPACE', Namespace);
-
 /**
  * Handles all Authorization related functionality
  */
-export class Authorizations<Parent extends Identity | Account> extends Namespace<Parent> {
+export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
   /**
    * Fetch all pending authorization requests for which this identity is the target
    *

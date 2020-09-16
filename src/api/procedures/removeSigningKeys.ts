@@ -32,7 +32,6 @@ export async function prepareRemoveSigningKeys(
   ]);
 
   const signerValues = signers.map(signer => signerToSignerValue(signer));
-
   const isMasterKeyPresent = find(signerValues, ({ value }) => value === masterKey);
 
   if (isMasterKeyPresent) {
