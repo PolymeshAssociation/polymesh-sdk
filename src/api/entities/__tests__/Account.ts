@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Account, Entity } from '~/api/entities';
@@ -5,19 +6,33 @@ import { Context } from '~/base';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { TxTags } from '~/types';
+import { Mocked } from '~/testUtils/types';
+import { AccountBalance, TxTags } from '~/types';
 import * as utilsModule from '~/utils';
 
 describe('Account class', () => {
-  let context: Context;
+  let context: Mocked<Context>;
+
+  let address: string;
+  let key: string;
+  let account: Account;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+
+    address = 'someAddress';
+    key = 'someKey';
+
+    sinon
+      .stub(utilsModule, 'addressToKey')
+      .withArgs(address)
+      .returns(key);
   });
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
+    account = new Account({ address }, context);
   });
 
   afterEach(() => {
@@ -28,24 +43,87 @@ describe('Account class', () => {
   afterAll(() => {
     entityMockUtils.cleanup();
     dsMockUtils.cleanup();
+    sinon.restore();
   });
 
   test('should extend Entity', () => {
     expect(Account.prototype instanceof Entity).toBe(true);
   });
 
+  describe('method: isUniqueIdentifiers', () => {
+    test('should return true if the object conforms to the interface', () => {
+      expect(Account.isUniqueIdentifiers({ address: 'someAdddress' })).toBe(true);
+      expect(Account.isUniqueIdentifiers({})).toBe(false);
+      expect(Account.isUniqueIdentifiers({ address: 3 })).toBe(false);
+    });
+  });
+
+  describe('method: getBalance', () => {
+    let fakeResult: AccountBalance;
+
+    beforeAll(() => {
+      fakeResult = {
+        free: new BigNumber(100),
+        locked: new BigNumber(10),
+      };
+    });
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance({ balance: fakeResult });
+      account = new Account({ address }, context);
+    });
+
+    test("should return the account's balance", async () => {
+      const result = await account.getBalance();
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const callback = sinon.stub();
+
+      context.accountBalance.callsFake(async (_, cbFunc) => {
+        cbFunc(fakeResult);
+        return unsubCallback;
+      });
+
+      const result = await account.getBalance(callback);
+
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeResult);
+    });
+  });
+
+  describe('method: getIdentity', () => {
+    test('should return the Identity associated to the Account', async () => {
+      const did = 'someDid';
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId(did),
+          })
+        ),
+      });
+
+      const result = await account.getIdentity();
+      expect(result.did).toBe(did);
+    });
+
+    test('should throw an error if there is no Identity associated to the Account', () => {
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').throws();
+
+      return expect(account.getIdentity()).rejects.toThrow(
+        'The current account does not have an associated Identity'
+      );
+    });
+  });
+
   describe('method: getTransactionHistory', () => {
     test('should return a list of transactions', async () => {
-      const address = 'someAddress';
-      const key = 'someKey';
       const tag = TxTags.identity.CddRegisterDid;
       const moduleId = ModuleIdEnum.Identity;
       const callId = CallIdEnum.CddRegisterDid;
-
-      sinon
-        .stub(utilsModule, 'addressToKey')
-        .withArgs(address)
-        .returns(key);
 
       sinon
         .stub(utilsModule, 'txTagToExtrinsicIdentifier')
@@ -74,8 +152,6 @@ describe('Account class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
-
-      const account = new Account({ address }, context);
 
       dsMockUtils.createApolloQueryStub(
         transactions({

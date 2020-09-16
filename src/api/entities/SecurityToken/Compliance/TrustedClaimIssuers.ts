@@ -19,7 +19,7 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
    *
    * This requires two transactions
    *
-   * @param args.claimIssuerDids - array of identity IDs of the default claim issuers
+   * @param args.claimIssuerDids - array of Identity IDs of the default Trusted Claim Issuers
    */
   public set(args: ModifyTokenTrustedClaimIssuersParams): Promise<TransactionQueue<SecurityToken>> {
     const {
@@ -33,9 +33,9 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   }
 
   /**
-   * Add the supplied identities to the Security Token's list of trusted claim issuers
+   * Add the supplied Identities to the Security Token's list of trusted claim issuers
    *
-   * @param args.claimIssuerDids - array of identity IDs of the default claim issuers
+   * @param args.claimIssuerDids - array of Identity IDs of the default claim issuers
    */
   public add(args: ModifyTokenTrustedClaimIssuersParams): Promise<TransactionQueue<SecurityToken>> {
     const {
@@ -49,9 +49,9 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   }
 
   /**
-   * Remove the supplied identities from the Security Token's list of trusted claim issuers   *
+   * Remove the supplied Identities from the Security Token's list of trusted claim issuers   *
    *
-   * @param args.claimIssuerDids - array of identity IDs of the default claim issuers
+   * @param args.claimIssuerDids - array of Identity IDs of the default claim issuers
    */
   public remove(
     args: ModifyTokenTrustedClaimIssuersParams

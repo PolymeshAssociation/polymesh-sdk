@@ -45,7 +45,7 @@ describe('Governance class', () => {
   });
 
   describe('method: getGovernanceCommitteeMembers', () => {
-    test('should retrieve a list of the identities of all active members', async () => {
+    test('should retrieve a list of the Identities of all active members', async () => {
       const did = 'someDid';
       const expectedMembers = [new Identity({ did }, context)];
 
@@ -71,7 +71,7 @@ describe('Governance class', () => {
 
   describe('method: getProposals', () => {
     test('should return a list of proposal entities', async () => {
-      const pipId = 10;
+      const pipId = new BigNumber(10);
       const url = 'http://someUrl';
       const address = 'someAddress';
       const proposer = '0xsomeAddress';
@@ -131,7 +131,9 @@ describe('Governance class', () => {
           skip: undefined,
         }),
         {
-          proposals: [{ ...proposalsQueryResponse, pipId, proposal, proposer, url }],
+          proposals: [
+            { ...proposalsQueryResponse, pipId: pipId.toNumber(), proposal, proposer, url },
+          ],
         }
       );
 
@@ -150,7 +152,7 @@ describe('Governance class', () => {
           skip: undefined,
         }),
         {
-          proposals: [{ ...proposalsQueryResponse, pipId, proposer, url }],
+          proposals: [{ ...proposalsQueryResponse, pipId: pipId.toNumber(), proposer, url }],
         }
       );
 

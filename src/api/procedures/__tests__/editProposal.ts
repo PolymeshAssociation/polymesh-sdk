@@ -1,5 +1,6 @@
 import { Text } from '@polkadot/types';
 import { AccountId } from '@polkadot/types/interfaces/runtime';
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { isAuthorized, Params, prepareEditProposal } from '~/api/procedures/editProposal';
@@ -11,7 +12,7 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('editProposal procedure', () => {
-  const pipId = 10;
+  const pipId = new BigNumber(10);
   const mockAddress = 'someAddress';
   const description = 'Some Proposal';
   const discussionUrl = 'www.proposal.com';
@@ -86,13 +87,19 @@ describe('editProposal procedure', () => {
   test('should add an edit proposal transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
+    const rawPipId = dsMockUtils.createMockPipId(pipId);
+    sinon
+      .stub(utilsModule, 'numberToPipId')
+      .withArgs(pipId, mockContext)
+      .returns(rawPipId);
+
     await prepareEditProposal.call(proc, { pipId, ...args });
 
     sinon.assert.calledWith(
       addTransactionStub,
       editProposalTransaction,
       {},
-      pipId,
+      rawPipId,
       rawDiscussionUrl,
       rawDescription
     );
@@ -106,7 +113,7 @@ describe('editProposal procedure', () => {
       addTransactionStub,
       editProposalTransaction,
       {},
-      pipId,
+      rawPipId,
       null,
       rawDescription
     );
@@ -120,7 +127,7 @@ describe('editProposal procedure', () => {
       addTransactionStub,
       editProposalTransaction,
       {},
-      pipId,
+      rawPipId,
       rawDiscussionUrl,
       null
     );

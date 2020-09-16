@@ -15,6 +15,7 @@ import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { camelCase, chunk, groupBy, isEqual, map, padEnd, snakeCase } from 'lodash';
+import { Memo, PipId } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
@@ -23,6 +24,7 @@ import {
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
   CddStatus,
   Claim as MeshClaim,
@@ -363,6 +365,16 @@ export function authorizationToAuthorizationData(
 /**
  * @hidden
  */
+export function authorizationTypeToMeshAuthorizationType(
+  authorizationType: AuthorizationType,
+  context: Context
+): MeshAuthorizationType {
+  return context.polymeshApi.createType('AuthorizationType', authorizationType);
+}
+
+/**
+ * @hidden
+ */
 export function permissionToMeshPermission(
   permission: Permission,
   context: Context
@@ -461,6 +473,13 @@ export function numberToBalance(value: number | BigNumber, context: Context): Ba
  */
 export function balanceToBigNumber(balance: Balance): BigNumber {
   return new BigNumber(balance.toString()).div(Math.pow(10, 6));
+}
+
+/**
+ * @hidden
+ */
+export function stringToMemo(value: string, context: Context): Memo {
+  return context.polymeshApi.createType('Memo', value);
 }
 
 /**
@@ -1085,6 +1104,13 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
  */
 export function stringToText(url: string, context: Context): Text {
   return context.polymeshApi.createType('Text', url);
+}
+
+/**
+ * @hidden
+ */
+export function numberToPipId(id: number | BigNumber, context: Context): PipId {
+  return context.polymeshApi.createType('PipId', new BigNumber(id).toString());
 }
 
 /**

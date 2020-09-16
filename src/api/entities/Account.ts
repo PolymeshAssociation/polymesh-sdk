@@ -86,7 +86,7 @@ export class Account extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve the Identity associated to this Account
    *
-   * @throws if there is no identity associated to the account
+   * @throws if there is no Identity associated to the Account
    */
   public async getIdentity(): Promise<Identity> {
     const {
@@ -109,7 +109,7 @@ export class Account extends Entity<UniqueIdentifiers> {
     } catch (err) {
       throw new PolymeshError({
         code: ErrorCode.IdentityNotPresent,
-        message: 'The current account does not have an associated identity',
+        message: 'The current account does not have an associated Identity',
       });
     }
   }

@@ -4,17 +4,22 @@ import BigNumber from 'bignumber.js';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Entity, Identity, Proposal } from '~/api/entities';
+import { Entity, Proposal } from '~/api/entities';
 import { ProposalStage } from '~/api/entities/Proposal/types';
 import { cancelProposal, editProposal, voteOnProposal } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs, proposal as proposalQuery, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, ProposalState } from '~/middleware/types';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
 
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+
 describe('Proposal class', () => {
-  const pipId = 10;
+  const pipId = new BigNumber(10);
   let context: Context;
   let proposal: Proposal;
   let u32ToBigNumberStub: sinon.SinonStub<[u32], BigNumber>;
@@ -23,6 +28,7 @@ describe('Proposal class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
     u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
     requestAtBlockStub = sinon.stub(utilsModule, 'requestAtBlock');
     balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
@@ -35,10 +41,12 @@ describe('Proposal class', () => {
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -53,7 +61,7 @@ describe('Proposal class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(Proposal.isUniqueIdentifiers({ pipId: 10 })).toBe(true);
+      expect(Proposal.isUniqueIdentifiers({ pipId })).toBe(true);
       expect(Proposal.isUniqueIdentifiers({})).toBe(false);
       expect(Proposal.isUniqueIdentifiers({ pipId: '10' })).toBe(false);
     });
@@ -73,7 +81,7 @@ describe('Proposal class', () => {
       proposal = new Proposal({ pipId }, context);
     });
 
-    test('should return true if the identity has voted on the proposal', async () => {
+    test('should return true if the Identity has voted on the proposal', async () => {
       const fakeResult = true;
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
@@ -88,7 +96,7 @@ describe('Proposal class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should return false if the identity has not voted on the proposal', async () => {
+    test('should return false if the Identity has not voted on the proposal', async () => {
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
       const result = await proposal.identityHasVoted({ identity: 'someDid' });
       expect(result).toBeFalsy();
@@ -97,19 +105,19 @@ describe('Proposal class', () => {
 
   describe('method: getVotes', () => {
     test('should return the list of votes', async () => {
-      const did = 'someDid';
+      const address = 'someAddress';
       const vote = false;
       const weight = new BigNumber(10000000000);
       const proposalVotesQueryResponse = [
         {
-          account: did,
+          account: address,
           vote,
           weight: weight.toNumber(),
         },
       ];
       const fakeResult = [
         {
-          identity: new Identity({ did }, context),
+          account: entityMockUtils.getAccountInstance({ address }),
           vote,
           weight,
         },
@@ -117,7 +125,7 @@ describe('Proposal class', () => {
 
       dsMockUtils.createApolloQueryStub(
         proposalVotes({
-          pipId,
+          pipId: pipId.toNumber(),
           vote: undefined,
           orderBy: undefined,
           count: undefined,
@@ -173,7 +181,7 @@ describe('Proposal class', () => {
 
   describe('method: getDetails', () => {
     test('should return the proposal details', async () => {
-      const variables = { pipId };
+      const variables = { pipId: pipId.toNumber() };
       const proposer = 'someProposer';
       const url = 'http://someUrl';
       const description = 'some description';
@@ -187,7 +195,7 @@ describe('Proposal class', () => {
       const totalNaysWeight = new BigNumber(20);
       const rawProposal = '0x110000';
       const fakeProposal = {
-        pipId,
+        pipId: pipId.toNumber(),
         proposer,
         createdAt: createdAt.toNumber(),
         url,

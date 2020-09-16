@@ -17,9 +17,9 @@ export interface Params {
 }
 
 /**
- * Represents a request made by an identity to another identity (or account) for some sort of authorization. This has multiple uses. For example, if Alice
- * wants to transfer ownership of her asset ALICETOKEN to Bob, an authorization request gets emitted to Bob,
- * who then has to accept it in order for the ownership transfer to be complete
+ * Represents a request made by an Identity to another Identity (or account) for some sort of authorization. This has multiple uses. For example, if Alice
+ *   wants to transfer ownership of her asset ALICETOKEN to Bob, an authorization request gets emitted to Bob,
+ *   who then has to accept it in order for the ownership transfer to be complete
  */
 export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
   /**
@@ -60,7 +60,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
 
   /**
    * date at which the authorization request expires and can no longer be accepted.
-   * At this point, a new authorization request must be emitted. Null if the request never expires
+   *   At this point, a new authorization request must be emitted. Null if the request never expires
    */
   public expiry: Date | null;
 

@@ -17,7 +17,7 @@ jest.mock(
 );
 
 describe('voteOnProposal procedure', () => {
-  const pipId = 10;
+  const pipId = new BigNumber(10);
   const mockAddress = 'someAddress';
   const vote = true;
   const bondAmount = new BigNumber(10);
@@ -115,7 +115,7 @@ describe('voteOnProposal procedure', () => {
     expect(error.message).toBe('The proposal must not be in its cool-off period');
   });
 
-  test('should throw an error if the identity has already voted on the proposal', async () => {
+  test('should throw an error if the Identity has already voted on the proposal', async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         identityHasVoted: true,
@@ -138,7 +138,7 @@ describe('voteOnProposal procedure', () => {
     expect(error.message).toBe('The Identity has already voted on this proposal');
   });
 
-  test("should throw an error if the identity doesn't have enough balance", async () => {
+  test("should throw an error if the Identity doesn't have enough balance", async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {
@@ -178,6 +178,13 @@ describe('voteOnProposal procedure', () => {
         } as ProposalDetails,
       },
     });
+
+    const rawPipId = dsMockUtils.createMockPipId(pipId);
+    sinon
+      .stub(utilsModule, 'numberToPipId')
+      .withArgs(pipId, mockContext)
+      .returns(rawPipId);
+
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareVoteOnProposal.call(proc, { pipId, ...args });
@@ -186,7 +193,7 @@ describe('voteOnProposal procedure', () => {
       addTransactionStub,
       voteOnProposalTransaction,
       {},
-      pipId,
+      rawPipId,
       rawVote,
       rawBondAmount
     );

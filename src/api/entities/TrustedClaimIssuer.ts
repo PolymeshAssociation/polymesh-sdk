@@ -26,7 +26,7 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * identity of the trusted claim issuer
+   * identity of the Trusted Claim Issuer
    */
   public identity: Identity;
 

@@ -10,7 +10,7 @@ import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
-import { ClaimType, Signer, SigningKey, TransactionArgumentType } from '~/types';
+import { ClaimType, Permission, Signer, SigningKey, TransactionArgumentType } from '~/types';
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -436,7 +436,7 @@ describe('Context class', () => {
       entityMockUtils.cleanup();
     });
 
-    test('should return the current identity', async () => {
+    test('should return the current Identity', async () => {
       const did = 'someDid';
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
         returnValue: dsMockUtils.createMockOption(
@@ -710,7 +710,7 @@ describe('Context class', () => {
         },
         {
           signer: account,
-          permissions: [],
+          permissions: [Permission.Full],
         },
       ];
     });
@@ -728,7 +728,7 @@ describe('Context class', () => {
           }),
           dsMockUtils.createMockSigningKey({
             signer: signerAccountId,
-            permissions: [],
+            permissions: [dsMockUtils.createMockPermission('Full')],
           }),
         ],
       });

@@ -127,7 +127,7 @@ describe('modifyClaims procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Some of the supplied identity IDs do not exist');
+    expect(error.message).toBe('Some of the supplied Identity IDs do not exist');
     expect(error.data).toMatchObject({ nonExistentDids: [otherDid] });
   });
 
@@ -198,7 +198,7 @@ describe('modifyClaims procedure', () => {
     );
   });
 
-  test("should throw an error if any of the claims that will be modified weren't issued by the current identity", async () => {
+  test("should throw an error if any of the claims that will be modified weren't issued by the current Identity", async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getCurrentIdentity();
 
@@ -220,13 +220,13 @@ describe('modifyClaims procedure', () => {
     await expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit })
     ).rejects.toThrow(
-      new RegExp("Attempt to edit claims that weren't issued by the current identity")
+      new RegExp("Attempt to edit claims that weren't issued by the current Identity")
     );
 
     await expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
     ).rejects.toThrow(
-      new RegExp("Attempt to revoke claims that weren't issued by the current identity")
+      new RegExp("Attempt to revoke claims that weren't issued by the current Identity")
     );
   });
 

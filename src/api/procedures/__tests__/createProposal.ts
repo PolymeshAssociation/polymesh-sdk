@@ -211,8 +211,8 @@ describe('createProposal procedure', () => {
 
 describe('createPrroposalResolver', () => {
   const findEventRecordStub = sinon.stub(utilsModule, 'findEventRecord');
-  const pipId = 1;
-  const rawPipId = dsMockUtils.createMockU32(pipId);
+  const pipId = new BigNumber(1);
+  const rawPipId = dsMockUtils.createMockU32(pipId.toNumber());
 
   beforeAll(() => {
     entityMockUtils.initMocks({ proposalOptions: { pipId } });

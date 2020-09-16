@@ -40,7 +40,7 @@ describe('IdentityAuthorizations class', () => {
       sinon.restore();
     });
 
-    test('should retrieve all pending authorizations sent by the identity and filter out expired ones', async () => {
+    test('should retrieve all pending authorizations sent by the Identity', async () => {
       sinon.stub(utilsModule, 'signerValueToSignatory');
       dsMockUtils.createQueryStub('identity', 'authorizationsGiven');
 
@@ -66,13 +66,6 @@ describe('IdentityAuthorizations class', () => {
           expiry: new Date('10/14/3040'),
           data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
           target: new Identity({ did: 'bob' }, context),
-          issuer: identity,
-        },
-        {
-          authId: new BigNumber(3),
-          expiry: new Date('10/14/1987'), // expired
-          data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
-          target: new Identity({ did: 'charlie' }, context),
           issuer: identity,
         },
       ];
@@ -109,7 +102,6 @@ describe('IdentityAuthorizations class', () => {
       authorizationsStub.multi.withArgs(authsMultiArgs).resolves(authorizations);
 
       const expectedAuthorizations = authParams
-        .slice(0, -1)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map(params => new AuthorizationRequest(params as any, context));
 

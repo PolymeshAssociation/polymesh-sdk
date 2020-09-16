@@ -5,25 +5,9 @@ import sinon from 'sinon';
 
 import { Entity, Identity } from '~/api/entities';
 import { Context } from '~/base';
-import {
-  issuerDidsWithClaimsByTarget,
-  scopesByIdentity,
-  tokensByTrustedClaimIssuer,
-  tokensHeldByDid,
-} from '~/middleware/queries';
-import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
+import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import {
-  ClaimData,
-  ClaimType,
-  IdentityWithClaims,
-  Order,
-  ResultSet,
-  Role,
-  RoleType,
-  TickerOwnerRole,
-  TokenOwnerRole,
-} from '~/types';
+import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -94,7 +78,7 @@ describe('Identity class', () => {
       entityMockUtils.cleanup();
     });
 
-    test('hasRole should check whether the identity has the Ticker Owner role', async () => {
+    test('hasRole should check whether the Identity has the Ticker Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const role: TickerOwnerRole = { type: RoleType.TickerOwner, ticker: 'someTicker' };
 
@@ -109,7 +93,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should check whether the identity has the Token Owner role', async () => {
+    test('hasRole should check whether the Identity has the Token Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const role: TokenOwnerRole = { type: RoleType.TokenOwner, ticker: 'someTicker' };
 
@@ -124,7 +108,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should check whether the identity has the CDD Provider role', async () => {
+    test('hasRole should check whether the Identity has the CDD Provider role', async () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
       const role: Role = { type: RoleType.CddProvider };
@@ -155,7 +139,7 @@ describe('Identity class', () => {
       return expect(hasRole).rejects.toThrow(`Unrecognized role "${JSON.stringify(role)}"`);
     });
 
-    test('hasRoles should return true if the identity possesses all roles', async () => {
+    test('hasRoles should return true if the Identity possesses all roles', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
@@ -167,7 +151,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(true);
     });
 
-    test("hasRoles should return false if at least one role isn't possessed by the identity", async () => {
+    test("hasRoles should return false if at least one role isn't possessed by the Identity", async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
@@ -345,36 +329,6 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getCddClaims', () => {
-    test('should return a list of cdd claims', async () => {
-      const did = 'someDid';
-      const identity = new Identity({ did }, context);
-
-      const issuedClaims: ResultSet<ClaimData> = {
-        data: [
-          {
-            target: new Identity({ did }, context),
-            issuer: new Identity({ did: 'otherDid' }, context),
-            issuedAt: new Date(),
-            expiry: null,
-            claim: { type: ClaimType.CustomerDueDiligence },
-          },
-        ],
-        next: 1,
-        count: 1,
-      };
-
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          issuedClaims,
-        },
-      });
-
-      const result = await identity.getCddClaims();
-      expect(result).toEqual(issuedClaims);
-    });
-  });
-
   describe('method: getMasterKey', () => {
     const did = 'someDid';
     const accountId = 'someMasterKey';
@@ -467,136 +421,6 @@ describe('Identity class', () => {
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
-    });
-  });
-
-  describe('method: getClaimScopes', () => {
-    const did = 'someDid';
-    const scopes = [
-      {
-        scope: 'someScope',
-        ticker: 'TOKEN\0\0',
-      },
-      {
-        scope: null,
-      },
-    ];
-
-    test('should return a list of scopes and tickers', async () => {
-      const identity = new Identity({ did }, context);
-
-      dsMockUtils.createApolloQueryStub(scopesByIdentity({ did }), {
-        scopesByIdentity: scopes,
-      });
-
-      const result = await identity.getClaimScopes();
-
-      expect(result[0].ticker).toBe('TOKEN');
-      expect(result[0].scope).toBe('someScope');
-      expect(result[1].ticker).toBeUndefined();
-      expect(result[1].scope).toBeNull();
-    });
-  });
-
-  describe('method: getClaims', () => {
-    test('should return a list of claims issued with this identity as the target', async () => {
-      const did = 'someDid';
-      const identity = new Identity({ did }, context);
-      const issuerDid = 'someIssuerDid';
-      const date = 1589816265000;
-      const claim = {
-        target: new Identity({ did }, context),
-        issuer: new Identity({ did: issuerDid }, context),
-        issuedAt: new Date(date),
-      };
-      const fakeClaims: IdentityWithClaims[] = [
-        {
-          identity: new Identity({ did }, context),
-          claims: [
-            {
-              ...claim,
-              expiry: new Date(date),
-              claim: {
-                type: ClaimType.CustomerDueDiligence,
-              },
-            },
-          ],
-        },
-      ];
-      /* eslint-disable @typescript-eslint/camelcase */
-      const commonClaimData = {
-        targetDID: did,
-        issuer: issuerDid,
-        issuance_date: date,
-        last_update_date: date,
-      };
-      const issuerDidsWithClaimsByTargetQueryResponse: IdentityWithClaimsResult = {
-        totalCount: 25,
-        items: [
-          {
-            did,
-            claims: [
-              {
-                ...commonClaimData,
-                expiry: date,
-                type: ClaimTypeEnum.CustomerDueDiligence,
-              },
-            ],
-          },
-        ],
-      };
-      /* eslint-enabled @typescript-eslint/camelcase */
-
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
-      sinon
-        .stub(utilsModule, 'toIdentityWithClaimsArray')
-        .withArgs(issuerDidsWithClaimsByTargetQueryResponse.items, context)
-        .returns(fakeClaims);
-
-      dsMockUtils.createApolloQueryStub(
-        issuerDidsWithClaimsByTarget({
-          target: did,
-          scope: undefined,
-          trustedClaimIssuers: [did],
-          includeExpired: false,
-          count: 1,
-          skip: undefined,
-        }),
-        {
-          issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
-        }
-      );
-
-      let result = await identity.getClaims({
-        trustedClaimIssuers: [did],
-        includeExpired: false,
-        size: 1,
-      });
-
-      expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
-      expect(result.next).toEqual(1);
-
-      dsMockUtils.createApolloQueryStub(
-        issuerDidsWithClaimsByTarget({
-          target: did,
-          scope: undefined,
-          trustedClaimIssuers: undefined,
-          includeExpired: true,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
-        }
-      );
-
-      result = await identity.getClaims();
-
-      expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
-      expect(result.next).toBeNull();
     });
   });
 });

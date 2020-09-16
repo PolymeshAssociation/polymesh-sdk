@@ -8,7 +8,7 @@ import { Signer, SigningKey, SubCallback, UnsubCallback } from '~/types';
  */
 export class CurrentIdentity extends Identity {
   /**
-   * Get the list of signing keys related to the identity
+   * Get the list of signing keys related to the Identity
    *
    * @note can be subscribed to
    */
@@ -29,7 +29,7 @@ export class CurrentIdentity extends Identity {
   }
 
   /**
-   * Remove a list of signing keys associated with the identity
+   * Remove a list of signing keys associated with the Identity
    */
   public removeSigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
     return removeSigningKeys.prepare(args, this.context);

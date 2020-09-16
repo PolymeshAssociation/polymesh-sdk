@@ -3,6 +3,7 @@ import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
+import { Memo, PipId } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
@@ -10,6 +11,7 @@ import {
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  AuthorizationType as MeshAuthorizationType,
   Claim as MeshClaim,
   DocumentHash,
   DocumentName,
@@ -26,9 +28,9 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity } from '~/api/entities';
+import { Account, Identity } from '~/api/entities';
 import { ProposalState } from '~/api/entities/Proposal/types';
-import { PostTransactionValue } from '~/base';
+import { Context, PostTransactionValue } from '~/base';
 import { CallIdEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -41,10 +43,11 @@ import {
   ConditionType,
   KnownTokenType,
   Permission,
+  Signer,
   TokenIdentifierType,
   TransferStatus,
 } from '~/types';
-import { SignerType } from '~/types/internal';
+import { SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
@@ -59,6 +62,7 @@ import {
   authIdentifierToAuthTarget,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
+  authorizationTypeToMeshAuthorizationType,
   authTargetToAuthIdentifier,
   balanceToBigNumber,
   batchArguments,
@@ -90,6 +94,7 @@ import {
   moduleAddressToString,
   momentToDate,
   numberToBalance,
+  numberToPipId,
   numberToU32,
   numberToU64,
   padString,
@@ -101,7 +106,9 @@ import {
   ruleToAssetTransferRule,
   serialize,
   signatoryToSignerValue,
+  signerToSignerValue,
   signerValueToSignatory,
+  signerValueToSigner,
   signingKeyToMeshSigningKey,
   stringToAccountId,
   stringToAssetIdentifier,
@@ -113,6 +120,7 @@ import {
   stringToFundingRoundName,
   stringToIdentityId,
   stringToJurisdictionName,
+  stringToMemo,
   stringToText,
   stringToTicker,
   textToString,
@@ -129,6 +137,7 @@ import {
   u64ToBigNumber,
   unserialize,
   unwrapValues,
+  valueToAddress,
   valueToDid,
 } from '../';
 
@@ -297,6 +306,26 @@ describe('valueToDid', () => {
   });
 });
 
+describe('valueToAddress', () => {
+  test('valueToAddress should return the Account address string', () => {
+    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const context = dsMockUtils.getContextInstance();
+
+    const account = new Account({ address }, context);
+
+    const result = valueToAddress(account);
+
+    expect(result).toBe(address);
+  });
+
+  test('valueToAddress should return the same address string that it receives', () => {
+    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const result = valueToAddress(address);
+
+    expect(result).toBe(address);
+  });
+});
+
 describe('numberToBalance and balanceToBigNumber', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -331,6 +360,35 @@ describe('numberToBalance and balanceToBigNumber', () => {
 
     const result = balanceToBigNumber(balance);
     expect(result).toEqual(new BigNumber(fakeResult).div(Math.pow(10, 6)));
+  });
+});
+
+describe('stringToMemo', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToMemo should convert a string to a polkadot Memo object', () => {
+    const value = 'someDescription';
+    const fakeResult = ('memoDescription' as unknown) as Memo;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Memo', value)
+      .returns(fakeResult);
+
+    const result = stringToMemo(value, context);
+
+    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -474,6 +532,35 @@ describe('stringToTicker and tickerToString', () => {
 
     const result = tickerToString(ticker);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('numberToPipId', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('numberToPipId should convert a number to a polkadot pipId object', () => {
+    const value = new BigNumber(100);
+    const fakeResult = ('100' as unknown) as PipId;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PipId', value.toString())
+      .returns(fakeResult);
+
+    const result = numberToPipId(value, context);
+
+    expect(result).toBe(fakeResult);
   });
 });
 
@@ -1224,6 +1311,62 @@ describe('signerToSignatory and signatoryToSigner', () => {
 
     result = signatoryToSignerValue(signatory);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('signerToSignerValue and signerValueToSigner', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    sinon.restore();
+  });
+
+  test('signerToSignerValue should convert a Signer to a SignerValue', () => {
+    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    let signer: Signer = new Account({ address }, context);
+
+    let result = signerToSignerValue(signer);
+
+    expect(result).toEqual({
+      type: SignerType.Account,
+      value: address,
+    });
+
+    const did = 'someDid';
+    signer = new Identity({ did }, context);
+
+    result = signerToSignerValue(signer);
+
+    expect(result).toEqual({ type: SignerType.Identity, value: did });
+  });
+
+  test('signerValueToSigner should convert a SignerValue to a Signer', () => {
+    let value = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    let signerValue: SignerValue = { type: SignerType.Account, value };
+
+    let result = signerValueToSigner(signerValue, context);
+
+    expect((result as Account).address).toBe(value);
+
+    value = 'someDid';
+    signerValue = { type: SignerType.Identity, value };
+
+    result = signerValueToSigner(signerValue, context);
+
+    expect((result as Identity).did).toBe(value);
   });
 });
 
@@ -2146,6 +2289,35 @@ describe('permissionToMeshPermission and meshPermissionToPermission', () => {
     permission = dsMockUtils.createMockPermission(fakeResult);
 
     result = meshPermissionToPermission(permission);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('authorizationTypeToMeshAuthorizationType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('authorizationTypeToMeshAuthorizationType should convert a AuthorizationType to a polkadot AuthorizationType object', () => {
+    const value = AuthorizationType.TransferTicker;
+    const fakeResult = ('convertedAuthorizationType' as unknown) as MeshAuthorizationType;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationType', value)
+      .returns(fakeResult);
+
+    const result = authorizationTypeToMeshAuthorizationType(value, context);
+
     expect(result).toEqual(fakeResult);
   });
 });

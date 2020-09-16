@@ -103,7 +103,7 @@ export async function prepareIssueTokens(
   if (failed.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: "You can't issue tokens to some of the supplied identities",
+      message: "You can't issue tokens to some of the supplied Identities",
       data: {
         failed,
       },

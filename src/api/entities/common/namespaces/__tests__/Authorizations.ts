@@ -1,11 +1,13 @@
-import { StorageKey } from '@polkadot/types';
+import { bool } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { AuthorizationType as MeshAuthorizationType, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { AuthorizationRequest, Identity, Namespace } from '~/api/entities';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType } from '~/types';
-import { tuple } from '~/types/utils';
+import { SignerValue } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 import { Authorizations } from '../Authorizations';
@@ -36,23 +38,37 @@ describe('Authorizations class', () => {
   });
 
   describe('method: getReceived', () => {
+    let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
+    let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
+    let authorizationTypeToMeshAuthorizationTypeStub: sinon.SinonStub<
+      [AuthorizationType, Context],
+      MeshAuthorizationType
+    >;
+
     afterAll(() => {
       sinon.restore();
     });
 
+    beforeAll(() => {
+      signerValueToSignatoryStub = sinon.stub(utilsModule, 'signerValueToSignatory');
+      booleanToBoolStub = sinon.stub(utilsModule, 'booleanToBool');
+      authorizationTypeToMeshAuthorizationTypeStub = sinon.stub(
+        utilsModule,
+        'authorizationTypeToMeshAuthorizationType'
+      );
+    });
+
     test('should retrieve all pending authorizations received by the identity and filter out expired ones', async () => {
-      sinon.stub(utilsModule, 'signerValueToSignatory');
-      dsMockUtils.createQueryStub('identity', 'authorizations');
-
-      const requestPaginatedStub = sinon.stub(utilsModule, 'requestPaginated');
-
       const did = 'someDid';
-
+      const filter = AuthorizationType.NoData;
       const context = dsMockUtils.getContextInstance({ did });
       const identity = entityMockUtils.getIdentityInstance({ did });
       const authsNamespace = new Authorizations(identity, context);
+      const rawSignatory = dsMockUtils.createMockSignatory();
+      const rawAuthorizationType = dsMockUtils.createMockAuthorizationType(filter);
 
       /* eslint-disable @typescript-eslint/camelcase */
+
       const authParams = [
         {
           authId: new BigNumber(1),
@@ -68,41 +84,46 @@ describe('Authorizations class', () => {
           target: identity,
           issuer: new Identity({ did: 'bob' }, context),
         },
-        {
-          authId: new BigNumber(3),
-          expiry: new Date('10/14/1987'), // expired
-          data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
-          target: identity,
-          issuer: new Identity({ did: 'bob' }, context),
-        },
       ];
 
-      const authEntries = authParams.map(({ authId, expiry, issuer, data }) =>
-        tuple(
-          ({ args: [did, authId] } as unknown) as StorageKey,
-          dsMockUtils.createMockAuthorization({
-            auth_id: dsMockUtils.createMockU64(authId.toNumber()),
-            expiry: dsMockUtils.createMockOption(
-              expiry ? dsMockUtils.createMockMoment(expiry.getTime()) : expiry
-            ),
-            authorization_data: dsMockUtils.createMockAuthorizationData({
-              TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
-            }),
-            authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
-          })
-        )
+      const fakeAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
+        dsMockUtils.createMockAuthorization({
+          auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+          expiry: dsMockUtils.createMockOption(
+            expiry ? dsMockUtils.createMockMoment(expiry.getTime()) : expiry
+          ),
+          authorization_data: dsMockUtils.createMockAuthorizationData({
+            TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
+          }),
+          authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
+        })
       );
 
-      requestPaginatedStub.resolves({ entries: authEntries, lastKey: null });
+      signerValueToSignatoryStub.returns(rawSignatory);
+      booleanToBoolStub.withArgs(true, context).returns(dsMockUtils.createMockBool(true));
+      booleanToBoolStub.withArgs(false, context).returns(dsMockUtils.createMockBool(false));
+      authorizationTypeToMeshAuthorizationTypeStub
+        .withArgs(filter, context)
+        .returns(rawAuthorizationType);
+
+      dsMockUtils
+        .createRpcStub('identity', 'getFilteredAuthorizations')
+        .resolves(fakeAuthorizations);
 
       const expectedAuthorizations = authParams
-        .slice(0, -1)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map(params => new AuthorizationRequest(params as any, context));
 
-      const result = await authsNamespace.getReceived();
+      let result = await authsNamespace.getReceived();
 
-      expect(result).toEqual({ data: expectedAuthorizations, next: null });
+      expect(result).toEqual(expectedAuthorizations);
+
+      result = await authsNamespace.getReceived({
+        type: AuthorizationType.NoData,
+        includeExpired: false,
+      });
+
+      expect(result).toEqual(expectedAuthorizations);
     });
   });
 });

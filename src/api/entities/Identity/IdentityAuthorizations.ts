@@ -13,7 +13,7 @@ import { Authorizations } from '../common/namespaces/Authorizations';
  */
 export class IdentityAuthorizations extends Authorizations<Identity> {
   /**
-   * Fetch all pending authorization requests issued by this identity
+   * Fetch all pending authorization requests issued by this Identity
    *
    * @note supports pagination
    */

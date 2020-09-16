@@ -76,7 +76,7 @@ export async function isAuthorized(
 
   const unexpiredRequests = authRequests.filter(request => !request.isExpired());
 
-  const authorized = await P.map(unexpiredRequests, async ({ target, issuer }) => {
+  const authorized = await P.mapSeries(unexpiredRequests, async ({ target, issuer }) => {
     let condition;
 
     if (target instanceof Account) {

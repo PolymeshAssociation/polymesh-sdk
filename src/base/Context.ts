@@ -302,7 +302,7 @@ export class Context {
   /**
    * Retrieve current Identity
    *
-   * @throws if there is no identity associated to the current account (or there is no current account associated to the SDK instance)
+   * @throws if there is no Identity associated to the current Account (or there is no current Account associated to the SDK instance)
    */
   public async getCurrentIdentity(): Promise<CurrentIdentity> {
     const account = this.getCurrentAccount();
@@ -313,7 +313,7 @@ export class Context {
   /**
    * Retrieve current Keyring Pair
    *
-   * @throws if there is no account associated to the SDK instance
+   * @throws if there is no Account associated to the SDK instance
    */
   public getCurrentPair(): KeyringPair {
     const { currentPair } = this;
@@ -328,7 +328,7 @@ export class Context {
   }
 
   /**
-   * Check whether identities exist
+   * Check whether Identities exist
    */
   public async getInvalidDids(identities: (string | Identity)[]): Promise<string[]> {
     const dids = identities.map(valueToDid);
@@ -561,7 +561,7 @@ export class Context {
   /**
    * Retrieve a list of claims. Can be filtered using parameters
    *
-   * @param opts.targets - identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.targets - identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
    * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
    * @param opts.size - page size

@@ -32,7 +32,7 @@ export const createProposalResolver = (context: Context) => (
   const data = eventRecord.event.data;
   const pipId = u32ToBigNumber(data[2] as PipId);
 
-  return new Proposal({ pipId: pipId.toNumber() }, context);
+  return new Proposal({ pipId }, context);
 };
 
 /**

@@ -404,7 +404,7 @@ describe('Rules class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('checkTransfer should return the current rules and whether the transfer complies with another identity', async () => {
+    test('checkTransfer should return the current rules and whether the transfer complies with another Identity', async () => {
       const rawResponse = ('response' as unknown) as AssetTransferRulesResult;
 
       dsMockUtils

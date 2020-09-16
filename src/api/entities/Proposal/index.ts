@@ -1,7 +1,7 @@
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import BigNumber from 'bignumber.js';
 
-import { Entity, Identity } from '~/api/entities';
+import { Account, Entity, Identity } from '~/api/entities';
 import {
   cancelProposal,
   editProposal,
@@ -16,6 +16,7 @@ import { Ensured, ResultSet } from '~/types';
 import {
   balanceToBigNumber,
   middlewareProposalToProposalDetails,
+  numberToPipId,
   requestAtBlock,
   u32ToBigNumber,
   valueToDid,
@@ -27,7 +28,7 @@ import { ProposalDetails, ProposalStage, ProposalVote, ProposalVotesOrderByInput
  * Properties that uniquely identify a Proposal
  */
 export interface UniqueIdentifiers {
-  pipId: number;
+  pipId: BigNumber;
 }
 
 /**
@@ -41,13 +42,13 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { pipId } = identifier as UniqueIdentifiers;
 
-    return typeof pipId === 'number';
+    return pipId instanceof BigNumber;
   }
 
   /**
    * internal identifier
    */
-  public pipId: number;
+  public pipId: BigNumber;
 
   /**
    * @hidden
@@ -118,7 +119,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
 
     const result = await context.queryMiddleware<Ensured<Query, 'proposalVotes'>>(
       proposalVotes({
-        pipId,
+        pipId: pipId.toNumber(),
         vote,
         orderBy,
         count: size,
@@ -126,13 +127,15 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       })
     );
 
-    const data = result.data.proposalVotes.map(({ account: did, vote: proposalVote, weight }) => {
-      return {
-        identity: new Identity({ did }, context),
-        vote: proposalVote,
-        weight: new BigNumber(weight),
-      };
-    });
+    const data = result.data.proposalVotes.map(
+      ({ account: address, vote: proposalVote, weight }) => {
+        return {
+          account: new Account({ address }, context),
+          vote: proposalVote,
+          weight: new BigNumber(weight),
+        };
+      }
+    );
 
     return {
       data,
@@ -169,7 +172,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       data: { proposal: rawProposal },
     } = await context.queryMiddleware<Ensured<Query, 'proposal'>>(
       proposal({
-        pipId,
+        pipId: pipId.toNumber(),
       })
     );
 
@@ -192,7 +195,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
 
     /* eslint-disable @typescript-eslint/no-explicit-any */
     const [metadata, blockNumber] = await Promise.all([
-      pips.proposalMetadata(pipId),
+      pips.proposalMetadata(numberToPipId(pipId, context)),
       context.getLatestBlock(),
     ]);
     /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -229,6 +232,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
    */
   public async minimumBondedAmount(): Promise<BigNumber> {
     const {
+      context,
       context: {
         polymeshApi: {
           query: { pips, system },
@@ -237,7 +241,10 @@ export class Proposal extends Entity<UniqueIdentifiers> {
       pipId,
     } = this;
 
-    const [stage, metadata] = await Promise.all([this.getStage(), pips.proposalMetadata(pipId)]);
+    const [stage, metadata] = await Promise.all([
+      this.getStage(),
+      pips.proposalMetadata(numberToPipId(pipId, context)),
+    ]);
 
     const { end: endBlock } = metadata.unwrap();
 

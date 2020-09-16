@@ -307,7 +307,7 @@ export enum ErrorCode {
 }
 
 /**
- * Represents an amount of tokens to be issued to an identity
+ * Represents an amount of tokens to be issued to an Identity
  */
 export interface IssuanceData {
   identity: string | Identity;

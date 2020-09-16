@@ -74,7 +74,7 @@ export async function prepareModifyTokenTrustedClaimIssuers(
     if (notPresent.length) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'One or more of the supplied identities are not trusted claim issuers',
+        message: 'One or more of the supplied Identities are not Trusted Claim Issuers',
         data: {
           notPresent,
         },
@@ -90,7 +90,7 @@ export async function prepareModifyTokenTrustedClaimIssuers(
     if (present.length) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'One or more of the supplied identities already are trusted claim issuers',
+        message: 'One or more of the supplied Identities already are Trusted Claim Issuers',
         data: {
           present,
         },
@@ -103,7 +103,7 @@ export async function prepareModifyTokenTrustedClaimIssuers(
   if (nonExistentDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Some of the supplied identity IDs do not exist',
+      message: 'Some of the supplied Identity IDs do not exist',
       data: {
         nonExistentDids,
       },

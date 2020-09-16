@@ -11,8 +11,6 @@ import { Ticker, TxTag } from 'polymesh-types/types';
 
 import { Account, Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
-  modifyClaims,
-  ModifyClaimsParams,
   registerIdentity,
   RegisterIdentityParams,
   reserveTicker,
@@ -21,37 +19,30 @@ import {
   TransferPolyXParams,
 } from '~/api/procedures';
 import { Context, PolymeshError, TransactionQueue } from '~/base';
-import { didsWithClaims, heartbeat } from '~/middleware/queries';
-import { ClaimTypeEnum, Query } from '~/middleware/types';
+import { heartbeat } from '~/middleware/queries';
 import {
   AccountBalance,
-  ClaimData,
-  ClaimType,
   CommonKeyring,
-  Ensured,
+  CurrentAccount,
   ErrorCode,
-  IdentityWithClaims,
   MiddlewareConfig,
   NetworkProperties,
-  ResultSet,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { ClaimOperation } from '~/types/internal';
 import {
-  calculateNextKey,
   moduleAddressToString,
   stringToIdentityId,
   stringToTicker,
   textToString,
   tickerToString,
-  toIdentityWithClaimsArray,
   u32ToBigNumber,
   valueToDid,
 } from '~/utils';
 
+import { Claims } from './Claims';
 import { Governance } from './Governance';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
@@ -78,6 +69,7 @@ export class Polymesh {
 
   // Namespaces
   public governance: Governance;
+  public claims: Claims;
 
   /**
    * @hidden
@@ -86,6 +78,7 @@ export class Polymesh {
     this.context = context;
 
     this.governance = new Governance(context);
+    this.claims = new Claims(context);
   }
 
   /**
@@ -221,6 +214,7 @@ export class Polymesh {
    *
    * @param args.to - account id that will receive the POLYX
    * @param args.amount - amount of POLYX to be transferred
+   * @param args.memo - identifier string to help differentiate transfers
    */
   public transferPolyX(args: TransferPolyXParams): Promise<TransactionQueue<void>> {
     return transferPolyX.prepare(args, this.context);
@@ -399,7 +393,11 @@ export class Polymesh {
   /**
    * Create an Account instance from an address. If no address is passed, the current Account is returned
    */
-  public getAccount(args?: { address: string }): Account {
+  public getAccount(): CurrentAccount;
+  public getAccount(args: { address: string }): Account;
+
+  // eslint-disable-next-line require-jsdoc
+  public getAccount(args?: { address: string }): Account | CurrentAccount {
     const { context } = this;
 
     if (args) {
@@ -432,35 +430,6 @@ export class Polymesh {
    */
   public getTreasuryAccount(): Account {
     return new Account({ address: moduleAddressToString(TREASURY_MODULE_ADDRESS) }, this.context);
-  }
-
-  /**
-   * Add claims to identities
-   *
-   * @param args.claims - array of claims to be added
-   */
-  public addClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Add }, this.context);
-  }
-
-  /**
-   * Edit claims associated to identities (only the expiry date can be modified)
-   *
-   * * @param args.claims - array of claims to be edited
-   */
-  public editClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Edit }, this.context);
-  }
-
-  /**
-   * Revoke claims from identities
-   *
-   * @param args.claims - array of claims to be revoked
-   */
-  public revokeClaims(
-    args: Omit<ModifyClaimsParams, 'operation'>
-  ): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Revoke }, this.context);
   }
 
   /**
@@ -500,7 +469,7 @@ export class Polymesh {
   /**
    * Retrieve all the Security Tokens owned by an Identity
    *
-   * @param args.owner - identity representation or identity ID as stored in the blockchain
+   * @param args.owner - identity representation or Identity ID as stored in the blockchain
    */
   public async getSecurityTokens(args?: { owner: string | Identity }): Promise<SecurityToken[]> {
     const {
@@ -562,86 +531,6 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all claims issued by the current identity
-   */
-  public async getIssuedClaims(
-    opts: {
-      size?: number;
-      start?: number;
-    } = {}
-  ): Promise<ResultSet<ClaimData>> {
-    const { context } = this;
-
-    const { size, start } = opts;
-    const { did } = await context.getCurrentIdentity();
-
-    const result = await context.issuedClaims({
-      trustedClaimIssuers: [did],
-      size,
-      start,
-    });
-
-    return result;
-  }
-
-  /**
-   * Retrieve a list of identities with claims associated to them. Can be filtered using parameters
-   *
-   * @param opts.targets - identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets
-   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
-   * @param opts.scope - scope of the claims to fetch. Defaults to any scope
-   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
-   * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   */
-  public async getIdentitiesWithClaims(
-    opts: {
-      targets?: (string | Identity)[];
-      trustedClaimIssuers?: (string | Identity)[];
-      scope?: string;
-      claimTypes?: ClaimType[];
-      includeExpired?: boolean;
-      size?: number;
-      start?: number;
-    } = { includeExpired: true }
-  ): Promise<ResultSet<IdentityWithClaims>> {
-    const { context } = this;
-
-    const { targets, trustedClaimIssuers, scope, claimTypes, includeExpired, size, start } = opts;
-
-    const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
-        dids: targets?.map(target => valueToDid(target)),
-        scope,
-        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          valueToDid(trustedClaimIssuer)
-        ),
-        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-        includeExpired,
-        count: size,
-        skip: start,
-      })
-    );
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
-      },
-    } = result;
-
-    const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
-
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
-  }
-
-  /**
    * Retrieve information for the current network
    */
   public async getNetworkProperties(): Promise<NetworkProperties> {
@@ -691,6 +580,9 @@ export class Polymesh {
    * Register an Identity
    *
    * @note must be a CDD provider
+   * @note this may create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
+   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
   public registerIdentity(args: RegisterIdentityParams): Promise<TransactionQueue<Identity>> {
     return registerIdentity.prepare(args, this.context);

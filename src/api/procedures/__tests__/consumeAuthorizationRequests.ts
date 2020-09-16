@@ -37,6 +37,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     entityMockUtils.initMocks();
     authTargetToAuthIdentifierStub = sinon.stub(utilsModule, 'authTargetToAuthIdentifier');
     numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
+    sinon.stub(utilsModule, 'addressToKey');
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -58,7 +59,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       {
         authId: new BigNumber(2),
         expiry: null,
-        target: new Identity({ did: 'targetDid2' }, mockContext),
+        target: new Account({ address: 'targetAddress2' }, mockContext),
         issuer: new Identity({ did: 'issuerDid2' }, mockContext),
         data: {
           type: AuthorizationType.TransferAssetOwnership,
@@ -161,7 +162,7 @@ describe('consumeAuthorizationRequests procedure', () => {
   });
 
   describe('isAuthorized', () => {
-    test('should return whether the current identity is the target of all non-expired requests if trying to accept', async () => {
+    test('should return whether the current Identity or Account is the target of all non-expired requests if trying to accept', async () => {
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
         mockContext
       );
@@ -203,16 +204,17 @@ describe('consumeAuthorizationRequests procedure', () => {
       expect(result).toBe(false);
     });
 
-    test('should return whether the current identity is the target or issuer of all non-expired requests if trying to remove', async () => {
+    test('should return whether the current Identity or Account is the target or issuer of all non-expired requests if trying to remove', async () => {
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
         mockContext
       );
       const { did } = await mockContext.getCurrentIdentity();
+      const { address } = mockContext.getCurrentAccount();
       const constructorParams = [
         {
           authId: new BigNumber(1),
           expiry: null,
-          target: new Identity({ did }, mockContext),
+          target: new Account({ address }, mockContext),
           issuer: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
           data: {
             type: AuthorizationType.NoData,
@@ -232,6 +234,15 @@ describe('consumeAuthorizationRequests procedure', () => {
           expiry: new Date('10/14/1987'), // expired
           target: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
           issuer: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
+          data: {
+            type: AuthorizationType.NoData,
+          } as Authorization,
+        },
+        {
+          authId: new BigNumber(4),
+          expiry: new Date('10/14/3040'),
+          target: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
+          issuer: new Identity({ did }, mockContext),
           data: {
             type: AuthorizationType.NoData,
           } as Authorization,

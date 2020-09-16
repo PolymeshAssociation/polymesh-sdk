@@ -30,7 +30,7 @@ describe('TrustedClaimIssuer class', () => {
   });
 
   describe('constructor', () => {
-    test('should assign ticker and identity to instance', () => {
+    test('should assign ticker and Identity to instance', () => {
       const did = 'someDid';
       const ticker = 'SOMETICKER';
       const identity = new Identity({ did }, context);

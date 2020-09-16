@@ -160,7 +160,7 @@ describe('Transfers class', () => {
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
-    test('should return a status value representing whether the transaction can be made from the current identity', async () => {
+    test('should return a status value representing whether the transaction can be made from the current Identity', async () => {
       const { did: currentDid } = await mockContext.getCurrentIdentity();
 
       const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
@@ -186,7 +186,7 @@ describe('Transfers class', () => {
       expect(result).toBe(TransferStatus.Success);
     });
 
-    test('should return a status value representing whether the transaction can be made from another identity', async () => {
+    test('should return a status value representing whether the transaction can be made from another Identity', async () => {
       const rawResponse = dsMockUtils.createMockCanTransferResult({
         Ok: dsMockUtils.createMockU8(statusCode),
       });

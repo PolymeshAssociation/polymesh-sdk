@@ -170,7 +170,7 @@ describe('issueTokens procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe("You can't issue tokens to some of the supplied identities");
+    expect(error.message).toBe("You can't issue tokens to some of the supplied Identities");
     expect(error.data).toMatchObject({
       failed: [{ did: args.issuanceData[0].identity, transferStatus }],
     });

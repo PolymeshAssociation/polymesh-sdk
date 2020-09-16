@@ -1,13 +1,14 @@
 import { Authorization } from 'polymesh-types/types';
 
 import { AuthorizationRequest, Identity, Namespace } from '~/api/entities';
-import { PaginationOptions, ResultSet, Signer } from '~/types';
+import { AuthorizationType, Signer } from '~/types';
 import { SignerValue } from '~/types/internal';
 import {
   authorizationDataToAuthorization,
+  authorizationTypeToMeshAuthorizationType,
+  booleanToBool,
   identityIdToString,
   momentToDate,
-  requestPaginated,
   signerToSignerValue,
   signerValueToSignatory,
   signerValueToSigner,
@@ -21,37 +22,40 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
   /**
    * Fetch all pending authorization requests for which this identity is the target
    *
-   * @note supports pagination
+   * @param opts.type - fetch only authorizations of this type. Fetches all types if not passed
+   * @param opts.includeExpired - whether to include expired authorizations. Defaults to true
    */
-  public async getReceived(
-    paginationOpts?: PaginationOptions
-  ): Promise<ResultSet<AuthorizationRequest>> {
+  public async getReceived(opts?: {
+    type?: AuthorizationType;
+    includeExpired?: boolean;
+  }): Promise<AuthorizationRequest[]> {
     const {
-      context: { polymeshApi },
       context,
       parent,
+      context: {
+        polymeshApi: { rpc },
+      },
     } = this;
 
-    const signer = signerToSignerValue(parent);
+    const signerValue = signerToSignerValue(parent);
+    const signatory = signerValueToSignatory(signerValue, context);
+    const rawBoolean = booleanToBool(opts?.includeExpired ?? true, context);
+    const rawAuthorizationType = opts?.type
+      ? authorizationTypeToMeshAuthorizationType(opts.type, context)
+      : undefined;
 
-    const signatory = signerValueToSignatory(signer, context);
-
-    const { entries, lastKey: next } = await requestPaginated(
-      polymeshApi.query.identity.authorizations,
-      {
-        arg: signatory,
-        paginationOpts,
-      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: Authorization[] = await (rpc as any).identity.getFilteredAuthorizations(
+      signatory,
+      rawBoolean,
+      rawAuthorizationType
     );
 
     const data = this.createAuthorizationRequests(
-      entries.map(([, auth]) => ({ auth, target: signer }))
+      result.map(auth => ({ auth, target: signerValue }))
     );
 
-    return {
-      data,
-      next,
-    };
+    return data;
   }
 
   /**

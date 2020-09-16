@@ -99,10 +99,14 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Transfer ownership of the Security Token to another identity. This generates an authorization request that must be accepted
-   * by the destinatary
+   * Transfer ownership of the Security Token to another Identity. This generates an authorization request that must be accepted
+   *   by the destinatary
    *
    * @param args.expiry - date at which the authorization request for transfer expires (optional)
+   *
+   * @note this will create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
+   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
   public transferOwnership(
     args: TransferTokenOwnershipParams
@@ -123,7 +127,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the Security Token's name, total supply, whether it is divisible or not and the identity of the owner
+   * Retrieve the Security Token's name, total supply, whether it is divisible or not and the Identity of the owner
    *
    * @note can be subscribed to
    */
