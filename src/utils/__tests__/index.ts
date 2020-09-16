@@ -3,6 +3,7 @@ import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
+import { Memo, PipId } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
@@ -10,6 +11,7 @@ import {
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  AuthorizationType as MeshAuthorizationType,
   Claim as MeshClaim,
   DocumentHash,
   DocumentName,
@@ -59,6 +61,7 @@ import {
   authIdentifierToAuthTarget,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
+  authorizationTypeToMeshAuthorizationType,
   authTargetToAuthIdentifier,
   balanceToBigNumber,
   batchArguments,
@@ -90,6 +93,7 @@ import {
   moduleAddressToString,
   momentToDate,
   numberToBalance,
+  numberToPipId,
   numberToU32,
   numberToU64,
   padString,
@@ -113,6 +117,7 @@ import {
   stringToFundingRoundName,
   stringToIdentityId,
   stringToJurisdictionName,
+  stringToMemo,
   stringToText,
   stringToTicker,
   textToString,
@@ -331,6 +336,35 @@ describe('numberToBalance and balanceToBigNumber', () => {
   });
 });
 
+describe('stringToMemo', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToMemo should convert a string to a polkadot Memo object', () => {
+    const value = 'someDescription';
+    const fakeResult = ('memoDescription' as unknown) as Memo;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Memo', value)
+      .returns(fakeResult);
+
+    const result = stringToMemo(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
 describe('posRatioToBigNumber', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -471,6 +505,35 @@ describe('stringToTicker and tickerToString', () => {
 
     const result = tickerToString(ticker);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('numberToPipId', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('numberToPipId should convert a number to a polkadot pipId object', () => {
+    const value = new BigNumber(100);
+    const fakeResult = ('100' as unknown) as PipId;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PipId', value.toString())
+      .returns(fakeResult);
+
+    const result = numberToPipId(value, context);
+
+    expect(result).toBe(fakeResult);
   });
 });
 
@@ -2143,6 +2206,35 @@ describe('permissionToMeshPermission and meshPermissionToPermission', () => {
     permission = dsMockUtils.createMockPermission(fakeResult);
 
     result = meshPermissionToPermission(permission);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('authorizationTypeToMeshAuthorizationType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('authorizationTypeToMeshAuthorizationType should convert a AuthorizationType to a polkadot AuthorizationType object', () => {
+    const value = AuthorizationType.TransferTicker;
+    const fakeResult = ('convertedAuthorizationType' as unknown) as MeshAuthorizationType;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationType', value)
+      .returns(fakeResult);
+
+    const result = authorizationTypeToMeshAuthorizationType(value, context);
+
     expect(result).toEqual(fakeResult);
   });
 });

@@ -4,11 +4,12 @@ import { IdentityId } from 'polymesh-types/types';
 import { Identity } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
-import { identityIdToString, numberToBalance, stringToAccountId } from '~/utils';
+import { identityIdToString, numberToBalance, stringToAccountId, stringToMemo } from '~/utils';
 
 export interface TransferPolyXParams {
   to: string;
   amount: BigNumber;
+  memo?: string;
 }
 
 /**
@@ -28,7 +29,7 @@ export async function prepareTransferPolyX(
     context,
   } = this;
 
-  const { to, amount } = args;
+  const { to, amount, memo } = args;
 
   let identityId: IdentityId;
 
@@ -80,7 +81,17 @@ export async function prepareTransferPolyX(
     });
   }
 
-  this.addTransaction(tx.balances.transfer, {}, to, numberToBalance(amount, context));
+  if (memo) {
+    this.addTransaction(
+      tx.balances.transferWithMemo,
+      {},
+      to,
+      numberToBalance(amount, context),
+      stringToMemo(memo, context)
+    );
+  } else {
+    this.addTransaction(tx.balances.transfer, {}, to, numberToBalance(amount, context));
+  }
 }
 
 /**

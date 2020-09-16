@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { Proposal } from '~/api/entities';
 import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 import { PolymeshError } from '~/base';
@@ -7,7 +9,7 @@ import { ErrorCode } from '~/types';
 /**
  * @hidden
  */
-export async function assertProposalUnlocked(pipId: number, context: Context): Promise<void> {
+export async function assertProposalUnlocked(pipId: BigNumber, context: Context): Promise<void> {
   const proposal = new Proposal({ pipId }, context);
 
   const [details, stage] = await Promise.all([proposal.getDetails(), proposal.getStage()]);

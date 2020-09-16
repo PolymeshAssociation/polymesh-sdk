@@ -107,7 +107,7 @@ export class Governance {
 
     const proposalsWithDetails = result.data.proposals.map(rawProposal => {
       const { pipId } = rawProposal;
-      const proposal = new Proposal({ pipId }, context);
+      const proposal = new Proposal({ pipId: new BigNumber(pipId) }, context);
       return {
         proposal,
         details: middlewareProposalToProposalDetails(rawProposal, context),

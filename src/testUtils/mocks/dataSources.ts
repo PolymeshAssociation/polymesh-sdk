@@ -40,6 +40,7 @@ import {
   AuthIdentifier,
   Authorization,
   AuthorizationData,
+  AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
   CddStatus,
   Claim,
@@ -57,6 +58,7 @@ import {
   LinkedKeyInfo,
   Permission,
   Pip,
+  PipId,
   PipsMetadata,
   PosRatio,
   ProposalState,
@@ -1422,6 +1424,24 @@ export const createMockIdentifierType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockAuthorizationType = (
+  authorizationType?:
+    | 'AttestMasterKeyRotation'
+    | 'RotateMasterKey'
+    | 'TransferTicker'
+    | 'AddMultiSigSigner'
+    | 'TransferAssetOwnership'
+    | 'JoinIdentity'
+    | 'Custom'
+    | 'NoData'
+): MeshAuthorizationType => {
+  return createMockEnum(authorizationType) as MeshAuthorizationType;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockAssetIdentifier = (identifier?: string): AssetIdentifier =>
   createMockStringCodec(identifier) as AssetIdentifier;
 
@@ -1784,3 +1804,9 @@ export const createMockSigningKey = (signingKey?: {
     !signingKey
   ) as SigningKey;
 };
+
+/**
+ * @hidden
+ */
+export const createMockPipId = (id: number | BigNumber): PipId =>
+  createMockU32(new BigNumber(id).toNumber()) as PipId;
