@@ -1,10 +1,7 @@
 import { AddressOrPair } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 
-import { TransactionQueue } from '~/base';
-import { PolymeshError } from '~/base/PolymeshError';
-import { PostTransactionValue } from '~/base/PostTransactionValue';
-import { Context } from '~/context';
+import { Context, PolymeshError, PostTransactionValue, TransactionQueue } from '~/base';
 import { ErrorCode, Role } from '~/types';
 import {
   MapMaybePostTransactionValue,

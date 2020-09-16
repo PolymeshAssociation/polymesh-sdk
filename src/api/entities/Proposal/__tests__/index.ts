@@ -1,20 +1,22 @@
 import { u32 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity } from '~/api/entities/Identity';
+import { Entity, Proposal } from '~/api/entities';
 import { ProposalStage } from '~/api/entities/Proposal/types';
 import { cancelProposal, editProposal, voteOnProposal } from '~/api/procedures';
-import { Entity, TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs, proposal as proposalQuery, proposalVotes } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, ProposalState } from '~/middleware/types';
-import { TxTags } from '~/polkadot';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
 
-import { Proposal } from '../';
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
 
 describe('Proposal class', () => {
   const pipId = new BigNumber(10);
@@ -26,6 +28,7 @@ describe('Proposal class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
     u32ToBigNumberStub = sinon.stub(utilsModule, 'u32ToBigNumber');
     requestAtBlockStub = sinon.stub(utilsModule, 'requestAtBlock');
     balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
@@ -38,10 +41,12 @@ describe('Proposal class', () => {
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -76,7 +81,7 @@ describe('Proposal class', () => {
       proposal = new Proposal({ pipId }, context);
     });
 
-    test('should return true if the identity has voted on the proposal', async () => {
+    test('should return true if the Identity has voted on the proposal', async () => {
       const fakeResult = true;
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
@@ -91,28 +96,28 @@ describe('Proposal class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should return false if the identity has not voted on the proposal', async () => {
+    test('should return false if the Identity has not voted on the proposal', async () => {
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
-      const result = await proposal.identityHasVoted({ did: 'someDid' });
+      const result = await proposal.identityHasVoted({ identity: 'someDid' });
       expect(result).toBeFalsy();
     });
   });
 
   describe('method: getVotes', () => {
     test('should return the list of votes', async () => {
-      const did = 'someDid';
+      const address = 'someAddress';
       const vote = false;
       const weight = new BigNumber(10000000000);
       const proposalVotesQueryResponse = [
         {
-          account: did,
+          account: address,
           vote,
           weight: weight.toNumber(),
         },
       ];
       const fakeResult = [
         {
-          identity: new Identity({ did }, context),
+          account: entityMockUtils.getAccountInstance({ address }),
           vote,
           weight,
         },

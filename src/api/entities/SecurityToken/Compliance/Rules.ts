@@ -2,9 +2,9 @@ import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
 import { AssetTransferRules, AssetTransferRulesResult, IdentityId } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities';
+import { Identity, Namespace, SecurityToken } from '~/api/entities';
 import { setTokenRules, SetTokenRulesParams, togglePauseRules } from '~/api/procedures';
-import { Namespace, TransactionQueue } from '~/base';
+import { TransactionQueue } from '~/base';
 import { Rule, RuleCompliance, SubCallback, UnsubCallback } from '~/types';
 import {
   assetTransferRulesResultToRuleCompliance,
@@ -15,8 +15,6 @@ import {
   stringToTicker,
   valueToDid,
 } from '~/utils';
-
-import { SecurityToken } from '../';
 
 /**
  * Handles all Security Token Rules related functionality
@@ -137,10 +135,10 @@ export class Rules extends Namespace<SecurityToken> {
   }
 
   /**
-   * Check whether transferring from one identity to another complies with all the rules of this asset
+   * Check whether transferring from one Identity to another complies with all the rules of this asset
    *
-   * @param args.from - sender identity (optional, defaults to the current identity)
-   * @param args.to - receiver identity
+   * @param args.from - sender Identity (optional, defaults to the current Identity)
+   * @param args.to - receiver Identity
    */
   public async checkTransfer(args: {
     from?: string | Identity;
@@ -151,9 +149,9 @@ export class Rules extends Namespace<SecurityToken> {
   }
 
   /**
-   * Check whether minting to an identity complies with all the rules of this asset
+   * Check whether minting to an Identity complies with all the rules of this asset
    *
-   * @param args.to - receiver identity
+   * @param args.to - receiver Identity
    */
   public async checkMint(args: { to: string | Identity }): Promise<RuleCompliance> {
     return this._checkTransfer({

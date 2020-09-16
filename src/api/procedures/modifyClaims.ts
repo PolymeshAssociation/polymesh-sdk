@@ -85,7 +85,7 @@ export async function prepareModifyClaims(
   if (nonExistentDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Some of the supplied identity IDs do not exist',
+      message: 'Some of the supplied Identity IDs do not exist',
       data: {
         nonExistentDids,
       },
@@ -140,7 +140,7 @@ export async function prepareModifyClaims(
         code: ErrorCode.ValidationError,
         message: `Attempt to ${
           operation === ClaimOperation.Edit ? 'edit' : 'revoke'
-        } claims that weren't issued by the current identity`,
+        } claims that weren't issued by the current Identity`,
         data: {
           nonExistentClaims,
         },

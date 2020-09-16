@@ -9,7 +9,7 @@ import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities';
+import { Account, CurrentAccount, CurrentIdentity, Identity } from '~/api/entities';
 import { PolymeshError } from '~/base';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
@@ -25,7 +25,7 @@ import {
   KeyringPair,
   PlainTransactionArgument,
   ResultSet,
-  Signer,
+  SigningKey,
   SimpleEnumTransactionArgument,
   SubCallback,
   TransactionArgument,
@@ -37,16 +37,17 @@ import {
   balanceToBigNumber,
   calculateNextKey,
   createClaim,
-  identityIdToString,
+  meshPermissionToPermission,
   numberToU32,
   posRatioToBigNumber,
   requestAtBlock,
-  signatoryToSigner,
-  stringToAccountId,
+  signatoryToSignerValue,
+  signerValueToSigner,
   stringToIdentityId,
   textToString,
   txTagToProtocolOp,
   u32ToBigNumber,
+  valueToAddress,
   valueToDid,
 } from '~/utils';
 import { ROOT_TYPES } from '~/utils/constants';
@@ -224,9 +225,9 @@ export class Context {
     this.currentPair = newCurrentPair;
   }
 
-  public accountBalance(accountId?: string): Promise<AccountBalance>;
+  public accountBalance(account?: string | Account): Promise<AccountBalance>;
   public accountBalance(
-    accountId: string | undefined,
+    account: string | Account | undefined,
     callback: SubCallback<AccountBalance>
   ): Promise<UnsubCallback>;
 
@@ -236,7 +237,7 @@ export class Context {
    * @note can be subscribed to
    */
   public async accountBalance(
-    accountId?: string,
+    account?: string | Account,
     callback?: SubCallback<AccountBalance>
   ): Promise<AccountBalance | UnsubCallback> {
     const {
@@ -247,8 +248,8 @@ export class Context {
     } = this;
     let address: string;
 
-    if (accountId) {
-      address = accountId;
+    if (account) {
+      address = valueToAddress(account);
     } else if (currentPair) {
       address = currentPair.address;
     } else {
@@ -279,17 +280,12 @@ export class Context {
   }
 
   /**
-   * Retrieve current Identity
+   * Retrieve current Account
    *
-   * @throws if there is no identity associated to the current account (or there is no current account associated to the SDK instance)
+   * @throws if there is no current account associated to the SDK instance
    */
-  public async getCurrentIdentity(): Promise<Identity> {
-    const {
-      currentPair,
-      polymeshApi: {
-        query: { identity },
-      },
-    } = this;
+  public getCurrentAccount(): CurrentAccount {
+    const { currentPair } = this;
 
     if (!currentPair) {
       throw new PolymeshError({
@@ -298,25 +294,26 @@ export class Context {
       });
     }
 
-    try {
-      const identityIdWrapper = await identity.keyToIdentityIds(
-        stringToAccountId(currentPair.address, this)
-      );
-      const did = identityIdToString(identityIdWrapper.unwrap().asUnique);
+    const { address } = currentPair;
 
-      return new Identity({ did }, this);
-    } catch (err) {
-      throw new PolymeshError({
-        code: ErrorCode.IdentityNotPresent,
-        message: 'The current account does not have an associated identity',
-      });
-    }
+    return new CurrentAccount({ address }, this);
+  }
+
+  /**
+   * Retrieve current Identity
+   *
+   * @throws if there is no Identity associated to the current Account (or there is no current Account associated to the SDK instance)
+   */
+  public async getCurrentIdentity(): Promise<CurrentIdentity> {
+    const account = this.getCurrentAccount();
+
+    return account.getIdentity();
   }
 
   /**
    * Retrieve current Keyring Pair
    *
-   * @throws if there is no account associated to the SDK instance
+   * @throws if there is no Account associated to the SDK instance
    */
   public getCurrentPair(): KeyringPair {
     const { currentPair } = this;
@@ -331,7 +328,7 @@ export class Context {
   }
 
   /**
-   * Check whether identities exist
+   * Check whether Identities exist
    */
   public async getInvalidDids(identities: (string | Identity)[]): Promise<string[]> {
     const dids = identities.map(valueToDid);
@@ -527,15 +524,17 @@ export class Context {
   }
 
   /**
-   * Retrieve the list of signing keys related to the account
+   * Retrieve the list of signing keys related to the Account
    *
    * @note can be subscribed to
    */
-  public async getSigningKeys(): Promise<Signer[]>;
-  public async getSigningKeys(callback: SubCallback<Signer[]>): Promise<UnsubCallback>;
+  public async getSigningKeys(): Promise<SigningKey[]>;
+  public async getSigningKeys(callback: SubCallback<SigningKey[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getSigningKeys(callback?: SubCallback<Signer[]>): Promise<Signer[] | UnsubCallback> {
+  public async getSigningKeys(
+    callback?: SubCallback<SigningKey[]>
+  ): Promise<SigningKey[] | UnsubCallback> {
     const {
       polymeshApi: {
         query: { identity },
@@ -544,8 +543,11 @@ export class Context {
 
     const { did } = await this.getCurrentIdentity();
 
-    const assembleResult = ({ signing_keys: signingKeys }: DidRecord): Signer[] => {
-      return signingKeys.map(({ signer: rawSigner }) => signatoryToSigner(rawSigner));
+    const assembleResult = ({ signing_keys: signingKeys }: DidRecord): SigningKey[] => {
+      return signingKeys.map(({ signer: rawSigner, permissions }) => ({
+        signer: signerValueToSigner(signatoryToSignerValue(rawSigner), this),
+        permissions: permissions.map(permission => meshPermissionToPermission(permission)),
+      }));
     };
 
     if (callback) {
@@ -559,7 +561,7 @@ export class Context {
   /**
    * Retrieve a list of claims. Can be filtered using parameters
    *
-   * @param opts.targets - identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.targets - identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
    * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
    * @param opts.size - page size
@@ -625,7 +627,8 @@ export class Context {
   /**
    * Retrieve the middleware client
    *
-   * @throws if credentials are not set
+   * @throws if cred
+   * entials are not set
    */
   public get middlewareApi(): ApolloClient<NormalizedCacheObject> {
     const { _middlewareApi } = this;

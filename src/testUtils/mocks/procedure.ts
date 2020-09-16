@@ -2,8 +2,7 @@
 
 import sinon, { SinonStub } from 'sinon';
 
-import { Procedure } from '~/base/Procedure';
-import { Context } from '~/context';
+import { Context, Procedure } from '~/base';
 import { Mocked } from '~/testUtils/types';
 
 const mockInstanceContainer = {

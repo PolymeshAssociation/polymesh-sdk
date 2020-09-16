@@ -10,7 +10,7 @@ import {
   Params,
   prepareSetTokenDocuments,
 } from '~/api/procedures/setTokenDocuments';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TokenDocument } from '~/types';
@@ -37,7 +37,7 @@ describe('setTokenDocuments procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    sinon.stub(utilsModule, 'signerToSignatory');
+    sinon.stub(utilsModule, 'signerValueToSignatory');
     tokenDocumentDataToDocumentStub = sinon.stub(utilsModule, 'tokenDocumentDataToDocument');
     stringToDocumentNameStub = sinon.stub(utilsModule, 'stringToDocumentName');
     ticker = 'someTicker';

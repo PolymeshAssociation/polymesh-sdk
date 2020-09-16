@@ -3,7 +3,7 @@ import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareModifyToken } from '~/api/procedures/modifyToken';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';

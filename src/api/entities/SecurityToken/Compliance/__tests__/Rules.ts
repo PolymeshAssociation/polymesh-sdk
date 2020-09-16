@@ -7,11 +7,10 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities';
+import { Namespace, SecurityToken } from '~/api/entities';
 import { setTokenRules, togglePauseRules } from '~/api/procedures';
 import { Params } from '~/api/procedures/setTokenRules';
-import { Namespace, TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ClaimType, ConditionTarget, ConditionType, Rule } from '~/types';
@@ -405,7 +404,7 @@ describe('Rules class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('checkTransfer should return the current rules and whether the transfer complies with another identity', async () => {
+    test('checkTransfer should return the current rules and whether the transfer complies with another Identity', async () => {
       const rawResponse = ('response' as unknown) as AssetTransferRulesResult;
 
       dsMockUtils

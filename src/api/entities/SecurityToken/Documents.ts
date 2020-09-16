@@ -1,6 +1,8 @@
+import { DocumentName } from 'polymesh-types/types';
+
+import { Namespace, SecurityToken } from '~/api/entities';
 import { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures';
-import { Namespace, TransactionQueue } from '~/base';
-import { DocumentName } from '~/polkadot';
+import { TransactionQueue } from '~/base';
 import { PaginationOptions, ResultSet, TokenDocument } from '~/types';
 import {
   documentNameToString,
@@ -8,8 +10,6 @@ import {
   requestPaginated,
   stringToTicker,
 } from '~/utils';
-
-import { SecurityToken } from './';
 
 /**
  * Handles all Security Token Document related functionality

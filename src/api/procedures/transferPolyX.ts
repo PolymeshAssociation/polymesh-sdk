@@ -1,13 +1,19 @@
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities';
+import { Account, Identity } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
-import { identityIdToString, numberToBalance, stringToAccountId, stringToMemo } from '~/utils';
+import {
+  identityIdToString,
+  numberToBalance,
+  stringToAccountId,
+  stringToMemo,
+  valueToAddress,
+} from '~/utils';
 
 export interface TransferPolyXParams {
-  to: string;
+  to: string | Account;
   amount: BigNumber;
   memo?: string;
 }
@@ -33,10 +39,12 @@ export async function prepareTransferPolyX(
 
   let identityId: IdentityId;
 
+  const rawAccountId = stringToAccountId(valueToAddress(to), context);
+
   // TODO: queryMulti
   const [{ free: freeBalance }, identityIds] = await Promise.all([
     context.accountBalance(),
-    identity.keyToIdentityIds(stringToAccountId(to, context)),
+    identity.keyToIdentityIds(rawAccountId),
   ]);
 
   if (amount.isGreaterThan(freeBalance)) {
@@ -54,7 +62,7 @@ export async function prepareTransferPolyX(
   } catch (err) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: "The destination account doesn't have an asssociated identity",
+      message: "The destination account doesn't have an asssociated Identity",
     });
   }
 
@@ -81,16 +89,18 @@ export async function prepareTransferPolyX(
     });
   }
 
+  const rawAmount = numberToBalance(amount, context);
+
   if (memo) {
     this.addTransaction(
       tx.balances.transferWithMemo,
       {},
-      to,
-      numberToBalance(amount, context),
+      rawAccountId,
+      rawAmount,
       stringToMemo(memo, context)
     );
   } else {
-    this.addTransaction(tx.balances.transfer, {}, to, numberToBalance(amount, context));
+    this.addTransaction(tx.balances.transfer, {}, rawAccountId, rawAmount);
   }
 }
 

@@ -282,7 +282,7 @@ export function transactions(
 /**
  * @hidden
  *
- * Get the scopes (and ticker, if applicable) of claims issued on an identity
+ * Get the scopes (and ticker, if applicable) of claims issued on an Identity
  */
 export function scopesByIdentity(
   variables: QueryScopesByIdentityArgs

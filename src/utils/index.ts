@@ -50,10 +50,9 @@ import {
   TxTags,
 } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities/Identity';
+import { Account, Identity } from '~/api/entities';
 import { ProposalDetails, ProposalState } from '~/api/entities/Proposal/types';
-import { PolymeshError, PostTransactionValue } from '~/base';
-import { Context } from '~/context';
+import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import {
   CallIdEnum,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
@@ -81,7 +80,6 @@ import {
   Rule,
   RuleCompliance,
   Signer,
-  SignerType,
   SigningKey,
   SingleClaimCondition,
   TokenIdentifierType,
@@ -94,6 +92,8 @@ import {
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
+  SignerType,
+  SignerValue,
   TokenDocumentData,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -285,7 +285,17 @@ export function valueToDid(value: string | Identity): string {
 /**
  * @hidden
  */
-export function signerToSignatory(signer: Signer, context: Context): Signatory {
+export function valueToAddress(value: string | Account): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return value.address;
+}
+
+/**
+ * @hidden
+ */
+export function signerValueToSignatory(signer: SignerValue, context: Context): Signatory {
   return context.polymeshApi.createType('Signatory', {
     [signer.type]: signer.value,
   });
@@ -294,7 +304,7 @@ export function signerToSignatory(signer: Signer, context: Context): Signatory {
 /**
  * @hidden
  */
-export function signatoryToSigner(signatory: Signatory): Signer {
+export function signatoryToSignerValue(signatory: Signatory): SignerValue {
   if (signatory.isAccount) {
     return {
       type: SignerType.Account,
@@ -306,6 +316,36 @@ export function signatoryToSigner(signatory: Signatory): Signer {
     type: SignerType.Identity,
     value: identityIdToString(signatory.asIdentity),
   };
+}
+
+/**
+ * @hidden
+ */
+export function signerToSignerValue(signer: Signer): SignerValue {
+  if (signer instanceof Account) {
+    return {
+      type: SignerType.Account,
+      value: signer.address,
+    };
+  }
+
+  return {
+    type: SignerType.Identity,
+    value: signer.did,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function signerValueToSigner(signerValue: SignerValue, context: Context): Signer {
+  const { type, value } = signerValue;
+
+  if (type === SignerType.Account) {
+    return new Account({ address: value }, context);
+  }
+
+  return new Identity({ did: value }, context);
 }
 
 /**
@@ -712,13 +752,13 @@ export function documentToTokenDocumentData(
  * @hidden
  */
 export function authTargetToAuthIdentifier(
-  { did, authId }: AuthTarget,
+  { target, authId }: AuthTarget,
   context: Context
 ): AuthIdentifier {
   return context.polymeshApi.createType('AuthIdentifier', {
     // eslint-disable-next-line @typescript-eslint/camelcase
     auth_id: numberToU64(authId, context),
-    signatory: signerToSignatory({ type: SignerType.Identity, value: did }, context),
+    signatory: signerValueToSignatory(target, context),
   });
 }
 
@@ -731,7 +771,7 @@ export function authIdentifierToAuthTarget({
 }: AuthIdentifier): AuthTarget {
   return {
     authId: u64ToBigNumber(authId),
-    did: signatoryToSigner(signatory).value,
+    target: signatoryToSignerValue(signatory),
   };
 }
 
@@ -1357,12 +1397,8 @@ export function toIdentityWithClaimsArray(
   data: MiddlewareIdentityWithClaims[],
   context: Context
 ): IdentityWithClaims[] {
-  // NOTE: this require statement is necessary to avoid a circular dependency
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { Identity: IdentityClass } = require('../api/entities/Identity');
-
   return data.map(({ did, claims }) => ({
-    identity: new IdentityClass({ did }, context),
+    identity: new Identity({ did }, context),
     claims: claims.map(
       ({
         targetDID,
@@ -1373,8 +1409,8 @@ export function toIdentityWithClaimsArray(
         jurisdiction,
         scope: claimScope,
       }) => ({
-        target: new IdentityClass({ did: targetDID }, context),
-        issuer: new IdentityClass({ did: issuer }, context),
+        target: new Identity({ did: targetDID }, context),
+        issuer: new Identity({ did: issuer }, context),
         issuedAt: new Date(issuanceDate),
         expiry: expiry ? new Date(expiry) : null,
         claim: createClaim(type, jurisdiction, claimScope),
@@ -1444,7 +1480,7 @@ export function signingKeyToMeshSigningKey(
   const { signer, permissions } = signingKey;
 
   return polymeshApi.createType('SigningKey', {
-    signer: signerToSignatory(signer, context),
+    signer: signerValueToSignatory(signerToSignerValue(signer), context),
     permissions: permissions.map(permission => permissionToMeshPermission(permission, context)),
   });
 }

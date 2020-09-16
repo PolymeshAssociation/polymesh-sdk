@@ -2,9 +2,8 @@ import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
 import { modifyClaims } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+import { Context, TransactionQueue } from '~/base';
 import { Claims } from '~/Claims';
-import { Context } from '~/context';
 import {
   didsWithClaims,
   issuerDidsWithClaimsByTarget,
@@ -73,7 +72,7 @@ describe('Claims Class', () => {
   });
 
   describe('method: getIdentitiesWithClaims', () => {
-    test('should return a list of identities with claims associated to them', async () => {
+    test('should return a list of Identities with claims associated to them', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
@@ -348,7 +347,7 @@ describe('Claims Class', () => {
   });
 
   describe('method: getTargetingClaims', () => {
-    test('should return a list of claims issued with an identity as target', async () => {
+    test('should return a list of claims issued with an Identity as target', async () => {
       const did = 'someDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;

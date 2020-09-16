@@ -1,10 +1,8 @@
 import { BigNumber } from 'bignumber.js';
 import { CddStatus, DidRecord } from 'polymesh-types/types';
 
-import { SecurityToken } from '~/api/entities/SecurityToken';
-import { TickerReservation } from '~/api/entities/TickerReservation';
-import { Entity, PolymeshError } from '~/base';
-import { Context } from '~/context';
+import { Entity, SecurityToken, TickerReservation } from '~/api/entities';
+import { Context, PolymeshError } from '~/base';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
@@ -30,7 +28,7 @@ import {
   stringToTicker,
 } from '~/utils';
 
-import { Authorizations } from './Authorizations';
+import { IdentityAuthorizations } from './IdentityAuthorizations';
 
 /**
  * Properties that uniquely identify an Identity
@@ -40,7 +38,7 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents an identity in the Polymesh blockchain
+ * Represents an Identity in the Polymesh blockchain
  */
 export class Identity extends Entity<UniqueIdentifiers> {
   /**
@@ -59,7 +57,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
   public did: string;
 
   // Namespaces
-  public authorizations: Authorizations;
+  public authorizations: IdentityAuthorizations;
 
   /**
    * Create an Identity entity
@@ -70,7 +68,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const { did } = identifiers;
 
     this.did = did;
-    this.authorizations = new Authorizations(this, context);
+    this.authorizations = new IdentityAuthorizations(this, context);
   }
 
   /**
@@ -214,7 +212,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the master key associated with the identity
+   * Retrieve the master key associated with the Identity
    *
    * @note can be subscribed to
    */
@@ -229,10 +227,9 @@ export class Identity extends Entity<UniqueIdentifiers> {
           query: { identity },
         },
       },
+      did,
       context,
     } = this;
-
-    const { did } = await context.getCurrentIdentity();
 
     const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
       return accountIdToString(masterKey);
@@ -249,7 +246,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve a list of all tokens which were held at one point by this identity
+   * Retrieve a list of all tokens which were held at one point by this Identity
    *
    * @note supports pagination
    */
@@ -300,7 +297,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Get the list of tokens for which this identity is a trusted claim issuer
+   * Get the list of tokens for which this Identity is a trusted claim issuer
    *
    * @note uses the middleware
    */

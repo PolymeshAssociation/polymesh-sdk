@@ -100,8 +100,19 @@ export interface TransactionSpec<
   batchSize: number | null;
 }
 
+export enum SignerType {
+  // eslint-disable-next-line no-shadow
+  Identity = 'Identity',
+  Account = 'Account',
+}
+
+export interface SignerValue {
+  type: SignerType;
+  value: string;
+}
+
 export interface AuthTarget {
-  did: string;
+  target: SignerValue;
   authId: BigNumber;
 }
 
