@@ -553,7 +553,7 @@ describe('Polymesh Class', () => {
 
       const params = { did: 'testDid' };
 
-      const result = await polymesh.getIdentity(params);
+      const result = polymesh.getIdentity(params);
       const context = dsMockUtils.getContextInstance();
 
       expect(result).toMatchObject(new Identity(params, context));

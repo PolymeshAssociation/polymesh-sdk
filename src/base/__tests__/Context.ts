@@ -490,7 +490,7 @@ describe('Context class', () => {
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      const result = await context.getCurrentAccount();
+      const result = context.getCurrentAccount();
       expect(result.address).toBe(address);
     });
 
@@ -503,7 +503,7 @@ describe('Context class', () => {
       let err;
 
       try {
-        await context.getCurrentAccount();
+        context.getCurrentAccount();
       } catch (e) {
         err = e;
       }
