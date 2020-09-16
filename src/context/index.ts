@@ -40,7 +40,6 @@ import {
   identityIdToString,
   numberToU32,
   posRatioToBigNumber,
-  requestAtBlock,
   signatoryToSigner,
   stringToAccountId,
   stringToIdentityId,
@@ -76,6 +75,11 @@ export class Context {
   public polymeshApi: ApiPromise;
 
   public currentPair?: KeyringPair;
+
+  /**
+   * Whether the current node is an archive node (contains a full history from genesis onward) or not
+   */
+  public isArchiveNode = false;
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
@@ -143,6 +147,7 @@ export class Context {
 
     let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
     let currentPair: KeyringPair | undefined;
+    let context: Context;
 
     if (passedKeyring) {
       keyring = passedKeyring;
@@ -161,21 +166,25 @@ export class Context {
     }
 
     if (currentPair) {
-      return new Context({
+      context = new Context({
         polymeshApi,
         middlewareApi,
         keyring,
         pair: currentPair,
       });
+    } else {
+      context = new Context({ polymeshApi, middlewareApi, keyring });
     }
 
-    return new Context({ polymeshApi, middlewareApi, keyring });
+    context.isArchiveNode = await context.isCurrentNodeArchive();
+
+    return context;
   }
 
   /**
-   * Retrieve whether the current node is an archive node (contains a full history from genesis onward) or not
+   * @hidden
    */
-  public async isCurrentNodeArchive(): Promise<boolean> {
+  private async isCurrentNodeArchive(): Promise<boolean> {
     const {
       polymeshApi: {
         query: { balances, system },
@@ -184,10 +193,7 @@ export class Context {
 
     try {
       const blockHash = await system.blockHash(numberToU32(0, this));
-      const balance = await requestAtBlock(balances.totalIssuance, {
-        args: [],
-        blockHash,
-      });
+      const balance = await balances.totalIssuance.at(blockHash);
       return balanceToBigNumber(balance).gt(new BigNumber(0));
     } catch (e) {
       return false;
