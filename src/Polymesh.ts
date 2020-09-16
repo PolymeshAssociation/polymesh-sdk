@@ -210,9 +210,9 @@ export class Polymesh {
   }
 
   /**
-   * Transfer an amount of POLYX to a specified account
+   * Transfer an amount of POLYX to a specified Account
    *
-   * @param args.to - account id that will receive the POLYX
+   * @param args.to - account that will receive the POLYX
    * @param args.amount - amount of POLYX to be transferred
    * @param args.memo - identifier string to help differentiate transfers
    */
@@ -221,9 +221,9 @@ export class Polymesh {
   }
 
   /**
-   * Get the free/locked POLYX balance of an account
+   * Get the free/locked POLYX balance of an Account
    *
-   * @param args.account - defaults to the current account
+   * @param args.account - defaults to the current Account
    *
    * @note can be subscribed to
    */
@@ -272,7 +272,7 @@ export class Polymesh {
 
   /**
    * Reserve a ticker symbol to later use in the creation of a Security Token.
-   * The ticker will expire after a set amount of time, after which other users can reserve it
+   *   The ticker will expire after a set amount of time, after which other users can reserve it
    *
    * @param args.ticker - ticker symbol to reserve
    */
@@ -310,10 +310,10 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all the ticker reservations currently owned by an identity. This doesn't include tokens that
+   * Retrieve all the ticker reservations currently owned by an Identity. This doesn't include tokens that
    *   have already been launched
    *
-   * @param args.owner - identity representation or identity ID as stored in the blockchain
+   * @param args.owner - identity representation or Identity ID as stored in the blockchain
    */
   public async getTickerReservations(args?: {
     owner: string | Identity;
@@ -408,7 +408,7 @@ export class Polymesh {
   }
 
   /**
-   * Return whether the supplied identity/DID exists
+   * Return whether the supplied Identity/DID exists
    */
   public async isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
     const invalid = await this.context.getInvalidDids([valueToDid(args.identity)]);
