@@ -284,18 +284,22 @@ export function signerValueToSignatory(signer: SignerValue, context: Context): S
 /**
  * @hidden
  */
+function createSignerValue(type: SignerType, value: string): SignerValue {
+  return {
+    type,
+    value,
+  };
+}
+
+/**
+ * @hidden
+ */
 export function signatoryToSignerValue(signatory: Signatory): SignerValue {
   if (signatory.isAccount) {
-    return {
-      type: SignerType.Account,
-      value: accountIdToString(signatory.asAccount),
-    };
+    return createSignerValue(SignerType.Account, accountIdToString(signatory.asAccount));
   }
 
-  return {
-    type: SignerType.Identity,
-    value: identityIdToString(signatory.asIdentity),
-  };
+  return createSignerValue(SignerType.Identity, identityIdToString(signatory.asIdentity));
 }
 
 /**
@@ -303,27 +307,10 @@ export function signatoryToSignerValue(signatory: Signatory): SignerValue {
  */
 export function signerToSignerValue(signer: Signer): SignerValue {
   if (signer instanceof Account) {
-    return {
-      type: SignerType.Account,
-      value: signer.address,
-    };
+    return createSignerValue(SignerType.Account, signer.address);
   }
 
-  return {
-    type: SignerType.Identity,
-    value: signer.did,
-  };
-}
-
-/**
- * @hidden
- */
-export function signerToString(signer: string | Signer): string {
-  if (typeof signer === 'string') {
-    return signer;
-  }
-
-  return signerToSignerValue(signer).value;
+  return createSignerValue(SignerType.Identity, signer.did);
 }
 
 /**
@@ -337,6 +324,17 @@ export function signerValueToSigner(signerValue: SignerValue, context: Context):
   }
 
   return new Identity({ did: value }, context);
+}
+
+/**
+ * @hidden
+ */
+export function signerToString(signer: string | Signer): string {
+  if (typeof signer === 'string') {
+    return signer;
+  }
+
+  return signerToSignerValue(signer).value;
 }
 
 /**
