@@ -5,8 +5,8 @@ import { SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
+  signerToString,
   signerValueToSignatory,
-  valueToDid,
 } from '~/utils';
 
 export interface TransferTokenOwnershipParams {
@@ -35,7 +35,7 @@ export async function prepareTransferTokenOwnership(
   const { ticker, target, expiry } = args;
 
   const rawSignatory = signerValueToSignatory(
-    { type: SignerType.Identity, value: valueToDid(target) },
+    { type: SignerType.Identity, value: signerToString(target) },
     context
   );
   const rawAuthorizationData = authorizationToAuthorizationData(

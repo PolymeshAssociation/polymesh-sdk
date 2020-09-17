@@ -275,26 +275,6 @@ export function identityIdToString(identityId: IdentityId): string {
 /**
  * @hidden
  */
-export function valueToDid(value: string | Identity): string {
-  if (typeof value === 'string') {
-    return value;
-  }
-  return value.did;
-}
-
-/**
- * @hidden
- */
-export function valueToAddress(value: string | Account): string {
-  if (typeof value === 'string') {
-    return value;
-  }
-  return value.address;
-}
-
-/**
- * @hidden
- */
 export function signerValueToSignatory(signer: SignerValue, context: Context): Signatory {
   return context.polymeshApi.createType('Signatory', {
     [signer.type]: signer.value,
@@ -333,6 +313,17 @@ export function signerToSignerValue(signer: Signer): SignerValue {
     type: SignerType.Identity,
     value: signer.did,
   };
+}
+
+/**
+ * @hidden
+ */
+export function signerToString(signer: string | Signer): string {
+  if (typeof signer === 'string') {
+    return signer;
+  }
+
+  return signerToSignerValue(signer).value;
 }
 
 /**
@@ -1130,7 +1121,7 @@ export function issuanceDataToIssueAssetItem(
   const { identity, amount } = issuanceData;
   return context.polymeshApi.createType('IssueAssetItem', {
     // eslint-disable-next-line @typescript-eslint/camelcase
-    identity_did: stringToIdentityId(valueToDid(identity), context),
+    identity_did: stringToIdentityId(signerToString(identity), context),
     value: numberToBalance(amount, context),
   });
 }

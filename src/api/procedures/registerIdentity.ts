@@ -8,9 +8,9 @@ import {
   dateToMoment,
   findEventRecord,
   identityIdToString,
+  signerToString,
   signingKeyToMeshSigningKey,
   stringToAccountId,
-  valueToAddress,
 } from '~/utils';
 
 export interface RegisterIdentityParams {
@@ -49,7 +49,7 @@ export async function prepareRegisterIdentity(
   } = this;
   const { targetAccount, expiry, signingKeys = [] } = args;
 
-  const rawTargetAccount = stringToAccountId(valueToAddress(targetAccount), context);
+  const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
   const rawSigningKeys = signingKeys.map(signingKey =>
     signingKeyToMeshSigningKey(signingKey, context)

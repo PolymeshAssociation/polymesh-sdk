@@ -21,8 +21,8 @@ import {
   claimToMeshClaim,
   dateToMoment,
   identityIdToString,
+  signerToString,
   stringToIdentityId,
-  valueToDid,
 } from '~/utils';
 
 interface AddClaimItem {
@@ -70,9 +70,9 @@ export async function prepareModifyClaims(
   let allTargets: string[] = [];
 
   claims.forEach(({ target, expiry, claim }: ClaimTarget) => {
-    allTargets.push(valueToDid(target));
+    allTargets.push(signerToString(target));
     modifyClaimItems.push({
-      target: stringToIdentityId(valueToDid(target), context),
+      target: stringToIdentityId(signerToString(target), context),
       claim: claimToMeshClaim(claim, context),
       expiry: expiry ? dateToMoment(expiry, context) : null,
     });
@@ -118,7 +118,7 @@ export async function prepareModifyClaims(
 
     const nonExistentClaims: Claim[] = [];
     claims.forEach(({ target, claim }) => {
-      const targetClaims = claimsByDid[valueToDid(target)] ?? [];
+      const targetClaims = claimsByDid[signerToString(target)] ?? [];
 
       const claimExists = !!targetClaims.find(({ scope, type }) => {
         let isSameScope = true;

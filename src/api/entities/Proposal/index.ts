@@ -18,8 +18,8 @@ import {
   middlewareProposalToProposalDetails,
   numberToPipId,
   requestAtBlock,
+  signerToString,
   u32ToBigNumber,
-  valueToDid,
 } from '~/utils';
 
 import { ProposalDetails, ProposalStage, ProposalVote, ProposalVotesOrderByInput } from './types';
@@ -74,7 +74,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
     let identity: string;
 
     if (args) {
-      identity = valueToDid(args.identity);
+      identity = signerToString(args.identity);
     } else {
       ({ did: identity } = await context.getCurrentIdentity());
     }

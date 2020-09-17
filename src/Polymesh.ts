@@ -34,12 +34,12 @@ import {
 } from '~/types';
 import {
   moduleAddressToString,
+  signerToString,
   stringToIdentityId,
   stringToTicker,
   textToString,
   tickerToString,
   u32ToBigNumber,
-  valueToDid,
 } from '~/utils';
 
 import { Claims } from './Claims';
@@ -328,7 +328,7 @@ export class Polymesh {
     let identity: string;
 
     if (args) {
-      identity = valueToDid(args.owner);
+      identity = signerToString(args.owner);
     } else {
       ({ did: identity } = await context.getCurrentIdentity());
     }
@@ -411,7 +411,7 @@ export class Polymesh {
    * Return whether the supplied Identity/DID exists
    */
   public async isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
-    const invalid = await this.context.getInvalidDids([valueToDid(args.identity)]);
+    const invalid = await this.context.getInvalidDids([signerToString(args.identity)]);
 
     return !invalid.length;
   }
@@ -482,7 +482,7 @@ export class Polymesh {
     let identity: string;
 
     if (args) {
-      identity = valueToDid(args.owner);
+      identity = signerToString(args.owner);
     } else {
       ({ did: identity } = await context.getCurrentIdentity());
     }

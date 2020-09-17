@@ -14,7 +14,7 @@ import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType } from '~/types';
 import * as utilsModule from '~/utils';
 
-describe('toggleFreezeTransfers procedure', () => {
+describe('acceptJoinIdentityAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
   let authId: BigNumber;

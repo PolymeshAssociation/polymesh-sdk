@@ -42,13 +42,12 @@ import {
   posRatioToBigNumber,
   requestAtBlock,
   signatoryToSignerValue,
+  signerToString,
   signerValueToSigner,
   stringToIdentityId,
   textToString,
   txTagToProtocolOp,
   u32ToBigNumber,
-  valueToAddress,
-  valueToDid,
 } from '~/utils';
 import { ROOT_TYPES } from '~/utils/constants';
 
@@ -249,7 +248,7 @@ export class Context {
     let address: string;
 
     if (account) {
-      address = valueToAddress(account);
+      address = signerToString(account);
     } else if (currentPair) {
       address = currentPair.address;
     } else {
@@ -331,7 +330,7 @@ export class Context {
    * Check whether Identities exist
    */
   public async getInvalidDids(identities: (string | Identity)[]): Promise<string[]> {
-    const dids = identities.map(valueToDid);
+    const dids = identities.map(signerToString);
     const rawIdentities = dids.map(did => stringToIdentityId(did, this));
     const records = await this.polymeshApi.query.identity.didRecords.multi<DidRecord>(
       rawIdentities
@@ -583,9 +582,9 @@ export class Context {
 
     const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
-        dids: targets?.map(target => valueToDid(target)),
+        dids: targets?.map(target => signerToString(target)),
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          valueToDid(trustedClaimIssuer)
+          signerToString(trustedClaimIssuer)
         ),
         claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
         includeExpired,

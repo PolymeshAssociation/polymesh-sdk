@@ -3,12 +3,12 @@ import BigNumber from 'bignumber.js';
 import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity, SecurityToken } from '~/api/entities';
+import { SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareTransferToken } from '~/api/procedures/transferToken';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TransferStatus } from '~/types';
+import { RoleType, Signer, TransferStatus } from '~/types';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -21,7 +21,7 @@ describe('transferToken procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context], Balance>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let valueToDidStub: sinon.SinonStub<[string | Identity], string>;
+  let signerToStringStub: sinon.SinonStub<[string | Signer], string>;
   let did: string;
   let ticker: string;
   let rawTicker: Ticker;
@@ -34,7 +34,7 @@ describe('transferToken procedure', () => {
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
     stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
-    valueToDidStub = sinon.stub(utilsModule, 'valueToDid');
+    signerToStringStub = sinon.stub(utilsModule, 'signerToString');
     did = 'someDid';
     ticker = 'TEST';
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -48,7 +48,7 @@ describe('transferToken procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    valueToDidStub.returns('someDid');
+    signerToStringStub.returns('someDid');
   });
 
   afterEach(() => {

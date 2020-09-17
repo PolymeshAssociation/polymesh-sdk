@@ -11,9 +11,9 @@ import {
   assetTransferRuleToRule,
   boolToBoolean,
   identityIdToString,
+  signerToString,
   stringToIdentityId,
   stringToTicker,
-  valueToDid,
 } from '~/utils';
 
 /**
@@ -200,9 +200,9 @@ export class Rules extends Namespace<SecurityToken> {
 
     let fromDid = null;
     if (from) {
-      fromDid = stringToIdentityId(valueToDid(from), context);
+      fromDid = stringToIdentityId(signerToString(from), context);
     }
-    const toDid = valueToDid(to);
+    const toDid = signerToString(to);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res: AssetTransferRulesResult = await (rpc as any).compliance.canTransfer(

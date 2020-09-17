@@ -9,10 +9,10 @@ import {
   boolToBoolean,
   canTransferResultToTransferStatus,
   numberToBalance,
+  signerToString,
   stringToAccountId,
   stringToIdentityId,
   stringToTicker,
-  valueToDid,
 } from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 
@@ -121,9 +121,9 @@ export class Transfers extends Namespace<SecurityToken> {
 
     let fromDid = null;
     if (from) {
-      fromDid = stringToIdentityId(valueToDid(from), context);
+      fromDid = stringToIdentityId(signerToString(from), context);
     }
-    const toDid = valueToDid(to);
+    const toDid = signerToString(to);
 
     /*
      * The RPC requires a sender account ID (although it's not being used at the moment). We use the current account

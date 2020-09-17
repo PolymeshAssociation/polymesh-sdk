@@ -13,8 +13,8 @@ import {
   calculateNextKey,
   createClaim,
   removePadding,
+  signerToString,
   toIdentityWithClaimsArray,
-  valueToDid,
 } from '~/utils';
 
 /**
@@ -80,7 +80,7 @@ export class Claims {
 
     let did;
     if (target) {
-      did = valueToDid(target);
+      did = signerToString(target);
     } else {
       const { did: identityId } = await context.getCurrentIdentity();
       did = identityId;
@@ -124,10 +124,10 @@ export class Claims {
 
     const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
-        dids: targets?.map(target => valueToDid(target)),
+        dids: targets?.map(target => signerToString(target)),
         scope,
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          valueToDid(trustedClaimIssuer)
+          signerToString(trustedClaimIssuer)
         ),
         claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
         count: size,
@@ -186,7 +186,7 @@ export class Claims {
 
     let did;
     if (target) {
-      did = valueToDid(target);
+      did = signerToString(target);
     } else {
       const { did: identityId } = await context.getCurrentIdentity();
       did = identityId;
@@ -235,7 +235,7 @@ export class Claims {
 
     let did;
     if (target) {
-      did = valueToDid(target);
+      did = signerToString(target);
     } else {
       ({ did } = await context.getCurrentIdentity());
     }
@@ -275,7 +275,7 @@ export class Claims {
 
     let did;
     if (target) {
-      did = valueToDid(target);
+      did = signerToString(target);
     } else {
       const { did: identityId } = await context.getCurrentIdentity();
       did = identityId;
@@ -286,7 +286,7 @@ export class Claims {
         target: did,
         scope,
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          valueToDid(trustedClaimIssuer)
+          signerToString(trustedClaimIssuer)
         ),
         includeExpired,
         count: size,

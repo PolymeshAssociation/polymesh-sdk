@@ -7,9 +7,9 @@ import { ErrorCode } from '~/types';
 import {
   identityIdToString,
   numberToBalance,
+  signerToString,
   stringToAccountId,
   stringToMemo,
-  valueToAddress,
 } from '~/utils';
 
 export interface TransferPolyXParams {
@@ -39,7 +39,7 @@ export async function prepareTransferPolyX(
 
   let identityId: IdentityId;
 
-  const rawAccountId = stringToAccountId(valueToAddress(to), context);
+  const rawAccountId = stringToAccountId(signerToString(to), context);
 
   // TODO: queryMulti
   const [{ free: freeBalance }, identityIds] = await Promise.all([

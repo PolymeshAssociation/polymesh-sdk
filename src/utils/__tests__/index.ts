@@ -107,6 +107,7 @@ import {
   serialize,
   signatoryToSignerValue,
   signerToSignerValue,
+  signerToString,
   signerValueToSignatory,
   signerValueToSigner,
   signingKeyToMeshSigningKey,
@@ -137,8 +138,6 @@ import {
   u64ToBigNumber,
   unserialize,
   unwrapValues,
-  valueToAddress,
-  valueToDid,
 } from '../';
 
 jest.mock(
@@ -287,40 +286,31 @@ describe('stringToIdentityId and identityIdToString', () => {
   });
 });
 
-describe('valueToDid', () => {
-  test('valueToDid should return the Indentity DID string', () => {
+describe('signerToString', () => {
+  test('signerToString should return the Indentity DID string', () => {
     const did = 'someDid';
     const context = dsMockUtils.getContextInstance();
     const identity = new Identity({ did }, context);
 
-    const result = valueToDid(identity);
+    const result = signerToString(identity);
 
     expect(result).toBe(did);
   });
 
-  test('valueToDid should return the same DID string that it receives', () => {
-    const did = 'someDid';
-    const result = valueToDid(did);
-
-    expect(result).toBe(did);
-  });
-});
-
-describe('valueToAddress', () => {
-  test('valueToAddress should return the Account address string', () => {
+  test('signerToStrings should return the Account address string', () => {
     const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
     const context = dsMockUtils.getContextInstance();
 
     const account = new Account({ address }, context);
 
-    const result = valueToAddress(account);
+    const result = signerToString(account);
 
     expect(result).toBe(address);
   });
 
-  test('valueToAddress should return the same address string that it receives', () => {
+  test('signerToStrings should return the same address string that it receives', () => {
     const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-    const result = valueToAddress(address);
+    const result = signerToString(address);
 
     expect(result).toBe(address);
   });

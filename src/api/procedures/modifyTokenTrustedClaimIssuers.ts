@@ -8,9 +8,9 @@ import { TrustedClaimIssuerOperation } from '~/types/internal';
 import {
   batchArguments,
   identityIdToString,
+  signerToString,
   stringToIdentityId,
   stringToTicker,
-  valueToDid,
 } from '~/utils';
 
 export interface ModifyTokenTrustedClaimIssuersParams {
@@ -45,7 +45,7 @@ export async function prepareModifyTokenTrustedClaimIssuers(
   let claimIssuersToDelete: IdentityId[] = [];
   let claimIssuersToAdd: IdentityId[] = [];
 
-  const inputDids = claimIssuerIdentities.map(valueToDid);
+  const inputDids = claimIssuerIdentities.map(signerToString);
 
   const rawCurrentClaimIssuers = await query.complianceManager.trustedClaimIssuer(rawTicker);
   const currentClaimIssuers = rawCurrentClaimIssuers.map(issuer => identityIdToString(issuer));
