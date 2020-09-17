@@ -304,6 +304,7 @@ export enum ErrorCode {
   NotAuthorized = 'NotAuthorized',
   MiddlewareError = 'MiddlewareError',
   IdentityNotPresent = 'IdentityNotPresent',
+  DataUnavailable = 'DataUnavailable',
 }
 
 /**
