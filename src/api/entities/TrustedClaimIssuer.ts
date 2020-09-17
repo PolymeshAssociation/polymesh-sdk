@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { Identity } from '~/api/entities/Identity';
 import { Entity } from '~/base';
 import { Context } from '~/context';
@@ -70,7 +72,7 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
       // TODO remove null check once types fixed
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
-        blockNumber: result.data.eventByIndexedArgs.block_id!,
+        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id!),
         blockDate: result.data.eventByIndexedArgs.block!.datetime!,
         eventIndex: result.data.eventByIndexedArgs.event_idx!,
       };

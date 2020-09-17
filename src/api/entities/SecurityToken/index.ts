@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { AssetIdentifier, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import { Identity } from '~/api/entities/Identity';
@@ -274,7 +275,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       // TODO remove null check once types fixed
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
-        blockNumber: result.data.eventByIndexedArgs.block_id!,
+        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id!),
         blockDate: result.data.eventByIndexedArgs.block!.datetime!,
         eventIndex: result.data.eventByIndexedArgs.event_idx!,
       };

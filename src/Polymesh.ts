@@ -659,7 +659,7 @@ export class Polymesh {
    */
   public async getTransactionHistory(
     filters: {
-      blockId?: number;
+      blockNumber?: BigNumber;
       address?: string;
       tag?: TxTag;
       success?: boolean;
@@ -670,7 +670,7 @@ export class Polymesh {
   ): Promise<ResultSet<ExtrinsicData>> {
     const { context } = this;
 
-    const { blockId, address, tag, success, size, start, orderBy } = filters;
+    const { blockNumber, address, tag, success, size, start, orderBy } = filters;
 
     let moduleId;
     let callId;
@@ -681,7 +681,7 @@ export class Polymesh {
     /* eslint-disable @typescript-eslint/camelcase */
     const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
       transactions({
-        block_id: blockId,
+        block_id: blockNumber ? blockNumber.toNumber() : undefined,
         address: address ? addressToKey(address) : undefined,
         module_id: moduleId,
         call_id: callId,
@@ -716,7 +716,7 @@ export class Polymesh {
         // TODO remove null check once types fixed
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
         data.push({
-          blockId: block_id!,
+          blockNumber: new BigNumber(block_id!),
           extrinsicIdx: extrinsic_idx!,
           address: rawAddress ?? null,
           nonce: nonce!,
