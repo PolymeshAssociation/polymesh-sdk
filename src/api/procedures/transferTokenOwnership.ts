@@ -1,10 +1,16 @@
-import { SecurityToken } from '~/api/entities';
+import { Identity, SecurityToken } from '~/api/entities';
 import { Procedure } from '~/base';
-import { AuthorizationType, Role, RoleType, SignerType } from '~/types';
-import { authorizationToAuthorizationData, dateToMoment, signerToSignatory } from '~/utils';
+import { AuthorizationType, Role, RoleType } from '~/types';
+import { SignerType } from '~/types/internal';
+import {
+  authorizationToAuthorizationData,
+  dateToMoment,
+  signerToString,
+  signerValueToSignatory,
+} from '~/utils';
 
 export interface TransferTokenOwnershipParams {
-  did: string;
+  target: string | Identity;
   expiry?: Date;
 }
 
@@ -26,9 +32,12 @@ export async function prepareTransferTokenOwnership(
     },
     context,
   } = this;
-  const { ticker, did, expiry } = args;
+  const { ticker, target, expiry } = args;
 
-  const rawSignatory = signerToSignatory({ type: SignerType.Identity, value: did }, context);
+  const rawSignatory = signerValueToSignatory(
+    { type: SignerType.Identity, value: signerToString(target) },
+    context
+  );
   const rawAuthorizationData = authorizationToAuthorizationData(
     { type: AuthorizationType.TransferAssetOwnership, value: ticker },
     context

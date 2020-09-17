@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
+import { TxTag } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities';
+import { Account } from '~/api/entities';
 import { ProposalState } from '~/middleware/types';
-import { TxTag } from '~/polkadot';
 
 export interface ProposalVote {
-  identity: Identity;
+  account: Account;
   vote: boolean;
   weight: BigNumber;
 }

@@ -1,22 +1,20 @@
 import BigNumber from 'bignumber.js';
 import { CanTransferResult } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities/Identity';
+import { Identity, Namespace, SecurityToken } from '~/api/entities';
 import { toggleFreezeTransfers, transferToken, TransferTokenParams } from '~/api/procedures';
-import { Namespace, TransactionQueue } from '~/base';
+import { TransactionQueue } from '~/base';
 import { SubCallback, TransferStatus, UnsubCallback } from '~/types';
 import {
   boolToBoolean,
   canTransferResultToTransferStatus,
   numberToBalance,
+  signerToString,
   stringToAccountId,
   stringToIdentityId,
   stringToTicker,
-  valueToDid,
 } from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
-
-import { SecurityToken } from './';
 
 /**
  * Handles all Security Token Transfer related functionality
@@ -78,10 +76,10 @@ export class Transfers extends Namespace<SecurityToken> {
   }
 
   /**
-   * Check whether it is possible to transfer a certain amount of this asset between two identities
+   * Check whether it is possible to transfer a certain amount of this asset between two Identities
    *
-   * @param args.from - sender identity (optional, defaults to the current identity)
-   * @param args.to - receiver identity
+   * @param args.from - sender Identity (optional, defaults to the current Identity)
+   * @param args.to - receiver Identity
    * @param args.amount - amount of tokens to transfer
    */
   public async canTransfer(args: {
@@ -96,7 +94,7 @@ export class Transfers extends Namespace<SecurityToken> {
   /**
    * Check whether it is possible to mint a certain amount of this asset
    *
-   * @param args.to - receiver identity
+   * @param args.to - receiver Identity
    * @param args.amount - amount of tokens to mint
    */
   public canMint(args: { to: string | Identity; amount: BigNumber }): Promise<TransferStatus> {
@@ -123,9 +121,9 @@ export class Transfers extends Namespace<SecurityToken> {
 
     let fromDid = null;
     if (from) {
-      fromDid = stringToIdentityId(valueToDid(from), context);
+      fromDid = stringToIdentityId(signerToString(from), context);
     }
-    const toDid = valueToDid(to);
+    const toDid = signerToString(to);
 
     /*
      * The RPC requires a sender account ID (although it's not being used at the moment). We use the current account
@@ -146,7 +144,7 @@ export class Transfers extends Namespace<SecurityToken> {
   }
 
   /**
-   * Transfer an amount of the token to another identity.
+   * Transfer an amount of the token to another Identity.
    */
   public async transfer(args: TransferTokenParams): Promise<TransactionQueue<SecurityToken>> {
     const {

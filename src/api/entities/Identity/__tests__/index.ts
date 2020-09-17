@@ -3,14 +3,12 @@ import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Entity } from '~/base';
-import { Context } from '~/context';
+import { Entity, Identity } from '~/api/entities';
+import { Context } from '~/base';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
 import * as utilsModule from '~/utils';
-
-import { Identity } from '../';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -80,7 +78,7 @@ describe('Identity class', () => {
       entityMockUtils.cleanup();
     });
 
-    test('hasRole should check whether the identity has the Ticker Owner role', async () => {
+    test('hasRole should check whether the Identity has the Ticker Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const role: TickerOwnerRole = { type: RoleType.TickerOwner, ticker: 'someTicker' };
 
@@ -95,7 +93,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should check whether the identity has the Token Owner role', async () => {
+    test('hasRole should check whether the Identity has the Token Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const role: TokenOwnerRole = { type: RoleType.TokenOwner, ticker: 'someTicker' };
 
@@ -110,7 +108,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should check whether the identity has the CDD Provider role', async () => {
+    test('hasRole should check whether the Identity has the CDD Provider role', async () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
       const role: Role = { type: RoleType.CddProvider };
@@ -141,7 +139,7 @@ describe('Identity class', () => {
       return expect(hasRole).rejects.toThrow(`Unrecognized role "${JSON.stringify(role)}"`);
     });
 
-    test('hasRoles should return true if the identity possesses all roles', async () => {
+    test('hasRoles should return true if the Identity possesses all roles', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
@@ -153,7 +151,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(true);
     });
 
-    test("hasRoles should return false if at least one role isn't possessed by the identity", async () => {
+    test("hasRoles should return false if at least one role isn't possessed by the Identity", async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
         { type: RoleType.TickerOwner, ticker: 'someTicker' },

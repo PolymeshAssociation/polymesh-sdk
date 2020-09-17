@@ -1,7 +1,6 @@
 import { Identity } from '~/api/entities';
 import { modifyClaims, ModifyClaimsParams } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, TransactionQueue } from '~/base';
 import {
   didsWithClaims,
   issuerDidsWithClaimsByTarget,
@@ -12,10 +11,9 @@ import { ClaimData, ClaimScope, ClaimType, Ensured, IdentityWithClaims, ResultSe
 import { ClaimOperation } from '~/types/internal';
 import {
   calculateNextKey,
-  createClaim,
   removePadding,
+  signerToString,
   toIdentityWithClaimsArray,
-  valueToDid,
 } from '~/utils';
 
 /**
@@ -32,7 +30,7 @@ export class Claims {
   }
 
   /**
-   * Add claims to identities
+   * Add claims to Identities
    *
    * @param args.claims - array of claims to be added
    */
@@ -41,7 +39,7 @@ export class Claims {
   }
 
   /**
-   * Edit claims associated to identities (only the expiry date can be modified)
+   * Edit claims associated to Identities (only the expiry date can be modified)
    *
    * * @param args.claims - array of claims to be edited
    */
@@ -50,7 +48,7 @@ export class Claims {
   }
 
   /**
-   * Revoke claims from identities
+   * Revoke claims from Identities
    *
    * @param args.claims - array of claims to be revoked
    */
@@ -63,7 +61,7 @@ export class Claims {
   /**
    * Retrieve all claims issued by an Identity
    *
-   * @param opts.target - identity (optional, defaults to the current identity)
+   * @param opts.target - identity (optional, defaults to the current Identity)
    *
    * @note supports pagination
    * @note uses the middleware
@@ -81,7 +79,7 @@ export class Claims {
 
     let did;
     if (target) {
-      did = valueToDid(target);
+      did = signerToString(target);
     } else {
       const { did: identityId } = await context.getCurrentIdentity();
       did = identityId;
@@ -97,9 +95,9 @@ export class Claims {
   }
 
   /**
-   * Retrieve a list of identities with claims associated to them. Can be filtered using parameters
+   * Retrieve a list of Identities with claims associated to them. Can be filtered using parameters
    *
-   * @param opts.targets - identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.targets - identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
    * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
    * @param opts.scope - scope of the claims to fetch. Defaults to any scope
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
@@ -125,10 +123,10 @@ export class Claims {
 
     const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
-        dids: targets?.map(target => valueToDid(target)),
+        dids: targets?.map(target => signerToString(target)),
         scope,
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          valueToDid(trustedClaimIssuer)
+          signerToString(trustedClaimIssuer)
         ),
         claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
         count: size,
@@ -142,26 +140,7 @@ export class Claims {
       },
     } = result;
 
-    const data = didsWithClaimsList.map(({ did, claims }) => ({
-      identity: new Identity({ did }, context),
-      claims: claims.map(
-        ({
-          targetDID,
-          issuer,
-          issuance_date: issuanceDate,
-          expiry,
-          type,
-          jurisdiction,
-          scope: claimScope,
-        }) => ({
-          target: new Identity({ did: targetDID }, context),
-          issuer: new Identity({ did: issuer }, context),
-          issuedAt: new Date(issuanceDate),
-          expiry: expiry ? new Date(expiry) : null,
-          claim: createClaim(type, jurisdiction, claimScope),
-        })
-      ),
-    }));
+    const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
 
     const next = calculateNextKey(count, size, start);
 
@@ -173,12 +152,12 @@ export class Claims {
   }
 
   /**
-   * Retrieve all scopes in which claims have been made for the target identity.
+   * Retrieve all scopes in which claims have been made for the target Identity.
    *   If the scope is an asset DID, the corresponding ticker is returned as well
    *
-   * @param opts.target - identity for which to fetch claim scopes (optional, defaults to the current identity)
+   * @param opts.target - identity for which to fetch claim scopes (optional, defaults to the current Identity)
    *
-   * @note a null scope means the identity has scopeless claims (like CDD for example)
+   * @note a null scope means the Identity has scopeless claims (like CDD for example)
    * @note uses the middleware
    */
   public async getClaimScopes(opts: { target?: string | Identity } = {}): Promise<ClaimScope[]> {
@@ -187,7 +166,7 @@ export class Claims {
 
     let did;
     if (target) {
-      did = valueToDid(target);
+      did = signerToString(target);
     } else {
       const { did: identityId } = await context.getCurrentIdentity();
       did = identityId;
@@ -217,7 +196,7 @@ export class Claims {
   /**
    * Retrieve the list of CDD claims for a target Identity
    *
-   * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current identity)
+   * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current Identity)
    * @param opts.size - page size
    * @param opts.start - page offset
    *
@@ -236,7 +215,7 @@ export class Claims {
 
     let did;
     if (target) {
-      did = valueToDid(target);
+      did = signerToString(target);
     } else {
       ({ did } = await context.getCurrentIdentity());
     }
@@ -252,9 +231,9 @@ export class Claims {
   }
 
   /**
-   * Retrieve all claims issued about an identity, grouped by claim issuer
+   * Retrieve all claims issued about an Identity, grouped by claim issuer
    *
-   * @param opts.target - identity for which to fetch targeting claims (optional, defaults to the current identity)
+   * @param opts.target - identity for which to fetch targeting claims (optional, defaults to the current Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
@@ -276,7 +255,7 @@ export class Claims {
 
     let did;
     if (target) {
-      did = valueToDid(target);
+      did = signerToString(target);
     } else {
       const { did: identityId } = await context.getCurrentIdentity();
       did = identityId;
@@ -287,7 +266,7 @@ export class Claims {
         target: did,
         scope,
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          valueToDid(trustedClaimIssuer)
+          signerToString(trustedClaimIssuer)
         ),
         includeExpired,
         count: size,

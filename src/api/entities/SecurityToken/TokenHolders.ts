@@ -3,14 +3,12 @@ import P from 'bluebird';
 import { chunk } from 'lodash';
 import { IdentityId } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities/Identity';
+import { Identity, Namespace, SecurityToken } from '~/api/entities';
 import { IdentityBalance } from '~/api/entities/types';
-import { Namespace } from '~/base';
 import { PaginationOptions, ResultSet, TransferStatus } from '~/types';
 import { balanceToBigNumber, identityIdToString, requestPaginated, stringToTicker } from '~/utils';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
 
-import { SecurityToken } from './';
 import { TokenHolderOptions, TokenHolderProperties } from './types';
 
 /**

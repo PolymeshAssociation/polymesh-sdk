@@ -1,20 +1,20 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import { IdentityId } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities';
-import { PostTransactionValue, Procedure } from '~/base';
-import { Context } from '~/context';
-import { IdentityId } from '~/polkadot';
+import { Account, Identity } from '~/api/entities';
+import { Context, PostTransactionValue, Procedure } from '~/base';
 import { Role, RoleType, SigningKey } from '~/types';
 import {
   dateToMoment,
   findEventRecord,
   identityIdToString,
+  signerToString,
   signingKeyToMeshSigningKey,
   stringToAccountId,
 } from '~/utils';
 
 export interface RegisterIdentityParams {
-  targetAccount: string;
+  targetAccount: string | Account;
   expiry?: Date;
   signingKeys?: SigningKey[];
 }
@@ -49,7 +49,7 @@ export async function prepareRegisterIdentity(
   } = this;
   const { targetAccount, expiry, signingKeys = [] } = args;
 
-  const rawTargetAccount = stringToAccountId(targetAccount, context);
+  const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
   const rawSigningKeys = signingKeys.map(signingKey =>
     signingKeyToMeshSigningKey(signingKey, context)

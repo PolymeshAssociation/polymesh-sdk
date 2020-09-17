@@ -21,8 +21,8 @@ import {
   claimToMeshClaim,
   dateToMoment,
   identityIdToString,
+  signerToString,
   stringToIdentityId,
-  valueToDid,
 } from '~/utils';
 
 interface AddClaimItem {
@@ -70,9 +70,9 @@ export async function prepareModifyClaims(
   let allTargets: string[] = [];
 
   claims.forEach(({ target, expiry, claim }: ClaimTarget) => {
-    allTargets.push(valueToDid(target));
+    allTargets.push(signerToString(target));
     modifyClaimItems.push({
-      target: stringToIdentityId(valueToDid(target), context),
+      target: stringToIdentityId(signerToString(target), context),
       claim: claimToMeshClaim(claim, context),
       expiry: expiry ? dateToMoment(expiry, context) : null,
     });
@@ -85,7 +85,7 @@ export async function prepareModifyClaims(
   if (nonExistentDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Some of the supplied identity IDs do not exist',
+      message: 'Some of the supplied Identity IDs do not exist',
       data: {
         nonExistentDids,
       },
@@ -118,7 +118,7 @@ export async function prepareModifyClaims(
 
     const nonExistentClaims: Claim[] = [];
     claims.forEach(({ target, claim }) => {
-      const targetClaims = claimsByDid[valueToDid(target)] ?? [];
+      const targetClaims = claimsByDid[signerToString(target)] ?? [];
 
       const claimExists = !!targetClaims.find(({ scope, type }) => {
         let isSameScope = true;
@@ -140,7 +140,7 @@ export async function prepareModifyClaims(
         code: ErrorCode.ValidationError,
         message: `Attempt to ${
           operation === ClaimOperation.Edit ? 'edit' : 'revoke'
-        } claims that weren't issued by the current identity`,
+        } claims that weren't issued by the current Identity`,
         data: {
           nonExistentClaims,
         },

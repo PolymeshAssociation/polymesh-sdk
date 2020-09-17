@@ -4,7 +4,7 @@ import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareIssueTokens } from '~/api/procedures/issueTokens';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TransferStatus } from '~/types';
@@ -170,7 +170,7 @@ describe('issueTokens procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe("You can't issue tokens to some of the supplied identities");
+    expect(error.message).toBe("You can't issue tokens to some of the supplied Identities");
     expect(error.data).toMatchObject({
       failed: [{ did: args.issuanceData[0].identity, transferStatus }],
     });

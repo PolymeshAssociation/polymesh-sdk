@@ -8,7 +8,7 @@ import {
   Params,
   prepareModifyTokenTrustedClaimIssuers,
 } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
@@ -119,7 +119,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Some of the supplied identity IDs do not exist');
+    expect(error.message).toBe('Some of the supplied Identity IDs do not exist');
     expect(error.data).toMatchObject({ nonExistentDids: [nonExistentDid] });
   });
 
@@ -191,7 +191,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
 
-  test('should throw an error if trying to remove an identity that is not a trusted claim issuer', async () => {
+  test('should throw an error if trying to remove an Identity that is not a trusted claim issuer', async () => {
     const currentClaimIssuerDids: IdentityId[] = [];
     trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
@@ -208,12 +208,12 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     }
 
     expect(error.message).toBe(
-      'One or more of the supplied identities are not trusted claim issuers'
+      'One or more of the supplied Identities are not Trusted Claim Issuers'
     );
     expect(error.data).toMatchObject({ notPresent: args.claimIssuerIdentities });
   });
 
-  test('should add a transaction to remove the supplied trusted claim issuers (remove)', async () => {
+  test('should add a transaction to remove the supplied Trusted Claim Issuers (remove)', async () => {
     const currentClaimIssuerDids = rawClaimIssuerDids;
     trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
@@ -233,7 +233,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
 
-  test('should throw an error if trying to add an identity that is already a trusted claim issuer', async () => {
+  test('should throw an error if trying to add an Identity that is already a Trusted Claim Issuer', async () => {
     const currentClaimIssuerDids = rawClaimIssuerDids;
     trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
@@ -250,12 +250,12 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     }
 
     expect(error.message).toBe(
-      'One or more of the supplied identities already are trusted claim issuers'
+      'One or more of the supplied Identities already are Trusted Claim Issuers'
     );
     expect(error.data).toMatchObject({ present: args.claimIssuerIdentities });
   });
 
-  test('should add a transaction to add the supplied trusted claim issuers (add)', async () => {
+  test('should add a transaction to add the supplied Trusted Claim Issuers (add)', async () => {
     const currentClaimIssuerDids: IdentityId[] = [];
     trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);

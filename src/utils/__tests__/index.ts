@@ -28,11 +28,11 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity } from '~/api/entities';
+import { Account, Identity } from '~/api/entities';
 import { ProposalState } from '~/api/entities/Proposal/types';
-import { PostTransactionValue } from '~/base';
+import { Context, PostTransactionValue } from '~/base';
 import { CallIdEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   Authorization,
   AuthorizationType,
@@ -43,10 +43,11 @@ import {
   ConditionType,
   KnownTokenType,
   Permission,
-  SignerType,
+  Signer,
   TokenIdentifierType,
   TransferStatus,
 } from '~/types';
+import { SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
@@ -104,8 +105,11 @@ import {
   requestPaginated,
   ruleToAssetTransferRule,
   serialize,
-  signatoryToSigner,
-  signerToSignatory,
+  signatoryToSignerValue,
+  signerToSignerValue,
+  signerToString,
+  signerValueToSignatory,
+  signerValueToSigner,
   signingKeyToMeshSigningKey,
   stringToAccountId,
   stringToAssetIdentifier,
@@ -134,14 +138,16 @@ import {
   u64ToBigNumber,
   unserialize,
   unwrapValues,
-  valueToDid,
 } from '../';
 
 jest.mock(
   '@polkadot/api',
   require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
 );
-jest.mock('~/context', require('~/testUtils/mocks/dataSources').mockContextModule('~/context'));
+jest.mock(
+  '~/base/Context',
+  require('~/testUtils/mocks/dataSources').mockContextModule('~/base/Context')
+);
 
 describe('delay', () => {
   jest.useFakeTimers();
@@ -280,22 +286,33 @@ describe('stringToIdentityId and identityIdToString', () => {
   });
 });
 
-describe('valueToDid', () => {
-  test('valueToDid should return the Indentity DID string', () => {
+describe('signerToString', () => {
+  test('signerToString should return the Indentity DID string', () => {
     const did = 'someDid';
     const context = dsMockUtils.getContextInstance();
     const identity = new Identity({ did }, context);
 
-    const result = valueToDid(identity);
+    const result = signerToString(identity);
 
     expect(result).toBe(did);
   });
 
-  test('valueToDid should return the same DID string that it receives', () => {
-    const did = 'someDid';
-    const result = valueToDid(did);
+  test('signerToStrings should return the Account address string', () => {
+    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const context = dsMockUtils.getContextInstance();
 
-    expect(result).toBe(did);
+    const account = new Account({ address }, context);
+
+    const result = signerToString(account);
+
+    expect(result).toBe(address);
+  });
+
+  test('signerToStrings should return the same address string that it receives', () => {
+    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const result = signerToString(address);
+
+    expect(result).toBe(address);
   });
 });
 
@@ -1125,10 +1142,10 @@ describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
   });
 
   test('authTargetToAuthIdentifier should convert an AuthTarget to a polkadot AuthIdentifer object', () => {
-    const did = 'someDid';
+    const target = { type: SignerType.Identity, value: 'someDid' };
     const authId = new BigNumber(1);
     const value = {
-      did,
+      target,
       authId,
     };
     const fakeResult = ('convertedAuthIdentifier' as unknown) as AuthIdentifier;
@@ -1139,7 +1156,7 @@ describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
       .withArgs('AuthIdentifier', {
         // eslint-disable-next-line @typescript-eslint/camelcase
         auth_id: numberToU64(authId, context),
-        signatory: signerToSignatory({ type: SignerType.Identity, value: did }, context),
+        signatory: signerValueToSignatory(target, context),
       })
       .returns(fakeResult);
 
@@ -1149,15 +1166,15 @@ describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
   });
 
   test('authIdentifierToAuthTarget should convert a polkadot AuthIdentifier object to an AuthTarget', () => {
-    const did = 'someDid';
+    const target = { type: SignerType.Identity, value: 'someDid' };
     const authId = new BigNumber(1);
     const fakeResult = {
-      did,
+      target,
       authId,
     };
     const authIdentifier = dsMockUtils.createMockAuthIdentifier({
       signatory: dsMockUtils.createMockSignatory({
-        Identity: dsMockUtils.createMockIdentityId(did),
+        Identity: dsMockUtils.createMockIdentityId(target.value),
       }),
       // eslint-disable-next-line @typescript-eslint/camelcase
       auth_id: dsMockUtils.createMockU64(authId.toNumber()),
@@ -1257,7 +1274,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
       .withArgs('Signatory', { [value.type]: value.value })
       .returns(fakeResult);
 
-    const result = signerToSignatory(value, context);
+    const result = signerValueToSignatory(value, context);
 
     expect(result).toBe(fakeResult);
   });
@@ -1271,7 +1288,7 @@ describe('signerToSignatory and signatoryToSigner', () => {
       Identity: dsMockUtils.createMockIdentityId(fakeResult.value),
     });
 
-    let result = signatoryToSigner(signatory);
+    let result = signatoryToSignerValue(signatory);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
@@ -1282,8 +1299,64 @@ describe('signerToSignatory and signatoryToSigner', () => {
       Account: dsMockUtils.createMockAccountId(fakeResult.value),
     });
 
-    result = signatoryToSigner(signatory);
+    result = signatoryToSignerValue(signatory);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('signerToSignerValue and signerValueToSigner', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    sinon.restore();
+  });
+
+  test('signerToSignerValue should convert a Signer to a SignerValue', () => {
+    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    let signer: Signer = new Account({ address }, context);
+
+    let result = signerToSignerValue(signer);
+
+    expect(result).toEqual({
+      type: SignerType.Account,
+      value: address,
+    });
+
+    const did = 'someDid';
+    signer = new Identity({ did }, context);
+
+    result = signerToSignerValue(signer);
+
+    expect(result).toEqual({ type: SignerType.Identity, value: did });
+  });
+
+  test('signerValueToSigner should convert a SignerValue to a Signer', () => {
+    let value = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    let signerValue: SignerValue = { type: SignerType.Account, value };
+
+    let result = signerValueToSigner(signerValue, context);
+
+    expect((result as Account).address).toBe(value);
+
+    value = 'someDid';
+    signerValue = { type: SignerType.Identity, value };
+
+    result = signerValueToSigner(signerValue, context);
+
+    expect((result as Identity).did).toBe(value);
   });
 });
 
@@ -2627,37 +2700,38 @@ describe('middlewareProposalToProposalDetails', () => {
 describe('signingKeyToMeshSigningKey', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   test('signingKeyToMeshSigningKey should convert a SigningKey to a polkadot SigningKey', () => {
+    const address = 'someAccount';
+    const context = dsMockUtils.getContextInstance();
     const signingKey = {
-      signer: {
-        type: SignerType.Account,
-        value: 'someAccont',
-      },
+      signer: entityMockUtils.getAccountInstance(),
       permissions: [Permission.Full],
     };
-    const mockAccountId = dsMockUtils.createMockAccountId(signingKey.signer.value);
+    const mockAccountId = dsMockUtils.createMockAccountId(address);
     const mockSignatory = dsMockUtils.createMockSignatory({ Account: mockAccountId });
     const mockPermission = dsMockUtils.createMockPermission(signingKey.permissions[0]);
     const fakeResult = dsMockUtils.createMockSigningKey({
       signer: mockSignatory,
       permissions: [mockPermission],
     });
-    const context = dsMockUtils.getContextInstance();
 
     dsMockUtils
       .getCreateTypeStub()
       .withArgs('SigningKey', {
-        signer: signerToSignatory(signingKey.signer, context),
+        signer: signerValueToSignatory({ type: SignerType.Account, value: address }, context),
         permissions: signingKey.permissions.map(permission =>
           permissionToMeshPermission(permission, context)
         ),

@@ -12,8 +12,7 @@ import {
   getRequiredRoles,
   prepareCreateProposal,
 } from '~/api/procedures/createProposal';
-import { PostTransactionValue } from '~/base';
-import { Context } from '~/context';
+import { Context, PostTransactionValue } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TickerReservationStatus, TransactionArgumentType } from '~/types';

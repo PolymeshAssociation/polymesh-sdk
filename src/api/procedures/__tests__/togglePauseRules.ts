@@ -8,7 +8,7 @@ import {
   Params,
   prepareTogglePauseRules,
 } from '~/api/procedures/togglePauseRules';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';

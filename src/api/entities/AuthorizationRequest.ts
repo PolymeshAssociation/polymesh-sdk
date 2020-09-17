@@ -1,26 +1,25 @@
 import BigNumber from 'bignumber.js';
 
-import { Identity } from '~/api/entities/Identity';
-import { consumeAuthorizationRequests } from '~/api/procedures';
-import { Entity, TransactionQueue } from '~/base';
-import { Context } from '~/context';
-import { Authorization } from '~/types';
+import { Entity, Identity } from '~/api/entities';
+import { acceptJoinIdentityAuthorization, consumeAuthorizationRequests } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
+import { Authorization, AuthorizationType, Signer } from '~/types';
 
 export interface UniqueIdentifiers {
   authId: BigNumber;
 }
 
 export interface Params {
-  targetDid: string;
-  issuerDid: string;
+  target: Signer;
+  issuer: Identity;
   expiry: Date | null;
   data: Authorization;
 }
 
 /**
- * Represents a request made by an identity to another identity for some sort of authorization. This has multiple uses. For example, if Alice
- * wants to transfer ownership of her asset ALICETOKEN to Bob, an authorization request gets emitted to Bob,
- * who then has to accept it in order for the ownership transfer to be complete
+ * Represents a request made by an Identity to another Identity (or account) for some sort of authorization. This has multiple uses. For example, if Alice
+ *   wants to transfer ownership of her asset ALICETOKEN to Bob, an authorization request gets emitted to Bob,
+ *   who then has to accept it in order for the ownership transfer to be complete
  */
 export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
   /**
@@ -34,14 +33,14 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Identity to which the request was emitted
+   * Identity or Account to which the request was emitted
    */
-  public targetIdentity: Identity;
+  public target: Signer;
 
   /**
    * Identity that emitted the request
    */
-  public issuerIdentity: Identity;
+  public issuer: Identity;
 
   /**
    * authorization request data corresponding to type of authorization
@@ -61,7 +60,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
 
   /**
    * date at which the authorization request expires and can no longer be accepted.
-   * At this point, a new authorization request must be emitted. Null if the request never expires
+   *   At this point, a new authorization request must be emitted. Null if the request never expires
    */
   public expiry: Date | null;
 
@@ -74,14 +73,14 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
    * @hidden
    */
   public constructor(args: UniqueIdentifiers & Params, context: Context) {
-    const { targetDid, issuerDid, expiry, data, ...identifiers } = args;
+    const { target, issuer, expiry, data, ...identifiers } = args;
 
     super(identifiers, context);
 
     const { authId } = identifiers;
 
-    this.targetIdentity = new Identity({ did: targetDid }, context);
-    this.issuerIdentity = new Identity({ did: issuerDid }, context);
+    this.target = target;
+    this.issuer = issuer;
     this.authId = authId;
     this.expiry = expiry;
     this.data = data;
@@ -91,10 +90,13 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
    * Accept the authorization request. You must be the target of the request to be able to accept it
    */
   public accept(): Promise<TransactionQueue> {
-    return consumeAuthorizationRequests.prepare(
-      { authRequests: [this], accept: true },
-      this.context
-    );
+    const { context } = this;
+
+    if (this.data.type === AuthorizationType.JoinIdentity) {
+      return acceptJoinIdentityAuthorization.prepare({ authRequest: this }, context);
+    }
+
+    return consumeAuthorizationRequests.prepare({ authRequests: [this], accept: true }, context);
   }
 
   /**
@@ -108,5 +110,14 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
       { authRequests: [this], accept: false },
       this.context
     );
+  }
+
+  /**
+   * Returns whether the Authorization Request has expired
+   */
+  public isExpired(): boolean {
+    const { expiry } = this;
+
+    return expiry !== null && expiry < new Date();
   }
 }

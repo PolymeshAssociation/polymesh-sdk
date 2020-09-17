@@ -1,14 +1,11 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Identity } from '~/api/entities/Identity';
-import { consumeAuthorizationRequests } from '~/api/procedures';
-import { Entity, TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { AuthorizationRequest, Entity, Identity } from '~/api/entities';
+import { acceptJoinIdentityAuthorization, consumeAuthorizationRequests } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Authorization, AuthorizationType } from '~/types';
-
-import { AuthorizationRequest } from '../AuthorizationRequest';
 
 describe('AuthorizationRequest class', () => {
   let context: Context;
@@ -42,12 +39,12 @@ describe('AuthorizationRequest class', () => {
       const expiry = new Date();
       const data = ('something' as unknown) as Authorization;
       const authRequest = new AuthorizationRequest(
-        { targetDid, issuerDid, expiry, data, authId: new BigNumber(1) },
+        { target: targetIdentity, issuer: issuerIdentity, expiry, data, authId: new BigNumber(1) },
         context
       );
 
-      expect(authRequest.targetIdentity).toEqual(targetIdentity);
-      expect(authRequest.issuerIdentity).toEqual(issuerIdentity);
+      expect(authRequest.target).toEqual(targetIdentity);
+      expect(authRequest.issuer).toEqual(issuerIdentity);
       expect(authRequest.expiry).toBe(expiry);
       expect(authRequest.data).toBe(data);
     });
@@ -66,13 +63,13 @@ describe('AuthorizationRequest class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    test('should prepare the consumeAuthorizationRequests procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
           expiry: null,
-          targetDid: 'someDid',
-          issuerDid: 'otherDid',
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
           data: { type: AuthorizationType.NoData },
         },
         context
@@ -94,6 +91,34 @@ describe('AuthorizationRequest class', () => {
 
       expect(queue).toBe(expectedQueue);
     });
+
+    test('should prepare the acceptJoinIdentityAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: null,
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: { type: AuthorizationType.JoinIdentity, value: [] },
+        },
+        context
+      );
+
+      const args = {
+        authRequest: authorizationRequest,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(acceptJoinIdentityAuthorization, 'prepare')
+        .withArgs({ ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await authorizationRequest.accept();
+
+      expect(queue).toBe(expectedQueue);
+    });
   });
 
   describe('method: remove', () => {
@@ -106,8 +131,8 @@ describe('AuthorizationRequest class', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          targetDid: 'someDid',
-          issuerDid: 'otherDid',
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
           data: { type: AuthorizationType.NoData },
         },
         context

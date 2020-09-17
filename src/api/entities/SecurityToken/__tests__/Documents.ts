@@ -1,9 +1,9 @@
 import { StorageKey } from '@polkadot/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities';
+import { Namespace, SecurityToken } from '~/api/entities';
 import { setTokenDocuments } from '~/api/procedures';
-import { Namespace, TransactionQueue } from '~/base';
+import { TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';

@@ -4,8 +4,7 @@ import BigNumber from 'bignumber.js';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { PostTransactionValue } from '~/base';
-import { Context } from '~/context';
+import { Context, PolymeshTransaction, PostTransactionValue } from '~/base';
 import { fakePromise } from '~/testUtils';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -13,8 +12,6 @@ import { TransactionStatus } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
-
-import { PolymeshTransaction } from '../PolymeshTransaction';
 
 describe('Polymesh Transaction class', () => {
   let context: Mocked<Context>;

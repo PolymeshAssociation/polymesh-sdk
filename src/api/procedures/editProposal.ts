@@ -58,18 +58,18 @@ export async function prepareEditProposal(
  */
 export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): Promise<boolean> {
   const {
-    context,
     context: {
       polymeshApi: {
         query: { pips },
       },
     },
+    context,
   } = this;
 
   const metadata = await pips.proposalMetadata(numberToPipId(pipId, context));
   const { proposer } = metadata.unwrap();
 
-  return accountIdToString(proposer) === this.context.getCurrentPair().address;
+  return accountIdToString(proposer) === context.getCurrentPair().address;
 }
 
 /**

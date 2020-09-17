@@ -2,8 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { Proposal } from '~/api/entities';
 import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
-import { PolymeshError } from '~/base';
-import { Context } from '~/context';
+import { Context, PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
 
 /**

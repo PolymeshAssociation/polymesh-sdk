@@ -1,8 +1,14 @@
+import P from 'bluebird';
 import { TxTags } from 'polymesh-types/types';
 
-import { AuthorizationRequest } from '~/api/entities';
+import { Account, AuthorizationRequest } from '~/api/entities';
 import { Procedure } from '~/base';
-import { authTargetToAuthIdentifier, batchArguments, numberToU64 } from '~/utils';
+import {
+  authTargetToAuthIdentifier,
+  batchArguments,
+  numberToU64,
+  signerToSignerValue,
+} from '~/utils';
 
 export interface ConsumeParams {
   accept: boolean;
@@ -14,12 +20,6 @@ export interface ConsumeParams {
 export type ConsumeAuthorizationRequestsParams = ConsumeParams & {
   authRequests: AuthorizationRequest[];
 };
-
-/**
- * @hidden
- */
-const isLive = ({ expiry }: AuthorizationRequest): boolean =>
-  expiry === null || expiry > new Date();
 
 /**
  * @hidden
@@ -36,7 +36,7 @@ export async function prepareConsumeAuthorizationRequests(
   } = this;
   const { accept, authRequests } = args;
 
-  const liveRequests = authRequests.filter(isLive);
+  const liveRequests = authRequests.filter(request => !request.isExpired());
 
   if (accept) {
     const requestIds = liveRequests.map(({ authId }) => numberToU64(authId, context));
@@ -48,8 +48,8 @@ export async function prepareConsumeAuthorizationRequests(
       );
     });
   } else {
-    const authIdentifiers = liveRequests.map(({ authId, targetIdentity }) =>
-      authTargetToAuthIdentifier({ authId, did: targetIdentity.did }, context)
+    const authIdentifiers = liveRequests.map(({ authId, target }) =>
+      authTargetToAuthIdentifier({ authId, target: signerToSignerValue(target) }, context)
     );
     batchArguments(authIdentifiers, TxTags.identity.BatchRemoveAuthorization).forEach(
       identifierBatch => {
@@ -70,16 +70,33 @@ export async function isAuthorized(
   this: Procedure<ConsumeAuthorizationRequestsParams>,
   { authRequests, accept }: ConsumeAuthorizationRequestsParams
 ): Promise<boolean> {
-  const { did } = await this.context.getCurrentIdentity();
+  const { context } = this;
 
-  return authRequests.filter(isLive).every(({ targetIdentity, issuerIdentity }) => {
-    let condition = did === targetIdentity.did;
+  let did: string;
+
+  const unexpiredRequests = authRequests.filter(request => !request.isExpired());
+
+  const authorized = await P.mapSeries(unexpiredRequests, async ({ target, issuer }) => {
+    let condition;
+
+    if (target instanceof Account) {
+      const { address } = context.getCurrentAccount();
+      condition = address === target.address;
+    } else {
+      if (!did) {
+        ({ did } = await context.getCurrentIdentity());
+      }
+      condition = did === target.did;
+    }
+
     if (!accept) {
-      condition = condition || did === issuerIdentity.did;
+      condition = condition || did === issuer.did;
     }
 
     return condition;
   });
+
+  return authorized.every(res => res);
 }
 
 /**

@@ -3,7 +3,7 @@ import { Memo } from 'polymesh-types/polymesh';
 import sinon from 'sinon';
 
 import { prepareTransferPolyX, TransferPolyXParams } from '~/api/procedures/transferPolyX';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import * as utilsModule from '~/utils';
@@ -20,7 +20,6 @@ describe('transferPolyX procedure', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    sinon.stub(utilsModule, 'stringToAccountId').returns(dsMockUtils.createMockAccountId());
   });
 
   beforeEach(() => {
@@ -52,17 +51,17 @@ describe('transferPolyX procedure', () => {
     ).rejects.toThrow('Insufficient free balance');
   });
 
-  test("should throw an error if destination account doesn't have an associated identity", () => {
+  test("should throw an error if destination account doesn't have an associated Identity", () => {
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
 
     const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
 
     return expect(
       prepareTransferPolyX.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
-    ).rejects.toThrow("The destination account doesn't have an asssociated identity");
+    ).rejects.toThrow("The destination account doesn't have an asssociated Identity");
   });
 
-  test("should throw an error if sender identity doesn't have a valid cdd", () => {
+  test("should throw an error if sender Identity doesn't have valid CDD", () => {
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
       dsMockUtils.createMockOption(
         dsMockUtils.createMockLinkedKeyInfo({
@@ -84,7 +83,7 @@ describe('transferPolyX procedure', () => {
     ).rejects.toThrow('The sender Identity has an invalid CDD claim');
   });
 
-  test("should throw an error if destination account doesn't have a valid cdd", () => {
+  test("should throw an error if destination Account doesn't have valid CDD", () => {
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
       dsMockUtils.createMockOption(
         dsMockUtils.createMockLinkedKeyInfo({
@@ -110,6 +109,7 @@ describe('transferPolyX procedure', () => {
     const to = 'someAccount';
     const amount = new BigNumber(99);
     const memo = 'someMessage';
+    const rawAccount = dsMockUtils.createMockAccountId(to);
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
     const rawMemo = ('memo' as unknown) as Memo;
 
@@ -121,6 +121,7 @@ describe('transferPolyX procedure', () => {
       )
     );
 
+    sinon.stub(utilsModule, 'stringToAccountId').returns(rawAccount);
     sinon.stub(utilsModule, 'numberToBalance').returns(rawAmount);
     sinon.stub(utilsModule, 'stringToMemo').returns(rawMemo);
 
@@ -132,7 +133,13 @@ describe('transferPolyX procedure', () => {
       amount,
     });
 
-    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), tx, {}, to, rawAmount);
+    sinon.assert.calledWith(
+      procedureMockUtils.getAddTransactionStub(),
+      tx,
+      {},
+      rawAccount,
+      rawAmount
+    );
 
     tx = dsMockUtils.createTxStub('balances', 'transferWithMemo');
 
@@ -146,7 +153,7 @@ describe('transferPolyX procedure', () => {
       procedureMockUtils.getAddTransactionStub(),
       tx,
       {},
-      to,
+      rawAccount,
       rawAmount,
       rawMemo
     );

@@ -9,50 +9,40 @@ import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { Ticker, TxTag } from 'polymesh-types/types';
 
-import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
+import { Account, Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
   registerIdentity,
   RegisterIdentityParams,
-  removeSigningKeys,
   reserveTicker,
   ReserveTickerParams,
   transferPolyX,
   TransferPolyXParams,
 } from '~/api/procedures';
-import { PolymeshError, TransactionQueue } from '~/base';
-import { Claims } from '~/Claims';
-import { Context } from '~/context';
-import { heartbeat, transactions } from '~/middleware/queries';
-import { Query, TransactionOrderByInput } from '~/middleware/types';
+import { Context, PolymeshError, TransactionQueue } from '~/base';
+import { heartbeat } from '~/middleware/queries';
 import {
   AccountBalance,
   CommonKeyring,
-  Ensured,
+  CurrentAccount,
   ErrorCode,
-  ExtrinsicData,
   MiddlewareConfig,
   NetworkProperties,
-  ResultSet,
-  Signer,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
 import {
-  addressToKey,
-  calculateNextKey,
-  extrinsicIdentifierToTxTag,
   moduleAddressToString,
+  signerToString,
   stringToIdentityId,
   stringToTicker,
   textToString,
   tickerToString,
-  txTagToExtrinsicIdentifier,
   u32ToBigNumber,
-  valueToDid,
 } from '~/utils';
 
+import { Claims } from './Claims';
 import { Governance } from './Governance';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
@@ -220,9 +210,9 @@ export class Polymesh {
   }
 
   /**
-   * Transfer an amount of POLYX to a specified account
+   * Transfer an amount of POLYX to a specified Account
    *
-   * @param args.to - account id that will receive the POLYX
+   * @param args.to - account that will receive the POLYX
    * @param args.amount - amount of POLYX to be transferred
    * @param args.memo - identifier string to help differentiate transfers
    */
@@ -231,26 +221,26 @@ export class Polymesh {
   }
 
   /**
-   * Get the free/locked POLYX balance of an account
+   * Get the free/locked POLYX balance of an Account
    *
-   * @param args.accountId - defaults to the current account
+   * @param args.account - defaults to the current Account
    *
    * @note can be subscribed to
    */
-  public getAccountBalance(args?: { accountId: string }): Promise<AccountBalance>;
+  public getAccountBalance(args?: { account: string | Account }): Promise<AccountBalance>;
   public getAccountBalance(callback: SubCallback<AccountBalance>): Promise<UnsubCallback>;
   public getAccountBalance(
-    args: { accountId: string },
+    args: { account: string | Account },
     callback: SubCallback<AccountBalance>
   ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public getAccountBalance(
-    args?: { accountId: string } | SubCallback<AccountBalance>,
+    args?: { account: string | Account } | SubCallback<AccountBalance>,
     callback?: SubCallback<AccountBalance>
   ): Promise<AccountBalance | UnsubCallback> {
     const { context } = this;
-    let accountId: string | undefined;
+    let account: string | Account | undefined;
     let cb: SubCallback<AccountBalance> | undefined = callback;
 
     switch (typeof args) {
@@ -262,21 +252,27 @@ export class Polymesh {
         break;
       }
       default: {
-        ({ accountId } = args);
+        ({ account } = args);
         break;
       }
     }
 
-    if (cb) {
-      return context.accountBalance(accountId, cb);
+    if (!account) {
+      account = context.getCurrentAccount();
+    } else if (typeof account === 'string') {
+      account = new Account({ address: account }, context);
     }
 
-    return context.accountBalance(accountId);
+    if (cb) {
+      return account.getBalance(cb);
+    }
+
+    return account.getBalance();
   }
 
   /**
    * Reserve a ticker symbol to later use in the creation of a Security Token.
-   * The ticker will expire after a set amount of time, after which other users can reserve it
+   *   The ticker will expire after a set amount of time, after which other users can reserve it
    *
    * @param args.ticker - ticker symbol to reserve
    */
@@ -314,13 +310,13 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all the ticker reservations currently owned by an identity. This doesn't include tokens that
+   * Retrieve all the ticker reservations currently owned by an Identity. This doesn't include tokens that
    *   have already been launched
    *
-   * @param args.did - identity representation or identity ID as stored in the blockchain
+   * @param args.owner - identity representation or Identity ID as stored in the blockchain
    */
   public async getTickerReservations(args?: {
-    did: string | Identity;
+    owner: string | Identity;
   }): Promise<TickerReservation[]> {
     const {
       context: {
@@ -332,7 +328,7 @@ export class Polymesh {
     let identity: string;
 
     if (args) {
-      identity = valueToDid(args.did);
+      identity = signerToString(args.owner);
     } else {
       ({ did: identity } = await context.getCurrentIdentity());
     }
@@ -381,20 +377,41 @@ export class Polymesh {
   }
 
   /**
-   * Create an identity instance from a DID. If no DID is passed, the current identity is returned
+   * Create an Identity instance from a DID
    */
-  public async getIdentity(args?: { did: string }): Promise<Identity> {
-    if (args) {
-      return new Identity(args, this.context);
-    }
+  public getIdentity(args: { did: string }): Identity {
+    return new Identity(args, this.context);
+  }
+
+  /**
+   * Retrieve the Identity associated to the current Account
+   */
+  public getCurrentIdentity(): Promise<Identity> {
     return this.context.getCurrentIdentity();
   }
 
   /**
-   * Return whether the supplied identity/DID exists
+   * Create an Account instance from an address. If no address is passed, the current Account is returned
+   */
+  public getAccount(): CurrentAccount;
+  public getAccount(args: { address: string }): Account;
+
+  // eslint-disable-next-line require-jsdoc
+  public getAccount(args?: { address: string }): Account | CurrentAccount {
+    const { context } = this;
+
+    if (args) {
+      return new Account(args, context);
+    }
+
+    return context.getCurrentAccount();
+  }
+
+  /**
+   * Return whether the supplied Identity/DID exists
    */
   public async isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
-    const invalid = await this.context.getInvalidDids([valueToDid(args.identity)]);
+    const invalid = await this.context.getInvalidDids([signerToString(args.identity)]);
 
     return !invalid.length;
   }
@@ -411,8 +428,8 @@ export class Polymesh {
   /**
    * Get the treasury wallet address
    */
-  public getTreasuryAddress(): string {
-    return moduleAddressToString(TREASURY_MODULE_ADDRESS);
+  public getTreasuryAccount(): Account {
+    return new Account({ address: moduleAddressToString(TREASURY_MODULE_ADDRESS) }, this.context);
   }
 
   /**
@@ -450,11 +467,11 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all the Security Tokens owned by an identity
+   * Retrieve all the Security Tokens owned by an Identity
    *
-   * @param args.did - identity representation or identity ID as stored in the blockchain
+   * @param args.owner - identity representation or Identity ID as stored in the blockchain
    */
-  public async getSecurityTokens(args?: { did: string | Identity }): Promise<SecurityToken[]> {
+  public async getSecurityTokens(args?: { owner: string | Identity }): Promise<SecurityToken[]> {
     const {
       context: {
         polymeshApi: { query },
@@ -465,7 +482,7 @@ export class Polymesh {
     let identity: string;
 
     if (args) {
-      identity = valueToDid(args.did);
+      identity = signerToString(args.owner);
     } else {
       ({ did: identity } = await context.getCurrentIdentity());
     }
@@ -536,98 +553,6 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve a list of transactions. Can be filtered using parameters
-   *
-   * @param filters.address - account that signed the transaction
-   * @param filters.tag - tag associated with the transaction
-   * @param filters.success - whether the transaction was successful or not
-   * @param filters.size - page size
-   * @param filters.start - page offset
-   */
-  public async getTransactionHistory(
-    filters: {
-      blockId?: number;
-      address?: string;
-      tag?: TxTag;
-      success?: boolean;
-      size?: number;
-      start?: number;
-      orderBy?: TransactionOrderByInput;
-    } = {}
-  ): Promise<ResultSet<ExtrinsicData>> {
-    const { context } = this;
-
-    const { blockId, address, tag, success, size, start, orderBy } = filters;
-
-    let moduleId;
-    let callId;
-    if (tag) {
-      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
-    }
-
-    /* eslint-disable @typescript-eslint/camelcase */
-    const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
-      transactions({
-        block_id: blockId,
-        address: address ? addressToKey(address) : undefined,
-        module_id: moduleId,
-        call_id: callId,
-        success,
-        count: size,
-        skip: start,
-        orderBy,
-      })
-    );
-
-    const {
-      data: {
-        transactions: { items: transactionList, totalCount: count },
-      },
-    } = result;
-
-    const data: ExtrinsicData[] = [];
-
-    transactionList.forEach(
-      ({
-        block_id,
-        extrinsic_idx,
-        address: rawAddress,
-        nonce,
-        module_id,
-        call_id,
-        params,
-        success: txSuccess,
-        spec_version_id,
-        extrinsic_hash,
-      }) => {
-        // TODO remove null check once types fixed
-        /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        data.push({
-          blockId: block_id!,
-          extrinsicIdx: extrinsic_idx!,
-          address: rawAddress ?? null,
-          nonce: nonce!,
-          txTag: extrinsicIdentifierToTxTag({ moduleId: module_id!, callId: call_id! }),
-          params,
-          success: !!txSuccess,
-          specVersionId: spec_version_id!,
-          extrinsicHash: extrinsic_hash!,
-        });
-        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
-      }
-    );
-    /* eslint-enable @typescript-eslint/camelcase */
-
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
-  }
-
-  /**
    * Get the Treasury POLYX balance
    *
    * @note can be subscribed to
@@ -639,50 +564,25 @@ export class Polymesh {
   public async getTreasuryBalance(
     callback?: SubCallback<BigNumber>
   ): Promise<BigNumber | UnsubCallback> {
-    const accountId = this.getTreasuryAddress();
+    const account = this.getTreasuryAccount();
 
     if (callback) {
-      return this.context.accountBalance(accountId, ({ free: freeBalance }) => {
+      return account.getBalance(({ free: freeBalance }) => {
         callback(freeBalance);
       });
     }
 
-    const { free } = await this.getAccountBalance({ accountId });
+    const { free } = await account.getBalance();
     return free;
-  }
-
-  /**
-   * Get the list of signing keys related to the current identity
-   *
-   * @note can be subscribed to
-   */
-  public async getMySigningKeys(): Promise<Signer[]>;
-  public async getMySigningKeys(callback: SubCallback<Signer[]>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getMySigningKeys(
-    callback?: SubCallback<Signer[]>
-  ): Promise<Signer[] | UnsubCallback> {
-    const { context } = this;
-
-    if (callback) {
-      return context.getSigningKeys(callback);
-    }
-
-    return context.getSigningKeys();
-  }
-
-  /**
-   * Remove a list of signing keys associated with the current identity
-   */
-  public removeMySigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
-    return removeSigningKeys.prepare(args, this.context);
   }
 
   /**
    * Register an Identity
    *
    * @note must be a CDD provider
+   * @note this may create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
+   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
   public registerIdentity(args: RegisterIdentityParams): Promise<TransactionQueue<Identity>> {
     return registerIdentity.prepare(args, this.context);

@@ -5,7 +5,12 @@ import { IssueAssetItem, TxTags } from 'polymesh-types/types';
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
-import { batchArguments, issuanceDataToIssueAssetItem, stringToTicker, valueToDid } from '~/utils';
+import {
+  batchArguments,
+  issuanceDataToIssueAssetItem,
+  signerToString,
+  stringToTicker,
+} from '~/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
 export interface IssueTokensParams {
@@ -90,7 +95,7 @@ export async function prepareIssueTokens(
 
     transferStatuses.forEach((canTransfer, index) => {
       const { identity } = issuanceDataChunk[index];
-      const did = valueToDid(identity);
+      const did = signerToString(identity);
 
       issueAssetItems.push(issuanceDataToIssueAssetItem(issuanceDataChunk[index], context));
 
@@ -103,7 +108,7 @@ export async function prepareIssueTokens(
   if (failed.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: "You can't issue tokens to some of the supplied identities",
+      message: "You can't issue tokens to some of the supplied Identities",
       data: {
         failed,
       },
