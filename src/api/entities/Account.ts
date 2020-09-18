@@ -1,6 +1,7 @@
 import { TxTag } from 'polymesh-types/types';
 
 import { Entity, Identity } from '~/api/entities';
+import { Authorizations } from '~/api/entities/common/namespaces/Authorizations';
 import { Context, PolymeshError } from '~/base';
 import { transactions } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
@@ -50,6 +51,9 @@ export class Account extends Entity<UniqueIdentifiers> {
    */
   public key: string;
 
+  // Namespaces
+  public authorizations: Authorizations<Account>;
+
   /**
    * @hidden
    */
@@ -60,6 +64,7 @@ export class Account extends Entity<UniqueIdentifiers> {
 
     this.address = address;
     this.key = addressToKey(address);
+    this.authorizations = new Authorizations(this, context);
   }
 
   /**
