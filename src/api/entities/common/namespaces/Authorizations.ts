@@ -40,16 +40,20 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
     const signerValue = signerToSignerValue(parent);
     const signatory = signerValueToSignatory(signerValue, context);
     const rawBoolean = booleanToBool(opts?.includeExpired ?? true, context);
-    const rawAuthorizationType = opts?.type
-      ? authorizationTypeToMeshAuthorizationType(opts.type, context)
-      : undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: Authorization[] = await (rpc as any).identity.getFilteredAuthorizations(
-      signatory,
-      rawBoolean,
-      rawAuthorizationType
-    );
+    let result: Authorization[];
+
+    if (opts?.type) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      result = await (rpc as any).identity.getFilteredAuthorizations(
+        signatory,
+        rawBoolean,
+        authorizationTypeToMeshAuthorizationType(opts.type, context)
+      );
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      result = await (rpc as any).identity.getFilteredAuthorizations(signatory, rawBoolean);
+    }
 
     const data = this.createAuthorizationRequests(
       result.map(auth => ({ auth, target: signerValue }))
