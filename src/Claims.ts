@@ -62,6 +62,7 @@ export class Claims {
    * Retrieve all claims issued by an Identity
    *
    * @param opts.target - identity (optional, defaults to the current Identity)
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
    * @note uses the middleware
@@ -69,13 +70,14 @@ export class Claims {
   public async getIssuedClaims(
     opts: {
       target?: string | Identity;
+      includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = {}
+    } = { includeExpired: true }
   ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
 
-    const { target, size, start } = opts;
+    const { target, includeExpired, size, start } = opts;
 
     let did;
     if (target) {
@@ -87,6 +89,7 @@ export class Claims {
 
     const result = await context.issuedClaims({
       trustedClaimIssuers: [did],
+      includeExpired,
       size,
       start,
     });
@@ -101,6 +104,7 @@ export class Claims {
    * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
    * @param opts.scope - scope of the claims to fetch. Defaults to any scope
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
    * @param opts.size - page size
    * @param opts.start - page offset
    *
@@ -113,13 +117,14 @@ export class Claims {
       trustedClaimIssuers?: (string | Identity)[];
       scope?: string;
       claimTypes?: ClaimType[];
+      includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = {}
+    } = { includeExpired: true }
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
 
-    const { targets, trustedClaimIssuers, scope, claimTypes, size, start } = opts;
+    const { targets, trustedClaimIssuers, scope, claimTypes, includeExpired, size, start } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
@@ -129,6 +134,7 @@ export class Claims {
           signerToString(trustedClaimIssuer)
         ),
         claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        includeExpired,
         count: size,
         skip: start,
       })
@@ -197,6 +203,7 @@ export class Claims {
    * Retrieve the list of CDD claims for a target Identity
    *
    * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current Identity)
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
    * @param opts.size - page size
    * @param opts.start - page offset
    *
@@ -206,12 +213,13 @@ export class Claims {
   public async getCddClaims(
     opts: {
       target?: string | Identity;
+      includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = {}
+    } = { includeExpired: true }
   ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
-    const { target, size, start } = opts;
+    const { target, includeExpired, size, start } = opts;
 
     let did;
     if (target) {
@@ -223,6 +231,7 @@ export class Claims {
     const result = await context.issuedClaims({
       targets: [did],
       claimTypes: [ClaimType.CustomerDueDiligence],
+      includeExpired,
       size,
       start,
     });
