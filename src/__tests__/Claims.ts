@@ -141,6 +141,7 @@ describe('Claims Class', () => {
           scope: undefined,
           trustedClaimIssuers: [targetDid],
           claimTypes: [ClaimTypeEnum.Accredited],
+          includeExpired: false,
           count: 1,
           skip: undefined,
         }),
@@ -153,6 +154,7 @@ describe('Claims Class', () => {
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
+        includeExpired: false,
         size: 1,
       });
 
@@ -166,6 +168,7 @@ describe('Claims Class', () => {
           scope: undefined,
           trustedClaimIssuers: undefined,
           claimTypes: undefined,
+          includeExpired: true,
           count: undefined,
           skip: undefined,
         }),
