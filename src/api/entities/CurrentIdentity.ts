@@ -36,7 +36,7 @@ export class CurrentIdentity extends Identity {
   }
 
   /**
-   * Send an invitation to an Account to join to your Identity group
+   * Send an invitation to an Account to join to your Identity
    *
    * @note this may create AuthorizationRequest which have to be accepted by
    *   the corresponding Account. An Account or Identity can
