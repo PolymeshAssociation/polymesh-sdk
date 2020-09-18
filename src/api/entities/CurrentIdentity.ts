@@ -1,5 +1,5 @@
 import { Identity } from '~/api/entities';
-import { removeSigningKeys } from '~/api/procedures';
+import { inviteAccount, InviteAccountParams, removeSigningKeys } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { Signer, SigningKey, SubCallback, UnsubCallback } from '~/types';
 
@@ -33,5 +33,16 @@ export class CurrentIdentity extends Identity {
    */
   public removeSigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
     return removeSigningKeys.prepare(args, this.context);
+  }
+
+  /**
+   * Send an invitation to an Account to join to your Identity
+   *
+   * @note this may create AuthorizationRequest which have to be accepted by
+   *   the corresponding Account. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   */
+  public inviteAccount(args: InviteAccountParams): Promise<TransactionQueue<void>> {
+    return inviteAccount.prepare(args, this.context);
   }
 }
