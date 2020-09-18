@@ -74,7 +74,7 @@ import {
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
-import { Identity } from '~/api/entities';
+import { AuthorizationRequest, Identity } from '~/api/entities';
 import { Context } from '~/base';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -185,6 +185,7 @@ interface ContextOptions {
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
   middlewareAvailable?: boolean;
+  sentAuthorizations?: ResultSet<AuthorizationRequest>;
 }
 
 interface Pair {
@@ -390,6 +391,11 @@ const defaultContextOptions: ContextOptions = {
   latestBlock: new BigNumber(100),
   middlewareEnabled: true,
   middlewareAvailable: true,
+  sentAuthorizations: {
+    data: [{} as AuthorizationRequest],
+    next: 1,
+    count: 1,
+  },
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -412,6 +418,9 @@ function configureContext(opts: ContextOptions): void {
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
     getMasterKey: sinon.stub().resolves(opts.masterKey),
     getSigningKeys: sinon.stub().resolves(opts.signingKeys),
+    authorizations: {
+      getSent: sinon.stub().resolves(opts.sentAuthorizations),
+    },
   };
   opts.withSeed
     ? getCurrentIdentity.resolves(identity)

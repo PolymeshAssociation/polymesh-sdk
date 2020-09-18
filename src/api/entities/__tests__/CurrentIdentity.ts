@@ -1,7 +1,7 @@
 import sinon from 'sinon';
 
 import { CurrentIdentity, Identity } from '~/api/entities';
-import { removeSigningKeys } from '~/api/procedures';
+import { inviteAccount, removeSigningKeys } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { SigningKey, SubCallback } from '~/types';
@@ -84,6 +84,28 @@ describe('CurrentIdentity class', () => {
         .resolves(expectedQueue);
 
       const queue = await identity.removeSigningKeys({ signers });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: inviteAccount', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new CurrentIdentity({ did }, context);
+
+      const args = {
+        targetAccount: 'someAccount',
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(inviteAccount, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.inviteAccount(args);
 
       expect(queue).toBe(expectedQueue);
     });
