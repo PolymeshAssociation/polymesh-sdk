@@ -60,7 +60,7 @@ describe('inviteAccount procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add authorization transaction to the queue', async () => {
+  test('should add an add authorization transaction to the queue', async () => {
     const expiry = new Date('1/1/2040');
     const target = new Account({ address: args.targetAccount }, mockContext);
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
