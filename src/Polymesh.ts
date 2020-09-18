@@ -24,6 +24,7 @@ import {
   AccountBalance,
   CommonKeyring,
   CurrentAccount,
+  CurrentIdentity,
   ErrorCode,
   MiddlewareConfig,
   NetworkProperties,
@@ -386,7 +387,7 @@ export class Polymesh {
   /**
    * Retrieve the Identity associated to the current Account
    */
-  public getCurrentIdentity(): Promise<Identity> {
+  public getCurrentIdentity(): Promise<CurrentIdentity> {
     return this.context.getCurrentIdentity();
   }
 
