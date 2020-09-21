@@ -2,13 +2,12 @@ import { TxTag } from 'polymesh-types/types';
 
 import { Entity, Identity } from '~/api/entities';
 import { Authorizations } from '~/api/entities/common/namespaces/Authorizations';
-import { Context, PolymeshError } from '~/base';
+import { Context } from '~/base';
 import { transactions } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
   Ensured,
-  ErrorCode,
   ExtrinsicData,
   ResultSet,
   SubCallback,
@@ -89,11 +88,9 @@ export class Account extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the Identity associated to this Account
-   *
-   * @throws if there is no Identity associated to the Account
+   * Retrieve the Identity associated to this Account (null if there is none)
    */
-  public async getIdentity(): Promise<Identity> {
+  public async getIdentity(): Promise<Identity | null> {
     const {
       context: {
         polymeshApi: {
@@ -112,10 +109,7 @@ export class Account extends Entity<UniqueIdentifiers> {
 
       return new Identity({ did }, context);
     } catch (err) {
-      throw new PolymeshError({
-        code: ErrorCode.IdentityNotPresent,
-        message: 'The current account does not have an associated Identity',
-      });
+      return null;
     }
   }
 

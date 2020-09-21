@@ -455,6 +455,20 @@ describe('Context class', () => {
       const result = await context.getCurrentIdentity();
       expect(result.did).toBe(did);
     });
+
+    test('should throw an error if there is no Identity associated to the Current Account', async () => {
+      entityMockUtils.getCurrentAccountGetIdentityStub().resolves(null);
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      return expect(context.getCurrentIdentity()).rejects.toThrow(
+        'The current account does not have an associated Identity'
+      );
+    });
   });
 
   describe('method: getCurrentAccount', () => {

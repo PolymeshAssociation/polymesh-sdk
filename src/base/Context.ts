@@ -306,7 +306,16 @@ export class Context {
   public async getCurrentIdentity(): Promise<CurrentIdentity> {
     const account = this.getCurrentAccount();
 
-    return account.getIdentity();
+    const identity = await account.getIdentity();
+
+    if (identity === null) {
+      throw new PolymeshError({
+        code: ErrorCode.IdentityNotPresent,
+        message: 'The current account does not have an associated Identity',
+      });
+    }
+
+    return identity;
   }
 
   /**

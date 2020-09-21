@@ -326,16 +326,16 @@ export class Polymesh {
       context,
     } = this;
 
-    let identity: string;
+    let did: string;
 
     if (args) {
-      identity = signerToString(args.owner);
+      did = signerToString(args.owner);
     } else {
-      ({ did: identity } = await context.getCurrentIdentity());
+      ({ did } = await context.getCurrentIdentity());
     }
 
     const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(identity, context)
+      stringToIdentityId(did, context)
     );
 
     const tickerReservations: TickerReservation[] = entries
@@ -385,10 +385,10 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve the Identity associated to the current Account
+   * Retrieve the Identity associated to the current Account (null if there is none)
    */
-  public getCurrentIdentity(): Promise<CurrentIdentity> {
-    return this.context.getCurrentIdentity();
+  public getCurrentIdentity(): Promise<CurrentIdentity | null> {
+    return this.context.getCurrentAccount().getIdentity();
   }
 
   /**
@@ -480,16 +480,16 @@ export class Polymesh {
       context,
     } = this;
 
-    let identity: string;
+    let did: string;
 
     if (args) {
-      identity = signerToString(args.owner);
+      did = signerToString(args.owner);
     } else {
-      ({ did: identity } = await context.getCurrentIdentity());
+      ({ did } = await context.getCurrentIdentity());
     }
 
     const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(identity, context)
+      stringToIdentityId(did, context)
     );
 
     const securityTokens: SecurityToken[] = entries

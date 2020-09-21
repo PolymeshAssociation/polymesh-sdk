@@ -64,26 +64,26 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   /**
    * Check if an Identity has voted on the proposal
    *
-   * @param args.identity - identity representation or Identity ID as stored in the blockchain
+   * @param args.identity - defaults to the current Identity
    *
    * @note uses the middleware
    */
   public async identityHasVoted(args?: { identity: string | Identity }): Promise<boolean> {
     const { pipId, context } = this;
 
-    let identity: string;
+    let did: string;
 
     if (args) {
-      identity = signerToString(args.identity);
+      did = signerToString(args.identity);
     } else {
-      ({ did: identity } = await context.getCurrentIdentity());
+      ({ did } = await context.getCurrentIdentity());
     }
 
     const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
       eventByIndexedArgs({
         moduleId: ModuleIdEnum.Pips,
         eventId: EventIdEnum.Voted,
-        eventArg0: identity,
+        eventArg0: did,
         eventArg2: pipId.toString(),
       })
     );

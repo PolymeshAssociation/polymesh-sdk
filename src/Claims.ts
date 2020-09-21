@@ -83,8 +83,7 @@ export class Claims {
     if (target) {
       did = signerToString(target);
     } else {
-      const { did: identityId } = await context.getCurrentIdentity();
-      did = identityId;
+      ({ did } = await context.getCurrentIdentity());
     }
 
     const result = await context.issuedClaims({
@@ -174,8 +173,7 @@ export class Claims {
     if (target) {
       did = signerToString(target);
     } else {
-      const { did: identityId } = await context.getCurrentIdentity();
-      did = identityId;
+      ({ did } = await context.getCurrentIdentity());
     }
 
     const {
@@ -266,8 +264,7 @@ export class Claims {
     if (target) {
       did = signerToString(target);
     } else {
-      const { did: identityId } = await context.getCurrentIdentity();
-      did = identityId;
+      ({ did } = await context.getCurrentIdentity());
     }
 
     const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
