@@ -34,6 +34,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
+  getDid,
   moduleAddressToString,
   signerToString,
   stringToIdentityId,
@@ -354,13 +355,7 @@ export class Polymesh {
       context,
     } = this;
 
-    let did: string;
-
-    if (args) {
-      did = signerToString(args.owner);
-    } else {
-      ({ did } = await context.getCurrentIdentity());
-    }
+    const did = await getDid(args?.owner, context);
 
     const entries = await query.asset.assetOwnershipRelations.entries(
       stringToIdentityId(did, context)
@@ -508,13 +503,7 @@ export class Polymesh {
       context,
     } = this;
 
-    let did: string;
-
-    if (args) {
-      did = signerToString(args.owner);
-    } else {
-      ({ did } = await context.getCurrentIdentity());
-    }
+    const did = await getDid(args?.owner, context);
 
     const entries = await query.asset.assetOwnershipRelations.entries(
       stringToIdentityId(did, context)

@@ -15,10 +15,10 @@ import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, ResultSet } from '~/types';
 import {
   balanceToBigNumber,
+  getDid,
   middlewareProposalToProposalDetails,
   numberToPipId,
   requestAtBlock,
-  signerToString,
   u32ToBigNumber,
 } from '~/utils';
 
@@ -71,13 +71,7 @@ export class Proposal extends Entity<UniqueIdentifiers> {
   public async identityHasVoted(args?: { identity: string | Identity }): Promise<boolean> {
     const { pipId, context } = this;
 
-    let did: string;
-
-    if (args) {
-      did = signerToString(args.identity);
-    } else {
-      ({ did } = await context.getCurrentIdentity());
-    }
+    const did = await getDid(args?.identity, context);
 
     const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
       eventByIndexedArgs({
