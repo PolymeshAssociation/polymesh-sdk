@@ -9,7 +9,7 @@ import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, Identity, ResultSet, Signer } from '~/types';
+import { Authorization, AuthorizationType, Identity, ResultSet } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
