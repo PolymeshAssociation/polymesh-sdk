@@ -1,15 +1,19 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
-import { AssetTransferRules, AssetTransferRulesResult, IdentityId } from 'polymesh-types/types';
+import { AssetCompliance, AssetComplianceResult, IdentityId } from 'polymesh-types/types';
 
 import { Identity, Namespace, SecurityToken } from '~/api/entities';
-import { setTokenRules, SetTokenRulesParams, togglePauseRules } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
-import { Rule, RuleCompliance, SubCallback, UnsubCallback } from '~/types';
 import {
-  assetTransferRulesResultToRuleCompliance,
-  assetTransferRuleToRule,
+  setAssetRequirements,
+  SetAssetRequirementsParams,
+  togglePauseRequirements,
+} from '~/api/procedures';
+import { TransactionQueue } from '~/base';
+import { Requirement, RequirementCompliance, SubCallback, UnsubCallback } from '~/types';
+import {
+  assetComplianceResultToRequirementCompliance,
   boolToBoolean,
+  complianceRequirementToRequirement,
   identityIdToString,
   signerToString,
   stringToIdentityId,
@@ -17,38 +21,38 @@ import {
 } from '~/utils';
 
 /**
- * Handles all Security Token Rules related functionality
+ * Handles all Security Token Requirements related functionality
  */
-export class Rules extends Namespace<SecurityToken> {
+export class Requirements extends Namespace<SecurityToken> {
   /**
-   * Configure transfer rules for the Security Token. This operation will replace all existing rules with a new rule set
+   * Configure asset compliance for the Security Token. This operation will replace all existing conditions with a new condition set
    *
    * This requires two transactions
    *
-   * @param args.rules - array of array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays. In other words, higher level arrays are *OR* between them,
+   * @param args.conditions - array of array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays. In other words, higher level arrays are *OR* between them,
    * while conditions inside each array are *AND* between them
    *
-   * @example Say A, B, C, D and E are rules and we arrange them as `[[A, B], [C, D], [E]]`.
+   * @example Say A, B, C, D and E are requirements and we arrange them as `[[A, B], [C, D], [E]]`.
    * For a transfer to succeed, it must either comply with A AND B, C AND D, OR E.
    */
-  public set(args: SetTokenRulesParams): Promise<TransactionQueue<SecurityToken>> {
+  public set(args: SetAssetRequirementsParams): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
       context,
     } = this;
-    return setTokenRules.prepare({ ticker, ...args }, context);
+    return setAssetRequirements.prepare({ ticker, ...args }, context);
   }
 
   /**
-   * Retrieve all of the Security Token's transfer rules
+   * Retrieve all of the Security Token's requirements
    *
    * @note can be subscribed to
    */
-  public get(): Promise<Rule[]>;
-  public get(callback: SubCallback<Rule[]>): Promise<UnsubCallback>;
+  public get(): Promise<Requirement[]>;
+  public get(callback: SubCallback<Requirement[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async get(callback?: SubCallback<Rule[]>): Promise<Rule[] | UnsubCallback> {
+  public async get(callback?: SubCallback<Requirement[]>): Promise<Requirement[] | UnsubCallback> {
     const {
       parent: { ticker },
       context: {
@@ -62,29 +66,29 @@ export class Rules extends Namespace<SecurityToken> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResult = ([transferRules, claimIssuers]: [
-      AssetTransferRules,
+    const assembleResult = ([assetCompliance, claimIssuers]: [
+      AssetCompliance,
       Vec<IdentityId>
-    ]): Rule[] => {
+    ]): Requirement[] => {
       const defaultTrustedClaimIssuers = claimIssuers.map(identityIdToString);
 
-      return transferRules.rules.map(assetTransferRule => {
-        const rule = assetTransferRuleToRule(assetTransferRule);
+      return assetCompliance.requirements.map(complianceRequirement => {
+        const requirement = complianceRequirementToRequirement(complianceRequirement);
 
-        rule.conditions.forEach(condition => {
+        requirement.conditions.forEach(condition => {
           if (!condition.trustedClaimIssuers || !condition.trustedClaimIssuers.length) {
             condition.trustedClaimIssuers = defaultTrustedClaimIssuers;
           }
         });
 
-        return rule;
+        return requirement;
       });
     };
 
     if (callback) {
-      return queryMulti<[AssetTransferRules, Vec<IdentityId>]>(
+      return queryMulti<[AssetCompliance, Vec<IdentityId>]>(
         [
-          [complianceManager.assetRulesMap as QueryableStorageEntry<'promise'>, rawTicker],
+          [complianceManager.assetCompliances as QueryableStorageEntry<'promise'>, rawTicker],
           [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
         ],
         res => {
@@ -93,8 +97,8 @@ export class Rules extends Namespace<SecurityToken> {
       );
     }
 
-    const result = await queryMulti<[AssetTransferRules, Vec<IdentityId>]>([
-      [complianceManager.assetRulesMap as QueryableStorageEntry<'promise'>, rawTicker],
+    const result = await queryMulti<[AssetCompliance, Vec<IdentityId>]>([
+      [complianceManager.assetCompliances as QueryableStorageEntry<'promise'>, rawTicker],
       [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
     ]);
 
@@ -102,40 +106,40 @@ export class Rules extends Namespace<SecurityToken> {
   }
 
   /**
-   * Detele all the current rules for the Security Token.
+   * Detele all the current requirements for the Security Token.
    */
   public reset(): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
       context,
     } = this;
-    return setTokenRules.prepare({ ticker, rules: [] }, context);
+    return setAssetRequirements.prepare({ ticker, conditions: [] }, context);
   }
 
   /**
-   * Pause all the Security Token's rules. This means that all transfers and token issuance will be allowed until rules are unpaused
+   * Pause all the Security Token's requirements. This means that all transfers and token issuance will be allowed until conditions are unpaused
    */
   public pause(): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
       context,
     } = this;
-    return togglePauseRules.prepare({ ticker, pause: true }, context);
+    return togglePauseRequirements.prepare({ ticker, pause: true }, context);
   }
 
   /**
-   * Un-pause all the Security Token's current rules
+   * Un-pause all the Security Token's current requirements
    */
   public unpause(): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
       context,
     } = this;
-    return togglePauseRules.prepare({ ticker, pause: false }, context);
+    return togglePauseRequirements.prepare({ ticker, pause: false }, context);
   }
 
   /**
-   * Check whether transferring from one Identity to another complies with all the rules of this asset
+   * Check whether transferring from one Identity to another complies with all the requirements of this asset
    *
    * @param args.from - sender Identity (optional, defaults to the current Identity)
    * @param args.to - receiver Identity
@@ -143,17 +147,17 @@ export class Rules extends Namespace<SecurityToken> {
   public async checkTransfer(args: {
     from?: string | Identity;
     to: string | Identity;
-  }): Promise<RuleCompliance> {
+  }): Promise<RequirementCompliance> {
     const { from = await this.context.getCurrentIdentity(), to } = args;
     return this._checkTransfer({ from, to });
   }
 
   /**
-   * Check whether minting to an Identity complies with all the rules of this asset
+   * Check whether minting to an Identity complies with all the requirements of this asset
    *
    * @param args.to - receiver Identity
    */
-  public async checkMint(args: { to: string | Identity }): Promise<RuleCompliance> {
+  public async checkMint(args: { to: string | Identity }): Promise<RequirementCompliance> {
     return this._checkTransfer({
       ...args,
       from: null,
@@ -161,7 +165,7 @@ export class Rules extends Namespace<SecurityToken> {
   }
 
   /**
-   * Check whether compliance rules are paused or not
+   * Check whether asset compliances are paused or not
    */
   public async arePaused(): Promise<boolean> {
     const {
@@ -176,7 +180,7 @@ export class Rules extends Namespace<SecurityToken> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const { is_paused: isPaused } = await complianceManager.assetRulesMap(rawTicker);
+    const { is_paused: isPaused } = await complianceManager.assetCompliances(rawTicker);
 
     return boolToBoolean(isPaused);
   }
@@ -187,7 +191,7 @@ export class Rules extends Namespace<SecurityToken> {
   private async _checkTransfer(args: {
     from?: null | string | Identity;
     to: string | Identity;
-  }): Promise<RuleCompliance> {
+  }): Promise<RequirementCompliance> {
     const {
       parent: { ticker },
       context: {
@@ -205,12 +209,12 @@ export class Rules extends Namespace<SecurityToken> {
     const toDid = signerToString(to);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res: AssetTransferRulesResult = await (rpc as any).compliance.canTransfer(
+    const res: AssetComplianceResult = await (rpc as any).compliance.canTransfer(
       stringToTicker(ticker, context),
       fromDid,
       stringToIdentityId(toDid, context)
     );
 
-    return assetTransferRulesResultToRuleCompliance(res);
+    return assetComplianceResultToRequirementCompliance(res);
   }
 }

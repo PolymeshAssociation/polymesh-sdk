@@ -17,6 +17,19 @@ import {
   Perbill,
 } from '@polkadot/types/interfaces/runtime';
 
+/** @name AssetCompliance */
+export interface AssetCompliance extends Struct {
+  readonly is_paused: bool;
+  readonly requirements: Vec<ComplianceRequirement>;
+}
+
+/** @name AssetComplianceResult */
+export interface AssetComplianceResult extends Struct {
+  readonly paused: bool;
+  readonly requirements: Vec<ComplianceRequirementResult>;
+  readonly result: bool;
+}
+
 /** @name AssetDidResult */
 export interface AssetDidResult extends Enum {
   readonly isOk: boolean;
@@ -36,34 +49,6 @@ export interface AssetOwnershipRelation extends Enum {
   readonly isNotOwned: boolean;
   readonly isTickerOwned: boolean;
   readonly isAssetOwned: boolean;
-}
-
-/** @name AssetTransferRule */
-export interface AssetTransferRule extends Struct {
-  readonly sender_rules: Vec<Rule>;
-  readonly receiver_rules: Vec<Rule>;
-  readonly rule_id: u32;
-}
-
-/** @name AssetTransferRuleResult */
-export interface AssetTransferRuleResult extends Struct {
-  readonly sender_rules: Vec<Rule>;
-  readonly receiver_rules: Vec<Rule>;
-  readonly rule_id: u32;
-  readonly transfer_rule_result: bool;
-}
-
-/** @name AssetTransferRules */
-export interface AssetTransferRules extends Struct {
-  readonly is_paused: bool;
-  readonly rules: Vec<AssetTransferRule>;
-}
-
-/** @name AssetTransferRulesResult */
-export interface AssetTransferRulesResult extends Struct {
-  readonly is_paused: bool;
-  readonly rules: Vec<AssetTransferRuleResult>;
-  readonly final_result: bool;
 }
 
 /** @name AssetType */
@@ -97,12 +82,14 @@ export interface Authorization extends Struct {
 
 /** @name AuthorizationData */
 export interface AuthorizationData extends Enum {
-  readonly isAttestMasterKeyRotation: boolean;
-  readonly asAttestMasterKeyRotation: IdentityId;
-  readonly isRotateMasterKey: boolean;
-  readonly asRotateMasterKey: IdentityId;
+  readonly isAttestPrimaryKeyRotation: boolean;
+  readonly asAttestPrimaryKeyRotation: IdentityId;
+  readonly isRotatePrimaryKey: boolean;
+  readonly asRotatePrimaryKey: IdentityId;
   readonly isTransferTicker: boolean;
   readonly asTransferTicker: Ticker;
+  readonly isTransferPrimaryIssuanceAgent: boolean;
+  readonly asTransferPrimaryIssuanceAgent: Ticker;
   readonly isAddMultiSigSigner: boolean;
   readonly asAddMultiSigSigner: AccountId;
   readonly isTransferAssetOwnership: boolean;
@@ -127,8 +114,8 @@ export interface AuthorizationStatus extends Enum {
 
 /** @name AuthorizationType */
 export interface AuthorizationType extends Enum {
-  readonly isAttestMasterKeyRotation: boolean;
-  readonly isRotateMasterKey: boolean;
+  readonly isAttestPrimaryKeyRotation: boolean;
+  readonly isRotatePrimaryKey: boolean;
   readonly isTransferTicker: boolean;
   readonly isAddMultiSigSigner: boolean;
   readonly isTransferAssetOwnership: boolean;
@@ -201,6 +188,9 @@ export interface CanTransferResult extends Enum {
 /** @name CappedFee */
 export interface CappedFee extends u64 {}
 
+/** @name CddId */
+export interface CddId extends U8aFixed {}
+
 /** @name CddStatus */
 export interface CddStatus extends Enum {
   readonly isOk: boolean;
@@ -220,14 +210,17 @@ export interface Claim extends Enum {
   readonly isSellLockup: boolean;
   readonly asSellLockup: Scope;
   readonly isCustomerDueDiligence: boolean;
+  readonly asCustomerDueDiligence: CddId;
   readonly isKnowYourCustomer: boolean;
   readonly asKnowYourCustomer: Scope;
   readonly isJurisdiction: boolean;
-  readonly asJurisdiction: ITuple<[JurisdictionName, Scope]>;
+  readonly asJurisdiction: ITuple<[CountryCode, Scope]>;
   readonly isExempted: boolean;
   readonly asExempted: Scope;
   readonly isBlocked: boolean;
   readonly asBlocked: Scope;
+  readonly isInvestorZkProof: boolean;
+  readonly asInvestorZkProof: ITuple<[Scope, ScopeId, CddId, InvestorZKProofData]>;
   readonly isNoData: boolean;
 }
 
@@ -257,6 +250,12 @@ export interface ClaimType extends Enum {
   readonly isNoType: boolean;
 }
 
+/** @name ClassicTickerRegistration */
+export interface ClassicTickerRegistration extends Struct {
+  readonly eth_owner: EthereumAddress;
+  readonly is_created: bool;
+}
+
 /** @name Commission */
 export interface Commission extends Enum {
   readonly isIndividual: boolean;
@@ -264,8 +263,306 @@ export interface Commission extends Enum {
   readonly asGlobal: u32;
 }
 
+/** @name Committee */
+export interface Committee extends Enum {
+  readonly isTechnical: boolean;
+  readonly isUpgrade: boolean;
+}
+
+/** @name ComplianceRequirement */
+export interface ComplianceRequirement extends Struct {
+  readonly sender_conditions: Vec<Condition>;
+  readonly receiver_conditions: Vec<Condition>;
+  readonly id: u32;
+}
+
+/** @name ComplianceRequirementResult */
+export interface ComplianceRequirementResult extends Struct {
+  readonly sender_conditions: Vec<Condition>;
+  readonly receiver_conditions: Vec<Condition>;
+  readonly id: u32;
+  readonly result: bool;
+}
+
+/** @name Condition */
+export interface Condition extends Struct {
+  readonly condition_type: ConditionType;
+  readonly issuers: Vec<IdentityId>;
+}
+
+/** @name ConditionResult */
+export interface ConditionResult extends Struct {
+  readonly condition: Condition;
+  readonly result: bool;
+}
+
+/** @name ConditionType */
+export interface ConditionType extends Enum {
+  readonly isIsPresent: boolean;
+  readonly asIsPresent: Claim;
+  readonly isIsAbsent: boolean;
+  readonly asIsAbsent: Claim;
+  readonly isIsAnyOf: boolean;
+  readonly asIsAnyOf: Vec<Claim>;
+  readonly isIsNoneOf: boolean;
+  readonly asIsNoneOf: Vec<Claim>;
+  readonly isIsIdentity: boolean;
+  readonly asIsIdentity: TargetIdentity;
+}
+
 /** @name Counter */
 export interface Counter extends u64 {}
+
+/** @name CountryCode */
+export interface CountryCode extends Enum {
+  readonly isAf: boolean;
+  readonly isAx: boolean;
+  readonly isAl: boolean;
+  readonly isDz: boolean;
+  readonly isAs: boolean;
+  readonly isAd: boolean;
+  readonly isAo: boolean;
+  readonly isAi: boolean;
+  readonly isAq: boolean;
+  readonly isAg: boolean;
+  readonly isAr: boolean;
+  readonly isAm: boolean;
+  readonly isAw: boolean;
+  readonly isAu: boolean;
+  readonly isAt: boolean;
+  readonly isAz: boolean;
+  readonly isBs: boolean;
+  readonly isBh: boolean;
+  readonly isBd: boolean;
+  readonly isBb: boolean;
+  readonly isBy: boolean;
+  readonly isBe: boolean;
+  readonly isBz: boolean;
+  readonly isBj: boolean;
+  readonly isBm: boolean;
+  readonly isBt: boolean;
+  readonly isBo: boolean;
+  readonly isBa: boolean;
+  readonly isBw: boolean;
+  readonly isBv: boolean;
+  readonly isBr: boolean;
+  readonly isVg: boolean;
+  readonly isIo: boolean;
+  readonly isBn: boolean;
+  readonly isBg: boolean;
+  readonly isBf: boolean;
+  readonly isBi: boolean;
+  readonly isKh: boolean;
+  readonly isCm: boolean;
+  readonly isCa: boolean;
+  readonly isCv: boolean;
+  readonly isKy: boolean;
+  readonly isCf: boolean;
+  readonly isTd: boolean;
+  readonly isCl: boolean;
+  readonly isCn: boolean;
+  readonly isHk: boolean;
+  readonly isMo: boolean;
+  readonly isCx: boolean;
+  readonly isCc: boolean;
+  readonly isCo: boolean;
+  readonly isKm: boolean;
+  readonly isCg: boolean;
+  readonly isCd: boolean;
+  readonly isCk: boolean;
+  readonly isCr: boolean;
+  readonly isCi: boolean;
+  readonly isHr: boolean;
+  readonly isCu: boolean;
+  readonly isCy: boolean;
+  readonly isCz: boolean;
+  readonly isDk: boolean;
+  readonly isDj: boolean;
+  readonly isDm: boolean;
+  readonly isDo: boolean;
+  readonly isEc: boolean;
+  readonly isEg: boolean;
+  readonly isSv: boolean;
+  readonly isGq: boolean;
+  readonly isEr: boolean;
+  readonly isEe: boolean;
+  readonly isEt: boolean;
+  readonly isFk: boolean;
+  readonly isFo: boolean;
+  readonly isFj: boolean;
+  readonly isFi: boolean;
+  readonly isFr: boolean;
+  readonly isGf: boolean;
+  readonly isPf: boolean;
+  readonly isTf: boolean;
+  readonly isGa: boolean;
+  readonly isGm: boolean;
+  readonly isGe: boolean;
+  readonly isDe: boolean;
+  readonly isGh: boolean;
+  readonly isGi: boolean;
+  readonly isGr: boolean;
+  readonly isGl: boolean;
+  readonly isGd: boolean;
+  readonly isGp: boolean;
+  readonly isGu: boolean;
+  readonly isGt: boolean;
+  readonly isGg: boolean;
+  readonly isGn: boolean;
+  readonly isGw: boolean;
+  readonly isGy: boolean;
+  readonly isHt: boolean;
+  readonly isHm: boolean;
+  readonly isVa: boolean;
+  readonly isHn: boolean;
+  readonly isHu: boolean;
+  readonly isIs: boolean;
+  readonly isIn: boolean;
+  readonly isId: boolean;
+  readonly isIr: boolean;
+  readonly isIq: boolean;
+  readonly isIe: boolean;
+  readonly isIm: boolean;
+  readonly isIl: boolean;
+  readonly isIt: boolean;
+  readonly isJm: boolean;
+  readonly isJp: boolean;
+  readonly isJe: boolean;
+  readonly isJo: boolean;
+  readonly isKz: boolean;
+  readonly isKe: boolean;
+  readonly isKi: boolean;
+  readonly isKp: boolean;
+  readonly isKr: boolean;
+  readonly isKw: boolean;
+  readonly isKg: boolean;
+  readonly isLa: boolean;
+  readonly isLv: boolean;
+  readonly isLb: boolean;
+  readonly isLs: boolean;
+  readonly isLr: boolean;
+  readonly isLy: boolean;
+  readonly isLi: boolean;
+  readonly isLt: boolean;
+  readonly isLu: boolean;
+  readonly isMk: boolean;
+  readonly isMg: boolean;
+  readonly isMw: boolean;
+  readonly isMy: boolean;
+  readonly isMv: boolean;
+  readonly isMl: boolean;
+  readonly isMt: boolean;
+  readonly isMh: boolean;
+  readonly isMq: boolean;
+  readonly isMr: boolean;
+  readonly isMu: boolean;
+  readonly isYt: boolean;
+  readonly isMx: boolean;
+  readonly isFm: boolean;
+  readonly isMd: boolean;
+  readonly isMc: boolean;
+  readonly isMn: boolean;
+  readonly isMe: boolean;
+  readonly isMs: boolean;
+  readonly isMa: boolean;
+  readonly isMz: boolean;
+  readonly isMm: boolean;
+  readonly isNa: boolean;
+  readonly isNr: boolean;
+  readonly isNp: boolean;
+  readonly isNl: boolean;
+  readonly isAn: boolean;
+  readonly isNc: boolean;
+  readonly isNz: boolean;
+  readonly isNi: boolean;
+  readonly isNe: boolean;
+  readonly isNg: boolean;
+  readonly isNu: boolean;
+  readonly isNf: boolean;
+  readonly isMp: boolean;
+  readonly isNo: boolean;
+  readonly isOm: boolean;
+  readonly isPk: boolean;
+  readonly isPw: boolean;
+  readonly isPs: boolean;
+  readonly isPa: boolean;
+  readonly isPg: boolean;
+  readonly isPy: boolean;
+  readonly isPe: boolean;
+  readonly isPh: boolean;
+  readonly isPn: boolean;
+  readonly isPl: boolean;
+  readonly isPt: boolean;
+  readonly isPr: boolean;
+  readonly isQa: boolean;
+  readonly isRe: boolean;
+  readonly isRo: boolean;
+  readonly isRu: boolean;
+  readonly isRw: boolean;
+  readonly isBl: boolean;
+  readonly isSh: boolean;
+  readonly isKn: boolean;
+  readonly isLc: boolean;
+  readonly isMf: boolean;
+  readonly isPm: boolean;
+  readonly isVc: boolean;
+  readonly isWs: boolean;
+  readonly isSm: boolean;
+  readonly isSt: boolean;
+  readonly isSa: boolean;
+  readonly isSn: boolean;
+  readonly isRs: boolean;
+  readonly isSc: boolean;
+  readonly isSl: boolean;
+  readonly isSg: boolean;
+  readonly isSk: boolean;
+  readonly isSi: boolean;
+  readonly isSb: boolean;
+  readonly isSo: boolean;
+  readonly isZa: boolean;
+  readonly isGs: boolean;
+  readonly isSs: boolean;
+  readonly isEs: boolean;
+  readonly isLk: boolean;
+  readonly isSd: boolean;
+  readonly isSr: boolean;
+  readonly isSj: boolean;
+  readonly isSz: boolean;
+  readonly isSe: boolean;
+  readonly isCh: boolean;
+  readonly isSy: boolean;
+  readonly isTw: boolean;
+  readonly isTj: boolean;
+  readonly isTz: boolean;
+  readonly isTh: boolean;
+  readonly isTl: boolean;
+  readonly isTg: boolean;
+  readonly isTk: boolean;
+  readonly isTo: boolean;
+  readonly isTt: boolean;
+  readonly isTn: boolean;
+  readonly isTr: boolean;
+  readonly isTm: boolean;
+  readonly isTc: boolean;
+  readonly isTv: boolean;
+  readonly isUg: boolean;
+  readonly isUa: boolean;
+  readonly isAe: boolean;
+  readonly isGb: boolean;
+  readonly isUs: boolean;
+  readonly isUm: boolean;
+  readonly isUy: boolean;
+  readonly isUz: boolean;
+  readonly isVu: boolean;
+  readonly isVe: boolean;
+  readonly isVn: boolean;
+  readonly isVi: boolean;
+  readonly isWf: boolean;
+  readonly isEh: boolean;
+  readonly isYe: boolean;
+  readonly isZm: boolean;
+  readonly isZw: boolean;
+}
 
 /** @name DepositInfo */
 export interface DepositInfo extends Struct {
@@ -276,8 +573,8 @@ export interface DepositInfo extends Struct {
 /** @name DidRecord */
 export interface DidRecord extends Struct {
   readonly roles: Vec<IdentityRole>;
-  readonly master_key: AccountId;
-  readonly signing_keys: Vec<SigningKey>;
+  readonly primary_key: AccountId;
+  readonly secondary_keys: Vec<SecondaryKey>;
 }
 
 /** @name DidRecords */
@@ -290,8 +587,8 @@ export interface DidRecords extends Enum {
 
 /** @name DidRecordsSuccess */
 export interface DidRecordsSuccess extends Struct {
-  readonly master_key: AccountId;
-  readonly signing_key: Vec<SigningKey>;
+  readonly primary_key: AccountId;
+  readonly secondary_key: Vec<SecondaryKey>;
 }
 
 /** @name DidStatus */
@@ -326,11 +623,25 @@ export interface DocumentName extends Text {}
 /** @name DocumentUri */
 export interface DocumentUri extends Text {}
 
+/** @name EcdsaSignature */
+export interface EcdsaSignature extends U8aFixed {}
+
+/** @name EthereumAddress */
+export interface EthereumAddress extends U8aFixed {}
+
 /** @name FeeOf */
 export interface FeeOf extends Balance {}
 
 /** @name FundingRoundName */
 export interface FundingRoundName extends Text {}
+
+/** @name Fundraiser */
+export interface Fundraiser extends Struct {
+  readonly raise_token: Ticker;
+  readonly remaining_amount: Balance;
+  readonly price_per_token: Balance;
+  readonly venue_id: u64;
+}
 
 /** @name HandledTxStatus */
 export interface HandledTxStatus extends Enum {
@@ -350,6 +661,7 @@ export interface IdentifierType extends Enum {
   readonly isCins: boolean;
   readonly isCusip: boolean;
   readonly isIsin: boolean;
+  readonly isDti: boolean;
 }
 
 /** @name IdentityClaim */
@@ -415,6 +727,12 @@ export interface Investment extends Struct {
   readonly last_purchase_date: Moment;
 }
 
+/** @name InvestorUid */
+export interface InvestorUid extends U8aFixed {}
+
+/** @name InvestorZKProofData */
+export interface InvestorZKProofData extends U8aFixed {}
+
 /** @name IssueAssetItem */
 export interface IssueAssetItem extends Struct {
   readonly identity_did: IdentityId;
@@ -429,8 +747,11 @@ export interface IssueRecipient extends Enum {
   readonly asIdentity: IdentityId;
 }
 
-/** @name JurisdictionName */
-export interface JurisdictionName extends Text {}
+/** @name KeyIdentityData */
+export interface KeyIdentityData extends Struct {
+  readonly identity: IdentityId;
+  readonly permissions: Option<Vec<Permission>>;
+}
 
 /** @name Leg */
 export interface Leg extends Struct {
@@ -514,6 +835,8 @@ export interface Pip extends Struct {
   readonly id: PipId;
   readonly proposal: Call;
   readonly state: ProposalState;
+  readonly proposer: Proposer;
+  readonly cool_off_until: u32;
 }
 
 /** @name PipDescription */
@@ -524,13 +847,10 @@ export interface PipId extends u32 {}
 
 /** @name PipsMetadata */
 export interface PipsMetadata extends Struct {
-  readonly proposer: AccountId;
   readonly id: PipId;
-  readonly end: u32;
   readonly url: Option<Url>;
   readonly description: Option<PipDescription>;
-  readonly cool_off_until: u32;
-  readonly beneficiaries: Vec<Beneficiary>;
+  readonly created_at: BlockNumber;
 }
 
 /** @name PolymeshVotes */
@@ -565,7 +885,7 @@ export interface PosRatio extends ITuple<[u32, u32]> {}
 /** @name PreAuthorizedKeyInfo */
 export interface PreAuthorizedKeyInfo extends Struct {
   readonly target_id: IdentityId;
-  readonly signing_key: SigningKey;
+  readonly secondary_key: SecondaryKey;
 }
 
 /** @name ProportionMatch */
@@ -609,6 +929,14 @@ export interface ProposalStatus extends Enum {
   readonly isRejected: boolean;
 }
 
+/** @name Proposer */
+export interface Proposer extends Enum {
+  readonly isCommunity: boolean;
+  readonly asCommunity: AccountId;
+  readonly isCommittee: boolean;
+  readonly asCommittee: Committee;
+}
+
 /** @name ProtocolOp */
 export interface ProtocolOp extends Enum {
   readonly isAssetRegisterTicker: boolean;
@@ -616,12 +944,12 @@ export interface ProtocolOp extends Enum {
   readonly isAssetAddDocument: boolean;
   readonly isAssetCreateAsset: boolean;
   readonly isDividendNew: boolean;
-  readonly isComplianceManagerAddActiveRule: boolean;
+  readonly isComplianceManagerAddComplianceRequirement: boolean;
   readonly isIdentityRegisterDid: boolean;
   readonly isIdentityCddRegisterDid: boolean;
   readonly isIdentityAddClaim: boolean;
-  readonly isIdentitySetMasterKey: boolean;
-  readonly isIdentityAddSigningKeysWithAuthorization: boolean;
+  readonly isIdentitySetPrimaryKey: boolean;
+  readonly isIdentityAddSecondaryKeysWithAuthorization: boolean;
   readonly isPipsPropose: boolean;
   readonly isVotingAddBallot: boolean;
 }
@@ -680,32 +1008,23 @@ export interface RestrictionResult extends Enum {
   readonly isForceValid: boolean;
 }
 
-/** @name Rule */
-export interface Rule extends Struct {
-  readonly rule_type: RuleType;
-  readonly issuers: Vec<IdentityId>;
-}
-
-/** @name RuleResult */
-export interface RuleResult extends Struct {
-  readonly rule: Rule;
-  readonly result: bool;
-}
-
-/** @name RuleType */
-export interface RuleType extends Enum {
-  readonly isIsPresent: boolean;
-  readonly asIsPresent: Claim;
-  readonly isIsAbsent: boolean;
-  readonly asIsAbsent: Claim;
-  readonly isIsAnyOf: boolean;
-  readonly asIsAnyOf: Vec<Claim>;
-  readonly isIsNoneOf: boolean;
-  readonly asIsNoneOf: Vec<Claim>;
-}
-
 /** @name Scope */
 export interface Scope extends IdentityId {}
+
+/** @name ScopeId */
+export interface ScopeId extends U8aFixed {}
+
+/** @name SecondaryKey */
+export interface SecondaryKey extends Struct {
+  readonly signer: Signatory;
+  readonly permissions: Vec<Permission>;
+}
+
+/** @name SecondaryKeyWithAuth */
+export interface SecondaryKeyWithAuth extends Struct {
+  readonly secondary_key: SecondaryKey;
+  readonly auth_signature: Signature;
+}
 
 /** @name SecurityToken */
 export interface SecurityToken extends Struct {
@@ -714,7 +1033,7 @@ export interface SecurityToken extends Struct {
   readonly owner_did: IdentityId;
   readonly divisible: bool;
   readonly asset_type: AssetType;
-  readonly treasury_did: Option<IdentityId>;
+  readonly primary_issuance_agent: Option<IdentityId>;
 }
 
 /** @name SettlementType */
@@ -741,24 +1060,15 @@ export interface SignData extends Struct {
   readonly nonce: u16;
 }
 
-/** @name SigningKey */
-export interface SigningKey extends Struct {
-  readonly signer: Signatory;
-  readonly permissions: Vec<Permission>;
-}
-
-/** @name SigningKeyWithAuth */
-export interface SigningKeyWithAuth extends Struct {
-  readonly signing_key: SigningKey;
-  readonly auth_signature: Signature;
-}
-
 /** @name SimpleTokenRecord */
 export interface SimpleTokenRecord extends Struct {
   readonly ticker: Ticker;
   readonly total_supply: Balance;
   readonly owner_did: IdentityId;
 }
+
+/** @name SkippedCount */
+export interface SkippedCount extends u8 {}
 
 /** @name SmartExtension */
 export interface SmartExtension extends Struct {
@@ -779,6 +1089,29 @@ export interface SmartExtensionType extends Enum {
   readonly asCustom: Bytes;
 }
 
+/** @name SnapshotId */
+export interface SnapshotId extends u32 {}
+
+/** @name SnapshotMetadata */
+export interface SnapshotMetadata extends Struct {
+  readonly created_at: BlockNumber;
+  readonly made_by: AccountId;
+  readonly id: SnapshotId;
+}
+
+/** @name SnapshotResult */
+export interface SnapshotResult extends Enum {
+  readonly isApprove: boolean;
+  readonly isReject: boolean;
+  readonly isSkip: boolean;
+}
+
+/** @name SnapshottedPip */
+export interface SnapshottedPip extends Struct {
+  readonly id: PipId;
+  readonly weight: ITuple<[bool, Balance]>;
+}
+
 /** @name STO */
 export interface STO extends Struct {
   readonly beneficiary_did: IdentityId;
@@ -795,6 +1128,13 @@ export interface TargetIdAuthorization extends Struct {
   readonly target_id: IdentityId;
   readonly nonce: u64;
   readonly expires_at: Moment;
+}
+
+/** @name TargetIdentity */
+export interface TargetIdentity extends Enum {
+  readonly isPrimaryIssuanceAgent: boolean;
+  readonly isSpecific: boolean;
+  readonly asSpecific: IdentityId;
 }
 
 /** @name Ticker */
@@ -844,6 +1184,14 @@ export interface Venue extends Struct {
 
 /** @name VenueDetails */
 export interface VenueDetails extends Text {}
+
+/** @name VenueType */
+export interface VenueType extends Enum {
+  readonly isOther: boolean;
+  readonly isDistribution: boolean;
+  readonly isSto: boolean;
+  readonly isExchange: boolean;
+}
 
 /** @name Vote */
 export interface Vote extends Enum {

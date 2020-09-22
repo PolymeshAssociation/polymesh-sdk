@@ -30,12 +30,10 @@ import { BigNumber } from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { cloneDeep, merge, upperFirst } from 'lodash';
 import {
+  AssetComplianceResult,
   AssetIdentifier,
   AssetName,
   AssetOwnershipRelation,
-  AssetTransferRule,
-  AssetTransferRuleResult,
-  AssetTransferRulesResult,
   AssetType,
   AuthIdentifier,
   Authorization,
@@ -44,6 +42,10 @@ import {
   CanTransferResult,
   CddStatus,
   Claim,
+  ComplianceRequirement,
+  ComplianceRequirementResult,
+  Condition,
+  ConditionType,
   DidRecord,
   Document,
   DocumentHash,
@@ -54,7 +56,6 @@ import {
   IdentityId,
   IdentityRole,
   IssueAssetItem,
-  JurisdictionName,
   LinkedKeyInfo,
   Permission,
   Pip,
@@ -62,12 +63,9 @@ import {
   PipsMetadata,
   PosRatio,
   ProposalState,
-  Rule,
-  RuleType,
   Scope,
   SecurityToken,
   Signatory,
-  SigningKey as MeshSigningKey,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
@@ -1586,100 +1584,103 @@ export const createMockClaim = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockRuleType = (
-  ruleType?:
+export const createMockConditionType = (
+  conditionType?:
     | { IsPresent: Claim }
     | { IsAbsent: Claim }
     | { IsAnyOf: Claim[] }
     | { IsNoneOf: Claim[] }
-): RuleType => createMockEnum(ruleType) as RuleType;
+): ConditionType => createMockEnum(conditionType) as ConditionType;
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockRule = (rule?: { rule_type: RuleType; issuers: IdentityId[] }): Rule => {
-  const auxRule = rule || {
-    rule_type: createMockRuleType(),
+export const createMockCondition = (condition?: {
+  condition_type: ConditionType;
+  issuers: IdentityId[];
+}): Condition => {
+  const auxCondition = condition || {
+    condition_type: createMockConditionType(),
     issuers: [],
   };
   return createMockCodec(
     {
-      ...auxRule,
+      ...auxCondition,
     },
-    !rule
-  ) as Rule;
+    !condition
+  ) as Condition;
 };
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockAssetTransferRule = (assetTransferRule?: {
-  sender_rules: Rule[];
-  receiver_rules: Rule[];
-  rule_id: u32;
-}): AssetTransferRule => {
-  const rule = assetTransferRule || {
-    sender_rules: [],
-    receiver_rules: [],
-    rule_id: createMockU32(),
+export const createMockComplianceRequirement = (complianceRequirement?: {
+  sender_conditions: Condition[];
+  receiver_conditions: Condition[];
+  id: u32;
+}): ComplianceRequirement => {
+  const requirement = complianceRequirement || {
+    sender_conditions: [],
+    receiver_conditions: [],
+    id: createMockU32(),
   };
 
   return createMockCodec(
     {
-      ...rule,
+      ...requirement,
     },
-    !assetTransferRule
-  ) as AssetTransferRule;
+    !complianceRequirement
+  ) as ComplianceRequirement;
 };
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockAssetTransferRuleResult = (assetTransferRuleResult?: {
-  sender_rules: Rule[];
-  receiver_rules: Rule[];
-  rule_id: u32;
-  transfer_rule_result: bool;
-}): AssetTransferRuleResult => {
-  const result = assetTransferRuleResult || {
-    sender_rules: [],
-    receiver_rules: [],
-    rule_id: createMockU32(),
-    transfer_rule_result: createMockBool(),
-  };
-
-  return createMockCodec(
-    {
-      ...result,
-    },
-    !assetTransferRuleResult
-  ) as AssetTransferRuleResult;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockAssetTransferRulesResult = (assetTransferRulesResult?: {
-  is_paused: bool;
-  rules: AssetTransferRuleResult[];
-  final_result: bool;
-}): AssetTransferRulesResult => {
-  const result = assetTransferRulesResult || {
-    is_paused: createMockBool(),
-    rules: createMockAssetTransferRuleResult(),
-    final_result: createMockBool(),
+export const createMockComplianceRequirementResult = (complianceRequirementResult?: {
+  sender_conditions: Condition[];
+  receiver_conditions: Condition[];
+  id: u32;
+  result: bool;
+}): ComplianceRequirementResult => {
+  const result = complianceRequirementResult || {
+    sender_conditions: [],
+    receiver_conditions: [],
+    id: createMockU32(),
+    result: createMockBool(),
   };
 
   return createMockCodec(
     {
       ...result,
     },
-    !assetTransferRulesResult
-  ) as AssetTransferRulesResult;
+    !complianceRequirementResult
+  ) as ComplianceRequirementResult;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetComplianceResult = (assetComplianceResult?: {
+  paused: bool;
+  requirements: ComplianceRequirementResult[];
+  result: bool;
+}): AssetComplianceResult => {
+  const result = assetComplianceResult || {
+    paused: createMockBool(),
+    requirements: createMockComplianceRequirementResult(),
+    result: createMockBool(),
+  };
+
+  return createMockCodec(
+    {
+      ...result,
+    },
+    !assetComplianceResult
+  ) as AssetComplianceResult;
 };
 
 /**

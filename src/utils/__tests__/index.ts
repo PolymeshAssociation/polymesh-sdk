@@ -3,11 +3,10 @@ import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
-import { Memo, PipId } from 'polymesh-types/polymesh';
+import { ComplianceRequirement, Memo, PipId } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
-  AssetTransferRule,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
@@ -54,10 +53,9 @@ import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   accountIdToString,
   addressToKey,
+  assetComplianceResultToRequirementCompliance,
   assetIdentifierToString,
   assetNameToString,
-  assetTransferRulesResultToRuleCompliance,
-  assetTransferRuleToRule,
   assetTypeToString,
   authIdentifierToAuthTarget,
   authorizationDataToAuthorization,
@@ -73,6 +71,7 @@ import {
   canTransferResultToTransferStatus,
   cddStatusToBoolean,
   claimToMeshClaim,
+  complianceRequirementToRequirement,
   createClaim,
   dateToMoment,
   delay,
@@ -103,7 +102,7 @@ import {
   removePadding,
   requestAtBlock,
   requestPaginated,
-  ruleToAssetTransferRule,
+  requirementToComplianceRequirement,
   serialize,
   signatoryToSignerValue,
   signerToSignerValue,
@@ -1729,7 +1728,7 @@ describe('createClaim', () => {
   });
 });
 
-describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
+describe('requirementToComplianceRequirement and complianceRequirementToRequirement', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1742,7 +1741,7 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
     dsMockUtils.cleanup();
   });
 
-  test('ruleToAssetTransferRule should convert a Rule to a polkadot AssetTransferRule object', () => {
+  test('requirementToComplianceRequirement should convert a Requirement to a polkadot ComplianceRequirement object', () => {
     const conditions: Condition[] = [
       {
         type: ConditionType.IsPresent,
@@ -1781,7 +1780,7 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
       conditions,
       id: 1,
     };
-    const fakeResult = ('convertedAssetTransferRule' as unknown) as AssetTransferRule;
+    const fakeResult = ('convertedComplianceRequirement' as unknown) as ComplianceRequirement;
     const context = dsMockUtils.getContextInstance();
 
     const createTypeStub = dsMockUtils.getCreateTypeStub();
@@ -1789,31 +1788,31 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
     conditions.forEach(({ type }, index) => {
       createTypeStub
         .withArgs(
-          'Rule',
+          'Condition',
           sinon.match({
             // eslint-disable-next-line @typescript-eslint/camelcase
-            rule_type: sinon.match.has(type),
+            condition_type: sinon.match.has(type),
           })
         )
-        .returns(`meshRule${index}${type}`);
+        .returns(`meshCondition${index}${type}`);
     });
 
     createTypeStub
-      .withArgs('AssetTransferRule', {
+      .withArgs('ComplianceRequirement', {
         /* eslint-disable @typescript-eslint/camelcase */
-        sender_rules: ['meshRule0IsPresent', 'meshRule1IsNoneOf'],
-        receiver_rules: ['meshRule0IsPresent', 'meshRule2IsAbsent'],
-        rule_id: numberToU32(value.id, context),
+        sender_conditions: ['meshCondition0IsPresent', 'meshCondition1IsNoneOf'],
+        receiver_conditions: ['meshCondition0IsPresent', 'meshCondition2IsAbsent'],
+        id: numberToU32(value.id, context),
         /* eslint-enable @typescript-eslint/camelcase */
       })
       .returns(fakeResult);
 
-    const result = ruleToAssetTransferRule(value, context);
+    const result = requirementToComplianceRequirement(value, context);
 
     expect(result).toEqual(fakeResult);
   });
 
-  test('assetTransferRuleToRule should convert a polkadot AssetTransferRule object to a Rule', () => {
+  test('complianceRequirementToRequirement should convert a polkadot Compliance Requirement object to a Requirement', () => {
     const id = 1;
     const tokenDid = 'someTokenDid';
     const issuerDids = ['someDid', 'otherDid'];
@@ -1873,22 +1872,22 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
 
     const scope = dsMockUtils.createMockScope(tokenDid);
     const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
-    const rules = [
+    const rawConditions = [
       /* eslint-disable @typescript-eslint/camelcase */
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsNoneOf: [
             dsMockUtils.createMockClaim({ Blocked: scope }),
             dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -1896,8 +1895,8 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsAnyOf: [
             dsMockUtils.createMockClaim({ Exempted: scope }),
             dsMockUtils.createMockClaim('CustomerDueDiligence'),
@@ -1906,19 +1905,19 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         issuers,
       }),
     ];
-    const assetTransferRule = dsMockUtils.createMockAssetTransferRule({
-      sender_rules: [rules[0], rules[2], rules[3]],
-      receiver_rules: [rules[0], rules[1], rules[3]],
-      rule_id: dsMockUtils.createMockU32(1),
+    const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
+      sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
+      receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+      id: dsMockUtils.createMockU32(1),
     });
     /* eslint-enable @typescript-eslint/camelcase */
 
-    const result = assetTransferRuleToRule(assetTransferRule);
+    const result = complianceRequirementToRequirement(complianceRequirement);
     expect(result.conditions).toEqual(expect.arrayContaining(fakeResult.conditions));
   });
 });
 
-describe('assetTransferRulesResultToRuleCompliance', () => {
+describe('assetComplianceResultToRequirementCompliance', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1931,7 +1930,7 @@ describe('assetTransferRulesResultToRuleCompliance', () => {
     dsMockUtils.cleanup();
   });
 
-  test('assetTransferRulesResultToRuleCompliance should convert a polkadot AssetTransferRulesResult object to a RuleCompliance', () => {
+  test('assetComplianceResultToRequirementCompliance should convert a polkadot AssetComplianceResult object to a RequirementCompliance', () => {
     const id = 1;
     const tokenDid = 'someTokenDid';
     const issuerDids = ['someDid', 'otherDid'];
@@ -1991,22 +1990,22 @@ describe('assetTransferRulesResultToRuleCompliance', () => {
 
     const scope = dsMockUtils.createMockScope(tokenDid);
     const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
-    const rules = [
+    const rawConditions = [
       /* eslint-disable @typescript-eslint/camelcase */
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsNoneOf: [
             dsMockUtils.createMockClaim({ Blocked: scope }),
             dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -2014,8 +2013,8 @@ describe('assetTransferRulesResultToRuleCompliance', () => {
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsAnyOf: [
             dsMockUtils.createMockClaim({ Exempted: scope }),
             dsMockUtils.createMockClaim('CustomerDueDiligence'),
@@ -2024,22 +2023,24 @@ describe('assetTransferRulesResultToRuleCompliance', () => {
         issuers,
       }),
     ];
-    const assetTransferRulesResult = dsMockUtils.createMockAssetTransferRulesResult({
-      is_paused: dsMockUtils.createMockBool(false),
-      rules: [
-        dsMockUtils.createMockAssetTransferRuleResult({
-          sender_rules: [rules[0], rules[2], rules[3]],
-          receiver_rules: [rules[0], rules[1], rules[3]],
-          rule_id: dsMockUtils.createMockU32(1),
-          transfer_rule_result: dsMockUtils.createMockBool(false),
+    const assetComplianceResult = dsMockUtils.createMockAssetComplianceResult({
+      paused: dsMockUtils.createMockBool(false),
+      requirements: [
+        dsMockUtils.createMockComplianceRequirementResult({
+          sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
+          receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+          id: dsMockUtils.createMockU32(1),
+          result: dsMockUtils.createMockBool(false),
         }),
       ],
-      final_result: dsMockUtils.createMockBool(false),
+      result: dsMockUtils.createMockBool(false),
     });
     /* eslint-enable @typescript-eslint/camelcase */
 
-    const result = assetTransferRulesResultToRuleCompliance(assetTransferRulesResult);
-    expect(result.rules[0].conditions).toEqual(expect.arrayContaining(fakeResult.conditions));
+    const result = assetComplianceResultToRequirementCompliance(assetComplianceResult);
+    expect(result.requirements[0].conditions).toEqual(
+      expect.arrayContaining(fakeResult.conditions)
+    );
   });
 });
 

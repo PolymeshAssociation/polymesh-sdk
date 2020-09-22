@@ -279,13 +279,13 @@ export function isMultiClaimCondition(condition: Condition): condition is MultiC
   return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
 }
 
-export interface Rule {
+export interface Requirement {
   id: number;
   conditions: Condition[];
 }
 
-export interface RuleCompliance {
-  rules: (Rule & {
+export interface RequirementCompliance {
+  requirements: (Requirement & {
     complies: boolean;
   })[];
   complies: boolean;

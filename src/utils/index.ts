@@ -15,12 +15,10 @@ import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { camelCase, chunk, groupBy, isEqual, map, padEnd, snakeCase } from 'lodash';
-import { Memo, PipId } from 'polymesh-types/polymesh';
+import { AssetComplianceResult, ComplianceRequirement, Memo, PipId } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
-  AssetTransferRule,
-  AssetTransferRulesResult,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
@@ -28,6 +26,8 @@ import {
   CanTransferResult,
   CddStatus,
   Claim as MeshClaim,
+  Condition as MeshCondition,
+  ConditionType as MeshConditionType,
   Document,
   DocumentHash,
   DocumentName,
@@ -41,8 +41,6 @@ import {
   PosRatio,
   ProposalState as MeshProposalState,
   ProtocolOp,
-  Rule as MeshRule,
-  RuleType,
   Signatory,
   SigningKey as MeshSigningKey,
   Ticker,
@@ -77,8 +75,8 @@ import {
   NextKey,
   PaginationOptions,
   Permission,
-  Rule,
-  RuleCompliance,
+  Requirement,
+  RequirementCompliance,
   Signer,
   SigningKey,
   SingleClaimCondition,
@@ -929,12 +927,15 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
 /**
  * @hidden
  */
-export function ruleToAssetTransferRule(rule: Rule, context: Context): AssetTransferRule {
+export function requirementToComplianceRequirement(
+  requirement: Requirement,
+  context: Context
+): ComplianceRequirement {
   const { polymeshApi } = context;
-  const senderRules: MeshRule[] = [];
-  const receiverRules: MeshRule[] = [];
+  const senderConditions: MeshCondition[] = [];
+  const receiverConditions: MeshCondition[] = [];
 
-  rule.conditions.forEach(condition => {
+  requirement.conditions.forEach(condition => {
     let claimContent: MeshClaim | MeshClaim[];
     if (isSingleClaimCondition(condition)) {
       const { claim } = condition;
@@ -946,28 +947,28 @@ export function ruleToAssetTransferRule(rule: Rule, context: Context): AssetTran
 
     const { target, type, trustedClaimIssuers = [] } = condition;
 
-    const meshRule = polymeshApi.createType('Rule', {
+    const meshCondition = polymeshApi.createType('Condition', {
       // eslint-disable-next-line @typescript-eslint/camelcase
-      rule_type: {
+      condition_type: {
         [type]: claimContent,
       },
       issuers: trustedClaimIssuers.map(issuer => stringToIdentityId(issuer, context)),
     });
 
     if ([ConditionTarget.Both, ConditionTarget.Receiver].includes(target)) {
-      receiverRules.push(meshRule);
+      receiverConditions.push(meshCondition);
     }
 
     if ([ConditionTarget.Both, ConditionTarget.Sender].includes(target)) {
-      senderRules.push(meshRule);
+      senderConditions.push(meshCondition);
     }
   });
 
-  return polymeshApi.createType('AssetTransferRule', {
+  return polymeshApi.createType('ComplianceRequirement', {
     /* eslint-disable @typescript-eslint/camelcase */
-    sender_rules: senderRules,
-    receiver_rules: receiverRules,
-    rule_id: numberToU32(rule.id, context),
+    sender_conditions: senderConditions,
+    receiver_conditions: receiverConditions,
+    id: numberToU32(requirement.id, context),
     /* eslint-enable @typescript-eslint/camelcase */
   });
 }
@@ -975,77 +976,83 @@ export function ruleToAssetTransferRule(rule: Rule, context: Context): AssetTran
 /**
  * @hidden
  */
-export function assetTransferRuleToRule(rule: AssetTransferRule): Rule {
-  const ruleTypeToCondition = (
-    ruleType: RuleType
+export function complianceRequirementToRequirement(
+  complianceRequirement: ComplianceRequirement
+): Requirement {
+  const meshConditionTypeToCondition = (
+    meshConditionType: MeshConditionType
   ):
     | Pick<SingleClaimCondition, 'type' | 'claim'>
     | Pick<MultiClaimCondition, 'type' | 'claims'> => {
-    if (ruleType.isIsPresent) {
+    if (meshConditionType.isIsPresent) {
       return {
         type: ConditionType.IsPresent,
-        claim: meshClaimToClaim(ruleType.asIsPresent),
+        claim: meshClaimToClaim(meshConditionType.asIsPresent),
       };
     }
 
-    if (ruleType.isIsAbsent) {
+    if (meshConditionType.isIsAbsent) {
       return {
         type: ConditionType.IsAbsent,
-        claim: meshClaimToClaim(ruleType.asIsAbsent),
+        claim: meshClaimToClaim(meshConditionType.asIsAbsent),
       };
     }
 
-    if (ruleType.isIsAnyOf) {
+    if (meshConditionType.isIsAnyOf) {
       return {
         type: ConditionType.IsAnyOf,
-        claims: ruleType.asIsAnyOf.map(claim => meshClaimToClaim(claim)),
+        claims: meshConditionType.asIsAnyOf.map(claim => meshClaimToClaim(claim)),
       };
     }
 
     return {
       type: ConditionType.IsNoneOf,
-      claims: ruleType.asIsNoneOf.map(claim => meshClaimToClaim(claim)),
+      claims: meshConditionType.asIsNoneOf.map(claim => meshClaimToClaim(claim)),
     };
   };
 
-  const conditions: Condition[] = rule.sender_rules.map(({ rule_type: ruleType, issuers }) => ({
-    ...ruleTypeToCondition(ruleType),
-    target: ConditionTarget.Sender,
-    trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
-  }));
-
-  rule.receiver_rules.forEach(({ rule_type: ruleType, issuers }) => {
-    const newCondition = {
-      ...ruleTypeToCondition(ruleType),
-      target: ConditionTarget.Receiver,
+  const conditions: Condition[] = complianceRequirement.sender_conditions.map(
+    ({ condition_type: conditionType, issuers }) => ({
+      ...meshConditionTypeToCondition(conditionType),
+      target: ConditionTarget.Sender,
       trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
-    };
+    })
+  );
 
-    const existingCondition = conditions.find(condition => {
-      let equalClaims = false;
+  complianceRequirement.receiver_conditions.forEach(
+    ({ condition_type: conditionType, issuers }) => {
+      const newCondition = {
+        ...meshConditionTypeToCondition(conditionType),
+        target: ConditionTarget.Receiver,
+        trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
+      };
 
-      if (isSingleClaimCondition(condition) && isSingleClaimCondition(newCondition)) {
-        equalClaims = isEqual(condition.claim, newCondition.claim);
+      const existingCondition = conditions.find(condition => {
+        let equalClaims = false;
+
+        if (isSingleClaimCondition(condition) && isSingleClaimCondition(newCondition)) {
+          equalClaims = isEqual(condition.claim, newCondition.claim);
+        }
+
+        if (isMultiClaimCondition(condition) && isMultiClaimCondition(newCondition)) {
+          equalClaims = isEqual(condition.claims, newCondition.claims);
+        }
+
+        return (
+          equalClaims && isEqual(condition.trustedClaimIssuers, newCondition.trustedClaimIssuers)
+        );
+      });
+
+      if (existingCondition) {
+        existingCondition.target = ConditionTarget.Both;
+      } else {
+        conditions.push(newCondition);
       }
-
-      if (isMultiClaimCondition(condition) && isMultiClaimCondition(newCondition)) {
-        equalClaims = isEqual(condition.claims, newCondition.claims);
-      }
-
-      return (
-        equalClaims && isEqual(condition.trustedClaimIssuers, newCondition.trustedClaimIssuers)
-      );
-    });
-
-    if (existingCondition) {
-      existingCondition.target = ConditionTarget.Both;
-    } else {
-      conditions.push(newCondition);
     }
-  });
+  );
 
   return {
-    id: u32ToBigNumber(rule.rule_id).toNumber(),
+    id: u32ToBigNumber(complianceRequirement.id).toNumber(),
     conditions,
   };
 }
@@ -1127,17 +1134,17 @@ export function issuanceDataToIssueAssetItem(
 /**
  * @hidden
  */
-export function assetTransferRulesResultToRuleCompliance(
-  assetTransferRulesResult: AssetTransferRulesResult
-): RuleCompliance {
-  const { rules: transferRules, final_result: result } = assetTransferRulesResult;
-  const rules = transferRules.map(rule => ({
-    ...assetTransferRuleToRule(rule),
-    complies: boolToBoolean(rule.transfer_rule_result),
+export function assetComplianceResultToRequirementCompliance(
+  assetComplianceResult: AssetComplianceResult
+): RequirementCompliance {
+  const { requirements: rawRequirements, result } = assetComplianceResult;
+  const requirements = rawRequirements.map(requirement => ({
+    ...complianceRequirementToRequirement(requirement),
+    complies: boolToBoolean(requirement.result),
   }));
 
   return {
-    rules,
+    requirements,
     complies: boolToBoolean(result),
   };
 }
