@@ -228,7 +228,7 @@ export interface IdentityWithClaims {
 }
 
 export interface ExtrinsicData {
-  blockId: number;
+  blockNumber: BigNumber;
   extrinsicIdx: number;
   address: string | null;
   nonce: number;
@@ -304,6 +304,7 @@ export enum ErrorCode {
   NotAuthorized = 'NotAuthorized',
   MiddlewareError = 'MiddlewareError',
   IdentityNotPresent = 'IdentityNotPresent',
+  DataUnavailable = 'DataUnavailable',
 }
 
 /**
@@ -358,7 +359,7 @@ export interface UiKeyring {
 }
 
 export interface EventIdentifier {
-  blockNumber: number;
+  blockNumber: BigNumber;
   blockDate: Date;
   eventIndex: number;
 }
