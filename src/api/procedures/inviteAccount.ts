@@ -5,7 +5,6 @@ import { SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
-  signerToSignerValue,
   signerToString,
   signerValueToSignatory,
 } from '~/utils';
@@ -33,7 +32,7 @@ export async function prepareInviteAccount(
 
   const { targetAccount, expiry } = args;
 
-  const signerValue = signerToString(targetAccount);
+  const address = signerToString(targetAccount);
 
   const currentIdentity = await context.getCurrentIdentity();
 
@@ -42,39 +41,39 @@ export async function prepareInviteAccount(
     context.getSigningKeys(),
   ]);
 
-  const isPresent = signingKeys
-    .map(({ signer }) => signerToSignerValue(signer))
-    .find(({ value }) => value === signerValue);
+  const isPresent = !!signingKeys.find(({ signer }) => signerToString(signer) === address);
 
   if (isPresent) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You cannot add an account that is already present in your signing keys list',
+      message: 'The target Account is already a signing key for this Identity',
     });
   }
 
-  const isPending = authorizationRequests.data
-    .map(authorizationRequest => {
-      return {
-        signer: signerToSignerValue(authorizationRequest.target),
-        isExpired: authorizationRequest.isExpired(),
-      };
-    })
-    .find(({ signer, isExpired }) => {
-      return signer.value === signerValue && !isExpired;
-    });
+  const hasPendingAuth = !!authorizationRequests.data.find(authorizationRequest => {
+    const {
+      target,
+      data: { type },
+    } = authorizationRequest;
+    return (
+      signerToString(target) === address &&
+      !authorizationRequest.isExpired() &&
+      type === AuthorizationType.JoinIdentity
+    );
+  });
 
-  if (isPending) {
+  if (hasPendingAuth) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The account invited already has a pending authorization to accept',
+      message: 'The target Account already has a pending invitation to join this Identity',
     });
   }
 
   const rawSignatory = signerValueToSignatory(
-    { type: SignerType.Account, value: signerValue },
+    { type: SignerType.Account, value: address },
     context
   );
+
   const rawAuthorizationData = authorizationToAuthorizationData(
     { type: AuthorizationType.JoinIdentity, value: [] },
     context
