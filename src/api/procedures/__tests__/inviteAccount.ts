@@ -9,7 +9,7 @@ import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, Identity, ResultSet, Signer } from '~/types';
+import { Authorization, AuthorizationType, Identity, ResultSet } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -21,7 +21,6 @@ describe('inviteAccount procedure', () => {
     AuthorizationData
   >;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
 
@@ -38,7 +37,6 @@ describe('inviteAccount procedure', () => {
       'authorizationToAuthorizationData'
     );
     dateToMomentStub = sinon.stub(utilsModule, 'dateToMoment');
-    signerToSignerValueStub = sinon.stub(utilsModule, 'signerToSignerValue');
     signerToStringStub = sinon.stub(utilsModule, 'signerToString');
     signerValueToSignatoryStub = sinon.stub(utilsModule, 'signerValueToSignatory');
   });
@@ -64,7 +62,6 @@ describe('inviteAccount procedure', () => {
     const expiry = new Date('1/1/2040');
     const target = new Account({ address: args.targetAccount }, mockContext);
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
-    const signerValue = { type: SignerType.Account, value: signer.address };
     const rawSignatory = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId('someAccountId'),
     });
@@ -102,11 +99,9 @@ describe('inviteAccount procedure', () => {
       },
     ]);
 
-    signerToSignerValueStub.withArgs(signer).returns(signerValue);
+    signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);
-    signerToSignerValueStub
-      .withArgs(target)
-      .returns({ type: SignerType.Account, value: 'someValue' });
+    signerToStringStub.withArgs(target).returns('someValue');
     signerValueToSignatoryStub
       .withArgs({ type: SignerType.Account, value: args.targetAccount }, mockContext)
       .returns(rawSignatory);
@@ -142,7 +137,6 @@ describe('inviteAccount procedure', () => {
 
   test('should throw an error if the passed account is already present in the signing keys list', async () => {
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
-    const signerValue = { type: SignerType.Account, value: args.targetAccount };
 
     mockContext.getSigningKeys.resolves([
       {
@@ -151,20 +145,19 @@ describe('inviteAccount procedure', () => {
       },
     ]);
 
-    signerToSignerValueStub.withArgs(signer).returns(signerValue);
+    signerToStringStub.withArgs(signer).returns(args.targetAccount);
     signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);
 
     const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
 
     await expect(prepareInviteAccount.call(proc, args)).rejects.toThrow(
-      'You cannot add an account that is already present in your signing keys list'
+      'The target Account is already a signing key for this Identity'
     );
   });
 
   test('should throw an error if the passed account has a pending authorization to accept', async () => {
     const target = new Account({ address: args.targetAccount }, mockContext);
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
-    const signerValue = { type: SignerType.Account, value: signer.address };
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [
         new AuthorizationRequest(
@@ -195,16 +188,14 @@ describe('inviteAccount procedure', () => {
       },
     ]);
 
-    signerToSignerValueStub.withArgs(signer).returns(signerValue);
+    signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);
-    signerToSignerValueStub
-      .withArgs(target)
-      .returns({ type: SignerType.Account, value: args.targetAccount });
+    signerToStringStub.withArgs(target).returns(args.targetAccount);
 
     const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
 
     await expect(prepareInviteAccount.call(proc, args)).rejects.toThrow(
-      'The account invited already has a pending authorization to accept'
+      'The target Account already has a pending invitation to join this Identity'
     );
   });
 });
