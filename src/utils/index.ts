@@ -339,6 +339,24 @@ export function signerToString(signer: string | Signer): string {
 
 /**
  * @hidden
+ * Extract the DID from an Identity, or return the Current DID if no Identity is passed
+ */
+export async function getDid(
+  target: string | Identity | undefined,
+  context: Context
+): Promise<string> {
+  let did;
+  if (target) {
+    did = signerToString(target);
+  } else {
+    ({ did } = await context.getCurrentIdentity());
+  }
+
+  return did;
+}
+
+/**
+ * @hidden
  */
 export function authorizationToAuthorizationData(
   auth: Authorization,

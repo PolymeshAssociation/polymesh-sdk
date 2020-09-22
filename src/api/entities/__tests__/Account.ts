@@ -107,15 +107,15 @@ describe('Account class', () => {
       });
 
       const result = await account.getIdentity();
-      expect(result.did).toBe(did);
+      expect(result?.did).toBe(did);
     });
 
-    test('should throw an error if there is no Identity associated to the Account', () => {
+    test('should return null if there is no Identity associated to the Account', async () => {
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').throws();
 
-      return expect(account.getIdentity()).rejects.toThrow(
-        'The current account does not have an associated Identity'
-      );
+      const result = await account.getIdentity();
+
+      expect(result).toBe(null);
     });
   });
 

@@ -5,11 +5,11 @@ import { Account, CurrentIdentity } from '~/api/entities';
  */
 export class CurrentAccount extends Account {
   /**
-   * Retrieves the current Identity
+   * Retrieves the current Identity (null if there is none)
    */
-  public async getIdentity(): Promise<CurrentIdentity> {
-    const { did } = await super.getIdentity();
+  public async getIdentity(): Promise<CurrentIdentity | null> {
+    const identity = await super.getIdentity();
 
-    return new CurrentIdentity({ did }, this.context);
+    return identity && new CurrentIdentity({ did: identity.did }, this.context);
   }
 }
