@@ -1310,7 +1310,7 @@ export const createMockSecurityToken = (token?: {
   owner_did: IdentityId;
   divisible: bool;
   asset_type: AssetType;
-  treasury_did: Option<IdentityId>;
+  primary_issuance_agent: Option<IdentityId>;
 }): SecurityToken => {
   const st = token || {
     name: createMockAssetName(),
@@ -1318,7 +1318,7 @@ export const createMockSecurityToken = (token?: {
     owner_did: createMockIdentityId(),
     divisible: createMockBool(),
     asset_type: createMockAssetType(),
-    treasury_did: createMockOption(createMockIdentityId()),
+    primary_issuance_agent: createMockOption(createMockIdentityId()),
   };
   return createMockCodec({ ...st }, !token) as SecurityToken;
 };

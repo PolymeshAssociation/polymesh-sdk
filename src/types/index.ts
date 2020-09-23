@@ -307,10 +307,9 @@ export enum ErrorCode {
 }
 
 /**
- * Represents an amount of tokens to be issued to an Identity
+ * Represents an amount of tokens to be issued to treasury account
  */
-export interface IssuanceData {
-  identity: string | Identity;
+export interface IssuanceAmount {
   amount: BigNumber;
 }
 

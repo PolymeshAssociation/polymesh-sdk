@@ -39,12 +39,9 @@ describe('Issuance class', () => {
       const issuance = new Issuance(token, context);
 
       const args = {
-        issuanceData: [
-          {
-            identity: 'someDid',
-            amount: new BigNumber(100),
-          },
-        ],
+        issuanceAmount: {
+          amount: new BigNumber(100),
+        },
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;

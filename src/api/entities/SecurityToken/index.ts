@@ -155,15 +155,15 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       divisible,
       owner_did,
       asset_type,
-      treasury_did,
+      primary_issuance_agent,
     }: MeshSecurityToken): SecurityTokenDetails => ({
       assetType: assetTypeToString(asset_type),
       isDivisible: boolToBoolean(divisible),
       name: assetNameToString(name),
       owner: new Identity({ did: identityIdToString(owner_did) }, context),
       totalSupply: balanceToBigNumber(total_supply),
-      treasuryIdentity: treasury_did.isSome
-        ? new Identity({ did: identityIdToString(treasury_did.unwrap()) }, context)
+      treasuryIdentity: primary_issuance_agent.isSome
+        ? new Identity({ did: identityIdToString(primary_issuance_agent.unwrap()) }, context)
         : null,
     });
     /* eslint-enable @typescript-eslint/camelcase */

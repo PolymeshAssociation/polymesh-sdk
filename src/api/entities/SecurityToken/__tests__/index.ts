@@ -87,7 +87,7 @@ describe('SecurityToken class', () => {
         asset_type: dsMockUtils.createMockAssetType(assetType),
         divisible: dsMockUtils.createMockBool(isDivisible),
         total_supply: dsMockUtils.createMockBalance(totalSupply),
-        treasury_did: dsMockUtils.createMockOption(
+        primary_issuance_agent: dsMockUtils.createMockOption(
           dsMockUtils.createMockIdentityId(treasuryIdentity)
         ),
         /* eslint-enable @typescript-eslint/camelcase */
@@ -115,7 +115,7 @@ describe('SecurityToken class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/camelcase
-      (rawToken as any).treasury_did = dsMockUtils.createMockOption();
+      (rawToken as any).primary_issuance_agent = dsMockUtils.createMockOption();
 
       dsMockUtils.createQueryStub('asset', 'tokens').callsFake(async (_, cbFunc) => {
         cbFunc(rawToken);
