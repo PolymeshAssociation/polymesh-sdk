@@ -18,7 +18,6 @@ import {
   FundingRoundName,
   IdentifierType,
   IdentityId,
-  JurisdictionName,
   Permission as MeshPermission,
   ProtocolOp,
   Signatory,
@@ -40,6 +39,7 @@ import {
   Condition,
   ConditionTarget,
   ConditionType,
+  CountryCode,
   KnownTokenType,
   Permission,
   Signer,
@@ -84,7 +84,6 @@ import {
   fundingRoundNameToString,
   identifierTypeToString,
   identityIdToString,
-  jurisdictionNameToString,
   keyToAddress,
   meshClaimToClaim,
   meshPermissionToPermission,
@@ -119,7 +118,6 @@ import {
   stringToDocumentUri,
   stringToFundingRoundName,
   stringToIdentityId,
-  stringToJurisdictionName,
   stringToMemo,
   stringToText,
   stringToTicker,
@@ -1488,44 +1486,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   });
 });
 
-describe('stringToJurisdictionName and jurisdictionNameToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  test('stringToJurisdictionName should convert a string to a polkadot JurisdictionName object', () => {
-    const context = dsMockUtils.getContextInstance();
-    const value = 'someJurisdiction';
-    const fakeResult = ('jurisdictionName' as unknown) as JurisdictionName;
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('JurisdictionName', value)
-      .returns(fakeResult);
-
-    const result = stringToJurisdictionName(value, context);
-
-    expect(result).toBe(fakeResult);
-  });
-
-  test('jurisdictionNameToString should convert a polkadot JurisdictionName object to a string', () => {
-    const fakeResult = 'someJurisdiction';
-    const jurisdictionName = dsMockUtils.createMockJurisdictionName(fakeResult);
-
-    const result = jurisdictionNameToString(jurisdictionName);
-    expect(result).toEqual(fakeResult);
-  });
-});
-
-describe('claimToMeshClaim and jurisdictionNameToString', () => {
+describe('claimToMeshClaim and meshClaimToClaim', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1542,14 +1503,14 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
     const context = dsMockUtils.getContextInstance();
     let value: Claim = {
       type: ClaimType.Jurisdiction,
-      name: 'someJurisdiction',
+      code: CountryCode.Cl,
       scope: 'someTickerDid',
     };
     const fakeResult = ('meshClaim' as unknown) as MeshClaim;
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('Claim', { [value.type]: [value.name, value.scope] })
+      .withArgs('Claim', { [value.type]: [value.code, value.scope] })
       .returns(fakeResult);
 
     let result = claimToMeshClaim(value, context);
@@ -1640,13 +1601,13 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
 
     fakeResult = {
       type: ClaimType.Jurisdiction,
-      name: 'someJurisdiction',
+      code: CountryCode.Cl,
       scope: 'someIdentity',
     };
 
     claim = dsMockUtils.createMockClaim({
       Jurisdiction: [
-        dsMockUtils.createMockJurisdictionName(fakeResult.name),
+        dsMockUtils.createMockCountryCode(fakeResult.code),
         dsMockUtils.createMockScope(fakeResult.scope),
       ],
     });
@@ -1700,13 +1661,13 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
 describe('createClaim', () => {
   test('', () => {
     let type = 'Jurisdiction';
-    const jurisdiction = 'someJurisdiction';
+    const jurisdiction = CountryCode.Cl;
     let scope = 'someScope';
 
     let result = createClaim(type, jurisdiction, scope);
     expect(result).toEqual({
       type: ClaimType.Jurisdiction,
-      name: jurisdiction,
+      code: jurisdiction,
       scope,
     });
 
@@ -1772,7 +1733,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         claim: {
           type: ClaimType.Jurisdiction,
           scope: 'someTickerDid',
-          name: 'someJurisdiction',
+          code: CountryCode.Cl,
         },
       },
     ];

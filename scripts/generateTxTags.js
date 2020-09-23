@@ -2,7 +2,7 @@
 const Metadata = require('@polkadot/metadata/Metadata').default;
 const { w3cwebsocket } = require('websocket');
 const { TypeRegistry } = require('@polkadot/types/create');
-const { stringCamelCase, stringLowerFirst, stringUpperFirst } = require('@polkadot/util');
+const { stringCamelCase, stringUpperFirst } = require('@polkadot/util');
 const fs = require('fs');
 const path = require('path');
 

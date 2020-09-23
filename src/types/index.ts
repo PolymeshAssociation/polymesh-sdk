@@ -5,6 +5,9 @@ import { TxTag } from 'polymesh-types/types';
 
 import { Account, Identity, Proposal } from '~/api/entities';
 import { ProposalDetails } from '~/api/entities/Proposal/types';
+import { CountryCode } from '~/generated/types';
+
+export * from '~/generated/types';
 
 export enum TransactionStatus {
   /**
@@ -198,7 +201,7 @@ export enum ClaimType {
 }
 
 export type ScopedClaim =
-  | { type: ClaimType.Jurisdiction; name: string; scope: string }
+  | { type: ClaimType.Jurisdiction; code: CountryCode; scope: string }
   | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string };
 
 export type UnscopedClaim = { type: ClaimType.NoData | ClaimType.CustomerDueDiligence };
