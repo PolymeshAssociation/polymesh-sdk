@@ -761,7 +761,6 @@ export enum CallIdEnum {
   TransferFrom = 'transfer_from',
   CreateCheckpoint = 'create_checkpoint',
   Issue = 'issue',
-  BatchIssue = 'batch_issue',
   Redeem = 'redeem',
   RedeemFrom = 'redeem_from',
   ControllerRedeem = 'controller_redeem',
