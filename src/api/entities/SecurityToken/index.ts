@@ -162,7 +162,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       name: assetNameToString(name),
       owner: new Identity({ did: identityIdToString(owner_did) }, context),
       totalSupply: balanceToBigNumber(total_supply),
-      treasuryIdentity: primary_issuance_agent.isSome
+      primaryIssuanceAgent: primary_issuance_agent.isSome
         ? new Identity({ did: identityIdToString(primary_issuance_agent.unwrap()) }, context)
         : null,
     });

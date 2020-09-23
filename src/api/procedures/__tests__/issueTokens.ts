@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities';
+import { Identity, SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareIssueTokens } from '~/api/procedures/issueTokens';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -101,7 +101,6 @@ describe('issueTokens procedure', () => {
       issuanceAmount: {
         amount,
       },
-
       ticker,
     };
 
@@ -134,18 +133,20 @@ describe('issueTokens procedure', () => {
     });
   });
 
-  test('should throw an error if canMint returns a status different from Success', async () => {
+  test('should throw an error if canMint returns a different status from Success', async () => {
     const transferStatus = TransferStatus.Failure;
     const args = {
       issuanceAmount: {
         amount,
       },
-
       ticker,
     };
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
+        details: {
+          primaryIssuanceAgent: new Identity({ did: 'someDid' }, mockContext),
+        },
         transfersCanMint: transferStatus,
       },
     });
@@ -171,7 +172,6 @@ describe('issueTokens procedure', () => {
       issuanceAmount: {
         amount,
       },
-
       ticker,
     };
 

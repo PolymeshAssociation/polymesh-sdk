@@ -63,7 +63,7 @@ describe('SecurityToken class', () => {
     let isDivisible: boolean;
     let owner: string;
     let assetType: 'EquityCommon';
-    let treasuryIdentity: string;
+    let primaryIssuanceAgent: string;
 
     let rawToken: MeshSecurityToken;
 
@@ -76,7 +76,7 @@ describe('SecurityToken class', () => {
       isDivisible = true;
       owner = '0x0wn3r';
       assetType = 'EquityCommon';
-      treasuryIdentity = '0xtr34sury';
+      primaryIssuanceAgent = '0xtr34sury';
     });
 
     beforeEach(() => {
@@ -88,7 +88,7 @@ describe('SecurityToken class', () => {
         divisible: dsMockUtils.createMockBool(isDivisible),
         total_supply: dsMockUtils.createMockBalance(totalSupply),
         primary_issuance_agent: dsMockUtils.createMockOption(
-          dsMockUtils.createMockIdentityId(treasuryIdentity)
+          dsMockUtils.createMockIdentityId(primaryIssuanceAgent)
         ),
         /* eslint-enable @typescript-eslint/camelcase */
       });
@@ -109,7 +109,7 @@ describe('SecurityToken class', () => {
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
-      expect(details.treasuryIdentity?.did).toBe(treasuryIdentity);
+      expect(details.primaryIssuanceAgent?.did).toBe(primaryIssuanceAgent);
     });
 
     test('should allow subscription', async () => {
@@ -133,7 +133,7 @@ describe('SecurityToken class', () => {
         name: ticker,
         owner: new Identity({ did: owner }, context),
         totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
-        treasuryIdentity: null,
+        primaryIssuanceAgent: null,
       });
     });
   });

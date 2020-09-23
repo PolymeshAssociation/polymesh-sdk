@@ -5,7 +5,6 @@ import { SecurityToken, TickerReservation } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import {
   ErrorCode,
-  Identity,
   Role,
   RoleType,
   TickerReservationStatus,
@@ -18,12 +17,10 @@ import {
   batchArguments,
   booleanToBool,
   numberToBalance,
-  signerToString,
   stringToAssetIdentifier,
   stringToAssetName,
   stringToDocumentName,
   stringToFundingRoundName,
-  stringToIdentityId,
   stringToTicker,
   tokenDocumentDataToDocument,
   tokenIdentifierTypeToIdentifierType,
@@ -37,7 +34,6 @@ export interface CreateSecurityTokenParams {
   tokenType: TokenType;
   tokenIdentifiers?: TokenIdentifier[];
   fundingRound?: string;
-  treasury?: string | Identity;
   documents?: TokenDocument[];
 }
 
@@ -69,7 +65,6 @@ export async function prepareCreateSecurityToken(
     tokenType,
     tokenIdentifiers = [],
     fundingRound,
-    treasury,
     documents,
   } = args;
 
@@ -105,7 +100,6 @@ export async function prepareCreateSecurityToken(
     }
   );
   const rawFundingRound = fundingRound ? stringToFundingRoundName(fundingRound, context) : null;
-  const rawTreasury = treasury ? stringToIdentityId(signerToString(treasury), context) : null;
 
   this.addTransaction(
     tx.asset.createAsset,
@@ -116,8 +110,7 @@ export async function prepareCreateSecurityToken(
     rawIsDivisible,
     rawType,
     rawIdentifiers,
-    rawFundingRound,
-    rawTreasury
+    rawFundingRound
   );
 
   if (documents) {

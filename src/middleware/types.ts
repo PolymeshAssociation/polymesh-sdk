@@ -779,7 +779,7 @@ export enum CallIdEnum {
   AddExtension = 'add_extension',
   ArchiveExtension = 'archive_extension',
   UnarchiveExtension = 'unarchive_extension',
-  SetTreasuryDid = 'set_treasury_did',
+  SetPrimaryIssuanceagent = 'set_primary_issuance_agent',
   New = 'new',
   Cancel = 'cancel',
   ClaimUnclaimed = 'claim_unclaimed',

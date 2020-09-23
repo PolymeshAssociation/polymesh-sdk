@@ -34,7 +34,7 @@ export async function prepareIssueTokens(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const { isDivisible, totalSupply, treasuryIdentity } = await securityToken.details();
+  const { isDivisible, totalSupply, primaryIssuanceAgent } = await securityToken.details();
   const { amount } = issuanceAmount;
 
   if (isDivisible) {
@@ -68,8 +68,8 @@ export async function prepareIssueTokens(
 
   let canTransfer = TransferStatus.InvalidSenderIdentity;
 
-  if (treasuryIdentity) {
-    canTransfer = await securityToken.transfers.canMint({ to: treasuryIdentity, amount });
+  if (primaryIssuanceAgent) {
+    canTransfer = await securityToken.transfers.canMint({ to: primaryIssuanceAgent, amount });
   }
 
   if (canTransfer !== TransferStatus.Success) {

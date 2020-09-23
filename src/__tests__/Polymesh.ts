@@ -762,7 +762,7 @@ describe('Polymesh Class', () => {
           name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
-          treasury_did: dsMockUtils.createMockOption(),
+          primary_issuance_agent: dsMockUtils.createMockOption(),
           total_supply: dsMockUtils.createMockBalance(),
           /* eslint-enable @typescript-eslint/camelcase */
         }),
@@ -787,7 +787,7 @@ describe('Polymesh Class', () => {
           name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
-          treasury_did: dsMockUtils.createMockOption(),
+          primary_issuance_agent: dsMockUtils.createMockOption(),
           total_supply: dsMockUtils.createMockBalance(),
           /* eslint-enable @typescript-eslint/camelcase */
         }),
