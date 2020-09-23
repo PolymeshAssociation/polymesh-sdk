@@ -9,7 +9,6 @@ export const MAX_MODULE_LENGTH = 32;
 export const MAX_TOKEN_AMOUNT = new BigNumber(Math.pow(10, 12));
 export const DUMMY_ACCOUNT_ID = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 export const MAX_BATCH_ELEMENTS = {
-  [TxTags.asset.BatchIssue]: 200,
   [TxTags.asset.BatchAddDocument]: 20,
   [TxTags.asset.BatchRemoveDocument]: 20,
   [TxTags.identity.BatchAcceptAuthorization]: 100,
