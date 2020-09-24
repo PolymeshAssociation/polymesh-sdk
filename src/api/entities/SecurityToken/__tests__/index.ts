@@ -239,9 +239,11 @@ describe('SecurityToken class', () => {
     let isinValue: string;
     let cusipValue: string;
     let cinsValue: string;
+    let dtiValue: string;
     let isinMock: AssetIdentifier;
     let cusipMock: AssetIdentifier;
     let cinsMock: AssetIdentifier;
+    let dtiMock: AssetIdentifier;
     let tokenIdentifiers: TokenIdentifier[];
 
     let rawIdentifiers: [IdentifierType, AssetIdentifier][];
@@ -259,9 +261,11 @@ describe('SecurityToken class', () => {
       isinValue = 'FAKE ISIN';
       cusipValue = 'FAKE CUSIP';
       cinsValue = 'FAKE CINS';
+      dtiValue = 'FAKE DTI';
       isinMock = dsMockUtils.createMockAssetIdentifier(isinValue);
       cusipMock = dsMockUtils.createMockAssetIdentifier(cusipValue);
       cinsMock = dsMockUtils.createMockAssetIdentifier(cinsValue);
+      dtiMock = dsMockUtils.createMockAssetIdentifier(dtiValue);
       tokenIdentifiers = [
         {
           type: TokenIdentifierType.Isin,
@@ -274,6 +278,10 @@ describe('SecurityToken class', () => {
         {
           type: TokenIdentifierType.Cins,
           value: cinsValue,
+        },
+        {
+          type: TokenIdentifierType.Dti,
+          value: dtiValue,
         },
       ];
 
@@ -309,7 +317,7 @@ describe('SecurityToken class', () => {
 
     test('should return the list of token identifiers for a security token', async () => {
       dsMockUtils.createQueryStub('asset', 'identifiers', {
-        multi: [isinMock, cusipMock, cinsMock],
+        multi: [isinMock, cusipMock, cinsMock, dtiMock],
       });
 
       const result = await securityToken.getIdentifiers();
@@ -317,6 +325,7 @@ describe('SecurityToken class', () => {
       expect(result[0].value).toBe(isinValue);
       expect(result[1].value).toBe(cusipValue);
       expect(result[2].value).toBe(cinsValue);
+      expect(result[3].value).toBe(dtiValue);
     });
 
     test('should allow subscription', async () => {

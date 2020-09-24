@@ -35,7 +35,6 @@ import {
   FundingRoundName,
   IdentifierType,
   IdentityId,
-  IssueAssetItem,
   Permission as MeshPermission,
   PosRatio,
   ProposalState as MeshProposalState,
@@ -70,7 +69,6 @@ import {
   IdentityWithClaims,
   isMultiClaimCondition,
   isSingleClaimCondition,
-  IssuanceData,
   KnownTokenType,
   MultiClaimCondition,
   NextKey,
@@ -636,8 +634,11 @@ export function identifierTypeToString(type: IdentifierType): string {
   if (type.isIsin) {
     return TokenIdentifierType.Isin;
   }
+  if (type.isCins) {
+    return TokenIdentifierType.Cins;
+  }
 
-  return TokenIdentifierType.Cins;
+  return TokenIdentifierType.Dti;
 }
 
 /**
@@ -1103,21 +1104,6 @@ export function numberToPipId(id: number | BigNumber, context: Context): PipId {
  */
 export function textToString(value: Text): string {
   return value.toString();
-}
-
-/**
- * @hidden
- */
-export function issuanceDataToIssueAssetItem(
-  issuanceData: IssuanceData,
-  context: Context
-): IssueAssetItem {
-  const { identity, amount } = issuanceData;
-  return context.polymeshApi.createType('IssueAssetItem', {
-    // eslint-disable-next-line @typescript-eslint/camelcase
-    identity_did: stringToIdentityId(signerToString(identity), context),
-    value: numberToBalance(amount, context),
-  });
 }
 
 /**

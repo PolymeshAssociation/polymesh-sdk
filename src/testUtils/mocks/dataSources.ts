@@ -1443,7 +1443,7 @@ export const createMockAuthIdentifier = (authIdentifier?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockIdentifierType = (
-  identifierType?: 'Isin' | 'Cusip' | 'Cins'
+  identifierType?: 'Isin' | 'Cusip' | 'Cins' | 'Dti'
 ): IdentifierType => {
   return createMockEnum(identifierType) as IdentifierType;
 };

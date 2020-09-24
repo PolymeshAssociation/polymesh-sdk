@@ -129,6 +129,7 @@ export enum TokenIdentifierType {
   Isin = 'Isin',
   Cusip = 'Cusip',
   Cins = 'Cins',
+  Dti = 'Dti',
 }
 
 // NOTE: query.asset.identifiers doesn’t support custom identifier types properly for now

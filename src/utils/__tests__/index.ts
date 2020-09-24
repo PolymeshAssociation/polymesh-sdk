@@ -881,6 +881,12 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
 
     result = identifierTypeToString(identifierType);
     expect(result).toEqual(fakeResult);
+
+    fakeResult = TokenIdentifierType.Dti;
+    identifierType = dsMockUtils.createMockIdentifierType(fakeResult);
+
+    result = identifierTypeToString(identifierType);
+    expect(result).toEqual(fakeResult);
   });
 });
 
