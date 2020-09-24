@@ -337,6 +337,24 @@ export function signerToString(signer: string | Signer): string {
 
 /**
  * @hidden
+ * Extract the DID from an Identity, or return the Current DID if no Identity is passed
+ */
+export async function getDid(
+  target: string | Identity | undefined,
+  context: Context
+): Promise<string> {
+  let did;
+  if (target) {
+    did = signerToString(target);
+  } else {
+    ({ did } = await context.getCurrentIdentity());
+  }
+
+  return did;
+}
+
+/**
+ * @hidden
  */
 export function authorizationToAuthorizationData(
   auth: Authorization,
@@ -1258,11 +1276,18 @@ export async function requestAtBlock<F extends AnyFunction>(
   opts: {
     blockHash?: string | BlockHash;
     args: Parameters<F>;
-  }
+  },
+  context: Context
 ): Promise<ObsInnerType<ReturnType<F>>> {
   const { blockHash, args } = opts;
 
   if (blockHash) {
+    if (!context.isArchiveNode) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Cannot query previous blocks in a non-archive node',
+      });
+    }
     return query.at(blockHash, ...args);
   }
 

@@ -1,14 +1,14 @@
+import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
 import { Entity, Identity } from '~/api/entities';
 import { Authorizations } from '~/api/entities/common/namespaces/Authorizations';
-import { Context, PolymeshError } from '~/base';
+import { Context } from '~/base';
 import { transactions } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
   Ensured,
-  ErrorCode,
   ExtrinsicData,
   ResultSet,
   SubCallback,
@@ -89,11 +89,9 @@ export class Account extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the Identity associated to this Account
-   *
-   * @throws if there is no Identity associated to the Account
+   * Retrieve the Identity associated to this Account (null if there is none)
    */
-  public async getIdentity(): Promise<Identity> {
+  public async getIdentity(): Promise<Identity | null> {
     const {
       context: {
         polymeshApi: {
@@ -112,10 +110,7 @@ export class Account extends Entity<UniqueIdentifiers> {
 
       return new Identity({ did }, context);
     } catch (err) {
-      throw new PolymeshError({
-        code: ErrorCode.IdentityNotPresent,
-        message: 'The current account does not have an associated Identity',
-      });
+      return null;
     }
   }
 
@@ -129,7 +124,7 @@ export class Account extends Entity<UniqueIdentifiers> {
    */
   public async getTransactionHistory(
     filters: {
-      blockId?: number;
+      blockNumber?: BigNumber;
       tag?: TxTag;
       success?: boolean;
       size?: number;
@@ -139,7 +134,7 @@ export class Account extends Entity<UniqueIdentifiers> {
   ): Promise<ResultSet<ExtrinsicData>> {
     const { context, address } = this;
 
-    const { blockId, tag, success, size, start, orderBy } = filters;
+    const { blockNumber, tag, success, size, start, orderBy } = filters;
 
     let moduleId;
     let callId;
@@ -150,7 +145,7 @@ export class Account extends Entity<UniqueIdentifiers> {
     /* eslint-disable @typescript-eslint/camelcase */
     const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
       transactions({
-        block_id: blockId,
+        block_id: blockNumber ? blockNumber.toNumber() : undefined,
         address: addressToKey(address),
         module_id: moduleId,
         call_id: callId,
@@ -185,7 +180,7 @@ export class Account extends Entity<UniqueIdentifiers> {
         // TODO remove null check once types fixed
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
         data.push({
-          blockId: block_id!,
+          blockNumber: new BigNumber(block_id!),
           extrinsicIdx: extrinsic_idx!,
           address: rawAddress ?? null,
           nonce: nonce!,
