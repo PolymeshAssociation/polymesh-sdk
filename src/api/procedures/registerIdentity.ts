@@ -3,20 +3,18 @@ import { IdentityId } from 'polymesh-types/types';
 
 import { Account, Identity } from '~/api/entities';
 import { Context, PostTransactionValue, Procedure } from '~/base';
-import { Role, RoleType, SigningKey } from '~/types';
+import { Role, RoleType, SecondaryKey } from '~/types';
 import {
-  dateToMoment,
   findEventRecord,
   identityIdToString,
+  secondaryKeyToMeshSecondaryKey,
   signerToString,
-  signingKeyToMeshSigningKey,
   stringToAccountId,
 } from '~/utils';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;
-  expiry?: Date;
-  signingKeys?: SigningKey[];
+  secondaryKeys?: SecondaryKey[];
 }
 
 /**
@@ -47,12 +45,11 @@ export async function prepareRegisterIdentity(
     },
     context,
   } = this;
-  const { targetAccount, expiry, signingKeys = [] } = args;
+  const { targetAccount, secondaryKeys = [] } = args;
 
   const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
-  const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
-  const rawSigningKeys = signingKeys.map(signingKey =>
-    signingKeyToMeshSigningKey(signingKey, context)
+  const rawSecondaryKeys = secondaryKeys.map(secondaryKey =>
+    secondaryKeyToMeshSecondaryKey(secondaryKey, context)
   );
 
   const [newIdentity] = this.addTransaction(
@@ -61,8 +58,7 @@ export async function prepareRegisterIdentity(
       resolvers: [createRegisterIdentityResolver(context)],
     },
     rawTargetAccount,
-    rawExpiry,
-    rawSigningKeys
+    rawSecondaryKeys
   );
 
   return newIdentity;

@@ -41,8 +41,8 @@ import {
   PosRatio,
   ProposalState as MeshProposalState,
   ProtocolOp,
+  SecondaryKey as MeshSecondaryKey,
   Signatory,
-  SigningKey as MeshSigningKey,
   Ticker,
   TxTag,
   TxTags,
@@ -77,8 +77,8 @@ import {
   Permission,
   Requirement,
   RequirementCompliance,
+  SecondaryKey,
   Signer,
-  SigningKey,
   SingleClaimCondition,
   TokenIdentifierType,
   TokenType,
@@ -392,17 +392,17 @@ export function meshPermissionToPermission(permission: MeshPermission): Permissi
  * @hidden
  */
 export function authorizationDataToAuthorization(auth: AuthorizationData): Authorization {
-  if (auth.isAttestMasterKeyRotation) {
+  if (auth.isAttestPrimaryKeyRotation) {
     return {
-      type: AuthorizationType.AttestMasterKeyRotation,
-      value: identityIdToString(auth.asAttestMasterKeyRotation),
+      type: AuthorizationType.AttestPrimaryKeyRotation,
+      value: identityIdToString(auth.asAttestPrimaryKeyRotation),
     };
   }
 
-  if (auth.isRotateMasterKey) {
+  if (auth.isRotatePrimaryKey) {
     return {
-      type: AuthorizationType.RotateMasterKey,
-      value: identityIdToString(auth.asRotateMasterKey),
+      type: AuthorizationType.RotatePrimaryKey,
+      value: identityIdToString(auth.asRotatePrimaryKey),
     };
   }
 
@@ -1468,14 +1468,14 @@ export function middlewareProposalToProposalDetails(
 /**
  * @hidden
  */
-export function signingKeyToMeshSigningKey(
-  signingKey: SigningKey,
+export function secondaryKeyToMeshSecondaryKey(
+  secondaryKey: SecondaryKey,
   context: Context
-): MeshSigningKey {
+): MeshSecondaryKey {
   const { polymeshApi } = context;
-  const { signer, permissions } = signingKey;
+  const { signer, permissions } = secondaryKey;
 
-  return polymeshApi.createType('SigningKey', {
+  return polymeshApi.createType('SecondaryKey', {
     signer: signerValueToSignatory(signerToSignerValue(signer), context),
     permissions: permissions.map(permission => permissionToMeshPermission(permission, context)),
   });

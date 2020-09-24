@@ -21,8 +21,8 @@ import {
   Authorization,
   AuthorizationType,
   ExtrinsicData,
+  SecondaryKey,
   SecurityTokenDetails,
-  SigningKey,
   TickerReservationDetails,
   TickerReservationStatus,
   TransferStatus,
@@ -54,11 +54,11 @@ interface IdentityOptions {
   hasRoles?: boolean;
   hasRole?: boolean;
   hasValidCdd?: boolean;
-  getMasterKey?: string;
+  getPrimaryKey?: string;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
-  getSigningKeys?: SigningKey[];
+  getSecondaryKeys?: SecondaryKey[];
 }
 
 interface TickerReservationOptions {
@@ -114,12 +114,12 @@ let securityTokenDetailsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
-let identityGetMasterKeyStub: SinonStub;
+let identityGetPrimaryKeyStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
-let currentIdentityGetMasterKeyStub: SinonStub;
-let currentIdentityGetSigningKeysStub: SinonStub;
+let currentIdentityGetPrimaryKeyStub: SinonStub;
+let currentIdentityGetSecondaryKeysStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -247,14 +247,14 @@ export const mockProposalModule = (path: string) => (): object => ({
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
-  getMasterKey: 'someAddress',
+  getPrimaryKey: 'someAddress',
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
-  getMasterKey: 'someAddress',
-  getSigningKeys: [],
+  getPrimaryKey: 'someAddress',
+  getSecondaryKeys: [],
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -459,7 +459,7 @@ function configureIdentity(opts: IdentityOptions): void {
     hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
-    getMasterKey: identityGetMasterKeyStub.resolves(opts.getMasterKey),
+    getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -477,7 +477,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRolesStub = sinon.stub();
   identityHasRoleStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
-  identityGetMasterKeyStub = sinon.stub();
+  identityGetPrimaryKeyStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -494,8 +494,8 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
     hasRoles: currentIdentityHasRolesStub.resolves(opts.hasRoles),
     hasRole: currentIdentityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: currentIdentityHasValidCddStub.resolves(opts.hasValidCdd),
-    getMasterKey: currentIdentityGetMasterKeyStub.resolves(opts.getMasterKey),
-    getSigningKeys: currentIdentityGetSigningKeysStub.resolves(opts.getSigningKeys),
+    getPrimaryKey: currentIdentityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
+    getSecondaryKeys: currentIdentityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
@@ -513,8 +513,8 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityHasRolesStub = sinon.stub();
   currentIdentityHasRoleStub = sinon.stub();
   currentIdentityHasValidCddStub = sinon.stub();
-  currentIdentityGetMasterKeyStub = sinon.stub();
-  currentIdentityGetSigningKeysStub = sinon.stub();
+  currentIdentityGetPrimaryKeyStub = sinon.stub();
+  currentIdentityGetSecondaryKeysStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
 
@@ -773,10 +773,10 @@ export function getIdentityHasValidCddStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `Identity.getMasterKey` method
+ * Retrieve the stub of the `Identity.getPrimaryKey` method
  */
-export function getIdentityGetMasterKeyStub(): SinonStub {
-  return identityGetMasterKeyStub;
+export function getIdentityGetPrimaryKeyStub(): SinonStub {
+  return identityGetPrimaryKeyStub;
 }
 
 /**
@@ -817,10 +817,10 @@ export function getCurrentIdentityHasValidCddStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `CurrentIdentity.getMasterKey` method
+ * Retrieve the stub of the `CurrentIdentity.getPrimaryKey` method
  */
-export function getCurrentIdentityGetMasterKeyStub(): SinonStub {
-  return currentIdentityGetMasterKeyStub;
+export function getCurrentIdentityGetPrimaryKeyStub(): SinonStub {
+  return currentIdentityGetPrimaryKeyStub;
 }
 
 /**

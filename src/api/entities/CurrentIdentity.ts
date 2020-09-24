@@ -1,38 +1,38 @@
 import { Identity } from '~/api/entities';
-import { inviteAccount, InviteAccountParams, removeSigningKeys } from '~/api/procedures';
+import { inviteAccount, InviteAccountParams, removeSecondaryKeys } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
-import { Signer, SigningKey, SubCallback, UnsubCallback } from '~/types';
+import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
 
 /**
  * Represents the Identity associated to the current [[Account]]
  */
 export class CurrentIdentity extends Identity {
   /**
-   * Get the list of signing keys related to the Identity
+   * Get the list of secondary keys related to the Identity
    *
    * @note can be subscribed to
    */
-  public async getSigningKeys(): Promise<SigningKey[]>;
-  public async getSigningKeys(callback: SubCallback<SigningKey[]>): Promise<UnsubCallback>;
+  public async getSecondaryKeys(): Promise<SecondaryKey[]>;
+  public async getSecondaryKeys(callback: SubCallback<SecondaryKey[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getSigningKeys(
-    callback?: SubCallback<SigningKey[]>
-  ): Promise<SigningKey[] | UnsubCallback> {
+  public async getSecondaryKeys(
+    callback?: SubCallback<SecondaryKey[]>
+  ): Promise<SecondaryKey[] | UnsubCallback> {
     const { context } = this;
 
     if (callback) {
-      return context.getSigningKeys(callback);
+      return context.getSecondaryKeys(callback);
     }
 
-    return context.getSigningKeys();
+    return context.getSecondaryKeys();
   }
 
   /**
-   * Remove a list of signing keys associated with the Identity
+   * Remove a list of secondary keys associated with the Identity
    */
-  public removeSigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
-    return removeSigningKeys.prepare(args, this.context);
+  public removeSecondaryKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
+    return removeSecondaryKeys.prepare(args, this.context);
   }
 
   /**

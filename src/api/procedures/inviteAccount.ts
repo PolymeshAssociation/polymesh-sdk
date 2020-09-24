@@ -37,19 +37,19 @@ export async function prepareInviteAccount(
 
   const currentIdentity = await context.getCurrentIdentity();
 
-  const [authorizationRequests, signingKeys] = await Promise.all([
+  const [authorizationRequests, secondaryKeys] = await Promise.all([
     currentIdentity.authorizations.getSent(),
-    context.getSigningKeys(),
+    context.getSecondaryKeys(),
   ]);
 
-  const isPresent = signingKeys
+  const isPresent = secondaryKeys
     .map(({ signer }) => signerToSignerValue(signer))
     .find(({ value }) => value === signerValue);
 
   if (isPresent) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You cannot add an account that is already present in your signing keys list',
+      message: 'You cannot add an account that is already present in your secondary keys list',
     });
   }
 

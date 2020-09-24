@@ -152,8 +152,8 @@ export interface TokenDocument {
  * Type of authorization request
  */
 export enum AuthorizationType {
-  AttestMasterKeyRotation = 'AttestMasterKeyRotation',
-  RotateMasterKey = 'RotateMasterKey',
+  AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
+  RotatePrimaryKey = 'RotatePrimaryKey',
   TransferTicker = 'TransferTicker',
   AddMultiSigSigner = 'AddMultiSigSigner',
   TransferAssetOwnership = 'TransferAssetOwnership',
@@ -465,7 +465,7 @@ export interface ProposalWithDetails {
   details: ProposalDetails;
 }
 
-export interface SigningKey {
+export interface SecondaryKey {
   signer: Signer;
   permissions: Permission[];
 }

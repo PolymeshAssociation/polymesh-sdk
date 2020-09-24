@@ -1,6 +1,6 @@
-import { AccountId, Moment } from '@polkadot/types/interfaces';
+import { AccountId } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
-import { SigningKey as MeshSigningKey } from 'polymesh-types/types';
+import { SecondaryKey as MeshSecondaryKey } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Identity } from '~/api/entities';
@@ -13,15 +13,17 @@ import {
 import { Context, PostTransactionValue } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Permission, RoleType, SigningKey } from '~/types';
+import { Permission, RoleType, SecondaryKey } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('registerIdentity procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let signingKeyToMeshSigningKeyStub: sinon.SinonStub<[SigningKey, Context], MeshSigningKey>;
+  let secondaryKeyToMeshSecondaryKeyStub: sinon.SinonStub<
+    [SecondaryKey, Context],
+    MeshSecondaryKey
+  >;
   let addTransactionStub: sinon.SinonStub;
   let registerIdentityTransaction: PolymeshTx<unknown[]>;
   let identity: PostTransactionValue<Identity>;
@@ -31,8 +33,7 @@ describe('registerIdentity procedure', () => {
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
     stringToAccountIdStub = sinon.stub(utilsModule, 'stringToAccountId');
-    dateToMomentStub = sinon.stub(utilsModule, 'dateToMoment');
-    signingKeyToMeshSigningKeyStub = sinon.stub(utilsModule, 'signingKeyToMeshSigningKey');
+    secondaryKeyToMeshSecondaryKeyStub = sinon.stub(utilsModule, 'secondaryKeyToMeshSecondaryKey');
     identity = ('identity' as unknown) as PostTransactionValue<Identity>;
   });
 
@@ -56,8 +57,7 @@ describe('registerIdentity procedure', () => {
 
   test('should add a cddRegisterIdentity transaction to the queue', async () => {
     const targetAccount = 'someAccount';
-    const expiry = new Date('10/10/2050');
-    const signingKeys = [
+    const secondaryKeys = [
       {
         signer: new Identity({ did: 'someValue' }, mockContext),
         permissions: [Permission.Full],
@@ -65,23 +65,22 @@ describe('registerIdentity procedure', () => {
     ];
     const args = {
       targetAccount,
-      expiry,
-      signingKeys,
+      secondaryKeys,
     };
     const rawAccountId = dsMockUtils.createMockAccountId(targetAccount);
-    const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
-    const rawSigningKey = dsMockUtils.createMockSigningKey({
+    const rawSecondaryKey = dsMockUtils.createMockSecondaryKey({
       signer: dsMockUtils.createMockSignatory({
-        Identity: dsMockUtils.createMockIdentityId(signingKeys[0].signer.did),
+        Identity: dsMockUtils.createMockIdentityId(secondaryKeys[0].signer.did),
       }),
-      permissions: [dsMockUtils.createMockPermission(signingKeys[0].permissions[0])],
+      permissions: [dsMockUtils.createMockPermission(secondaryKeys[0].permissions[0])],
     });
 
     const proc = procedureMockUtils.getInstance<RegisterIdentityParams, Identity>(mockContext);
 
     stringToAccountIdStub.withArgs(targetAccount, mockContext).returns(rawAccountId);
-    dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
-    signingKeyToMeshSigningKeyStub.withArgs(signingKeys[0], mockContext).returns(rawSigningKey);
+    secondaryKeyToMeshSecondaryKeyStub
+      .withArgs(secondaryKeys[0], mockContext)
+      .returns(rawSecondaryKey);
 
     let result = await prepareRegisterIdentity.call(proc, args);
 
@@ -92,8 +91,7 @@ describe('registerIdentity procedure', () => {
         resolvers: sinon.match.array,
       }),
       rawAccountId,
-      rawExpiry,
-      [rawSigningKey]
+      [rawSecondaryKey]
     );
     expect(result).toBe(identity);
 
@@ -106,7 +104,6 @@ describe('registerIdentity procedure', () => {
         resolvers: sinon.match.array,
       }),
       rawAccountId,
-      null,
       []
     );
     expect(result).toBe(identity);

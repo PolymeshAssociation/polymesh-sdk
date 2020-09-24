@@ -64,6 +64,7 @@ import {
   PosRatio,
   ProposalState,
   Scope,
+  SecondaryKey as MeshSecondaryKey,
   SecurityToken,
   Signatory,
   Ticker,
@@ -82,7 +83,7 @@ import {
   ExtrinsicData,
   KeyringPair,
   ResultSet,
-  SigningKey,
+  SecondaryKey,
 } from '~/types';
 import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
@@ -177,8 +178,8 @@ interface ContextOptions {
   transactionFee?: BigNumber;
   currentPairAddress?: string;
   issuedClaims?: ResultSet<ClaimData>;
-  masterKey?: string;
-  signingKeys?: SigningKey[];
+  primaryKey?: string;
+  secondaryKeys?: SecondaryKey[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
@@ -379,8 +380,8 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 1,
   },
-  masterKey: 'masterKey',
-  signingKeys: [],
+  primaryKey: 'primaryKey',
+  secondaryKeys: [],
   transactionHistory: {
     data: [],
     next: null,
@@ -414,8 +415,8 @@ function configureContext(opts: ContextOptions): void {
     hasRoles: sinon.stub().resolves(opts.hasRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-    getMasterKey: sinon.stub().resolves(opts.masterKey),
-    getSigningKeys: sinon.stub().resolves(opts.signingKeys),
+    getPrimaryKey: sinon.stub().resolves(opts.primaryKey),
+    getSecondaryKeys: sinon.stub().resolves(opts.secondaryKeys),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
@@ -465,7 +466,7 @@ function configureContext(opts: ContextOptions): void {
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
-    getSigningKeys: sinon.stub().returns(opts.signingKeys),
+    getSecondaryKeys: sinon.stub().returns(opts.secondaryKeys),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
@@ -1451,8 +1452,8 @@ export const createMockIdentifierType = (
  */
 export const createMockAuthorizationType = (
   authorizationType?:
-    | 'AttestMasterKeyRotation'
-    | 'RotateMasterKey'
+    | 'AttestPrimaryKeyRotation'
+    | 'RotatePrimaryKey'
     | 'TransferTicker'
     | 'AddMultiSigSigner'
     | 'TransferAssetOwnership'
@@ -1493,8 +1494,8 @@ export const createMockPermission = (
  */
 export const createMockAuthorizationData = (
   authorizationData?:
-    | { AttestMasterKeyRotation: IdentityId }
-    | { RotateMasterKey: IdentityId }
+    | { AttestPrimaryKeyRotation: IdentityId }
+    | { RotatePrimaryKey: IdentityId }
     | { TransferTicker: Ticker }
     | 'AddMultiSigSigner'
     | { TransferAssetOwnership: Ticker }
@@ -1689,13 +1690,13 @@ export const createMockAssetComplianceResult = (assetComplianceResult?: {
  */
 export const createMockDidRecord = (didRecord?: {
   roles: IdentityRole[];
-  master_key: AccountId;
-  signing_keys: MeshSigningKey[];
+  primary_key: AccountId;
+  secondary_keys: MeshSecondaryKey[];
 }): DidRecord => {
   const record = didRecord || {
     roles: [],
-    master_key: createMockAccountId(),
-    signing_items: [],
+    primary_key: createMockAccountId(),
+    secondary_items: [],
   };
 
   return createMockCodec(
@@ -1817,11 +1818,11 @@ export const createMockPipsMetadata = (metadata?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockSigningKey = (signingKey?: {
+export const createMockSecondaryKey = (secondaryKey?: {
   signer: Signatory;
   permissions: Permission[];
-}): MeshSigningKey => {
-  const key = signingKey || {
+}): MeshSecondaryKey => {
+  const key = secondaryKey || {
     signer: createMockSignatory(),
     permissions: [],
   };
@@ -1829,8 +1830,8 @@ export const createMockSigningKey = (signingKey?: {
     {
       ...key,
     },
-    !signingKey
-  ) as MeshSigningKey;
+    !secondaryKey
+  ) as MeshSecondaryKey;
 };
 
 /**

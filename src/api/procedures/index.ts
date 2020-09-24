@@ -15,7 +15,7 @@ export {
   ModifyTokenTrustedClaimIssuersParams,
 } from './modifyTokenTrustedClaimIssuers';
 export { registerIdentity, RegisterIdentityParams } from './registerIdentity';
-export { removeSigningKeys, RemoveSigningKeysParams } from './removeSigningKeys';
+export { removeSecondaryKeys, RemoveSecondaryKeysParams } from './removeSecondaryKeys';
 export { reserveTicker, ReserveTickerParams } from './reserveTicker';
 export { setTokenDocuments, SetTokenDocumentsParams } from './setTokenDocuments';
 export { setAssetRequirements, SetAssetRequirementsParams } from './setAssetRequirements';

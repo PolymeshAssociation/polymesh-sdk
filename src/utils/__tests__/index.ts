@@ -103,13 +103,13 @@ import {
   requestAtBlock,
   requestPaginated,
   requirementToComplianceRequirement,
+  secondaryKeyToMeshSecondaryKey,
   serialize,
   signatoryToSignerValue,
   signerToSignerValue,
   signerToString,
   signerValueToSignatory,
   signerValueToSigner,
-  signingKeyToMeshSigningKey,
   stringToAccountId,
   stringToAssetIdentifier,
   stringToAssetName,
@@ -1375,7 +1375,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   test('authorizationToAuthorizationData should convert an Authorization to a polkadot AuthorizationData object', () => {
     const context = dsMockUtils.getContextInstance();
     let value: Authorization = {
-      type: AuthorizationType.AttestMasterKeyRotation,
+      type: AuthorizationType.AttestPrimaryKeyRotation,
       value: 'someIdentity',
     };
     const fakeResult = ('AuthorizationDataEnum' as unknown) as AuthorizationData;
@@ -1405,22 +1405,22 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
   test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {
     let fakeResult: Authorization = {
-      type: AuthorizationType.AttestMasterKeyRotation,
+      type: AuthorizationType.AttestPrimaryKeyRotation,
       value: 'someIdentity',
     };
     let authorizationData = dsMockUtils.createMockAuthorizationData({
-      AttestMasterKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
+      AttestPrimaryKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     let result = authorizationDataToAuthorization(authorizationData);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
-      type: AuthorizationType.RotateMasterKey,
+      type: AuthorizationType.RotatePrimaryKey,
       value: 'someIdentity',
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
-      RotateMasterKey: dsMockUtils.createMockIdentityId(fakeResult.value),
+      RotatePrimaryKey: dsMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -2698,7 +2698,7 @@ describe('middlewareProposalToProposalDetails', () => {
   });
 });
 
-describe('signingKeyToMeshSigningKey', () => {
+describe('secondaryKeyToMeshSecondaryKey', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -2714,32 +2714,32 @@ describe('signingKeyToMeshSigningKey', () => {
     entityMockUtils.cleanup();
   });
 
-  test('signingKeyToMeshSigningKey should convert a SigningKey to a polkadot SigningKey', () => {
+  test('secondaryKeyToMeshSecondaryKey should convert a SecondaryKey to a polkadot SecondaryKey', () => {
     const address = 'someAccount';
     const context = dsMockUtils.getContextInstance();
-    const signingKey = {
+    const secondaryKey = {
       signer: entityMockUtils.getAccountInstance(),
       permissions: [Permission.Full],
     };
     const mockAccountId = dsMockUtils.createMockAccountId(address);
     const mockSignatory = dsMockUtils.createMockSignatory({ Account: mockAccountId });
-    const mockPermission = dsMockUtils.createMockPermission(signingKey.permissions[0]);
-    const fakeResult = dsMockUtils.createMockSigningKey({
+    const mockPermission = dsMockUtils.createMockPermission(secondaryKey.permissions[0]);
+    const fakeResult = dsMockUtils.createMockSecondaryKey({
       signer: mockSignatory,
       permissions: [mockPermission],
     });
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('SigningKey', {
+      .withArgs('SecondaryKey', {
         signer: signerValueToSignatory({ type: SignerType.Account, value: address }, context),
-        permissions: signingKey.permissions.map(permission =>
+        permissions: secondaryKey.permissions.map(permission =>
           permissionToMeshPermission(permission, context)
         ),
       })
       .returns(fakeResult);
 
-    const result = signingKeyToMeshSigningKey(signingKey, context);
+    const result = secondaryKeyToMeshSecondaryKey(secondaryKey, context);
 
     expect(result).toEqual(fakeResult);
   });

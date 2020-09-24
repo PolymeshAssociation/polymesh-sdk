@@ -10,7 +10,7 @@ import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
-import { ClaimType, Permission, Signer, SigningKey, TransactionArgumentType } from '~/types';
+import { ClaimType, Permission, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -563,13 +563,13 @@ describe('Context class', () => {
         multi: [
           dsMockUtils.createMockDidRecord({
             roles: [],
-            master_key: createMockAccountId('someId'),
-            signing_keys: [],
+            primary_key: createMockAccountId('someId'),
+            secondary_keys: [],
           }),
           dsMockUtils.createMockDidRecord({
             roles: [],
-            master_key: createMockAccountId('otherId'),
-            signing_keys: [],
+            primary_key: createMockAccountId('otherId'),
+            secondary_keys: [],
           }),
           dsMockUtils.createMockDidRecord(),
           dsMockUtils.createMockDidRecord(),
@@ -668,7 +668,7 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: getSigningKeys', () => {
+  describe('method: getSecondaryKeys', () => {
     const did = 'someDid';
     const accountId = 'someAccountId';
     const signerValues = [
@@ -684,7 +684,7 @@ describe('Context class', () => {
 
     let identity: Identity;
     let account: Account;
-    let fakeResult: SigningKey[];
+    let fakeResult: SecondaryKey[];
 
     let signatoryToSignerValueStub: sinon.SinonStub<[Signatory], SignerValue>;
     let signerValueToSignerStub: sinon.SinonStub<[SignerValue, Context], Signer>;
@@ -720,13 +720,13 @@ describe('Context class', () => {
       /* eslint-disable @typescript-eslint/camelcase */
       rawDidRecord = dsMockUtils.createMockDidRecord({
         roles: [],
-        master_key: dsMockUtils.createMockAccountId(),
-        signing_keys: [
-          dsMockUtils.createMockSigningKey({
+        primary_key: dsMockUtils.createMockAccountId(),
+        secondary_keys: [
+          dsMockUtils.createMockSecondaryKey({
             signer: signerIdentityId,
             permissions: [],
           }),
-          dsMockUtils.createMockSigningKey({
+          dsMockUtils.createMockSecondaryKey({
             signer: signerAccountId,
             permissions: [dsMockUtils.createMockPermission('Full')],
           }),
@@ -760,7 +760,7 @@ describe('Context class', () => {
 
       didRecordsStub.returns(rawDidRecord);
 
-      const result = await context.getSigningKeys();
+      const result = await context.getSecondaryKeys();
       expect(result).toEqual(fakeResult);
     });
 
@@ -779,7 +779,7 @@ describe('Context class', () => {
       });
 
       const callback = sinon.stub();
-      const result = await context.getSigningKeys(callback);
+      const result = await context.getSecondaryKeys(callback);
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeResult);
