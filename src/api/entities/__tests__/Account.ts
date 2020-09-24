@@ -107,15 +107,15 @@ describe('Account class', () => {
       });
 
       const result = await account.getIdentity();
-      expect(result.did).toBe(did);
+      expect(result?.did).toBe(did);
     });
 
-    test('should throw an error if there is no Identity associated to the Account', () => {
+    test('should return null if there is no Identity associated to the Account', async () => {
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').throws();
 
-      return expect(account.getIdentity()).rejects.toThrow(
-        'The current account does not have an associated Identity'
-      );
+      const result = await account.getIdentity();
+
+      expect(result).toBe(null);
     });
   });
 
@@ -124,6 +124,8 @@ describe('Account class', () => {
       const tag = TxTags.identity.CddRegisterDid;
       const moduleId = ModuleIdEnum.Identity;
       const callId = CallIdEnum.CddRegisterDid;
+      const blockNumber1 = new BigNumber(1);
+      const blockNumber2 = new BigNumber(2);
 
       sinon
         .stub(utilsModule, 'txTagToExtrinsicIdentifier')
@@ -138,12 +140,12 @@ describe('Account class', () => {
         totalCount: 20,
         items: [
           {
-            block_id: 1,
+            block_id: blockNumber1.toNumber(),
             address: address,
             success: 0,
           },
           {
-            block_id: 2,
+            block_id: blockNumber2.toNumber(),
             success: 1,
           },
         ],
@@ -155,7 +157,7 @@ describe('Account class', () => {
 
       dsMockUtils.createApolloQueryStub(
         transactions({
-          block_id: undefined,
+          block_id: blockNumber1.toNumber(),
           address: key,
           module_id: moduleId,
           call_id: callId,
@@ -170,13 +172,14 @@ describe('Account class', () => {
       );
 
       let result = await account.getTransactionHistory({
+        blockNumber: blockNumber1,
         tag,
         size: 2,
         start: 1,
       });
 
-      expect(result.data[0].blockId).toEqual(1);
-      expect(result.data[1].blockId).toEqual(2);
+      expect(result.data[0].blockNumber).toEqual(blockNumber1);
+      expect(result.data[1].blockNumber).toEqual(blockNumber2);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[1].address).toBeNull();
       expect(result.data[0].success).toBeFalsy();
@@ -202,7 +205,7 @@ describe('Account class', () => {
 
       result = await account.getTransactionHistory();
 
-      expect(result.data[0].blockId).toEqual(1);
+      expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[0].success).toBeFalsy();
       expect(result.count).toEqual(20);
