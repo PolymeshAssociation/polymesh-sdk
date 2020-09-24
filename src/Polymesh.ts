@@ -44,7 +44,7 @@ import {
 } from '~/utils';
 
 import { Claims } from './Claims';
-import { Governance } from './Governance';
+// import { Governance } from './Governance';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
@@ -69,7 +69,9 @@ export class Polymesh {
   private context: Context = {} as Context;
 
   // Namespaces
-  public governance: Governance;
+
+  // NOTE uncomment in Governance v2 upgrade
+  // public governance: Governance;
   public claims: Claims;
 
   /**
@@ -78,7 +80,8 @@ export class Polymesh {
   private constructor(context: Context) {
     this.context = context;
 
-    this.governance = new Governance(context);
+    // NOTE uncomment in Governance v2 upgrade
+    // this.governance = new Governance(context);
     this.claims = new Claims(context);
   }
 

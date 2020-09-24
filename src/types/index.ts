@@ -3,8 +3,9 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
-import { Account, Identity, Proposal } from '~/api/entities';
-import { ProposalDetails } from '~/api/entities/Proposal/types';
+// NOTE uncomment in Governance v2 upgrade
+import { Account, Identity /*, Proposal */ } from '~/api/entities';
+// import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { CountryCode } from '~/generated/types';
 
 export * from '~/generated/types';
@@ -464,10 +465,11 @@ export type TransactionArgument = {
 
 export type Signer = Identity | Account;
 
-export interface ProposalWithDetails {
-  proposal: Proposal;
-  details: ProposalDetails;
-}
+// NOTE uncomment in Governance v2 upgrade
+// export interface ProposalWithDetails {
+//   proposal: Proposal;
+//   details: ProposalDetails;
+// }
 
 export interface SecondaryKey {
   signer: Signer;
