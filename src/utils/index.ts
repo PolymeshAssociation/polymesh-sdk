@@ -36,7 +36,6 @@ import {
   IdentifierType,
   IdentityId,
   IssueAssetItem,
-  JurisdictionName,
   Permission as MeshPermission,
   PosRatio,
   ProposalState as MeshProposalState,
@@ -51,6 +50,7 @@ import {
 import { Account, Identity } from '~/api/entities';
 import { ProposalDetails, ProposalState } from '~/api/entities/Proposal/types';
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
+import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   CallIdEnum,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
@@ -65,6 +65,7 @@ import {
   Condition,
   ConditionTarget,
   ConditionType,
+  CountryCode,
   ErrorCode,
   IdentityWithClaims,
   isMultiClaimCondition,
@@ -106,6 +107,7 @@ import {
 } from '~/utils/constants';
 
 export { cryptoWaitReady } from '@polkadot/util-crypto';
+export * from '~/generated/utils';
 
 /**
  * @hidden
@@ -791,20 +793,6 @@ export function canTransferResultToTransferStatus(
 /**
  * @hidden
  */
-export function stringToJurisdictionName(name: string, context: Context): JurisdictionName {
-  return context.polymeshApi.createType('JurisdictionName', name);
-}
-
-/**
- * @hidden
- */
-export function jurisdictionNameToString(name: JurisdictionName): string {
-  return name.toString();
-}
-
-/**
- * @hidden
- */
 export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
   let value: unknown;
 
@@ -815,7 +803,7 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
       break;
     }
     case ClaimType.Jurisdiction: {
-      value = tuple(claim.name, claim.scope);
+      value = tuple(claim.code, claim.scope);
       break;
     }
     default: {
@@ -838,7 +826,8 @@ export function createClaim(
   if (type === ClaimType.Jurisdiction) {
     return {
       type,
-      name: jurisdiction as string,
+      // this assertion is necessary because CountryCode is not in the middleware types
+      code: jurisdiction as CountryCode,
       scope: scope as string,
     };
   } else if (type !== ClaimType.NoData && type !== ClaimType.CustomerDueDiligence) {
@@ -856,10 +845,10 @@ export function createClaim(
  */
 export function meshClaimToClaim(claim: MeshClaim): Claim {
   if (claim.isJurisdiction) {
-    const [name, scope] = claim.asJurisdiction;
+    const [code, scope] = claim.asJurisdiction;
     return {
       type: ClaimType.Jurisdiction,
-      name: jurisdictionNameToString(name),
+      code: meshCountryCodeToCountryCode(code),
       scope: identityIdToString(scope),
     };
   }

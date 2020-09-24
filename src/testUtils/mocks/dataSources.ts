@@ -46,6 +46,7 @@ import {
   ComplianceRequirementResult,
   Condition,
   ConditionType,
+  CountryCode,
   DidRecord,
   Document,
   DocumentHash,
@@ -80,6 +81,7 @@ import {
   AccountBalance,
   ClaimData,
   ClaimType,
+  CountryCode as CountryCodeEnum,
   ExtrinsicData,
   KeyringPair,
   ResultSet,
@@ -1560,8 +1562,8 @@ export const createMockCddStatus = (cddStatus?: { Ok: IdentityId } | { Err: Byte
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockJurisdictionName = (name?: string): JurisdictionName =>
-  createMockStringCodec(name) as JurisdictionName;
+export const createMockCountryCode = (name?: CountryCodeEnum): CountryCode =>
+  createMockEnum(name) as CountryCode;
 
 /**
  * @hidden
@@ -1575,7 +1577,7 @@ export const createMockClaim = (
     | { SellLockup: Scope }
     | 'CustomerDueDiligence'
     | { KnowYourCustomer: Scope }
-    | { Jurisdiction: [JurisdictionName, Scope] }
+    | { Jurisdiction: [CountryCode, Scope] }
     | { Exempted: Scope }
     | { Blocked: Scope }
     | 'NoData'
