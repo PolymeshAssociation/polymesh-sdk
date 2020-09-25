@@ -4,7 +4,7 @@
 
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { Signer } from '@polkadot/api/types';
-import { bool, Bytes, Compact, Enum, Option, Text, u8, u32, u64 } from '@polkadot/types';
+import { bool, Bytes, Compact, Enum, Option, Text, u8, U8aFixed, u32, u64 } from '@polkadot/types';
 import { CompactEncodable } from '@polkadot/types/codec/Compact';
 import {
   AccountData,
@@ -40,6 +40,7 @@ import {
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
+  CddId,
   CddStatus,
   Claim,
   ComplianceRequirement,
@@ -53,7 +54,6 @@ import {
   DocumentName,
   DocumentUri,
   FundingRoundName,
-  IdentifierType,
   IdentityId,
   IdentityRole,
   IssueAssetItem,
@@ -1442,16 +1442,6 @@ export const createMockAuthIdentifier = (authIdentifier?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockIdentifierType = (
-  identifierType?: 'Isin' | 'Cusip' | 'Cins' | 'Dti'
-): IdentifierType => {
-  return createMockEnum(identifierType) as IdentifierType;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockAuthorizationType = (
   authorizationType?:
     | 'AttestPrimaryKeyRotation'
@@ -1470,8 +1460,16 @@ export const createMockAuthorizationType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockAssetIdentifier = (identifier?: string): AssetIdentifier =>
-  createMockStringCodec(identifier) as AssetIdentifier;
+export const createMockU8aFixed = (value?: string): U8aFixed =>
+  createMockU8ACodec(value) as U8aFixed;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetIdentifier = (
+  identifier?: { Isin: U8aFixed } | { Cusip: U8aFixed } | { Cins: U8aFixed } | { Lei: U8aFixed }
+): AssetIdentifier => createMockEnum(identifier) as AssetIdentifier;
 
 /**
  * @hidden
@@ -1569,13 +1567,27 @@ export const createMockCountryCode = (name?: CountryCodeEnum): CountryCode =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockScope = (
+  scope?: { Identity: IdentityId } | { Ticker: Ticker } | { Custom: Bytes }
+): Scope => createMockEnum(scope) as Scope;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCddId = (cddId?: string): CddId => createMockStringCodec(cddId) as CddId;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockClaim = (
   claim?:
     | { Accredited: Scope }
     | { Affiliate: Scope }
     | { BuyLockup: Scope }
     | { SellLockup: Scope }
-    | 'CustomerDueDiligence'
+    | { CustomerDueDiligence: CddId }
     | { KnowYourCustomer: Scope }
     | { Jurisdiction: [CountryCode, Scope] }
     | { Exempted: Scope }
@@ -1708,12 +1720,6 @@ export const createMockDidRecord = (didRecord?: {
     !didRecord
   ) as DidRecord;
 };
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockScope = (did?: string): Scope => createMockStringCodec(did) as Scope;
 
 /**
  * @hidden

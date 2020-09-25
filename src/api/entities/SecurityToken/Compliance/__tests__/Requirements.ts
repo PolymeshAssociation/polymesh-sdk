@@ -8,7 +8,7 @@ import { Params, setAssetRequirements } from '~/api/procedures/setAssetRequireme
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, ConditionTarget, ConditionType, Requirement } from '~/types';
+import { ClaimType, ConditionTarget, ConditionType, Requirement, ScopeType } from '~/types';
 import * as utilsModule from '~/utils';
 
 import { Requirements } from '../Requirements';
@@ -48,7 +48,7 @@ describe('Requirements class', () => {
               type: ConditionType.IsPresent,
               claim: {
                 type: ClaimType.Exempted,
-                scope: 'someTokenDid',
+                scope: { type: ScopeType.Ticker, value: 'someTicker' },
               },
               target: ConditionTarget.Both,
             },
@@ -56,7 +56,7 @@ describe('Requirements class', () => {
               type: ConditionType.IsAbsent,
               claim: {
                 type: ClaimType.Blocked,
-                scope: 'someTokenDid',
+                scope: { type: ScopeType.Ticker, value: 'someTicker' },
               },
               target: ConditionTarget.Both,
             },
@@ -108,6 +108,7 @@ describe('Requirements class', () => {
     let defaultClaimIssuers: string[];
     let notDefaultClaimIssuer: string;
     let tokenDid: string;
+    let cddId: string;
 
     let expected: Requirement[];
 
@@ -122,12 +123,15 @@ describe('Requirements class', () => {
       defaultClaimIssuers = ['defaultissuer'];
       notDefaultClaimIssuer = 'notDefaultClaimIssuer';
       tokenDid = 'someTokenDid';
+      cddId = 'someCddId';
       dsMockUtils.createQueryStub('complianceManager', 'assetCompliances');
       dsMockUtils.createQueryStub('complianceManager', 'trustedClaimIssuer');
 
       queryMultiStub = dsMockUtils.getQueryMultiStub();
 
-      const scope = dsMockUtils.createMockScope(tokenDid);
+      const scope = dsMockUtils.createMockScope({
+        Identity: dsMockUtils.createMockIdentityId(tokenDid),
+      });
       const conditionForBoth = dsMockUtils.createMockCondition({
         // eslint-disable-next-line @typescript-eslint/camelcase
         condition_type: dsMockUtils.createMockConditionType({
@@ -135,7 +139,9 @@ describe('Requirements class', () => {
             dsMockUtils.createMockClaim({
               KnowYourCustomer: scope,
             }),
-            dsMockUtils.createMockClaim('CustomerDueDiligence'),
+            dsMockUtils.createMockClaim({
+              CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+            }),
           ],
         }),
         issuers: [],
@@ -189,7 +195,7 @@ describe('Requirements class', () => {
               type: ConditionType.IsPresent,
               claim: {
                 type: ClaimType.Exempted,
-                scope: tokenDid,
+                scope: { type: ScopeType.Identity, value: tokenDid },
               },
               trustedClaimIssuers: [notDefaultClaimIssuer],
             },
@@ -204,9 +210,9 @@ describe('Requirements class', () => {
               claims: [
                 {
                   type: ClaimType.KnowYourCustomer,
-                  scope: tokenDid,
+                  scope: { type: ScopeType.Identity, value: tokenDid },
                 },
-                { type: ClaimType.CustomerDueDiligence },
+                { type: ClaimType.CustomerDueDiligence, id: cddId },
               ],
               trustedClaimIssuers: defaultClaimIssuers,
             },
@@ -215,7 +221,7 @@ describe('Requirements class', () => {
               type: ConditionType.IsAbsent,
               claim: {
                 type: ClaimType.Blocked,
-                scope: tokenDid,
+                scope: { type: ScopeType.Identity, value: tokenDid },
               },
               trustedClaimIssuers: defaultClaimIssuers,
             },

@@ -93,7 +93,6 @@ import {
   DocumentName,
   FundingRoundName,
   Fundraiser,
-  IdentifierType,
   IdentityClaim,
   IdentityId,
   InactiveMember,
@@ -136,21 +135,6 @@ declare module '@polkadot/api/types/storage' {
   export interface AugmentedQueries<ApiType> {
     asset: {
       /**
-       * (ticker, sender (DID), spender(DID)) -> allowance amount
-       **/
-      allowance: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentityId | string | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<Balance>
-      >;
-      /**
        * Documents attached to an Asset
        * (ticker, document_name) -> document
        **/
@@ -168,22 +152,6 @@ declare module '@polkadot/api/types/storage' {
           key1: IdentityId | string | Uint8Array,
           key2: Ticker | string | Uint8Array
         ) => Observable<AssetOwnershipRelation>
-      >;
-      /**
-       * Store the nonce for off chain signature to increase the custody allowance.
-       * (ticker, token holder, nonce) -> bool
-       **/
-      authenticationNonce: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId, u16]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentityId | string | Uint8Array,
-                u16 | AnyNumber | Uint8Array
-              ]
-        ) => Observable<bool>
       >;
       /**
        * The total asset ticker balance per identity.
@@ -228,22 +196,6 @@ declare module '@polkadot/api/types/storage' {
       classicTickers: AugmentedQuery<
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<Option<ClassicTickerRegistration>>
-      >;
-      /**
-       * Allowance provided to the custodian.
-       * (ticker, token holder, custodian) -> balance
-       **/
-      custodianAllowance: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentityId | string | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<Balance>
       >;
       /**
        * List of Smart extension added for the given tokens.
@@ -293,18 +245,11 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<FundingRoundName>
       >;
       /**
-       * A map of pairs of a ticker name and an `IdentifierType` to asset identifiers.
+       * A map of a ticker name and asset identifiers.
        **/
       identifiers: AugmentedQuery<
         ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentifierType]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentifierType | 'Cins' | 'Cusip' | 'Isin' | 'Dti' | number | Uint8Array
-              ]
-        ) => Observable<AssetIdentifier>
+        (arg: Ticker | string | Uint8Array) => Observable<Vec<AssetIdentifier>>
       >;
       /**
        * The total balances of tokens issued in all recorded funding rounds.
@@ -346,18 +291,6 @@ declare module '@polkadot/api/types/storage' {
       totalCheckpoints: AugmentedQuery<
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<u64>
-      >;
-      /**
-       * Total custodian allowance for a given token holder.
-       * (ticker, token holder) -> balance
-       **/
-      totalCustodyAllowance: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId]>
-            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
-        ) => Observable<Balance>
       >;
       /**
        * Last checkpoint updated for a DID's balance.
@@ -1183,6 +1116,26 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
+       * The custodian of a particular portfolio. None implies that the identity owner is the custodian.
+       **/
+      portfolioCustodian: AugmentedQuery<
+        ApiType,
+        (
+          arg: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
+        ) => Observable<Option<IdentityId>>
+      >;
+      /**
+       * Amount of assets locked in a portfolio.
+       * These assets show up in portfolio balance but can not be transferred away.
+       **/
+      portfolioLockedAssets: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          key2: Ticker | string | Uint8Array
+        ) => Observable<Balance>
+      >;
+      /**
        * The set of existing portfolios with their names. If a certain pair of a DID and
        * portfolio number maps to `None` then such a portfolio doesn't exist. Conversely, if a
        * pair maps to `Some(name)` then such a portfolio exists and is called `name`.
@@ -1192,7 +1145,7 @@ declare module '@polkadot/api/types/storage' {
         (
           key1: IdentityId | string | Uint8Array,
           key2: PortfolioNumber | AnyNumber | Uint8Array
-        ) => Observable<Option<PortfolioName>>
+        ) => Observable<PortfolioName>
       >;
     };
     protocolFee: {
@@ -1286,7 +1239,7 @@ declare module '@polkadot/api/types/storage' {
         ApiType,
         (
           key1: u64 | AnyNumber | Uint8Array,
-          key2: IdentityId | string | Uint8Array
+          key2: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
         ) => Observable<AuthorizationStatus>
       >;
       /**
@@ -1349,9 +1302,16 @@ declare module '@polkadot/api/types/storage' {
       userAuths: AugmentedQueryDoubleMap<
         ApiType,
         (
-          key1: IdentityId | string | Uint8Array,
+          key1: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           key2: u64 | AnyNumber | Uint8Array
         ) => Observable<AuthorizationStatus>
+      >;
+      /**
+       * Array of venues created by an identity. Only needed for the UI. IdentityId -> Vec<venue_id>
+       **/
+      userVenues: AugmentedQuery<
+        ApiType,
+        (arg: IdentityId | string | Uint8Array) => Observable<Vec<u64>>
       >;
       /**
        * Venues that are allowed to create instructions involving a particular ticker. Oly used if filtering is enabled.

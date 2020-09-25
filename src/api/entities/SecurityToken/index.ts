@@ -1,4 +1,4 @@
-import { AssetIdentifier, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
+import { SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import { Entity, Identity } from '~/api/entities';
 import {
@@ -10,16 +10,9 @@ import {
 import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Ensured, EventIdentifier, SubCallback, TokenIdentifier, UnsubCallback } from '~/types';
 import {
-  Ensured,
-  EventIdentifier,
-  SubCallback,
-  TokenIdentifier,
-  TokenIdentifierType,
-  UnsubCallback,
-} from '~/types';
-import {
-  assetIdentifierToString,
+  assetIdentifierToTokenIdentifier,
   assetNameToString,
   assetTypeToString,
   balanceToBigNumber,
@@ -27,8 +20,8 @@ import {
   fundingRoundNameToString,
   identityIdToString,
   padString,
+  stringToTicker,
   tickerToDid,
-  tokenIdentifierTypeToIdentifierType,
 } from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
@@ -232,28 +225,17 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const tokenIdentifierTypes = Object.values(TokenIdentifierType);
-
-    const assembleResult = (identifiers: AssetIdentifier[]): TokenIdentifier[] =>
-      tokenIdentifierTypes.map((type, i) => ({
-        type,
-        value: assetIdentifierToString(identifiers[i]),
-      }));
-
-    const identifierTypes = tokenIdentifierTypes.map(type => [
-      ticker,
-      tokenIdentifierTypeToIdentifierType(type, context),
-    ]);
+    const rawTicker = stringToTicker(ticker, context);
 
     if (callback) {
-      return asset.identifiers.multi<AssetIdentifier>(identifierTypes, identifiers => {
-        callback(assembleResult(identifiers));
+      return asset.identifiers(rawTicker, identifiers => {
+        callback(identifiers.map(assetIdentifierToTokenIdentifier));
       });
     }
 
-    const assetIdentifiers = await asset.identifiers.multi<AssetIdentifier>(identifierTypes);
+    const assetIdentifiers = await asset.identifiers(rawTicker);
 
-    return assembleResult(assetIdentifiers);
+    return assetIdentifiers.map(assetIdentifierToTokenIdentifier);
   }
 
   /**

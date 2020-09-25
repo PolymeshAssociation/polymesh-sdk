@@ -17,7 +17,7 @@ import { Context } from '~/base';
 import { didsWithClaims } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Claim, ClaimType, RoleType } from '~/types';
+import { Claim, ClaimType, RoleType, ScopeType } from '~/types';
 import { ClaimOperation, PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -58,8 +58,11 @@ describe('modifyClaims procedure', () => {
 
     someDid = 'someDid';
     otherDid = 'otherDid';
-    cddClaim = { type: ClaimType.CustomerDueDiligence };
-    buyLockupClaim = { type: ClaimType.BuyLockup, scope: 'someIdentityId' };
+    cddClaim = { type: ClaimType.CustomerDueDiligence, id: 'someId' };
+    buyLockupClaim = {
+      type: ClaimType.BuyLockup,
+      scope: { type: ScopeType.Identity, value: 'someIdentityId' },
+    };
     expiry = new Date();
     args = {
       claims: [
@@ -80,9 +83,11 @@ describe('modifyClaims procedure', () => {
       operation: ClaimOperation.Add,
     };
 
-    rawCddClaim = dsMockUtils.createMockClaim('CustomerDueDiligence');
+    rawCddClaim = dsMockUtils.createMockClaim({
+      CustomerDueDiligence: dsMockUtils.createMockCddId(),
+    });
     rawBuyLockupClaim = dsMockUtils.createMockClaim({
-      BuyLockup: dsMockUtils.createMockIdentityId(),
+      BuyLockup: dsMockUtils.createMockScope(),
     });
     rawSomeDid = dsMockUtils.createMockIdentityId(someDid);
     rawOtherDid = dsMockUtils.createMockIdentityId(otherDid);
@@ -306,7 +311,10 @@ describe('getRequiredRoles', () => {
       claims: [
         {
           target: 'someDid',
-          claim: { type: ClaimType.Accredited, scope: 'someIdentityId' },
+          claim: {
+            type: ClaimType.Accredited,
+            scope: { type: ScopeType.Identity, value: 'someIdentityId' },
+          },
         },
       ],
     } as ModifyClaimsParams;

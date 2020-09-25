@@ -602,13 +602,22 @@ export class Context {
 
     didsWithClaimsList.forEach(({ claims }) => {
       claims.forEach(
-        ({ targetDID, issuer, issuance_date: issuanceDate, expiry, type, jurisdiction, scope }) => {
+        ({
+          targetDID,
+          issuer,
+          issuance_date: issuanceDate,
+          expiry,
+          type,
+          jurisdiction,
+          scope,
+          cddId,
+        }) => {
           data.push({
             target: new Identity({ did: targetDID }, this),
             issuer: new Identity({ did: issuer }, this),
             issuedAt: new Date(issuanceDate),
             expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, scope),
+            claim: createClaim(type, jurisdiction, scope, cddId),
           });
         }
       );

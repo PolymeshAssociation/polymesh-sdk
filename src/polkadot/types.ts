@@ -16,6 +16,11 @@ export enum SystemTx {
   Suicide = 'system.suicide',
 }
 
+export enum BabeTx {
+  ReportEquivocation = 'babe.reportEquivocation',
+  ReportEquivocationUnsigned = 'babe.reportEquivocationUnsigned',
+}
+
 export enum TimestampTx {
   Set = 'timestamp.set',
 }
@@ -85,6 +90,8 @@ export enum FinalityTrackerTx {
 
 export enum GrandpaTx {
   ReportEquivocation = 'grandpa.reportEquivocation',
+  ReportEquivocationUnsigned = 'grandpa.reportEquivocationUnsigned',
+  NoteStalled = 'grandpa.noteStalled',
 }
 
 export enum ImOnlineTx {
@@ -217,24 +224,11 @@ export enum AssetTx {
   Freeze = 'asset.freeze',
   Unfreeze = 'asset.unfreeze',
   RenameAsset = 'asset.renameAsset',
-  Transfer = 'asset.transfer',
-  ControllerTransfer = 'asset.controllerTransfer',
-  Approve = 'asset.approve',
-  TransferFrom = 'asset.transferFrom',
   CreateCheckpoint = 'asset.createCheckpoint',
   Issue = 'asset.issue',
-  Redeem = 'asset.redeem',
-  RedeemFrom = 'asset.redeemFrom',
-  ControllerRedeem = 'asset.controllerRedeem',
   MakeDivisible = 'asset.makeDivisible',
-  TransferWithData = 'asset.transferWithData',
-  TransferFromWithData = 'asset.transferFromWithData',
-  IsIssuable = 'asset.isIssuable',
   BatchAddDocument = 'asset.batchAddDocument',
   BatchRemoveDocument = 'asset.batchRemoveDocument',
-  IncreaseCustodyAllowance = 'asset.increaseCustodyAllowance',
-  IncreaseCustodyAllowanceOf = 'asset.increaseCustodyAllowanceOf',
-  TransferByCustodian = 'asset.transferByCustodian',
   SetFundingRound = 'asset.setFundingRound',
   UpdateIdentifiers = 'asset.updateIdentifiers',
   AddExtension = 'asset.addExtension',
@@ -336,6 +330,7 @@ export enum ExemptionTx {
 
 export enum SettlementTx {
   CreateVenue = 'settlement.createVenue',
+  UpdateVenue = 'settlement.updateVenue',
   AddInstruction = 'settlement.addInstruction',
   AddAndAuthorizeInstruction = 'settlement.addAndAuthorizeInstruction',
   AuthorizeInstruction = 'settlement.authorizeInstruction',
@@ -379,7 +374,7 @@ export enum UtilityTx {
 export enum PortfolioTx {
   CreatePortfolio = 'portfolio.createPortfolio',
   DeletePortfolio = 'portfolio.deletePortfolio',
-  MovePortfolio = 'portfolio.movePortfolio',
+  MovePortfolioFunds = 'portfolio.movePortfolioFunds',
   RenamePortfolio = 'portfolio.renamePortfolio',
 }
 
@@ -390,6 +385,7 @@ export enum ConfidentialTx {
 
 export type TxTag =
   | SystemTx
+  | BabeTx
   | TimestampTx
   | IndicesTx
   | BalancesTx
@@ -428,6 +424,7 @@ export type TxTag =
 
 export const TxTags = {
   system: SystemTx,
+  babe: BabeTx,
   timestamp: TimestampTx,
   indices: IndicesTx,
   balances: BalancesTx,

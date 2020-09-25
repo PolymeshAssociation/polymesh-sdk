@@ -3,7 +3,6 @@ import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
   FundingRoundName,
-  IdentifierType,
   SecurityToken as MeshSecurityToken,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -15,7 +14,6 @@ import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
-import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
@@ -239,33 +237,34 @@ describe('SecurityToken class', () => {
     let isinValue: string;
     let cusipValue: string;
     let cinsValue: string;
-    let dtiValue: string;
+    let leiValue: string;
     let isinMock: AssetIdentifier;
     let cusipMock: AssetIdentifier;
     let cinsMock: AssetIdentifier;
-    let dtiMock: AssetIdentifier;
+    let leiMock: AssetIdentifier;
     let tokenIdentifiers: TokenIdentifier[];
-
-    let rawIdentifiers: [IdentifierType, AssetIdentifier][];
 
     let context: Context;
     let securityToken: SecurityToken;
-
-    let tokenIdentifierTypeToIdentifierTypeStub: sinon.SinonStub<
-      [TokenIdentifierType, Context],
-      IdentifierType
-    >;
 
     beforeAll(() => {
       ticker = 'TEST';
       isinValue = 'FAKE ISIN';
       cusipValue = 'FAKE CUSIP';
       cinsValue = 'FAKE CINS';
-      dtiValue = 'FAKE DTI';
-      isinMock = dsMockUtils.createMockAssetIdentifier(isinValue);
-      cusipMock = dsMockUtils.createMockAssetIdentifier(cusipValue);
-      cinsMock = dsMockUtils.createMockAssetIdentifier(cinsValue);
-      dtiMock = dsMockUtils.createMockAssetIdentifier(dtiValue);
+      leiValue = 'FAKE LEI';
+      isinMock = dsMockUtils.createMockAssetIdentifier({
+        Isin: dsMockUtils.createMockU8aFixed(isinValue),
+      });
+      cusipMock = dsMockUtils.createMockAssetIdentifier({
+        Cusip: dsMockUtils.createMockU8aFixed(cusipValue),
+      });
+      cinsMock = dsMockUtils.createMockAssetIdentifier({
+        Cins: dsMockUtils.createMockU8aFixed(cinsValue),
+      });
+      leiMock = dsMockUtils.createMockAssetIdentifier({
+        Lei: dsMockUtils.createMockU8aFixed(leiValue),
+      });
       tokenIdentifiers = [
         {
           type: TokenIdentifierType.Isin,
@@ -280,44 +279,20 @@ describe('SecurityToken class', () => {
           value: cinsValue,
         },
         {
-          type: TokenIdentifierType.Dti,
-          value: dtiValue,
+          type: TokenIdentifierType.Lei,
+          value: leiValue,
         },
       ];
-
-      rawIdentifiers = tokenIdentifiers.map(({ type, value }) =>
-        tuple(
-          dsMockUtils.createMockIdentifierType(type),
-          dsMockUtils.createMockAssetIdentifier(value)
-        )
-      );
-
-      tokenIdentifierTypeToIdentifierTypeStub = sinon.stub(
-        utilsModule,
-        'tokenIdentifierTypeToIdentifierType'
-      );
     });
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
       securityToken = new SecurityToken({ ticker }, context);
-
-      tokenIdentifierTypeToIdentifierTypeStub
-        .withArgs(tokenIdentifiers[0].type, context)
-        .returns(rawIdentifiers[0][0]);
-
-      tokenIdentifierTypeToIdentifierTypeStub
-        .withArgs(tokenIdentifiers[1].type, context)
-        .returns(rawIdentifiers[1][0]);
-
-      tokenIdentifierTypeToIdentifierTypeStub
-        .withArgs(tokenIdentifiers[2].type, context)
-        .returns(rawIdentifiers[2][0]);
     });
 
     test('should return the list of token identifiers for a security token', async () => {
       dsMockUtils.createQueryStub('asset', 'identifiers', {
-        multi: [isinMock, cusipMock, cinsMock, dtiMock],
+        returnValue: [isinMock, cusipMock, cinsMock, leiMock],
       });
 
       const result = await securityToken.getIdentifiers();
@@ -325,14 +300,14 @@ describe('SecurityToken class', () => {
       expect(result[0].value).toBe(isinValue);
       expect(result[1].value).toBe(cusipValue);
       expect(result[2].value).toBe(cinsValue);
-      expect(result[3].value).toBe(dtiValue);
+      expect(result[3].value).toBe(leiValue);
     });
 
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
-      dsMockUtils.createQueryStub('asset', 'identifiers').multi.callsFake(async (_, cbFunc) => {
-        cbFunc([rawIdentifiers[0][1], rawIdentifiers[1][1], rawIdentifiers[2][1]]);
+      dsMockUtils.createQueryStub('asset', 'identifiers').callsFake(async (_, cbFunc) => {
+        cbFunc([isinMock, cusipMock, cinsMock, leiMock]);
 
         return unsubCallback;
       });

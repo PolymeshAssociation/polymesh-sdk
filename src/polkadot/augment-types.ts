@@ -693,7 +693,6 @@ import {
   HandledTxStatus,
   HistoricalVotingByAddress,
   HistoricalVotingById,
-  IdentifierType,
   IdentityClaim,
   IdentityClaimKey,
   IdentityId,
@@ -751,7 +750,6 @@ import {
   SecondaryKeyWithAuth,
   SecurityToken,
   SettlementType,
-  SignData,
   Signatory,
   SimpleTokenRecord,
   SkippedCount,
@@ -2667,18 +2665,15 @@ declare module '@polkadot/types/types/registry' {
     AssetType: AssetType;
     'Option<AssetType>': Option<AssetType>;
     'Vec<AssetType>': Vec<AssetType>;
-    IdentifierType: IdentifierType;
-    'Option<IdentifierType>': Option<IdentifierType>;
-    'Vec<IdentifierType>': Vec<IdentifierType>;
+    AssetIdentifier: AssetIdentifier;
+    'Option<AssetIdentifier>': Option<AssetIdentifier>;
+    'Vec<AssetIdentifier>': Vec<AssetIdentifier>;
     AssetOwnershipRelation: AssetOwnershipRelation;
     'Option<AssetOwnershipRelation>': Option<AssetOwnershipRelation>;
     'Vec<AssetOwnershipRelation>': Vec<AssetOwnershipRelation>;
     AssetName: AssetName;
     'Option<AssetName>': Option<AssetName>;
     'Vec<AssetName>': Vec<AssetName>;
-    AssetIdentifier: AssetIdentifier;
-    'Option<AssetIdentifier>': Option<AssetIdentifier>;
-    'Vec<AssetIdentifier>': Vec<AssetIdentifier>;
     FundingRoundName: FundingRoundName;
     'Option<FundingRoundName>': Option<FundingRoundName>;
     'Vec<FundingRoundName>': Vec<FundingRoundName>;
@@ -2778,9 +2773,6 @@ declare module '@polkadot/types/types/registry' {
     ClassicTickerRegistration: ClassicTickerRegistration;
     'Option<ClassicTickerRegistration>': Option<ClassicTickerRegistration>;
     'Vec<ClassicTickerRegistration>': Vec<ClassicTickerRegistration>;
-    SignData: SignData;
-    'Option<SignData>': Option<SignData>;
-    'Vec<SignData>': Vec<SignData>;
     MotionTitle: MotionTitle;
     'Option<MotionTitle>': Option<MotionTitle>;
     'Vec<MotionTitle>': Vec<MotionTitle>;

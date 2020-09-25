@@ -11,6 +11,7 @@ import { ClaimData, ClaimScope, ClaimType, Ensured, IdentityWithClaims, ResultSe
 import { ClaimOperation } from '~/types/internal';
 import {
   calculateNextKey,
+  middlewareScopeToScope,
   removePadding,
   signerToString,
   toIdentityWithClaimsArray,
@@ -193,7 +194,7 @@ export class Claims {
       }
 
       return {
-        scope: scope ?? null,
+        scope: scope ? middlewareScopeToScope(scope) : null,
         ticker,
       };
     });

@@ -12,7 +12,14 @@ import {
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimData, ClaimTarget, ClaimType, IdentityWithClaims, ResultSet } from '~/types';
+import {
+  ClaimData,
+  ClaimTarget,
+  ClaimType,
+  IdentityWithClaims,
+  ResultSet,
+  ScopeType,
+} from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -196,7 +203,7 @@ describe('Claims Class', () => {
           target: 'someDid',
           claim: {
             type: ClaimType.Accredited,
-            scope: 'someIdentityId',
+            scope: { type: ScopeType.Identity, value: 'someDid' },
           },
         },
       ];
@@ -227,7 +234,7 @@ describe('Claims Class', () => {
           target: 'someDid',
           claim: {
             type: ClaimType.Accredited,
-            scope: 'someIdentityId',
+            scope: { type: ScopeType.Identity, value: 'someDid' },
           },
         },
       ];
@@ -258,7 +265,7 @@ describe('Claims Class', () => {
           target: 'someDid',
           claim: {
             type: ClaimType.Accredited,
-            scope: 'someIdentityId',
+            scope: { type: ScopeType.Identity, value: 'someDid' },
           },
         },
       ];
@@ -289,7 +296,7 @@ describe('Claims Class', () => {
             issuer: new Identity({ did: 'otherDid' }, context),
             issuedAt: new Date(),
             expiry: null,
-            claim: { type: ClaimType.CustomerDueDiligence },
+            claim: { type: ClaimType.CustomerDueDiligence, id: 'someCddId' },
           },
         ],
         next: 1,
@@ -368,6 +375,7 @@ describe('Claims Class', () => {
               expiry: new Date(date),
               claim: {
                 type: ClaimType.CustomerDueDiligence,
+                id: 'someCddId',
               },
             },
           ],

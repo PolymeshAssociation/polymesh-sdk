@@ -1,5 +1,5 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { cloneDeep, uniq } from 'lodash';
+import { cloneDeep, isEqual, uniq } from 'lodash';
 import { Claim as MeshClaim, IdentityId, TxTag, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure } from '~/base';
@@ -124,7 +124,7 @@ export async function prepareModifyClaims(
         let isSameScope = true;
 
         if (isScopedClaim(claim)) {
-          isSameScope = claim.scope === scope;
+          isSameScope = isEqual(claim.scope, scope);
         }
 
         return isSameScope && ClaimType[type] === claim.type;

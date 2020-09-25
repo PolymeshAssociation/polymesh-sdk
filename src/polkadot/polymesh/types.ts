@@ -3,7 +3,7 @@
 
 import { ITuple } from '@polkadot/types/types';
 import { Enum, Option, Struct, U8aFixed, Vec } from '@polkadot/types/codec';
-import { Bytes, Text, bool, u16, u32, u64, u8 } from '@polkadot/types/primitive';
+import { Bytes, Text, bool, u32, u64, u8 } from '@polkadot/types/primitive';
 import { Signature } from '@polkadot/types/interfaces/extrinsics';
 import {
   AccountId,
@@ -39,7 +39,17 @@ export interface AssetDidResult extends Enum {
 }
 
 /** @name AssetIdentifier */
-export interface AssetIdentifier extends Text {}
+export interface AssetIdentifier extends Enum {
+  readonly isCusip: boolean;
+  readonly asCusip: U8aFixed;
+  readonly isCins: boolean;
+  readonly asCins: U8aFixed;
+  readonly isIsin: boolean;
+  readonly asIsin: U8aFixed;
+  readonly isLei: boolean;
+  readonly asLei: U8aFixed;
+  readonly isEmpty: boolean;
+}
 
 /** @name AssetName */
 export interface AssetName extends Text {}
@@ -96,6 +106,8 @@ export interface AuthorizationData extends Enum {
   readonly asTransferAssetOwnership: Ticker;
   readonly isJoinIdentity: boolean;
   readonly asJoinIdentity: Vec<Permission>;
+  readonly isPortfolioCustody: boolean;
+  readonly asPortfolioCustody: PortfolioId;
   readonly isCustom: boolean;
   readonly asCustom: Ticker;
   readonly isNoData: boolean;
@@ -120,6 +132,7 @@ export interface AuthorizationType extends Enum {
   readonly isAddMultiSigSigner: boolean;
   readonly isTransferAssetOwnership: boolean;
   readonly isJoinIdentity: boolean;
+  readonly isPortfolioCustody: boolean;
   readonly isCustom: boolean;
   readonly isNoData: boolean;
 }
@@ -656,14 +669,6 @@ export interface HistoricalVotingByAddress extends Vec<VoteByPip> {}
 /** @name HistoricalVotingById */
 export interface HistoricalVotingById extends Vec<ITuple<[AccountId, HistoricalVotingByAddress]>> {}
 
-/** @name IdentifierType */
-export interface IdentifierType extends Enum {
-  readonly isCins: boolean;
-  readonly isCusip: boolean;
-  readonly isIsin: boolean;
-  readonly isDti: boolean;
-}
-
 /** @name IdentityClaim */
 export interface IdentityClaim extends Struct {
   readonly claim_issuer: IdentityId;
@@ -755,8 +760,8 @@ export interface KeyIdentityData extends Struct {
 
 /** @name Leg */
 export interface Leg extends Struct {
-  readonly from: IdentityId;
-  readonly to: IdentityId;
+  readonly from: PortfolioId;
+  readonly to: PortfolioId;
   readonly asset: Ticker;
   readonly amount: Balance;
 }
@@ -851,6 +856,7 @@ export interface PipsMetadata extends Struct {
   readonly url: Option<Url>;
   readonly description: Option<PipDescription>;
   readonly created_at: BlockNumber;
+  readonly transaction_version: u32;
 }
 
 /** @name PolymeshVotes */
@@ -915,9 +921,10 @@ export interface ProposalDetails extends Struct {
 export interface ProposalState extends Enum {
   readonly isPending: boolean;
   readonly isCancelled: boolean;
-  readonly isKilled: boolean;
   readonly isRejected: boolean;
-  readonly isReferendum: boolean;
+  readonly isScheduled: boolean;
+  readonly isFailed: boolean;
+  readonly isExecuted: boolean;
 }
 
 /** @name ProposalStatus */
@@ -963,8 +970,8 @@ export interface ProverTickerKey extends Struct {
 /** @name Receipt */
 export interface Receipt extends Struct {
   readonly receipt_uid: u64;
-  readonly from: IdentityId;
-  readonly to: IdentityId;
+  readonly from: PortfolioId;
+  readonly to: PortfolioId;
   readonly asset: Ticker;
   readonly amount: Balance;
 }
@@ -1009,7 +1016,14 @@ export interface RestrictionResult extends Enum {
 }
 
 /** @name Scope */
-export interface Scope extends IdentityId {}
+export interface Scope extends Enum {
+  readonly isIdentity: boolean;
+  readonly asIdentity: IdentityId;
+  readonly isTicker: boolean;
+  readonly asTicker: Ticker;
+  readonly isCustom: boolean;
+  readonly asCustom: Bytes;
+}
 
 /** @name ScopeId */
 export interface ScopeId extends U8aFixed {}
@@ -1049,15 +1063,6 @@ export interface Signatory extends Enum {
   readonly asIdentity: IdentityId;
   readonly isAccount: boolean;
   readonly asAccount: AccountId;
-}
-
-/** @name SignData */
-export interface SignData extends Struct {
-  readonly custodian_did: IdentityId;
-  readonly holder_did: IdentityId;
-  readonly ticker: Ticker;
-  readonly value: Balance;
-  readonly nonce: u16;
 }
 
 /** @name SimpleTokenRecord */
@@ -1194,13 +1199,7 @@ export interface VenueType extends Enum {
 }
 
 /** @name Vote */
-export interface Vote extends Enum {
-  readonly isNone: boolean;
-  readonly isYes: boolean;
-  readonly asYes: Balance;
-  readonly isNo: boolean;
-  readonly asNo: Balance;
-}
+export interface Vote extends ITuple<[bool, Balance]> {}
 
 /** @name VoteByPip */
 export interface VoteByPip extends Struct {
