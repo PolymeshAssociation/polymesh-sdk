@@ -1,16 +1,14 @@
 import { IdentityId } from 'polymesh-types/types';
 
-import { TrustedClaimIssuer } from '~/api/entities/TrustedClaimIssuer';
+import { Namespace, SecurityToken, TrustedClaimIssuer } from '~/api/entities';
 import {
   modifyTokenTrustedClaimIssuers,
   ModifyTokenTrustedClaimIssuersParams,
 } from '~/api/procedures';
-import { Namespace, TransactionQueue } from '~/base';
+import { TransactionQueue } from '~/base';
 import { SubCallback, UnsubCallback } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import { identityIdToString, stringToTicker } from '~/utils';
-
-import { SecurityToken } from '../';
 
 /**
  * Handles all Security Token Default Trusted Claim Issuers related functionality
@@ -21,7 +19,7 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
    *
    * This requires two transactions
    *
-   * @param args.claimIssuerDids - array of identity IDs of the default claim issuers
+   * @param args.claimIssuerDids - array of Identity IDs of the default Trusted Claim Issuers
    */
   public set(args: ModifyTokenTrustedClaimIssuersParams): Promise<TransactionQueue<SecurityToken>> {
     const {
@@ -35,9 +33,9 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   }
 
   /**
-   * Add the supplied identities to the Security Token's list of trusted claim issuers
+   * Add the supplied Identities to the Security Token's list of trusted claim issuers
    *
-   * @param args.claimIssuerDids - array of identity IDs of the default claim issuers
+   * @param args.claimIssuerDids - array of Identity IDs of the default claim issuers
    */
   public add(args: ModifyTokenTrustedClaimIssuersParams): Promise<TransactionQueue<SecurityToken>> {
     const {
@@ -51,9 +49,9 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   }
 
   /**
-   * Remove the supplied identities from the Security Token's list of trusted claim issuers   *
+   * Remove the supplied Identities from the Security Token's list of trusted claim issuers   *
    *
-   * @param args.claimIssuerDids - array of identity IDs of the default claim issuers
+   * @param args.claimIssuerDids - array of Identity IDs of the default claim issuers
    */
   public remove(
     args: ModifyTokenTrustedClaimIssuersParams

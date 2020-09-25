@@ -8,10 +8,9 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity } from '~/api/entities';
+import { Entity, Identity } from '~/api/entities';
 import { modifyToken, transferTokenOwnership } from '~/api/procedures';
-import { Entity, TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
@@ -144,11 +143,11 @@ describe('SecurityToken class', () => {
       const ticker = 'TEST';
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
-      const did = 'someOtherDid';
+      const target = 'someOtherDid';
       const expiry = new Date('10/14/3040');
 
       const args = {
-        did,
+        target,
         expiry,
       };
 

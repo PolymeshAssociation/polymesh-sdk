@@ -9,56 +9,42 @@ import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { Ticker, TxTag } from 'polymesh-types/types';
 
-import { Identity, SecurityToken, TickerReservation } from '~/api/entities';
+import { Account, Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
-  modifyClaims,
-  ModifyClaimsParams,
   registerIdentity,
   RegisterIdentityParams,
-  removeSigningKeys,
   reserveTicker,
   ReserveTickerParams,
   transferPolyX,
   TransferPolyXParams,
 } from '~/api/procedures';
-import { PolymeshError, TransactionQueue } from '~/base';
-import { Context } from '~/context';
-import { didsWithClaims, heartbeat, transactions } from '~/middleware/queries';
-import { ClaimTypeEnum, Query, TransactionOrderByInput } from '~/middleware/types';
+import { Context, PolymeshError, TransactionQueue } from '~/base';
+import { heartbeat } from '~/middleware/queries';
 import {
   AccountBalance,
-  ClaimData,
-  ClaimType,
   CommonKeyring,
-  Ensured,
+  CurrentAccount,
+  CurrentIdentity,
   ErrorCode,
-  ExtrinsicData,
-  IdentityWithClaims,
   MiddlewareConfig,
   NetworkProperties,
-  ResultSet,
-  Signer,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { ClaimOperation } from '~/types/internal';
 import {
-  addressToKey,
-  calculateNextKey,
-  extrinsicIdentifierToTxTag,
+  getDid,
   moduleAddressToString,
+  signerToString,
   stringToIdentityId,
   stringToTicker,
   textToString,
   tickerToString,
-  toIdentityWithClaimsArray,
-  txTagToExtrinsicIdentifier,
   u32ToBigNumber,
-  valueToDid,
 } from '~/utils';
 
+import { Claims } from './Claims';
 import { Governance } from './Governance';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
@@ -85,6 +71,7 @@ export class Polymesh {
 
   // Namespaces
   public governance: Governance;
+  public claims: Claims;
 
   /**
    * @hidden
@@ -93,21 +80,50 @@ export class Polymesh {
     this.context = context;
 
     this.governance = new Governance(context);
+    this.claims = new Claims(context);
   }
 
   /**
-   * Create the instance and connect to the Polymesh node
+   * Create the instance and connect to the Polymesh node using an account seed
+   *
+   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
+   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
+   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
+   * @param params.accountSeed - hex seed of the account
    */
   static async connect(params: ConnectParamsBase & { accountSeed: string }): Promise<Polymesh>;
 
+  /**
+   * Create the instance and connect to the Polymesh node using a keyring
+   *
+   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
+   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
+   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
+   * @param params.keyring - object that holds several accounts (useful when using a wallet browser extension)
+   */
   static async connect(
     params: ConnectParamsBase & {
       keyring: CommonKeyring | UiKeyring;
     }
   ): Promise<Polymesh>;
 
+  /**
+   * Create the instance and connect to the Polymesh node using an account URI
+   *
+   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
+   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
+   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
+   * @param params.accountUri - account URI or mnemonic
+   */
   static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
 
+  /**
+   * Create the instance and connect to the Polymesh node without an account
+   *
+   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
+   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
+   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
+   */
   static async connect(params: ConnectParamsBase): Promise<Polymesh>;
 
   // eslint-disable-next-line require-jsdoc
@@ -224,9 +240,9 @@ export class Polymesh {
   }
 
   /**
-   * Transfer an amount of POLYX to a specified account
+   * Transfer an amount of POLYX to a specified Account
    *
-   * @param args.to - account id that will receive the POLYX
+   * @param args.to - account that will receive the POLYX
    * @param args.amount - amount of POLYX to be transferred
    * @param args.memo - identifier string to help differentiate transfers
    */
@@ -235,26 +251,26 @@ export class Polymesh {
   }
 
   /**
-   * Get the free/locked POLYX balance of an account
+   * Get the free/locked POLYX balance of an Account
    *
-   * @param args.accountId - defaults to the current account
+   * @param args.account - defaults to the current Account
    *
    * @note can be subscribed to
    */
-  public getAccountBalance(args?: { accountId: string }): Promise<AccountBalance>;
+  public getAccountBalance(args?: { account: string | Account }): Promise<AccountBalance>;
   public getAccountBalance(callback: SubCallback<AccountBalance>): Promise<UnsubCallback>;
   public getAccountBalance(
-    args: { accountId: string },
+    args: { account: string | Account },
     callback: SubCallback<AccountBalance>
   ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public getAccountBalance(
-    args?: { accountId: string } | SubCallback<AccountBalance>,
+    args?: { account: string | Account } | SubCallback<AccountBalance>,
     callback?: SubCallback<AccountBalance>
   ): Promise<AccountBalance | UnsubCallback> {
     const { context } = this;
-    let accountId: string | undefined;
+    let account: string | Account | undefined;
     let cb: SubCallback<AccountBalance> | undefined = callback;
 
     switch (typeof args) {
@@ -266,21 +282,27 @@ export class Polymesh {
         break;
       }
       default: {
-        ({ accountId } = args);
+        ({ account } = args);
         break;
       }
     }
 
-    if (cb) {
-      return context.accountBalance(accountId, cb);
+    if (!account) {
+      account = context.getCurrentAccount();
+    } else if (typeof account === 'string') {
+      account = new Account({ address: account }, context);
     }
 
-    return context.accountBalance(accountId);
+    if (cb) {
+      return account.getBalance(cb);
+    }
+
+    return account.getBalance();
   }
 
   /**
    * Reserve a ticker symbol to later use in the creation of a Security Token.
-   * The ticker will expire after a set amount of time, after which other users can reserve it
+   *   The ticker will expire after a set amount of time, after which other users can reserve it
    *
    * @param args.ticker - ticker symbol to reserve
    */
@@ -318,13 +340,13 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all the ticker reservations currently owned by an identity. This doesn't include tokens that
+   * Retrieve all the ticker reservations currently owned by an Identity. This doesn't include tokens that
    *   have already been launched
    *
-   * @param args.did - identity representation or identity ID as stored in the blockchain
+   * @param args.owner - identity representation or Identity ID as stored in the blockchain
    */
   public async getTickerReservations(args?: {
-    did: string | Identity;
+    owner: string | Identity;
   }): Promise<TickerReservation[]> {
     const {
       context: {
@@ -333,16 +355,10 @@ export class Polymesh {
       context,
     } = this;
 
-    let identity: string;
-
-    if (args) {
-      identity = valueToDid(args.did);
-    } else {
-      ({ did: identity } = await context.getCurrentIdentity());
-    }
+    const did = await getDid(args?.owner, context);
 
     const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(identity, context)
+      stringToIdentityId(did, context)
     );
 
     const tickerReservations: TickerReservation[] = entries
@@ -385,20 +401,41 @@ export class Polymesh {
   }
 
   /**
-   * Create an identity instance from a DID. If no DID is passed, the current identity is returned
+   * Create an Identity instance from a DID
    */
-  public async getIdentity(args?: { did: string }): Promise<Identity> {
-    if (args) {
-      return new Identity(args, this.context);
-    }
-    return this.context.getCurrentIdentity();
+  public getIdentity(args: { did: string }): Identity {
+    return new Identity(args, this.context);
   }
 
   /**
-   * Return whether the supplied identity/DID exists
+   * Retrieve the Identity associated to the current Account (null if there is none)
+   */
+  public getCurrentIdentity(): Promise<CurrentIdentity | null> {
+    return this.context.getCurrentAccount().getIdentity();
+  }
+
+  /**
+   * Create an Account instance from an address. If no address is passed, the current Account is returned
+   */
+  public getAccount(): CurrentAccount;
+  public getAccount(args: { address: string }): Account;
+
+  // eslint-disable-next-line require-jsdoc
+  public getAccount(args?: { address: string }): Account | CurrentAccount {
+    const { context } = this;
+
+    if (args) {
+      return new Account(args, context);
+    }
+
+    return context.getCurrentAccount();
+  }
+
+  /**
+   * Return whether the supplied Identity/DID exists
    */
   public async isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
-    const invalid = await this.context.getInvalidDids([valueToDid(args.identity)]);
+    const invalid = await this.context.getInvalidDids([signerToString(args.identity)]);
 
     return !invalid.length;
   }
@@ -415,37 +452,8 @@ export class Polymesh {
   /**
    * Get the treasury wallet address
    */
-  public getTreasuryAddress(): string {
-    return moduleAddressToString(TREASURY_MODULE_ADDRESS);
-  }
-
-  /**
-   * Add claims to identities
-   *
-   * @param args.claims - array of claims to be added
-   */
-  public addClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Add }, this.context);
-  }
-
-  /**
-   * Edit claims associated to identities (only the expiry date can be modified)
-   *
-   * * @param args.claims - array of claims to be edited
-   */
-  public editClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Edit }, this.context);
-  }
-
-  /**
-   * Revoke claims from identities
-   *
-   * @param args.claims - array of claims to be revoked
-   */
-  public revokeClaims(
-    args: Omit<ModifyClaimsParams, 'operation'>
-  ): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Revoke }, this.context);
+  public getTreasuryAccount(): Account {
+    return new Account({ address: moduleAddressToString(TREASURY_MODULE_ADDRESS) }, this.context);
   }
 
   /**
@@ -483,11 +491,11 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all the Security Tokens owned by an identity
+   * Retrieve all the Security Tokens owned by an Identity
    *
-   * @param args.did - identity representation or identity ID as stored in the blockchain
+   * @param args.owner - identity representation or Identity ID as stored in the blockchain
    */
-  public async getSecurityTokens(args?: { did: string | Identity }): Promise<SecurityToken[]> {
+  public async getSecurityTokens(args?: { owner: string | Identity }): Promise<SecurityToken[]> {
     const {
       context: {
         polymeshApi: { query },
@@ -495,16 +503,10 @@ export class Polymesh {
       context,
     } = this;
 
-    let identity: string;
-
-    if (args) {
-      identity = valueToDid(args.did);
-    } else {
-      ({ did: identity } = await context.getCurrentIdentity());
-    }
+    const did = await getDid(args?.owner, context);
 
     const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(identity, context)
+      stringToIdentityId(did, context)
     );
 
     const securityTokens: SecurityToken[] = entries
@@ -547,86 +549,6 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve all claims issued by the current identity
-   */
-  public async getIssuedClaims(
-    opts: {
-      size?: number;
-      start?: number;
-    } = {}
-  ): Promise<ResultSet<ClaimData>> {
-    const { context } = this;
-
-    const { size, start } = opts;
-    const { did } = await context.getCurrentIdentity();
-
-    const result = await context.issuedClaims({
-      trustedClaimIssuers: [did],
-      size,
-      start,
-    });
-
-    return result;
-  }
-
-  /**
-   * Retrieve a list of identities with claims associated to them. Can be filtered using parameters
-   *
-   * @param opts.targets - identities (or identity IDs) for which to fetch claims (targets). Defaults to all targets
-   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
-   * @param opts.scope - scope of the claims to fetch. Defaults to any scope
-   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
-   * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   */
-  public async getIdentitiesWithClaims(
-    opts: {
-      targets?: (string | Identity)[];
-      trustedClaimIssuers?: (string | Identity)[];
-      scope?: string;
-      claimTypes?: ClaimType[];
-      includeExpired?: boolean;
-      size?: number;
-      start?: number;
-    } = { includeExpired: true }
-  ): Promise<ResultSet<IdentityWithClaims>> {
-    const { context } = this;
-
-    const { targets, trustedClaimIssuers, scope, claimTypes, includeExpired, size, start } = opts;
-
-    const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
-        dids: targets?.map(target => valueToDid(target)),
-        scope,
-        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          valueToDid(trustedClaimIssuer)
-        ),
-        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-        includeExpired,
-        count: size,
-        skip: start,
-      })
-    );
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
-      },
-    } = result;
-
-    const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
-
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
-  }
-
-  /**
    * Retrieve information for the current network
    */
   public async getNetworkProperties(): Promise<NetworkProperties> {
@@ -649,98 +571,6 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve a list of transactions. Can be filtered using parameters
-   *
-   * @param filters.address - account that signed the transaction
-   * @param filters.tag - tag associated with the transaction
-   * @param filters.success - whether the transaction was successful or not
-   * @param filters.size - page size
-   * @param filters.start - page offset
-   */
-  public async getTransactionHistory(
-    filters: {
-      blockNumber?: BigNumber;
-      address?: string;
-      tag?: TxTag;
-      success?: boolean;
-      size?: number;
-      start?: number;
-      orderBy?: TransactionOrderByInput;
-    } = {}
-  ): Promise<ResultSet<ExtrinsicData>> {
-    const { context } = this;
-
-    const { blockNumber, address, tag, success, size, start, orderBy } = filters;
-
-    let moduleId;
-    let callId;
-    if (tag) {
-      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
-    }
-
-    /* eslint-disable @typescript-eslint/camelcase */
-    const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
-      transactions({
-        block_id: blockNumber ? blockNumber.toNumber() : undefined,
-        address: address ? addressToKey(address) : undefined,
-        module_id: moduleId,
-        call_id: callId,
-        success,
-        count: size,
-        skip: start,
-        orderBy,
-      })
-    );
-
-    const {
-      data: {
-        transactions: { items: transactionList, totalCount: count },
-      },
-    } = result;
-
-    const data: ExtrinsicData[] = [];
-
-    transactionList.forEach(
-      ({
-        block_id,
-        extrinsic_idx,
-        address: rawAddress,
-        nonce,
-        module_id,
-        call_id,
-        params,
-        success: txSuccess,
-        spec_version_id,
-        extrinsic_hash,
-      }) => {
-        // TODO remove null check once types fixed
-        /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        data.push({
-          blockNumber: new BigNumber(block_id!),
-          extrinsicIdx: extrinsic_idx!,
-          address: rawAddress ?? null,
-          nonce: nonce!,
-          txTag: extrinsicIdentifierToTxTag({ moduleId: module_id!, callId: call_id! }),
-          params,
-          success: !!txSuccess,
-          specVersionId: spec_version_id!,
-          extrinsicHash: extrinsic_hash!,
-        });
-        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
-      }
-    );
-    /* eslint-enable @typescript-eslint/camelcase */
-
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
-  }
-
-  /**
    * Get the Treasury POLYX balance
    *
    * @note can be subscribed to
@@ -752,50 +582,25 @@ export class Polymesh {
   public async getTreasuryBalance(
     callback?: SubCallback<BigNumber>
   ): Promise<BigNumber | UnsubCallback> {
-    const accountId = this.getTreasuryAddress();
+    const account = this.getTreasuryAccount();
 
     if (callback) {
-      return this.context.accountBalance(accountId, ({ free: freeBalance }) => {
+      return account.getBalance(({ free: freeBalance }) => {
         callback(freeBalance);
       });
     }
 
-    const { free } = await this.getAccountBalance({ accountId });
+    const { free } = await account.getBalance();
     return free;
-  }
-
-  /**
-   * Get the list of signing keys related to the current identity
-   *
-   * @note can be subscribed to
-   */
-  public async getMySigningKeys(): Promise<Signer[]>;
-  public async getMySigningKeys(callback: SubCallback<Signer[]>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getMySigningKeys(
-    callback?: SubCallback<Signer[]>
-  ): Promise<Signer[] | UnsubCallback> {
-    const { context } = this;
-
-    if (callback) {
-      return context.getSigningKeys(callback);
-    }
-
-    return context.getSigningKeys();
-  }
-
-  /**
-   * Remove a list of signing keys associated with the current identity
-   */
-  public removeMySigningKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
-    return removeSigningKeys.prepare(args, this.context);
   }
 
   /**
    * Register an Identity
    *
    * @note must be a CDD provider
+   * @note this may create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
+   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
   public registerIdentity(args: RegisterIdentityParams): Promise<TransactionQueue<Identity>> {
     return registerIdentity.prepare(args, this.context);

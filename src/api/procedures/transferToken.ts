@@ -3,7 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import { Identity, SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType, TransferStatus } from '~/types';
-import { numberToBalance, stringToIdentityId, stringToTicker, valueToDid } from '~/utils';
+import { numberToBalance, signerToString, stringToIdentityId, stringToTicker } from '~/utils';
 
 export interface TransferTokenParams {
   to: string | Identity;
@@ -35,7 +35,7 @@ export async function prepareTransferToken(
 
   const { ticker, to, amount } = args;
 
-  const did = valueToDid(to);
+  const did = signerToString(to);
   const value = numberToBalance(amount, context);
   const identityId = stringToIdentityId(did, context);
   const securityToken = new SecurityToken({ ticker }, context);

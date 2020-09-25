@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 

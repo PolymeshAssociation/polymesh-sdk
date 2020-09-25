@@ -18,6 +18,7 @@ import {
   batchArguments,
   booleanToBool,
   numberToBalance,
+  signerToString,
   stringToAssetIdentifier,
   stringToAssetName,
   stringToDocumentName,
@@ -27,7 +28,6 @@ import {
   tokenDocumentDataToDocument,
   tokenIdentifierTypeToIdentifierType,
   tokenTypeToAssetType,
-  valueToDid,
 } from '~/utils';
 
 export interface CreateSecurityTokenParams {
@@ -105,7 +105,7 @@ export async function prepareCreateSecurityToken(
     }
   );
   const rawFundingRound = fundingRound ? stringToFundingRoundName(fundingRound, context) : null;
-  const rawTreasury = treasury ? stringToIdentityId(valueToDid(treasury), context) : null;
+  const rawTreasury = treasury ? stringToIdentityId(signerToString(treasury), context) : null;
 
   this.addTransaction(
     tx.asset.createAsset,

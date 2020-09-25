@@ -4,8 +4,7 @@ import BigNumber from 'bignumber.js';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { PostTransactionValue } from '~/base';
-import { Context } from '~/context';
+import { Context, PolymeshTransaction, PostTransactionValue } from '~/base';
 import { fakePromise } from '~/testUtils';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -13,8 +12,6 @@ import { TransactionStatus } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
-
-import { PolymeshTransaction } from '../PolymeshTransaction';
 
 describe('Polymesh Transaction class', () => {
   let context: Mocked<Context>;
@@ -468,6 +465,45 @@ describe('Polymesh Transaction class', () => {
       return expect(transaction.getFees()).rejects.toThrow(
         'Did not set batch size for batch transaction. Please report this error to the Polymath team'
       );
+    });
+
+    test('should return all fees as zero if the transaction is paid by a third party', async () => {
+      const tx1 = dsMockUtils.createTxStub('identity', 'joinIdentityAsKey', { gas: rawGasFees[0] });
+      const tx2 = dsMockUtils.createTxStub('identity', 'joinIdentityAsIdentity', {
+        gas: rawGasFees[1],
+      });
+
+      const args = tuple('I_SWEAR_TO_ANY_GOD_THAT_IS_LISTENING_THIS_IS_THE_LAST_TIME');
+
+      let transaction = new PolymeshTransaction(
+        {
+          ...txSpec,
+          fee: null,
+          tx: tx1,
+          args,
+        },
+        context
+      );
+
+      let result = await transaction.getFees();
+
+      expect(result?.protocol).toEqual(new BigNumber(0));
+      expect(result?.gas).toEqual(new BigNumber(0));
+
+      transaction = new PolymeshTransaction(
+        {
+          ...txSpec,
+          fee: null,
+          tx: tx2,
+          args,
+        },
+        context
+      );
+
+      result = await transaction.getFees();
+
+      expect(result?.protocol).toEqual(new BigNumber(0));
+      expect(result?.gas).toEqual(new BigNumber(0));
     });
   });
 });

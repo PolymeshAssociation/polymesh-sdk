@@ -3,7 +3,7 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
-import { Identity, Proposal } from '~/api/entities';
+import { Account, Identity, Proposal } from '~/api/entities';
 import { ProposalDetails } from '~/api/entities/Proposal/types';
 
 export enum TransactionStatus {
@@ -308,7 +308,7 @@ export enum ErrorCode {
 }
 
 /**
- * Represents an amount of tokens to be issued to an identity
+ * Represents an amount of tokens to be issued to an Identity
  */
 export interface IssuanceData {
   identity: string | Identity;
@@ -403,12 +403,6 @@ export enum Permission {
   SpendFunds = 'SpendFunds',
 }
 
-export enum SignerType {
-  // eslint-disable-next-line no-shadow
-  Identity = 'Identity',
-  Account = 'Account',
-}
-
 export enum TransactionArgumentType {
   Did = 'Did',
   Address = 'Address',
@@ -466,10 +460,7 @@ export type TransactionArgument = {
   | ComplexTransactionArgument
 );
 
-export interface Signer {
-  type: SignerType;
-  value: string;
-}
+export type Signer = Identity | Account;
 
 export interface ProposalWithDetails {
   proposal: Proposal;

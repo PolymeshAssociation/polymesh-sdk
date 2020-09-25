@@ -4,10 +4,10 @@ import BigNumber from 'bignumber.js';
 import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
+import { Namespace } from '~/api/entities';
 import { toggleFreezeTransfers, transferToken } from '~/api/procedures';
 import { Params } from '~/api/procedures/toggleFreezeTransfers';
-import { Namespace, TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransferStatus } from '~/types';
@@ -160,7 +160,7 @@ describe('Transfers class', () => {
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
-    test('should return a status value representing whether the transaction can be made from the current identity', async () => {
+    test('should return a status value representing whether the transaction can be made from the current Identity', async () => {
       const { did: currentDid } = await mockContext.getCurrentIdentity();
 
       const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
@@ -186,7 +186,7 @@ describe('Transfers class', () => {
       expect(result).toBe(TransferStatus.Success);
     });
 
-    test('should return a status value representing whether the transaction can be made from another identity', async () => {
+    test('should return a status value representing whether the transaction can be made from another Identity', async () => {
       const rawResponse = dsMockUtils.createMockCanTransferResult({
         Ok: dsMockUtils.createMockU8(statusCode),
       });

@@ -1,4 +1,4 @@
-import { Namespace } from '~/base';
+import { Namespace } from '~/api/entities';
 
 import { Compliance } from '../';
 

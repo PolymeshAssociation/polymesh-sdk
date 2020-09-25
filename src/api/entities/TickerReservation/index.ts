@@ -1,15 +1,10 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { SecurityToken as MeshToken, TickerRegistration } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities/Identity';
-import { SecurityToken } from '~/api/entities/SecurityToken';
-import { reserveTicker } from '~/api/procedures';
-import {
-  createSecurityToken,
-  CreateSecurityTokenParams,
-} from '~/api/procedures/createSecurityToken';
-import { Entity, TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Entity, Identity, SecurityToken } from '~/api/entities';
+import { createSecurityToken, reserveTicker } from '~/api/procedures';
+import { CreateSecurityTokenParams } from '~/api/procedures/createSecurityToken';
+import { Context, TransactionQueue } from '~/base';
 import { SubCallback, UnsubCallback } from '~/types';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils';
 
@@ -24,8 +19,8 @@ export interface UniqueIdentifiers {
 
 /**
  * Represents a reserved token symbol in the Polymesh chain. Ticker reservations expire
- * after a set length of time, after which they can be reserved by another identity.
- * A Ticker must be previously reserved by an identity for that identity to be able create a Security Token with it
+ *   after a set length of time, after which they can be reserved by another Identity.
+ *   A Ticker must be previously reserved by an Identity for that Identity to be able create a Security Token with it
  */
 export class TickerReservation extends Entity<UniqueIdentifiers> {
   /**
@@ -55,7 +50,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the reservation's owner, expiry date and status
+   * Retrieve the Reservation's owner, expiry date and status
    *
    * @note can be subscribed to
    */
@@ -137,7 +132,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Extend the reservation time period of the ticker for 60 days from now
+   * Extend the Reservation time period of the ticker for 60 days from now
    * to later use it in the creation of a Security Token.
    */
   public extend(): Promise<TransactionQueue<TickerReservation>> {

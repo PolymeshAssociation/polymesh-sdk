@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-import { Identity } from '~/api/entities/Identity';
-import { Entity } from '~/base';
-import { Context } from '~/context';
+import { Entity, Identity } from '~/api/entities';
+import { Context } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier } from '~/types';
@@ -29,7 +28,7 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * identity of the trusted claim issuer
+   * identity of the Trusted Claim Issuer
    */
   public identity: Identity;
 

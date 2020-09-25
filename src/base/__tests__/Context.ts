@@ -2,19 +2,35 @@ import BigNumber from 'bignumber.js';
 import { DidRecord, ProtocolOp, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity } from '~/api/entities';
-import { Context } from '~/context';
+import { Account, Identity } from '~/api/entities';
+import { Context } from '~/base';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
-import { ClaimType, SignerType, TransactionArgumentType } from '~/types';
-import { GraphqlQuery } from '~/types/internal';
+import { ClaimType, Permission, Signer, SigningKey, TransactionArgumentType } from '~/types';
+import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 jest.mock(
   '@polkadot/api',
   require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
+);
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/CurrentIdentity',
+  require('~/testUtils/mocks/entities').mockCurrentIdentityModule('~/api/entities/CurrentIdentity')
+);
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+jest.mock(
+  '~/api/entities/CurrentAccount',
+  require('~/testUtils/mocks/entities').mockCurrentAccountModule('~/api/entities/CurrentAccount')
 );
 
 // TODO: refactor tests (too much repeated code)
@@ -417,7 +433,19 @@ describe('Context class', () => {
   });
 
   describe('method: getCurrentIdentity', () => {
-    test('should return the current identity', async () => {
+    beforeAll(() => {
+      entityMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      entityMockUtils.reset();
+    });
+
+    afterAll(() => {
+      entityMockUtils.cleanup();
+    });
+
+    test('should return the current Identity', async () => {
       const did = 'someDid';
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
         returnValue: dsMockUtils.createMockOption(
@@ -437,7 +465,9 @@ describe('Context class', () => {
       expect(result.did).toBe(did);
     });
 
-    test("should throw an error if the current account doesn't have an identity", async () => {
+    test('should throw an error if there is no Identity associated to the Current Account', async () => {
+      entityMockUtils.getCurrentAccountGetIdentityStub().resolves(null);
+
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -445,8 +475,46 @@ describe('Context class', () => {
       });
 
       return expect(context.getCurrentIdentity()).rejects.toThrow(
-        'The current account does not have an associated identity'
+        'The current account does not have an associated Identity'
       );
+    });
+  });
+
+  describe('method: getCurrentAccount', () => {
+    beforeAll(() => {
+      entityMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      entityMockUtils.reset();
+    });
+
+    afterAll(() => {
+      entityMockUtils.cleanup();
+    });
+
+    test('should return the current account', async () => {
+      const address = 'someAddress';
+
+      const pair = {
+        address,
+        meta: {},
+        publicKey: 'publicKey',
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          addFromSeed: pair,
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const result = context.getCurrentAccount();
+      expect(result.address).toBe(address);
     });
 
     test('should throw an error if there is no account associated with the SDK', async () => {
@@ -455,9 +523,15 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      return expect(context.getCurrentIdentity()).rejects.toThrow(
-        'There is no account associated with the SDK'
-      );
+      let err;
+
+      try {
+        context.getCurrentAccount();
+      } catch (e) {
+        err = e;
+      }
+
+      expect(err.message).toBe('There is no account associated with the SDK');
     });
   });
 
@@ -620,7 +694,7 @@ describe('Context class', () => {
   describe('method: getSigningKeys', () => {
     const did = 'someDid';
     const accountId = 'someAccountId';
-    const fakeResult = [
+    const signerValues = [
       { value: did, type: SignerType.Identity },
       { value: accountId, type: SignerType.Account },
     ];
@@ -631,15 +705,37 @@ describe('Context class', () => {
       Account: dsMockUtils.createMockAccountId(accountId),
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let signatoryToSignerStub: sinon.SinonStub<[Signatory], any>;
+    let identity: Identity;
+    let account: Account;
+    let fakeResult: SigningKey[];
+
+    let signatoryToSignerValueStub: sinon.SinonStub<[Signatory], SignerValue>;
+    let signerValueToSignerStub: sinon.SinonStub<[SignerValue, Context], Signer>;
     let didRecordsStub: sinon.SinonStub;
     let rawDidRecord: DidRecord;
 
     beforeAll(() => {
-      signatoryToSignerStub = sinon.stub(utilsModule, 'signatoryToSigner');
-      signatoryToSignerStub.withArgs(signerIdentityId).returns(fakeResult[0]);
-      signatoryToSignerStub.withArgs(signerAccountId).returns(fakeResult[1]);
+      entityMockUtils.initMocks();
+      signatoryToSignerValueStub = sinon.stub(utilsModule, 'signatoryToSignerValue');
+      signatoryToSignerValueStub.withArgs(signerIdentityId).returns(signerValues[0]);
+      signatoryToSignerValueStub.withArgs(signerAccountId).returns(signerValues[1]);
+
+      identity = entityMockUtils.getIdentityInstance({ did });
+      account = entityMockUtils.getAccountInstance({ address: accountId });
+      signerValueToSignerStub = sinon.stub(utilsModule, 'signerValueToSigner');
+      signerValueToSignerStub.withArgs(signerValues[0], sinon.match.object).returns(identity);
+      signerValueToSignerStub.withArgs(signerValues[1], sinon.match.object).returns(account);
+
+      fakeResult = [
+        {
+          signer: identity,
+          permissions: [],
+        },
+        {
+          signer: account,
+          permissions: [Permission.Full],
+        },
+      ];
     });
 
     beforeEach(() => {
@@ -655,7 +751,7 @@ describe('Context class', () => {
           }),
           dsMockUtils.createMockSigningKey({
             signer: signerAccountId,
-            permissions: [],
+            permissions: [dsMockUtils.createMockPermission('Full')],
           }),
         ],
       });
@@ -668,6 +764,14 @@ describe('Context class', () => {
           })
         ),
       });
+    });
+
+    afterEach(() => {
+      entityMockUtils.reset();
+    });
+
+    afterAll(() => {
+      entityMockUtils.cleanup();
     });
 
     test('should return a list of Signers', async () => {

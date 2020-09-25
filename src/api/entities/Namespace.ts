@@ -1,5 +1,5 @@
-import { Entity } from '~/base';
-import { Context } from '~/context';
+import { Entity } from '~/api/entities';
+import { Context } from '~/base';
 
 /**
  * @hidden

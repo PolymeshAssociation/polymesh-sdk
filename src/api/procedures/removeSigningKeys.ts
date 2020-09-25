@@ -2,7 +2,7 @@ import { find } from 'lodash';
 
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Signer } from '~/types';
-import { signerToSignatory } from '~/utils';
+import { signerToSignerValue, signerValueToSignatory } from '~/utils';
 
 export interface RemoveSigningKeysParams {
   signers: Signer[];
@@ -31,7 +31,8 @@ export async function prepareRemoveSigningKeys(
     context.getSigningKeys(),
   ]);
 
-  const isMasterKeyPresent = find(signers, ({ value }) => value === masterKey);
+  const signerValues = signers.map(signer => signerToSignerValue(signer));
+  const isMasterKeyPresent = find(signerValues, ({ value }) => value === masterKey);
 
   if (isMasterKeyPresent) {
     throw new PolymeshError({
@@ -41,8 +42,10 @@ export async function prepareRemoveSigningKeys(
   }
 
   const notInTheList: string[] = [];
-  signers.forEach(({ value: itemValue }) => {
-    const isPresent = signingKeys.find(({ value }) => value === itemValue);
+  signerValues.forEach(({ value: itemValue }) => {
+    const isPresent = signingKeys
+      .map(({ signer }) => signerToSignerValue(signer))
+      .find(({ value }) => value === itemValue);
     if (!isPresent) {
       notInTheList.push(itemValue);
     }
@@ -61,7 +64,7 @@ export async function prepareRemoveSigningKeys(
   this.addTransaction(
     tx.identity.removeSigningKeys,
     {},
-    signers.map(signer => signerToSignatory(signer, context))
+    signerValues.map(signer => signerValueToSignatory(signer, context))
   );
 }
 

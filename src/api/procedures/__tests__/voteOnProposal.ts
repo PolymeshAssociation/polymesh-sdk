@@ -5,7 +5,7 @@ import sinon from 'sinon';
 
 import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 import { Params, prepareVoteOnProposal } from '~/api/procedures/voteOnProposal';
-import { Context } from '~/context';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';
@@ -115,7 +115,7 @@ describe('voteOnProposal procedure', () => {
     expect(error.message).toBe('The proposal must not be in its cool-off period');
   });
 
-  test('should throw an error if the identity has already voted on the proposal', async () => {
+  test('should throw an error if the Identity has already voted on the proposal', async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         identityHasVoted: true,
@@ -138,7 +138,7 @@ describe('voteOnProposal procedure', () => {
     expect(error.message).toBe('The Identity has already voted on this proposal');
   });
 
-  test("should throw an error if the identity doesn't have enough balance", async () => {
+  test("should throw an error if the Identity doesn't have enough balance", async () => {
     entityMockUtils.configureMocks({
       proposalOptions: {
         getDetails: {

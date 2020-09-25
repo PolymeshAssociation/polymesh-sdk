@@ -67,17 +67,25 @@ import {
   Scope,
   SecurityToken,
   Signatory,
-  SigningKey,
+  SigningKey as MeshSigningKey,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
-import { Identity } from '~/api/entities';
-import { Context } from '~/context';
+import { AuthorizationRequest, Identity } from '~/api/entities';
+import { Context } from '~/base';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, ClaimData, ClaimType, KeyringPair, ResultSet, SignerType } from '~/types';
+import {
+  AccountBalance,
+  ClaimData,
+  ClaimType,
+  ExtrinsicData,
+  KeyringPair,
+  ResultSet,
+  SigningKey,
+} from '~/types';
 import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
 
@@ -172,9 +180,12 @@ interface ContextOptions {
   currentPairAddress?: string;
   issuedClaims?: ResultSet<ClaimData>;
   masterKey?: string;
+  signingKeys?: SigningKey[];
+  transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
   middlewareAvailable?: boolean;
+  sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
 }
 
@@ -369,12 +380,23 @@ const defaultContextOptions: ContextOptions = {
       },
     ],
     next: 1,
-    count: 0,
+    count: 1,
   },
   masterKey: 'masterKey',
+  signingKeys: [],
+  transactionHistory: {
+    data: [],
+    next: null,
+    count: 1,
+  },
   latestBlock: new BigNumber(100),
   middlewareEnabled: true,
   middlewareAvailable: true,
+  sentAuthorizations: {
+    data: [{} as AuthorizationRequest],
+    next: 1,
+    count: 1,
+  },
   isArchiveNode: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
@@ -391,18 +413,31 @@ let keyringOptions: KeyringOptions = defaultKeyringOptions;
  */
 function configureContext(opts: ContextOptions): void {
   const getCurrentIdentity = sinon.stub();
+  const identity = {
+    did: opts.did,
+    hasRoles: sinon.stub().resolves(opts.hasRoles),
+    hasValidCdd: sinon.stub().resolves(opts.validCdd),
+    getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
+    getMasterKey: sinon.stub().resolves(opts.masterKey),
+    getSigningKeys: sinon.stub().resolves(opts.signingKeys),
+    authorizations: {
+      getSent: sinon.stub().resolves(opts.sentAuthorizations),
+    },
+  };
   opts.withSeed
-    ? getCurrentIdentity.resolves({
-        getPolyXBalance: sinon.stub().resolves(opts.balance?.free),
-        did: opts.did,
-        hasRoles: sinon.stub().resolves(opts.hasRoles),
-        hasValidCdd: sinon.stub().resolves(opts.validCdd),
-        getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-        getMasterKey: sinon.stub().resolves(opts.masterKey),
-      })
+    ? getCurrentIdentity.resolves(identity)
     : getCurrentIdentity.throws(
         new Error('The current account does not have an associated identity')
       );
+  const getCurrentAccount = sinon.stub();
+  opts.withSeed
+    ? getCurrentAccount.returns({
+        address: opts.currentPairAddress,
+        getBalance: sinon.stub().resolves(opts.balance),
+        getIdentity: sinon.stub().resolves(identity),
+        getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
+      })
+    : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
   const currentPair = opts.withSeed
     ? ({
         address: opts.currentPairAddress,
@@ -419,6 +454,7 @@ function configureContext(opts: ContextOptions): void {
   const contextInstance = ({
     currentPair,
     getCurrentIdentity,
+    getCurrentAccount,
     getCurrentPair,
     accountBalance: sinon.stub().resolves(opts.balance),
     getAccounts: sinon.stub().returns([]),
@@ -433,16 +469,7 @@ function configureContext(opts: ContextOptions): void {
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
-    getSigningKeys: sinon.stub().returns(
-      opts.withSeed
-        ? [
-            {
-              type: SignerType.Account,
-              value: opts.currentPairAddress,
-            },
-          ]
-        : []
-    ),
+    getSigningKeys: sinon.stub().returns(opts.signingKeys),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
@@ -1665,7 +1692,7 @@ export const createMockAssetTransferRulesResult = (assetTransferRulesResult?: {
 export const createMockDidRecord = (didRecord?: {
   roles: IdentityRole[];
   master_key: AccountId;
-  signing_keys: SigningKey[];
+  signing_keys: MeshSigningKey[];
 }): DidRecord => {
   const record = didRecord || {
     roles: [],
@@ -1795,7 +1822,7 @@ export const createMockPipsMetadata = (metadata?: {
 export const createMockSigningKey = (signingKey?: {
   signer: Signatory;
   permissions: Permission[];
-}): SigningKey => {
+}): MeshSigningKey => {
   const key = signingKey || {
     signer: createMockSignatory(),
     permissions: [],
@@ -1805,7 +1832,7 @@ export const createMockSigningKey = (signingKey?: {
       ...key,
     },
     !signingKey
-  ) as SigningKey;
+  ) as MeshSigningKey;
 };
 
 /**

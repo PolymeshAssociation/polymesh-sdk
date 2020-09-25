@@ -10,8 +10,7 @@ import {
   ProposalTimeFrames,
 } from '~/api/entities/Proposal/types';
 import { createProposal, CreateProposalParams } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
-import { Context } from '~/context';
+import { Context, TransactionQueue } from '~/base';
 import { proposals } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
