@@ -57,8 +57,6 @@ export async function prepareSetAssetRequirements(
     });
   }
 
-  // conditionToComplianceRequirement
-
   const rawConditions = requirements.map(requirement => {
     const {
       sender_conditions: senderConditions,

@@ -313,6 +313,10 @@ describe('SecurityToken class', () => {
       tokenIdentifierTypeToIdentifierTypeStub
         .withArgs(tokenIdentifiers[2].type, context)
         .returns(rawIdentifiers[2][0]);
+
+      tokenIdentifierTypeToIdentifierTypeStub
+        .withArgs(tokenIdentifiers[3].type, context)
+        .returns(rawIdentifiers[3][0]);
     });
 
     test('should return the list of token identifiers for a security token', async () => {
@@ -332,7 +336,12 @@ describe('SecurityToken class', () => {
       const unsubCallback = 'unsubCallBack';
 
       dsMockUtils.createQueryStub('asset', 'identifiers').multi.callsFake(async (_, cbFunc) => {
-        cbFunc([rawIdentifiers[0][1], rawIdentifiers[1][1], rawIdentifiers[2][1]]);
+        cbFunc([
+          rawIdentifiers[0][1],
+          rawIdentifiers[1][1],
+          rawIdentifiers[2][1],
+          rawIdentifiers[3][1],
+        ]);
 
         return unsubCallback;
       });

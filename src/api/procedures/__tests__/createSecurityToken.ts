@@ -266,7 +266,6 @@ describe('createSecurityToken procedure', () => {
       rawIsDivisible,
       rawType,
       [],
-      null,
       null
     );
   });
