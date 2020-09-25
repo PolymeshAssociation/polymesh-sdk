@@ -34,12 +34,28 @@ export async function prepareInviteAccount(
 
   const address = signerToString(targetAccount);
 
+  let account: Account;
+
+  if (targetAccount instanceof Account) {
+    account = targetAccount;
+  } else {
+    account = new Account({ address: targetAccount }, context);
+  }
+
   const currentIdentity = await context.getCurrentIdentity();
 
-  const [authorizationRequests, secondaryKeys] = await Promise.all([
+  const [authorizationRequests, secondaryKeys, existingIdentity] = await Promise.all([
     currentIdentity.authorizations.getSent(),
     context.getSecondaryKeys(),
-  ]);
+    account.getIdentity(),
+  ] as const);
+
+  if (existingIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The target Account is already part of an Identity',
+    });
+  }
 
   const isPresent = !!secondaryKeys.find(({ signer }) => signerToString(signer) === address);
 
