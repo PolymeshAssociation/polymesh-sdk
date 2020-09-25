@@ -135,6 +135,22 @@ describe('inviteAccount procedure', () => {
     );
   });
 
+  test('should throw an error if the passed account is already part of an Identity', async () => {
+    const targetAccount = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+      getIdentity: entityMockUtils.getIdentityInstance(),
+    });
+    Object.setPrototypeOf(targetAccount, Account.prototype);
+
+    signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);
+
+    const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
+
+    await expect(prepareInviteAccount.call(proc, { targetAccount })).rejects.toThrow(
+      'The target Account is already part of an Identity'
+    );
+  });
+
   test('should throw an error if the passed account is already present in the signing keys list', async () => {
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
 
