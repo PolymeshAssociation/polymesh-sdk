@@ -41,7 +41,7 @@ describe('CurrentAccount class', () => {
       const result = await account.getIdentity();
 
       expect(result instanceof CurrentIdentity).toBe(true);
-      expect(result.did).toBe(did);
+      expect(result?.did).toBe(did);
     });
   });
 });

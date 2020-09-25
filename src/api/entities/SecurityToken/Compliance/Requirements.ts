@@ -25,11 +25,11 @@ import {
  */
 export class Requirements extends Namespace<SecurityToken> {
   /**
-   * Configure asset compliance for the Security Token. This operation will replace all existing conditions with a new condition set
+   * Configure asset compliance requirements for the Security Token. This operation will replace all existing requirements with a new requirement set
    *
    * This requires two transactions
    *
-   * @param args.conditions - array of array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays. In other words, higher level arrays are *OR* between them,
+   * @param args.requirements - array of array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays. In other words, higher level arrays are *OR* between them,
    * while conditions inside each array are *AND* between them
    *
    * @example Say A, B, C, D and E are requirements and we arrange them as `[[A, B], [C, D], [E]]`.
@@ -113,11 +113,11 @@ export class Requirements extends Namespace<SecurityToken> {
       parent: { ticker },
       context,
     } = this;
-    return setAssetRequirements.prepare({ ticker, conditions: [] }, context);
+    return setAssetRequirements.prepare({ ticker, requirements: [] }, context);
   }
 
   /**
-   * Pause all the Security Token's requirements. This means that all transfers and token issuance will be allowed until conditions are unpaused
+   * Pause all the Security Token's requirements. This means that all transfers and token issuance will be allowed until requirements are unpaused
    */
   public pause(): Promise<TransactionQueue<SecurityToken>> {
     const {
@@ -165,7 +165,7 @@ export class Requirements extends Namespace<SecurityToken> {
   }
 
   /**
-   * Check whether asset compliances are paused or not
+   * Check whether asset compliance requirements are paused or not
    */
   public async arePaused(): Promise<boolean> {
     const {

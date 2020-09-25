@@ -187,6 +187,7 @@ interface ContextOptions {
   middlewareEnabled?: boolean;
   middlewareAvailable?: boolean;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
+  isArchiveNode?: boolean;
 }
 
 interface Pair {
@@ -397,6 +398,7 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 1,
   },
+  isArchiveNode: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -473,6 +475,7 @@ function configureContext(opts: ContextOptions): void {
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
     isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
+    isArchiveNode: opts.isArchiveNode,
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);

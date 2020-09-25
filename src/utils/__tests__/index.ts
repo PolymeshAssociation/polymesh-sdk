@@ -2351,6 +2351,9 @@ describe('requestPaginated', () => {
 
 describe('requestAtBlock', () => {
   test('should fetch and return the value at a certain block (current if left empty)', async () => {
+    const context = dsMockUtils.getContextInstance({
+      isArchiveNode: true,
+    });
     const returnValue = dsMockUtils.createMockU32(5);
     const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
       returnValue,
@@ -2359,20 +2362,49 @@ describe('requestAtBlock', () => {
     const blockHash = 'someBlockHash';
     const ticker = 'ticker';
 
-    let res = await requestAtBlock(queryStub, {
-      blockHash,
-      args: [ticker],
-    });
+    let res = await requestAtBlock(
+      queryStub,
+      {
+        blockHash,
+        args: [ticker],
+      },
+      context
+    );
 
     sinon.assert.calledWith(queryStub.at, blockHash, ticker);
     expect(res).toBe(returnValue);
 
-    res = await requestAtBlock(queryStub, {
-      args: [ticker],
-    });
+    res = await requestAtBlock(
+      queryStub,
+      {
+        args: [ticker],
+      },
+      context
+    );
 
     sinon.assert.calledWith(queryStub, ticker);
     expect(res).toBe(returnValue);
+  });
+
+  test('should throw an error if the node is not archive', async () => {
+    const context = dsMockUtils.getContextInstance({
+      isArchiveNode: false,
+    });
+
+    const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
+      returnValue: dsMockUtils.createMockU32(5),
+    });
+
+    await expect(
+      requestAtBlock(
+        queryStub,
+        {
+          blockHash: 'someBlockHash',
+          args: ['ticker'],
+        },
+        context
+      )
+    ).rejects.toThrow('Cannot query previous blocks in a non-archive node');
   });
 });
 

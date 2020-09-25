@@ -61,7 +61,7 @@ describe('issueTokens procedure', () => {
   test('should throw an error if security token is divisible and the amount exceeds six decimals', () => {
     const args = {
       issuanceAmount: {
-        amount,
+        amount: new BigNumber(50.1234567),
       },
       ticker,
     };
@@ -84,7 +84,7 @@ describe('issueTokens procedure', () => {
   test('should throw an error if security token is not divisible and the amount has decimals', () => {
     const args = {
       issuanceAmount: {
-        amount,
+        amount: new BigNumber(50.1),
       },
       ticker,
     };
@@ -134,7 +134,7 @@ describe('issueTokens procedure', () => {
   });
 
   test('should throw an error if canMint returns a different status from Success', async () => {
-    const transferStatus = TransferStatus.Failure;
+    const transferStatus = TransferStatus.InvalidSenderIdentity;
     const args = {
       issuanceAmount: {
         amount,
@@ -145,7 +145,7 @@ describe('issueTokens procedure', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
         details: {
-          primaryIssuanceAgent: new Identity({ did: 'someDid' }, mockContext),
+          primaryIssuanceAgent: undefined,
         },
         transfersCanMint: transferStatus,
       },
@@ -161,9 +161,9 @@ describe('issueTokens procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe("You can't issue tokens to treasury account");
+    expect(error.message).toBe("You can't issue tokens to primary issuance agent");
     expect(error.data).toMatchObject({
-      failed: [{ transferStatus }],
+      transferStatus,
     });
   });
 
@@ -174,6 +174,15 @@ describe('issueTokens procedure', () => {
       },
       ticker,
     };
+
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        details: {
+          isDivisible: true,
+          primaryIssuanceAgent: entityMockUtils.getIdentityInstance(),
+        },
+      },
+    });
 
     const transaction = dsMockUtils.createTxStub('asset', 'issue');
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);

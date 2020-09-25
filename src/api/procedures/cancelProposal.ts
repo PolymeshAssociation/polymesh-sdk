@@ -1,55 +1,57 @@
-import BigNumber from 'bignumber.js';
+// NOTE uncomment in Governance v2 upgrade
 
-import { Procedure } from '~/base';
-import { accountIdToString, numberToPipId } from '~/utils';
+// import BigNumber from 'bignumber.js';
 
-import { assertProposalUnlocked } from './utils';
+// import { Procedure } from '~/base';
+// import { accountIdToString, numberToPipId } from '~/utils';
 
-/**
- * @hidden
- */
-export type Params = { pipId: BigNumber };
+// import { assertProposalUnlocked } from './utils';
 
-/**
- * @hidden
- */
-export async function prepareCancelProposal(
-  this: Procedure<Params, void>,
-  args: Params
-): Promise<void> {
-  const {
-    context: {
-      polymeshApi: { tx },
-    },
-    context,
-  } = this;
-  const { pipId } = args;
+// /**
+//  * @hidden
+//  */
+// export type Params = { pipId: BigNumber };
 
-  await assertProposalUnlocked(pipId, context);
+// /**
+//  * @hidden
+//  */
+// export async function prepareCancelProposal(
+//   this: Procedure<Params, void>,
+//   args: Params
+// ): Promise<void> {
+//   const {
+//     context: {
+//       polymeshApi: { tx },
+//     },
+//     context,
+//   } = this;
+//   const { pipId } = args;
 
-  this.addTransaction(tx.pips.cancelProposal, {}, numberToPipId(pipId, context));
-}
+//   await assertProposalUnlocked(pipId, context);
 
-/**
- * @hidden
- */
-export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): Promise<boolean> {
-  const {
-    context,
-    context: {
-      polymeshApi: {
-        query: { pips },
-      },
-    },
-  } = this;
+//   this.addTransaction(tx.pips.cancelProposal, {}, numberToPipId(pipId, context));
+// }
 
-  const metadata = await pips.proposalMetadata(numberToPipId(pipId, context));
-  const { proposer } = metadata.unwrap();
+// /**
+//  * @hidden
+//  */
+// export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): Promise<boolean> {
+//   const {
+//     context,
+//     context: {
+//       polymeshApi: {
+//         query: { pips },
+//       },
+//     },
+//   } = this;
 
-  return accountIdToString(proposer) === this.context.getCurrentPair().address;
-}
+//   const metadata = await pips.proposalMetadata(numberToPipId(pipId, context));
+//   const { proposer } = metadata.unwrap();
 
-/**
- * @hidden
- */
-export const cancelProposal = new Procedure(prepareCancelProposal, isAuthorized);
+//   return accountIdToString(proposer) === this.context.getCurrentPair().address;
+// }
+
+// /**
+//  * @hidden
+//  */
+// export const cancelProposal = new Procedure(prepareCancelProposal, isAuthorized);

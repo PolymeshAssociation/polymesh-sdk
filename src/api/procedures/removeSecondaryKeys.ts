@@ -54,7 +54,7 @@ export async function prepareRemoveSecondaryKeys(
   if (notInTheList.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You cannot remove a signing key that is not present in your secondary keys list',
+      message: 'You cannot remove a key that is not present in your secondary keys list',
       data: {
         missing: notInTheList,
       },

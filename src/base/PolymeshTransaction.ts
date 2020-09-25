@@ -3,7 +3,8 @@ import { DispatchError } from '@polkadot/types/interfaces';
 import { ISubmittableResult, RegistryError } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
-import { TxTag } from 'polymesh-types/types';
+import { includes } from 'lodash';
+import { TxTag, TxTags } from 'polymesh-types/types';
 
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import { ErrorCode, Fees, TransactionStatus } from '~/types';
@@ -196,11 +197,11 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
   /**
    * Get all (protocol and gas) fees associated with this transaction. Returns null
    * if the transaction is not ready yet (this can happen if it depends on the execution of a
-   * previous transaction in the queue)
+   * previous transaction in the queue). Fees will be returned as zero if they are paid by a third party (such as when joining an identity)
    */
   public async getFees(): Promise<Fees | null> {
     const { tx, args, signer, batchSize, context } = this;
-    let { protocolFee } = this;
+    let { protocolFee, tag } = this;
 
     let unwrappedTx;
     let unwrappedArgs;
@@ -210,6 +211,15 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
       unwrappedArgs = unwrapValues(args);
     } catch (err) {
       return null;
+    }
+
+    if (
+      includes([TxTags.identity.JoinIdentityAsIdentity, TxTags.identity.JoinIdentityAsKey], tag)
+    ) {
+      return {
+        protocol: new BigNumber(0),
+        gas: new BigNumber(0),
+      };
     }
 
     const { partialFee } = await unwrappedTx(...unwrappedArgs).paymentInfo(signer);

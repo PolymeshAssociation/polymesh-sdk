@@ -25,7 +25,7 @@ describe('setAssetRequirements procedure', () => {
   let complianceRequirementToRequirementStub: sinon.SinonStub<[ComplianceRequirement], Requirement>;
   let assetCompliancesStub: sinon.SinonStub;
   let ticker: string;
-  let conditions: Condition[][];
+  let requirements: Condition[][];
   let rawTicker: Ticker;
   let senderConditions: MeshCondition[][];
   let receiverConditions: MeshCondition[][];
@@ -46,7 +46,7 @@ describe('setAssetRequirements procedure', () => {
       'complianceRequirementToRequirement'
     );
     ticker = 'someTicker';
-    conditions = ([
+    requirements = ([
       ['condition0', 'condition1'],
       ['condition1', 'condition2', 'condition3'],
       ['condition4'],
@@ -74,7 +74,7 @@ describe('setAssetRequirements procedure', () => {
     /* eslint-enable @typescript-eslint/camelcase */
     args = {
       ticker,
-      conditions,
+      requirements,
     };
   });
 
@@ -106,7 +106,7 @@ describe('setAssetRequirements procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    conditions.forEach((condition, index) => {
+    requirements.forEach((condition, index) => {
       const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
         /* eslint-disable @typescript-eslint/camelcase */
         sender_conditions: senderConditions[index],
@@ -156,7 +156,7 @@ describe('setAssetRequirements procedure', () => {
   test('should add a reset asset compliance transaction and add compliance requirement transactions to the queue', async () => {
     const currentComplianceRequirement = rawComplianceRequirement.slice(0, -1);
     assetCompliancesStub.withArgs(rawTicker).returns({
-      conditions: currentComplianceRequirement,
+      requirements: currentComplianceRequirement,
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
@@ -184,7 +184,7 @@ describe('setAssetRequirements procedure', () => {
 
   test('should not add a remove claim issuers transaction if there are no default claim issuers set on the token', async () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
-      conditions: [],
+      requirements: [],
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
@@ -211,7 +211,7 @@ describe('setAssetRequirements procedure', () => {
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
-    const result = await prepareSetAssetRequirements.call(proc, { ...args, conditions: [] });
+    const result = await prepareSetAssetRequirements.call(proc, { ...args, requirements: [] });
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,

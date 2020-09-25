@@ -80,7 +80,10 @@ export async function prepareModifyClaims(
 
   allTargets = uniq(allTargets);
 
-  const nonExistentDids: string[] = await context.getInvalidDids(allTargets);
+  const [nonExistentDids, middlewareAvailable] = await Promise.all([
+    context.getInvalidDids(allTargets),
+    context.isMiddlewareAvailable(),
+  ]);
 
   if (nonExistentDids.length) {
     throw new PolymeshError({
@@ -92,7 +95,8 @@ export async function prepareModifyClaims(
     });
   }
 
-  if (operation !== ClaimOperation.Add) {
+  // skip validation if the middleware is unavailable
+  if (operation !== ClaimOperation.Add && middlewareAvailable) {
     const { did: currentDid } = await context.getCurrentIdentity();
     const {
       data: {

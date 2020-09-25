@@ -11,6 +11,7 @@ import { ClaimData, ClaimScope, ClaimType, Ensured, IdentityWithClaims, ResultSe
 import { ClaimOperation } from '~/types/internal';
 import {
   calculateNextKey,
+  getDid,
   middlewareScopeToScope,
   removePadding,
   signerToString,
@@ -77,16 +78,9 @@ export class Claims {
     } = { includeExpired: true }
   ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
-
     const { target, includeExpired, size, start } = opts;
 
-    let did;
-    if (target) {
-      did = signerToString(target);
-    } else {
-      const { did: identityId } = await context.getCurrentIdentity();
-      did = identityId;
-    }
+    const did = await getDid(target, context);
 
     const result = await context.issuedClaims({
       trustedClaimIssuers: [did],
@@ -171,13 +165,7 @@ export class Claims {
     const { context } = this;
     const { target } = opts;
 
-    let did;
-    if (target) {
-      did = signerToString(target);
-    } else {
-      const { did: identityId } = await context.getCurrentIdentity();
-      did = identityId;
-    }
+    const did = await getDid(target, context);
 
     const {
       data: { scopesByIdentity: scopes },
@@ -222,12 +210,7 @@ export class Claims {
     const { context } = this;
     const { target, includeExpired, size, start } = opts;
 
-    let did;
-    if (target) {
-      did = signerToString(target);
-    } else {
-      ({ did } = await context.getCurrentIdentity());
-    }
+    const did = await getDid(target, context);
 
     const result = await context.issuedClaims({
       targets: [did],
@@ -263,13 +246,7 @@ export class Claims {
 
     const { target, trustedClaimIssuers, scope, includeExpired, size, start } = opts;
 
-    let did;
-    if (target) {
-      did = signerToString(target);
-    } else {
-      const { did: identityId } = await context.getCurrentIdentity();
-      did = identityId;
-    }
+    const did = await getDid(target, context);
 
     const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
       issuerDidsWithClaimsByTarget({

@@ -76,6 +76,8 @@ export async function isAuthorized(
 
   const unexpiredRequests = authRequests.filter(request => !request.isExpired());
 
+  const fetchDid = async (): Promise<string> => did || (await context.getCurrentIdentity()).did;
+
   const authorized = await P.mapSeries(unexpiredRequests, async ({ target, issuer }) => {
     let condition;
 
@@ -83,13 +85,12 @@ export async function isAuthorized(
       const { address } = context.getCurrentAccount();
       condition = address === target.address;
     } else {
-      if (!did) {
-        ({ did } = await context.getCurrentIdentity());
-      }
+      did = await fetchDid();
       condition = did === target.did;
     }
 
     if (!accept) {
+      did = await fetchDid();
       condition = condition || did === issuer.did;
     }
 

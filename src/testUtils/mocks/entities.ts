@@ -10,11 +10,12 @@ import {
   CurrentAccount,
   CurrentIdentity,
   Identity,
-  Proposal,
+  // NOTE uncomment in Governance v2 upgrade
+  // Proposal,
   SecurityToken,
   TickerReservation,
 } from '~/api/entities';
-import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -26,7 +27,8 @@ import {
   TickerReservationDetails,
   TickerReservationStatus,
   TransferStatus,
-  TxTags,
+  // NOTE uncomment in Governance v2 upgrade
+  // TxTags,
 } from '~/types';
 
 const mockInstanceContainer = {
@@ -35,7 +37,8 @@ const mockInstanceContainer = {
   tickerReservation: {} as MockTickerReservation,
   securityToken: {} as MockSecurityToken,
   authorizationRequest: {} as MockAuthorizationRequest,
-  proposal: {} as MockProposal,
+  // NOTE uncomment in Governance v2 upgrade
+  // proposal: {} as MockProposal,
   account: {} as MockAccount,
   currentAccount: {} as MockCurrentAccount,
 };
@@ -47,7 +50,8 @@ type MockCurrentAccount = Mocked<CurrentAccount>;
 type MockTickerReservation = Mocked<TickerReservation>;
 type MockSecurityToken = Mocked<SecurityToken>;
 type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
-type MockProposal = Mocked<Proposal>;
+// NOTE uncomment in Governance v2 upgrade
+// type MockProposal = Mocked<Proposal>;
 
 interface IdentityOptions {
   did?: string;
@@ -305,46 +309,51 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
   expiry: null,
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
-const defaultProposalOptions: ProposalOptions = {
-  pipId: new BigNumber(1),
-  getDetails: {
-    lastState: ProposalState.Referendum,
-    transaction: TxTags.treasury.Disbursement,
-  } as ProposalDetails,
-  getStage: ProposalStage.Open,
-  identityHasVoted: false,
-};
-let proposalOptions = defaultProposalOptions;
+// NOTE uncomment in Governance v2 upgrade
+// const defaultProposalOptions: ProposalOptions = {
+//   pipId: new BigNumber(1),
+//   getDetails: {
+//     lastState: ProposalState.Referendum,
+//     transaction: TxTags.treasury.Disbursement,
+//   } as ProposalDetails,
+//   getStage: ProposalStage.Open,
+//   identityHasVoted: false,
+// };
+
+// let proposalOptions = defaultProposalOptions;
 
 /**
  * @hidden
  * Configure the Proposal instance
  */
-function configureProposal(opts: ProposalOptions): void {
-  const proposal = ({
-    pipId: opts.pipId,
-    getDetails: sinon.stub().returns(opts.getDetails),
-    getStage: sinon.stub().returns(opts.getStage),
-    identityHasVoted: sinon.stub().returns(opts.identityHasVoted),
-  } as unknown) as MockProposal;
+// NOTE uncomment in Governance v2 upgrade
 
-  Object.assign(mockInstanceContainer.proposal, proposal);
-  proposalConstructorStub.callsFake(args => {
-    return merge({}, proposal, args);
-  });
-}
+// function configureProposal(opts: ProposalOptions): void {
+//   const proposal = ({
+//     pipId: opts.pipId,
+//     getDetails: sinon.stub().returns(opts.getDetails),
+//     getStage: sinon.stub().returns(opts.getStage),
+//     identityHasVoted: sinon.stub().returns(opts.identityHasVoted),
+//   } as unknown) as MockProposal;
+
+//   Object.assign(mockInstanceContainer.proposal, proposal);
+//   proposalConstructorStub.callsFake(args => {
+//     return merge({}, proposal, args);
+//   });
+// }
 
 /**
  * @hidden
  * Initialize the Proposal instance
  */
-function initProposal(opts?: ProposalOptions): void {
-  proposalConstructorStub = sinon.stub();
+// NOTE uncomment in Governance v2 upgrade
+// function initProposal(opts?: ProposalOptions): void {
+//   proposalConstructorStub = sinon.stub();
 
-  proposalOptions = { ...defaultProposalOptions, ...opts };
+//   proposalOptions = { ...defaultProposalOptions, ...opts };
 
-  configureProposal(proposalOptions);
-}
+//   configureProposal(proposalOptions);
+// }
 
 /**
  * @hidden
@@ -654,12 +663,14 @@ export function configureMocks(opts?: {
 
   configureAuthorizationRequest(tempAuthorizationRequestOptions);
 
-  const tempProposalOptions = {
-    ...defaultProposalOptions,
-    ...opts?.proposalOptions,
-  };
+  // NOTE uncomment in Governance v2 upgrade
+  // const tempProposalOptions = {
+  //   ...defaultProposalOptions,
+  //   ...opts?.proposalOptions,
+  // };
 
-  configureProposal(tempProposalOptions);
+  // NOTE uncomment in Governance v2 upgrade
+  // configureProposal(tempProposalOptions);
 }
 
 /**
@@ -699,7 +710,8 @@ export function initMocks(opts?: {
   initAuthorizationRequest(opts?.authorizationRequestOptions);
 
   // Proposal
-  initProposal(opts?.proposalOptions);
+  // NOTE uncomment in Governance v2 upgrade
+  // initProposal(opts?.proposalOptions);
 }
 
 /**
@@ -714,7 +726,8 @@ export function cleanup(): void {
   mockInstanceContainer.tickerReservation = {} as MockTickerReservation;
   mockInstanceContainer.securityToken = {} as MockSecurityToken;
   mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
-  mockInstanceContainer.proposal = {} as MockProposal;
+  // NOTE uncomment in Governance v2 upgrade
+  // mockInstanceContainer.proposal = {} as MockProposal;
 }
 
 /**
@@ -731,7 +744,8 @@ export function reset(): void {
     tickerReservationOptions,
     securityTokenOptions,
     authorizationRequestOptions,
-    proposalOptions,
+    // NOTE uncomment in Governance v2 upgrade
+    // proposalOptions,
   });
 }
 
@@ -1017,10 +1031,12 @@ export function getAuthorizationRequestInstance(
  * @hidden
  * Retrieve a Proposal instance
  */
-export function getProposalInstance(opts?: ProposalOptions): MockProposal {
-  if (opts) {
-    configureProposal(opts);
-  }
+// NOTE uncomment in Governance v2 upgrade
 
-  return mockInstanceContainer.proposal;
-}
+// export function getProposalInstance(opts?: ProposalOptions): MockProposal {
+//   if (opts) {
+//     configureProposal(opts);
+//   }
+
+//   return mockInstanceContainer.proposal;
+// }

@@ -34,6 +34,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
+  getDid,
   moduleAddressToString,
   signerToString,
   stringToIdentityId,
@@ -44,7 +45,7 @@ import {
 } from '~/utils';
 
 import { Claims } from './Claims';
-import { Governance } from './Governance';
+// import { Governance } from './Governance';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
@@ -69,7 +70,9 @@ export class Polymesh {
   private context: Context = {} as Context;
 
   // Namespaces
-  public governance: Governance;
+
+  // NOTE uncomment in Governance v2 upgrade
+  // public governance: Governance;
   public claims: Claims;
 
   /**
@@ -78,23 +81,52 @@ export class Polymesh {
   private constructor(context: Context) {
     this.context = context;
 
-    this.governance = new Governance(context);
+    // NOTE uncomment in Governance v2 upgrade
+    // this.governance = new Governance(context);
     this.claims = new Claims(context);
   }
 
   /**
-   * Create the instance and connect to the Polymesh node
+   * Create the instance and connect to the Polymesh node using an account seed
+   *
+   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
+   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
+   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
+   * @param params.accountSeed - hex seed of the account
    */
   static async connect(params: ConnectParamsBase & { accountSeed: string }): Promise<Polymesh>;
 
+  /**
+   * Create the instance and connect to the Polymesh node using a keyring
+   *
+   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
+   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
+   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
+   * @param params.keyring - object that holds several accounts (useful when using a wallet browser extension)
+   */
   static async connect(
     params: ConnectParamsBase & {
       keyring: CommonKeyring | UiKeyring;
     }
   ): Promise<Polymesh>;
 
+  /**
+   * Create the instance and connect to the Polymesh node using an account URI
+   *
+   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
+   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
+   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
+   * @param params.accountUri - account URI or mnemonic
+   */
   static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
 
+  /**
+   * Create the instance and connect to the Polymesh node without an account
+   *
+   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
+   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
+   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
+   */
   static async connect(params: ConnectParamsBase): Promise<Polymesh>;
 
   // eslint-disable-next-line require-jsdoc
@@ -326,16 +358,10 @@ export class Polymesh {
       context,
     } = this;
 
-    let identity: string;
-
-    if (args) {
-      identity = signerToString(args.owner);
-    } else {
-      ({ did: identity } = await context.getCurrentIdentity());
-    }
+    const did = await getDid(args?.owner, context);
 
     const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(identity, context)
+      stringToIdentityId(did, context)
     );
 
     const tickerReservations: TickerReservation[] = entries
@@ -385,10 +411,10 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve the Identity associated to the current Account
+   * Retrieve the Identity associated to the current Account (null if there is none)
    */
-  public getCurrentIdentity(): Promise<CurrentIdentity> {
-    return this.context.getCurrentIdentity();
+  public getCurrentIdentity(): Promise<CurrentIdentity | null> {
+    return this.context.getCurrentAccount().getIdentity();
   }
 
   /**
@@ -480,16 +506,10 @@ export class Polymesh {
       context,
     } = this;
 
-    let identity: string;
-
-    if (args) {
-      identity = signerToString(args.owner);
-    } else {
-      ({ did: identity } = await context.getCurrentIdentity());
-    }
+    const did = await getDid(args?.owner, context);
 
     const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(identity, context)
+      stringToIdentityId(did, context)
     );
 
     const securityTokens: SecurityToken[] = entries

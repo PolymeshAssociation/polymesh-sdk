@@ -3,8 +3,9 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
-import { Account, Identity, Proposal } from '~/api/entities';
-import { ProposalDetails } from '~/api/entities/Proposal/types';
+// NOTE uncomment in Governance v2 upgrade
+import { Account, Identity /*, Proposal */ } from '~/api/entities';
+// import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { CountryCode } from '~/generated/types';
 
 export * from '~/generated/types';
@@ -243,7 +244,7 @@ export interface IdentityWithClaims {
 }
 
 export interface ExtrinsicData {
-  blockId: number;
+  blockNumber: BigNumber;
   extrinsicIdx: number;
   address: string | null;
   nonce: number;
@@ -319,10 +320,11 @@ export enum ErrorCode {
   NotAuthorized = 'NotAuthorized',
   MiddlewareError = 'MiddlewareError',
   IdentityNotPresent = 'IdentityNotPresent',
+  DataUnavailable = 'DataUnavailable',
 }
 
 /**
- * Represents an amount of tokens to be issued to treasury account
+ * Represents an amount of tokens to be issued to primary issuance agent
  */
 export interface IssuanceAmount {
   amount: BigNumber;
@@ -372,7 +374,7 @@ export interface UiKeyring {
 }
 
 export interface EventIdentifier {
-  blockNumber: number;
+  blockNumber: BigNumber;
   blockDate: Date;
   eventIndex: number;
 }
@@ -475,10 +477,11 @@ export type TransactionArgument = {
 
 export type Signer = Identity | Account;
 
-export interface ProposalWithDetails {
-  proposal: Proposal;
-  details: ProposalDetails;
-}
+// NOTE uncomment in Governance v2 upgrade
+// export interface ProposalWithDetails {
+//   proposal: Proposal;
+//   details: ProposalDetails;
+// }
 
 export interface SecondaryKey {
   signer: Signer;

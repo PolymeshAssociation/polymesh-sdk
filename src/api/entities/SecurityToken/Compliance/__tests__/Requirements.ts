@@ -42,7 +42,7 @@ describe('Requirements class', () => {
       const requirements = new Requirements(token, context);
 
       const args: Omit<Params, 'ticker'> = {
-        conditions: [
+        requirements: [
           [
             {
               type: ConditionType.IsPresent,
@@ -91,7 +91,7 @@ describe('Requirements class', () => {
 
       sinon
         .stub(setAssetRequirements, 'prepare')
-        .withArgs({ ticker: token.ticker, conditions: [] }, context)
+        .withArgs({ ticker: token.ticker, requirements: [] }, context)
         .resolves(expectedQueue);
 
       const queue = await requirements.reset();

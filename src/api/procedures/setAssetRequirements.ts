@@ -10,7 +10,7 @@ import {
 } from '~/utils';
 
 export interface SetAssetRequirementsParams {
-  conditions: Condition[][];
+  requirements: Condition[][];
 }
 
 /**
@@ -33,7 +33,7 @@ export async function prepareSetAssetRequirements(
     },
     context,
   } = this;
-  const { ticker, conditions } = args;
+  const { ticker, requirements } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
@@ -48,8 +48,8 @@ export async function prepareSetAssetRequirements(
   };
 
   if (
-    !differenceWith(conditions, currentRequirements, comparator).length &&
-    conditions.length === currentRequirements.length
+    !differenceWith(requirements, currentRequirements, comparator).length &&
+    requirements.length === currentRequirements.length
   ) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -57,13 +57,11 @@ export async function prepareSetAssetRequirements(
     });
   }
 
-  // conditionToComplianceRequirement
-
-  const rawConditions = conditions.map(condition => {
+  const rawConditions = requirements.map(requirement => {
     const {
       sender_conditions: senderConditions,
       receiver_conditions: receiverConditions,
-    } = requirementToComplianceRequirement({ conditions: condition, id: 1 }, context);
+    } = requirementToComplianceRequirement({ conditions: requirement, id: 1 }, context);
 
     return {
       senderConditions,

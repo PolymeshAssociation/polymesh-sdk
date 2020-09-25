@@ -75,7 +75,7 @@ export async function prepareIssueTokens(
   if (canTransfer !== TransferStatus.Success) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: "You can't issue tokens to treasury account",
+      message: "You can't issue tokens to primary issuance agent",
       data: {
         transferStatus: canTransfer,
       },
