@@ -313,7 +313,7 @@ export enum ErrorCode {
 }
 
 /**
- * Represents an amount of tokens to be issued to treasury account
+ * Represents an amount of tokens to be issued to primary issuance agent
  */
 export interface IssuanceAmount {
   amount: BigNumber;

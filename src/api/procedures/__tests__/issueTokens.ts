@@ -161,7 +161,7 @@ describe('issueTokens procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe("You can't issue tokens to treasury account");
+    expect(error.message).toBe("You can't issue tokens to primary issuance agent");
     expect(error.data).toMatchObject({
       failed: [{ transferStatus }],
     });
