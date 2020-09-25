@@ -3,7 +3,7 @@ import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
-import { ComplianceRequirement, Memo, PipId } from 'polymesh-types/polymesh';
+import { CddId, ComplianceRequirement, Memo, PipId } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
@@ -19,6 +19,7 @@ import {
   IdentityId,
   Permission as MeshPermission,
   ProtocolOp,
+  Scope as MeshScope,
   Signatory,
   Ticker,
   TxTags,
@@ -41,6 +42,7 @@ import {
   CountryCode,
   KnownTokenType,
   Permission,
+  Scope,
   ScopeType,
   Signer,
   TokenIdentifierType,
@@ -69,6 +71,7 @@ import {
   bytesToString,
   calculateNextKey,
   canTransferResultToTransferStatus,
+  cddIdToString,
   cddStatusToBoolean,
   claimToMeshClaim,
   complianceRequirementToRequirement,
@@ -86,7 +89,7 @@ import {
   keyToAddress,
   meshClaimToClaim,
   meshPermissionToPermission,
-  meshProposalStateToProposalState,
+  meshScopeToScope,
   middlewareProposalToProposalDetails,
   moduleAddressToString,
   momentToDate,
@@ -101,6 +104,7 @@ import {
   requestAtBlock,
   requestPaginated,
   requirementToComplianceRequirement,
+  scopeToMeshScope,
   secondaryKeyToMeshSecondaryKey,
   serialize,
   signatoryToSignerValue,
@@ -111,6 +115,7 @@ import {
   stringToAccountId,
   stringToAssetName,
   stringToBytes,
+  stringToCddId,
   stringToDocumentHash,
   stringToDocumentName,
   stringToDocumentUri,
@@ -1530,7 +1535,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
     let claim = dsMockUtils.createMockClaim({
       Accredited: dsMockUtils.createMockScope({
-        Identity: dsMockUtils.createMockTicker(scope.value),
+        Ticker: dsMockUtils.createMockTicker(scope.value),
       }),
     });
 
@@ -1654,6 +1659,43 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
   });
 });
 
+describe('stringToCddId and cddIdToString', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToCddId should convert a cdd id string into an CddId', () => {
+    const cddId = 'someId';
+    const fakeResult = ('type' as unknown) as CddId;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('CddId', cddId)
+      .returns(fakeResult);
+
+    const result = stringToCddId(cddId, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('cddIdToString should convert a CddId to a cddId string', () => {
+    const fakeResult = 'cddId';
+    const cddId = dsMockUtils.createMockCddId(fakeResult);
+
+    const result = cddIdToString(cddId);
+    expect(result).toBe(fakeResult);
+  });
+});
+
 describe('createClaim', () => {
   test('', () => {
     let type = 'Jurisdiction';
@@ -1691,6 +1733,73 @@ describe('createClaim', () => {
       type: ClaimType.CustomerDueDiligence,
       id,
     });
+  });
+});
+
+describe('scopeToMeshScope and meshScopeToScope', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('scopeToMeshScope should convert a Scope into a polkadot Scope object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const value: Scope = {
+      type: ScopeType.Identity,
+      value: 'someDid',
+    };
+    const fakeResult = ('ScopeEnum' as unknown) as MeshScope;
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Scope', { [value.type]: value.value })
+      .returns(fakeResult);
+
+    const result = scopeToMeshScope(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('meshScopeToScope should convert a polkadot Scope object into a Scope', () => {
+    let fakeResult: Scope = {
+      type: ScopeType.Identity,
+      value: 'someDid',
+    };
+    let scope = dsMockUtils.createMockScope({
+      Identity: dsMockUtils.createMockIdentityId(fakeResult.value),
+    });
+
+    let result = meshScopeToScope(scope);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ScopeType.Ticker,
+      value: 'someTicker',
+    };
+    scope = dsMockUtils.createMockScope({
+      Ticker: dsMockUtils.createMockTicker(fakeResult.value),
+    });
+
+    result = meshScopeToScope(scope);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ScopeType.Custom,
+      value: 'something',
+    };
+    scope = dsMockUtils.createMockScope({
+      Custom: dsMockUtils.createMockBytes(fakeResult.value),
+    });
+
+    result = meshScopeToScope(scope);
+    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -2496,42 +2605,43 @@ describe('meshProposalStateToProposalState', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
-    let fakeResult: ProposalState = ProposalState.Cancelled;
+  // NOTE uncomment in Governance v2 upgrade
+  // test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
+  //   let fakeResult: ProposalState = ProposalState.Cancelled;
 
-    let proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   let proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-    let result = meshProposalStateToProposalState(proposalState);
-    expect(result).toEqual(fakeResult);
+  //   let result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-    fakeResult = ProposalState.Killed;
+  //   fakeResult = ProposalState.Killed;
 
-    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-    result = meshProposalStateToProposalState(proposalState);
-    expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-    fakeResult = ProposalState.Pending;
+  //   fakeResult = ProposalState.Pending;
 
-    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-    result = meshProposalStateToProposalState(proposalState);
-    expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-    fakeResult = ProposalState.Referendum;
+  //   fakeResult = ProposalState.Referendum;
 
-    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-    result = meshProposalStateToProposalState(proposalState);
-    expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-    fakeResult = ProposalState.Rejected;
+  //   fakeResult = ProposalState.Rejected;
 
-    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-    result = meshProposalStateToProposalState(proposalState);
-    expect(result).toEqual(fakeResult);
-  });
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
+  // });
 });
 
 describe('toIdentityWithClaimsArray', () => {

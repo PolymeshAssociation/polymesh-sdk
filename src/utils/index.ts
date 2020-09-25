@@ -42,7 +42,6 @@ import {
   IdentityId,
   Permission as MeshPermission,
   PosRatio,
-  ProposalState as MeshProposalState,
   ProtocolOp,
   Scope as MeshScope,
   SecondaryKey as MeshSecondaryKey,
@@ -53,7 +52,7 @@ import {
 } from 'polymesh-types/types';
 
 import { Account, Identity } from '~/api/entities';
-import { ProposalDetails, ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
@@ -1437,28 +1436,29 @@ export function calculateNextKey(totalCount: number, size?: number, start?: numb
   return totalCount > next ? next : null;
 }
 
-/**
- * @hidden
- */
-export function meshProposalStateToProposalState(proposalState: MeshProposalState): ProposalState {
-  if (proposalState.isPending) {
-    return ProposalState.Pending;
-  }
+// NOTE uncomment in Governance v2 upgrade
+// /**
+//  * @hidden
+//  */
+// export function meshProposalStateToProposalState(proposalState: MeshProposalState): ProposalState {
+//   if (proposalState.isPending) {
+//     return ProposalState.Pending;
+//   }
 
-  if (proposalState.isCancelled) {
-    return ProposalState.Cancelled;
-  }
+//   if (proposalState.isCancelled) {
+//     return ProposalState.Cancelled;
+//   }
 
-  if (proposalState.isKilled) {
-    return ProposalState.Killed;
-  }
+//   if (proposalState.isKilled) {
+//     return ProposalState.Killed;
+//   }
 
-  if (proposalState.isRejected) {
-    return ProposalState.Rejected;
-  }
+//   if (proposalState.isRejected) {
+//     return ProposalState.Rejected;
+//   }
 
-  return ProposalState.Referendum;
-}
+//   return ProposalState.Referendum;
+// }
 
 /**
  * @hidden

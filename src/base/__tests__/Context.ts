@@ -865,12 +865,16 @@ describe('Context class', () => {
               name: 'target',
             },
             {
-              type: 'Claim',
-              name: 'claim',
+              type: 'Commission',
+              name: 'commission',
             },
             {
               type: 'Option<Moment>',
               name: 'expiry',
+            },
+            {
+              type: '(IdentityId, u32)',
+              name: 'identityPair',
             },
           ],
         },
@@ -883,70 +887,18 @@ describe('Context class', () => {
           optional: false,
         },
         {
-          name: 'claim',
+          name: 'commission',
           type: TransactionArgumentType.RichEnum,
           optional: false,
           internal: [
             {
-              name: 'Accredited',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'Affiliate',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'BuyLockup',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'SellLockup',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'CustomerDueDiligence',
+              name: 'Individual',
               type: TransactionArgumentType.Null,
               optional: false,
             },
             {
-              name: 'KnowYourCustomer',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'Jurisdiction',
-              type: TransactionArgumentType.Tuple,
-              optional: false,
-              internal: [
-                {
-                  name: '0',
-                  type: TransactionArgumentType.Text,
-                  optional: false,
-                },
-                {
-                  name: '1',
-                  type: TransactionArgumentType.Did,
-                  optional: false,
-                },
-              ],
-            },
-            {
-              name: 'Exempted',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'Blocked',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'NoData',
-              type: TransactionArgumentType.Null,
+              name: 'Global',
+              type: TransactionArgumentType.Number,
               optional: false,
             },
           ],
@@ -955,6 +907,23 @@ describe('Context class', () => {
           name: 'expiry',
           type: TransactionArgumentType.Date,
           optional: true,
+        },
+        {
+          name: 'identityPair',
+          type: TransactionArgumentType.Tuple,
+          optional: false,
+          internal: [
+            {
+              name: '0',
+              optional: false,
+              type: TransactionArgumentType.Did,
+            },
+            {
+              name: '1',
+              optional: false,
+              type: TransactionArgumentType.Number,
+            },
+          ],
         },
       ]);
 

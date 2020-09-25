@@ -322,7 +322,7 @@ describe('Claims Class', () => {
       const target = 'someTarget';
       const scopes = [
         {
-          scope: 'someScope',
+          scope: { type: ScopeType.Identity, value: 'someScope' },
           ticker: 'TOKEN\0\0',
         },
         {
@@ -340,17 +340,19 @@ describe('Claims Class', () => {
         scopesByIdentity: scopes,
       });
 
+      sinon.stub();
+
       let result = await claims.getClaimScopes({ target });
 
       expect(result[0].ticker).toBe('TOKEN');
-      expect(result[0].scope).toBe('someScope');
+      expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: 'someScope' });
       expect(result[1].ticker).toBeUndefined();
       expect(result[1].scope).toBeNull();
 
       result = await claims.getClaimScopes();
 
       expect(result[0].ticker).toBe('TOKEN');
-      expect(result[0].scope).toBe('someScope');
+      expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: 'someScope' });
       expect(result[1].ticker).toBeUndefined();
       expect(result[1].scope).toBeNull();
     });
