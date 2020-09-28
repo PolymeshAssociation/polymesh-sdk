@@ -28,12 +28,13 @@ export default {
         Custom: 'Vec<u8>',
       },
     },
-    IdentifierType: {
+    AssetIdentifier: {
       _enum: {
-        Cins: '',
-        Cusip: '',
-        Isin: '',
-        Dti: '',
+        CUSIP: '[u8; 9]',
+        CINS: '[u8; 9]',
+        ISIN: '[u8; 12]',
+        LEI: '[u8; 20]',
+        EMPTY: '',
       },
     },
     AssetOwnershipRelation: {
@@ -44,7 +45,6 @@ export default {
       },
     },
     AssetName: 'Text',
-    AssetIdentifier: 'Text',
     FundingRoundName: 'Text',
     VenueDetails: 'Text',
     SecurityToken: {
@@ -356,7 +356,13 @@ export default {
         'ZW',
       ],
     },
-    Scope: 'IdentityId',
+    Scope: {
+      _enum: {
+        Identity: 'IdentityId',
+        Ticker: 'Ticker',
+        Custom: 'Vec<u8>',
+      },
+    },
     InvestorZKProofData: '[u8;64]',
     Claim: {
       _enum: {
@@ -474,13 +480,6 @@ export default {
     },
     EthereumAddress: '[u8; 20]',
     EcdsaSignature: '[u8; 65]',
-    SignData: {
-      custodian_did: 'IdentityId',
-      holder_did: 'IdentityId',
-      ticker: 'Ticker',
-      value: 'Balance',
-      nonce: 'u16',
-    },
     MotionTitle: 'Text',
     MotionInfoLink: 'Text',
     Motion: {
@@ -501,6 +500,7 @@ export default {
       url: 'Option<Url>',
       description: 'Option<PipDescription>',
       created_at: 'BlockNumber',
+      transaction_version: 'u32',
     },
     Proposer: {
       _enum: {
@@ -547,7 +547,7 @@ export default {
     },
     PipId: 'u32',
     ProposalState: {
-      _enum: ['Pending', 'Cancelled', 'Killed', 'Rejected', 'Referendum'],
+      _enum: ['Pending', 'Cancelled', 'Rejected', 'Scheduled', 'Failed', 'Executed'],
     },
     ReferendumState: {
       _enum: ['Pending', 'Scheduled', 'Rejected', 'Failed', 'Executed'],
@@ -601,6 +601,7 @@ export default {
         AddMultiSigSigner: 'AccountId',
         TransferAssetOwnership: 'Ticker',
         JoinIdentity: 'Vec<Permission>',
+        PortfolioCustody: 'PortfolioId',
         Custom: 'Ticker',
         NoData: '',
       },
@@ -745,13 +746,7 @@ export default {
         ProposalNotFound: 'Vec<u8>',
       },
     },
-    Vote: {
-      _enum: {
-        None: '',
-        Yes: 'Balance',
-        No: 'Balance',
-      },
-    },
+    Vote: '(bool, Balance)',
     VoteByPip: {
       pip: 'PipId',
       vote: 'Vote',
@@ -794,6 +789,7 @@ export default {
         AddMultiSigSigner: '',
         TransferAssetOwnership: '',
         JoinIdentity: '',
+        PortfolioCustody: '',
         Custom: '',
         NoData: '',
       },
@@ -882,8 +878,8 @@ export default {
       valid_from: 'Option<Moment>',
     },
     Leg: {
-      from: 'IdentityId',
-      to: 'IdentityId',
+      from: 'PortfolioId',
+      to: 'PortfolioId',
       asset: 'Ticker',
       amount: 'Balance',
     },
@@ -894,8 +890,8 @@ export default {
     },
     Receipt: {
       receipt_uid: 'u64',
-      from: 'IdentityId',
-      to: 'IdentityId',
+      from: 'PortfolioId',
+      to: 'PortfolioId',
       asset: 'Ticker',
       amount: 'Balance',
     },
@@ -939,8 +935,7 @@ export default {
     compliance: {
       canTransfer: {
         description:
-          'Checks whether a transaction with given parameters ' +
-          'is compliant to the compliance manager conditions',
+          'Checks whether a transaction with given parameters is compliant to the compliance manager conditions',
         params: [
           {
             name: 'ticker',
@@ -973,7 +968,7 @@ export default {
     },
     identity: {
       isIdentityHasValidCdd: {
-        description: 'use to tell whether the given ' + 'did has valid cdd claim or not',
+        description: 'use to tell whether the given did has valid cdd claim or not',
         params: [
           {
             name: 'did',
@@ -1043,9 +1038,7 @@ export default {
       },
       getFilteredAuthorizations: {
         description:
-          'Retrieve authorizations data for a given ' +
-          'signatory and filtered using the given ' +
-          'authorization type',
+          'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
         params: [
           {
             name: 'signatory',

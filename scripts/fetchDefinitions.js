@@ -23,6 +23,7 @@ function writeDefinitions(schemaObj) {
     `/* eslint-disable @typescript-eslint/camelcase */\nexport default ${util.inspect(schemaObj, {
       compact: false,
       depth: null,
+      maxArrayLength: null,
     })}`
   );
 }
@@ -62,7 +63,7 @@ export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): 
     const isLast = index === countryCodes.length - 1;
     const pascalCaseCode = upperFirst(toLower(code));
 
-    countryCodeEnum = `${countryCodeEnum}\n  ${pascalCaseCode} = '${code}',${
+    countryCodeEnum = `${countryCodeEnum}\n  ${pascalCaseCode} = '${pascalCaseCode}',${
       isLast ? '\n}\n' : ''
     }`;
 

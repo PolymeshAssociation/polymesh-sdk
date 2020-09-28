@@ -928,6 +928,12 @@ export type IdentityWithClaims = {
   claims: Array<Claim>;
 };
 
+export type Scope = {
+  __typename?: 'Scope';
+  type: Scalars['String'];
+  value: Scalars['String'];
+};
+
 export type Claim = {
   __typename?: 'Claim';
   targetDID: Scalars['String'];
@@ -937,12 +943,13 @@ export type Claim = {
   expiry?: Maybe<Scalars['BigInt']>;
   type: ClaimTypeEnum;
   jurisdiction?: Maybe<Scalars['String']>;
-  scope?: Maybe<Scalars['String']>;
+  scope?: Maybe<Scope>;
+  cddId?: Maybe<Scalars['String']>;
 };
 
 export type ClaimScope = {
   __typename?: 'ClaimScope';
-  scope?: Maybe<Scalars['String']>;
+  scope?: Maybe<Scope>;
   ticker?: Maybe<Scalars['String']>;
 };
 

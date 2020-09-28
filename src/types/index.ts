@@ -130,7 +130,7 @@ export enum TokenIdentifierType {
   Isin = 'Isin',
   Cusip = 'Cusip',
   Cins = 'Cins',
-  Dti = 'Dti',
+  Lei = 'Lei',
 }
 
 export enum KnownPortfolioKind {
@@ -195,6 +195,18 @@ export enum ConditionTarget {
   Both = 'Both',
 }
 
+export enum ScopeType {
+  // eslint-disable-next-line no-shadow
+  Identity = 'Identity',
+  Ticker = 'Ticker',
+  Custom = 'Custom',
+}
+
+export interface Scope {
+  type: ScopeType;
+  value: string;
+}
+
 export enum ClaimType {
   Accredited = 'Accredited',
   Affiliate = 'Affiliate',
@@ -209,10 +221,12 @@ export enum ClaimType {
 }
 
 export type ScopedClaim =
-  | { type: ClaimType.Jurisdiction; code: CountryCode; scope: string }
-  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string };
+  | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
+  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: Scope };
 
-export type UnscopedClaim = { type: ClaimType.NoData | ClaimType.CustomerDueDiligence };
+export type UnscopedClaim =
+  | { type: ClaimType.NoData }
+  | { type: ClaimType.CustomerDueDiligence; id: string };
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -222,7 +236,7 @@ export type Claim = ScopedClaim | UnscopedClaim;
 export function isScopedClaim(claim: Claim): claim is ScopedClaim {
   const { type } = claim;
 
-  return type !== ClaimType.NoData && type !== ClaimType.CustomerDueDiligence;
+  return ![ClaimType.NoData, ClaimType.CustomerDueDiligence].includes(type);
 }
 
 export interface ClaimData {
@@ -251,7 +265,7 @@ export interface ExtrinsicData {
 }
 
 export interface ClaimScope {
-  scope: string | null;
+  scope: Scope | null;
   ticker?: string;
 }
 

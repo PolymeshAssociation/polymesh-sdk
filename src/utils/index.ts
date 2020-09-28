@@ -15,7 +15,13 @@ import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { camelCase, chunk, groupBy, isEqual, map, padEnd, snakeCase } from 'lodash';
-import { AssetComplianceResult, ComplianceRequirement, Memo, PipId } from 'polymesh-types/polymesh';
+import {
+  AssetComplianceResult,
+  CddId,
+  ComplianceRequirement,
+  Memo,
+  PipId,
+} from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
@@ -33,14 +39,13 @@ import {
   DocumentName,
   DocumentUri,
   FundingRoundName,
-  IdentifierType,
   IdentityId,
   Permission as MeshPermission,
   PortfolioId as MeshPortfolioId,
   PortfolioKind as MeshPortfolioKind,
   PosRatio,
-  ProposalState as MeshProposalState,
   ProtocolOp,
+  Scope as MeshScope,
   SecondaryKey as MeshSecondaryKey,
   Signatory,
   Ticker,
@@ -49,7 +54,7 @@ import {
 } from 'polymesh-types/types';
 
 import { Account, Identity } from '~/api/entities';
-import { ProposalDetails, ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
@@ -57,6 +62,7 @@ import {
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
   Proposal,
+  Scope as MiddlewareScope,
 } from '~/middleware/types';
 import {
   Authorization,
@@ -80,9 +86,12 @@ import {
   PortfolioKind,
   Requirement,
   RequirementCompliance,
+  Scope,
+  ScopeType,
   SecondaryKey,
   Signer,
   SingleClaimCondition,
+  TokenIdentifier,
   TokenIdentifierType,
   TokenType,
   TransferStatus,
@@ -659,42 +668,41 @@ export function posRatioToBigNumber(postRatio: PosRatio): BigNumber {
 /**
  * @hidden
  */
-export function tokenIdentifierTypeToIdentifierType(
-  type: TokenIdentifierType,
+export function tokenIdentifierToAssetIdentifier(
+  identifier: TokenIdentifier,
   context: Context
-): IdentifierType {
-  return context.polymeshApi.createType('IdentifierType', type);
+): AssetIdentifier {
+  const { type, value } = identifier;
+  return context.polymeshApi.createType('AssetIdentifier', { [type]: value });
 }
 
 /**
  * @hidden
  */
-export function identifierTypeToString(type: IdentifierType): string {
-  if (type.isCusip) {
-    return TokenIdentifierType.Cusip;
+export function assetIdentifierToTokenIdentifier(identifier: AssetIdentifier): TokenIdentifier {
+  if (identifier.isCusip) {
+    return {
+      type: TokenIdentifierType.Cusip,
+      value: u8aToString(identifier.asCusip),
+    };
   }
-  if (type.isIsin) {
-    return TokenIdentifierType.Isin;
+  if (identifier.isIsin) {
+    return {
+      type: TokenIdentifierType.Isin,
+      value: u8aToString(identifier.asIsin),
+    };
   }
-  if (type.isCins) {
-    return TokenIdentifierType.Cins;
+  if (identifier.isCins) {
+    return {
+      type: TokenIdentifierType.Cins,
+      value: u8aToString(identifier.asCins),
+    };
   }
 
-  return TokenIdentifierType.Dti;
-}
-
-/**
- * @hidden
- */
-export function stringToAssetIdentifier(id: string, context: Context): AssetIdentifier {
-  return context.polymeshApi.createType('AssetIdentifier', id);
-}
-
-/**
- * @hidden
- */
-export function assetIdentifierToString(id: AssetIdentifier): string {
-  return id.toString();
+  return {
+    type: TokenIdentifierType.Lei,
+    value: u8aToString(identifier.asLei),
+  };
 }
 
 /**
@@ -860,27 +868,92 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
 /**
  * @hidden
  */
+export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
+  return { type: scope.type, value: scope.value } as Scope;
+}
+
+/**
+ * @hidden
+ */
 export function createClaim(
   claimType: string,
-  jurisdiction?: string | null,
-  scope?: string | null
+  jurisdiction: string | null | undefined,
+  middlewareScope: MiddlewareScope | null | undefined,
+  cddId: string | null | undefined
 ): Claim {
   const type = claimType as ClaimType;
+  const scope = (middlewareScope
+    ? { type: middlewareScope.type, value: middlewareScope.value }
+    : {}) as Scope;
+
   if (type === ClaimType.Jurisdiction) {
     return {
       type,
       // this assertion is necessary because CountryCode is not in the middleware types
       code: jurisdiction as CountryCode,
-      scope: scope as string,
+      scope,
     };
-  } else if (type !== ClaimType.NoData && type !== ClaimType.CustomerDueDiligence) {
+  } else if (type === ClaimType.NoData) {
     return {
       type,
-      scope: scope as string,
+    };
+  } else if (type === ClaimType.CustomerDueDiligence) {
+    return {
+      type,
+      id: cddId as string,
     };
   }
 
-  return { type };
+  return { type, scope };
+}
+
+/**
+ * @hidden
+ */
+export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
+  const { type, value } = scope;
+
+  return context.polymeshApi.createType('Scope', {
+    [type]: value,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function meshScopeToScope(scope: MeshScope): Scope {
+  if (scope.isTicker) {
+    return {
+      type: ScopeType.Ticker,
+      value: tickerToString(scope.asTicker),
+    };
+  }
+
+  if (scope.isIdentity) {
+    return {
+      type: ScopeType.Identity,
+      value: identityIdToString(scope.asIdentity),
+    };
+  }
+
+  return {
+    type: ScopeType.Custom,
+    value: u8aToString(scope.asCustom),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function stringToCddId(cddId: string, context: Context): CddId {
+  return context.polymeshApi.createType('CddId', cddId);
+}
+
+/**
+ * @hidden
+ */
+export function cddIdToString(cddId: CddId): string {
+  return cddId.toString();
 }
 
 /**
@@ -892,7 +965,7 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
     return {
       type: ClaimType.Jurisdiction,
       code: meshCountryCodeToCountryCode(code),
-      scope: identityIdToString(scope),
+      scope: meshScopeToScope(scope),
     };
   }
 
@@ -905,54 +978,55 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
   if (claim.isAccredited) {
     return {
       type: ClaimType.Accredited,
-      scope: identityIdToString(claim.asAccredited),
+      scope: meshScopeToScope(claim.asAccredited),
     };
   }
 
   if (claim.isAffiliate) {
     return {
       type: ClaimType.Affiliate,
-      scope: identityIdToString(claim.asAffiliate),
+      scope: meshScopeToScope(claim.asAffiliate),
     };
   }
 
   if (claim.isBuyLockup) {
     return {
       type: ClaimType.BuyLockup,
-      scope: identityIdToString(claim.asBuyLockup),
+      scope: meshScopeToScope(claim.asBuyLockup),
     };
   }
 
   if (claim.isSellLockup) {
     return {
       type: ClaimType.SellLockup,
-      scope: identityIdToString(claim.asSellLockup),
+      scope: meshScopeToScope(claim.asSellLockup),
     };
   }
 
   if (claim.isCustomerDueDiligence) {
     return {
       type: ClaimType.CustomerDueDiligence,
+      id: cddIdToString(claim.asCustomerDueDiligence),
     };
   }
 
   if (claim.isKnowYourCustomer) {
     return {
       type: ClaimType.KnowYourCustomer,
-      scope: identityIdToString(claim.asKnowYourCustomer),
+      scope: meshScopeToScope(claim.asKnowYourCustomer),
     };
   }
 
   if (claim.isExempted) {
     return {
       type: ClaimType.Exempted,
-      scope: identityIdToString(claim.asExempted),
+      scope: meshScopeToScope(claim.asExempted),
     };
   }
 
   return {
     type: ClaimType.Blocked,
-    scope: identityIdToString(claim.asBlocked),
+    scope: meshScopeToScope(claim.asBlocked),
   };
 }
 
@@ -1130,17 +1204,16 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
 /**
  * @hidden
  */
-export function stringToText(url: string, context: Context): Text {
-  return context.polymeshApi.createType('Text', url);
+export function numberToPipId(id: number | BigNumber, context: Context): PipId {
+  return context.polymeshApi.createType('PipId', new BigNumber(id).toString());
 }
 
 /**
  * @hidden
  */
-export function numberToPipId(id: number | BigNumber, context: Context): PipId {
-  return context.polymeshApi.createType('PipId', new BigNumber(id).toString());
+export function stringToText(url: string, context: Context): Text {
+  return context.polymeshApi.createType('Text', url);
 }
-
 /**
  * @hidden
  */
@@ -1387,28 +1460,29 @@ export function calculateNextKey(totalCount: number, size?: number, start?: numb
   return totalCount > next ? next : null;
 }
 
-/**
- * @hidden
- */
-export function meshProposalStateToProposalState(proposalState: MeshProposalState): ProposalState {
-  if (proposalState.isPending) {
-    return ProposalState.Pending;
-  }
+// NOTE uncomment in Governance v2 upgrade
+// /**
+//  * @hidden
+//  */
+// export function meshProposalStateToProposalState(proposalState: MeshProposalState): ProposalState {
+//   if (proposalState.isPending) {
+//     return ProposalState.Pending;
+//   }
 
-  if (proposalState.isCancelled) {
-    return ProposalState.Cancelled;
-  }
+//   if (proposalState.isCancelled) {
+//     return ProposalState.Cancelled;
+//   }
 
-  if (proposalState.isKilled) {
-    return ProposalState.Killed;
-  }
+//   if (proposalState.isKilled) {
+//     return ProposalState.Killed;
+//   }
 
-  if (proposalState.isRejected) {
-    return ProposalState.Rejected;
-  }
+//   if (proposalState.isRejected) {
+//     return ProposalState.Rejected;
+//   }
 
-  return ProposalState.Referendum;
-}
+//   return ProposalState.Referendum;
+// }
 
 /**
  * @hidden
@@ -1428,12 +1502,13 @@ export function toIdentityWithClaimsArray(
         type,
         jurisdiction,
         scope: claimScope,
+        cddId,
       }) => ({
         target: new Identity({ did: targetDID }, context),
         issuer: new Identity({ did: issuer }, context),
         issuedAt: new Date(issuanceDate),
         expiry: expiry ? new Date(expiry) : null,
-        claim: createClaim(type, jurisdiction, claimScope),
+        claim: createClaim(type, jurisdiction, claimScope, cddId),
       })
     ),
   }));

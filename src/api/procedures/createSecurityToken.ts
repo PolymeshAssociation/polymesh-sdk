@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { AssetIdentifier, IdentifierType, TxTags } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 
 import { SecurityToken, TickerReservation } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
@@ -17,13 +17,12 @@ import {
   batchArguments,
   booleanToBool,
   numberToBalance,
-  stringToAssetIdentifier,
   stringToAssetName,
   stringToDocumentName,
   stringToFundingRoundName,
   stringToTicker,
   tokenDocumentDataToDocument,
-  tokenIdentifierTypeToIdentifierType,
+  tokenIdentifierToAssetIdentifier,
   tokenTypeToAssetType,
 } from '~/utils';
 
@@ -91,13 +90,8 @@ export async function prepareCreateSecurityToken(
   const rawName = stringToAssetName(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawType = tokenTypeToAssetType(tokenType, context);
-  const rawIdentifiers = tokenIdentifiers.map<[IdentifierType, AssetIdentifier]>(
-    ({ type, value }) => {
-      return [
-        tokenIdentifierTypeToIdentifierType(type, context),
-        stringToAssetIdentifier(value, context),
-      ];
-    }
+  const rawIdentifiers = tokenIdentifiers.map(identifier =>
+    tokenIdentifierToAssetIdentifier(identifier, context)
   );
   const rawFundingRound = fundingRound ? stringToFundingRoundName(fundingRound, context) : null;
 
