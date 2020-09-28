@@ -62,6 +62,8 @@ import {
   Pip,
   PipId,
   PipsMetadata,
+  PortfolioId,
+  PortfolioKind,
   PosRatio,
   ProposalState,
   Scope,
@@ -1269,6 +1271,36 @@ const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): E
   }
 
   return createMockCodec(codec, false) as Enum;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPortfolioKind = (
+  portfolioKind?: 'Default' | { User: u64 }
+): PortfolioKind => {
+  return createMockEnum(portfolioKind) as PortfolioKind;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPortfolioId = (portfiolioId?: {
+  did: IdentityId;
+  kind: PortfolioKind;
+}): PortfolioId => {
+  const reg = portfiolioId || {
+    did: createMockIdentityId(),
+    kind: createMockPortfolioKind(),
+  };
+  return createMockCodec(
+    {
+      ...reg,
+    },
+    !portfiolioId
+  ) as PortfolioId;
 };
 
 /**

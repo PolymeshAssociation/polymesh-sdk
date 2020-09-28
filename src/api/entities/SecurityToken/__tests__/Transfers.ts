@@ -1,7 +1,7 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
-import { IdentityId, Ticker } from 'polymesh-types/types';
+import { IdentityId, PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
 import { Namespace } from '~/api/entities';
@@ -10,7 +10,7 @@ import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TransferStatus } from '~/types';
+import { KnownPortfolioKind, PortfolioId, TransferStatus } from '~/types';
 import * as utilsModule from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 
@@ -29,6 +29,7 @@ describe('Transfers class', () => {
   let stringToTickerStub: SinonStub<[string, Context], Ticker>;
   let stringToIdentityIdStub: SinonStub<[string, Context], IdentityId>;
   let numberToBalanceStub: SinonStub<[number | BigNumber, Context], Balance>;
+  let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let rawAccountId: AccountId;
   let rawToDid: IdentityId;
   let rawTicker: Ticker;
@@ -49,6 +50,7 @@ describe('Transfers class', () => {
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
     numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
+    portfolioIdToMeshPortfolioIdStub = sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
     rawToDid = dsMockUtils.createMockIdentityId(toDid);
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
     prepareToggleFreezeTransfersStub = sinon.stub(toggleFreezeTransfers, 'prepare');
@@ -150,6 +152,8 @@ describe('Transfers class', () => {
   describe('method: canTransfer', () => {
     let fromDid: string;
     let rawFromDid: IdentityId;
+    const rawFromPortfolio = dsMockUtils.createMockPortfolioId();
+    const rawToPortfolio = dsMockUtils.createMockPortfolioId();
 
     beforeAll(() => {
       fromDid = 'fromDid';
@@ -158,6 +162,9 @@ describe('Transfers class', () => {
 
     beforeEach(() => {
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
+      portfolioIdToMeshPortfolioIdStub
+        .withArgs({ did: rawToDid, kind: KnownPortfolioKind.Default }, mockContext)
+        .returns(rawToPortfolio);
     });
 
     test('should return a status value representing whether the transaction can be made from the current Identity', async () => {
@@ -167,6 +174,10 @@ describe('Transfers class', () => {
       const rawDummyAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
 
       stringToIdentityIdStub.withArgs(currentDid, mockContext).returns(rawCurrentDid);
+
+      portfolioIdToMeshPortfolioIdStub
+        .withArgs({ did: rawCurrentDid, kind: KnownPortfolioKind.Default }, mockContext)
+        .returns(rawFromPortfolio);
 
       // also test the case where the SDK was instanced without an account
       mockContext.currentPair = undefined;
@@ -178,7 +189,15 @@ describe('Transfers class', () => {
 
       dsMockUtils
         .createRpcStub('asset', 'canTransfer')
-        .withArgs(rawDummyAccountId, rawTicker, rawCurrentDid, rawToDid, rawAmount)
+        .withArgs(
+          rawDummyAccountId,
+          null,
+          rawFromPortfolio,
+          null,
+          rawToPortfolio,
+          rawTicker,
+          rawAmount
+        )
         .returns(rawResponse);
 
       const result = await transfers.canTransfer({ to: toDid, amount });
@@ -191,9 +210,13 @@ describe('Transfers class', () => {
         Ok: dsMockUtils.createMockU8(statusCode),
       });
 
+      portfolioIdToMeshPortfolioIdStub
+        .withArgs({ did: rawFromDid, kind: KnownPortfolioKind.Default }, mockContext)
+        .returns(rawFromPortfolio);
+
       dsMockUtils
         .createRpcStub('asset', 'canTransfer')
-        .withArgs(rawAccountId, rawTicker, rawFromDid, rawToDid, rawAmount)
+        .withArgs(rawAccountId, null, rawFromPortfolio, null, rawToPortfolio, rawTicker, rawAmount)
         .returns(rawResponse);
 
       const result = await transfers.canTransfer({ from: fromDid, to: toDid, amount });
