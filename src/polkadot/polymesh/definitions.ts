@@ -1202,8 +1202,7 @@ export default {
     },
     asset: {
       canTransfer: {
-        description:
-          'Checks whether a transaction with ' + 'given parameters can take place or ' + 'not',
+        description: 'Checks whether a transaction with given parameters can take place or not',
         params: [
           {
             name: 'sender',
@@ -1211,18 +1210,28 @@ export default {
             isOptional: false,
           },
           {
+            name: 'from_custodian',
+            type: 'Option<IdentityId>',
+            isOptional: false,
+          },
+          {
+            name: 'from_portfolio',
+            type: 'PortfolioId',
+            isOptional: false,
+          },
+          {
+            name: 'to_custodian',
+            type: 'Option<IdentityId>',
+            isOptional: false,
+          },
+          {
+            name: 'to_portfolio',
+            type: 'PortfolioId',
+            isOptional: false,
+          },
+          {
             name: 'ticker',
             type: 'Ticker',
-            isOptional: false,
-          },
-          {
-            name: 'from_did',
-            type: 'Option<IdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'to_did',
-            type: 'Option<IdentityId>',
             isOptional: false,
           },
           {

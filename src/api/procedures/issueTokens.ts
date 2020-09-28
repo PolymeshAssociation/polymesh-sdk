@@ -1,6 +1,6 @@
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode, IssuanceAmount, Role, RoleType, TransferStatus } from '~/types';
+import { ErrorCode, IssuanceAmount, Role, RoleType } from '~/types';
 import { numberToBalance, stringToTicker } from '~/utils';
 import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
@@ -66,19 +66,10 @@ export async function prepareIssueTokens(
     });
   }
 
-  let canTransfer = TransferStatus.InvalidSenderIdentity;
-
-  if (primaryIssuanceAgent) {
-    canTransfer = await securityToken.transfers.canMint({ to: primaryIssuanceAgent, amount });
-  }
-
-  if (canTransfer !== TransferStatus.Success) {
+  if (!primaryIssuanceAgent) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: "You can't issue tokens to primary issuance agent",
-      data: {
-        transferStatus: canTransfer,
-      },
+      message: 'You should set a primary issuance agent to issue tokens',
     });
   }
 

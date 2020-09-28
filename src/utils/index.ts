@@ -36,6 +36,8 @@ import {
   IdentifierType,
   IdentityId,
   Permission as MeshPermission,
+  PortfolioId as MeshPortfolioId,
+  PortfolioKind as MeshPortfolioKind,
   PosRatio,
   ProposalState as MeshProposalState,
   ProtocolOp,
@@ -74,6 +76,8 @@ import {
   NextKey,
   PaginationOptions,
   Permission,
+  PortfolioId,
+  PortfolioKind,
   Requirement,
   RequirementCompliance,
   SecondaryKey,
@@ -268,6 +272,26 @@ export function stringToIdentityId(identityId: string, context: Context): Identi
  */
 export function identityIdToString(identityId: IdentityId): string {
   return identityId.toString();
+}
+
+/**
+ * @hidden
+ */
+export function portfolioKindToMeshPortfolioKind(
+  portfolioKind: PortfolioKind,
+  context: Context
+): MeshPortfolioKind {
+  return context.polymeshApi.createType('PortfolioKind', portfolioKind);
+}
+
+/**
+ * @hidden
+ */
+export function portfolioIdToMeshPortfolioId(
+  portfolioId: PortfolioId,
+  context: Context
+): MeshPortfolioId {
+  return context.polymeshApi.createType('PortfolioId', portfolioId);
 }
 
 /**

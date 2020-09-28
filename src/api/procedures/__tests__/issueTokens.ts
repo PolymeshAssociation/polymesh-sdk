@@ -3,12 +3,12 @@ import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity, SecurityToken } from '~/api/entities';
+import { SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareIssueTokens } from '~/api/procedures/issueTokens';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TransferStatus } from '~/types';
+import { RoleType } from '~/types';
 import * as utilsModule from '~/utils';
 import { MAX_DECIMALS } from '~/utils/constants';
 
@@ -133,8 +133,7 @@ describe('issueTokens procedure', () => {
     });
   });
 
-  test('should throw an error if canMint returns a different status from Success', async () => {
-    const transferStatus = TransferStatus.InvalidSenderIdentity;
+  test('should throw an error if primary issuance agent is undefined', async () => {
     const args = {
       issuanceAmount: {
         amount,
@@ -147,7 +146,6 @@ describe('issueTokens procedure', () => {
         details: {
           primaryIssuanceAgent: undefined,
         },
-        transfersCanMint: transferStatus,
       },
     });
 
@@ -161,10 +159,7 @@ describe('issueTokens procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe("You can't issue tokens to primary issuance agent");
-    expect(error.data).toMatchObject({
-      transferStatus,
-    });
+    expect(error.message).toBe('You should set a primary issuance agent to issue tokens');
   });
 
   test('should add a issue transaction to the queue', async () => {

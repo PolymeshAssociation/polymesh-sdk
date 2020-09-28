@@ -3,7 +3,7 @@ import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
-import { ComplianceRequirement, Memo, PipId } from 'polymesh-types/polymesh';
+import { ComplianceRequirement, Memo, PipId, PortfolioId } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
@@ -19,6 +19,7 @@ import {
   IdentifierType,
   IdentityId,
   Permission as MeshPermission,
+  PortfolioKind as MeshPortfolioKind,
   ProtocolOp,
   Signatory,
   Ticker,
@@ -40,6 +41,7 @@ import {
   ConditionTarget,
   ConditionType,
   CountryCode,
+  KnownPortfolioKind,
   KnownTokenType,
   Permission,
   Signer,
@@ -97,6 +99,8 @@ import {
   numberToU64,
   padString,
   permissionToMeshPermission,
+  portfolioIdToMeshPortfolioId,
+  portfolioKindToMeshPortfolioKind,
   posRatioToBigNumber,
   removePadding,
   requestAtBlock,
@@ -279,6 +283,67 @@ describe('stringToIdentityId and identityIdToString', () => {
     const identityId = dsMockUtils.createMockIdentityId(fakeResult);
 
     const result = identityIdToString(identityId);
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('portfolioKindToMeshPortfolioKind', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('portfolioKindToMeshPortfolioKind should convert a portfolio kind object into a polkadot portfolio kind', () => {
+    const portfolioKind = KnownPortfolioKind.Default;
+    const fakeResult = ('PortfolioKind' as unknown) as MeshPortfolioKind;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PortfolioKind', portfolioKind)
+      .returns(fakeResult);
+
+    const result = portfolioKindToMeshPortfolioKind(portfolioKind, context);
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('portfolioIdToMeshPortfolioId', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('portfolioIdToMeshPortfolioId should convert a portfolio id into a polkadot portfolio id', () => {
+    const portfolioId = {
+      did: dsMockUtils.createMockIdentityId(),
+      kind: KnownPortfolioKind.Default,
+    };
+    const fakeResult = ('PortfolioId' as unknown) as PortfolioId;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PortfolioId', portfolioId)
+      .returns(fakeResult);
+
+    const result = portfolioIdToMeshPortfolioId(portfolioId, context);
+
     expect(result).toBe(fakeResult);
   });
 });

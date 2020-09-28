@@ -24,7 +24,6 @@ export { setAssetRequirements, SetAssetRequirementsParams } from './setAssetRequ
 export { toggleFreezeTransfers, ToggleFreezeTransfersParams } from './toggleFreezeTransfers';
 export { togglePauseRequirements, TogglePauseRequirementsParams } from './togglePauseRequirements';
 export { transferPolyX, TransferPolyXParams } from './transferPolyX';
-export { transferToken, TransferTokenParams } from './transferToken';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 // export { voteOnProposal, VoteOnProposalParams } from './voteOnProposal';
 export { inviteAccount, InviteAccountParams } from './inviteAccount';

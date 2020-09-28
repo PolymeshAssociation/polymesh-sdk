@@ -5,7 +5,7 @@ import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
 import { Namespace } from '~/api/entities';
-import { toggleFreezeTransfers, transferToken } from '~/api/procedures';
+import { toggleFreezeTransfers } from '~/api/procedures';
 import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -199,42 +199,6 @@ describe('Transfers class', () => {
       const result = await transfers.canTransfer({ from: fromDid, to: toDid, amount });
 
       expect(result).toBe(TransferStatus.Success);
-    });
-  });
-
-  describe('method: canMint', () => {
-    test('should return a status value representing whether the minting can be made', async () => {
-      const rawResponse = dsMockUtils.createMockCanTransferResult({
-        Ok: dsMockUtils.createMockU8(statusCode),
-      });
-
-      dsMockUtils
-        .createRpcStub('asset', 'canTransfer')
-        .withArgs(rawAccountId, rawTicker, null, rawToDid, rawAmount)
-        .returns(rawResponse);
-
-      const result = await transfers.canMint({ to: toDid, amount });
-
-      expect(result).toBe(TransferStatus.Success);
-    });
-  });
-
-  describe('method: transfer', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const args = {
-        to: 'someDid',
-        amount: new BigNumber(100),
-      };
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
-
-      sinon
-        .stub(transferToken, 'prepare')
-        .withArgs({ ticker: mockSecurityToken.ticker, ...args }, mockContext)
-        .resolves(expectedQueue);
-
-      const queue = await transfers.transfer(args);
-
-      expect(queue).toBe(expectedQueue);
     });
   });
 });
