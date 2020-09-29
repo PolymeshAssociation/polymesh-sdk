@@ -4,7 +4,7 @@ import { CanTransferResult } from 'polymesh-types/types';
 import { Identity, Namespace, SecurityToken } from '~/api/entities';
 import { toggleFreezeTransfers } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
-import { KnownPortfolioKind, SubCallback, TransferStatus, UnsubCallback } from '~/types';
+import { SubCallback, TransferStatus, UnsubCallback } from '~/types';
 import {
   boolToBoolean,
   canTransferResultToTransferStatus,
@@ -12,7 +12,6 @@ import {
   portfolioIdToMeshPortfolioId,
   signerToString,
   stringToAccountId,
-  stringToIdentityId,
   stringToTicker,
 } from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
@@ -77,7 +76,7 @@ export class Transfers extends Namespace<SecurityToken> {
   }
 
   /**
-   * Check whether it is possible to transfer a certain amount of this asset between two portfolios
+   * Check whether it is possible to transfer a certain amount of this asset between two Identities
    *
    * @param args.from - sender Identity (optional, defaults to the current Identity)
    * @param args.to - receiver Identity
@@ -85,18 +84,6 @@ export class Transfers extends Namespace<SecurityToken> {
    */
   public async canTransfer(args: {
     from?: string | Identity;
-    to: string | Identity;
-    amount: BigNumber;
-  }): Promise<TransferStatus> {
-    const { from = await this.context.getCurrentIdentity(), to, amount } = args;
-    return this._canTransfer({ from, to, amount });
-  }
-
-  /**
-   * @hidden
-   */
-  private async _canTransfer(args: {
-    from: string | Identity;
     to: string | Identity;
     amount: BigNumber;
   }): Promise<TransferStatus> {
@@ -108,10 +95,7 @@ export class Transfers extends Namespace<SecurityToken> {
       context,
     } = this;
 
-    const { from, to, amount } = args;
-
-    const fromDid = stringToIdentityId(signerToString(from), context);
-    const toDid = stringToIdentityId(signerToString(to), context);
+    const { from = await this.context.getCurrentIdentity(), to, amount } = args;
 
     /*
      * The RPC requires a sender account ID (although it's not being used at the moment). We use the current account
@@ -123,9 +107,9 @@ export class Transfers extends Namespace<SecurityToken> {
     const res: CanTransferResult = await (rpc as any).asset.canTransfer(
       stringToAccountId(senderAddress, context),
       null,
-      portfolioIdToMeshPortfolioId({ did: fromDid, kind: KnownPortfolioKind.Default }, context),
+      portfolioIdToMeshPortfolioId({ did: signerToString(from) }, context),
       null,
-      portfolioIdToMeshPortfolioId({ did: toDid, kind: KnownPortfolioKind.Default }, context),
+      portfolioIdToMeshPortfolioId({ did: signerToString(to) }, context),
       stringToTicker(ticker, context),
       numberToBalance(amount, context)
     );

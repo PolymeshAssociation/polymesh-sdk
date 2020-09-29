@@ -339,7 +339,7 @@ describe('Requirements class', () => {
     });
   });
 
-  describe('method: checkTransfer/checkMint', () => {
+  describe('method: checkTransfer', () => {
     let context: Mocked<Context>;
     let token: SecurityToken;
     let requirements: Requirements;
@@ -418,23 +418,6 @@ describe('Requirements class', () => {
       assetComplianceResultToRequirementComplianceStub.withArgs(rawResponse).returns(fakeResult);
 
       const result = await requirements.checkTransfer({ from: fromDid, to: toDid });
-
-      expect(result).toBe(fakeResult);
-    });
-
-    test('checkMint should return the current requirements and whether the mint complies', async () => {
-      const rawResponse = ('response' as unknown) as AssetComplianceResult;
-
-      dsMockUtils
-        .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, null, rawToDid)
-        .resolves(rawResponse);
-
-      const fakeResult = 'result';
-
-      assetComplianceResultToRequirementComplianceStub.withArgs(rawResponse).returns(fakeResult);
-
-      const result = await requirements.checkMint({ to: toDid });
 
       expect(result).toBe(fakeResult);
     });

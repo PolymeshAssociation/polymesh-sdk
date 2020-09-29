@@ -60,9 +60,7 @@ describe('issueTokens procedure', () => {
 
   test('should throw an error if security token is divisible and the amount exceeds six decimals', () => {
     const args = {
-      issuanceAmount: {
-        amount: new BigNumber(50.1234567),
-      },
+      amount: new BigNumber(50.1234567),
       ticker,
     };
 
@@ -83,9 +81,8 @@ describe('issueTokens procedure', () => {
 
   test('should throw an error if security token is not divisible and the amount has decimals', () => {
     const args = {
-      issuanceAmount: {
-        amount: new BigNumber(50.1),
-      },
+      amount: new BigNumber(50.1),
+
       ticker,
     };
 
@@ -98,9 +95,7 @@ describe('issueTokens procedure', () => {
 
   test('should throw an error if token supply is bigger than the limit total supply', async () => {
     const args = {
-      issuanceAmount: {
-        amount,
-      },
+      amount,
       ticker,
     };
 
@@ -135,9 +130,7 @@ describe('issueTokens procedure', () => {
 
   test('should throw an error if primary issuance agent is undefined', async () => {
     const args = {
-      issuanceAmount: {
-        amount,
-      },
+      amount,
       ticker,
     };
 
@@ -164,9 +157,7 @@ describe('issueTokens procedure', () => {
 
   test('should add a issue transaction to the queue', async () => {
     const args = {
-      issuanceAmount: {
-        amount,
-      },
+      amount,
       ticker,
     };
 

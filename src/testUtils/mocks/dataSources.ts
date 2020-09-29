@@ -1291,13 +1291,13 @@ export const createMockPortfolioId = (portfiolioId?: {
   did: IdentityId;
   kind: PortfolioKind;
 }): PortfolioId => {
-  const reg = portfiolioId || {
+  const id = portfiolioId || {
     did: createMockIdentityId(),
     kind: createMockPortfolioKind(),
   };
   return createMockCodec(
     {
-      ...reg,
+      ...id,
     },
     !portfiolioId
   ) as PortfolioId;

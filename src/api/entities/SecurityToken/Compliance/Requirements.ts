@@ -21,7 +21,7 @@ import {
 } from '~/utils';
 
 /**
- * Handles all Security Token Requirements related functionality
+ * Handles all Security Token Compliance Requirements related functionality
  */
 export class Requirements extends Namespace<SecurityToken> {
   /**
@@ -117,7 +117,7 @@ export class Requirements extends Namespace<SecurityToken> {
   }
 
   /**
-   * Pause all the Security Token's requirements. This means that all transfers and token issuance will be allowed until requirements are unpaused
+   * Pause all the Security Token's requirements. This means that all transfers will be allowed until requirements are unpaused
    */
   public pause(): Promise<TransactionQueue<SecurityToken>> {
     const {
@@ -148,20 +148,27 @@ export class Requirements extends Namespace<SecurityToken> {
     from?: string | Identity;
     to: string | Identity;
   }): Promise<RequirementCompliance> {
-    const { from = await this.context.getCurrentIdentity(), to } = args;
-    return this._checkTransfer({ from, to });
-  }
+    const {
+      parent: { ticker },
+      context: {
+        polymeshApi: { rpc },
+      },
+      context,
+    } = this;
 
-  /**
-   * Check whether minting to an Identity complies with all the requirements of this asset
-   *
-   * @param args.to - receiver Identity
-   */
-  public async checkMint(args: { to: string | Identity }): Promise<RequirementCompliance> {
-    return this._checkTransfer({
-      ...args,
-      from: null,
-    });
+    const { from = await this.context.getCurrentIdentity(), to } = args;
+
+    const fromDid = stringToIdentityId(signerToString(from), context);
+    const toDid = signerToString(to);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res: AssetComplianceResult = await (rpc as any).compliance.canTransfer(
+      stringToTicker(ticker, context),
+      fromDid,
+      stringToIdentityId(toDid, context)
+    );
+
+    return assetComplianceResultToRequirementCompliance(res);
   }
 
   /**
@@ -183,38 +190,5 @@ export class Requirements extends Namespace<SecurityToken> {
     const { is_paused: isPaused } = await complianceManager.assetCompliances(rawTicker);
 
     return boolToBoolean(isPaused);
-  }
-
-  /**
-   * @hidden
-   */
-  private async _checkTransfer(args: {
-    from?: null | string | Identity;
-    to: string | Identity;
-  }): Promise<RequirementCompliance> {
-    const {
-      parent: { ticker },
-      context: {
-        polymeshApi: { rpc },
-      },
-      context,
-    } = this;
-
-    const { from, to } = args;
-
-    let fromDid = null;
-    if (from) {
-      fromDid = stringToIdentityId(signerToString(from), context);
-    }
-    const toDid = signerToString(to);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res: AssetComplianceResult = await (rpc as any).compliance.canTransfer(
-      stringToTicker(ticker, context),
-      fromDid,
-      stringToIdentityId(toDid, context)
-    );
-
-    return assetComplianceResultToRequirementCompliance(res);
   }
 }

@@ -18,7 +18,6 @@ import {
   FundingRoundName,
   IdentityId,
   Permission as MeshPermission,
-  PortfolioKind as MeshPortfolioKind,
   ProtocolOp,
   Scope as MeshScope,
   Signatory,
@@ -41,7 +40,6 @@ import {
   ConditionTarget,
   ConditionType,
   CountryCode,
-  KnownPortfolioKind,
   KnownTokenType,
   Permission,
   Scope,
@@ -102,7 +100,6 @@ import {
   padString,
   permissionToMeshPermission,
   portfolioIdToMeshPortfolioId,
-  portfolioKindToMeshPortfolioKind,
   posRatioToBigNumber,
   removePadding,
   requestAtBlock,
@@ -290,35 +287,6 @@ describe('stringToIdentityId and identityIdToString', () => {
   });
 });
 
-describe('portfolioKindToMeshPortfolioKind', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  test('portfolioKindToMeshPortfolioKind should convert a portfolio kind object into a polkadot portfolio kind', () => {
-    const portfolioKind = KnownPortfolioKind.Default;
-    const fakeResult = ('PortfolioKind' as unknown) as MeshPortfolioKind;
-    const context = dsMockUtils.getContextInstance();
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('PortfolioKind', portfolioKind)
-      .returns(fakeResult);
-
-    const result = portfolioKindToMeshPortfolioKind(portfolioKind, context);
-
-    expect(result).toBe(fakeResult);
-  });
-});
-
 describe('portfolioIdToMeshPortfolioId', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -334,18 +302,45 @@ describe('portfolioIdToMeshPortfolioId', () => {
 
   test('portfolioIdToMeshPortfolioId should convert a portfolio id into a polkadot portfolio id', () => {
     const portfolioId = {
-      did: dsMockUtils.createMockIdentityId(),
-      kind: KnownPortfolioKind.Default,
+      did: 'someDid',
     };
+    const number = 1;
+    const rawIdentityId = dsMockUtils.createMockIdentityId(portfolioId.did);
+    const rawU64 = dsMockUtils.createMockU64(number);
     const fakeResult = ('PortfolioId' as unknown) as PortfolioId;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('PortfolioId', portfolioId)
+      .withArgs('IdentityId', portfolioId.did)
+      .returns(rawIdentityId);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PortfolioId', {
+        did: rawIdentityId,
+        kind: 'Default',
+      })
       .returns(fakeResult);
 
-    const result = portfolioIdToMeshPortfolioId(portfolioId, context);
+    let result = portfolioIdToMeshPortfolioId(portfolioId, context);
+
+    expect(result).toBe(fakeResult);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('u64', number.toString())
+      .returns(rawU64);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PortfolioId', {
+        did: rawIdentityId,
+        kind: { User: rawU64 },
+      })
+      .returns(fakeResult);
+
+    result = portfolioIdToMeshPortfolioId({ ...portfolioId, number }, context);
 
     expect(result).toBe(fakeResult);
   });

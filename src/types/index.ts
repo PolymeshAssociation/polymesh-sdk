@@ -1,7 +1,7 @@
 import { Keyring } from '@polkadot/api';
 import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId, TxTag } from 'polymesh-types/types';
+import { TxTag } from 'polymesh-types/types';
 
 // NOTE uncomment in Governance v2 upgrade
 import { Account, Identity /*, Proposal */ } from '~/api/entities';
@@ -132,12 +132,6 @@ export enum TokenIdentifierType {
   Cins = 'Cins',
   Lei = 'Lei',
 }
-
-export enum KnownPortfolioKind {
-  Default = 'Default',
-}
-
-export type PortfolioKind = KnownPortfolioKind | { user: number };
 
 // NOTE: query.asset.identifiers doesn’t support custom identifier types properly for now
 // export type TokenIdentifierType = KnownTokenIdentifierType | { custom: string };
@@ -332,13 +326,6 @@ export enum ErrorCode {
   DataUnavailable = 'DataUnavailable',
 }
 
-/**
- * Represents an amount of tokens to be issued to primary issuance agent
- */
-export interface IssuanceAmount {
-  amount: BigNumber;
-}
-
 export enum TransferStatus {
   Failure = 'Failure', // 80
   Success = 'Success', // 81
@@ -495,11 +482,6 @@ export type Signer = Identity | Account;
 export interface SecondaryKey {
   signer: Signer;
   permissions: Permission[];
-}
-
-export interface PortfolioId {
-  did: IdentityId;
-  kind: PortfolioKind;
 }
 
 export { TxTags } from 'polymesh-types/types';

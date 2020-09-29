@@ -1,19 +1,15 @@
+import BigNumber from 'bignumber.js';
+
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode, IssuanceAmount, Role, RoleType } from '~/types';
+import { ErrorCode, Role, RoleType } from '~/types';
 import { numberToBalance, stringToTicker } from '~/utils';
 import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
-
-export interface IssueTokensParams {
-  issuanceAmount: IssuanceAmount;
-}
 
 /**
  * @hidden
  */
-export type Params = IssueTokensParams & {
-  ticker: string;
-};
+export type Params = { amount: BigNumber; ticker: string };
 
 /**
  * @hidden
@@ -30,12 +26,11 @@ export async function prepareIssueTokens(
     },
     context,
   } = this;
-  const { ticker, issuanceAmount } = args;
+  const { ticker, amount } = args;
 
   const securityToken = new SecurityToken({ ticker }, context);
 
   const { isDivisible, totalSupply, primaryIssuanceAgent } = await securityToken.details();
-  const { amount } = issuanceAmount;
 
   if (isDivisible) {
     if (amount.decimalPlaces() > MAX_DECIMALS) {

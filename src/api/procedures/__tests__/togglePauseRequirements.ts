@@ -65,7 +65,7 @@ describe('togglePauseRequirements procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if pause is set to true and the asset compliance are already paused', () => {
+  test('should throw an error if pause is set to true and the asset compliance requirements are already paused', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
@@ -76,7 +76,7 @@ describe('togglePauseRequirements procedure', () => {
     ).rejects.toThrow('Requirements are already paused');
   });
 
-  test('should throw an error if pause is set to false and the asset compliance are already unpaused', () => {
+  test('should throw an error if pause is set to false and the asset compliance requirements are already unpaused', () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
       // eslint-disable-next-line @typescript-eslint/camelcase
       is_paused: false,

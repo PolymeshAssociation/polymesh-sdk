@@ -1,18 +1,19 @@
+import BigNumber from 'bignumber.js';
+
 import { Namespace, SecurityToken } from '~/api/entities';
 import { issueTokens } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
-import { IssuanceAmount } from '~/types';
 
 /**
  * Handles all Security Token Issuance related functionality
  */
 export class Issuance extends Namespace<SecurityToken> {
   /**
-   * Issue a certain amount of tokens to treasury account
+   * Issue a certain amount of tokens to primary issuance agent
    *
-   * @param args.issuanceAmount - amount of tokens to be issued to treasury
+   * @param args.issuanceAmount - amount of tokens to be issued to primary issuance agent
    */
-  public issue(args: { issuanceAmount: IssuanceAmount }): Promise<TransactionQueue<SecurityToken>> {
+  public issue(args: { amount: BigNumber }): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
       context,

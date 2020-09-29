@@ -42,7 +42,6 @@ import {
   IdentityId,
   Permission as MeshPermission,
   PortfolioId as MeshPortfolioId,
-  PortfolioKind as MeshPortfolioKind,
   PosRatio,
   ProtocolOp,
   Scope as MeshScope,
@@ -82,8 +81,6 @@ import {
   NextKey,
   PaginationOptions,
   Permission,
-  PortfolioId,
-  PortfolioKind,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -102,6 +99,7 @@ import {
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
+  PortfolioId,
   SignerType,
   SignerValue,
   TokenDocumentData,
@@ -281,26 +279,6 @@ export function stringToIdentityId(identityId: string, context: Context): Identi
  */
 export function identityIdToString(identityId: IdentityId): string {
   return identityId.toString();
-}
-
-/**
- * @hidden
- */
-export function portfolioKindToMeshPortfolioKind(
-  portfolioKind: PortfolioKind,
-  context: Context
-): MeshPortfolioKind {
-  return context.polymeshApi.createType('PortfolioKind', portfolioKind);
-}
-
-/**
- * @hidden
- */
-export function portfolioIdToMeshPortfolioId(
-  portfolioId: PortfolioId,
-  context: Context
-): MeshPortfolioId {
-  return context.polymeshApi.createType('PortfolioId', portfolioId);
 }
 
 /**
@@ -1211,14 +1189,29 @@ export function numberToPipId(id: number | BigNumber, context: Context): PipId {
 /**
  * @hidden
  */
-export function stringToText(url: string, context: Context): Text {
-  return context.polymeshApi.createType('Text', url);
+export function stringToText(text: string, context: Context): Text {
+  return context.polymeshApi.createType('Text', text);
 }
+
 /**
  * @hidden
  */
 export function textToString(value: Text): string {
   return value.toString();
+}
+
+/**
+ * @hidden
+ */
+export function portfolioIdToMeshPortfolioId(
+  portfolioId: PortfolioId,
+  context: Context
+): MeshPortfolioId {
+  const { did, number } = portfolioId;
+  return context.polymeshApi.createType('PortfolioId', {
+    did: stringToIdentityId(did, context),
+    kind: number ? { User: numberToU64(number, context) } : 'Default',
+  });
 }
 
 /**

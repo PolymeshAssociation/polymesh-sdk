@@ -1,7 +1,7 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
-import { IdentityId, PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
+import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
 import { Namespace } from '~/api/entities';
@@ -10,7 +10,8 @@ import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { KnownPortfolioKind, PortfolioId, TransferStatus } from '~/types';
+import { TransferStatus } from '~/types';
+import { PortfolioId } from '~/types/internal';
 import * as utilsModule from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 
@@ -27,11 +28,9 @@ describe('Transfers class', () => {
   >;
   let stringToAccountIdStub: SinonStub<[string, Context], AccountId>;
   let stringToTickerStub: SinonStub<[string, Context], Ticker>;
-  let stringToIdentityIdStub: SinonStub<[string, Context], IdentityId>;
   let numberToBalanceStub: SinonStub<[number | BigNumber, Context], Balance>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let rawAccountId: AccountId;
-  let rawToDid: IdentityId;
   let rawTicker: Ticker;
   let rawAmount: Balance;
   let statusCode: number;
@@ -48,10 +47,8 @@ describe('Transfers class', () => {
     dsMockUtils.initMocks();
     stringToAccountIdStub = sinon.stub(utilsModule, 'stringToAccountId');
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
     numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
     portfolioIdToMeshPortfolioIdStub = sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
-    rawToDid = dsMockUtils.createMockIdentityId(toDid);
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
     prepareToggleFreezeTransfersStub = sinon.stub(toggleFreezeTransfers, 'prepare');
   });
@@ -59,7 +56,6 @@ describe('Transfers class', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     mockSecurityToken = entityMockUtils.getSecurityTokenInstance();
-    stringToIdentityIdStub.withArgs(toDid, mockContext).returns(rawToDid);
     numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
     transfers = new Transfers(mockSecurityToken, mockContext);
     ticker = mockSecurityToken.ticker;
@@ -151,32 +147,28 @@ describe('Transfers class', () => {
 
   describe('method: canTransfer', () => {
     let fromDid: string;
-    let rawFromDid: IdentityId;
     const rawFromPortfolio = dsMockUtils.createMockPortfolioId();
     const rawToPortfolio = dsMockUtils.createMockPortfolioId();
 
     beforeAll(() => {
       fromDid = 'fromDid';
-      rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
     });
 
     beforeEach(() => {
-      stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
       portfolioIdToMeshPortfolioIdStub
-        .withArgs({ did: rawToDid, kind: KnownPortfolioKind.Default }, mockContext)
+        .withArgs({ did: toDid }, mockContext)
         .returns(rawToPortfolio);
     });
 
     test('should return a status value representing whether the transaction can be made from the current Identity', async () => {
       const { did: currentDid } = await mockContext.getCurrentIdentity();
 
-      const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
       const rawDummyAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
 
-      stringToIdentityIdStub.withArgs(currentDid, mockContext).returns(rawCurrentDid);
+      // stringToIdentityIdStub.withArgs(currentDid, mockContext).returns(rawCurrentDid);
 
       portfolioIdToMeshPortfolioIdStub
-        .withArgs({ did: rawCurrentDid, kind: KnownPortfolioKind.Default }, mockContext)
+        .withArgs({ did: currentDid }, mockContext)
         .returns(rawFromPortfolio);
 
       // also test the case where the SDK was instanced without an account
@@ -211,7 +203,7 @@ describe('Transfers class', () => {
       });
 
       portfolioIdToMeshPortfolioIdStub
-        .withArgs({ did: rawFromDid, kind: KnownPortfolioKind.Default }, mockContext)
+        .withArgs({ did: fromDid }, mockContext)
         .returns(rawFromPortfolio);
 
       dsMockUtils

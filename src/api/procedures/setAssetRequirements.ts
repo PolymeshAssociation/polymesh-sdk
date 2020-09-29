@@ -37,9 +37,9 @@ export async function prepareSetAssetRequirements(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const currentAssetCompliancesRaw = await query.complianceManager.assetCompliances(rawTicker);
+  const rawCurrentAssetCompliance = await query.complianceManager.assetCompliances(rawTicker);
 
-  const currentRequirements = currentAssetCompliancesRaw.requirements.map(
+  const currentRequirements = rawCurrentAssetCompliance.requirements.map(
     requirement => complianceRequirementToRequirement(requirement).conditions
   );
 

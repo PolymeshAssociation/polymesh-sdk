@@ -88,7 +88,7 @@ describe('removeSecondaryKeys procedure', () => {
     ).rejects.toThrow('You cannot remove the primary key');
   });
 
-  test('should throw an error if at least one of the secondary key to remove is not present in the secondary keys list', async () => {
+  test('should throw an error if at least one of the secondary keys to remove is not present in the secondary keys list', async () => {
     const { signers } = args;
     const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
 
