@@ -56,7 +56,7 @@ describe('toggleFreezeTransfers procedure', () => {
   test('should throw an error if freeze is set to true and the security token is already frozen', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        transferIsFrozen: true,
+        isFrozen: true,
       },
     });
 
@@ -99,7 +99,7 @@ describe('toggleFreezeTransfers procedure', () => {
   test('should add a unfreeze transaction to the queue', async () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        transferIsFrozen: true,
+        isFrozen: true,
       },
     });
 

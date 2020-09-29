@@ -4,7 +4,11 @@ import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
-import { getRequiredRoles, Params, prepareIssueTokens } from '~/api/procedures/issueTokens';
+import {
+  getRequiredRoles,
+  IssueTokensParams,
+  prepareIssueTokens,
+} from '~/api/procedures/issueTokens';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -72,7 +76,7 @@ describe('issueTokens procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
 
     return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
       `Issuance amount cannot have more than ${MAX_DECIMALS} decimals`
@@ -86,7 +90,7 @@ describe('issueTokens procedure', () => {
       ticker,
     };
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
 
     return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
       'Cannot issue decimal amount of an indivisible token'
@@ -109,7 +113,7 @@ describe('issueTokens procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
 
     let error;
 
@@ -142,7 +146,7 @@ describe('issueTokens procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
 
     let error;
 
@@ -171,7 +175,7 @@ describe('issueTokens procedure', () => {
     });
 
     const transaction = dsMockUtils.createTxStub('asset', 'issue');
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
 
     const result = await prepareIssueTokens.call(proc, args);
 
@@ -185,7 +189,7 @@ describe('getRequiredRoles', () => {
     const ticker = 'someTicker';
     const args = {
       ticker,
-    } as Params;
+    } as IssueTokensParams;
 
     expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
   });

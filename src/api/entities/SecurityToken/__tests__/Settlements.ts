@@ -91,8 +91,6 @@ describe('Settlements class', () => {
 
       const rawDummyAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
 
-      // stringToIdentityIdStub.withArgs(currentDid, mockContext).returns(rawCurrentDid);
-
       portfolioIdToMeshPortfolioIdStub
         .withArgs({ did: currentDid }, mockContext)
         .returns(rawFromPortfolio);

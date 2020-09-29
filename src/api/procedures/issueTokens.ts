@@ -6,17 +6,17 @@ import { ErrorCode, Role, RoleType } from '~/types';
 import { numberToBalance, stringToTicker } from '~/utils';
 import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
-/**
- * @hidden
- */
-export type Params = { amount: BigNumber; ticker: string };
+export interface IssueTokensParams {
+  amount: BigNumber;
+  ticker: string;
+}
 
 /**
  * @hidden
  */
 export async function prepareIssueTokens(
-  this: Procedure<Params, SecurityToken>,
-  args: Params
+  this: Procedure<IssueTokensParams, SecurityToken>,
+  args: IssueTokensParams
 ): Promise<SecurityToken> {
   const {
     context: {
@@ -79,7 +79,7 @@ export async function prepareIssueTokens(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
+export function getRequiredRoles({ ticker }: IssueTokensParams): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 

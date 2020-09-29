@@ -9,7 +9,7 @@ export { consumeAuthorizationRequests, ConsumeParams } from './consumeAuthorizat
 // export { createProposal, CreateProposalParams } from './createProposal';
 export { createSecurityToken, CreateSecurityTokenParams } from './createSecurityToken';
 // export { editProposal, EditProposalParams } from './editProposal';
-export { issueTokens } from './issueTokens';
+export { issueTokens, IssueTokensParams } from './issueTokens';
 export { modifyClaims, ModifyClaimsParams } from './modifyClaims';
 export { modifyToken, ModifyTokenParams } from './modifyToken';
 export {
