@@ -74,7 +74,7 @@ interface SecurityTokenOptions {
   ticker?: string;
   details?: Partial<SecurityTokenDetails>;
   currentFundingRound?: string;
-  transfersAreFrozen?: boolean;
+  transferIsFrozen?: boolean;
   transfersCanTransfer?: TransferStatus;
 }
 
@@ -131,7 +131,7 @@ let currentAccountGetIdentityStub: SinonStub;
 let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
-let securityTokenTransfersAreFrozenStub: SinonStub;
+let securityTokenTransferIsFrozenStub: SinonStub;
 let securityTokenTransfersCanTransferStub: SinonStub;
 
 const MockIdentityClass = class {
@@ -295,7 +295,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     isDivisible: false,
   },
   currentFundingRound: 'Series A',
-  transfersAreFrozen: false,
+  transferIsFrozen: false,
   transfersCanTransfer: TransferStatus.Success,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
@@ -392,8 +392,8 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     ticker: opts.ticker,
     details: securityTokenDetailsStub.resolves(details),
     currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(opts.currentFundingRound),
+    isFrozen: securityTokenTransferIsFrozenStub.resolves(opts.transferIsFrozen),
     transfers: {
-      areFrozen: securityTokenTransfersAreFrozenStub.resolves(opts.transfersAreFrozen),
       canTransfer: securityTokenTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
     },
   } as unknown) as MockSecurityToken;
@@ -412,7 +412,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenConstructorStub = sinon.stub();
   securityTokenDetailsStub = sinon.stub();
   securityTokenCurrentFundingRoundStub = sinon.stub();
-  securityTokenTransfersAreFrozenStub = sinon.stub();
+  securityTokenTransferIsFrozenStub = sinon.stub();
   securityTokenTransfersCanTransferStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
@@ -974,14 +974,14 @@ export function getSecurityTokenCurrentFundingRoundStub(currentFundingRound?: st
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.Transfers.areFrozen` method
+ * Retrieve the stub of the `SecurityToken.isFrozen` method
  */
-export function getSecurityTokenTransfersAreFrozenStub(frozen?: boolean): SinonStub {
+export function getSecurityTokenTransferIsFrozenStub(frozen?: boolean): SinonStub {
   if (frozen !== undefined) {
-    return securityTokenTransfersAreFrozenStub.resolves(frozen);
+    return securityTokenTransferIsFrozenStub.resolves(frozen);
   }
 
-  return securityTokenTransfersAreFrozenStub;
+  return securityTokenTransferIsFrozenStub;
 }
 
 /**
