@@ -9,9 +9,9 @@ import { TransactionQueue } from '~/base';
  */
 export class Issuance extends Namespace<SecurityToken> {
   /**
-   * Issue a certain amount of tokens to primary issuance agent
+   * Issue a certain amount of tokens to the primary issuance agent
    *
-   * @param args.issuanceAmount - amount of tokens to be issued to primary issuance agent
+   * @param args.amount - amount of tokens to be issued to primary issuance agent
    */
   public issue(args: { amount: BigNumber }): Promise<TransactionQueue<SecurityToken>> {
     const {
