@@ -4,7 +4,10 @@
     "rootDir": "src",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["src/*"]
+      "~/*": ["src/*"],
+      "polymesh-types/*": ["src/polkadot/*"],
+      "@polkadot/api/augment": ["src/polkadot/augment-api.ts"],
+      "@polkadot/types/augment": ["src/polkadot/augment-types.ts"]
     },
     "plugins": [
       {
@@ -23,5 +26,5 @@
     "lib": ["es2017", "dom"],
     "typeRoots": ["./node_modules/@types", "./src/typings"]
   },
-  "exclude": ["dist", "node_modules", "test.ts"]
+  "exclude": ["dist", "node_modules", "sandbox.ts", "test.ts"]
 }

@@ -1,4 +1,7 @@
-// Happy Coding!
-console.log('Polymath Rocks! (It would rock a whole lot less without Jere, though)');
+import './polkadot/augment-api';
 
-export const a = 1;
+import BigNumber from 'bignumber.js';
+
+export { Polymesh } from './Polymesh';
+export { Keyring, WsProvider } from '@polkadot/api';
+export { BigNumber };

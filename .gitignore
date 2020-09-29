@@ -6,4 +6,7 @@ npm-package/
 .idea/
 coverage/
 test.ts
+sandbox.ts
+tsconfig.dev.json
+.env
 docs/

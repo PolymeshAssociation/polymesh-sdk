@@ -1,0 +1,14 @@
+schema:
+  - ${MIDDLEWARE_LINK}:
+      headers:
+        x-api-key: ${MIDDLEWARE_KEY}
+generates:
+  ./src/middleware/types.ts:
+    config:
+      defaultMapper: any
+      scalars:
+        DateTime: Date
+        JSON: '{ [key: string]: any }'
+        CustomBoolean: boolean
+    plugins:
+      - 'typescript'
