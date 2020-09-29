@@ -92,7 +92,7 @@ describe('inviteAccount procedure', () => {
       },
     });
 
-    mockContext.getSigningKeys.resolves([
+    mockContext.getSecondaryKeys.resolves([
       {
         signer,
         permissions: [],
@@ -151,10 +151,10 @@ describe('inviteAccount procedure', () => {
     );
   });
 
-  test('should throw an error if the passed account is already present in the signing keys list', async () => {
+  test('should throw an error if the passed account is already present in the secondary keys list', async () => {
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
 
-    mockContext.getSigningKeys.resolves([
+    mockContext.getSecondaryKeys.resolves([
       {
         signer,
         permissions: [],
@@ -167,7 +167,7 @@ describe('inviteAccount procedure', () => {
     const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
 
     await expect(prepareInviteAccount.call(proc, args)).rejects.toThrow(
-      'The target Account is already a signing key for this Identity'
+      'The target Account is already a secondary key for this Identity'
     );
   });
 
@@ -197,7 +197,7 @@ describe('inviteAccount procedure', () => {
       },
     });
 
-    mockContext.getSigningKeys.resolves([
+    mockContext.getSecondaryKeys.resolves([
       {
         signer,
         permissions: [],

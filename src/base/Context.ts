@@ -25,7 +25,7 @@ import {
   KeyringPair,
   PlainTransactionArgument,
   ResultSet,
-  SigningKey,
+  SecondaryKey,
   SimpleEnumTransactionArgument,
   SubCallback,
   TransactionArgument,
@@ -538,17 +538,17 @@ export class Context {
   }
 
   /**
-   * Retrieve the list of signing keys related to the Account
+   * Retrieve the list of secondary keys related to the Account
    *
    * @note can be subscribed to
    */
-  public async getSigningKeys(): Promise<SigningKey[]>;
-  public async getSigningKeys(callback: SubCallback<SigningKey[]>): Promise<UnsubCallback>;
+  public async getSecondaryKeys(): Promise<SecondaryKey[]>;
+  public async getSecondaryKeys(callback: SubCallback<SecondaryKey[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getSigningKeys(
-    callback?: SubCallback<SigningKey[]>
-  ): Promise<SigningKey[] | UnsubCallback> {
+  public async getSecondaryKeys(
+    callback?: SubCallback<SecondaryKey[]>
+  ): Promise<SecondaryKey[] | UnsubCallback> {
     const {
       polymeshApi: {
         query: { identity },
@@ -557,8 +557,8 @@ export class Context {
 
     const { did } = await this.getCurrentIdentity();
 
-    const assembleResult = ({ signing_keys: signingKeys }: DidRecord): SigningKey[] => {
-      return signingKeys.map(({ signer: rawSigner, permissions }) => ({
+    const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SecondaryKey[] => {
+      return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
         signer: signerValueToSigner(signatoryToSignerValue(rawSigner), this),
         permissions: permissions.map(permission => meshPermissionToPermission(permission)),
       }));
@@ -617,13 +617,22 @@ export class Context {
 
     didsWithClaimsList.forEach(({ claims }) => {
       claims.forEach(
-        ({ targetDID, issuer, issuance_date: issuanceDate, expiry, type, jurisdiction, scope }) => {
+        ({
+          targetDID,
+          issuer,
+          issuance_date: issuanceDate,
+          expiry,
+          type,
+          jurisdiction,
+          scope,
+          cddId,
+        }) => {
           data.push({
             target: new Identity({ did: targetDID }, this),
             issuer: new Identity({ did: issuer }, this),
             issuedAt: new Date(issuanceDate),
             expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, scope),
+            claim: createClaim(type, jurisdiction, scope, cddId),
           });
         }
       );

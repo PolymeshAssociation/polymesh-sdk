@@ -3,8 +3,12 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
-import { Account, Identity, Proposal } from '~/api/entities';
-import { ProposalDetails } from '~/api/entities/Proposal/types';
+// NOTE uncomment in Governance v2 upgrade
+import { Account, Identity /*, Proposal */ } from '~/api/entities';
+// import { ProposalDetails } from '~/api/entities/Proposal/types';
+import { CountryCode } from '~/generated/types';
+
+export * from '~/generated/types';
 
 export enum TransactionStatus {
   /**
@@ -126,6 +130,7 @@ export enum TokenIdentifierType {
   Isin = 'Isin',
   Cusip = 'Cusip',
   Cins = 'Cins',
+  Lei = 'Lei',
 }
 
 // NOTE: query.asset.identifiers doesn’t support custom identifier types properly for now
@@ -152,8 +157,8 @@ export interface TokenDocument {
  * Type of authorization request
  */
 export enum AuthorizationType {
-  AttestMasterKeyRotation = 'AttestMasterKeyRotation',
-  RotateMasterKey = 'RotateMasterKey',
+  AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
+  RotatePrimaryKey = 'RotatePrimaryKey',
   TransferTicker = 'TransferTicker',
   AddMultiSigSigner = 'AddMultiSigSigner',
   TransferAssetOwnership = 'TransferAssetOwnership',
@@ -184,6 +189,18 @@ export enum ConditionTarget {
   Both = 'Both',
 }
 
+export enum ScopeType {
+  // eslint-disable-next-line no-shadow
+  Identity = 'Identity',
+  Ticker = 'Ticker',
+  Custom = 'Custom',
+}
+
+export interface Scope {
+  type: ScopeType;
+  value: string;
+}
+
 export enum ClaimType {
   Accredited = 'Accredited',
   Affiliate = 'Affiliate',
@@ -198,10 +215,12 @@ export enum ClaimType {
 }
 
 export type ScopedClaim =
-  | { type: ClaimType.Jurisdiction; name: string; scope: string }
-  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string };
+  | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
+  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: Scope };
 
-export type UnscopedClaim = { type: ClaimType.NoData | ClaimType.CustomerDueDiligence };
+export type UnscopedClaim =
+  | { type: ClaimType.NoData }
+  | { type: ClaimType.CustomerDueDiligence; id: string };
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -211,7 +230,7 @@ export type Claim = ScopedClaim | UnscopedClaim;
 export function isScopedClaim(claim: Claim): claim is ScopedClaim {
   const { type } = claim;
 
-  return type !== ClaimType.NoData && type !== ClaimType.CustomerDueDiligence;
+  return ![ClaimType.NoData, ClaimType.CustomerDueDiligence].includes(type);
 }
 
 export interface ClaimData {
@@ -240,7 +259,7 @@ export interface ExtrinsicData {
 }
 
 export interface ClaimScope {
-  scope: string | null;
+  scope: Scope | null;
   ticker?: string;
 }
 
@@ -279,13 +298,13 @@ export function isMultiClaimCondition(condition: Condition): condition is MultiC
   return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
 }
 
-export interface Rule {
+export interface Requirement {
   id: number;
   conditions: Condition[];
 }
 
-export interface RuleCompliance {
-  rules: (Rule & {
+export interface RequirementCompliance {
+  requirements: (Requirement & {
     complies: boolean;
   })[];
   complies: boolean;
@@ -305,14 +324,6 @@ export enum ErrorCode {
   MiddlewareError = 'MiddlewareError',
   IdentityNotPresent = 'IdentityNotPresent',
   DataUnavailable = 'DataUnavailable',
-}
-
-/**
- * Represents an amount of tokens to be issued to an Identity
- */
-export interface IssuanceData {
-  identity: string | Identity;
-  amount: BigNumber;
 }
 
 export enum TransferStatus {
@@ -462,12 +473,13 @@ export type TransactionArgument = {
 
 export type Signer = Identity | Account;
 
-export interface ProposalWithDetails {
-  proposal: Proposal;
-  details: ProposalDetails;
-}
+// NOTE uncomment in Governance v2 upgrade
+// export interface ProposalWithDetails {
+//   proposal: Proposal;
+//   details: ProposalDetails;
+// }
 
-export interface SigningKey {
+export interface SecondaryKey {
   signer: Signer;
   permissions: Permission[];
 }

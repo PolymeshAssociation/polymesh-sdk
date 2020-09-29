@@ -150,6 +150,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
   /**
    * Create a Security Token using the reserved ticker
    *
+   * @note the issuer DID will be set as the primary issuance agent
+   *
    * @param args.totalSupply - amount of tokens that will be minted on creation
    * @param args.isDivisible - whether a single token can be divided into decimal parts
    * @param args.tokenType - type of security that the token represents (i.e. Equity, Debt, Commodity, etc)

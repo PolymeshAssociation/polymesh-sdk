@@ -33,10 +33,10 @@ export async function prepareToggleFreezeTransfers(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const areFrozen = await securityToken.transfers.areFrozen();
+  const isFrozen = await securityToken.isFrozen();
 
   if (freeze) {
-    if (areFrozen) {
+    if (isFrozen) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The Security Token is already frozen',
@@ -45,7 +45,7 @@ export async function prepareToggleFreezeTransfers(
 
     this.addTransaction(tx.asset.freeze, {}, rawTicker);
   } else {
-    if (!areFrozen) {
+    if (!isFrozen) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The Security Token is already unfrozen',

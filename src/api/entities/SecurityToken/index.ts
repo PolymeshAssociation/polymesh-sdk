@@ -1,26 +1,20 @@
 import BigNumber from 'bignumber.js';
-import { AssetIdentifier, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
+import { SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import { Entity, Identity } from '~/api/entities';
 import {
   modifyToken,
   ModifyTokenParams,
+  toggleFreezeTransfers,
   transferTokenOwnership,
   TransferTokenOwnershipParams,
 } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Ensured, EventIdentifier, SubCallback, TokenIdentifier, UnsubCallback } from '~/types';
 import {
-  Ensured,
-  EventIdentifier,
-  SubCallback,
-  TokenIdentifier,
-  TokenIdentifierType,
-  UnsubCallback,
-} from '~/types';
-import {
-  assetIdentifierToString,
+  assetIdentifierToTokenIdentifier,
   assetNameToString,
   assetTypeToString,
   balanceToBigNumber,
@@ -28,16 +22,16 @@ import {
   fundingRoundNameToString,
   identityIdToString,
   padString,
+  stringToTicker,
   tickerToDid,
-  tokenIdentifierTypeToIdentifierType,
 } from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import { Compliance } from './Compliance';
 import { Documents } from './Documents';
 import { Issuance } from './Issuance';
+import { Settlements } from './Settlements';
 import { TokenHolders } from './TokenHolders';
-import { Transfers } from './Transfers';
 import { SecurityTokenDetails } from './types';
 
 /**
@@ -76,7 +70,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
   // Namespaces
   public documents: Documents;
-  public transfers: Transfers;
+  public settlements: Settlements;
   public tokenHolders: TokenHolders;
   public issuance: Issuance;
   public compliance: Compliance;
@@ -93,7 +87,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.did = tickerToDid(ticker);
 
     this.documents = new Documents(this, context);
-    this.transfers = new Transfers(this, context);
+    this.settlements = new Settlements(this, context);
     this.tokenHolders = new TokenHolders(this, context);
     this.issuance = new Issuance(this, context);
     this.compliance = new Compliance(this, context);
@@ -156,15 +150,15 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       divisible,
       owner_did,
       asset_type,
-      treasury_did,
+      primary_issuance_agent,
     }: MeshSecurityToken): SecurityTokenDetails => ({
       assetType: assetTypeToString(asset_type),
       isDivisible: boolToBoolean(divisible),
       name: assetNameToString(name),
       owner: new Identity({ did: identityIdToString(owner_did) }, context),
       totalSupply: balanceToBigNumber(total_supply),
-      treasuryIdentity: treasury_did.isSome
-        ? new Identity({ did: identityIdToString(treasury_did.unwrap()) }, context)
+      primaryIssuanceAgent: primary_issuance_agent.isSome
+        ? new Identity({ did: identityIdToString(primary_issuance_agent.unwrap()) }, context)
         : null,
     });
     /* eslint-enable @typescript-eslint/camelcase */
@@ -233,28 +227,17 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const tokenIdentifierTypes = Object.values(TokenIdentifierType);
-
-    const assembleResult = (identifiers: AssetIdentifier[]): TokenIdentifier[] =>
-      tokenIdentifierTypes.map((type, i) => ({
-        type,
-        value: assetIdentifierToString(identifiers[i]),
-      }));
-
-    const identifierTypes = tokenIdentifierTypes.map(type => [
-      ticker,
-      tokenIdentifierTypeToIdentifierType(type, context),
-    ]);
+    const rawTicker = stringToTicker(ticker, context);
 
     if (callback) {
-      return asset.identifiers.multi<AssetIdentifier>(identifierTypes, identifiers => {
-        callback(assembleResult(identifiers));
+      return asset.identifiers(rawTicker, identifiers => {
+        callback(identifiers.map(assetIdentifierToTokenIdentifier));
       });
     }
 
-    const assetIdentifiers = await asset.identifiers.multi<AssetIdentifier>(identifierTypes);
+    const assetIdentifiers = await asset.identifiers(rawTicker);
 
-    return assembleResult(assetIdentifiers);
+    return assetIdentifiers.map(assetIdentifierToTokenIdentifier);
   }
 
   /**
@@ -286,5 +269,54 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     }
 
     return null;
+  }
+
+  /**
+   * Freezes transfers and minting of the Security Token
+   */
+  public freeze(): Promise<TransactionQueue<SecurityToken>> {
+    const { ticker, context } = this;
+    return toggleFreezeTransfers.prepare({ ticker, freeze: true }, context);
+  }
+
+  /**
+   * Unfreeze transfers and minting of the Security Token
+   */
+  public unfreeze(): Promise<TransactionQueue<SecurityToken>> {
+    const { ticker, context } = this;
+    return toggleFreezeTransfers.prepare({ ticker, freeze: false }, context);
+  }
+
+  /**
+   * Check whether transfers are frozen for the Security Token
+   *
+   * @note can be subscribed to
+   */
+  public isFrozen(): Promise<boolean>;
+  public isFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async isFrozen(callback?: SubCallback<boolean>): Promise<boolean | UnsubCallback> {
+    const {
+      ticker,
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      context,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    if (callback) {
+      return asset.frozen(rawTicker, frozen => {
+        callback(boolToBoolean(frozen));
+      });
+    }
+
+    const result = await asset.frozen(rawTicker);
+
+    return boolToBoolean(result);
   }
 }

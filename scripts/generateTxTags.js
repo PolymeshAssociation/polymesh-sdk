@@ -2,11 +2,11 @@
 const Metadata = require('@polkadot/metadata/Metadata').default;
 const { w3cwebsocket } = require('websocket');
 const { TypeRegistry } = require('@polkadot/types/create');
-const { stringCamelCase, stringLowerFirst, stringUpperFirst } = require('@polkadot/util');
+const { stringCamelCase, stringUpperFirst } = require('@polkadot/util');
 const fs = require('fs');
 const path = require('path');
 
-const websocket = new w3cwebsocket('wss://pmf.polymath.network');
+const websocket = new w3cwebsocket('wss://pme.polymath.network');
 websocket.onopen = () => {
   websocket.send('{"id":"1","jsonrpc":"2.0","method":"state_getMetadata","params":[]}');
 };

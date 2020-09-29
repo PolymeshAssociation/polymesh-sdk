@@ -1,35 +1,22 @@
-import P from 'bluebird';
-import { chunk } from 'lodash';
-import { IssueAssetItem, TxTags } from 'polymesh-types/types';
+import BigNumber from 'bignumber.js';
 
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode, IssuanceData, Role, RoleType, TransferStatus } from '~/types';
-import {
-  batchArguments,
-  issuanceDataToIssueAssetItem,
-  signerToString,
-  stringToTicker,
-} from '~/utils';
-import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import { ErrorCode, Role, RoleType } from '~/types';
+import { numberToBalance, stringToTicker } from '~/utils';
+import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
 export interface IssueTokensParams {
-  issuanceData: IssuanceData[];
+  amount: BigNumber;
+  ticker: string;
 }
 
 /**
  * @hidden
  */
-export type Params = IssueTokensParams & {
-  ticker: string;
-};
-
-/**
- * @hidden
- */
 export async function prepareIssueTokens(
-  this: Procedure<Params, SecurityToken>,
-  args: Params
+  this: Procedure<IssueTokensParams, SecurityToken>,
+  args: IssueTokensParams
 ): Promise<SecurityToken> {
   const {
     context: {
@@ -39,34 +26,29 @@ export async function prepareIssueTokens(
     },
     context,
   } = this;
-  const { ticker, issuanceData } = args;
+  const { ticker, amount } = args;
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const { isDivisible, totalSupply } = await securityToken.details();
-  const values = issuanceData.map(({ amount }) => amount);
+  const { isDivisible, totalSupply, primaryIssuanceAgent } = await securityToken.details();
 
-  values.forEach(value => {
-    if (isDivisible) {
-      if (value.decimalPlaces() > MAX_DECIMALS) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: `Issuance amounts cannot have more than ${MAX_DECIMALS} decimals`,
-        });
-      }
-    } else {
-      if (value.decimalPlaces()) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'Cannot issue decimal amounts of an indivisible token',
-        });
-      }
+  if (isDivisible) {
+    if (amount.decimalPlaces() > MAX_DECIMALS) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: `Issuance amount cannot have more than ${MAX_DECIMALS} decimals`,
+      });
     }
-  });
+  } else {
+    if (amount.decimalPlaces()) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Cannot issue decimal amount of an indivisible token',
+      });
+    }
+  }
 
-  const supplyAfterMint = values.reduce((acc, next) => {
-    return acc.plus(next);
-  }, totalSupply);
+  const supplyAfterMint = amount.plus(totalSupply);
 
   if (supplyAfterMint.isGreaterThan(MAX_TOKEN_AMOUNT)) {
     throw new PolymeshError({
@@ -79,45 +61,17 @@ export async function prepareIssueTokens(
     });
   }
 
-  const rawTicker = stringToTicker(ticker, context);
-
-  const issueAssetItems: IssueAssetItem[] = [];
-  const failed: Array<{ did: string; transferStatus: TransferStatus }> = [];
-
-  const issuanceDataChunks = chunk(issuanceData, MAX_CONCURRENT_REQUESTS);
-
-  await P.each(issuanceDataChunks, async issuanceDataChunk => {
-    const transferStatuses = await Promise.all(
-      issuanceDataChunk.map(({ identity, amount }) =>
-        securityToken.transfers.canMint({ to: identity, amount })
-      )
-    );
-
-    transferStatuses.forEach((canTransfer, index) => {
-      const { identity } = issuanceDataChunk[index];
-      const did = signerToString(identity);
-
-      issueAssetItems.push(issuanceDataToIssueAssetItem(issuanceDataChunk[index], context));
-
-      if (canTransfer !== TransferStatus.Success) {
-        failed.push({ did, transferStatus: canTransfer });
-      }
-    });
-  });
-
-  if (failed.length) {
+  if (!primaryIssuanceAgent) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: "You can't issue tokens to some of the supplied Identities",
-      data: {
-        failed,
-      },
+      message: 'You should set a primary issuance agent to issue tokens',
     });
   }
 
-  batchArguments(issueAssetItems, TxTags.asset.BatchIssue).forEach(itemBatch => {
-    this.addTransaction(asset.batchIssue, { batchSize: issuanceData.length }, itemBatch, rawTicker);
-  });
+  const rawTicker = stringToTicker(ticker, context);
+  const rawValue = numberToBalance(amount, context);
+
+  this.addTransaction(asset.issue, {}, rawTicker, rawValue);
 
   return securityToken;
 }
@@ -125,7 +79,7 @@ export async function prepareIssueTokens(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
+export function getRequiredRoles({ ticker }: IssueTokensParams): Role[] {
   return [{ type: RoleType.TokenOwner, ticker }];
 }
 

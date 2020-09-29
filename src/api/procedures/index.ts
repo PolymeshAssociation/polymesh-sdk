@@ -1,12 +1,14 @@
+// NOTE uncomment in Governance v2 upgrade
+
 export {
   acceptJoinIdentityAuthorization,
   AcceptJoinIdentityAuthorizationParams,
 } from './acceptJoinIdentityAuthorization';
-export { cancelProposal } from './cancelProposal';
+// export { cancelProposal } from './cancelProposal';
 export { consumeAuthorizationRequests, ConsumeParams } from './consumeAuthorizationRequests';
-export { createProposal, CreateProposalParams } from './createProposal';
+// export { createProposal, CreateProposalParams } from './createProposal';
 export { createSecurityToken, CreateSecurityTokenParams } from './createSecurityToken';
-export { editProposal, EditProposalParams } from './editProposal';
+// export { editProposal, EditProposalParams } from './editProposal';
 export { issueTokens, IssueTokensParams } from './issueTokens';
 export { modifyClaims, ModifyClaimsParams } from './modifyClaims';
 export { modifyToken, ModifyTokenParams } from './modifyToken';
@@ -15,14 +17,13 @@ export {
   ModifyTokenTrustedClaimIssuersParams,
 } from './modifyTokenTrustedClaimIssuers';
 export { registerIdentity, RegisterIdentityParams } from './registerIdentity';
-export { removeSigningKeys, RemoveSigningKeysParams } from './removeSigningKeys';
+export { removeSecondaryKeys, RemoveSecondaryKeysParams } from './removeSecondaryKeys';
 export { reserveTicker, ReserveTickerParams } from './reserveTicker';
 export { setTokenDocuments, SetTokenDocumentsParams } from './setTokenDocuments';
-export { setTokenRules, SetTokenRulesParams } from './setTokenRules';
+export { setAssetRequirements, SetAssetRequirementsParams } from './setAssetRequirements';
 export { toggleFreezeTransfers, ToggleFreezeTransfersParams } from './toggleFreezeTransfers';
-export { togglePauseRules, TogglePauseRulesParams } from './togglePauseRules';
+export { togglePauseRequirements, TogglePauseRequirementsParams } from './togglePauseRequirements';
 export { transferPolyX, TransferPolyXParams } from './transferPolyX';
-export { transferToken, TransferTokenParams } from './transferToken';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
-export { voteOnProposal, VoteOnProposalParams } from './voteOnProposal';
+// export { voteOnProposal, VoteOnProposalParams } from './voteOnProposal';
 export { inviteAccount, InviteAccountParams } from './inviteAccount';

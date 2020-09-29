@@ -4,16 +4,16 @@ import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Signer } from '~/types';
 import { signerToSignerValue, signerValueToSignatory } from '~/utils';
 
-export interface RemoveSigningKeysParams {
+export interface RemoveSecondaryKeysParams {
   signers: Signer[];
 }
 
 /**
  * @hidden
  */
-export async function prepareRemoveSigningKeys(
-  this: Procedure<RemoveSigningKeysParams>,
-  args: RemoveSigningKeysParams
+export async function prepareRemoveSecondaryKeys(
+  this: Procedure<RemoveSecondaryKeysParams>,
+  args: RemoveSecondaryKeysParams
 ): Promise<void> {
   const {
     context: {
@@ -26,24 +26,24 @@ export async function prepareRemoveSigningKeys(
 
   const identity = await context.getCurrentIdentity();
 
-  const [masterKey, signingKeys] = await Promise.all([
-    identity.getMasterKey(),
-    context.getSigningKeys(),
+  const [primaryKey, secondaryKeys] = await Promise.all([
+    identity.getPrimaryKey(),
+    context.getSecondaryKeys(),
   ]);
 
   const signerValues = signers.map(signer => signerToSignerValue(signer));
-  const isMasterKeyPresent = find(signerValues, ({ value }) => value === masterKey);
+  const isPrimaryKeyPresent = find(signerValues, ({ value }) => value === primaryKey);
 
-  if (isMasterKeyPresent) {
+  if (isPrimaryKeyPresent) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You cannot remove the master key',
+      message: 'You cannot remove the primary key',
     });
   }
 
   const notInTheList: string[] = [];
   signerValues.forEach(({ value: itemValue }) => {
-    const isPresent = signingKeys
+    const isPresent = secondaryKeys
       .map(({ signer }) => signerToSignerValue(signer))
       .find(({ value }) => value === itemValue);
     if (!isPresent) {
@@ -54,7 +54,7 @@ export async function prepareRemoveSigningKeys(
   if (notInTheList.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You cannot remove a signing key that is not present in your signing keys list',
+      message: 'You cannot remove a key that is not present in your secondary keys list',
       data: {
         missing: notInTheList,
       },
@@ -62,7 +62,7 @@ export async function prepareRemoveSigningKeys(
   }
 
   this.addTransaction(
-    tx.identity.removeSigningKeys,
+    tx.identity.removeSecondaryKeys,
     {},
     signerValues.map(signer => signerValueToSignatory(signer, context))
   );
@@ -71,16 +71,16 @@ export async function prepareRemoveSigningKeys(
 /**
  * @hidden
  */
-export async function isAuthorized(this: Procedure<RemoveSigningKeysParams>): Promise<boolean> {
+export async function isAuthorized(this: Procedure<RemoveSecondaryKeysParams>): Promise<boolean> {
   const { context } = this;
 
   const identity = await context.getCurrentIdentity();
-  const masterKey = await identity.getMasterKey();
+  const primaryKey = await identity.getPrimaryKey();
 
-  return masterKey === context.getCurrentPair().address;
+  return primaryKey === context.getCurrentPair().address;
 }
 
 /**
  * @hidden
  */
-export const removeSigningKeys = new Procedure(prepareRemoveSigningKeys, isAuthorized);
+export const removeSecondaryKeys = new Procedure(prepareRemoveSecondaryKeys, isAuthorized);

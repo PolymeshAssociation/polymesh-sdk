@@ -212,15 +212,15 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the master key associated with the Identity
+   * Retrieve the primary key associated with the Identity
    *
    * @note can be subscribed to
    */
-  public async getMasterKey(): Promise<string>;
-  public async getMasterKey(callback: SubCallback<string>): Promise<UnsubCallback>;
+  public async getPrimaryKey(): Promise<string>;
+  public async getPrimaryKey(callback: SubCallback<string>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getMasterKey(callback?: SubCallback<string>): Promise<string | UnsubCallback> {
+  public async getPrimaryKey(callback?: SubCallback<string>): Promise<string | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -231,8 +231,8 @@ export class Identity extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
-      return accountIdToString(masterKey);
+    const assembleResult = ({ primary_key: primaryKey }: DidRecord): string => {
+      return accountIdToString(primaryKey);
     };
 
     const rawDid = stringToIdentityId(did, context);

@@ -104,6 +104,7 @@ declare module '@polkadot/metadata/Decorated/consts/types' {
       windowSize: AugmentedConst<BlockNumber>;
     };
     settlement: {
+      maxLegsInAInstruction: AugmentedConst<u32>;
       maxScheduledInstructionLegsPerBlock: AugmentedConst<u32>;
     };
     staking: {

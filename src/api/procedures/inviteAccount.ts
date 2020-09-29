@@ -44,9 +44,9 @@ export async function prepareInviteAccount(
 
   const currentIdentity = await context.getCurrentIdentity();
 
-  const [authorizationRequests, signingKeys, existingIdentity] = await Promise.all([
+  const [authorizationRequests, secondaryKeys, existingIdentity] = await Promise.all([
     currentIdentity.authorizations.getSent(),
-    context.getSigningKeys(),
+    context.getSecondaryKeys(),
     account.getIdentity(),
   ] as const);
 
@@ -57,12 +57,12 @@ export async function prepareInviteAccount(
     });
   }
 
-  const isPresent = !!signingKeys.find(({ signer }) => signerToString(signer) === address);
+  const isPresent = !!secondaryKeys.find(({ signer }) => signerToString(signer) === address);
 
   if (isPresent) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The target Account is already a signing key for this Identity',
+      message: 'The target Account is already a secondary key for this Identity',
     });
   }
 

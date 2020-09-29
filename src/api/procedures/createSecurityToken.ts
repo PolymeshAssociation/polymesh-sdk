@@ -1,11 +1,10 @@
 import BigNumber from 'bignumber.js';
-import { AssetIdentifier, IdentifierType, TxTags } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 
 import { SecurityToken, TickerReservation } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import {
   ErrorCode,
-  Identity,
   Role,
   RoleType,
   TickerReservationStatus,
@@ -18,15 +17,12 @@ import {
   batchArguments,
   booleanToBool,
   numberToBalance,
-  signerToString,
-  stringToAssetIdentifier,
   stringToAssetName,
   stringToDocumentName,
   stringToFundingRoundName,
-  stringToIdentityId,
   stringToTicker,
   tokenDocumentDataToDocument,
-  tokenIdentifierTypeToIdentifierType,
+  tokenIdentifierToAssetIdentifier,
   tokenTypeToAssetType,
 } from '~/utils';
 
@@ -37,7 +33,6 @@ export interface CreateSecurityTokenParams {
   tokenType: TokenType;
   tokenIdentifiers?: TokenIdentifier[];
   fundingRound?: string;
-  treasury?: string | Identity;
   documents?: TokenDocument[];
 }
 
@@ -69,7 +64,6 @@ export async function prepareCreateSecurityToken(
     tokenType,
     tokenIdentifiers = [],
     fundingRound,
-    treasury,
     documents,
   } = args;
 
@@ -96,16 +90,10 @@ export async function prepareCreateSecurityToken(
   const rawName = stringToAssetName(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawType = tokenTypeToAssetType(tokenType, context);
-  const rawIdentifiers = tokenIdentifiers.map<[IdentifierType, AssetIdentifier]>(
-    ({ type, value }) => {
-      return [
-        tokenIdentifierTypeToIdentifierType(type, context),
-        stringToAssetIdentifier(value, context),
-      ];
-    }
+  const rawIdentifiers = tokenIdentifiers.map(identifier =>
+    tokenIdentifierToAssetIdentifier(identifier, context)
   );
   const rawFundingRound = fundingRound ? stringToFundingRoundName(fundingRound, context) : null;
-  const rawTreasury = treasury ? stringToIdentityId(signerToString(treasury), context) : null;
 
   this.addTransaction(
     tx.asset.createAsset,
@@ -116,8 +104,7 @@ export async function prepareCreateSecurityToken(
     rawIsDivisible,
     rawType,
     rawIdentifiers,
-    rawFundingRound,
-    rawTreasury
+    rawFundingRound
   );
 
   if (documents) {

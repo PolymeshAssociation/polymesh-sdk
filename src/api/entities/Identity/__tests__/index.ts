@@ -217,7 +217,7 @@ describe('Identity class', () => {
           total_supply: dsMockUtils.createMockBalance(3000),
           divisible: dsMockUtils.createMockBool(true),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
-          treasury_did: dsMockUtils.createMockOption(),
+          primary_issuance_agent: dsMockUtils.createMockOption(),
           name: dsMockUtils.createMockAssetName('someToken'),
         })
       );
@@ -329,9 +329,9 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getMasterKey', () => {
+  describe('method: getPrimaryKey', () => {
     const did = 'someDid';
-    const accountId = 'someMasterKey';
+    const accountId = 'somePrimaryKey';
 
     let accountIdToStringStub: sinon.SinonStub<[AccountId], string>;
     let didRecordsStub: sinon.SinonStub;
@@ -347,19 +347,19 @@ describe('Identity class', () => {
       /* eslint-disable @typescript-eslint/camelcase */
       rawDidRecord = dsMockUtils.createMockDidRecord({
         roles: [],
-        master_key: dsMockUtils.createMockAccountId(accountId),
-        signing_keys: [],
+        primary_key: dsMockUtils.createMockAccountId(accountId),
+        secondary_keys: [],
       });
       /* eslint-enabled @typescript-eslint/camelcase */
     });
 
-    test('should return a MasterKey', async () => {
+    test('should return a PrimaryKey', async () => {
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
 
       didRecordsStub.returns(rawDidRecord);
 
-      const result = await identity.getMasterKey();
+      const result = await identity.getPrimaryKey();
       expect(result).toEqual(accountId);
     });
 
@@ -375,7 +375,7 @@ describe('Identity class', () => {
       });
 
       const callback = sinon.stub();
-      const result = await identity.getMasterKey(callback);
+      const result = await identity.getPrimaryKey(callback);
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, accountId);

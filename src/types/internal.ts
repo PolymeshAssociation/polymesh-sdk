@@ -142,3 +142,8 @@ export interface TokenDocumentData {
   uri: string;
   contentHash: string;
 }
+
+export interface PortfolioId {
+  did: string;
+  number?: number;
+}

@@ -47,8 +47,8 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
    *
    * | Type                       | Data   |
    * |----------------------------|--------|
-   * | Attest Master Key Rotation | DID    |
-   * | Rotate Master Key          | DID    |
+   * | Attest Primary Key Rotation| DID    |
+   * | Rotate Primary Key         | DID    |
    * | Transfer Ticker            | Ticker |
    * | Add MultiSig Signer        | N/A    |
    * | Transfer Token Ownership   | Ticker |

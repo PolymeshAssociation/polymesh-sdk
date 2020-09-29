@@ -16,6 +16,11 @@ export enum SystemTx {
   Suicide = 'system.suicide',
 }
 
+export enum BabeTx {
+  ReportEquivocation = 'babe.reportEquivocation',
+  ReportEquivocationUnsigned = 'babe.reportEquivocationUnsigned',
+}
+
 export enum TimestampTx {
   Set = 'timestamp.set',
 }
@@ -85,6 +90,8 @@ export enum FinalityTrackerTx {
 
 export enum GrandpaTx {
   ReportEquivocation = 'grandpa.reportEquivocation',
+  ReportEquivocationUnsigned = 'grandpa.reportEquivocationUnsigned',
+  NoteStalled = 'grandpa.noteStalled',
 }
 
 export enum ImOnlineTx {
@@ -118,7 +125,7 @@ export enum MultiSigTx {
   ChangeSigsRequired = 'multiSig.changeSigsRequired',
   ChangeAllSignersAndSigsRequired = 'multiSig.changeAllSignersAndSigsRequired',
   MakeMultisigSigner = 'multiSig.makeMultisigSigner',
-  MakeMultisigMaster = 'multiSig.makeMultisigMaster',
+  MakeMultisigPrimary = 'multiSig.makeMultisigPrimary',
 }
 
 export enum ContractsTx {
@@ -136,13 +143,14 @@ export enum TreasuryTx {
 
 export enum PolymeshCommitteeTx {
   SetVoteThreshold = 'polymeshCommittee.setVoteThreshold',
-  Close = 'polymeshCommittee.close',
   SetReleaseCoordinator = 'polymeshCommittee.setReleaseCoordinator',
-  VoteEnactReferendum = 'polymeshCommittee.voteEnactReferendum',
-  VoteRejectReferendum = 'polymeshCommittee.voteRejectReferendum',
+  Close = 'polymeshCommittee.close',
+  VoteOrPropose = 'polymeshCommittee.voteOrPropose',
+  Vote = 'polymeshCommittee.vote',
 }
 
 export enum CommitteeMembershipTx {
+  SetActiveMembersLimit = 'committeeMembership.setActiveMembersLimit',
   DisableMember = 'committeeMembership.disableMember',
   AddMember = 'committeeMembership.addMember',
   RemoveMember = 'committeeMembership.removeMember',
@@ -154,58 +162,85 @@ export enum CommitteeMembershipTx {
 export enum PipsTx {
   SetPruneHistoricalPips = 'pips.setPruneHistoricalPips',
   SetMinProposalDeposit = 'pips.setMinProposalDeposit',
-  SetQuorumThreshold = 'pips.setQuorumThreshold',
-  SetProposalDuration = 'pips.setProposalDuration',
   SetProposalCoolOffPeriod = 'pips.setProposalCoolOffPeriod',
   SetDefaultEnactmentPeriod = 'pips.setDefaultEnactmentPeriod',
+  SetMaxPipSkipCount = 'pips.setMaxPipSkipCount',
+  SetActivePipLimit = 'pips.setActivePipLimit',
   Propose = 'pips.propose',
   AmendProposal = 'pips.amendProposal',
   CancelProposal = 'pips.cancelProposal',
-  BondAdditionalDeposit = 'pips.bondAdditionalDeposit',
-  UnbondDeposit = 'pips.unbondDeposit',
   Vote = 'pips.vote',
-  KillProposal = 'pips.killProposal',
+  ApproveCommitteeProposal = 'pips.approveCommitteeProposal',
+  RejectProposal = 'pips.rejectProposal',
   PruneProposal = 'pips.pruneProposal',
-  FastTrackProposal = 'pips.fastTrackProposal',
-  EmergencyReferendum = 'pips.emergencyReferendum',
-  EnactReferendum = 'pips.enactReferendum',
-  RejectReferendum = 'pips.rejectReferendum',
-  OverrideReferendumEnactmentPeriod = 'pips.overrideReferendumEnactmentPeriod',
+  RescheduleExecution = 'pips.rescheduleExecution',
+  ClearSnapshot = 'pips.clearSnapshot',
+  Snapshot = 'pips.snapshot',
+  EnactSnapshotResults = 'pips.enactSnapshotResults',
+}
+
+export enum TechnicalCommitteeTx {
+  SetVoteThreshold = 'technicalCommittee.setVoteThreshold',
+  SetReleaseCoordinator = 'technicalCommittee.setReleaseCoordinator',
+  Close = 'technicalCommittee.close',
+  VoteOrPropose = 'technicalCommittee.voteOrPropose',
+  Vote = 'technicalCommittee.vote',
+}
+
+export enum TechnicalCommitteeMembershipTx {
+  SetActiveMembersLimit = 'technicalCommitteeMembership.setActiveMembersLimit',
+  DisableMember = 'technicalCommitteeMembership.disableMember',
+  AddMember = 'technicalCommitteeMembership.addMember',
+  RemoveMember = 'technicalCommitteeMembership.removeMember',
+  SwapMember = 'technicalCommitteeMembership.swapMember',
+  ResetMembers = 'technicalCommitteeMembership.resetMembers',
+  AbdicateMembership = 'technicalCommitteeMembership.abdicateMembership',
+}
+
+export enum UpgradeCommitteeTx {
+  SetVoteThreshold = 'upgradeCommittee.setVoteThreshold',
+  SetReleaseCoordinator = 'upgradeCommittee.setReleaseCoordinator',
+  Close = 'upgradeCommittee.close',
+  VoteOrPropose = 'upgradeCommittee.voteOrPropose',
+  Vote = 'upgradeCommittee.vote',
+}
+
+export enum UpgradeCommitteeMembershipTx {
+  SetActiveMembersLimit = 'upgradeCommitteeMembership.setActiveMembersLimit',
+  DisableMember = 'upgradeCommitteeMembership.disableMember',
+  AddMember = 'upgradeCommitteeMembership.addMember',
+  RemoveMember = 'upgradeCommitteeMembership.removeMember',
+  SwapMember = 'upgradeCommitteeMembership.swapMember',
+  ResetMembers = 'upgradeCommitteeMembership.resetMembers',
+  AbdicateMembership = 'upgradeCommitteeMembership.abdicateMembership',
 }
 
 export enum AssetTx {
   RegisterTicker = 'asset.registerTicker',
   AcceptTickerTransfer = 'asset.acceptTickerTransfer',
+  AcceptPrimaryIssuanceAgentTransfer = 'asset.acceptPrimaryIssuanceAgentTransfer',
   AcceptAssetOwnershipTransfer = 'asset.acceptAssetOwnershipTransfer',
   CreateAsset = 'asset.createAsset',
   Freeze = 'asset.freeze',
   Unfreeze = 'asset.unfreeze',
   RenameAsset = 'asset.renameAsset',
-  Transfer = 'asset.transfer',
   ControllerTransfer = 'asset.controllerTransfer',
   Approve = 'asset.approve',
-  TransferFrom = 'asset.transferFrom',
   CreateCheckpoint = 'asset.createCheckpoint',
   Issue = 'asset.issue',
-  BatchIssue = 'asset.batchIssue',
-  Redeem = 'asset.redeem',
-  RedeemFrom = 'asset.redeemFrom',
-  ControllerRedeem = 'asset.controllerRedeem',
   MakeDivisible = 'asset.makeDivisible',
-  TransferWithData = 'asset.transferWithData',
   TransferFromWithData = 'asset.transferFromWithData',
   IsIssuable = 'asset.isIssuable',
   BatchAddDocument = 'asset.batchAddDocument',
   BatchRemoveDocument = 'asset.batchRemoveDocument',
-  IncreaseCustodyAllowance = 'asset.increaseCustodyAllowance',
-  IncreaseCustodyAllowanceOf = 'asset.increaseCustodyAllowanceOf',
-  TransferByCustodian = 'asset.transferByCustodian',
   SetFundingRound = 'asset.setFundingRound',
   UpdateIdentifiers = 'asset.updateIdentifiers',
   AddExtension = 'asset.addExtension',
   ArchiveExtension = 'asset.archiveExtension',
   UnarchiveExtension = 'asset.unarchiveExtension',
-  SetTreasuryDid = 'asset.setTreasuryDid',
+  RemovePrimaryIssuanceAgent = 'asset.removePrimaryIssuanceAgent',
+  RemoveSmartExtension = 'asset.removeSmartExtension',
+  ClaimClassicTicker = 'asset.claimClassicTicker',
 }
 
 export enum DividendTx {
@@ -219,9 +254,9 @@ export enum IdentityTx {
   RegisterDid = 'identity.registerDid',
   CddRegisterDid = 'identity.cddRegisterDid',
   InvalidateCddClaims = 'identity.invalidateCddClaims',
-  RemoveSigningKeys = 'identity.removeSigningKeys',
-  SetMasterKey = 'identity.setMasterKey',
-  AcceptMasterKey = 'identity.acceptMasterKey',
+  RemoveSecondaryKeys = 'identity.removeSecondaryKeys',
+  SetPrimaryKey = 'identity.setPrimaryKey',
+  AcceptPrimaryKey = 'identity.acceptPrimaryKey',
   ChangeCddRequirementForMkRotation = 'identity.changeCddRequirementForMkRotation',
   JoinIdentityAsKey = 'identity.joinIdentityAsKey',
   JoinIdentityAsIdentity = 'identity.joinIdentityAsIdentity',
@@ -233,8 +268,8 @@ export enum IdentityTx {
   RevokeClaim = 'identity.revokeClaim',
   BatchRevokeClaim = 'identity.batchRevokeClaim',
   SetPermissionToSigner = 'identity.setPermissionToSigner',
-  FreezeSigningKeys = 'identity.freezeSigningKeys',
-  UnfreezeSigningKeys = 'identity.unfreezeSigningKeys',
+  FreezeSecondaryKeys = 'identity.freezeSecondaryKeys',
+  UnfreezeSecondaryKeys = 'identity.unfreezeSecondaryKeys',
   GetMyDid = 'identity.getMyDid',
   GetCddOf = 'identity.getCddOf',
   AddAuthorization = 'identity.addAuthorization',
@@ -243,7 +278,7 @@ export enum IdentityTx {
   BatchRemoveAuthorization = 'identity.batchRemoveAuthorization',
   AcceptAuthorization = 'identity.acceptAuthorization',
   BatchAcceptAuthorization = 'identity.batchAcceptAuthorization',
-  BatchAddSigningKeyWithAuthorization = 'identity.batchAddSigningKeyWithAuthorization',
+  BatchAddSecondaryKeyWithAuthorization = 'identity.batchAddSecondaryKeyWithAuthorization',
   RevokeOffchainAuthorization = 'identity.revokeOffchainAuthorization',
 }
 
@@ -266,18 +301,18 @@ export enum BridgeTx {
 }
 
 export enum ComplianceManagerTx {
-  AddActiveRule = 'complianceManager.addActiveRule',
-  RemoveActiveRule = 'complianceManager.removeActiveRule',
-  ReplaceAssetRules = 'complianceManager.replaceAssetRules',
-  ResetActiveRules = 'complianceManager.resetActiveRules',
-  PauseAssetRules = 'complianceManager.pauseAssetRules',
-  ResumeAssetRules = 'complianceManager.resumeAssetRules',
+  AddComplianceRequirement = 'complianceManager.addComplianceRequirement',
+  RemoveComplianceRequirement = 'complianceManager.removeComplianceRequirement',
+  ReplaceAssetCompliance = 'complianceManager.replaceAssetCompliance',
+  ResetAssetCompliance = 'complianceManager.resetAssetCompliance',
+  PauseAssetCompliance = 'complianceManager.pauseAssetCompliance',
+  ResumeAssetCompliance = 'complianceManager.resumeAssetCompliance',
   AddDefaultTrustedClaimIssuer = 'complianceManager.addDefaultTrustedClaimIssuer',
   RemoveDefaultTrustedClaimIssuer = 'complianceManager.removeDefaultTrustedClaimIssuer',
   BatchAddDefaultTrustedClaimIssuer = 'complianceManager.batchAddDefaultTrustedClaimIssuer',
   BatchRemoveDefaultTrustedClaimIssuer = 'complianceManager.batchRemoveDefaultTrustedClaimIssuer',
-  ChangeAssetRule = 'complianceManager.changeAssetRule',
-  BatchChangeAssetRule = 'complianceManager.batchChangeAssetRule',
+  ChangeComplianceRequirement = 'complianceManager.changeComplianceRequirement',
+  BatchChangeComplianceRequirement = 'complianceManager.batchChangeComplianceRequirement',
 }
 
 export enum VotingTx {
@@ -299,7 +334,9 @@ export enum ExemptionTx {
 
 export enum SettlementTx {
   CreateVenue = 'settlement.createVenue',
+  UpdateVenue = 'settlement.updateVenue',
   AddInstruction = 'settlement.addInstruction',
+  AddAndAuthorizeInstruction = 'settlement.addAndAuthorizeInstruction',
   AuthorizeInstruction = 'settlement.authorizeInstruction',
   UnauthorizeInstruction = 'settlement.unauthorizeInstruction',
   RejectInstruction = 'settlement.rejectInstruction',
@@ -311,7 +348,13 @@ export enum SettlementTx {
   DisallowVenues = 'settlement.disallowVenues',
 }
 
+export enum StoTx {
+  CreateFundraiser = 'sto.createFundraiser',
+  Invest = 'sto.invest',
+}
+
 export enum CddServiceProvidersTx {
+  SetActiveMembersLimit = 'cddServiceProviders.setActiveMembersLimit',
   DisableMember = 'cddServiceProviders.disableMember',
   AddMember = 'cddServiceProviders.addMember',
   RemoveMember = 'cddServiceProviders.removeMember',
@@ -327,13 +370,15 @@ export enum ProtocolFeeTx {
 
 export enum UtilityTx {
   Batch = 'utility.batch',
+  BatchAtomic = 'utility.batchAtomic',
+  BatchOptimistic = 'utility.batchOptimistic',
   RelayTx = 'utility.relayTx',
 }
 
 export enum PortfolioTx {
   CreatePortfolio = 'portfolio.createPortfolio',
   DeletePortfolio = 'portfolio.deletePortfolio',
-  MovePortfolio = 'portfolio.movePortfolio',
+  MovePortfolioFunds = 'portfolio.movePortfolioFunds',
   RenamePortfolio = 'portfolio.renamePortfolio',
 }
 
@@ -344,6 +389,7 @@ export enum ConfidentialTx {
 
 export type TxTag =
   | SystemTx
+  | BabeTx
   | TimestampTx
   | IndicesTx
   | BalancesTx
@@ -360,6 +406,10 @@ export type TxTag =
   | PolymeshCommitteeTx
   | CommitteeMembershipTx
   | PipsTx
+  | TechnicalCommitteeTx
+  | TechnicalCommitteeMembershipTx
+  | UpgradeCommitteeTx
+  | UpgradeCommitteeMembershipTx
   | AssetTx
   | DividendTx
   | IdentityTx
@@ -369,6 +419,7 @@ export type TxTag =
   | StoCappedTx
   | ExemptionTx
   | SettlementTx
+  | StoTx
   | CddServiceProvidersTx
   | ProtocolFeeTx
   | UtilityTx
@@ -377,6 +428,7 @@ export type TxTag =
 
 export const TxTags = {
   system: SystemTx,
+  babe: BabeTx,
   timestamp: TimestampTx,
   indices: IndicesTx,
   balances: BalancesTx,
@@ -393,6 +445,10 @@ export const TxTags = {
   polymeshCommittee: PolymeshCommitteeTx,
   committeeMembership: CommitteeMembershipTx,
   pips: PipsTx,
+  technicalCommittee: TechnicalCommitteeTx,
+  technicalCommitteeMembership: TechnicalCommitteeMembershipTx,
+  upgradeCommittee: UpgradeCommitteeTx,
+  upgradeCommitteeMembership: UpgradeCommitteeMembershipTx,
   asset: AssetTx,
   dividend: DividendTx,
   identity: IdentityTx,
@@ -402,6 +458,7 @@ export const TxTags = {
   stoCapped: StoCappedTx,
   exemption: ExemptionTx,
   settlement: SettlementTx,
+  sto: StoTx,
   cddServiceProviders: CddServiceProvidersTx,
   protocolFee: ProtocolFeeTx,
   utility: UtilityTx,

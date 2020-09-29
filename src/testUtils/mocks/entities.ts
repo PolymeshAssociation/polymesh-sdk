@@ -10,23 +10,25 @@ import {
   CurrentAccount,
   CurrentIdentity,
   Identity,
-  Proposal,
+  // NOTE uncomment in Governance v2 upgrade
+  // Proposal,
   SecurityToken,
   TickerReservation,
 } from '~/api/entities';
-import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
   Authorization,
   AuthorizationType,
   ExtrinsicData,
+  SecondaryKey,
   SecurityTokenDetails,
-  SigningKey,
   TickerReservationDetails,
   TickerReservationStatus,
   TransferStatus,
-  TxTags,
+  // NOTE uncomment in Governance v2 upgrade
+  // TxTags,
 } from '~/types';
 
 const mockInstanceContainer = {
@@ -35,7 +37,8 @@ const mockInstanceContainer = {
   tickerReservation: {} as MockTickerReservation,
   securityToken: {} as MockSecurityToken,
   authorizationRequest: {} as MockAuthorizationRequest,
-  proposal: {} as MockProposal,
+  // NOTE uncomment in Governance v2 upgrade
+  // proposal: {} as MockProposal,
   account: {} as MockAccount,
   currentAccount: {} as MockCurrentAccount,
 };
@@ -47,18 +50,19 @@ type MockCurrentAccount = Mocked<CurrentAccount>;
 type MockTickerReservation = Mocked<TickerReservation>;
 type MockSecurityToken = Mocked<SecurityToken>;
 type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
-type MockProposal = Mocked<Proposal>;
+// NOTE uncomment in Governance v2 upgrade
+// type MockProposal = Mocked<Proposal>;
 
 interface IdentityOptions {
   did?: string;
   hasRoles?: boolean;
   hasRole?: boolean;
   hasValidCdd?: boolean;
-  getMasterKey?: string;
+  getPrimaryKey?: string;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
-  getSigningKeys?: SigningKey[];
+  getSecondaryKeys?: SecondaryKey[];
 }
 
 interface TickerReservationOptions {
@@ -70,9 +74,8 @@ interface SecurityTokenOptions {
   ticker?: string;
   details?: Partial<SecurityTokenDetails>;
   currentFundingRound?: string;
-  transfersAreFrozen?: boolean;
+  isFrozen?: boolean;
   transfersCanTransfer?: TransferStatus;
-  transfersCanMint?: TransferStatus;
 }
 
 interface AuthorizationRequestOptions {
@@ -114,12 +117,12 @@ let securityTokenDetailsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
-let identityGetMasterKeyStub: SinonStub;
+let identityGetPrimaryKeyStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
-let currentIdentityGetMasterKeyStub: SinonStub;
-let currentIdentityGetSigningKeysStub: SinonStub;
+let currentIdentityGetPrimaryKeyStub: SinonStub;
+let currentIdentityGetSecondaryKeysStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -128,9 +131,8 @@ let currentAccountGetIdentityStub: SinonStub;
 let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
-let securityTokenTransfersAreFrozenStub: SinonStub;
+let securityTokenIsFrozenStub: SinonStub;
 let securityTokenTransfersCanTransferStub: SinonStub;
-let securityTokenTransfersCanMintStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -247,14 +249,14 @@ export const mockProposalModule = (path: string) => (): object => ({
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
-  getMasterKey: 'someAddress',
+  getPrimaryKey: 'someAddress',
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
-  getMasterKey: 'someAddress',
-  getSigningKeys: [],
+  getPrimaryKey: 'someAddress',
+  getSecondaryKeys: [],
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -293,9 +295,8 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     isDivisible: false,
   },
   currentFundingRound: 'Series A',
-  transfersAreFrozen: false,
+  isFrozen: false,
   transfersCanTransfer: TransferStatus.Success,
-  transfersCanMint: TransferStatus.Success,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -305,46 +306,51 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
   expiry: null,
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
-const defaultProposalOptions: ProposalOptions = {
-  pipId: new BigNumber(1),
-  getDetails: {
-    lastState: ProposalState.Referendum,
-    transaction: TxTags.treasury.Disbursement,
-  } as ProposalDetails,
-  getStage: ProposalStage.Open,
-  identityHasVoted: false,
-};
-let proposalOptions = defaultProposalOptions;
+// NOTE uncomment in Governance v2 upgrade
+// const defaultProposalOptions: ProposalOptions = {
+//   pipId: new BigNumber(1),
+//   getDetails: {
+//     lastState: ProposalState.Referendum,
+//     transaction: TxTags.treasury.Disbursement,
+//   } as ProposalDetails,
+//   getStage: ProposalStage.Open,
+//   identityHasVoted: false,
+// };
+
+// let proposalOptions = defaultProposalOptions;
 
 /**
  * @hidden
  * Configure the Proposal instance
  */
-function configureProposal(opts: ProposalOptions): void {
-  const proposal = ({
-    pipId: opts.pipId,
-    getDetails: sinon.stub().returns(opts.getDetails),
-    getStage: sinon.stub().returns(opts.getStage),
-    identityHasVoted: sinon.stub().returns(opts.identityHasVoted),
-  } as unknown) as MockProposal;
+// NOTE uncomment in Governance v2 upgrade
 
-  Object.assign(mockInstanceContainer.proposal, proposal);
-  proposalConstructorStub.callsFake(args => {
-    return merge({}, proposal, args);
-  });
-}
+// function configureProposal(opts: ProposalOptions): void {
+//   const proposal = ({
+//     pipId: opts.pipId,
+//     getDetails: sinon.stub().returns(opts.getDetails),
+//     getStage: sinon.stub().returns(opts.getStage),
+//     identityHasVoted: sinon.stub().returns(opts.identityHasVoted),
+//   } as unknown) as MockProposal;
+
+//   Object.assign(mockInstanceContainer.proposal, proposal);
+//   proposalConstructorStub.callsFake(args => {
+//     return merge({}, proposal, args);
+//   });
+// }
 
 /**
  * @hidden
  * Initialize the Proposal instance
  */
-function initProposal(opts?: ProposalOptions): void {
-  proposalConstructorStub = sinon.stub();
+// NOTE uncomment in Governance v2 upgrade
+// function initProposal(opts?: ProposalOptions): void {
+//   proposalConstructorStub = sinon.stub();
 
-  proposalOptions = { ...defaultProposalOptions, ...opts };
+//   proposalOptions = { ...defaultProposalOptions, ...opts };
 
-  configureProposal(proposalOptions);
-}
+//   configureProposal(proposalOptions);
+// }
 
 /**
  * @hidden
@@ -386,10 +392,9 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     ticker: opts.ticker,
     details: securityTokenDetailsStub.resolves(details),
     currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(opts.currentFundingRound),
+    isFrozen: securityTokenIsFrozenStub.resolves(opts.isFrozen),
     transfers: {
-      areFrozen: securityTokenTransfersAreFrozenStub.resolves(opts.transfersAreFrozen),
       canTransfer: securityTokenTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
-      canMint: securityTokenTransfersCanMintStub.resolves(opts.transfersCanMint),
     },
   } as unknown) as MockSecurityToken;
 
@@ -407,9 +412,8 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenConstructorStub = sinon.stub();
   securityTokenDetailsStub = sinon.stub();
   securityTokenCurrentFundingRoundStub = sinon.stub();
-  securityTokenTransfersAreFrozenStub = sinon.stub();
+  securityTokenIsFrozenStub = sinon.stub();
   securityTokenTransfersCanTransferStub = sinon.stub();
-  securityTokenTransfersCanMintStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -459,7 +463,7 @@ function configureIdentity(opts: IdentityOptions): void {
     hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
-    getMasterKey: identityGetMasterKeyStub.resolves(opts.getMasterKey),
+    getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -477,7 +481,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRolesStub = sinon.stub();
   identityHasRoleStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
-  identityGetMasterKeyStub = sinon.stub();
+  identityGetPrimaryKeyStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -494,8 +498,8 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
     hasRoles: currentIdentityHasRolesStub.resolves(opts.hasRoles),
     hasRole: currentIdentityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: currentIdentityHasValidCddStub.resolves(opts.hasValidCdd),
-    getMasterKey: currentIdentityGetMasterKeyStub.resolves(opts.getMasterKey),
-    getSigningKeys: currentIdentityGetSigningKeysStub.resolves(opts.getSigningKeys),
+    getPrimaryKey: currentIdentityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
+    getSecondaryKeys: currentIdentityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
@@ -513,8 +517,8 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityHasRolesStub = sinon.stub();
   currentIdentityHasRoleStub = sinon.stub();
   currentIdentityHasValidCddStub = sinon.stub();
-  currentIdentityGetMasterKeyStub = sinon.stub();
-  currentIdentityGetSigningKeysStub = sinon.stub();
+  currentIdentityGetPrimaryKeyStub = sinon.stub();
+  currentIdentityGetSecondaryKeysStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
 
@@ -654,12 +658,14 @@ export function configureMocks(opts?: {
 
   configureAuthorizationRequest(tempAuthorizationRequestOptions);
 
-  const tempProposalOptions = {
-    ...defaultProposalOptions,
-    ...opts?.proposalOptions,
-  };
+  // NOTE uncomment in Governance v2 upgrade
+  // const tempProposalOptions = {
+  //   ...defaultProposalOptions,
+  //   ...opts?.proposalOptions,
+  // };
 
-  configureProposal(tempProposalOptions);
+  // NOTE uncomment in Governance v2 upgrade
+  // configureProposal(tempProposalOptions);
 }
 
 /**
@@ -699,7 +705,8 @@ export function initMocks(opts?: {
   initAuthorizationRequest(opts?.authorizationRequestOptions);
 
   // Proposal
-  initProposal(opts?.proposalOptions);
+  // NOTE uncomment in Governance v2 upgrade
+  // initProposal(opts?.proposalOptions);
 }
 
 /**
@@ -714,7 +721,8 @@ export function cleanup(): void {
   mockInstanceContainer.tickerReservation = {} as MockTickerReservation;
   mockInstanceContainer.securityToken = {} as MockSecurityToken;
   mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
-  mockInstanceContainer.proposal = {} as MockProposal;
+  // NOTE uncomment in Governance v2 upgrade
+  // mockInstanceContainer.proposal = {} as MockProposal;
 }
 
 /**
@@ -731,7 +739,8 @@ export function reset(): void {
     tickerReservationOptions,
     securityTokenOptions,
     authorizationRequestOptions,
-    proposalOptions,
+    // NOTE uncomment in Governance v2 upgrade
+    // proposalOptions,
   });
 }
 
@@ -773,10 +782,10 @@ export function getIdentityHasValidCddStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `Identity.getMasterKey` method
+ * Retrieve the stub of the `Identity.getPrimaryKey` method
  */
-export function getIdentityGetMasterKeyStub(): SinonStub {
-  return identityGetMasterKeyStub;
+export function getIdentityGetPrimaryKeyStub(): SinonStub {
+  return identityGetPrimaryKeyStub;
 }
 
 /**
@@ -817,10 +826,10 @@ export function getCurrentIdentityHasValidCddStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `CurrentIdentity.getMasterKey` method
+ * Retrieve the stub of the `CurrentIdentity.getPrimaryKey` method
  */
-export function getCurrentIdentityGetMasterKeyStub(): SinonStub {
-  return currentIdentityGetMasterKeyStub;
+export function getCurrentIdentityGetPrimaryKeyStub(): SinonStub {
+  return currentIdentityGetPrimaryKeyStub;
 }
 
 /**
@@ -965,14 +974,14 @@ export function getSecurityTokenCurrentFundingRoundStub(currentFundingRound?: st
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.Transfers.areFrozen` method
+ * Retrieve the stub of the `SecurityToken.isFrozen` method
  */
-export function getSecurityTokenTransfersAreFrozenStub(frozen?: boolean): SinonStub {
+export function getSecurityTokenIsFrozenStub(frozen?: boolean): SinonStub {
   if (frozen !== undefined) {
-    return securityTokenTransfersAreFrozenStub.resolves(frozen);
+    return securityTokenIsFrozenStub.resolves(frozen);
   }
 
-  return securityTokenTransfersAreFrozenStub;
+  return securityTokenIsFrozenStub;
 }
 
 /**
@@ -985,18 +994,6 @@ export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus
   }
 
   return securityTokenTransfersCanTransferStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `SecurityToken.Transfers.canMint` method
- */
-export function getSecurityTokenTransfersCanMintStub(status?: TransferStatus): SinonStub {
-  if (status) {
-    return securityTokenTransfersCanMintStub.resolves(status);
-  }
-
-  return securityTokenTransfersCanMintStub;
 }
 
 /**
@@ -1017,10 +1014,12 @@ export function getAuthorizationRequestInstance(
  * @hidden
  * Retrieve a Proposal instance
  */
-export function getProposalInstance(opts?: ProposalOptions): MockProposal {
-  if (opts) {
-    configureProposal(opts);
-  }
+// NOTE uncomment in Governance v2 upgrade
 
-  return mockInstanceContainer.proposal;
-}
+// export function getProposalInstance(opts?: ProposalOptions): MockProposal {
+//   if (opts) {
+//     configureProposal(opts);
+//   }
+
+//   return mockInstanceContainer.proposal;
+// }

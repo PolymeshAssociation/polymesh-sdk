@@ -1,13 +1,18 @@
+import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { IssueAssetItem, Ticker } from 'polymesh-types/types';
+import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities';
-import { getRequiredRoles, Params, prepareIssueTokens } from '~/api/procedures/issueTokens';
+import {
+  getRequiredRoles,
+  IssueTokensParams,
+  prepareIssueTokens,
+} from '~/api/procedures/issueTokens';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TransferStatus } from '~/types';
+import { RoleType } from '~/types';
 import * as utilsModule from '~/utils';
 import { MAX_DECIMALS } from '~/utils/constants';
 
@@ -19,8 +24,11 @@ jest.mock(
 describe('issueTokens procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let numberToBalance: sinon.SinonStub<[number | BigNumber, Context], Balance>;
   let ticker: string;
   let rawTicker: Ticker;
+  let amount: BigNumber;
+  let rawAmount: Balance;
   let addTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
@@ -28,13 +36,17 @@ describe('issueTokens procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    numberToBalance = sinon.stub(utilsModule, 'numberToBalance');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
+    amount = new BigNumber(100);
+    rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    numberToBalance.withArgs(amount, mockContext).returns(rawAmount);
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
 
@@ -50,18 +62,9 @@ describe('issueTokens procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if security token is divisible and at least one amount exceeds six decimals', () => {
+  test('should throw an error if security token is divisible and the amount exceeds six decimals', () => {
     const args = {
-      issuanceData: [
-        {
-          identity: 'someDid',
-          amount: new BigNumber(100),
-        },
-        {
-          identity: 'anotherDid',
-          amount: new BigNumber(50.1234567),
-        },
-      ],
+      amount: new BigNumber(50.1234567),
       ticker,
     };
 
@@ -73,43 +76,30 @@ describe('issueTokens procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
 
     return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
-      `Issuance amounts cannot have more than ${MAX_DECIMALS} decimals`
+      `Issuance amount cannot have more than ${MAX_DECIMALS} decimals`
     );
   });
 
-  test('should throw an error if security token is not divisible and at least one amount has decimals', () => {
+  test('should throw an error if security token is not divisible and the amount has decimals', () => {
     const args = {
-      issuanceData: [
-        {
-          identity: 'someDid',
-          amount: new BigNumber(100),
-        },
-        {
-          identity: 'anotherDid',
-          amount: new BigNumber(50.1),
-        },
-      ],
+      amount: new BigNumber(50.1),
+
       ticker,
     };
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
 
     return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
-      'Cannot issue decimal amounts of an indivisible token'
+      'Cannot issue decimal amount of an indivisible token'
     );
   });
 
   test('should throw an error if token supply is bigger than the limit total supply', async () => {
     const args = {
-      issuanceData: [
-        {
-          identity: 'someDid',
-          amount: new BigNumber(100),
-        },
-      ],
+      amount,
       ticker,
     };
 
@@ -123,7 +113,7 @@ describe('issueTokens procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
 
     let error;
 
@@ -142,25 +132,21 @@ describe('issueTokens procedure', () => {
     });
   });
 
-  test('should throw an error if canMint returns a status different from Success', async () => {
-    const transferStatus = TransferStatus.Failure;
+  test('should throw an error if primary issuance agent is undefined', async () => {
     const args = {
-      issuanceData: [
-        {
-          identity: 'someDid',
-          amount: new BigNumber(100),
-        },
-      ],
+      amount,
       ticker,
     };
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        transfersCanMint: transferStatus,
+        details: {
+          primaryIssuanceAgent: undefined,
+        },
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
 
     let error;
 
@@ -170,59 +156,30 @@ describe('issueTokens procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe("You can't issue tokens to some of the supplied Identities");
-    expect(error.data).toMatchObject({
-      failed: [{ did: args.issuanceData[0].identity, transferStatus }],
-    });
+    expect(error.message).toBe('You should set a primary issuance agent to issue tokens');
   });
 
-  test('should add a batch issue transaction to the queue', async () => {
+  test('should add a issue transaction to the queue', async () => {
     const args = {
-      issuanceData: [
-        {
-          identity: 'someDid',
-          amount: new BigNumber(100),
-        },
-        {
-          identity: 'otherDid',
-          amount: new BigNumber(200),
-        },
-      ],
+      amount,
       ticker,
     };
 
-    const items: IssueAssetItem[] = [];
-
-    const issuanceDataToIssueAssetItemStub = sinon.stub(
-      utilsModule,
-      'issuanceDataToIssueAssetItem'
-    );
-
-    args.issuanceData.forEach(({ identity, amount }) => {
-      const identityId = dsMockUtils.createMockIdentityId(`${identity}Identity`);
-      const balance = dsMockUtils.createMockBalance(amount.toNumber());
-      const item = dsMockUtils.createMockIssueAssetItem({
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        identity_did: identityId,
-        value: balance,
-      });
-      items.push(item);
-
-      issuanceDataToIssueAssetItemStub.withArgs({ identity, amount }, mockContext).returns(item);
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        details: {
+          isDivisible: true,
+          primaryIssuanceAgent: entityMockUtils.getIdentityInstance(),
+        },
+      },
     });
 
-    const transaction = dsMockUtils.createTxStub('asset', 'batchIssue');
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const transaction = dsMockUtils.createTxStub('asset', 'issue');
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
 
     const result = await prepareIssueTokens.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      transaction,
-      { batchSize: args.issuanceData.length },
-      items,
-      rawTicker
-    );
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAmount);
     expect(result.ticker).toBe(ticker);
   });
 });
@@ -232,7 +189,7 @@ describe('getRequiredRoles', () => {
     const ticker = 'someTicker';
     const args = {
       ticker,
-    } as Params;
+    } as IssueTokensParams;
 
     expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
   });

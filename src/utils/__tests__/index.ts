@@ -3,11 +3,10 @@ import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
-import { Memo, PipId } from 'polymesh-types/polymesh';
+import { CddId, ComplianceRequirement, Memo, PipId, PortfolioId } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
-  AssetTransferRule,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
@@ -17,11 +16,10 @@ import {
   DocumentName,
   DocumentUri,
   FundingRoundName,
-  IdentifierType,
   IdentityId,
-  JurisdictionName,
   Permission as MeshPermission,
   ProtocolOp,
+  Scope as MeshScope,
   Signatory,
   Ticker,
   TxTags,
@@ -41,8 +39,11 @@ import {
   Condition,
   ConditionTarget,
   ConditionType,
+  CountryCode,
   KnownTokenType,
   Permission,
+  Scope,
+  ScopeType,
   Signer,
   TokenIdentifierType,
   TransferStatus,
@@ -54,10 +55,9 @@ import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   accountIdToString,
   addressToKey,
-  assetIdentifierToString,
+  assetComplianceResultToRequirementCompliance,
+  assetIdentifierToTokenIdentifier,
   assetNameToString,
-  assetTransferRulesResultToRuleCompliance,
-  assetTransferRuleToRule,
   assetTypeToString,
   authIdentifierToAuthTarget,
   authorizationDataToAuthorization,
@@ -71,8 +71,10 @@ import {
   bytesToString,
   calculateNextKey,
   canTransferResultToTransferStatus,
+  cddIdToString,
   cddStatusToBoolean,
   claimToMeshClaim,
+  complianceRequirementToRequirement,
   createClaim,
   dateToMoment,
   delay,
@@ -83,13 +85,11 @@ import {
   extrinsicIdentifierToTxTag,
   findEventRecord,
   fundingRoundNameToString,
-  identifierTypeToString,
   identityIdToString,
-  jurisdictionNameToString,
   keyToAddress,
   meshClaimToClaim,
   meshPermissionToPermission,
-  meshProposalStateToProposalState,
+  meshScopeToScope,
   middlewareProposalToProposalDetails,
   moduleAddressToString,
   momentToDate,
@@ -99,28 +99,29 @@ import {
   numberToU64,
   padString,
   permissionToMeshPermission,
+  portfolioIdToMeshPortfolioId,
   posRatioToBigNumber,
   removePadding,
   requestAtBlock,
   requestPaginated,
-  ruleToAssetTransferRule,
+  requirementToComplianceRequirement,
+  scopeToMeshScope,
+  secondaryKeyToMeshSecondaryKey,
   serialize,
   signatoryToSignerValue,
   signerToSignerValue,
   signerToString,
   signerValueToSignatory,
   signerValueToSigner,
-  signingKeyToMeshSigningKey,
   stringToAccountId,
-  stringToAssetIdentifier,
   stringToAssetName,
   stringToBytes,
+  stringToCddId,
   stringToDocumentHash,
   stringToDocumentName,
   stringToDocumentUri,
   stringToFundingRoundName,
   stringToIdentityId,
-  stringToJurisdictionName,
   stringToMemo,
   stringToText,
   stringToTicker,
@@ -129,7 +130,7 @@ import {
   tickerToString,
   toIdentityWithClaimsArray,
   tokenDocumentDataToDocument,
-  tokenIdentifierTypeToIdentifierType,
+  tokenIdentifierToAssetIdentifier,
   tokenTypeToAssetType,
   transactionHexToTxTag,
   txTagToExtrinsicIdentifier,
@@ -282,6 +283,65 @@ describe('stringToIdentityId and identityIdToString', () => {
     const identityId = dsMockUtils.createMockIdentityId(fakeResult);
 
     const result = identityIdToString(identityId);
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('portfolioIdToMeshPortfolioId', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('portfolioIdToMeshPortfolioId should convert a portfolio id into a polkadot portfolio id', () => {
+    const portfolioId = {
+      did: 'someDid',
+    };
+    const number = 1;
+    const rawIdentityId = dsMockUtils.createMockIdentityId(portfolioId.did);
+    const rawU64 = dsMockUtils.createMockU64(number);
+    const fakeResult = ('PortfolioId' as unknown) as PortfolioId;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('IdentityId', portfolioId.did)
+      .returns(rawIdentityId);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PortfolioId', {
+        did: rawIdentityId,
+        kind: 'Default',
+      })
+      .returns(fakeResult);
+
+    let result = portfolioIdToMeshPortfolioId(portfolioId, context);
+
+    expect(result).toBe(fakeResult);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('u64', number.toString())
+      .returns(rawU64);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PortfolioId', {
+        did: rawIdentityId,
+        kind: { User: rawU64 },
+      })
+      .returns(fakeResult);
+
+    result = portfolioIdToMeshPortfolioId({ ...portfolioId, number }, context);
+
     expect(result).toBe(fakeResult);
   });
 });
@@ -838,7 +898,7 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
   });
 });
 
-describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () => {
+describe('tokenIdentifierToAssetIdentifer and assetIdentifierToTokenIdentifier', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -851,75 +911,52 @@ describe('tokenIdentifierTypeToIdentifierType and identifierTypeToString', () =>
     dsMockUtils.cleanup();
   });
 
-  test('tokenIdentifierTypeToIdentifierType should convert a TokenIdentifierType to a polkadot IdentifierType object', () => {
-    const value = TokenIdentifierType.Isin;
-    const fakeResult = ('IsinEnum' as unknown) as IdentifierType;
+  test('tokenIdentifierToAssetIdentifer should convert a TokenIdentifier to a polkadot AssetIdentifier object', () => {
+    const value = { type: TokenIdentifierType.Isin, value: 'someIdentifier' };
+    const fakeResult = ('IsinEnum' as unknown) as AssetIdentifier;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('IdentifierType', value)
+      .withArgs('AssetIdentifier', { [TokenIdentifierType.Isin]: 'someIdentifier' })
       .returns(fakeResult);
 
-    const result = tokenIdentifierTypeToIdentifierType(value, context);
+    const result = tokenIdentifierToAssetIdentifier(value, context);
 
     expect(result).toBe(fakeResult);
   });
 
-  test('identifierTypeToString should convert a polkadot IdentifierType object to a string', () => {
-    let fakeResult = TokenIdentifierType.Isin;
-    let identifierType = dsMockUtils.createMockIdentifierType(fakeResult);
+  test('assetIdentifierToTokenIdentifier should convert a polkadot AssetIdentifier object to a TokenIdentifier', () => {
+    let fakeResult = { type: TokenIdentifierType.Isin, value: 'someValue' };
+    let identifier = dsMockUtils.createMockAssetIdentifier({
+      [TokenIdentifierType.Isin]: dsMockUtils.createMockU8aFixed('someValue'),
+    });
 
-    let result = identifierTypeToString(identifierType);
+    let result = assetIdentifierToTokenIdentifier(identifier);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = TokenIdentifierType.Cusip;
-    identifierType = dsMockUtils.createMockIdentifierType(fakeResult);
+    fakeResult = { type: TokenIdentifierType.Cusip, value: 'someValue' };
+    identifier = dsMockUtils.createMockAssetIdentifier({
+      [TokenIdentifierType.Cusip]: dsMockUtils.createMockU8aFixed('someValue'),
+    });
 
-    result = identifierTypeToString(identifierType);
+    result = assetIdentifierToTokenIdentifier(identifier);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = TokenIdentifierType.Cins;
-    identifierType = dsMockUtils.createMockIdentifierType(fakeResult);
+    fakeResult = { type: TokenIdentifierType.Cins, value: 'someValue' };
+    identifier = dsMockUtils.createMockAssetIdentifier({
+      [TokenIdentifierType.Cins]: dsMockUtils.createMockU8aFixed('someValue'),
+    });
 
-    result = identifierTypeToString(identifierType);
+    result = assetIdentifierToTokenIdentifier(identifier);
     expect(result).toEqual(fakeResult);
-  });
-});
 
-describe('stringToAssetIdentifier and assetIdentifierToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
+    fakeResult = { type: TokenIdentifierType.Lei, value: 'someValue' };
+    identifier = dsMockUtils.createMockAssetIdentifier({
+      [TokenIdentifierType.Lei]: dsMockUtils.createMockU8aFixed('someValue'),
+    });
 
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  test('stringToAssetIdentifier should convert a string to a polkadot AssetIdentifier object', () => {
-    const value = 'someIdentifier';
-    const fakeResult = ('convertedIdentifier' as unknown) as AssetIdentifier;
-    const context = dsMockUtils.getContextInstance();
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AssetIdentifier', value)
-      .returns(fakeResult);
-
-    const result = stringToAssetIdentifier(value, context);
-
-    expect(result).toBe(fakeResult);
-  });
-
-  test('assetIdentifierToString should convert a polkadot AssetIdentifier object to a string', () => {
-    const fakeResult = 'someIdentifier';
-    const identifierType = dsMockUtils.createMockAssetIdentifier(fakeResult);
-
-    const result = assetIdentifierToString(identifierType);
+    result = assetIdentifierToTokenIdentifier(identifier);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -1376,7 +1413,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   test('authorizationToAuthorizationData should convert an Authorization to a polkadot AuthorizationData object', () => {
     const context = dsMockUtils.getContextInstance();
     let value: Authorization = {
-      type: AuthorizationType.AttestMasterKeyRotation,
+      type: AuthorizationType.AttestPrimaryKeyRotation,
       value: 'someIdentity',
     };
     const fakeResult = ('AuthorizationDataEnum' as unknown) as AuthorizationData;
@@ -1406,22 +1443,22 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
   test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {
     let fakeResult: Authorization = {
-      type: AuthorizationType.AttestMasterKeyRotation,
+      type: AuthorizationType.AttestPrimaryKeyRotation,
       value: 'someIdentity',
     };
     let authorizationData = dsMockUtils.createMockAuthorizationData({
-      AttestMasterKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
+      AttestPrimaryKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     let result = authorizationDataToAuthorization(authorizationData);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
-      type: AuthorizationType.RotateMasterKey,
+      type: AuthorizationType.RotatePrimaryKey,
       value: 'someIdentity',
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
-      RotateMasterKey: dsMockUtils.createMockIdentityId(fakeResult.value),
+      RotatePrimaryKey: dsMockUtils.createMockIdentityId(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData);
@@ -1489,44 +1526,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   });
 });
 
-describe('stringToJurisdictionName and jurisdictionNameToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  test('stringToJurisdictionName should convert a string to a polkadot JurisdictionName object', () => {
-    const context = dsMockUtils.getContextInstance();
-    const value = 'someJurisdiction';
-    const fakeResult = ('jurisdictionName' as unknown) as JurisdictionName;
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('JurisdictionName', value)
-      .returns(fakeResult);
-
-    const result = stringToJurisdictionName(value, context);
-
-    expect(result).toBe(fakeResult);
-  });
-
-  test('jurisdictionNameToString should convert a polkadot JurisdictionName object to a string', () => {
-    const fakeResult = 'someJurisdiction';
-    const jurisdictionName = dsMockUtils.createMockJurisdictionName(fakeResult);
-
-    const result = jurisdictionNameToString(jurisdictionName);
-    expect(result).toEqual(fakeResult);
-  });
-});
-
-describe('claimToMeshClaim and jurisdictionNameToString', () => {
+describe('claimToMeshClaim and meshClaimToClaim', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1543,14 +1543,14 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
     const context = dsMockUtils.getContextInstance();
     let value: Claim = {
       type: ClaimType.Jurisdiction,
-      name: 'someJurisdiction',
-      scope: 'someTickerDid',
+      code: CountryCode.Cl,
+      scope: { type: ScopeType.Identity, value: 'someTickerDid' },
     };
     const fakeResult = ('meshClaim' as unknown) as MeshClaim;
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('Claim', { [value.type]: [value.name, value.scope] })
+      .withArgs('Claim', { [value.type]: [value.code, value.scope] })
       .returns(fakeResult);
 
     let result = claimToMeshClaim(value, context);
@@ -1559,7 +1559,7 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
 
     value = {
       type: ClaimType.Exempted,
-      scope: 'someTickerDid',
+      scope: { type: ScopeType.Identity, value: 'someTickerDid' },
     };
 
     dsMockUtils
@@ -1586,24 +1586,32 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
   });
 
   test('meshClaimToClaim should convert a polkadot Claim object to a Claim', () => {
+    let scope = { type: ScopeType.Ticker, value: 'someTicker' };
+
     let fakeResult: Claim = {
       type: ClaimType.Accredited,
-      scope: 'someTickerDid',
+      scope,
     };
 
     let claim = dsMockUtils.createMockClaim({
-      Accredited: dsMockUtils.createMockScope(fakeResult.scope),
+      Accredited: dsMockUtils.createMockScope({
+        Ticker: dsMockUtils.createMockTicker(scope.value),
+      }),
     });
 
     let result = meshClaimToClaim(claim);
     expect(result).toEqual(fakeResult);
 
+    scope = { type: ScopeType.Identity, value: 'someDid' };
+
     fakeResult = {
       type: ClaimType.Affiliate,
-      scope: 'someIdentity',
+      scope,
     };
     claim = dsMockUtils.createMockClaim({
-      Affiliate: dsMockUtils.createMockScope(fakeResult.scope),
+      Affiliate: dsMockUtils.createMockScope({
+        Identity: dsMockUtils.createMockIdentityId(scope.value),
+      }),
     });
 
     result = meshClaimToClaim(claim);
@@ -1611,10 +1619,12 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
 
     fakeResult = {
       type: ClaimType.Blocked,
-      scope: 'someIdentity',
+      scope,
     };
     claim = dsMockUtils.createMockClaim({
-      Blocked: dsMockUtils.createMockScope(fakeResult.scope),
+      Blocked: dsMockUtils.createMockScope({
+        Identity: dsMockUtils.createMockIdentityId(scope.value),
+      }),
     });
 
     result = meshClaimToClaim(claim);
@@ -1622,10 +1632,12 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
 
     fakeResult = {
       type: ClaimType.BuyLockup,
-      scope: 'someIdentity',
+      scope,
     };
     claim = dsMockUtils.createMockClaim({
-      BuyLockup: dsMockUtils.createMockScope(fakeResult.scope),
+      BuyLockup: dsMockUtils.createMockScope({
+        Identity: dsMockUtils.createMockIdentityId(scope.value),
+      }),
     });
 
     result = meshClaimToClaim(claim);
@@ -1633,22 +1645,25 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
 
     fakeResult = {
       type: ClaimType.CustomerDueDiligence,
+      id: 'someId',
     };
-    claim = dsMockUtils.createMockClaim('CustomerDueDiligence');
+    claim = dsMockUtils.createMockClaim({
+      CustomerDueDiligence: dsMockUtils.createMockCddId(fakeResult.id),
+    });
 
     result = meshClaimToClaim(claim);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
       type: ClaimType.Jurisdiction,
-      name: 'someJurisdiction',
-      scope: 'someIdentity',
+      code: CountryCode.Cl,
+      scope,
     };
 
     claim = dsMockUtils.createMockClaim({
       Jurisdiction: [
-        dsMockUtils.createMockJurisdictionName(fakeResult.name),
-        dsMockUtils.createMockScope(fakeResult.scope),
+        dsMockUtils.createMockCountryCode(fakeResult.code),
+        dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) }),
       ],
     });
 
@@ -1657,10 +1672,12 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
 
     fakeResult = {
       type: ClaimType.KnowYourCustomer,
-      scope: 'someIdentity',
+      scope,
     };
     claim = dsMockUtils.createMockClaim({
-      KnowYourCustomer: dsMockUtils.createMockScope(fakeResult.scope),
+      KnowYourCustomer: dsMockUtils.createMockScope({
+        Identity: dsMockUtils.createMockIdentityId(scope.value),
+      }),
     });
 
     result = meshClaimToClaim(claim);
@@ -1676,10 +1693,12 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
 
     fakeResult = {
       type: ClaimType.SellLockup,
-      scope: 'someIdentity',
+      scope,
     };
     claim = dsMockUtils.createMockClaim({
-      SellLockup: dsMockUtils.createMockScope(fakeResult.scope),
+      SellLockup: dsMockUtils.createMockScope({
+        Identity: dsMockUtils.createMockIdentityId(scope.value),
+      }),
     });
 
     result = meshClaimToClaim(claim);
@@ -1687,10 +1706,12 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
 
     fakeResult = {
       type: ClaimType.Exempted,
-      scope: 'someIdentity',
+      scope,
     };
     claim = dsMockUtils.createMockClaim({
-      Exempted: dsMockUtils.createMockScope(fakeResult.scope),
+      Exempted: dsMockUtils.createMockScope({
+        Identity: dsMockUtils.createMockIdentityId(scope.value),
+      }),
     });
 
     result = meshClaimToClaim(claim);
@@ -1698,38 +1719,7 @@ describe('claimToMeshClaim and jurisdictionNameToString', () => {
   });
 });
 
-describe('createClaim', () => {
-  test('', () => {
-    let type = 'Jurisdiction';
-    const jurisdiction = 'someJurisdiction';
-    let scope = 'someScope';
-
-    let result = createClaim(type, jurisdiction, scope);
-    expect(result).toEqual({
-      type: ClaimType.Jurisdiction,
-      name: jurisdiction,
-      scope,
-    });
-
-    type = 'BuyLockup';
-    scope = 'someScope';
-
-    result = createClaim(type, null, scope);
-    expect(result).toEqual({
-      type: ClaimType.BuyLockup,
-      scope,
-    });
-
-    type = 'NoData';
-
-    result = createClaim(type, null, null);
-    expect(result).toEqual({
-      type: ClaimType.NoData,
-    });
-  });
-});
-
-describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
+describe('stringToCddId and cddIdToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1742,14 +1732,158 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
     dsMockUtils.cleanup();
   });
 
-  test('ruleToAssetTransferRule should convert a Rule to a polkadot AssetTransferRule object', () => {
+  test('stringToCddId should convert a cdd id string into an CddId', () => {
+    const cddId = 'someId';
+    const fakeResult = ('type' as unknown) as CddId;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('CddId', cddId)
+      .returns(fakeResult);
+
+    const result = stringToCddId(cddId, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('cddIdToString should convert a CddId to a cddId string', () => {
+    const fakeResult = 'cddId';
+    const cddId = dsMockUtils.createMockCddId(fakeResult);
+
+    const result = cddIdToString(cddId);
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('createClaim', () => {
+  test('', () => {
+    let type = 'Jurisdiction';
+    const jurisdiction = CountryCode.Cl;
+    let scope = { type: ScopeType.Identity, value: 'someScope' };
+
+    let result = createClaim(type, jurisdiction, scope, null);
+    expect(result).toEqual({
+      type: ClaimType.Jurisdiction,
+      code: jurisdiction,
+      scope,
+    });
+
+    type = 'BuyLockup';
+    scope = { type: ScopeType.Identity, value: 'someScope' };
+
+    result = createClaim(type, null, scope, null);
+    expect(result).toEqual({
+      type: ClaimType.BuyLockup,
+      scope,
+    });
+
+    type = 'NoData';
+
+    result = createClaim(type, null, null, null);
+    expect(result).toEqual({
+      type: ClaimType.NoData,
+    });
+
+    type = 'CustomerDueDiligence';
+    const id = 'someId';
+
+    result = createClaim(type, null, null, id);
+    expect(result).toEqual({
+      type: ClaimType.CustomerDueDiligence,
+      id,
+    });
+  });
+});
+
+describe('scopeToMeshScope and meshScopeToScope', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('scopeToMeshScope should convert a Scope into a polkadot Scope object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const value: Scope = {
+      type: ScopeType.Identity,
+      value: 'someDid',
+    };
+    const fakeResult = ('ScopeEnum' as unknown) as MeshScope;
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Scope', { [value.type]: value.value })
+      .returns(fakeResult);
+
+    const result = scopeToMeshScope(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('meshScopeToScope should convert a polkadot Scope object into a Scope', () => {
+    let fakeResult: Scope = {
+      type: ScopeType.Identity,
+      value: 'someDid',
+    };
+    let scope = dsMockUtils.createMockScope({
+      Identity: dsMockUtils.createMockIdentityId(fakeResult.value),
+    });
+
+    let result = meshScopeToScope(scope);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ScopeType.Ticker,
+      value: 'someTicker',
+    };
+    scope = dsMockUtils.createMockScope({
+      Ticker: dsMockUtils.createMockTicker(fakeResult.value),
+    });
+
+    result = meshScopeToScope(scope);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ScopeType.Custom,
+      value: 'something',
+    };
+    scope = dsMockUtils.createMockScope({
+      Custom: dsMockUtils.createMockBytes(fakeResult.value),
+    });
+
+    result = meshScopeToScope(scope);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('requirementToComplianceRequirement and complianceRequirementToRequirement', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('requirementToComplianceRequirement should convert a Requirement to a polkadot ComplianceRequirement object', () => {
     const conditions: Condition[] = [
       {
         type: ConditionType.IsPresent,
         target: ConditionTarget.Both,
         claim: {
           type: ClaimType.Exempted,
-          scope: 'someTickerDid',
+          scope: { type: ScopeType.Identity, value: 'someTickerDid' },
         },
         trustedClaimIssuers: ['someDid', 'otherDid'],
       },
@@ -1759,11 +1893,11 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         claims: [
           {
             type: ClaimType.Blocked,
-            scope: 'someTickerDid',
+            scope: { type: ScopeType.Identity, value: 'someTickerDid' },
           },
           {
             type: ClaimType.SellLockup,
-            scope: 'someTickerDid',
+            scope: { type: ScopeType.Identity, value: 'someTickerDid' },
           },
         ],
       },
@@ -1772,8 +1906,8 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         target: ConditionTarget.Receiver,
         claim: {
           type: ClaimType.Jurisdiction,
-          scope: 'someTickerDid',
-          name: 'someJurisdiction',
+          scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+          code: CountryCode.Cl,
         },
       },
     ];
@@ -1781,7 +1915,7 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
       conditions,
       id: 1,
     };
-    const fakeResult = ('convertedAssetTransferRule' as unknown) as AssetTransferRule;
+    const fakeResult = ('convertedComplianceRequirement' as unknown) as ComplianceRequirement;
     const context = dsMockUtils.getContextInstance();
 
     const createTypeStub = dsMockUtils.getCreateTypeStub();
@@ -1789,33 +1923,34 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
     conditions.forEach(({ type }, index) => {
       createTypeStub
         .withArgs(
-          'Rule',
+          'Condition',
           sinon.match({
             // eslint-disable-next-line @typescript-eslint/camelcase
-            rule_type: sinon.match.has(type),
+            condition_type: sinon.match.has(type),
           })
         )
-        .returns(`meshRule${index}${type}`);
+        .returns(`meshCondition${index}${type}`);
     });
 
     createTypeStub
-      .withArgs('AssetTransferRule', {
+      .withArgs('ComplianceRequirement', {
         /* eslint-disable @typescript-eslint/camelcase */
-        sender_rules: ['meshRule0IsPresent', 'meshRule1IsNoneOf'],
-        receiver_rules: ['meshRule0IsPresent', 'meshRule2IsAbsent'],
-        rule_id: numberToU32(value.id, context),
+        sender_conditions: ['meshCondition0IsPresent', 'meshCondition1IsNoneOf'],
+        receiver_conditions: ['meshCondition0IsPresent', 'meshCondition2IsAbsent'],
+        id: numberToU32(value.id, context),
         /* eslint-enable @typescript-eslint/camelcase */
       })
       .returns(fakeResult);
 
-    const result = ruleToAssetTransferRule(value, context);
+    const result = requirementToComplianceRequirement(value, context);
 
     expect(result).toEqual(fakeResult);
   });
 
-  test('assetTransferRuleToRule should convert a polkadot AssetTransferRule object to a Rule', () => {
+  test('complianceRequirementToRequirement should convert a polkadot Compliance Requirement object to a Requirement', () => {
     const id = 1;
     const tokenDid = 'someTokenDid';
+    const cddId = 'someCddId';
     const issuerDids = ['someDid', 'otherDid'];
     const conditions: Condition[] = [
       {
@@ -1823,7 +1958,7 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         target: ConditionTarget.Both,
         claim: {
           type: ClaimType.KnowYourCustomer,
-          scope: tokenDid,
+          scope: { type: ScopeType.Identity, value: tokenDid },
         },
         trustedClaimIssuers: issuerDids,
       },
@@ -1832,7 +1967,7 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         target: ConditionTarget.Receiver,
         claim: {
           type: ClaimType.BuyLockup,
-          scope: tokenDid,
+          scope: { type: ScopeType.Identity, value: tokenDid },
         },
         trustedClaimIssuers: issuerDids,
       },
@@ -1842,11 +1977,11 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         claims: [
           {
             type: ClaimType.Blocked,
-            scope: tokenDid,
+            scope: { type: ScopeType.Identity, value: tokenDid },
           },
           {
             type: ClaimType.SellLockup,
-            scope: tokenDid,
+            scope: { type: ScopeType.Identity, value: tokenDid },
           },
         ],
         trustedClaimIssuers: issuerDids,
@@ -1857,10 +1992,11 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         claims: [
           {
             type: ClaimType.Exempted,
-            scope: tokenDid,
+            scope: { type: ScopeType.Identity, value: tokenDid },
           },
           {
             type: ClaimType.CustomerDueDiligence,
+            id: cddId,
           },
         ],
         trustedClaimIssuers: issuerDids,
@@ -1871,24 +2007,26 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
       conditions,
     };
 
-    const scope = dsMockUtils.createMockScope(tokenDid);
+    const scope = dsMockUtils.createMockScope({
+      Identity: dsMockUtils.createMockIdentityId(tokenDid),
+    });
     const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
-    const rules = [
+    const rawConditions = [
       /* eslint-disable @typescript-eslint/camelcase */
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsNoneOf: [
             dsMockUtils.createMockClaim({ Blocked: scope }),
             dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -1896,29 +2034,31 @@ describe('ruleToAssetTransferRule and assetTransferRuleToRule', () => {
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsAnyOf: [
             dsMockUtils.createMockClaim({ Exempted: scope }),
-            dsMockUtils.createMockClaim('CustomerDueDiligence'),
+            dsMockUtils.createMockClaim({
+              CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+            }),
           ],
         }),
         issuers,
       }),
     ];
-    const assetTransferRule = dsMockUtils.createMockAssetTransferRule({
-      sender_rules: [rules[0], rules[2], rules[3]],
-      receiver_rules: [rules[0], rules[1], rules[3]],
-      rule_id: dsMockUtils.createMockU32(1),
+    const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
+      sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
+      receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+      id: dsMockUtils.createMockU32(1),
     });
     /* eslint-enable @typescript-eslint/camelcase */
 
-    const result = assetTransferRuleToRule(assetTransferRule);
+    const result = complianceRequirementToRequirement(complianceRequirement);
     expect(result.conditions).toEqual(expect.arrayContaining(fakeResult.conditions));
   });
 });
 
-describe('assetTransferRulesResultToRuleCompliance', () => {
+describe('assetComplianceResultToRequirementCompliance', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1931,9 +2071,10 @@ describe('assetTransferRulesResultToRuleCompliance', () => {
     dsMockUtils.cleanup();
   });
 
-  test('assetTransferRulesResultToRuleCompliance should convert a polkadot AssetTransferRulesResult object to a RuleCompliance', () => {
+  test('assetComplianceResultToRequirementCompliance should convert a polkadot AssetComplianceResult object to a RequirementCompliance', () => {
     const id = 1;
     const tokenDid = 'someTokenDid';
+    const cddId = 'someCddId';
     const issuerDids = ['someDid', 'otherDid'];
     const conditions: Condition[] = [
       {
@@ -1941,7 +2082,7 @@ describe('assetTransferRulesResultToRuleCompliance', () => {
         target: ConditionTarget.Both,
         claim: {
           type: ClaimType.KnowYourCustomer,
-          scope: tokenDid,
+          scope: { type: ScopeType.Identity, value: tokenDid },
         },
         trustedClaimIssuers: issuerDids,
       },
@@ -1950,7 +2091,7 @@ describe('assetTransferRulesResultToRuleCompliance', () => {
         target: ConditionTarget.Receiver,
         claim: {
           type: ClaimType.BuyLockup,
-          scope: tokenDid,
+          scope: { type: ScopeType.Identity, value: tokenDid },
         },
         trustedClaimIssuers: issuerDids,
       },
@@ -1960,11 +2101,11 @@ describe('assetTransferRulesResultToRuleCompliance', () => {
         claims: [
           {
             type: ClaimType.Blocked,
-            scope: tokenDid,
+            scope: { type: ScopeType.Identity, value: tokenDid },
           },
           {
             type: ClaimType.SellLockup,
-            scope: tokenDid,
+            scope: { type: ScopeType.Identity, value: tokenDid },
           },
         ],
         trustedClaimIssuers: issuerDids,
@@ -1975,10 +2116,11 @@ describe('assetTransferRulesResultToRuleCompliance', () => {
         claims: [
           {
             type: ClaimType.Exempted,
-            scope: tokenDid,
+            scope: { type: ScopeType.Identity, value: tokenDid },
           },
           {
             type: ClaimType.CustomerDueDiligence,
+            id: cddId,
           },
         ],
         trustedClaimIssuers: issuerDids,
@@ -1989,24 +2131,26 @@ describe('assetTransferRulesResultToRuleCompliance', () => {
       conditions,
     };
 
-    const scope = dsMockUtils.createMockScope(tokenDid);
+    const scope = dsMockUtils.createMockScope({
+      Identity: dsMockUtils.createMockIdentityId(tokenDid),
+    });
     const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
-    const rules = [
+    const rawConditions = [
       /* eslint-disable @typescript-eslint/camelcase */
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsNoneOf: [
             dsMockUtils.createMockClaim({ Blocked: scope }),
             dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -2014,32 +2158,36 @@ describe('assetTransferRulesResultToRuleCompliance', () => {
         }),
         issuers,
       }),
-      dsMockUtils.createMockRule({
-        rule_type: dsMockUtils.createMockRuleType({
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
           IsAnyOf: [
             dsMockUtils.createMockClaim({ Exempted: scope }),
-            dsMockUtils.createMockClaim('CustomerDueDiligence'),
+            dsMockUtils.createMockClaim({
+              CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+            }),
           ],
         }),
         issuers,
       }),
     ];
-    const assetTransferRulesResult = dsMockUtils.createMockAssetTransferRulesResult({
-      is_paused: dsMockUtils.createMockBool(false),
-      rules: [
-        dsMockUtils.createMockAssetTransferRuleResult({
-          sender_rules: [rules[0], rules[2], rules[3]],
-          receiver_rules: [rules[0], rules[1], rules[3]],
-          rule_id: dsMockUtils.createMockU32(1),
-          transfer_rule_result: dsMockUtils.createMockBool(false),
+    const assetComplianceResult = dsMockUtils.createMockAssetComplianceResult({
+      paused: dsMockUtils.createMockBool(false),
+      requirements: [
+        dsMockUtils.createMockComplianceRequirementResult({
+          sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
+          receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+          id: dsMockUtils.createMockU32(1),
+          result: dsMockUtils.createMockBool(false),
         }),
       ],
-      final_result: dsMockUtils.createMockBool(false),
+      result: dsMockUtils.createMockBool(false),
     });
     /* eslint-enable @typescript-eslint/camelcase */
 
-    const result = assetTransferRulesResultToRuleCompliance(assetTransferRulesResult);
-    expect(result.rules[0].conditions).toEqual(expect.arrayContaining(fakeResult.conditions));
+    const result = assetComplianceResultToRequirementCompliance(assetComplianceResult);
+    expect(result.requirements[0].conditions).toEqual(
+      expect.arrayContaining(fakeResult.conditions)
+    );
   });
 });
 
@@ -2431,7 +2579,7 @@ describe('requestAtBlock', () => {
 
 describe('batchArguments', () => {
   test('should return chunks of data', () => {
-    const tag = TxTags.asset.BatchIssue;
+    const tag = TxTags.asset.BatchAddDocument;
     const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
 
     const elements = range(0, 3 * expectedBatchLength + 1);
@@ -2446,7 +2594,7 @@ describe('batchArguments', () => {
   });
 
   test('should use a custom batching function to group elements', () => {
-    const tag = TxTags.asset.BatchIssue;
+    const tag = TxTags.asset.BatchAddDocument;
     const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
 
     const elements = range(0, 2 * expectedBatchLength);
@@ -2466,7 +2614,7 @@ describe('batchArguments', () => {
   });
 
   test('should throw an error if a custom batch has a size bigger than the limit', () => {
-    const tag = TxTags.asset.BatchIssue;
+    const tag = TxTags.asset.BatchAddDocument;
     const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
 
     const elements = range(0, 3 * expectedBatchLength);
@@ -2517,42 +2665,43 @@ describe('meshProposalStateToProposalState', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
-    let fakeResult: ProposalState = ProposalState.Cancelled;
+  // NOTE uncomment in Governance v2 upgrade
+  // test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
+  //   let fakeResult: ProposalState = ProposalState.Cancelled;
 
-    let proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   let proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-    let result = meshProposalStateToProposalState(proposalState);
-    expect(result).toEqual(fakeResult);
+  //   let result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-    fakeResult = ProposalState.Killed;
+  //   fakeResult = ProposalState.Killed;
 
-    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-    result = meshProposalStateToProposalState(proposalState);
-    expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-    fakeResult = ProposalState.Pending;
+  //   fakeResult = ProposalState.Pending;
 
-    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-    result = meshProposalStateToProposalState(proposalState);
-    expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-    fakeResult = ProposalState.Referendum;
+  //   fakeResult = ProposalState.Referendum;
 
-    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-    result = meshProposalStateToProposalState(proposalState);
-    expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-    fakeResult = ProposalState.Rejected;
+  //   fakeResult = ProposalState.Rejected;
 
-    proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-    result = meshProposalStateToProposalState(proposalState);
-    expect(result).toEqual(fakeResult);
-  });
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
+  // });
 });
 
 describe('toIdentityWithClaimsArray', () => {
@@ -2729,7 +2878,7 @@ describe('middlewareProposalToProposalDetails', () => {
   });
 });
 
-describe('signingKeyToMeshSigningKey', () => {
+describe('secondaryKeyToMeshSecondaryKey', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -2745,32 +2894,32 @@ describe('signingKeyToMeshSigningKey', () => {
     entityMockUtils.cleanup();
   });
 
-  test('signingKeyToMeshSigningKey should convert a SigningKey to a polkadot SigningKey', () => {
+  test('secondaryKeyToMeshSecondaryKey should convert a SecondaryKey to a polkadot SecondaryKey', () => {
     const address = 'someAccount';
     const context = dsMockUtils.getContextInstance();
-    const signingKey = {
+    const secondaryKey = {
       signer: entityMockUtils.getAccountInstance(),
       permissions: [Permission.Full],
     };
     const mockAccountId = dsMockUtils.createMockAccountId(address);
     const mockSignatory = dsMockUtils.createMockSignatory({ Account: mockAccountId });
-    const mockPermission = dsMockUtils.createMockPermission(signingKey.permissions[0]);
-    const fakeResult = dsMockUtils.createMockSigningKey({
+    const mockPermission = dsMockUtils.createMockPermission(secondaryKey.permissions[0]);
+    const fakeResult = dsMockUtils.createMockSecondaryKey({
       signer: mockSignatory,
       permissions: [mockPermission],
     });
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('SigningKey', {
+      .withArgs('SecondaryKey', {
         signer: signerValueToSignatory({ type: SignerType.Account, value: address }, context),
-        permissions: signingKey.permissions.map(permission =>
+        permissions: secondaryKey.permissions.map(permission =>
           permissionToMeshPermission(permission, context)
         ),
       })
       .returns(fakeResult);
 
-    const result = signingKeyToMeshSigningKey(signingKey, context);
+    const result = secondaryKeyToMeshSecondaryKey(secondaryKey, context);
 
     expect(result).toEqual(fakeResult);
   });

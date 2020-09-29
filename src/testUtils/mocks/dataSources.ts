@@ -4,7 +4,7 @@
 
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { Signer } from '@polkadot/api/types';
-import { bool, Bytes, Compact, Enum, Option, Text, u8, u32, u64 } from '@polkadot/types';
+import { bool, Bytes, Compact, Enum, Option, Text, u8, U8aFixed, u32, u64 } from '@polkadot/types';
 import { CompactEncodable } from '@polkadot/types/codec/Compact';
 import {
   AccountData,
@@ -30,44 +30,46 @@ import { BigNumber } from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { cloneDeep, merge, upperFirst } from 'lodash';
 import {
+  AssetComplianceResult,
   AssetIdentifier,
   AssetName,
   AssetOwnershipRelation,
-  AssetTransferRule,
-  AssetTransferRuleResult,
-  AssetTransferRulesResult,
   AssetType,
   AuthIdentifier,
   Authorization,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
+  CddId,
   CddStatus,
   Claim,
+  ComplianceRequirement,
+  ComplianceRequirementResult,
+  Condition,
+  ConditionType,
+  CountryCode,
   DidRecord,
   Document,
   DocumentHash,
   DocumentName,
   DocumentUri,
   FundingRoundName,
-  IdentifierType,
   IdentityId,
   IdentityRole,
   IssueAssetItem,
-  JurisdictionName,
   LinkedKeyInfo,
   Permission,
   Pip,
   PipId,
   PipsMetadata,
+  PortfolioId,
+  PortfolioKind,
   PosRatio,
   ProposalState,
-  Rule,
-  RuleType,
   Scope,
+  SecondaryKey as MeshSecondaryKey,
   SecurityToken,
   Signatory,
-  SigningKey as MeshSigningKey,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
@@ -81,10 +83,11 @@ import {
   AccountBalance,
   ClaimData,
   ClaimType,
+  CountryCode as CountryCodeEnum,
   ExtrinsicData,
   KeyringPair,
   ResultSet,
-  SigningKey,
+  SecondaryKey,
 } from '~/types';
 import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable } from '~/types/utils';
@@ -179,8 +182,8 @@ interface ContextOptions {
   transactionFee?: BigNumber;
   currentPairAddress?: string;
   issuedClaims?: ResultSet<ClaimData>;
-  masterKey?: string;
-  signingKeys?: SigningKey[];
+  primaryKey?: string;
+  secondaryKeys?: SecondaryKey[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
@@ -382,8 +385,8 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 1,
   },
-  masterKey: 'masterKey',
-  signingKeys: [],
+  primaryKey: 'primaryKey',
+  secondaryKeys: [],
   transactionHistory: {
     data: [],
     next: null,
@@ -418,8 +421,8 @@ function configureContext(opts: ContextOptions): void {
     hasRoles: sinon.stub().resolves(opts.hasRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-    getMasterKey: sinon.stub().resolves(opts.masterKey),
-    getSigningKeys: sinon.stub().resolves(opts.signingKeys),
+    getPrimaryKey: sinon.stub().resolves(opts.primaryKey),
+    getSecondaryKeys: sinon.stub().resolves(opts.secondaryKeys),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
@@ -469,7 +472,7 @@ function configureContext(opts: ContextOptions): void {
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
-    getSigningKeys: sinon.stub().returns(opts.signingKeys),
+    getSecondaryKeys: sinon.stub().returns(opts.secondaryKeys),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
@@ -1274,6 +1277,36 @@ const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): E
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockPortfolioKind = (
+  portfolioKind?: 'Default' | { User: u64 }
+): PortfolioKind => {
+  return createMockEnum(portfolioKind) as PortfolioKind;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPortfolioId = (portfiolioId?: {
+  did: IdentityId;
+  kind: PortfolioKind;
+}): PortfolioId => {
+  const id = portfiolioId || {
+    did: createMockIdentityId(),
+    kind: createMockPortfolioKind(),
+  };
+  return createMockCodec(
+    {
+      ...id,
+    },
+    !portfiolioId
+  ) as PortfolioId;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockAssetType = (
   assetType?:
     | 'EquityCommon'
@@ -1315,7 +1348,7 @@ export const createMockSecurityToken = (token?: {
   owner_did: IdentityId;
   divisible: bool;
   asset_type: AssetType;
-  treasury_did: Option<IdentityId>;
+  primary_issuance_agent: Option<IdentityId>;
 }): SecurityToken => {
   const st = token || {
     name: createMockAssetName(),
@@ -1323,7 +1356,7 @@ export const createMockSecurityToken = (token?: {
     owner_did: createMockIdentityId(),
     divisible: createMockBool(),
     asset_type: createMockAssetType(),
-    treasury_did: createMockOption(createMockIdentityId()),
+    primary_issuance_agent: createMockOption(createMockIdentityId()),
   };
   return createMockCodec({ ...st }, !token) as SecurityToken;
 };
@@ -1444,20 +1477,10 @@ export const createMockAuthIdentifier = (authIdentifier?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockIdentifierType = (
-  identifierType?: 'Isin' | 'Cusip' | 'Cins'
-): IdentifierType => {
-  return createMockEnum(identifierType) as IdentifierType;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockAuthorizationType = (
   authorizationType?:
-    | 'AttestMasterKeyRotation'
-    | 'RotateMasterKey'
+    | 'AttestPrimaryKeyRotation'
+    | 'RotatePrimaryKey'
     | 'TransferTicker'
     | 'AddMultiSigSigner'
     | 'TransferAssetOwnership'
@@ -1472,8 +1495,16 @@ export const createMockAuthorizationType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockAssetIdentifier = (identifier?: string): AssetIdentifier =>
-  createMockStringCodec(identifier) as AssetIdentifier;
+export const createMockU8aFixed = (value?: string): U8aFixed =>
+  createMockU8ACodec(value) as U8aFixed;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetIdentifier = (
+  identifier?: { Isin: U8aFixed } | { Cusip: U8aFixed } | { Cins: U8aFixed } | { Lei: U8aFixed }
+): AssetIdentifier => createMockEnum(identifier) as AssetIdentifier;
 
 /**
  * @hidden
@@ -1498,8 +1529,8 @@ export const createMockPermission = (
  */
 export const createMockAuthorizationData = (
   authorizationData?:
-    | { AttestMasterKeyRotation: IdentityId }
-    | { RotateMasterKey: IdentityId }
+    | { AttestPrimaryKeyRotation: IdentityId }
+    | { RotatePrimaryKey: IdentityId }
     | { TransferTicker: Ticker }
     | 'AddMultiSigSigner'
     | { TransferAssetOwnership: Ticker }
@@ -1564,8 +1595,22 @@ export const createMockCddStatus = (cddStatus?: { Ok: IdentityId } | { Err: Byte
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockJurisdictionName = (name?: string): JurisdictionName =>
-  createMockStringCodec(name) as JurisdictionName;
+export const createMockCountryCode = (name?: CountryCodeEnum): CountryCode =>
+  createMockEnum(name) as CountryCode;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockScope = (
+  scope?: { Identity: IdentityId } | { Ticker: Ticker } | { Custom: Bytes }
+): Scope => createMockEnum(scope) as Scope;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCddId = (cddId?: string): CddId => createMockStringCodec(cddId) as CddId;
 
 /**
  * @hidden
@@ -1577,9 +1622,9 @@ export const createMockClaim = (
     | { Affiliate: Scope }
     | { BuyLockup: Scope }
     | { SellLockup: Scope }
-    | 'CustomerDueDiligence'
+    | { CustomerDueDiligence: CddId }
     | { KnowYourCustomer: Scope }
-    | { Jurisdiction: [JurisdictionName, Scope] }
+    | { Jurisdiction: [CountryCode, Scope] }
     | { Exempted: Scope }
     | { Blocked: Scope }
     | 'NoData'
@@ -1589,100 +1634,103 @@ export const createMockClaim = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockRuleType = (
-  ruleType?:
+export const createMockConditionType = (
+  conditionType?:
     | { IsPresent: Claim }
     | { IsAbsent: Claim }
     | { IsAnyOf: Claim[] }
     | { IsNoneOf: Claim[] }
-): RuleType => createMockEnum(ruleType) as RuleType;
+): ConditionType => createMockEnum(conditionType) as ConditionType;
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockRule = (rule?: { rule_type: RuleType; issuers: IdentityId[] }): Rule => {
-  const auxRule = rule || {
-    rule_type: createMockRuleType(),
+export const createMockCondition = (condition?: {
+  condition_type: ConditionType;
+  issuers: IdentityId[];
+}): Condition => {
+  const auxCondition = condition || {
+    condition_type: createMockConditionType(),
     issuers: [],
   };
   return createMockCodec(
     {
-      ...auxRule,
+      ...auxCondition,
     },
-    !rule
-  ) as Rule;
+    !condition
+  ) as Condition;
 };
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockAssetTransferRule = (assetTransferRule?: {
-  sender_rules: Rule[];
-  receiver_rules: Rule[];
-  rule_id: u32;
-}): AssetTransferRule => {
-  const rule = assetTransferRule || {
-    sender_rules: [],
-    receiver_rules: [],
-    rule_id: createMockU32(),
+export const createMockComplianceRequirement = (complianceRequirement?: {
+  sender_conditions: Condition[];
+  receiver_conditions: Condition[];
+  id: u32;
+}): ComplianceRequirement => {
+  const requirement = complianceRequirement || {
+    sender_conditions: [],
+    receiver_conditions: [],
+    id: createMockU32(),
   };
 
   return createMockCodec(
     {
-      ...rule,
+      ...requirement,
     },
-    !assetTransferRule
-  ) as AssetTransferRule;
+    !complianceRequirement
+  ) as ComplianceRequirement;
 };
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockAssetTransferRuleResult = (assetTransferRuleResult?: {
-  sender_rules: Rule[];
-  receiver_rules: Rule[];
-  rule_id: u32;
-  transfer_rule_result: bool;
-}): AssetTransferRuleResult => {
-  const result = assetTransferRuleResult || {
-    sender_rules: [],
-    receiver_rules: [],
-    rule_id: createMockU32(),
-    transfer_rule_result: createMockBool(),
-  };
-
-  return createMockCodec(
-    {
-      ...result,
-    },
-    !assetTransferRuleResult
-  ) as AssetTransferRuleResult;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockAssetTransferRulesResult = (assetTransferRulesResult?: {
-  is_paused: bool;
-  rules: AssetTransferRuleResult[];
-  final_result: bool;
-}): AssetTransferRulesResult => {
-  const result = assetTransferRulesResult || {
-    is_paused: createMockBool(),
-    rules: createMockAssetTransferRuleResult(),
-    final_result: createMockBool(),
+export const createMockComplianceRequirementResult = (complianceRequirementResult?: {
+  sender_conditions: Condition[];
+  receiver_conditions: Condition[];
+  id: u32;
+  result: bool;
+}): ComplianceRequirementResult => {
+  const result = complianceRequirementResult || {
+    sender_conditions: [],
+    receiver_conditions: [],
+    id: createMockU32(),
+    result: createMockBool(),
   };
 
   return createMockCodec(
     {
       ...result,
     },
-    !assetTransferRulesResult
-  ) as AssetTransferRulesResult;
+    !complianceRequirementResult
+  ) as ComplianceRequirementResult;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetComplianceResult = (assetComplianceResult?: {
+  paused: bool;
+  requirements: ComplianceRequirementResult[];
+  result: bool;
+}): AssetComplianceResult => {
+  const result = assetComplianceResult || {
+    paused: createMockBool(),
+    requirements: createMockComplianceRequirementResult(),
+    result: createMockBool(),
+  };
+
+  return createMockCodec(
+    {
+      ...result,
+    },
+    !assetComplianceResult
+  ) as AssetComplianceResult;
 };
 
 /**
@@ -1691,13 +1739,13 @@ export const createMockAssetTransferRulesResult = (assetTransferRulesResult?: {
  */
 export const createMockDidRecord = (didRecord?: {
   roles: IdentityRole[];
-  master_key: AccountId;
-  signing_keys: MeshSigningKey[];
+  primary_key: AccountId;
+  secondary_keys: MeshSecondaryKey[];
 }): DidRecord => {
   const record = didRecord || {
     roles: [],
-    master_key: createMockAccountId(),
-    signing_items: [],
+    primary_key: createMockAccountId(),
+    secondary_items: [],
   };
 
   return createMockCodec(
@@ -1707,12 +1755,6 @@ export const createMockDidRecord = (didRecord?: {
     !didRecord
   ) as DidRecord;
 };
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockScope = (did?: string): Scope => createMockStringCodec(did) as Scope;
 
 /**
  * @hidden
@@ -1819,11 +1861,11 @@ export const createMockPipsMetadata = (metadata?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockSigningKey = (signingKey?: {
+export const createMockSecondaryKey = (secondaryKey?: {
   signer: Signatory;
   permissions: Permission[];
-}): MeshSigningKey => {
-  const key = signingKey || {
+}): MeshSecondaryKey => {
+  const key = secondaryKey || {
     signer: createMockSignatory(),
     permissions: [],
   };
@@ -1831,8 +1873,8 @@ export const createMockSigningKey = (signingKey?: {
     {
       ...key,
     },
-    !signingKey
-  ) as MeshSigningKey;
+    !secondaryKey
+  ) as MeshSecondaryKey;
 };
 
 /**

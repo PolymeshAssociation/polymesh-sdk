@@ -492,7 +492,6 @@ export enum EventIdEnum {
   AssetCreated = 'AssetCreated',
   IdentifiersUpdated = 'IdentifiersUpdated',
   DivisibilityChanged = 'DivisibilityChanged',
-  TransferWithData = 'TransferWithData',
   IsIssuable = 'IsIssuable',
   CustodyTransfer = 'CustodyTransfer',
   CustodyAllowanceChanged = 'CustodyAllowanceChanged',
@@ -515,11 +514,11 @@ export enum EventIdEnum {
   DividendPaidOutToUser = 'DividendPaidOutToUser',
   DividendRemainingClaimed = 'DividendRemainingClaimed',
   DidCreated = 'DidCreated',
-  SigningKeysAdded = 'SigningKeysAdded',
-  SigningKeysRemoved = 'SigningKeysRemoved',
+  SecondaryKeysAdded = 'SecondaryKeysAdded',
+  SecondaryKeysRemoved = 'SecondaryKeysRemoved',
   SignerLeft = 'SignerLeft',
   SigningPermissionsUpdated = 'SigningPermissionsUpdated',
-  MasterKeyUpdated = 'MasterKeyUpdated',
+  PrimaryKeyUpdated = 'PrimaryKeyUpdated',
   ClaimAdded = 'ClaimAdded',
   ClaimRevoked = 'ClaimRevoked',
   DidStatus = 'DidStatus',
@@ -530,10 +529,10 @@ export enum EventIdEnum {
   AuthorizationRejected = 'AuthorizationRejected',
   AuthorizationConsumed = 'AuthorizationConsumed',
   OffChainAuthorizationRevoked = 'OffChainAuthorizationRevoked',
-  CddRequirementForMasterKeyUpdated = 'CddRequirementForMasterKeyUpdated',
+  CddRequirementForPrimaryKeyUpdated = 'CddRequirementForPrimaryKeyUpdated',
   CddClaimsInvalidated = 'CddClaimsInvalidated',
-  SigningKeysFrozen = 'SigningKeysFrozen',
-  SigningKeysUnfrozen = 'SigningKeysUnfrozen',
+  SecondaryKeysFrozen = 'SecondaryKeysFrozen',
+  SecondaryKeysUnfrozen = 'SecondaryKeysUnfrozen',
   ControllerChanged = 'ControllerChanged',
   AdminChanged = 'AdminChanged',
   TimelockChanged = 'TimelockChanged',
@@ -758,16 +757,12 @@ export enum CallIdEnum {
   RenameAsset = 'rename_asset',
   ControllerTransfer = 'controller_transfer',
   Approve = 'approve',
-  TransferFrom = 'transfer_from',
   CreateCheckpoint = 'create_checkpoint',
   Issue = 'issue',
-  BatchIssue = 'batch_issue',
   Redeem = 'redeem',
   RedeemFrom = 'redeem_from',
   ControllerRedeem = 'controller_redeem',
   MakeDivisible = 'make_divisible',
-  TransferWithData = 'transfer_with_data',
-  TransferFromWithData = 'transfer_from_with_data',
   IsIssuable = 'is_issuable',
   BatchAddDocument = 'batch_add_document',
   BatchRemoveDocument = 'batch_remove_document',
@@ -779,16 +774,16 @@ export enum CallIdEnum {
   AddExtension = 'add_extension',
   ArchiveExtension = 'archive_extension',
   UnarchiveExtension = 'unarchive_extension',
-  SetTreasuryDid = 'set_treasury_did',
+  SetPrimaryIssuanceagent = 'set_primary_issuance_agent',
   New = 'new',
   Cancel = 'cancel',
   ClaimUnclaimed = 'claim_unclaimed',
   RegisterDid = 'register_did',
   CddRegisterDid = 'cdd_register_did',
   InvalidateCddClaims = 'invalidate_cdd_claims',
-  RemoveSigningKeys = 'remove_signing_keys',
-  SetMasterKey = 'set_master_key',
-  AcceptMasterKey = 'accept_master_key',
+  RemoveSecondaryKeys = 'remove_secondary_keys',
+  SetPrimaryKey = 'set_primary_key',
+  AcceptPrimaryKey = 'accept_primary_key',
   ChangeCddRequirementForMkRotation = 'change_cdd_requirement_for_mk_rotation',
   JoinIdentityAsKey = 'join_identity_as_key',
   JoinIdentityAsIdentity = 'join_identity_as_identity',
@@ -800,8 +795,8 @@ export enum CallIdEnum {
   RevokeClaim = 'revoke_claim',
   BatchRevokeClaim = 'batch_revoke_claim',
   SetPermissionToSigner = 'set_permission_to_signer',
-  FreezeSigningKeys = 'freeze_signing_keys',
-  UnfreezeSigningKeys = 'unfreeze_signing_keys',
+  FreezeSecondaryKeys = 'freeze_secondary_keys',
+  UnfreezeSecondaryKeys = 'unfreeze_secondary_keys',
   GetMyDid = 'get_my_did',
   GetCddOf = 'get_cdd_of',
   AddAuthorization = 'add_authorization',
@@ -810,7 +805,7 @@ export enum CallIdEnum {
   BatchRemoveAuthorization = 'batch_remove_authorization',
   AcceptAuthorization = 'accept_authorization',
   BatchAcceptAuthorization = 'batch_accept_authorization',
-  BatchAddSigningKeyWithAuthorization = 'batch_add_signing_key_with_authorization',
+  BatchAddSecondaryKeyWithAuthorization = 'batch_add_secondary_key_with_authorization',
   RevokeOffchainAuthorization = 'revoke_offchain_authorization',
   ChangeController = 'change_controller',
   ChangeAdmin = 'change_admin',
@@ -933,6 +928,12 @@ export type IdentityWithClaims = {
   claims: Array<Claim>;
 };
 
+export type Scope = {
+  __typename?: 'Scope';
+  type: Scalars['String'];
+  value: Scalars['String'];
+};
+
 export type Claim = {
   __typename?: 'Claim';
   targetDID: Scalars['String'];
@@ -942,12 +943,13 @@ export type Claim = {
   expiry?: Maybe<Scalars['BigInt']>;
   type: ClaimTypeEnum;
   jurisdiction?: Maybe<Scalars['String']>;
-  scope?: Maybe<Scalars['String']>;
+  scope?: Maybe<Scope>;
+  cddId?: Maybe<Scalars['String']>;
 };
 
 export type ClaimScope = {
   __typename?: 'ClaimScope';
-  scope?: Maybe<Scalars['String']>;
+  scope?: Maybe<Scope>;
   ticker?: Maybe<Scalars['String']>;
 };
 
@@ -990,8 +992,8 @@ export type FailedTokenTransfer = {
 };
 
 export enum AuthTypeEnum {
-  AttestMasterKeyRotation = 'AttestMasterKeyRotation',
-  RotateMasterKey = 'RotateMasterKey',
+  AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
+  RotatePrimaryKey = 'RotatePrimaryKey',
   TransferTicker = 'TransferTicker',
   AddMultiSigSigner = 'AddMultiSigSigner',
   TransferAssetOwnership = 'TransferAssetOwnership',

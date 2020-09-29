@@ -72,9 +72,9 @@ import {
 } from '@polkadot/types/interfaces/system';
 import { Multiplier } from '@polkadot/types/interfaces/txpayment';
 import {
+  AssetCompliance,
   AssetIdentifier,
   AssetOwnershipRelation,
-  AssetTransferRules,
   Authorization,
   AuthorizationNonce,
   AuthorizationStatus,
@@ -83,6 +83,7 @@ import {
   BridgeTxDetail,
   Claim1stKey,
   Claim2ndKey,
+  ClassicTickerRegistration,
   Commission,
   Counter,
   DepositInfo,
@@ -91,7 +92,7 @@ import {
   Document,
   DocumentName,
   FundingRoundName,
-  IdentifierType,
+  Fundraiser,
   IdentityClaim,
   IdentityId,
   InactiveMember,
@@ -112,12 +113,14 @@ import {
   ProposalDetails,
   ProtocolOp,
   ProverTickerKey,
-  Referendum,
   STO,
   SecurityToken,
   Signatory,
+  SkippedCount,
   SmartExtension,
   SmartExtensionType,
+  SnapshotMetadata,
+  SnapshottedPip,
   TargetIdAuthorization,
   Ticker,
   TickerRangeProof,
@@ -131,21 +134,6 @@ import { ApiTypes } from '@polkadot/api/types';
 declare module '@polkadot/api/types/storage' {
   export interface AugmentedQueries<ApiType> {
     asset: {
-      /**
-       * (ticker, sender (DID), spender(DID)) -> allowance amount
-       **/
-      allowance: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentityId | string | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<Balance>
-      >;
       /**
        * Documents attached to an Asset
        * (ticker, document_name) -> document
@@ -164,22 +152,6 @@ declare module '@polkadot/api/types/storage' {
           key1: IdentityId | string | Uint8Array,
           key2: Ticker | string | Uint8Array
         ) => Observable<AssetOwnershipRelation>
-      >;
-      /**
-       * Store the nonce for off chain signature to increase the custody allowance.
-       * (ticker, token holder, nonce) -> bool
-       **/
-      authenticationNonce: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId, u16]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentityId | string | Uint8Array,
-                u16 | AnyNumber | Uint8Array
-              ]
-        ) => Observable<bool>
       >;
       /**
        * The total asset ticker balance per identity.
@@ -219,20 +191,11 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
-       * Allowance provided to the custodian.
-       * (ticker, token holder, custodian) -> balance
+       * Ticker registration details on Polymath Classic / Ethereum.
        **/
-      custodianAllowance: AugmentedQuery<
+      classicTickers: AugmentedQuery<
         ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentityId | string | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<Balance>
+        (arg: Ticker | string | Uint8Array) => Observable<Option<ClassicTickerRegistration>>
       >;
       /**
        * List of Smart extension added for the given tokens.
@@ -282,18 +245,11 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<FundingRoundName>
       >;
       /**
-       * A map of pairs of a ticker name and an `IdentifierType` to asset identifiers.
+       * A map of a ticker name and asset identifiers.
        **/
       identifiers: AugmentedQuery<
         ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentifierType]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentifierType | 'Cins' | 'Cusip' | 'Isin' | number | Uint8Array
-              ]
-        ) => Observable<AssetIdentifier>
+        (arg: Ticker | string | Uint8Array) => Observable<Vec<AssetIdentifier>>
       >;
       /**
        * The total balances of tokens issued in all recorded funding rounds.
@@ -335,18 +291,6 @@ declare module '@polkadot/api/types/storage' {
       totalCheckpoints: AugmentedQuery<
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<u64>
-      >;
-      /**
-       * Total custodian allowance for a given token holder.
-       * (ticker, token holder) -> balance
-       **/
-      totalCustodyAllowance: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId]>
-            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
-        ) => Observable<Balance>
       >;
       /**
        * Last checkpoint updated for a DID's balance.
@@ -531,6 +475,10 @@ declare module '@polkadot/api/types/storage' {
        **/
       activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
       /**
+       * Limit of how many "active" members there can be.
+       **/
+      activeMembersLimit: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
        * The current "inactive" membership, stored as an ordered Vec.
        **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
@@ -541,17 +489,21 @@ declare module '@polkadot/api/types/storage' {
        **/
       activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
       /**
+       * Limit of how many "active" members there can be.
+       **/
+      activeMembersLimit: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
        * The current "inactive" membership, stored as an ordered Vec.
        **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
     };
     complianceManager: {
       /**
-       * List of active rules for a ticker (Ticker -> Array of AssetTransferRules)
+       * Asset compliance for a ticker (Ticker -> AssetCompliance)
        **/
-      assetRulesMap: AugmentedQuery<
+      assetCompliances: AugmentedQuery<
         ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<AssetTransferRules>
+        (arg: Ticker | string | Uint8Array) => Observable<AssetCompliance>
       >;
       /**
        * List of trusted claim issuer Ticker -> Issuer Identity
@@ -722,9 +674,15 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Signatory>
       >;
       /**
-       * It defines if authorization from a CDD provider is needed to change master key of an identity
+       * Obsoleted storage variable superceded by `CddAuthForPrimaryKeyRotation`. It is kept here
+       * for the purpose of storage migration.
        **/
       cddAuthForMasterKeyRotation: AugmentedQuery<ApiType, () => Observable<bool>>;
+      /**
+       * A config flag that, if set, instructs an authorization from a CDD provider in order to
+       * change the primary key of an identity.
+       **/
+      cddAuthForPrimaryKeyRotation: AugmentedQuery<ApiType, () => Observable<bool>>;
       /**
        * (Target ID, claim type) (issuer,scope) -> Associated claims
        **/
@@ -751,7 +709,7 @@ declare module '@polkadot/api/types/storage' {
         (arg: IdentityId | string | Uint8Array) => Observable<DidRecord>
       >;
       /**
-       * DID -> bool that indicates if signing keys are frozen.
+       * DID -> bool that indicates if secondary keys are frozen.
        **/
       isDidFrozen: AugmentedQuery<
         ApiType,
@@ -846,7 +804,7 @@ declare module '@polkadot/api/types/storage' {
     };
     multiSig: {
       /**
-       * Maps a multisig signing key to a multisig address.
+       * Maps a multisig secondary key to a multisig address.
        **/
       keyToMultiSig: AugmentedQuery<
         ApiType,
@@ -980,6 +938,20 @@ declare module '@polkadot/api/types/storage' {
     };
     pips: {
       /**
+       * Total count of current pending or scheduled PIPs.
+       **/
+      activePipCount: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * The maximum allowed number for `ActivePipCount`.
+       * Once reached, new PIPs cannot be proposed by community members.
+       **/
+      activePipLimit: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * All existing PIPs where the proposer is a committee.
+       * This list is a cache of all ids in `Proposals` with `Proposer::Committee(_)`.
+       **/
+      committeePips: AugmentedQuery<ApiType, () => Observable<Vec<PipId>>>;
+      /**
        * Default enactment period that will be use after a proposal is accepted by GC.
        **/
       defaultEnactmentPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
@@ -995,7 +967,19 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<DepositInfo>
       >;
       /**
-       * The minimum amount to be used as a deposit for a public referendum proposal.
+       * Maps block numbers to list of PIPs which should be executed at the block number.
+       * block number -> Pip id
+       **/
+      executionSchedule: AugmentedQuery<
+        ApiType,
+        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
+      >;
+      /**
+       * Maximum times a PIP can be skipped before triggering `CannotSkipPip` in `enact_snapshot_results`.
+       **/
+      maxPipSkipCount: AugmentedQuery<ApiType, () => Observable<SkippedCount>>;
+      /**
+       * The minimum amount to be used as a deposit for community PIP creation.
        **/
       minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
       /**
@@ -1003,14 +987,25 @@ declare module '@polkadot/api/types/storage' {
        **/
       pipIdSequence: AugmentedQuery<ApiType, () => Observable<u32>>;
       /**
+       * The number of times a certain PIP has been skipped.
+       * Once a (configurable) threshhold is exceeded, a PIP cannot be skipped again.
+       **/
+      pipSkipCount: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<SkippedCount>
+      >;
+      /**
+       * Maps PIPs to the block at which they will be executed, if any.
+       **/
+      pipToSchedule: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<BlockNumber>>
+      >;
+      /**
        * During Cool-off period, proposal owner can amend any PIP detail or cancel the entire
        * proposal.
        **/
       proposalCoolOffPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
-      /**
-       * How long (in blocks) a ballot runs
-       **/
-      proposalDuration: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
       /**
        * The metadata of the active proposals.
        **/
@@ -1035,13 +1030,6 @@ declare module '@polkadot/api/types/storage' {
         (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<Pip>>
       >;
       /**
-       * It maps the block number where a list of proposal are considered as matured.
-       **/
-      proposalsMaturingAt: AugmentedQuery<
-        ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
-      >;
-      /**
        * Votes per Proposal and account. Used to avoid double vote issue.
        * (proposal id, account) -> Vote
        **/
@@ -1050,32 +1038,28 @@ declare module '@polkadot/api/types/storage' {
         (
           key1: PipId | AnyNumber | Uint8Array,
           key2: AccountId | string | Uint8Array
-        ) => Observable<Vote>
+        ) => Observable<Option<Vote>>
       >;
       /**
        * Determines whether historical PIP data is persisted or removed
        **/
       pruneHistoricalPips: AugmentedQuery<ApiType, () => Observable<bool>>;
       /**
-       * Minimum stake a proposal must gather in order to be considered by the committee.
+       * Snapshots so far. id can be used to keep track of snapshots off-chain.
        **/
-      quorumThreshold: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      snapshotIdSequence: AugmentedQuery<ApiType, () => Observable<u32>>;
       /**
-       * Proposals that have met the quorum threshold to be put forward to a governance committee
-       * proposal id -> proposal
+       * The metadata of the snapshot, if there is one.
        **/
-      referendums: AugmentedQuery<
-        ApiType,
-        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<Referendum>>
-      >;
+      snapshotMeta: AugmentedQuery<ApiType, () => Observable<Option<SnapshotMetadata>>>;
       /**
-       * List of id's of current scheduled referendums.
-       * block number -> Pip id
+       * The priority queue (lowest priority at index 0) of PIPs at the point of snapshotting.
+       * Priority is defined by the `weight` in the `SnapshottedPIP`.
+       *
+       * A queued PIP can be skipped. Doing so bumps the `pip_skip_count`.
+       * Once a (configurable) threshhold is exceeded, a PIP cannot be skipped again.
        **/
-      scheduledReferendumsAt: AugmentedQuery<
-        ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
-      >;
+      snapshotQueue: AugmentedQuery<ApiType, () => Observable<Vec<SnapshottedPip>>>;
     };
     polymeshCommittee: {
       /**
@@ -1132,6 +1116,26 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
+       * The custodian of a particular portfolio. None implies that the identity owner is the custodian.
+       **/
+      portfolioCustodian: AugmentedQuery<
+        ApiType,
+        (
+          arg: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
+        ) => Observable<Option<IdentityId>>
+      >;
+      /**
+       * Amount of assets locked in a portfolio.
+       * These assets show up in portfolio balance but can not be transferred away.
+       **/
+      portfolioLockedAssets: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          key2: Ticker | string | Uint8Array
+        ) => Observable<Balance>
+      >;
+      /**
        * The set of existing portfolios with their names. If a certain pair of a DID and
        * portfolio number maps to `None` then such a portfolio doesn't exist. Conversely, if a
        * pair maps to `Some(name)` then such a portfolio exists and is called `name`.
@@ -1141,7 +1145,7 @@ declare module '@polkadot/api/types/storage' {
         (
           key1: IdentityId | string | Uint8Array,
           key2: PortfolioNumber | AnyNumber | Uint8Array
-        ) => Observable<Option<PortfolioName>>
+        ) => Observable<PortfolioName>
       >;
     };
     protocolFee: {
@@ -1158,12 +1162,12 @@ declare module '@polkadot/api/types/storage' {
             | 'AssetAddDocument'
             | 'AssetCreateAsset'
             | 'DividendNew'
-            | 'ComplianceManagerAddActiveRule'
+            | 'ComplianceManagerAddComplianceRequirement'
             | 'IdentityRegisterDid'
             | 'IdentityCddRegisterDid'
             | 'IdentityAddClaim'
-            | 'IdentitySetMasterKey'
-            | 'IdentityAddSigningKeysWithAuthorization'
+            | 'IdentitySetPrimaryKey'
+            | 'IdentityAddSecondaryKeysWithAuthorization'
             | 'PipsPropose'
             | 'VotingAddBallot'
             | number
@@ -1235,7 +1239,7 @@ declare module '@polkadot/api/types/storage' {
         ApiType,
         (
           key1: u64 | AnyNumber | Uint8Array,
-          key2: IdentityId | string | Uint8Array
+          key2: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
         ) => Observable<AuthorizationStatus>
       >;
       /**
@@ -1298,9 +1302,16 @@ declare module '@polkadot/api/types/storage' {
       userAuths: AugmentedQueryDoubleMap<
         ApiType,
         (
-          key1: IdentityId | string | Uint8Array,
+          key1: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           key2: u64 | AnyNumber | Uint8Array
         ) => Observable<AuthorizationStatus>
+      >;
+      /**
+       * Array of venues created by an identity. Only needed for the UI. IdentityId -> Vec<venue_id>
+       **/
+      userVenues: AugmentedQuery<
+        ApiType,
+        (arg: IdentityId | string | Uint8Array) => Observable<Vec<u64>>
       >;
       /**
        * Venues that are allowed to create instructions involving a particular ticker. Oly used if filtering is enabled.
@@ -1619,6 +1630,25 @@ declare module '@polkadot/api/types/storage' {
         (arg: Ticker | string | Uint8Array) => Observable<Counter>
       >;
     };
+    sto: {
+      /**
+       * Total fundraisers created for a token
+       **/
+      fundraiserCount: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<u64>
+      >;
+      /**
+       * All fundraisers that are currently running. (ticker, fundraiser_id) -> Fundraiser
+       **/
+      fundraisers: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Ticker | string | Uint8Array,
+          key2: u64 | AnyNumber | Uint8Array
+        ) => Observable<Fundraiser>
+      >;
+    };
     stoCapped: {
       /**
        * To track the investment data of the investor corresponds to ticker
@@ -1757,6 +1787,56 @@ declare module '@polkadot/api/types/storage' {
        **/
       parentHash: AugmentedQuery<ApiType, () => Observable<Hash>>;
     };
+    technicalCommittee: {
+      /**
+       * The current members of the committee.
+       **/
+      members: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * Proposals so far.
+       **/
+      proposalCount: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * Actual proposal for a given hash.
+       **/
+      proposalOf: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>
+      >;
+      /**
+       * The hashes of the active proposals.
+       **/
+      proposals: AugmentedQuery<ApiType, () => Observable<Vec<Hash>>>;
+      /**
+       * Release coordinator.
+       **/
+      releaseCoordinator: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
+      /**
+       * Vote threshold for an approval.
+       **/
+      voteThreshold: AugmentedQuery<ApiType, () => Observable<ITuple<[u32, u32]>>>;
+      /**
+       * PolymeshVotes on a given proposal, if it is ongoing.
+       **/
+      voting: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<PolymeshVotes>>
+      >;
+    };
+    technicalCommitteeMembership: {
+      /**
+       * The current "active" membership, stored as an ordered Vec.
+       **/
+      activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * Limit of how many "active" members there can be.
+       **/
+      activeMembersLimit: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * The current "inactive" membership, stored as an ordered Vec.
+       **/
+      inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
+    };
     timestamp: {
       /**
        * Did the timestamp get updated in this block?
@@ -1769,6 +1849,56 @@ declare module '@polkadot/api/types/storage' {
     };
     transactionPayment: {
       nextFeeMultiplier: AugmentedQuery<ApiType, () => Observable<Multiplier>>;
+    };
+    upgradeCommittee: {
+      /**
+       * The current members of the committee.
+       **/
+      members: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * Proposals so far.
+       **/
+      proposalCount: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * Actual proposal for a given hash.
+       **/
+      proposalOf: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>
+      >;
+      /**
+       * The hashes of the active proposals.
+       **/
+      proposals: AugmentedQuery<ApiType, () => Observable<Vec<Hash>>>;
+      /**
+       * Release coordinator.
+       **/
+      releaseCoordinator: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
+      /**
+       * Vote threshold for an approval.
+       **/
+      voteThreshold: AugmentedQuery<ApiType, () => Observable<ITuple<[u32, u32]>>>;
+      /**
+       * PolymeshVotes on a given proposal, if it is ongoing.
+       **/
+      voting: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<PolymeshVotes>>
+      >;
+    };
+    upgradeCommitteeMembership: {
+      /**
+       * The current "active" membership, stored as an ordered Vec.
+       **/
+      activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * Limit of how many "active" members there can be.
+       **/
+      activeMembersLimit: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * The current "inactive" membership, stored as an ordered Vec.
+       **/
+      inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
     };
     utility: {
       nonces: AugmentedQuery<

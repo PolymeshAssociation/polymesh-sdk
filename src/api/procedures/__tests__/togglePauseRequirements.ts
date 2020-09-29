@@ -6,8 +6,8 @@ import { SecurityToken } from '~/api/entities';
 import {
   getRequiredRoles,
   Params,
-  prepareTogglePauseRules,
-} from '~/api/procedures/togglePauseRules';
+  prepareTogglePauseRequirements,
+} from '~/api/procedures/togglePauseRequirements';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -19,10 +19,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
 
-describe('togglePauseRules procedure', () => {
+describe('togglePauseRequirements procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let assetRulesMapStub: sinon.SinonStub;
+  let assetCompliancesStub: sinon.SinonStub;
   let boolToBooleanStub: sinon.SinonStub<[bool], boolean>;
   let ticker: string;
   let rawTicker: Ticker;
@@ -43,10 +43,10 @@ describe('togglePauseRules procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    assetRulesMapStub = dsMockUtils.createQueryStub('complianceManager', 'assetRulesMap', {
+    assetCompliancesStub = dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {
       returnValue: [],
     });
-    assetRulesMapStub.withArgs(rawTicker).resolves({
+    assetCompliancesStub.withArgs(rawTicker).resolves({
       // eslint-disable-next-line @typescript-eslint/camelcase
       is_paused: true,
     });
@@ -65,19 +65,19 @@ describe('togglePauseRules procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if pause is set to true and the rules are already paused', () => {
+  test('should throw an error if pause is set to true and the asset compliance requirements are already paused', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
-      prepareTogglePauseRules.call(proc, {
+      prepareTogglePauseRequirements.call(proc, {
         ticker,
         pause: true,
       })
-    ).rejects.toThrow('Rules are already paused');
+    ).rejects.toThrow('Requirements are already paused');
   });
 
-  test('should throw an error if pause is set to false and the rules are already unpaused', () => {
-    assetRulesMapStub.withArgs(rawTicker).returns({
+  test('should throw an error if pause is set to false and the asset compliance requirements are already unpaused', () => {
+    assetCompliancesStub.withArgs(rawTicker).returns({
       // eslint-disable-next-line @typescript-eslint/camelcase
       is_paused: false,
     });
@@ -87,15 +87,15 @@ describe('togglePauseRules procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
-      prepareTogglePauseRules.call(proc, {
+      prepareTogglePauseRequirements.call(proc, {
         ticker,
         pause: false,
       })
-    ).rejects.toThrow('Rules are already unpaused');
+    ).rejects.toThrow('Requirements are already unpaused');
   });
 
-  test('should add a pause asset rules transaction to the queue', async () => {
-    assetRulesMapStub.withArgs(rawTicker).returns({
+  test('should add a pause asset compliance transaction to the queue', async () => {
+    assetCompliancesStub.withArgs(rawTicker).returns({
       // eslint-disable-next-line @typescript-eslint/camelcase
       is_paused: false,
     });
@@ -104,9 +104,9 @@ describe('togglePauseRules procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('complianceManager', 'pauseAssetRules');
+    const transaction = dsMockUtils.createTxStub('complianceManager', 'pauseAssetCompliance');
 
-    const result = await prepareTogglePauseRules.call(proc, {
+    const result = await prepareTogglePauseRequirements.call(proc, {
       ticker,
       pause: true,
     });
@@ -116,12 +116,12 @@ describe('togglePauseRules procedure', () => {
     expect(ticker).toBe(result.ticker);
   });
 
-  test('should add a resume asset rules transaction to the queue', async () => {
+  test('should add a resume asset compliance transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('complianceManager', 'resumeAssetRules');
+    const transaction = dsMockUtils.createTxStub('complianceManager', 'resumeAssetCompliance');
 
-    const result = await prepareTogglePauseRules.call(proc, {
+    const result = await prepareTogglePauseRequirements.call(proc, {
       ticker,
       pause: false,
     });
