@@ -339,7 +339,7 @@ describe('Requirements class', () => {
     });
   });
 
-  describe('method: checkTransfer', () => {
+  describe('method: checkSettle', () => {
     let context: Mocked<Context>;
     let token: SecurityToken;
     let requirements: Requirements;
@@ -388,7 +388,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('checkTransfer should return the current requirement compliance and whether the transfer complies', async () => {
+    test('checkSettle should return the current requirement compliance and whether the transfer complies', async () => {
       const rawResponse = ('response' as unknown) as AssetComplianceResult;
 
       dsMockUtils
@@ -400,12 +400,12 @@ describe('Requirements class', () => {
 
       assetComplianceResultToRequirementComplianceStub.withArgs(rawResponse).returns(fakeResult);
 
-      const result = await requirements.checkTransfer({ to: toDid });
+      const result = await requirements.checkSettle({ to: toDid });
 
       expect(result).toEqual(fakeResult);
     });
 
-    test('checkTransfer should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
+    test('checkSettle should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
       const rawResponse = ('response' as unknown) as AssetComplianceResult;
 
       dsMockUtils
@@ -417,7 +417,7 @@ describe('Requirements class', () => {
 
       assetComplianceResultToRequirementComplianceStub.withArgs(rawResponse).returns(fakeResult);
 
-      const result = await requirements.checkTransfer({ from: fromDid, to: toDid });
+      const result = await requirements.checkSettle({ from: fromDid, to: toDid });
 
       expect(result).toBe(fakeResult);
     });

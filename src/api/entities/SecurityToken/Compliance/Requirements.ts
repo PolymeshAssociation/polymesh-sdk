@@ -144,7 +144,7 @@ export class Requirements extends Namespace<SecurityToken> {
    * @param args.from - sender Identity (optional, defaults to the current Identity)
    * @param args.to - receiver Identity
    */
-  public async checkTransfer(args: {
+  public async checkSettle(args: {
     from?: string | Identity;
     to: string | Identity;
   }): Promise<RequirementCompliance> {
