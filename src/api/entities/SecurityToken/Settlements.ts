@@ -2,11 +2,8 @@ import BigNumber from 'bignumber.js';
 import { CanTransferResult } from 'polymesh-types/types';
 
 import { Identity, Namespace, SecurityToken } from '~/api/entities';
-import { toggleFreezeTransfers } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
-import { SubCallback, TransferStatus, UnsubCallback } from '~/types';
+import { TransferStatus } from '~/types';
 import {
-  boolToBoolean,
   canTransferResultToTransferStatus,
   numberToBalance,
   portfolioIdToMeshPortfolioId,
@@ -17,64 +14,9 @@ import {
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 
 /**
- * Handles all Security Token Transfer related functionality
+ * Handles all Security Token Settlements related functionality
  */
-export class Transfers extends Namespace<SecurityToken> {
-  /**
-   * Freezes transfers and minting of the Security Token
-   */
-  public freeze(): Promise<TransactionQueue<SecurityToken>> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
-    return toggleFreezeTransfers.prepare({ ticker, freeze: true }, context);
-  }
-
-  /**
-   * Unfreeze transfers and minting of the Security Token
-   */
-  public unfreeze(): Promise<TransactionQueue<SecurityToken>> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
-    return toggleFreezeTransfers.prepare({ ticker, freeze: false }, context);
-  }
-
-  /**
-   * Check whether transfers are frozen for the Security Token
-   *
-   * @note can be subscribed to
-   */
-  public areFrozen(): Promise<boolean>;
-  public areFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async areFrozen(callback?: SubCallback<boolean>): Promise<boolean | UnsubCallback> {
-    const {
-      parent: { ticker },
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      context,
-    } = this;
-
-    const rawTicker = stringToTicker(ticker, context);
-
-    if (callback) {
-      return asset.frozen(rawTicker, frozen => {
-        callback(boolToBoolean(frozen));
-      });
-    }
-
-    const result = await asset.frozen(rawTicker);
-
-    return boolToBoolean(result);
-  }
-
+export class Settlements extends Namespace<SecurityToken> {
   /**
    * Check whether it is possible to transfer a certain amount of this asset between two Identities
    *
@@ -82,7 +24,7 @@ export class Transfers extends Namespace<SecurityToken> {
    * @param args.to - receiver Identity
    * @param args.amount - amount of tokens to transfer
    */
-  public async canTransfer(args: {
+  public async canSettle(args: {
     from?: string | Identity;
     to: string | Identity;
     amount: BigNumber;

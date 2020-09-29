@@ -1,13 +1,10 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
-import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
 import { Namespace } from '~/api/entities';
-import { toggleFreezeTransfers } from '~/api/procedures';
-import { Params } from '~/api/procedures/toggleFreezeTransfers';
-import { Context, TransactionQueue } from '~/base';
+import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransferStatus } from '~/types';
@@ -15,17 +12,13 @@ import { PortfolioId } from '~/types/internal';
 import * as utilsModule from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 
-import { SecurityToken } from '../';
-import { Transfers } from '../Transfers';
+import { SecurityToken } from '..';
+import { Settlements } from '../Settlements';
 
-describe('Transfers class', () => {
+describe('Settlements class', () => {
   let mockContext: Mocked<Context>;
   let mockSecurityToken: Mocked<SecurityToken>;
-  let transfers: Transfers;
-  let prepareToggleFreezeTransfersStub: SinonStub<
-    [Params, Context],
-    Promise<TransactionQueue<SecurityToken, unknown[][]>>
-  >;
+  let settlements: Settlements;
   let stringToAccountIdStub: SinonStub<[string, Context], AccountId>;
   let stringToTickerStub: SinonStub<[string, Context], Ticker>;
   let numberToBalanceStub: SinonStub<[number | BigNumber, Context], Balance>;
@@ -50,14 +43,13 @@ describe('Transfers class', () => {
     numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
     portfolioIdToMeshPortfolioIdStub = sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
-    prepareToggleFreezeTransfersStub = sinon.stub(toggleFreezeTransfers, 'prepare');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     mockSecurityToken = entityMockUtils.getSecurityTokenInstance();
     numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
-    transfers = new Transfers(mockSecurityToken, mockContext);
+    settlements = new Settlements(mockSecurityToken, mockContext);
     ticker = mockSecurityToken.ticker;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     accountId = mockContext.currentPair?.address!;
@@ -76,76 +68,10 @@ describe('Transfers class', () => {
   });
 
   test('should extend namespace', () => {
-    expect(Transfers.prototype instanceof Namespace).toBe(true);
+    expect(Settlements.prototype instanceof Namespace).toBe(true);
   });
 
-  describe('method: freeze', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
-
-      prepareToggleFreezeTransfersStub
-        .withArgs({ ticker: mockSecurityToken.ticker, freeze: true }, mockContext)
-        .resolves(expectedQueue);
-
-      const queue = await transfers.freeze();
-
-      expect(queue).toBe(expectedQueue);
-    });
-  });
-
-  describe('method: unfreeze', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
-
-      prepareToggleFreezeTransfersStub
-        .withArgs({ ticker: mockSecurityToken.ticker, freeze: false }, mockContext)
-        .resolves(expectedQueue);
-
-      const queue = await transfers.unfreeze();
-
-      expect(queue).toBe(expectedQueue);
-    });
-  });
-
-  describe('method: areFrozen', () => {
-    let frozenStub: sinon.SinonStub;
-    let boolValue: boolean;
-    let rawBoolValue: bool;
-
-    beforeAll(() => {
-      boolValue = true;
-      rawBoolValue = dsMockUtils.createMockBool(boolValue);
-    });
-
-    beforeEach(() => {
-      frozenStub = dsMockUtils.createQueryStub('asset', 'frozen');
-    });
-
-    test('should return whether the security token is frozen or not', async () => {
-      frozenStub.resolves(rawBoolValue);
-
-      const result = await transfers.areFrozen();
-
-      expect(result).toBe(boolValue);
-    });
-
-    test('should allow subscription', async () => {
-      const unsubCallback = 'unsubCallBack';
-
-      frozenStub.callsFake(async (_, cbFunc) => {
-        cbFunc(rawBoolValue);
-        return unsubCallback;
-      });
-
-      const callback = sinon.stub();
-      const result = await transfers.areFrozen(callback);
-
-      expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, boolValue);
-    });
-  });
-
-  describe('method: canTransfer', () => {
+  describe('method: canSettle', () => {
     let fromDid: string;
     const rawFromPortfolio = dsMockUtils.createMockPortfolioId();
     const rawToPortfolio = dsMockUtils.createMockPortfolioId();
@@ -192,7 +118,7 @@ describe('Transfers class', () => {
         )
         .returns(rawResponse);
 
-      const result = await transfers.canTransfer({ to: toDid, amount });
+      const result = await settlements.canSettle({ to: toDid, amount });
 
       expect(result).toBe(TransferStatus.Success);
     });
@@ -211,7 +137,7 @@ describe('Transfers class', () => {
         .withArgs(rawAccountId, null, rawFromPortfolio, null, rawToPortfolio, rawTicker, rawAmount)
         .returns(rawResponse);
 
-      const result = await transfers.canTransfer({ from: fromDid, to: toDid, amount });
+      const result = await settlements.canSettle({ from: fromDid, to: toDid, amount });
 
       expect(result).toBe(TransferStatus.Success);
     });

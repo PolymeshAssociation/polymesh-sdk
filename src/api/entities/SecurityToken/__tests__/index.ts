@@ -1,14 +1,16 @@
 import { Balance } from '@polkadot/types/interfaces';
+import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
   FundingRoundName,
   SecurityToken as MeshSecurityToken,
 } from 'polymesh-types/types';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 
 import { Entity, Identity } from '~/api/entities';
 import { modifyToken, transferTokenOwnership } from '~/api/procedures';
+import { Params, toggleFreezeTransfers } from '~/api/procedures/toggleFreezeTransfers';
 import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
@@ -20,8 +22,14 @@ import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import { SecurityToken } from '../';
 
 describe('SecurityToken class', () => {
+  let prepareToggleFreezeTransfersStub: SinonStub<
+    [Params, Context],
+    Promise<TransactionQueue<SecurityToken, unknown[][]>>
+  >;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
+    prepareToggleFreezeTransfersStub = sinon.stub(toggleFreezeTransfers, 'prepare');
   });
 
   afterEach(() => {
@@ -363,6 +371,87 @@ describe('SecurityToken class', () => {
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
       const result = await securityToken.createdAt();
       expect(result).toBeNull();
+    });
+  });
+
+  describe('method: freeze', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      prepareToggleFreezeTransfersStub
+        .withArgs({ ticker, freeze: true }, context)
+        .resolves(expectedQueue);
+
+      const queue = await securityToken.freeze();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: unfreeze', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      prepareToggleFreezeTransfersStub
+        .withArgs({ ticker, freeze: false }, context)
+        .resolves(expectedQueue);
+
+      const queue = await securityToken.unfreeze();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: isFrozen', () => {
+    let frozenStub: sinon.SinonStub;
+    let boolValue: boolean;
+    let rawBoolValue: bool;
+
+    beforeAll(() => {
+      boolValue = true;
+      rawBoolValue = dsMockUtils.createMockBool(boolValue);
+    });
+
+    beforeEach(() => {
+      frozenStub = dsMockUtils.createQueryStub('asset', 'frozen');
+    });
+
+    test('should return whether the security token is frozen or not', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      frozenStub.resolves(rawBoolValue);
+
+      const result = await securityToken.isFrozen();
+
+      expect(result).toBe(boolValue);
+    });
+
+    test('should allow subscription', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+      const unsubCallback = 'unsubCallBack';
+
+      frozenStub.callsFake(async (_, cbFunc) => {
+        cbFunc(rawBoolValue);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await securityToken.isFrozen(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, boolValue);
     });
   });
 });
