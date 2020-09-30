@@ -21,7 +21,7 @@ describe('Settlements class', () => {
   let settlements: Settlements;
   let stringToAccountIdStub: SinonStub<[string, Context], AccountId>;
   let stringToTickerStub: SinonStub<[string, Context], Ticker>;
-  let numberToBalanceStub: SinonStub<[number | BigNumber, Context], Balance>;
+  let numberToBalanceStub: sinon.SinonStub;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let rawAccountId: AccountId;
   let rawTicker: Ticker;
