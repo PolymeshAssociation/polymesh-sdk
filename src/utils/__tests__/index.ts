@@ -425,7 +425,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
       .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
       .returns(fakeResult);
 
-    let result = numberToBalance(value, context);
+    let result = numberToBalance(value, context, false);
 
     expect(result).toBe(fakeResult);
 
@@ -436,7 +436,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
       .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
       .returns(fakeResult);
 
-    result = numberToBalance(value, context, true);
+    result = numberToBalance(value, context);
 
     expect(result).toBe(fakeResult);
   });
@@ -448,7 +448,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
     let error;
 
     try {
-      numberToBalance(value, context, true);
+      numberToBalance(value, context);
     } catch (err) {
       error = err;
     }
@@ -464,7 +464,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
     let error;
 
     try {
-      numberToBalance(value, context, true);
+      numberToBalance(value, context);
     } catch (err) {
       error = err;
     }
@@ -477,7 +477,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
     const value = new BigNumber(50.1234567);
     const context = dsMockUtils.getContextInstance();
 
-    expect(() => numberToBalance(value, context)).toThrow(
+    expect(() => numberToBalance(value, context, false)).toThrow(
       'The value cannot have decimals if the token is indivisible'
     );
   });
