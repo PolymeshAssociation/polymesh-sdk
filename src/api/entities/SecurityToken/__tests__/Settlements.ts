@@ -48,7 +48,7 @@ describe('Settlements class', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     mockSecurityToken = entityMockUtils.getSecurityTokenInstance();
-    numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
+    numberToBalanceStub.withArgs(amount, mockContext, false).returns(rawAmount);
     settlements = new Settlements(mockSecurityToken, mockContext);
     ticker = mockSecurityToken.ticker;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

@@ -486,6 +486,8 @@ export function numberToBalance(
 ): Balance {
   const rawValue = new BigNumber(value);
 
+  divisible = divisible ?? true;
+
   if (rawValue.isGreaterThan(MAX_TOKEN_AMOUNT)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,

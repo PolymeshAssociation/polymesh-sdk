@@ -30,7 +30,7 @@ export class Settlements extends Namespace<SecurityToken> {
     amount: BigNumber;
   }): Promise<TransferStatus> {
     const {
-      parent: { ticker },
+      parent: { ticker, details },
       context: {
         polymeshApi: { rpc },
       },
@@ -38,6 +38,8 @@ export class Settlements extends Namespace<SecurityToken> {
     } = this;
 
     const { from = await this.context.getCurrentIdentity(), to, amount } = args;
+
+    const { isDivisible } = await details();
 
     /*
      * The RPC requires a sender account ID (although it's not being used at the moment). We use the current account
@@ -53,7 +55,7 @@ export class Settlements extends Namespace<SecurityToken> {
       null,
       portfolioIdToMeshPortfolioId({ did: signerToString(to) }, context),
       stringToTicker(ticker, context),
-      numberToBalance(amount, context)
+      numberToBalance(amount, context, isDivisible)
     );
 
     return canTransferResultToTransferStatus(res);
