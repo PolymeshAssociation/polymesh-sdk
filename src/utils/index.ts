@@ -695,7 +695,7 @@ export function isIsinValid(isin: string): boolean {
 /**
  * @hidden
  *
- * @note CINS and CUSIP uses the same validation
+ * @note CINS and CUSIP use the same validation
  */
 export function isCusipValid(cusip: string): boolean {
   cusip = cusip.toUpperCase();
@@ -756,9 +756,6 @@ export function tokenIdentifierToAssetIdentifier(
 
   let error = false;
 
-  /**
-   * @note CINS and CUSIP uses the same validation
-   */
   switch (type) {
     case TokenIdentifierType.Isin: {
       if (!isIsinValid(value)) {
@@ -772,6 +769,7 @@ export function tokenIdentifierToAssetIdentifier(
       }
       break;
     }
+    // CINS and CUSIP use the same validation
     default: {
       if (!isCusipValid(value)) {
         error = true;
