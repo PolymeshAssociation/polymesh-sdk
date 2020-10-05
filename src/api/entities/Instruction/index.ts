@@ -71,8 +71,8 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
     const details = {
       status: meshInstructionStatusToInstructionStatus(status),
-      createdAt: momentToDate(createdAt.unwrap()), // NOTE @monitz87: I'm pretty sure neither of these two can be null, but I'll ask
-      validFrom: momentToDate(validFrom.unwrap()),
+      createdAt: momentToDate(createdAt.unwrap()), // NOTE @monitz87: I'm pretty sure this can't be null, but I'll ask
+      validFrom: validFrom.isSome ? momentToDate(validFrom.unwrap()) : null,
     };
 
     if (type.isSettleOnAuthorization) {

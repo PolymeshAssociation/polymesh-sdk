@@ -15,7 +15,10 @@ export enum InstructionType {
 export type InstructionDetails = {
   status: InstructionStatus;
   createdAt: Date;
-  validFrom: Date;
+  /**
+   * If null, the instruction is valid immediately
+   */
+  validFrom: Date | null;
 } & (
   | {
       type: InstructionType.SettleOnAuthorization;

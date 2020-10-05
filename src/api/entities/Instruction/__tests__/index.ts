@@ -108,10 +108,12 @@ describe('Instruction class', () => {
 
       instructionDetailsStub.resolves({
         ...queryResult,
-        // eslint-disable-next-line @typescript-eslint/camelcase
+        /* eslint-disable @typescript-eslint/camelcase */
+        valid_from: dsMockUtils.createMockOption(),
         settlement_type: dsMockUtils.createMockSettlementType({
           SettleOnBlock: dsMockUtils.createMockU32(endBlock.toNumber()),
         }),
+        /* eslint-enable @typescript-eslint/camelcase */
       });
 
       result = await instruction.details();
@@ -119,7 +121,7 @@ describe('Instruction class', () => {
       expect(result).toEqual({
         status,
         createdAt,
-        validFrom,
+        validFrom: null,
         type,
         endBlock,
       });
