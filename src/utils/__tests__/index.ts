@@ -96,6 +96,9 @@ import {
   findEventRecord,
   fundingRoundNameToString,
   identityIdToString,
+  isCusipValid,
+  isIsinValid,
+  isLeiValid,
   keyToAddress,
   meshClaimToClaim,
   meshInstructionStatusToInstructionStatus,
@@ -913,6 +916,46 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
   });
 });
 
+describe('isIsinValid, isCusipValid and isLeiValid', () => {
+  test('isIsinValid should return if the Isin value identifier is valid or not', () => {
+    const correct = isIsinValid('US0378331005');
+    let incorrect = isIsinValid('US0373431005');
+
+    expect(correct).toBeTruthy();
+    expect(incorrect).toBeFalsy();
+
+    incorrect = isIsinValid('US0373431');
+    expect(incorrect).toBeFalsy();
+  });
+
+  test('isCusipValid should return if the Cusip value identifier is valid or not', () => {
+    const correct = isCusipValid('037833100');
+    let incorrect = isCusipValid('037831200');
+
+    expect(correct).toBeTruthy();
+    expect(incorrect).toBeFalsy();
+
+    incorrect = isCusipValid('037831');
+
+    expect(incorrect).toBeFalsy();
+
+    incorrect = isCusipValid('0378312CD');
+
+    expect(incorrect).toBeFalsy();
+  });
+
+  test('isLeiValid should return if the Lei value identifier is valid or not', () => {
+    const correct = isLeiValid('724500VKKSH9QOLTFR81');
+    let incorrect = isLeiValid('969500T3MBS4SQAMHJ45');
+
+    expect(correct).toBeTruthy();
+    expect(incorrect).toBeFalsy();
+
+    incorrect = isLeiValid('969500T3MS4SQAMHJ4');
+    expect(incorrect).toBeFalsy();
+  });
+});
+
 describe('tokenIdentifierToAssetIdentifer and assetIdentifierToTokenIdentifier', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -926,19 +969,67 @@ describe('tokenIdentifierToAssetIdentifer and assetIdentifierToTokenIdentifier',
     dsMockUtils.cleanup();
   });
 
-  test('tokenIdentifierToAssetIdentifer should convert a TokenIdentifier to a polkadot AssetIdentifier object', () => {
-    const value = { type: TokenIdentifierType.Isin, value: 'someIdentifier' };
+  test('tokenIdentifierToAssetIdentifier should convert a TokenIdentifier to a polkadot AssetIdentifier object', () => {
+    const isinValue = 'US0378331005';
+    const leiValue = '724500VKKSH9QOLTFR81';
+    const cusipValue = '037833100';
+
+    let value = { type: TokenIdentifierType.Isin, value: isinValue };
     const fakeResult = ('IsinEnum' as unknown) as AssetIdentifier;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AssetIdentifier', { [TokenIdentifierType.Isin]: 'someIdentifier' })
+      .withArgs('AssetIdentifier', { [TokenIdentifierType.Isin]: isinValue })
       .returns(fakeResult);
 
-    const result = tokenIdentifierToAssetIdentifier(value, context);
+    let result = tokenIdentifierToAssetIdentifier(value, context);
 
     expect(result).toBe(fakeResult);
+
+    value = { type: TokenIdentifierType.Lei, value: leiValue };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AssetIdentifier', { [TokenIdentifierType.Lei]: leiValue })
+      .returns(fakeResult);
+
+    result = tokenIdentifierToAssetIdentifier(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    value = { type: TokenIdentifierType.Cusip, value: cusipValue };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AssetIdentifier', { [TokenIdentifierType.Cusip]: cusipValue })
+      .returns(fakeResult);
+
+    result = tokenIdentifierToAssetIdentifier(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('tokenIdentifierToAssetIdentifier should throw an error if some identifier is invalid', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    let identifier = { type: TokenIdentifierType.Isin, value: 'US0373431005' };
+
+    expect(() => tokenIdentifierToAssetIdentifier(identifier, context)).toThrow(
+      `Error while checking value identifier ${identifier.value} as Isin type`
+    );
+
+    identifier = { type: TokenIdentifierType.Lei, value: '969500T3MBS4SQAMHJ45' };
+
+    expect(() => tokenIdentifierToAssetIdentifier(identifier, context)).toThrow(
+      `Error while checking value identifier ${identifier.value} as Lei type`
+    );
+
+    identifier = { type: TokenIdentifierType.Cusip, value: '037831200' };
+
+    expect(() => tokenIdentifierToAssetIdentifier(identifier, context)).toThrow(
+      `Error while checking value identifier ${identifier.value} as Cusip type`
+    );
   });
 
   test('assetIdentifierToTokenIdentifier should convert a polkadot AssetIdentifier object to a TokenIdentifier', () => {
