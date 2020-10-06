@@ -1,5 +1,11 @@
-import { Identity } from '~/api/entities';
-import { inviteAccount, InviteAccountParams, removeSecondaryKeys } from '~/api/procedures';
+import { Identity, Venue } from '~/api/entities';
+import {
+  createVenue,
+  CreateVenueParams,
+  inviteAccount,
+  InviteAccountParams,
+  removeSecondaryKeys,
+} from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
 
@@ -44,5 +50,12 @@ export class CurrentIdentity extends Identity {
    */
   public inviteAccount(args: InviteAccountParams): Promise<TransactionQueue<void>> {
     return inviteAccount.prepare(args, this.context);
+  }
+
+  /**
+   * Create a Venue
+   */
+  public createVenue(args: CreateVenueParams): Promise<TransactionQueue<Venue>> {
+    return createVenue.prepare(args, this.context);
   }
 }

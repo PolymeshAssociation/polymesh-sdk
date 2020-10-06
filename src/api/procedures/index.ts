@@ -8,7 +8,9 @@ export {
 export { consumeAuthorizationRequests, ConsumeParams } from './consumeAuthorizationRequests';
 // export { createProposal, CreateProposalParams } from './createProposal';
 export { createSecurityToken, CreateSecurityTokenParams } from './createSecurityToken';
+export { createVenue, CreateVenueParams } from './createVenue';
 // export { editProposal, EditProposalParams } from './editProposal';
+export { inviteAccount, InviteAccountParams } from './inviteAccount';
 export { issueTokens, IssueTokensParams } from './issueTokens';
 export { modifyClaims, ModifyClaimsParams } from './modifyClaims';
 export { modifyToken, ModifyTokenParams } from './modifyToken';
@@ -26,4 +28,3 @@ export { togglePauseRequirements, TogglePauseRequirementsParams } from './toggle
 export { transferPolyX, TransferPolyXParams } from './transferPolyX';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 // export { voteOnProposal, VoteOnProposalParams } from './voteOnProposal';
-export { inviteAccount, InviteAccountParams } from './inviteAccount';
