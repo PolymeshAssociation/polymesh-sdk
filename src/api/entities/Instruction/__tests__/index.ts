@@ -171,4 +171,34 @@ describe('Instruction class', () => {
       expect(leg.token).toEqual(entityMockUtils.getSecurityTokenInstance());
     });
   });
+
+  describe('method: getStatus', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the status of the instruction', async () => {
+      const status = InstructionStatus.Pending;
+      const creator = 'someDid';
+
+      entityMockUtils.configureMocks({ identityOptions: { did: creator } });
+      sinon
+        .stub(utilsModule, 'numberToU64')
+        .withArgs(id, context)
+        .returns(rawId);
+
+      const queryResult = {
+        status: dsMockUtils.createMockInstructionStatus(status),
+      };
+
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionDetails')
+        .withArgs(rawId)
+        .resolves(queryResult);
+
+      const result = await instruction.getStatus();
+
+      expect(result).toEqual(status);
+    });
+  });
 });

@@ -12,7 +12,7 @@ import {
   u32ToBigNumber,
 } from '~/utils';
 
-import { InstructionDetails, InstructionType, Leg } from './types';
+import { InstructionDetails, InstructionStatus, InstructionType, Leg } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -119,5 +119,24 @@ export class Instruction extends Entity<UniqueIdentifiers> {
         token: new SecurityToken({ ticker }, context),
       };
     });
+  }
+
+  /**
+   * Retrieve the current status of this Instruction
+   */
+  public async getStatus(): Promise<InstructionStatus> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const { status } = await settlement.instructionDetails(numberToU64(id, context));
+
+    return meshInstructionStatusToInstructionStatus(status);
   }
 }
