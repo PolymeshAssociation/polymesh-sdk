@@ -1,10 +1,19 @@
+import { u64 } from '@polkadot/types';
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { CurrentIdentity, Identity, Venue } from '~/api/entities';
 import { createVenue, inviteAccount, removeSecondaryKeys } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
+import { IdentityId } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { SecondaryKey, SubCallback, VenueType } from '~/types';
+import * as utilsModule from '~/utils';
+
+jest.mock(
+  '~/api/entities/Venue',
+  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
+);
 
 describe('CurrentIdentity class', () => {
   let context: Context;
@@ -66,6 +75,66 @@ describe('CurrentIdentity class', () => {
       const result = await identity.getSecondaryKeys(callback);
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(getSecondaryKeysStub, callback);
+    });
+  });
+
+  describe('method: getVenues', () => {
+    let did: string;
+    let venueId: BigNumber;
+
+    let rawDid: IdentityId;
+    let rawVenueId: u64;
+
+    let stringToIdentityIdStub: sinon.SinonStub;
+
+    beforeAll(() => {
+      did = 'someDid';
+      venueId = new BigNumber(10);
+
+      rawDid = dsMockUtils.createMockIdentityId(did);
+      rawVenueId = dsMockUtils.createMockU64(venueId.toNumber());
+
+      stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
+    });
+
+    beforeEach(() => {
+      stringToIdentityIdStub.withArgs(did, context).returns(rawDid);
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return a list of Venues', async () => {
+      const fakeResult = [entityMockUtils.getVenueInstance({ id: venueId })];
+
+      dsMockUtils
+        .createQueryStub('settlement', 'userVenues')
+        .withArgs(rawDid)
+        .resolves([rawVenueId]);
+
+      const identity = new CurrentIdentity({ did }, context);
+
+      const result = await identity.getVenues();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      const fakeResult = [entityMockUtils.getVenueInstance({ id: venueId })];
+
+      dsMockUtils.createQueryStub('settlement', 'userVenues').callsFake(async (_, cbFunc) => {
+        cbFunc([rawVenueId]);
+        return unsubCallback;
+      });
+
+      const identity = new CurrentIdentity({ did }, context);
+
+      const callback = sinon.stub();
+      const result = await identity.getVenues(callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeResult);
     });
   });
 

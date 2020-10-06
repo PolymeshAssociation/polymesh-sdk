@@ -66,7 +66,7 @@ export class CurrentIdentity extends Identity {
       return settlement.userVenues(rawDid, ids => callback(assembleResult(ids)));
     }
 
-    const venueIds = await context.polymeshApi.query.settlement.userVenues(rawDid);
+    const venueIds = await settlement.userVenues(rawDid);
 
     return assembleResult(venueIds);
   }
