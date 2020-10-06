@@ -37,9 +37,15 @@ export class Settlements extends Namespace<SecurityToken> {
       context,
     } = this;
 
-    const { from = await this.context.getCurrentIdentity(), to, amount } = args;
+    const { to, amount } = args;
+    let { from } = args;
+    let isDivisible;
 
-    const { isDivisible } = await details();
+    if (!from) {
+      [{ isDivisible }, from] = await Promise.all([details(), this.context.getCurrentIdentity()]);
+    } else {
+      ({ isDivisible } = await details());
+    }
 
     /*
      * The RPC requires a sender account ID (although it's not being used at the moment). We use the current account
