@@ -13,8 +13,19 @@ import {
 } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
+import { computeWithoutCheck } from 'iso-7064';
 import stringify from 'json-stable-stringify';
-import { camelCase, chunk, groupBy, isEqual, map, padEnd, snakeCase } from 'lodash';
+import {
+  camelCase,
+  chunk,
+  groupBy,
+  isEqual,
+  map,
+  padEnd,
+  range,
+  rangeRight,
+  snakeCase,
+} from 'lodash';
 import {
   AssetComplianceResult,
   CddId,
@@ -687,11 +698,133 @@ export function posRatioToBigNumber(postRatio: PosRatio): BigNumber {
 /**
  * @hidden
  */
+export function isIsinValid(isin: string): boolean {
+  isin = isin.toUpperCase();
+
+  if (!new RegExp('^[0-9A-Z]{12}$').test(isin)) {
+    return false;
+  }
+
+  const v: number[] = [];
+
+  rangeRight(11).forEach(i => {
+    const c = parseInt(isin.charAt(i));
+    if (isNaN(c)) {
+      const letterCode = isin.charCodeAt(i) - 55;
+      v.push(letterCode % 10);
+      v.push(Math.floor(letterCode / 10));
+    } else {
+      v.push(Number(c));
+    }
+  });
+
+  let sum = 0;
+
+  range(v.length).forEach(i => {
+    if (i % 2 === 0) {
+      const d = v[i] * 2;
+      sum += Math.floor(d / 10);
+      sum += d % 10;
+    } else {
+      sum += v[i];
+    }
+  });
+
+  return (10 - (sum % 10)) % 10 === Number(isin[isin.length - 1]);
+}
+
+/**
+ * @hidden
+ *
+ * @note CINS and CUSIP use the same validation
+ */
+export function isCusipValid(cusip: string): boolean {
+  cusip = cusip.toUpperCase();
+
+  if (!new RegExp('^[0-9A-Z@#*]{9}$').test(cusip)) {
+    return false;
+  }
+
+  let sum = 0;
+
+  const cusipChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ*@#'.split('');
+  const cusipLength = cusip.length - 1;
+
+  range(cusipLength).forEach(i => {
+    const item = cusip[i];
+    const code = item.charCodeAt(0);
+
+    let num;
+
+    if (code >= 'A'.charCodeAt(0) && code <= 'Z'.charCodeAt(0)) {
+      num = cusipChars.indexOf(item) + 10;
+    } else {
+      num = Number(item);
+    }
+
+    if (i % 2 !== 0) {
+      num *= 2;
+    }
+
+    num = (num % 10) + Math.floor(num / 10);
+    sum += num;
+  });
+
+  return (10 - (sum % 10)) % 10 === Number(cusip[cusip.length - 1]);
+}
+
+/**
+ * @hidden
+ */
+export function isLeiValid(lei: string): boolean {
+  lei = lei.toUpperCase();
+
+  if (!new RegExp('^[0-9A-Z]{18}[0-9]{2}$').test(lei)) {
+    return false;
+  }
+
+  return computeWithoutCheck(lei) === 1;
+}
+
+/**
+ * @hidden
+ */
 export function tokenIdentifierToAssetIdentifier(
   identifier: TokenIdentifier,
   context: Context
 ): AssetIdentifier {
   const { type, value } = identifier;
+
+  let error = false;
+
+  switch (type) {
+    case TokenIdentifierType.Isin: {
+      if (!isIsinValid(value)) {
+        error = true;
+      }
+      break;
+    }
+    case TokenIdentifierType.Lei: {
+      if (!isLeiValid(value)) {
+        error = true;
+      }
+      break;
+    }
+    // CINS and CUSIP use the same validation
+    default: {
+      if (!isCusipValid(value)) {
+        error = true;
+      }
+    }
+  }
+
+  if (error) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `Error while checking value identifier ${value} as ${type} type`,
+    });
+  }
+
   return context.polymeshApi.createType('AssetIdentifier', { [type]: value });
 }
 
