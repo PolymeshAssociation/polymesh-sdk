@@ -758,6 +758,14 @@ export function getIdentityInstance(opts?: IdentityOptions): MockIdentity {
 
 /**
  * @hidden
+ * Retrieve the Identity constructor stub
+ */
+export function getIdentityConstructorStub(): SinonStub {
+  return identityConstructorStub;
+}
+
+/**
+ * @hidden
  * Retrieve the stub of the `Identity.hasRoles` method
  */
 export function getIdentityHasRolesStub(): SinonStub {

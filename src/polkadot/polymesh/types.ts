@@ -1184,7 +1184,8 @@ export interface Url extends Text {}
 export interface Venue extends Struct {
   readonly creator: IdentityId;
   readonly instructions: Vec<u64>;
-  readonly details: Bytes;
+  readonly details: VenueDetails;
+  readonly venue_type: VenueType;
 }
 
 /** @name VenueDetails */
