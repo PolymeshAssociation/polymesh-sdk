@@ -958,8 +958,43 @@ export function canTransferResultToTransferStatus(
 /**
  * @hidden
  */
+export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
+  const { type, value } = scope;
+
+  return context.polymeshApi.createType('Scope', {
+    [type]: value,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function meshScopeToScope(scope: MeshScope): Scope {
+  if (scope.isTicker) {
+    return {
+      type: ScopeType.Ticker,
+      value: tickerToString(scope.asTicker),
+    };
+  }
+
+  if (scope.isIdentity) {
+    return {
+      type: ScopeType.Identity,
+      value: identityIdToString(scope.asIdentity),
+    };
+  }
+
+  return {
+    type: ScopeType.Custom,
+    value: u8aToString(scope.asCustom),
+  };
+}
+
+/**
+ * @hidden
+ */
 export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
-  let value: unknown;
+  let value;
 
   switch (claim.type) {
     case ClaimType.NoData:
@@ -968,11 +1003,11 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
       break;
     }
     case ClaimType.Jurisdiction: {
-      value = tuple(claim.code, claim.scope);
+      value = tuple(claim.code, scopeToMeshScope(claim.scope, context));
       break;
     }
     default: {
-      value = claim.scope;
+      value = scopeToMeshScope(claim.scope, context);
     }
   }
 
@@ -1019,41 +1054,6 @@ export function createClaim(
   }
 
   return { type, scope };
-}
-
-/**
- * @hidden
- */
-export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
-  const { type, value } = scope;
-
-  return context.polymeshApi.createType('Scope', {
-    [type]: value,
-  });
-}
-
-/**
- * @hidden
- */
-export function meshScopeToScope(scope: MeshScope): Scope {
-  if (scope.isTicker) {
-    return {
-      type: ScopeType.Ticker,
-      value: tickerToString(scope.asTicker),
-    };
-  }
-
-  if (scope.isIdentity) {
-    return {
-      type: ScopeType.Identity,
-      value: identityIdToString(scope.asIdentity),
-    };
-  }
-
-  return {
-    type: ScopeType.Custom,
-    value: u8aToString(scope.asCustom),
-  };
 }
 
 /**
