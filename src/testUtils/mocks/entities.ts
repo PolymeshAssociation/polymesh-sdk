@@ -10,6 +10,7 @@ import {
   CurrentAccount,
   CurrentIdentity,
   Identity,
+  Instruction,
   // NOTE uncomment in Governance v2 upgrade
   // Proposal,
   SecurityToken,
@@ -22,6 +23,7 @@ import {
   Authorization,
   AuthorizationType,
   ExtrinsicData,
+  InstructionDetails,
   SecondaryKey,
   SecurityTokenDetails,
   TickerReservationDetails,
@@ -41,6 +43,7 @@ const mockInstanceContainer = {
   // proposal: {} as MockProposal,
   account: {} as MockAccount,
   currentAccount: {} as MockCurrentAccount,
+  instruction: {} as MockInstruction,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -50,6 +53,7 @@ type MockCurrentAccount = Mocked<CurrentAccount>;
 type MockTickerReservation = Mocked<TickerReservation>;
 type MockSecurityToken = Mocked<SecurityToken>;
 type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
+type MockInstruction = Mocked<Instruction>;
 // NOTE uncomment in Governance v2 upgrade
 // type MockProposal = Mocked<Proposal>;
 
@@ -59,6 +63,10 @@ interface IdentityOptions {
   hasRole?: boolean;
   hasValidCdd?: boolean;
   getPrimaryKey?: string;
+}
+
+interface InstructionOptions {
+  details?: InstructionDetails;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -112,6 +120,7 @@ let tickerReservationConstructorStub: SinonStub;
 let securityTokenConstructorStub: SinonStub;
 let authorizationRequestConstructorStub: SinonStub;
 let proposalConstructorStub: SinonStub;
+let instructionConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
@@ -133,6 +142,7 @@ let tickerReservationDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
 let securityTokenIsFrozenStub: SinonStub;
 let securityTokenTransfersCanTransferStub: SinonStub;
+let instructionDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -206,6 +216,15 @@ const MockProposalClass = class {
   }
 };
 
+const MockInstructionClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return instructionConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -246,12 +265,21 @@ export const mockProposalModule = (path: string) => (): object => ({
   Proposal: MockProposalClass,
 });
 
+export const mockInstructionModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Instruction: MockInstructionClass,
+});
+
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
   getPrimaryKey: 'someAddress',
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
+const defaultInstructionOptions: InstructionOptions = {
+  details: {} as InstructionDetails,
+};
+let instructionOptions: InstructionOptions = defaultInstructionOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
@@ -490,6 +518,34 @@ function initIdentity(opts?: IdentityOptions): void {
 
 /**
  * @hidden
+ * Configure the identity instance
+ */
+function configureInstruction(opts: InstructionOptions): void {
+  const instruction = ({
+    details: instructionDetailsStub.resolves(opts.details),
+  } as unknown) as MockInstruction;
+
+  Object.assign(mockInstanceContainer.instruction, instruction);
+  instructionConstructorStub.callsFake(args => {
+    return merge({}, instruction, args);
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Instruction instance
+ */
+function initInstruction(opts?: InstructionOptions): void {
+  instructionConstructorStub = sinon.stub();
+  instructionDetailsStub = sinon.stub();
+
+  instructionOptions = { ...defaultInstructionOptions, ...opts };
+
+  configureInstruction(instructionOptions);
+}
+
+/**
+ * @hidden
  * Configure the CurrentIdentity instance
  */
 function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
@@ -613,6 +669,7 @@ export function configureMocks(opts?: {
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
   proposalOptions?: ProposalOptions;
+  instructionOptions?: InstructionOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -666,6 +723,10 @@ export function configureMocks(opts?: {
 
   // NOTE uncomment in Governance v2 upgrade
   // configureProposal(tempProposalOptions);
+
+  const tempInstructionOptions = { ...defaultInstructionOptions, ...opts?.instructionOptions };
+
+  configureInstruction(tempInstructionOptions);
 }
 
 /**
@@ -682,6 +743,7 @@ export function initMocks(opts?: {
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
   proposalOptions?: ProposalOptions;
+  instructionOptions?: InstructionOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -703,6 +765,9 @@ export function initMocks(opts?: {
 
   // Authorization Request
   initAuthorizationRequest(opts?.authorizationRequestOptions);
+
+  // Instruction Request
+  initInstruction(opts?.instructionOptions);
 
   // Proposal
   // NOTE uncomment in Governance v2 upgrade

@@ -41,6 +41,7 @@ import { CallIdEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   Authorization,
+  AuthorizationStatus,
   AuthorizationType,
   Claim,
   ClaimType,
@@ -100,6 +101,7 @@ import {
   isIsinValid,
   isLeiValid,
   keyToAddress,
+  meshAuthorizationStatusToAuthorizationStatus,
   meshClaimToClaim,
   meshInstructionStatusToInstructionStatus,
   meshPermissionToPermission,
@@ -3147,6 +3149,46 @@ describe('meshInstructionStatusToInstructionStatus', () => {
     instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
 
     result = meshInstructionStatusToInstructionStatus(instructionStatus);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('meshAuthorizationStatusToAuthorizationStatus', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshAuthorizationStatusToAuthorizationStatus should convert a polkadot AuthorizationStatus object to a AuthorizationStatus', () => {
+    let fakeResult = AuthorizationStatus.Unknown;
+    let authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    let result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Rejected;
+    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Pending;
+    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Authorized;
+    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
   });
 });
