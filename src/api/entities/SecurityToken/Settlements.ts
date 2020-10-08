@@ -42,7 +42,7 @@ export class Settlements extends Namespace<SecurityToken> {
     let isDivisible;
 
     if (!from) {
-      [{ isDivisible }, from] = await Promise.all([details(), this.context.getCurrentIdentity()]);
+      [{ isDivisible }, from] = await Promise.all([details(), context.getCurrentIdentity()]);
     } else {
       ({ isDivisible } = await details());
     }
