@@ -1,5 +1,3 @@
-import { u64 } from '@polkadot/types';
-
 import { Identity, Venue } from '~/api/entities';
 import {
   createVenue,
@@ -10,7 +8,6 @@ import {
 } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
-import { stringToIdentityId, u64ToBigNumber } from '~/utils';
 
 /**
  * Represents the Identity associated to the current [[Account]]
@@ -35,40 +32,6 @@ export class CurrentIdentity extends Identity {
     }
 
     return context.getSecondaryKeys();
-  }
-
-  /**
-   * Retrieve all Venues created by this Identity
-   *
-   * @note can be subscribed to
-   */
-  public async getVenues(): Promise<Venue[]>;
-  public async getVenues(callback: SubCallback<Venue[]>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getVenues(callback?: SubCallback<Venue[]>): Promise<Venue[] | UnsubCallback> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { settlement },
-        },
-      },
-      did,
-      context,
-    } = this;
-
-    const assembleResult = (ids: u64[]): Venue[] =>
-      ids.map(id => new Venue({ id: u64ToBigNumber(id) }, context));
-
-    const rawDid = stringToIdentityId(did, context);
-
-    if (callback) {
-      return settlement.userVenues(rawDid, ids => callback(assembleResult(ids)));
-    }
-
-    const venueIds = await settlement.userVenues(rawDid);
-
-    return assembleResult(venueIds);
   }
 
   /**
