@@ -35,7 +35,6 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
   let addTransactionStub: sinon.SinonStub;
   let rawSignatory: Signatory;
   let rawAuthorizationData: AuthorizationData;
-  let rawExpiry: Moment;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -57,13 +56,11 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
       TransferAssetOwnership: rawTicker,
     });
-    rawExpiry = dsMockUtils.createMockMoment(123456789);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
-    dateToMomentStub.returns(rawExpiry);
     signerToStringStub.returns(target);
     signerValueToSignatoryStub.returns(rawSignatory);
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
@@ -81,7 +78,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if the supplied target don't exist", () => {
+  test("should throw an error if the supplied target doesn't exist", () => {
     const args = {
       target,
       ticker,
@@ -92,7 +89,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareModifyPrimaryIssuanceAgent.call(proc, args)).rejects.toThrow(
-      'The supplied Identity do not exist'
+      'The supplied Identity does not exist'
     );
   });
 
@@ -117,11 +114,37 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     );
   });
 
+  test('should throw an error if the supplied expiry date is not a future date', () => {
+    const args = {
+      target,
+      ticker,
+      requestExpiry: new Date(),
+    };
+
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        details: {
+          primaryIssuanceAgent: null,
+        },
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    return expect(prepareModifyPrimaryIssuanceAgent.call(proc, args)).rejects.toThrow(
+      'The request expiry must be a future date'
+    );
+  });
+
   test('should add a add authorization transaction to the queue', async () => {
     const args = {
       target,
       ticker,
     };
+    const requestExpiry = new Date('12/12/2050');
+    const rawExpiry = dsMockUtils.createMockMoment(requestExpiry.getTime());
+
+    dateToMomentStub.withArgs(requestExpiry, mockContext).returns(rawExpiry);
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
@@ -164,7 +187,10 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
       null
     );
 
-    await prepareModifyPrimaryIssuanceAgent.call(proc, { ...args, expiry: new Date() });
+    await prepareModifyPrimaryIssuanceAgent.call(proc, {
+      ...args,
+      requestExpiry,
+    });
 
     sinon.assert.calledWith(
       addTransactionStub,

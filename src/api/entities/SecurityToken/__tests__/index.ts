@@ -9,9 +9,11 @@ import {
 import sinon, { SinonStub } from 'sinon';
 
 import { Entity, Identity } from '~/api/entities';
-import { modifyToken, removePrimaryIssuanceAgent, transferTokenOwnership } from '~/api/procedures';
 import { modifyPrimaryIssuanceAgent } from '~/api/procedures/modifyPrimaryIssuanceAgent';
+import { modifyToken } from '~/api/procedures/modifyToken';
+import { removePrimaryIssuanceAgent } from '~/api/procedures/removePrimaryIssuanceAgent';
 import { Params, toggleFreezeTransfers } from '~/api/procedures/toggleFreezeTransfers';
+import { transferTokenOwnership } from '~/api/procedures/transferTokenOwnership';
 import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';

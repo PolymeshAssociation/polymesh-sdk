@@ -11,7 +11,7 @@ import {
 
 export interface ModifyPrimaryIssuanceAgentParams {
   target: string | Identity;
-  expiry?: Date;
+  requestExpiry?: Date;
 }
 
 /**
@@ -37,19 +37,19 @@ export async function prepareModifyPrimaryIssuanceAgent(
     context,
   } = this;
 
-  const { target, ticker, expiry } = args;
+  const { target, ticker, requestExpiry } = args;
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const [isInvalidTarget, { primaryIssuanceAgent }] = await Promise.all([
+  const [invalidDids, { primaryIssuanceAgent }] = await Promise.all([
     context.getInvalidDids([target]),
     securityToken.details(),
   ]);
 
-  if (isInvalidTarget.length) {
+  if (invalidDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The supplied Identity do not exist',
+      message: 'The supplied Identity does not exist',
     });
   }
 
@@ -72,7 +72,19 @@ export async function prepareModifyPrimaryIssuanceAgent(
     context
   );
 
-  const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
+  let rawExpiry;
+  if (requestExpiry) {
+    if (requestExpiry <= new Date()) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The request expiry must be a future date',
+      });
+    } else {
+      rawExpiry = dateToMoment(requestExpiry, context);
+    }
+  } else {
+    rawExpiry = null;
+  }
 
   this.addTransaction(identity.addAuthorization, {}, rawSignatory, rawAuthorizationData, rawExpiry);
 }

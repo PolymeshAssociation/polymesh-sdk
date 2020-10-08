@@ -324,7 +324,10 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Modify the primary issuance agent of the Security Token
+   * Assign a new primary issuance agent for the Security Token
+   *
+   * @param args.target - identity to be set as primary issuance agent
+   * @param args.requestExpiry - date at which the authorization request for modify primary issuance expires (optional)
    *
    * @note this may create AuthorizationRequest which have to be accepted by
    *   the corresponding Account. An Account or Identity can
@@ -340,7 +343,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   /**
    * Remove the primary issuance agent of the Security Token
    *
-   * @note issuing won’t be possible if primary issuance agent is not set
+   * @note issuance won’t be possible if primary issuance agent is not set
    */
   public removePrimaryIssuanceAgent(): Promise<TransactionQueue<void>> {
     const { ticker, context } = this;
