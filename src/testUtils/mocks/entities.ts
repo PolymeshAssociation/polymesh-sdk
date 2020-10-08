@@ -15,6 +15,7 @@ import {
   // Proposal,
   SecurityToken,
   TickerReservation,
+  Venue,
 } from '~/api/entities';
 import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
 import { Mocked } from '~/testUtils/types';
@@ -44,6 +45,7 @@ const mockInstanceContainer = {
   account: {} as MockAccount,
   currentAccount: {} as MockCurrentAccount,
   instruction: {} as MockInstruction,
+  venue: {} as MockVenue,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -56,6 +58,7 @@ type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 type MockInstruction = Mocked<Instruction>;
 // NOTE uncomment in Governance v2 upgrade
 // type MockProposal = Mocked<Proposal>;
+type MockVenue = Mocked<Venue>;
 
 interface IdentityOptions {
   did?: string;
@@ -112,6 +115,10 @@ interface CurrentAccountOptions extends AccountOptions {
   getIdentity?: CurrentIdentity;
 }
 
+interface VenueOptions {
+  id: BigNumber;
+}
+
 let identityConstructorStub: SinonStub;
 let currentIdentityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
@@ -121,6 +128,7 @@ let securityTokenConstructorStub: SinonStub;
 let authorizationRequestConstructorStub: SinonStub;
 let proposalConstructorStub: SinonStub;
 let instructionConstructorStub: SinonStub;
+let venueConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
@@ -225,6 +233,15 @@ const MockInstructionClass = class {
   }
 };
 
+const MockVenueClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return venueConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -268,6 +285,11 @@ export const mockProposalModule = (path: string) => (): object => ({
 export const mockInstructionModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Instruction: MockInstructionClass,
+});
+
+export const mockVenueModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Venue: MockVenueClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -334,6 +356,10 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
   expiry: null,
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
+const defaultVenueOptions: VenueOptions = {
+  id: new BigNumber(1),
+};
+let venueOptions = defaultVenueOptions;
 // NOTE uncomment in Governance v2 upgrade
 // const defaultProposalOptions: ProposalOptions = {
 //   pipId: new BigNumber(1),
@@ -379,6 +405,33 @@ let authorizationRequestOptions = defaultAuthorizationRequestOptions;
 
 //   configureProposal(proposalOptions);
 // }
+
+/**
+ * @hidden
+ * Configure the Authorization Request instance
+ */
+function configureVenue(opts: VenueOptions): void {
+  const venue = ({
+    id: opts.id,
+  } as unknown) as MockVenue;
+
+  Object.assign(mockInstanceContainer.venue, venue);
+  venueConstructorStub.callsFake(args => {
+    return merge({}, venue, args);
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Venue instance
+ */
+function initVenue(opts?: VenueOptions): void {
+  venueConstructorStub = sinon.stub();
+
+  venueOptions = { ...defaultVenueOptions, ...opts };
+
+  configureVenue(venueOptions);
+}
 
 /**
  * @hidden
@@ -670,6 +723,7 @@ export function configureMocks(opts?: {
   authorizationRequestOptions?: AuthorizationRequestOptions;
   proposalOptions?: ProposalOptions;
   instructionOptions?: InstructionOptions;
+  venueOptions?: VenueOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -727,6 +781,12 @@ export function configureMocks(opts?: {
   const tempInstructionOptions = { ...defaultInstructionOptions, ...opts?.instructionOptions };
 
   configureInstruction(tempInstructionOptions);
+
+  const tempVenueOptions = {
+    ...defaultVenueOptions,
+    ...opts?.venueOptions,
+  };
+  configureVenue(tempVenueOptions);
 }
 
 /**
@@ -744,6 +804,7 @@ export function initMocks(opts?: {
   authorizationRequestOptions?: AuthorizationRequestOptions;
   proposalOptions?: ProposalOptions;
   instructionOptions?: InstructionOptions;
+  venueOptions?: VenueOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -772,6 +833,9 @@ export function initMocks(opts?: {
   // Proposal
   // NOTE uncomment in Governance v2 upgrade
   // initProposal(opts?.proposalOptions);
+
+  // Venue
+  initVenue(opts?.venueOptions);
 }
 
 /**
@@ -788,6 +852,7 @@ export function cleanup(): void {
   mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
   // NOTE uncomment in Governance v2 upgrade
   // mockInstanceContainer.proposal = {} as MockProposal;
+  mockInstanceContainer.venue = {} as MockVenue;
 }
 
 /**
@@ -806,6 +871,7 @@ export function reset(): void {
     authorizationRequestOptions,
     // NOTE uncomment in Governance v2 upgrade
     // proposalOptions,
+    venueOptions,
   });
 }
 
@@ -1096,3 +1162,15 @@ export function getAuthorizationRequestInstance(
 
 //   return mockInstanceContainer.proposal;
 // }
+
+/**
+ * @hidden
+ * Retrieve a Venue instance
+ */
+export function getVenueInstance(opts?: VenueOptions): MockVenue {
+  if (opts) {
+    configureVenue(opts);
+  }
+
+  return mockInstanceContainer.venue;
+}

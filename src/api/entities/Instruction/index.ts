@@ -20,7 +20,7 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents a trusted claim issuer for a specific token in the Polymesh blockchain
+ * Represents a settlement Instruction to be executed on a certain Venue
  */
 export class Instruction extends Entity<UniqueIdentifiers> {
   /**
