@@ -28,12 +28,6 @@ import {
 } from 'lodash';
 import {
   AssetComplianceResult,
-  CddId,
-  ComplianceRequirement,
-  Memo,
-  PipId,
-} from 'polymesh-types/polymesh';
-import {
   AssetIdentifier,
   AssetName,
   AssetType,
@@ -41,8 +35,10 @@ import {
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
+  CddId,
   CddStatus,
   Claim as MeshClaim,
+  ComplianceRequirement,
   Condition as MeshCondition,
   ConditionType as MeshConditionType,
   Document,
@@ -51,7 +47,10 @@ import {
   DocumentUri,
   FundingRoundName,
   IdentityId,
+  InstructionStatus as MeshInstructionStatus,
+  Memo,
   Permission as MeshPermission,
+  PipId,
   PortfolioId as MeshPortfolioId,
   PosRatio,
   ProtocolOp,
@@ -61,6 +60,8 @@ import {
   Ticker,
   TxTag,
   TxTags,
+  VenueDetails,
+  VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
 import { Account, Identity } from '~/api/entities';
@@ -85,6 +86,7 @@ import {
   CountryCode,
   ErrorCode,
   IdentityWithClaims,
+  InstructionStatus,
   isMultiClaimCondition,
   isSingleClaimCondition,
   KnownTokenType,
@@ -103,6 +105,7 @@ import {
   TokenIdentifierType,
   TokenType,
   TransferStatus,
+  VenueType,
 } from '~/types';
 import {
   AuthTarget,
@@ -1704,4 +1707,57 @@ export function secondaryKeyToMeshSecondaryKey(
     signer: signerValueToSignatory(signerToSignerValue(signer), context),
     permissions: permissions.map(permission => permissionToMeshPermission(permission, context)),
   });
+}
+
+/**
+ * @hidden
+ */
+export function meshVenueTypeToVenueType(type: MeshVenueType): VenueType {
+  if (type.isOther) {
+    return VenueType.Other;
+  }
+
+  if (type.isDistribution) {
+    return VenueType.Distribution;
+  }
+
+  if (type.isSto) {
+    return VenueType.Sto;
+  }
+
+  return VenueType.Exchange;
+}
+
+/**
+ * @hidden
+ */
+export function venueTypeToMeshVenueType(type: VenueType, context: Context): MeshVenueType {
+  return context.polymeshApi.createType('VenueType', type);
+}
+
+/**
+ * @hidden
+ */
+export function stringToVenueDetails(details: string, context: Context): VenueDetails {
+  return context.polymeshApi.createType('VenueDetails', details);
+}
+
+/**
+ * @hidden
+ */
+export function venueDetailsToString(details: VenueDetails): string {
+  return details.toString();
+}
+
+/**
+ * @hidden
+ */
+export function meshInstructionStatusToInstructionStatus(
+  status: MeshInstructionStatus
+): InstructionStatus {
+  if (status.isPending) {
+    return InstructionStatus.Pending;
+  }
+
+  return InstructionStatus.Unknown;
 }

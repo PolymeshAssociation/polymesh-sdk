@@ -3,7 +3,14 @@ import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
-import { CddId, ComplianceRequirement, Memo, PipId, PortfolioId } from 'polymesh-types/polymesh';
+import {
+  CddId,
+  ComplianceRequirement,
+  Memo,
+  PipId,
+  PortfolioId,
+  VenueDetails,
+} from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
@@ -23,6 +30,7 @@ import {
   Signatory,
   Ticker,
   TxTags,
+  VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -40,6 +48,7 @@ import {
   ConditionTarget,
   ConditionType,
   CountryCode,
+  InstructionStatus,
   KnownTokenType,
   Permission,
   Scope,
@@ -47,6 +56,7 @@ import {
   Signer,
   TokenIdentifierType,
   TransferStatus,
+  VenueType,
 } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -91,8 +101,10 @@ import {
   isLeiValid,
   keyToAddress,
   meshClaimToClaim,
+  meshInstructionStatusToInstructionStatus,
   meshPermissionToPermission,
   meshScopeToScope,
+  meshVenueTypeToVenueType,
   middlewareProposalToProposalDetails,
   moduleAddressToString,
   momentToDate,
@@ -128,6 +140,7 @@ import {
   stringToMemo,
   stringToText,
   stringToTicker,
+  stringToVenueDetails,
   textToString,
   tickerToDid,
   tickerToString,
@@ -142,6 +155,8 @@ import {
   u64ToBigNumber,
   unserialize,
   unwrapValues,
+  venueDetailsToString,
+  venueTypeToMeshVenueType,
 } from '../';
 
 jest.mock(
@@ -3012,6 +3027,126 @@ describe('secondaryKeyToMeshSecondaryKey', () => {
 
     const result = secondaryKeyToMeshSecondaryKey(secondaryKey, context);
 
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('venueTypeToMeshVenueType and meshVenueTypeToVenueType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('venueTypeToMeshVenueType should convert a VenueType to a polkadot VenueType object', () => {
+    const value = VenueType.Other;
+    const fakeResult = ('Other' as unknown) as MeshVenueType;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('VenueType', value)
+      .returns(fakeResult);
+
+    const result = venueTypeToMeshVenueType(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('meshVenueTypeToVenueType should convert a polkadot VenueType object to a VenueType', () => {
+    let fakeResult = VenueType.Other;
+    let venueType = dsMockUtils.createMockVenueType(fakeResult);
+
+    let result = meshVenueTypeToVenueType(venueType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = VenueType.Distribution;
+    venueType = dsMockUtils.createMockVenueType(fakeResult);
+
+    result = meshVenueTypeToVenueType(venueType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = VenueType.Sto;
+    venueType = dsMockUtils.createMockVenueType(fakeResult);
+
+    result = meshVenueTypeToVenueType(venueType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = VenueType.Exchange;
+    venueType = dsMockUtils.createMockVenueType(fakeResult);
+
+    result = meshVenueTypeToVenueType(venueType);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToVenueDetails and venueDetailsToString', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToVenueDetails should convert a string into a polkadot VenueDetails object', () => {
+    const details = 'details';
+    const fakeResult = ('type' as unknown) as VenueDetails;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('VenueDetails', details)
+      .returns(fakeResult);
+
+    const result = stringToVenueDetails(details, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('venueDetailsToString should convert a polkadot VenueDetails object to a string', () => {
+    const fakeResult = 'details';
+    const venueDetails = dsMockUtils.createMockVenueDetails(fakeResult);
+
+    const result = venueDetailsToString(venueDetails);
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('meshInstructionStatusToInstructionStatus', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshInstructionStatusToInstructionStatus should convert a polkadot InstructionStatus object to an InstructionStatus', () => {
+    let fakeResult = InstructionStatus.Pending;
+    let instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
+
+    let result = meshInstructionStatusToInstructionStatus(instructionStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = InstructionStatus.Unknown;
+    instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
+
+    result = meshInstructionStatusToInstructionStatus(instructionStatus);
     expect(result).toEqual(fakeResult);
   });
 });

@@ -1,10 +1,10 @@
 import sinon from 'sinon';
 
-import { CurrentIdentity, Identity } from '~/api/entities';
-import { inviteAccount, removeSecondaryKeys } from '~/api/procedures';
+import { CurrentIdentity, Identity, Venue } from '~/api/entities';
+import { createVenue, inviteAccount, removeSecondaryKeys } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { SecondaryKey, SubCallback } from '~/types';
+import { SecondaryKey, SubCallback, VenueType } from '~/types';
 
 describe('CurrentIdentity class', () => {
   let context: Context;
@@ -106,6 +106,29 @@ describe('CurrentIdentity class', () => {
         .resolves(expectedQueue);
 
       const queue = await identity.inviteAccount(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: createVenue', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new CurrentIdentity({ did }, context);
+
+      const args = {
+        details: 'details',
+        type: VenueType.Distribution,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
+
+      sinon
+        .stub(createVenue, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.createVenue(args);
 
       expect(queue).toBe(expectedQueue);
     });
