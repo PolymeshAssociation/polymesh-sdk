@@ -2,7 +2,7 @@
 /* eslint-disable */
 
 import { AnyNumber, ITuple } from '@polkadot/types/types';
-import { BTreeSet, Compact, Option, Vec } from '@polkadot/types/codec';
+import { Compact, Option, Vec } from '@polkadot/types/codec';
 import { Bytes, bool, u128, u16, u32, u64 } from '@polkadot/types/primitive';
 import { BabeEquivocationProof } from '@polkadot/types/interfaces/babe';
 import { MemberCount, ProposalIndex } from '@polkadot/types/interfaces/collective';
@@ -2740,7 +2740,9 @@ declare module '@polkadot/api/types/submittable' {
           legs:
             | Vec<Leg>
             | (Leg | { from?: any; to?: any; asset?: any; amount?: any } | string | Uint8Array)[],
-          portfolios: BTreeSet<PortfolioId>
+          portfolios:
+            | Vec<PortfolioId>
+            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2796,7 +2798,9 @@ declare module '@polkadot/api/types/submittable' {
       authorizeInstruction: AugmentedSubmittable<
         (
           instructionId: u64 | AnyNumber | Uint8Array,
-          portfolios: BTreeSet<PortfolioId>
+          portfolios:
+            | Vec<PortfolioId>
+            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2821,7 +2825,9 @@ declare module '@polkadot/api/types/submittable' {
                 | string
                 | Uint8Array
               )[],
-          portfolios: BTreeSet<PortfolioId>
+          portfolios:
+            | Vec<PortfolioId>
+            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2886,7 +2892,9 @@ declare module '@polkadot/api/types/submittable' {
       rejectInstruction: AugmentedSubmittable<
         (
           instructionId: u64 | AnyNumber | Uint8Array,
-          portfolios: BTreeSet<PortfolioId>
+          portfolios:
+            | Vec<PortfolioId>
+            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2912,7 +2920,9 @@ declare module '@polkadot/api/types/submittable' {
       unauthorizeInstruction: AugmentedSubmittable<
         (
           instructionId: u64 | AnyNumber | Uint8Array,
-          portfolios: BTreeSet<PortfolioId>
+          portfolios:
+            | Vec<PortfolioId>
+            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**

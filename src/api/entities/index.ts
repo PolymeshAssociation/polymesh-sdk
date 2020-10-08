@@ -10,3 +10,5 @@ export { AuthorizationRequest } from './AuthorizationRequest';
 // NOTE uncomment in Governance v2 upgrade
 // export { Proposal } from './Proposal';
 export { TrustedClaimIssuer } from './TrustedClaimIssuer';
+export { Venue } from './Venue';
+export { Instruction } from './Instruction';

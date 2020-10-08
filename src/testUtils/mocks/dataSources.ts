@@ -56,6 +56,7 @@ import {
   FundingRoundName,
   IdentityId,
   IdentityRole,
+  InstructionStatus,
   IssueAssetItem,
   LinkedKeyInfo,
   Permission,
@@ -69,10 +70,13 @@ import {
   Scope,
   SecondaryKey as MeshSecondaryKey,
   SecurityToken,
+  SettlementType,
   Signatory,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
+  VenueDetails,
+  VenueType,
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
@@ -1879,6 +1883,44 @@ export const createMockSecondaryKey = (secondaryKey?: {
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPipId = (id: number | BigNumber): PipId =>
   createMockU32(new BigNumber(id).toNumber()) as PipId;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockVenueDetails = (details?: string): VenueDetails =>
+  createMockStringCodec(details) as VenueDetails;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockVenueType = (
+  venueType?: 'Other' | 'Distribution' | 'Sto' | 'Exchange'
+): VenueType => {
+  return createMockEnum(venueType) as VenueType;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockInstructionStatus = (
+  instructionStatus?: 'Pending' | 'Unknown'
+): InstructionStatus => {
+  return createMockEnum(instructionStatus) as InstructionStatus;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSettlementType = (
+  settlementType?: 'SettleOnAuthorization' | { SettleOnBlock: u32 }
+): SettlementType => {
+  return createMockEnum(settlementType) as SettlementType;
+};
