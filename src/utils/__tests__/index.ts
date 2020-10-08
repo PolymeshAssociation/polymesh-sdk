@@ -1653,10 +1653,13 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       scope: { type: ScopeType.Identity, value: 'someTickerDid' },
     };
     const fakeResult = ('meshClaim' as unknown) as MeshClaim;
+    const fakeScope = ('scope' as unknown) as MeshScope;
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Claim', { [value.type]: [value.code, value.scope] })
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
+
+    createTypeStub.withArgs('Scope', sinon.match.any).returns(fakeScope);
+    createTypeStub
+      .withArgs('Claim', { [value.type]: [value.code, scopeToMeshScope(value.scope, context)] })
       .returns(fakeResult);
 
     let result = claimToMeshClaim(value, context);
@@ -1668,9 +1671,8 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       scope: { type: ScopeType.Identity, value: 'someTickerDid' },
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Claim', { [value.type]: value.scope })
+    createTypeStub
+      .withArgs('Claim', { [value.type]: scopeToMeshScope(value.scope, context) })
       .returns(fakeResult);
 
     result = claimToMeshClaim(value, context);
@@ -1681,10 +1683,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       type: ClaimType.NoData,
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Claim', { [value.type]: null })
-      .returns(fakeResult);
+    createTypeStub.withArgs('Claim', { [value.type]: null }).returns(fakeResult);
 
     result = claimToMeshClaim(value, context);
 
