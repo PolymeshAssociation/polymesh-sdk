@@ -35,3 +35,15 @@ export interface Leg {
   amount: BigNumber;
   token: SecurityToken;
 }
+
+export enum AuthorizationStatus {
+  Unknown = 'Unknown',
+  Pending = 'Pending',
+  Authorized = 'Authorized',
+  Rejected = 'Rejected',
+}
+
+export interface AuthorizerWithAuthorizationStatus {
+  identity: Identity;
+  authorizarionStatus: AuthorizationStatus;
+}

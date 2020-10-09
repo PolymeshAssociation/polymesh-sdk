@@ -1,10 +1,12 @@
 import BigNumber from 'bignumber.js';
+import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 
 import { Entity, Identity, SecurityToken } from '~/api/entities';
 import { Context } from '~/base';
 import {
   balanceToBigNumber,
   identityIdToString,
+  meshAuthorizationStatusToAuthorizationStatus,
   meshInstructionStatusToInstructionStatus,
   momentToDate,
   numberToU64,
@@ -12,7 +14,12 @@ import {
   u32ToBigNumber,
 } from '~/utils';
 
-import { InstructionDetails, InstructionType, Leg } from './types';
+import {
+  AuthorizerWithAuthorizationStatus,
+  InstructionDetails,
+  InstructionType,
+  Leg,
+} from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -87,6 +94,35 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       type: InstructionType.SettleOnBlock,
       endBlock: u32ToBigNumber(type.asSettleOnBlock),
     };
+  }
+
+  /**
+   * Retrieve all authorization statuses with authorizer identity of this Instruction
+   */
+  public async getAuthorizationStatuses(): Promise<AuthorizerWithAuthorizationStatus[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const entries = await settlement.authsReceived.entries(numberToU64(id, context));
+
+    const authorizerWithAuthorizationStatus: AuthorizerWithAuthorizationStatus[] = [];
+
+    entries.forEach(([key, meshAuthorizationStatus]) => {
+      const { did } = key.args[1] as MeshPortfolioId;
+      authorizerWithAuthorizationStatus.push({
+        identity: new Identity({ did: identityIdToString(did) }, context),
+        authorizarionStatus: meshAuthorizationStatusToAuthorizationStatus(meshAuthorizationStatus),
+      });
+    });
+
+    return authorizerWithAuthorizationStatus;
   }
 
   /**

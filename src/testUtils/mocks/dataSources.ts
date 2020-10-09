@@ -38,6 +38,7 @@ import {
   AuthIdentifier,
   Authorization,
   AuthorizationData,
+  AuthorizationStatus as MeshAuthorizationStatus,
   AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
   CddId,
@@ -1525,6 +1526,16 @@ export const createMockPermission = (
   permission: 'Admin' | 'Full' | 'Operator' | 'SpendFunds'
 ): Permission => {
   return createMockEnum(permission) as Permission;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAuthorizationStatus = (
+  authorizationStatus: 'Authorized' | 'Pending' | 'Rejected' | 'Unknown'
+): MeshAuthorizationStatus => {
+  return createMockEnum(authorizationStatus) as MeshAuthorizationStatus;
 };
 
 /**

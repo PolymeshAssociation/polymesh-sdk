@@ -41,6 +41,7 @@ import { CallIdEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   Authorization,
+  AuthorizationStatus,
   AuthorizationType,
   Claim,
   ClaimType,
@@ -100,6 +101,7 @@ import {
   isIsinValid,
   isLeiValid,
   keyToAddress,
+  meshAuthorizationStatusToAuthorizationStatus,
   meshClaimToClaim,
   meshInstructionStatusToInstructionStatus,
   meshPermissionToPermission,
@@ -2532,6 +2534,46 @@ describe('permissionToMeshPermission and meshPermissionToPermission', () => {
     permission = dsMockUtils.createMockPermission(fakeResult);
 
     result = meshPermissionToPermission(permission);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('meshAuthorizationStatusToAuthorizationStatus', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshAuthorizationStatusToAuthorizationStatus should convert a polkadot AuthorizationStatus object to a AuthorizationStatus', () => {
+    let fakeResult = AuthorizationStatus.Authorized;
+    let permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    let result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Pending;
+    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Rejected;
+    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Unknown;
+    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(permission);
     expect(result).toEqual(fakeResult);
   });
 });

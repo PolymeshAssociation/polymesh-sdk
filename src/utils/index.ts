@@ -33,6 +33,7 @@ import {
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  AuthorizationStatus as MeshAuthorizationStatus,
   AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
   CddId,
@@ -77,6 +78,7 @@ import {
 } from '~/middleware/types';
 import {
   Authorization,
+  AuthorizationStatus,
   AuthorizationType,
   Claim,
   ClaimType,
@@ -429,6 +431,27 @@ export function meshPermissionToPermission(permission: MeshPermission): Permissi
   }
 
   return Permission.SpendFunds;
+}
+
+/**
+ * @hidden
+ */
+export function meshAuthorizationStatusToAuthorizationStatus(
+  authorizationStatus: MeshAuthorizationStatus
+): AuthorizationStatus {
+  if (authorizationStatus.isPending) {
+    return AuthorizationStatus.Pending;
+  }
+
+  if (authorizationStatus.isRejected) {
+    return AuthorizationStatus.Rejected;
+  }
+
+  if (authorizationStatus.isUnknown) {
+    return AuthorizationStatus.Unknown;
+  }
+
+  return AuthorizationStatus.Authorized;
 }
 
 /**
