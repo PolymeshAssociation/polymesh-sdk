@@ -1,7 +1,7 @@
 import { BigNumber } from 'bignumber.js';
 import { CddStatus, DidRecord } from 'polymesh-types/types';
 
-import { Entity, SecurityToken, TickerReservation } from '~/api/entities';
+import { Entity, SecurityToken, TickerReservation, Venue } from '~/api/entities';
 import { Context, PolymeshError } from '~/base';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
@@ -11,6 +11,7 @@ import {
   isCddProviderRole,
   isTickerOwnerRole,
   isTokenOwnerRole,
+  isVenueOwnerRole,
   Order,
   ResultSet,
   Role,
@@ -102,6 +103,12 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const memberDids = activeMembers.map(identityIdToString);
 
       return memberDids.includes(did);
+    } else if (isVenueOwnerRole(role)) {
+      const venue = new Venue({ id: role.venueId }, context);
+
+      const { owner } = await venue.details();
+
+      return owner.did === did;
     }
 
     throw new PolymeshError({

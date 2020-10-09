@@ -7,7 +7,7 @@ import { Entity, Identity } from '~/api/entities';
 import { Context } from '~/base';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
+import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole, VenueOwnerRole } from '~/types';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -19,6 +19,10 @@ jest.mock(
 jest.mock(
   '~/api/entities/SecurityToken',
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+jest.mock(
+  '~/api/entities/Venue',
+  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
 
 describe('Identity class', () => {
@@ -117,6 +121,26 @@ describe('Identity class', () => {
       dsMockUtils.createQueryStub('cddServiceProviders', 'activeMembers').resolves([rawDid]);
 
       identityIdToStringStub.withArgs(rawDid).returns(did);
+
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      identity.did = 'otherDid';
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+    });
+
+    test('hasRole should check whether the Identity has the Venue Owner role', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const role: VenueOwnerRole = { type: RoleType.VenueOwner, venueId: new BigNumber(10) };
+
+      entityMockUtils.configureMocks({
+        venueOptions: { details: { owner: new Identity({ did }, context) } },
+      });
 
       let hasRole = await identity.hasRole(role);
 
