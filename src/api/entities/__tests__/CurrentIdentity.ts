@@ -6,11 +6,6 @@ import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { SecondaryKey, SubCallback, VenueType } from '~/types';
 
-jest.mock(
-  '~/api/entities/Venue',
-  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
-);
-
 describe('CurrentIdentity class', () => {
   let context: Context;
 
