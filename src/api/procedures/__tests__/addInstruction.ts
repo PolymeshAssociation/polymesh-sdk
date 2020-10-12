@@ -24,7 +24,10 @@ describe('addInstruction procedure', () => {
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
-  let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context], Balance>;
+  let numberToBalanceStub: sinon.SinonStub<
+    [number | BigNumber, Context, (boolean | undefined)?],
+    Balance
+  >;
   let endConditionToSettlementTypeStub: sinon.SinonStub<
     [
       (
