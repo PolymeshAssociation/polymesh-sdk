@@ -291,7 +291,7 @@ export const mockVenueModule = (path: string) => (): object => ({
 
 export const mockInstructionModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
-  Venue: MockInstructionClass,
+  Instruction: MockInstructionClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -794,7 +794,7 @@ export function configureMocks(opts?: {
 
   const tempInstructionOptions = {
     ...defaultInstructionOptions,
-    ...opts?.venueOptions,
+    ...opts?.instructionOptions,
   };
   configureInstruction(tempInstructionOptions);
 }
