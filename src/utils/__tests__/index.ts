@@ -60,7 +60,12 @@ import {
 } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { MAX_BATCH_ELEMENTS, MAX_TICKER_LENGTH } from '~/utils/constants';
+import {
+  MAX_BATCH_ELEMENTS,
+  MAX_DECIMALS,
+  MAX_TICKER_LENGTH,
+  MAX_TOKEN_AMOUNT,
+} from '~/utils/constants';
 
 import {
   accountIdToString,
@@ -408,7 +413,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
   });
 
   test('numberToBalance should convert a number to a polkadot Balance object', () => {
-    const value = new BigNumber(100);
+    let value = new BigNumber(100);
     const fakeResult = ('100' as unknown) as Balance;
     const context = dsMockUtils.getContextInstance();
 
@@ -417,9 +422,61 @@ describe('numberToBalance and balanceToBigNumber', () => {
       .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
       .returns(fakeResult);
 
-    const result = numberToBalance(value, context);
+    let result = numberToBalance(value, context, false);
 
     expect(result).toBe(fakeResult);
+
+    value = new BigNumber(100.1);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
+      .returns(fakeResult);
+
+    result = numberToBalance(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('numberToBalance should throw an error if the value exceeds the max token amount constant', () => {
+    const value = new BigNumber(Math.pow(20, 15));
+    const context = dsMockUtils.getContextInstance();
+
+    let error;
+
+    try {
+      numberToBalance(value, context);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('The value exceed the amount limit allowed');
+    expect(error.data).toMatchObject({ currentValue: value, amountLimit: MAX_TOKEN_AMOUNT });
+  });
+
+  test('numberToBalance should throw an error if security token is divisible and the value exceeds the max decimals constant', () => {
+    const value = new BigNumber(50.1234567);
+    const context = dsMockUtils.getContextInstance();
+
+    let error;
+
+    try {
+      numberToBalance(value, context);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('The value exceed the decimals limit allowed');
+    expect(error.data).toMatchObject({ currentValue: value, decimalsLimit: MAX_DECIMALS });
+  });
+
+  test('numberToBalance should throw an error if security token is not divisible and the value has decimals', () => {
+    const value = new BigNumber(50.1234567);
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => numberToBalance(value, context, false)).toThrow(
+      'The value cannot have decimals if the token is indivisible'
+    );
   });
 
   test('balanceToBigNumber should convert a polkadot Balance object to a BigNumber', () => {

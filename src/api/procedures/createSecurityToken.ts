@@ -86,7 +86,7 @@ export async function prepareCreateSecurityToken(
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawTotalSupply = numberToBalance(totalSupply, context);
+  const rawTotalSupply = numberToBalance(totalSupply, context, isDivisible);
   const rawName = stringToAssetName(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawType = tokenTypeToAssetType(tokenType, context);
