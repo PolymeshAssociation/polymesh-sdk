@@ -175,6 +175,7 @@ export enum AuthorizationType {
   TransferTicker = 'TransferTicker',
   AddMultiSigSigner = 'AddMultiSigSigner',
   TransferAssetOwnership = 'TransferAssetOwnership',
+  TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
   JoinIdentity = 'JoinIdentity',
   Custom = 'Custom',
   NoData = 'NoData',

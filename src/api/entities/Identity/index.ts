@@ -1,3 +1,4 @@
+import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import { CddStatus, DidRecord } from 'polymesh-types/types';
 
@@ -27,6 +28,7 @@ import {
   removePadding,
   stringToIdentityId,
   stringToTicker,
+  u64ToBigNumber,
 } from '~/utils';
 
 import { IdentityAuthorizations } from './IdentityAuthorizations';
@@ -322,5 +324,39 @@ export class Identity extends Entity<UniqueIdentifiers> {
     );
 
     return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
+  }
+
+  /**
+   * Retrieve all Venues created by this Identity
+   *
+   * @note can be subscribed to
+   */
+  public async getVenues(): Promise<Venue[]>;
+  public async getVenues(callback: SubCallback<Venue[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getVenues(callback?: SubCallback<Venue[]>): Promise<Venue[] | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      did,
+      context,
+    } = this;
+
+    const assembleResult = (ids: u64[]): Venue[] =>
+      ids.map(id => new Venue({ id: u64ToBigNumber(id) }, context));
+
+    const rawDid = stringToIdentityId(did, context);
+
+    if (callback) {
+      return settlement.userVenues(rawDid, ids => callback(assembleResult(ids)));
+    }
+
+    const venueIds = await settlement.userVenues(rawDid);
+
+    return assembleResult(venueIds);
   }
 }
