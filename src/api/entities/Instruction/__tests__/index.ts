@@ -133,7 +133,7 @@ describe('Instruction class', () => {
     });
   });
 
-  describe('method: getAuthorizationStatuses', () => {
+  describe('method: getAuthorizations', () => {
     const did = 'someDid';
     const status = AuthorizationStatus.Authorized;
     let rawStorageKey: [u64, MeshPortfolioId][];
@@ -167,11 +167,11 @@ describe('Instruction class', () => {
     });
 
     test('should return a list of Authorization Statuses', async () => {
-      const result = await instruction.getAuthorizationStatuses();
+      const result = await instruction.getAuthorizations();
 
       expect(result).toHaveLength(1);
       expect(result[0].identity).toEqual(new Identity({ did }, context));
-      expect(result[0].authorizarionStatus).toEqual(status);
+      expect(result[0].authorizationStatus).toEqual(status);
     });
   });
 
