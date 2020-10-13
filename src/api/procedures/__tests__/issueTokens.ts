@@ -14,7 +14,6 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
 import * as utilsModule from '~/utils';
-import { MAX_DECIMALS } from '~/utils/constants';
 
 jest.mock(
   '~/api/entities/SecurityToken',
@@ -24,7 +23,7 @@ jest.mock(
 describe('issueTokens procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToBalance: sinon.SinonStub<[number | BigNumber, Context], Balance>;
+  let numberToBalance: sinon.SinonStub;
   let ticker: string;
   let rawTicker: Ticker;
   let amount: BigNumber;
@@ -46,7 +45,6 @@ describe('issueTokens procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    numberToBalance.withArgs(amount, mockContext).returns(rawAmount);
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
 
@@ -60,41 +58,6 @@ describe('issueTokens procedure', () => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-  });
-
-  test('should throw an error if security token is divisible and the amount exceeds six decimals', () => {
-    const args = {
-      amount: new BigNumber(50.1234567),
-      ticker,
-    };
-
-    entityMockUtils.configureMocks({
-      securityTokenOptions: {
-        details: {
-          isDivisible: true,
-        },
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
-
-    return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
-      `Issuance amount cannot have more than ${MAX_DECIMALS} decimals`
-    );
-  });
-
-  test('should throw an error if security token is not divisible and the amount has decimals', () => {
-    const args = {
-      amount: new BigNumber(50.1),
-
-      ticker,
-    };
-
-    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
-
-    return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
-      'Cannot issue decimal amount of an indivisible token'
-    );
   });
 
   test('should throw an error if token supply is bigger than the limit total supply', async () => {
@@ -160,6 +123,7 @@ describe('issueTokens procedure', () => {
   });
 
   test('should add a issue transaction to the queue', async () => {
+    const isDivisible = true;
     const args = {
       amount,
       ticker,
@@ -168,11 +132,13 @@ describe('issueTokens procedure', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
         details: {
-          isDivisible: true,
+          isDivisible,
           primaryIssuanceAgent: entityMockUtils.getIdentityInstance(),
         },
       },
     });
+
+    numberToBalance.withArgs(amount, mockContext, isDivisible).returns(rawAmount);
 
     const transaction = dsMockUtils.createTxStub('asset', 'issue');
     const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);

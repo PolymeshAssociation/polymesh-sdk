@@ -126,8 +126,10 @@ import {
   DEFAULT_GQL_PAGE_SIZE,
   IGNORE_CHECKSUM,
   MAX_BATCH_ELEMENTS,
+  MAX_DECIMALS,
   MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
+  MAX_TOKEN_AMOUNT,
   SS58_FORMAT,
 } from '~/utils/constants';
 
@@ -514,10 +516,49 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
 /**
  * @hidden
  */
-export function numberToBalance(value: number | BigNumber, context: Context): Balance {
+export function numberToBalance(
+  value: number | BigNumber,
+  context: Context,
+  divisible?: boolean
+): Balance {
+  const rawValue = new BigNumber(value);
+
+  divisible = divisible ?? true;
+
+  if (rawValue.isGreaterThan(MAX_TOKEN_AMOUNT)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The value exceed the amount limit allowed',
+      data: {
+        currentValue: rawValue,
+        amountLimit: MAX_TOKEN_AMOUNT,
+      },
+    });
+  }
+
+  if (divisible) {
+    if (rawValue.decimalPlaces() > MAX_DECIMALS) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The value exceed the decimals limit allowed',
+        data: {
+          currentValue: rawValue,
+          decimalsLimit: MAX_DECIMALS,
+        },
+      });
+    }
+  } else {
+    if (rawValue.decimalPlaces()) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The value cannot have decimals if the token is indivisible',
+      });
+    }
+  }
+
   return context.polymeshApi.createType(
     'Balance',
-    new BigNumber(value).multipliedBy(Math.pow(10, 6)).toString()
+    rawValue.multipliedBy(Math.pow(10, 6)).toString()
   );
 }
 
