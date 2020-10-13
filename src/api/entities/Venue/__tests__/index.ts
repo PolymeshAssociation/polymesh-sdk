@@ -13,6 +13,10 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/api/entities/Instruction',
+  require('~/testUtils/mocks/entities').mockInstructionModule('~/api/entities/Instruction')
+);
 
 describe('Venue class', () => {
   let context: Mocked<Context>;
@@ -58,12 +62,16 @@ describe('Venue class', () => {
   });
 
   describe('method: details', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return the Venue details', async () => {
       const description = 'someDescription';
       const type = VenueType.Other;
-      const creator = 'someDid';
+      const owner = 'someDid';
 
-      entityMockUtils.configureMocks({ identityOptions: { did: creator } });
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
       sinon
         .stub(utilsModule, 'numberToU64')
         .withArgs(id, context)
@@ -73,7 +81,7 @@ describe('Venue class', () => {
         .createQueryStub('settlement', 'venueInfo')
         .withArgs(rawId)
         .resolves({
-          creator: dsMockUtils.createMockIdentityId(creator),
+          creator: dsMockUtils.createMockIdentityId(owner),
           instructions: [],
           details: dsMockUtils.createMockVenueDetails(description),
           // eslint-disable-next-line @typescript-eslint/camelcase
@@ -83,10 +91,44 @@ describe('Venue class', () => {
       const result = await venue.details();
 
       expect(result).toEqual({
-        creator: entityMockUtils.getIdentityInstance(),
+        owner: entityMockUtils.getIdentityInstance(),
         description,
         type,
       });
+    });
+  });
+
+  describe('method: getPendingInstructions', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test("should return the Venue's pending instructions", async () => {
+      const description = 'someDescription';
+      const type = VenueType.Other;
+      const owner = 'someDid';
+      const instructionId = new BigNumber(1);
+
+      entityMockUtils.configureMocks({ instructionOptions: { id: instructionId } });
+      sinon
+        .stub(utilsModule, 'numberToU64')
+        .withArgs(id, context)
+        .returns(rawId);
+
+      dsMockUtils
+        .createQueryStub('settlement', 'venueInfo')
+        .withArgs(rawId)
+        .resolves({
+          creator: dsMockUtils.createMockIdentityId(owner),
+          instructions: [dsMockUtils.createMockU64(instructionId.toNumber())],
+          details: dsMockUtils.createMockVenueDetails(description),
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          venue_type: dsMockUtils.createMockVenueType(type),
+        });
+
+      const result = await venue.getPendingInstructions();
+
+      expect(result[0].id).toEqual(instructionId);
     });
   });
 });

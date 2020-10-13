@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Entity, Identity, SecurityToken } from '~/api/entities';
-import { rejectInstruction } from '~/api/procedures';
+import { rejectInstruction, toggleInstructionAuthorization } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import {
   balanceToBigNumber,
@@ -131,5 +131,21 @@ export class Instruction extends Entity<UniqueIdentifiers> {
   public reject(): Promise<TransactionQueue<void>> {
     const { id, context } = this;
     return rejectInstruction.prepare({ id }, context);
+  }
+
+  /**
+   * Authorize this instruction
+   */
+  public authorize(): Promise<TransactionQueue<Instruction>> {
+    const { id, context } = this;
+    return toggleInstructionAuthorization.prepare({ id, authorize: true }, context);
+  }
+
+  /**
+   * Unauthorize this instruction
+   */
+  public unauthorize(): Promise<TransactionQueue<Instruction>> {
+    const { id, context } = this;
+    return toggleInstructionAuthorization.prepare({ id, authorize: false }, context);
   }
 }

@@ -38,6 +38,7 @@ import {
   AuthIdentifier,
   Authorization,
   AuthorizationData,
+  AuthorizationStatus,
   AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
   CddId,
@@ -1212,7 +1213,7 @@ export const createMockU8 = (value?: number): u8 => createMockNumberCodec(value)
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU32 = (value?: number): u8 => createMockNumberCodec(value) as u32;
+export const createMockU32 = (value?: number): u32 => createMockNumberCodec(value) as u32;
 
 /**
  * @hidden
@@ -1924,4 +1925,14 @@ export const createMockSettlementType = (
   settlementType?: 'SettleOnAuthorization' | { SettleOnBlock: u32 }
 ): SettlementType => {
   return createMockEnum(settlementType) as SettlementType;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAuthorizationStatus = (
+  authorizationStatus?: 'Unknown' | 'Pending' | 'Authorized' | 'Rejected'
+): AuthorizationStatus => {
+  return createMockEnum(authorizationStatus) as AuthorizationStatus;
 };

@@ -10,6 +10,7 @@ import {
   CurrentAccount,
   CurrentIdentity,
   Identity,
+  Instruction,
   // NOTE uncomment in Governance v2 upgrade
   // Proposal,
   SecurityToken,
@@ -23,11 +24,16 @@ import {
   Authorization,
   AuthorizationType,
   ExtrinsicData,
+  InstructionDetails,
+  InstructionStatus,
+  InstructionType,
   SecondaryKey,
   SecurityTokenDetails,
   TickerReservationDetails,
   TickerReservationStatus,
   TransferStatus,
+  VenueDetails,
+  VenueType,
   // NOTE uncomment in Governance v2 upgrade
   // TxTags,
 } from '~/types';
@@ -43,6 +49,7 @@ const mockInstanceContainer = {
   account: {} as MockAccount,
   currentAccount: {} as MockCurrentAccount,
   venue: {} as MockVenue,
+  instruction: {} as MockInstruction,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -55,6 +62,7 @@ type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 // NOTE uncomment in Governance v2 upgrade
 // type MockProposal = Mocked<Proposal>;
 type MockVenue = Mocked<Venue>;
+type MockInstruction = Mocked<Instruction>;
 
 interface IdentityOptions {
   did?: string;
@@ -62,6 +70,10 @@ interface IdentityOptions {
   hasRole?: boolean;
   hasValidCdd?: boolean;
   getPrimaryKey?: string;
+}
+
+interface InstructionOptions {
+  details?: InstructionDetails;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -108,7 +120,13 @@ interface CurrentAccountOptions extends AccountOptions {
 }
 
 interface VenueOptions {
-  id: BigNumber;
+  id?: BigNumber;
+  details?: Partial<VenueDetails>;
+}
+
+interface InstructionOptions {
+  id?: BigNumber;
+  details?: InstructionDetails;
 }
 
 let identityConstructorStub: SinonStub;
@@ -120,8 +138,12 @@ let securityTokenConstructorStub: SinonStub;
 let authorizationRequestConstructorStub: SinonStub;
 let proposalConstructorStub: SinonStub;
 let venueConstructorStub: SinonStub;
+let instructionConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
+let securityTokenCurrentFundingRoundStub: SinonStub;
+let securityTokenIsFrozenStub: SinonStub;
+let securityTokenTransfersCanTransferStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -138,9 +160,8 @@ let currentAccountGetBalanceStub: SinonStub;
 let currentAccountGetIdentityStub: SinonStub;
 let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
-let securityTokenCurrentFundingRoundStub: SinonStub;
-let securityTokenIsFrozenStub: SinonStub;
-let securityTokenTransfersCanTransferStub: SinonStub;
+let venueDetailsStub: SinonStub;
+let instructionDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -223,6 +244,15 @@ const MockVenueClass = class {
   }
 };
 
+const MockInstructionClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return instructionConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -266,6 +296,11 @@ export const mockProposalModule = (path: string) => (): object => ({
 export const mockVenueModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Venue: MockVenueClass,
+});
+
+export const mockInstructionModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Instruction: MockInstructionClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -330,8 +365,22 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
 const defaultVenueOptions: VenueOptions = {
   id: new BigNumber(1),
+  details: {
+    type: VenueType.Distribution,
+    description: 'someDescription',
+  },
 };
 let venueOptions = defaultVenueOptions;
+const defaultInstructionOptions: InstructionOptions = {
+  id: new BigNumber(1),
+  details: {
+    status: InstructionStatus.Pending,
+    createdAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
+    validFrom: null,
+    type: InstructionType.SettleOnAuthorization,
+  },
+};
+let instructionOptions = defaultInstructionOptions;
 // NOTE uncomment in Governance v2 upgrade
 // const defaultProposalOptions: ProposalOptions = {
 //   pipId: new BigNumber(1),
@@ -383,8 +432,10 @@ let venueOptions = defaultVenueOptions;
  * Configure the Authorization Request instance
  */
 function configureVenue(opts: VenueOptions): void {
+  const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const venue = ({
     id: opts.id,
+    details: venueDetailsStub.resolves(details),
   } as unknown) as MockVenue;
 
   Object.assign(mockInstanceContainer.venue, venue);
@@ -399,6 +450,7 @@ function configureVenue(opts: VenueOptions): void {
  */
 function initVenue(opts?: VenueOptions): void {
   venueConstructorStub = sinon.stub();
+  venueDetailsStub = sinon.stub();
 
   venueOptions = { ...defaultVenueOptions, ...opts };
 
@@ -543,6 +595,34 @@ function initIdentity(opts?: IdentityOptions): void {
 
 /**
  * @hidden
+ * Configure the identity instance
+ */
+function configureInstruction(opts: InstructionOptions): void {
+  const instruction = ({
+    details: instructionDetailsStub.resolves(opts.details),
+  } as unknown) as MockInstruction;
+
+  Object.assign(mockInstanceContainer.instruction, instruction);
+  instructionConstructorStub.callsFake(args => {
+    return merge({}, instruction, args);
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Instruction instance
+ */
+function initInstruction(opts?: InstructionOptions): void {
+  instructionConstructorStub = sinon.stub();
+  instructionDetailsStub = sinon.stub();
+
+  instructionOptions = { ...defaultInstructionOptions, ...opts };
+
+  configureInstruction(instructionOptions);
+}
+
+/**
+ * @hidden
  * Configure the CurrentIdentity instance
  */
 function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
@@ -667,6 +747,7 @@ export function configureMocks(opts?: {
   authorizationRequestOptions?: AuthorizationRequestOptions;
   proposalOptions?: ProposalOptions;
   venueOptions?: VenueOptions;
+  instructionOptions?: InstructionOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -726,6 +807,12 @@ export function configureMocks(opts?: {
     ...opts?.venueOptions,
   };
   configureVenue(tempVenueOptions);
+
+  const tempInstructionOptions = {
+    ...defaultInstructionOptions,
+    ...opts?.instructionOptions,
+  };
+  configureInstruction(tempInstructionOptions);
 }
 
 /**
@@ -743,6 +830,7 @@ export function initMocks(opts?: {
   authorizationRequestOptions?: AuthorizationRequestOptions;
   proposalOptions?: ProposalOptions;
   venueOptions?: VenueOptions;
+  instructionOptions?: InstructionOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -765,12 +853,18 @@ export function initMocks(opts?: {
   // Authorization Request
   initAuthorizationRequest(opts?.authorizationRequestOptions);
 
+  // Instruction Request
+  initInstruction(opts?.instructionOptions);
+
   // Proposal
   // NOTE uncomment in Governance v2 upgrade
   // initProposal(opts?.proposalOptions);
 
   // Venue
   initVenue(opts?.venueOptions);
+
+  // Instruction
+  initInstruction(opts?.instructionOptions);
 }
 
 /**
@@ -788,6 +882,7 @@ export function cleanup(): void {
   // NOTE uncomment in Governance v2 upgrade
   // mockInstanceContainer.proposal = {} as MockProposal;
   mockInstanceContainer.venue = {} as MockVenue;
+  mockInstanceContainer.instruction = {} as MockInstruction;
 }
 
 /**
@@ -807,6 +902,7 @@ export function reset(): void {
     // NOTE uncomment in Governance v2 upgrade
     // proposalOptions,
     venueOptions,
+    instructionOptions,
   });
 }
 
@@ -1108,4 +1204,44 @@ export function getVenueInstance(opts?: VenueOptions): MockVenue {
   }
 
   return mockInstanceContainer.venue;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Venue.details` method
+ */
+export function getVenueDetailsStub(details?: Partial<VenueDetails>): SinonStub {
+  if (details) {
+    return venueDetailsStub.resolves({
+      ...defaultVenueOptions.details,
+      ...details,
+    });
+  }
+  return venueDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve an Instruction instance
+ */
+export function getInstructionInstance(opts?: InstructionOptions): MockInstruction {
+  if (opts) {
+    configureInstruction(opts);
+  }
+
+  return mockInstanceContainer.instruction;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Instruction.details` method
+ */
+export function getInstructionDetailsStub(details?: Partial<InstructionDetails>): SinonStub {
+  if (details) {
+    return instructionDetailsStub.resolves({
+      ...defaultInstructionOptions.details,
+      ...details,
+    });
+  }
+  return instructionDetailsStub;
 }

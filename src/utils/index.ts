@@ -33,6 +33,7 @@ import {
   AssetType,
   AuthIdentifier,
   AuthorizationData,
+  AuthorizationStatus as MeshAuthorizationStatus,
   AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
   CddId,
@@ -56,6 +57,7 @@ import {
   ProtocolOp,
   Scope as MeshScope,
   SecondaryKey as MeshSecondaryKey,
+  SettlementType,
   Signatory,
   Ticker,
   TxTag,
@@ -77,6 +79,7 @@ import {
 } from '~/middleware/types';
 import {
   Authorization,
+  AuthorizationStatus,
   AuthorizationType,
   Claim,
   ClaimType,
@@ -87,6 +90,7 @@ import {
   ErrorCode,
   IdentityWithClaims,
   InstructionStatus,
+  InstructionType,
   isMultiClaimCondition,
   isSingleClaimCondition,
   KnownTokenType,
@@ -1801,4 +1805,47 @@ export function meshInstructionStatusToInstructionStatus(
   }
 
   return InstructionStatus.Unknown;
+}
+
+/**
+ * @hidden
+ */
+export function meshAuthorizationStatusToAuthorizationStatus(
+  status: MeshAuthorizationStatus
+): AuthorizationStatus {
+  if (status.isUnknown) {
+    return AuthorizationStatus.Unknown;
+  }
+
+  if (status.isPending) {
+    return AuthorizationStatus.Pending;
+  }
+
+  if (status.isAuthorized) {
+    return AuthorizationStatus.Authorized;
+  }
+
+  return AuthorizationStatus.Rejected;
+}
+
+/**
+ * @hidden
+ */
+export function endConditionToSettlementType(
+  endCondition:
+    | { type: InstructionType.SettleOnAuthorization }
+    | { type: InstructionType; value: BigNumber },
+  context: Context
+): SettlementType {
+  let value;
+
+  if (endCondition.type === InstructionType.SettleOnAuthorization) {
+    value = InstructionType.SettleOnAuthorization;
+  } else {
+    value = {
+      [InstructionType.SettleOnBlock]: numberToU32(endCondition.value, context),
+    };
+  }
+
+  return context.polymeshApi.createType('SettlementType', value);
 }

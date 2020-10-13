@@ -3,7 +3,14 @@ import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 
 import { Entity, Instruction } from '~/api/entities';
-import { Params, rejectInstruction } from '~/api/procedures/rejectInstruction';
+import {
+  Params as RejectInstructionParams,
+  rejectInstruction,
+} from '~/api/procedures/rejectInstruction';
+import {
+  Params as ToggleInstructionAuthorizationParams,
+  toggleInstructionAuthorization,
+} from '~/api/procedures/toggleInstructionAuthorization';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -24,12 +31,14 @@ describe('Instruction class', () => {
   let context: Mocked<Context>;
   let instruction: Instruction;
   let prepareRejectInstructionStub: SinonStub<
-    [Params, Context],
+    [RejectInstructionParams, Context],
     Promise<TransactionQueue<void, unknown[][]>>
   >;
-
+  let prepareToggleInstructionAuthorizationStub: SinonStub<
+    [ToggleInstructionAuthorizationParams, Context],
+    Promise<TransactionQueue<Instruction, unknown[][]>>
+  >;
   let id: BigNumber;
-
   let rawId: u64;
 
   beforeAll(() => {
@@ -77,9 +86,9 @@ describe('Instruction class', () => {
       const createdAt = new Date('10/14/1987');
       const validFrom = new Date('11/17/1987');
       let type = InstructionType.SettleOnAuthorization;
-      const creator = 'someDid';
+      const owner = 'someDid';
 
-      entityMockUtils.configureMocks({ identityOptions: { did: creator } });
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
       sinon
         .stub(utilsModule, 'numberToU64')
         .withArgs(id, context)
@@ -192,6 +201,55 @@ describe('Instruction class', () => {
       prepareRejectInstructionStub.withArgs({ id }, context).resolves(expectedQueue);
 
       const queue = await instruction.reject();
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: authorize', () => {
+    beforeAll(() => {
+      prepareToggleInstructionAuthorizationStub = sinon.stub(
+        toggleInstructionAuthorization,
+        'prepare'
+      );
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+
+      prepareToggleInstructionAuthorizationStub
+        .withArgs({ id, authorize: true }, context)
+        .resolves(expectedQueue);
+
+      const queue = await instruction.authorize();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: unauthorize', () => {
+    beforeAll(() => {
+      prepareToggleInstructionAuthorizationStub = sinon.stub(
+        toggleInstructionAuthorization,
+        'prepare'
+      );
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+
+      prepareToggleInstructionAuthorizationStub
+        .withArgs({ id, authorize: false }, context)
+        .resolves(expectedQueue);
+
+      const queue = await instruction.unauthorize();
 
       expect(queue).toBe(expectedQueue);
     });
