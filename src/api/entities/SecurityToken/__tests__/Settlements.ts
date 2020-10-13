@@ -21,7 +21,7 @@ describe('Settlements class', () => {
   let settlements: Settlements;
   let stringToAccountIdStub: SinonStub<[string, Context], AccountId>;
   let stringToTickerStub: SinonStub<[string, Context], Ticker>;
-  let numberToBalanceStub: SinonStub<[number | BigNumber, Context], Balance>;
+  let numberToBalanceStub: sinon.SinonStub;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let rawAccountId: AccountId;
   let rawTicker: Ticker;
@@ -48,7 +48,7 @@ describe('Settlements class', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     mockSecurityToken = entityMockUtils.getSecurityTokenInstance();
-    numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
+    numberToBalanceStub.withArgs(amount, mockContext, false).returns(rawAmount);
     settlements = new Settlements(mockSecurityToken, mockContext);
     ticker = mockSecurityToken.ticker;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
