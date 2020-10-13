@@ -116,5 +116,4 @@ export async function prepareToggleInstructionAuthorization(
 /**
  * @hidden
  */
-// TODO @shuffledex: add RequiredRoles to validate that this instruction exists and it is pending
 export const toggleInstructionAuthorization = new Procedure(prepareToggleInstructionAuthorization);
