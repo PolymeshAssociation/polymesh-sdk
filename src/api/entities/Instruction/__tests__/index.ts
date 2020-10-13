@@ -1,9 +1,10 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 
 import { Entity, Instruction } from '~/api/entities';
-import { Context } from '~/base';
+import { Params, rejectInstruction } from '~/api/procedures/rejectInstruction';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { InstructionStatus, InstructionType } from '~/types';
@@ -22,6 +23,10 @@ jest.mock(
 describe('Instruction class', () => {
   let context: Mocked<Context>;
   let instruction: Instruction;
+  let prepareRejectInstructionStub: SinonStub<
+    [Params, Context],
+    Promise<TransactionQueue<void, unknown[][]>>
+  >;
 
   let id: BigNumber;
 
@@ -169,6 +174,26 @@ describe('Instruction class', () => {
       sinon.assert.calledWithExactly(identityConstructor.secondCall, { did: toDid }, context);
       expect(leg.amount).toEqual(amount);
       expect(leg.token).toEqual(entityMockUtils.getSecurityTokenInstance());
+    });
+  });
+
+  describe('method: reject', () => {
+    beforeAll(() => {
+      prepareRejectInstructionStub = sinon.stub(rejectInstruction, 'prepare');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      prepareRejectInstructionStub.withArgs({ id }, context).resolves(expectedQueue);
+
+      const queue = await instruction.reject();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

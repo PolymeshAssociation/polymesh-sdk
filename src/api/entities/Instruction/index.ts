@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { Entity, Identity, SecurityToken } from '~/api/entities';
-import { Context } from '~/base';
+import { rejectInstruction } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -119,5 +120,16 @@ export class Instruction extends Entity<UniqueIdentifiers> {
         token: new SecurityToken({ ticker }, context),
       };
     });
+  }
+
+  /**
+   * Reject this instruction
+   *
+   * @note reject on `SettleOnAuthorization` will execute the settlement and it will fail immediately.
+   * @note reject on `SettleOnBlock` behaves just like unauthorize
+   */
+  public reject(): Promise<TransactionQueue<void>> {
+    const { id, context } = this;
+    return rejectInstruction.prepare({ id }, context);
   }
 }

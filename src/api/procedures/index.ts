@@ -33,3 +33,4 @@ export {
   ModifyPrimaryIssuanceAgentParams,
 } from './modifyPrimaryIssuanceAgent';
 export { removePrimaryIssuanceAgent } from './removePrimaryIssuanceAgent';
+export { rejectInstruction } from './rejectInstruction';
