@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Entity, Identity, SecurityToken } from '~/api/entities';
-import { toggleInstructionAuthorization } from '~/api/procedures/toggleInstructionAuthorization';
+import { toggleInstructionAuthorization } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import {
   balanceToBigNumber,

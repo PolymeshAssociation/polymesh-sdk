@@ -61,7 +61,10 @@ export async function prepareToggleInstructionAuthorization(
     if (now < validFrom) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'The instruction in still blocked',
+        message: 'The instruction has not reached its validity period',
+        data: {
+          validFrom,
+        },
       });
     }
   }
@@ -73,17 +76,18 @@ export async function prepareToggleInstructionAuthorization(
     if (latestBlock >= endBlock) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'The instruction can not be modified',
+        message: 'The instruction cannot be modified; it has already reached its end block',
+        data: {
+          currentBlock: latestBlock,
+          endBlock,
+        },
       });
     }
   }
 
   const rawInstructionId = numberToU64(id, context);
   const rawPortfolioId = portfolioIdToMeshPortfolioId({ did: currentIdentity.did }, context);
-  const rawAuthorizationStatus = await settlement.userAuths(
-    portfolioIdToMeshPortfolioId({ did: currentIdentity.did }, context),
-    rawInstructionId
-  );
+  const rawAuthorizationStatus = await settlement.userAuths(rawPortfolioId, rawInstructionId);
   const authorizationStatus = meshAuthorizationStatusToAuthorizationStatus(rawAuthorizationStatus);
 
   if (authorize) {
@@ -92,22 +96,18 @@ export async function prepareToggleInstructionAuthorization(
         code: ErrorCode.ValidationError,
         message: 'The Instruction is already authorized',
       });
-    } else {
-      this.addTransaction(tx.settlement.authorizeInstruction, {}, rawInstructionId, [
-        rawPortfolioId,
-      ]);
     }
+    this.addTransaction(tx.settlement.authorizeInstruction, {}, rawInstructionId, [rawPortfolioId]);
   } else {
     if (authorizationStatus === AuthorizationStatus.Pending) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'The Instruction is already unauthorized',
+        message: 'The Instruction is not authorized',
       });
-    } else {
-      this.addTransaction(tx.settlement.unauthorizeInstruction, {}, rawInstructionId, [
-        rawPortfolioId,
-      ]);
     }
+    this.addTransaction(tx.settlement.unauthorizeInstruction, {}, rawInstructionId, [
+      rawPortfolioId,
+    ]);
   }
 
   return instruction;

@@ -97,45 +97,65 @@ describe('toggleInstructionAuthorization procedure', () => {
     ).rejects.toThrow('The Instruction must be in pending state');
   });
 
-  test('should throw an error if instruction is blocked', () => {
+  test('should throw an error if instruction is blocked', async () => {
+    const validFrom = new Date('12/12/2050');
+
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
           status: InstructionStatus.Pending,
-          validFrom: new Date('12/12/2050'),
+          validFrom,
         } as InstructionDetails,
       },
     });
 
     const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
 
-    return expect(
-      prepareToggleInstructionAuthorization.call(proc, {
+    let error;
+
+    try {
+      await prepareToggleInstructionAuthorization.call(proc, {
         id,
         authorize: true,
-      })
-    ).rejects.toThrow('The instruction in still blocked');
+      });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('The instruction has not reached its validity period');
+    expect(error.data.validFrom).toBe(validFrom);
   });
 
-  test('should throw an error if the instruction can not be modified', () => {
+  test('should throw an error if the instruction can not be modified', async () => {
+    const endBlock = new BigNumber(10);
+
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
           status: InstructionStatus.Pending,
           type: InstructionType.SettleOnBlock,
-          endBlock: new BigNumber(10),
+          endBlock,
         } as InstructionDetails,
       },
     });
 
     const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
 
-    return expect(
-      prepareToggleInstructionAuthorization.call(proc, {
+    let error;
+
+    try {
+      await prepareToggleInstructionAuthorization.call(proc, {
         id,
         authorize: true,
-      })
-    ).rejects.toThrow('The instruction can not be modified');
+      });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe(
+      'The instruction cannot be modified; it has already reached its end block'
+    );
+    expect(error.data.endBlock).toBe(endBlock);
   });
 
   test('should throw an error if authorize is set to true and the instruction is already authorized', () => {
@@ -189,7 +209,7 @@ describe('toggleInstructionAuthorization procedure', () => {
         id,
         authorize: false,
       })
-    ).rejects.toThrow('The Instruction is already unauthorized');
+    ).rejects.toThrow('The Instruction is not authorized');
   });
 
   test('should add an authorize instruction transaction to the queue', async () => {

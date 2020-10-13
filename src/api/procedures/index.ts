@@ -28,3 +28,7 @@ export { togglePauseRequirements, TogglePauseRequirementsParams } from './toggle
 export { transferPolyX, TransferPolyXParams } from './transferPolyX';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 // export { voteOnProposal, VoteOnProposalParams } from './voteOnProposal';
+export {
+  toggleInstructionAuthorization,
+  ToggleInstructionAuthorizationParams,
+} from './toggleInstructionAuthorization';
