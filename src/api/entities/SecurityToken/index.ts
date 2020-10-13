@@ -327,7 +327,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * Assign a new primary issuance agent for the Security Token
    *
    * @param args.target - identity to be set as primary issuance agent
-   * @param args.requestExpiry - date at which the authorization request for modify primary issuance expires (optional)
+   * @param args.requestExpiry - date at which the authorization request to modify the primary issuance agent expires (optional, never expires if a date is not provided)
    *
    * @note this may create AuthorizationRequest which have to be accepted by
    *   the corresponding Account. An Account or Identity can
