@@ -1,8 +1,13 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import {
+  AuthorizationStatus as MeshAuthorizationStatus,
+  PortfolioId as MeshPortfolioId,
+} from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
 import { Entity, Instruction } from '~/api/entities';
+import { Identity } from '~/api/entities/Identity';
 import {
   Params as RejectInstructionParams,
   rejectInstruction,
@@ -14,7 +19,7 @@ import {
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InstructionStatus, InstructionType } from '~/types';
+import { AuthorizationStatus, InstructionStatus, InstructionType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
@@ -139,6 +144,48 @@ describe('Instruction class', () => {
         type,
         endBlock,
       });
+    });
+  });
+
+  describe('method: getAuthorizations', () => {
+    const did = 'someDid';
+    const status = AuthorizationStatus.Authorized;
+    let rawStorageKey: [u64, MeshPortfolioId][];
+    let authsReceivedEntries: [[u64, MeshPortfolioId], MeshAuthorizationStatus][];
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    beforeAll(() => {
+      rawStorageKey = [
+        tuple(
+          dsMockUtils.createMockU64(),
+          dsMockUtils.createMockPortfolioId({
+            did: dsMockUtils.createMockIdentityId(did),
+            kind: dsMockUtils.createMockPortfolioKind('Default'),
+          })
+        ),
+      ];
+      authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
+        tuple(
+          [instructionId, portfolioId],
+          dsMockUtils.createMockAuthorizationStatus(AuthorizationStatus.Authorized)
+        )
+      );
+      dsMockUtils.createQueryStub('settlement', 'authsReceived', {
+        entries: [authsReceivedEntries[0]],
+      });
+      sinon.stub(utilsModule, 'identityIdToString').returns(did);
+      sinon.stub(utilsModule, 'meshAuthorizationStatusToAuthorizationStatus').returns(status);
+    });
+
+    test('should return a list of Authorization Statuses', async () => {
+      const result = await instruction.getAuthorizations();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].identity).toEqual(new Identity({ did }, context));
+      expect(result[0].authorizationStatus).toEqual(status);
     });
   });
 

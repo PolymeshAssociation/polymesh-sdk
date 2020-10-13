@@ -7,13 +7,6 @@ export enum InstructionStatus {
   Unknown = 'Unknown',
 }
 
-export enum AuthorizationStatus {
-  Unknown = 'Unknown',
-  Pending = 'Pending',
-  Authorized = 'Authorized',
-  Rejected = 'Rejected',
-}
-
 export enum InstructionType {
   SettleOnAuthorization = 'SettleOnAuthorization',
   SettleOnBlock = 'SettleOnBlock',
@@ -41,4 +34,16 @@ export interface Leg {
   to: Identity;
   amount: BigNumber;
   token: SecurityToken;
+}
+
+export enum AuthorizationStatus {
+  Unknown = 'Unknown',
+  Pending = 'Pending',
+  Authorized = 'Authorized',
+  Rejected = 'Rejected',
+}
+
+export interface InstructionAuthorization {
+  identity: Identity;
+  authorizationStatus: AuthorizationStatus;
 }
