@@ -1540,6 +1540,7 @@ export const createMockAuthorizationData = (
     | 'AddMultiSigSigner'
     | { TransferAssetOwnership: Ticker }
     | { JoinIdentity: Permission[] }
+    | { TransferPrimaryIssuanceAgent: Ticker }
     | { custom: Bytes }
     | 'NoData'
 ): AuthorizationData => {

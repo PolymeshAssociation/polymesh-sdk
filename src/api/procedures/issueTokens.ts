@@ -4,7 +4,7 @@ import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType } from '~/types';
 import { numberToBalance, stringToTicker } from '~/utils';
-import { MAX_DECIMALS, MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import { MAX_TOKEN_AMOUNT } from '~/utils/constants';
 
 export interface IssueTokensParams {
   amount: BigNumber;
@@ -32,22 +32,6 @@ export async function prepareIssueTokens(
 
   const { isDivisible, totalSupply, primaryIssuanceAgent } = await securityToken.details();
 
-  if (isDivisible) {
-    if (amount.decimalPlaces() > MAX_DECIMALS) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: `Issuance amount cannot have more than ${MAX_DECIMALS} decimals`,
-      });
-    }
-  } else {
-    if (amount.decimalPlaces()) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Cannot issue decimal amount of an indivisible token',
-      });
-    }
-  }
-
   const supplyAfterMint = amount.plus(totalSupply);
 
   if (supplyAfterMint.isGreaterThan(MAX_TOKEN_AMOUNT)) {
@@ -69,7 +53,7 @@ export async function prepareIssueTokens(
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawValue = numberToBalance(amount, context);
+  const rawValue = numberToBalance(amount, context, isDivisible);
 
   this.addTransaction(asset.issue, {}, rawTicker, rawValue);
 

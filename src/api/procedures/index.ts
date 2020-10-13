@@ -32,3 +32,8 @@ export {
   toggleInstructionAuthorization,
   ToggleInstructionAuthorizationParams,
 } from './toggleInstructionAuthorization';
+export {
+  modifyPrimaryIssuanceAgent,
+  ModifyPrimaryIssuanceAgentParams,
+} from './modifyPrimaryIssuanceAgent';
+export { removePrimaryIssuanceAgent } from './removePrimaryIssuanceAgent';
