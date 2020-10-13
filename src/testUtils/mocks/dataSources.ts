@@ -1213,7 +1213,7 @@ export const createMockU8 = (value?: number): u8 => createMockNumberCodec(value)
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU32 = (value?: number): u8 => createMockNumberCodec(value) as u32;
+export const createMockU32 = (value?: number): u32 => createMockNumberCodec(value) as u32;
 
 /**
  * @hidden

@@ -64,7 +64,7 @@ export class Venue extends Entity<UniqueIdentifiers> {
     );
 
     return {
-      creator: new Identity({ did: identityIdToString(creator) }, context),
+      owner: new Identity({ did: identityIdToString(creator) }, context),
       description: venueDetailsToString(details),
       type: meshVenueTypeToVenueType(type),
     };

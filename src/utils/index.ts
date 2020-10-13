@@ -57,6 +57,7 @@ import {
   ProtocolOp,
   Scope as MeshScope,
   SecondaryKey as MeshSecondaryKey,
+  SettlementType,
   Signatory,
   Ticker,
   TxTag,
@@ -89,6 +90,7 @@ import {
   ErrorCode,
   IdentityWithClaims,
   InstructionStatus,
+  InstructionType,
   isMultiClaimCondition,
   isSingleClaimCondition,
   KnownTokenType,
@@ -1824,4 +1826,26 @@ export function meshInstructionStatusToInstructionStatus(
   }
 
   return InstructionStatus.Unknown;
+}
+
+/**
+ * @hidden
+ */
+export function endConditionToSettlementType(
+  endCondition:
+    | { type: InstructionType.SettleOnAuthorization }
+    | { type: InstructionType; value: BigNumber },
+  context: Context
+): SettlementType {
+  let value;
+
+  if (endCondition.type === InstructionType.SettleOnAuthorization) {
+    value = InstructionType.SettleOnAuthorization;
+  } else {
+    value = {
+      [InstructionType.SettleOnBlock]: numberToU32(endCondition.value, context),
+    };
+  }
+
+  return context.polymeshApi.createType('SettlementType', value);
 }

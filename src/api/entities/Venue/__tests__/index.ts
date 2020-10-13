@@ -61,9 +61,9 @@ describe('Venue class', () => {
     test('should return the Venue details', async () => {
       const description = 'someDescription';
       const type = VenueType.Other;
-      const creator = 'someDid';
+      const owner = 'someDid';
 
-      entityMockUtils.configureMocks({ identityOptions: { did: creator } });
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
       sinon
         .stub(utilsModule, 'numberToU64')
         .withArgs(id, context)
@@ -73,7 +73,7 @@ describe('Venue class', () => {
         .createQueryStub('settlement', 'venueInfo')
         .withArgs(rawId)
         .resolves({
-          creator: dsMockUtils.createMockIdentityId(creator),
+          creator: dsMockUtils.createMockIdentityId(owner),
           instructions: [],
           details: dsMockUtils.createMockVenueDetails(description),
           // eslint-disable-next-line @typescript-eslint/camelcase
@@ -83,7 +83,7 @@ describe('Venue class', () => {
       const result = await venue.details();
 
       expect(result).toEqual({
-        creator: entityMockUtils.getIdentityInstance(),
+        owner: entityMockUtils.getIdentityInstance(),
         description,
         type,
       });
