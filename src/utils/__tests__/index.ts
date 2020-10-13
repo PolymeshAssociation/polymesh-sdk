@@ -9,6 +9,7 @@ import {
   Memo,
   PipId,
   PortfolioId,
+  SettlementType,
   VenueDetails,
 } from 'polymesh-types/polymesh';
 import {
@@ -49,6 +50,7 @@ import {
   ConditionType,
   CountryCode,
   InstructionStatus,
+  InstructionType,
   KnownTokenType,
   Permission,
   Scope,
@@ -97,6 +99,7 @@ import {
   documentNameToString,
   documentToTokenDocumentData,
   documentUriToString,
+  endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
   findEventRecord,
   fundingRoundNameToString,
@@ -3204,5 +3207,55 @@ describe('meshInstructionStatusToInstructionStatus', () => {
 
     result = meshInstructionStatusToInstructionStatus(instructionStatus);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('endConditionToSettlementType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('endConditionToSettlementType should convert an end condition to a polkadot SettlementType object', () => {
+    const fakeResult = ('type' as unknown) as SettlementType;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('SettlementType', InstructionType.SettleOnAuthorization)
+      .returns(fakeResult);
+
+    let result = endConditionToSettlementType(
+      { type: InstructionType.SettleOnAuthorization },
+      context
+    );
+
+    expect(result).toBe(fakeResult);
+
+    const blockNumber = new BigNumber(10);
+    const rawBlockNumber = dsMockUtils.createMockU32(blockNumber.toNumber());
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('u32', blockNumber.toString())
+      .returns(rawBlockNumber);
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('SettlementType', { [InstructionType.SettleOnBlock]: rawBlockNumber })
+      .returns(fakeResult);
+
+    result = endConditionToSettlementType(
+      { type: InstructionType.SettleOnBlock, value: new BigNumber(10) },
+      context
+    );
+
+    expect(result).toBe(fakeResult);
   });
 });

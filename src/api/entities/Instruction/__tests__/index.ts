@@ -72,9 +72,9 @@ describe('Instruction class', () => {
       const createdAt = new Date('10/14/1987');
       const validFrom = new Date('11/17/1987');
       let type = InstructionType.SettleOnAuthorization;
-      const creator = 'someDid';
+      const owner = 'someDid';
 
-      entityMockUtils.configureMocks({ identityOptions: { did: creator } });
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
       sinon
         .stub(utilsModule, 'numberToU64')
         .withArgs(id, context)

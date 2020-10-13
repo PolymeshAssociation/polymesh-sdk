@@ -18,6 +18,6 @@ export enum VenueType {
 
 export interface VenueDetails {
   type: VenueType;
-  creator: Identity;
+  owner: Identity;
   description: string;
 }
