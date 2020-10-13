@@ -640,6 +640,12 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     case 168: {
       return TransferStatus.FundsLimitReached;
     }
+    case 169: {
+      return TransferStatus.PortfolioFailure;
+    }
+    case 170: {
+      return TransferStatus.CustodianError;
+    }
     case 80: {
       return TransferStatus.Failure;
     }
