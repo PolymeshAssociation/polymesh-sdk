@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { Entity, Identity, SecurityToken } from '~/api/entities';
-import { Context } from '~/base';
+import { toggleInstructionAuthorization } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -119,5 +120,21 @@ export class Instruction extends Entity<UniqueIdentifiers> {
         token: new SecurityToken({ ticker }, context),
       };
     });
+  }
+
+  /**
+   * Authorize this instruction
+   */
+  public authorize(): Promise<TransactionQueue<Instruction>> {
+    const { id, context } = this;
+    return toggleInstructionAuthorization.prepare({ id, authorize: true }, context);
+  }
+
+  /**
+   * Unauthorize this instruction
+   */
+  public unauthorize(): Promise<TransactionQueue<Instruction>> {
+    const { id, context } = this;
+    return toggleInstructionAuthorization.prepare({ id, authorize: false }, context);
   }
 }
