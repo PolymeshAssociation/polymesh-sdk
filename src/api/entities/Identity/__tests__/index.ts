@@ -1,3 +1,4 @@
+import { u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
@@ -19,6 +20,10 @@ jest.mock(
 jest.mock(
   '~/api/entities/SecurityToken',
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+jest.mock(
+  '~/api/entities/Venue',
+  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
 
 describe('Identity class', () => {
@@ -421,6 +426,62 @@ describe('Identity class', () => {
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
+    });
+  });
+
+  describe('method: getVenues', () => {
+    let did: string;
+    let venueId: BigNumber;
+
+    let rawDid: IdentityId;
+    let rawVenueId: u64;
+
+    beforeAll(() => {
+      did = 'someDid';
+      venueId = new BigNumber(10);
+
+      rawDid = dsMockUtils.createMockIdentityId(did);
+      rawVenueId = dsMockUtils.createMockU64(venueId.toNumber());
+    });
+
+    beforeEach(() => {
+      stringToIdentityIdStub.withArgs(did, context).returns(rawDid);
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return a list of Venues', async () => {
+      const fakeResult = [entityMockUtils.getVenueInstance({ id: venueId })];
+
+      dsMockUtils
+        .createQueryStub('settlement', 'userVenues')
+        .withArgs(rawDid)
+        .resolves([rawVenueId]);
+
+      const identity = new Identity({ did }, context);
+
+      const result = await identity.getVenues();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      const fakeResult = [entityMockUtils.getVenueInstance({ id: venueId })];
+
+      dsMockUtils.createQueryStub('settlement', 'userVenues').callsFake(async (_, cbFunc) => {
+        cbFunc([rawVenueId]);
+        return unsubCallback;
+      });
+
+      const identity = new Identity({ did }, context);
+
+      const callback = sinon.stub();
+      const result = await identity.getVenues(callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeResult);
     });
   });
 });
