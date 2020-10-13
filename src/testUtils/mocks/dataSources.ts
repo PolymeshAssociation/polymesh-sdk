@@ -38,7 +38,8 @@ import {
   AuthIdentifier,
   Authorization,
   AuthorizationData,
-  AuthorizationStatus as MeshAuthorizationStatus,
+  // AuthorizationStatus as MeshAuthorizationStatus,
+  AuthorizationStatus,
   AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
   CddId,
@@ -1532,16 +1533,6 @@ export const createMockPermission = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockAuthorizationStatus = (
-  authorizationStatus: 'Authorized' | 'Pending' | 'Rejected' | 'Unknown'
-): MeshAuthorizationStatus => {
-  return createMockEnum(authorizationStatus) as MeshAuthorizationStatus;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockAuthorizationData = (
   authorizationData?:
     | { AttestPrimaryKeyRotation: IdentityId }
@@ -1935,4 +1926,14 @@ export const createMockSettlementType = (
   settlementType?: 'SettleOnAuthorization' | { SettleOnBlock: u32 }
 ): SettlementType => {
   return createMockEnum(settlementType) as SettlementType;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAuthorizationStatus = (
+  authorizationStatus?: 'Unknown' | 'Pending' | 'Authorized' | 'Rejected'
+): AuthorizationStatus => {
+  return createMockEnum(authorizationStatus) as AuthorizationStatus;
 };

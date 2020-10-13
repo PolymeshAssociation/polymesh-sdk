@@ -2428,6 +2428,14 @@ describe('u8ToTransferStatus', () => {
 
     expect(result).toBe(TransferStatus.FundsLimitReached);
 
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(169));
+
+    expect(result).toBe(TransferStatus.PortfolioFailure);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(170));
+
+    expect(result).toBe(TransferStatus.CustodianError);
+
     const fakeStatusCode = 1;
     expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
       `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymath team`
@@ -3248,6 +3256,46 @@ describe('meshInstructionStatusToInstructionStatus', () => {
     instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
 
     result = meshInstructionStatusToInstructionStatus(instructionStatus);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('meshAuthorizationStatusToAuthorizationStatus', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshAuthorizationStatusToAuthorizationStatus should convert a polkadot AuthorizationStatus object to a AuthorizationStatus', () => {
+    let fakeResult = AuthorizationStatus.Unknown;
+    let authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    let result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Rejected;
+    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Pending;
+    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Authorized;
+    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
   });
 });

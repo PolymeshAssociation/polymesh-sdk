@@ -72,6 +72,10 @@ interface IdentityOptions {
   getPrimaryKey?: string;
 }
 
+interface InstructionOptions {
+  details?: InstructionDetails;
+}
+
 interface CurrentIdentityOptions extends IdentityOptions {
   getSecondaryKeys?: SecondaryKey[];
 }
@@ -427,35 +431,6 @@ let instructionOptions = defaultInstructionOptions;
  * @hidden
  * Configure the Authorization Request instance
  */
-function configureInstruction(opts: InstructionOptions): void {
-  const instruction = ({
-    id: opts.id,
-    details: instructionDetailsStub.resolves(opts.details),
-  } as unknown) as MockInstruction;
-
-  Object.assign(mockInstanceContainer.instruction, instruction);
-  instructionConstructorStub.callsFake(args => {
-    return merge({}, instruction, args);
-  });
-}
-
-/**
- * @hidden
- * Initialize the Instruction instance
- */
-function initInstruction(opts?: InstructionOptions): void {
-  instructionConstructorStub = sinon.stub();
-  instructionDetailsStub = sinon.stub();
-
-  instructionOptions = { ...defaultInstructionOptions, ...opts };
-
-  configureInstruction(instructionOptions);
-}
-
-/**
- * @hidden
- * Configure the Authorization Request instance
- */
 function configureVenue(opts: VenueOptions): void {
   const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const venue = ({
@@ -616,6 +591,34 @@ function initIdentity(opts?: IdentityOptions): void {
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
   configureIdentity(identityOptions);
+}
+
+/**
+ * @hidden
+ * Configure the identity instance
+ */
+function configureInstruction(opts: InstructionOptions): void {
+  const instruction = ({
+    details: instructionDetailsStub.resolves(opts.details),
+  } as unknown) as MockInstruction;
+
+  Object.assign(mockInstanceContainer.instruction, instruction);
+  instructionConstructorStub.callsFake(args => {
+    return merge({}, instruction, args);
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Instruction instance
+ */
+function initInstruction(opts?: InstructionOptions): void {
+  instructionConstructorStub = sinon.stub();
+  instructionDetailsStub = sinon.stub();
+
+  instructionOptions = { ...defaultInstructionOptions, ...opts };
+
+  configureInstruction(instructionOptions);
 }
 
 /**
@@ -849,6 +852,9 @@ export function initMocks(opts?: {
 
   // Authorization Request
   initAuthorizationRequest(opts?.authorizationRequestOptions);
+
+  // Instruction Request
+  initInstruction(opts?.instructionOptions);
 
   // Proposal
   // NOTE uncomment in Governance v2 upgrade

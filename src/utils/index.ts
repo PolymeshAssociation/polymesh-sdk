@@ -440,27 +440,6 @@ export function meshPermissionToPermission(permission: MeshPermission): Permissi
 /**
  * @hidden
  */
-export function meshAuthorizationStatusToAuthorizationStatus(
-  authorizationStatus: MeshAuthorizationStatus
-): AuthorizationStatus {
-  if (authorizationStatus.isPending) {
-    return AuthorizationStatus.Pending;
-  }
-
-  if (authorizationStatus.isRejected) {
-    return AuthorizationStatus.Rejected;
-  }
-
-  if (authorizationStatus.isUnknown) {
-    return AuthorizationStatus.Unknown;
-  }
-
-  return AuthorizationStatus.Authorized;
-}
-
-/**
- * @hidden
- */
 export function authorizationDataToAuthorization(auth: AuthorizationData): Authorization {
   if (auth.isAttestPrimaryKeyRotation) {
     return {
@@ -660,6 +639,12 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     }
     case 168: {
       return TransferStatus.FundsLimitReached;
+    }
+    case 169: {
+      return TransferStatus.PortfolioFailure;
+    }
+    case 170: {
+      return TransferStatus.CustodianError;
     }
     case 80: {
       return TransferStatus.Failure;
@@ -1826,6 +1811,27 @@ export function meshInstructionStatusToInstructionStatus(
   }
 
   return InstructionStatus.Unknown;
+}
+
+/**
+ * @hidden
+ */
+export function meshAuthorizationStatusToAuthorizationStatus(
+  status: MeshAuthorizationStatus
+): AuthorizationStatus {
+  if (status.isUnknown) {
+    return AuthorizationStatus.Unknown;
+  }
+
+  if (status.isPending) {
+    return AuthorizationStatus.Pending;
+  }
+
+  if (status.isAuthorized) {
+    return AuthorizationStatus.Authorized;
+  }
+
+  return AuthorizationStatus.Rejected;
 }
 
 /**

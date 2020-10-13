@@ -4,11 +4,15 @@ import {
   AuthorizationStatus as MeshAuthorizationStatus,
   PortfolioId as MeshPortfolioId,
 } from 'polymesh-types/types';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 
 import { Entity, Instruction } from '~/api/entities';
 import { Identity } from '~/api/entities/Identity';
-import { Context } from '~/base';
+import {
+  Params,
+  toggleInstructionAuthorization,
+} from '~/api/procedures/toggleInstructionAuthorization';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AuthorizationStatus, InstructionStatus, InstructionType } from '~/types';
@@ -27,6 +31,10 @@ jest.mock(
 describe('Instruction class', () => {
   let context: Mocked<Context>;
   let instruction: Instruction;
+  let prepareToggleInstructionAuthorizationStub: SinonStub<
+    [Params, Context],
+    Promise<TransactionQueue<Instruction, unknown[][]>>
+  >;
 
   let id: BigNumber;
 
@@ -216,6 +224,56 @@ describe('Instruction class', () => {
       sinon.assert.calledWithExactly(identityConstructor.secondCall, { did: toDid }, context);
       expect(leg.amount).toEqual(amount);
       expect(leg.token).toEqual(entityMockUtils.getSecurityTokenInstance());
+    });
+  });
+
+  describe('method: authorize', () => {
+    beforeAll(() => {
+      prepareToggleInstructionAuthorizationStub = sinon.stub(
+        toggleInstructionAuthorization,
+        'prepare'
+      );
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+
+      prepareToggleInstructionAuthorizationStub
+        .withArgs({ id, authorize: true }, context)
+        .resolves(expectedQueue);
+
+      const queue = await instruction.authorize();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: unauthorize', () => {
+    beforeAll(() => {
+      prepareToggleInstructionAuthorizationStub = sinon.stub(
+        toggleInstructionAuthorization,
+        'prepare'
+      );
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+
+      prepareToggleInstructionAuthorizationStub
+        .withArgs({ id, authorize: false }, context)
+        .resolves(expectedQueue);
+
+      const queue = await instruction.unauthorize();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });
