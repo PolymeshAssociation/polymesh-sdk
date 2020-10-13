@@ -38,7 +38,6 @@ import {
   AuthIdentifier,
   Authorization,
   AuthorizationData,
-  // AuthorizationStatus as MeshAuthorizationStatus,
   AuthorizationStatus,
   AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
