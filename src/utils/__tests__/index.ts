@@ -2606,6 +2606,46 @@ describe('permissionToMeshPermission and meshPermissionToPermission', () => {
   });
 });
 
+describe('meshAuthorizationStatusToAuthorizationStatus', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshAuthorizationStatusToAuthorizationStatus should convert a polkadot AuthorizationStatus object to a AuthorizationStatus', () => {
+    let fakeResult = AuthorizationStatus.Authorized;
+    let permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    let result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Pending;
+    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Rejected;
+    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Unknown;
+    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
 describe('authorizationTypeToMeshAuthorizationType', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
