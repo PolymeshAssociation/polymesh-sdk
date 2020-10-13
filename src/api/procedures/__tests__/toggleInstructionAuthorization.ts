@@ -35,6 +35,7 @@ describe('toggleInstructionAuthorization procedure', () => {
     did: dsMockUtils.createMockIdentityId('someDid'),
     kind: dsMockUtils.createMockPortfolioKind('Default'),
   });
+  const latestBlock = new BigNumber(100);
   let mockContext: Mocked<Context>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
@@ -45,7 +46,11 @@ describe('toggleInstructionAuthorization procedure', () => {
   let instruction: Instruction;
 
   beforeAll(() => {
-    dsMockUtils.initMocks();
+    dsMockUtils.initMocks({
+      contextOptions: {
+        latestBlock,
+      },
+    });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
@@ -155,6 +160,7 @@ describe('toggleInstructionAuthorization procedure', () => {
     expect(error.message).toBe(
       'The instruction cannot be modified; it has already reached its end block'
     );
+    expect(error.data.currentBlock).toBe(latestBlock);
     expect(error.data.endBlock).toBe(endBlock);
   });
 
