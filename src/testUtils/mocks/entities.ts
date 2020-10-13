@@ -24,6 +24,9 @@ import {
   Authorization,
   AuthorizationType,
   ExtrinsicData,
+  InstructionDetails,
+  InstructionStatus,
+  InstructionType,
   SecondaryKey,
   SecurityTokenDetails,
   TickerReservationDetails,
@@ -119,6 +122,7 @@ interface VenueOptions {
 
 interface InstructionOptions {
   id?: BigNumber;
+  details?: InstructionDetails;
 }
 
 let identityConstructorStub: SinonStub;
@@ -153,6 +157,7 @@ let currentAccountGetIdentityStub: SinonStub;
 let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let venueDetailsStub: SinonStub;
+let instructionDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -364,6 +369,12 @@ const defaultVenueOptions: VenueOptions = {
 let venueOptions = defaultVenueOptions;
 const defaultInstructionOptions: InstructionOptions = {
   id: new BigNumber(1),
+  details: {
+    status: InstructionStatus.Pending,
+    createdAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
+    validFrom: null,
+    type: InstructionType.SettleOnAuthorization,
+  },
 };
 let instructionOptions = defaultInstructionOptions;
 // NOTE uncomment in Governance v2 upgrade
@@ -419,6 +430,7 @@ let instructionOptions = defaultInstructionOptions;
 function configureInstruction(opts: InstructionOptions): void {
   const instruction = ({
     id: opts.id,
+    details: instructionDetailsStub.resolves(opts.details),
   } as unknown) as MockInstruction;
 
   Object.assign(mockInstanceContainer.instruction, instruction);
@@ -433,6 +445,7 @@ function configureInstruction(opts: InstructionOptions): void {
  */
 function initInstruction(opts?: InstructionOptions): void {
   instructionConstructorStub = sinon.stub();
+  instructionDetailsStub = sinon.stub();
 
   instructionOptions = { ...defaultInstructionOptions, ...opts };
 
@@ -1211,4 +1224,18 @@ export function getInstructionInstance(opts?: InstructionOptions): MockInstructi
   }
 
   return mockInstanceContainer.instruction;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Instruction.details` method
+ */
+export function getInstructionDetailsStub(details?: Partial<InstructionDetails>): SinonStub {
+  if (details) {
+    return instructionDetailsStub.resolves({
+      ...defaultInstructionOptions.details,
+      ...details,
+    });
+  }
+  return instructionDetailsStub;
 }
