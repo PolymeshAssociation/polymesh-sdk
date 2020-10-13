@@ -9,8 +9,14 @@ import {
 import sinon, { SinonStub } from 'sinon';
 
 import { Entity, Identity } from '~/api/entities';
-import { modifyToken, transferTokenOwnership } from '~/api/procedures';
-import { Params, toggleFreezeTransfers } from '~/api/procedures/toggleFreezeTransfers';
+import {
+  modifyPrimaryIssuanceAgent,
+  modifyToken,
+  removePrimaryIssuanceAgent,
+  toggleFreezeTransfers,
+  transferTokenOwnership,
+} from '~/api/procedures';
+import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
@@ -452,6 +458,45 @@ describe('SecurityToken class', () => {
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, boolValue);
+    });
+  });
+
+  describe('method: modifyPrimaryIssuanceAgent', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const ticker = 'TICKER';
+      const target = 'someDid';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(modifyPrimaryIssuanceAgent, 'prepare')
+        .withArgs({ ticker, target }, context)
+        .resolves(expectedQueue);
+
+      const queue = await securityToken.modifyPrimaryIssuanceAgent({ target });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: removePrimaryIssuanceAgent', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(removePrimaryIssuanceAgent, 'prepare')
+        .withArgs({ ticker }, context)
+        .resolves(expectedQueue);
+
+      const queue = await securityToken.removePrimaryIssuanceAgent();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

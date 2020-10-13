@@ -28,3 +28,8 @@ export { togglePauseRequirements, TogglePauseRequirementsParams } from './toggle
 export { transferPolyX, TransferPolyXParams } from './transferPolyX';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 // export { voteOnProposal, VoteOnProposalParams } from './voteOnProposal';
+export {
+  modifyPrimaryIssuanceAgent,
+  ModifyPrimaryIssuanceAgentParams,
+} from './modifyPrimaryIssuanceAgent';
+export { removePrimaryIssuanceAgent } from './removePrimaryIssuanceAgent';

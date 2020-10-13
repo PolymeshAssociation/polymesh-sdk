@@ -3,8 +3,11 @@ import { SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import { Entity, Identity } from '~/api/entities';
 import {
+  modifyPrimaryIssuanceAgent,
+  ModifyPrimaryIssuanceAgentParams,
   modifyToken,
   ModifyTokenParams,
+  removePrimaryIssuanceAgent,
   toggleFreezeTransfers,
   transferTokenOwnership,
   TransferTokenOwnershipParams,
@@ -318,5 +321,32 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const result = await asset.frozen(rawTicker);
 
     return boolToBoolean(result);
+  }
+
+  /**
+   * Assign a new primary issuance agent for the Security Token
+   *
+   * @param args.target - identity to be set as primary issuance agent
+   * @param args.requestExpiry - date at which the authorization request to modify the primary issuance agent expires (optional, never expires if a date is not provided)
+   *
+   * @note this may create AuthorizationRequest which have to be accepted by
+   *   the corresponding Account. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   */
+  public modifyPrimaryIssuanceAgent(
+    args: ModifyPrimaryIssuanceAgentParams
+  ): Promise<TransactionQueue<void>> {
+    const { ticker, context } = this;
+    return modifyPrimaryIssuanceAgent.prepare({ ticker, ...args }, context);
+  }
+
+  /**
+   * Remove the primary issuance agent of the Security Token
+   *
+   * @note issuance won’t be possible if primary issuance agent is not set
+   */
+  public removePrimaryIssuanceAgent(): Promise<TransactionQueue<void>> {
+    const { ticker, context } = this;
+    return removePrimaryIssuanceAgent.prepare({ ticker }, context);
   }
 }
