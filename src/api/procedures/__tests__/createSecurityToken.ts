@@ -44,7 +44,7 @@ jest.mock(
 describe('createSecurityToken procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context], Balance>;
+  let numberToBalanceStub: sinon.SinonStub;
   let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let tokenTypeToAssetTypeStub: sinon.SinonStub<[TokenType, Context], AssetType>;
@@ -169,7 +169,7 @@ describe('createSecurityToken procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    numberToBalanceStub.withArgs(totalSupply, mockContext).returns(rawTotalSupply);
+    numberToBalanceStub.withArgs(totalSupply, mockContext, isDivisible).returns(rawTotalSupply);
     stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     tokenTypeToAssetTypeStub.withArgs(tokenType, mockContext).returns(rawType);
