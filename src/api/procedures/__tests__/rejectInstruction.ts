@@ -175,12 +175,12 @@ describe('rejectInstruction procedure', () => {
     ).rejects.toThrow('The instruction cannot be rejected');
   });
 
-  /*
   test('should add an reject instruction transaction to the queue', async () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
           status: InstructionStatus.Pending,
+          validFrom: new Date('10/10/2019'),
         } as InstructionDetails,
       },
     });
@@ -193,7 +193,7 @@ describe('rejectInstruction procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('settlement', 'authorizeInstruction');
+    const transaction = dsMockUtils.createTxStub('settlement', 'rejectInstruction');
 
     await prepareRejectInstruction.call(proc, {
       id,
@@ -203,5 +203,4 @@ describe('rejectInstruction procedure', () => {
       rawPortfolioId,
     ]);
   });
-  */
 });
