@@ -1,11 +1,14 @@
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 
-import { Entity, Identity } from '~/api/entities';
+import { Entity, Identity, Instruction } from '~/api/entities';
 import { Context } from '~/base';
+import { InstructionStatus } from '~/types';
 import {
   identityIdToString,
   meshVenueTypeToVenueType,
   numberToU64,
+  u64ToBigNumber,
   venueDetailsToString,
 } from '~/utils';
 
@@ -64,9 +67,36 @@ export class Venue extends Entity<UniqueIdentifiers> {
     );
 
     return {
-      creator: new Identity({ did: identityIdToString(creator) }, context),
+      owner: new Identity({ did: identityIdToString(creator) }, context),
       description: venueDetailsToString(details),
       type: meshVenueTypeToVenueType(type),
     };
+  }
+
+  /**
+   * Retrieve all pending Instructions in this Venue
+   */
+  public async getPendingInstructions(): Promise<Instruction[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const { instructions: rawInstructions } = await settlement.venueInfo(numberToU64(id, context));
+
+    const instructions = rawInstructions.map(
+      instructionId => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
+    );
+
+    return P.filter(instructions, async instruction => {
+      const { status } = await instruction.details();
+
+      return status === InstructionStatus.Pending;
+    });
   }
 }
