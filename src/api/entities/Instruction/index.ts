@@ -107,7 +107,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
     const entries = await settlement.authsReceived.entries(numberToU64(id, context));
 
-    const instructionAuthorization: InstructionAuthorization[] = [];
+    const instructionAuthorizations: InstructionAuthorization[] = [];
 
     entries.forEach(([key, meshAuthorizationStatus]) => {
       const { did } = key.args[1] as MeshPortfolioId;
