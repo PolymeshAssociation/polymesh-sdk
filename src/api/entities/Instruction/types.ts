@@ -43,7 +43,7 @@ export enum AuthorizationStatus {
   Rejected = 'Rejected',
 }
 
-export interface InstructionAuthorization {
+export interface InstructionAuthorizations {
   identity: Identity;
   authorizationStatus: AuthorizationStatus;
 }
