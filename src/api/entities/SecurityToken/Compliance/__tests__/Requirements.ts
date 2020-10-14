@@ -2,8 +2,7 @@ import { Vec } from '@polkadot/types/codec';
 import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Namespace, SecurityToken } from '~/api/entities';
-import { Identity } from '~/api/entities/Identity';
+import { Identity, Namespace, SecurityToken } from '~/api/entities';
 import { togglePauseRequirements } from '~/api/procedures';
 import { Params, setAssetRequirements } from '~/api/procedures/setAssetRequirements';
 import { Context, TransactionQueue } from '~/base';
