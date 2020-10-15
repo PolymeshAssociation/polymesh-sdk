@@ -47,9 +47,3 @@ export interface InstructionAuthorization {
   identity: Identity;
   authorizationStatus: AuthorizationStatus;
 }
-
-export enum InstructionAuthorizationOperation {
-  Authorize = 'Authorize',
-  Unauthorize = 'Unauthorize',
-  Reject = 'Reject',
-}

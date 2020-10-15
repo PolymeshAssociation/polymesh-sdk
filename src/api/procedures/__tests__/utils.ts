@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Instruction } from '~/api/entities';
-import { checkInstructionValidation } from '~/api/procedures/utils';
+import { assertInstructionValid } from '~/api/procedures/utils';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getInstructionInstance } from '~/testUtils/mocks/entities';
@@ -105,7 +105,7 @@ import { InstructionDetails, InstructionStatus, InstructionType } from '~/types'
 //   });
 // });
 
-describe('checkInstructionValidation', () => {
+describe('assertInstructionValid', () => {
   const latestBlock = new BigNumber(100);
   let mockContext: Mocked<Context>;
   let instruction: Instruction;
@@ -144,7 +144,7 @@ describe('checkInstructionValidation', () => {
 
     instruction = getInstructionInstance();
 
-    return expect(checkInstructionValidation(instruction, mockContext)).rejects.toThrow(
+    return expect(assertInstructionValid(instruction, mockContext)).rejects.toThrow(
       'The Instruction must be in pending state'
     );
   });
@@ -166,7 +166,7 @@ describe('checkInstructionValidation', () => {
     let error;
 
     try {
-      await checkInstructionValidation(instruction, mockContext);
+      await assertInstructionValid(instruction, mockContext);
     } catch (err) {
       error = err;
     }
@@ -194,7 +194,7 @@ describe('checkInstructionValidation', () => {
     let error;
 
     try {
-      await checkInstructionValidation(instruction, mockContext);
+      await assertInstructionValid(instruction, mockContext);
     } catch (err) {
       error = err;
     }
@@ -218,7 +218,7 @@ describe('checkInstructionValidation', () => {
 
     instruction = getInstructionInstance();
 
-    let result = await checkInstructionValidation(instruction, mockContext);
+    let result = await assertInstructionValid(instruction, mockContext);
 
     expect(result).toBeUndefined();
 
@@ -234,7 +234,7 @@ describe('checkInstructionValidation', () => {
 
     instruction = getInstructionInstance();
 
-    result = await checkInstructionValidation(instruction, mockContext);
+    result = await assertInstructionValid(instruction, mockContext);
 
     expect(result).toBeUndefined();
   });

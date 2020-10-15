@@ -37,7 +37,7 @@ import { ErrorCode, InstructionStatus, InstructionType } from '~/types';
 /**
  * @hidden
  */
-export async function checkInstructionValidation(
+export async function assertInstructionValid(
   instruction: Instruction,
   context: Context
 ): Promise<void> {

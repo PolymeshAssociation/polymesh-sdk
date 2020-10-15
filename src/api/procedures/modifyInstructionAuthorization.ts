@@ -1,9 +1,10 @@
 import BigNumber from 'bignumber.js';
 
 import { Instruction } from '~/api/entities';
-import { checkInstructionValidation } from '~/api/procedures/utils';
+import { assertInstructionValid } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/base';
-import { AuthorizationStatus, ErrorCode, InstructionAuthorizationOperation } from '~/types';
+import { AuthorizationStatus, ErrorCode } from '~/types';
+import { InstructionAuthorizationOperation } from '~/types/internal';
 import {
   meshAuthorizationStatusToAuthorizationStatus,
   numberToU64,
@@ -11,22 +12,16 @@ import {
 } from '~/utils';
 
 export interface ModifyInstructionAuthorizationParams {
+  id: BigNumber;
   operation: InstructionAuthorizationOperation;
 }
 
 /**
  * @hidden
  */
-export type Params = ModifyInstructionAuthorizationParams & {
-  id: BigNumber;
-};
-
-/**
- * @hidden
- */
 export async function prepareModifyInstructionAuthorization(
-  this: Procedure<Params, Instruction | void>,
-  args: Params
+  this: Procedure<ModifyInstructionAuthorizationParams, Instruction | void>,
+  args: ModifyInstructionAuthorizationParams
 ): Promise<Instruction | void> {
   const {
     context: {
@@ -42,7 +37,7 @@ export async function prepareModifyInstructionAuthorization(
 
   const instruction = new Instruction({ id }, context);
 
-  checkInstructionValidation(instruction, context);
+  assertInstructionValid(instruction, context);
 
   const currentIdentity = await context.getCurrentIdentity();
   const rawInstructionId = numberToU64(id, context);
@@ -66,10 +61,13 @@ export async function prepareModifyInstructionAuthorization(
       return instruction;
     }
     case InstructionAuthorizationOperation.Unauthorize: {
-      if (authorizationStatus === AuthorizationStatus.Pending) {
+      if (
+        authorizationStatus === AuthorizationStatus.Pending ||
+        authorizationStatus === AuthorizationStatus.Rejected
+      ) {
         throw new PolymeshError({
           code: ErrorCode.ValidationError,
-          message: 'The Instruction is unauthorize',
+          message: 'The instruction is not authorized',
         });
       }
 

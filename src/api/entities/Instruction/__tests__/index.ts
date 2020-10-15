@@ -8,16 +8,12 @@ import sinon, { SinonStub } from 'sinon';
 
 import { Entity, Instruction } from '~/api/entities';
 import { Identity } from '~/api/entities/Identity';
-import { modifyInstructionAuthorization } from '~/api/procedures/modifyInstructionAuthorization';
+import { modifyInstructionAuthorization } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {
-  AuthorizationStatus,
-  InstructionAuthorizationOperation,
-  InstructionStatus,
-  InstructionType,
-} from '~/types';
+import { AuthorizationStatus, InstructionStatus, InstructionType } from '~/types';
+import { InstructionAuthorizationOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 

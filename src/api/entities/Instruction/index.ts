@@ -4,6 +4,7 @@ import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import { Entity, Identity, SecurityToken } from '~/api/entities';
 import { modifyInstructionAuthorization } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
+import { InstructionAuthorizationOperation } from '~/types/internal';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -15,13 +16,7 @@ import {
   u32ToBigNumber,
 } from '~/utils';
 
-import {
-  InstructionAuthorization,
-  InstructionAuthorizationOperation,
-  InstructionDetails,
-  InstructionType,
-  Leg,
-} from './types';
+import { InstructionAuthorization, InstructionDetails, InstructionType, Leg } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;

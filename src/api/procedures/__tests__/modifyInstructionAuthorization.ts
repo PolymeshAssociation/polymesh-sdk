@@ -8,14 +8,14 @@ import sinon from 'sinon';
 
 import { Instruction } from '~/api/entities';
 import {
-  Params,
+  ModifyInstructionAuthorizationParams,
   prepareModifyInstructionAuthorization,
 } from '~/api/procedures/modifyInstructionAuthorization';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AuthorizationStatus, InstructionAuthorizationOperation } from '~/types';
-import { PortfolioId } from '~/types/internal';
+import { AuthorizationStatus } from '~/types';
+import { InstructionAuthorizationOperation, PortfolioId } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('modifyInstructionAuthorization procedure', () => {
@@ -80,7 +80,10 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Authorized);
 
-    const proc = procedureMockUtils.getInstance<Params, Instruction | void>(mockContext);
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAuthorizationParams,
+      Instruction | void
+    >(mockContext);
 
     return expect(
       prepareModifyInstructionAuthorization.call(proc, {
@@ -97,7 +100,10 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Pending);
 
-    const proc = procedureMockUtils.getInstance<Params, Instruction | void>(mockContext);
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAuthorizationParams,
+      Instruction | void
+    >(mockContext);
 
     const transaction = dsMockUtils.createTxStub('settlement', 'authorizeInstruction');
 
@@ -120,14 +126,37 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Pending);
 
-    const proc = procedureMockUtils.getInstance<Params, Instruction | void>(mockContext);
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAuthorizationParams,
+      Instruction | void
+    >(mockContext);
 
     return expect(
       prepareModifyInstructionAuthorization.call(proc, {
         id,
         operation: InstructionAuthorizationOperation.Unauthorize,
       })
-    ).rejects.toThrow('The Instruction is unauthorize');
+    ).rejects.toThrow('The instruction is not authorized');
+  });
+
+  test('should throw an error if operation is Unauthorize and the current status of the instruction is rejected', () => {
+    const rawAuthorizationStatus = dsMockUtils.createMockAuthorizationStatus('Rejected');
+    dsMockUtils.createQueryStub('settlement', 'userAuths').resolves(rawAuthorizationStatus);
+    meshAuthorizationStatusToAuthorizationStatusStub
+      .withArgs(rawAuthorizationStatus)
+      .returns(AuthorizationStatus.Rejected);
+
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAuthorizationParams,
+      Instruction | void
+    >(mockContext);
+
+    return expect(
+      prepareModifyInstructionAuthorization.call(proc, {
+        id,
+        operation: InstructionAuthorizationOperation.Unauthorize,
+      })
+    ).rejects.toThrow('The instruction is not authorized');
   });
 
   test('should add an unauthorize instruction transaction to the queue', async () => {
@@ -137,7 +166,10 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Authorized);
 
-    const proc = procedureMockUtils.getInstance<Params, Instruction | void>(mockContext);
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAuthorizationParams,
+      Instruction | void
+    >(mockContext);
 
     const transaction = dsMockUtils.createTxStub('settlement', 'unauthorizeInstruction');
 
@@ -160,7 +192,10 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Rejected);
 
-    const proc = procedureMockUtils.getInstance<Params, Instruction | void>(mockContext);
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAuthorizationParams,
+      Instruction | void
+    >(mockContext);
 
     return expect(
       prepareModifyInstructionAuthorization.call(proc, {
@@ -177,7 +212,10 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Pending);
 
-    const proc = procedureMockUtils.getInstance<Params, Instruction | void>(mockContext);
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAuthorizationParams,
+      Instruction | void
+    >(mockContext);
 
     const transaction = dsMockUtils.createTxStub('settlement', 'rejectInstruction');
 
