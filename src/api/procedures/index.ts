@@ -29,12 +29,11 @@ export { transferPolyX, TransferPolyXParams } from './transferPolyX';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 // export { voteOnProposal, VoteOnProposalParams } from './voteOnProposal';
 export {
-  toggleInstructionAuthorization,
-  ToggleInstructionAuthorizationParams,
-} from './toggleInstructionAuthorization';
-export {
   modifyPrimaryIssuanceAgent,
   ModifyPrimaryIssuanceAgentParams,
 } from './modifyPrimaryIssuanceAgent';
 export { removePrimaryIssuanceAgent } from './removePrimaryIssuanceAgent';
-export { rejectInstruction } from './rejectInstruction';
+export {
+  modifyInstructionAuthorization,
+  ModifyInstructionAuthorizationParams,
+} from './modifyInstructionAuthorization';

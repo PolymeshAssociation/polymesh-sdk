@@ -1,14 +1,9 @@
 import BigNumber from 'bignumber.js';
 
 import { Instruction } from '~/api/entities';
+import { checkInstructionValidation } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/base';
-import {
-  AuthorizationStatus,
-  ErrorCode,
-  InstructionAuthorizationOperation,
-  InstructionStatus,
-  InstructionType,
-} from '~/types';
+import { AuthorizationStatus, ErrorCode, InstructionAuthorizationOperation } from '~/types';
 import {
   meshAuthorizationStatusToAuthorizationStatus,
   numberToU64,
@@ -47,49 +42,7 @@ export async function prepareModifyInstructionAuthorization(
 
   const instruction = new Instruction({ id }, context);
 
-  /*
-  const details = await instruction.details();
-
-  const { status, validFrom } = details;
-
-  if (status !== InstructionStatus.Pending) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The Instruction must be in pending state',
-    });
-  }
-
-  if (validFrom) {
-    const now = new Date();
-
-    if (now < validFrom) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The instruction has not reached its validity period',
-        data: {
-          validFrom,
-        },
-      });
-    }
-  }
-
-  if (details.type === InstructionType.SettleOnBlock) {
-    const latestBlock = await context.getLatestBlock();
-    const { endBlock } = details;
-
-    if (latestBlock >= endBlock) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The instruction cannot be modified; it has already reached its end block',
-        data: {
-          currentBlock: latestBlock,
-          endBlock,
-        },
-      });
-    }
-  }
-
-  */
+  checkInstructionValidation(instruction, context);
 
   const currentIdentity = await context.getCurrentIdentity();
   const rawInstructionId = numberToU64(id, context);
@@ -116,7 +69,7 @@ export async function prepareModifyInstructionAuthorization(
       if (authorizationStatus === AuthorizationStatus.Pending) {
         throw new PolymeshError({
           code: ErrorCode.ValidationError,
-          message: 'The Instruction is not authorized',
+          message: 'The Instruction is unauthorize',
         });
       }
 
@@ -142,4 +95,4 @@ export async function prepareModifyInstructionAuthorization(
 /**
  * @hidden
  */
-export const toggleInstructionAuthorization = new Procedure(prepareModifyInstructionAuthorization);
+export const modifyInstructionAuthorization = new Procedure(prepareModifyInstructionAuthorization);
