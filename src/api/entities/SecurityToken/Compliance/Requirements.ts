@@ -161,11 +161,15 @@ export class Requirements extends Namespace<SecurityToken> {
     const fromDid = stringToIdentityId(signerToString(from), context);
     const toDid = signerToString(to);
 
+    const securityToken = new SecurityToken({ ticker }, context);
+    const { primaryIssuanceAgent } = await securityToken.details();
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res: AssetComplianceResult = await (rpc as any).compliance.canTransfer(
       stringToTicker(ticker, context),
       fromDid,
-      stringToIdentityId(toDid, context)
+      stringToIdentityId(toDid, context),
+      primaryIssuanceAgent ? stringToIdentityId(primaryIssuanceAgent.did, context) : null
     );
 
     return assetComplianceResultToRequirementCompliance(res);
