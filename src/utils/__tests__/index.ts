@@ -2302,8 +2302,8 @@ describe('assetComplianceResultToRequirementCompliance', () => {
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
     const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
+    /* eslint-disable @typescript-eslint/camelcase */
     const rawConditions = [
-      /* eslint-disable @typescript-eslint/camelcase */
       dsMockUtils.createMockCondition({
         condition_type: dsMockUtils.createMockConditionType({
           IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
@@ -2337,24 +2337,35 @@ describe('assetComplianceResultToRequirementCompliance', () => {
         issuers,
       }),
     ];
-    const assetComplianceResult = dsMockUtils.createMockAssetComplianceResult({
-      paused: dsMockUtils.createMockBool(false),
-      requirements: [
-        dsMockUtils.createMockComplianceRequirementResult({
-          sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
-          receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
-          id: dsMockUtils.createMockU32(1),
-          result: dsMockUtils.createMockBool(false),
-        }),
-      ],
+
+    const rawRequirements = dsMockUtils.createMockComplianceRequirementResult({
+      sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
+      receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+      id: dsMockUtils.createMockU32(1),
       result: dsMockUtils.createMockBool(false),
     });
     /* eslint-enable @typescript-eslint/camelcase */
 
-    const result = assetComplianceResultToRequirementCompliance(assetComplianceResult);
+    let assetComplianceResult = dsMockUtils.createMockAssetComplianceResult({
+      paused: dsMockUtils.createMockBool(true),
+      requirements: [rawRequirements],
+      result: dsMockUtils.createMockBool(true),
+    });
+
+    let result = assetComplianceResultToRequirementCompliance(assetComplianceResult);
     expect(result.requirements[0].conditions).toEqual(
       expect.arrayContaining(fakeResult.conditions)
     );
+    expect(result.complies).toBeTruthy();
+
+    assetComplianceResult = dsMockUtils.createMockAssetComplianceResult({
+      paused: dsMockUtils.createMockBool(false),
+      requirements: [rawRequirements],
+      result: dsMockUtils.createMockBool(true),
+    });
+
+    result = assetComplianceResultToRequirementCompliance(assetComplianceResult);
+    expect(result.complies).toBeTruthy();
   });
 });
 
