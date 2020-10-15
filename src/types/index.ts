@@ -177,6 +177,7 @@ export enum AuthorizationType {
   TransferAssetOwnership = 'TransferAssetOwnership',
   TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
   JoinIdentity = 'JoinIdentity',
+  PortfolioCustody = 'PortfolioCustody',
   Custom = 'Custom',
   NoData = 'NoData',
 }
@@ -185,15 +186,10 @@ export enum AuthorizationType {
  * Authorization request data corresponding to type
  */
 export type Authorization =
-  | { type: AuthorizationType.NoData | AuthorizationType.AddMultiSigSigner }
+  | { type: AuthorizationType.NoData }
   | { type: AuthorizationType.JoinIdentity; value: Permission[] }
   | {
-      type: Exclude<
-        AuthorizationType,
-        | AuthorizationType.NoData
-        | AuthorizationType.AddMultiSigSigner
-        | AuthorizationType.JoinIdentity
-      >;
+      type: Exclude<AuthorizationType, AuthorizationType.NoData | AuthorizationType.JoinIdentity>;
       value: string;
     };
 

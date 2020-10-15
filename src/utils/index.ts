@@ -465,6 +465,7 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
   if (auth.isAddMultiSigSigner) {
     return {
       type: AuthorizationType.AddMultiSigSigner,
+      value: accountIdToString(auth.asAddMultiSigSigner),
     };
   }
 
@@ -472,6 +473,14 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
     return {
       type: AuthorizationType.TransferAssetOwnership,
       value: tickerToString(auth.asTransferAssetOwnership),
+    };
+  }
+
+  // todo
+  if (auth.isPortfolioCustody) {
+    return {
+      type: AuthorizationType.PortfolioCustody,
+      value: portfolioidtoportfolio,
     };
   }
 

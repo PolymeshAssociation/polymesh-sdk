@@ -1645,8 +1645,20 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     fakeResult = {
       type: AuthorizationType.AddMultiSigSigner,
+      value: 'someAccount',
     };
-    authorizationData = dsMockUtils.createMockAuthorizationData('AddMultiSigSigner');
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      AddMultiSigSigner: dsMockUtils.createMockAccountId(fakeResult.value),
+    });
+
+    // todo
+    fakeResult = {
+      type: AuthorizationType.PortfolioCustody,
+      value: '',
+    };
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      PortfolioCustody: dsMockUtils.createMock(fakeResult.value),
+    });
 
     result = authorizationDataToAuthorization(authorizationData);
     expect(result).toEqual(fakeResult);
