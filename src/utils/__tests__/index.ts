@@ -2428,6 +2428,14 @@ describe('u8ToTransferStatus', () => {
 
     expect(result).toBe(TransferStatus.FundsLimitReached);
 
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(169));
+
+    expect(result).toBe(TransferStatus.PortfolioFailure);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(170));
+
+    expect(result).toBe(TransferStatus.CustodianError);
+
     const fakeStatusCode = 1;
     expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
       `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymath team`
@@ -2594,6 +2602,46 @@ describe('permissionToMeshPermission and meshPermissionToPermission', () => {
     permission = dsMockUtils.createMockPermission(fakeResult);
 
     result = meshPermissionToPermission(permission);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('meshAuthorizationStatusToAuthorizationStatus', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshAuthorizationStatusToAuthorizationStatus should convert a polkadot AuthorizationStatus object to a AuthorizationStatus', () => {
+    let fakeResult = AuthorizationStatus.Authorized;
+    let permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    let result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Pending;
+    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Rejected;
+    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = AuthorizationStatus.Unknown;
+    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+
+    result = meshAuthorizationStatusToAuthorizationStatus(permission);
     expect(result).toEqual(fakeResult);
   });
 });
