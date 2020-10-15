@@ -2,7 +2,7 @@ import { Vec } from '@polkadot/types/codec';
 import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Namespace, SecurityToken } from '~/api/entities';
+import { Identity, Namespace, SecurityToken } from '~/api/entities';
 import { togglePauseRequirements } from '~/api/procedures';
 import { Params, setAssetRequirements } from '~/api/procedures/setAssetRequirements';
 import { Context, TransactionQueue } from '~/base';
@@ -13,6 +13,11 @@ import * as utilsModule from '~/utils';
 
 import { Requirements } from '../Requirements';
 
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+
 describe('Requirements class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -20,10 +25,12 @@ describe('Requirements class', () => {
   });
 
   afterEach(() => {
+    entityMockUtils.reset();
     dsMockUtils.reset();
   });
 
   afterAll(() => {
+    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
@@ -350,6 +357,8 @@ describe('Requirements class', () => {
     let rawToDid: IdentityId;
     let rawCurrentDid: IdentityId;
     let rawTicker: Ticker;
+    let primaryIssuanceAgentDid: string;
+    let rawPrimaryIssuanceAgentDid: IdentityId;
 
     let stringToIdentityIdStub: sinon.SinonStub;
     let assetComplianceResultToRequirementComplianceStub: sinon.SinonStub;
@@ -358,6 +367,7 @@ describe('Requirements class', () => {
     beforeAll(() => {
       fromDid = 'fromDid';
       toDid = 'toDid';
+      primaryIssuanceAgentDid = 'primaryIssuanceAgentDid';
 
       stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
       assetComplianceResultToRequirementComplianceStub = sinon.stub(
@@ -377,11 +387,15 @@ describe('Requirements class', () => {
       rawToDid = dsMockUtils.createMockIdentityId(toDid);
       rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
       rawTicker = dsMockUtils.createMockTicker(token.ticker);
+      rawPrimaryIssuanceAgentDid = dsMockUtils.createMockIdentityId(primaryIssuanceAgentDid);
 
       stringToIdentityIdStub.withArgs(currentDid, context).returns(rawCurrentDid);
       stringToIdentityIdStub.withArgs(fromDid, context).returns(rawFromDid);
       stringToIdentityIdStub.withArgs(toDid, context).returns(rawToDid);
       stringToTickerStub.withArgs(token.ticker, context).returns(rawTicker);
+      stringToIdentityIdStub
+        .withArgs(primaryIssuanceAgentDid, context)
+        .returns(rawPrimaryIssuanceAgentDid);
     });
 
     afterAll(() => {
@@ -391,9 +405,19 @@ describe('Requirements class', () => {
     test('checkSettle should return the current requirement compliance and whether the transfer complies', async () => {
       const rawResponse = ('response' as unknown) as AssetComplianceResult;
 
+      const primaryIssuanceAgent = new Identity({ did: primaryIssuanceAgentDid }, context);
+
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          details: {
+            primaryIssuanceAgent,
+          },
+        },
+      });
+
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawCurrentDid, rawToDid)
+        .withArgs(rawTicker, rawCurrentDid, rawToDid, rawPrimaryIssuanceAgentDid)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
@@ -408,9 +432,17 @@ describe('Requirements class', () => {
     test('checkSettle should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
       const rawResponse = ('response' as unknown) as AssetComplianceResult;
 
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          details: {
+            primaryIssuanceAgent: null,
+          },
+        },
+      });
+
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawFromDid, rawToDid)
+        .withArgs(rawTicker, rawFromDid, rawToDid, null)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
