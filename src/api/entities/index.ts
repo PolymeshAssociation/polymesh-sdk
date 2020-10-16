@@ -12,3 +12,6 @@ export { AuthorizationRequest } from './AuthorizationRequest';
 export { TrustedClaimIssuer } from './TrustedClaimIssuer';
 export { Venue } from './Venue';
 export { Instruction } from './Instruction';
+export { Portfolio } from './Portfolio';
+export { DefaultPortfolio } from './DefaultPortfolio';
+export { NumberedPortfolio } from './NumberedPortfolio';
