@@ -114,7 +114,7 @@ describe('modifyInstructionAuthorization procedure', () => {
       rawPortfolioId,
     ]);
 
-    expect(instruction.id).toEqual((result as Instruction).id);
+    expect(instruction.id).toEqual(result.id);
   });
 
   test('should throw an error if operation is Unauthorize and the current status of the instruction is pending', () => {
@@ -177,7 +177,7 @@ describe('modifyInstructionAuthorization procedure', () => {
       rawPortfolioId,
     ]);
 
-    expect(instruction.id).toEqual((result as Instruction).id);
+    expect(instruction.id).toEqual(result.id);
   });
 
   test('should throw an error if operation is Reject and the current status of the instruction is rejected', () => {
@@ -221,6 +221,6 @@ describe('modifyInstructionAuthorization procedure', () => {
       rawPortfolioId,
     ]);
 
-    expect(instruction.id).toEqual((result as Instruction).id);
+    expect(instruction.id).toEqual(result.id);
   });
 });
