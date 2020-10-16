@@ -147,3 +147,9 @@ export interface PortfolioId {
   did: string;
   number?: number;
 }
+
+export enum InstructionAuthorizationOperation {
+  Authorize = 'Authorize',
+  Unauthorize = 'Unauthorize',
+  Reject = 'Reject',
+}
