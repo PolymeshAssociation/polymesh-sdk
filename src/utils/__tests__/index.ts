@@ -35,7 +35,7 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Identity } from '~/api/entities';
+import { Account, Identity, Portfolio } from '~/api/entities';
 import { ProposalState } from '~/api/entities/Proposal/types';
 import { Context, PostTransactionValue } from '~/base';
 import { CallIdEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
@@ -1610,6 +1610,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   });
 
   test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {
+    const context = dsMockUtils.getContextInstance();
     let fakeResult: Authorization = {
       type: AuthorizationType.AttestPrimaryKeyRotation,
       value: 'someIdentity',
@@ -1618,7 +1619,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       AttestPrimaryKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
     });
 
-    let result = authorizationDataToAuthorization(authorizationData);
+    let result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
@@ -1629,7 +1630,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       RotatePrimaryKey: dsMockUtils.createMockIdentityId(fakeResult.value),
     });
 
-    result = authorizationDataToAuthorization(authorizationData);
+    result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
@@ -1640,7 +1641,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       TransferTicker: dsMockUtils.createMockTicker(fakeResult.value),
     });
 
-    result = authorizationDataToAuthorization(authorizationData);
+    result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
@@ -1651,16 +1652,38 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       AddMultiSigSigner: dsMockUtils.createMockAccountId(fakeResult.value),
     });
 
-    // todo
+    result = authorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
     fakeResult = {
       type: AuthorizationType.PortfolioCustody,
-      value: '',
+      value: new Portfolio({ did: 'someDid' }, context),
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
-      PortfolioCustody: dsMockUtils.createMock(fakeResult.value),
+      PortfolioCustody: dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(fakeResult.value.owner.did),
+        kind: dsMockUtils.createMockPortfolioKind('Default'),
+      }),
     });
 
-    result = authorizationDataToAuthorization(authorizationData);
+    result = authorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    const portfolioId = new BigNumber(1);
+    fakeResult = {
+      type: AuthorizationType.PortfolioCustody,
+      value: new Portfolio({ did: 'someDid', id: portfolioId }, context),
+    };
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      PortfolioCustody: dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(fakeResult.value.owner.did),
+        kind: dsMockUtils.createMockPortfolioKind({
+          User: dsMockUtils.createMockU64(portfolioId.toNumber()),
+        }),
+      }),
+    });
+
+    result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
@@ -1671,7 +1694,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       TransferAssetOwnership: dsMockUtils.createMockTicker(fakeResult.value),
     });
 
-    result = authorizationDataToAuthorization(authorizationData);
+    result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
@@ -1682,7 +1705,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       JoinIdentity: [dsMockUtils.createMockPermission('Operator')],
     });
 
-    result = authorizationDataToAuthorization(authorizationData);
+    result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
@@ -1693,7 +1716,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       custom: dsMockUtils.createMockBytes(fakeResult.value),
     });
 
-    result = authorizationDataToAuthorization(authorizationData);
+    result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
@@ -1701,7 +1724,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     };
     authorizationData = dsMockUtils.createMockAuthorizationData('NoData');
 
-    result = authorizationDataToAuthorization(authorizationData);
+    result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
   });
 });

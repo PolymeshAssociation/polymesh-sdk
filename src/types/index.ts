@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
 // NOTE uncomment in Governance v2 upgrade
-import { Account, Identity /*, Proposal */ } from '~/api/entities';
+import { Account, Identity, Portfolio /*, Proposal */ } from '~/api/entities';
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { CountryCode } from '~/generated/types';
 
@@ -188,8 +188,14 @@ export enum AuthorizationType {
 export type Authorization =
   | { type: AuthorizationType.NoData }
   | { type: AuthorizationType.JoinIdentity; value: Permission[] }
+  | { type: AuthorizationType.PortfolioCustody; value: Portfolio }
   | {
-      type: Exclude<AuthorizationType, AuthorizationType.NoData | AuthorizationType.JoinIdentity>;
+      type: Exclude<
+        AuthorizationType,
+        | AuthorizationType.NoData
+        | AuthorizationType.JoinIdentity
+        | AuthorizationType.PortfolioCustody
+      >;
       value: string;
     };
 
