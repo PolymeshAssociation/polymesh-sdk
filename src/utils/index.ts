@@ -1416,7 +1416,7 @@ export function portfolioIdToMeshPortfolioId(
 export function assetComplianceResultToRequirementCompliance(
   assetComplianceResult: AssetComplianceResult
 ): RequirementCompliance {
-  const { requirements: rawRequirements, result } = assetComplianceResult;
+  const { requirements: rawRequirements, result, paused } = assetComplianceResult;
   const requirements = rawRequirements.map(requirement => ({
     ...complianceRequirementToRequirement(requirement),
     complies: boolToBoolean(requirement.result),
@@ -1424,7 +1424,7 @@ export function assetComplianceResultToRequirementCompliance(
 
   return {
     requirements,
-    complies: boolToBoolean(result),
+    complies: boolToBoolean(paused) || boolToBoolean(result),
   };
 }
 
