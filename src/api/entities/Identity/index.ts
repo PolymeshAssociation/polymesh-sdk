@@ -32,6 +32,7 @@ import {
 } from '~/utils';
 
 import { IdentityAuthorizations } from './IdentityAuthorizations';
+import { Portfolios } from './Portfolios';
 
 /**
  * Properties that uniquely identify an Identity
@@ -61,6 +62,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
   // Namespaces
   public authorizations: IdentityAuthorizations;
+  public portfolios: Portfolios;
 
   /**
    * Create an Identity entity
@@ -72,6 +74,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
     this.did = did;
     this.authorizations = new IdentityAuthorizations(this, context);
+    this.portfolios = new Portfolios(this, context);
   }
 
   /**

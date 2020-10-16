@@ -266,7 +266,7 @@ export interface ExtrinsicData {
   address: string | null;
   nonce: number;
   txTag: TxTag;
-  params: object;
+  params: object[];
   success: boolean;
   specVersionId: number;
   extrinsicHash: string;
