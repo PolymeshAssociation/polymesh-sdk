@@ -160,7 +160,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
    * @note reject on `SettleOnAuthorization` will execute the settlement and it will fail immediately.
    * @note reject on `SettleOnBlock` behaves just like unauthorize
    */
-  public reject(): Promise<TransactionQueue<Instruction | void>> {
+  public reject(): Promise<TransactionQueue<Instruction>> {
     const { id, context } = this;
     return modifyInstructionAuthorization.prepare(
       { id, operation: InstructionAuthorizationOperation.Reject },
@@ -171,7 +171,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
   /**
    * Authorize this instruction
    */
-  public authorize(): Promise<TransactionQueue<Instruction | void>> {
+  public authorize(): Promise<TransactionQueue<Instruction>> {
     const { id, context } = this;
     return modifyInstructionAuthorization.prepare(
       { id, operation: InstructionAuthorizationOperation.Authorize },
@@ -182,7 +182,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
   /**
    * Unauthorize this instruction
    */
-  public unauthorize(): Promise<TransactionQueue<Instruction | void>> {
+  public unauthorize(): Promise<TransactionQueue<Instruction>> {
     const { id, context } = this;
     return modifyInstructionAuthorization.prepare(
       { id, operation: InstructionAuthorizationOperation.Unauthorize },

@@ -20,9 +20,9 @@ export interface ModifyInstructionAuthorizationParams {
  * @hidden
  */
 export async function prepareModifyInstructionAuthorization(
-  this: Procedure<ModifyInstructionAuthorizationParams, Instruction | void>,
+  this: Procedure<ModifyInstructionAuthorizationParams, Instruction>,
   args: ModifyInstructionAuthorizationParams
-): Promise<Instruction | void> {
+): Promise<Instruction> {
   const {
     context: {
       polymeshApi: {
@@ -58,12 +58,11 @@ export async function prepareModifyInstructionAuthorization(
         rawPortfolioId,
       ]);
 
-      return instruction;
+      break;
     }
     case InstructionAuthorizationOperation.Unauthorize: {
       if (
-        authorizationStatus === AuthorizationStatus.Pending ||
-        authorizationStatus === AuthorizationStatus.Rejected
+        [AuthorizationStatus.Pending, AuthorizationStatus.Rejected].includes(authorizationStatus)
       ) {
         throw new PolymeshError({
           code: ErrorCode.ValidationError,
@@ -75,7 +74,7 @@ export async function prepareModifyInstructionAuthorization(
         rawPortfolioId,
       ]);
 
-      return instruction;
+      break;
     }
     case InstructionAuthorizationOperation.Reject: {
       if (authorizationStatus === AuthorizationStatus.Rejected) {
@@ -86,8 +85,12 @@ export async function prepareModifyInstructionAuthorization(
       }
 
       this.addTransaction(tx.settlement.rejectInstruction, {}, rawInstructionId, [rawPortfolioId]);
+
+      break;
     }
   }
+
+  return instruction;
 }
 
 /**

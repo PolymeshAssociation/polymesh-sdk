@@ -80,10 +80,9 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Authorized);
 
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAuthorizationParams,
-      Instruction | void
-    >(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+      mockContext
+    );
 
     return expect(
       prepareModifyInstructionAuthorization.call(proc, {
@@ -100,10 +99,9 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Pending);
 
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAuthorizationParams,
-      Instruction | void
-    >(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+      mockContext
+    );
 
     const transaction = dsMockUtils.createTxStub('settlement', 'authorizeInstruction');
 
@@ -126,10 +124,9 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Pending);
 
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAuthorizationParams,
-      Instruction | void
-    >(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+      mockContext
+    );
 
     return expect(
       prepareModifyInstructionAuthorization.call(proc, {
@@ -146,10 +143,9 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Rejected);
 
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAuthorizationParams,
-      Instruction | void
-    >(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+      mockContext
+    );
 
     return expect(
       prepareModifyInstructionAuthorization.call(proc, {
@@ -166,10 +162,9 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Authorized);
 
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAuthorizationParams,
-      Instruction | void
-    >(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+      mockContext
+    );
 
     const transaction = dsMockUtils.createTxStub('settlement', 'unauthorizeInstruction');
 
@@ -192,10 +187,9 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Rejected);
 
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAuthorizationParams,
-      Instruction | void
-    >(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+      mockContext
+    );
 
     return expect(
       prepareModifyInstructionAuthorization.call(proc, {
@@ -212,14 +206,13 @@ describe('modifyInstructionAuthorization procedure', () => {
       .withArgs(rawAuthorizationStatus)
       .returns(AuthorizationStatus.Pending);
 
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAuthorizationParams,
-      Instruction | void
-    >(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+      mockContext
+    );
 
     const transaction = dsMockUtils.createTxStub('settlement', 'rejectInstruction');
 
-    await prepareModifyInstructionAuthorization.call(proc, {
+    const result = await prepareModifyInstructionAuthorization.call(proc, {
       id,
       operation: InstructionAuthorizationOperation.Reject,
     });
@@ -227,5 +220,7 @@ describe('modifyInstructionAuthorization procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawInstructionId, [
       rawPortfolioId,
     ]);
+
+    expect(instruction.id).toEqual((result as Instruction).id);
   });
 });
