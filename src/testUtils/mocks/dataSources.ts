@@ -57,6 +57,7 @@ import {
   FundingRoundName,
   IdentityId,
   IdentityRole,
+  Instruction,
   InstructionStatus,
   IssueAssetItem,
   LinkedKeyInfo,
@@ -1935,4 +1936,33 @@ export const createMockAuthorizationStatus = (
   authorizationStatus?: 'Unknown' | 'Pending' | 'Authorized' | 'Rejected'
 ): AuthorizationStatus => {
   return createMockEnum(authorizationStatus) as AuthorizationStatus;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockInstruction = (instruction?: {
+  instruction_id: u64;
+  venue_id: u64;
+  status: InstructionStatus;
+  settlement_type: SettlementType;
+  created_at: Option<Moment>;
+  valid_from: Option<Moment>;
+}): Instruction => {
+  const data = instruction || {
+    instruction_id: createMockU64(),
+    venue_id: createMockU64(),
+    status: createMockInstructionStatus(),
+    settlement_type: createMockSettlementType(),
+    created_at: createMockOption(),
+    valid_from: createMockOption(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !instruction
+  ) as Instruction;
 };
