@@ -36,7 +36,7 @@ import {
 import sinon from 'sinon';
 
 import { Account, Identity } from '~/api/entities';
-import { ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalState } from '~/api/entities/types';
 import { Context, PostTransactionValue } from '~/base';
 import { CallIdEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';

@@ -67,7 +67,7 @@ import {
 } from 'polymesh-types/types';
 
 import { Account, Identity } from '~/api/entities';
-import { ProposalDetails } from '~/api/entities/Proposal/types';
+import { ProposalDetails } from '~/api/entities/types';
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {

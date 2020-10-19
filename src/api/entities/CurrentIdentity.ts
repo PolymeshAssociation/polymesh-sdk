@@ -11,7 +11,7 @@ import {
 } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
-import { portfolioIdToMeshPortfolioId,stringToIdentityId, u64ToBigNumber } from '~/utils';
+import { portfolioIdToMeshPortfolioId, u64ToBigNumber } from '~/utils';
 
 /**
  * Represents the Identity associated to the current [[Account]]

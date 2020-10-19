@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { Entity, Identity, Instruction } from '~/api/entities';
-import { addInstruction, AddInstructionParams } from '~/api/procedures/addInstruction';
+import { addInstruction, AddInstructionParams } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { InstructionStatus } from '~/types';
 import {

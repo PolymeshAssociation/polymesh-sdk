@@ -37,7 +37,7 @@ export async function prepareModifyInstructionAuthorization(
 
   const instruction = new Instruction({ id }, context);
 
-  assertInstructionValid(instruction, context);
+  await assertInstructionValid(instruction, context);
 
   const currentIdentity = await context.getCurrentIdentity();
   const rawInstructionId = numberToU64(id, context);

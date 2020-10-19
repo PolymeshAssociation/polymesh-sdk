@@ -2,9 +2,8 @@ import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Entity, Venue } from '~/api/entities';
-import { Instruction } from '~/api/entities/Instruction';
-import { addInstruction } from '~/api/procedures/addInstruction';
+import { Entity, Instruction, Venue } from '~/api/entities';
+import { addInstruction } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';

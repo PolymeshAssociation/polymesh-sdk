@@ -11,6 +11,7 @@ import {
   ModifyInstructionAuthorizationParams,
   prepareModifyInstructionAuthorization,
 } from '~/api/procedures/modifyInstructionAuthorization';
+import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -50,6 +51,8 @@ describe('modifyInstructionAuthorization procedure', () => {
       'meshAuthorizationStatusToAuthorizationStatus'
     );
     instruction = new Instruction({ id }, mockContext);
+
+    sinon.stub(procedureUtilsModule, 'assertInstructionValid');
   });
 
   let addTransactionStub: sinon.SinonStub;
