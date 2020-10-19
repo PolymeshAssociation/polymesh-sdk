@@ -1,7 +1,6 @@
 import sinon, { SinonStub } from 'sinon';
 
-import { Namespace, NumberedPortfolio } from '~/api/entities';
-import { Identity } from '~/api/entities/Identity';
+import { Identity, Namespace, NumberedPortfolio } from '~/api/entities';
 import { createPortfolio } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';

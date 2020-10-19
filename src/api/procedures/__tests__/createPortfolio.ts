@@ -19,8 +19,8 @@ import * as utilsModule from '~/utils';
 describe('createPortfolio procedure', () => {
   let mockContext: Mocked<Context>;
   let numberedPortfolio: PostTransactionValue<NumberedPortfolio>;
-  let bytesToStringStub: sinon.SinonStub;
-  let stringToBytesStub: sinon.SinonStub;
+  let bytesToStringStub: sinon.SinonStub<[Bytes], string>;
+  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let rawPortfolios: [PortfolioName][];
   let portfolioEntries: [[], PortfolioName][];
   let portfoliosName: { name: string }[];
