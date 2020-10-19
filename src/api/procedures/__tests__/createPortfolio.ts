@@ -13,7 +13,6 @@ import {
 import { Context, PostTransactionValue } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
