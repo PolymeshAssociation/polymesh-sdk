@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity, Namespace, NumberedPortfolio, Portfolio } from '~/api/entities';
+import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -66,9 +66,9 @@ describe('Portfolios class', () => {
 
       const result = await portfolios.getPortfolios();
       expect(result).toHaveLength(2);
-      expect(result[0] instanceof Portfolio).toBe(true);
+      expect(result[0] instanceof DefaultPortfolio).toBe(true);
       expect(result[1] instanceof NumberedPortfolio).toBe(true);
-      expect((result[0] as Portfolio).owner.did).toEqual(did);
+      expect((result[0] as DefaultPortfolio).owner.did).toEqual(did);
       expect((result[1] as NumberedPortfolio).id).toEqual(numberedPortfolioId);
     });
   });

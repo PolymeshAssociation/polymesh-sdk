@@ -1,4 +1,4 @@
-import { Identity, Namespace, NumberedPortfolio, Portfolio } from '~/api/entities';
+import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
 import { PortfolioNumber } from '~/polkadot';
 import { stringToIdentityId, u64ToBigNumber } from '~/utils';
 
@@ -9,7 +9,7 @@ export class Portfolios extends Namespace<Identity> {
   /**
    * Retrieve all the portfolios for the current identity
    */
-  public async getPortfolios(): Promise<(Portfolio | NumberedPortfolio)[]> {
+  public async getPortfolios(): Promise<[DefaultPortfolio, ...NumberedPortfolio[]]> {
     const {
       context,
       context: {
@@ -23,7 +23,9 @@ export class Portfolios extends Namespace<Identity> {
     const identityId = stringToIdentityId(did, context);
     const rawPortfolios = await portfolio.portfolios.entries(identityId);
 
-    const numberedPortfolios: (Portfolio | NumberedPortfolio)[] = [new Portfolio({ did }, context)];
+    const numberedPortfolios: [DefaultPortfolio, ...NumberedPortfolio[]] = [
+      new DefaultPortfolio({ did }, context),
+    ];
     rawPortfolios.forEach(([key]) => {
       numberedPortfolios.push(
         new NumberedPortfolio({ id: u64ToBigNumber(key.args[1] as PortfolioNumber), did }, context)
