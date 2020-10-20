@@ -45,16 +45,17 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
   /**
    * authorization request data corresponding to type of authorization
    *
-   * | Type                       | Data   |
-   * |----------------------------|--------|
-   * | Attest Primary Key Rotation| DID    |
-   * | Rotate Primary Key         | DID    |
-   * | Transfer Ticker            | Ticker |
-   * | Add MultiSig Signer        | N/A    |
-   * | Transfer Token Ownership   | Ticker |
-   * | Join Identity              | DID    |
-   * | Custom                     | Custom |
-   * | No Data                    | N/A    |
+   * | Type                        | Data      |
+   * |-----------------------------|-----------|
+   * | Attest Primary Key Rotation | DID       |
+   * | Rotate Primary Key          | DID       |
+   * | Transfer Ticker             | Ticker    |
+   * | Add MultiSig Signer         | Account   |
+   * | Transfer Token Ownership    | Ticker    |
+   * | Join Identity               | DID       |
+   * | Portfolio Custody           | Portfolio |
+   * | Custom                      | Custom    |
+   * | No Data                     | N/A       |
    */
   public data: Authorization;
 
