@@ -2,8 +2,9 @@ import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Entity, Venue } from '~/api/entities';
-import { Context } from '~/base';
+import { Entity, Instruction, Venue } from '~/api/entities';
+import { addInstruction } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { VenueType } from '~/types';
@@ -129,6 +130,48 @@ describe('Venue class', () => {
       const result = await venue.getPendingInstructions();
 
       expect(result[0].id).toEqual(instructionId);
+    });
+  });
+
+  describe('method: addInstruction', () => {
+    let prepareAddInstructionStub: sinon.SinonStub;
+
+    beforeAll(() => {
+      prepareAddInstructionStub = sinon.stub(addInstruction, 'prepare');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const legs = [
+        {
+          from: 'someDid',
+          to: 'anotherDid',
+          amount: new BigNumber(1000),
+          token: 'SOME_TOKEN',
+        },
+        {
+          from: 'anotherDid',
+          to: 'aThirdDid',
+          amount: new BigNumber(100),
+          token: 'ANOTHER_TOKEN',
+        },
+      ];
+
+      const validFrom = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+      const endBlock = new BigNumber(10000);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+
+      prepareAddInstructionStub
+        .withArgs({ venueId: id, legs, validFrom, endBlock }, context)
+        .resolves(expectedQueue);
+
+      const queue = await venue.addInstruction({ legs, validFrom, endBlock });
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

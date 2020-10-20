@@ -67,14 +67,14 @@ import {
 } from 'polymesh-types/types';
 
 import { Account, DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
-import { ProposalDetails } from '~/api/entities/Proposal/types';
+// import { ProposalDetails } from '~/api/types';
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   CallIdEnum,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
-  Proposal,
+  // Proposal,
   Scope as MiddlewareScope,
 } from '~/middleware/types';
 import {
@@ -1096,7 +1096,7 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
  * @hidden
  */
 export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
-  return { type: scope.type, value: scope.value } as Scope;
+  return { type: ScopeType[scope.type], value: scope.value } as Scope;
 }
 
 /**
@@ -1110,7 +1110,7 @@ export function createClaim(
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope
-    ? { type: middlewareScope.type, value: middlewareScope.value }
+    ? { type: ScopeType[middlewareScope.type], value: middlewareScope.value }
     : {}) as Scope;
 
   if (type === ClaimType.Jurisdiction) {
@@ -1709,7 +1709,7 @@ export function toIdentityWithClaimsArray(
         type,
         jurisdiction,
         scope: claimScope,
-        cddId,
+        cdd_id: cddId,
       }) => ({
         target: new Identity({ did: targetDID }, context),
         issuer: new Identity({ did: issuer }, context),
@@ -1733,43 +1733,43 @@ export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
   });
 }
 
-/**
- * @hidden
- */
-export function middlewareProposalToProposalDetails(
-  proposal: Proposal,
-  context: Context
-): ProposalDetails {
-  const {
-    proposer: proposerAddress,
-    createdAt,
-    url: discussionUrl,
-    description,
-    coolOffEndBlock,
-    endBlock,
-    proposal: rawProposal,
-    lastState,
-    lastStateUpdatedAt,
-    totalVotes,
-    totalAyesWeight,
-    totalNaysWeight,
-  } = proposal;
+// /**
+//  * @hidden
+//  */
+// export function middlewareProposalToProposalDetails(
+//   proposal: Proposal,
+//   context: Context
+// ): ProposalDetails {
+//   const {
+//     proposer: proposerAddress,
+//     createdAt,
+//     url: discussionUrl,
+//     description,
+//     coolOffEndBlock,
+//     endBlock,
+//     proposal: rawProposal,
+//     lastState,
+//     lastStateUpdatedAt,
+//     totalVotes,
+//     totalAyesWeight,
+//     totalNaysWeight,
+//   } = proposal;
 
-  return {
-    proposerAddress,
-    createdAt: new BigNumber(createdAt),
-    discussionUrl,
-    description,
-    coolOffEndBlock: new BigNumber(coolOffEndBlock),
-    endBlock: new BigNumber(endBlock),
-    transaction: rawProposal ? transactionHexToTxTag(rawProposal, context) : null,
-    lastState,
-    lastStateUpdatedAt: new BigNumber(lastStateUpdatedAt),
-    totalVotes: new BigNumber(totalVotes),
-    totalAyesWeight: new BigNumber(totalAyesWeight),
-    totalNaysWeight: new BigNumber(totalNaysWeight),
-  };
-}
+//   return {
+//     proposerAddress,
+//     createdAt: new BigNumber(createdAt),
+//     discussionUrl,
+//     description,
+//     coolOffEndBlock: new BigNumber(coolOffEndBlock),
+//     endBlock: new BigNumber(endBlock),
+//     transaction: rawProposal ? transactionHexToTxTag(rawProposal, context) : null,
+//     lastState,
+//     lastStateUpdatedAt: new BigNumber(lastStateUpdatedAt),
+//     totalVotes: new BigNumber(totalVotes),
+//     totalAyesWeight: new BigNumber(totalAyesWeight),
+//     totalNaysWeight: new BigNumber(totalNaysWeight),
+//   };
+// }
 
 /**
  * @hidden

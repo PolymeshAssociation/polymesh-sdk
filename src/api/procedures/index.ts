@@ -4,8 +4,10 @@ export {
   acceptJoinIdentityAuthorization,
   AcceptJoinIdentityAuthorizationParams,
 } from './acceptJoinIdentityAuthorization';
+export { addInstruction, AddInstructionParams } from './addInstruction';
 // export { cancelProposal } from './cancelProposal';
 export { consumeAuthorizationRequests, ConsumeParams } from './consumeAuthorizationRequests';
+export { createPortfolio } from './createPortfolio';
 // export { createProposal, CreateProposalParams } from './createProposal';
 export { createSecurityToken, CreateSecurityTokenParams } from './createSecurityToken';
 export { createVenue, CreateVenueParams } from './createVenue';
@@ -13,7 +15,15 @@ export { createVenue, CreateVenueParams } from './createVenue';
 export { inviteAccount, InviteAccountParams } from './inviteAccount';
 export { issueTokens, IssueTokensParams } from './issueTokens';
 export { modifyClaims, ModifyClaimsParams } from './modifyClaims';
+export {
+  modifyInstructionAuthorization,
+  ModifyInstructionAuthorizationParams,
+} from './modifyInstructionAuthorization';
 export { modifyToken, ModifyTokenParams } from './modifyToken';
+export {
+  modifyPrimaryIssuanceAgent,
+  ModifyPrimaryIssuanceAgentParams,
+} from './modifyPrimaryIssuanceAgent';
 export {
   modifyTokenTrustedClaimIssuers,
   ModifyTokenTrustedClaimIssuersParams,
@@ -28,13 +38,4 @@ export { togglePauseRequirements, TogglePauseRequirementsParams } from './toggle
 export { transferPolyX, TransferPolyXParams } from './transferPolyX';
 export { transferTokenOwnership, TransferTokenOwnershipParams } from './transferTokenOwnership';
 // export { voteOnProposal, VoteOnProposalParams } from './voteOnProposal';
-export {
-  modifyPrimaryIssuanceAgent,
-  ModifyPrimaryIssuanceAgentParams,
-} from './modifyPrimaryIssuanceAgent';
 export { removePrimaryIssuanceAgent } from './removePrimaryIssuanceAgent';
-export {
-  modifyInstructionAuthorization,
-  ModifyInstructionAuthorizationParams,
-} from './modifyInstructionAuthorization';
-export { createPortfolio } from './createPortfolio';
