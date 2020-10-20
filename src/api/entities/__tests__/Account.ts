@@ -140,11 +140,21 @@ describe('Account class', () => {
         totalCount: 20,
         items: [
           {
+            module_id: ModuleIdEnum.Asset,
+            call_id: CallIdEnum.RegisterTicker,
+            extrinsic_idx: 2,
+            spec_version_id: 2006,
+            params: [],
             block_id: blockNumber1.toNumber(),
             address: address,
             success: 0,
           },
           {
+            module_id: ModuleIdEnum.Asset,
+            call_id: CallIdEnum.RegisterTicker,
+            extrinsic_idx: 2,
+            spec_version_id: 2006,
+            params: [],
             block_id: blockNumber2.toNumber(),
             success: 1,
           },

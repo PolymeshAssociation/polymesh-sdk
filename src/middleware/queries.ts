@@ -57,7 +57,7 @@ export function didsWithClaims(
   const query = gql`
     query DidsWithClaimsQuery(
       $dids: [String!]
-      $scope: String
+      $scope: ScopeInput
       $trustedClaimIssuers: [String!]
       $claimTypes: [ClaimTypeEnum!]
       $includeExpired: Boolean
@@ -84,7 +84,11 @@ export function didsWithClaims(
             expiry
             type
             jurisdiction
-            scope
+            cdd_id
+            scope {
+              type
+              value
+            }
           }
         }
       }
@@ -290,7 +294,10 @@ export function scopesByIdentity(
   const query = gql`
     query ScopesByIdentityQuery($did: String!) {
       scopesByIdentity(did: $did) {
-        scope
+        scope {
+          type
+          value
+        }
         ticker
       }
     }
@@ -313,7 +320,7 @@ export function issuerDidsWithClaimsByTarget(
   const query = gql`
     query IssuerDidsWithClaimsByTargetQuery(
       $target: String!
-      $scope: String
+      $scope: ScopeInput
       $trustedClaimIssuers: [String!]
       $includeExpired: Boolean
       $count: Int
@@ -338,7 +345,11 @@ export function issuerDidsWithClaimsByTarget(
             expiry
             type
             jurisdiction
-            scope
+            cdd_id
+            scope {
+              type
+              value
+            }
           }
         }
       }

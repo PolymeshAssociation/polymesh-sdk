@@ -6,8 +6,16 @@ import {
   issuerDidsWithClaimsByTarget,
   scopesByIdentity,
 } from '~/middleware/queries';
-import { ClaimTypeEnum, Query } from '~/middleware/types';
-import { ClaimData, ClaimScope, ClaimType, Ensured, IdentityWithClaims, ResultSet } from '~/types';
+import { ClaimScopeTypeEnum, ClaimTypeEnum, Query } from '~/middleware/types';
+import {
+  ClaimData,
+  ClaimScope,
+  ClaimType,
+  Ensured,
+  IdentityWithClaims,
+  ResultSet,
+  Scope,
+} from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import {
   calculateNextKey,
@@ -110,7 +118,7 @@ export class Claims {
     opts: {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
-      scope?: string;
+      scope?: Scope;
       claimTypes?: ClaimType[];
       includeExpired?: boolean;
       size?: number;
@@ -124,7 +132,7 @@ export class Claims {
     const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
         dids: targets?.map(target => signerToString(target)),
-        scope,
+        scope: scope ? { type: ClaimScopeTypeEnum[scope.type], value: scope.value } : scope,
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
           signerToString(trustedClaimIssuer)
         ),
@@ -235,7 +243,7 @@ export class Claims {
   public async getTargetingClaims(
     opts: {
       target?: string | Identity;
-      scope?: string;
+      scope?: Scope;
       trustedClaimIssuers?: (string | Identity)[];
       includeExpired?: boolean;
       size?: number;
@@ -251,7 +259,7 @@ export class Claims {
     const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
       issuerDidsWithClaimsByTarget({
         target: did,
-        scope,
+        scope: scope ? { type: ClaimScopeTypeEnum[scope.type], value: scope.value } : scope,
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
           signerToString(trustedClaimIssuer)
         ),
