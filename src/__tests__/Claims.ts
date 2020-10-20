@@ -9,7 +9,7 @@ import {
   issuerDidsWithClaimsByTarget,
   scopesByIdentity,
 } from '~/middleware/queries';
-import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
+import { ClaimScopeTypeEnum, ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -18,6 +18,7 @@ import {
   ClaimType,
   IdentityWithClaims,
   ResultSet,
+  Scope,
   ScopeType,
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
@@ -190,6 +191,103 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(25);
       expect(result.next).toEqual(null);
     });
+
+    test('should return a list of Identities with claims associated to them filtered by scope', async () => {
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
+      const date = 1589816265000;
+      const accreditedType = ClaimTypeEnum.Accredited;
+      const claim = {
+        target: new Identity({ did: targetDid }, context),
+        issuer: new Identity({ did: issuerDid }, context),
+        issuedAt: new Date(date),
+      };
+
+      const fakeClaims = [
+        {
+          identity: new Identity({ did: targetDid }, context),
+          claims: [
+            {
+              ...claim,
+              expiry: new Date(date),
+              claim: {
+                type: accreditedType,
+                scope,
+              },
+            },
+            {
+              ...claim,
+              expiry: null,
+              claim: {
+                type: accreditedType,
+                scope,
+              },
+            },
+          ],
+        },
+      ];
+      /* eslint-disable @typescript-eslint/camelcase */
+      const commonClaimData = {
+        targetDID: targetDid,
+        issuer: issuerDid,
+        issuance_date: date,
+        last_update_date: date,
+      };
+      const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
+        totalCount: 25,
+        items: [
+          {
+            did: targetDid,
+            claims: [
+              {
+                ...commonClaimData,
+                expiry: date,
+                type: accreditedType,
+                scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value },
+              },
+              {
+                ...commonClaimData,
+                expiry: null,
+                type: accreditedType,
+                scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value },
+              },
+            ],
+          },
+        ],
+      };
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      dsMockUtils.createApolloQueryStub(
+        didsWithClaims({
+          dids: [targetDid],
+          scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value },
+          trustedClaimIssuers: [targetDid],
+          claimTypes: [ClaimTypeEnum.Accredited],
+          includeExpired: false,
+          count: 1,
+          skip: undefined,
+        }),
+        {
+          didsWithClaims: didsWithClaimsQueryResponse,
+        }
+      );
+
+      const result = await claims.getIdentitiesWithClaims({
+        targets: [targetDid],
+        trustedClaimIssuers: [targetDid],
+        scope,
+        claimTypes: [ClaimType.Accredited],
+        includeExpired: false,
+        size: 1,
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(25);
+      expect(result.next).toEqual(1);
+    });
   });
 
   describe('method: addClaims', () => {
@@ -359,6 +457,10 @@ describe('Claims Class', () => {
   });
 
   describe('method: getTargetingClaims', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return a list of claims issued with an Identity as target', async () => {
       const did = 'someDid';
       const issuerDid = 'someIssuerDid';
@@ -459,5 +561,89 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(25);
       expect(result.next).toBeNull();
     });
+  });
+
+  test('should return a list of claims issued with an Identity as target and a given Scope', async () => {
+    const did = 'someDid';
+    const issuerDid = 'someIssuerDid';
+    const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
+    const date = 1589816265000;
+    const claim = {
+      target: new Identity({ did }, context),
+      issuer: new Identity({ did: issuerDid }, context),
+      issuedAt: new Date(date),
+    };
+    const fakeClaims: IdentityWithClaims[] = [
+      {
+        identity: new Identity({ did }, context),
+        claims: [
+          {
+            ...claim,
+            expiry: new Date(date),
+            claim: {
+              type: ClaimType.Accredited,
+              scope,
+            },
+          },
+        ],
+      },
+    ];
+    /* eslint-disable @typescript-eslint/camelcase */
+    const commonClaimData = {
+      targetDID: did,
+      issuer: issuerDid,
+      issuance_date: date,
+      last_update_date: date,
+    };
+    const issuerDidsWithClaimsByTargetQueryResponse: IdentityWithClaimsResult = {
+      totalCount: 25,
+      items: [
+        {
+          did,
+          claims: [
+            {
+              ...commonClaimData,
+              expiry: date,
+              type: ClaimTypeEnum.Accredited,
+              scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value },
+            },
+          ],
+        },
+      ],
+    };
+    /* eslint-enabled @typescript-eslint/camelcase */
+
+    dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+    sinon
+      .stub(utilsModule, 'toIdentityWithClaimsArray')
+      .withArgs(issuerDidsWithClaimsByTargetQueryResponse.items, context)
+      .returns(fakeClaims);
+
+    dsMockUtils.createApolloQueryStub(
+      issuerDidsWithClaimsByTarget({
+        target: did,
+        scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value },
+        trustedClaimIssuers: [did],
+        includeExpired: false,
+        count: 1,
+        skip: undefined,
+      }),
+      {
+        issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
+      }
+    );
+
+    const result = await claims.getTargetingClaims({
+      target: did,
+      trustedClaimIssuers: [did],
+      scope,
+      includeExpired: false,
+      size: 1,
+    });
+
+    expect(result.data).toEqual(fakeClaims);
+    expect(result.count).toEqual(25);
+    expect(result.next).toEqual(1);
   });
 });

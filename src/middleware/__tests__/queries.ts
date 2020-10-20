@@ -1,4 +1,5 @@
 import {
+  ClaimScopeTypeEnum,
   ClaimTypeEnum,
   EventIdEnum,
   ModuleIdEnum,
@@ -45,7 +46,7 @@ describe('didsWithClaims', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       dids: ['someDid', 'otherDid'],
-      scope: 'someScope',
+      scope: { type: ClaimScopeTypeEnum.Ticker, value: 'someScope' },
       trustedClaimIssuers: ['someTrustedClaim'],
       claimTypes: [ClaimTypeEnum.Accredited],
       count: 100,
@@ -152,7 +153,7 @@ describe('issuerDidsWithClaimsByTarget', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       target: 'someDid',
-      scope: 'someScope',
+      scope: { type: ClaimScopeTypeEnum.Identity, value: 'someScope' },
       trustedClaimIssuers: ['aTrustedClaimIssuer'],
     };
 

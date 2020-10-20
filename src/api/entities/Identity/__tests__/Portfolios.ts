@@ -4,7 +4,8 @@ import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
-import { Context } from '~/base';
+import { createPortfolio } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { tuple } from '~/types/utils';
@@ -22,6 +23,7 @@ describe('Portfolios class', () => {
   let u64ToBigNumberStub: sinon.SinonStub<[u64], BigNumber>;
   let portfolios: Portfolios;
   let identity: Identity;
+  let prepareCreatePortfolioStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -70,6 +72,27 @@ describe('Portfolios class', () => {
       expect(result[1] instanceof NumberedPortfolio).toBe(true);
       expect(result[0].owner.did).toEqual(did);
       expect(result[1].id).toEqual(numberedPortfolioId);
+    });
+  });
+
+  describe('method: createPortfolio', () => {
+    beforeAll(() => {
+      prepareCreatePortfolioStub = sinon.stub(createPortfolio, 'prepare');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const name = 'someName';
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
+
+      prepareCreatePortfolioStub.withArgs({ name }, mockContext).resolves(expectedQueue);
+
+      const queue = await portfolios.createPortfolio({ name });
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

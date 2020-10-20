@@ -1,4 +1,6 @@
 import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
+import { createPortfolio } from '~/api/procedures';
+import { TransactionQueue } from '~/base';
 import { PortfolioNumber } from '~/polkadot';
 import { stringToIdentityId, u64ToBigNumber } from '~/utils';
 
@@ -33,5 +35,12 @@ export class Portfolios extends Namespace<Identity> {
     });
 
     return portfolios;
+  }
+
+  /**
+   * Create a new Portfolio for the Current Identity
+   */
+  public createPortfolio(args: { name: string }): Promise<TransactionQueue<NumberedPortfolio>> {
+    return createPortfolio.prepare(args, this.context);
   }
 }

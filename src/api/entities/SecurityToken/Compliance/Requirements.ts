@@ -154,6 +154,7 @@ export class Requirements extends Namespace<SecurityToken> {
         polymeshApi: { rpc },
       },
       context,
+      parent,
     } = this;
 
     const { from = await this.context.getCurrentIdentity(), to } = args;
@@ -161,8 +162,7 @@ export class Requirements extends Namespace<SecurityToken> {
     const fromDid = stringToIdentityId(signerToString(from), context);
     const toDid = signerToString(to);
 
-    const securityToken = new SecurityToken({ ticker }, context);
-    const { primaryIssuanceAgent } = await securityToken.details();
+    const { primaryIssuanceAgent } = await parent.details();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res: AssetComplianceResult = await (rpc as any).compliance.canTransfer(
