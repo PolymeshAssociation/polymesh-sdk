@@ -1,4 +1,7 @@
-import { Identity, Venue } from '~/api/entities';
+import { u64 } from '@polkadot/types';
+import { Instruction as MeshInstruction } from 'polymesh-types/types';
+
+import { Identity, Instruction, Venue } from '~/api/entities';
 import {
   createVenue,
   CreateVenueParams,
@@ -8,6 +11,7 @@ import {
 } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
+import { portfolioIdToMeshPortfolioId, u64ToBigNumber } from '~/utils';
 
 /**
  * Represents the Identity associated to the current [[Account]]
@@ -57,5 +61,34 @@ export class CurrentIdentity extends Identity {
    */
   public createVenue(args: CreateVenueParams): Promise<TransactionQueue<Venue>> {
     return createVenue.prepare(args, this.context);
+  }
+
+  /**
+   * Retrieve all pending Instructions involving the Current Identity
+   */
+  public async getPendingInstructions(): Promise<Instruction[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      did,
+      context,
+    } = this;
+
+    const auths = await settlement.userAuths.entries(
+      portfolioIdToMeshPortfolioId({ did }, context)
+    );
+
+    const instructionIds = auths.map(([key]) => key.args[1] as u64);
+
+    const meshInstructions = await settlement.instructionDetails.multi<MeshInstruction>(
+      instructionIds
+    );
+
+    return meshInstructions
+      .filter(({ status }) => status.isPending)
+      .map(({ instruction_id: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
   }
 }

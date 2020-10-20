@@ -625,7 +625,7 @@ export class Context {
           type,
           jurisdiction,
           scope,
-          cddId,
+          cdd_id: cddId,
         }) => {
           data.push({
             target: new Identity({ did: targetDID }, this),

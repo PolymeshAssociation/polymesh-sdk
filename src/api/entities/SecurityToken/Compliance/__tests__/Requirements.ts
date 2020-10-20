@@ -13,11 +13,6 @@ import * as utilsModule from '~/utils';
 
 import { Requirements } from '../Requirements';
 
-jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
-);
-
 describe('Requirements class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();

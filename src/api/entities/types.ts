@@ -35,3 +35,4 @@ export * from './SecurityToken/types';
 export * from './Venue/types';
 export * from './Instruction/types';
 export * from './Portfolio/types';
+// export * from './Proposal/types';

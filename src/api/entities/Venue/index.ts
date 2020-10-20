@@ -2,7 +2,8 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { Entity, Identity, Instruction } from '~/api/entities';
-import { Context } from '~/base';
+import { addInstruction, AddInstructionParams } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import { InstructionStatus } from '~/types';
 import {
   identityIdToString,
@@ -98,5 +99,18 @@ export class Venue extends Entity<UniqueIdentifiers> {
 
       return status === InstructionStatus.Pending;
     });
+  }
+
+  /**
+   * Creates a settlement instruction in this Venue
+   *
+   * @param args.legs - array of token movements (amount, from, to, token)
+   * @param args.validFrom - date from which the instruction is valid and can be authorized by the participants (optional, instruction will be valid from the start if not supplied)
+   * @param args.endBlock - block at which the instruction will be executed automatically (optional, the instruction will be executed when all participants have authorized it if not supplied)
+   */
+  public async addInstruction(args: AddInstructionParams): Promise<TransactionQueue<Instruction>> {
+    const { id, context } = this;
+
+    return addInstruction.prepare({ ...args, venueId: id }, context);
   }
 }
