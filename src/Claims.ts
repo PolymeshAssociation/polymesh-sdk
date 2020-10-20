@@ -259,7 +259,7 @@ export class Claims {
     const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
       issuerDidsWithClaimsByTarget({
         target: did,
-        scope: scope ? { type: ClaimScopeTypeEnum[scope.type], value: scope.value } : scope,
+        scope: scope ? { type: ClaimScopeTypeEnum[scope.type], value: scope.value } : undefined,
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
           signerToString(trustedClaimIssuer)
         ),
