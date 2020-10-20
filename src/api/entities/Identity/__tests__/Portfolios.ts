@@ -68,8 +68,8 @@ describe('Portfolios class', () => {
       expect(result).toHaveLength(2);
       expect(result[0] instanceof DefaultPortfolio).toBe(true);
       expect(result[1] instanceof NumberedPortfolio).toBe(true);
-      expect((result[0] as DefaultPortfolio).owner.did).toEqual(did);
-      expect((result[1] as NumberedPortfolio).id).toEqual(numberedPortfolioId);
+      expect(result[0].owner.did).toEqual(did);
+      expect(result[1].id).toEqual(numberedPortfolioId);
     });
   });
 });
