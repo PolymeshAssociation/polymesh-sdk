@@ -4,18 +4,20 @@ import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/
 import { createPortfolio } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { ErrorCode } from '~/types';
-import { bytesToString, numberToU64, stringToIdentityId } from '~/utils';
+import { numberToU64, stringToIdentityId } from '~/utils';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
  */
 export class Portfolios extends Namespace<Identity> {
   /**
-   * Retrieve a numbered Portfolio or the default Portfolio if Portfolio Id is not passed
+   * Retrieve a numbered Portfolio or the default Portfolio if Portfolio ID is not passed
    *
-   * @param args.porfolioId - optional, default to the default portfolio
+   * @param args.porfolioId - optional, defaults to the default portfolio
    */
-  public async getPortfolio(porfolioId?: BigNumber): Promise<DefaultPortfolio | NumberedPortfolio> {
+  public async getPortfolio(args?: {
+    portfolioId: BigNumber;
+  }): Promise<DefaultPortfolio | NumberedPortfolio> {
     const {
       context,
       context: {
@@ -23,26 +25,30 @@ export class Portfolios extends Namespace<Identity> {
           query: { portfolio },
         },
       },
+      parent: { did },
     } = this;
 
-    const { did } = await context.getCurrentIdentity();
+    let portfolioId;
+    if (args) {
+      portfolioId = args.portfolioId;
+    }
 
-    if (!porfolioId) {
+    if (!portfolioId) {
       return new DefaultPortfolio({ did }, context);
     }
 
     const identityId = stringToIdentityId(did, context);
-    const rawPortolioNumber = numberToU64(porfolioId, context);
-    const rawPortfolioName = await portfolio.portfolios(identityId, rawPortolioNumber);
+    const rawPortfolioNumber = numberToU64(portfolioId, context);
+    const rawPortfolioName = await portfolio.portfolios(identityId, rawPortfolioNumber);
 
-    if (!bytesToString(rawPortfolioName)) {
+    if (rawPortfolioName.isEmpty) {
       throw new PolymeshError({
-        code: ErrorCode.InvalidUuid,
+        code: ErrorCode.ValidationError,
         message: "The Portfolio doesn't exist",
       });
     }
 
-    return new NumberedPortfolio({ id: porfolioId, did }, context);
+    return new NumberedPortfolio({ id: portfolioId, did }, context);
   }
 
   /**
