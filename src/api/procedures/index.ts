@@ -7,6 +7,7 @@ export {
 export { addInstruction, AddInstructionParams } from './addInstruction';
 // export { cancelProposal } from './cancelProposal';
 export { consumeAuthorizationRequests, ConsumeParams } from './consumeAuthorizationRequests';
+export { createPortfolio } from './createPortfolio';
 // export { createProposal, CreateProposalParams } from './createProposal';
 export { createSecurityToken, CreateSecurityTokenParams } from './createSecurityToken';
 export { createVenue, CreateVenueParams } from './createVenue';

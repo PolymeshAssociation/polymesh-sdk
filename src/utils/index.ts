@@ -66,15 +66,15 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { Account, Identity } from '~/api/entities';
-import { ProposalDetails } from '~/api/entities/types';
+import { Account, DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
+// import { ProposalDetails } from '~/api/types';
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   CallIdEnum,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
-  Proposal,
+  // Proposal,
   Scope as MiddlewareScope,
 } from '~/middleware/types';
 import {
@@ -440,7 +440,33 @@ export function meshPermissionToPermission(permission: MeshPermission): Permissi
 /**
  * @hidden
  */
-export function authorizationDataToAuthorization(auth: AuthorizationData): Authorization {
+export function u64ToBigNumber(value: u64): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function portfolioIdToPortfolio(
+  portfolioId: MeshPortfolioId,
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, kind } = portfolioId;
+  const identityId = identityIdToString(did);
+
+  if (kind.isDefault) {
+    return new DefaultPortfolio({ did: identityId }, context);
+  }
+  return new NumberedPortfolio({ did: identityId, id: u64ToBigNumber(kind.asUser) }, context);
+}
+
+/**
+ * @hidden
+ */
+export function authorizationDataToAuthorization(
+  auth: AuthorizationData,
+  context: Context
+): Authorization {
   if (auth.isAttestPrimaryKeyRotation) {
     return {
       type: AuthorizationType.AttestPrimaryKeyRotation,
@@ -465,6 +491,7 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
   if (auth.isAddMultiSigSigner) {
     return {
       type: AuthorizationType.AddMultiSigSigner,
+      value: accountIdToString(auth.asAddMultiSigSigner),
     };
   }
 
@@ -472,6 +499,13 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
     return {
       type: AuthorizationType.TransferAssetOwnership,
       value: tickerToString(auth.asTransferAssetOwnership),
+    };
+  }
+
+  if (auth.isPortfolioCustody) {
+    return {
+      type: AuthorizationType.PortfolioCustody,
+      value: portfolioIdToPortfolio(auth.asPortfolioCustody, context),
     };
   }
 
@@ -576,13 +610,6 @@ export function u32ToBigNumber(value: u32): BigNumber {
  */
 export function numberToU64(value: number | BigNumber, context: Context): u64 {
   return context.polymeshApi.createType('u64', new BigNumber(value).toString());
-}
-
-/**
- * @hidden
- */
-export function u64ToBigNumber(value: u64): BigNumber {
-  return new BigNumber(value.toString());
 }
 
 /**
@@ -1706,43 +1733,43 @@ export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
   });
 }
 
-/**
- * @hidden
- */
-export function middlewareProposalToProposalDetails(
-  proposal: Proposal,
-  context: Context
-): ProposalDetails {
-  const {
-    proposer: proposerAddress,
-    createdAt,
-    url: discussionUrl,
-    description,
-    coolOffEndBlock,
-    endBlock,
-    proposal: rawProposal,
-    lastState,
-    lastStateUpdatedAt,
-    totalVotes,
-    totalAyesWeight,
-    totalNaysWeight,
-  } = proposal;
+// /**
+//  * @hidden
+//  */
+// export function middlewareProposalToProposalDetails(
+//   proposal: Proposal,
+//   context: Context
+// ): ProposalDetails {
+//   const {
+//     proposer: proposerAddress,
+//     createdAt,
+//     url: discussionUrl,
+//     description,
+//     coolOffEndBlock,
+//     endBlock,
+//     proposal: rawProposal,
+//     lastState,
+//     lastStateUpdatedAt,
+//     totalVotes,
+//     totalAyesWeight,
+//     totalNaysWeight,
+//   } = proposal;
 
-  return {
-    proposerAddress,
-    createdAt: new BigNumber(createdAt),
-    discussionUrl,
-    description,
-    coolOffEndBlock: new BigNumber(coolOffEndBlock),
-    endBlock: new BigNumber(endBlock),
-    transaction: rawProposal ? transactionHexToTxTag(rawProposal, context) : null,
-    lastState,
-    lastStateUpdatedAt: new BigNumber(lastStateUpdatedAt),
-    totalVotes: new BigNumber(totalVotes),
-    totalAyesWeight: new BigNumber(totalAyesWeight),
-    totalNaysWeight: new BigNumber(totalNaysWeight),
-  };
-}
+//   return {
+//     proposerAddress,
+//     createdAt: new BigNumber(createdAt),
+//     discussionUrl,
+//     description,
+//     coolOffEndBlock: new BigNumber(coolOffEndBlock),
+//     endBlock: new BigNumber(endBlock),
+//     transaction: rawProposal ? transactionHexToTxTag(rawProposal, context) : null,
+//     lastState,
+//     lastStateUpdatedAt: new BigNumber(lastStateUpdatedAt),
+//     totalVotes: new BigNumber(totalVotes),
+//     totalAyesWeight: new BigNumber(totalAyesWeight),
+//     totalNaysWeight: new BigNumber(totalNaysWeight),
+//   };
+// }
 
 /**
  * @hidden
