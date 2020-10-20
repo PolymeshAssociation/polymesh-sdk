@@ -1,4 +1,4 @@
-import { Bytes, u64 } from '@polkadot/types';
+import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
