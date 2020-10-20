@@ -7,7 +7,7 @@ import { stringToIdentityId, u64ToBigNumber } from '~/utils';
  */
 export class Portfolios extends Namespace<Identity> {
   /**
-   * Retrieve all the portfolios for the current identity
+   * Retrieve all the Portfolios for the Identity
    */
   public async getPortfolios(): Promise<[DefaultPortfolio, ...NumberedPortfolio[]]> {
     const {
@@ -17,21 +17,21 @@ export class Portfolios extends Namespace<Identity> {
           query: { portfolio },
         },
       },
+      parent: { did },
     } = this;
 
-    const { did } = await context.getCurrentIdentity();
     const identityId = stringToIdentityId(did, context);
     const rawPortfolios = await portfolio.portfolios.entries(identityId);
 
-    const numberedPortfolios: [DefaultPortfolio, ...NumberedPortfolio[]] = [
+    const portfolios: [DefaultPortfolio, ...NumberedPortfolio[]] = [
       new DefaultPortfolio({ did }, context),
     ];
     rawPortfolios.forEach(([key]) => {
-      numberedPortfolios.push(
+      portfolios.push(
         new NumberedPortfolio({ id: u64ToBigNumber(key.args[1] as PortfolioNumber), did }, context)
       );
     });
 
-    return numberedPortfolios;
+    return portfolios;
   }
 }
