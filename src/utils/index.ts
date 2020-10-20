@@ -1096,7 +1096,7 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
  * @hidden
  */
 export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
-  return { type: scope.type, value: scope.value } as Scope;
+  return { type: ScopeType[scope.type], value: scope.value } as Scope;
 }
 
 /**
@@ -1110,7 +1110,7 @@ export function createClaim(
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope
-    ? { type: middlewareScope.type, value: middlewareScope.value }
+    ? { type: ScopeType[middlewareScope.type], value: middlewareScope.value }
     : {}) as Scope;
 
   if (type === ClaimType.Jurisdiction) {
@@ -1709,7 +1709,7 @@ export function toIdentityWithClaimsArray(
         type,
         jurisdiction,
         scope: claimScope,
-        cddId,
+        cdd_id: cddId,
       }) => ({
         target: new Identity({ did: targetDID }, context),
         issuer: new Identity({ did: issuer }, context),

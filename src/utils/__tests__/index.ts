@@ -38,7 +38,7 @@ import sinon from 'sinon';
 import { Account, DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
 // import { ProposalState } from '~/api/entities/types';
 import { Context, PostTransactionValue } from '~/base';
-import { CallIdEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
+import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   Authorization,
@@ -1959,10 +1959,10 @@ describe('stringToCddId and cddIdToString', () => {
 });
 
 describe('createClaim', () => {
-  test('', () => {
+  test('createClaim should create Claim objects from claims data provided by middleware', () => {
     let type = 'Jurisdiction';
     const jurisdiction = CountryCode.Cl;
-    let scope = { type: ScopeType.Identity, value: 'someScope' };
+    let scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
     let result = createClaim(type, jurisdiction, scope, null);
     expect(result).toEqual({
@@ -1972,7 +1972,7 @@ describe('createClaim', () => {
     });
 
     type = 'BuyLockup';
-    scope = { type: ScopeType.Identity, value: 'someScope' };
+    scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
     result = createClaim(type, null, scope, null);
     expect(result).toEqual({

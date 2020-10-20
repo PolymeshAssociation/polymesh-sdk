@@ -30,11 +30,12 @@ export class Settlements extends Namespace<SecurityToken> {
     amount: BigNumber;
   }): Promise<TransferStatus> {
     const {
-      parent: { ticker, details },
+      parent: { ticker },
       context: {
         polymeshApi: { rpc },
       },
       context,
+      parent,
     } = this;
 
     const { to, amount } = args;
@@ -42,9 +43,9 @@ export class Settlements extends Namespace<SecurityToken> {
     let isDivisible;
 
     if (!from) {
-      [{ isDivisible }, from] = await Promise.all([details(), context.getCurrentIdentity()]);
+      [{ isDivisible }, from] = await Promise.all([parent.details(), context.getCurrentIdentity()]);
     } else {
-      ({ isDivisible } = await details());
+      ({ isDivisible } = await parent.details());
     }
 
     /*
