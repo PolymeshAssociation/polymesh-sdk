@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Identity, SecurityToken } from '~/api/entities';
+import { Identity, SecurityToken, Venue } from '~/api/entities';
 
 export enum InstructionStatus {
   Pending = 'Pending',
@@ -19,6 +19,7 @@ export type InstructionDetails = {
    * If null, the instruction is valid immediately
    */
   validFrom: Date | null;
+  venue: Venue;
 } & (
   | {
       type: InstructionType.SettleOnAuthorization;
