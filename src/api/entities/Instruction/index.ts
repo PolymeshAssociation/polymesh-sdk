@@ -2,8 +2,9 @@ import BigNumber from 'bignumber.js';
 import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 
 import { Entity, Identity, SecurityToken } from '~/api/entities';
-import { toggleInstructionAuthorization } from '~/api/procedures';
+import { modifyInstructionAuthorization } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
+import { InstructionAuthorizationOperation } from '~/types/internal';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -154,11 +155,28 @@ export class Instruction extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Reject this instruction
+   *
+   * @note reject on `SettleOnAuthorization` will execute the settlement and it will fail immediately.
+   * @note reject on `SettleOnBlock` behaves just like unauthorize
+   */
+  public reject(): Promise<TransactionQueue<Instruction>> {
+    const { id, context } = this;
+    return modifyInstructionAuthorization.prepare(
+      { id, operation: InstructionAuthorizationOperation.Reject },
+      context
+    );
+  }
+
+  /**
    * Authorize this instruction
    */
   public authorize(): Promise<TransactionQueue<Instruction>> {
     const { id, context } = this;
-    return toggleInstructionAuthorization.prepare({ id, authorize: true }, context);
+    return modifyInstructionAuthorization.prepare(
+      { id, operation: InstructionAuthorizationOperation.Authorize },
+      context
+    );
   }
 
   /**
@@ -166,6 +184,9 @@ export class Instruction extends Entity<UniqueIdentifiers> {
    */
   public unauthorize(): Promise<TransactionQueue<Instruction>> {
     const { id, context } = this;
-    return toggleInstructionAuthorization.prepare({ id, authorize: false }, context);
+    return modifyInstructionAuthorization.prepare(
+      { id, operation: InstructionAuthorizationOperation.Unauthorize },
+      context
+    );
   }
 }
