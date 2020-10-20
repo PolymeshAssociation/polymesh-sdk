@@ -72,10 +72,6 @@ interface IdentityOptions {
   getPrimaryKey?: string;
 }
 
-interface InstructionOptions {
-  details?: InstructionDetails;
-}
-
 interface CurrentIdentityOptions extends IdentityOptions {
   getSecondaryKeys?: SecondaryKey[];
 }
@@ -126,7 +122,7 @@ interface VenueOptions {
 
 interface InstructionOptions {
   id?: BigNumber;
-  details?: InstructionDetails;
+  details?: Partial<InstructionDetails>;
 }
 
 let identityConstructorStub: SinonStub;
@@ -598,8 +594,9 @@ function initIdentity(opts?: IdentityOptions): void {
  * Configure the identity instance
  */
 function configureInstruction(opts: InstructionOptions): void {
+  const details = { venue: mockInstanceContainer.venue, ...opts.details };
   const instruction = ({
-    details: instructionDetailsStub.resolves(opts.details),
+    details: instructionDetailsStub.resolves(details),
   } as unknown) as MockInstruction;
 
   Object.assign(mockInstanceContainer.instruction, instruction);
