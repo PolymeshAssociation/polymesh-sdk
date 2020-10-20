@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
-import { PolymeshError } from '~/base';
+import { createPortfolio } from '~/api/procedures';
+import { PolymeshError, TransactionQueue } from '~/base';
 import { ErrorCode } from '~/types';
 import { bytesToString, numberToU64, stringToIdentityId } from '~/utils';
 
@@ -42,5 +43,12 @@ export class Portfolios extends Namespace<Identity> {
     }
 
     return new NumberedPortfolio({ id: porfolioId, did }, context);
+  }
+
+  /**
+   * Create a new Portfolio for the Current Identity
+   */
+  public createPortfolio(args: { name: string }): Promise<TransactionQueue<NumberedPortfolio>> {
+    return createPortfolio.prepare(args, this.context);
   }
 }

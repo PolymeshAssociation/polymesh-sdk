@@ -37,3 +37,4 @@ export {
   modifyInstructionAuthorization,
   ModifyInstructionAuthorizationParams,
 } from './modifyInstructionAuthorization';
+export { createPortfolio } from './createPortfolio';

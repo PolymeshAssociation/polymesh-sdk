@@ -1,10 +1,11 @@
 import { Bytes, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 
 import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
-import { Context } from '~/base';
+import { createPortfolio } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import * as utilsModule from '~/utils';
@@ -19,6 +20,7 @@ describe('Portfolios class', () => {
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
   let bytesToStringStub: sinon.SinonStub<[Bytes], string>;
+  let prepareCreatePortfolioStub: SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -85,6 +87,27 @@ describe('Portfolios class', () => {
       return expect(portfolios.getPortfolio(portfolioId)).rejects.toThrow(
         "The Portfolio doesn't exist"
       );
+    });
+  });
+
+  describe('method: createPortfolio', () => {
+    beforeAll(() => {
+      prepareCreatePortfolioStub = sinon.stub(createPortfolio, 'prepare');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const name = 'someName';
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
+
+      prepareCreatePortfolioStub.withArgs({ name }, context).resolves(expectedQueue);
+
+      const queue = await portfolios.createPortfolio({ name });
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });
