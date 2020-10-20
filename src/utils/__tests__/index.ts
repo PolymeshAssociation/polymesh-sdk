@@ -35,7 +35,7 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Identity, Portfolio } from '~/api/entities';
+import { Account, DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
 import { ProposalState } from '~/api/entities/Proposal/types';
 import { Context, PostTransactionValue } from '~/base';
 import { CallIdEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
@@ -1657,7 +1657,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     fakeResult = {
       type: AuthorizationType.PortfolioCustody,
-      value: new Portfolio({ did: 'someDid' }, context),
+      value: new DefaultPortfolio({ did: 'someDid' }, context),
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
       PortfolioCustody: dsMockUtils.createMockPortfolioId({
@@ -1672,7 +1672,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     const portfolioId = new BigNumber(1);
     fakeResult = {
       type: AuthorizationType.PortfolioCustody,
-      value: new Portfolio({ did: 'someDid', id: portfolioId }, context),
+      value: new NumberedPortfolio({ did: 'someDid', id: portfolioId }, context),
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
       PortfolioCustody: dsMockUtils.createMockPortfolioId({

@@ -66,7 +66,7 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { Account, Identity, Portfolio } from '~/api/entities';
+import { Account, DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
 import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
@@ -447,14 +447,17 @@ export function u64ToBigNumber(value: u64): BigNumber {
 /**
  * @hidden
  */
-export function portfolioIdToPortfolio(portfolioId: MeshPortfolioId, context: Context): Portfolio {
+export function portfolioIdToPortfolio(
+  portfolioId: MeshPortfolioId,
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
   const { did, kind } = portfolioId;
-  const indentityId = identityIdToString(did);
+  const identityId = identityIdToString(did);
 
   if (kind.isDefault) {
-    return new Portfolio({ did: indentityId }, context);
+    return new DefaultPortfolio({ did: identityId }, context);
   }
-  return new Portfolio({ did: indentityId, id: u64ToBigNumber(kind.asUser) }, context);
+  return new NumberedPortfolio({ did: identityId, id: u64ToBigNumber(kind.asUser) }, context);
 }
 
 /**
