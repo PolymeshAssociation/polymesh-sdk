@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { CurrentIdentity, Identity, Venue } from '~/api/entities';
@@ -5,6 +6,7 @@ import { createVenue, inviteAccount, removeSecondaryKeys } from '~/api/procedure
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { SecondaryKey, SubCallback, VenueType } from '~/types';
+import { tuple } from '~/types/utils';
 
 describe('CurrentIdentity class', () => {
   let context: Context;
@@ -131,6 +133,75 @@ describe('CurrentIdentity class', () => {
       const queue = await identity.createVenue(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getPendingInstructions', () => {
+    test('should return all pending instructions in which the identity is involved', async () => {
+      const id1 = new BigNumber(1);
+      const id2 = new BigNumber(2);
+      const id3 = new BigNumber(3);
+
+      const did = 'someDid';
+      const identity = new CurrentIdentity({ did }, context);
+
+      const rawPortfolio = dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(did),
+        kind: dsMockUtils.createMockPortfolioKind('Default'),
+      });
+      dsMockUtils.createQueryStub('settlement', 'userAuths', {
+        entries: [
+          tuple(
+            [rawPortfolio, dsMockUtils.createMockU64(id1.toNumber())],
+            dsMockUtils.createMockAuthorizationStatus('Pending')
+          ),
+          tuple(
+            [rawPortfolio, dsMockUtils.createMockU64(id2.toNumber())],
+            dsMockUtils.createMockAuthorizationStatus('Pending')
+          ),
+          tuple(
+            [rawPortfolio, dsMockUtils.createMockU64(id3.toNumber())],
+            dsMockUtils.createMockAuthorizationStatus('Pending')
+          ),
+        ],
+      });
+
+      /* eslint-disable @typescript-eslint/camelcase */
+      dsMockUtils.createQueryStub('settlement', 'instructionDetails', {
+        multi: [
+          dsMockUtils.createMockInstruction({
+            instruction_id: dsMockUtils.createMockU64(id1.toNumber()),
+            venue_id: dsMockUtils.createMockU64(),
+            status: dsMockUtils.createMockInstructionStatus('Pending'),
+            settlement_type: dsMockUtils.createMockSettlementType('SettleOnAuthorization'),
+            created_at: dsMockUtils.createMockOption(),
+            valid_from: dsMockUtils.createMockOption(),
+          }),
+          dsMockUtils.createMockInstruction({
+            instruction_id: dsMockUtils.createMockU64(id2.toNumber()),
+            venue_id: dsMockUtils.createMockU64(),
+            status: dsMockUtils.createMockInstructionStatus('Pending'),
+            settlement_type: dsMockUtils.createMockSettlementType('SettleOnAuthorization'),
+            created_at: dsMockUtils.createMockOption(),
+            valid_from: dsMockUtils.createMockOption(),
+          }),
+          dsMockUtils.createMockInstruction({
+            instruction_id: dsMockUtils.createMockU64(id3.toNumber()),
+            venue_id: dsMockUtils.createMockU64(),
+            status: dsMockUtils.createMockInstructionStatus('Unknown'),
+            settlement_type: dsMockUtils.createMockSettlementType('SettleOnAuthorization'),
+            created_at: dsMockUtils.createMockOption(),
+            valid_from: dsMockUtils.createMockOption(),
+          }),
+        ],
+      });
+      /* eslint-enable @typescript-eslint/camelcase */
+
+      const result = await identity.getPendingInstructions();
+
+      expect(result.length).toBe(2);
+      expect(result[0].id).toEqual(id1);
+      expect(result[1].id).toEqual(id2);
     });
   });
 });
