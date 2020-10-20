@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 
-import { Entity, Identity, SecurityToken } from '~/api/entities';
+import { Entity, Identity, SecurityToken, Venue } from '~/api/entities';
 import { modifyInstructionAuthorization } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { InstructionAuthorizationOperation } from '~/types/internal';
@@ -14,6 +14,7 @@ import {
   numberToU64,
   tickerToString,
   u32ToBigNumber,
+  u64ToBigNumber,
 } from '~/utils';
 
 import { InstructionAuthorization, InstructionDetails, InstructionType, Leg } from './types';
@@ -71,12 +72,14 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       created_at: createdAt,
       valid_from: validFrom,
       settlement_type: type,
+      venue_id: venueId,
     } = await settlement.instructionDetails(numberToU64(id, context));
 
     const details = {
       status: meshInstructionStatusToInstructionStatus(status),
-      createdAt: momentToDate(createdAt.unwrap()), // NOTE @monitz87: I'm pretty sure this can't be null, but I'll ask
+      createdAt: momentToDate(createdAt.unwrap()),
       validFrom: validFrom.isSome ? momentToDate(validFrom.unwrap()) : null,
+      venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
     };
 
     if (type.isSettleOnAuthorization) {

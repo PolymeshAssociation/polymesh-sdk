@@ -6,8 +6,8 @@ import {
 } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
-import { Entity, Instruction } from '~/api/entities';
-import { Identity } from '~/api/entities/Identity';
+import { Entity, Identity, Instruction } from '~/api/entities';
+import { Venue } from '~/api/entities/Venue';
 import { modifyInstructionAuthorization } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -77,6 +77,8 @@ describe('Instruction class', () => {
       const status = InstructionStatus.Pending;
       const createdAt = new Date('10/14/1987');
       const validFrom = new Date('11/17/1987');
+      const venueId = new BigNumber(1);
+      const venue = new Venue({ id: venueId }, context);
       let type = InstructionType.SettleOnAuthorization;
       const owner = 'someDid';
 
@@ -89,6 +91,7 @@ describe('Instruction class', () => {
       const queryResult = {
         status: dsMockUtils.createMockInstructionStatus(status),
         /* eslint-disable @typescript-eslint/camelcase */
+        venue_id: dsMockUtils.createMockU64(venueId.toNumber()),
         created_at: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(createdAt.getTime())),
         valid_from: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(validFrom.getTime())),
         settlement_type: dsMockUtils.createMockSettlementType(type),
@@ -107,6 +110,7 @@ describe('Instruction class', () => {
         createdAt,
         validFrom,
         type,
+        venue,
       });
 
       type = InstructionType.SettleOnBlock;
@@ -130,6 +134,7 @@ describe('Instruction class', () => {
         validFrom: null,
         type,
         endBlock,
+        venue,
       });
     });
   });
