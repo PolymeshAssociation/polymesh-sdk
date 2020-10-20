@@ -6,8 +6,7 @@ import {
 } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
-import { Entity, Identity, Instruction } from '~/api/entities';
-import { Venue } from '~/api/entities/Venue';
+import { Entity, Identity, Instruction, Venue } from '~/api/entities';
 import { modifyInstructionAuthorization } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
