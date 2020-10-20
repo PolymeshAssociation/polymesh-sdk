@@ -66,7 +66,7 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { Account, Identity } from '~/api/entities';
+import { Account, DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
 import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
@@ -440,7 +440,33 @@ export function meshPermissionToPermission(permission: MeshPermission): Permissi
 /**
  * @hidden
  */
-export function authorizationDataToAuthorization(auth: AuthorizationData): Authorization {
+export function u64ToBigNumber(value: u64): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function portfolioIdToPortfolio(
+  portfolioId: MeshPortfolioId,
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, kind } = portfolioId;
+  const identityId = identityIdToString(did);
+
+  if (kind.isDefault) {
+    return new DefaultPortfolio({ did: identityId }, context);
+  }
+  return new NumberedPortfolio({ did: identityId, id: u64ToBigNumber(kind.asUser) }, context);
+}
+
+/**
+ * @hidden
+ */
+export function authorizationDataToAuthorization(
+  auth: AuthorizationData,
+  context: Context
+): Authorization {
   if (auth.isAttestPrimaryKeyRotation) {
     return {
       type: AuthorizationType.AttestPrimaryKeyRotation,
@@ -465,6 +491,7 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
   if (auth.isAddMultiSigSigner) {
     return {
       type: AuthorizationType.AddMultiSigSigner,
+      value: accountIdToString(auth.asAddMultiSigSigner),
     };
   }
 
@@ -472,6 +499,13 @@ export function authorizationDataToAuthorization(auth: AuthorizationData): Autho
     return {
       type: AuthorizationType.TransferAssetOwnership,
       value: tickerToString(auth.asTransferAssetOwnership),
+    };
+  }
+
+  if (auth.isPortfolioCustody) {
+    return {
+      type: AuthorizationType.PortfolioCustody,
+      value: portfolioIdToPortfolio(auth.asPortfolioCustody, context),
     };
   }
 
@@ -576,13 +610,6 @@ export function u32ToBigNumber(value: u32): BigNumber {
  */
 export function numberToU64(value: number | BigNumber, context: Context): u64 {
   return context.polymeshApi.createType('u64', new BigNumber(value).toString());
-}
-
-/**
- * @hidden
- */
-export function u64ToBigNumber(value: u64): BigNumber {
-  return new BigNumber(value.toString());
 }
 
 /**
