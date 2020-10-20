@@ -1537,10 +1537,11 @@ export const createMockAuthorizationData = (
     | { AttestPrimaryKeyRotation: IdentityId }
     | { RotatePrimaryKey: IdentityId }
     | { TransferTicker: Ticker }
-    | 'AddMultiSigSigner'
+    | { AddMultiSigSigner: AccountId }
     | { TransferAssetOwnership: Ticker }
     | { JoinIdentity: Permission[] }
     | { TransferPrimaryIssuanceAgent: Ticker }
+    | { PortfolioCustody: PortfolioId }
     | { custom: Bytes }
     | 'NoData'
 ): AuthorizationData => {
