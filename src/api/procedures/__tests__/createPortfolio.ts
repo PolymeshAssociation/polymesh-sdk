@@ -23,7 +23,7 @@ describe('createPortfolio procedure', () => {
   let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let rawPortfolios: [PortfolioName][];
   let portfolioEntries: [[], PortfolioName][];
-  let portfoliosName: { name: string }[];
+  let portfolioNames: { name: string }[];
   let newPortfolioName: string;
   let addTransactionStub: sinon.SinonStub;
   let rawNewPortfolioName: Bytes;
@@ -36,13 +36,13 @@ describe('createPortfolio procedure', () => {
     bytesToStringStub = sinon.stub(utilsModule, 'bytesToString');
     stringToBytesStub = sinon.stub(utilsModule, 'stringToBytes');
 
-    portfoliosName = [
+    portfolioNames = [
       {
         name: 'portfolioName1',
       },
     ];
 
-    rawPortfolios = portfoliosName.map(({ name }) => tuple(dsMockUtils.createMockBytes(name)));
+    rawPortfolios = portfolioNames.map(({ name }) => tuple(dsMockUtils.createMockBytes(name)));
 
     portfolioEntries = rawPortfolios.map(([name]) => tuple([], name));
 
@@ -53,7 +53,7 @@ describe('createPortfolio procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([numberedPortfolio]);
-    bytesToStringStub.withArgs(rawPortfolios[0][0]).returns(portfoliosName[0].name);
+    bytesToStringStub.withArgs(rawPortfolios[0][0]).returns(portfolioNames[0].name);
     stringToBytesStub.withArgs(newPortfolioName, mockContext).returns(rawNewPortfolioName);
 
     dsMockUtils.createQueryStub('portfolio', 'portfolios', {
@@ -77,11 +77,11 @@ describe('createPortfolio procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
     return expect(
-      prepareCreatePortfolio.call(proc, { name: portfoliosName[0].name })
-    ).rejects.toThrow('Already exists a portfolio with the same name');
+      prepareCreatePortfolio.call(proc, { name: portfolioNames[0].name })
+    ).rejects.toThrow('A portfolio with that name already exists');
   });
 
-  test('should add a create portfolio transaction and an add documents transaction to the queue', async () => {
+  test('should add a create portfolio transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
     const createPortfolioTransaction = dsMockUtils.createTxStub('portfolio', 'createPortfolio');
 

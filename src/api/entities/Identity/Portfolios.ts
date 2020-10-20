@@ -7,11 +7,10 @@ import { TransactionQueue } from '~/base';
  */
 export class Portfolios extends Namespace<Identity> {
   /**
-   * Create a new portfolio to the current Identity
+   * Create a new Portfolio for the Current Identity
    */
   public createPortfolio(args: { name: string }): Promise<TransactionQueue<NumberedPortfolio>> {
-    const { name } = args;
     const { context } = this;
-    return createPortfolio.prepare({ name }, context);
+    return createPortfolio.prepare(args, context);
   }
 }

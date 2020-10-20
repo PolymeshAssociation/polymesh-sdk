@@ -17,9 +17,9 @@ import {
 /**
  * @hidden
  */
-export type Params = {
+export interface Params {
   name: string;
-};
+}
 
 /**
  * @hidden
@@ -57,13 +57,12 @@ export async function prepareCreatePortfolio(
 
   const rawPortfolios = await portfolio.portfolios.entries(stringToIdentityId(did, context));
 
-  const portfoliosNames: string[] = [];
-  rawPortfolios.forEach(([, name]) => portfoliosNames.push(bytesToString(name)));
+  const portfolioNames = rawPortfolios.map(([, name]) => bytesToString(name));
 
-  if (portfoliosNames.includes(portfolioName)) {
+  if (portfolioNames.includes(portfolioName)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Already exists a portfolio with the same name',
+      message: 'A portfolio with that name already exists',
     });
   }
 
