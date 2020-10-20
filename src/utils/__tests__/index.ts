@@ -1959,7 +1959,7 @@ describe('stringToCddId and cddIdToString', () => {
 });
 
 describe('createClaim', () => {
-  test('', () => {
+  test('createClaim should create Claim objects from claims data provided by middleware', () => {
     let type = 'Jurisdiction';
     const jurisdiction = CountryCode.Cl;
     let scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
