@@ -1117,6 +1117,7 @@ export function createClaim(
     return {
       type,
       // this assertion is necessary because CountryCode is not in the middleware types
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       code: stringUpperFirst(jurisdiction!.toLowerCase()) as CountryCode,
       scope,
     };
