@@ -1117,7 +1117,7 @@ export function createClaim(
     return {
       type,
       // this assertion is necessary because CountryCode is not in the middleware types
-      code: stringUpperFirst(jurisdiction?.toLowerCase()) as CountryCode,
+      code: stringUpperFirst(jurisdiction!.toLowerCase()) as CountryCode,
       scope,
     };
   } else if (type === ClaimType.NoData) {
