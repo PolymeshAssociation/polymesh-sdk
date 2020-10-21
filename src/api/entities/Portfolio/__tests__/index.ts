@@ -3,8 +3,7 @@ import BigNumber from 'bignumber.js';
 import { PortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Entity, Identity, Portfolio } from '~/api/entities';
-import { SecurityToken } from '~/api/entities/SecurityToken';
+import { Entity, Identity, Portfolio, SecurityToken } from '~/api/entities';
 import { Context } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
