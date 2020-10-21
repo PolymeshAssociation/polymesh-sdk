@@ -244,13 +244,19 @@ describe('Claims Class', () => {
                 ...commonClaimData,
                 expiry: date,
                 type: accreditedType,
-                scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value },
+                scope: {
+                  type: ClaimScopeTypeEnum[scope.type],
+                  value: scope.value.padEnd(12, '\0'),
+                },
               },
               {
                 ...commonClaimData,
                 expiry: null,
                 type: accreditedType,
-                scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value },
+                scope: {
+                  type: ClaimScopeTypeEnum[scope.type],
+                  value: scope.value.padEnd(12, '\0'),
+                },
               },
             ],
           },
@@ -263,7 +269,7 @@ describe('Claims Class', () => {
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
           dids: [targetDid],
-          scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value },
+          scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value.padEnd(12, '\0') },
           trustedClaimIssuers: [targetDid],
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: false,
@@ -605,7 +611,7 @@ describe('Claims Class', () => {
               ...commonClaimData,
               expiry: date,
               type: ClaimTypeEnum.Accredited,
-              scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value },
+              scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value.padEnd(12, '\0') },
             },
           ],
         },
@@ -623,7 +629,7 @@ describe('Claims Class', () => {
     dsMockUtils.createApolloQueryStub(
       issuerDidsWithClaimsByTarget({
         target: did,
-        scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value },
+        scope: { type: ClaimScopeTypeEnum[scope.type], value: scope.value.padEnd(12, '\0') },
         trustedClaimIssuers: [did],
         includeExpired: false,
         count: 1,
