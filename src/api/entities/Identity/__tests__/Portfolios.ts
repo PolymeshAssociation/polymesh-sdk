@@ -53,7 +53,7 @@ describe('Portfolios class', () => {
   });
 
   describe('method: getPortfolios', () => {
-    test('should retrieve all the portfolios for the current identity', async () => {
+    test('should retrieve all the portfolios for the identity', async () => {
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
         entries: [
           tuple(
