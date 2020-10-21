@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { Identity, Namespace, NumberedPortfolio } from '~/api/entities';
 import { createPortfolio } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
@@ -11,5 +13,15 @@ export class Portfolios extends Namespace<Identity> {
    */
   public createPortfolio(args: { name: string }): Promise<TransactionQueue<NumberedPortfolio>> {
     return createPortfolio.prepare(args, this.context);
+  }
+
+  /**
+   * Delete a Portfolio by ID
+   */
+  public deletePortfolio(args: { portfolioId: BigNumber }): Promise<TransactionQueue<void>> {
+    const {
+      parent: { did },
+    } = this;
+    return deletePortfolio.prepare({ id: args.portfolioId, did }, this.context);
   }
 }
