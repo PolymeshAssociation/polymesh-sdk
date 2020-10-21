@@ -28,10 +28,7 @@ export class Portfolios extends Namespace<Identity> {
       parent: { did },
     } = this;
 
-    let portfolioId;
-    if (args) {
-      portfolioId = args.portfolioId;
-    }
+    const portfolioId = args?.portfolioId;
 
     if (!portfolioId) {
       return new DefaultPortfolio({ did }, context);
