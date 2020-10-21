@@ -38,13 +38,7 @@ import sinon from 'sinon';
 import { Account, DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
 // import { ProposalState } from '~/api/entities/types';
 import { Context, PostTransactionValue } from '~/base';
-import {
-  CallIdEnum,
-  ClaimScopeTypeEnum,
-  ClaimTypeEnum,
-  ModuleIdEnum,
-  Scope as MiddlewareScope,
-} from '~/middleware/types';
+import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   Authorization,
