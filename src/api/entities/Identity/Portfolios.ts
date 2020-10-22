@@ -79,7 +79,7 @@ export class Portfolios extends Namespace<Identity> {
   }
 
   /**
-   * Create a new Portfolio for the Current Identity
+   * Create a new Portfolio for the Identity
    */
   public createPortfolio(args: { name: string }): Promise<TransactionQueue<NumberedPortfolio>> {
     return createPortfolio.prepare(args, this.context);
