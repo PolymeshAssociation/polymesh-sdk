@@ -145,7 +145,7 @@ export interface TokenDocumentData {
 
 export interface PortfolioId {
   did: string;
-  number?: number;
+  number?: BigNumber;
 }
 
 export enum InstructionAuthorizationOperation {
