@@ -23,6 +23,7 @@ describe('Portfolios class', () => {
   let u64ToBigNumberStub: sinon.SinonStub<[u64], BigNumber>;
   let portfolios: Portfolios;
   let identity: Identity;
+  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
   let prepareCreatePortfolioStub: sinon.SinonStub;
 
   beforeAll(() => {
@@ -30,6 +31,7 @@ describe('Portfolios class', () => {
     entityMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
     u64ToBigNumberStub = sinon.stub(utilsModule, 'u64ToBigNumber');
+    numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
   });
 
   beforeEach(() => {
@@ -72,6 +74,46 @@ describe('Portfolios class', () => {
       expect(result[1] instanceof NumberedPortfolio).toBe(true);
       expect(result[0].owner.did).toEqual(did);
       expect(result[1].id).toEqual(numberedPortfolioId);
+    });
+  });
+
+  describe('method: getPortfolio', () => {
+    test('should return the default portfolio for the current identity', async () => {
+      const result = await portfolios.getPortfolio();
+      expect(result instanceof DefaultPortfolio).toBe(true);
+      expect(result.owner.did).toEqual(did);
+    });
+
+    test('should return a numbered portfolio', async () => {
+      const portfolioId = new BigNumber(1);
+      const portfolioName = 'someName';
+
+      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+        returnValue: dsMockUtils.createMockBytes(portfolioName),
+      });
+
+      stringToIdentityIdStub.returns(dsMockUtils.createMockIdentityId(did));
+      numberToU64Stub.returns(dsMockUtils.createMockU64(portfolioId.toNumber()));
+
+      const result = await portfolios.getPortfolio({ portfolioId });
+
+      expect(result instanceof NumberedPortfolio).toBe(true);
+      expect((result as NumberedPortfolio).id).toEqual(portfolioId);
+    });
+
+    test("should throw an error ir portfolio doesn't exist", async () => {
+      const portfolioId = new BigNumber(0);
+
+      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+        returnValue: dsMockUtils.createMockBytes(),
+      });
+
+      stringToIdentityIdStub.returns(dsMockUtils.createMockIdentityId(did));
+      numberToU64Stub.returns(dsMockUtils.createMockU64(portfolioId.toNumber()));
+
+      return expect(portfolios.getPortfolio({ portfolioId })).rejects.toThrow(
+        "The Portfolio doesn't exist"
+      );
     });
   });
 
