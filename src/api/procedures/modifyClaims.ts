@@ -1,5 +1,5 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { cloneDeep, isMatch, uniq } from 'lodash';
+import { cloneDeep, isEqual, uniq } from 'lodash';
 import { Claim as MeshClaim, IdentityId, TxTag, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure } from '~/base';
@@ -21,6 +21,7 @@ import {
   claimToMeshClaim,
   dateToMoment,
   identityIdToString,
+  middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
 } from '~/utils';
@@ -128,8 +129,7 @@ export async function prepareModifyClaims(
         let isSameScope = true;
 
         if (isScopedClaim(claim)) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          isSameScope = isMatch(scope!, claim.scope);
+          isSameScope = scope ? isEqual(middlewareScopeToScope(scope), claim.scope) : false;
         }
 
         return isSameScope && ClaimType[type] === claim.type;
