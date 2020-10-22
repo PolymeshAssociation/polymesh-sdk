@@ -3,13 +3,43 @@ import BigNumber from 'bignumber.js';
 import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
 import { createPortfolio, deletePortfolio } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
+import { PortfolioNumber } from '~/polkadot';
 import { ErrorCode } from '~/types';
-import { numberToU64, stringToIdentityId } from '~/utils';
+import { numberToU64, stringToIdentityId, u64ToBigNumber } from '~/utils';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
  */
 export class Portfolios extends Namespace<Identity> {
+  /**
+   * Retrieve all the Portfolios for the Identity
+   */
+  public async getPortfolios(): Promise<[DefaultPortfolio, ...NumberedPortfolio[]]> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+      parent: { did },
+    } = this;
+
+    const identityId = stringToIdentityId(did, context);
+    const rawPortfolios = await portfolio.portfolios.entries(identityId);
+
+    const portfolios: [DefaultPortfolio, ...NumberedPortfolio[]] = [
+      new DefaultPortfolio({ did }, context),
+    ];
+    rawPortfolios.forEach(([key]) => {
+      portfolios.push(
+        new NumberedPortfolio({ id: u64ToBigNumber(key.args[1] as PortfolioNumber), did }, context)
+      );
+    });
+
+    return portfolios;
+  }
+
   /**
    * Retrieve a numbered Portfolio or the default Portfolio if Portfolio ID is not passed
    *
@@ -49,7 +79,7 @@ export class Portfolios extends Namespace<Identity> {
   }
 
   /**
-   * Create a new Portfolio for the Current Identity
+   * Create a new Portfolio for the Identity
    */
   public createPortfolio(args: { name: string }): Promise<TransactionQueue<NumberedPortfolio>> {
     return createPortfolio.prepare(args, this.context);

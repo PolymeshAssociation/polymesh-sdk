@@ -6,42 +6,74 @@ import sinon from 'sinon';
 import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
 import { createPortfolio, deletePortfolio } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
 import { Portfolios } from '../Portfolios';
 
 describe('Portfolios class', () => {
   const did = 'someDid';
-  let context: Mocked<Context>;
+  const rawIdentityId = dsMockUtils.createMockIdentityId(did);
+  const numberedPortfolioId = new BigNumber(1);
+  const rawNumberedPortfolioId = dsMockUtils.createMockU64(numberedPortfolioId.toNumber());
+  let mockContext: Mocked<Context>;
+  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
+  let u64ToBigNumberStub: sinon.SinonStub<[u64], BigNumber>;
   let portfolios: Portfolios;
   let identity: Identity;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
+    u64ToBigNumberStub = sinon.stub(utilsModule, 'u64ToBigNumber');
     numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
   });
 
   beforeEach(() => {
-    context = dsMockUtils.getContextInstance();
-    identity = new Identity({ did }, context);
-    portfolios = new Portfolios(identity, context);
+    mockContext = dsMockUtils.getContextInstance();
+    identity = new Identity({ did }, mockContext);
+    portfolios = new Portfolios(identity, mockContext);
   });
 
   afterEach(() => {
+    entityMockUtils.reset();
     dsMockUtils.reset();
   });
 
   afterAll(() => {
+    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
     expect(Portfolios.prototype instanceof Namespace).toBe(true);
+  });
+
+  describe('method: getPortfolios', () => {
+    test('should retrieve all the portfolios for the identity', async () => {
+      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), rawNumberedPortfolioId],
+            dsMockUtils.createMockBytes()
+          ),
+        ],
+      });
+
+      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
+      u64ToBigNumberStub.returns(numberedPortfolioId);
+
+      const result = await portfolios.getPortfolios();
+      expect(result).toHaveLength(2);
+      expect(result[0] instanceof DefaultPortfolio).toBe(true);
+      expect(result[1] instanceof NumberedPortfolio).toBe(true);
+      expect(result[0].owner.did).toEqual(did);
+      expect(result[1].id).toEqual(numberedPortfolioId);
+    });
   });
 
   describe('method: getPortfolio', () => {
@@ -91,7 +123,7 @@ describe('Portfolios class', () => {
 
       sinon
         .stub(createPortfolio, 'prepare')
-        .withArgs({ name }, context)
+        .withArgs({ name }, mockContext)
         .resolves(expectedQueue);
 
       const queue = await portfolios.createPortfolio({ name });
@@ -107,7 +139,7 @@ describe('Portfolios class', () => {
 
       sinon
         .stub(deletePortfolio, 'prepare')
-        .withArgs({ id: portfolioId, did }, context)
+        .withArgs({ id: portfolioId, did }, mockContext)
         .resolves(expectedQueue);
 
       const queue = await portfolios.deletePortfolio({ portfolioId });
