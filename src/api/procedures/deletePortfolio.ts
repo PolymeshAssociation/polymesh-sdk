@@ -30,7 +30,20 @@ export async function prepareDeletePortfolio(
   const { did, id } = args;
 
   const numberedPortfolio = new NumberedPortfolio({ did, id }, context);
-  const isOwned = await numberedPortfolio.isOwned();
+  const identityId = stringToIdentityId(did, context);
+  const rawPortfolioNumber = numberToU64(id, context);
+
+  const [isOwned, rawPortfolioName] = await Promise.all([
+    numberedPortfolio.isOwned(),
+    queryPortfolio.portfolios(identityId, rawPortfolioNumber),
+  ]);
+
+  if (rawPortfolioName.isEmpty) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: "The Portfolio doesn't exist",
+    });
+  }
 
   if (!isOwned) {
     throw new PolymeshError({
@@ -41,7 +54,7 @@ export async function prepareDeletePortfolio(
 
   // TODO @shuffledex: check portfolio balance before remove
 
-  // this.addTransaction(portfolio.deletePortfolio, {}, rawPortfolioNumber);
+  this.addTransaction(portfolio.deletePortfolio, {}, rawPortfolioNumber);
 }
 
 /**

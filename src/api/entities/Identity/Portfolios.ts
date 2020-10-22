@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Identity, Namespace, NumberedPortfolio } from '~/api/entities';
-import { createPortfolio } from '~/api/procedures';
+import { createPortfolio, deletePortfolio } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 
 /**
