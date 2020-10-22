@@ -1,10 +1,10 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
-import sinon, { SinonStub } from 'sinon';
+import sinon from 'sinon';
 
 import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
-import { createPortfolio } from '~/api/procedures';
+import { createPortfolio, deletePortfolio } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -19,7 +19,6 @@ describe('Portfolios class', () => {
   let identity: Identity;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
-  let prepareCreatePortfolioStub: SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -86,21 +85,32 @@ describe('Portfolios class', () => {
   });
 
   describe('method: createPortfolio', () => {
-    beforeAll(() => {
-      prepareCreatePortfolioStub = sinon.stub(createPortfolio, 'prepare');
-    });
-
-    afterAll(() => {
-      sinon.restore();
-    });
-
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const name = 'someName';
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
 
-      prepareCreatePortfolioStub.withArgs({ name }, context).resolves(expectedQueue);
+      sinon
+        .stub(createPortfolio, 'prepare')
+        .withArgs({ name }, context)
+        .resolves(expectedQueue);
 
       const queue = await portfolios.createPortfolio({ name });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: deletePortfolio', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const portfolioId = new BigNumber(5);
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(deletePortfolio, 'prepare')
+        .withArgs({ id: portfolioId, did }, context)
+        .resolves(expectedQueue);
+
+      const queue = await portfolios.deletePortfolio({ portfolioId });
 
       expect(queue).toBe(expectedQueue);
     });

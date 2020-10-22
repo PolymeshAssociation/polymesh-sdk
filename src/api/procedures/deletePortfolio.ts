@@ -33,9 +33,10 @@ export async function prepareDeletePortfolio(
   const identityId = stringToIdentityId(did, context);
   const rawPortfolioNumber = numberToU64(id, context);
 
-  const [isOwned, rawPortfolioName] = await Promise.all([
+  const [isOwned, rawPortfolioName, portfolioBalances] = await Promise.all([
     numberedPortfolio.isOwned(),
     queryPortfolio.portfolios(identityId, rawPortfolioNumber),
+    numberedPortfolio.getTokenBalances(),
   ]);
 
   if (rawPortfolioName.isEmpty) {
@@ -52,7 +53,14 @@ export async function prepareDeletePortfolio(
     });
   }
 
-  // TODO @shuffledex: check portfolio balance before remove
+  if (portfolioBalances.length > 0) {
+    if (portfolioBalances.every(balance => !balance.total.eq(0))) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'You cannot delete a Portfolio with balance within',
+      });
+    }
+  }
 
   this.addTransaction(portfolio.deletePortfolio, {}, rawPortfolioNumber);
 }
