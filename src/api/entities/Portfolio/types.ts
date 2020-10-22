@@ -4,5 +4,6 @@ import { SecurityToken } from '~/api/entities';
 
 export interface PortfolioBalance {
   token: SecurityToken;
-  balance: BigNumber;
+  total: BigNumber;
+  locked: BigNumber;
 }

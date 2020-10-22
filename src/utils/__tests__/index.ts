@@ -333,9 +333,9 @@ describe('portfolioIdToMeshPortfolioId', () => {
     const portfolioId = {
       did: 'someDid',
     };
-    const number = 1;
+    const number = new BigNumber(1);
     const rawIdentityId = dsMockUtils.createMockIdentityId(portfolioId.did);
-    const rawU64 = dsMockUtils.createMockU64(number);
+    const rawU64 = dsMockUtils.createMockU64(number.toNumber());
     const fakeResult = ('PortfolioId' as unknown) as PortfolioId;
     const context = dsMockUtils.getContextInstance();
 
