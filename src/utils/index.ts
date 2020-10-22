@@ -72,6 +72,7 @@ import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   CallIdEnum,
+  ClaimScopeTypeEnum,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
   // Proposal,
@@ -1096,7 +1097,31 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
  * @hidden
  */
 export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
-  return { type: ScopeType[scope.type], value: scope.value } as Scope;
+  const { type, value } = scope;
+
+  switch (type) {
+    case ClaimScopeTypeEnum.Ticker:
+      // eslint-disable-next-line no-control-regex
+      return { type: ScopeType.Ticker, value: value.replace(/\u0000/g, '') };
+    case ClaimScopeTypeEnum.Identity:
+    case ClaimScopeTypeEnum.Custom:
+      return { type: ScopeType[scope.type], value };
+  }
+}
+
+/**
+ * @hidden
+ */
+export function scopeToMiddlewareScope(scope: Scope): MiddlewareScope {
+  const { type, value } = scope;
+
+  switch (type) {
+    case ScopeType.Ticker:
+      return { type: ClaimScopeTypeEnum.Ticker, value: padEnd(value, 12, '\0') };
+    case ScopeType.Identity:
+    case ScopeType.Custom:
+      return { type: ClaimScopeTypeEnum[scope.type], value };
+  }
 }
 
 /**
@@ -1109,15 +1134,14 @@ export function createClaim(
   cddId: string | null | undefined
 ): Claim {
   const type = claimType as ClaimType;
-  const scope = (middlewareScope
-    ? { type: ScopeType[middlewareScope.type], value: middlewareScope.value }
-    : {}) as Scope;
+  const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
 
   if (type === ClaimType.Jurisdiction) {
     return {
       type,
       // this assertion is necessary because CountryCode is not in the middleware types
-      code: jurisdiction as CountryCode,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      code: stringUpperFirst(jurisdiction!.toLowerCase()) as CountryCode,
       scope,
     };
   } else if (type === ClaimType.NoData) {

@@ -131,6 +131,7 @@ import {
   requestPaginated,
   requirementToComplianceRequirement,
   scopeToMeshScope,
+  scopeToMiddlewareScope,
   secondaryKeyToMeshSecondaryKey,
   serialize,
   signatoryToSignerValue,
@@ -332,9 +333,9 @@ describe('portfolioIdToMeshPortfolioId', () => {
     const portfolioId = {
       did: 'someDid',
     };
-    const number = 1;
+    const number = new BigNumber(1);
     const rawIdentityId = dsMockUtils.createMockIdentityId(portfolioId.did);
-    const rawU64 = dsMockUtils.createMockU64(number);
+    const rawU64 = dsMockUtils.createMockU64(number.toNumber());
     const fakeResult = ('PortfolioId' as unknown) as PortfolioId;
     const context = dsMockUtils.getContextInstance();
 
@@ -1961,13 +1962,13 @@ describe('stringToCddId and cddIdToString', () => {
 describe('createClaim', () => {
   test('createClaim should create Claim objects from claims data provided by middleware', () => {
     let type = 'Jurisdiction';
-    const jurisdiction = CountryCode.Cl;
+    const jurisdiction = 'CL';
     let scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
     let result = createClaim(type, jurisdiction, scope, null);
     expect(result).toEqual({
       type: ClaimType.Jurisdiction,
-      code: jurisdiction,
+      code: CountryCode.Cl,
       scope,
     });
 
@@ -3393,5 +3394,21 @@ describe('endConditionToSettlementType', () => {
     );
 
     expect(result).toBe(fakeResult);
+  });
+
+  describe('scopeToMiddlewareScope', () => {
+    test('scopeToMiddlewareScope should convert a different Scopes to a middlware Scops', () => {
+      let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
+      let result = scopeToMiddlewareScope(scope);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
+
+      scope = { type: ScopeType.Ticker, value: 'someTicker' };
+      result = scopeToMiddlewareScope(scope);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
+
+      scope = { type: ScopeType.Custom, value: 'customValue' };
+      result = scopeToMiddlewareScope(scope);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
+    });
   });
 });

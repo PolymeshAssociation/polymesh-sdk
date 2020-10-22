@@ -6,7 +6,7 @@ import {
   issuerDidsWithClaimsByTarget,
   scopesByIdentity,
 } from '~/middleware/queries';
-import { ClaimScopeTypeEnum, ClaimTypeEnum, Query } from '~/middleware/types';
+import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   ClaimData,
   ClaimScope,
@@ -22,6 +22,7 @@ import {
   getDid,
   middlewareScopeToScope,
   removePadding,
+  scopeToMiddlewareScope,
   signerToString,
   toIdentityWithClaimsArray,
 } from '~/utils';
@@ -132,7 +133,7 @@ export class Claims {
     const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
         dids: targets?.map(target => signerToString(target)),
-        scope: scope ? { type: ClaimScopeTypeEnum[scope.type], value: scope.value } : undefined,
+        scope: scope ? scopeToMiddlewareScope(scope) : undefined,
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
           signerToString(trustedClaimIssuer)
         ),
@@ -259,7 +260,7 @@ export class Claims {
     const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
       issuerDidsWithClaimsByTarget({
         target: did,
-        scope: scope ? { type: ClaimScopeTypeEnum[scope.type], value: scope.value } : undefined,
+        scope: scope ? scopeToMiddlewareScope(scope) : undefined,
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
           signerToString(trustedClaimIssuer)
         ),
