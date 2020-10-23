@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Params, prepareModifyNamePortfolio } from '~/api/procedures/modifyNamePortfolio';
+import { Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -76,7 +76,7 @@ describe('modifyNamePortfolio procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
     return expect(
-      prepareModifyNamePortfolio.call(proc, {
+      prepareRenamePortfolio.call(proc, {
         id,
         did,
         name: 'newName',
@@ -97,7 +97,7 @@ describe('modifyNamePortfolio procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
     return expect(
-      prepareModifyNamePortfolio.call(proc, {
+      prepareRenamePortfolio.call(proc, {
         id,
         did,
         name: newName,
@@ -131,7 +131,7 @@ describe('modifyNamePortfolio procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
     return expect(
-      prepareModifyNamePortfolio.call(proc, {
+      prepareRenamePortfolio.call(proc, {
         id,
         did,
         name: portfolioNames[0].name,
@@ -156,7 +156,7 @@ describe('modifyNamePortfolio procedure', () => {
     const transaction = dsMockUtils.createTxStub('portfolio', 'renamePortfolio');
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
-    const result = await prepareModifyNamePortfolio.call(proc, {
+    const result = await prepareRenamePortfolio.call(proc, {
       id,
       did,
       name: newName,

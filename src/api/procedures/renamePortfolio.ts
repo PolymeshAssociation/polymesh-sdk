@@ -5,17 +5,17 @@ import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
 import { bytesToString, numberToU64, stringToBytes, stringToIdentityId } from '~/utils';
 
-export type ModifyNamePortfolioParams = { name: string };
+export type RenamePortfolioParams = { name: string };
 
 /**
  * @hidden
  */
-export type Params = { did: string; id: BigNumber } & ModifyNamePortfolioParams;
+export type Params = { did: string; id: BigNumber } & RenamePortfolioParams;
 
 /**
  * @hidden
  */
-export async function prepareModifyNamePortfolio(
+export async function prepareRenamePortfolio(
   this: Procedure<Params, NumberedPortfolio>,
   args: Params
 ): Promise<NumberedPortfolio> {
@@ -77,4 +77,4 @@ export async function prepareModifyNamePortfolio(
 /**
  * @hidden
  */
-export const modifyNamePortfolio = new Procedure(prepareModifyNamePortfolio);
+export const renamePortfolio = new Procedure(prepareRenamePortfolio);

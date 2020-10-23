@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Entity, Identity, NumberedPortfolio } from '~/api/entities';
-import { deletePortfolio, modifyNamePortfolio } from '~/api/procedures';
+import { deletePortfolio, renamePortfolio } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 
@@ -80,7 +80,7 @@ describe('Numberedortfolio class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
 
       sinon
-        .stub(modifyNamePortfolio, 'prepare')
+        .stub(renamePortfolio, 'prepare')
         .withArgs({ id, did, name }, context)
         .resolves(expectedQueue);
 
