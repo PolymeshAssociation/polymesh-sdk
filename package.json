@@ -97,6 +97,7 @@
     "apollo-link-state": "^0.4.2",
     "bignumber.js": "^9.0.0",
     "bluebird": "^3.7.2",
+    "cross-fetch": "^3.0.6",
     "graphql": "15.0.0",
     "graphql-tag": "^2.10.3",
     "iso-7064": "^1.0.2",

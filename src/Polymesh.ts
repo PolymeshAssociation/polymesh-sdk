@@ -6,6 +6,7 @@ import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import BigNumber from 'bignumber.js';
+import fetch from 'cross-fetch';
 import { polymesh } from 'polymesh-types/definitions';
 import { Ticker, TxTag } from 'polymesh-types/types';
 
@@ -143,6 +144,7 @@ export class Polymesh {
 
     try {
       const { types, rpc } = polymesh;
+      console.log('HEY');
 
       const polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
@@ -153,6 +155,8 @@ export class Polymesh {
         },
         rpc,
       });
+
+      console.log('HEY2');
 
       let middlewareApi: ApolloClient<NormalizedCacheObject> | null = null;
 
@@ -169,6 +173,7 @@ export class Polymesh {
             ApolloLink.from([
               new HttpLink({
                 uri: middleware.link,
+                fetch,
               }),
             ])
           ),
