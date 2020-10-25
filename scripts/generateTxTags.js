@@ -71,7 +71,7 @@ websocket.onmessage = message => {
   );
 
   rimraf.sync(jsonPath);
-  fs.writeFileSync(jsonPath, JSON.stringify(transactionData, null, 2));
+  fs.writeFileSync(jsonPath, `${JSON.stringify(transactionData, null, 2)}\n`);
 
   websocket.close();
 };
