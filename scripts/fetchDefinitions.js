@@ -64,7 +64,7 @@ export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): 
     const pascalCaseCode = upperFirst(toLower(code));
 
     countryCodeEnum = `${countryCodeEnum}\n  ${pascalCaseCode} = '${pascalCaseCode}',${
-      isLast ? '\n}\n' : ''
+      isLast ? '\n}' : ''
     }`;
 
     const returnStatement = `return CountryCode.${pascalCaseCode}`;

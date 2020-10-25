@@ -6,11 +6,11 @@ import { addInstruction, AddInstructionParams } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { InstructionStatus } from '~/types';
 import {
+  bytesToString,
   identityIdToString,
   meshVenueTypeToVenueType,
   numberToU64,
   u64ToBigNumber,
-  venueDetailsToString,
 } from '~/utils';
 
 import { VenueDetails } from './types';
@@ -69,7 +69,7 @@ export class Venue extends Entity<UniqueIdentifiers> {
 
     return {
       owner: new Identity({ did: identityIdToString(creator) }, context),
-      description: venueDetailsToString(details),
+      description: bytesToString(details),
       type: meshVenueTypeToVenueType(type),
     };
   }

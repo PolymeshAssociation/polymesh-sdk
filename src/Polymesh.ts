@@ -146,7 +146,11 @@ export class Polymesh {
 
       const polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
-        types,
+        // https://github.com/polkadot-js/api/releases/tag/v2.0.1 TODO @monitz87: remove once Polymesh is updated to substrate 2.0
+        types: {
+          ...types,
+          RefCount: 'RefCountTo259',
+        },
         rpc,
       });
 

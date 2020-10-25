@@ -142,11 +142,13 @@ export enum TreasuryTx {
 }
 
 export enum PolymeshCommitteeTx {
-  SetVoteThreshold = 'polymeshCommittee.setVoteThreshold',
-  SetReleaseCoordinator = 'polymeshCommittee.setReleaseCoordinator',
-  Close = 'polymeshCommittee.close',
   VoteOrPropose = 'polymeshCommittee.voteOrPropose',
   Vote = 'polymeshCommittee.vote',
+  SetVoteThreshold = 'polymeshCommittee.setVoteThreshold',
+  Close = 'polymeshCommittee.close',
+  SetReleaseCoordinator = 'polymeshCommittee.setReleaseCoordinator',
+  VoteEnactReferendum = 'polymeshCommittee.voteEnactReferendum',
+  VoteRejectReferendum = 'polymeshCommittee.voteRejectReferendum',
 }
 
 export enum CommitteeMembershipTx {
@@ -160,23 +162,33 @@ export enum CommitteeMembershipTx {
 }
 
 export enum PipsTx {
-  SetPruneHistoricalPips = 'pips.setPruneHistoricalPips',
-  SetMinProposalDeposit = 'pips.setMinProposalDeposit',
-  SetProposalCoolOffPeriod = 'pips.setProposalCoolOffPeriod',
-  SetDefaultEnactmentPeriod = 'pips.setDefaultEnactmentPeriod',
   SetMaxPipSkipCount = 'pips.setMaxPipSkipCount',
   SetActivePipLimit = 'pips.setActivePipLimit',
-  Propose = 'pips.propose',
-  AmendProposal = 'pips.amendProposal',
-  CancelProposal = 'pips.cancelProposal',
-  Vote = 'pips.vote',
   ApproveCommitteeProposal = 'pips.approveCommitteeProposal',
   RejectProposal = 'pips.rejectProposal',
-  PruneProposal = 'pips.pruneProposal',
   RescheduleExecution = 'pips.rescheduleExecution',
   ClearSnapshot = 'pips.clearSnapshot',
   Snapshot = 'pips.snapshot',
   EnactSnapshotResults = 'pips.enactSnapshotResults',
+  SetPruneHistoricalPips = 'pips.setPruneHistoricalPips',
+  SetMinProposalDeposit = 'pips.setMinProposalDeposit',
+  SetQuorumThreshold = 'pips.setQuorumThreshold',
+  SetProposalDuration = 'pips.setProposalDuration',
+  SetProposalCoolOffPeriod = 'pips.setProposalCoolOffPeriod',
+  SetDefaultEnactmentPeriod = 'pips.setDefaultEnactmentPeriod',
+  Propose = 'pips.propose',
+  AmendProposal = 'pips.amendProposal',
+  CancelProposal = 'pips.cancelProposal',
+  BondAdditionalDeposit = 'pips.bondAdditionalDeposit',
+  UnbondDeposit = 'pips.unbondDeposit',
+  Vote = 'pips.vote',
+  KillProposal = 'pips.killProposal',
+  PruneProposal = 'pips.pruneProposal',
+  FastTrackProposal = 'pips.fastTrackProposal',
+  EmergencyReferendum = 'pips.emergencyReferendum',
+  EnactReferendum = 'pips.enactReferendum',
+  RejectReferendum = 'pips.rejectReferendum',
+  OverrideReferendumEnactmentPeriod = 'pips.overrideReferendumEnactmentPeriod',
 }
 
 export enum TechnicalCommitteeTx {
@@ -249,6 +261,7 @@ export enum DividendTx {
 export enum IdentityTx {
   RegisterDid = 'identity.registerDid',
   CddRegisterDid = 'identity.cddRegisterDid',
+  MockCddRegisterDid = 'identity.mockCddRegisterDid',
   InvalidateCddClaims = 'identity.invalidateCddClaims',
   RemoveSecondaryKeys = 'identity.removeSecondaryKeys',
   SetPrimaryKey = 'identity.setPrimaryKey',
