@@ -91,6 +91,7 @@
     "sudo_as": "sudo_as"
   },
   "MultiSig": {
+    "make_multisig_master": "make_multisig_master",
     "create_multisig": "create_multisig",
     "create_or_approve_proposal_as_identity": "create_or_approve_proposal_as_identity",
     "create_or_approve_proposal_as_key": "create_or_approve_proposal_as_key",
@@ -202,6 +203,21 @@
     "abdicate_membership": "abdicate_membership"
   },
   "Asset": {
+    "transfer": "transfer",
+    "controller_transfer": "controller_transfer",
+    "approve": "approve",
+    "transfer_from": "transfer_from",
+    "batch_issue": "batch_issue",
+    "redeem": "redeem",
+    "redeem_from": "redeem_from",
+    "controller_redeem": "controller_redeem",
+    "transfer_with_data": "transfer_with_data",
+    "transfer_from_with_data": "transfer_from_with_data",
+    "is_issuable": "is_issuable",
+    "increase_custody_allowance": "increase_custody_allowance",
+    "increase_custody_allowance_of": "increase_custody_allowance_of",
+    "transfer_by_custodian": "transfer_by_custodian",
+    "set_treasury_did": "set_treasury_did",
     "register_ticker": "register_ticker",
     "accept_ticker_transfer": "accept_ticker_transfer",
     "accept_primary_issuance_agent_transfer": "accept_primary_issuance_agent_transfer",
@@ -231,6 +247,12 @@
     "claim_unclaimed": "claim_unclaimed"
   },
   "Identity": {
+    "remove_signing_keys": "remove_signing_keys",
+    "set_master_key": "set_master_key",
+    "accept_master_key": "accept_master_key",
+    "freeze_signing_keys": "freeze_signing_keys",
+    "unfreeze_signing_keys": "unfreeze_signing_keys",
+    "batch_add_signing_key_with_authorization": "batch_add_signing_key_with_authorization",
     "register_did": "register_did",
     "cdd_register_did": "cdd_register_did",
     "mock_cdd_register_did": "mock_cdd_register_did",
@@ -280,6 +302,14 @@
     "batch_unfreeze_tx": "batch_unfreeze_tx"
   },
   "ComplianceManager": {
+    "add_active_rule": "add_active_rule",
+    "remove_active_rule": "remove_active_rule",
+    "replace_asset_rules": "replace_asset_rules",
+    "reset_active_rules": "reset_active_rules",
+    "pause_asset_rules": "pause_asset_rules",
+    "resume_asset_rules": "resume_asset_rules",
+    "change_asset_rule": "change_asset_rule",
+    "batch_change_asset_rule": "batch_change_asset_rule",
     "add_compliance_requirement": "add_compliance_requirement",
     "remove_compliance_requirement": "remove_compliance_requirement",
     "replace_asset_compliance": "replace_asset_compliance",
@@ -346,6 +376,7 @@
     "relay_tx": "relay_tx"
   },
   "Portfolio": {
+    "move_portfolio": "move_portfolio",
     "create_portfolio": "create_portfolio",
     "delete_portfolio": "delete_portfolio",
     "move_portfolio_funds": "move_portfolio_funds",

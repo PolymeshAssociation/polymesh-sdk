@@ -107,6 +107,7 @@ export enum SudoTx {
 }
 
 export enum MultiSigTx {
+  MakeMultisigMaster = 'multiSig.makeMultisigMaster',
   CreateMultisig = 'multiSig.createMultisig',
   CreateOrApproveProposalAsIdentity = 'multiSig.createOrApproveProposalAsIdentity',
   CreateOrApproveProposalAsKey = 'multiSig.createOrApproveProposalAsKey',
@@ -228,6 +229,21 @@ export enum UpgradeCommitteeMembershipTx {
 }
 
 export enum AssetTx {
+  Transfer = 'asset.transfer',
+  ControllerTransfer = 'asset.controllerTransfer',
+  Approve = 'asset.approve',
+  TransferFrom = 'asset.transferFrom',
+  BatchIssue = 'asset.batchIssue',
+  Redeem = 'asset.redeem',
+  RedeemFrom = 'asset.redeemFrom',
+  ControllerRedeem = 'asset.controllerRedeem',
+  TransferWithData = 'asset.transferWithData',
+  TransferFromWithData = 'asset.transferFromWithData',
+  IsIssuable = 'asset.isIssuable',
+  IncreaseCustodyAllowance = 'asset.increaseCustodyAllowance',
+  IncreaseCustodyAllowanceOf = 'asset.increaseCustodyAllowanceOf',
+  TransferByCustodian = 'asset.transferByCustodian',
+  SetTreasuryDid = 'asset.setTreasuryDid',
   RegisterTicker = 'asset.registerTicker',
   AcceptTickerTransfer = 'asset.acceptTickerTransfer',
   AcceptPrimaryIssuanceAgentTransfer = 'asset.acceptPrimaryIssuanceAgentTransfer',
@@ -259,6 +275,12 @@ export enum DividendTx {
 }
 
 export enum IdentityTx {
+  RemoveSigningKeys = 'identity.removeSigningKeys',
+  SetMasterKey = 'identity.setMasterKey',
+  AcceptMasterKey = 'identity.acceptMasterKey',
+  FreezeSigningKeys = 'identity.freezeSigningKeys',
+  UnfreezeSigningKeys = 'identity.unfreezeSigningKeys',
+  BatchAddSigningKeyWithAuthorization = 'identity.batchAddSigningKeyWithAuthorization',
   RegisterDid = 'identity.registerDid',
   CddRegisterDid = 'identity.cddRegisterDid',
   MockCddRegisterDid = 'identity.mockCddRegisterDid',
@@ -310,6 +332,14 @@ export enum BridgeTx {
 }
 
 export enum ComplianceManagerTx {
+  AddActiveRule = 'complianceManager.addActiveRule',
+  RemoveActiveRule = 'complianceManager.removeActiveRule',
+  ReplaceAssetRules = 'complianceManager.replaceAssetRules',
+  ResetActiveRules = 'complianceManager.resetActiveRules',
+  PauseAssetRules = 'complianceManager.pauseAssetRules',
+  ResumeAssetRules = 'complianceManager.resumeAssetRules',
+  ChangeAssetRule = 'complianceManager.changeAssetRule',
+  BatchChangeAssetRule = 'complianceManager.batchChangeAssetRule',
   AddComplianceRequirement = 'complianceManager.addComplianceRequirement',
   RemoveComplianceRequirement = 'complianceManager.removeComplianceRequirement',
   ReplaceAssetCompliance = 'complianceManager.replaceAssetCompliance',
@@ -385,6 +415,7 @@ export enum UtilityTx {
 }
 
 export enum PortfolioTx {
+  MovePortfolio = 'portfolio.movePortfolio',
   CreatePortfolio = 'portfolio.createPortfolio',
   DeletePortfolio = 'portfolio.deletePortfolio',
   MovePortfolioFunds = 'portfolio.movePortfolioFunds',
