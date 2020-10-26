@@ -144,7 +144,6 @@ export class Polymesh {
 
     try {
       const { types, rpc } = polymesh;
-      console.log('HEY');
 
       const polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
@@ -155,8 +154,6 @@ export class Polymesh {
         },
         rpc,
       });
-
-      console.log('HEY2');
 
       let middlewareApi: ApolloClient<NormalizedCacheObject> | null = null;
 

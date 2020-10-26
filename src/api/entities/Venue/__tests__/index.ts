@@ -84,7 +84,7 @@ describe('Venue class', () => {
         .resolves({
           creator: dsMockUtils.createMockIdentityId(owner),
           instructions: [],
-          details: dsMockUtils.createMockBytes(description),
+          details: dsMockUtils.createMockVenueDetails(description),
           // eslint-disable-next-line @typescript-eslint/camelcase
           venue_type: dsMockUtils.createMockVenueType(type),
         });

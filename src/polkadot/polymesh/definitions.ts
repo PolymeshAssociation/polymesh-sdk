@@ -862,7 +862,7 @@ export default {
     Venue: {
       creator: 'IdentityId',
       instructions: 'Vec<u64>',
-      details: 'Vec<u8>',
+      details: 'VenueDetails',
       venue_type: 'VenueType',
     },
     Receipt: {
