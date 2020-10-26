@@ -81,17 +81,23 @@ export class Portfolios extends Namespace<Identity> {
   /**
    * Create a new Portfolio for the Identity
    */
-  public createPortfolio(args: { name: string }): Promise<TransactionQueue<NumberedPortfolio>> {
+  public create(args: { name: string }): Promise<TransactionQueue<NumberedPortfolio>> {
     return createPortfolio.prepare(args, this.context);
   }
 
   /**
    * Delete a Portfolio by ID
    */
-  public deletePortfolio(args: { portfolioId: BigNumber }): Promise<TransactionQueue<void>> {
+  public delete(args: {
+    portfolio: BigNumber | NumberedPortfolio;
+  }): Promise<TransactionQueue<void>> {
     const {
       parent: { did },
     } = this;
-    return deletePortfolio.prepare({ id: args.portfolioId, did }, this.context);
+
+    const { portfolio } = args;
+    const id = portfolio instanceof BigNumber ? portfolio : portfolio.id;
+
+    return deletePortfolio.prepare({ id, did }, this.context);
   }
 }
