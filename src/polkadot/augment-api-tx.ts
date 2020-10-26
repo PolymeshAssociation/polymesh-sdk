@@ -526,22 +526,8 @@ declare module '@polkadot/api/types/submittable' {
        **/
       forceTransfer: AugmentedSubmittable<
         (
-          source:
-            | LookupSource
-            | Address
-            | AccountId
-            | AccountIndex
-            | LookupSource
-            | string
-            | Uint8Array,
-          dest:
-            | LookupSource
-            | Address
-            | AccountId
-            | AccountIndex
-            | LookupSource
-            | string
-            | Uint8Array,
+          source: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
+          dest: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
           value: Compact<Balance> | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
@@ -565,14 +551,7 @@ declare module '@polkadot/api/types/submittable' {
        **/
       setBalance: AugmentedSubmittable<
         (
-          who:
-            | LookupSource
-            | Address
-            | AccountId
-            | AccountIndex
-            | LookupSource
-            | string
-            | Uint8Array,
+          who: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
           newFree: Compact<Balance> | AnyNumber | Uint8Array,
           newReserved: Compact<Balance> | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
@@ -603,14 +582,7 @@ declare module '@polkadot/api/types/submittable' {
        **/
       transfer: AugmentedSubmittable<
         (
-          dest:
-            | LookupSource
-            | Address
-            | AccountId
-            | AccountIndex
-            | LookupSource
-            | string
-            | Uint8Array,
+          dest: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
           value: Compact<Balance> | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
@@ -626,14 +598,7 @@ declare module '@polkadot/api/types/submittable' {
        **/
       transferWithMemo: AugmentedSubmittable<
         (
-          dest:
-            | LookupSource
-            | Address
-            | AccountId
-            | AccountIndex
-            | LookupSource
-            | string
-            | Uint8Array,
+          dest: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
           value: Compact<Balance> | AnyNumber | Uint8Array,
           memo: Option<Memo> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
@@ -1240,14 +1205,7 @@ declare module '@polkadot/api/types/submittable' {
        **/
       call: AugmentedSubmittable<
         (
-          dest:
-            | LookupSource
-            | Address
-            | AccountId
-            | AccountIndex
-            | LookupSource
-            | string
-            | Uint8Array,
+          dest: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
           value: Compact<BalanceOf> | AnyNumber | Uint8Array,
           gasLimit: Compact<Gas> | AnyNumber | Uint8Array,
           data: Bytes | string | Uint8Array
@@ -2989,14 +2947,7 @@ declare module '@polkadot/api/types/submittable' {
        **/
       bond: AugmentedSubmittable<
         (
-          controller:
-            | LookupSource
-            | Address
-            | AccountId
-            | AccountIndex
-            | LookupSource
-            | string
-            | Uint8Array,
+          controller: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
           value: Compact<BalanceOf> | AnyNumber | Uint8Array,
           payee:
             | RewardDestination
@@ -3182,15 +3133,7 @@ declare module '@polkadot/api/types/submittable' {
         (
           targets:
             | Vec<LookupSource>
-            | (
-                | LookupSource
-                | Address
-                | AccountId
-                | AccountIndex
-                | LookupSource
-                | string
-                | Uint8Array
-              )[]
+            | (LookupSource | Address | AccountId | AccountIndex | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -3318,14 +3261,7 @@ declare module '@polkadot/api/types/submittable' {
        **/
       setController: AugmentedSubmittable<
         (
-          controller:
-            | LookupSource
-            | Address
-            | AccountId
-            | AccountIndex
-            | LookupSource
-            | string
-            | Uint8Array
+          controller: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -3782,14 +3718,7 @@ declare module '@polkadot/api/types/submittable' {
        **/
       setKey: AugmentedSubmittable<
         (
-          updated:
-            | LookupSource
-            | Address
-            | AccountId
-            | AccountIndex
-            | LookupSource
-            | string
-            | Uint8Array
+          updated: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -3824,14 +3753,7 @@ declare module '@polkadot/api/types/submittable' {
        **/
       sudoAs: AugmentedSubmittable<
         (
-          who:
-            | LookupSource
-            | Address
-            | AccountId
-            | AccountIndex
-            | LookupSource
-            | string
-            | Uint8Array,
+          who: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
           call: Call | { callIndex?: any; args?: any } | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
