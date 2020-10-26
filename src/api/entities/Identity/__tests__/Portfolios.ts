@@ -116,7 +116,7 @@ describe('Portfolios class', () => {
     });
   });
 
-  describe('method: createPortfolio', () => {
+  describe('method: create', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const name = 'someName';
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
@@ -126,13 +126,13 @@ describe('Portfolios class', () => {
         .withArgs({ name }, mockContext)
         .resolves(expectedQueue);
 
-      const queue = await portfolios.createPortfolio({ name });
+      const queue = await portfolios.create({ name });
 
       expect(queue).toBe(expectedQueue);
     });
   });
 
-  describe('method: deletePortfolio', () => {
+  describe('method: delete', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolioId = new BigNumber(5);
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
@@ -142,7 +142,13 @@ describe('Portfolios class', () => {
         .withArgs({ id: portfolioId, did }, mockContext)
         .resolves(expectedQueue);
 
-      const queue = await portfolios.deletePortfolio({ portfolioId });
+      let queue = await portfolios.delete({ portfolio: portfolioId });
+
+      expect(queue).toBe(expectedQueue);
+
+      queue = await portfolios.delete({
+        portfolio: new NumberedPortfolio({ id: portfolioId, did }, mockContext),
+      });
 
       expect(queue).toBe(expectedQueue);
     });
