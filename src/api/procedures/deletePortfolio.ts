@@ -53,13 +53,11 @@ export async function prepareDeletePortfolio(
     });
   }
 
-  if (portfolioBalances.length > 0) {
-    if (portfolioBalances.every(balance => !balance.total.eq(0))) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'You cannot delete a Portfolio with balance within',
-      });
-    }
+  if (portfolioBalances.some(({ total }) => total.gt(0))) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'You cannot delete a Portfolio that contains any assets',
+    });
   }
 
   this.addTransaction(portfolio.deletePortfolio, {}, rawPortfolioNumber);

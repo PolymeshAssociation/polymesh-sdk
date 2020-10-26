@@ -95,7 +95,10 @@ describe('deletePortfolio procedure', () => {
   test('should throw an error if the portfolio has balance in it', async () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        tokenBalances: [{ total: new BigNumber(1) } as PortfolioBalance],
+        tokenBalances: [
+          { total: new BigNumber(1) },
+          { total: new BigNumber(0) },
+        ] as PortfolioBalance[],
       },
     });
 
@@ -106,7 +109,7 @@ describe('deletePortfolio procedure', () => {
         id,
         did,
       })
-    ).rejects.toThrow('You cannot delete a Portfolio with balance within');
+    ).rejects.toThrow('You cannot delete a Portfolio that contains any assets');
   });
 
   test('should add a delete portfolio transaction to the queue', async () => {

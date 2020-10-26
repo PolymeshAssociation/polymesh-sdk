@@ -40,7 +40,7 @@ export class NumberedPortfolio extends Portfolio {
   }
 
   /**
-   * Delete portfolio
+   * Delete this Portfolio
    */
   public async delete(): Promise<TransactionQueue<void>> {
     const {
