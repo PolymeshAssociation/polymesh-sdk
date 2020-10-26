@@ -70,4 +70,22 @@ describe('Numberedortfolio class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: getName', () => {
+    test('should return the name of the Portfolio', async () => {
+      const id = new BigNumber(1);
+      const did = 'someDid';
+      const portfolioName = 'someName';
+      const rawPortfolioName = dsMockUtils.createMockBytes(portfolioName);
+      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
+
+      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+        returnValue: rawPortfolioName,
+      });
+
+      const result = await numberedPortfolio.getName();
+
+      expect(result).toEqual(portfolioName);
+    });
+  });
 });
