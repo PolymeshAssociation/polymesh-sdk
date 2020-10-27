@@ -28,6 +28,7 @@ describe('modifyNamePortfolio procedure', () => {
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
   let bytesToStringStub: sinon.SinonStub<[Bytes], string>;
   let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
+  let portfoliosStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -48,6 +49,8 @@ describe('modifyNamePortfolio procedure', () => {
         isOwned: true,
       },
     });
+
+    portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
   });
 
   afterEach(() => {
@@ -62,15 +65,11 @@ describe('modifyNamePortfolio procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the portfolio does not exist', async () => {
+  test('should throw an error if the Current Identity is not the Portfolio owner', async () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         isOwned: false,
       },
-    });
-    dsMockUtils.createQueryStub('portfolio', 'portfolios').returns(dsMockUtils.createMockBytes());
-    dsMockUtils.createQueryStub('portfolio', 'portfolios', {
-      entries: [],
     });
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
@@ -84,15 +83,12 @@ describe('modifyNamePortfolio procedure', () => {
     ).rejects.toThrow('You are not the owner of this Portfolio');
   });
 
-  test('should throw an error if new name is the same name currently in the pportfolio', async () => {
+  test('should throw an error if the new name is the same as the current one', async () => {
     const newName = 'newName';
     const rawNewName = dsMockUtils.createMockBytes(newName);
 
     bytesToStringStub.withArgs(rawNewName).returns(newName);
-    dsMockUtils.createQueryStub('portfolio', 'portfolios').returns(rawNewName);
-    dsMockUtils.createQueryStub('portfolio', 'portfolios', {
-      entries: [],
-    });
+    portfoliosStub.resolves(rawNewName);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
@@ -105,28 +101,19 @@ describe('modifyNamePortfolio procedure', () => {
     ).rejects.toThrow('New name is the same as current name');
   });
 
-  test('should throw an error if there is a portfolio with the new name', async () => {
+  test('should throw an error if there already is a portfolio with the new name', async () => {
     const portfolioName = 'portfolioName';
     const rawPortfolioName = dsMockUtils.createMockBytes(portfolioName);
-    const entriePortfolioName = 'someName';
-    const rawEntriePortfolioName = dsMockUtils.createMockBytes(entriePortfolioName);
-    const portfolioNames = [
-      {
-        name: entriePortfolioName,
-      },
-    ];
+    const entryPortfolioName = 'someName';
+    const rawEntryPortfolioName = dsMockUtils.createMockBytes(entryPortfolioName);
+
     bytesToStringStub.withArgs(rawPortfolioName).returns(portfolioName);
-    bytesToStringStub.withArgs(rawEntriePortfolioName).returns(entriePortfolioName);
+    bytesToStringStub.withArgs(rawEntryPortfolioName).returns(entryPortfolioName);
 
-    const rawPortfolios = portfolioNames.map(({ name }) =>
-      tuple(dsMockUtils.createMockBytes(name))
-    );
-    const portfolioEntries = rawPortfolios.map(([name]) => tuple([], name));
-
-    dsMockUtils.createQueryStub('portfolio', 'portfolios').returns(rawPortfolioName);
-    dsMockUtils.createQueryStub('portfolio', 'portfolios', {
-      entries: [portfolioEntries[0]],
+    portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+      entries: [tuple([], dsMockUtils.createMockBytes(entryPortfolioName))],
     });
+    portfoliosStub.resolves(rawPortfolioName);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
@@ -134,7 +121,7 @@ describe('modifyNamePortfolio procedure', () => {
       prepareRenamePortfolio.call(proc, {
         id,
         did,
-        name: portfolioNames[0].name,
+        name: entryPortfolioName,
       })
     ).rejects.toThrow('A portfolio with that name already exists');
   });
@@ -148,10 +135,7 @@ describe('modifyNamePortfolio procedure', () => {
     bytesToStringStub.withArgs(rawPortfolioName).returns(portfolioName);
     stringToBytesStub.returns(rawNewName);
 
-    dsMockUtils.createQueryStub('portfolio', 'portfolios').returns(rawPortfolioName);
-    dsMockUtils.createQueryStub('portfolio', 'portfolios', {
-      entries: [],
-    });
+    portfoliosStub.resolves(rawPortfolioName);
 
     const transaction = dsMockUtils.createTxStub('portfolio', 'renamePortfolio');
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);

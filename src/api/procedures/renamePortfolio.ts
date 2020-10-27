@@ -5,7 +5,9 @@ import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
 import { bytesToString, numberToU64, stringToBytes, stringToIdentityId } from '~/utils';
 
-export type RenamePortfolioParams = { name: string };
+export interface RenamePortfolioParams {
+  name: string;
+}
 
 /**
  * @hidden

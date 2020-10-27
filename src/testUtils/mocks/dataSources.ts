@@ -859,14 +859,15 @@ export function createQueryStub<
     stub = instance.query[mod][query] as Queries[ModuleName][QueryName] & SinonStub & StubQuery;
   }
 
-  if (opts?.entries) {
-    const entryResults = opts.entries.map(([keys, value], index) => [
-      { args: keys, toHex: (): string => `key${index}` },
-      value,
-    ]);
-    stub.entries.resolves(entryResults);
-    stub.entriesPaged.resolves(entryResults);
-  }
+  const entries = opts?.entries ?? [];
+
+  const entryResults = entries.map(([keys, value], index) => [
+    { args: keys, toHex: (): string => `key${index}` },
+    value,
+  ]);
+  stub.entries.resolves(entryResults);
+  stub.entriesPaged.resolves(entryResults);
+
   if (opts?.multi) {
     stub.multi.resolves(opts.multi);
   }
