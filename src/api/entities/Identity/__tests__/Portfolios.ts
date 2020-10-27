@@ -4,7 +4,7 @@ import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
-import { createPortfolio } from '~/api/procedures';
+import { createPortfolio, deletePortfolio } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -24,7 +24,6 @@ describe('Portfolios class', () => {
   let portfolios: Portfolios;
   let identity: Identity;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
-  let prepareCreatePortfolioStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -117,22 +116,39 @@ describe('Portfolios class', () => {
     });
   });
 
-  describe('method: createPortfolio', () => {
-    beforeAll(() => {
-      prepareCreatePortfolioStub = sinon.stub(createPortfolio, 'prepare');
-    });
-
-    afterAll(() => {
-      sinon.restore();
-    });
-
+  describe('method: create', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const name = 'someName';
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
 
-      prepareCreatePortfolioStub.withArgs({ name }, mockContext).resolves(expectedQueue);
+      sinon
+        .stub(createPortfolio, 'prepare')
+        .withArgs({ name }, mockContext)
+        .resolves(expectedQueue);
 
-      const queue = await portfolios.createPortfolio({ name });
+      const queue = await portfolios.create({ name });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: delete', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const portfolioId = new BigNumber(5);
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(deletePortfolio, 'prepare')
+        .withArgs({ id: portfolioId, did }, mockContext)
+        .resolves(expectedQueue);
+
+      let queue = await portfolios.delete({ portfolio: portfolioId });
+
+      expect(queue).toBe(expectedQueue);
+
+      queue = await portfolios.delete({
+        portfolio: new NumberedPortfolio({ id: portfolioId, did }, mockContext),
+      });
 
       expect(queue).toBe(expectedQueue);
     });

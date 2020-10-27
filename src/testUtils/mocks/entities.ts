@@ -11,6 +11,7 @@ import {
   CurrentIdentity,
   Identity,
   Instruction,
+  NumberedPortfolio,
   // NOTE uncomment in Governance v2 upgrade
   // Proposal,
   SecurityToken,
@@ -27,6 +28,7 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionType,
+  PortfolioBalance,
   SecondaryKey,
   SecurityTokenDetails,
   TickerReservationDetails,
@@ -50,6 +52,7 @@ const mockInstanceContainer = {
   currentAccount: {} as MockCurrentAccount,
   venue: {} as MockVenue,
   instruction: {} as MockInstruction,
+  numberedPortfolio: {} as MockNumberedPortfolio,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -63,6 +66,7 @@ type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 // type MockProposal = Mocked<Proposal>;
 type MockVenue = Mocked<Venue>;
 type MockInstruction = Mocked<Instruction>;
+type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
 
 interface IdentityOptions {
   did?: string;
@@ -120,6 +124,12 @@ interface VenueOptions {
   details?: Partial<VenueDetails>;
 }
 
+interface NumberedPortfolioOptions {
+  id?: BigNumber;
+  isOwned?: boolean;
+  tokenBalances?: PortfolioBalance[];
+}
+
 interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
@@ -135,6 +145,7 @@ let authorizationRequestConstructorStub: SinonStub;
 let proposalConstructorStub: SinonStub;
 let venueConstructorStub: SinonStub;
 let instructionConstructorStub: SinonStub;
+let numberedPortfolioConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
@@ -158,6 +169,8 @@ let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let venueDetailsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
+let numberedPortfolioIsOwnedStub: SinonStub;
+let numberedPortfolioGetTokenBalancesStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -240,6 +253,15 @@ const MockVenueClass = class {
   }
 };
 
+const MockNumberedPortfolioClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return numberedPortfolioConstructorStub(...args);
+  }
+};
+
 const MockInstructionClass = class {
   /**
    * @hidden
@@ -297,6 +319,11 @@ export const mockVenueModule = (path: string) => (): object => ({
 export const mockInstructionModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Instruction: MockInstructionClass,
+});
+
+export const mockNumberedPortfolioModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  NumberedPortfolio: MockNumberedPortfolioClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -367,6 +394,18 @@ const defaultVenueOptions: VenueOptions = {
   },
 };
 let venueOptions = defaultVenueOptions;
+const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
+  id: new BigNumber(1),
+  isOwned: true,
+  tokenBalances: [
+    {
+      token: ('someToken' as unknown) as SecurityToken,
+      total: new BigNumber(1),
+      locked: new BigNumber(0),
+    },
+  ],
+};
+let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
 const defaultInstructionOptions: InstructionOptions = {
   id: new BigNumber(1),
   details: {
@@ -451,6 +490,37 @@ function initVenue(opts?: VenueOptions): void {
   venueOptions = { ...defaultVenueOptions, ...opts };
 
   configureVenue(venueOptions);
+}
+
+/**
+ * @hidden
+ * Configure the Numbered Portfolio instance
+ */
+function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
+  const numberedPortfolio = ({
+    id: opts.id,
+    isOwned: numberedPortfolioIsOwnedStub.resolves(opts.isOwned),
+    getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
+  } as unknown) as MockNumberedPortfolio;
+
+  Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
+  numberedPortfolioConstructorStub.callsFake(args => {
+    return merge({}, numberedPortfolio, args);
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the NumberedPortfolio instance
+ */
+function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
+  numberedPortfolioConstructorStub = sinon.stub();
+  numberedPortfolioIsOwnedStub = sinon.stub();
+  numberedPortfolioGetTokenBalancesStub = sinon.stub();
+
+  numberedPortfolioOptions = { ...defaultNumberedPortfolioOptions, ...opts };
+
+  configureNumberedPortfolio(numberedPortfolioOptions);
 }
 
 /**
@@ -745,6 +815,7 @@ export function configureMocks(opts?: {
   proposalOptions?: ProposalOptions;
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
+  numberedPortfolioOptions?: NumberedPortfolioOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -805,6 +876,12 @@ export function configureMocks(opts?: {
   };
   configureVenue(tempVenueOptions);
 
+  const tempNumberedPortfolioOptions = {
+    ...defaultNumberedPortfolioOptions,
+    ...opts?.numberedPortfolioOptions,
+  };
+  configureNumberedPortfolio(tempNumberedPortfolioOptions);
+
   const tempInstructionOptions = {
     ...defaultInstructionOptions,
     ...opts?.instructionOptions,
@@ -828,6 +905,7 @@ export function initMocks(opts?: {
   proposalOptions?: ProposalOptions;
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
+  numberedPortfolioOptions?: NumberedPortfolioOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -859,6 +937,9 @@ export function initMocks(opts?: {
 
   // Venue
   initVenue(opts?.venueOptions);
+
+  // NumberedPortfolio
+  initNumberedPortfolio(opts?.numberedPortfolioOptions);
 
   // Instruction
   initInstruction(opts?.instructionOptions);
@@ -900,6 +981,7 @@ export function reset(): void {
     // proposalOptions,
     venueOptions,
     instructionOptions,
+    numberedPortfolioOptions,
   });
 }
 
@@ -1215,6 +1297,20 @@ export function getVenueDetailsStub(details?: Partial<VenueDetails>): SinonStub 
     });
   }
   return venueDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a NumberedPortfolio instance
+ */
+export function getNumberedPortfolioInstance(
+  opts?: NumberedPortfolioOptions
+): MockNumberedPortfolio {
+  if (opts) {
+    configureNumberedPortfolio(opts);
+  }
+
+  return mockInstanceContainer.numberedPortfolio;
 }
 
 /**

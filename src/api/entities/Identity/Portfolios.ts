@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
-import { createPortfolio } from '~/api/procedures';
+import { createPortfolio, deletePortfolio } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { PortfolioNumber } from '~/polkadot';
 import { ErrorCode } from '~/types';
@@ -81,7 +81,23 @@ export class Portfolios extends Namespace<Identity> {
   /**
    * Create a new Portfolio for the Identity
    */
-  public createPortfolio(args: { name: string }): Promise<TransactionQueue<NumberedPortfolio>> {
+  public create(args: { name: string }): Promise<TransactionQueue<NumberedPortfolio>> {
     return createPortfolio.prepare(args, this.context);
+  }
+
+  /**
+   * Delete a Portfolio by ID
+   */
+  public delete(args: {
+    portfolio: BigNumber | NumberedPortfolio;
+  }): Promise<TransactionQueue<void>> {
+    const {
+      parent: { did },
+    } = this;
+
+    const { portfolio } = args;
+    const id = portfolio instanceof BigNumber ? portfolio : portfolio.id;
+
+    return deletePortfolio.prepare({ id, did }, this.context);
   }
 }

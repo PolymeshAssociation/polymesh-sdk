@@ -1,7 +1,9 @@
 import BigNumber from 'bignumber.js';
+import sinon from 'sinon';
 
 import { Entity, Identity, NumberedPortfolio } from '~/api/entities';
-import { Context } from '~/base';
+import { deletePortfolio, renamePortfolio } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 
 describe('Numberedortfolio class', () => {
@@ -48,6 +50,43 @@ describe('Numberedortfolio class', () => {
       expect(NumberedPortfolio.isUniqueIdentifiers({})).toBe(false);
       expect(NumberedPortfolio.isUniqueIdentifiers({ did: 'someDid', id: 3 })).toBe(false);
       expect(NumberedPortfolio.isUniqueIdentifiers({ did: 1, id: new BigNumber(1) })).toBe(false);
+    });
+  });
+
+  describe('method: delete', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const id = new BigNumber(1);
+      const did = 'someDid';
+      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(deletePortfolio, 'prepare')
+        .withArgs({ id, did }, context)
+        .resolves(expectedQueue);
+
+      const queue = await numberedPortfolio.delete();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: modifyName', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const id = new BigNumber(1);
+      const did = 'someDid';
+      const name = 'newName';
+      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
+
+      sinon
+        .stub(renamePortfolio, 'prepare')
+        .withArgs({ id, did, name }, context)
+        .resolves(expectedQueue);
+
+      const queue = await numberedPortfolio.modifyName({ name });
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 

@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { Portfolio } from '~/api/entities';
-import { Context } from '~/base';
+import { deletePortfolio, renamePortfolio, RenamePortfolioParams } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import { bytesToString, numberToU64 } from '~/utils';
 
 export interface UniqueIdentifiers {
@@ -37,6 +38,31 @@ export class NumberedPortfolio extends Portfolio {
     const { id } = identifiers;
 
     this.id = id;
+  }
+
+  /**
+   * Delete this Portfolio
+   */
+  public async delete(): Promise<TransactionQueue<void>> {
+    const {
+      id,
+      owner: { did },
+    } = this;
+    return deletePortfolio.prepare({ did, id }, this.context);
+  }
+
+  /**
+   * Rename portfolio
+   */
+  public async modifyName(
+    args: RenamePortfolioParams
+  ): Promise<TransactionQueue<NumberedPortfolio>> {
+    const {
+      id,
+      owner: { did },
+    } = this;
+    const { name } = args;
+    return renamePortfolio.prepare({ did, id, name }, this.context);
   }
 
   /**
