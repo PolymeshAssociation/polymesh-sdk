@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Entity, Identity, NumberedPortfolio } from '~/api/entities';
-import { deletePortfolio } from '~/api/procedures';
+import { deletePortfolio, renamePortfolio } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 
@@ -66,6 +66,25 @@ describe('Numberedortfolio class', () => {
         .resolves(expectedQueue);
 
       const queue = await numberedPortfolio.delete();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: modifyName', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const id = new BigNumber(1);
+      const did = 'someDid';
+      const name = 'newName';
+      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
+
+      sinon
+        .stub(renamePortfolio, 'prepare')
+        .withArgs({ id, did, name }, context)
+        .resolves(expectedQueue);
+
+      const queue = await numberedPortfolio.modifyName({ name });
 
       expect(queue).toBe(expectedQueue);
     });

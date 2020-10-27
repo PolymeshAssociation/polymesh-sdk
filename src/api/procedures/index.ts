@@ -40,3 +40,4 @@ export { transferTokenOwnership, TransferTokenOwnershipParams } from './transfer
 // export { voteOnProposal, VoteOnProposalParams } from './voteOnProposal';
 export { removePrimaryIssuanceAgent } from './removePrimaryIssuanceAgent';
 export { deletePortfolio } from './deletePortfolio';
+export { renamePortfolio, RenamePortfolioParams } from './renamePortfolio';
