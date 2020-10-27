@@ -6,6 +6,7 @@ import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import BigNumber from 'bignumber.js';
+import fetch from 'cross-fetch';
 import { polymesh } from 'polymesh-types/definitions';
 import { Ticker, TxTag } from 'polymesh-types/types';
 
@@ -146,7 +147,11 @@ export class Polymesh {
 
       const polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
-        types,
+        // https://github.com/polkadot-js/api/releases/tag/v2.0.1 TODO @monitz87: remove once Polymesh is updated to substrate 2.0
+        types: {
+          ...types,
+          RefCount: 'RefCountTo259',
+        },
         rpc,
       });
 
@@ -165,6 +170,7 @@ export class Polymesh {
             ApolloLink.from([
               new HttpLink({
                 uri: middleware.link,
+                fetch,
               }),
             ])
           ),

@@ -5,7 +5,7 @@ import { AnyNumber, ITuple } from '@polkadot/types/types';
 import { Compact, Option, Vec } from '@polkadot/types/codec';
 import { Bytes, bool, u128, u16, u32, u64 } from '@polkadot/types/primitive';
 import { BabeEquivocationProof } from '@polkadot/types/interfaces/babe';
-import { MemberCount, ProposalIndex } from '@polkadot/types/interfaces/collective';
+import { ProposalIndex } from '@polkadot/types/interfaces/collective';
 import { CodeHash, Gas, Schedule } from '@polkadot/types/interfaces/contracts';
 import { Proposal } from '@polkadot/types/interfaces/democracy';
 import { EcdsaSignature, Extrinsic, Signature } from '@polkadot/types/interfaces/extrinsics';
@@ -77,9 +77,7 @@ import {
   SecondaryKeyWithAuth,
   SettlementType,
   Signatory,
-  SkippedCount,
   SmartExtension,
-  SnapshotResult,
   TargetIdAuthorization,
   Ticker,
   UniqueCall,
@@ -264,7 +262,6 @@ declare module '@polkadot/api/types/submittable' {
                 | { CINS: any }
                 | { ISIN: any }
                 | { LEI: any }
-                | { EMPTY: any }
                 | string
                 | Uint8Array
               )[],
@@ -430,7 +427,6 @@ declare module '@polkadot/api/types/submittable' {
                 | { CINS: any }
                 | { ISIN: any }
                 | { LEI: any }
-                | { EMPTY: any }
                 | string
                 | Uint8Array
               )[]
@@ -869,15 +865,6 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Change this group's limit for how many concurrent active members they may be.
-       *
-       * # Arguments
-       * * `limit` - the numer of active members there may be concurrently.
-       **/
-      setActiveMembersLimit: AugmentedSubmittable<
-        (limit: MemberCount | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
        * Swaps out one member `remove` for another member `add`.
        *
        * May only be called from `SwapOrigin` or root.
@@ -970,15 +957,6 @@ declare module '@polkadot/api/types/submittable' {
         (
           members: Vec<IdentityId> | (IdentityId | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change this group's limit for how many concurrent active members they may be.
-       *
-       * # Arguments
-       * * `limit` - the numer of active members there may be concurrently.
-       **/
-      setActiveMembersLimit: AugmentedSubmittable<
-        (limit: MemberCount | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * Swaps out one member `remove` for another member `add`.
@@ -1284,21 +1262,15 @@ declare module '@polkadot/api/types/submittable' {
             | Schedule
             | {
                 version?: any;
-                putCodePerByteCost?: any;
-                growMemCost?: any;
-                regularOpCost?: any;
-                returnDataPerByteCost?: any;
-                eventDataPerByteCost?: any;
-                eventPerTopicCost?: any;
-                eventBaseCost?: any;
-                sandboxDataReadCost?: any;
-                sandboxDataWriteCost?: any;
-                transferCost?: any;
+                instructionWeights?: any;
+                hostFnWeights?: any;
+                enablePrintln?: any;
                 maxEventTopics?: any;
                 maxStackHeight?: any;
                 maxMemoryPages?: any;
-                enablePrintln?: any;
+                maxTableSize?: any;
                 maxSubjectLen?: any;
+                maxCodeSize?: any;
               }
             | string
             | Uint8Array
@@ -1710,6 +1682,21 @@ declare module '@polkadot/api/types/submittable' {
        * Leave the secondary key's identity.
        **/
       leaveIdentityAsKey: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
+      /**
+       * Registers a new Identity for the `target_account` and issues a CDD claim to it.
+       *
+       * # Failure
+       * - `origin` has to be a active CDD provider. Inactive CDD providers cannot add new
+       * claims.
+       * - `target_account` (primary key of the new Identity) can be linked to just one and only
+       * one identity.
+       *
+       * # Weight
+       * `7_000_000_000
+       **/
+      mockCddRegisterDid: AugmentedSubmittable<
+        (targetAccount: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
       /**
        * Register a new did with a CDD claim for the caller.
        **/
@@ -2284,17 +2271,18 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Approves the pending non-cooling committee PIP given by the `id`.
+       * Id bonds an additional deposit to proposal with id `id`.
+       * That amount is added to the current deposit.
        *
        * # Errors
-       * * `BadOrigin` unless a GC voting majority executes this function.
-       * * `NoSuchProposal` if the PIP with `id` doesn't exist.
-       * * `IncorrectProposalState` if the proposal isn't pending.
-       * * `ProposalOnCoolOffPeriod` if the proposal is cooling off.
-       * * `NotByCommittee` if the proposal isn't by a committee.
+       * * `BadOrigin`: Only the owner of the proposal can bond an additional deposit.
+       * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
        **/
-      approveCommitteeProposal: AugmentedSubmittable<
-        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      bondAdditionalDeposit: AugmentedSubmittable<
+        (
+          id: PipId | AnyNumber | Uint8Array,
+          additionalDeposit: BalanceOf | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * It cancels the proposal of the id `id`.
@@ -2309,39 +2297,52 @@ declare module '@polkadot/api/types/submittable' {
         (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Clears the snapshot and emits the event `SnapshotCleared`.
-       *
-       * # Errors
-       * * `NotACommitteeMember` - triggered when a non-GC-member executes the function.
+       * Governance committee can make a proposal that automatically becomes a referendum on
+       * which the committee can vote on.
        **/
-      clearSnapshot: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
-      /**
-       * Enacts `results` for the PIPs in the snapshot queue.
-       * The snapshot will be available for further enactments until it is cleared.
-       *
-       * The `results` are encoded a list of `(id, result)` where `result` is applied to `id`.
-       * Note that the snapshot priority queue is encoded with the *lowest priority first*.
-       * so `results = [(id, Approve)]` will approve `SnapshotQueue[SnapshotQueue.len() - 1]`.
-       *
-       * # Errors
-       * * `BadOrigin` - unless a GC voting majority executes this function.
-       * * `CannotSkipPip` - a given PIP has already been skipped too many times.
-       * * `SnapshotResultTooLarge` - on len(results) > len(snapshot_queue).
-       * * `SnapshotIdMismatch` - if:
-       * ```
-       * ∃ (i ∈ 0..SnapshotQueue.len()).
-       * results[i].0 ≠ SnapshotQueue[SnapshotQueue.len() - i].id
-       * ```
-       * This is protects against clearing queue while GC is voting.
-       **/
-      enactSnapshotResults: AugmentedSubmittable<
+      emergencyReferendum: AugmentedSubmittable<
         (
-          results:
-            | Vec<ITuple<[PipId, SnapshotResult]>>
-            | [
-                PipId | AnyNumber | Uint8Array,
-                SnapshotResult | 'Approve' | 'Reject' | 'Skip' | number | Uint8Array
-              ][]
+          proposal: Proposal | { callIndex?: any; args?: any } | string | Uint8Array,
+          url: Option<Url> | null | object | string | Uint8Array,
+          description: Option<PipDescription> | null | object | string | Uint8Array,
+          beneficiaries: Option<Vec<Beneficiary>> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Moves a referendum instance into dispatch queue.
+       **/
+      enactReferendum: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Any governance committee member can fast track a proposal and turn it into a referendum
+       * that will be voted on by the committee.
+       **/
+      fastTrackProposal: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * An emergency stop measure to kill a proposal. Governance committee can kill
+       * a proposal at any time.
+       **/
+      killProposal: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * It updates the enactment period of a specific referendum.
+       *
+       * # Arguments
+       * * `until`, It defines the future block where the enactment period will finished.  A
+       * `None` value means that enactment period is going to finish in the next block.
+       *
+       * # Errors
+       * * `BadOrigin`, Only the release coordinator can update the enactment period.
+       * * ``,
+       **/
+      overrideReferendumEnactmentPeriod: AugmentedSubmittable<
+        (
+          id: PipId | AnyNumber | Uint8Array,
+          until: Option<BlockNumber> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -2349,10 +2350,8 @@ declare module '@polkadot/api/types/submittable' {
        * changes the network in someway. A minimum deposit is required to open a new proposal.
        *
        * # Arguments
-       * * `proposer` is either a signing key or committee.
-       * Used to understand whether this is a committee proposal and verified against `origin`.
        * * `proposal` a dispatchable call
-       * * `deposit` minimum deposit value, which is ignored if `proposer` is a committee.
+       * * `deposit` minimum deposit value
        * * `url` a link to a website for proposal discussion
        **/
       propose: AugmentedSubmittable<
@@ -2360,71 +2359,28 @@ declare module '@polkadot/api/types/submittable' {
           proposal: Proposal | { callIndex?: any; args?: any } | string | Uint8Array,
           deposit: BalanceOf | AnyNumber | Uint8Array,
           url: Option<Url> | null | object | string | Uint8Array,
-          description: Option<PipDescription> | null | object | string | Uint8Array
+          description: Option<PipDescription> | null | object | string | Uint8Array,
+          beneficiaries: Option<Vec<Beneficiary>> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Prune the PIP given by the `id`, refunding any funds not already refunded.
-       * The PIP may not be active
-       *
-       * This function is intended for storage garbage collection purposes.
-       *
-       * # Errors
-       * * `BadOrigin` unless a GC voting majority executes this function.
-       * * `NoSuchProposal` if the PIP with `id` doesn't exist.
-       * * `IncorrectProposalState` if the proposal is active.
+       * An emergency stop measure to kill a proposal. Governance committee can kill
+       * a proposal at any time.
        **/
       pruneProposal: AugmentedSubmittable<
         (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Rejects the PIP given by the `id`, refunding any bonded funds,
-       * assuming it hasn't been cancelled or executed.
-       * Note that cooling-off and proposals scheduled-for-execution can also be rejected.
-       *
-       * # Errors
-       * * `BadOrigin` unless a GC voting majority executes this function.
-       * * `NoSuchProposal` if the PIP with `id` doesn't exist.
-       * * `IncorrectProposalState` if the proposal was cancelled or executed.
+       * Moves a referendum instance into rejected state.
        **/
-      rejectProposal: AugmentedSubmittable<
+      rejectReferendum: AugmentedSubmittable<
         (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Updates the execution schedule of the PIP given by `id`.
-       *
-       * # Arguments
-       * * `until` defines the future block where the enactment period will finished.
-       * `None` value means that enactment period is going to finish in the next block.
-       *
-       * # Errors
-       * * `BadOrigin` unless triggered by release coordinator.
-       * * `IncorrectProposalState` unless the proposal was in a scheduled state.
-       **/
-      rescheduleExecution: AugmentedSubmittable<
-        (
-          id: PipId | AnyNumber | Uint8Array,
-          until: Option<BlockNumber> | null | object | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change the maximum number of active PIPs before community members cannot propose anything.
-       **/
-      setActivePipLimit: AugmentedSubmittable<
-        (newMax: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * Change the default enact period.
        **/
       setDefaultEnactmentPeriod: AugmentedSubmittable<
         (duration: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change the maximum skip count (`max_pip_skip_count`).
-       * New values only
-       **/
-      setMaxPipSkipCount: AugmentedSubmittable<
-        (newMax: SkippedCount | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
        * Change the minimum proposal deposit amount required to start a proposal. Only Governance
@@ -2447,6 +2403,16 @@ declare module '@polkadot/api/types/submittable' {
         (duration: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
+       * Change the proposal duration value. This is the number of blocks for which votes are
+       * accepted on a proposal. Only Governance committee is allowed to change this value.
+       *
+       * # Arguments
+       * * `duration` proposal duration in blocks
+       **/
+      setProposalDuration: AugmentedSubmittable<
+        (duration: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * Change whether completed PIPs are pruned. Can only be called by governance council
        *
        * # Arguments
@@ -2456,33 +2422,40 @@ declare module '@polkadot/api/types/submittable' {
         (newValue: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Takes a new snapshot of the current list of active && pending PIPs.
-       * The PIPs are then sorted into a priority queue based on each PIP's weight.
-       *
-       * # Errors
-       * * `NotACommitteeMember` - triggered when a non-GC-member executes the function.
-       **/
-      snapshot: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
-      /**
-       * Vote either in favor (`aye_or_nay` == true) or against a PIP with `id`.
-       * The "convinction" or strength of the vote is given by `deposit`, which is reserved.
-       *
-       * Note that `vote` is *not* additive.
-       * That is, `vote(id, true, 50)` followed by `vote(id, true, 40)`
-       * will first reserve `50` and then refund `50 - 10`, ending up with `40` in deposit.
-       * To add atop of existing votes, you'll need `existing_deposit + addition`.
+       * Change the quorum threshold amount. This is the amount which a proposal must gather so
+       * as to be considered by a committee. Only Governance committee is allowed to change
+       * this value.
        *
        * # Arguments
-       * * `id`, proposal id
-       * * `aye_or_nay`, a bool representing for or against vote
-       * * `deposit`, the "conviction" with which the vote is made.
+       * * `threshold` the new quorum threshold amount value
+       **/
+      setQuorumThreshold: AugmentedSubmittable<
+        (threshold: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * It unbonds any amount from the deposit of the proposal with id `id`.
        *
        * # Errors
-       * * `NoSuchProposal` if `id` doesn't reference a valid PIP.
-       * * `NotFromCommunity` if proposal was made by a committee.
-       * * `ProposalOnCoolOffPeriod` if non-owner is voting and PIP is cooling off.
-       * * `IncorrectProposalState` if PIP isn't pending.
-       * * `InsufficientDeposit` if `origin` cannot reserve `deposit - old_deposit`.
+       * * `BadOrigin`: Only the owner of the proposal can release part of the deposit.
+       * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
+       * * `InsufficientDeposit`: If the final deposit will be less that the minimum deposit for
+       * a proposal.
+       **/
+      unbondDeposit: AugmentedSubmittable<
+        (
+          id: PipId | AnyNumber | Uint8Array,
+          amount: BalanceOf | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * A network member can vote on any PIP by selecting the id that
+       * corresponds ot the dispatchable action and vote with some balance.
+       *
+       * # Arguments
+       * * `proposal` a dispatchable call
+       * * `id` proposal id
+       * * `aye_or_nay` a bool representing for or against vote
+       * * `deposit` minimum deposit value
        **/
       vote: AugmentedSubmittable<
         (
@@ -2546,48 +2519,22 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Votes `approve`ingly (or not, if `false`)
-       * on an existing `proposal` given by its hash, `index`.
+       * Enact the referendum
        *
        * # Arguments
-       * * `proposal` - A hash of the proposal to be voted on.
-       * * `index` - The proposal index.
-       * * `approve` - If `true` than this is a `for` vote, and `against` otherwise.
-       *
-       * # Errors
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
+       * * `id` - Pip Id that need to be enacted
        **/
-      vote: AugmentedSubmittable<
-        (
-          proposal: Hash | string | Uint8Array,
-          index: ProposalIndex | AnyNumber | Uint8Array,
-          approve: bool | boolean | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
+      voteEnactReferendum: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Proposes to the committee that `call` should be executed in its name.
-       * Alternatively, if the hash of `call` has already been recorded, i.e., already proposed,
-       * then this call counts as a vote, i.e., as if `vote_by_hash` was called.
-       *
-       * # Weight
-       *
-       * The weight of this dispatchable is that of `call` as well as the complexity
-       * for recording the vote itself.
+       * Reject the referendum
        *
        * # Arguments
-       * * `approve` - is this an approving vote?
-       * If the proposal doesn't exist, passing `false` will result in error `FirstVoteReject`.
-       * * `call` - the call to propose for execution.
-       *
-       * # Errors
-       * * `FirstVoteReject`, if `call` hasn't been proposed and `approve == false`.
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
+       * * `id` - Pip Id that need to be rejected
        **/
-      voteOrPropose: AugmentedSubmittable<
-        (
-          approve: bool | boolean | Uint8Array,
-          call: Proposal | { callIndex?: any; args?: any } | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
+      voteRejectReferendum: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
       >;
     };
     portfolio: {
@@ -3002,7 +2949,14 @@ declare module '@polkadot/api/types/submittable' {
         (
           controller: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
           value: Compact<BalanceOf> | AnyNumber | Uint8Array,
-          payee: RewardDestination | 'Staked' | 'Stash' | 'Controller' | number | Uint8Array
+          payee:
+            | RewardDestination
+            | { Staked: any }
+            | { Stash: any }
+            | { Controller: any }
+            | { Account: any }
+            | string
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -3395,7 +3349,14 @@ declare module '@polkadot/api/types/submittable' {
        **/
       setPayee: AugmentedSubmittable<
         (
-          payee: RewardDestination | 'Staked' | 'Stash' | 'Controller' | number | Uint8Array
+          payee:
+            | RewardDestination
+            | { Staked: any }
+            | { Stash: any }
+            | { Controller: any }
+            | { Account: any }
+            | string
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -3951,207 +3912,6 @@ declare module '@polkadot/api/types/submittable' {
        **/
       suicide: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
     };
-    technicalCommittee: {
-      /**
-       * May be called by any signed account after the voting duration has ended in order to
-       * finish voting and close the proposal.
-       *
-       * Abstentions are counted as rejections.
-       *
-       * # Arguments
-       * * `proposal` - A hash of the proposal to be closed.
-       * * `index` - The proposal index.
-       *
-       * # Complexity
-       * - the weight of `proposal` preimage.
-       * - up to three events deposited.
-       * - one read, two removals, one mutation. (plus three static reads.)
-       * - computation and i/o `O(P + L + M)` where:
-       * - `M` is number of members,
-       * - `P` is number of active proposals,
-       * - `L` is the encoded length of `proposal` preimage.
-       **/
-      close: AugmentedSubmittable<
-        (
-          proposal: Hash | string | Uint8Array,
-          index: Compact<ProposalIndex> | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Changes the release coordinator.
-       *
-       * # Arguments
-       * * `id` - The DID of the new release coordinator.
-       *
-       * # Errors
-       * * `MemberNotFound`, If the new coordinator `id` is not part of the committee.
-       **/
-      setReleaseCoordinator: AugmentedSubmittable<
-        (id: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change the vote threshold the determines the winning proposal. For e.g., for a simple
-       * majority use (1, 2) which represents the in-equation ">= 1/2"
-       *
-       * # Arguments
-       * * `match_criteria` - One of {AtLeast, MoreThan}.
-       * * `n` - Numerator of the fraction representing vote threshold.
-       * * `d` - Denominator of the fraction representing vote threshold.
-       **/
-      setVoteThreshold: AugmentedSubmittable<
-        (
-          n: u32 | AnyNumber | Uint8Array,
-          d: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Votes `approve`ingly (or not, if `false`)
-       * on an existing `proposal` given by its hash, `index`.
-       *
-       * # Arguments
-       * * `proposal` - A hash of the proposal to be voted on.
-       * * `index` - The proposal index.
-       * * `approve` - If `true` than this is a `for` vote, and `against` otherwise.
-       *
-       * # Errors
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
-       **/
-      vote: AugmentedSubmittable<
-        (
-          proposal: Hash | string | Uint8Array,
-          index: ProposalIndex | AnyNumber | Uint8Array,
-          approve: bool | boolean | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Proposes to the committee that `call` should be executed in its name.
-       * Alternatively, if the hash of `call` has already been recorded, i.e., already proposed,
-       * then this call counts as a vote, i.e., as if `vote_by_hash` was called.
-       *
-       * # Weight
-       *
-       * The weight of this dispatchable is that of `call` as well as the complexity
-       * for recording the vote itself.
-       *
-       * # Arguments
-       * * `approve` - is this an approving vote?
-       * If the proposal doesn't exist, passing `false` will result in error `FirstVoteReject`.
-       * * `call` - the call to propose for execution.
-       *
-       * # Errors
-       * * `FirstVoteReject`, if `call` hasn't been proposed and `approve == false`.
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
-       **/
-      voteOrPropose: AugmentedSubmittable<
-        (
-          approve: bool | boolean | Uint8Array,
-          call: Proposal | { callIndex?: any; args?: any } | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-    };
-    technicalCommitteeMembership: {
-      /**
-       * Allows the calling member to *unilaterally quit* without this being subject to a GC
-       * vote.
-       *
-       * # Arguments
-       * * `origin` - Member of committee who wants to quit.
-       *
-       * # Error
-       *
-       * * Only primary key can abdicate.
-       * * Last member of a group cannot abdicate.
-       **/
-      abdicateMembership: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
-      /**
-       * Adds a member `who` to the group. May only be called from `AddOrigin` or root.
-       *
-       * # Arguments
-       * * `origin` - Origin representing `AddOrigin` or root
-       * * `who` - IdentityId to be added to the group.
-       **/
-      addMember: AugmentedSubmittable<
-        (who: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Disables a member at specific moment.
-       *
-       * Please note that if member is already revoked (a "valid member"), its revocation
-       * time-stamp will be updated.
-       *
-       * Any disabled member should NOT allow to act like an active member of the group. For
-       * instance, a disabled CDD member should NOT be able to generate a CDD claim. However any
-       * generated claim issued before `at` would be considered as a valid one.
-       *
-       * If you want to invalidate any generated claim, you should use `Self::remove_member`.
-       *
-       * # Arguments
-       * * `at` - Revocation time-stamp.
-       * * `who` - Target member of the group.
-       * * `expiry` - Time-stamp when `who` is removed from CDD. As soon as it is expired, the
-       * generated claims will be "invalid" as `who` is not considered a member of the group.
-       **/
-      disableMember: AugmentedSubmittable<
-        (
-          who: IdentityId | string | Uint8Array,
-          expiry: Option<Moment> | null | object | string | Uint8Array,
-          at: Option<Moment> | null | object | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Removes a member `who` from the set. May only be called from `RemoveOrigin` or root.
-       *
-       * Any claim previously generated by this member is not valid as a group claim. For
-       * instance, if a CDD member group generated a claim for a target identity and then it is
-       * removed, that claim will be invalid.  In case you want to keep the validity of generated
-       * claims, you have to use `Self::disable_member` function
-       *
-       * # Arguments
-       * * `origin` - Origin representing `RemoveOrigin` or root
-       * * `who` - IdentityId to be removed from the group.
-       **/
-      removeMember: AugmentedSubmittable<
-        (who: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Changes the membership to a new set, disregarding the existing membership.
-       * May only be called from `ResetOrigin` or root.
-       *
-       * # Arguments
-       * * `origin` - Origin representing `ResetOrigin` or root
-       * * `members` - New set of identities
-       **/
-      resetMembers: AugmentedSubmittable<
-        (
-          members: Vec<IdentityId> | (IdentityId | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change this group's limit for how many concurrent active members they may be.
-       *
-       * # Arguments
-       * * `limit` - the numer of active members there may be concurrently.
-       **/
-      setActiveMembersLimit: AugmentedSubmittable<
-        (limit: MemberCount | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Swaps out one member `remove` for another member `add`.
-       *
-       * May only be called from `SwapOrigin` or root.
-       *
-       * # Arguments
-       * * `origin` - Origin representing `SwapOrigin` or root
-       * * `remove` - IdentityId to be removed from the group.
-       * * `add` - IdentityId to be added in place of `remove`.
-       **/
-      swapMember: AugmentedSubmittable<
-        (
-          remove: IdentityId | string | Uint8Array,
-          add: IdentityId | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-    };
     timestamp: {
       /**
        * Set the current time.
@@ -4197,207 +3957,6 @@ declare module '@polkadot/api/types/submittable' {
        **/
       reimbursement: AugmentedSubmittable<
         (amount: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-    };
-    upgradeCommittee: {
-      /**
-       * May be called by any signed account after the voting duration has ended in order to
-       * finish voting and close the proposal.
-       *
-       * Abstentions are counted as rejections.
-       *
-       * # Arguments
-       * * `proposal` - A hash of the proposal to be closed.
-       * * `index` - The proposal index.
-       *
-       * # Complexity
-       * - the weight of `proposal` preimage.
-       * - up to three events deposited.
-       * - one read, two removals, one mutation. (plus three static reads.)
-       * - computation and i/o `O(P + L + M)` where:
-       * - `M` is number of members,
-       * - `P` is number of active proposals,
-       * - `L` is the encoded length of `proposal` preimage.
-       **/
-      close: AugmentedSubmittable<
-        (
-          proposal: Hash | string | Uint8Array,
-          index: Compact<ProposalIndex> | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Changes the release coordinator.
-       *
-       * # Arguments
-       * * `id` - The DID of the new release coordinator.
-       *
-       * # Errors
-       * * `MemberNotFound`, If the new coordinator `id` is not part of the committee.
-       **/
-      setReleaseCoordinator: AugmentedSubmittable<
-        (id: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change the vote threshold the determines the winning proposal. For e.g., for a simple
-       * majority use (1, 2) which represents the in-equation ">= 1/2"
-       *
-       * # Arguments
-       * * `match_criteria` - One of {AtLeast, MoreThan}.
-       * * `n` - Numerator of the fraction representing vote threshold.
-       * * `d` - Denominator of the fraction representing vote threshold.
-       **/
-      setVoteThreshold: AugmentedSubmittable<
-        (
-          n: u32 | AnyNumber | Uint8Array,
-          d: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Votes `approve`ingly (or not, if `false`)
-       * on an existing `proposal` given by its hash, `index`.
-       *
-       * # Arguments
-       * * `proposal` - A hash of the proposal to be voted on.
-       * * `index` - The proposal index.
-       * * `approve` - If `true` than this is a `for` vote, and `against` otherwise.
-       *
-       * # Errors
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
-       **/
-      vote: AugmentedSubmittable<
-        (
-          proposal: Hash | string | Uint8Array,
-          index: ProposalIndex | AnyNumber | Uint8Array,
-          approve: bool | boolean | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Proposes to the committee that `call` should be executed in its name.
-       * Alternatively, if the hash of `call` has already been recorded, i.e., already proposed,
-       * then this call counts as a vote, i.e., as if `vote_by_hash` was called.
-       *
-       * # Weight
-       *
-       * The weight of this dispatchable is that of `call` as well as the complexity
-       * for recording the vote itself.
-       *
-       * # Arguments
-       * * `approve` - is this an approving vote?
-       * If the proposal doesn't exist, passing `false` will result in error `FirstVoteReject`.
-       * * `call` - the call to propose for execution.
-       *
-       * # Errors
-       * * `FirstVoteReject`, if `call` hasn't been proposed and `approve == false`.
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
-       **/
-      voteOrPropose: AugmentedSubmittable<
-        (
-          approve: bool | boolean | Uint8Array,
-          call: Proposal | { callIndex?: any; args?: any } | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-    };
-    upgradeCommitteeMembership: {
-      /**
-       * Allows the calling member to *unilaterally quit* without this being subject to a GC
-       * vote.
-       *
-       * # Arguments
-       * * `origin` - Member of committee who wants to quit.
-       *
-       * # Error
-       *
-       * * Only primary key can abdicate.
-       * * Last member of a group cannot abdicate.
-       **/
-      abdicateMembership: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>>;
-      /**
-       * Adds a member `who` to the group. May only be called from `AddOrigin` or root.
-       *
-       * # Arguments
-       * * `origin` - Origin representing `AddOrigin` or root
-       * * `who` - IdentityId to be added to the group.
-       **/
-      addMember: AugmentedSubmittable<
-        (who: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Disables a member at specific moment.
-       *
-       * Please note that if member is already revoked (a "valid member"), its revocation
-       * time-stamp will be updated.
-       *
-       * Any disabled member should NOT allow to act like an active member of the group. For
-       * instance, a disabled CDD member should NOT be able to generate a CDD claim. However any
-       * generated claim issued before `at` would be considered as a valid one.
-       *
-       * If you want to invalidate any generated claim, you should use `Self::remove_member`.
-       *
-       * # Arguments
-       * * `at` - Revocation time-stamp.
-       * * `who` - Target member of the group.
-       * * `expiry` - Time-stamp when `who` is removed from CDD. As soon as it is expired, the
-       * generated claims will be "invalid" as `who` is not considered a member of the group.
-       **/
-      disableMember: AugmentedSubmittable<
-        (
-          who: IdentityId | string | Uint8Array,
-          expiry: Option<Moment> | null | object | string | Uint8Array,
-          at: Option<Moment> | null | object | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Removes a member `who` from the set. May only be called from `RemoveOrigin` or root.
-       *
-       * Any claim previously generated by this member is not valid as a group claim. For
-       * instance, if a CDD member group generated a claim for a target identity and then it is
-       * removed, that claim will be invalid.  In case you want to keep the validity of generated
-       * claims, you have to use `Self::disable_member` function
-       *
-       * # Arguments
-       * * `origin` - Origin representing `RemoveOrigin` or root
-       * * `who` - IdentityId to be removed from the group.
-       **/
-      removeMember: AugmentedSubmittable<
-        (who: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Changes the membership to a new set, disregarding the existing membership.
-       * May only be called from `ResetOrigin` or root.
-       *
-       * # Arguments
-       * * `origin` - Origin representing `ResetOrigin` or root
-       * * `members` - New set of identities
-       **/
-      resetMembers: AugmentedSubmittable<
-        (
-          members: Vec<IdentityId> | (IdentityId | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Change this group's limit for how many concurrent active members they may be.
-       *
-       * # Arguments
-       * * `limit` - the numer of active members there may be concurrently.
-       **/
-      setActiveMembersLimit: AugmentedSubmittable<
-        (limit: MemberCount | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
-      >;
-      /**
-       * Swaps out one member `remove` for another member `add`.
-       *
-       * May only be called from `SwapOrigin` or root.
-       *
-       * # Arguments
-       * * `origin` - Origin representing `SwapOrigin` or root
-       * * `remove` - IdentityId to be removed from the group.
-       * * `add` - IdentityId to be added in place of `remove`.
-       **/
-      swapMember: AugmentedSubmittable<
-        (
-          remove: IdentityId | string | Uint8Array,
-          add: IdentityId | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>
       >;
     };
     utility: {

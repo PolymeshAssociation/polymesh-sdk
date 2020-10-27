@@ -107,6 +107,7 @@ export enum SudoTx {
 }
 
 export enum MultiSigTx {
+  MakeMultisigMaster = 'multiSig.makeMultisigMaster',
   CreateMultisig = 'multiSig.createMultisig',
   CreateOrApproveProposalAsIdentity = 'multiSig.createOrApproveProposalAsIdentity',
   CreateOrApproveProposalAsKey = 'multiSig.createOrApproveProposalAsKey',
@@ -142,11 +143,13 @@ export enum TreasuryTx {
 }
 
 export enum PolymeshCommitteeTx {
-  SetVoteThreshold = 'polymeshCommittee.setVoteThreshold',
-  SetReleaseCoordinator = 'polymeshCommittee.setReleaseCoordinator',
-  Close = 'polymeshCommittee.close',
   VoteOrPropose = 'polymeshCommittee.voteOrPropose',
   Vote = 'polymeshCommittee.vote',
+  SetVoteThreshold = 'polymeshCommittee.setVoteThreshold',
+  Close = 'polymeshCommittee.close',
+  SetReleaseCoordinator = 'polymeshCommittee.setReleaseCoordinator',
+  VoteEnactReferendum = 'polymeshCommittee.voteEnactReferendum',
+  VoteRejectReferendum = 'polymeshCommittee.voteRejectReferendum',
 }
 
 export enum CommitteeMembershipTx {
@@ -160,23 +163,33 @@ export enum CommitteeMembershipTx {
 }
 
 export enum PipsTx {
-  SetPruneHistoricalPips = 'pips.setPruneHistoricalPips',
-  SetMinProposalDeposit = 'pips.setMinProposalDeposit',
-  SetProposalCoolOffPeriod = 'pips.setProposalCoolOffPeriod',
-  SetDefaultEnactmentPeriod = 'pips.setDefaultEnactmentPeriod',
   SetMaxPipSkipCount = 'pips.setMaxPipSkipCount',
   SetActivePipLimit = 'pips.setActivePipLimit',
-  Propose = 'pips.propose',
-  AmendProposal = 'pips.amendProposal',
-  CancelProposal = 'pips.cancelProposal',
-  Vote = 'pips.vote',
   ApproveCommitteeProposal = 'pips.approveCommitteeProposal',
   RejectProposal = 'pips.rejectProposal',
-  PruneProposal = 'pips.pruneProposal',
   RescheduleExecution = 'pips.rescheduleExecution',
   ClearSnapshot = 'pips.clearSnapshot',
   Snapshot = 'pips.snapshot',
   EnactSnapshotResults = 'pips.enactSnapshotResults',
+  SetPruneHistoricalPips = 'pips.setPruneHistoricalPips',
+  SetMinProposalDeposit = 'pips.setMinProposalDeposit',
+  SetQuorumThreshold = 'pips.setQuorumThreshold',
+  SetProposalDuration = 'pips.setProposalDuration',
+  SetProposalCoolOffPeriod = 'pips.setProposalCoolOffPeriod',
+  SetDefaultEnactmentPeriod = 'pips.setDefaultEnactmentPeriod',
+  Propose = 'pips.propose',
+  AmendProposal = 'pips.amendProposal',
+  CancelProposal = 'pips.cancelProposal',
+  BondAdditionalDeposit = 'pips.bondAdditionalDeposit',
+  UnbondDeposit = 'pips.unbondDeposit',
+  Vote = 'pips.vote',
+  KillProposal = 'pips.killProposal',
+  PruneProposal = 'pips.pruneProposal',
+  FastTrackProposal = 'pips.fastTrackProposal',
+  EmergencyReferendum = 'pips.emergencyReferendum',
+  EnactReferendum = 'pips.enactReferendum',
+  RejectReferendum = 'pips.rejectReferendum',
+  OverrideReferendumEnactmentPeriod = 'pips.overrideReferendumEnactmentPeriod',
 }
 
 export enum TechnicalCommitteeTx {
@@ -216,6 +229,21 @@ export enum UpgradeCommitteeMembershipTx {
 }
 
 export enum AssetTx {
+  Transfer = 'asset.transfer',
+  ControllerTransfer = 'asset.controllerTransfer',
+  Approve = 'asset.approve',
+  TransferFrom = 'asset.transferFrom',
+  BatchIssue = 'asset.batchIssue',
+  Redeem = 'asset.redeem',
+  RedeemFrom = 'asset.redeemFrom',
+  ControllerRedeem = 'asset.controllerRedeem',
+  TransferWithData = 'asset.transferWithData',
+  TransferFromWithData = 'asset.transferFromWithData',
+  IsIssuable = 'asset.isIssuable',
+  IncreaseCustodyAllowance = 'asset.increaseCustodyAllowance',
+  IncreaseCustodyAllowanceOf = 'asset.increaseCustodyAllowanceOf',
+  TransferByCustodian = 'asset.transferByCustodian',
+  SetTreasuryDid = 'asset.setTreasuryDid',
   RegisterTicker = 'asset.registerTicker',
   AcceptTickerTransfer = 'asset.acceptTickerTransfer',
   AcceptPrimaryIssuanceAgentTransfer = 'asset.acceptPrimaryIssuanceAgentTransfer',
@@ -247,8 +275,15 @@ export enum DividendTx {
 }
 
 export enum IdentityTx {
+  RemoveSigningKeys = 'identity.removeSigningKeys',
+  SetMasterKey = 'identity.setMasterKey',
+  AcceptMasterKey = 'identity.acceptMasterKey',
+  FreezeSigningKeys = 'identity.freezeSigningKeys',
+  UnfreezeSigningKeys = 'identity.unfreezeSigningKeys',
+  BatchAddSigningKeyWithAuthorization = 'identity.batchAddSigningKeyWithAuthorization',
   RegisterDid = 'identity.registerDid',
   CddRegisterDid = 'identity.cddRegisterDid',
+  MockCddRegisterDid = 'identity.mockCddRegisterDid',
   InvalidateCddClaims = 'identity.invalidateCddClaims',
   RemoveSecondaryKeys = 'identity.removeSecondaryKeys',
   SetPrimaryKey = 'identity.setPrimaryKey',
@@ -297,6 +332,14 @@ export enum BridgeTx {
 }
 
 export enum ComplianceManagerTx {
+  AddActiveRule = 'complianceManager.addActiveRule',
+  RemoveActiveRule = 'complianceManager.removeActiveRule',
+  ReplaceAssetRules = 'complianceManager.replaceAssetRules',
+  ResetActiveRules = 'complianceManager.resetActiveRules',
+  PauseAssetRules = 'complianceManager.pauseAssetRules',
+  ResumeAssetRules = 'complianceManager.resumeAssetRules',
+  ChangeAssetRule = 'complianceManager.changeAssetRule',
+  BatchChangeAssetRule = 'complianceManager.batchChangeAssetRule',
   AddComplianceRequirement = 'complianceManager.addComplianceRequirement',
   RemoveComplianceRequirement = 'complianceManager.removeComplianceRequirement',
   ReplaceAssetCompliance = 'complianceManager.replaceAssetCompliance',
@@ -372,6 +415,7 @@ export enum UtilityTx {
 }
 
 export enum PortfolioTx {
+  MovePortfolio = 'portfolio.movePortfolio',
   CreatePortfolio = 'portfolio.createPortfolio',
   DeletePortfolio = 'portfolio.deletePortfolio',
   MovePortfolioFunds = 'portfolio.movePortfolioFunds',
