@@ -15,13 +15,14 @@ import {
 import { Context, PostTransactionValue } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InstructionType, RoleType, TickerReservationStatus } from '~/types';
+import { InstructionType, PortfolioLike, RoleType, TickerReservationStatus } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
 describe('addInstruction procedure', () => {
   let mockContext: Mocked<Context>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub;
+  let portfolioLikeToPortfolioIdStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
   let numberToBalanceStub: sinon.SinonStub<
@@ -41,8 +42,10 @@ describe('addInstruction procedure', () => {
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let venueId: BigNumber;
   let amount: BigNumber;
-  let from: string;
-  let to: string;
+  let from: PortfolioLike;
+  let to: PortfolioLike;
+  let fromDid: string;
+  let toDid: string;
   let token: string;
   let validFrom: Date;
   let endBlock: BigNumber;
@@ -68,6 +71,7 @@ describe('addInstruction procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     portfolioIdToMeshPortfolioIdStub = sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
+    portfolioLikeToPortfolioIdStub = sinon.stub(utilsModule, 'portfolioLikeToPortfolioId');
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
     numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
@@ -77,6 +81,8 @@ describe('addInstruction procedure', () => {
     amount = new BigNumber(100);
     from = 'fromDid';
     to = 'toDid';
+    fromDid = 'fromDid';
+    toDid = 'toDid';
     token = 'SOME_TOKEN';
     validFrom = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
     endBlock = new BigNumber(1000);
@@ -149,8 +155,14 @@ describe('addInstruction procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    portfolioIdToMeshPortfolioIdStub.withArgs({ did: from }, mockContext).returns(rawFrom);
-    portfolioIdToMeshPortfolioIdStub.withArgs({ did: to }, mockContext).returns(rawTo);
+    portfolioLikeToPortfolioIdStub.withArgs(from, mockContext).returns({ did: fromDid });
+    portfolioLikeToPortfolioIdStub.withArgs(to, mockContext).returns({ did: toDid });
+    portfolioIdToMeshPortfolioIdStub
+      .withArgs({ did: fromDid, number: undefined }, mockContext)
+      .returns(rawFrom);
+    portfolioIdToMeshPortfolioIdStub
+      .withArgs({ did: toDid, number: undefined }, mockContext)
+      .returns(rawTo);
     stringToTickerStub.withArgs(token, mockContext).returns(rawToken);
     numberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
     numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
@@ -205,7 +217,7 @@ describe('addInstruction procedure', () => {
   });
 
   test('should add an add and authorize instruction transaction to the queue', async () => {
-    dsMockUtils.configureMocks({ contextOptions: { did: from } });
+    dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
     const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
 
     const result = await prepareAddInstruction.call(proc, args);

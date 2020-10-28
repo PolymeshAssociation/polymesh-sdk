@@ -12,6 +12,7 @@ import {
   meshInstructionStatusToInstructionStatus,
   momentToDate,
   numberToU64,
+  portfolioIdToPortfolio,
   tickerToString,
   u32ToBigNumber,
   u64ToBigNumber,
@@ -145,12 +146,12 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       const { from, to, amount, asset } = leg;
 
       const ticker = tickerToString(asset);
-      const fromDid = identityIdToString(from.did);
-      const toDid = identityIdToString(to.did);
+      const fromPortfolio = portfolioIdToPortfolio(from, context);
+      const toPortfolio = portfolioIdToPortfolio(to, context);
 
       return {
-        from: new Identity({ did: fromDid }, context),
-        to: new Identity({ did: toDid }, context),
+        from: fromPortfolio,
+        to: toPortfolio,
         amount: balanceToBigNumber(amount),
         token: new SecurityToken({ ticker }, context),
       };

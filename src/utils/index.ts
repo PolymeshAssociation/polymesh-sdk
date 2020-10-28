@@ -66,7 +66,7 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { Account, DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
+import { Account, DefaultPortfolio, Identity, NumberedPortfolio, Portfolio } from '~/api/entities';
 // import { ProposalDetails } from '~/api/types';
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
@@ -99,6 +99,7 @@ import {
   NextKey,
   PaginationOptions,
   Permission,
+  PortfolioLike,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -372,12 +373,12 @@ export function signerToString(signer: string | Signer): string {
  * Extract the DID from an Identity, or return the Current DID if no Identity is passed
  */
 export async function getDid(
-  target: string | Identity | undefined,
+  value: string | Identity | undefined,
   context: Context
 ): Promise<string> {
   let did;
-  if (target) {
-    did = signerToString(target);
+  if (value) {
+    did = signerToString(value);
   } else {
     ({ did } = await context.getCurrentIdentity());
   }
@@ -1905,4 +1906,57 @@ export function endConditionToSettlementType(
   }
 
   return context.polymeshApi.createType('SettlementType', value);
+}
+
+/**
+ * @hidden
+ */
+export async function portfolioLikeToPortfolioId(
+  value: PortfolioLike,
+  context: Context
+): Promise<PortfolioId> {
+  let did: string;
+  let number: BigNumber | undefined;
+
+  if (typeof value === 'string') {
+    did = value;
+  } else if (value instanceof Identity) {
+    ({ did } = value);
+  } else if (value instanceof Portfolio) {
+    ({
+      owner: { did },
+    } = value);
+
+    if (value instanceof NumberedPortfolio) {
+      ({ id: number } = value);
+    }
+  } else {
+    const { identity: valueIdentity } = value;
+    ({ id: number } = value);
+
+    let identity: Identity;
+
+    if (typeof valueIdentity === 'string') {
+      did = valueIdentity;
+      identity = new Identity({ did }, context);
+    } else {
+      ({ did } = valueIdentity);
+      identity = valueIdentity;
+    }
+
+    const exists = await identity.portfolios.portfolioExists({ portfolioId: number });
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Portfolio doesn't exist",
+        data: {
+          did,
+          portfolioId: number,
+        },
+      });
+    }
+  }
+
+  return { did, number };
 }
