@@ -343,7 +343,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   /**
    * Remove the primary issuance agent of the Security Token
    *
-   * @note issuance won’t be possible if primary issuance agent is not set
+   * @note if primary issuance agent is not set, Security Token owner would be used by default
    */
   public removePrimaryIssuanceAgent(): Promise<TransactionQueue<void>> {
     const { ticker, context } = this;

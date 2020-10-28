@@ -30,7 +30,7 @@ export async function prepareIssueTokens(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const { isDivisible, totalSupply, primaryIssuanceAgent } = await securityToken.details();
+  const { isDivisible, totalSupply } = await securityToken.details();
 
   const supplyAfterMint = amount.plus(totalSupply);
 
@@ -42,13 +42,6 @@ export async function prepareIssueTokens(
         currentSupply: totalSupply,
         supplyLimit: MAX_TOKEN_AMOUNT,
       },
-    });
-  }
-
-  if (!primaryIssuanceAgent) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You should set a primary issuance agent to issue tokens',
     });
   }
 
