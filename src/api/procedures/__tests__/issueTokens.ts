@@ -95,33 +95,6 @@ describe('issueTokens procedure', () => {
     });
   });
 
-  test('should throw an error if primary issuance agent is undefined', async () => {
-    const args = {
-      amount,
-      ticker,
-    };
-
-    entityMockUtils.configureMocks({
-      securityTokenOptions: {
-        details: {
-          primaryIssuanceAgent: undefined,
-        },
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
-
-    let error;
-
-    try {
-      await prepareIssueTokens.call(proc, args);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('You should set a primary issuance agent to issue tokens');
-  });
-
   test('should add a issue transaction to the queue', async () => {
     const isDivisible = true;
     const args = {
