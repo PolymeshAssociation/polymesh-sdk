@@ -153,4 +153,28 @@ describe('Portfolios class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: portfolioExists', () => {
+    test('should return whether a portfolio exists', async () => {
+      const portfolioId = new BigNumber(0);
+
+      const portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+        returnValue: dsMockUtils.createMockBytes(),
+      });
+
+      stringToIdentityIdStub.returns(dsMockUtils.createMockIdentityId(did));
+      numberToU64Stub.returns(dsMockUtils.createMockU64(portfolioId.toNumber()));
+
+      let result = await portfolios.portfolioExists({ portfolioId });
+
+      expect(result).toBe(false);
+
+      const portfolioName = 'portfolioName';
+      portfoliosStub.resolves(dsMockUtils.createMockBytes(portfolioName));
+
+      result = await portfolios.portfolioExists({ portfolioId });
+
+      expect(result).toBe(true);
+    });
+  });
 });

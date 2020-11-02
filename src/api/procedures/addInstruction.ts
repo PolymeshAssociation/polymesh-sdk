@@ -4,9 +4,9 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { PortfolioId, Ticker } from 'polymesh-types/types';
 
-import { Identity, Instruction, SecurityToken } from '~/api/entities';
+import { Instruction, SecurityToken } from '~/api/entities';
 import { Context, PolymeshError, PostTransactionValue, Procedure } from '~/base';
-import { ErrorCode, InstructionType, Role, RoleType } from '~/types';
+import { ErrorCode, InstructionType, PortfolioLike, Role, RoleType } from '~/types';
 import {
   dateToMoment,
   endConditionToSettlementType,
@@ -14,18 +14,16 @@ import {
   numberToBalance,
   numberToU64,
   portfolioIdToMeshPortfolioId,
-  signerToString,
+  portfolioLikeToPortfolioId,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils';
 
-// NOTE @monitz87: adapt when we add support for Portfolios
-
 export interface AddInstructionParams {
   legs: {
     amount: BigNumber;
-    from: string | Identity;
-    to: string | Identity;
+    from: PortfolioLike;
+    to: PortfolioLike;
     token: string | SecurityToken;
   }[];
   validFrom?: Date;
@@ -108,21 +106,27 @@ export async function prepareAddInstruction(
   }[] = [];
   const rawPortfolios: PortfolioId[] = [];
 
-  legs.forEach(({ from, to, amount, token }) => {
-    const fromDid = signerToString(from);
-    const fromPortfolio = portfolioIdToMeshPortfolioId({ did: fromDid }, context);
+  await Promise.all(
+    legs.map(async ({ from, to, amount, token }) => {
+      const { did: fromDid, number: fromNumber } = await portfolioLikeToPortfolioId(from, context);
+      const { did: toDid, number: toNumber } = await portfolioLikeToPortfolioId(to, context);
+      const fromPortfolio = portfolioIdToMeshPortfolioId(
+        { did: fromDid, number: fromNumber },
+        context
+      );
 
-    if (fromDid === did) {
-      rawPortfolios.push(fromPortfolio);
-    }
+      if (fromDid === did) {
+        rawPortfolios.push(fromPortfolio);
+      }
 
-    rawLegs.push({
-      from: fromPortfolio,
-      to: portfolioIdToMeshPortfolioId({ did: signerToString(to) }, context),
-      asset: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
-      amount: numberToBalance(amount, context),
-    });
-  });
+      rawLegs.push({
+        from: fromPortfolio,
+        to: portfolioIdToMeshPortfolioId({ did: toDid, number: toNumber }, context),
+        asset: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
+        amount: numberToBalance(amount, context),
+      });
+    })
+  );
 
   let newInstruction;
 

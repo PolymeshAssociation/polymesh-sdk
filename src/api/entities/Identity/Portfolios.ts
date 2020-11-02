@@ -41,13 +41,9 @@ export class Portfolios extends Namespace<Identity> {
   }
 
   /**
-   * Retrieve a numbered Portfolio or the default Portfolio if Portfolio ID is not passed
-   *
-   * @param args.porfolioId - optional, defaults to the default portfolio
+   * Retrieve whether this Identity possesses a Portfolio with a certain ID
    */
-  public async getPortfolio(args?: {
-    portfolioId: BigNumber;
-  }): Promise<DefaultPortfolio | NumberedPortfolio> {
+  public async portfolioExists(args: { portfolioId: BigNumber }): Promise<boolean> {
     const {
       context,
       context: {
@@ -57,6 +53,27 @@ export class Portfolios extends Namespace<Identity> {
       },
       parent: { did },
     } = this;
+    const { portfolioId } = args;
+
+    const identityId = stringToIdentityId(did, context);
+    const rawPortfolioNumber = numberToU64(portfolioId, context);
+    const rawPortfolioName = await portfolio.portfolios(identityId, rawPortfolioNumber);
+
+    return !rawPortfolioName.isEmpty;
+  }
+
+  /**
+   * Retrieve a numbered Portfolio or the default Portfolio if Portfolio ID is not passed
+   *
+   * @param args.porfolioId - optional, defaults to the default portfolio
+   */
+  public async getPortfolio(args?: {
+    portfolioId: BigNumber;
+  }): Promise<DefaultPortfolio | NumberedPortfolio> {
+    const {
+      context,
+      parent: { did },
+    } = this;
 
     const portfolioId = args?.portfolioId;
 
@@ -64,11 +81,9 @@ export class Portfolios extends Namespace<Identity> {
       return new DefaultPortfolio({ did }, context);
     }
 
-    const identityId = stringToIdentityId(did, context);
-    const rawPortfolioNumber = numberToU64(portfolioId, context);
-    const rawPortfolioName = await portfolio.portfolios(identityId, rawPortfolioNumber);
+    const exists = await this.portfolioExists({ portfolioId });
 
-    if (rawPortfolioName.isEmpty) {
+    if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: "The Portfolio doesn't exist",

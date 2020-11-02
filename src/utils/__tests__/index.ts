@@ -54,6 +54,7 @@ import {
   InstructionType,
   KnownTokenType,
   Permission,
+  PortfolioLike,
   Scope,
   ScopeType,
   Signer,
@@ -125,6 +126,7 @@ import {
   padString,
   permissionToMeshPermission,
   portfolioIdToMeshPortfolioId,
+  portfolioLikeToPortfolioId,
   posRatioToBigNumber,
   removePadding,
   requestAtBlock,
@@ -177,6 +179,10 @@ jest.mock(
 jest.mock(
   '~/base/Context',
   require('~/testUtils/mocks/dataSources').mockContextModule('~/base/Context')
+);
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 
 describe('delay', () => {
@@ -376,6 +382,21 @@ describe('portfolioIdToMeshPortfolioId', () => {
 });
 
 describe('signerToString', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.reset();
+  });
+
   test('signerToString should return the Indentity DID string', () => {
     const did = 'someDid';
     const context = dsMockUtils.getContextInstance();
@@ -1515,6 +1536,7 @@ describe('signerToSignerValue and signerValueToSigner', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -1523,10 +1545,12 @@ describe('signerToSignerValue and signerValueToSigner', () => {
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
     sinon.restore();
   });
 
@@ -2967,6 +2991,21 @@ describe('meshProposalStateToProposalState', () => {
 });
 
 describe('toIdentityWithClaimsArray', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
   test('should return an IdentityWithClaims array object', () => {
     const context = dsMockUtils.getContextInstance();
     const targetDid = 'someTargetDid';
@@ -3395,20 +3434,120 @@ describe('endConditionToSettlementType', () => {
 
     expect(result).toBe(fakeResult);
   });
+});
 
-  describe('scopeToMiddlewareScope', () => {
-    test('scopeToMiddlewareScope should convert a different Scopes to a middlware Scops', () => {
-      let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
-      let result = scopeToMiddlewareScope(scope);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
+describe('scopeToMiddlewareScope', () => {
+  test('scopeToMiddlewareScope should convert a different Scopes to a middlware Scops', () => {
+    let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
+    let result = scopeToMiddlewareScope(scope);
+    expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
-      scope = { type: ScopeType.Ticker, value: 'someTicker' };
-      result = scopeToMiddlewareScope(scope);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
+    scope = { type: ScopeType.Ticker, value: 'someTicker' };
+    result = scopeToMiddlewareScope(scope);
+    expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
 
-      scope = { type: ScopeType.Custom, value: 'customValue' };
-      result = scopeToMiddlewareScope(scope);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
+    scope = { type: ScopeType.Custom, value: 'customValue' };
+    result = scopeToMiddlewareScope(scope);
+    expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
+  });
+});
+
+describe('portfolioLikeToPortfolioId', () => {
+  let did: string;
+  let number: BigNumber;
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+
+    did = 'someDid';
+    number = new BigNumber(1);
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('should convert a DID string to a PortfolioId', async () => {
+    const result = await portfolioLikeToPortfolioId(did, context);
+
+    expect(result).toEqual({ did, number: undefined });
+  });
+
+  test('should convert an Identity to a PortfolioId', async () => {
+    const identity = entityMockUtils.getIdentityInstance({ did });
+    Object.setPrototypeOf(identity, Identity.prototype);
+
+    const result = await portfolioLikeToPortfolioId(identity, context);
+
+    expect(result).toEqual({ did, number: undefined });
+  });
+
+  test('should convert a NumberedPortfolio to a PortfolioId', async () => {
+    const portfolio = new NumberedPortfolio({ did, id: number }, context);
+
+    const result = await portfolioLikeToPortfolioId(portfolio, context);
+
+    expect(result).toEqual({ did, number });
+  });
+
+  test('should convert a DefaultPortfolio to a PortfolioId', async () => {
+    const portfolio = new DefaultPortfolio({ did }, context);
+
+    const result = await portfolioLikeToPortfolioId(portfolio, context);
+
+    expect(result).toEqual({ did, number: undefined });
+  });
+
+  test('should convert a Portfolio identifier object to a PortfolioId', async () => {
+    const portfolioIdentifier: PortfolioLike = { identity: did, id: number };
+
+    let result = await portfolioLikeToPortfolioId(portfolioIdentifier, context);
+
+    expect(result).toEqual({ did, number });
+
+    portfolioIdentifier.identity = entityMockUtils.getIdentityInstance({
+      did,
+      portfoliosPortfolioExists: true,
+    });
+
+    result = await portfolioLikeToPortfolioId(portfolioIdentifier, context);
+
+    expect(result).toEqual({ did, number });
+  });
+
+  test("should throw an error if the Portfolio identifier object refers to a Portfolio that doesn't exist", async () => {
+    const portfolioIdentifier: PortfolioLike = {
+      identity: entityMockUtils.getIdentityInstance({
+        did,
+        portfoliosPortfolioExists: false,
+      }),
+      id: number,
+    };
+
+    let err;
+
+    try {
+      await portfolioLikeToPortfolioId(portfolioIdentifier, context);
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err.message).toBe("The Portfolio doesn't exist");
+    expect(err.data).toEqual({
+      did,
+      portfolioId: number,
     });
   });
 });
