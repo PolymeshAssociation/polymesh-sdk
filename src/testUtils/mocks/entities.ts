@@ -77,6 +77,7 @@ interface IdentityOptions {
   hasRole?: boolean;
   hasValidCdd?: boolean;
   getPrimaryKey?: string;
+  portfoliosPortfolioExists?: boolean;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -166,6 +167,7 @@ let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
 let identityGetPrimaryKeyStub: SinonStub;
+let identityPortfoliosPortfolioExistsStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
@@ -357,12 +359,14 @@ const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
   getPrimaryKey: 'someAddress',
+  portfoliosPortfolioExists: true,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
   getPrimaryKey: 'someAddress',
+  portfoliosPortfolioExists: true,
   getSecondaryKeys: [],
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
@@ -707,6 +711,11 @@ function configureIdentity(opts: IdentityOptions): void {
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
     getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
+    portfolios: {
+      portfolioExists: identityPortfoliosPortfolioExistsStub.resolves(
+        opts.portfoliosPortfolioExists
+      ),
+    },
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -725,6 +734,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRoleStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
   identityGetPrimaryKeyStub = sinon.stub();
+  identityPortfoliosPortfolioExistsStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 

@@ -4,7 +4,13 @@ import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
 // NOTE uncomment in Governance v2 upgrade
-import { Account, Identity, Portfolio /*, Proposal */ } from '~/api/entities';
+import {
+  Account,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  Portfolio /*, Proposal */,
+} from '~/api/entities';
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { CountryCode } from '~/generated/types';
 
@@ -501,6 +507,13 @@ export interface SecondaryKey {
   signer: Signer;
   permissions: Permission[];
 }
+
+export type PortfolioLike =
+  | string
+  | Identity
+  | NumberedPortfolio
+  | DefaultPortfolio
+  | { identity: string | Identity; id: BigNumber };
 
 export { TxTags } from 'polymesh-types/types';
 export { Signer as PolkadotSigner } from '@polkadot/api/types';

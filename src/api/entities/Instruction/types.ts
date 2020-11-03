@@ -1,6 +1,12 @@
 import BigNumber from 'bignumber.js';
 
-import { Identity, SecurityToken, Venue } from '~/api/entities';
+import {
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  SecurityToken,
+  Venue,
+} from '~/api/entities';
 
 export enum InstructionStatus {
   Pending = 'Pending',
@@ -31,8 +37,8 @@ export type InstructionDetails = {
 );
 
 export interface Leg {
-  from: Identity; // NOTE @monitz87: change these identities to portfolios when the entity exists
-  to: Identity;
+  from: DefaultPortfolio | NumberedPortfolio;
+  to: DefaultPortfolio | NumberedPortfolio;
   amount: BigNumber;
   token: SecurityToken;
 }
