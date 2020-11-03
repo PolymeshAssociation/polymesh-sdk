@@ -9,6 +9,7 @@ import {
   AuthorizationRequest,
   CurrentAccount,
   CurrentIdentity,
+  DefaultPortfolio,
   Identity,
   Instruction,
   NumberedPortfolio,
@@ -53,6 +54,7 @@ const mockInstanceContainer = {
   venue: {} as MockVenue,
   instruction: {} as MockInstruction,
   numberedPortfolio: {} as MockNumberedPortfolio,
+  defaultPortfolio: {} as MockDefaultPortfolio,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -67,6 +69,7 @@ type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 type MockVenue = Mocked<Venue>;
 type MockInstruction = Mocked<Instruction>;
 type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
+type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
 
 interface IdentityOptions {
   did?: string;
@@ -128,6 +131,13 @@ interface NumberedPortfolioOptions {
   id?: BigNumber;
   isOwned?: boolean;
   tokenBalances?: PortfolioBalance[];
+  did?: string;
+}
+
+interface DefaultPortfolioOptions {
+  isOwned?: boolean;
+  tokenBalances?: PortfolioBalance[];
+  did?: string;
 }
 
 interface InstructionOptions {
@@ -146,6 +156,7 @@ let proposalConstructorStub: SinonStub;
 let venueConstructorStub: SinonStub;
 let instructionConstructorStub: SinonStub;
 let numberedPortfolioConstructorStub: SinonStub;
+let defaultPortfolioConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
@@ -171,6 +182,8 @@ let venueDetailsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
 let numberedPortfolioIsOwnedStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
+let defaultPortfolioIsOwnedStub: SinonStub;
+let defaultPortfolioGetTokenBalancesStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -262,6 +275,15 @@ const MockNumberedPortfolioClass = class {
   }
 };
 
+const MockDefaultPortfolioClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return defaultPortfolioConstructorStub(...args);
+  }
+};
+
 const MockInstructionClass = class {
   /**
    * @hidden
@@ -324,6 +346,11 @@ export const mockInstructionModule = (path: string) => (): object => ({
 export const mockNumberedPortfolioModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   NumberedPortfolio: MockNumberedPortfolioClass,
+});
+
+export const mockDefaultPortfolioModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  DefaultPortfolio: MockDefaultPortfolioClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -404,8 +431,21 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
       locked: new BigNumber(0),
     },
   ],
+  did: 'someDid',
 };
 let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
+const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
+  isOwned: true,
+  tokenBalances: [
+    {
+      token: ('someToken' as unknown) as SecurityToken,
+      total: new BigNumber(1),
+      locked: new BigNumber(0),
+    },
+  ],
+  did: 'someDid',
+};
+let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
 const defaultInstructionOptions: InstructionOptions = {
   id: new BigNumber(1),
   details: {
@@ -501,6 +541,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
     id: opts.id,
     isOwned: numberedPortfolioIsOwnedStub.resolves(opts.isOwned),
     getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
+    owner: { did: opts.did },
   } as unknown) as MockNumberedPortfolio;
 
   Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
@@ -521,6 +562,37 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
   numberedPortfolioOptions = { ...defaultNumberedPortfolioOptions, ...opts };
 
   configureNumberedPortfolio(numberedPortfolioOptions);
+}
+
+/**
+ * @hidden
+ * Configure the Default Portfolio instance
+ */
+function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
+  const defaultPortfolio = ({
+    isOwned: defaultPortfolioIsOwnedStub.resolves(opts.isOwned),
+    getTokenBalances: defaultPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
+    owner: { did: opts.did },
+  } as unknown) as MockDefaultPortfolio;
+
+  Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
+  defaultPortfolioConstructorStub.callsFake(args => {
+    return merge({}, defaultPortfolio, args);
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the DefaultPortfolio instance
+ */
+function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
+  defaultPortfolioConstructorStub = sinon.stub();
+  defaultPortfolioIsOwnedStub = sinon.stub();
+  defaultPortfolioGetTokenBalancesStub = sinon.stub();
+
+  defaultPortfolioOptions = { ...defaultDefaultPortfolioOptions, ...opts };
+
+  configureDefaultPortfolio(defaultPortfolioOptions);
 }
 
 /**
@@ -816,6 +888,7 @@ export function configureMocks(opts?: {
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
+  defaultPortfolioOptions?: DefaultPortfolioOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -882,6 +955,12 @@ export function configureMocks(opts?: {
   };
   configureNumberedPortfolio(tempNumberedPortfolioOptions);
 
+  const tempDefaultPortfolioOptions = {
+    ...defaultDefaultPortfolioOptions,
+    ...opts?.defaultPortfolioOptions,
+  };
+  configureDefaultPortfolio(tempDefaultPortfolioOptions);
+
   const tempInstructionOptions = {
     ...defaultInstructionOptions,
     ...opts?.instructionOptions,
@@ -906,6 +985,7 @@ export function initMocks(opts?: {
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
+  defaultPortfolioOptions?: DefaultPortfolioOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -940,6 +1020,9 @@ export function initMocks(opts?: {
 
   // NumberedPortfolio
   initNumberedPortfolio(opts?.numberedPortfolioOptions);
+
+  // DefaultPortfolio
+  initDefaultPortfolio(opts?.defaultPortfolioOptions);
 
   // Instruction
   initInstruction(opts?.instructionOptions);
@@ -982,6 +1065,7 @@ export function reset(): void {
     venueOptions,
     instructionOptions,
     numberedPortfolioOptions,
+    defaultPortfolioOptions,
   });
 }
 
@@ -1311,6 +1395,18 @@ export function getNumberedPortfolioInstance(
   }
 
   return mockInstanceContainer.numberedPortfolio;
+}
+
+/**
+ * @hidden
+ * Retrieve a DefaultPortfolio instance
+ */
+export function getDefaultPortfolioInstance(opts?: DefaultPortfolioOptions): MockDefaultPortfolio {
+  if (opts) {
+    configureDefaultPortfolio(opts);
+  }
+
+  return mockInstanceContainer.defaultPortfolio;
 }
 
 /**

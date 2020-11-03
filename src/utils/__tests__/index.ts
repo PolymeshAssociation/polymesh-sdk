@@ -7,6 +7,7 @@ import {
   CddId,
   ComplianceRequirement,
   Memo,
+  MovePortfolioItem,
   PipId,
   PortfolioId,
   SettlementType,
@@ -35,7 +36,13 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
+import {
+  Account,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  SecurityToken,
+} from '~/api/entities';
 // import { ProposalState } from '~/api/entities/types';
 import { Context, PostTransactionValue } from '~/base';
 import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
@@ -54,6 +61,7 @@ import {
   InstructionType,
   KnownTokenType,
   Permission,
+  PortfolioItem,
   Scope,
   ScopeType,
   Signer,
@@ -125,6 +133,7 @@ import {
   padString,
   permissionToMeshPermission,
   portfolioIdToMeshPortfolioId,
+  portfolioItemToMovePortfolioItem,
   posRatioToBigNumber,
   removePadding,
   requestAtBlock,
@@ -370,6 +379,66 @@ describe('portfolioIdToMeshPortfolioId', () => {
       .returns(fakeResult);
 
     result = portfolioIdToMeshPortfolioId({ ...portfolioId, number }, context);
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('portfolioItemToMovePortfolioItem', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('portfolioItemToMovePortfolioItem should convert a portfolio item into a polkadot move portfolio item', () => {
+    const context = dsMockUtils.getContextInstance();
+    const ticker = 'someToken';
+    const amount = new BigNumber(100);
+    const rawToken = new SecurityToken({ ticker }, context);
+    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    const fakeResult = ('MovePortfolioItem' as unknown) as MovePortfolioItem;
+
+    let portfolioItem: PortfolioItem = {
+      token: ticker,
+      amount,
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Ticker', ticker)
+      .returns(rawTicker);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Balance', portfolioItem.amount.multipliedBy(Math.pow(10, 6)).toString())
+      .returns(rawAmount);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('MovePortfolioItem', {
+        ticker: rawTicker,
+        amount: rawAmount,
+      })
+      .returns(fakeResult);
+
+    let result = portfolioItemToMovePortfolioItem(portfolioItem, context);
+
+    expect(result).toBe(fakeResult);
+
+    portfolioItem = {
+      token: rawToken,
+      amount,
+    };
+
+    result = portfolioItemToMovePortfolioItem(portfolioItem, context);
 
     expect(result).toBe(fakeResult);
   });

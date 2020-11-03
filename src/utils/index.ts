@@ -50,6 +50,7 @@ import {
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
   Memo,
+  MovePortfolioItem,
   Permission as MeshPermission,
   PipId,
   PortfolioId as MeshPortfolioId,
@@ -99,6 +100,7 @@ import {
   NextKey,
   PaginationOptions,
   Permission,
+  PortfolioItem,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -1449,6 +1451,20 @@ export function portfolioIdToMeshPortfolioId(
   return context.polymeshApi.createType('PortfolioId', {
     did: stringToIdentityId(did, context),
     kind: number ? { User: numberToU64(number, context) } : 'Default',
+  });
+}
+
+/**
+ * @hidden
+ */
+export function portfolioItemToMovePortfolioItem(
+  portfolioItem: PortfolioItem,
+  context: Context
+): MovePortfolioItem {
+  const { token, amount } = portfolioItem;
+  return context.polymeshApi.createType('MovePortfolioItem', {
+    ticker: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
+    amount: numberToBalance(amount, context),
   });
 }
 

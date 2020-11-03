@@ -3,7 +3,8 @@ import { values } from 'lodash';
 import { Ticker } from 'polymesh-types/types';
 
 import { Entity, Identity, SecurityToken } from '~/api/entities';
-import { Context } from '~/base';
+import { moveFunds, MoveFundsParams } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import { balanceToBigNumber, portfolioIdToMeshPortfolioId, tickerToString } from '~/utils';
 
 import { PortfolioBalance } from './types';
@@ -129,5 +130,15 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     }
 
     return values(assetBalances);
+  }
+
+  /**
+   * Moves funds from one owned portfolio to another owned portfolio
+   *
+   * @param args.to - owned portfolio who will receive the funds
+   * @param args.items - list of tokens and amounts to be move
+   */
+  public async moveFunds(args: MoveFundsParams): Promise<TransactionQueue<void>> {
+    return moveFunds.prepare({ ...args, from: this }, this.context);
   }
 }
