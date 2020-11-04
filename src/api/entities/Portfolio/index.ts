@@ -4,7 +4,12 @@ import { Ticker } from 'polymesh-types/types';
 
 import { Entity, Identity, SecurityToken } from '~/api/entities';
 import { Context } from '~/base';
-import { balanceToBigNumber, portfolioIdToMeshPortfolioId, tickerToString } from '~/utils';
+import {
+  balanceToBigNumber,
+  identityIdToString,
+  portfolioIdToMeshPortfolioId,
+  tickerToString,
+} from '~/utils';
 
 import { PortfolioBalance } from './types';
 
@@ -129,5 +134,34 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     }
 
     return values(assetBalances);
+  }
+
+  /**
+   * Retrieve the custodian of this portfolio
+   */
+  public async getCustodian(): Promise<Identity> {
+    const {
+      owner: { did },
+      _id,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+      context,
+    } = this;
+
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: _id }, context);
+    const portfolioCustodian = await portfolio.portfolioCustodian(rawPortfolioId);
+
+    let custodianDid;
+    try {
+      const rawIdentityId = portfolioCustodian.unwrap();
+      custodianDid = identityIdToString(rawIdentityId);
+    } catch (_) {
+      custodianDid = did;
+    }
+
+    return new Identity({ did: custodianDid }, context);
   }
 }
