@@ -154,14 +154,11 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: _id }, context);
     const portfolioCustodian = await portfolio.portfolioCustodian(rawPortfolioId);
 
-    let custodianDid;
     try {
       const rawIdentityId = portfolioCustodian.unwrap();
-      custodianDid = identityIdToString(rawIdentityId);
+      return new Identity({ did: identityIdToString(rawIdentityId) }, context);
     } catch (_) {
-      custodianDid = did;
+      return new Identity({ did }, context);
     }
-
-    return new Identity({ did: custodianDid }, context);
   }
 }
