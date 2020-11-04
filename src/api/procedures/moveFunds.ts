@@ -1,5 +1,5 @@
 import { DefaultPortfolio, NumberedPortfolio } from '~/api/entities';
-import { PortfolioItem } from '~/api/entities/types';
+import { PortfolioItem } from '~/api/entities/Portfolio/types';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode } from '~/types';
 import { portfolioIdToMeshPortfolioId, portfolioItemToMovePortfolioItem } from '~/utils';
@@ -80,17 +80,13 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     owner: { did },
   } = fromPortfolio;
 
-  const castedFromPortfolio = fromPortfolio as NumberedPortfolio;
+  let number = (fromPortfolio as NumberedPortfolio).id;
 
-  const fromPortfolioId = castedFromPortfolio.id
-    ? { number: castedFromPortfolio.id, did }
-    : { did };
-  const rawFrom = portfolioIdToMeshPortfolioId(fromPortfolioId, context);
+  const rawFrom = portfolioIdToMeshPortfolioId(number ? { did, number } : { did }, context);
 
-  const castedToPortfolio = toPortfolio as NumberedPortfolio;
+  number = (toPortfolio as NumberedPortfolio).id;
 
-  const toPortfolioId = castedToPortfolio.id ? { number: castedToPortfolio.id, did } : { did };
-  const rawTo = portfolioIdToMeshPortfolioId(toPortfolioId, context);
+  const rawTo = portfolioIdToMeshPortfolioId(number ? { did, number } : { did }, context);
 
   const rawMovePortfolioItem = items.map(item => portfolioItemToMovePortfolioItem(item, context));
 
