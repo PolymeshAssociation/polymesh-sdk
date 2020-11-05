@@ -113,9 +113,9 @@ export class NumberedPortfolio extends Portfolio {
       // TODO remove null check once types fixed
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
-        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id!),
-        blockDate: result.data.eventByIndexedArgs.block!.datetime!,
-        eventIndex: result.data.eventByIndexedArgs.event_idx!,
+        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id),
+        blockDate: result.data.eventByIndexedArgs.block!.datetime,
+        eventIndex: result.data.eventByIndexedArgs.event_idx,
       };
       /* eslint-enabled @typescript-eslint/no-non-null-assertion */
     }
