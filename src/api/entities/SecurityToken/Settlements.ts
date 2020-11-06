@@ -1,13 +1,13 @@
 import BigNumber from 'bignumber.js';
 import { CanTransferResult } from 'polymesh-types/types';
 
-import { Identity, Namespace, SecurityToken } from '~/api/entities';
-import { TransferStatus } from '~/types';
+import { Namespace, SecurityToken } from '~/api/entities';
+import { PortfolioLike, TransferStatus } from '~/types';
 import {
   canTransferResultToTransferStatus,
   numberToBalance,
   portfolioIdToMeshPortfolioId,
-  signerToString,
+  portfolioLikeToPortfolioId,
   stringToAccountId,
   stringToTicker,
 } from '~/utils';
@@ -18,15 +18,20 @@ import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
  */
 export class Settlements extends Namespace<SecurityToken> {
   /**
-   * Check whether it is possible to transfer a certain amount of this asset between two Identities
+   * Check whether it is possible to create a settlement instruction to transfer a certain amount of this asset between two Portfolios.
    *
-   * @param args.from - sender Identity (optional, defaults to the current Identity)
-   * @param args.to - receiver Identity
+   * @note this takes locked tokens into account. For example, if portfolio A has 1000 tokens and this function is called to check if 700 of them can be
+   *   transferred to portfolio B (assuming everything else checks out) the result will be success. If an instruction is created and authorized to transfer those 700 tokens,
+   *   they would become locked. From that point, further calls to this function would yield failed results because of the funds being locked, even though they haven't been
+   *   transferred yet
+   *
+   * @param args.from - sender Portfolio (optional, defaults to the current Identity's Default Portfolio)
+   * @param args.to - receiver Portfolio
    * @param args.amount - amount of tokens to transfer
    */
   public async canSettle(args: {
-    from?: string | Identity;
-    to: string | Identity;
+    from?: PortfolioLike;
+    to: PortfolioLike;
     amount: BigNumber;
   }): Promise<TransferStatus> {
     const {
@@ -54,13 +59,18 @@ export class Settlements extends Namespace<SecurityToken> {
      */
     const senderAddress = context.currentPair?.address || DUMMY_ACCOUNT_ID;
 
+    const [fromPortfolio, toPortfolio] = await Promise.all([
+      portfolioLikeToPortfolioId(from, context),
+      portfolioLikeToPortfolioId(to, context),
+    ]);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res: CanTransferResult = await (rpc as any).asset.canTransfer(
       stringToAccountId(senderAddress, context),
       null,
-      portfolioIdToMeshPortfolioId({ did: signerToString(from) }, context),
+      portfolioIdToMeshPortfolioId(fromPortfolio, context),
       null,
-      portfolioIdToMeshPortfolioId({ did: signerToString(to) }, context),
+      portfolioIdToMeshPortfolioId(toPortfolio, context),
       stringToTicker(ticker, context),
       numberToBalance(amount, context, isDivisible)
     );
