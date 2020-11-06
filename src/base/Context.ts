@@ -578,6 +578,7 @@ export class Context {
    * @param opts.targets - identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
    * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
    * @param opts.size - page size
    * @param opts.start - page offset
    *
@@ -593,7 +594,7 @@ export class Context {
       start?: number;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
-    const { targets, trustedClaimIssuers, claimTypes, includeExpired, size, start } = opts;
+    const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
 
     const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
