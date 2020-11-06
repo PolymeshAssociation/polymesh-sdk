@@ -3,6 +3,9 @@ import BigNumber from 'bignumber.js';
 import { Portfolio } from '~/api/entities';
 import { deletePortfolio, renamePortfolio, RenamePortfolioParams } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
+import { eventByIndexedArgs } from '~/middleware/queries';
+import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Ensured, EventIdentifier } from '~/types';
 import { bytesToString, numberToU64 } from '~/utils';
 
 export interface UniqueIdentifiers {
@@ -82,5 +85,41 @@ export class NumberedPortfolio extends Portfolio {
 
     const rawPortfolioName = await portfolio.portfolios(did, numberToU64(id, context));
     return bytesToString(rawPortfolioName);
+  }
+
+  /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this portfolio was created
+   *
+   * @note uses the middleware
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async createdAt(): Promise<EventIdentifier | null> {
+    const {
+      owner: { did },
+      id,
+      context,
+    } = this;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+      eventByIndexedArgs({
+        moduleId: ModuleIdEnum.Portfolio,
+        eventId: EventIdEnum.PortfolioCreated,
+        eventArg0: did,
+        eventArg1: id.toString(),
+      })
+    );
+
+    if (result.data.eventByIndexedArgs) {
+      // TODO remove null check once types fixed
+      /* eslint-disable @typescript-eslint/no-non-null-assertion */
+      return {
+        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id),
+        blockDate: result.data.eventByIndexedArgs.block!.datetime,
+        eventIndex: result.data.eventByIndexedArgs.event_idx,
+      };
+      /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+    }
+
+    return null;
   }
 }

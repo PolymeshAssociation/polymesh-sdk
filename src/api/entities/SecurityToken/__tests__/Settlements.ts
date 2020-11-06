@@ -7,7 +7,7 @@ import { Namespace } from '~/api/entities';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TransferStatus } from '~/types';
+import { PortfolioLike, TransferStatus } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsModule from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
@@ -23,6 +23,10 @@ describe('Settlements class', () => {
   let stringToTickerStub: SinonStub<[string, Context], Ticker>;
   let numberToBalanceStub: sinon.SinonStub;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
+  let portfolioLikeToPortfolioIdStub: sinon.SinonStub<
+    [PortfolioLike, Context],
+    Promise<PortfolioId>
+  >;
   let rawAccountId: AccountId;
   let rawTicker: Ticker;
   let rawAmount: Balance;
@@ -42,6 +46,7 @@ describe('Settlements class', () => {
     stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
     numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
     portfolioIdToMeshPortfolioIdStub = sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
+    portfolioLikeToPortfolioIdStub = sinon.stub(utilsModule, 'portfolioLikeToPortfolioId');
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
   });
 
@@ -73,26 +78,35 @@ describe('Settlements class', () => {
 
   describe('method: canSettle', () => {
     let fromDid: string;
+    let fromPortfolioId: PortfolioId;
+    let toPortfolioId: PortfolioId;
     const rawFromPortfolio = dsMockUtils.createMockPortfolioId();
     const rawToPortfolio = dsMockUtils.createMockPortfolioId();
 
     beforeAll(() => {
       fromDid = 'fromDid';
+      fromPortfolioId = { did: fromDid };
+      toPortfolioId = { did: toDid };
     });
 
     beforeEach(() => {
-      portfolioIdToMeshPortfolioIdStub
-        .withArgs({ did: toDid }, mockContext)
-        .returns(rawToPortfolio);
+      portfolioLikeToPortfolioIdStub.withArgs(fromDid, mockContext).resolves(fromPortfolioId);
+      portfolioLikeToPortfolioIdStub.withArgs(toDid, mockContext).resolves(toPortfolioId);
+      portfolioIdToMeshPortfolioIdStub.withArgs(toPortfolioId, mockContext).returns(rawToPortfolio);
     });
 
     test('should return a status value representing whether the transaction can be made from the current Identity', async () => {
-      const { did: currentDid } = await mockContext.getCurrentIdentity();
+      const currentIdentity = await mockContext.getCurrentIdentity();
+      const { did: currentDid } = currentIdentity;
 
       const rawDummyAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
+      const currentDefaultPortfolioId = { did: currentDid };
 
+      portfolioLikeToPortfolioIdStub
+        .withArgs(currentIdentity, mockContext)
+        .resolves(currentDefaultPortfolioId);
       portfolioIdToMeshPortfolioIdStub
-        .withArgs({ did: currentDid }, mockContext)
+        .withArgs(currentDefaultPortfolioId, mockContext)
         .returns(rawFromPortfolio);
 
       // also test the case where the SDK was instanced without an account
