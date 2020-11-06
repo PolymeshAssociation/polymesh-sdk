@@ -4,6 +4,8 @@ import sinon from 'sinon';
 import { Entity, Identity, NumberedPortfolio } from '~/api/entities';
 import { deletePortfolio, renamePortfolio } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
+import { eventByIndexedArgs } from '~/middleware/queries';
+import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 
 describe('Numberedortfolio class', () => {
@@ -105,6 +107,47 @@ describe('Numberedortfolio class', () => {
       const result = await numberedPortfolio.getName();
 
       expect(result).toEqual(portfolioName);
+    });
+  });
+
+  describe('method: createdAt', () => {
+    const id = new BigNumber(1);
+    const did = 'someDid';
+    const variables = {
+      moduleId: ModuleIdEnum.Portfolio,
+      eventId: EventIdEnum.PortfolioCreated,
+      eventArg0: did,
+      eventArg1: id.toString(),
+    };
+
+    test('should return the event identifier object of the portfolio creation', async () => {
+      const blockNumber = new BigNumber(1234);
+      const blockDate = new Date('4/14/2020');
+      const eventIdx = 1;
+      const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
+      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
+
+      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
+        /* eslint-disable @typescript-eslint/camelcase */
+        eventByIndexedArgs: {
+          block_id: blockNumber.toNumber(),
+          block: { datetime: blockDate },
+          event_idx: eventIdx,
+        },
+        /* eslint-enable @typescript-eslint/camelcase */
+      });
+
+      const result = await numberedPortfolio.createdAt();
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should return null if the query result is empty', async () => {
+      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
+
+      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
+      const result = await numberedPortfolio.createdAt();
+      expect(result).toBeNull();
     });
   });
 });
