@@ -61,7 +61,12 @@ describe('Portfolios class', () => {
   describe('method: getPortfolios', () => {
     test('should retrieve all the portfolios for the identity', async () => {
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
-        entries: [tuple([rawIdentityId, rawNumberedPortfolioId], dsMockUtils.createMockBytes())],
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), rawNumberedPortfolioId],
+            dsMockUtils.createMockBytes()
+          ),
+        ],
       });
 
       stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
@@ -76,43 +81,6 @@ describe('Portfolios class', () => {
     });
   });
 
-  describe('method: getCustodiedPortfolos', () => {
-    test('should retrieve all the Portfolios custodied by the Identity', async () => {
-      dsMockUtils.createQueryStub('portfolio', 'portfoliosInCustody', {
-        entries: [
-          tuple(
-            [
-              rawIdentityId,
-              dsMockUtils.createMockPortfolioId({
-                did: rawIdentityId,
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
-              }),
-            ],
-            dsMockUtils.createMockBool(true)
-          ),
-          tuple(
-            [
-              rawIdentityId,
-              dsMockUtils.createMockPortfolioId({
-                did: rawIdentityId,
-                kind: dsMockUtils.createMockPortfolioKind({ User: rawNumberedPortfolioId }),
-              }),
-            ],
-            dsMockUtils.createMockBool(true)
-          ),
-        ],
-      });
-
-      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
-      u64ToBigNumberStub.returns(numberedPortfolioId);
-
-      const result = await portfolios.getCustodiedPortfolios();
-      expect(result).toHaveLength(2);
-      expect(result[0].owner.did).toEqual(did);
-      expect((result[1] as NumberedPortfolio).id).toEqual(numberedPortfolioId);
-    });
-  });
-
   describe('method: getPortfolio', () => {
     test('should return the default portfolio for the current identity', async () => {
       const result = await portfolios.getPortfolio();
@@ -122,7 +90,11 @@ describe('Portfolios class', () => {
 
     test('should return a numbered portfolio', async () => {
       const portfolioId = new BigNumber(1);
+
       const result = await portfolios.getPortfolio({ portfolioId });
+      // Object.setPrototypeOf(result, NumberedPortfolio.prototype);
+
+      expect(result instanceof NumberedPortfolio).toBe(true);
       expect((result as NumberedPortfolio).id).toEqual(portfolioId);
     });
 
