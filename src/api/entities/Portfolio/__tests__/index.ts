@@ -191,18 +191,16 @@ describe('Portfolio class', () => {
 
       identityIdToStringStub.returns(custodianDid);
 
-      let portfolio = new Portfolio({ did, id }, context);
-      let result = await portfolio.getCustodian();
+      const portfolio = new Portfolio({ did, id }, context);
 
+      let result = await portfolio.getCustodian();
       expect(result.did).toEqual(custodianDid);
 
       dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian').returns({});
 
       identityIdToStringStub.returns(did);
 
-      portfolio = new Portfolio({ did, id }, context);
       result = await portfolio.getCustodian();
-
       expect(result.did).toEqual(did);
     });
   });

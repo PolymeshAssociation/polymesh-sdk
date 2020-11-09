@@ -137,10 +137,13 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the custodian of this portfolio
+   * Retrieve the custodian Identity of this Portfolio
+   *
+   * @note if no custodian is set, the owner Identity is returned
    */
   public async getCustodian(): Promise<Identity> {
     const {
+      owner,
       owner: { did },
       _id,
       context: {
@@ -158,7 +161,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       const rawIdentityId = portfolioCustodian.unwrap();
       return new Identity({ did: identityIdToString(rawIdentityId) }, context);
     } catch (_) {
-      return new Identity({ did }, context);
+      return owner;
     }
   }
 }
