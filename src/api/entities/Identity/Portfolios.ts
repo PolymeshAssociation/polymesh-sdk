@@ -1,18 +1,19 @@
 import BigNumber from 'bignumber.js';
+import { PortfolioId } from 'polymesh-types/types';
 
 import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
 import { createPortfolio, deletePortfolio } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { PortfolioNumber } from '~/polkadot';
 import { ErrorCode } from '~/types';
-import { stringToIdentityId, u64ToBigNumber } from '~/utils';
+import { identityIdToString, numberToU64, stringToIdentityId, u64ToBigNumber } from '~/utils';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
  */
 export class Portfolios extends Namespace<Identity> {
   /**
-   * Retrieve all the Portfolios for the Identity
+   * Retrieve all the Portfolios owned by this Identity
    */
   public async getPortfolios(): Promise<[DefaultPortfolio, ...NumberedPortfolio[]]> {
     const {
@@ -38,6 +39,38 @@ export class Portfolios extends Namespace<Identity> {
     });
 
     return portfolios;
+  }
+
+  /**
+   * Retrieve all Portfolios custodied by this Identity
+   */
+  public async getCustodiedPortfolios(): Promise<(DefaultPortfolio | NumberedPortfolio)[]> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+      parent: { did: custodianDid },
+    } = this;
+
+    const custodian = stringToIdentityId(custodianDid, context);
+    const portfolioEntries = await portfolio.portfoliosInCustody.entries(custodian);
+
+    return portfolioEntries.map(([{ args }]) => {
+      const { did: ownerDid, kind } = args[1] as PortfolioId;
+
+      const did = identityIdToString(ownerDid);
+
+      if (kind.isDefault) {
+        return new DefaultPortfolio({ did }, context);
+      }
+
+      const id = u64ToBigNumber(kind.asUser);
+
+      return new NumberedPortfolio({ did, id }, context);
+    });
   }
 
   /**

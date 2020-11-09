@@ -61,12 +61,7 @@ describe('Portfolios class', () => {
   describe('method: getPortfolios', () => {
     test('should retrieve all the portfolios for the identity', async () => {
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), rawNumberedPortfolioId],
-            dsMockUtils.createMockBytes()
-          ),
-        ],
+        entries: [tuple([rawIdentityId, rawNumberedPortfolioId], dsMockUtils.createMockBytes())],
       });
 
       stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
@@ -74,8 +69,47 @@ describe('Portfolios class', () => {
 
       const result = await portfolios.getPortfolios();
       expect(result).toHaveLength(2);
+      expect(result[0] instanceof DefaultPortfolio).toBe(true);
+      expect(result[1] instanceof NumberedPortfolio).toBe(true);
       expect(result[0].owner.did).toEqual(did);
       expect(result[1].id).toEqual(numberedPortfolioId);
+    });
+  });
+
+  describe('method: getCustodiedPortfolos', () => {
+    test('should retrieve all the Portfolios custodied by the Identity', async () => {
+      dsMockUtils.createQueryStub('portfolio', 'portfoliosInCustody', {
+        entries: [
+          tuple(
+            [
+              rawIdentityId,
+              dsMockUtils.createMockPortfolioId({
+                did: rawIdentityId,
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+            ],
+            dsMockUtils.createMockBool(true)
+          ),
+          tuple(
+            [
+              rawIdentityId,
+              dsMockUtils.createMockPortfolioId({
+                did: rawIdentityId,
+                kind: dsMockUtils.createMockPortfolioKind({ User: rawNumberedPortfolioId }),
+              }),
+            ],
+            dsMockUtils.createMockBool(true)
+          ),
+        ],
+      });
+
+      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
+      u64ToBigNumberStub.returns(numberedPortfolioId);
+
+      const result = await portfolios.getCustodiedPortfolios();
+      expect(result).toHaveLength(2);
+      expect(result[0].owner.did).toEqual(did);
+      expect((result[1] as NumberedPortfolio).id).toEqual(numberedPortfolioId);
     });
   });
 
