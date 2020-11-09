@@ -7,8 +7,3 @@ export interface PortfolioBalance {
   total: BigNumber;
   locked: BigNumber;
 }
-
-export interface PortfolioItem {
-  token: string | SecurityToken;
-  amount: BigNumber;
-}

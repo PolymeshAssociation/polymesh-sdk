@@ -133,10 +133,10 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Moves funds from one owned portfolio to another owned portfolio
+   * Moves funds from this Portfolio to another one owned by the same Identity
    *
-   * @param args.to - owned portfolio who will receive the funds
-   * @param args.items - list of tokens and amounts to be move
+   * @param args.to - portfolio (or portfolio ID) that will receive the funds. Optional, if no value is passed, the funds will be moved to the default Portfolio of this Portfolio's owner
+   * @param args.movements - list of tokens (and their corresponding amounts) that will be moved
    */
   public async moveFunds(args: MoveFundsParams): Promise<TransactionQueue<void>> {
     return moveFunds.prepare({ ...args, from: this }, this.context);

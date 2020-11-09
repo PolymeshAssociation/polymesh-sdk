@@ -7,7 +7,7 @@ import { Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, PortfolioItem } from '~/types';
+import { PortfolioBalance, PortfolioMovement } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -28,20 +28,22 @@ jest.mock(
 describe('moveFunds procedure', () => {
   let mockContext: Mocked<Context>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
-  let portfolioItemToMovePortfolioItemStub: sinon.SinonStub<
-    [PortfolioItem, Context],
+  let portfolioMovementToMovePortfolioItemStub: sinon.SinonStub<
+    [PortfolioMovement, Context],
     MovePortfolioItem
   >;
+  let portfolioLikeToPortfolioIdStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     portfolioIdToMeshPortfolioIdStub = sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
-    portfolioItemToMovePortfolioItemStub = sinon.stub(
+    portfolioMovementToMovePortfolioItemStub = sinon.stub(
       utilsModule,
-      'portfolioItemToMovePortfolioItem'
+      'portfolioMovementToMovePortfolioItem'
     );
+    portfolioLikeToPortfolioIdStub = sinon.stub(utilsModule, 'portfolioLikeToPortfolioId');
   });
 
   beforeEach(() => {
@@ -77,7 +79,7 @@ describe('moveFunds procedure', () => {
         to: samePortfolio,
         items: [],
       })
-    ).rejects.toThrow('You cannot move tokens to the same portfolio of origin');
+    ).rejects.toThrow('Origin and destination should be different Portfolios');
   });
 
   test('should throw an error if the Identity is not the owner of both Portfolios', async () => {
@@ -101,7 +103,7 @@ describe('moveFunds procedure', () => {
         to,
         items: [],
       })
-    ).rejects.toThrow('You are not the owner of these Portfolios');
+    ).rejects.toThrow('You must be the owner of both Portfolios');
   });
 
   test('should throw an error if some of the amount token to move exceed its balance', async () => {
@@ -113,7 +115,7 @@ describe('moveFunds procedure', () => {
     const to = new NumberedPortfolio({ id: toId, did: toDid }, mockContext);
     const securityToken01 = new SecurityToken({ ticker: 'TICKER001' }, mockContext);
     const securityToken02 = new SecurityToken({ ticker: 'TICKER002' }, mockContext);
-    const items: PortfolioItem[] = [
+    const items: PortfolioMovement[] = [
       {
         token: securityToken01.ticker,
         amount: new BigNumber(100),
@@ -127,8 +129,8 @@ describe('moveFunds procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         tokenBalances: [
-          { token: securityToken01, total: new BigNumber(50) },
-          { token: securityToken02, total: new BigNumber(10) },
+          { token: securityToken01, total: new BigNumber(50), locked: new BigNumber(0) },
+          { token: securityToken02, total: new BigNumber(10), locked: new BigNumber(0) },
         ] as PortfolioBalance[],
       },
     });
@@ -147,7 +149,9 @@ describe('moveFunds procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Some of the token amount exceed the actual balance');
+    expect(error.message).toBe(
+      "Some of the amounts being transferred exceed the Portfolio's balance"
+    );
     expect(error.data.balanceExceeded).toMatchObject(items);
   });
 
@@ -176,6 +180,12 @@ describe('moveFunds procedure', () => {
       },
     });
 
+    let fromPortfolioId: { did: string; number?: BigNumber } = { did, number: fromId };
+    let toPortfolioId: { did: string; number?: BigNumber } = { did, number: toId };
+
+    portfolioLikeToPortfolioIdStub.withArgs(from, mockContext).resolves(fromPortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(to, mockContext).resolves(toPortfolioId);
+
     let rawFromMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind({
@@ -183,7 +193,7 @@ describe('moveFunds procedure', () => {
       }),
     });
     portfolioIdToMeshPortfolioIdStub
-      .withArgs({ did, number: fromId }, mockContext)
+      .withArgs(fromPortfolioId, mockContext)
       .returns(rawFromMeshPortfolioId);
 
     let rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
@@ -193,14 +203,14 @@ describe('moveFunds procedure', () => {
       }),
     });
     portfolioIdToMeshPortfolioIdStub
-      .withArgs({ did, number: toId }, mockContext)
+      .withArgs(toPortfolioId, mockContext)
       .returns(rawToMeshPortfolioId);
 
     const rawMovePortfolioItem = dsMockUtils.createMockMovePortfolioItem({
       ticker: dsMockUtils.createMockTicker(items[0].token),
       amount: dsMockUtils.createMockBalance(items[0].amount.toNumber()),
     });
-    portfolioItemToMovePortfolioItemStub
+    portfolioMovementToMovePortfolioItemStub
       .withArgs(items[0], mockContext)
       .returns(rawMovePortfolioItem);
 
@@ -210,7 +220,7 @@ describe('moveFunds procedure', () => {
 
     await prepareMoveFunds.call(proc, {
       from,
-      to,
+      to: toId,
       items,
     });
 
@@ -227,15 +237,20 @@ describe('moveFunds procedure', () => {
 
     const defaultTo = new DefaultPortfolio({ did }, mockContext);
 
+    toPortfolioId = { did };
+
+    portfolioLikeToPortfolioIdStub.withArgs(defaultTo, mockContext).resolves(toPortfolioId);
+
     rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    portfolioIdToMeshPortfolioIdStub.withArgs({ did }, mockContext).returns(rawToMeshPortfolioId);
+    portfolioIdToMeshPortfolioIdStub
+      .withArgs(toPortfolioId, mockContext)
+      .returns(rawToMeshPortfolioId);
 
     await prepareMoveFunds.call(proc, {
       from,
-      to: defaultTo,
       items,
     });
 
@@ -252,11 +267,19 @@ describe('moveFunds procedure', () => {
 
     const defaultFrom = new DefaultPortfolio({ did }, mockContext);
 
+    fromPortfolioId = { did };
+    toPortfolioId = { did, number: toId };
+
+    portfolioLikeToPortfolioIdStub.withArgs(defaultFrom, mockContext).resolves(fromPortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(to, mockContext).resolves(toPortfolioId);
+
     rawFromMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    portfolioIdToMeshPortfolioIdStub.withArgs({ did }, mockContext).returns(rawFromMeshPortfolioId);
+    portfolioIdToMeshPortfolioIdStub
+      .withArgs(fromPortfolioId, mockContext)
+      .returns(rawFromMeshPortfolioId);
 
     rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -265,7 +288,7 @@ describe('moveFunds procedure', () => {
       }),
     });
     portfolioIdToMeshPortfolioIdStub
-      .withArgs({ did, number: toId }, mockContext)
+      .withArgs(toPortfolioId, mockContext)
       .returns(rawToMeshPortfolioId);
 
     await prepareMoveFunds.call(proc, {

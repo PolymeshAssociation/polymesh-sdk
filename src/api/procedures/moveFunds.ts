@@ -1,12 +1,17 @@
+import BigNumber from 'bignumber.js';
+
 import { DefaultPortfolio, NumberedPortfolio } from '~/api/entities';
-import { PortfolioItem } from '~/api/entities/Portfolio/types';
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode } from '~/types';
-import { portfolioIdToMeshPortfolioId, portfolioItemToMovePortfolioItem } from '~/utils';
+import { ErrorCode, PortfolioMovement } from '~/types';
+import {
+  portfolioIdToMeshPortfolioId,
+  portfolioLikeToPortfolioId,
+  portfolioMovementToMovePortfolioItem,
+} from '~/utils';
 
 export interface MoveFundsParams {
-  to: DefaultPortfolio | NumberedPortfolio;
-  items: PortfolioItem[];
+  to?: BigNumber | DefaultPortfolio | NumberedPortfolio;
+  items: PortfolioMovement[];
 }
 
 /**
@@ -29,12 +34,26 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     context,
   } = this;
 
-  const { from: fromPortfolio, to: toPortfolio, items } = args;
+  const { from: fromPortfolio, to, items } = args;
+  const currentIdentity = await context.getCurrentIdentity();
 
-  if (fromPortfolio === toPortfolio) {
+  let toPortfolio;
+
+  if (!to) {
+    toPortfolio = new DefaultPortfolio({ did: currentIdentity.did }, context);
+  } else if (to instanceof BigNumber) {
+    toPortfolio = new NumberedPortfolio({ did: currentIdentity.did, id: to }, context);
+  } else {
+    toPortfolio = to;
+  }
+
+  if (
+    fromPortfolio.owner.did === toPortfolio.owner.did &&
+    (fromPortfolio as NumberedPortfolio).id === (toPortfolio as NumberedPortfolio).id
+  ) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You cannot move tokens to the same portfolio of origin',
+      message: 'Origin and destination should be different Portfolios',
     });
   }
 
@@ -49,48 +68,45 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
   if (!fromIsOwned || !toIsOwned) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You are not the owner of these Portfolios',
+      message: 'You must be the owner of both Portfolios',
     });
   }
 
-  const balanceExceeded: PortfolioItem[] = [];
+  const balanceExceeded: (PortfolioMovement & { free: BigNumber })[] = [];
 
-  portfolioBalances.forEach(({ token: { ticker }, total }) => {
+  portfolioBalances.forEach(({ token: { ticker }, total, locked }) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const transferItem = items.find(
       ({ token: t }) => (typeof t === 'string' ? t : t.ticker) === ticker
     )!;
 
-    if (transferItem.amount.gt(total)) {
-      balanceExceeded.push(transferItem);
+    const free = total.minus(locked);
+    if (transferItem.amount.gt(free)) {
+      balanceExceeded.push({ ...transferItem, free });
     }
   });
 
   if (balanceExceeded.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Some of the token amount exceed the actual balance',
+      message: "Some of the amounts being transferred exceed the Portfolio's balance",
       data: {
         balanceExceeded,
       },
     });
   }
 
-  const {
-    owner: { did },
-  } = fromPortfolio;
+  const portfolioIdFrom = await portfolioLikeToPortfolioId(fromPortfolio, context);
+  const portfolioIdTo = await portfolioLikeToPortfolioId(toPortfolio, context);
 
-  let number = (fromPortfolio as NumberedPortfolio).id;
+  const rawFrom = portfolioIdToMeshPortfolioId(portfolioIdFrom, context);
+  const rawTo = portfolioIdToMeshPortfolioId(portfolioIdTo, context);
 
-  const rawFrom = portfolioIdToMeshPortfolioId(number ? { did, number } : { did }, context);
+  const rawMovePortfolioItems = items.map(item =>
+    portfolioMovementToMovePortfolioItem(item, context)
+  );
 
-  number = (toPortfolio as NumberedPortfolio).id;
-
-  const rawTo = portfolioIdToMeshPortfolioId(number ? { did, number } : { did }, context);
-
-  const rawMovePortfolioItem = items.map(item => portfolioItemToMovePortfolioItem(item, context));
-
-  this.addTransaction(portfolio.movePortfolioFunds, {}, rawFrom, rawTo, rawMovePortfolioItem);
+  this.addTransaction(portfolio.movePortfolioFunds, {}, rawFrom, rawTo, rawMovePortfolioItems);
 }
 
 /**

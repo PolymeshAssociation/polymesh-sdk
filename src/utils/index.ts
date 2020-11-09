@@ -100,8 +100,8 @@ import {
   NextKey,
   PaginationOptions,
   Permission,
-  PortfolioItem,
   PortfolioLike,
+  PortfolioMovement,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -1469,8 +1469,8 @@ export function portfolioIdToMeshPortfolioId(
 /**
  * @hidden
  */
-export function portfolioItemToMovePortfolioItem(
-  portfolioItem: PortfolioItem,
+export function portfolioMovementToMovePortfolioItem(
+  portfolioItem: PortfolioMovement,
   context: Context
 ): MovePortfolioItem {
   const { token, amount } = portfolioItem;
@@ -1961,17 +1961,16 @@ export async function portfolioLikeToPortfolioId(
     const { identity: valueIdentity } = value;
     ({ id: number } = value);
 
-    let identity: Identity;
-
     if (typeof valueIdentity === 'string') {
       did = valueIdentity;
-      identity = new Identity({ did }, context);
     } else {
       ({ did } = valueIdentity);
-      identity = valueIdentity;
     }
+  }
 
-    const exists = await identity.portfolios.portfolioExists({ portfolioId: number });
+  if (number) {
+    const numberedPortfolio = new NumberedPortfolio({ did, id: number }, context);
+    const exists = await numberedPortfolio.exists();
 
     if (!exists) {
       throw new PolymeshError({

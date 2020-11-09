@@ -5,7 +5,7 @@ import { createPortfolio, deletePortfolio } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { PortfolioNumber } from '~/polkadot';
 import { ErrorCode } from '~/types';
-import { numberToU64, stringToIdentityId, u64ToBigNumber } from '~/utils';
+import { stringToIdentityId, u64ToBigNumber } from '~/utils';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
@@ -41,28 +41,6 @@ export class Portfolios extends Namespace<Identity> {
   }
 
   /**
-   * Retrieve whether this Identity possesses a Portfolio with a certain ID
-   */
-  public async portfolioExists(args: { portfolioId: BigNumber }): Promise<boolean> {
-    const {
-      context,
-      context: {
-        polymeshApi: {
-          query: { portfolio },
-        },
-      },
-      parent: { did },
-    } = this;
-    const { portfolioId } = args;
-
-    const identityId = stringToIdentityId(did, context);
-    const rawPortfolioNumber = numberToU64(portfolioId, context);
-    const rawPortfolioName = await portfolio.portfolios(identityId, rawPortfolioNumber);
-
-    return !rawPortfolioName.isEmpty;
-  }
-
-  /**
    * Retrieve a numbered Portfolio or the default Portfolio if Portfolio ID is not passed
    *
    * @param args.porfolioId - optional, defaults to the default portfolio
@@ -81,7 +59,8 @@ export class Portfolios extends Namespace<Identity> {
       return new DefaultPortfolio({ did }, context);
     }
 
-    const exists = await this.portfolioExists({ portfolioId });
+    const numberedPortfolio = new NumberedPortfolio({ id: portfolioId, did }, context);
+    const exists = await numberedPortfolio.exists();
 
     if (!exists) {
       throw new PolymeshError({
@@ -90,7 +69,7 @@ export class Portfolios extends Namespace<Identity> {
       });
     }
 
-    return new NumberedPortfolio({ id: portfolioId, did }, context);
+    return numberedPortfolio;
   }
 
   /**

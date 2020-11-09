@@ -10,6 +10,7 @@ import {
   Identity,
   NumberedPortfolio,
   Portfolio /*, Proposal */,
+  SecurityToken,
 } from '~/api/entities';
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { CountryCode } from '~/generated/types';
@@ -514,6 +515,11 @@ export type PortfolioLike =
   | NumberedPortfolio
   | DefaultPortfolio
   | { identity: string | Identity; id: BigNumber };
+
+export interface PortfolioMovement {
+  token: string | SecurityToken;
+  amount: BigNumber;
+}
 
 export { TxTags } from 'polymesh-types/types';
 export { Signer as PolkadotSigner } from '@polkadot/api/types';

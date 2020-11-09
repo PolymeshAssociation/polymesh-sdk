@@ -61,8 +61,8 @@ import {
   InstructionType,
   KnownTokenType,
   Permission,
-  PortfolioItem,
   PortfolioLike,
+  PortfolioMovement,
   Scope,
   ScopeType,
   Signer,
@@ -134,8 +134,8 @@ import {
   padString,
   permissionToMeshPermission,
   portfolioIdToMeshPortfolioId,
-  portfolioItemToMovePortfolioItem,
   portfolioLikeToPortfolioId,
+  portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
   removePadding,
   requestAtBlock,
@@ -192,6 +192,12 @@ jest.mock(
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
 );
 
 describe('delay', () => {
@@ -390,7 +396,7 @@ describe('portfolioIdToMeshPortfolioId', () => {
   });
 });
 
-describe('portfolioItemToMovePortfolioItem', () => {
+describe('portfolioMovementToMovePortfolioItem', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -403,16 +409,16 @@ describe('portfolioItemToMovePortfolioItem', () => {
     dsMockUtils.cleanup();
   });
 
-  test('portfolioItemToMovePortfolioItem should convert a portfolio item into a polkadot move portfolio item', () => {
+  test('portfolioMovementToMovePortfolioItem should convert a portfolio item into a polkadot move portfolio item', () => {
     const context = dsMockUtils.getContextInstance();
     const ticker = 'someToken';
     const amount = new BigNumber(100);
-    const rawToken = new SecurityToken({ ticker }, context);
+    const token = new SecurityToken({ ticker }, context);
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
     const fakeResult = ('MovePortfolioItem' as unknown) as MovePortfolioItem;
 
-    let portfolioItem: PortfolioItem = {
+    let portfolioMovement: PortfolioMovement = {
       token: ticker,
       amount,
     };
@@ -424,7 +430,7 @@ describe('portfolioItemToMovePortfolioItem', () => {
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('Balance', portfolioItem.amount.multipliedBy(Math.pow(10, 6)).toString())
+      .withArgs('Balance', portfolioMovement.amount.multipliedBy(Math.pow(10, 6)).toString())
       .returns(rawAmount);
 
     dsMockUtils
@@ -435,16 +441,16 @@ describe('portfolioItemToMovePortfolioItem', () => {
       })
       .returns(fakeResult);
 
-    let result = portfolioItemToMovePortfolioItem(portfolioItem, context);
+    let result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
-    portfolioItem = {
-      token: rawToken,
+    portfolioMovement = {
+      token,
       amount,
     };
 
-    result = portfolioItemToMovePortfolioItem(portfolioItem, context);
+    result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
   });
@@ -3580,27 +3586,20 @@ describe('portfolioLikeToPortfolioId', () => {
   });
 
   test('should convert a Portfolio identifier object to a PortfolioId', async () => {
-    const portfolioIdentifier: PortfolioLike = { identity: did, id: number };
-
-    let result = await portfolioLikeToPortfolioId(portfolioIdentifier, context);
-
-    expect(result).toEqual({ did, number });
-
-    portfolioIdentifier.identity = entityMockUtils.getIdentityInstance({
-      did,
-      portfoliosPortfolioExists: true,
-    });
-
-    result = await portfolioLikeToPortfolioId(portfolioIdentifier, context);
-
+    const result = await portfolioLikeToPortfolioId({ identity: did, id: number }, context);
     expect(result).toEqual({ did, number });
   });
 
   test("should throw an error if the Portfolio identifier object refers to a Portfolio that doesn't exist", async () => {
+    entityMockUtils.configureMocks({
+      numberedPortfolioOptions: {
+        exists: false,
+      },
+    });
+
     const portfolioIdentifier: PortfolioLike = {
       identity: entityMockUtils.getIdentityInstance({
         did,
-        portfoliosPortfolioExists: false,
       }),
       id: number,
     };
