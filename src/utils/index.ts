@@ -389,20 +389,6 @@ export async function getDid(
 /**
  * @hidden
  */
-export function authorizationToAuthorizationData(
-  auth: Authorization,
-  context: Context
-): AuthorizationData {
-  const { type, value = null } = auth as { type: AuthorizationType; value?: string };
-
-  return context.polymeshApi.createType('AuthorizationData', {
-    [type]: value,
-  });
-}
-
-/**
- * @hidden
- */
 export function authorizationTypeToMeshAuthorizationType(
   authorizationType: AuthorizationType,
   context: Context
@@ -1450,6 +1436,35 @@ export function portfolioIdToMeshPortfolioId(
   return context.polymeshApi.createType('PortfolioId', {
     did: stringToIdentityId(did, context),
     kind: number ? { User: numberToU64(number, context) } : 'Default',
+  });
+}
+
+/**
+ * @hidden
+ */
+export function authorizationToAuthorizationData(
+  auth: Authorization,
+  context: Context
+): AuthorizationData {
+  const { type } = auth;
+  let _value;
+
+  if (type === AuthorizationType.PortfolioCustody) {
+    const {
+      value: {
+        owner: { did },
+      },
+      value,
+    } = auth as { value: NumberedPortfolio | DefaultPortfolio };
+    const number = (value as NumberedPortfolio).id;
+    _value = portfolioIdToMeshPortfolioId(number ? { did, number } : { did }, context);
+  } else {
+    const { value = null } = auth as { value?: string };
+    _value = value;
+  }
+
+  return context.polymeshApi.createType('AuthorizationData', {
+    [type]: _value,
   });
 }
 

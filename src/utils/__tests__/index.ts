@@ -1632,6 +1632,76 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     result = authorizationToAuthorizationData(value, context);
 
     expect(result).toBe(fakeResult);
+
+    const portfolioId = {
+      did: 'someDid',
+      number: new BigNumber(1),
+    };
+
+    const rawIdentityId = dsMockUtils.createMockIdentityId(portfolioId.did);
+
+    const rawU64 = dsMockUtils.createMockU64(portfolioId.number.toNumber());
+
+    const fakeMeshPortfolioId = ('PortfolioId' as unknown) as PortfolioId;
+
+    value = {
+      type: AuthorizationType.PortfolioCustody,
+      value: new DefaultPortfolio({ did: portfolioId.did }, context),
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('IdentityId', portfolioId.did)
+      .returns(rawIdentityId);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PortfolioId', {
+        did: rawIdentityId,
+        kind: 'Default',
+      })
+      .returns(fakeMeshPortfolioId);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationData', { [value.type]: fakeMeshPortfolioId })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    value = {
+      type: AuthorizationType.PortfolioCustody,
+      value: new NumberedPortfolio({ did: portfolioId.did, id: portfolioId.number }, context),
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('IdentityId', portfolioId.did)
+      .returns(rawIdentityId);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('u64', portfolioId.number.toString())
+      .returns(rawU64);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PortfolioId', {
+        did: rawIdentityId,
+        kind: { User: rawU64 },
+      })
+      .returns(fakeMeshPortfolioId);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationData', { [value.type]: fakeMeshPortfolioId })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+
+    expect(result).toBe(fakeResult);
   });
 
   test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {

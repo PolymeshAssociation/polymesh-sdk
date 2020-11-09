@@ -4,7 +4,8 @@ import { PortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Entity, Identity, Portfolio, SecurityToken } from '~/api/entities';
-import { Context } from '~/base';
+import { setCustodian } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
@@ -164,6 +165,25 @@ describe('Portfolio class', () => {
       expect(result[1].token.ticker).toBe(otherTicker);
       expect(result[1].total).toEqual(new BigNumber(0));
       expect(result[1].locked).toEqual(new BigNumber(0));
+    });
+  });
+
+  describe('method: setCustodian', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const id = new BigNumber(1);
+      const did = 'someDid';
+      const portfolio = new Portfolio({ id, did }, context);
+      const targetAccount = 'someTarget';
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(setCustodian, 'prepare')
+        .withArgs({ id, did, targetAccount }, context)
+        .resolves(expectedQueue);
+
+      const queue = await portfolio.setCustodian({ targetAccount });
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

@@ -9,7 +9,7 @@ import {
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
-  Portfolio /*, Proposal */,
+  /*, Proposal */
 } from '~/api/entities';
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { CountryCode } from '~/generated/types';
@@ -194,7 +194,7 @@ export enum AuthorizationType {
 export type Authorization =
   | { type: AuthorizationType.NoData }
   | { type: AuthorizationType.JoinIdentity; value: Permission[] }
-  | { type: AuthorizationType.PortfolioCustody; value: Portfolio }
+  | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
   | {
       type: Exclude<
         AuthorizationType,
