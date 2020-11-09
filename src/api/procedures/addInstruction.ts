@@ -108,8 +108,13 @@ export async function prepareAddInstruction(
 
   await Promise.all(
     legs.map(async ({ from, to, amount, token }) => {
-      const { did: fromDid, number: fromNumber } = await portfolioLikeToPortfolioId(from, context);
-      const { did: toDid, number: toNumber } = await portfolioLikeToPortfolioId(to, context);
+      const [
+        { did: fromDid, number: fromNumber },
+        { did: toDid, number: toNumber },
+      ] = await Promise.all([
+        portfolioLikeToPortfolioId(from, context),
+        portfolioLikeToPortfolioId(to, context),
+      ]);
       const fromPortfolio = portfolioIdToMeshPortfolioId(
         { did: fromDid, number: fromNumber },
         context

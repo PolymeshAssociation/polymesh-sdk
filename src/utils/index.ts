@@ -1336,13 +1336,36 @@ export function complianceRequirementToRequirement(
     };
   };
 
-  const conditions: Condition[] = complianceRequirement.sender_conditions.map(
-    ({ condition_type: conditionType, issuers }) => ({
+  const conditions: Condition[] = [];
+
+  const conditionsAreEqual = (a: Condition, b: Condition): boolean => {
+    let equalClaims = false;
+
+    if (isSingleClaimCondition(a) && isSingleClaimCondition(b)) {
+      equalClaims = isEqual(a.claim, b.claim);
+    }
+
+    if (isMultiClaimCondition(a) && isMultiClaimCondition(b)) {
+      equalClaims = isEqual(a.claims, b.claims);
+    }
+
+    return equalClaims && isEqual(a.trustedClaimIssuers, b.trustedClaimIssuers);
+  };
+
+  complianceRequirement.sender_conditions.forEach(({ condition_type: conditionType, issuers }) => {
+    const newCondition = {
       ...meshConditionTypeToCondition(conditionType),
       target: ConditionTarget.Sender,
       trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
-    })
-  );
+    };
+    const existingCondition = conditions.find(condition =>
+      conditionsAreEqual(condition, newCondition)
+    );
+
+    if (!existingCondition) {
+      conditions.push(newCondition);
+    }
+  });
 
   complianceRequirement.receiver_conditions.forEach(
     ({ condition_type: conditionType, issuers }) => {
@@ -1352,23 +1375,11 @@ export function complianceRequirementToRequirement(
         trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
       };
 
-      const existingCondition = conditions.find(condition => {
-        let equalClaims = false;
+      const existingCondition = conditions.find(condition =>
+        conditionsAreEqual(condition, newCondition)
+      );
 
-        if (isSingleClaimCondition(condition) && isSingleClaimCondition(newCondition)) {
-          equalClaims = isEqual(condition.claim, newCondition.claim);
-        }
-
-        if (isMultiClaimCondition(condition) && isMultiClaimCondition(newCondition)) {
-          equalClaims = isEqual(condition.claims, newCondition.claims);
-        }
-
-        return (
-          equalClaims && isEqual(condition.trustedClaimIssuers, newCondition.trustedClaimIssuers)
-        );
-      });
-
-      if (existingCondition) {
+      if (existingCondition && existingCondition.target === ConditionTarget.Sender) {
         existingCondition.target = ConditionTarget.Both;
       } else {
         conditions.push(newCondition);

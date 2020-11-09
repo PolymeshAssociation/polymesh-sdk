@@ -2343,8 +2343,8 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
       }),
     ];
     const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
-      sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
-      receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+      sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[2], rawConditions[3]],
+      receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[1], rawConditions[3]],
       id: dsMockUtils.createMockU32(1),
     });
     /* eslint-enable @typescript-eslint/camelcase */

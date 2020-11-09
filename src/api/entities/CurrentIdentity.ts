@@ -1,4 +1,6 @@
 import { u64 } from '@polkadot/types';
+import P from 'bluebird';
+import { chunk, flatten, uniqBy } from 'lodash';
 import { Instruction as MeshInstruction } from 'polymesh-types/types';
 
 import { Identity, Instruction, Venue } from '~/api/entities';
@@ -11,7 +13,9 @@ import {
 } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
+import { PortfolioId } from '~/types/internal';
 import { portfolioIdToMeshPortfolioId, u64ToBigNumber } from '~/utils';
+import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
 
 /**
  * Represents the Identity associated to the current [[Account]]
@@ -74,20 +78,34 @@ export class CurrentIdentity extends Identity {
         },
       },
       did,
+      portfolios,
       context,
     } = this;
 
-    const auths = await settlement.userAuths.entries(
-      portfolioIdToMeshPortfolioId({ did }, context)
-    );
+    const [, ...numberedPortfolios] = await portfolios.getPortfolios();
 
-    const instructionIds = auths.map(([key]) => key.args[1] as u64);
+    const portfolioIds: PortfolioId[] = [
+      { did },
+      ...numberedPortfolios.map(({ id: number }) => ({ did, number })),
+    ];
 
-    const meshInstructions = await settlement.instructionDetails.multi<MeshInstruction>(
-      instructionIds
-    );
+    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 
-    return meshInstructions
+    const chunkedInstructions = await P.mapSeries(portfolioIdChunks, async portfolioIdChunk => {
+      const auths = await P.map(portfolioIdChunk, portfolioId =>
+        settlement.userAuths.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
+      );
+
+      const instructionIds = uniqBy(
+        flatten(auths).map(([key]) => key.args[1] as u64),
+        id => id.toNumber()
+      );
+      return settlement.instructionDetails.multi<MeshInstruction>(instructionIds);
+    });
+
+    const rawInstructions = flatten(chunkedInstructions);
+
+    return rawInstructions
       .filter(({ status }) => status.isPending)
       .map(({ instruction_id: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
   }

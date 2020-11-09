@@ -29,6 +29,7 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionType,
+  Leg,
   PortfolioBalance,
   SecondaryKey,
   SecurityTokenDetails,
@@ -144,6 +145,7 @@ interface DefaultPortfolioOptions {
 interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
+  getLegs?: Leg[];
 }
 
 let identityConstructorStub: SinonStub;
@@ -182,6 +184,7 @@ let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let venueDetailsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
+let instructionGetLegsStub: SinonStub;
 let numberedPortfolioIsOwnedStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
 let defaultPortfolioIsOwnedStub: SinonStub;
@@ -747,8 +750,17 @@ function initIdentity(opts?: IdentityOptions): void {
  */
 function configureInstruction(opts: InstructionOptions): void {
   const details = { venue: mockInstanceContainer.venue, ...opts.details };
+  const legs = opts.getLegs || [
+    {
+      from: mockInstanceContainer.numberedPortfolio,
+      to: mockInstanceContainer.numberedPortfolio,
+      token: mockInstanceContainer.securityToken,
+      amount: new BigNumber(100),
+    },
+  ];
   const instruction = ({
     details: instructionDetailsStub.resolves(details),
+    getLegs: instructionGetLegsStub.resolves(legs),
   } as unknown) as MockInstruction;
 
   Object.assign(mockInstanceContainer.instruction, instruction);
@@ -764,6 +776,7 @@ function configureInstruction(opts: InstructionOptions): void {
 function initInstruction(opts?: InstructionOptions): void {
   instructionConstructorStub = sinon.stub();
   instructionDetailsStub = sinon.stub();
+  instructionGetLegsStub = sinon.stub();
 
   instructionOptions = { ...defaultInstructionOptions, ...opts };
 
