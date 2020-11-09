@@ -58,7 +58,7 @@ describe('Portfolios class', () => {
     expect(Portfolios.prototype instanceof Namespace).toBe(true);
   });
 
-  describe.only('method: getPortfolios', () => {
+  describe('method: getPortfolios', () => {
     test('should retrieve all the portfolios for the identity', async () => {
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
         entries: [
@@ -74,8 +74,6 @@ describe('Portfolios class', () => {
 
       const result = await portfolios.getPortfolios();
       expect(result).toHaveLength(2);
-      expect(result[0] instanceof DefaultPortfolio).toBe(true);
-      expect(result[1] instanceof NumberedPortfolio).toBe(true);
       expect(result[0].owner.did).toEqual(did);
       expect(result[1].id).toEqual(numberedPortfolioId);
     });
@@ -90,11 +88,7 @@ describe('Portfolios class', () => {
 
     test('should return a numbered portfolio', async () => {
       const portfolioId = new BigNumber(1);
-
       const result = await portfolios.getPortfolio({ portfolioId });
-      Object.setPrototypeOf(result, NumberedPortfolio.prototype);
-
-      expect(result instanceof NumberedPortfolio).toBe(true);
       expect((result as NumberedPortfolio).id).toEqual(portfolioId);
     });
 
