@@ -54,7 +54,7 @@ describe('Portfolio class', () => {
     });
   });
 
-  describe('method: isOwned', () => {
+  describe('method: isOwnedBy', () => {
     let did: string;
 
     beforeAll(() => {
@@ -65,13 +65,13 @@ describe('Portfolio class', () => {
     test('should return whether the current Identity is the Portfolio owner', async () => {
       let portfolio = new Portfolio({ did }, context);
 
-      let result = await portfolio.isOwned();
+      let result = await portfolio.isOwnedBy();
 
       expect(result).toBe(true);
 
       portfolio = new Portfolio({ did: 'notTheCurrentIdentity' }, context);
 
-      result = await portfolio.isOwned();
+      result = await portfolio.isOwnedBy({ identity: did });
 
       expect(result).toBe(false);
     });

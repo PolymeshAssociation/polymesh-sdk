@@ -184,7 +184,7 @@ let tickerReservationDetailsStub: SinonStub;
 let venueDetailsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
-let numberedPortfolioIsOwnedStub: SinonStub;
+let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
 let numberedPortfolioExistsStub: SinonStub;
 let defaultPortfolioIsOwnedStub: SinonStub;
@@ -545,7 +545,7 @@ function initVenue(opts?: VenueOptions): void {
 function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
   const numberedPortfolio = ({
     id: opts.id,
-    isOwned: numberedPortfolioIsOwnedStub.resolves(opts.isOwned),
+    isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwned),
     getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
     owner: { did: opts.did },
     exists: numberedPortfolioExistsStub.resolves(opts.exists),
@@ -563,7 +563,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
  */
 function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
   numberedPortfolioConstructorStub = sinon.stub();
-  numberedPortfolioIsOwnedStub = sinon.stub();
+  numberedPortfolioIsOwnedByStub = sinon.stub();
   numberedPortfolioGetTokenBalancesStub = sinon.stub();
   numberedPortfolioExistsStub = sinon.stub();
 
