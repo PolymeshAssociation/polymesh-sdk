@@ -84,7 +84,7 @@ export async function prepareModifyInstructionAuthorization(
         portfolioLikeToPortfolioId(to, context),
       ]);
 
-      const [fromIsOwned, toIsOwned] = await Promise.all([from.isOwned(), to.isOwned()]);
+      const [fromIsOwned, toIsOwned] = await Promise.all([from.isOwnedBy(), to.isOwnedBy()]);
 
       if (fromIsOwned) {
         rawPortfolioIds.push(portfolioIdToMeshPortfolioId(fromId, context));

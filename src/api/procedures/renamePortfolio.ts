@@ -38,7 +38,7 @@ export async function prepareRenamePortfolio(
   const rawPortfolioNumber = numberToU64(id, context);
 
   const [isOwned, rawPortfolioName, rawPortfolios] = await Promise.all([
-    numberedPortfolio.isOwned(),
+    numberedPortfolio.isOwnedBy(),
     queryPortfolio.portfolios(identityId, rawPortfolioNumber),
     queryPortfolio.portfolios.entries(identityId),
   ]);

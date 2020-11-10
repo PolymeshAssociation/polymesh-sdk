@@ -6,6 +6,7 @@ import { Entity, Identity, SecurityToken } from '~/api/entities';
 import { Context } from '~/base';
 import {
   balanceToBigNumber,
+  getDid,
   identityIdToString,
   portfolioIdToMeshPortfolioId,
   tickerToString,
@@ -55,15 +56,17 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Return whether the current Identity is the Portfolio owner
+   * Return whether an Identity is the Portfolio owner
+   *
+   * @param args.identity - defaults to the current Identity
    */
-  public async isOwned(): Promise<boolean> {
+  public async isOwnedBy(args?: { identity: string | Identity }): Promise<boolean> {
     const {
       owner: { did: ownerDid },
       context,
     } = this;
 
-    const { did } = await context.getCurrentIdentity();
+    const did = await getDid(args?.identity, context);
 
     return ownerDid === did;
   }
