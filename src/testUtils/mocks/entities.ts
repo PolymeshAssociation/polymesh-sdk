@@ -130,14 +130,14 @@ interface VenueOptions {
 
 interface NumberedPortfolioOptions {
   id?: BigNumber;
-  isOwned?: boolean;
+  isOwnedBy?: boolean;
   tokenBalances?: PortfolioBalance[];
   did?: string;
   exists?: boolean;
 }
 
 interface DefaultPortfolioOptions {
-  isOwned?: boolean;
+  isOwnedBy?: boolean;
   tokenBalances?: PortfolioBalance[];
   did?: string;
 }
@@ -187,7 +187,7 @@ let instructionGetLegsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
 let numberedPortfolioExistsStub: SinonStub;
-let defaultPortfolioIsOwnedStub: SinonStub;
+let defaultPortfolioIsOwnedByStub: SinonStub;
 let defaultPortfolioGetTokenBalancesStub: SinonStub;
 
 const MockIdentityClass = class {
@@ -428,7 +428,7 @@ const defaultVenueOptions: VenueOptions = {
 let venueOptions = defaultVenueOptions;
 const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   id: new BigNumber(1),
-  isOwned: true,
+  isOwnedBy: true,
   tokenBalances: [
     {
       token: ('someToken' as unknown) as SecurityToken,
@@ -441,7 +441,7 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
 };
 let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
 const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
-  isOwned: true,
+  isOwnedBy: true,
   tokenBalances: [
     {
       token: ('someToken' as unknown) as SecurityToken,
@@ -547,7 +547,7 @@ function initVenue(opts?: VenueOptions): void {
 function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
   const numberedPortfolio = ({
     id: opts.id,
-    isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwned),
+    isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
     owner: { did: opts.did },
     exists: numberedPortfolioExistsStub.resolves(opts.exists),
@@ -585,7 +585,7 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
  */
 function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
   const defaultPortfolio = ({
-    isOwnedBy: defaultPortfolioIsOwnedStub.resolves(opts.isOwned),
+    isOwnedBy: defaultPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getTokenBalances: defaultPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
     owner: { did: opts.did },
   } as unknown) as MockDefaultPortfolio;
@@ -607,7 +607,7 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
  */
 function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
   defaultPortfolioConstructorStub = sinon.stub();
-  defaultPortfolioIsOwnedStub = sinon.stub();
+  defaultPortfolioIsOwnedByStub = sinon.stub();
   defaultPortfolioGetTokenBalancesStub = sinon.stub();
 
   defaultPortfolioOptions = { ...defaultDefaultPortfolioOptions, ...opts };
@@ -818,7 +818,10 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
   Object.assign(mockInstanceContainer.currentIdentity, identity);
   currentIdentityConstructorStub.callsFake(args => {
     const value = merge({}, identity, args);
-    Object.setPrototypeOf(value, require('~/api/entities').CurrentIdentity.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/api/entities');
+    Object.setPrototypeOf(entities.CurrentIdentity.prototype, entities.Identity.prototype);
+    Object.setPrototypeOf(value, entities.CurrentIdentity.prototype);
     return value;
   });
 }
@@ -898,7 +901,10 @@ function configureCurrentAccount(opts: CurrentAccountOptions): void {
   Object.assign(mockInstanceContainer.currentAccount, account);
   currentAccountConstructorStub.callsFake(args => {
     const value = merge({}, account, args);
-    Object.setPrototypeOf(value, require('~/api/entities').CurrentAccount.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/api/entities');
+    Object.setPrototypeOf(entities.CurrentAccount.prototype, entities.Account.prototype);
+    Object.setPrototypeOf(value, entities.CurrentAccount.prototype);
     return value;
   });
 }

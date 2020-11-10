@@ -50,7 +50,7 @@ describe('moveFunds procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        isOwned: true,
+        isOwnedBy: true,
       },
     });
   });
@@ -67,11 +67,65 @@ describe('moveFunds procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  test('should throw an error if both portfolios does not have the same owner', async () => {
+    const fromId = new BigNumber(1);
+    const fromDid = 'someDid';
+    const toId = new BigNumber(2);
+    const toDid = 'otherDid';
+    const fromPortfolio = new NumberedPortfolio({ id: fromId, did: fromDid }, mockContext);
+    const toPortfolio = entityMockUtils.getNumberedPortfolioInstance({
+      id: toId,
+      did: toDid,
+    });
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    portfolioLikeToPortfolioIdStub
+      .withArgs(fromPortfolio, mockContext)
+      .resolves({ did: fromDid, number: toId });
+    portfolioLikeToPortfolioIdStub
+      .withArgs(toPortfolio, mockContext)
+      .resolves({ did: fromDid, number: toId });
+
+    return expect(
+      prepareMoveFunds.call(proc, {
+        from: fromPortfolio,
+        to: toPortfolio,
+        items: [],
+      })
+    ).rejects.toThrow('Both portfolios should have the same owner');
+  });
+
+  test('should throw an error if current identity is not the owner of the origin portfolio', async () => {
+    const id = new BigNumber(1);
+    const did = 'otherDid';
+    const samePortfolio = entityMockUtils.getNumberedPortfolioInstance({
+      id,
+      did,
+    });
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const fakePortfolioId = { did, number: id };
+
+    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio, mockContext).resolves(fakePortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio, mockContext).resolves(fakePortfolioId);
+
+    return expect(
+      prepareMoveFunds.call(proc, {
+        from: samePortfolio,
+        to: samePortfolio,
+        items: [],
+      })
+    ).rejects.toThrow('The current identity should be the owner of the origin portfolio');
+  });
+
   test('should throw an error if both portfolios are the same', async () => {
     const id = new BigNumber(1);
     const did = 'someDid';
     const samePortfolio = new NumberedPortfolio({ id, did }, mockContext);
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const fakePortfolioId = { did, number: id };
+
+    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio, mockContext).resolves(fakePortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio, mockContext).resolves(fakePortfolioId);
 
     return expect(
       prepareMoveFunds.call(proc, {
@@ -89,9 +143,12 @@ describe('moveFunds procedure', () => {
     const from = new NumberedPortfolio({ id: fromId, did }, mockContext);
     const to = new NumberedPortfolio({ id: toId, did }, mockContext);
 
+    portfolioLikeToPortfolioIdStub.withArgs(from, mockContext).resolves({ did, number: fromId });
+    portfolioLikeToPortfolioIdStub.withArgs(to, mockContext).resolves({ did, number: toId });
+
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        isOwned: false,
+        isOwnedBy: false,
       },
     });
 
@@ -125,6 +182,11 @@ describe('moveFunds procedure', () => {
         amount: new BigNumber(20),
       },
     ];
+
+    portfolioLikeToPortfolioIdStub
+      .withArgs(from, mockContext)
+      .resolves({ did: fromDid, number: fromId });
+    portfolioLikeToPortfolioIdStub.withArgs(to, mockContext).resolves({ did: toDid, number: toId });
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {

@@ -124,7 +124,7 @@ export class NumberedPortfolio extends Portfolio {
   }
 
   /**
-   * Retrieve whether if this portfolio exists
+   * Return whether this Portfolio exists
    */
   public async exists(): Promise<boolean> {
     const {

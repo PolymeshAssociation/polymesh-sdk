@@ -153,7 +153,7 @@ describe('Numberedortfolio class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether if the portfolio exists', async () => {
+    test('should return whether the portfolio exists', async () => {
       const did = 'someDid';
       const id = new BigNumber(1);
       const portfolioId = new BigNumber(0);

@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { isEqual } from 'lodash';
 
 import { DefaultPortfolio, NumberedPortfolio } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
@@ -35,22 +36,45 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
   } = this;
 
   const { from: fromPortfolio, to, items } = args;
-  const currentIdentity = await context.getCurrentIdentity();
+
+  const {
+    owner: { did: fromDid },
+  } = fromPortfolio;
 
   let toPortfolio;
-
   if (!to) {
-    toPortfolio = new DefaultPortfolio({ did: currentIdentity.did }, context);
+    toPortfolio = new DefaultPortfolio({ did: fromDid }, context);
   } else if (to instanceof BigNumber) {
-    toPortfolio = new NumberedPortfolio({ did: currentIdentity.did, id: to }, context);
+    toPortfolio = new NumberedPortfolio({ did: fromDid, id: to }, context);
   } else {
     toPortfolio = to;
   }
 
-  if (
-    fromPortfolio.owner.did === toPortfolio.owner.did &&
-    (fromPortfolio as NumberedPortfolio).id === (toPortfolio as NumberedPortfolio).id
-  ) {
+  const {
+    owner: { did: toDid },
+  } = toPortfolio;
+
+  const [fromPortfolioId, toPortfolioId, currentIdentity] = await Promise.all([
+    portfolioLikeToPortfolioId(fromPortfolio, context),
+    portfolioLikeToPortfolioId(toPortfolio, context),
+    context.getCurrentIdentity(),
+  ]);
+
+  if (fromDid !== toDid) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Both portfolios should have the same owner',
+    });
+  }
+
+  if (currentIdentity.did !== fromDid) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The current identity should be the owner of the origin portfolio',
+    });
+  }
+
+  if (isEqual(fromPortfolioId, toPortfolioId)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Origin and destination should be different Portfolios',
@@ -96,11 +120,8 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     });
   }
 
-  const portfolioIdFrom = await portfolioLikeToPortfolioId(fromPortfolio, context);
-  const portfolioIdTo = await portfolioLikeToPortfolioId(toPortfolio, context);
-
-  const rawFrom = portfolioIdToMeshPortfolioId(portfolioIdFrom, context);
-  const rawTo = portfolioIdToMeshPortfolioId(portfolioIdTo, context);
+  const rawFrom = portfolioIdToMeshPortfolioId(fromPortfolioId, context);
+  const rawTo = portfolioIdToMeshPortfolioId(toPortfolioId, context);
 
   const rawMovePortfolioItems = items.map(item =>
     portfolioMovementToMovePortfolioItem(item, context)
