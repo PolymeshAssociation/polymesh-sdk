@@ -113,6 +113,7 @@ import {
   extrinsicIdentifierToTxTag,
   findEventRecord,
   fundingRoundNameToString,
+  getDid,
   identityIdToString,
   isCusipValid,
   isIsinValid,
@@ -124,6 +125,7 @@ import {
   meshPermissionToPermission,
   meshScopeToScope,
   meshVenueTypeToVenueType,
+  middlewareScopeToScope,
   // middlewareProposalToProposalDetails,
   moduleAddressToString,
   momentToDate,
@@ -176,6 +178,7 @@ import {
   u8ToTransferStatus,
   u64ToBigNumber,
   unserialize,
+  unwrapValue,
   unwrapValues,
   venueDetailsToString,
   venueTypeToMeshVenueType,
@@ -498,6 +501,46 @@ describe('signerToString', () => {
     const result = signerToString(address);
 
     expect(result).toBe(address);
+  });
+});
+
+describe('getDid', () => {
+  let context: Context;
+  let did: string;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    did = 'aDid';
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('getDid should extract the DID from an Identity', async () => {
+    const result = await getDid(new Identity({ did }, context), context);
+
+    expect(result).toBe(did);
+  });
+
+  test('getDid should return the passed DID', async () => {
+    const result = await getDid(did, context);
+
+    expect(result).toBe(did);
+  });
+
+  test('getDid should return the current Identity DID if nothing is passed', async () => {
+    const result = await getDid(undefined, context);
+
+    expect(result).toBe((await context.getCurrentIdentity()).did);
   });
 });
 
@@ -1505,6 +1548,21 @@ describe('cddStatusToBoolean', () => {
   });
 });
 
+describe('unwrapValue', () => {
+  test('should unwrap a Post Transactin Value', async () => {
+    const wrapped = new PostTransactionValue(async () => 1);
+    await wrapped.run({} as ISubmittableResult);
+
+    const unwrapped = unwrapValue(wrapped);
+
+    expect(unwrapped).toEqual(1);
+  });
+
+  test('should return a non Post Transaction Value as is', () => {
+    expect(unwrapValue(1)).toBe(1);
+  });
+});
+
 describe('unwrapValues', () => {
   test('should unwrap all Post Transaction Values in the array', async () => {
     const values = [1, 2, 3, 4, 5];
@@ -2179,6 +2237,8 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
   });
 
   test('requirementToComplianceRequirement should convert a Requirement to a polkadot ComplianceRequirement object', () => {
+    const did = 'someDid';
+    const context = dsMockUtils.getContextInstance();
     const conditions: Condition[] = [
       {
         type: ConditionType.IsPresent,
@@ -2212,33 +2272,51 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           code: CountryCode.Cl,
         },
       },
+      {
+        type: ConditionType.IsIdentity,
+        target: ConditionTarget.Sender,
+        identity: new Identity({ did }, context),
+      },
+      {
+        type: ConditionType.IsPrimaryIssuanceAgent,
+        target: ConditionTarget.Receiver,
+      },
     ];
     const value = {
       conditions,
       id: 1,
     };
     const fakeResult = ('convertedComplianceRequirement' as unknown) as ComplianceRequirement;
-    const context = dsMockUtils.getContextInstance();
 
     const createTypeStub = dsMockUtils.getCreateTypeStub();
 
-    conditions.forEach(({ type }, index) => {
+    conditions.forEach(({ type }) => {
+      const meshType =
+        type === ConditionType.IsPrimaryIssuanceAgent ? ConditionType.IsIdentity : type;
       createTypeStub
         .withArgs(
           'Condition',
           sinon.match({
             // eslint-disable-next-line @typescript-eslint/camelcase
-            condition_type: sinon.match.has(type),
+            condition_type: sinon.match.has(meshType),
           })
         )
-        .returns(`meshCondition${index}${type}`);
+        .returns(`meshCondition${meshType}`);
     });
 
     createTypeStub
       .withArgs('ComplianceRequirement', {
         /* eslint-disable @typescript-eslint/camelcase */
-        sender_conditions: ['meshCondition0IsPresent', 'meshCondition1IsNoneOf'],
-        receiver_conditions: ['meshCondition0IsPresent', 'meshCondition2IsAbsent'],
+        sender_conditions: [
+          'meshConditionIsPresent',
+          'meshConditionIsNoneOf',
+          'meshConditionIsIdentity',
+        ],
+        receiver_conditions: [
+          'meshConditionIsPresent',
+          'meshConditionIsAbsent',
+          'meshConditionIsIdentity',
+        ],
         id: numberToU32(value.id, context),
         /* eslint-enable @typescript-eslint/camelcase */
       })
@@ -2254,6 +2332,8 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
     const issuerDids = ['someDid', 'otherDid'];
+    const targetIdentityDid = 'someDid';
+    const context = dsMockUtils.getContextInstance();
     const conditions: Condition[] = [
       {
         type: ConditionType.IsPresent,
@@ -2303,6 +2383,17 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         ],
         trustedClaimIssuers: issuerDids,
       },
+      {
+        type: ConditionType.IsIdentity,
+        target: ConditionTarget.Sender,
+        identity: new Identity({ did: targetIdentityDid }, context),
+        trustedClaimIssuers: issuerDids,
+      },
+      {
+        type: ConditionType.IsPrimaryIssuanceAgent,
+        target: ConditionTarget.Receiver,
+        trustedClaimIssuers: issuerDids,
+      },
     ];
     const fakeResult = {
       id,
@@ -2347,15 +2438,44 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         }),
         issuers,
       }),
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
+          IsIdentity: dsMockUtils.createMockTargetIdentity({
+            Specific: dsMockUtils.createMockIdentityId(targetIdentityDid),
+          }),
+        }),
+        issuers,
+      }),
+      dsMockUtils.createMockCondition({
+        condition_type: dsMockUtils.createMockConditionType({
+          IsIdentity: dsMockUtils.createMockTargetIdentity('PrimaryIssuanceAgent'),
+        }),
+        issuers,
+      }),
     ];
     const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
-      sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[2], rawConditions[3]],
-      receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[1], rawConditions[3]],
+      sender_conditions: [
+        rawConditions[0],
+        rawConditions[2],
+        rawConditions[2],
+        rawConditions[3],
+        rawConditions[4],
+      ],
+      receiver_conditions: [
+        rawConditions[0],
+        rawConditions[1],
+        rawConditions[1],
+        rawConditions[3],
+        rawConditions[5],
+      ],
       id: dsMockUtils.createMockU32(1),
     });
     /* eslint-enable @typescript-eslint/camelcase */
 
-    const result = complianceRequirementToRequirement(complianceRequirement);
+    const result = complianceRequirementToRequirement(
+      complianceRequirement,
+      dsMockUtils.getContextInstance()
+    );
     expect(result.conditions).toEqual(expect.arrayContaining(fakeResult.conditions));
   });
 });
@@ -2378,6 +2498,7 @@ describe('assetComplianceResultToRequirementCompliance', () => {
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
     const issuerDids = ['someDid', 'otherDid'];
+    const context = dsMockUtils.getContextInstance();
     const conditions: Condition[] = [
       {
         type: ConditionType.IsPresent,
@@ -2487,7 +2608,7 @@ describe('assetComplianceResultToRequirementCompliance', () => {
       result: dsMockUtils.createMockBool(true),
     });
 
-    let result = assetComplianceResultToRequirementCompliance(assetComplianceResult);
+    let result = assetComplianceResultToRequirementCompliance(assetComplianceResult, context);
     expect(result.requirements[0].conditions).toEqual(
       expect.arrayContaining(fakeResult.conditions)
     );
@@ -2499,7 +2620,7 @@ describe('assetComplianceResultToRequirementCompliance', () => {
       result: dsMockUtils.createMockBool(true),
     });
 
-    result = assetComplianceResultToRequirementCompliance(assetComplianceResult);
+    result = assetComplianceResultToRequirementCompliance(assetComplianceResult, context);
     expect(result.complies).toBeTruthy();
   });
 });
@@ -2966,7 +3087,7 @@ describe('batchArguments', () => {
     expect(batches[0]).toEqual(range(0, 2 * expectedBatchLength, 2));
     expect(batches[1]).toEqual(range(1, 2 * expectedBatchLength, 2));
 
-    batches = batchArguments(elements, tag, element => `${element % 3}`); // separate in 3 groups
+    batches = batchArguments(elements, tag, element => `${element % 5}`); // separate in 5 groups
 
     expect(batches.length).toBe(3);
     expect(batches[0].length).toBeLessThan(expectedBatchLength);
@@ -3511,8 +3632,25 @@ describe('endConditionToSettlementType', () => {
   });
 });
 
-describe('scopeToMiddlewareScope', () => {
-  test('scopeToMiddlewareScope should convert a different Scopes to a middlware Scops', () => {
+describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
+  test('should convert a MiddlewareScope object to a Scope', () => {
+    let result = middlewareScopeToScope({
+      type: ClaimScopeTypeEnum.Ticker,
+      value: 'SOMETHING\u0000\u0000\u0000',
+    });
+
+    expect(result).toEqual({ type: ScopeType.Ticker, value: 'SOMETHING' });
+
+    result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Identity, value: 'someDid' });
+
+    expect(result).toEqual({ type: ScopeType.Identity, value: 'someDid' });
+
+    result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHINGELSE' });
+
+    expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHINGELSE' });
+  });
+
+  test('scopeToMiddlewareScope should convert a Scope to a MiddlewareScope object', () => {
     let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
     let result = scopeToMiddlewareScope(scope);
     expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
