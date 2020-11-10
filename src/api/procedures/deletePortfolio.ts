@@ -34,7 +34,7 @@ export async function prepareDeletePortfolio(
   const rawPortfolioNumber = numberToU64(id, context);
 
   const [isOwned, rawPortfolioName, portfolioBalances] = await Promise.all([
-    numberedPortfolio.isOwned(),
+    numberedPortfolio.isOwnedBy(),
     queryPortfolio.portfolios(identityId, rawPortfolioNumber),
     numberedPortfolio.getTokenBalances(),
   ]);
