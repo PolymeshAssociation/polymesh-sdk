@@ -1125,10 +1125,7 @@ export function getIdentityInstance(opts?: IdentityOptions): MockIdentity {
     configureIdentity(opts);
   }
 
-  const identity = mockInstanceContainer.identity;
-  Object.setPrototypeOf(identity, require('~/api/entities').Identity.prototype);
-
-  return identity;
+  return new MockIdentityClass() as MockIdentity;
 }
 
 /**
@@ -1180,10 +1177,7 @@ export function getCurrentIdentityInstance(opts?: CurrentIdentityOptions): MockC
     configureCurrentIdentity(opts);
   }
 
-  const identity = mockInstanceContainer.currentIdentity;
-  Object.setPrototypeOf(identity, require('~/api/entities').Identity.prototype);
-
-  return identity;
+  return new MockCurrentIdentityClass() as MockCurrentIdentity;
 }
 
 /**
@@ -1227,10 +1221,7 @@ export function getAccountInstance(opts?: AccountOptions): MockAccount {
     configureAccount(opts);
   }
 
-  const account = mockInstanceContainer.account;
-  Object.setPrototypeOf(account, require('~/api/entities').Account.prototype);
-
-  return account;
+  return new MockAccountClass() as MockAccount;
 }
 
 /**
@@ -1266,10 +1257,7 @@ export function getCurrentAccountInstance(opts?: CurrentAccountOptions): MockCur
     configureCurrentAccount(opts);
   }
 
-  const currentAccount = mockInstanceContainer.currentAccount;
-  Object.setPrototypeOf(currentAccount, require('~/api/entities').CurrentAccount.prototype);
-
-  return currentAccount;
+  return new MockCurrentAccountClass() as MockCurrentAccount;
 }
 
 /**
@@ -1307,10 +1295,7 @@ export function getTickerReservationInstance(
     configureTickerReservation(opts);
   }
 
-  const tickerReservation = mockInstanceContainer.tickerReservation;
-  Object.setPrototypeOf(tickerReservation, require('~/api/entities').TickerReservation.prototype);
-
-  return tickerReservation;
+  return new MockTickerReservationClass() as MockTickerReservation;
 }
 
 /**
@@ -1338,10 +1323,7 @@ export function getSecurityTokenInstance(opts?: SecurityTokenOptions): MockSecur
     configureSecurityToken(opts);
   }
 
-  const securityToken = mockInstanceContainer.securityToken;
-  Object.setPrototypeOf(securityToken, require('~/api/entities').SecurityToken.prototype);
-
-  return securityToken;
+  return new MockSecurityTokenClass() as MockSecurityToken;
 }
 
 /**
@@ -1405,13 +1387,7 @@ export function getAuthorizationRequestInstance(
     configureAuthorizationRequest(opts);
   }
 
-  const authorizationRequest = mockInstanceContainer.authorizationRequest;
-  Object.setPrototypeOf(
-    authorizationRequest,
-    require('~/api/entities').AuthorizationRequest.prototype
-  );
-
-  return authorizationRequest;
+  return new MockAuthorizationRequestClass() as MockAuthorizationRequest;
 }
 
 /**
@@ -1437,10 +1413,7 @@ export function getVenueInstance(opts?: VenueOptions): MockVenue {
     configureVenue(opts);
   }
 
-  const venue = mockInstanceContainer.venue;
-  Object.setPrototypeOf(venue, require('~/api/entities').Venue.prototype);
-
-  return venue;
+  return new MockVenueClass() as MockVenue;
 }
 
 /**
@@ -1468,14 +1441,7 @@ export function getNumberedPortfolioInstance(
     configureNumberedPortfolio(opts);
   }
 
-  const numberedPortfolio = mockInstanceContainer.numberedPortfolio;
-  Object.setPrototypeOf(
-    require('~/api/entities').NumberedPortfolio.prototype,
-    require('~/api/entities').Portfolio.prototype
-  );
-  Object.setPrototypeOf(numberedPortfolio, require('~/api/entities').NumberedPortfolio.prototype);
-
-  return numberedPortfolio;
+  return new MockNumberedPortfolioClass() as MockNumberedPortfolio;
 }
 
 /**
@@ -1487,14 +1453,7 @@ export function getDefaultPortfolioInstance(opts?: DefaultPortfolioOptions): Moc
     configureDefaultPortfolio(opts);
   }
 
-  const defaultPortfolio = mockInstanceContainer.defaultPortfolio;
-  Object.setPrototypeOf(
-    require('~/api/entities').DefaultPortfolio.prototype,
-    require('~/api/entities').Portfolio.prototype
-  );
-  Object.setPrototypeOf(defaultPortfolio, require('~/api/entities').DefaultPortfolio.prototype);
-
-  return defaultPortfolio;
+  return new MockDefaultPortfolioClass() as MockDefaultPortfolio;
 }
 
 /**
@@ -1506,10 +1465,7 @@ export function getInstructionInstance(opts?: InstructionOptions): MockInstructi
     configureInstruction(opts);
   }
 
-  const instruction = mockInstanceContainer.instruction;
-  Object.setPrototypeOf(instruction, require('~/api/entities').Instruction.prototype);
-
-  return instruction;
+  return new MockInstructionClass() as MockInstruction;
 }
 
 /**
