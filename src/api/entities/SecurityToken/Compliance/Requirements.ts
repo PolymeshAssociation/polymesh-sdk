@@ -73,7 +73,7 @@ export class Requirements extends Namespace<SecurityToken> {
       const defaultTrustedClaimIssuers = claimIssuers.map(identityIdToString);
 
       return assetCompliance.requirements.map(complianceRequirement => {
-        const requirement = complianceRequirementToRequirement(complianceRequirement);
+        const requirement = complianceRequirementToRequirement(complianceRequirement, context);
 
         requirement.conditions.forEach(condition => {
           if (!condition.trustedClaimIssuers || !condition.trustedClaimIssuers.length) {
@@ -174,7 +174,7 @@ export class Requirements extends Namespace<SecurityToken> {
       primaryIssuanceAgent ? stringToIdentityId(primaryIssuanceAgent.did, context) : null
     );
 
-    return assetComplianceResultToRequirementCompliance(res);
+    return assetComplianceResultToRequirementCompliance(res, context);
   }
 
   /**
