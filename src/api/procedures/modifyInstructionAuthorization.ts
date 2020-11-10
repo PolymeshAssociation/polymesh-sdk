@@ -1,14 +1,19 @@
+import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
+import { AuthorizationStatus as MeshAuthorizationStatus, PortfolioId } from 'polymesh-types/types';
 
 import { Instruction } from '~/api/entities';
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/base';
 import { AuthorizationStatus, ErrorCode } from '~/types';
-import { InstructionAuthorizationOperation } from '~/types/internal';
+import { InstructionAuthorizationOperation, PolymeshTx } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import {
   meshAuthorizationStatusToAuthorizationStatus,
   numberToU64,
   portfolioIdToMeshPortfolioId,
+  portfolioLikeToPortfolioId,
 } from '~/utils';
 
 export interface ModifyInstructionAuthorizationParams {
@@ -26,7 +31,7 @@ export async function prepareModifyInstructionAuthorization(
   const {
     context: {
       polymeshApi: {
-        tx,
+        tx: { settlement: settlementTx },
         query: { settlement },
       },
     },
@@ -39,56 +44,80 @@ export async function prepareModifyInstructionAuthorization(
 
   await assertInstructionValid(instruction, context);
 
-  const currentIdentity = await context.getCurrentIdentity();
+  const legs = await instruction.getLegs();
+
   const rawInstructionId = numberToU64(id, context);
-  const rawPortfolioId = portfolioIdToMeshPortfolioId({ did: currentIdentity.did }, context);
-  const rawAuthorizationStatus = await settlement.userAuths(rawPortfolioId, rawInstructionId);
-  const authorizationStatus = meshAuthorizationStatusToAuthorizationStatus(rawAuthorizationStatus);
+  const rawPortfolioIds: PortfolioId[] = [];
+
+  const excludeCriteria: AuthorizationStatus[] = [];
+  let errorMessage: string;
+  let transaction: PolymeshTx<[u64, PortfolioId[]]>;
 
   switch (operation) {
     case InstructionAuthorizationOperation.Authorize: {
-      if (authorizationStatus === AuthorizationStatus.Authorized) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'The Instruction is already authorized',
-        });
-      }
-
-      this.addTransaction(tx.settlement.authorizeInstruction, {}, rawInstructionId, [
-        rawPortfolioId,
-      ]);
+      excludeCriteria.push(AuthorizationStatus.Authorized);
+      errorMessage = 'The Instruction is already authorized';
+      transaction = settlementTx.authorizeInstruction;
 
       break;
     }
     case InstructionAuthorizationOperation.Unauthorize: {
-      if (
-        [AuthorizationStatus.Pending, AuthorizationStatus.Rejected].includes(authorizationStatus)
-      ) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'The instruction is not authorized',
-        });
-      }
-
-      this.addTransaction(tx.settlement.unauthorizeInstruction, {}, rawInstructionId, [
-        rawPortfolioId,
-      ]);
+      excludeCriteria.push(AuthorizationStatus.Pending, AuthorizationStatus.Rejected);
+      errorMessage = 'The instruction is not authorized';
+      transaction = settlementTx.unauthorizeInstruction;
 
       break;
     }
     case InstructionAuthorizationOperation.Reject: {
-      if (authorizationStatus === AuthorizationStatus.Rejected) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'The instruction cannot be rejected',
-        });
-      }
-
-      this.addTransaction(tx.settlement.rejectInstruction, {}, rawInstructionId, [rawPortfolioId]);
+      excludeCriteria.push(AuthorizationStatus.Rejected);
+      errorMessage = 'The Instruction cannot be rejected';
+      transaction = settlementTx.rejectInstruction;
 
       break;
     }
   }
+
+  await Promise.all([
+    P.map(legs, async ({ from, to }) => {
+      const [fromId, toId] = await Promise.all([
+        portfolioLikeToPortfolioId(from, context),
+        portfolioLikeToPortfolioId(to, context),
+      ]);
+
+      const [fromIsOwned, toIsOwned] = await Promise.all([from.isOwnedBy(), to.isOwnedBy()]);
+
+      if (fromIsOwned) {
+        rawPortfolioIds.push(portfolioIdToMeshPortfolioId(fromId, context));
+      }
+
+      if (toIsOwned) {
+        rawPortfolioIds.push(portfolioIdToMeshPortfolioId(toId, context));
+      }
+    }),
+  ]);
+
+  const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
+
+  const rawAuthorizationStatuses = await settlement.userAuths.multi<MeshAuthorizationStatus>(
+    multiArgs
+  );
+
+  const authorizationStatuses = rawAuthorizationStatuses.map(
+    meshAuthorizationStatusToAuthorizationStatus
+  );
+
+  const validPortfolioIds = rawPortfolioIds.filter(
+    (_, index) => !excludeCriteria.includes(authorizationStatuses[index])
+  );
+
+  if (!validPortfolioIds.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: errorMessage,
+    });
+  }
+
+  this.addTransaction(transaction, {}, rawInstructionId, validPortfolioIds);
 
   return instruction;
 }

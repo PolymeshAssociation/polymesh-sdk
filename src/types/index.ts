@@ -290,6 +290,8 @@ export enum ConditionType {
   IsAbsent = 'IsAbsent',
   IsAnyOf = 'IsAnyOf',
   IsNoneOf = 'IsNoneOf',
+  IsPrimaryIssuanceAgent = 'IsPrimaryIssuanceAgent',
+  IsIdentity = 'IsIdentity',
 }
 
 export type ConditionBase = { target: ConditionTarget; trustedClaimIssuers?: string[] };
@@ -304,7 +306,20 @@ export type MultiClaimCondition = ConditionBase & {
   claims: Claim[];
 };
 
-export type Condition = SingleClaimCondition | MultiClaimCondition;
+export type IdentityCondition = ConditionBase & {
+  type: ConditionType.IsIdentity;
+  identity: Identity;
+};
+
+export type PrimaryIssuanceAgentCondition = ConditionBase & {
+  type: ConditionType.IsPrimaryIssuanceAgent;
+};
+
+export type Condition =
+  | SingleClaimCondition
+  | MultiClaimCondition
+  | IdentityCondition
+  | PrimaryIssuanceAgentCondition;
 
 /**
  * @hidden

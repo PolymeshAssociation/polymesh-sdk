@@ -28,6 +28,7 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionType,
+  Leg,
   PortfolioBalance,
   SecondaryKey,
   SecurityTokenDetails,
@@ -134,6 +135,7 @@ interface NumberedPortfolioOptions {
 interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
+  getLegs?: Leg[];
 }
 
 let identityConstructorStub: SinonStub;
@@ -171,7 +173,8 @@ let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let venueDetailsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
-let numberedPortfolioIsOwnedStub: SinonStub;
+let instructionGetLegsStub: SinonStub;
+let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
 
 const MockIdentityClass = class {
@@ -503,7 +506,7 @@ function initVenue(opts?: VenueOptions): void {
 function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
   const numberedPortfolio = ({
     id: opts.id,
-    isOwned: numberedPortfolioIsOwnedStub.resolves(opts.isOwned),
+    isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwned),
     getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
   } as unknown) as MockNumberedPortfolio;
 
@@ -519,7 +522,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
  */
 function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
   numberedPortfolioConstructorStub = sinon.stub();
-  numberedPortfolioIsOwnedStub = sinon.stub();
+  numberedPortfolioIsOwnedByStub = sinon.stub();
   numberedPortfolioGetTokenBalancesStub = sinon.stub();
 
   numberedPortfolioOptions = { ...defaultNumberedPortfolioOptions, ...opts };
@@ -675,8 +678,17 @@ function initIdentity(opts?: IdentityOptions): void {
  */
 function configureInstruction(opts: InstructionOptions): void {
   const details = { venue: mockInstanceContainer.venue, ...opts.details };
+  const legs = opts.getLegs || [
+    {
+      from: mockInstanceContainer.numberedPortfolio,
+      to: mockInstanceContainer.numberedPortfolio,
+      token: mockInstanceContainer.securityToken,
+      amount: new BigNumber(100),
+    },
+  ];
   const instruction = ({
     details: instructionDetailsStub.resolves(details),
+    getLegs: instructionGetLegsStub.resolves(legs),
   } as unknown) as MockInstruction;
 
   Object.assign(mockInstanceContainer.instruction, instruction);
@@ -692,6 +704,7 @@ function configureInstruction(opts: InstructionOptions): void {
 function initInstruction(opts?: InstructionOptions): void {
   instructionConstructorStub = sinon.stub();
   instructionDetailsStub = sinon.stub();
+  instructionGetLegsStub = sinon.stub();
 
   instructionOptions = { ...defaultInstructionOptions, ...opts };
 

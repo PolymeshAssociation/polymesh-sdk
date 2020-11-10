@@ -73,7 +73,7 @@ export class Requirements extends Namespace<SecurityToken> {
       const defaultTrustedClaimIssuers = claimIssuers.map(identityIdToString);
 
       return assetCompliance.requirements.map(complianceRequirement => {
-        const requirement = complianceRequirementToRequirement(complianceRequirement);
+        const requirement = complianceRequirementToRequirement(complianceRequirement, context);
 
         requirement.conditions.forEach(condition => {
           if (!condition.trustedClaimIssuers || !condition.trustedClaimIssuers.length) {
@@ -139,7 +139,9 @@ export class Requirements extends Namespace<SecurityToken> {
   }
 
   /**
-   * Check whether transferring from one Identity to another complies with all the requirements of this asset
+   * Check whether the sender and receiver Identities in a transfer comply with all the requirements of this asset
+   *
+   * @note this does not take balances into account
    *
    * @param args.from - sender Identity (optional, defaults to the current Identity)
    * @param args.to - receiver Identity
@@ -172,7 +174,7 @@ export class Requirements extends Namespace<SecurityToken> {
       primaryIssuanceAgent ? stringToIdentityId(primaryIssuanceAgent.did, context) : null
     );
 
-    return assetComplianceResultToRequirementCompliance(res);
+    return assetComplianceResultToRequirementCompliance(res, context);
   }
 
   /**

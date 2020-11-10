@@ -59,6 +59,7 @@ import {
   SecondaryKey as MeshSecondaryKey,
   SettlementType,
   Signatory,
+  TargetIdentity,
   Ticker,
   TxTag,
   TxTags,
@@ -89,6 +90,7 @@ import {
   ConditionType,
   CountryCode,
   ErrorCode,
+  IdentityCondition,
   IdentityWithClaims,
   InstructionStatus,
   InstructionType,
@@ -100,6 +102,7 @@ import {
   PaginationOptions,
   Permission,
   PortfolioLike,
+  PrimaryIssuanceAgentCondition,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -1236,6 +1239,16 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
 /**
  * @hidden
  */
+export function stringToTargetIdentity(did: string | null, context: Context): TargetIdentity {
+  return context.polymeshApi.createType(
+    'TargetIdentity',
+    did ? { Specific: stringToIdentityId(did, context) } : 'PrimaryIssuanceAgent'
+  );
+}
+
+/**
+ * @hidden
+ */
 export function requirementToComplianceRequirement(
   requirement: Requirement,
   context: Context
@@ -1245,21 +1258,31 @@ export function requirementToComplianceRequirement(
   const receiverConditions: MeshCondition[] = [];
 
   requirement.conditions.forEach(condition => {
-    let claimContent: MeshClaim | MeshClaim[];
+    let conditionContent: MeshClaim | MeshClaim[] | TargetIdentity;
+    let { type } = condition;
     if (isSingleClaimCondition(condition)) {
       const { claim } = condition;
-      claimContent = claimToMeshClaim(claim, context);
-    } else {
+      conditionContent = claimToMeshClaim(claim, context);
+    } else if (isMultiClaimCondition(condition)) {
       const { claims } = condition;
-      claimContent = claims.map(claim => claimToMeshClaim(claim, context));
+      conditionContent = claims.map(claim => claimToMeshClaim(claim, context));
+    } else if (condition.type === ConditionType.IsIdentity) {
+      const {
+        identity: { did },
+      } = condition;
+      conditionContent = stringToTargetIdentity(did, context);
+    } else {
+      // IsPrimaryIssuanceAgent does not exist as a condition type in Polymesh, it's SDK sugar
+      type = ConditionType.IsIdentity;
+      conditionContent = stringToTargetIdentity(null, context);
     }
 
-    const { target, type, trustedClaimIssuers = [] } = condition;
+    const { target, trustedClaimIssuers = [] } = condition;
 
     const meshCondition = polymeshApi.createType('Condition', {
       // eslint-disable-next-line @typescript-eslint/camelcase
       condition_type: {
-        [type]: claimContent,
+        [type]: conditionContent,
       },
       issuers: trustedClaimIssuers.map(issuer => stringToIdentityId(issuer, context)),
     });
@@ -1286,13 +1309,16 @@ export function requirementToComplianceRequirement(
  * @hidden
  */
 export function complianceRequirementToRequirement(
-  complianceRequirement: ComplianceRequirement
+  complianceRequirement: ComplianceRequirement,
+  context: Context
 ): Requirement {
   const meshConditionTypeToCondition = (
     meshConditionType: MeshConditionType
   ):
     | Pick<SingleClaimCondition, 'type' | 'claim'>
-    | Pick<MultiClaimCondition, 'type' | 'claims'> => {
+    | Pick<MultiClaimCondition, 'type' | 'claims'>
+    | Pick<IdentityCondition, 'type' | 'identity'>
+    | Pick<PrimaryIssuanceAgentCondition, 'type'> => {
     if (meshConditionType.isIsPresent) {
       return {
         type: ConditionType.IsPresent,
@@ -1314,19 +1340,57 @@ export function complianceRequirementToRequirement(
       };
     }
 
+    if (meshConditionType.isIsIdentity) {
+      const target = meshConditionType.asIsIdentity;
+
+      if (target.isPrimaryIssuanceAgent) {
+        return {
+          type: ConditionType.IsPrimaryIssuanceAgent,
+        };
+      }
+
+      return {
+        type: ConditionType.IsIdentity,
+        identity: new Identity({ did: identityIdToString(target.asSpecific) }, context),
+      };
+    }
+
     return {
       type: ConditionType.IsNoneOf,
       claims: meshConditionType.asIsNoneOf.map(claim => meshClaimToClaim(claim)),
     };
   };
 
-  const conditions: Condition[] = complianceRequirement.sender_conditions.map(
-    ({ condition_type: conditionType, issuers }) => ({
+  const conditions: Condition[] = [];
+
+  const conditionsAreEqual = (a: Condition, b: Condition): boolean => {
+    let equalClaims = false;
+
+    if (isSingleClaimCondition(a) && isSingleClaimCondition(b)) {
+      equalClaims = isEqual(a.claim, b.claim);
+    }
+
+    if (isMultiClaimCondition(a) && isMultiClaimCondition(b)) {
+      equalClaims = isEqual(a.claims, b.claims);
+    }
+
+    return equalClaims && isEqual(a.trustedClaimIssuers, b.trustedClaimIssuers);
+  };
+
+  complianceRequirement.sender_conditions.forEach(({ condition_type: conditionType, issuers }) => {
+    const newCondition = {
       ...meshConditionTypeToCondition(conditionType),
       target: ConditionTarget.Sender,
       trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
-    })
-  );
+    };
+    const existingCondition = conditions.find(condition =>
+      conditionsAreEqual(condition, newCondition)
+    );
+
+    if (!existingCondition) {
+      conditions.push(newCondition);
+    }
+  });
 
   complianceRequirement.receiver_conditions.forEach(
     ({ condition_type: conditionType, issuers }) => {
@@ -1336,23 +1400,11 @@ export function complianceRequirementToRequirement(
         trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
       };
 
-      const existingCondition = conditions.find(condition => {
-        let equalClaims = false;
+      const existingCondition = conditions.find(condition =>
+        conditionsAreEqual(condition, newCondition)
+      );
 
-        if (isSingleClaimCondition(condition) && isSingleClaimCondition(newCondition)) {
-          equalClaims = isEqual(condition.claim, newCondition.claim);
-        }
-
-        if (isMultiClaimCondition(condition) && isMultiClaimCondition(newCondition)) {
-          equalClaims = isEqual(condition.claims, newCondition.claims);
-        }
-
-        return (
-          equalClaims && isEqual(condition.trustedClaimIssuers, newCondition.trustedClaimIssuers)
-        );
-      });
-
-      if (existingCondition) {
+      if (existingCondition && existingCondition.target === ConditionTarget.Sender) {
         existingCondition.target = ConditionTarget.Both;
       } else {
         conditions.push(newCondition);
@@ -1472,11 +1524,12 @@ export function authorizationToAuthorizationData(
  * @hidden
  */
 export function assetComplianceResultToRequirementCompliance(
-  assetComplianceResult: AssetComplianceResult
+  assetComplianceResult: AssetComplianceResult,
+  context: Context
 ): RequirementCompliance {
   const { requirements: rawRequirements, result, paused } = assetComplianceResult;
   const requirements = rawRequirements.map(requirement => ({
-    ...complianceRequirementToRequirement(requirement),
+    ...complianceRequirementToRequirement(requirement, context),
     complies: boolToBoolean(requirement.result),
   }));
 

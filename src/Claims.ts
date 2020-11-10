@@ -84,10 +84,10 @@ export class Claims {
       includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = { includeExpired: true }
+    } = {}
   ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
-    const { target, includeExpired, size, start } = opts;
+    const { target, includeExpired = true, size, start } = opts;
 
     const did = await getDid(target, context);
 
@@ -124,11 +124,19 @@ export class Claims {
       includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = { includeExpired: true }
+    } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
 
-    const { targets, trustedClaimIssuers, scope, claimTypes, includeExpired, size, start } = opts;
+    const {
+      targets,
+      trustedClaimIssuers,
+      scope,
+      claimTypes,
+      includeExpired = true,
+      size,
+      start,
+    } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
@@ -214,10 +222,10 @@ export class Claims {
       includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = { includeExpired: true }
+    } = {}
   ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
-    const { target, includeExpired, size, start } = opts;
+    const { target, includeExpired = true, size, start } = opts;
 
     const did = await getDid(target, context);
 
@@ -249,11 +257,11 @@ export class Claims {
       includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = { includeExpired: true }
+    } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
 
-    const { target, trustedClaimIssuers, scope, includeExpired, size, start } = opts;
+    const { target, trustedClaimIssuers, scope, includeExpired = true, size, start } = opts;
 
     const did = await getDid(target, context);
 

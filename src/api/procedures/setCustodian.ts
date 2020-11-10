@@ -44,8 +44,16 @@ export async function prepareSetCustodian(
     : new DefaultPortfolio({ did }, context);
 
   const address = signerToString(targetAccount);
-  const currentIdentity = await context.getCurrentIdentity();
-  const authorizationRequests = await currentIdentity.authorizations.getSent();
+
+  const [currentIdentity, isOwned] = await Promise.all([
+    context.getCurrentIdentity(),
+    portfolio.isOwnedBy(),
+  ]);
+
+  const [authorizationRequests, custodiedPortfolios] = await Promise.all([
+    currentIdentity.authorizations.getSent(),
+    currentIdentity.portfolios.getCustodiedPortfolios(),
+  ]);
 
   const hasPendingAuth = !!authorizationRequests.data.find(authorizationRequest => {
     const {
@@ -75,8 +83,6 @@ export async function prepareSetCustodian(
         'The target Account already has a pending invitation to be the custodian for the portfolio',
     });
   }
-
-  // TODO @shuffledex: validate owner and custodian properties
 
   const rawSignatory = signerValueToSignatory(
     { type: SignerType.Account, value: address },
