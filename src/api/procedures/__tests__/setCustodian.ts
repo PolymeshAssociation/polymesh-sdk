@@ -3,14 +3,21 @@ import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, AuthorizationRequest, DefaultPortfolio } from '~/api/entities';
+import { Account, AuthorizationRequest, DefaultPortfolio, Identity } from '~/api/entities';
 import { Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, Identity, ResultSet } from '~/types';
+import { Authorization, AuthorizationType, ResultSet } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsModule from '~/utils';
+
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
+);
 
 describe('setCustodian procedure', () => {
   let mockContext: Mocked<Context>;
@@ -40,6 +47,12 @@ describe('setCustodian procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
+
+    entityMockUtils.configureMocks({
+      numberedPortfolioOptions: {
+        custodian: entityMockUtils.getCurrentIdentityInstance(),
+      },
+    });
   });
 
   afterEach(() => {
@@ -52,6 +65,24 @@ describe('setCustodian procedure', () => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+  });
+
+  test('should throw an error if identity is not the custodian of the portfolio', async () => {
+    const did = 'someDid';
+    const id = new BigNumber(1);
+    const args = { targetAccount: 'targetAccount', did, id };
+
+    entityMockUtils.configureMocks({
+      numberedPortfolioOptions: {
+        custodian: new Identity({ did: 'otherDid' }, mockContext),
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    await expect(prepareSetCustodian.call(proc, args)).rejects.toThrow(
+      'You are not the custodian of this portfolio'
+    );
   });
 
   test('should throw an error if the passed account has a pending authorization to accept', async () => {

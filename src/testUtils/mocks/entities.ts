@@ -130,6 +130,7 @@ interface NumberedPortfolioOptions {
   id?: BigNumber;
   isOwned?: boolean;
   tokenBalances?: PortfolioBalance[];
+  custodian?: Identity;
 }
 
 interface InstructionOptions {
@@ -176,6 +177,7 @@ let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
+let numberedPortfolioGetCustodianStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -508,6 +510,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
     id: opts.id,
     isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwned),
     getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
+    getCustodian: numberedPortfolioGetCustodianStub.resolves(opts.custodian),
   } as unknown) as MockNumberedPortfolio;
 
   Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
@@ -524,6 +527,7 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
   numberedPortfolioConstructorStub = sinon.stub();
   numberedPortfolioIsOwnedByStub = sinon.stub();
   numberedPortfolioGetTokenBalancesStub = sinon.stub();
+  numberedPortfolioGetCustodianStub = sinon.stub();
 
   numberedPortfolioOptions = { ...defaultNumberedPortfolioOptions, ...opts };
 

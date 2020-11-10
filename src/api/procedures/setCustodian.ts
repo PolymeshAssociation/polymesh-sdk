@@ -45,15 +45,19 @@ export async function prepareSetCustodian(
 
   const address = signerToString(targetAccount);
 
-  const [currentIdentity, isOwned] = await Promise.all([
+  const [currentIdentity, custodian] = await Promise.all([
     context.getCurrentIdentity(),
-    portfolio.isOwnedBy(),
+    portfolio.getCustodian(),
   ]);
 
-  const [authorizationRequests, custodiedPortfolios] = await Promise.all([
-    currentIdentity.authorizations.getSent(),
-    currentIdentity.portfolios.getCustodiedPortfolios(),
-  ]);
+  if (custodian.did !== currentIdentity.did) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'You are not the custodian of this portfolio',
+    });
+  }
+
+  const authorizationRequests = await currentIdentity.authorizations.getSent();
 
   const hasPendingAuth = !!authorizationRequests.data.find(authorizationRequest => {
     const {
