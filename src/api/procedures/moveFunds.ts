@@ -58,8 +58,8 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
   }
 
   const [fromIsOwned, toIsOwned, portfolioBalances] = await Promise.all([
-    fromPortfolio.isOwned(),
-    toPortfolio.isOwned(),
+    fromPortfolio.isOwnedBy(),
+    toPortfolio.isOwnedBy(),
     fromPortfolio.getTokenBalances({
       tokens: items.map(({ token }) => token),
     }),

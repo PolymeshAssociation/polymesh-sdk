@@ -3562,7 +3562,6 @@ describe('portfolioLikeToPortfolioId', () => {
 
   test('should convert an Identity to a PortfolioId', async () => {
     const identity = entityMockUtils.getIdentityInstance({ did });
-    Object.setPrototypeOf(identity, Identity.prototype);
 
     const result = await portfolioLikeToPortfolioId(identity, context);
 

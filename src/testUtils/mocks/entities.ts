@@ -521,7 +521,9 @@ function configureVenue(opts: VenueOptions): void {
 
   Object.assign(mockInstanceContainer.venue, venue);
   venueConstructorStub.callsFake(args => {
-    return merge({}, venue, args);
+    const value = merge({}, venue, args);
+    Object.setPrototypeOf(value, require('~/api/entities').Venue.prototype);
+    return value;
   });
 }
 
@@ -553,7 +555,12 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
 
   Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
   numberedPortfolioConstructorStub.callsFake(args => {
-    return merge({}, numberedPortfolio, args);
+    const value = merge({}, numberedPortfolio, args);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/api/entities');
+    Object.setPrototypeOf(entities.NumberedPortfolio.prototype, entities.Portfolio.prototype);
+    Object.setPrototypeOf(value, entities.NumberedPortfolio.prototype);
+    return value;
   });
 }
 
@@ -578,14 +585,19 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
  */
 function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
   const defaultPortfolio = ({
-    isOwned: defaultPortfolioIsOwnedStub.resolves(opts.isOwned),
+    isOwnedBy: defaultPortfolioIsOwnedStub.resolves(opts.isOwned),
     getTokenBalances: defaultPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
     owner: { did: opts.did },
   } as unknown) as MockDefaultPortfolio;
 
   Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
   defaultPortfolioConstructorStub.callsFake(args => {
-    return merge({}, defaultPortfolio, args);
+    const value = merge({}, defaultPortfolio, args);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/api/entities');
+    Object.setPrototypeOf(entities.NumberedPortfolio.prototype, entities.Portfolio.prototype);
+    Object.setPrototypeOf(value, entities.NumberedPortfolio.prototype);
+    return value;
   });
 }
 
@@ -617,7 +629,9 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
 
   Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
   authorizationRequestConstructorStub.callsFake(args => {
-    return merge({}, authorizationRequest, args);
+    const value = merge({}, authorizationRequest, args);
+    Object.setPrototypeOf(value, require('~/api/entities').AuthorizationRequest.prototype);
+    return value;
   });
 }
 
@@ -651,7 +665,9 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
   securityTokenConstructorStub.callsFake(args => {
-    return merge({}, securityToken, args);
+    const value = merge({}, securityToken, args);
+    Object.setPrototypeOf(value, require('~/api/entities').SecurityToken.prototype);
+    return value;
   });
 }
 
@@ -684,7 +700,9 @@ function configureTickerReservation(opts: TickerReservationOptions): void {
 
   Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
   tickerReservationConstructorStub.callsFake(args => {
-    return merge({}, tickerReservation, args);
+    const value = merge({}, tickerReservation, args);
+    Object.setPrototypeOf(value, require('~/api/entities').TickerReservation.prototype);
+    return value;
   });
 }
 
@@ -720,7 +738,9 @@ function configureIdentity(opts: IdentityOptions): void {
 
   Object.assign(mockInstanceContainer.identity, identity);
   identityConstructorStub.callsFake(args => {
-    return merge({}, identity, args);
+    const value = merge({}, identity, args);
+    Object.setPrototypeOf(value, require('~/api/entities').Identity.prototype);
+    return value;
   });
 }
 
@@ -742,7 +762,7 @@ function initIdentity(opts?: IdentityOptions): void {
 
 /**
  * @hidden
- * Configure the identity instance
+ * Configure the Instruction instance
  */
 function configureInstruction(opts: InstructionOptions): void {
   const details = { venue: mockInstanceContainer.venue, ...opts.details };
@@ -761,7 +781,9 @@ function configureInstruction(opts: InstructionOptions): void {
 
   Object.assign(mockInstanceContainer.instruction, instruction);
   instructionConstructorStub.callsFake(args => {
-    return merge({}, instruction, args);
+    const value = merge({}, instruction, args);
+    Object.setPrototypeOf(value, require('~/api/entities').Instruction.prototype);
+    return value;
   });
 }
 
@@ -795,7 +817,9 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
   currentIdentityConstructorStub.callsFake(args => {
-    return merge({}, identity, args);
+    const value = merge({}, identity, args);
+    Object.setPrototypeOf(value, require('~/api/entities').CurrentIdentity.prototype);
+    return value;
   });
 }
 
@@ -833,7 +857,9 @@ function configureAccount(opts: AccountOptions): void {
 
   Object.assign(mockInstanceContainer.account, account);
   accountConstructorStub.callsFake(args => {
-    return merge({}, account, args);
+    const value = merge({}, account, args);
+    Object.setPrototypeOf(value, require('~/api/entities').Account.prototype);
+    return value;
   });
 }
 
@@ -871,7 +897,9 @@ function configureCurrentAccount(opts: CurrentAccountOptions): void {
 
   Object.assign(mockInstanceContainer.currentAccount, account);
   currentAccountConstructorStub.callsFake(args => {
-    return merge({}, account, args);
+    const value = merge({}, account, args);
+    Object.setPrototypeOf(value, require('~/api/entities').CurrentAccount.prototype);
+    return value;
   });
 }
 
@@ -1097,7 +1125,10 @@ export function getIdentityInstance(opts?: IdentityOptions): MockIdentity {
     configureIdentity(opts);
   }
 
-  return mockInstanceContainer.identity;
+  const identity = mockInstanceContainer.identity;
+  Object.setPrototypeOf(identity, require('~/api/entities').Identity.prototype);
+
+  return identity;
 }
 
 /**
@@ -1149,7 +1180,10 @@ export function getCurrentIdentityInstance(opts?: CurrentIdentityOptions): MockC
     configureCurrentIdentity(opts);
   }
 
-  return mockInstanceContainer.currentIdentity;
+  const identity = mockInstanceContainer.currentIdentity;
+  Object.setPrototypeOf(identity, require('~/api/entities').Identity.prototype);
+
+  return identity;
 }
 
 /**
@@ -1193,7 +1227,10 @@ export function getAccountInstance(opts?: AccountOptions): MockAccount {
     configureAccount(opts);
   }
 
-  return mockInstanceContainer.account;
+  const account = mockInstanceContainer.account;
+  Object.setPrototypeOf(account, require('~/api/entities').Account.prototype);
+
+  return account;
 }
 
 /**
@@ -1229,7 +1266,10 @@ export function getCurrentAccountInstance(opts?: CurrentAccountOptions): MockCur
     configureCurrentAccount(opts);
   }
 
-  return mockInstanceContainer.currentAccount;
+  const currentAccount = mockInstanceContainer.currentAccount;
+  Object.setPrototypeOf(currentAccount, require('~/api/entities').CurrentAccount.prototype);
+
+  return currentAccount;
 }
 
 /**
@@ -1267,7 +1307,10 @@ export function getTickerReservationInstance(
     configureTickerReservation(opts);
   }
 
-  return mockInstanceContainer.tickerReservation;
+  const tickerReservation = mockInstanceContainer.tickerReservation;
+  Object.setPrototypeOf(tickerReservation, require('~/api/entities').TickerReservation.prototype);
+
+  return tickerReservation;
 }
 
 /**
@@ -1295,7 +1338,10 @@ export function getSecurityTokenInstance(opts?: SecurityTokenOptions): MockSecur
     configureSecurityToken(opts);
   }
 
-  return mockInstanceContainer.securityToken;
+  const securityToken = mockInstanceContainer.securityToken;
+  Object.setPrototypeOf(securityToken, require('~/api/entities').SecurityToken.prototype);
+
+  return securityToken;
 }
 
 /**
@@ -1359,7 +1405,13 @@ export function getAuthorizationRequestInstance(
     configureAuthorizationRequest(opts);
   }
 
-  return mockInstanceContainer.authorizationRequest;
+  const authorizationRequest = mockInstanceContainer.authorizationRequest;
+  Object.setPrototypeOf(
+    authorizationRequest,
+    require('~/api/entities').AuthorizationRequest.prototype
+  );
+
+  return authorizationRequest;
 }
 
 /**
@@ -1385,7 +1437,10 @@ export function getVenueInstance(opts?: VenueOptions): MockVenue {
     configureVenue(opts);
   }
 
-  return mockInstanceContainer.venue;
+  const venue = mockInstanceContainer.venue;
+  Object.setPrototypeOf(venue, require('~/api/entities').Venue.prototype);
+
+  return venue;
 }
 
 /**
@@ -1413,7 +1468,14 @@ export function getNumberedPortfolioInstance(
     configureNumberedPortfolio(opts);
   }
 
-  return mockInstanceContainer.numberedPortfolio;
+  const numberedPortfolio = mockInstanceContainer.numberedPortfolio;
+  Object.setPrototypeOf(
+    require('~/api/entities').NumberedPortfolio.prototype,
+    require('~/api/entities').Portfolio.prototype
+  );
+  Object.setPrototypeOf(numberedPortfolio, require('~/api/entities').NumberedPortfolio.prototype);
+
+  return numberedPortfolio;
 }
 
 /**
@@ -1425,7 +1487,14 @@ export function getDefaultPortfolioInstance(opts?: DefaultPortfolioOptions): Moc
     configureDefaultPortfolio(opts);
   }
 
-  return mockInstanceContainer.defaultPortfolio;
+  const defaultPortfolio = mockInstanceContainer.defaultPortfolio;
+  Object.setPrototypeOf(
+    require('~/api/entities').DefaultPortfolio.prototype,
+    require('~/api/entities').Portfolio.prototype
+  );
+  Object.setPrototypeOf(defaultPortfolio, require('~/api/entities').DefaultPortfolio.prototype);
+
+  return defaultPortfolio;
 }
 
 /**
@@ -1437,7 +1506,10 @@ export function getInstructionInstance(opts?: InstructionOptions): MockInstructi
     configureInstruction(opts);
   }
 
-  return mockInstanceContainer.instruction;
+  const instruction = mockInstanceContainer.instruction;
+  Object.setPrototypeOf(instruction, require('~/api/entities').Instruction.prototype);
+
+  return instruction;
 }
 
 /**

@@ -131,7 +131,6 @@ describe('Portfolios class', () => {
       const portfolioId = new BigNumber(1);
 
       const result = await portfolios.getPortfolio({ portfolioId });
-      // Object.setPrototypeOf(result, NumberedPortfolio.prototype);
 
       expect(result instanceof NumberedPortfolio).toBe(true);
       expect((result as NumberedPortfolio).id).toEqual(portfolioId);
