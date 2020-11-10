@@ -59,6 +59,7 @@ import {
   SecondaryKey as MeshSecondaryKey,
   SettlementType,
   Signatory,
+  TargetIdentity,
   Ticker,
   TxTag,
   TxTags,
@@ -89,6 +90,7 @@ import {
   ConditionType,
   CountryCode,
   ErrorCode,
+  IdentityCondition,
   IdentityWithClaims,
   InstructionStatus,
   InstructionType,
@@ -100,6 +102,7 @@ import {
   PaginationOptions,
   Permission,
   PortfolioLike,
+  PrimaryIssuanceAgentCondition,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -1250,6 +1253,16 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
 /**
  * @hidden
  */
+export function stringToTargetIdentity(did: string | null, context: Context): TargetIdentity {
+  return context.polymeshApi.createType(
+    'TargetIdentity',
+    did ? { Specific: stringToIdentityId(did, context) } : 'PrimaryIssuanceAgent'
+  );
+}
+
+/**
+ * @hidden
+ */
 export function requirementToComplianceRequirement(
   requirement: Requirement,
   context: Context
@@ -1259,21 +1272,31 @@ export function requirementToComplianceRequirement(
   const receiverConditions: MeshCondition[] = [];
 
   requirement.conditions.forEach(condition => {
-    let claimContent: MeshClaim | MeshClaim[];
+    let conditionContent: MeshClaim | MeshClaim[] | TargetIdentity;
+    let { type } = condition;
     if (isSingleClaimCondition(condition)) {
       const { claim } = condition;
-      claimContent = claimToMeshClaim(claim, context);
-    } else {
+      conditionContent = claimToMeshClaim(claim, context);
+    } else if (isMultiClaimCondition(condition)) {
       const { claims } = condition;
-      claimContent = claims.map(claim => claimToMeshClaim(claim, context));
+      conditionContent = claims.map(claim => claimToMeshClaim(claim, context));
+    } else if (condition.type === ConditionType.IsIdentity) {
+      const {
+        identity: { did },
+      } = condition;
+      conditionContent = stringToTargetIdentity(did, context);
+    } else {
+      // IsPrimaryIssuanceAgent does not exist as a condition type in Polymesh, it's SDK sugar
+      type = ConditionType.IsIdentity;
+      conditionContent = stringToTargetIdentity(null, context);
     }
 
-    const { target, type, trustedClaimIssuers = [] } = condition;
+    const { target, trustedClaimIssuers = [] } = condition;
 
     const meshCondition = polymeshApi.createType('Condition', {
       // eslint-disable-next-line @typescript-eslint/camelcase
       condition_type: {
-        [type]: claimContent,
+        [type]: conditionContent,
       },
       issuers: trustedClaimIssuers.map(issuer => stringToIdentityId(issuer, context)),
     });
@@ -1300,13 +1323,16 @@ export function requirementToComplianceRequirement(
  * @hidden
  */
 export function complianceRequirementToRequirement(
-  complianceRequirement: ComplianceRequirement
+  complianceRequirement: ComplianceRequirement,
+  context: Context
 ): Requirement {
   const meshConditionTypeToCondition = (
     meshConditionType: MeshConditionType
   ):
     | Pick<SingleClaimCondition, 'type' | 'claim'>
-    | Pick<MultiClaimCondition, 'type' | 'claims'> => {
+    | Pick<MultiClaimCondition, 'type' | 'claims'>
+    | Pick<IdentityCondition, 'type' | 'identity'>
+    | Pick<PrimaryIssuanceAgentCondition, 'type'> => {
     if (meshConditionType.isIsPresent) {
       return {
         type: ConditionType.IsPresent,
@@ -1325,6 +1351,21 @@ export function complianceRequirementToRequirement(
       return {
         type: ConditionType.IsAnyOf,
         claims: meshConditionType.asIsAnyOf.map(claim => meshClaimToClaim(claim)),
+      };
+    }
+
+    if (meshConditionType.isIsIdentity) {
+      const target = meshConditionType.asIsIdentity;
+
+      if (target.isPrimaryIssuanceAgent) {
+        return {
+          type: ConditionType.IsPrimaryIssuanceAgent,
+        };
+      }
+
+      return {
+        type: ConditionType.IsIdentity,
+        identity: new Identity({ did: identityIdToString(target.asSpecific) }, context),
       };
     }
 
@@ -1468,11 +1509,12 @@ export function portfolioIdToMeshPortfolioId(
  * @hidden
  */
 export function assetComplianceResultToRequirementCompliance(
-  assetComplianceResult: AssetComplianceResult
+  assetComplianceResult: AssetComplianceResult,
+  context: Context
 ): RequirementCompliance {
   const { requirements: rawRequirements, result, paused } = assetComplianceResult;
   const requirements = rawRequirements.map(requirement => ({
-    ...complianceRequirementToRequirement(requirement),
+    ...complianceRequirementToRequirement(requirement, context),
     complies: boolToBoolean(requirement.result),
   }));
 

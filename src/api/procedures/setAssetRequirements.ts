@@ -40,7 +40,7 @@ export async function prepareSetAssetRequirements(
   const rawCurrentAssetCompliance = await query.complianceManager.assetCompliances(rawTicker);
 
   const currentRequirements = rawCurrentAssetCompliance.requirements.map(
-    requirement => complianceRequirementToRequirement(requirement).conditions
+    requirement => complianceRequirementToRequirement(requirement, context).conditions
   );
 
   const comparator = (a: Condition[], b: Condition[]): boolean => {

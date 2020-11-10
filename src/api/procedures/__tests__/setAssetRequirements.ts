@@ -22,7 +22,10 @@ describe('setAssetRequirements procedure', () => {
     [Requirement, Context],
     ComplianceRequirement
   >;
-  let complianceRequirementToRequirementStub: sinon.SinonStub<[ComplianceRequirement], Requirement>;
+  let complianceRequirementToRequirementStub: sinon.SinonStub<
+    [ComplianceRequirement, Context],
+    Requirement
+  >;
   let assetCompliancesStub: sinon.SinonStub;
   let ticker: string;
   let requirements: Condition[][];
@@ -124,7 +127,8 @@ describe('setAssetRequirements procedure', () => {
             sender_conditions: senderConditions[index],
             receiver_conditions: receiverConditions[index],
             /* eslint-enable @typescript-eslint/camelcase */
-          })
+          }),
+          mockContext
         )
         .returns({ conditions: condition, id: 1 });
     });
