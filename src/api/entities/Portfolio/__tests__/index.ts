@@ -187,5 +187,43 @@ describe('Portfolio class', () => {
 
       expect(queue).toBe(expectedQueue);
     });
+
+    describe('method: getCustodian', () => {
+      let did: string;
+      let id: BigNumber;
+
+      beforeAll(() => {
+        did = 'someDid';
+        id = new BigNumber(1);
+        sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
+      });
+
+      afterAll(() => {
+        sinon.restore();
+      });
+
+      test('should return the custodian of the portfolio', async () => {
+        const custodianDid = 'custodianDid';
+        const identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
+
+        dsMockUtils
+          .createQueryStub('portfolio', 'portfolioCustodian')
+          .returns(dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(custodianDid)));
+
+        identityIdToStringStub.returns(custodianDid);
+
+        const portfolio = new Portfolio({ did, id }, context);
+
+        let result = await portfolio.getCustodian();
+        expect(result.did).toEqual(custodianDid);
+
+        dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian').returns({});
+
+        identityIdToStringStub.returns(did);
+
+        result = await portfolio.getCustodian();
+        expect(result.did).toEqual(did);
+      });
+    });
   });
 });
