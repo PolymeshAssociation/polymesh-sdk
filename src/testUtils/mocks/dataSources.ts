@@ -74,6 +74,7 @@ import {
   SecurityToken,
   SettlementType,
   Signatory,
+  TargetIdentity,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
@@ -1643,12 +1644,21 @@ export const createMockClaim = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockTargetIdentity = (
+  targetIdentity?: { Specific: IdentityId } | 'PrimaryIssuanceAgent'
+): TargetIdentity => createMockEnum(targetIdentity) as TargetIdentity;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockConditionType = (
   conditionType?:
     | { IsPresent: Claim }
     | { IsAbsent: Claim }
     | { IsAnyOf: Claim[] }
     | { IsNoneOf: Claim[] }
+    | { IsIdentity: TargetIdentity }
 ): ConditionType => createMockEnum(conditionType) as ConditionType;
 
 /**
