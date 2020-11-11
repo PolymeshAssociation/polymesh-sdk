@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { isEqual } from 'lodash';
 
 import { DefaultPortfolio, NumberedPortfolio } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
@@ -74,7 +73,7 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     });
   }
 
-  if (isEqual(fromPortfolioId, toPortfolioId)) {
+  if (fromPortfolioId.number === toPortfolioId.number) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Origin and destination should be different Portfolios',

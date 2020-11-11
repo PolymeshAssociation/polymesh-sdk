@@ -67,7 +67,7 @@ describe('moveFunds procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if both portfolios does not have the same owner', async () => {
+  test('should throw an error if both portfolios do not have the same owner', async () => {
     const fromId = new BigNumber(1);
     const fromDid = 'someDid';
     const toId = new BigNumber(2);
