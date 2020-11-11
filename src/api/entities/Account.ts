@@ -16,12 +16,12 @@ import {
 } from '~/types';
 import {
   addressToKey,
-  calculateNextKey,
   extrinsicIdentifierToTxTag,
   identityIdToString,
   stringToAccountId,
   txTagToExtrinsicIdentifier,
-} from '~/utils';
+} from '~/utils/conversion';
+import { calculateNextKey } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   address: string;

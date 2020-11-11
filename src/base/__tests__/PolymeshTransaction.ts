@@ -11,7 +11,7 @@ import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Polymesh Transaction class', () => {
   let context: Mocked<Context>;
@@ -360,7 +360,7 @@ describe('Polymesh Transaction class', () => {
     let rawGasFees: Balance[];
 
     beforeAll(() => {
-      balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
+      balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
       protocolFees = [new BigNumber(250), new BigNumber(150)];
       gasFees = [5, 10];
       rawGasFees = gasFees.map(dsMockUtils.createMockBalance);

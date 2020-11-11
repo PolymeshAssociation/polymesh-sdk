@@ -1,6 +1,6 @@
 import { Account, AuthorizationRequest } from '~/api/entities';
 import { Procedure } from '~/base';
-import { numberToU64 } from '~/utils';
+import { numberToU64 } from '~/utils/conversion';
 
 /**
  * @hidden

@@ -5,8 +5,8 @@ import { Context } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
-import * as utilsModule from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('TrustedClaimIssuer class', () => {
   let context: Context;
@@ -60,7 +60,7 @@ describe('TrustedClaimIssuer class', () => {
     const variables = {
       moduleId: ModuleIdEnum.Compliancemanager,
       eventId: EventIdEnum.TrustedDefaultClaimIssuerAdded,
-      eventArg1: utilsModule.padString(ticker, MAX_TICKER_LENGTH),
+      eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
       eventArg2: did,
     };
 

@@ -13,7 +13,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { Authorization, RoleType } from '~/types';
 import { SignerValue } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/SecurityToken',
@@ -41,12 +41,12 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     authorizationToAuthorizationDataStub = sinon.stub(
-      utilsModule,
+      utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = sinon.stub(utilsModule, 'dateToMoment');
-    signerToStringStub = sinon.stub(utilsModule, 'signerToString');
-    signerValueToSignatoryStub = sinon.stub(utilsModule, 'signerValueToSignatory');
+    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
+    signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
+    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     target = 'someDid';

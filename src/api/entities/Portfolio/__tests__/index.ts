@@ -7,7 +7,7 @@ import { Entity, Identity, Portfolio, SecurityToken } from '~/api/entities';
 import { Context } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Portfolio class', () => {
   let context: Context;
@@ -113,7 +113,7 @@ describe('Portfolio class', () => {
           User: dsMockUtils.createMockU64(id.toNumber()),
         }),
       });
-      sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
+      sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
       dsMockUtils.configureMocks({ contextOptions: { did } });
     });
 
@@ -174,7 +174,7 @@ describe('Portfolio class', () => {
     beforeAll(() => {
       did = 'someDid';
       id = new BigNumber(1);
-      sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
+      sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
     });
 
     afterAll(() => {
@@ -183,7 +183,7 @@ describe('Portfolio class', () => {
 
     test('should return the custodian of the portfolio', async () => {
       const custodianDid = 'custodianDid';
-      const identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
+      const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
 
       dsMockUtils
         .createQueryStub('portfolio', 'portfolioCustodian')

@@ -32,7 +32,7 @@ import {
 } from '~/types';
 import { PolymeshTx, TokenDocumentData } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -80,18 +80,21 @@ describe('createSecurityToken procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
-    stringToAssetNameStub = sinon.stub(utilsModule, 'stringToAssetName');
-    booleanToBoolStub = sinon.stub(utilsModule, 'booleanToBool');
-    tokenTypeToAssetTypeStub = sinon.stub(utilsModule, 'tokenTypeToAssetType');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
+    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
+    tokenTypeToAssetTypeStub = sinon.stub(utilsConversionModule, 'tokenTypeToAssetType');
     tokenIdentifierToAssetIdentifierStub = sinon.stub(
-      utilsModule,
+      utilsConversionModule,
       'tokenIdentifierToAssetIdentifier'
     );
-    stringToFundingRoundNameStub = sinon.stub(utilsModule, 'stringToFundingRoundName');
-    stringToDocumentNameStub = sinon.stub(utilsModule, 'stringToDocumentName');
-    tokenDocumentDataToDocumentStub = sinon.stub(utilsModule, 'tokenDocumentDataToDocument');
+    stringToFundingRoundNameStub = sinon.stub(utilsConversionModule, 'stringToFundingRoundName');
+    stringToDocumentNameStub = sinon.stub(utilsConversionModule, 'stringToDocumentName');
+    tokenDocumentDataToDocumentStub = sinon.stub(
+      utilsConversionModule,
+      'tokenDocumentDataToDocument'
+    );
     ticker = 'someTicker';
     name = 'someName';
     totalSupply = new BigNumber(100);

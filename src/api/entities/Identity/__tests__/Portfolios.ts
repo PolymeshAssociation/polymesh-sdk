@@ -9,7 +9,7 @@ import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import { Portfolios } from '../Portfolios';
 
@@ -28,9 +28,9 @@ describe('Portfolios class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
-    u64ToBigNumberStub = sinon.stub(utilsModule, 'u64ToBigNumber');
-    numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
+    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
+    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
   });
 
   beforeEach(() => {

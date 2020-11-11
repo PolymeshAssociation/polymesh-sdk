@@ -1,6 +1,6 @@
 import { Procedure } from '~/base';
 import { Role, RoleType } from '~/types';
-import { stringToTicker } from '~/utils';
+import { stringToTicker } from '~/utils/conversion';
 
 /**
  * @hidden

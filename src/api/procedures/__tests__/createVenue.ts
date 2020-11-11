@@ -11,7 +11,8 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { VenueType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('createVenue procedure', () => {
   let mockContext: Mocked<Context>;
@@ -25,8 +26,8 @@ describe('createVenue procedure', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
-    stringToVenueuDetailsStub = sinon.stub(utilsModule, 'stringToVenueDetails');
-    venueTypeToMeshVenueTypeStub = sinon.stub(utilsModule, 'venueTypeToMeshVenueType');
+    stringToVenueuDetailsStub = sinon.stub(utilsConversionModule, 'stringToVenueDetails');
+    venueTypeToMeshVenueTypeStub = sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType');
     venue = ('venue' as unknown) as PostTransactionValue<Venue>;
   });
 
@@ -80,7 +81,7 @@ describe('createVenue procedure', () => {
 });
 
 describe('createCreateVenueResolver', () => {
-  const findEventRecordStub = sinon.stub(utilsModule, 'findEventRecord');
+  const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
   const id = new BigNumber(10);
   const rawId = dsMockUtils.createMockU64(id.toNumber());
 

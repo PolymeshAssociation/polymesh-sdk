@@ -16,7 +16,7 @@ import {
   tickerToString,
   u32ToBigNumber,
   u64ToBigNumber,
-} from '~/utils';
+} from '~/utils/conversion';
 
 import { InstructionAuthorization, InstructionDetails, InstructionType, Leg } from './types';
 

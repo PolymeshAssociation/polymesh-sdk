@@ -6,7 +6,7 @@ import { modifyTokenTrustedClaimIssuers } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import { TrustedClaimIssuers } from '../TrustedClaimIssuers';
 
@@ -146,7 +146,7 @@ describe('TrustedClaimIssuers class', () => {
     beforeAll(() => {
       ticker = 'test';
       rawTicker = dsMockUtils.createMockTicker(ticker);
-      stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+      stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
       context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance({ ticker });
 

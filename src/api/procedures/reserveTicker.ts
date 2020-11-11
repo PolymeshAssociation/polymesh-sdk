@@ -4,7 +4,8 @@ import { Ticker } from 'polymesh-types/types';
 import { TickerReservation } from '~/api/entities';
 import { Context, PolymeshError, PostTransactionValue, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType, TickerReservationStatus } from '~/types';
-import { findEventRecord, stringToTicker, tickerToString } from '~/utils';
+import { stringToTicker, tickerToString } from '~/utils/conversion';
+import { findEventRecord } from '~/utils/internal';
 
 export interface ReserveTickerParams {
   ticker: string;

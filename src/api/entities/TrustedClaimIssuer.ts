@@ -5,8 +5,8 @@ import { Context } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier } from '~/types';
-import { padString } from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import { padString } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
