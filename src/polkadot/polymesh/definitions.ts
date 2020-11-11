@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/camelcase */
 export default {
   types: {
+    Proposer: '[u8; 32]',
+    SkippedCount: '[u8; 32]',
+    SnapshotId: '[u8; 32]',
+    SnapshotMetadata: '[u8; 32]',
+    SnapshotResult: '[u8; 32]',
+    SnapshottedPip: '[u8; 32]',
     IdentityId: '[u8; 32]',
     InvestorUid: '[u8; 32]',
     Ticker: '[u8; 12]',

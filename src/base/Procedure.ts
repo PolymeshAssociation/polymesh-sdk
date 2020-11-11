@@ -18,6 +18,7 @@ interface AddTransactionOpts<Values extends unknown[]> {
   isCritical?: boolean;
   signer?: AddressOrPair;
   batchSize?: number;
+  paidByThirdParty?: boolean;
 }
 
 /**
@@ -154,6 +155,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
       isCritical = true,
       batchSize = null,
+      paidByThirdParty = false,
     } = options;
     let { signer } = options;
     const postTransactionValues = resolvers.map(
@@ -180,6 +182,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       signer,
       fee,
       batchSize,
+      paidByThirdParty,
     });
 
     return postTransactionValues;
