@@ -46,7 +46,7 @@ describe('modifyNamePortfolio procedure', () => {
     numberToU64Stub.withArgs(id, mockContext).returns(rawPortfolioNumber);
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        isOwned: true,
+        isOwnedBy: true,
       },
     });
 
@@ -68,7 +68,7 @@ describe('modifyNamePortfolio procedure', () => {
   test('should throw an error if the Current Identity is not the Portfolio owner', async () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        isOwned: false,
+        isOwnedBy: false,
       },
     });
 

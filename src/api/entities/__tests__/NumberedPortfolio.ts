@@ -7,6 +7,7 @@ import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
+import * as utilsModule from '~/utils';
 
 describe('Numberedortfolio class', () => {
   let context: Context;
@@ -148,6 +149,33 @@ describe('Numberedortfolio class', () => {
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
       const result = await numberedPortfolio.createdAt();
       expect(result).toBeNull();
+    });
+  });
+
+  describe('method: exists', () => {
+    test('should return whether the portfolio exists', async () => {
+      const did = 'someDid';
+      const id = new BigNumber(1);
+      const portfolioId = new BigNumber(0);
+
+      const portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+        returnValue: dsMockUtils.createMockBytes(),
+      });
+
+      sinon.stub(utilsModule, 'stringToIdentityId').returns(dsMockUtils.createMockIdentityId(did));
+      sinon
+        .stub(utilsModule, 'numberToU64')
+        .returns(dsMockUtils.createMockU64(portfolioId.toNumber()));
+
+      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
+
+      let result = await numberedPortfolio.exists();
+      expect(result).toBe(false);
+
+      portfoliosStub.resolves(dsMockUtils.createMockBytes('portfolioName'));
+
+      result = await numberedPortfolio.exists();
+      expect(result).toBe(true);
     });
   });
 });
