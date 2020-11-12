@@ -4,17 +4,17 @@ import sinon from 'sinon';
 
 import { Account, AuthorizationRequest, Identity } from '~/api/entities';
 import {
-  AcceptJoinIdentityAuthorizationParams,
+  ConsumeJoinIdentityAuthorizationParams,
   isAuthorized,
-  prepareAcceptJoinIdentityAuthorization,
-} from '~/api/procedures/acceptJoinIdentityAuthorization';
+  prepareConsumeJoinIdentityAuthorization,
+} from '~/api/procedures/consumeJoinIdentityAuthorization';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType } from '~/types';
 import * as utilsModule from '~/utils';
 
-describe('acceptJoinIdentityAuthorization procedure', () => {
+describe('consumeJoinIdentityAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
   let authId: BigNumber;
@@ -52,7 +52,7 @@ describe('acceptJoinIdentityAuthorization procedure', () => {
   });
 
   test('should add a joinIdentityAsKey transaction to the queue if the target is an Account', async () => {
-    const proc = procedureMockUtils.getInstance<AcceptJoinIdentityAuthorizationParams, void>(
+    const proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void>(
       mockContext
     );
 
@@ -60,7 +60,7 @@ describe('acceptJoinIdentityAuthorization procedure', () => {
 
     const target = new Account({ address: 'someAddress' }, mockContext);
 
-    await prepareAcceptJoinIdentityAuthorization.call(proc, {
+    await prepareConsumeJoinIdentityAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -71,13 +71,14 @@ describe('acceptJoinIdentityAuthorization procedure', () => {
         },
         mockContext
       ),
+      accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, transaction, { paidByThirdParty: true }, rawAuthId);
   });
 
   test('should add a joinIdentityAsIdentity transaction to the queue if the target is an Identity', async () => {
-    const proc = procedureMockUtils.getInstance<AcceptJoinIdentityAuthorizationParams, void>(
+    const proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void>(
       mockContext
     );
 
@@ -85,7 +86,7 @@ describe('acceptJoinIdentityAuthorization procedure', () => {
 
     const target = new Identity({ did: 'someOtherDid' }, mockContext);
 
-    await prepareAcceptJoinIdentityAuthorization.call(proc, {
+    await prepareConsumeJoinIdentityAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -96,14 +97,53 @@ describe('acceptJoinIdentityAuthorization procedure', () => {
         },
         mockContext
       ),
+      accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, transaction, { paidByThirdParty: true }, rawAuthId);
+  });
+
+  test('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
+    const proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void>(
+      mockContext
+    );
+
+    const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
+
+    const target = new Identity({ did: 'someOtherDid' }, mockContext);
+
+    const rawSignatory = dsMockUtils.createMockSignatory({
+      Identity: dsMockUtils.createMockIdentityId(target.did),
+    });
+
+    sinon.stub(utilsModule, 'signerValueToSignatory').returns(rawSignatory);
+
+    await prepareConsumeJoinIdentityAuthorization.call(proc, {
+      authRequest: new AuthorizationRequest(
+        {
+          target,
+          issuer: entityMockUtils.getIdentityInstance(),
+          authId,
+          expiry: null,
+          data: { type: AuthorizationType.JoinIdentity, value: [] },
+        },
+        mockContext
+      ),
+      accept: false,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      { paidByThirdParty: true },
+      rawSignatory,
+      rawAuthId
+    );
   });
 
   describe('isAuthorized', () => {
     test('should return whether the current Identity or Account is the target of the authorization request', async () => {
-      const proc = procedureMockUtils.getInstance<AcceptJoinIdentityAuthorizationParams, void>(
+      const proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void>(
         mockContext
       );
       const { address } = mockContext.getCurrentAccount();
@@ -118,6 +158,7 @@ describe('acceptJoinIdentityAuthorization procedure', () => {
       };
       const args = {
         authRequest: new AuthorizationRequest(constructorParams, mockContext),
+        accept: true,
       };
 
       const boundFunc = isAuthorized.bind(proc);
