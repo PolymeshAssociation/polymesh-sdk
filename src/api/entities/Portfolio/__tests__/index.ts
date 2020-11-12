@@ -7,7 +7,7 @@ import { Entity, Identity, Portfolio, SecurityToken } from '~/api/entities';
 import { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
 import { moveFunds } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';
 
