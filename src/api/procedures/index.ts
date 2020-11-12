@@ -42,3 +42,4 @@ export { removePrimaryIssuanceAgent } from './removePrimaryIssuanceAgent';
 export { deletePortfolio } from './deletePortfolio';
 export { renamePortfolio, RenamePortfolioParams } from './renamePortfolio';
 export { setCustodian, SetCustodianParams } from './setCustodian';
+export { moveFunds, MoveFundsParams } from './moveFunds';

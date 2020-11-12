@@ -3,7 +3,7 @@ import { values } from 'lodash';
 import { Ticker } from 'polymesh-types/types';
 
 import { Entity, Identity, SecurityToken } from '~/api/entities';
-import { setCustodian, SetCustodianParams } from '~/api/procedures';
+import { moveFunds, MoveFundsParams, setCustodian, SetCustodianParams } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import {
   balanceToBigNumber,
@@ -155,6 +155,16 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     } = this;
 
     return setCustodian.prepare({ ...args, did, id }, context);
+  }
+
+  /**
+   * Moves funds from this Portfolio to another one owned by the same Identity
+   *
+   * @param args.to - portfolio (or portfolio ID) that will receive the funds. Optional, if no value is passed, the funds will be moved to the default Portfolio of this Portfolio's owner
+   * @param args.movements - list of tokens (and their corresponding amounts) that will be moved
+   */
+  public async moveFunds(args: MoveFundsParams): Promise<TransactionQueue<void>> {
+    return moveFunds.prepare({ ...args, from: this }, this.context);
   }
 
   /**

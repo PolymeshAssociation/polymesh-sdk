@@ -61,6 +61,7 @@ import {
   InstructionStatus,
   IssueAssetItem,
   LinkedKeyInfo,
+  MovePortfolioItem,
   Permission,
   Pip,
   PipId,
@@ -1309,6 +1310,26 @@ export const createMockPortfolioId = (portfiolioId?: {
     },
     !portfiolioId
   ) as PortfolioId;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockMovePortfolioItem = (movePortfolioItem?: {
+  ticker: Ticker;
+  amount: Balance;
+}): MovePortfolioItem => {
+  const item = movePortfolioItem || {
+    ticker: createMockTicker(),
+    amount: createMockBalance(),
+  };
+  return createMockCodec(
+    {
+      ...item,
+    },
+    !movePortfolioItem
+  ) as MovePortfolioItem;
 };
 
 /**

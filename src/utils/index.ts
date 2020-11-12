@@ -50,6 +50,7 @@ import {
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
   Memo,
+  MovePortfolioItem,
   Permission as MeshPermission,
   PipId,
   PortfolioId as MeshPortfolioId,
@@ -102,6 +103,7 @@ import {
   PaginationOptions,
   Permission,
   PortfolioLike,
+  PortfolioMovement,
   PrimaryIssuanceAgentCondition,
   Requirement,
   RequirementCompliance,
@@ -1523,6 +1525,20 @@ export function authorizationToAuthorizationData(
 /**
  * @hidden
  */
+export function portfolioMovementToMovePortfolioItem(
+  portfolioItem: PortfolioMovement,
+  context: Context
+): MovePortfolioItem {
+  const { token, amount } = portfolioItem;
+  return context.polymeshApi.createType('MovePortfolioItem', {
+    ticker: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
+    amount: numberToBalance(amount, context),
+  });
+}
+
+/**
+ * @hidden
+ */
 export function assetComplianceResultToRequirementCompliance(
   assetComplianceResult: AssetComplianceResult,
   context: Context
@@ -2002,17 +2018,16 @@ export async function portfolioLikeToPortfolioId(
     const { identity: valueIdentity } = value;
     ({ id: number } = value);
 
-    let identity: Identity;
-
     if (typeof valueIdentity === 'string') {
       did = valueIdentity;
-      identity = new Identity({ did }, context);
     } else {
       ({ did } = valueIdentity);
-      identity = valueIdentity;
     }
+  }
 
-    const exists = await identity.portfolios.portfolioExists({ portfolioId: number });
+  if (number) {
+    const numberedPortfolio = new NumberedPortfolio({ did, id: number }, context);
+    const exists = await numberedPortfolio.exists();
 
     if (!exists) {
       throw new PolymeshError({
