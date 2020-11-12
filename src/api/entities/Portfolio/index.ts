@@ -73,6 +73,38 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Return whether an Identity is the Portfolio custodian
+   *
+   * @param args.identity - defaults to the current Identity
+   */
+  public async isCustodiedBy(args?: { identity: string | Identity }): Promise<boolean> {
+    const {
+      _id,
+      owner: { did },
+      context,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+    } = this;
+
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: _id }, context);
+
+    const [portfolioCustodian, targetDid] = await Promise.all([
+      portfolio.portfolioCustodian(rawPortfolioId),
+      getDid(args?.identity, context),
+    ]);
+
+    try {
+      const rawIdentityId = portfolioCustodian.unwrap();
+      return targetDid === identityIdToString(rawIdentityId);
+    } catch (_) {
+      return targetDid === did;
+    }
+  }
+
+  /**
    * Retrieve the balances of all assets in this Portfolio
    *
    * @param args.tokens - array of Security Tokens (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
