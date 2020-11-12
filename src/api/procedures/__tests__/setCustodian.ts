@@ -18,6 +18,12 @@ jest.mock(
     '~/api/entities/NumberedPortfolio'
   )
 );
+jest.mock(
+  '~/api/entities/DefaultPortfolio',
+  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+    '~/api/entities/DefaultPortfolio'
+  )
+);
 
 describe('setCustodian procedure', () => {
   let mockContext: Mocked<Context>;
@@ -50,6 +56,9 @@ describe('setCustodian procedure', () => {
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
+        custodian: entityMockUtils.getCurrentIdentityInstance(),
+      },
+      defaultPortfolioOptions: {
         custodian: entityMockUtils.getCurrentIdentityInstance(),
       },
     });
