@@ -6,7 +6,7 @@ import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier } from '~/types';
-import { bytesToString, numberToU64 } from '~/utils/conversion';
+import { bytesToString, numberToU64, stringToIdentityId } from '~/utils/conversion';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -121,5 +121,27 @@ export class NumberedPortfolio extends Portfolio {
     }
 
     return null;
+  }
+
+  /**
+   * Return whether this Portfolio exists
+   */
+  public async exists(): Promise<boolean> {
+    const {
+      owner: { did },
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+    } = this;
+
+    const identityId = stringToIdentityId(did, context);
+    const rawPortfolioNumber = numberToU64(id, context);
+    const rawPortfolioName = await portfolio.portfolios(identityId, rawPortfolioNumber);
+
+    return !rawPortfolioName.isEmpty;
   }
 }

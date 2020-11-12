@@ -3,8 +3,7 @@ import { DispatchError } from '@polkadot/types/interfaces';
 import { ISubmittableResult, RegistryError } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
-import { includes } from 'lodash';
-import { TxTag, TxTags } from 'polymesh-types/types';
+import { TxTag } from 'polymesh-types/types';
 
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
 import { ErrorCode, Fees, TransactionStatus } from '~/types';
@@ -61,10 +60,16 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
   public isCritical: boolean;
 
   /**
-   * arguments arguments for the transaction. Available after the transaction starts running
+   * arguments for the transaction. Available after the transaction starts running
    * (may be Post Transaction Values from a previous transaction in the queue that haven't resolved yet)
    */
   public args: MapMaybePostTransactionValue<Args>;
+
+  /**
+   * whether the fees for this tx are paid by a third party.
+   *   For example, when accepting/rejecting a request to join an Identity, fees are paid by the Identity that sent the request
+   */
+  public paidByThirdParty: boolean;
 
   /**
    * @hidden
@@ -125,7 +130,16 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
    * @hidden
    */
   constructor(transactionSpec: TransactionSpec<Args, Values>, context: Context) {
-    const { postTransactionValues, tx, args, signer, isCritical, fee, batchSize } = transactionSpec;
+    const {
+      postTransactionValues,
+      tx,
+      args,
+      signer,
+      isCritical,
+      fee,
+      batchSize,
+      paidByThirdParty,
+    } = transactionSpec;
 
     if (postTransactionValues) {
       this.postValues = postTransactionValues;
@@ -139,6 +153,7 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
     this.batchSize = batchSize;
     this.protocolFee = fee;
     this.context = context;
+    this.paidByThirdParty = paidByThirdParty;
 
     this.setTag();
   }
@@ -198,11 +213,11 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
   /**
    * Get all (protocol and gas) fees associated with this transaction. Returns null
    * if the transaction is not ready yet (this can happen if it depends on the execution of a
-   * previous transaction in the queue). Fees will be returned as zero if they are paid by a third party (such as when joining an identity)
+   * previous transaction in the queue)
    */
   public async getFees(): Promise<Fees | null> {
     const { tx, args, signer, batchSize, context } = this;
-    let { protocolFee, tag } = this;
+    let { protocolFee } = this;
 
     let unwrappedTx;
     let unwrappedArgs;
@@ -212,15 +227,6 @@ export class PolymeshTransaction<Args extends unknown[], Values extends unknown[
       unwrappedArgs = unwrapValues(args);
     } catch (err) {
       return null;
-    }
-
-    if (
-      includes([TxTags.identity.JoinIdentityAsIdentity, TxTags.identity.JoinIdentityAsKey], tag)
-    ) {
-      return {
-        protocol: new BigNumber(0),
-        gas: new BigNumber(0),
-      };
     }
 
     const { partialFee } = await unwrappedTx(...unwrappedArgs).paymentInfo(signer);

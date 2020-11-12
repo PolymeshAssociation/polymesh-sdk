@@ -140,7 +140,6 @@ describe('inviteAccount procedure', () => {
       address: 'someAddress',
       getIdentity: entityMockUtils.getIdentityInstance(),
     });
-    Object.setPrototypeOf(targetAccount, Account.prototype);
 
     signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);
 

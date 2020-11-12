@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { AuthorizationRequest, Entity, Identity } from '~/api/entities';
-import { acceptJoinIdentityAuthorization, consumeAuthorizationRequests } from '~/api/procedures';
+import { consumeAuthorizationRequests, consumeJoinIdentityAuthorization } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Authorization, AuthorizationType } from '~/types';
@@ -92,7 +92,7 @@ describe('AuthorizationRequest class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
-    test('should prepare the acceptJoinIdentityAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    test('should prepare the consumeJoinIdentityAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -106,12 +106,13 @@ describe('AuthorizationRequest class', () => {
 
       const args = {
         authRequest: authorizationRequest,
+        accept: true,
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       sinon
-        .stub(acceptJoinIdentityAuthorization, 'prepare')
+        .stub(consumeJoinIdentityAuthorization, 'prepare')
         .withArgs({ ...args }, context)
         .resolves(expectedQueue);
 
@@ -126,7 +127,7 @@ describe('AuthorizationRequest class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    test('should prepare the consumeAuthorizationRequest procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -147,6 +148,35 @@ describe('AuthorizationRequest class', () => {
 
       sinon
         .stub(consumeAuthorizationRequests, 'prepare')
+        .withArgs({ ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await authorizationRequest.remove();
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    test('should prepare the consumeJoinIdentityAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: null,
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: { type: AuthorizationType.JoinIdentity, value: [] },
+        },
+        context
+      );
+
+      const args = {
+        authRequest: authorizationRequest,
+        accept: false,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(consumeJoinIdentityAuthorization, 'prepare')
         .withArgs({ ...args }, context)
         .resolves(expectedQueue);
 

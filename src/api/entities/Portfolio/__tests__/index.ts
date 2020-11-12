@@ -4,7 +4,9 @@ import { PortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Entity, Identity, Portfolio, SecurityToken } from '~/api/entities';
-import { Context } from '~/base';
+import { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
+import { moveFunds } from '~/api/procedures';
+import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -202,6 +204,26 @@ describe('Portfolio class', () => {
 
       result = await portfolio.getCustodian();
       expect(result.did).toEqual(did);
+    });
+  });
+
+  describe('method: moveFunds', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const args = {
+        to: new NumberedPortfolio({ id: new BigNumber(1), did: 'someDid' }, context),
+        items: [{ token: 'someToken', amount: new BigNumber(100) }],
+      };
+      const portfolio = new Portfolio({ did: 'someDid' }, context);
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(moveFunds, 'prepare')
+        .withArgs({ ...args, from: portfolio }, context)
+        .resolves(expectedQueue);
+
+      const queue = await portfolio.moveFunds(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

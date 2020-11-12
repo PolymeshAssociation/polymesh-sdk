@@ -1,9 +1,9 @@
 // NOTE uncomment in Governance v2 upgrade
 
 export {
-  acceptJoinIdentityAuthorization,
-  AcceptJoinIdentityAuthorizationParams,
-} from './acceptJoinIdentityAuthorization';
+  consumeJoinIdentityAuthorization,
+  ConsumeJoinIdentityAuthorizationParams,
+} from './consumeJoinIdentityAuthorization';
 export { addInstruction, AddInstructionParams } from './addInstruction';
 // export { cancelProposal } from './cancelProposal';
 export { consumeAuthorizationRequests, ConsumeParams } from './consumeAuthorizationRequests';
@@ -41,3 +41,4 @@ export { transferTokenOwnership, TransferTokenOwnershipParams } from './transfer
 export { removePrimaryIssuanceAgent } from './removePrimaryIssuanceAgent';
 export { deletePortfolio } from './deletePortfolio';
 export { renamePortfolio, RenamePortfolioParams } from './renamePortfolio';
+export { moveFunds, MoveFundsParams } from './moveFunds';

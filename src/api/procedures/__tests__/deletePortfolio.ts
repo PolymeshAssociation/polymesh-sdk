@@ -44,7 +44,7 @@ describe('deletePortfolio procedure', () => {
       .returns(dsMockUtils.createMockBytes('someName'));
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        isOwned: true,
+        isOwnedBy: true,
         tokenBalances: [zeroBalance, zeroBalance],
       },
     });
@@ -78,7 +78,7 @@ describe('deletePortfolio procedure', () => {
   test('should throw an error if the Identity is not the owner of the Portfolio', async () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        isOwned: false,
+        isOwnedBy: false,
       },
     });
 
