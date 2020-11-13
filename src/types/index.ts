@@ -14,6 +14,7 @@ import {
 } from '~/api/entities';
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { CountryCode } from '~/generated/types';
+import { PortfolioId } from '~/types/internal';
 
 export * from '~/generated/types';
 
@@ -78,6 +79,7 @@ export enum RoleType {
   TokenOwner = 'TokenOwner',
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
+  PortfolioCustodian = 'PortfolioCustodian',
 }
 
 export interface TickerOwnerRole {
@@ -127,7 +129,24 @@ export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
   return role.type === RoleType.VenueOwner;
 }
 
-export type Role = TickerOwnerRole | TokenOwnerRole | CddProviderRole | VenueOwnerRole;
+export interface PortfolioCustodianRole {
+  type: RoleType.PortfolioCustodian;
+  portfolioId: PortfolioId;
+}
+
+/**
+ * @hidden
+ */
+export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodianRole {
+  return role.type === RoleType.PortfolioCustodian;
+}
+
+export type Role =
+  | TickerOwnerRole
+  | TokenOwnerRole
+  | CddProviderRole
+  | VenueOwnerRole
+  | PortfolioCustodianRole;
 
 export enum KnownTokenType {
   EquityCommon = 'EquityCommon',

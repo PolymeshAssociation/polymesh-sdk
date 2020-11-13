@@ -8,7 +8,15 @@ import { Entity, Identity } from '~/api/entities';
 import { Context } from '~/base';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole, VenueOwnerRole } from '~/types';
+import {
+  Order,
+  PortfolioCustodianRole,
+  Role,
+  RoleType,
+  TickerOwnerRole,
+  TokenOwnerRole,
+  VenueOwnerRole,
+} from '~/types';
 import * as utilsModule from '~/utils';
 
 jest.mock(
@@ -24,6 +32,18 @@ jest.mock(
 jest.mock(
   '~/api/entities/Venue',
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
+);
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
+);
+jest.mock(
+  '~/api/entities/DefaultPortfolio',
+  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+    '~/api/entities/DefaultPortfolio'
+  )
 );
 
 describe('Identity class', () => {
@@ -152,6 +172,43 @@ describe('Identity class', () => {
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
+    });
+
+    test('hasRole should check whether the Identity has the Portfolio Custodian role', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const portfolioId = {
+        did,
+        number: new BigNumber(1),
+      };
+      let role: PortfolioCustodianRole = { type: RoleType.PortfolioCustodian, portfolioId };
+
+      entityMockUtils.configureMocks({
+        numberedPortfolioOptions: { custodian: new Identity({ did }, context) },
+        defaultPortfolioOptions: { custodian: new Identity({ did }, context) },
+      });
+
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      identity.did = 'otherDid';
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+
+      role = { type: RoleType.PortfolioCustodian, portfolioId: { did } };
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+
+      identity.did = did;
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
     });
 
     test('hasRole should throw an error if the role is not recognized', () => {

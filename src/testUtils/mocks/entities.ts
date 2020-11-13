@@ -20,6 +20,7 @@ import {
   Venue,
 } from '~/api/entities';
 import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
+import { entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -134,12 +135,14 @@ interface NumberedPortfolioOptions {
   tokenBalances?: PortfolioBalance[];
   did?: string;
   exists?: boolean;
+  custodian?: Identity;
 }
 
 interface DefaultPortfolioOptions {
   isOwnedBy?: boolean;
   tokenBalances?: PortfolioBalance[];
   did?: string;
+  custodian?: Identity;
 }
 
 interface InstructionOptions {
@@ -187,8 +190,10 @@ let instructionGetLegsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
 let numberedPortfolioExistsStub: SinonStub;
+let numberedPortfolioGetCustodianStub: SinonStub;
 let defaultPortfolioIsOwnedByStub: SinonStub;
 let defaultPortfolioGetTokenBalancesStub: SinonStub;
+let defaultPortfolioGetCustodianStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -438,6 +443,7 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   ],
   did: 'someDid',
   exists: true,
+  custodian: {} as MockIdentity,
 };
 let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
 const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
@@ -450,6 +456,7 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
     },
   ],
   did: 'someDid',
+  custodian: {} as MockIdentity,
 };
 let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
 const defaultInstructionOptions: InstructionOptions = {
@@ -551,6 +558,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
     getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
     owner: { did: opts.did },
     exists: numberedPortfolioExistsStub.resolves(opts.exists),
+    getCustodian: numberedPortfolioGetCustodianStub.resolves(opts.custodian),
   } as unknown) as MockNumberedPortfolio;
 
   Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
@@ -573,6 +581,7 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
   numberedPortfolioIsOwnedByStub = sinon.stub();
   numberedPortfolioGetTokenBalancesStub = sinon.stub();
   numberedPortfolioExistsStub = sinon.stub();
+  numberedPortfolioGetCustodianStub = sinon.stub();
 
   numberedPortfolioOptions = { ...defaultNumberedPortfolioOptions, ...opts };
 
@@ -588,6 +597,7 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
     isOwnedBy: defaultPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getTokenBalances: defaultPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
     owner: { did: opts.did },
+    getCustodian: defaultPortfolioGetCustodianStub.resolves(opts.custodian),
   } as unknown) as MockDefaultPortfolio;
 
   Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
@@ -609,6 +619,7 @@ function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
   defaultPortfolioConstructorStub = sinon.stub();
   defaultPortfolioIsOwnedByStub = sinon.stub();
   defaultPortfolioGetTokenBalancesStub = sinon.stub();
+  defaultPortfolioGetCustodianStub = sinon.stub();
 
   defaultPortfolioOptions = { ...defaultDefaultPortfolioOptions, ...opts };
 
