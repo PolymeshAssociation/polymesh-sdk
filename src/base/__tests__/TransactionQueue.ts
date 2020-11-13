@@ -610,6 +610,7 @@ describe('Transaction Queue class', () => {
           args: [{ foo: 'bar' }],
           isCritical: true,
           autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          paidByThirdParty: true,
         },
       ];
 
