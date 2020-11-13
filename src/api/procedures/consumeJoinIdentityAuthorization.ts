@@ -1,20 +1,21 @@
 import { Account, AuthorizationRequest } from '~/api/entities';
 import { Procedure } from '~/base';
-import { numberToU64 } from '~/utils';
+import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils';
 
 /**
  * @hidden
  */
-export type AcceptJoinIdentityAuthorizationParams = {
+export type ConsumeJoinIdentityAuthorizationParams = {
   authRequest: AuthorizationRequest;
+  accept: boolean;
 };
 
 /**
  * @hidden
  */
-export async function prepareAcceptJoinIdentityAuthorization(
-  this: Procedure<AcceptJoinIdentityAuthorizationParams>,
-  args: AcceptJoinIdentityAuthorizationParams
+export async function prepareConsumeJoinIdentityAuthorization(
+  this: Procedure<ConsumeJoinIdentityAuthorizationParams>,
+  args: ConsumeJoinIdentityAuthorizationParams
 ): Promise<void> {
   const {
     context: {
@@ -26,9 +27,23 @@ export async function prepareAcceptJoinIdentityAuthorization(
   } = this;
   const {
     authRequest: { target, authId },
+    accept,
   } = args;
 
   let transaction;
+
+  const rawAuthId = numberToU64(authId, context);
+
+  if (!accept) {
+    this.addTransaction(
+      identity.removeAuthorization,
+      { paidByThirdParty: true },
+      signerValueToSignatory(signerToSignerValue(target), context),
+      rawAuthId
+    );
+
+    return;
+  }
 
   if (target instanceof Account) {
     transaction = identity.joinIdentityAsKey;
@@ -36,15 +51,15 @@ export async function prepareAcceptJoinIdentityAuthorization(
     transaction = identity.joinIdentityAsIdentity;
   }
 
-  this.addTransaction(transaction, {}, numberToU64(authId, context));
+  this.addTransaction(transaction, { paidByThirdParty: true }, rawAuthId);
 }
 
 /**
  * @hidden
  */
 export async function isAuthorized(
-  this: Procedure<AcceptJoinIdentityAuthorizationParams>,
-  { authRequest }: AcceptJoinIdentityAuthorizationParams
+  this: Procedure<ConsumeJoinIdentityAuthorizationParams>,
+  { authRequest }: ConsumeJoinIdentityAuthorizationParams
 ): Promise<boolean> {
   const { target } = authRequest;
   const { context } = this;
@@ -65,7 +80,7 @@ export async function isAuthorized(
 /**
  * @hidden
  */
-export const acceptJoinIdentityAuthorization = new Procedure(
-  prepareAcceptJoinIdentityAuthorization,
+export const consumeJoinIdentityAuthorization = new Procedure(
+  prepareConsumeJoinIdentityAuthorization,
   isAuthorized
 );

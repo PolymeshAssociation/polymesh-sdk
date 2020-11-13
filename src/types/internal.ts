@@ -98,6 +98,10 @@ export interface TransactionSpec<
    * number of elements in the batch (only applicable to batch transactions)
    */
   batchSize: number | null;
+  /**
+   * whether the transaction fees are paid by a third party (for example when joining an identity as a secondary key)
+   */
+  paidByThirdParty: boolean;
 }
 
 export enum SignerType {

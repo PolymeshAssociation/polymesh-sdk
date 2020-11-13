@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Entity, Identity } from '~/api/entities';
-import { acceptJoinIdentityAuthorization, consumeAuthorizationRequests } from '~/api/procedures';
+import { consumeAuthorizationRequests, consumeJoinIdentityAuthorization } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { Authorization, AuthorizationType, Signer } from '~/types';
 
@@ -91,10 +91,13 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
    * Accept the authorization request. You must be the target of the request to be able to accept it
    */
   public accept(): Promise<TransactionQueue> {
-    const { context } = this;
+    const {
+      context,
+      data: { type },
+    } = this;
 
-    if (this.data.type === AuthorizationType.JoinIdentity) {
-      return acceptJoinIdentityAuthorization.prepare({ authRequest: this }, context);
+    if (type === AuthorizationType.JoinIdentity) {
+      return consumeJoinIdentityAuthorization.prepare({ authRequest: this, accept: true }, context);
     }
 
     return consumeAuthorizationRequests.prepare({ authRequests: [this], accept: true }, context);
@@ -107,6 +110,18 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
    * - If you are the request target, this will reject the authorization
    */
   public remove(): Promise<TransactionQueue> {
+    const {
+      context,
+      data: { type },
+    } = this;
+
+    if (type === AuthorizationType.JoinIdentity) {
+      return consumeJoinIdentityAuthorization.prepare(
+        { authRequest: this, accept: false },
+        context
+      );
+    }
+
     return consumeAuthorizationRequests.prepare(
       { authRequests: [this], accept: false },
       this.context
