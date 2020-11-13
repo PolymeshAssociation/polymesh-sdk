@@ -54,6 +54,7 @@ import {
   Claim,
   ClaimType,
   Condition,
+  ConditionCompliance,
   ConditionTarget,
   ConditionType,
   CountryCode,
@@ -82,7 +83,7 @@ import {
 import {
   accountIdToString,
   addressToKey,
-  assetComplianceResultToRequirementCompliance,
+  assetComplianceResultToCompliance,
   assetIdentifierToTokenIdentifier,
   assetNameToString,
   assetTypeToString,
@@ -101,6 +102,7 @@ import {
   cddIdToString,
   cddStatusToBoolean,
   claimToMeshClaim,
+  complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
   createClaim,
   dateToMoment,
@@ -2293,6 +2295,210 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
   });
 });
 
+describe('complianceRequirementResultToRequirementCompliance', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('complianceRequirementResultToRequirementCompliance should convert a polkadot Compliance Requirement Result object to a RequirementCompliance', () => {
+    const id = 1;
+    const tokenDid = 'someTokenDid';
+    const cddId = 'someCddId';
+    const issuerDids = ['someDid', 'otherDid'];
+    const targetIdentityDid = 'someDid';
+    const context = dsMockUtils.getContextInstance();
+    const conditions: ConditionCompliance[] = [
+      {
+        condition: {
+          type: ConditionType.IsPresent,
+          target: ConditionTarget.Both,
+          claim: {
+            type: ClaimType.KnowYourCustomer,
+            scope: { type: ScopeType.Identity, value: tokenDid },
+          },
+          trustedClaimIssuers: issuerDids,
+        },
+        complies: true,
+      },
+      {
+        condition: {
+          type: ConditionType.IsAbsent,
+          target: ConditionTarget.Receiver,
+          claim: {
+            type: ClaimType.BuyLockup,
+            scope: { type: ScopeType.Identity, value: tokenDid },
+          },
+          trustedClaimIssuers: issuerDids,
+        },
+        complies: false,
+      },
+      {
+        condition: {
+          type: ConditionType.IsNoneOf,
+          target: ConditionTarget.Sender,
+          claims: [
+            {
+              type: ClaimType.Blocked,
+              scope: { type: ScopeType.Identity, value: tokenDid },
+            },
+            {
+              type: ClaimType.SellLockup,
+              scope: { type: ScopeType.Identity, value: tokenDid },
+            },
+          ],
+          trustedClaimIssuers: issuerDids,
+        },
+        complies: true,
+      },
+      {
+        condition: {
+          type: ConditionType.IsAnyOf,
+          target: ConditionTarget.Both,
+          claims: [
+            {
+              type: ClaimType.Exempted,
+              scope: { type: ScopeType.Identity, value: tokenDid },
+            },
+            {
+              type: ClaimType.CustomerDueDiligence,
+              id: cddId,
+            },
+          ],
+          trustedClaimIssuers: issuerDids,
+        },
+        complies: false,
+      },
+      {
+        condition: {
+          type: ConditionType.IsIdentity,
+          target: ConditionTarget.Sender,
+          identity: new Identity({ did: targetIdentityDid }, context),
+          trustedClaimIssuers: issuerDids,
+        },
+        complies: true,
+      },
+      {
+        condition: {
+          type: ConditionType.IsPrimaryIssuanceAgent,
+          target: ConditionTarget.Receiver,
+          trustedClaimIssuers: issuerDids,
+        },
+        complies: false,
+      },
+    ];
+    const fakeResult = {
+      id,
+      conditions,
+      complies: false,
+    };
+
+    const scope = dsMockUtils.createMockScope({
+      Identity: dsMockUtils.createMockIdentityId(tokenDid),
+    });
+    const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
+    const rawConditions = [
+      /* eslint-disable @typescript-eslint/camelcase */
+      dsMockUtils.createMockConditionResult({
+        condition: dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
+          }),
+          issuers,
+        }),
+        result: dsMockUtils.createMockBool(true),
+      }),
+      dsMockUtils.createMockConditionResult({
+        condition: dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
+          }),
+          issuers,
+        }),
+        result: dsMockUtils.createMockBool(false),
+      }),
+      dsMockUtils.createMockConditionResult({
+        condition: dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsNoneOf: [
+              dsMockUtils.createMockClaim({ Blocked: scope }),
+              dsMockUtils.createMockClaim({ SellLockup: scope }),
+            ],
+          }),
+          issuers,
+        }),
+        result: dsMockUtils.createMockBool(true),
+      }),
+      dsMockUtils.createMockConditionResult({
+        condition: dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsAnyOf: [
+              dsMockUtils.createMockClaim({ Exempted: scope }),
+              dsMockUtils.createMockClaim({
+                CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+              }),
+            ],
+          }),
+          issuers,
+        }),
+        result: dsMockUtils.createMockBool(false),
+      }),
+      dsMockUtils.createMockConditionResult({
+        condition: dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsIdentity: dsMockUtils.createMockTargetIdentity({
+              Specific: dsMockUtils.createMockIdentityId(targetIdentityDid),
+            }),
+          }),
+          issuers,
+        }),
+        result: dsMockUtils.createMockBool(true),
+      }),
+      dsMockUtils.createMockConditionResult({
+        condition: dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsIdentity: dsMockUtils.createMockTargetIdentity('PrimaryIssuanceAgent'),
+          }),
+          issuers,
+        }),
+        result: dsMockUtils.createMockBool(false),
+      }),
+    ];
+    const complianceRequirement = dsMockUtils.createMockComplianceRequirementResult({
+      sender_conditions: [
+        rawConditions[0],
+        rawConditions[2],
+        rawConditions[2],
+        rawConditions[3],
+        rawConditions[4],
+      ],
+      receiver_conditions: [
+        rawConditions[0],
+        rawConditions[1],
+        rawConditions[1],
+        rawConditions[3],
+        rawConditions[5],
+      ],
+      id: dsMockUtils.createMockU32(1),
+      result: dsMockUtils.createMockBool(false),
+    });
+    /* eslint-enable @typescript-eslint/camelcase */
+
+    const result = complianceRequirementResultToRequirementCompliance(
+      complianceRequirement,
+      dsMockUtils.getContextInstance()
+    );
+    expect(result.conditions).toEqual(expect.arrayContaining(fakeResult.conditions));
+  });
+});
+
 describe('requirementToComplianceRequirement and complianceRequirementToRequirement', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -2550,7 +2756,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
   });
 });
 
-describe('assetComplianceResultToRequirementCompliance', () => {
+describe('assetComplianceResultToCompliance', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2563,60 +2769,72 @@ describe('assetComplianceResultToRequirementCompliance', () => {
     dsMockUtils.cleanup();
   });
 
-  test('assetComplianceResultToRequirementCompliance should convert a polkadot AssetComplianceResult object to a RequirementCompliance', () => {
+  test('assetComplianceResultToCompliance should convert a polkadot AssetComplianceResult object to a RequirementCompliance', () => {
     const id = 1;
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
     const issuerDids = ['someDid', 'otherDid'];
     const context = dsMockUtils.getContextInstance();
-    const conditions: Condition[] = [
+    const conditions: ConditionCompliance[] = [
       {
-        type: ConditionType.IsPresent,
-        target: ConditionTarget.Both,
-        claim: {
-          type: ClaimType.KnowYourCustomer,
-          scope: { type: ScopeType.Identity, value: tokenDid },
+        condition: {
+          type: ConditionType.IsPresent,
+          target: ConditionTarget.Both,
+          claim: {
+            type: ClaimType.KnowYourCustomer,
+            scope: { type: ScopeType.Identity, value: tokenDid },
+          },
+          trustedClaimIssuers: issuerDids,
         },
-        trustedClaimIssuers: issuerDids,
+        complies: true,
       },
       {
-        type: ConditionType.IsAbsent,
-        target: ConditionTarget.Receiver,
-        claim: {
-          type: ClaimType.BuyLockup,
-          scope: { type: ScopeType.Identity, value: tokenDid },
+        condition: {
+          type: ConditionType.IsAbsent,
+          target: ConditionTarget.Receiver,
+          claim: {
+            type: ClaimType.BuyLockup,
+            scope: { type: ScopeType.Identity, value: tokenDid },
+          },
+          trustedClaimIssuers: issuerDids,
         },
-        trustedClaimIssuers: issuerDids,
+        complies: false,
       },
       {
-        type: ConditionType.IsNoneOf,
-        target: ConditionTarget.Sender,
-        claims: [
-          {
-            type: ClaimType.Blocked,
-            scope: { type: ScopeType.Identity, value: tokenDid },
-          },
-          {
-            type: ClaimType.SellLockup,
-            scope: { type: ScopeType.Identity, value: tokenDid },
-          },
-        ],
-        trustedClaimIssuers: issuerDids,
+        condition: {
+          type: ConditionType.IsNoneOf,
+          target: ConditionTarget.Sender,
+          claims: [
+            {
+              type: ClaimType.Blocked,
+              scope: { type: ScopeType.Identity, value: tokenDid },
+            },
+            {
+              type: ClaimType.SellLockup,
+              scope: { type: ScopeType.Identity, value: tokenDid },
+            },
+          ],
+          trustedClaimIssuers: issuerDids,
+        },
+        complies: true,
       },
       {
-        type: ConditionType.IsAnyOf,
-        target: ConditionTarget.Both,
-        claims: [
-          {
-            type: ClaimType.Exempted,
-            scope: { type: ScopeType.Identity, value: tokenDid },
-          },
-          {
-            type: ClaimType.CustomerDueDiligence,
-            id: cddId,
-          },
-        ],
-        trustedClaimIssuers: issuerDids,
+        condition: {
+          type: ConditionType.IsAnyOf,
+          target: ConditionTarget.Both,
+          claims: [
+            {
+              type: ClaimType.Exempted,
+              scope: { type: ScopeType.Identity, value: tokenDid },
+            },
+            {
+              type: ClaimType.CustomerDueDiligence,
+              id: cddId,
+            },
+          ],
+          trustedClaimIssuers: issuerDids,
+        },
+        complies: false,
       },
     ];
     const fakeResult = {
@@ -2630,37 +2848,50 @@ describe('assetComplianceResultToRequirementCompliance', () => {
     const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
     /* eslint-disable @typescript-eslint/camelcase */
     const rawConditions = [
-      dsMockUtils.createMockCondition({
-        condition_type: dsMockUtils.createMockConditionType({
-          IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
+      /* eslint-disable @typescript-eslint/camelcase */
+      dsMockUtils.createMockConditionResult({
+        condition: dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
+          }),
+          issuers,
         }),
-        issuers,
+        result: dsMockUtils.createMockBool(true),
       }),
-      dsMockUtils.createMockCondition({
-        condition_type: dsMockUtils.createMockConditionType({
-          IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
+      dsMockUtils.createMockConditionResult({
+        condition: dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
+          }),
+          issuers,
         }),
-        issuers,
+        result: dsMockUtils.createMockBool(false),
       }),
-      dsMockUtils.createMockCondition({
-        condition_type: dsMockUtils.createMockConditionType({
-          IsNoneOf: [
-            dsMockUtils.createMockClaim({ Blocked: scope }),
-            dsMockUtils.createMockClaim({ SellLockup: scope }),
-          ],
+      dsMockUtils.createMockConditionResult({
+        condition: dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsNoneOf: [
+              dsMockUtils.createMockClaim({ Blocked: scope }),
+              dsMockUtils.createMockClaim({ SellLockup: scope }),
+            ],
+          }),
+          issuers,
         }),
-        issuers,
+        result: dsMockUtils.createMockBool(true),
       }),
-      dsMockUtils.createMockCondition({
-        condition_type: dsMockUtils.createMockConditionType({
-          IsAnyOf: [
-            dsMockUtils.createMockClaim({ Exempted: scope }),
-            dsMockUtils.createMockClaim({
-              CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
-            }),
-          ],
+      dsMockUtils.createMockConditionResult({
+        condition: dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsAnyOf: [
+              dsMockUtils.createMockClaim({ Exempted: scope }),
+              dsMockUtils.createMockClaim({
+                CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+              }),
+            ],
+          }),
+          issuers,
         }),
-        issuers,
+        result: dsMockUtils.createMockBool(false),
       }),
     ];
 
@@ -2678,7 +2909,7 @@ describe('assetComplianceResultToRequirementCompliance', () => {
       result: dsMockUtils.createMockBool(true),
     });
 
-    let result = assetComplianceResultToRequirementCompliance(assetComplianceResult, context);
+    let result = assetComplianceResultToCompliance(assetComplianceResult, context);
     expect(result.requirements[0].conditions).toEqual(
       expect.arrayContaining(fakeResult.conditions)
     );
@@ -2690,7 +2921,7 @@ describe('assetComplianceResultToRequirementCompliance', () => {
       result: dsMockUtils.createMockBool(true),
     });
 
-    result = assetComplianceResultToRequirementCompliance(assetComplianceResult, context);
+    result = assetComplianceResultToCompliance(assetComplianceResult, context);
     expect(result.complies).toBeTruthy();
   });
 });
