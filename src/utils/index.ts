@@ -1503,14 +1503,17 @@ export function authorizationToAuthorizationData(
   const { type } = auth;
   let _value;
 
-  if (type === AuthorizationType.PortfolioCustody) {
+  if (auth.type === AuthorizationType.PortfolioCustody) {
     const {
       value: {
         owner: { did },
       },
       value,
-    } = auth as { value: NumberedPortfolio | DefaultPortfolio };
-    const number = (value as NumberedPortfolio).id;
+    } = auth;
+    let number;
+    if (value instanceof NumberedPortfolio) {
+      number = value.id;
+    }
     _value = portfolioIdToMeshPortfolioId(number ? { did, number } : { did }, context);
   } else {
     const { value = null } = auth as { value?: string };

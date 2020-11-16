@@ -78,6 +78,9 @@ interface IdentityOptions {
   hasRole?: boolean;
   hasValidCdd?: boolean;
   getPrimaryKey?: string;
+  authorizations?: {
+    getReceived: AuthorizationRequest[];
+  };
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -135,6 +138,7 @@ interface NumberedPortfolioOptions {
   custodian?: Identity;
   did?: string;
   exists?: boolean;
+  uuid?: string;
 }
 
 interface DefaultPortfolioOptions {
@@ -142,6 +146,7 @@ interface DefaultPortfolioOptions {
   tokenBalances?: PortfolioBalance[];
   did?: string;
   custodian?: Identity;
+  uuid?: string;
 }
 
 interface InstructionOptions {
@@ -171,6 +176,7 @@ let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
 let identityGetPrimaryKeyStub: SinonStub;
+let identityGetReceivedStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
@@ -366,6 +372,9 @@ const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
   getPrimaryKey: 'someAddress',
+  authorizations: {
+    getReceived: [],
+  },
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -442,6 +451,7 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   ],
   did: 'someDid',
   exists: true,
+  uuid: 'someUuid',
 };
 let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
 const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
@@ -454,6 +464,7 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
     },
   ],
   did: 'someDid',
+  uuid: 'someUuid',
 };
 let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
 const defaultInstructionOptions: InstructionOptions = {
@@ -742,6 +753,9 @@ function configureIdentity(opts: IdentityOptions): void {
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
     getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
     portfolios: {},
+    authorizations: {
+      getReceived: sinon.stub().resolves(opts.authorizations?.getReceived),
+    },
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -762,6 +776,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRoleStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
   identityGetPrimaryKeyStub = sinon.stub();
+  identityGetReceivedStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -911,7 +926,6 @@ function configureCurrentAccount(opts: CurrentAccountOptions): void {
     const value = merge({}, account, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/api/entities');
-    Object.setPrototypeOf(entities.CurrentAccount.prototype, entities.Account.prototype);
     Object.setPrototypeOf(value, entities.CurrentAccount.prototype);
     return value;
   });
@@ -1180,6 +1194,14 @@ export function getIdentityHasValidCddStub(): SinonStub {
  */
 export function getIdentityGetPrimaryKeyStub(): SinonStub {
   return identityGetPrimaryKeyStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Identity.authorizations.getReceived` method
+ */
+export function getIdentityGetReceivedStub(): SinonStub {
+  return identityGetReceivedStub;
 }
 
 /**

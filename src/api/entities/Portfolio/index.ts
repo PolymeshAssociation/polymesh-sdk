@@ -141,10 +141,10 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Send an invitation to an Account to assign it as custodian for this portfolio
+   * Send an invitation to an Identity to assign it as custodian for this Portfolio
    *
-   * @note this may create AuthorizationRequest which have to be accepted by
-   *   the corresponding Account. An Account or Identity can
+   * @note this may create an AuthorizationRequest which has to be accepted by
+   *   the corresponding Identity. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
   public setCustodian(args: SetCustodianParams): Promise<TransactionQueue<void>> {

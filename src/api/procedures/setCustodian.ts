@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Account, DefaultPortfolio, NumberedPortfolio } from '~/api/entities';
+import { DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { AuthorizationType, ErrorCode } from '~/types';
 import { SignerType } from '~/types/internal';
@@ -12,7 +12,7 @@ import {
 } from '~/utils';
 
 export interface SetCustodianParams {
-  targetAccount: string | Account;
+  targetIdentity: string | Identity;
   expiry?: Date;
 }
 
@@ -37,7 +37,7 @@ export async function prepareSetCustodian(
     context,
   } = this;
 
-  const { targetAccount, expiry, did, id } = args;
+  const { targetIdentity, expiry, did, id } = args;
 
   const portfolio = id
     ? new NumberedPortfolio({ did, id }, context)
@@ -55,40 +55,30 @@ export async function prepareSetCustodian(
     });
   }
 
-  const address = signerToString(targetAccount);
-  const authorizationRequests = await currentIdentity.authorizations.getSent();
+  const identityDid = await signerToString(targetIdentity);
+  const rawIdentity = new Identity({ did: identityDid }, context);
 
-  const hasPendingAuth = !!authorizationRequests.data.find(authorizationRequest => {
-    const {
-      target,
-      data,
-      data: { type },
-    } = authorizationRequest;
+  const authorizationRequests = await rawIdentity.authorizations.getReceived({
+    type: AuthorizationType.PortfolioCustody,
+    includeExpired: false,
+  });
 
-    if (type === AuthorizationType.PortfolioCustody) {
-      const authorizationData = data as { value: NumberedPortfolio | DefaultPortfolio };
-
-      return (
-        signerToString(target) === address &&
-        !authorizationRequest.isExpired() &&
-        type === AuthorizationType.PortfolioCustody &&
-        authorizationData.value.uuid === portfolio.uuid
-      );
-    }
-
-    return false;
+  const hasPendingAuth = authorizationRequests.find(authorizationRequest => {
+    const { issuer, data } = authorizationRequest;
+    const authorizationData = data as { value: NumberedPortfolio | DefaultPortfolio };
+    return rawIdentity.did === issuer.did && authorizationData.value.uuid === portfolio.uuid;
   });
 
   if (hasPendingAuth) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message:
-        'The target Account already has a pending invitation to be the custodian for the portfolio',
+        "The target Identity already has a pending invitation to be the Portfolio's custodian",
     });
   }
 
   const rawSignatory = signerValueToSignatory(
-    { type: SignerType.Account, value: address },
+    { type: SignerType.Identity, value: identityDid },
     context
   );
 

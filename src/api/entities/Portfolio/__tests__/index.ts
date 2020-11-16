@@ -232,15 +232,15 @@ describe('Portfolio class', () => {
       const id = new BigNumber(1);
       const did = 'someDid';
       const portfolio = new Portfolio({ id, did }, context);
-      const targetAccount = 'someTarget';
+      const targetIdentity = 'someTarget';
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       sinon
         .stub(setCustodian, 'prepare')
-        .withArgs({ id, did, targetAccount }, context)
+        .withArgs({ id, did, targetIdentity }, context)
         .resolves(expectedQueue);
 
-      const queue = await portfolio.setCustodian({ targetAccount });
+      const queue = await portfolio.setCustodian({ targetIdentity });
 
       expect(queue).toBe(expectedQueue);
     });

@@ -8,7 +8,7 @@ import { Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, ResultSet } from '~/types';
+import { Authorization, AuthorizationType } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -23,6 +23,11 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
     '~/api/entities/DefaultPortfolio'
   )
+);
+
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 
 describe('setCustodian procedure', () => {
@@ -53,15 +58,6 @@ describe('setCustodian procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
-
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        custodian: entityMockUtils.getCurrentIdentityInstance(),
-      },
-      defaultPortfolioOptions: {
-        custodian: entityMockUtils.getCurrentIdentityInstance(),
-      },
-    });
   });
 
   afterEach(() => {
@@ -76,10 +72,10 @@ describe('setCustodian procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if identity is not the custodian of the portfolio', async () => {
+  test('should throw an error if the Current Identity is not the custodian of the Portfolio', async () => {
     const did = 'someDid';
     const id = new BigNumber(1);
-    const args = { targetAccount: 'targetAccount', did, id };
+    const args = { targetIdentity: 'targetIdentity', did, id };
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
@@ -96,31 +92,36 @@ describe('setCustodian procedure', () => {
 
   test('should throw an error if the passed account has a pending authorization to accept', async () => {
     const did = 'someDid';
-    const args = { targetAccount: 'targetAccount', did };
+    const args = { targetIdentity: 'targetIdentity', did };
 
-    const target = new Account({ address: args.targetAccount }, mockContext);
+    const target = new Identity({ did: args.targetIdentity }, mockContext);
+    // const target = entityMockUtils.getIdentityInstance({did: args.targetIdentity, authorizations: { getReceived:  }})
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
     const fakePortfolio = new DefaultPortfolio({ did }, mockContext);
-    const sentAuthorizations: ResultSet<AuthorizationRequest> = {
-      data: [
-        new AuthorizationRequest(
-          {
-            target,
-            issuer: entityMockUtils.getIdentityInstance(),
-            authId: new BigNumber(1),
-            expiry: null,
-            data: { type: AuthorizationType.PortfolioCustody, value: fakePortfolio },
-          },
-          mockContext
-        ),
-      ],
-      next: 1,
-      count: 1,
-    };
+    const receivedAuthorizations: AuthorizationRequest[] = [
+      new AuthorizationRequest(
+        {
+          target,
+          issuer: entityMockUtils.getIdentityInstance({ did: args.targetIdentity }),
+          authId: new BigNumber(1),
+          expiry: null,
+          data: { type: AuthorizationType.PortfolioCustody, value: fakePortfolio },
+        },
+        mockContext
+      ),
+    ];
 
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        sentAuthorizations,
+    entityMockUtils.configureMocks({
+      identityOptions: {
+        authorizations: {
+          getReceived: receivedAuthorizations,
+        },
+      },
+      numberedPortfolioOptions: {
+        custodian: entityMockUtils.getCurrentIdentityInstance(),
+      },
+      defaultPortfolioOptions: {
+        custodian: entityMockUtils.getCurrentIdentityInstance(),
       },
     });
 
@@ -132,13 +133,13 @@ describe('setCustodian procedure', () => {
     ]);
 
     signerToStringStub.withArgs(signer).returns(signer.address);
-    signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);
-    signerToStringStub.withArgs(target).returns(args.targetAccount);
+    signerToStringStub.withArgs(args.targetIdentity).returns(args.targetIdentity);
+    signerToStringStub.withArgs(target).returns(args.targetIdentity);
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await expect(prepareSetCustodian.call(proc, args)).rejects.toThrow(
-      'The target Account already has a pending invitation to be the custodian for the portfolio'
+      "The target Identity already has a pending invitation to be the Portfolio's custodian"
     );
   });
 
@@ -146,8 +147,8 @@ describe('setCustodian procedure', () => {
     const did = 'someDid';
     const id = new BigNumber(1);
     const expiry = new Date('1/1/2040');
-    const args = { targetAccount: 'targetAccount', did };
-    const target = new Account({ address: args.targetAccount }, mockContext);
+    const args = { targetIdentity: 'targetIdentity', did };
+    const target = new Identity({ did: args.targetIdentity }, mockContext);
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
     const rawSignatory = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId('someAccountId'),
@@ -160,26 +161,31 @@ describe('setCustodian procedure', () => {
       PortfolioCustody: dsMockUtils.createMockPortfolioId({ did: rawDid, kind: rawPortfolioKind }),
     });
     const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
-    const sentAuthorizations: ResultSet<AuthorizationRequest> = {
-      data: [
-        new AuthorizationRequest(
-          {
-            target,
-            issuer: entityMockUtils.getIdentityInstance(),
-            authId: new BigNumber(1),
-            expiry: null,
-            data: { type: AuthorizationType.JoinIdentity, value: [] },
-          },
-          mockContext
-        ),
-      ],
-      next: 1,
-      count: 1,
-    };
+    const fakePortfolio = entityMockUtils.getNumberedPortfolioInstance({ uuid: 'otherUuid' });
+    const receivedAuthorizations: AuthorizationRequest[] = [
+      new AuthorizationRequest(
+        {
+          target,
+          issuer: entityMockUtils.getIdentityInstance(),
+          authId: new BigNumber(1),
+          expiry: null,
+          data: { type: AuthorizationType.PortfolioCustody, value: fakePortfolio },
+        },
+        mockContext
+      ),
+    ];
 
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        sentAuthorizations,
+    entityMockUtils.configureMocks({
+      identityOptions: {
+        authorizations: {
+          getReceived: receivedAuthorizations,
+        },
+      },
+      numberedPortfolioOptions: {
+        custodian: entityMockUtils.getCurrentIdentityInstance(),
+      },
+      defaultPortfolioOptions: {
+        custodian: entityMockUtils.getCurrentIdentityInstance(),
       },
     });
 
@@ -191,10 +197,10 @@ describe('setCustodian procedure', () => {
     ]);
 
     signerToStringStub.withArgs(signer).returns(signer.address);
-    signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);
+    signerToStringStub.withArgs(args.targetIdentity).returns(args.targetIdentity);
     signerToStringStub.withArgs(target).returns('someValue');
     signerValueToSignatoryStub
-      .withArgs({ type: SignerType.Account, value: args.targetAccount }, mockContext)
+      .withArgs({ type: SignerType.Identity, value: args.targetIdentity }, mockContext)
       .returns(rawSignatory);
     authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
