@@ -84,7 +84,6 @@ describe('Portfolio class', () => {
     beforeAll(() => {
       did = 'someDid';
       id = new BigNumber(1);
-      sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
     });
 
     afterAll(() => {
@@ -112,14 +111,6 @@ describe('Portfolio class', () => {
       identityIdToStringStub.returns(currentIdentityDid);
 
       result = await portfolio.isCustodiedBy({ identity: currentIdentityDid });
-      expect(result).toEqual(true);
-
-      dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian').returns({});
-
-      result = await portfolio.isCustodiedBy({ identity: 'otherDid' });
-      expect(result).toEqual(false);
-
-      result = await portfolio.isCustodiedBy({ identity: 'someDid' });
       expect(result).toEqual(true);
     });
   });
