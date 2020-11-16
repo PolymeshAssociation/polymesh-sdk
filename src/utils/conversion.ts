@@ -26,6 +26,7 @@ import {
   CddStatus,
   Claim as MeshClaim,
   ComplianceRequirement,
+  ComplianceRequirementResult,
   Condition as MeshCondition,
   ConditionType as MeshConditionType,
   Document,
@@ -72,7 +73,9 @@ import {
   AuthorizationType,
   Claim,
   ClaimType,
+  Compliance,
   Condition,
+  ConditionCompliance,
   ConditionTarget,
   ConditionType,
   ErrorCode,
@@ -1201,59 +1204,143 @@ export function requirementToComplianceRequirement(
 /**
  * @hidden
  */
-export function complianceRequirementToRequirement(
-  complianceRequirement: ComplianceRequirement,
+function meshConditionTypeToCondition(
+  meshConditionType: MeshConditionType,
   context: Context
-): Requirement {
-  const meshConditionTypeToCondition = (
-    meshConditionType: MeshConditionType
-  ):
-    | Pick<SingleClaimCondition, 'type' | 'claim'>
-    | Pick<MultiClaimCondition, 'type' | 'claims'>
-    | Pick<IdentityCondition, 'type' | 'identity'>
-    | Pick<PrimaryIssuanceAgentCondition, 'type'> => {
-    if (meshConditionType.isIsPresent) {
+):
+  | Pick<SingleClaimCondition, 'type' | 'claim'>
+  | Pick<MultiClaimCondition, 'type' | 'claims'>
+  | Pick<IdentityCondition, 'type' | 'identity'>
+  | Pick<PrimaryIssuanceAgentCondition, 'type'> {
+  if (meshConditionType.isIsPresent) {
+    return {
+      type: ConditionType.IsPresent,
+      claim: meshClaimToClaim(meshConditionType.asIsPresent),
+    };
+  }
+
+  if (meshConditionType.isIsAbsent) {
+    return {
+      type: ConditionType.IsAbsent,
+      claim: meshClaimToClaim(meshConditionType.asIsAbsent),
+    };
+  }
+
+  if (meshConditionType.isIsAnyOf) {
+    return {
+      type: ConditionType.IsAnyOf,
+      claims: meshConditionType.asIsAnyOf.map(claim => meshClaimToClaim(claim)),
+    };
+  }
+
+  if (meshConditionType.isIsIdentity) {
+    const target = meshConditionType.asIsIdentity;
+
+    if (target.isPrimaryIssuanceAgent) {
       return {
-        type: ConditionType.IsPresent,
-        claim: meshClaimToClaim(meshConditionType.asIsPresent),
-      };
-    }
-
-    if (meshConditionType.isIsAbsent) {
-      return {
-        type: ConditionType.IsAbsent,
-        claim: meshClaimToClaim(meshConditionType.asIsAbsent),
-      };
-    }
-
-    if (meshConditionType.isIsAnyOf) {
-      return {
-        type: ConditionType.IsAnyOf,
-        claims: meshConditionType.asIsAnyOf.map(claim => meshClaimToClaim(claim)),
-      };
-    }
-
-    if (meshConditionType.isIsIdentity) {
-      const target = meshConditionType.asIsIdentity;
-
-      if (target.isPrimaryIssuanceAgent) {
-        return {
-          type: ConditionType.IsPrimaryIssuanceAgent,
-        };
-      }
-
-      return {
-        type: ConditionType.IsIdentity,
-        identity: new Identity({ did: identityIdToString(target.asSpecific) }, context),
+        type: ConditionType.IsPrimaryIssuanceAgent,
       };
     }
 
     return {
-      type: ConditionType.IsNoneOf,
-      claims: meshConditionType.asIsNoneOf.map(claim => meshClaimToClaim(claim)),
+      type: ConditionType.IsIdentity,
+      identity: new Identity({ did: identityIdToString(target.asSpecific) }, context),
     };
+  }
+
+  return {
+    type: ConditionType.IsNoneOf,
+    claims: meshConditionType.asIsNoneOf.map(claim => meshClaimToClaim(claim)),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function complianceRequirementResultToRequirementCompliance(
+  complianceRequirement: ComplianceRequirementResult,
+  context: Context
+): RequirementCompliance {
+  const conditions: ConditionCompliance[] = [];
+
+  const conditionCompliancesAreEqual = (
+    { condition: aCondition, complies: aComplies }: ConditionCompliance,
+    { condition: bCondition, complies: bComplies }: ConditionCompliance
+  ): boolean => {
+    let equalClaims = false;
+
+    if (isSingleClaimCondition(aCondition) && isSingleClaimCondition(bCondition)) {
+      equalClaims = isEqual(aCondition.claim, bCondition.claim);
+    }
+
+    if (isMultiClaimCondition(aCondition) && isMultiClaimCondition(bCondition)) {
+      equalClaims = isEqual(aCondition.claims, bCondition.claims);
+    }
+
+    return (
+      equalClaims &&
+      isEqual(aCondition.trustedClaimIssuers, bCondition.trustedClaimIssuers) &&
+      aComplies === bComplies
+    );
   };
 
+  complianceRequirement.sender_conditions.forEach(
+    ({ condition: { condition_type: conditionType, issuers }, result }) => {
+      const newCondition = {
+        condition: {
+          ...meshConditionTypeToCondition(conditionType, context),
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
+        },
+        complies: boolToBoolean(result),
+      };
+      const existingCondition = conditions.find(condition =>
+        conditionCompliancesAreEqual(condition, newCondition)
+      );
+
+      if (!existingCondition) {
+        conditions.push(newCondition);
+      }
+    }
+  );
+
+  complianceRequirement.receiver_conditions.forEach(
+    ({ condition: { condition_type: conditionType, issuers }, result }) => {
+      const newCondition = {
+        condition: {
+          ...meshConditionTypeToCondition(conditionType, context),
+          target: ConditionTarget.Receiver,
+          trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
+        },
+        complies: boolToBoolean(result),
+      };
+
+      const existingCondition = conditions.find(condition =>
+        conditionCompliancesAreEqual(condition, newCondition)
+      );
+
+      if (existingCondition && existingCondition.condition.target === ConditionTarget.Sender) {
+        existingCondition.condition.target = ConditionTarget.Both;
+      } else {
+        conditions.push(newCondition);
+      }
+    }
+  );
+
+  return {
+    id: u32ToBigNumber(complianceRequirement.id).toNumber(),
+    conditions,
+    complies: boolToBoolean(complianceRequirement.result),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function complianceRequirementToRequirement(
+  complianceRequirement: ComplianceRequirement,
+  context: Context
+): Requirement {
   const conditions: Condition[] = [];
 
   const conditionsAreEqual = (a: Condition, b: Condition): boolean => {
@@ -1272,7 +1359,7 @@ export function complianceRequirementToRequirement(
 
   complianceRequirement.sender_conditions.forEach(({ condition_type: conditionType, issuers }) => {
     const newCondition = {
-      ...meshConditionTypeToCondition(conditionType),
+      ...meshConditionTypeToCondition(conditionType, context),
       target: ConditionTarget.Sender,
       trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
     };
@@ -1288,7 +1375,7 @@ export function complianceRequirementToRequirement(
   complianceRequirement.receiver_conditions.forEach(
     ({ condition_type: conditionType, issuers }) => {
       const newCondition = {
-        ...meshConditionTypeToCondition(conditionType),
+        ...meshConditionTypeToCondition(conditionType, context),
         target: ConditionTarget.Receiver,
         trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
       };
@@ -1387,15 +1474,14 @@ export function portfolioIdToMeshPortfolioId(
 /**
  * @hidden
  */
-export function assetComplianceResultToRequirementCompliance(
+export function assetComplianceResultToCompliance(
   assetComplianceResult: AssetComplianceResult,
   context: Context
-): RequirementCompliance {
+): Compliance {
   const { requirements: rawRequirements, result, paused } = assetComplianceResult;
-  const requirements = rawRequirements.map(requirement => ({
-    ...complianceRequirementToRequirement(requirement, context),
-    complies: boolToBoolean(requirement.result),
-  }));
+  const requirements = rawRequirements.map(requirement =>
+    complianceRequirementResultToRequirementCompliance(requirement, context)
+  );
 
   return {
     requirements,

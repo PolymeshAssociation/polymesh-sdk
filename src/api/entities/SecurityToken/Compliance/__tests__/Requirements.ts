@@ -367,7 +367,7 @@ describe('Requirements class', () => {
       stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
       assetComplianceResultToRequirementComplianceStub = sinon.stub(
         utilsConversionModule,
-        'assetComplianceResultToRequirementCompliance'
+        'assetComplianceResultToCompliance'
       );
       stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     });

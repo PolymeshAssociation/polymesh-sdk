@@ -409,8 +409,8 @@ export default {
       id: 'u32',
     },
     ComplianceRequirementResult: {
-      sender_conditions: 'Vec<Condition>',
-      receiver_conditions: 'Vec<Condition>',
+      sender_conditions: 'Vec<ConditionResult>',
+      receiver_conditions: 'Vec<ConditionResult>',
       id: 'u32',
       result: 'bool',
     },
@@ -421,13 +421,6 @@ export default {
         IsAnyOf: 'Vec<Claim>',
         IsNoneOf: 'Vec<Claim>',
         IsIdentity: 'TargetIdentity',
-        HasValidProofOfInvestor: 'Ticker',
-      },
-    },
-    ImplicitRequirementStatus: {
-      _enum: {
-        Active: '',
-        Inactive: '',
       },
     },
     Condition: {
@@ -502,13 +495,41 @@ export default {
     Url: 'Text',
     PipDescription: 'Text',
     PipsMetadata: {
-      proposer: 'AccountId',
       id: 'PipId',
-      end: 'u32',
       url: 'Option<Url>',
       description: 'Option<PipDescription>',
-      cool_off_until: 'u32',
-      beneficiaries: 'Vec<Beneficiary>',
+      created_at: 'BlockNumber',
+      transaction_version: 'u32',
+    },
+    Proposer: {
+      _enum: {
+        Community: 'AccountId',
+        Committee: 'Committee',
+      },
+    },
+    Committee: {
+      _enum: {
+        Technical: '',
+        Upgrade: '',
+      },
+    },
+    SkippedCount: 'u8',
+    SnapshottedPip: {
+      id: 'PipId',
+      weight: '(bool, Balance)',
+    },
+    SnapshotId: 'u32',
+    SnapshotMetadata: {
+      created_at: 'BlockNumber',
+      made_by: 'AccountId',
+      id: 'SnapshotId',
+    },
+    SnapshotResult: {
+      _enum: {
+        Approve: '',
+        Reject: '',
+        Skip: '',
+      },
     },
     Beneficiary: {
       id: 'IdentityId',
@@ -525,7 +546,7 @@ export default {
     },
     PipId: 'u32',
     ProposalState: {
-      _enum: ['Pending', 'Cancelled', 'Killed', 'Rejected', 'Referendum'],
+      _enum: ['Pending', 'Cancelled', 'Rejected', 'Scheduled', 'Failed', 'Executed'],
     },
     ReferendumState: {
       _enum: ['Pending', 'Scheduled', 'Rejected', 'Failed', 'Executed'],
@@ -537,6 +558,8 @@ export default {
       id: 'PipId',
       proposal: 'Call',
       state: 'ProposalState',
+      proposer: 'Proposer',
+      cool_off_until: 'u32',
     },
     ProposalData: {
       _enum: {

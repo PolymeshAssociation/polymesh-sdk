@@ -9,9 +9,9 @@ import {
   togglePauseRequirements,
 } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
-import { Requirement, RequirementCompliance, SubCallback, UnsubCallback } from '~/types';
+import { Compliance, Requirement, SubCallback, UnsubCallback } from '~/types';
 import {
-  assetComplianceResultToRequirementCompliance,
+  assetComplianceResultToCompliance,
   boolToBoolean,
   complianceRequirementToRequirement,
   identityIdToString,
@@ -149,7 +149,7 @@ export class Requirements extends Namespace<SecurityToken> {
   public async checkSettle(args: {
     from?: string | Identity;
     to: string | Identity;
-  }): Promise<RequirementCompliance> {
+  }): Promise<Compliance> {
     const {
       parent: { ticker },
       context: {
@@ -174,7 +174,7 @@ export class Requirements extends Namespace<SecurityToken> {
       primaryIssuanceAgent ? stringToIdentityId(primaryIssuanceAgent.did, context) : null
     );
 
-    return assetComplianceResultToRequirementCompliance(res, context);
+    return assetComplianceResultToCompliance(res, context);
   }
 
   /**

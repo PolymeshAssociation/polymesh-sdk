@@ -176,6 +176,7 @@ export class Context {
     }
 
     context.isArchiveNode = await context.isCurrentNodeArchive();
+    // context.isArchiveNode = true;
 
     return context;
   }
