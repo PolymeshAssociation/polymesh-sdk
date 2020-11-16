@@ -55,7 +55,7 @@ export async function prepareSetCustodian(
     });
   }
 
-  const identityDid = await signerToString(targetIdentity);
+  const identityDid = signerToString(targetIdentity);
   const rawIdentity = new Identity({ did: identityDid }, context);
 
   const authorizationRequests = await rawIdentity.authorizations.getReceived({
