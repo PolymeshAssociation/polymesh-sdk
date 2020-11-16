@@ -95,7 +95,6 @@ describe('setCustodian procedure', () => {
     const args = { targetIdentity: 'targetIdentity', did };
 
     const target = new Identity({ did: args.targetIdentity }, mockContext);
-    // const target = entityMockUtils.getIdentityInstance({did: args.targetIdentity, authorizations: { getReceived:  }})
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
     const fakePortfolio = new DefaultPortfolio({ did }, mockContext);
     const receivedAuthorizations: AuthorizationRequest[] = [
