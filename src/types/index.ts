@@ -341,10 +341,19 @@ export interface Requirement {
   conditions: Condition[];
 }
 
+export interface ConditionCompliance {
+  condition: Condition;
+  complies: boolean;
+}
+
 export interface RequirementCompliance {
-  requirements: (Requirement & {
-    complies: boolean;
-  })[];
+  id: number;
+  conditions: ConditionCompliance[];
+  complies: boolean;
+}
+
+export interface Compliance {
+  requirements: RequirementCompliance[];
   complies: boolean;
 }
 

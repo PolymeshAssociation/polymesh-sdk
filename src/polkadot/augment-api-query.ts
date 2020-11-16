@@ -113,12 +113,14 @@ import {
   ProposalDetails,
   ProtocolOp,
   ProverTickerKey,
-  Referendum,
   STO,
   SecurityToken,
   Signatory,
+  SkippedCount,
   SmartExtension,
   SmartExtensionType,
+  SnapshotMetadata,
+  SnapshottedPip,
   TargetIdAuthorization,
   Ticker,
   TickerRangeProof,
@@ -473,6 +475,10 @@ declare module '@polkadot/api/types/storage' {
        **/
       activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
       /**
+       * Limit of how many "active" members there can be.
+       **/
+      activeMembersLimit: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
        * The current "inactive" membership, stored as an ordered Vec.
        **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
@@ -482,6 +488,10 @@ declare module '@polkadot/api/types/storage' {
        * The current "active" membership, stored as an ordered Vec.
        **/
       activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * Limit of how many "active" members there can be.
+       **/
+      activeMembersLimit: AugmentedQuery<ApiType, () => Observable<u32>>;
       /**
        * The current "inactive" membership, stored as an ordered Vec.
        **/
@@ -928,6 +938,20 @@ declare module '@polkadot/api/types/storage' {
     };
     pips: {
       /**
+       * Total count of current pending or scheduled PIPs.
+       **/
+      activePipCount: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * The maximum allowed number for `ActivePipCount`.
+       * Once reached, new PIPs cannot be proposed by community members.
+       **/
+      activePipLimit: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * All existing PIPs where the proposer is a committee.
+       * This list is a cache of all ids in `Proposals` with `Proposer::Committee(_)`.
+       **/
+      committeePips: AugmentedQuery<ApiType, () => Observable<Vec<PipId>>>;
+      /**
        * Default enactment period that will be use after a proposal is accepted by GC.
        **/
       defaultEnactmentPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
@@ -943,7 +967,19 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<DepositInfo>
       >;
       /**
-       * The minimum amount to be used as a deposit for a public referendum proposal.
+       * Maps block numbers to list of PIPs which should be executed at the block number.
+       * block number -> Pip id
+       **/
+      executionSchedule: AugmentedQuery<
+        ApiType,
+        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
+      >;
+      /**
+       * Maximum times a PIP can be skipped before triggering `CannotSkipPip` in `enact_snapshot_results`.
+       **/
+      maxPipSkipCount: AugmentedQuery<ApiType, () => Observable<SkippedCount>>;
+      /**
+       * The minimum amount to be used as a deposit for community PIP creation.
        **/
       minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
       /**
@@ -951,14 +987,25 @@ declare module '@polkadot/api/types/storage' {
        **/
       pipIdSequence: AugmentedQuery<ApiType, () => Observable<u32>>;
       /**
+       * The number of times a certain PIP has been skipped.
+       * Once a (configurable) threshhold is exceeded, a PIP cannot be skipped again.
+       **/
+      pipSkipCount: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<SkippedCount>
+      >;
+      /**
+       * Maps PIPs to the block at which they will be executed, if any.
+       **/
+      pipToSchedule: AugmentedQuery<
+        ApiType,
+        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<BlockNumber>>
+      >;
+      /**
        * During Cool-off period, proposal owner can amend any PIP detail or cancel the entire
        * proposal.
        **/
       proposalCoolOffPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
-      /**
-       * How long (in blocks) a ballot runs
-       **/
-      proposalDuration: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
       /**
        * The metadata of the active proposals.
        **/
@@ -983,13 +1030,6 @@ declare module '@polkadot/api/types/storage' {
         (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<Pip>>
       >;
       /**
-       * It maps the block number where a list of proposal are considered as matured.
-       **/
-      proposalsMaturingAt: AugmentedQuery<
-        ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
-      >;
-      /**
        * Votes per Proposal and account. Used to avoid double vote issue.
        * (proposal id, account) -> Vote
        **/
@@ -998,32 +1038,28 @@ declare module '@polkadot/api/types/storage' {
         (
           key1: PipId | AnyNumber | Uint8Array,
           key2: AccountId | string | Uint8Array
-        ) => Observable<Vote>
+        ) => Observable<Option<Vote>>
       >;
       /**
        * Determines whether historical PIP data is persisted or removed
        **/
       pruneHistoricalPips: AugmentedQuery<ApiType, () => Observable<bool>>;
       /**
-       * Minimum stake a proposal must gather in order to be considered by the committee.
+       * Snapshots so far. id can be used to keep track of snapshots off-chain.
        **/
-      quorumThreshold: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      snapshotIdSequence: AugmentedQuery<ApiType, () => Observable<u32>>;
       /**
-       * Proposals that have met the quorum threshold to be put forward to a governance committee
-       * proposal id -> proposal
+       * The metadata of the snapshot, if there is one.
        **/
-      referendums: AugmentedQuery<
-        ApiType,
-        (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<Referendum>>
-      >;
+      snapshotMeta: AugmentedQuery<ApiType, () => Observable<Option<SnapshotMetadata>>>;
       /**
-       * List of id's of current scheduled referendums.
-       * block number -> Pip id
+       * The priority queue (lowest priority at index 0) of PIPs at the point of snapshotting.
+       * Priority is defined by the `weight` in the `SnapshottedPIP`.
+       *
+       * A queued PIP can be skipped. Doing so bumps the `pip_skip_count`.
+       * Once a (configurable) threshhold is exceeded, a PIP cannot be skipped again.
        **/
-      scheduledReferendumsAt: AugmentedQuery<
-        ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
-      >;
+      snapshotQueue: AugmentedQuery<ApiType, () => Observable<Vec<SnapshottedPip>>>;
     };
     polymeshCommittee: {
       /**
@@ -1763,6 +1799,56 @@ declare module '@polkadot/api/types/storage' {
        **/
       parentHash: AugmentedQuery<ApiType, () => Observable<Hash>>;
     };
+    technicalCommittee: {
+      /**
+       * The current members of the committee.
+       **/
+      members: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * Proposals so far.
+       **/
+      proposalCount: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * Actual proposal for a given hash.
+       **/
+      proposalOf: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>
+      >;
+      /**
+       * The hashes of the active proposals.
+       **/
+      proposals: AugmentedQuery<ApiType, () => Observable<Vec<Hash>>>;
+      /**
+       * Release coordinator.
+       **/
+      releaseCoordinator: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
+      /**
+       * Vote threshold for an approval.
+       **/
+      voteThreshold: AugmentedQuery<ApiType, () => Observable<ITuple<[u32, u32]>>>;
+      /**
+       * PolymeshVotes on a given proposal, if it is ongoing.
+       **/
+      voting: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<PolymeshVotes>>
+      >;
+    };
+    technicalCommitteeMembership: {
+      /**
+       * The current "active" membership, stored as an ordered Vec.
+       **/
+      activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * Limit of how many "active" members there can be.
+       **/
+      activeMembersLimit: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * The current "inactive" membership, stored as an ordered Vec.
+       **/
+      inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
+    };
     timestamp: {
       /**
        * Did the timestamp get updated in this block?
@@ -1775,6 +1861,56 @@ declare module '@polkadot/api/types/storage' {
     };
     transactionPayment: {
       nextFeeMultiplier: AugmentedQuery<ApiType, () => Observable<Multiplier>>;
+    };
+    upgradeCommittee: {
+      /**
+       * The current members of the committee.
+       **/
+      members: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * Proposals so far.
+       **/
+      proposalCount: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * Actual proposal for a given hash.
+       **/
+      proposalOf: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>
+      >;
+      /**
+       * The hashes of the active proposals.
+       **/
+      proposals: AugmentedQuery<ApiType, () => Observable<Vec<Hash>>>;
+      /**
+       * Release coordinator.
+       **/
+      releaseCoordinator: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>>;
+      /**
+       * Vote threshold for an approval.
+       **/
+      voteThreshold: AugmentedQuery<ApiType, () => Observable<ITuple<[u32, u32]>>>;
+      /**
+       * PolymeshVotes on a given proposal, if it is ongoing.
+       **/
+      voting: AugmentedQuery<
+        ApiType,
+        (arg: Hash | string | Uint8Array) => Observable<Option<PolymeshVotes>>
+      >;
+    };
+    upgradeCommitteeMembership: {
+      /**
+       * The current "active" membership, stored as an ordered Vec.
+       **/
+      activeMembers: AugmentedQuery<ApiType, () => Observable<Vec<IdentityId>>>;
+      /**
+       * Limit of how many "active" members there can be.
+       **/
+      activeMembersLimit: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
+       * The current "inactive" membership, stored as an ordered Vec.
+       **/
+      inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
     };
     utility: {
       nonces: AugmentedQuery<
