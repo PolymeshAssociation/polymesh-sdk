@@ -9,7 +9,7 @@ import {
   signerToSignerValue,
   signerToString,
   signerValueToSignatory,
-} from '~/utils';
+} from '~/utils/conversion';
 
 export interface SetCustodianParams {
   targetIdentity: string | Identity;
