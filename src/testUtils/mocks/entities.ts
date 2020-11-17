@@ -20,7 +20,6 @@ import {
   Venue,
 } from '~/api/entities';
 import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
-import { entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -605,8 +604,8 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
     const value = merge({}, defaultPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/api/entities');
-    Object.setPrototypeOf(entities.NumberedPortfolio.prototype, entities.Portfolio.prototype);
-    Object.setPrototypeOf(value, entities.NumberedPortfolio.prototype);
+    Object.setPrototypeOf(entities.DefaultPortfolio.prototype, entities.Portfolio.prototype);
+    Object.setPrototypeOf(value, entities.DefaultPortfolio.prototype);
     return value;
   });
 }

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode } from '~/types';
+import { ErrorCode, Role, RoleType } from '~/types';
 import { numberToU64, stringToIdentityId } from '~/utils';
 
 export interface DeletePortfolioParams {
@@ -33,8 +33,7 @@ export async function prepareDeletePortfolio(
   const identityId = stringToIdentityId(did, context);
   const rawPortfolioNumber = numberToU64(id, context);
 
-  const [isOwned, rawPortfolioName, portfolioBalances] = await Promise.all([
-    numberedPortfolio.isOwnedBy(),
+  const [rawPortfolioName, portfolioBalances] = await Promise.all([
     queryPortfolio.portfolios(identityId, rawPortfolioNumber),
     numberedPortfolio.getTokenBalances(),
   ]);
@@ -43,13 +42,6 @@ export async function prepareDeletePortfolio(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: "The Portfolio doesn't exist",
-    });
-  }
-
-  if (!isOwned) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You are not the owner of this Portfolio',
     });
   }
 
@@ -66,4 +58,12 @@ export async function prepareDeletePortfolio(
 /**
  * @hidden
  */
-export const deletePortfolio = new Procedure(prepareDeletePortfolio);
+export function getRequiredRoles({ did, id }: DeletePortfolioParams): Role[] {
+  const portfolioId = { did, number: id };
+  return [{ type: RoleType.PortfolioCustodian, portfolioId }];
+}
+
+/**
+ * @hidden
+ */
+export const deletePortfolio = new Procedure(prepareDeletePortfolio, getRequiredRoles);

@@ -3,11 +3,11 @@ import { MovePortfolioItem, PortfolioId as MeshPortfolioId } from 'polymesh-type
 import sinon from 'sinon';
 
 import { DefaultPortfolio, NumberedPortfolio, SecurityToken } from '~/api/entities';
-import { Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
+import { getRequiredRoles, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, PortfolioMovement } from '~/types';
+import { PortfolioBalance, PortfolioMovement, RoleType } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsModule from '~/utils';
 
@@ -93,28 +93,6 @@ describe('moveFunds procedure', () => {
         items: [],
       })
     ).rejects.toThrow('Both portfolios should have the same owner');
-  });
-
-  test('should throw an error if current identity is not the owner of the origin portfolio', async () => {
-    const id = new BigNumber(1);
-    const did = 'otherDid';
-    const samePortfolio = entityMockUtils.getNumberedPortfolioInstance({
-      id,
-      did,
-    });
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-    const fakePortfolioId = { did, number: id };
-
-    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio, mockContext).resolves(fakePortfolioId);
-    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio, mockContext).resolves(fakePortfolioId);
-
-    return expect(
-      prepareMoveFunds.call(proc, {
-        from: samePortfolio,
-        to: samePortfolio,
-        items: [],
-      })
-    ).rejects.toThrow('The current identity should be the owner of the origin portfolio');
   });
 
   test('should throw an error if both portfolios are the same', async () => {
@@ -369,5 +347,36 @@ describe('moveFunds procedure', () => {
       rawToMeshPortfolioId,
       [rawMovePortfolioItem]
     );
+  });
+});
+
+describe('getRequiredRoles', () => {
+  const mockContext = dsMockUtils.getContextInstance();
+
+  test('should return a portfolio custodian role with did and number', () => {
+    const id = new BigNumber(1);
+    const did = 'someDid';
+    const from = new NumberedPortfolio({ id, did }, mockContext);
+
+    const args = {
+      from,
+    } as Params;
+
+    const portfolioId = { did, number: id };
+
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
+  });
+
+  test('should return a portfolio custodian role with did', () => {
+    const did = 'someDid';
+    const from = new DefaultPortfolio({ did }, mockContext);
+
+    const args = {
+      from,
+    } as Params;
+
+    const portfolioId = { did };
+
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
   });
 });
