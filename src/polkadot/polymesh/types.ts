@@ -275,6 +275,12 @@ export interface Commission extends Enum {
   readonly asGlobal: u32;
 }
 
+/** @name Committee */
+export interface Committee extends Enum {
+  readonly isTechnical: boolean;
+  readonly isUpgrade: boolean;
+}
+
 /** @name ComplianceRequirement */
 export interface ComplianceRequirement extends Struct {
   readonly sender_conditions: Vec<Condition>;
@@ -284,8 +290,8 @@ export interface ComplianceRequirement extends Struct {
 
 /** @name ComplianceRequirementResult */
 export interface ComplianceRequirementResult extends Struct {
-  readonly sender_conditions: Vec<Condition>;
-  readonly receiver_conditions: Vec<Condition>;
+  readonly sender_conditions: Vec<ConditionResult>;
+  readonly receiver_conditions: Vec<ConditionResult>;
   readonly id: u32;
   readonly result: bool;
 }
@@ -314,8 +320,6 @@ export interface ConditionType extends Enum {
   readonly asIsNoneOf: Vec<Claim>;
   readonly isIsIdentity: boolean;
   readonly asIsIdentity: TargetIdentity;
-  readonly isHasValidProofOfInvestor: boolean;
-  readonly asHasValidProofOfInvestor: Ticker;
 }
 
 /** @name Counter */
@@ -696,12 +700,6 @@ export interface IdentityRole extends Enum {
   readonly isVerifiedIdentityClaimIssuer: boolean;
 }
 
-/** @name ImplicitRequirementStatus */
-export interface ImplicitRequirementStatus extends Enum {
-  readonly isActive: boolean;
-  readonly isInactive: boolean;
-}
-
 /** @name InactiveMember */
 export interface InactiveMember extends Struct {
   readonly id: IdentityId;
@@ -841,6 +839,8 @@ export interface Pip extends Struct {
   readonly id: PipId;
   readonly proposal: Call;
   readonly state: ProposalState;
+  readonly proposer: Proposer;
+  readonly cool_off_until: u32;
 }
 
 /** @name PipDescription */
@@ -851,13 +851,11 @@ export interface PipId extends u32 {}
 
 /** @name PipsMetadata */
 export interface PipsMetadata extends Struct {
-  readonly proposer: AccountId;
   readonly id: PipId;
-  readonly end: u32;
   readonly url: Option<Url>;
   readonly description: Option<PipDescription>;
-  readonly cool_off_until: u32;
-  readonly beneficiaries: Vec<Beneficiary>;
+  readonly created_at: BlockNumber;
+  readonly transaction_version: u32;
 }
 
 /** @name PolymeshVotes */
@@ -922,9 +920,10 @@ export interface ProposalDetails extends Struct {
 export interface ProposalState extends Enum {
   readonly isPending: boolean;
   readonly isCancelled: boolean;
-  readonly isKilled: boolean;
   readonly isRejected: boolean;
-  readonly isReferendum: boolean;
+  readonly isScheduled: boolean;
+  readonly isFailed: boolean;
+  readonly isExecuted: boolean;
 }
 
 /** @name ProposalStatus */
@@ -934,6 +933,14 @@ export interface ProposalStatus extends Enum {
   readonly isExecutionSuccessful: boolean;
   readonly isExecutionFailed: boolean;
   readonly isRejected: boolean;
+}
+
+/** @name Proposer */
+export interface Proposer extends Enum {
+  readonly isCommunity: boolean;
+  readonly asCommunity: AccountId;
+  readonly isCommittee: boolean;
+  readonly asCommittee: Committee;
 }
 
 /** @name ProtocolOp */
@@ -1064,6 +1071,9 @@ export interface SimpleTokenRecord extends Struct {
   readonly owner_did: IdentityId;
 }
 
+/** @name SkippedCount */
+export interface SkippedCount extends u8 {}
+
 /** @name SmartExtension */
 export interface SmartExtension extends Struct {
   readonly extension_type: SmartExtensionType;
@@ -1081,6 +1091,29 @@ export interface SmartExtensionType extends Enum {
   readonly isOfferings: boolean;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
+}
+
+/** @name SnapshotId */
+export interface SnapshotId extends u32 {}
+
+/** @name SnapshotMetadata */
+export interface SnapshotMetadata extends Struct {
+  readonly created_at: BlockNumber;
+  readonly made_by: AccountId;
+  readonly id: SnapshotId;
+}
+
+/** @name SnapshotResult */
+export interface SnapshotResult extends Enum {
+  readonly isApprove: boolean;
+  readonly isReject: boolean;
+  readonly isSkip: boolean;
+}
+
+/** @name SnapshottedPip */
+export interface SnapshottedPip extends Struct {
+  readonly id: PipId;
+  readonly weight: ITuple<[bool, Balance]>;
 }
 
 /** @name STO */

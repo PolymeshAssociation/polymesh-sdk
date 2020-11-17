@@ -1,7 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import { Compact, Option, Raw, Vec } from '@polkadot/types/codec';
+import { Compact, Json, Option, Raw, Vec } from '@polkadot/types/codec';
 import {
   BitVec,
   Bytes,
@@ -85,9 +85,14 @@ import {
   CodeHash,
   ContractCallRequest,
   ContractExecResult,
-  ContractExecResultSuccess,
+  ContractExecResultErr,
+  ContractExecResultErrModule,
+  ContractExecResultOk,
+  ContractExecResultResult,
   ContractExecResultSuccessTo255,
+  ContractExecResultSuccessTo260,
   ContractExecResultTo255,
+  ContractExecResultTo260,
   ContractInfo,
   ContractStorageKey,
   Gas,
@@ -404,6 +409,7 @@ import {
   LookupTarget,
   ModuleId,
   Moment,
+  MultiAddress,
   OpaqueCall,
   Origin,
   OriginCaller,
@@ -570,6 +576,7 @@ import {
   RawOrigin,
   RefCount,
   RefCountTo259,
+  SyncState,
   SystemOrigin,
   TransactionValidityError,
   UnknownTransaction,
@@ -621,6 +628,7 @@ import {
   ClaimType,
   ClassicTickerRegistration,
   Commission,
+  Committee,
   ComplianceRequirement,
   ComplianceRequirementResult,
   Condition,
@@ -648,7 +656,6 @@ import {
   IdentityClaimKey,
   IdentityId,
   IdentityRole,
-  ImplicitRequirementStatus,
   InactiveMember,
   Instruction,
   InstructionStatus,
@@ -686,6 +693,7 @@ import {
   ProposalDetails,
   ProposalState,
   ProposalStatus,
+  Proposer,
   ProtocolOp,
   ProverTickerKey,
   Receipt,
@@ -703,9 +711,14 @@ import {
   SettlementType,
   Signatory,
   SimpleTokenRecord,
+  SkippedCount,
   SmartExtension,
   SmartExtensionName,
   SmartExtensionType,
+  SnapshotId,
+  SnapshotMetadata,
+  SnapshotResult,
+  SnapshottedPip,
   TargetIdAuthorization,
   TargetIdentity,
   Ticker,
@@ -803,6 +816,9 @@ declare module '@polkadot/types/types/registry' {
     'Compact<usize>': Compact<usize>;
     'Option<usize>': Option<usize>;
     'Vec<usize>': Vec<usize>;
+    Json: Json;
+    'Option<Json>': Option<Json>;
+    'Vec<Json>': Vec<Json>;
     Raw: Raw;
     'Option<Raw>': Option<Raw>;
     'Vec<Raw>': Vec<Raw>;
@@ -954,6 +970,9 @@ declare module '@polkadot/types/types/registry' {
     ModuleId: ModuleId;
     'Option<ModuleId>': Option<ModuleId>;
     'Vec<ModuleId>': Vec<ModuleId>;
+    MultiAddress: MultiAddress;
+    'Option<MultiAddress>': Option<MultiAddress>;
+    'Vec<MultiAddress>': Vec<MultiAddress>;
     Moment: Moment;
     'Compact<Moment>': Compact<Moment>;
     'Option<Moment>': Option<Moment>;
@@ -1158,9 +1177,24 @@ declare module '@polkadot/types/types/registry' {
     ContractExecResultTo255: ContractExecResultTo255;
     'Option<ContractExecResultTo255>': Option<ContractExecResultTo255>;
     'Vec<ContractExecResultTo255>': Vec<ContractExecResultTo255>;
-    ContractExecResultSuccess: ContractExecResultSuccess;
-    'Option<ContractExecResultSuccess>': Option<ContractExecResultSuccess>;
-    'Vec<ContractExecResultSuccess>': Vec<ContractExecResultSuccess>;
+    ContractExecResultSuccessTo260: ContractExecResultSuccessTo260;
+    'Option<ContractExecResultSuccessTo260>': Option<ContractExecResultSuccessTo260>;
+    'Vec<ContractExecResultSuccessTo260>': Vec<ContractExecResultSuccessTo260>;
+    ContractExecResultTo260: ContractExecResultTo260;
+    'Option<ContractExecResultTo260>': Option<ContractExecResultTo260>;
+    'Vec<ContractExecResultTo260>': Vec<ContractExecResultTo260>;
+    ContractExecResultErrModule: ContractExecResultErrModule;
+    'Option<ContractExecResultErrModule>': Option<ContractExecResultErrModule>;
+    'Vec<ContractExecResultErrModule>': Vec<ContractExecResultErrModule>;
+    ContractExecResultErr: ContractExecResultErr;
+    'Option<ContractExecResultErr>': Option<ContractExecResultErr>;
+    'Vec<ContractExecResultErr>': Vec<ContractExecResultErr>;
+    ContractExecResultOk: ContractExecResultOk;
+    'Option<ContractExecResultOk>': Option<ContractExecResultOk>;
+    'Vec<ContractExecResultOk>': Vec<ContractExecResultOk>;
+    ContractExecResultResult: ContractExecResultResult;
+    'Option<ContractExecResultResult>': Option<ContractExecResultResult>;
+    'Vec<ContractExecResultResult>': Vec<ContractExecResultResult>;
     ContractExecResult: ContractExecResult;
     'Option<ContractExecResult>': Option<ContractExecResult>;
     'Vec<ContractExecResult>': Vec<ContractExecResult>;
@@ -1863,6 +1897,9 @@ declare module '@polkadot/types/types/registry' {
     'Compact<RefCountTo259>': Compact<RefCountTo259>;
     'Option<RefCountTo259>': Option<RefCountTo259>;
     'Vec<RefCountTo259>': Vec<RefCountTo259>;
+    SyncState: SyncState;
+    'Option<SyncState>': Option<SyncState>;
+    'Vec<SyncState>': Vec<SyncState>;
     SystemOrigin: SystemOrigin;
     'Option<SystemOrigin>': Option<SystemOrigin>;
     'Vec<SystemOrigin>': Vec<SystemOrigin>;
@@ -2550,9 +2587,6 @@ declare module '@polkadot/types/types/registry' {
     ConditionType: ConditionType;
     'Option<ConditionType>': Option<ConditionType>;
     'Vec<ConditionType>': Vec<ConditionType>;
-    ImplicitRequirementStatus: ImplicitRequirementStatus;
-    'Option<ImplicitRequirementStatus>': Option<ImplicitRequirementStatus>;
-    'Vec<ImplicitRequirementStatus>': Vec<ImplicitRequirementStatus>;
     Condition: Condition;
     'Option<Condition>': Option<Condition>;
     'Vec<Condition>': Vec<Condition>;
@@ -2569,6 +2603,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<SimpleTokenRecord>': Option<SimpleTokenRecord>;
     'Vec<SimpleTokenRecord>': Vec<SimpleTokenRecord>;
     FeeOf: FeeOf;
+    'Compact<FeeOf>': Compact<FeeOf>;
     'Option<FeeOf>': Option<FeeOf>;
     'Vec<FeeOf>': Vec<FeeOf>;
     Dividend: Dividend;
@@ -2607,6 +2642,29 @@ declare module '@polkadot/types/types/registry' {
     PipsMetadata: PipsMetadata;
     'Option<PipsMetadata>': Option<PipsMetadata>;
     'Vec<PipsMetadata>': Vec<PipsMetadata>;
+    Proposer: Proposer;
+    'Option<Proposer>': Option<Proposer>;
+    'Vec<Proposer>': Vec<Proposer>;
+    Committee: Committee;
+    'Option<Committee>': Option<Committee>;
+    'Vec<Committee>': Vec<Committee>;
+    SkippedCount: SkippedCount;
+    'Compact<SkippedCount>': Compact<SkippedCount>;
+    'Option<SkippedCount>': Option<SkippedCount>;
+    'Vec<SkippedCount>': Vec<SkippedCount>;
+    SnapshottedPip: SnapshottedPip;
+    'Option<SnapshottedPip>': Option<SnapshottedPip>;
+    'Vec<SnapshottedPip>': Vec<SnapshottedPip>;
+    SnapshotId: SnapshotId;
+    'Compact<SnapshotId>': Compact<SnapshotId>;
+    'Option<SnapshotId>': Option<SnapshotId>;
+    'Vec<SnapshotId>': Vec<SnapshotId>;
+    SnapshotMetadata: SnapshotMetadata;
+    'Option<SnapshotMetadata>': Option<SnapshotMetadata>;
+    'Vec<SnapshotMetadata>': Vec<SnapshotMetadata>;
+    SnapshotResult: SnapshotResult;
+    'Option<SnapshotResult>': Option<SnapshotResult>;
+    'Vec<SnapshotResult>': Vec<SnapshotResult>;
     Beneficiary: Beneficiary;
     'Option<Beneficiary>': Option<Beneficiary>;
     'Vec<Beneficiary>': Vec<Beneficiary>;

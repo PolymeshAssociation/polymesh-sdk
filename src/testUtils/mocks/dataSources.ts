@@ -47,6 +47,7 @@ import {
   ComplianceRequirement,
   ComplianceRequirementResult,
   Condition,
+  ConditionResult,
   ConditionType,
   CountryCode,
   DidRecord,
@@ -1706,6 +1707,26 @@ export const createMockCondition = (condition?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockConditionResult = (conditionResult?: {
+  condition: Condition;
+  result: bool;
+}): ConditionResult => {
+  const auxConditionResult = conditionResult || {
+    condition: createMockCondition(),
+    result: createMockBool(),
+  };
+  return createMockCodec(
+    {
+      ...auxConditionResult,
+    },
+    !conditionResult
+  ) as ConditionResult;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockComplianceRequirement = (complianceRequirement?: {
   sender_conditions: Condition[];
   receiver_conditions: Condition[];
@@ -1730,8 +1751,8 @@ export const createMockComplianceRequirement = (complianceRequirement?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockComplianceRequirementResult = (complianceRequirementResult?: {
-  sender_conditions: Condition[];
-  receiver_conditions: Condition[];
+  sender_conditions: ConditionResult[];
+  receiver_conditions: ConditionResult[];
   id: u32;
   result: bool;
 }): ComplianceRequirementResult => {
