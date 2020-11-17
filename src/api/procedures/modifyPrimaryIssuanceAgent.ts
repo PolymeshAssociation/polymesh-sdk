@@ -7,7 +7,7 @@ import {
   dateToMoment,
   signerToString,
   signerValueToSignatory,
-} from '~/utils';
+} from '~/utils/conversion';
 
 export interface ModifyPrimaryIssuanceAgentParams {
   target: string | Identity;

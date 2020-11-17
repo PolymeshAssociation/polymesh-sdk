@@ -9,7 +9,7 @@ import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ClaimType, ConditionTarget, ConditionType, Requirement, ScopeType } from '~/types';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import { Requirements } from '../Requirements';
 
@@ -320,12 +320,12 @@ describe('Requirements class', () => {
       const requeriments = new Requirements(token, context);
 
       sinon
-        .stub(utilsModule, 'stringToTicker')
+        .stub(utilsConversionModule, 'stringToTicker')
         .withArgs(token.ticker, context)
         .returns(rawTicker);
 
       sinon
-        .stub(utilsModule, 'boolToBoolean')
+        .stub(utilsConversionModule, 'boolToBoolean')
         .withArgs(mockBool)
         .returns(fakeResult);
 
@@ -364,12 +364,12 @@ describe('Requirements class', () => {
       toDid = 'toDid';
       primaryIssuanceAgentDid = 'primaryIssuanceAgentDid';
 
-      stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
+      stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
       assetComplianceResultToRequirementComplianceStub = sinon.stub(
-        utilsModule,
+        utilsConversionModule,
         'assetComplianceResultToCompliance'
       );
-      stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+      stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     });
 
     beforeEach(async () => {

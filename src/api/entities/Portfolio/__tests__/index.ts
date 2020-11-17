@@ -9,7 +9,7 @@ import { moveFunds } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Portfolio class', () => {
   let context: Context;
@@ -94,7 +94,7 @@ describe('Portfolio class', () => {
       const portfolio = new Portfolio({ did, id }, context);
       const custodianDid = 'custodianDid';
       const currentIdentityDid = 'currentIdentity';
-      const identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
+      const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
       const portfolioCustodianStub = dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian');
 
       portfolioCustodianStub.returns(
@@ -153,7 +153,7 @@ describe('Portfolio class', () => {
           User: dsMockUtils.createMockU64(id.toNumber()),
         }),
       });
-      sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
+      sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
       dsMockUtils.configureMocks({ contextOptions: { did } });
     });
 
@@ -207,6 +207,44 @@ describe('Portfolio class', () => {
     });
   });
 
+  describe('method: getCustodian', () => {
+    let did: string;
+    let id: BigNumber;
+
+    beforeAll(() => {
+      did = 'someDid';
+      id = new BigNumber(1);
+      sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the custodian of the portfolio', async () => {
+      const custodianDid = 'custodianDid';
+      const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+
+      dsMockUtils
+        .createQueryStub('portfolio', 'portfolioCustodian')
+        .returns(dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(custodianDid)));
+
+      identityIdToStringStub.returns(custodianDid);
+
+      const portfolio = new Portfolio({ did, id }, context);
+
+      let result = await portfolio.getCustodian();
+      expect(result.did).toEqual(custodianDid);
+
+      dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian').returns({});
+
+      identityIdToStringStub.returns(did);
+
+      result = await portfolio.getCustodian();
+      expect(result.did).toEqual(did);
+    });
+  });
+
   describe('method: moveFunds', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const args = {
@@ -234,7 +272,7 @@ describe('Portfolio class', () => {
     beforeAll(() => {
       did = 'someDid';
       id = new BigNumber(1);
-      sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
+      sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
     });
 
     afterAll(() => {
@@ -243,7 +281,7 @@ describe('Portfolio class', () => {
 
     test('should return the custodian of the portfolio', async () => {
       const custodianDid = 'custodianDid';
-      const identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
+      const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
 
       dsMockUtils
         .createQueryStub('portfolio', 'portfolioCustodian')

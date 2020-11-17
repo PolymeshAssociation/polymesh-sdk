@@ -5,12 +5,12 @@ import { Account, Identity } from '~/api/entities';
 import { Context, PostTransactionValue, Procedure } from '~/base';
 import { Role, RoleType, SecondaryKey } from '~/types';
 import {
-  findEventRecord,
   identityIdToString,
   secondaryKeyToMeshSecondaryKey,
   signerToString,
   stringToAccountId,
-} from '~/utils';
+} from '~/utils/conversion';
+import { findEventRecord } from '~/utils/internal';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;

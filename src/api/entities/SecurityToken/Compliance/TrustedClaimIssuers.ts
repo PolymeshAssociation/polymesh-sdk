@@ -8,7 +8,7 @@ import {
 import { TransactionQueue } from '~/base';
 import { SubCallback, UnsubCallback } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
-import { identityIdToString, stringToTicker } from '~/utils';
+import { identityIdToString, stringToTicker } from '~/utils/conversion';
 
 /**
  * Handles all Security Token Default Trusted Claim Issuers related functionality

@@ -6,7 +6,7 @@ import { createPortfolio, deletePortfolio } from '~/api/procedures';
 import { PolymeshError, TransactionQueue } from '~/base';
 import { PortfolioNumber } from '~/polkadot';
 import { ErrorCode } from '~/types';
-import { identityIdToString, stringToIdentityId, u64ToBigNumber } from '~/utils';
+import { identityIdToString, stringToIdentityId, u64ToBigNumber } from '~/utils/conversion';
 
 /**
  * Handles all Portfolio related functionality on the Identity side

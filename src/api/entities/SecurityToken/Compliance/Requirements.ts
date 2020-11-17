@@ -18,7 +18,7 @@ import {
   signerToString,
   stringToIdentityId,
   stringToTicker,
-} from '~/utils';
+} from '~/utils/conversion';
 
 /**
  * Handles all Security Token Compliance Requirements related functionality

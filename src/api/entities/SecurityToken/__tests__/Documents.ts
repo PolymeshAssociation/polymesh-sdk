@@ -6,7 +6,7 @@ import { setTokenDocuments } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsInternalModule from '~/utils/internal';
 
 import { Documents } from '../Documents';
 
@@ -69,7 +69,7 @@ describe('Documents class', () => {
     test('should retrieve all documents linked to the token', async () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       dsMockUtils.createQueryStub('asset', 'assetDocuments');
-      const requestPaginatedStub = sinon.stub(utilsModule, 'requestPaginated');
+      const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
 
       const expectedDocuments = [
         {

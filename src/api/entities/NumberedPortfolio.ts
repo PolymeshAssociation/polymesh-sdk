@@ -6,7 +6,7 @@ import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier } from '~/types';
-import { bytesToString, numberToU64, stringToIdentityId } from '~/utils';
+import { bytesToString, numberToU64, stringToIdentityId } from '~/utils/conversion';
 
 export interface UniqueIdentifiers {
   did: string;

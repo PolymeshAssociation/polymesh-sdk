@@ -6,7 +6,8 @@ import { AuthorizationRequest, Identity, Namespace } from '~/api/entities';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType } from '~/types';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 import { IdentityAuthorizations } from '../IdentityAuthorizations';
 
@@ -41,10 +42,10 @@ describe('IdentityAuthorizations class', () => {
     });
 
     test('should retrieve all pending authorizations sent by the Identity', async () => {
-      sinon.stub(utilsModule, 'signerValueToSignatory');
+      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
       dsMockUtils.createQueryStub('identity', 'authorizationsGiven');
 
-      const requestPaginatedStub = sinon.stub(utilsModule, 'requestPaginated');
+      const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
 
       const did = 'someDid';
 

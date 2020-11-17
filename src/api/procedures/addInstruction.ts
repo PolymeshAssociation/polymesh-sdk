@@ -10,14 +10,14 @@ import { ErrorCode, InstructionType, PortfolioLike, Role, RoleType } from '~/typ
 import {
   dateToMoment,
   endConditionToSettlementType,
-  findEventRecord,
   numberToBalance,
   numberToU64,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
   stringToTicker,
   u64ToBigNumber,
-} from '~/utils';
+} from '~/utils/conversion';
+import { findEventRecord } from '~/utils/internal';
 
 export interface AddInstructionParams {
   legs: {

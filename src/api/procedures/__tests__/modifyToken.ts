@@ -7,7 +7,7 @@ import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/SecurityToken',
@@ -27,9 +27,9 @@ describe('modifyToken procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    stringToAssetNameStub = sinon.stub(utilsModule, 'stringToAssetName');
-    stringToFundingRoundNameStub = sinon.stub(utilsModule, 'stringToFundingRoundName');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
+    stringToFundingRoundNameStub = sinon.stub(utilsConversionModule, 'stringToFundingRoundName');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     fundingRound = 'Series A';
