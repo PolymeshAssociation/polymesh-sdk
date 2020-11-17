@@ -101,7 +101,7 @@ describe('setCustodian procedure', () => {
       new AuthorizationRequest(
         {
           target,
-          issuer: entityMockUtils.getIdentityInstance({ did: args.targetIdentity }),
+          issuer: entityMockUtils.getIdentityInstance({ did }),
           authId: new BigNumber(1),
           expiry: null,
           data: { type: AuthorizationType.PortfolioCustody, value: fakePortfolio },

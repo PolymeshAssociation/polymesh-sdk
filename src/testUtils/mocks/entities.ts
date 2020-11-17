@@ -561,6 +561,7 @@ function initVenue(opts?: VenueOptions): void {
  */
 function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
   const numberedPortfolio = ({
+    uuid: opts.uuid,
     id: opts.id,
     isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
@@ -602,6 +603,7 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
  */
 function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
   const defaultPortfolio = ({
+    uuid: opts.uuid,
     isOwnedBy: defaultPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getTokenBalances: defaultPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
     owner: { did: opts.did },

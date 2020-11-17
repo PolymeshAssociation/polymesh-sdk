@@ -3,10 +3,10 @@ import BigNumber from 'bignumber.js';
 import { DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { AuthorizationType, ErrorCode } from '~/types';
-import { SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
+  signerToSignerValue,
   signerToString,
   signerValueToSignatory,
 } from '~/utils';
@@ -55,10 +55,10 @@ export async function prepareSetCustodian(
     });
   }
 
-  const identityDid = signerToString(targetIdentity);
-  const rawIdentity = new Identity({ did: identityDid }, context);
+  const targetDid = signerToString(targetIdentity);
+  const target = new Identity({ did: targetDid }, context);
 
-  const authorizationRequests = await rawIdentity.authorizations.getReceived({
+  const authorizationRequests = await target.authorizations.getReceived({
     type: AuthorizationType.PortfolioCustody,
     includeExpired: false,
   });
@@ -66,7 +66,7 @@ export async function prepareSetCustodian(
   const hasPendingAuth = authorizationRequests.find(authorizationRequest => {
     const { issuer, data } = authorizationRequest;
     const authorizationData = data as { value: NumberedPortfolio | DefaultPortfolio };
-    return rawIdentity.did === issuer.did && authorizationData.value.uuid === portfolio.uuid;
+    return currentIdentity.did === issuer.did && authorizationData.value.uuid === portfolio.uuid;
   });
 
   if (hasPendingAuth) {
@@ -77,10 +77,7 @@ export async function prepareSetCustodian(
     });
   }
 
-  const rawSignatory = signerValueToSignatory(
-    { type: SignerType.Identity, value: identityDid },
-    context
-  );
+  const rawSignatory = signerValueToSignatory(signerToSignerValue(target), context);
 
   const rawAuthorizationData = authorizationToAuthorizationData(
     { type: AuthorizationType.PortfolioCustody, value: portfolio },

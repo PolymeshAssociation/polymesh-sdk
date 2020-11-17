@@ -1601,7 +1601,7 @@ export function authorizationToAuthorizationData(
     if (value instanceof NumberedPortfolio) {
       number = value.id;
     }
-    _value = portfolioIdToMeshPortfolioId(number ? { did, number } : { did }, context);
+    _value = portfolioIdToMeshPortfolioId({ did, number }, context);
   } else {
     const { value = null } = auth as { value?: string };
     _value = value;
