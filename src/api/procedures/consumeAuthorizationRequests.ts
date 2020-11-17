@@ -3,12 +3,8 @@ import { TxTags } from 'polymesh-types/types';
 
 import { Account, AuthorizationRequest } from '~/api/entities';
 import { Procedure } from '~/base';
-import {
-  authTargetToAuthIdentifier,
-  batchArguments,
-  numberToU64,
-  signerToSignerValue,
-} from '~/utils';
+import { authTargetToAuthIdentifier, numberToU64, signerToSignerValue } from '~/utils/conversion';
+import { batchArguments } from '~/utils/internal';
 
 export interface ConsumeParams {
   accept: boolean;

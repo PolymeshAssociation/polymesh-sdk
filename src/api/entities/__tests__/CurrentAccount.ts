@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { Account, CurrentAccount, CurrentIdentity, Identity } from '~/api/entities';
 import { Context } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('CurrentAccount class', () => {
   let context: Context;
@@ -11,7 +11,7 @@ describe('CurrentAccount class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
 
-    sinon.stub(utilsModule, 'addressToKey');
+    sinon.stub(utilsConversionModule, 'addressToKey');
   });
 
   beforeEach(() => {

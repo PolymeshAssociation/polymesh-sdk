@@ -14,8 +14,9 @@ import {
   PostTransactionValueArray,
   TransactionSpec,
 } from '~/types/internal';
-import { balanceToBigNumber, unwrapValue, unwrapValues } from '~/utils';
 import { BATCH_REGEX } from '~/utils/constants';
+import { balanceToBigNumber } from '~/utils/conversion';
+import { unwrapValue, unwrapValues } from '~/utils/internal';
 
 /**
  * @hidden

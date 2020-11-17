@@ -5,7 +5,7 @@ import { Entity, Identity, SecurityToken } from '~/api/entities';
 import { createSecurityToken, CreateSecurityTokenParams, reserveTicker } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { SubCallback, UnsubCallback } from '~/types';
-import { identityIdToString, momentToDate, stringToTicker } from '~/utils';
+import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
 
 import { TickerReservationDetails, TickerReservationStatus } from './types';
 

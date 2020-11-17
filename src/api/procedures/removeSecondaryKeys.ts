@@ -2,7 +2,7 @@ import { find } from 'lodash';
 
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Signer } from '~/types';
-import { signerToSignerValue, signerValueToSignatory } from '~/utils';
+import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 
 export interface RemoveSecondaryKeysParams {
   signers: Signer[];

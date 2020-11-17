@@ -8,7 +8,7 @@ import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance } from '~/types';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/NumberedPortfolio',
@@ -31,8 +31,8 @@ describe('deletePortfolio procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
-    numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
+    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
   });
 
   beforeEach(() => {

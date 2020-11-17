@@ -1,7 +1,7 @@
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType } from '~/types';
-import { boolToBoolean, stringToTicker } from '~/utils';
+import { boolToBoolean, stringToTicker } from '~/utils/conversion';
 
 export interface TogglePauseRequirementsParams {
   pause: boolean;

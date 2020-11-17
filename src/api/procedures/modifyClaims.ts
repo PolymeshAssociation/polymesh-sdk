@@ -17,14 +17,14 @@ import {
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import {
-  batchArguments,
   claimToMeshClaim,
   dateToMoment,
   identityIdToString,
   middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
-} from '~/utils';
+} from '~/utils/conversion';
+import { batchArguments } from '~/utils/internal';
 
 interface AddClaimItem {
   target: IdentityId;

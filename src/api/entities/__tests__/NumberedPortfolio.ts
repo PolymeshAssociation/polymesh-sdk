@@ -7,7 +7,7 @@ import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Numberedortfolio class', () => {
   let context: Context;
@@ -162,9 +162,11 @@ describe('Numberedortfolio class', () => {
         returnValue: dsMockUtils.createMockBytes(),
       });
 
-      sinon.stub(utilsModule, 'stringToIdentityId').returns(dsMockUtils.createMockIdentityId(did));
       sinon
-        .stub(utilsModule, 'numberToU64')
+        .stub(utilsConversionModule, 'stringToIdentityId')
+        .returns(dsMockUtils.createMockIdentityId(did));
+      sinon
+        .stub(utilsConversionModule, 'numberToU64')
         .returns(dsMockUtils.createMockU64(portfolioId.toNumber()));
 
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);

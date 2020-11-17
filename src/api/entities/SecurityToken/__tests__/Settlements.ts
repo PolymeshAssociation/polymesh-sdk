@@ -9,8 +9,8 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioLike, TransferStatus } from '~/types';
 import { PortfolioId } from '~/types/internal';
-import * as utilsModule from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import { SecurityToken } from '..';
 import { Settlements } from '../Settlements';
@@ -42,11 +42,17 @@ describe('Settlements class', () => {
     amount = new BigNumber(100);
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
-    stringToAccountIdStub = sinon.stub(utilsModule, 'stringToAccountId');
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
-    portfolioLikeToPortfolioIdStub = sinon.stub(utilsModule, 'portfolioLikeToPortfolioId');
+    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+      utilsConversionModule,
+      'portfolioIdToMeshPortfolioId'
+    );
+    portfolioLikeToPortfolioIdStub = sinon.stub(
+      utilsConversionModule,
+      'portfolioLikeToPortfolioId'
+    );
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
   });
 

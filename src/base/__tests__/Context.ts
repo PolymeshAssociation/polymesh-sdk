@@ -10,7 +10,7 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
 import { ClaimType, Permission, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '@polkadot/api',
@@ -303,7 +303,7 @@ describe('Context class', () => {
       });
 
       sinon
-        .stub(utilsModule, 'stringToAccountId')
+        .stub(utilsConversionModule, 'stringToAccountId')
         .withArgs(newAddress, context)
         .returns(accountId);
 
@@ -353,7 +353,7 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance();
-      expect(result.free).toEqual(utilsModule.balanceToBigNumber(freeBalance));
+      expect(result.free).toEqual(utilsConversionModule.balanceToBigNumber(freeBalance));
     });
 
     test('should return the account POLYX balance if accountId is set', async () => {
@@ -384,7 +384,7 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance('accountId');
-      expect(result.free).toEqual(utilsModule.balanceToBigNumber(freeBalance));
+      expect(result.free).toEqual(utilsConversionModule.balanceToBigNumber(freeBalance));
     });
 
     test('should allow subscription', async () => {
@@ -426,8 +426,8 @@ describe('Context class', () => {
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, {
-        free: utilsModule.balanceToBigNumber(free),
-        locked: utilsModule.balanceToBigNumber(feeFrozen),
+        free: utilsConversionModule.balanceToBigNumber(free),
+        locked: utilsConversionModule.balanceToBigNumber(feeFrozen),
       });
     });
   });
@@ -659,7 +659,7 @@ describe('Context class', () => {
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      const txTagToProtocolOpStub = sinon.stub(utilsModule, 'txTagToProtocolOp');
+      const txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
 
       txTagToProtocolOpStub
         .withArgs(TxTags.asset.CreateAsset, context)
@@ -716,13 +716,13 @@ describe('Context class', () => {
 
     beforeAll(() => {
       entityMockUtils.initMocks();
-      signatoryToSignerValueStub = sinon.stub(utilsModule, 'signatoryToSignerValue');
+      signatoryToSignerValueStub = sinon.stub(utilsConversionModule, 'signatoryToSignerValue');
       signatoryToSignerValueStub.withArgs(signerIdentityId).returns(signerValues[0]);
       signatoryToSignerValueStub.withArgs(signerAccountId).returns(signerValues[1]);
 
       identity = entityMockUtils.getIdentityInstance({ did });
       account = entityMockUtils.getAccountInstance({ address: accountId });
-      signerValueToSignerStub = sinon.stub(utilsModule, 'signerValueToSigner');
+      signerValueToSignerStub = sinon.stub(utilsConversionModule, 'signerValueToSigner');
       signerValueToSignerStub.withArgs(signerValues[0], sinon.match.object).returns(identity);
       signerValueToSignerStub.withArgs(signerValues[1], sinon.match.object).returns(account);
 

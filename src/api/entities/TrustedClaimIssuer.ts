@@ -5,8 +5,8 @@ import { Context } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier } from '~/types';
-import { padString } from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import { padString } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -71,9 +71,9 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
       // TODO remove null check once types fixed
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
-        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id!),
-        blockDate: result.data.eventByIndexedArgs.block!.datetime!,
-        eventIndex: result.data.eventByIndexedArgs.event_idx!,
+        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id),
+        blockDate: result.data.eventByIndexedArgs.block!.datetime,
+        eventIndex: result.data.eventByIndexedArgs.event_idx,
       };
       /* eslint-enabled @typescript-eslint/no-non-null-assertion */
     }
