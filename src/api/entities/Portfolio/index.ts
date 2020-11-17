@@ -85,8 +85,6 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       getDid(args?.identity, context),
     ]);
 
-    console.log(portfolioCustodian.did, targetDid);
-
     return portfolioCustodian.did === targetDid;
   }
 
