@@ -7,11 +7,11 @@ import { moveFunds, MoveFundsParams, setCustodian, SetCustodianParams } from '~/
 import { Context, TransactionQueue } from '~/base';
 import {
   balanceToBigNumber,
-  getDid,
   identityIdToString,
   portfolioIdToMeshPortfolioId,
   tickerToString,
-} from '~/utils';
+} from '~/utils/conversion';
+import { getDid } from '~/utils/internal';
 
 import { PortfolioBalance } from './types';
 

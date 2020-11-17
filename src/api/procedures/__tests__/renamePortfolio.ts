@@ -9,7 +9,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { NumberedPortfolio } from '~/types';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/NumberedPortfolio',
@@ -34,10 +34,10 @@ describe('modifyNamePortfolio procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
-    numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
-    bytesToStringStub = sinon.stub(utilsModule, 'bytesToString');
-    stringToBytesStub = sinon.stub(utilsModule, 'stringToBytes');
+    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bytesToStringStub = sinon.stub(utilsConversionModule, 'bytesToString');
+    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
   });
 
   beforeEach(() => {

@@ -14,8 +14,8 @@ import {
 import { TransactionQueue } from '~/base';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
 import { PortfolioId } from '~/types/internal';
-import { portfolioIdToMeshPortfolioId, u64ToBigNumber } from '~/utils';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
+import { portfolioIdToMeshPortfolioId, u64ToBigNumber } from '~/utils/conversion';
 
 /**
  * Represents the Identity associated to the current [[Account]]

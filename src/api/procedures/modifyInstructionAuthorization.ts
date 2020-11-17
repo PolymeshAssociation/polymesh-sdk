@@ -14,7 +14,7 @@ import {
   numberToU64,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
-} from '~/utils';
+} from '~/utils/conversion';
 
 export interface ModifyInstructionAuthorizationParams {
   id: BigNumber;

@@ -13,7 +13,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { Condition, Requirement, RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('setAssetRequirements procedure', () => {
   let mockContext: Mocked<Context>;
@@ -39,13 +39,13 @@ describe('setAssetRequirements procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     requirementToComplianceRequirementStub = sinon.stub(
-      utilsModule,
+      utilsConversionModule,
       'requirementToComplianceRequirement'
     );
     complianceRequirementToRequirementStub = sinon.stub(
-      utilsModule,
+      utilsConversionModule,
       'complianceRequirementToRequirement'
     );
     ticker = 'someTicker';

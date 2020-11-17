@@ -17,7 +17,8 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { InstructionType, PortfolioLike, RoleType, TickerReservationStatus } from '~/types';
 import { PolymeshTx } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('addInstruction procedure', () => {
   let mockContext: Mocked<Context>;
@@ -70,13 +71,22 @@ describe('addInstruction procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
-    portfolioLikeToPortfolioIdStub = sinon.stub(utilsModule, 'portfolioLikeToPortfolioId');
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
-    numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
-    endConditionToSettlementTypeStub = sinon.stub(utilsModule, 'endConditionToSettlementType');
-    dateToMomentStub = sinon.stub(utilsModule, 'dateToMoment');
+    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+      utilsConversionModule,
+      'portfolioIdToMeshPortfolioId'
+    );
+    portfolioLikeToPortfolioIdStub = sinon.stub(
+      utilsConversionModule,
+      'portfolioLikeToPortfolioId'
+    );
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    endConditionToSettlementTypeStub = sinon.stub(
+      utilsConversionModule,
+      'endConditionToSettlementType'
+    );
+    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
     venueId = new BigNumber(1);
     amount = new BigNumber(100);
     from = 'fromDid';
@@ -276,7 +286,7 @@ describe('getRequiredRoles', () => {
 });
 
 describe('createAddInstructionResolver', () => {
-  const findEventRecordStub = sinon.stub(utilsModule, 'findEventRecord');
+  const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
   const id = new BigNumber(10);
   const rawId = dsMockUtils.createMockU64(id.toNumber());
 

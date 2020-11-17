@@ -6,12 +6,12 @@ import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import {
-  batchArguments,
   identityIdToString,
   signerToString,
   stringToIdentityId,
   stringToTicker,
-} from '~/utils';
+} from '~/utils/conversion';
+import { batchArguments } from '~/utils/internal';
 
 export interface ModifyTokenTrustedClaimIssuersParams {
   claimIssuerIdentities: (string | Identity)[];

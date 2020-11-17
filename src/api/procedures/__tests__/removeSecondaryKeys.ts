@@ -12,7 +12,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { Signer } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('removeSecondaryKeys procedure', () => {
   let mockContext: Mocked<Context>;
@@ -26,8 +26,8 @@ describe('removeSecondaryKeys procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatoryStub = sinon.stub(utilsModule, 'signerValueToSignatory');
-    signerToSignerValueStub = sinon.stub(utilsModule, 'signerToSignerValue');
+    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+    signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
   });
 
   beforeEach(() => {

@@ -16,12 +16,12 @@ import {
 } from '~/types';
 import {
   addressToKey,
-  calculateNextKey,
   extrinsicIdentifierToTxTag,
   identityIdToString,
   stringToAccountId,
   txTagToExtrinsicIdentifier,
-} from '~/utils';
+} from '~/utils/conversion';
+import { calculateNextKey } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   address: string;
@@ -180,14 +180,14 @@ export class Account extends Entity<UniqueIdentifiers> {
         // TODO remove null check once types fixed
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
         data.push({
-          blockNumber: new BigNumber(block_id!),
-          extrinsicIdx: extrinsic_idx!,
+          blockNumber: new BigNumber(block_id),
+          extrinsicIdx: extrinsic_idx,
           address: rawAddress ?? null,
           nonce: nonce!,
-          txTag: extrinsicIdentifierToTxTag({ moduleId: module_id!, callId: call_id! }),
+          txTag: extrinsicIdentifierToTxTag({ moduleId: module_id, callId: call_id }),
           params,
           success: !!txSuccess,
-          specVersionId: spec_version_id!,
+          specVersionId: spec_version_id,
           extrinsicHash: extrinsic_hash!,
         });
         /* eslint-enabled @typescript-eslint/no-non-null-assertion */
