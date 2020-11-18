@@ -3,7 +3,7 @@ import { values } from 'lodash';
 import { Ticker } from 'polymesh-types/types';
 
 import { Entity, Identity, SecurityToken } from '~/api/entities';
-import { moveFunds, MoveFundsParams } from '~/api/procedures';
+import { moveFunds, MoveFundsParams, setCustodian, SetCustodianParams } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import {
   balanceToBigNumber,
@@ -138,6 +138,23 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     }
 
     return values(assetBalances);
+  }
+
+  /**
+   * Send an invitation to an Identity to assign it as custodian for this Portfolio
+   *
+   * @note this may create an AuthorizationRequest which has to be accepted by
+   *   the corresponding Identity. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   */
+  public setCustodian(args: SetCustodianParams): Promise<TransactionQueue<void>> {
+    const {
+      owner: { did },
+      _id: id,
+      context,
+    } = this;
+
+    return setCustodian.prepare({ ...args, did, id }, context);
   }
 
   /**
