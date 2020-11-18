@@ -73,6 +73,22 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Return whether an Identity is the Portfolio custodian
+   *
+   * @param args.identity - optional, defaults to the current Identity
+   */
+  public async isCustodiedBy(args?: { identity: string | Identity }): Promise<boolean> {
+    const { context } = this;
+
+    const [portfolioCustodian, targetDid] = await Promise.all([
+      this.getCustodian(),
+      getDid(args?.identity, context),
+    ]);
+
+    return portfolioCustodian.did === targetDid;
+  }
+
+  /**
    * Retrieve the balances of all assets in this Portfolio
    *
    * @param args.tokens - array of Security Tokens (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
