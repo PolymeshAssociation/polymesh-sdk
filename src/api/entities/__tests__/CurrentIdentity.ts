@@ -9,6 +9,19 @@ import { SecondaryKey, SubCallback, VenueType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
+// jest.mock(
+//   '~/api/entities/NumberedPortfolio',
+//   require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+//     '~/api/entities/NumberedPortfolio'
+//   )
+// );
+// jest.mock(
+//   '~/api/entities/DefaultPortfolio',
+//   require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+//     '~/api/entities/DefaultPortfolio'
+//   )
+// );
+
 describe('CurrentIdentity class', () => {
   let context: Context;
 
@@ -137,7 +150,7 @@ describe('CurrentIdentity class', () => {
     });
   });
 
-  describe('method: getPendingInstructions', () => {
+  describe.only('method: getPendingInstructions', () => {
     test('should return all pending instructions in which the identity is involved', async () => {
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
@@ -147,12 +160,27 @@ describe('CurrentIdentity class', () => {
 
       const did = 'someDid';
       const identity = new CurrentIdentity({ did }, context);
+      const otherDid = 'otherDid';
+      const otherIdentity = new Identity({ did: otherDid }, context);
 
       const numberedPortfolioId = new BigNumber(1);
 
-      identity.portfolios.getPortfolios = sinon
-        .stub()
-        .resolves([{ owner: { did } }, { owner: { did }, id: numberedPortfolioId }]);
+      // identity.portfolios.getPortfolios = sinon
+      //   .stub()
+      //   .resolves([{ owner: { did } }, { owner: { did }, id: numberedPortfolioId }]);
+
+      const portfolio1 = entityMockUtils.getDefaultPortfolioInstance({
+        custodian: identity,
+      });
+      const portfolio2 = entityMockUtils.getNumberedPortfolioInstance({
+        id: numberedPortfolioId,
+        custodian: otherIdentity,
+      });
+      const portfolio3 = entityMockUtils.getNumberedPortfolioInstance({
+        id: numberedPortfolioId,
+        custodian: identity,
+      });
+      identity.portfolios.getPortfolios = sinon.stub().resolves([portfolio1, portfolio2]);
 
       const rawPortfolio = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),
@@ -165,6 +193,8 @@ describe('CurrentIdentity class', () => {
           User: dsMockUtils.createMockU64(numberedPortfolioId.toNumber()),
         }),
       });
+
+      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves([portfolio3]);
 
       const portfolioIdToMeshPortfolioIdStub = sinon.stub(
         utilsConversionModule,

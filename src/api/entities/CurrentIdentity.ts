@@ -4,6 +4,7 @@ import { chunk, flatten, uniqBy } from 'lodash';
 import { Instruction as MeshInstruction } from 'polymesh-types/types';
 
 import { Identity, Instruction, Venue } from '~/api/entities';
+import { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
 import {
   createVenue,
   CreateVenueParams,
@@ -82,11 +83,25 @@ export class CurrentIdentity extends Identity {
       context,
     } = this;
 
-    const [, ...numberedPortfolios] = await portfolios.getPortfolios();
+    const getPortfolios = await portfolios.getPortfolios();
+
+    const [ownedCustodiedPortfolios, custodiedPortfolios] = await Promise.all([
+      P.filter(getPortfolios, async portfolio => {
+        const { did: custodianIdentityDid } = await portfolio.getCustodian();
+        return custodianIdentityDid === did;
+      }),
+      this.portfolios.getCustodiedPortfolios(),
+    ]);
+
+    const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
 
     const portfolioIds: PortfolioId[] = [
-      { did },
-      ...numberedPortfolios.map(({ id: number }) => ({ did, number })),
+      ...allPortfolios.map(portfolio => {
+        if (portfolio instanceof NumberedPortfolio) {
+          return { did, number: portfolio.id };
+        }
+        return { did };
+      }),
     ];
 
     const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
