@@ -14,7 +14,7 @@ import { Mocked } from '~/testUtils/types';
 import { AuthorizationStatus, InstructionStatus, InstructionType } from '~/types';
 import { InstructionAuthorizationOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -83,7 +83,7 @@ describe('Instruction class', () => {
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
       sinon
-        .stub(utilsModule, 'numberToU64')
+        .stub(utilsConversionModule, 'numberToU64')
         .withArgs(id, context)
         .returns(rawId);
 
@@ -167,8 +167,10 @@ describe('Instruction class', () => {
       dsMockUtils.createQueryStub('settlement', 'authsReceived', {
         entries: [authsReceivedEntries[0]],
       });
-      sinon.stub(utilsModule, 'identityIdToString').returns(did);
-      sinon.stub(utilsModule, 'meshAuthorizationStatusToAuthorizationStatus').returns(status);
+      sinon.stub(utilsConversionModule, 'identityIdToString').returns(did);
+      sinon
+        .stub(utilsConversionModule, 'meshAuthorizationStatusToAuthorizationStatus')
+        .returns(status);
     });
 
     test('should return a list of Authorization Statuses', async () => {
@@ -194,7 +196,7 @@ describe('Instruction class', () => {
 
       entityMockUtils.configureMocks({ securityTokenOptions: { ticker } });
       sinon
-        .stub(utilsModule, 'numberToU64')
+        .stub(utilsConversionModule, 'numberToU64')
         .withArgs(id, context)
         .returns(rawId);
       dsMockUtils.createQueryStub('settlement', 'instructionLegs', {

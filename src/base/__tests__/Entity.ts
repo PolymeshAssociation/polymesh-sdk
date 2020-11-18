@@ -1,13 +1,13 @@
 import sinon from 'sinon';
 
 import { Entity } from '~/api/entities';
-import * as utils from '~/utils';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('Entity class', () => {
   describe('method: generateUuid', () => {
     test("should generate the Entity's UUID", async () => {
       sinon
-        .stub(utils, 'serialize')
+        .stub(utilsInternalModule, 'serialize')
         .withArgs('Entity', {
           did: 'abc',
         })
@@ -21,7 +21,7 @@ describe('Entity class', () => {
     let unserializeStub: sinon.SinonStub;
 
     beforeAll(() => {
-      unserializeStub = sinon.stub(utils, 'unserialize');
+      unserializeStub = sinon.stub(utilsInternalModule, 'unserialize');
     });
 
     test('should throw an error if the string is not related to an Entity Unique Identifier', async () => {

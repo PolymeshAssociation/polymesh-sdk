@@ -9,7 +9,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, PortfolioMovement, RoleType } from '~/types';
 import { PortfolioId } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/NumberedPortfolio',
@@ -38,12 +38,18 @@ describe('moveFunds procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
+    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+      utilsConversionModule,
+      'portfolioIdToMeshPortfolioId'
+    );
     portfolioMovementToMovePortfolioItemStub = sinon.stub(
-      utilsModule,
+      utilsConversionModule,
       'portfolioMovementToMovePortfolioItem'
     );
-    portfolioLikeToPortfolioIdStub = sinon.stub(utilsModule, 'portfolioLikeToPortfolioId');
+    portfolioLikeToPortfolioIdStub = sinon.stub(
+      utilsConversionModule,
+      'portfolioLikeToPortfolioId'
+    );
   });
 
   beforeEach(() => {

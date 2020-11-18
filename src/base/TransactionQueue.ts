@@ -8,7 +8,7 @@ import { latestProcessedBlock } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Ensured, ErrorCode, Fees, TransactionQueueStatus } from '~/types';
 import { MaybePostTransactionValue, TransactionSpec } from '~/types/internal';
-import { delay } from '~/utils';
+import { delay } from '~/utils/internal';
 
 /**
  * @hidden

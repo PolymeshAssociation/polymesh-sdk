@@ -10,7 +10,8 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { IdentityBalance } from '~/types';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 import { TokenHolders } from '../TokenHolders';
 
@@ -43,11 +44,11 @@ describe('TokenHolders class', () => {
     ticker = 'TEST';
     mockContext = dsMockUtils.getContextInstance();
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    requestPaginatedStub = sinon.stub(utilsModule, 'requestPaginated');
-    identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
-    balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
+    requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+    balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
     sinon
-      .stub(utilsModule, 'stringToTicker')
+      .stub(utilsConversionModule, 'stringToTicker')
       .withArgs(ticker, mockContext)
       .returns(rawTicker);
   });

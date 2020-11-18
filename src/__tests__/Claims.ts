@@ -22,7 +22,7 @@ import {
   ScopeType,
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Claims Class', () => {
   let context: Mocked<Context>;
@@ -518,7 +518,7 @@ describe('Claims Class', () => {
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
       sinon
-        .stub(utilsModule, 'toIdentityWithClaimsArray')
+        .stub(utilsConversionModule, 'toIdentityWithClaimsArray')
         .withArgs(issuerDidsWithClaimsByTargetQueryResponse.items, context)
         .returns(fakeClaims);
 
@@ -622,7 +622,7 @@ describe('Claims Class', () => {
     dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
     sinon
-      .stub(utilsModule, 'toIdentityWithClaimsArray')
+      .stub(utilsConversionModule, 'toIdentityWithClaimsArray')
       .withArgs(issuerDidsWithClaimsByTargetQueryResponse.items, context)
       .returns(fakeClaims);
 

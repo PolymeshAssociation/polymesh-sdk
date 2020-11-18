@@ -15,7 +15,8 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { Permission, RoleType, SecondaryKey } from '~/types';
 import { PolymeshTx } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('registerIdentity procedure', () => {
   let mockContext: Mocked<Context>;
@@ -32,8 +33,11 @@ describe('registerIdentity procedure', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
-    stringToAccountIdStub = sinon.stub(utilsModule, 'stringToAccountId');
-    secondaryKeyToMeshSecondaryKeyStub = sinon.stub(utilsModule, 'secondaryKeyToMeshSecondaryKey');
+    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
+    secondaryKeyToMeshSecondaryKeyStub = sinon.stub(
+      utilsConversionModule,
+      'secondaryKeyToMeshSecondaryKey'
+    );
     identity = ('identity' as unknown) as PostTransactionValue<Identity>;
   });
 
@@ -111,7 +115,7 @@ describe('registerIdentity procedure', () => {
 });
 
 describe('createRegisterIdentityResolver', () => {
-  const findEventRecordStub = sinon.stub(utilsModule, 'findEventRecord');
+  const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
   const did = 'someDid';
   const rawDid = dsMockUtils.createMockIdentityId(did);
 

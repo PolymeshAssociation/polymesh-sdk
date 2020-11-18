@@ -17,7 +17,7 @@ import {
   TokenOwnerRole,
   VenueOwnerRole,
 } from '~/types';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -53,8 +53,8 @@ describe('Identity class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
-    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
-    identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
+    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
   });
 
   beforeEach(() => {
@@ -281,12 +281,12 @@ describe('Identity class', () => {
       identity = new Identity({ did }, mockContext);
 
       sinon
-        .stub(utilsModule, 'stringToTicker')
+        .stub(utilsConversionModule, 'stringToTicker')
         .withArgs(ticker, mockContext)
         .returns(rawTicker);
 
       sinon
-        .stub(utilsModule, 'balanceToBigNumber')
+        .stub(utilsConversionModule, 'balanceToBigNumber')
         .withArgs(fakeBalance)
         .returns(fakeValue);
     });
@@ -362,7 +362,7 @@ describe('Identity class', () => {
         .resolves(fakeHasValidCdd);
 
       sinon
-        .stub(utilsModule, 'cddStatusToBoolean')
+        .stub(utilsConversionModule, 'cddStatusToBoolean')
         .withArgs(fakeHasValidCdd)
         .returns(statusResponse);
 
@@ -420,7 +420,7 @@ describe('Identity class', () => {
     let rawDidRecord: DidRecord;
 
     beforeAll(() => {
-      accountIdToStringStub = sinon.stub(utilsModule, 'accountIdToString');
+      accountIdToStringStub = sinon.stub(utilsConversionModule, 'accountIdToString');
       accountIdToStringStub.returns(accountId);
     });
 

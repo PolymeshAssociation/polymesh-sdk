@@ -9,7 +9,7 @@ import {
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
-  Portfolio /*, Proposal */,
+  /*, Proposal */
   SecurityToken,
 } from '~/api/entities';
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
@@ -214,7 +214,7 @@ export enum AuthorizationType {
 export type Authorization =
   | { type: AuthorizationType.NoData }
   | { type: AuthorizationType.JoinIdentity; value: Permission[] }
-  | { type: AuthorizationType.PortfolioCustody; value: Portfolio }
+  | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
   | {
       type: Exclude<
         AuthorizationType,
@@ -360,10 +360,19 @@ export interface Requirement {
   conditions: Condition[];
 }
 
+export interface ConditionCompliance {
+  condition: Condition;
+  complies: boolean;
+}
+
 export interface RequirementCompliance {
-  requirements: (Requirement & {
-    complies: boolean;
-  })[];
+  id: number;
+  conditions: ConditionCompliance[];
+  complies: boolean;
+}
+
+export interface Compliance {
+  requirements: RequirementCompliance[];
   complies: boolean;
 }
 
