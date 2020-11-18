@@ -5,7 +5,7 @@ import sinon from 'sinon';
 
 import { Entity, Identity, Portfolio, SecurityToken } from '~/api/entities';
 import { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
-import { moveFunds } from '~/api/procedures';
+import { moveFunds, setCustodian } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
@@ -300,6 +300,23 @@ describe('Portfolio class', () => {
 
       result = await portfolio.getCustodian();
       expect(result.did).toEqual(did);
+    });
+
+    describe('method: setCustodian', () => {
+      test('should prepare the procedure and return the resulting transaction queue', async () => {
+        const portfolio = new Portfolio({ id, did }, context);
+        const targetIdentity = 'someTarget';
+        const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+        sinon
+          .stub(setCustodian, 'prepare')
+          .withArgs({ id, did, targetIdentity }, context)
+          .resolves(expectedQueue);
+
+        const queue = await portfolio.setCustodian({ targetIdentity });
+
+        expect(queue).toBe(expectedQueue);
+      });
     });
   });
 });

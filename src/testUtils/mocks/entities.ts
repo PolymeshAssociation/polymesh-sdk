@@ -78,6 +78,9 @@ interface IdentityOptions {
   hasRole?: boolean;
   hasValidCdd?: boolean;
   getPrimaryKey?: string;
+  authorizations?: {
+    getReceived: AuthorizationRequest[];
+  };
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -132,14 +135,18 @@ interface NumberedPortfolioOptions {
   id?: BigNumber;
   isOwnedBy?: boolean;
   tokenBalances?: PortfolioBalance[];
+  custodian?: Identity;
   did?: string;
   exists?: boolean;
+  uuid?: string;
 }
 
 interface DefaultPortfolioOptions {
   isOwnedBy?: boolean;
   tokenBalances?: PortfolioBalance[];
   did?: string;
+  custodian?: Identity;
+  uuid?: string;
 }
 
 interface InstructionOptions {
@@ -169,6 +176,7 @@ let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
 let identityGetPrimaryKeyStub: SinonStub;
+let identityGetReceivedStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
@@ -186,9 +194,11 @@ let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
+let numberedPortfolioGetCustodianStub: SinonStub;
 let numberedPortfolioExistsStub: SinonStub;
 let defaultPortfolioIsOwnedByStub: SinonStub;
 let defaultPortfolioGetTokenBalancesStub: SinonStub;
+let defaultPortfolioGetCustodianStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -362,6 +372,9 @@ const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
   getPrimaryKey: 'someAddress',
+  authorizations: {
+    getReceived: [],
+  },
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -438,6 +451,7 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   ],
   did: 'someDid',
   exists: true,
+  uuid: 'someUuid',
 };
 let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
 const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
@@ -450,6 +464,7 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
     },
   ],
   did: 'someDid',
+  uuid: 'someUuid',
 };
 let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
 const defaultInstructionOptions: InstructionOptions = {
@@ -546,9 +561,11 @@ function initVenue(opts?: VenueOptions): void {
  */
 function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
   const numberedPortfolio = ({
+    uuid: opts.uuid,
     id: opts.id,
     isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
+    getCustodian: numberedPortfolioGetCustodianStub.resolves(opts.custodian),
     owner: { did: opts.did },
     exists: numberedPortfolioExistsStub.resolves(opts.exists),
   } as unknown) as MockNumberedPortfolio;
@@ -572,6 +589,7 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
   numberedPortfolioConstructorStub = sinon.stub();
   numberedPortfolioIsOwnedByStub = sinon.stub();
   numberedPortfolioGetTokenBalancesStub = sinon.stub();
+  numberedPortfolioGetCustodianStub = sinon.stub();
   numberedPortfolioExistsStub = sinon.stub();
 
   numberedPortfolioOptions = { ...defaultNumberedPortfolioOptions, ...opts };
@@ -585,9 +603,11 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
  */
 function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
   const defaultPortfolio = ({
+    uuid: opts.uuid,
     isOwnedBy: defaultPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getTokenBalances: defaultPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
     owner: { did: opts.did },
+    getCustodian: defaultPortfolioGetCustodianStub.resolves(opts.custodian),
   } as unknown) as MockDefaultPortfolio;
 
   Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
@@ -609,6 +629,7 @@ function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
   defaultPortfolioConstructorStub = sinon.stub();
   defaultPortfolioIsOwnedByStub = sinon.stub();
   defaultPortfolioGetTokenBalancesStub = sinon.stub();
+  defaultPortfolioGetCustodianStub = sinon.stub();
 
   defaultPortfolioOptions = { ...defaultDefaultPortfolioOptions, ...opts };
 
@@ -734,6 +755,9 @@ function configureIdentity(opts: IdentityOptions): void {
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
     getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
     portfolios: {},
+    authorizations: {
+      getReceived: sinon.stub().resolves(opts.authorizations?.getReceived),
+    },
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -754,6 +778,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRoleStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
   identityGetPrimaryKeyStub = sinon.stub();
+  identityGetReceivedStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -903,7 +928,6 @@ function configureCurrentAccount(opts: CurrentAccountOptions): void {
     const value = merge({}, account, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/api/entities');
-    Object.setPrototypeOf(entities.CurrentAccount.prototype, entities.Account.prototype);
     Object.setPrototypeOf(value, entities.CurrentAccount.prototype);
     return value;
   });
@@ -1172,6 +1196,14 @@ export function getIdentityHasValidCddStub(): SinonStub {
  */
 export function getIdentityGetPrimaryKeyStub(): SinonStub {
   return identityGetPrimaryKeyStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Identity.authorizations.getReceived` method
+ */
+export function getIdentityGetReceivedStub(): SinonStub {
+  return identityGetReceivedStub;
 }
 
 /**
