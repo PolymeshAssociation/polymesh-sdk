@@ -2,13 +2,12 @@ import { bool } from '@polkadot/types';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities';
 import {
   getRequiredRoles,
   Params,
   prepareTogglePauseRequirements,
 } from '~/api/procedures/togglePauseRequirements';
-import { Context } from '~/base';
+import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';

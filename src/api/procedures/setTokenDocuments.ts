@@ -1,8 +1,7 @@
 import { differenceWith } from 'lodash';
 import { DocumentName, TxTags } from 'polymesh-types/types';
 
-import { SecurityToken } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, Role, RoleType, TokenDocument } from '~/types';
 import { tuple } from '~/types/utils';
 import {

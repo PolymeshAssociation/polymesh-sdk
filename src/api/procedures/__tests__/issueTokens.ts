@@ -3,13 +3,12 @@ import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities';
 import {
   getRequiredRoles,
   IssueTokensParams,
   prepareIssueTokens,
 } from '~/api/procedures/issueTokens';
-import { Context } from '~/base';
+import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';

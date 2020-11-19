@@ -4,8 +4,7 @@ import BigNumber from 'bignumber.js';
 import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity, Namespace } from '~/api/entities';
-import { Context } from '~/base';
+import { Context, Identity, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { IdentityBalance } from '~/types';

@@ -1,10 +1,16 @@
 import BigNumber from 'bignumber.js';
-import { PortfolioId } from 'polymesh-types/types';
+import { PortfolioId, PortfolioNumber } from 'polymesh-types/types';
 
-import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
-import { createPortfolio, deletePortfolio } from '~/api/procedures';
-import { PolymeshError, TransactionQueue } from '~/base';
-import { PortfolioNumber } from '~/polkadot';
+import {
+  createPortfolio,
+  DefaultPortfolio,
+  deletePortfolio,
+  Identity,
+  Namespace,
+  NumberedPortfolio,
+  PolymeshError,
+  TransactionQueue,
+} from '~/internal';
 import { ErrorCode } from '~/types';
 import { identityIdToString, stringToIdentityId, u64ToBigNumber } from '~/utils';
 

@@ -2,8 +2,7 @@ import BigNumber from 'bignumber.js';
 import { DidRecord, ProtocolOp, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Identity } from '~/api/entities';
-import { Context } from '~/base';
+import { Account, Context, Identity } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -575,6 +574,66 @@ describe('Context class', () => {
       expect(() => context.getCurrentPair()).toThrow(
         'There is no account associated with the current SDK instance'
       );
+    });
+  });
+
+  describe('method: getSigner', () => {
+    test('should return the signer address if the current pair is locked', async () => {
+      const pair = {
+        address: 'someAddress1',
+        meta: {},
+        publicKey: 'publicKey',
+        isLocked: true,
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          addFromSeed: pair,
+        },
+      });
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      expect(context.getSigner()).toBe(pair.address);
+    });
+
+    test('should return the signer address if the current pair is locked', async () => {
+      const pair = {
+        address: 'someAddress1',
+        meta: {},
+        publicKey: 'publicKey',
+        isLocked: false,
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          addFromSeed: pair,
+        },
+      });
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockLinkedKeyInfo({
+            Unique: dsMockUtils.createMockIdentityId('someDid'),
+          })
+        ),
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      expect(context.getSigner()).toEqual(pair);
     });
   });
 

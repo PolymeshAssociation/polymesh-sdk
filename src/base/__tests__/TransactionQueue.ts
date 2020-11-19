@@ -4,12 +4,11 @@ import P from 'bluebird';
 import { noop, range } from 'lodash';
 import sinon from 'sinon';
 
-import { Context, PostTransactionValue, TransactionQueue } from '~/base';
+import { Context, PostTransactionValue, TransactionQueue } from '~/internal';
 import { latestProcessedBlock } from '~/middleware/queries';
 import { fakePromise } from '~/testUtils';
 import { dsMockUtils, polymeshTransactionMockUtils } from '~/testUtils/mocks';
 import { TransactionQueueStatus, TransactionStatus } from '~/types';
-import { TransactionSpec } from '~/types/internal';
 
 jest.mock(
   '~/base/PolymeshTransaction',
@@ -52,11 +51,7 @@ describe('Transaction Queue class', () => {
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
       expect(queue.transactions).toEqual(transactions);
     });
   });
@@ -76,14 +71,10 @@ describe('Transaction Queue class', () => {
         },
       ];
 
-      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      let transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const returnValue = 3;
-      let queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        returnValue,
-        context
-      );
+      let queue = new TransactionQueue(transactions, returnValue, context);
 
       let returned = await queue.run();
 
@@ -92,18 +83,14 @@ describe('Transaction Queue class', () => {
         sinon.assert.calledOnce(transaction.run);
       });
 
-      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const returnPostTransactionValue = new PostTransactionValue(() =>
         Promise.resolve(returnValue)
       );
       await returnPostTransactionValue.run({} as ISubmittableResult);
 
-      queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        returnPostTransactionValue,
-        context
-      );
+      queue = new TransactionQueue(transactions, returnPostTransactionValue, context);
 
       returned = await queue.run();
 
@@ -120,11 +107,7 @@ describe('Transaction Queue class', () => {
       ];
       let transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      let queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        returnValue,
-        context
-      );
+      let queue = new TransactionQueue(transactions, returnValue, context);
 
       // Idle -> Running -> Succeeded
       expect(queue.status).toBe(TransactionQueueStatus.Idle);
@@ -147,11 +130,7 @@ describe('Transaction Queue class', () => {
       transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       // Idle -> Running -> Failed
-      queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        returnValue,
-        context
-      );
+      queue = new TransactionQueue(transactions, returnValue, context);
 
       queue.run().catch(noop);
 
@@ -180,14 +159,10 @@ describe('Transaction Queue class', () => {
         },
       ];
 
-      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       const runPromise = queue.run();
 
@@ -212,18 +187,14 @@ describe('Transaction Queue class', () => {
         },
       ];
 
-      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       dsMockUtils.setContextAccountBalance({
         free: new BigNumber(100),
         locked: new BigNumber(0),
       });
 
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       const runPromise = queue.run();
 
@@ -246,14 +217,10 @@ describe('Transaction Queue class', () => {
         },
       ];
 
-      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       let err;
 
@@ -280,14 +247,10 @@ describe('Transaction Queue class', () => {
         },
       ];
 
-      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       await queue.run();
 
@@ -304,13 +267,9 @@ describe('Transaction Queue class', () => {
           autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
-      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
       queue.onStatusChange(q => listenerStub(q.status));
@@ -331,11 +290,7 @@ describe('Transaction Queue class', () => {
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
       const unsub = queue.onStatusChange(q => listenerStub(q.status));
@@ -367,11 +322,7 @@ describe('Transaction Queue class', () => {
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
       queue.onTransactionStatusChange(transaction => {
@@ -405,11 +356,7 @@ describe('Transaction Queue class', () => {
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
       const unsub = queue.onTransactionStatusChange(transaction => {
@@ -456,13 +403,9 @@ describe('Transaction Queue class', () => {
           autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
-      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
       queue.onProcessedByMiddleware(err => listenerStub(err));
@@ -495,13 +438,9 @@ describe('Transaction Queue class', () => {
           autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
-      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
       queue.onProcessedByMiddleware(err => listenerStub(err));
@@ -531,13 +470,9 @@ describe('Transaction Queue class', () => {
           autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
-      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
       expect(() => queue.onProcessedByMiddleware(err => listenerStub(err))).toThrow(
@@ -553,13 +488,9 @@ describe('Transaction Queue class', () => {
           autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
-      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
       const unsub = queue.onProcessedByMiddleware(err => listenerStub(err));
@@ -614,14 +545,10 @@ describe('Transaction Queue class', () => {
         },
       ];
 
-      polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
       const returnValue = 3;
-      const queue = new TransactionQueue(
-        (transactionSpecs as unknown) as [TransactionSpec<[number]>, TransactionSpec<[string]>],
-        returnValue,
-        context
-      );
+      const queue = new TransactionQueue(transactions, returnValue, context);
 
       const fees = await queue.getMinFees();
 

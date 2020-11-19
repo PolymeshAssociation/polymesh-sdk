@@ -4,7 +4,7 @@ import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
-import { Context } from '~/base';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { NumberedPortfolio } from '~/types';

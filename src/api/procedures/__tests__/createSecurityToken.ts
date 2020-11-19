@@ -12,13 +12,12 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities';
 import {
   getRequiredRoles,
   Params,
   prepareCreateSecurityToken,
 } from '~/api/procedures/createSecurityToken';
-import { Context } from '~/base';
+import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {

@@ -3,11 +3,11 @@ import P from 'bluebird';
 import { EventEmitter } from 'events';
 import { range } from 'lodash';
 
-import { Context, PolymeshError, PolymeshTransaction, PostTransactionValue } from '~/base';
+import { Context, PolymeshError, PolymeshTransactionBase, PostTransactionValue } from '~/internal';
 import { latestProcessedBlock } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Ensured, ErrorCode, Fees, TransactionQueueStatus } from '~/types';
-import { MaybePostTransactionValue, TransactionSpec } from '~/types/internal';
+import { MaybePostTransactionValue } from '~/types/internal';
 import { delay } from '~/utils';
 
 /**
@@ -24,13 +24,7 @@ enum Event {
  */
 type PolymeshTransactionArray<TransactionArgs extends unknown[][]> = {
   [K in keyof TransactionArgs]: TransactionArgs[K] extends TransactionArgs[number]
-    ? PolymeshTransaction<TransactionArgs[K]>
-    : never;
-};
-
-type TransactionSpecArray<TransactionArgs extends unknown[][]> = {
-  [K in keyof TransactionArgs]: TransactionArgs[K] extends TransactionArgs[number]
-    ? TransactionSpec<TransactionArgs[K]>
+    ? PolymeshTransactionBase<TransactionArgs[K]>
     : never;
 };
 
@@ -90,7 +84,7 @@ export class TransactionQueue<
    * @param args - arguments with which the Procedure that generated this queue was instanced
    */
   constructor(
-    transactions: TransactionSpecArray<TransactionArgs>,
+    transactions: PolymeshTransactionArray<TransactionArgs>,
     returnValue: MaybePostTransactionValue<ReturnType>,
     context: Context
   ) {
@@ -101,13 +95,11 @@ export class TransactionQueue<
     this.transactions = ([] as unknown) as PolymeshTransactionArray<TransactionArgs>;
 
     transactions.forEach(transaction => {
-      const txn = new PolymeshTransaction(transaction, context);
-
-      txn.onStatusChange(updatedTransaction => {
+      transaction.onStatusChange(updatedTransaction => {
         this.emitter.emit(Event.TransactionStatusChange, updatedTransaction, this);
       });
 
-      this.transactions.push(txn);
+      this.transactions.push(transaction);
     });
   }
 
@@ -127,7 +119,7 @@ export class TransactionQueue<
 
     const { context } = this;
 
-    const [{ free: freeBalance }, fees] = await Promise.all([
+    const [{ free: freeBalance }, fees] = await P.all([
       context.accountBalance(),
       this.getMinFees(),
     ]);
@@ -184,10 +176,8 @@ export class TransactionQueue<
    * @note transaction fees that are paid by a third party aren't included in this total
    */
   public async getMinFees(): Promise<Fees> {
-    const allFees = await Promise.all(
-      this.transactions.map(transaction =>
-        transaction.paidByThirdParty ? null : transaction.getFees()
-      )
+    const allFees = await P.map(this.transactions, transaction =>
+      transaction.paidByThirdParty ? null : transaction.getFees()
     );
 
     return allFees.reduce<Fees>(
@@ -227,7 +217,7 @@ export class TransactionQueue<
    * @returns unsubscribe function
    */
   public onTransactionStatusChange<TxArgs extends unknown[], Values extends unknown[]>(
-    listener: (transaction: PolymeshTransaction<TxArgs, Values>, transactionQueue: this) => void
+    listener: (transaction: PolymeshTransactionBase<TxArgs, Values>, transactionQueue: this) => void
   ): () => void {
     this.emitter.on(Event.TransactionStatusChange, listener);
 

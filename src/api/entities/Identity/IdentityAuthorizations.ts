@@ -1,12 +1,10 @@
 import { u64 } from '@polkadot/types';
 import { Authorization } from 'polymesh-types/types';
 
-import { AuthorizationRequest, Identity } from '~/api/entities';
+import { AuthorizationRequest, Authorizations, Identity } from '~/internal';
 import { PaginationOptions, ResultSet } from '~/types';
 import { tuple } from '~/types/utils';
 import { requestPaginated, signatoryToSignerValue, stringToIdentityId } from '~/utils';
-
-import { Authorizations } from '../common/namespaces/Authorizations';
 
 /**
  * Handles all Identity Authorization related functionality

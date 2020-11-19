@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 
-import { Identity, Namespace, SecurityToken } from '~/api/entities';
 import { IdentityBalance } from '~/api/entities/types';
+import { Identity, Namespace, SecurityToken } from '~/internal';
 import { PaginationOptions, ResultSet } from '~/types';
 import { balanceToBigNumber, identityIdToString, requestPaginated, stringToTicker } from '~/utils';
 

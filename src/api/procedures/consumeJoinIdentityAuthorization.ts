@@ -1,5 +1,4 @@
-import { Account, AuthorizationRequest } from '~/api/entities';
-import { Procedure } from '~/base';
+import { Account, AuthorizationRequest, Procedure } from '~/internal';
 import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils';
 
 /**

@@ -1,13 +1,12 @@
 import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account } from '~/api/entities';
 import {
   isAuthorized,
   prepareRemoveSecondaryKeys,
   RemoveSecondaryKeysParams,
 } from '~/api/procedures/removeSecondaryKeys';
-import { Context } from '~/base';
+import { Account, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Signer } from '~/types';

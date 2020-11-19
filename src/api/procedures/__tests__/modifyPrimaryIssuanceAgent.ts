@@ -2,13 +2,12 @@ import { Moment } from '@polkadot/types/interfaces';
 import { AuthorizationData, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Identity } from '~/api/entities';
 import {
   getRequiredRoles,
   Params,
   prepareModifyPrimaryIssuanceAgent,
 } from '~/api/procedures/modifyPrimaryIssuanceAgent';
-import { Context } from '~/base';
+import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, RoleType } from '~/types';

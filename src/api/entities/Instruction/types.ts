@@ -1,12 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import {
-  DefaultPortfolio,
-  Identity,
-  NumberedPortfolio,
-  SecurityToken,
-  Venue,
-} from '~/api/entities';
+import { DefaultPortfolio, Identity, NumberedPortfolio, SecurityToken, Venue } from '~/internal';
 
 export enum InstructionStatus {
   Pending = 'Pending',

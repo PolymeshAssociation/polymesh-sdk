@@ -1,8 +1,12 @@
 import { DocumentName } from 'polymesh-types/types';
 
-import { Namespace, SecurityToken } from '~/api/entities';
-import { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+import {
+  Namespace,
+  SecurityToken,
+  setTokenDocuments,
+  SetTokenDocumentsParams,
+  TransactionQueue,
+} from '~/internal';
 import { PaginationOptions, ResultSet, TokenDocument } from '~/types';
 import {
   documentNameToString,

@@ -1,9 +1,15 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
-import { Entity, Identity, Instruction } from '~/api/entities';
-import { addInstruction, AddInstructionParams } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import {
+  addInstruction,
+  AddInstructionParams,
+  Context,
+  Entity,
+  Identity,
+  Instruction,
+  TransactionQueue,
+} from '~/internal';
 import { InstructionStatus } from '~/types';
 import {
   identityIdToString,

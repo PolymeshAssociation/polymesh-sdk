@@ -38,13 +38,14 @@ import sinon from 'sinon';
 
 import {
   Account,
+  Context,
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
+  PostTransactionValue,
   SecurityToken,
-} from '~/api/entities';
+} from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
-import { Context, PostTransactionValue } from '~/base';
 import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -74,6 +75,7 @@ import {
 import { SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
+  DEFAULT_MAX_BATCH_ELEMENTS,
   MAX_BATCH_ELEMENTS,
   MAX_DECIMALS,
   MAX_TICKER_LENGTH,
@@ -3307,8 +3309,8 @@ describe('batchArguments', () => {
   });
 
   test('should use a custom batching function to group elements', () => {
-    const tag = TxTags.asset.BatchAddDocument;
-    const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
+    const tag = null;
+    const expectedBatchLength = DEFAULT_MAX_BATCH_ELEMENTS;
 
     const elements = range(0, 2 * expectedBatchLength);
 
@@ -3327,8 +3329,8 @@ describe('batchArguments', () => {
   });
 
   test('should throw an error if a custom batch has a size bigger than the limit', () => {
-    const tag = TxTags.asset.BatchAddDocument;
-    const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
+    const tag = TxTags.asset.CreateCheckpoint;
+    const expectedBatchLength = DEFAULT_MAX_BATCH_ELEMENTS;
 
     const elements = range(0, 3 * expectedBatchLength);
 

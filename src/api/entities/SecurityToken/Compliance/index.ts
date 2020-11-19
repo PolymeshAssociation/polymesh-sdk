@@ -1,5 +1,4 @@
-import { Namespace, SecurityToken } from '~/api/entities';
-import { Context } from '~/base';
+import { Context, Namespace, SecurityToken } from '~/internal';
 
 import { Requirements } from './Requirements';
 import { TrustedClaimIssuers } from './TrustedClaimIssuers';

@@ -2,8 +2,14 @@ import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import { CddStatus, DidRecord } from 'polymesh-types/types';
 
-import { Entity, SecurityToken, TickerReservation, Venue } from '~/api/entities';
-import { Context, PolymeshError } from '~/base';
+import {
+  Context,
+  Entity,
+  PolymeshError,
+  SecurityToken,
+  TickerReservation,
+  Venue,
+} from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {

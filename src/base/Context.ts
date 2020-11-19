@@ -1,4 +1,5 @@
 import { ApiPromise, Keyring } from '@polkadot/api';
+import { AddressOrPair } from '@polkadot/api/types';
 import { getTypeDef } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
 import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
@@ -9,8 +10,7 @@ import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
-import { Account, CurrentAccount, CurrentIdentity, Identity } from '~/api/entities';
-import { PolymeshError } from '~/base';
+import { Account, CurrentAccount, CurrentIdentity, Identity, PolymeshError } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
@@ -340,6 +340,19 @@ export class Context {
     }
 
     return currentPair;
+  }
+
+  /**
+   * Retrieve the signer address (or keyring pair)
+   */
+  public getSigner(): AddressOrPair {
+    const currentPair = this.getCurrentPair();
+    const { isLocked, address } = currentPair;
+    /*
+     * if the keyring pair is locked, it means it most likely got added from the polkadot extension
+     * with a custom signer. This means we have to pass just the address to signAndSend
+     */
+    return isLocked ? address : currentPair;
   }
 
   /**

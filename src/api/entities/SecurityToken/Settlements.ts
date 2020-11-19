@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { CanTransferResult } from 'polymesh-types/types';
 
-import { Namespace, SecurityToken } from '~/api/entities';
+import { Namespace, SecurityToken } from '~/internal';
 import { PortfolioLike, TransferStatus } from '~/types';
 import {
   canTransferResultToTransferStatus,

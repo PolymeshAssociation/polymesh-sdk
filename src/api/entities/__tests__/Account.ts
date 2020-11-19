@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Account, Entity } from '~/api/entities';
-import { Context } from '~/base';
+import { Account, Context, Entity } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';

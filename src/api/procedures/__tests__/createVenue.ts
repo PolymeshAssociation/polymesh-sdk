@@ -3,10 +3,8 @@ import BigNumber from 'bignumber.js';
 import { VenueDetails, VenueType as MeshVenueType } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Venue } from '~/api/entities';
-import { CreateVenueParams } from '~/api/procedures';
 import { createCreateVenueResolver, prepareCreateVenue } from '~/api/procedures/createVenue';
-import { Context, PostTransactionValue } from '~/base';
+import { Context, CreateVenueParams, PostTransactionValue, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { VenueType } from '~/types';

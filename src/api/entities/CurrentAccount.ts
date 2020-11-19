@@ -1,4 +1,4 @@
-import { Account, CurrentIdentity } from '~/api/entities';
+import { Account, CurrentIdentity } from '~/internal';
 
 /**
  * Represents the current account that is bound to the SDK instance

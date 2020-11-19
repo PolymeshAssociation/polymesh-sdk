@@ -85,8 +85,7 @@ import {
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
-import { AuthorizationRequest, Identity } from '~/api/entities';
-import { Context } from '~/base';
+import { AuthorizationRequest, Context, Identity } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -190,6 +189,7 @@ interface ContextOptions {
   invalidDids?: string[];
   transactionFee?: BigNumber;
   currentPairAddress?: string;
+  currentPairIsLocked?: boolean;
   issuedClaims?: ResultSet<ClaimData>;
   primaryKey?: string;
   secondaryKeys?: SecondaryKey[];
@@ -205,6 +205,7 @@ interface Pair {
   address: string;
   meta: object;
   publicKey: string;
+  isLocked?: boolean;
 }
 
 interface KeyringOptions {
@@ -236,6 +237,7 @@ export enum MockTxStatus {
   Aborted = 'Aborted',
   Rejected = 'Rejected',
   Intermediate = 'Intermediate',
+  BatchFailed = 'BatchFailed',
 }
 
 export enum TxFailReason {
@@ -268,6 +270,13 @@ const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
   status: { isReady: false, isInBlock: true, asInBlock: 'blockHash' },
   isCompleted: true,
   isInBlock: true,
+});
+
+const batchFailedReceipt: ISubmittableResult = merge({}, successReceipt, {
+  findRecord: (mod: string, event: string) =>
+    mod === 'utility' && event === 'BatchInterrupted'
+      ? { event: { data: [{ toString: (): string => '1' }, 'Some Error'] } }
+      : undefined,
 });
 
 /**
@@ -338,6 +347,9 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
   if (status === MockTxStatus.Intermediate) {
     return intermediateReceipt;
   }
+  if (status === MockTxStatus.BatchFailed) {
+    return batchFailedReceipt;
+  }
 
   throw new Error(`There is no receipt associated with status ${status}`);
 };
@@ -381,6 +393,7 @@ const defaultContextOptions: ContextOptions = {
   invalidDids: [],
   transactionFee: new BigNumber(200),
   currentPairAddress: '0xdummy',
+  currentPairIsLocked: false,
   issuedClaims: {
     data: [
       {
@@ -453,7 +466,7 @@ function configureContext(opts: ContextOptions): void {
   const currentPair = opts.withSeed
     ? ({
         address: opts.currentPairAddress,
-        isLocked: false,
+        isLocked: opts.currentPairIsLocked,
       } as KeyringPair)
     : undefined;
   const getCurrentPair = sinon.stub();
@@ -473,6 +486,7 @@ function configureContext(opts: ContextOptions): void {
     setPair: sinon.stub().callsFake(address => {
       contextInstance.currentPair = { address } as KeyringPair;
     }),
+    getSigner: sinon.stub().returns(currentPair),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
     queryMiddleware: sinon

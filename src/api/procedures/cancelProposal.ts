@@ -2,7 +2,7 @@
 
 // import BigNumber from 'bignumber.js';
 
-// import { Procedure } from '~/base';
+// import { Procedure } from '~/internal';
 // import { accountIdToString, numberToPipId } from '~/utils';
 
 // import { assertProposalUnlocked } from './utils';

@@ -4,13 +4,12 @@ import BigNumber from 'bignumber.js';
 import { IdentityId, PortfolioName } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { NumberedPortfolio } from '~/api/entities';
 import {
   createPortfolioResolver,
   Params,
   prepareCreatePortfolio,
 } from '~/api/procedures/createPortfolio';
-import { Context, PostTransactionValue } from '~/base';
+import { Context, NumberedPortfolio, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { tuple } from '~/types/utils';

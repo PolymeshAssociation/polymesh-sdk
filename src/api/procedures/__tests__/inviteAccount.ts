@@ -3,10 +3,8 @@ import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, AuthorizationRequest } from '~/api/entities';
-import { InviteAccountParams } from '~/api/procedures';
 import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
-import { Context } from '~/base';
+import { Account, AuthorizationRequest, Context, InviteAccountParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, Identity, ResultSet } from '~/types';

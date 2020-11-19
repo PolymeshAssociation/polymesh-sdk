@@ -3,9 +3,16 @@ import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { DefaultPortfolio, Identity, Namespace, NumberedPortfolio } from '~/api/entities';
-import { createPortfolio, deletePortfolio } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import {
+  Context,
+  createPortfolio,
+  DefaultPortfolio,
+  deletePortfolio,
+  Identity,
+  Namespace,
+  NumberedPortfolio,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { tuple } from '~/types/utils';

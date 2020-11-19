@@ -2,7 +2,7 @@
 
 import sinon, { SinonStub } from 'sinon';
 
-import { Context, Procedure } from '~/base';
+import { Context, Procedure } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 
 const mockInstanceContainer = {
@@ -13,6 +13,7 @@ type MockProcedure = Mocked<Procedure>;
 
 let procedureConstructorStub: SinonStub;
 let addTransactionStub: SinonStub;
+let addBatchTransactionStub: SinonStub;
 
 export const MockProcedureClass = class {
   /**
@@ -35,8 +36,10 @@ export const mockProcedureModule = (path: string) => (): object => ({
 function initProcedure(): void {
   procedureConstructorStub = sinon.stub();
   addTransactionStub = sinon.stub();
+  addBatchTransactionStub = sinon.stub();
   const procedure = ({
     addTransaction: addTransactionStub.returns([]),
+    addBatchTransaction: addBatchTransactionStub.returns([]),
   } as unknown) as MockProcedure;
 
   mockInstanceContainer.procedure = procedure;
@@ -87,4 +90,12 @@ export function getInstance<T, U>(context?: Context): Procedure<T, U> {
  */
 export function getAddTransactionStub(): SinonStub {
   return addTransactionStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `addBatchTransaction` method
+ */
+export function getAddBatchTransactionStub(): SinonStub {
+  return addBatchTransactionStub;
 }

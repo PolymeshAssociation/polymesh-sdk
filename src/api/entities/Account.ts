@@ -1,9 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
-import { Entity, Identity } from '~/api/entities';
-import { Authorizations } from '~/api/entities/common/namespaces/Authorizations';
-import { Context } from '~/base';
+import { Authorizations, Context, Entity, Identity } from '~/internal';
 import { transactions } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {

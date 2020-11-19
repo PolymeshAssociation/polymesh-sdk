@@ -6,13 +6,12 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { DefaultPortfolio, Instruction } from '~/api/entities';
 import {
   ModifyInstructionAuthorizationParams,
   prepareModifyInstructionAuthorization,
 } from '~/api/procedures/modifyInstructionAuthorization';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Context } from '~/base';
+import { Context, DefaultPortfolio, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AuthorizationStatus } from '~/types';

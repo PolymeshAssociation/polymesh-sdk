@@ -1,8 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Venue } from '~/api/entities';
-import { Context, PostTransactionValue, Procedure } from '~/base';
+import { Context, PostTransactionValue, Procedure, Venue } from '~/internal';
 import { VenueType } from '~/types';
 import {
   findEventRecord,

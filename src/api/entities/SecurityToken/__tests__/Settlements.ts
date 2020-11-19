@@ -3,8 +3,7 @@ import BigNumber from 'bignumber.js';
 import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
-import { Namespace } from '~/api/entities';
-import { Context } from '~/base';
+import { Context, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioLike, TransferStatus } from '~/types';

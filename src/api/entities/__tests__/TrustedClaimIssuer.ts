@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Entity, Identity, TrustedClaimIssuer } from '~/api/entities';
-import { Context } from '~/base';
+import { Context, Entity, Identity, TrustedClaimIssuer } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';

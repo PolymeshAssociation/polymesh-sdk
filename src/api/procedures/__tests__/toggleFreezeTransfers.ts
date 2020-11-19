@@ -1,13 +1,12 @@
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities';
 import {
   getRequiredRoles,
   Params,
   prepareToggleFreezeTransfers,
 } from '~/api/procedures/toggleFreezeTransfers';
-import { Context } from '~/base';
+import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';

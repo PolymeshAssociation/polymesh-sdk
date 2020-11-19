@@ -3,10 +3,16 @@ import BigNumber from 'bignumber.js';
 import { PortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Entity, Identity, Portfolio, SecurityToken } from '~/api/entities';
-import { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
-import { moveFunds } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import {
+  Context,
+  Entity,
+  Identity,
+  moveFunds,
+  NumberedPortfolio,
+  Portfolio,
+  SecurityToken,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsModule from '~/utils';

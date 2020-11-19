@@ -3,14 +3,13 @@ import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { TickerReservation } from '~/api/entities';
 import {
   createTickerReservationResolver,
   getRequiredRoles,
   prepareReserveTicker,
   ReserveTickerParams,
 } from '~/api/procedures/reserveTicker';
-import { Context, PostTransactionValue } from '~/base';
+import { Context, PostTransactionValue, TickerReservation } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TickerReservationStatus } from '~/types';

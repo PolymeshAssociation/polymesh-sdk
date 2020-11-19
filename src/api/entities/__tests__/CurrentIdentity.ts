@@ -1,9 +1,16 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { CurrentIdentity, Identity, Venue } from '~/api/entities';
-import { createVenue, inviteAccount, removeSecondaryKeys } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import {
+  Context,
+  createVenue,
+  CurrentIdentity,
+  Identity,
+  inviteAccount,
+  removeSecondaryKeys,
+  TransactionQueue,
+  Venue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { SecondaryKey, SubCallback, VenueType } from '~/types';
 import { tuple } from '~/types/utils';

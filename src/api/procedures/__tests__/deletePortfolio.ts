@@ -4,7 +4,7 @@ import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { DeletePortfolioParams, prepareDeletePortfolio } from '~/api/procedures/deletePortfolio';
-import { Context } from '~/base';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance } from '~/types';

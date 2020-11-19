@@ -1,7 +1,15 @@
 import { AddressOrPair } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
+import { TxTag } from 'polymesh-types/types';
 
-import { Context, PolymeshError, PostTransactionValue, TransactionQueue } from '~/base';
+import {
+  Context,
+  PolymeshError,
+  PolymeshTransaction,
+  PolymeshTransactionBatch,
+  PostTransactionValue,
+  TransactionQueue,
+} from '~/internal';
 import { ErrorCode, Role } from '~/types';
 import {
   MapMaybePostTransactionValue,
@@ -9,16 +17,24 @@ import {
   PolymeshTx,
   PostTransactionValueArray,
   ResolverFunctionArray,
-  TransactionSpec,
 } from '~/types/internal';
+import { batchArguments, transactionToTxTag } from '~/utils';
 
-interface AddTransactionOpts<Values extends unknown[]> {
+interface AddTransactionOptsBase<Values extends unknown[]> {
   fee?: BigNumber;
   resolvers?: ResolverFunctionArray<Values>;
   isCritical?: boolean;
   signer?: AddressOrPair;
-  batchSize?: number;
   paidByThirdParty?: boolean;
+}
+
+interface AddBatchTransactionOpts<Values extends unknown[], Args extends unknown[]>
+  extends AddTransactionOptsBase<Values> {
+  groupByFn?: (obj: MapMaybePostTransactionValue<Args>) => string;
+}
+
+interface AddTransactionOpts<Values extends unknown[]> extends AddTransactionOptsBase<Values> {
+  batchSize?: number;
 }
 
 /**
@@ -38,7 +54,10 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     args: Args
   ) => Promise<boolean> | boolean | Role[];
 
-  private transactions: TransactionSpec[] = [];
+  private transactions: (
+    | PolymeshTransaction<unknown[]>
+    | PolymeshTransactionBatch<unknown[]>
+  )[] = [];
 
   public context = {} as Context;
 
@@ -114,18 +133,17 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
   }
 
   /**
-   * Appends a method (or [[PostTransactionValue]] that resolves to a method) into the TransactionQueue's queue. This defines
-   * what will be run by the TransactionQueue when it is started.
+   * Appends a transaction (or [[PostTransactionValue]] that resolves to a transaction) into the TransactionQueue's queue. This defines
+   *   what will be run by the TransactionQueue when it is started.
    *
-   * @param method - a method that will be run in the Procedure's TransactionQueue.
-   * A future method is a transaction that doesn't exist at prepare time
-   * (for example a transaction on a module that hasn't been attached but will be by the time the previous transactions are run)
+   * @param tx - a transaction that will be run in the Procedure's TransactionQueue
    * @param options.fee - value in POLYX of the transaction (should only be set manually if the transaction is a future value or other special cases, otherwise it is fetched automatically from the chain)
-   * @param options.resolvers - asynchronous calslbacks used to return runtime data after
-   * the added transaction has finished successfully
+   * @param options.resolvers - asynchronous callbacks used to return runtime data after
+   *   the added transaction has finished successfully
    * @param options.isCritical - whether this transaction failing should make the entire queue fail or not. Defaults to true
    * @param options.signer - address or keyring pair of the account that will sign this transaction. Defaults to the current pair in the context
-   * @param options.batchSize - when adding batch transactions, this is used to specify the amount of elements in the batch (for fee calculations). If a batch transaction is added without this option being set, an error will be thrown
+   * @param options.batchSize - amount of elements in the batch (this is only used for certain transactions whose fees depend on the size of the arg list, like `asset.addDocuments`)
+   * @param options.paidByThirdParty - if the transaction fees will be paid by a third party. Defaults to false
    * @param args - arguments to be passed to the transaction method
    *
    * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options
@@ -154,36 +172,36 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       fee = null,
       resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
       isCritical = true,
-      batchSize = null,
       paidByThirdParty = false,
+      batchSize = null,
     } = options;
+    const { context } = this;
     let { signer } = options;
     const postTransactionValues = resolvers.map(
       resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
     if (!signer) {
-      const currentPair = this.context.getCurrentPair();
-      const { isLocked, address } = currentPair;
-      /*
-       * if the keyring pair is locked, it means it most likely got added from the polkadot extension
-       * with a custom signer. This means we have to pass just the address to signAndSend
-       */
-      signer = isLocked ? address : currentPair;
+      signer = context.getSigner();
     }
 
-    const tx = transaction as PolymeshTx<unknown[]>;
+    const tx = transaction as MaybePostTransactionValue<PolymeshTx<unknown[]>>;
 
-    this.transactions.push({
-      tx,
-      args,
-      postTransactionValues,
-      isCritical,
-      signer,
-      fee,
-      batchSize,
-      paidByThirdParty,
-    });
+    this.transactions.push(
+      new PolymeshTransaction<unknown[]>(
+        {
+          tx,
+          args,
+          postTransactionValues,
+          isCritical,
+          signer,
+          fee,
+          batchSize,
+          paidByThirdParty,
+        },
+        context
+      )
+    );
 
     return postTransactionValues;
   }
@@ -224,5 +242,107 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     } finally {
       procedure.cleanup();
     }
+  }
+
+  /**
+   * Appends a batch (or multiple batches) of transactions (or [[PostTransactionValue]]s that resolve to transactions) into the TransactionQueue's queue. This defines
+   *   what will be run by the TransactionQueue when it is started.
+   *
+   * @param tx - a transaction that will be run in the Procedure's TransactionQueue
+   * @param options.fee - value in POLYX of the transaction (should only be set manually if the transaction is a future value or other special cases, otherwise it is fetched automatically from the chain)
+   * @param options.resolvers - asynchronous callbacks used to return runtime data after
+   *   the added transaction has finished successfully
+   * @param options.isCritical - whether this transaction failing should make the entire queue fail or not. Defaults to true
+   * @param options.signer - address or keyring pair of the account that will sign this transaction. Defaults to the current pair in the context
+   * @param options.paidByThirdParty - if the transaction fees will be paid by a third party. Defaults to false
+   * @param options.groupByFn - function that establishes how to group the arguments in case the list is too large and they must be separated internally
+   * @param args - arguments to be passed to each method in the batch
+   *
+   * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options.
+   *   Resolvers will be run on the last internal batch of the transactions.
+   */
+  public addBatchTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
+    tx: PolymeshTx<TxArgs>,
+    options: AddBatchTransactionOpts<Values, TxArgs>,
+    args: MapMaybePostTransactionValue<TxArgs>[]
+  ): PostTransactionValueArray<Values>;
+
+  public addBatchTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
+    tx: PostTransactionValue<PolymeshTx<TxArgs>>,
+    options: Omit<AddBatchTransactionOpts<Values, TxArgs>, 'fee'> & {
+      fee: BigNumber; // fee MUST be provided by hand if the transaction is a future value
+    },
+    args: MapMaybePostTransactionValue<TxArgs>[]
+  ): PostTransactionValueArray<Values>;
+
+  // eslint-disable-next-line require-jsdoc
+  public addBatchTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
+    transaction: MaybePostTransactionValue<PolymeshTx<TxArgs>>,
+    options: AddBatchTransactionOpts<Values, TxArgs>,
+    args: MapMaybePostTransactionValue<TxArgs>[]
+  ): PostTransactionValueArray<Values> {
+    const {
+      fee = null,
+      resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
+      isCritical = true,
+      paidByThirdParty = false,
+      groupByFn,
+    } = options;
+    const { context } = this;
+    let { signer } = options;
+    const postTransactionValues = resolvers.map(
+      resolver => new PostTransactionValue(resolver)
+    ) as PostTransactionValueArray<Values>;
+
+    if (!signer) {
+      signer = context.getSigner();
+    }
+
+    const tx = transaction as MaybePostTransactionValue<PolymeshTx<unknown[]>>;
+
+    let tag: TxTag | null;
+
+    if (tx instanceof PostTransactionValue) {
+      tag = null;
+    } else {
+      tag = transactionToTxTag(tx);
+    }
+
+    const specBase = {
+      tx,
+      postTransactionValues,
+      isCritical,
+      signer,
+      fee,
+      paidByThirdParty,
+    } as const;
+
+    const batches = batchArguments(args, tag, groupByFn);
+
+    batches.forEach((argumentBatch, index) => {
+      let spec = { ...specBase };
+
+      if (index === batches.length - 1) {
+        spec = { ...spec, postTransactionValues };
+      }
+
+      if (argumentBatch.length === 1) {
+        // single transaction
+        this.transactions.push(
+          new PolymeshTransaction<unknown[]>(
+            { ...spec, args: argumentBatch[0], batchSize: null },
+            context
+          )
+        );
+
+        return;
+      }
+
+      this.transactions.push(
+        new PolymeshTransactionBatch<unknown[]>({ ...spec, args: argumentBatch }, context)
+      );
+    });
+
+    return postTransactionValues;
   }
 }

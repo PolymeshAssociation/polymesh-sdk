@@ -13,14 +13,14 @@ describe('createProposal procedure', () => {
 // import { TxTag, TxTags } from 'polymesh-types/types';
 // import sinon from 'sinon';
 
-// import { Proposal } from '~/api/entities';
+// import { Proposal } from '~/internal';
 // import {
 //   CreateProposalParams,
 //   createProposalResolver,
 //   getRequiredRoles,
 //   prepareCreateProposal,
 // } from '~/api/procedures/createProposal';
-// import { Context, PostTransactionValue } from '~/base';
+// import { Context, PostTransactionValue } from '~/internal';
 // import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 // import { Mocked } from '~/testUtils/types';
 // import { TickerReservationStatus, TransactionArgumentType } from '~/types';

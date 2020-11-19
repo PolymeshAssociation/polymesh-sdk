@@ -8,24 +8,25 @@ import {
 } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
-import { Entity, Identity } from '~/api/entities';
+import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import {
+  Context,
+  Entity,
+  Identity,
   modifyPrimaryIssuanceAgent,
   modifyToken,
   removePrimaryIssuanceAgent,
+  SecurityToken,
   toggleFreezeTransfers,
+  TransactionQueue,
   transferTokenOwnership,
-} from '~/api/procedures';
-import { Params } from '~/api/procedures/toggleFreezeTransfers';
-import { Context, TransactionQueue } from '~/base';
+} from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
 import * as utilsModule from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
-
-import { SecurityToken } from '../';
 
 describe('SecurityToken class', () => {
   let prepareToggleFreezeTransfersStub: SinonStub<

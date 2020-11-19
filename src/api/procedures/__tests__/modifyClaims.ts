@@ -1,19 +1,15 @@
-import { Vec } from '@polkadot/types';
+import { Option } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
-import {
-  BatchAddClaimItem,
-  BatchRevokeClaimItem,
-  Claim as MeshClaim,
-  IdentityId,
-} from 'polymesh-types/types';
+import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
   getRequiredRoles,
+  groupByDid,
   ModifyClaimsParams,
   prepareModifyClaims,
 } from '~/api/procedures/modifyClaims';
-import { Context } from '~/base';
+import { Context } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -27,9 +23,9 @@ describe('modifyClaims procedure', () => {
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let addTransactionStub: sinon.SinonStub;
-  let batchAddClaimTransaction: PolymeshTx<[Vec<BatchAddClaimItem>]>;
-  let batchRevokeClaimTransaction: PolymeshTx<[Vec<BatchRevokeClaimItem>]>;
+  let addBatchTransactionStub: sinon.SinonStub;
+  let addClaimTransaction: PolymeshTx<[IdentityId, Claim, Option<Moment>]>;
+  let revokeClaimTransaction: PolymeshTx<[IdentityId, Claim]>;
 
   let someDid: string;
   let otherDid: string;
@@ -95,10 +91,10 @@ describe('modifyClaims procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
-    batchAddClaimTransaction = dsMockUtils.createTxStub('identity', 'batchAddClaim');
-    batchRevokeClaimTransaction = dsMockUtils.createTxStub('identity', 'batchRevokeClaim');
+    addClaimTransaction = dsMockUtils.createTxStub('identity', 'addClaim');
+    revokeClaimTransaction = dsMockUtils.createTxStub('identity', 'revokeClaim');
     claimToMeshClaimStub.withArgs(cddClaim, mockContext).returns(rawCddClaim);
     claimToMeshClaimStub.withArgs(buyLockupClaim, mockContext).returns(rawBuyLockupClaim);
     stringToIdentityIdStub.withArgs(someDid, mockContext).returns(rawSomeDid);
@@ -136,34 +132,29 @@ describe('modifyClaims procedure', () => {
     expect(error.data).toMatchObject({ nonExistentDids: [otherDid] });
   });
 
-  test('should add an add claims batch transaction to the queue', async () => {
+  describe('groupByDid', () => {
+    test('should return the DID of the target identity', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(groupByDid([rawOtherDid] as any)).toBe(otherDid);
+    });
+  });
+
+  test('should add a batch of add claim transactions to the queue', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getCurrentIdentity();
 
     await prepareModifyClaims.call(proc, args);
 
     const rawAddClaimItems = [
-      {
-        target: rawOtherDid,
-        claim: rawCddClaim,
-        expiry: null,
-      },
-      {
-        target: rawSomeDid,
-        claim: rawCddClaim,
-        expiry: null,
-      },
-      {
-        target: rawSomeDid,
-        claim: rawBuyLockupClaim,
-        expiry: rawExpiry,
-      },
+      [rawSomeDid, rawCddClaim, null],
+      [rawOtherDid, rawCddClaim, null],
+      [rawSomeDid, rawBuyLockupClaim, rawExpiry],
     ];
 
     sinon.assert.calledWith(
-      addTransactionStub,
-      batchAddClaimTransaction,
-      { batchSize: rawAddClaimItems.length },
+      addBatchTransactionStub,
+      addClaimTransaction,
+      { groupByFn: sinon.match(sinon.match.func) },
       rawAddClaimItems
     );
 
@@ -196,9 +187,9 @@ describe('modifyClaims procedure', () => {
     await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
 
     sinon.assert.calledWith(
-      addTransactionStub,
-      batchAddClaimTransaction,
-      { batchSize: rawAddClaimItems.length },
+      addBatchTransactionStub,
+      addClaimTransaction,
+      { groupByFn: sinon.match(sinon.match.func) },
       rawAddClaimItems
     );
   });
@@ -235,7 +226,7 @@ describe('modifyClaims procedure', () => {
     );
   });
 
-  test('should add a revoke claims batch transaction to the queue', async () => {
+  test('should add a batch of revoke claim transactions to the queue', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getCurrentIdentity();
 
@@ -266,27 +257,15 @@ describe('modifyClaims procedure', () => {
     await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke });
 
     const rawRevokeClaimItems = [
-      {
-        target: rawOtherDid,
-        claim: rawCddClaim,
-        expiry: null,
-      },
-      {
-        target: rawSomeDid,
-        claim: rawCddClaim,
-        expiry: null,
-      },
-      {
-        target: rawSomeDid,
-        claim: rawBuyLockupClaim,
-        expiry: rawExpiry,
-      },
+      [rawSomeDid, rawCddClaim, null],
+      [rawOtherDid, rawCddClaim, null],
+      [rawSomeDid, rawBuyLockupClaim, rawExpiry],
     ];
 
     sinon.assert.calledWith(
-      addTransactionStub,
-      batchRevokeClaimTransaction,
-      { batchSize: rawRevokeClaimItems.length },
+      addBatchTransactionStub,
+      revokeClaimTransaction,
+      { groupByFn: sinon.match(sinon.match.func) },
       rawRevokeClaimItems
     );
   });

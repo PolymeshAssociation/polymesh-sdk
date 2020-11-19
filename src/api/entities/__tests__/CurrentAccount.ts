@@ -1,7 +1,6 @@
 import sinon from 'sinon';
 
-import { Account, CurrentAccount, CurrentIdentity, Identity } from '~/api/entities';
-import { Context } from '~/base';
+import { Account, Context, CurrentAccount, CurrentIdentity, Identity } from '~/internal';
 import { dsMockUtils } from '~/testUtils/mocks';
 import * as utilsModule from '~/utils';
 

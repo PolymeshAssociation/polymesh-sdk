@@ -4,8 +4,14 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { PortfolioId, Ticker } from 'polymesh-types/types';
 
-import { Instruction, SecurityToken } from '~/api/entities';
-import { Context, PolymeshError, PostTransactionValue, Procedure } from '~/base';
+import {
+  Context,
+  Instruction,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+  SecurityToken,
+} from '~/internal';
 import { ErrorCode, InstructionType, PortfolioLike, Role, RoleType } from '~/types';
 import {
   dateToMoment,

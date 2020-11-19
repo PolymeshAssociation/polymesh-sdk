@@ -3,15 +3,15 @@
 // import { BlockHash } from '@polkadot/types/interfaces/chain';
 // import BigNumber from 'bignumber.js';
 
-// import { Account, Entity, Identity } from '~/api/entities';
+// import { Account, Entity, Identity } from '~/internal';
 // import {
 //   cancelProposal,
 //   editProposal,
 //   EditProposalParams,
 //   voteOnProposal,
 //   VoteOnProposalParams,
-// } from '~/api/procedures';
-// import { Context, TransactionQueue } from '~/base';
+// } from '~/internal';
+// import { Context, TransactionQueue } from '~/internal';
 // import { eventByIndexedArgs, proposal, proposalVotes } from '~/middleware/queries';
 // import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 // import { Ensured, ResultSet } from '~/types';

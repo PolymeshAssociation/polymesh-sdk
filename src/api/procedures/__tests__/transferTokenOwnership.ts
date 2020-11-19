@@ -4,13 +4,12 @@ import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities';
 import {
   getRequiredRoles,
   Params,
   prepareTransferTokenOwnership,
 } from '~/api/procedures/transferTokenOwnership';
-import { Context } from '~/base';
+import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, RoleType, TickerReservationStatus } from '~/types';
