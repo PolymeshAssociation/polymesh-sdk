@@ -1,6 +1,7 @@
 import { Account, AuthorizationRequest } from '~/api/entities';
 import { Procedure } from '~/base';
 import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
+import { getDid } from '~/utils/internal';
 
 /**
  * @hidden
@@ -66,7 +67,7 @@ export async function isAuthorized(
 
   let condition;
   let did: string;
-  const fetchDid = async (): Promise<string> => did || (await context.getCurrentIdentity()).did;
+  const fetchDid = async (): Promise<string> => getDid(did, context);
 
   if (target instanceof Account) {
     const { address } = context.getCurrentAccount();
