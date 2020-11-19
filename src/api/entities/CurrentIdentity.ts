@@ -4,7 +4,6 @@ import { chunk, flatten, uniqBy } from 'lodash';
 import { Instruction as MeshInstruction } from 'polymesh-types/types';
 
 import { Identity, Instruction, Venue } from '~/api/entities';
-import { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
 import {
   createVenue,
   CreateVenueParams,
@@ -16,7 +15,11 @@ import { TransactionQueue } from '~/base';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
-import { portfolioIdToMeshPortfolioId, u64ToBigNumber } from '~/utils/conversion';
+import {
+  portfolioIdToMeshPortfolioId,
+  portfolioLikeToPortfolioId,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 
 /**
  * Represents the Identity associated to the current [[Account]]
@@ -96,12 +99,7 @@ export class CurrentIdentity extends Identity {
     const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
 
     const portfolioIds: PortfolioId[] = [
-      ...allPortfolios.map(portfolio => {
-        if (portfolio instanceof NumberedPortfolio) {
-          return { did, number: portfolio.id };
-        }
-        return { did };
-      }),
+      ...(await P.map(allPortfolios, portfolio => portfolioLikeToPortfolioId(portfolio, context))),
     ];
 
     const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);

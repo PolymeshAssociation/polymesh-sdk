@@ -452,6 +452,7 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   did: 'someDid',
   exists: true,
   uuid: 'someUuid',
+  custodian: ('identity' as unknown) as Identity,
 };
 let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
 const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
@@ -465,6 +466,7 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
   ],
   did: 'someDid',
   uuid: 'someUuid',
+  custodian: ('identity' as unknown) as Identity,
 };
 let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
 const defaultInstructionOptions: InstructionOptions = {
@@ -615,8 +617,8 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
     const value = merge({}, defaultPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/api/entities');
-    Object.setPrototypeOf(entities.NumberedPortfolio.prototype, entities.Portfolio.prototype);
-    Object.setPrototypeOf(value, entities.NumberedPortfolio.prototype);
+    Object.setPrototypeOf(entities.DefaultPortfolio.prototype, entities.Portfolio.prototype);
+    Object.setPrototypeOf(value, entities.DefaultPortfolio.prototype);
     return value;
   });
 }

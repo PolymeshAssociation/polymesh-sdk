@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { CurrentIdentity, Identity, Venue } from '~/api/entities';
+import { CurrentIdentity, Identity, NumberedPortfolio, Venue } from '~/api/entities';
+import { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 import { createVenue, inviteAccount, removeSecondaryKeys } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -9,18 +10,18 @@ import { SecondaryKey, SubCallback, VenueType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
-// jest.mock(
-//   '~/api/entities/NumberedPortfolio',
-//   require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
-//     '~/api/entities/NumberedPortfolio'
-//   )
-// );
-// jest.mock(
-//   '~/api/entities/DefaultPortfolio',
-//   require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
-//     '~/api/entities/DefaultPortfolio'
-//   )
-// );
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
+);
+jest.mock(
+  '~/api/entities/DefaultPortfolio',
+  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+    '~/api/entities/DefaultPortfolio'
+  )
+);
 
 describe('CurrentIdentity class', () => {
   let context: Context;
@@ -150,69 +151,75 @@ describe('CurrentIdentity class', () => {
     });
   });
 
-  describe.only('method: getPendingInstructions', () => {
+  describe('method: getPendingInstructions', () => {
     test('should return all pending instructions in which the identity is involved', async () => {
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
       const id3 = new BigNumber(3);
       const id4 = new BigNumber(4);
-      const id5 = new BigNumber(5);
 
       const did = 'someDid';
       const identity = new CurrentIdentity({ did }, context);
+
       const otherDid = 'otherDid';
       const otherIdentity = new Identity({ did: otherDid }, context);
 
+      const defaultPortfolioDid = 'someDid';
+      const numberedPortfolioDid = 'someDid';
       const numberedPortfolioId = new BigNumber(1);
 
-      // identity.portfolios.getPortfolios = sinon
-      //   .stub()
-      //   .resolves([{ owner: { did } }, { owner: { did }, id: numberedPortfolioId }]);
+      const defaultPortfolio = new DefaultPortfolio({ did: defaultPortfolioDid }, context);
+      const numberedPortfolio = new NumberedPortfolio(
+        { did: numberedPortfolioDid, id: numberedPortfolioId },
+        context
+      );
 
-      const portfolio1 = entityMockUtils.getDefaultPortfolioInstance({
-        custodian: identity,
+      entityMockUtils.configureMocks({
+        defaultPortfolioOptions: {
+          custodian: identity,
+        },
+        numberedPortfolioOptions: {
+          custodian: otherIdentity,
+        },
       });
-      const portfolio2 = entityMockUtils.getNumberedPortfolioInstance({
-        id: numberedPortfolioId,
-        custodian: otherIdentity,
-      });
-      const portfolio3 = entityMockUtils.getNumberedPortfolioInstance({
-        id: numberedPortfolioId,
-        custodian: identity,
-      });
-      identity.portfolios.getPortfolios = sinon.stub().resolves([portfolio1, portfolio2]);
+
+      identity.portfolios.getPortfolios = sinon
+        .stub()
+        .resolves([defaultPortfolio, numberedPortfolio]);
+
+      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves([]);
+
+      const portfolioLikeToPortfolioIdStub = sinon.stub(
+        utilsConversionModule,
+        'portfolioLikeToPortfolioId'
+      );
+
+      portfolioLikeToPortfolioIdStub
+        .withArgs(defaultPortfolio, context)
+        .resolves({ did: defaultPortfolioDid, number: undefined });
+      portfolioLikeToPortfolioIdStub
+        .withArgs(numberedPortfolio, context)
+        .resolves({ did: numberedPortfolioDid, number: numberedPortfolioId });
 
       const rawPortfolio = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),
         kind: dsMockUtils.createMockPortfolioKind('Default'),
       });
 
-      const rawNumberedPortfolio = dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId(did),
-        kind: dsMockUtils.createMockPortfolioKind({
-          User: dsMockUtils.createMockU64(numberedPortfolioId.toNumber()),
-        }),
-      });
-
-      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves([portfolio3]);
-
       const portfolioIdToMeshPortfolioIdStub = sinon.stub(
         utilsConversionModule,
         'portfolioIdToMeshPortfolioId'
       );
 
-      portfolioIdToMeshPortfolioIdStub.withArgs({ did }, context).returns(rawPortfolio);
       portfolioIdToMeshPortfolioIdStub
-        .withArgs({ did, number: numberedPortfolioId }, context)
-        .returns(rawNumberedPortfolio);
+        .withArgs({ did, number: undefined }, context)
+        .returns(rawPortfolio);
 
       const userAuthsStub = dsMockUtils.createQueryStub('settlement', 'userAuths');
 
       const rawId1 = dsMockUtils.createMockU64(id1.toNumber());
       const rawId2 = dsMockUtils.createMockU64(id2.toNumber());
       const rawId3 = dsMockUtils.createMockU64(id3.toNumber());
-      const rawId4 = dsMockUtils.createMockU64(id4.toNumber());
-      const rawId5 = dsMockUtils.createMockU64(id5.toNumber());
 
       const entriesStub = sinon.stub();
       entriesStub
@@ -232,23 +239,6 @@ describe('CurrentIdentity class', () => {
           ),
         ]);
 
-      entriesStub
-        .withArgs(rawNumberedPortfolio)
-        .resolves([
-          tuple(
-            { args: [rawNumberedPortfolio, rawId2] },
-            dsMockUtils.createMockAuthorizationStatus('Pending')
-          ),
-          tuple(
-            { args: [rawNumberedPortfolio, rawId4] },
-            dsMockUtils.createMockAuthorizationStatus('Pending')
-          ),
-          tuple(
-            { args: [rawNumberedPortfolio, rawId5] },
-            dsMockUtils.createMockAuthorizationStatus('Pending')
-          ),
-        ]);
-
       userAuthsStub.entries = entriesStub;
 
       /* eslint-disable @typescript-eslint/camelcase */
@@ -262,7 +252,7 @@ describe('CurrentIdentity class', () => {
 
       const multiStub = sinon.stub();
 
-      multiStub.withArgs([rawId1, rawId2, rawId3, rawId4, rawId5]).resolves([
+      multiStub.withArgs([rawId1, rawId2, rawId3]).resolves([
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id1.toNumber()),
           venue_id: dsMockUtils.createMockU64(),
@@ -291,14 +281,6 @@ describe('CurrentIdentity class', () => {
           instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAuthorization'),
-          created_at: dsMockUtils.createMockOption(),
-          valid_from: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id5.toNumber()),
-          venue_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Unknown'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAuthorization'),
           created_at: dsMockUtils.createMockOption(),
           valid_from: dsMockUtils.createMockOption(),
