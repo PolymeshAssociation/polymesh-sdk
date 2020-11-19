@@ -13,7 +13,7 @@ import {
   PolymeshTx,
   PostTransactionValueArray,
 } from '~/types/internal';
-import { balanceToBigNumber, transactionToTxTag } from '~/utils';
+import { balanceToBigNumber, transactionToTxTag } from '~/utils/conversion';
 
 /**
  * @hidden

@@ -14,7 +14,7 @@ import {
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { SecondaryKey, SubCallback, VenueType } from '~/types';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('CurrentIdentity class', () => {
   let context: Context;
@@ -174,7 +174,7 @@ describe('CurrentIdentity class', () => {
       });
 
       const portfolioIdToMeshPortfolioIdStub = sinon.stub(
-        utilsModule,
+        utilsConversionModule,
         'portfolioIdToMeshPortfolioId'
       );
 

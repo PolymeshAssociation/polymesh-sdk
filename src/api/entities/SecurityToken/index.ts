@@ -18,6 +18,7 @@ import {
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier, SubCallback, TokenIdentifier, UnsubCallback } from '~/types';
+import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToTokenIdentifier,
   assetNameToString,
@@ -26,11 +27,10 @@ import {
   boolToBoolean,
   fundingRoundNameToString,
   identityIdToString,
-  padString,
   stringToTicker,
   tickerToDid,
-} from '~/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
+} from '~/utils/conversion';
+import { padString } from '~/utils/internal';
 
 import { Compliance } from './Compliance';
 import { Documents } from './Documents';

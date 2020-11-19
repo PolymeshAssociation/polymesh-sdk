@@ -12,12 +12,12 @@ import {
 import { ErrorCode } from '~/types';
 import {
   bytesToString,
-  findEventRecord,
   identityIdToString,
   stringToBytes,
   stringToIdentityId,
   u64ToBigNumber,
-} from '~/utils';
+} from '~/utils/conversion';
+import { findEventRecord } from '~/utils/internal';
 
 /**
  * @hidden

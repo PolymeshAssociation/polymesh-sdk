@@ -40,7 +40,6 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
-  getDid,
   moduleAddressToString,
   signerToString,
   stringToIdentityId,
@@ -48,7 +47,8 @@ import {
   textToString,
   tickerToString,
   u32ToBigNumber,
-} from '~/utils';
+} from '~/utils/conversion';
+import { getDid } from '~/utils/internal';
 
 import { Claims } from './Claims';
 // import { Governance } from './Governance';

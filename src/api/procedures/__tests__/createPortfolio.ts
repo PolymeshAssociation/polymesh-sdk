@@ -13,7 +13,8 @@ import { Context, NumberedPortfolio, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('createPortfolio procedure', () => {
   let mockContext: Mocked<Context>;
@@ -32,8 +33,8 @@ describe('createPortfolio procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     numberedPortfolio = ('numberedPortfolio' as unknown) as PostTransactionValue<NumberedPortfolio>;
-    bytesToStringStub = sinon.stub(utilsModule, 'bytesToString');
-    stringToBytesStub = sinon.stub(utilsModule, 'stringToBytes');
+    bytesToStringStub = sinon.stub(utilsConversionModule, 'bytesToString');
+    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
 
     portfolioNames = [
       {
@@ -99,7 +100,7 @@ describe('createPortfolio procedure', () => {
 });
 
 describe('createPortfolioResolver', () => {
-  const findEventRecordStub = sinon.stub(utilsModule, 'findEventRecord');
+  const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
   const did = 'someDid';
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const id = new BigNumber(1);
@@ -108,8 +109,8 @@ describe('createPortfolioResolver', () => {
   let u64ToBigNumberStub: sinon.SinonStub<[u64], BigNumber>;
 
   beforeAll(() => {
-    identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
-    u64ToBigNumberStub = sinon.stub(utilsModule, 'u64ToBigNumber');
+    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+    u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
   });
 
   beforeEach(() => {

@@ -5,13 +5,13 @@ import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, Role, RoleType, TokenDocument } from '~/types';
 import { tuple } from '~/types/utils';
 import {
-  batchArguments,
   documentNameToString,
   documentToTokenDocumentData,
   stringToDocumentName,
   stringToTicker,
   tokenDocumentDataToDocument,
-} from '~/utils';
+} from '~/utils/conversion';
+import { batchArguments } from '~/utils/internal';
 
 export interface SetTokenDocumentsParams {
   documents: TokenDocument[];

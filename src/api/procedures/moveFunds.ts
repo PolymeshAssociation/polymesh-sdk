@@ -6,7 +6,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
-} from '~/utils';
+} from '~/utils/conversion';
 
 export interface MoveFundsParams {
   to?: BigNumber | DefaultPortfolio | NumberedPortfolio;

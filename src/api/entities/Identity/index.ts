@@ -28,14 +28,13 @@ import {
 import {
   accountIdToString,
   balanceToBigNumber,
-  calculateNextKey,
   cddStatusToBoolean,
   identityIdToString,
-  removePadding,
   stringToIdentityId,
   stringToTicker,
   u64ToBigNumber,
-} from '~/utils';
+} from '~/utils/conversion';
+import { calculateNextKey, removePadding } from '~/utils/internal';
 
 import { IdentityAuthorizations } from './IdentityAuthorizations';
 import { Portfolios } from './Portfolios';

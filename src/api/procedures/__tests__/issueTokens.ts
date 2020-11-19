@@ -12,7 +12,7 @@ import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/SecurityToken',
@@ -33,8 +33,8 @@ describe('issueTokens procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    numberToBalance = sinon.stub(utilsModule, 'numberToBalance');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    numberToBalance = sinon.stub(utilsConversionModule, 'numberToBalance');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);

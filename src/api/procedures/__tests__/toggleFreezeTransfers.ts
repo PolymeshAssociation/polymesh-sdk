@@ -10,7 +10,7 @@ import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/SecurityToken',
@@ -27,7 +27,7 @@ describe('toggleFreezeTransfers procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'tickerFrozen';
     rawTicker = dsMockUtils.createMockTicker(ticker);
   });

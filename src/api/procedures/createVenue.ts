@@ -3,12 +3,8 @@ import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, PostTransactionValue, Procedure, Venue } from '~/internal';
 import { VenueType } from '~/types';
-import {
-  findEventRecord,
-  stringToVenueDetails,
-  u64ToBigNumber,
-  venueTypeToMeshVenueType,
-} from '~/utils';
+import { stringToVenueDetails, u64ToBigNumber, venueTypeToMeshVenueType } from '~/utils/conversion';
+import { findEventRecord } from '~/utils/internal';
 
 export interface CreateVenueParams {
   details: string;

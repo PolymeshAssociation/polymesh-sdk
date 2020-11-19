@@ -2,8 +2,8 @@ import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, Role, RoleType } from '~/types';
-import { numberToBalance, stringToTicker } from '~/utils';
 import { MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import { numberToBalance, stringToTicker } from '~/utils/conversion';
 
 export interface IssueTokensParams {
   amount: BigNumber;

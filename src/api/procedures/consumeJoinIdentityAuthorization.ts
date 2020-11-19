@@ -1,5 +1,5 @@
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
-import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils';
+import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 
 /**
  * @hidden

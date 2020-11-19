@@ -15,7 +15,7 @@ import { Mocked } from '~/testUtils/types';
 import { RoleType, TokenDocument } from '~/types';
 import { PolymeshTx, TokenDocumentData } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('setTokenDocuments procedure', () => {
   let mockContext: Mocked<Context>;
@@ -35,10 +35,13 @@ describe('setTokenDocuments procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    sinon.stub(utilsModule, 'signerValueToSignatory');
-    tokenDocumentDataToDocumentStub = sinon.stub(utilsModule, 'tokenDocumentDataToDocument');
-    stringToDocumentNameStub = sinon.stub(utilsModule, 'stringToDocumentName');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+    tokenDocumentDataToDocumentStub = sinon.stub(
+      utilsConversionModule,
+      'tokenDocumentDataToDocument'
+    );
+    stringToDocumentNameStub = sinon.stub(utilsConversionModule, 'stringToDocumentName');
     ticker = 'someTicker';
     documents = [
       {

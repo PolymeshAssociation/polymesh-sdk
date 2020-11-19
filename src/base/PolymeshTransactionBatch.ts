@@ -5,7 +5,8 @@ import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, PolymeshTransactionBase } from '~/internal';
 import { BatchTransactionSpec, MapMaybePostTransactionValue } from '~/types/internal';
-import { u32ToBigNumber, unwrapValue, unwrapValues } from '~/utils';
+import { u32ToBigNumber } from '~/utils/conversion';
+import { unwrapValue, unwrapValues } from '~/utils/internal';
 
 /**
  * Wrapper class for a batch of Polymesh Transactions

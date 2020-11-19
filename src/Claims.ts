@@ -16,14 +16,12 @@ import {
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import {
-  calculateNextKey,
-  getDid,
   middlewareScopeToScope,
-  removePadding,
   scopeToMiddlewareScope,
   signerToString,
   toIdentityWithClaimsArray,
-} from '~/utils';
+} from '~/utils/conversion';
+import { calculateNextKey, getDid, removePadding } from '~/utils/internal';
 
 /**
  * Handles all Claims related functionality

@@ -11,7 +11,7 @@ import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType } from '~/types';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('consumeJoinIdentityAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
@@ -23,11 +23,11 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
+    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
     authId = new BigNumber(1);
     rawAuthId = dsMockUtils.createMockU64(authId.toNumber());
 
-    sinon.stub(utilsModule, 'addressToKey');
+    sinon.stub(utilsConversionModule, 'addressToKey');
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -115,7 +115,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
       Identity: dsMockUtils.createMockIdentityId(target.did),
     });
 
-    sinon.stub(utilsModule, 'signerValueToSignatory').returns(rawSignatory);
+    sinon.stub(utilsConversionModule, 'signerValueToSignatory').returns(rawSignatory);
 
     await prepareConsumeJoinIdentityAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(

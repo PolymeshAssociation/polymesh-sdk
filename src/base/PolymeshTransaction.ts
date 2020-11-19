@@ -3,7 +3,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, PolymeshTransactionBase } from '~/internal';
 import { MapMaybePostTransactionValue, TransactionSpec } from '~/types/internal';
-import { unwrapValue, unwrapValues } from '~/utils';
+import { unwrapValue, unwrapValues } from '~/utils/internal';
 
 /**
  * Wrapper class for a Polymesh Transaction

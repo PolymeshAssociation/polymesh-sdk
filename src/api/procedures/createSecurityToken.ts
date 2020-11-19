@@ -13,7 +13,6 @@ import {
 } from '~/types';
 import { tuple } from '~/types/utils';
 import {
-  batchArguments,
   booleanToBool,
   numberToBalance,
   stringToAssetName,
@@ -23,7 +22,8 @@ import {
   tokenDocumentDataToDocument,
   tokenIdentifierToAssetIdentifier,
   tokenTypeToAssetType,
-} from '~/utils';
+} from '~/utils/conversion';
+import { batchArguments } from '~/utils/internal';
 
 export interface CreateSecurityTokenParams {
   name: string;

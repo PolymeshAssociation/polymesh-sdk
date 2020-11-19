@@ -6,7 +6,7 @@ import { addInstruction, Context, Entity, Instruction, TransactionQueue, Venue }
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { VenueType } from '~/types';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -72,7 +72,7 @@ describe('Venue class', () => {
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
       sinon
-        .stub(utilsModule, 'numberToU64')
+        .stub(utilsConversionModule, 'numberToU64')
         .withArgs(id, context)
         .returns(rawId);
 
@@ -110,7 +110,7 @@ describe('Venue class', () => {
 
       entityMockUtils.configureMocks({ instructionOptions: { id: instructionId } });
       sinon
-        .stub(utilsModule, 'numberToU64')
+        .stub(utilsConversionModule, 'numberToU64')
         .withArgs(id, context)
         .returns(rawId);
 

@@ -4,12 +4,12 @@ import { IdentityId } from 'polymesh-types/types';
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
 import { Role, RoleType, SecondaryKey } from '~/types';
 import {
-  findEventRecord,
   identityIdToString,
   secondaryKeyToMeshSecondaryKey,
   signerToString,
   stringToAccountId,
-} from '~/utils';
+} from '~/utils/conversion';
+import { findEventRecord } from '~/utils/internal';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;

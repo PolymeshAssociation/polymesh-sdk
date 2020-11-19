@@ -9,15 +9,17 @@ import {
   moveFunds,
   MoveFundsParams,
   SecurityToken,
+  setCustodian,
+  SetCustodianParams,
   TransactionQueue,
 } from '~/internal';
 import {
   balanceToBigNumber,
-  getDid,
   identityIdToString,
   portfolioIdToMeshPortfolioId,
   tickerToString,
-} from '~/utils';
+} from '~/utils/conversion';
+import { getDid } from '~/utils/internal';
 
 import { PortfolioBalance } from './types';
 
@@ -76,6 +78,22 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     const did = await getDid(args?.identity, context);
 
     return ownerDid === did;
+  }
+
+  /**
+   * Return whether an Identity is the Portfolio custodian
+   *
+   * @param args.identity - optional, defaults to the current Identity
+   */
+  public async isCustodiedBy(args?: { identity: string | Identity }): Promise<boolean> {
+    const { context } = this;
+
+    const [portfolioCustodian, targetDid] = await Promise.all([
+      this.getCustodian(),
+      getDid(args?.identity, context),
+    ]);
+
+    return portfolioCustodian.did === targetDid;
   }
 
   /**
@@ -144,6 +162,23 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     }
 
     return values(assetBalances);
+  }
+
+  /**
+   * Send an invitation to an Identity to assign it as custodian for this Portfolio
+   *
+   * @note this may create an AuthorizationRequest which has to be accepted by
+   *   the corresponding Identity. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   */
+  public setCustodian(args: SetCustodianParams): Promise<TransactionQueue<void>> {
+    const {
+      owner: { did },
+      _id: id,
+      context,
+    } = this;
+
+    return setCustodian.prepare({ ...args, did, id }, context);
   }
 
   /**

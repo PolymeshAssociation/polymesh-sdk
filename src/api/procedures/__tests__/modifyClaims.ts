@@ -15,7 +15,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { Claim, ClaimType, RoleType, ScopeType } from '~/types';
 import { ClaimOperation, PolymeshTx } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifyClaims procedure', () => {
   let mockContext: Mocked<Context>;
@@ -47,10 +47,10 @@ describe('modifyClaims procedure', () => {
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
 
-    claimToMeshClaimStub = sinon.stub(utilsModule, 'claimToMeshClaim');
-    dateToMomentStub = sinon.stub(utilsModule, 'dateToMoment');
-    identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
-    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
+    claimToMeshClaimStub = sinon.stub(utilsConversionModule, 'claimToMeshClaim');
+    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
+    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
 
     someDid = 'someDid';
     otherDid = 'otherDid';

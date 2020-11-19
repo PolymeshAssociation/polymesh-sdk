@@ -3,6 +3,7 @@ import { CanTransferResult } from 'polymesh-types/types';
 
 import { Namespace, SecurityToken } from '~/internal';
 import { PortfolioLike, TransferStatus } from '~/types';
+import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import {
   canTransferResultToTransferStatus,
   numberToBalance,
@@ -10,8 +11,7 @@ import {
   portfolioLikeToPortfolioId,
   stringToAccountId,
   stringToTicker,
-} from '~/utils';
-import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
+} from '~/utils/conversion';
 
 /**
  * Handles all Security Token Settlements related functionality

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode } from '~/types';
-import { bytesToString, numberToU64, stringToBytes, stringToIdentityId } from '~/utils';
+import { bytesToString, numberToU64, stringToBytes, stringToIdentityId } from '~/utils/conversion';
 
 export interface RenamePortfolioParams {
   name: string;

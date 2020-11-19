@@ -6,7 +6,7 @@ import { prepareTransferPolyX, TransferPolyXParams } from '~/api/procedures/tran
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -121,9 +121,9 @@ describe('transferPolyX procedure', () => {
       )
     );
 
-    sinon.stub(utilsModule, 'stringToAccountId').returns(rawAccount);
-    sinon.stub(utilsModule, 'numberToBalance').returns(rawAmount);
-    sinon.stub(utilsModule, 'stringToMemo').returns(rawMemo);
+    sinon.stub(utilsConversionModule, 'stringToAccountId').returns(rawAccount);
+    sinon.stub(utilsConversionModule, 'numberToBalance').returns(rawAmount);
+    sinon.stub(utilsConversionModule, 'stringToMemo').returns(rawMemo);
 
     let tx = dsMockUtils.createTxStub('balances', 'transfer');
     const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);

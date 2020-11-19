@@ -1,6 +1,6 @@
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, Role, RoleType } from '~/types';
-import { stringToTicker } from '~/utils';
+import { stringToTicker } from '~/utils/conversion';
 
 export interface ToggleFreezeTransfersParams {
   freeze: boolean;

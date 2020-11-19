@@ -4,7 +4,8 @@ import { Authorization } from 'polymesh-types/types';
 import { AuthorizationRequest, Authorizations, Identity } from '~/internal';
 import { PaginationOptions, ResultSet } from '~/types';
 import { tuple } from '~/types/utils';
-import { requestPaginated, signatoryToSignerValue, stringToIdentityId } from '~/utils';
+import { signatoryToSignerValue, stringToIdentityId } from '~/utils/conversion';
+import { requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Identity Authorization related functionality

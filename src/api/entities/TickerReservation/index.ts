@@ -12,7 +12,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { SubCallback, UnsubCallback } from '~/types';
-import { identityIdToString, momentToDate, stringToTicker } from '~/utils';
+import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
 
 import { TickerReservationDetails, TickerReservationStatus } from './types';
 

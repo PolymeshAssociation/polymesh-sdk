@@ -24,7 +24,7 @@ import {
   middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
-} from '~/utils';
+} from '~/utils/conversion';
 
 interface AddClaimsParams {
   claims: ClaimTarget[];

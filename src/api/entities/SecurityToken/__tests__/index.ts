@@ -25,8 +25,9 @@ import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
-import * as utilsModule from '~/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('SecurityToken class', () => {
   let prepareToggleFreezeTransfersStub: SinonStub<
@@ -58,7 +59,7 @@ describe('SecurityToken class', () => {
       const securityToken = new SecurityToken({ ticker }, context);
 
       expect(securityToken.ticker).toBe(ticker);
-      expect(securityToken.did).toBe(utilsModule.tickerToDid(ticker));
+      expect(securityToken.did).toBe(utilsConversionModule.tickerToDid(ticker));
     });
   });
 
@@ -117,7 +118,7 @@ describe('SecurityToken class', () => {
 
       expect(details.name).toBe(ticker);
       expect(details.totalSupply).toEqual(
-        utilsModule.balanceToBigNumber((totalSupply as unknown) as Balance)
+        utilsConversionModule.balanceToBigNumber((totalSupply as unknown) as Balance)
       );
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
@@ -344,7 +345,7 @@ describe('SecurityToken class', () => {
       const variables = {
         moduleId: ModuleIdEnum.Asset,
         eventId: EventIdEnum.AssetCreated,
-        eventArg1: utilsModule.padString(ticker, MAX_TICKER_LENGTH),
+        eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
       };
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
       const context = dsMockUtils.getContextInstance();
@@ -370,7 +371,7 @@ describe('SecurityToken class', () => {
       const variables = {
         moduleId: ModuleIdEnum.Asset,
         eventId: EventIdEnum.AssetCreated,
-        eventArg1: utilsModule.padString(ticker, MAX_TICKER_LENGTH),
+        eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
       };
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);

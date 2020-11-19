@@ -16,7 +16,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { AuthorizationStatus } from '~/types';
 import { InstructionAuthorizationOperation, PortfolioId } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Instruction',
@@ -47,11 +47,14 @@ describe('modifyInstructionAuthorization procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(utilsModule, 'portfolioIdToMeshPortfolioId');
-    sinon.stub(utilsModule, 'portfolioLikeToPortfolioId');
+    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+      utilsConversionModule,
+      'portfolioIdToMeshPortfolioId'
+    );
+    sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolioId');
     meshAuthorizationStatusToAuthorizationStatusStub = sinon.stub(
-      utilsModule,
+      utilsConversionModule,
       'meshAuthorizationStatusToAuthorizationStatus'
     );
 

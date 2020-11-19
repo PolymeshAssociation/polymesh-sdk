@@ -1,6 +1,6 @@
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, Role, RoleType } from '~/types';
-import { stringToAssetName, stringToFundingRoundName, stringToTicker } from '~/utils';
+import { stringToAssetName, stringToFundingRoundName, stringToTicker } from '~/utils/conversion';
 
 export type ModifyTokenParams =
   | { makeDivisible?: true; name: string; fundingRound?: string }

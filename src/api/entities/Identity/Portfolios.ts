@@ -12,7 +12,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { ErrorCode } from '~/types';
-import { identityIdToString, stringToIdentityId, u64ToBigNumber } from '~/utils';
+import { identityIdToString, stringToIdentityId, u64ToBigNumber } from '~/utils/conversion';
 
 /**
  * Handles all Portfolio related functionality on the Identity side

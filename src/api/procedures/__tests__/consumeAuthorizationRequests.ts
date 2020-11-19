@@ -13,7 +13,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType } from '~/types';
 import { SignerValue } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
@@ -34,9 +34,9 @@ describe('consumeAuthorizationRequests procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatoryStub = sinon.stub(utilsModule, 'signerValueToSignatory');
-    numberToU64Stub = sinon.stub(utilsModule, 'numberToU64');
-    sinon.stub(utilsModule, 'addressToKey');
+    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    sinon.stub(utilsConversionModule, 'addressToKey');
   });
 
   let addBatchTransactionStub: sinon.SinonStub;
@@ -82,7 +82,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     authParams.forEach(params => {
       const { authId, target } = params;
 
-      const signerValue = utilsModule.signerToSignerValue(target);
+      const signerValue = utilsConversionModule.signerToSignerValue(target);
 
       auths.push(new AuthorizationRequest(params, mockContext));
 

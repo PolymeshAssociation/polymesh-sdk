@@ -13,7 +13,7 @@ import {
   signerValueToSignatory,
   signerValueToSigner,
   u64ToBigNumber,
-} from '~/utils';
+} from '~/utils/conversion';
 
 /**
  * Handles all Authorization related functionality

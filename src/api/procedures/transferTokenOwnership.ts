@@ -6,7 +6,7 @@ import {
   dateToMoment,
   signerToString,
   signerValueToSignatory,
-} from '~/utils';
+} from '~/utils/conversion';
 
 export interface TransferTokenOwnershipParams {
   target: string | Identity;

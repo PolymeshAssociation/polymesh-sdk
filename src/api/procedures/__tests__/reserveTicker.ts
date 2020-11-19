@@ -14,7 +14,8 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TickerReservationStatus } from '~/types';
 import { PolymeshTx } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -37,7 +38,7 @@ describe('reserveTicker procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks({ identityOptions: { did: 'someOtherDid' } });
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'SOMETICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     args = {
@@ -234,7 +235,7 @@ describe('reserveTicker procedure', () => {
 });
 
 describe('tickerReservationResolver', () => {
-  const findEventRecordStub = sinon.stub(utilsModule, 'findEventRecord');
+  const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
   const tickerString = 'someTicker';
   const ticker = dsMockUtils.createMockTicker(tickerString);
 

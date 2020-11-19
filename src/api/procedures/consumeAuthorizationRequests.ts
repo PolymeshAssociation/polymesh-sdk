@@ -2,7 +2,7 @@ import P from 'bluebird';
 
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
 import { tuple } from '~/types/utils';
-import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils';
+import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 
 export interface ConsumeParams {
   accept: boolean;

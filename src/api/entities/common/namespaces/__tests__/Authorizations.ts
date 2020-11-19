@@ -7,7 +7,7 @@ import { AuthorizationRequest, Context, Identity, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType } from '~/types';
 import { SignerValue } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import { Authorizations } from '../Authorizations';
 
@@ -49,10 +49,10 @@ describe('Authorizations class', () => {
     });
 
     beforeAll(() => {
-      signerValueToSignatoryStub = sinon.stub(utilsModule, 'signerValueToSignatory');
-      booleanToBoolStub = sinon.stub(utilsModule, 'booleanToBool');
+      signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+      booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
       authorizationTypeToMeshAuthorizationTypeStub = sinon.stub(
-        utilsModule,
+        utilsConversionModule,
         'authorizationTypeToMeshAuthorizationType'
       );
     });

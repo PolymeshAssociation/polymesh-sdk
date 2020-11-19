@@ -5,7 +5,12 @@ import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, Role, RoleType } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { identityIdToString, signerToString, stringToIdentityId, stringToTicker } from '~/utils';
+import {
+  identityIdToString,
+  signerToString,
+  stringToIdentityId,
+  stringToTicker,
+} from '~/utils/conversion';
 
 export interface ModifyTokenTrustedClaimIssuersParams {
   claimIssuerIdentities: (string | Identity)[];

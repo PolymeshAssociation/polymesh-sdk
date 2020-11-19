@@ -11,9 +11,9 @@ import { PaginationOptions, ResultSet, TokenDocument } from '~/types';
 import {
   documentNameToString,
   documentToTokenDocumentData,
-  requestPaginated,
   stringToTicker,
-} from '~/utils';
+} from '~/utils/conversion';
+import { requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Security Token Document related functionality

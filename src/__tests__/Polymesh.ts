@@ -20,7 +20,7 @@ import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AccountBalance, SubCallback, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '@polkadot/api',
@@ -449,7 +449,7 @@ describe('Polymesh Class', () => {
 
   describe('method: getTickerReservations', () => {
     beforeAll(() => {
-      sinon.stub(utilsModule, 'signerValueToSignatory');
+      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     });
 
     afterAll(() => {
@@ -670,7 +670,7 @@ describe('Polymesh Class', () => {
 
   describe('method: getSecurityTokens', () => {
     beforeAll(() => {
-      sinon.stub(utilsModule, 'signerValueToSignatory');
+      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     });
 
     afterAll(() => {

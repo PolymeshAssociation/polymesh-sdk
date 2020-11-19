@@ -9,7 +9,7 @@ import {
   signerToString,
   stringToAccountId,
   stringToMemo,
-} from '~/utils';
+} from '~/utils/conversion';
 
 export interface TransferPolyXParams {
   to: string | Account;

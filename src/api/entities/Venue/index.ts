@@ -17,7 +17,7 @@ import {
   numberToU64,
   u64ToBigNumber,
   venueDetailsToString,
-} from '~/utils';
+} from '~/utils/conversion';
 
 import { VenueDetails } from './types';
 

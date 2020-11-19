@@ -6,7 +6,7 @@ import {
   complianceRequirementToRequirement,
   requirementToComplianceRequirement,
   stringToTicker,
-} from '~/utils';
+} from '~/utils/conversion';
 
 export interface SetAssetRequirementsParams {
   requirements: Condition[][];

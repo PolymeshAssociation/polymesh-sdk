@@ -33,10 +33,9 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
+import { ROOT_TYPES } from '~/utils/constants';
 import {
   balanceToBigNumber,
-  calculateNextKey,
-  createClaim,
   meshPermissionToPermission,
   numberToU32,
   posRatioToBigNumber,
@@ -47,8 +46,8 @@ import {
   textToString,
   txTagToProtocolOp,
   u32ToBigNumber,
-} from '~/utils';
-import { ROOT_TYPES } from '~/utils/constants';
+} from '~/utils/conversion';
+import { calculateNextKey, createClaim } from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;

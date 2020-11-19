@@ -18,7 +18,8 @@ import {
   PostTransactionValueArray,
   ResolverFunctionArray,
 } from '~/types/internal';
-import { batchArguments, transactionToTxTag } from '~/utils';
+import { transactionToTxTag } from '~/utils/conversion';
+import { batchArguments } from '~/utils/internal';
 
 interface AddTransactionOptsBase<Values extends unknown[]> {
   fee?: BigNumber;

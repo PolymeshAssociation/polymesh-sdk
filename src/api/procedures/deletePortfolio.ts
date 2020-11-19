@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode } from '~/types';
-import { numberToU64, stringToIdentityId } from '~/utils';
+import { numberToU64, stringToIdentityId } from '~/utils/conversion';
 
 export interface DeletePortfolioParams {
   did: string;

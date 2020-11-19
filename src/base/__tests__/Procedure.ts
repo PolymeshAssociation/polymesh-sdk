@@ -10,7 +10,7 @@ import { dsMockUtils } from '~/testUtils/mocks';
 import { KeyringPair, Role } from '~/types';
 import { MaybePostTransactionValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 const { Procedure } = baseModule;
 
@@ -45,9 +45,9 @@ describe('Procedure class', () => {
     let coefficient: BigNumber;
 
     beforeAll(() => {
-      posRatioToBigNumberStub = sinon.stub(utilsModule, 'posRatioToBigNumber');
-      balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
-      txTagToProtocolOpStub = sinon.stub(utilsModule, 'txTagToProtocolOp');
+      posRatioToBigNumberStub = sinon.stub(utilsConversionModule, 'posRatioToBigNumber');
+      balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
+      txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
       txTags = [TxTags.asset.RegisterTicker, TxTags.identity.RegisterDid];
       fees = [250, 0];
       numerator = 7;

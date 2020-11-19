@@ -4,7 +4,8 @@ import { IdentityId } from 'polymesh-types/types';
 import { IdentityBalance } from '~/api/entities/types';
 import { Identity, Namespace, SecurityToken } from '~/internal';
 import { PaginationOptions, ResultSet } from '~/types';
-import { balanceToBigNumber, identityIdToString, requestPaginated, stringToTicker } from '~/utils';
+import { balanceToBigNumber, identityIdToString, stringToTicker } from '~/utils/conversion';
+import { requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Security Token Holders related functionality
