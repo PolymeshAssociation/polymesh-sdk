@@ -4,7 +4,7 @@ import { TxTags } from 'polymesh-types/types';
 import { Account, AuthorizationRequest } from '~/api/entities';
 import { Procedure } from '~/base';
 import { authTargetToAuthIdentifier, numberToU64, signerToSignerValue } from '~/utils/conversion';
-import { batchArguments } from '~/utils/internal';
+import { batchArguments, getDid } from '~/utils/internal';
 
 export interface ConsumeParams {
   accept: boolean;
@@ -72,7 +72,7 @@ export async function isAuthorized(
 
   const unexpiredRequests = authRequests.filter(request => !request.isExpired());
 
-  const fetchDid = async (): Promise<string> => did || (await context.getCurrentIdentity()).did;
+  const fetchDid = async (): Promise<string> => getDid(did, context);
 
   const authorized = await P.mapSeries(unexpiredRequests, async ({ target, issuer }) => {
     let condition;
