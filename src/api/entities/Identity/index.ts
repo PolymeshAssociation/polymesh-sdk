@@ -134,9 +134,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
         portfolio = new DefaultPortfolio({ did: portfolioDid }, context);
       }
 
-      const custodianIdentity = await portfolio.getCustodian();
-
-      return custodianIdentity.did === did;
+      return portfolio.isCustodiedBy();
     }
 
     throw new PolymeshError({

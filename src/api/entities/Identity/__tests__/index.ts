@@ -184,31 +184,19 @@ describe('Identity class', () => {
       let role: PortfolioCustodianRole = { type: RoleType.PortfolioCustodian, portfolioId };
 
       entityMockUtils.configureMocks({
-        numberedPortfolioOptions: { custodian: new Identity({ did }, context) },
-        defaultPortfolioOptions: { custodian: new Identity({ did }, context) },
+        numberedPortfolioOptions: { isCustodiedBy: true },
+        defaultPortfolioOptions: { isCustodiedBy: false },
       });
 
       let hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(true);
 
-      identity.did = 'otherDid';
-
-      hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(false);
-
       role = { type: RoleType.PortfolioCustodian, portfolioId: { did } };
 
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
-
-      identity.did = did;
-
-      hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(true);
     });
 
     test('hasRole should throw an error if the role is not recognized', () => {
