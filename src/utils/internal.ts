@@ -5,7 +5,7 @@ import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import stringify from 'json-stable-stringify';
-import { chunk, groupBy, map, padEnd } from 'lodash';
+import { chunk, groupBy, map, padEnd, range } from 'lodash';
 
 import { Identity } from '~/api/entities';
 import { Context, PolymeshError, PostTransactionValue } from '~/base';
@@ -189,6 +189,17 @@ export function padString(value: string, length: number): string {
 export function removePadding(value: string): string {
   // eslint-disable-next-line no-control-regex
   return value.replace(/\u0000/g, '');
+}
+
+/**
+ * @hidden
+ *
+ * Return whether the string is free of unreadable characters
+ */
+export function stringIsClean(value: string): boolean {
+  const forbiddenCharCodes = [65533]; // this should be extended as we find more offending characters
+
+  return !range(value.length).some(index => forbiddenCharCodes.includes(value.charCodeAt(index)));
 }
 
 /**
