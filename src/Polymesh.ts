@@ -43,7 +43,7 @@ import {
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { getDid } from '~/utils/internal';
+import { getDid, stringIsClean } from '~/utils/internal';
 
 import { Claims } from './Claims';
 // import { Governance } from './Governance';
@@ -353,6 +353,8 @@ export class Polymesh {
    *   have already been launched
    *
    * @param args.owner - identity representation or Identity ID as stored in the blockchain
+   *
+   * * @note reservations with unreadable characters in their tickers will be left out
    */
   public async getTickerReservations(args?: {
     owner: string | Identity;
@@ -370,13 +372,20 @@ export class Polymesh {
       stringToIdentityId(did, context)
     );
 
-    const tickerReservations: TickerReservation[] = entries
-      .filter(([, relation]) => relation.isTickerOwned)
-      .map(([key]) => {
-        const ticker = tickerToString(key.args[1] as Ticker);
+    const tickerReservations: TickerReservation[] = entries.reduce<TickerReservation[]>(
+      (result, [key, relation]) => {
+        if (relation.isTickerOwned) {
+          const ticker = tickerToString(key.args[1] as Ticker);
 
-        return new TickerReservation({ ticker }, context);
-      });
+          if (stringIsClean(ticker)) {
+            return [...result, new TickerReservation({ ticker }, context)];
+          }
+        }
+
+        return result;
+      },
+      []
+    );
 
     return tickerReservations;
   }
@@ -503,6 +512,8 @@ export class Polymesh {
    * Retrieve all the Security Tokens owned by an Identity
    *
    * @param args.owner - identity representation or Identity ID as stored in the blockchain
+   *
+   * @note tokens with unreadable characters in their tickers will be left out
    */
   public async getSecurityTokens(args?: { owner: string | Identity }): Promise<SecurityToken[]> {
     const {
@@ -518,13 +529,20 @@ export class Polymesh {
       stringToIdentityId(did, context)
     );
 
-    const securityTokens: SecurityToken[] = entries
-      .filter(([, relation]) => relation.isAssetOwned)
-      .map(([key]) => {
-        const ticker = tickerToString(key.args[1] as Ticker);
+    const securityTokens: SecurityToken[] = entries.reduce<SecurityToken[]>(
+      (result, [key, relation]) => {
+        if (relation.isAssetOwned) {
+          const ticker = tickerToString(key.args[1] as Ticker);
 
-        return new SecurityToken({ ticker }, context);
-      });
+          if (stringIsClean(ticker)) {
+            return [...result, new SecurityToken({ ticker }, context)];
+          }
+        }
+
+        return result;
+      },
+      []
+    );
 
     return securityTokens;
   }
