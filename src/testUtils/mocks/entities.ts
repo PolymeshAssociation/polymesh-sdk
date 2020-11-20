@@ -1532,3 +1532,11 @@ export function getInstructionDetailsStub(details?: Partial<InstructionDetails>)
   }
   return instructionDetailsStub;
 }
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
+ */
+export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
+  return defaultPortfolioIsCustodiedByStub;
+}

@@ -84,13 +84,16 @@ export async function prepareModifyInstructionAuthorization(
         portfolioLikeToPortfolioId(to, context),
       ]);
 
-      const [fromIsOwned, toIsOwned] = await Promise.all([from.isOwnedBy(), to.isOwnedBy()]);
+      const [fromIsCustodied, toIsCustodied] = await Promise.all([
+        from.isCustodiedBy(),
+        to.isCustodiedBy(),
+      ]);
 
-      if (fromIsOwned) {
+      if (fromIsCustodied) {
         rawPortfolioIds.push(portfolioIdToMeshPortfolioId(fromId, context));
       }
 
-      if (toIsOwned) {
+      if (toIsCustodied) {
         rawPortfolioIds.push(portfolioIdToMeshPortfolioId(toId, context));
       }
     }),
@@ -116,6 +119,8 @@ export async function prepareModifyInstructionAuthorization(
       message: errorMessage,
     });
   }
+
+  console.log(validPortfolioIds);
 
   this.addTransaction(transaction, {}, rawInstructionId, validPortfolioIds);
 
