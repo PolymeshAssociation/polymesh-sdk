@@ -1,6 +1,7 @@
 import { Account, AuthorizationRequest } from '~/api/entities';
 import { Procedure } from '~/base';
 import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
+import { getDid } from '~/utils/internal';
 
 /**
  * @hidden
@@ -59,19 +60,26 @@ export async function prepareConsumeJoinIdentityAuthorization(
  */
 export async function isAuthorized(
   this: Procedure<ConsumeJoinIdentityAuthorizationParams>,
-  { authRequest }: ConsumeJoinIdentityAuthorizationParams
+  { authRequest, accept }: ConsumeJoinIdentityAuthorizationParams
 ): Promise<boolean> {
-  const { target } = authRequest;
+  const { target, issuer } = authRequest;
   const { context } = this;
 
   let condition;
+  let did: string;
+  const fetchDid = async (): Promise<string> => getDid(did, context);
 
   if (target instanceof Account) {
     const { address } = context.getCurrentAccount();
     condition = address === target.address;
   } else {
-    const { did } = await context.getCurrentIdentity();
+    did = await fetchDid();
     condition = did === target.did;
+  }
+
+  if (!accept) {
+    did = await fetchDid();
+    condition = condition || did === issuer.did;
   }
 
   return condition && !authRequest.isExpired();
