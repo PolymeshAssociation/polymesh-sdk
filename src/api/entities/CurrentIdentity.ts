@@ -13,7 +13,6 @@ import {
 } from '~/api/procedures';
 import { TransactionQueue } from '~/base';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
-import { PortfolioId } from '~/types/internal';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
 import {
   portfolioIdToMeshPortfolioId,
@@ -86,21 +85,18 @@ export class CurrentIdentity extends Identity {
       context,
     } = this;
 
-    const getPortfolios = await portfolios.getPortfolios();
+    const ownedPortfolios = await portfolios.getPortfolios();
 
     const [ownedCustodiedPortfolios, custodiedPortfolios] = await Promise.all([
-      P.filter(getPortfolios, async portfolio => {
-        const { did: custodianIdentityDid } = await portfolio.getCustodian();
-        return custodianIdentityDid === did;
-      }),
+      P.filter(ownedPortfolios, portfolio => portfolio.isCustodiedBy({ identity: did })),
       this.portfolios.getCustodiedPortfolios(),
     ]);
 
     const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
 
-    const portfolioIds: PortfolioId[] = [
-      ...(await P.map(allPortfolios, portfolio => portfolioLikeToPortfolioId(portfolio, context))),
-    ];
+    const portfolioIds = await P.map(allPortfolios, portfolio =>
+      portfolioLikeToPortfolioId(portfolio, context)
+    );
 
     const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 

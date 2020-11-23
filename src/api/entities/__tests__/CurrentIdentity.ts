@@ -1,8 +1,13 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { CurrentIdentity, Identity, NumberedPortfolio, Venue } from '~/api/entities';
-import { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
+import {
+  CurrentIdentity,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  Venue,
+} from '~/api/entities';
 import { createVenue, inviteAccount, removeSecondaryKeys } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -161,9 +166,6 @@ describe('CurrentIdentity class', () => {
       const did = 'someDid';
       const identity = new CurrentIdentity({ did }, context);
 
-      const otherDid = 'otherDid';
-      const otherIdentity = new Identity({ did: otherDid }, context);
-
       const defaultPortfolioDid = 'someDid';
       const numberedPortfolioDid = 'someDid';
       const numberedPortfolioId = new BigNumber(1);
@@ -176,10 +178,10 @@ describe('CurrentIdentity class', () => {
 
       entityMockUtils.configureMocks({
         defaultPortfolioOptions: {
-          custodian: identity,
+          isCustodiedBy: true,
         },
         numberedPortfolioOptions: {
-          custodian: otherIdentity,
+          isCustodiedBy: false,
         },
       });
 
