@@ -168,13 +168,15 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     });
     /* eslint-enable @typescript-eslint/camelcase */
 
+    const rawTicker = stringToTicker(ticker, context);
+
     if (callback) {
-      return asset.tokens(ticker, securityToken => {
+      return asset.tokens(rawTicker, securityToken => {
         callback(assembleResult(securityToken));
       });
     }
 
-    const token = await asset.tokens(ticker);
+    const token = await asset.tokens(rawTicker);
 
     return assembleResult(token);
   }
@@ -198,15 +200,18 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
         },
       },
       ticker,
+      context,
     } = this;
 
+    const rawTicker = stringToTicker(ticker, context);
+
     if (callback) {
-      return asset.fundingRound(ticker, round => {
+      return asset.fundingRound(rawTicker, round => {
         callback(fundingRoundNameToString(round));
       });
     }
 
-    const fundingRound = await asset.fundingRound(ticker);
+    const fundingRound = await asset.fundingRound(rawTicker);
     return fundingRoundNameToString(fundingRound);
   }
 

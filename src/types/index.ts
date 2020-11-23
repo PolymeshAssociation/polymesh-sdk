@@ -3,9 +3,9 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
+// NOTE uncomment in Governance v2 upgrade
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import { CountryCode } from '~/generated/types';
-// NOTE uncomment in Governance v2 upgrade
 import {
   Account,
   DefaultPortfolio,

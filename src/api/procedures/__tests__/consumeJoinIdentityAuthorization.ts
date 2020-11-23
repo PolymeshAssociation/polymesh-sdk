@@ -168,6 +168,12 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toBe(false);
+
+      args.accept = false;
+      args.authRequest.issuer = await mockContext.getCurrentIdentity();
+
+      result = await boundFunc(args);
+      expect(result).toBe(true);
     });
   });
 });

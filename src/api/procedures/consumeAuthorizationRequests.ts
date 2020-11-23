@@ -3,6 +3,7 @@ import P from 'bluebird';
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
 import { tuple } from '~/types/utils';
 import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
+import { getDid } from '~/utils/internal';
 
 export interface ConsumeParams {
   accept: boolean;
@@ -59,7 +60,7 @@ export async function isAuthorized(
 
   const unexpiredRequests = authRequests.filter(request => !request.isExpired());
 
-  const fetchDid = async (): Promise<string> => did || (await context.getCurrentIdentity()).did;
+  const fetchDid = async (): Promise<string> => getDid(did, context);
 
   const authorized = await P.mapSeries(unexpiredRequests, async ({ target, issuer }) => {
     let condition;

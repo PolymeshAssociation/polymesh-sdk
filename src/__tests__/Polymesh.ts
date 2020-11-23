@@ -507,6 +507,41 @@ describe('Polymesh Class', () => {
       expect(tickerReservations).toHaveLength(1);
       expect(tickerReservations[0].ticker).toBe(fakeTicker);
     });
+
+    test('should filter out tickers with unreadable characters', async () => {
+      const fakeTicker = 'TEST';
+      const unreadableTicker = String.fromCharCode(65533);
+      const did = 'someDid';
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+          ),
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('someTicker')],
+            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(unreadableTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+          ),
+        ],
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const tickerReservations = await polymesh.getTickerReservations();
+
+      expect(tickerReservations).toHaveLength(1);
+      expect(tickerReservations[0].ticker).toBe(fakeTicker);
+    });
   });
 
   describe('method: getTickerReservation', () => {
@@ -713,6 +748,41 @@ describe('Polymesh Class', () => {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+        ],
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const securityTokens = await polymesh.getSecurityTokens();
+
+      expect(securityTokens).toHaveLength(1);
+      expect(securityTokens[0].ticker).toBe(fakeTicker);
+    });
+
+    test('should filter out tokens whose tickers have unreadable characters', async () => {
+      const fakeTicker = 'TEST';
+      const unreadableTicker = String.fromCharCode(65533);
+      const did = 'someDid';
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('someTicker')],
+            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+          ),
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(unreadableTicker)],
             dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
           ),
         ],
