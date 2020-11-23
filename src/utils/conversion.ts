@@ -122,7 +122,7 @@ import {
   MAX_TOKEN_AMOUNT,
   SS58_FORMAT,
 } from '~/utils/constants';
-import { createClaim, padString } from '~/utils/internal';
+import { createClaim, padString, removePadding, stringIsClean } from '~/utils/internal';
 
 export * from '~/generated/utils';
 
@@ -187,6 +187,14 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
       message: `Ticker length cannot exceed ${MAX_TICKER_LENGTH} characters`,
     });
   }
+
+  if (!stringIsClean(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Ticker contains unreadable characters',
+    });
+  }
+
   return context.polymeshApi.createType('Ticker', ticker);
 }
 
@@ -195,7 +203,7 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
  */
 export function tickerToString(ticker: Ticker): string {
   // eslint-disable-next-line no-control-regex
-  return u8aToString(ticker).replace(/\u0000/g, '');
+  return removePadding(u8aToString(ticker));
 }
 
 /**
@@ -1022,7 +1030,7 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
   switch (type) {
     case ClaimScopeTypeEnum.Ticker:
       // eslint-disable-next-line no-control-regex
-      return { type: ScopeType.Ticker, value: value.replace(/\u0000/g, '') };
+      return { type: ScopeType.Ticker, value: removePadding(value) };
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:
       return { type: ScopeType[scope.type], value };

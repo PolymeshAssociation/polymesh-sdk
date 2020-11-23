@@ -22,6 +22,7 @@ import {
   requestAtBlock,
   requestPaginated,
   serialize,
+  stringIsClean,
   unserialize,
   unwrapValue,
   unwrapValues,
@@ -411,5 +412,15 @@ describe('calculateNextKey', () => {
     const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
 
     expect(nextKey).toEqual(30);
+  });
+
+  describe('stringIsClean', () => {
+    test('should return false if the string contains charcode 65533', () => {
+      expect(stringIsClean(String.fromCharCode(65533))).toBe(false);
+    });
+
+    test("should return true if the string doesn't contain any forbidden characters", () => {
+      expect(stringIsClean('Clean String')).toBe(true);
+    });
   });
 });
