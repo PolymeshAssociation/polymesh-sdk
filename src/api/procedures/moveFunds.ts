@@ -73,20 +73,9 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     });
   }
 
-  const [toIsOwned, portfolioBalances] = await Promise.all([
-    toPortfolio.isOwnedBy(),
-    fromPortfolio.getTokenBalances({
-      tokens: items.map(({ token }) => token),
-    }),
-  ]);
-
-  if (!toIsOwned) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You must be the owner of both Portfolios',
-    });
-  }
-
+  const portfolioBalances = await fromPortfolio.getTokenBalances({
+    tokens: items.map(({ token }) => token),
+  });
   const balanceExceeded: (PortfolioMovement & { free: BigNumber })[] = [];
 
   portfolioBalances.forEach(({ token: { ticker }, total, locked }) => {

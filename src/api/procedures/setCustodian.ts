@@ -43,15 +43,16 @@ export async function prepareSetCustodian(
     ? new NumberedPortfolio({ did, id }, context)
     : new DefaultPortfolio({ did }, context);
 
-  const currentIdentity = await context.getCurrentIdentity();
-
   const targetDid = signerToString(targetIdentity);
   const target = new Identity({ did: targetDid }, context);
 
-  const authorizationRequests = await target.authorizations.getReceived({
-    type: AuthorizationType.PortfolioCustody,
-    includeExpired: false,
-  });
+  const [authorizationRequests, currentIdentity] = await Promise.all([
+    target.authorizations.getReceived({
+      type: AuthorizationType.PortfolioCustody,
+      includeExpired: false,
+    }),
+    context.getCurrentIdentity(),
+  ]);
 
   const hasPendingAuth = authorizationRequests.find(authorizationRequest => {
     const { issuer, data } = authorizationRequest;

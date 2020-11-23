@@ -120,8 +120,6 @@ export async function prepareModifyInstructionAuthorization(
     });
   }
 
-  console.log(validPortfolioIds);
-
   this.addTransaction(transaction, {}, rawInstructionId, validPortfolioIds);
 
   return instruction;

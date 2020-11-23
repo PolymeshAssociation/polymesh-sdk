@@ -120,33 +120,6 @@ describe('moveFunds procedure', () => {
     ).rejects.toThrow('Origin and destination should be different Portfolios');
   });
 
-  test('should throw an error if the Identity is not the owner of both Portfolios', async () => {
-    const fromId = new BigNumber(1);
-    const toId = new BigNumber(2);
-    const did = 'someDid';
-    const from = new NumberedPortfolio({ id: fromId, did }, mockContext);
-    const to = new NumberedPortfolio({ id: toId, did }, mockContext);
-
-    portfolioLikeToPortfolioIdStub.withArgs(from, mockContext).resolves({ did, number: fromId });
-    portfolioLikeToPortfolioIdStub.withArgs(to, mockContext).resolves({ did, number: toId });
-
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        isOwnedBy: false,
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    return expect(
-      prepareMoveFunds.call(proc, {
-        from,
-        to,
-        items: [],
-      })
-    ).rejects.toThrow('You must be the owner of both Portfolios');
-  });
-
   test('should throw an error if some of the amount token to move exceed its balance', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
