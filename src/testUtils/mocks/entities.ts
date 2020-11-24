@@ -455,7 +455,6 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   ],
   did: 'someDid',
   exists: true,
-  custodian: {} as MockIdentity,
   uuid: 'someUuid',
   custodian: ('identity' as unknown) as Identity,
   isCustodiedBy: true,
@@ -471,7 +470,6 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
     },
   ],
   did: 'someDid',
-  custodian: {} as MockIdentity,
   uuid: 'someUuid',
   custodian: ('identity' as unknown) as Identity,
   isCustodiedBy: true,
@@ -1549,12 +1547,4 @@ export function getInstructionDetailsStub(details?: Partial<InstructionDetails>)
     });
   }
   return instructionDetailsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
- */
-export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
-  return defaultPortfolioIsCustodiedByStub;
 }
