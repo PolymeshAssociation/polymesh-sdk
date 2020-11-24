@@ -1336,6 +1336,22 @@ export function getCurrentAccountGetTransactionHistoryStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `NumberedPortfolio.isCustodiedBy` method
+ */
+export function getNumberedPortfolioIsCustodiedByStub(): SinonStub {
+  return numberedPortfolioIsCustodiedByStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
+ */
+export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
+  return defaultPortfolioIsCustodiedByStub;
+}
+
+/**
+ * @hidden
  * Retrieve a Ticker Reservation instance
  */
 export function getTickerReservationInstance(

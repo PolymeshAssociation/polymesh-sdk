@@ -1,32 +1,13 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  CurrentIdentity,
-  DefaultPortfolio,
-  Identity,
-  NumberedPortfolio,
-  Venue,
-} from '~/api/entities';
+import { CurrentIdentity, Identity, Venue } from '~/api/entities';
 import { createVenue, inviteAccount, removeSecondaryKeys } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { SecondaryKey, SubCallback, VenueType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
-
-jest.mock(
-  '~/api/entities/NumberedPortfolio',
-  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
-    '~/api/entities/NumberedPortfolio'
-  )
-);
-jest.mock(
-  '~/api/entities/DefaultPortfolio',
-  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
-    '~/api/entities/DefaultPortfolio'
-  )
-);
 
 describe('CurrentIdentity class', () => {
   let context: Context;
@@ -170,19 +151,15 @@ describe('CurrentIdentity class', () => {
       const numberedPortfolioDid = 'someDid';
       const numberedPortfolioId = new BigNumber(1);
 
-      const defaultPortfolio = new DefaultPortfolio({ did: defaultPortfolioDid }, context);
-      const numberedPortfolio = new NumberedPortfolio(
-        { did: numberedPortfolioDid, id: numberedPortfolioId },
-        context
-      );
+      const defaultPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: defaultPortfolioDid,
+        isCustodiedBy: true,
+      });
 
-      entityMockUtils.configureMocks({
-        defaultPortfolioOptions: {
-          isCustodiedBy: true,
-        },
-        numberedPortfolioOptions: {
-          isCustodiedBy: false,
-        },
+      const numberedPortfolio = entityMockUtils.getNumberedPortfolioInstance({
+        did: numberedPortfolioDid,
+        id: numberedPortfolioId,
+        isCustodiedBy: false,
       });
 
       identity.portfolios.getPortfolios = sinon
