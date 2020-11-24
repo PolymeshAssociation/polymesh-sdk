@@ -4,26 +4,13 @@ import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Account, AuthorizationRequest, DefaultPortfolio, Identity } from '~/api/entities';
-import { Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
+import { getRequiredRoles, Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType } from '~/types';
+import { Authorization, AuthorizationType, RoleType } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
-
-jest.mock(
-  '~/api/entities/NumberedPortfolio',
-  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
-    '~/api/entities/NumberedPortfolio'
-  )
-);
-jest.mock(
-  '~/api/entities/DefaultPortfolio',
-  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
-    '~/api/entities/DefaultPortfolio'
-  )
-);
 
 jest.mock(
   '~/api/entities/Identity',
@@ -72,24 +59,6 @@ describe('setCustodian procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Current Identity is not the custodian of the Portfolio', async () => {
-    const did = 'someDid';
-    const id = new BigNumber(1);
-    const args = { targetIdentity: 'targetIdentity', did, id };
-
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        custodian: new Identity({ did: 'otherDid' }, mockContext),
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    await expect(prepareSetCustodian.call(proc, args)).rejects.toThrow(
-      'You are not the custodian of this portfolio'
-    );
-  });
-
   test('should throw an error if the passed account has a pending authorization to accept', async () => {
     const did = 'someDid';
     const args = { targetIdentity: 'targetIdentity', did };
@@ -115,12 +84,6 @@ describe('setCustodian procedure', () => {
         authorizations: {
           getReceived: receivedAuthorizations,
         },
-      },
-      numberedPortfolioOptions: {
-        custodian: entityMockUtils.getCurrentIdentityInstance(),
-      },
-      defaultPortfolioOptions: {
-        custodian: entityMockUtils.getCurrentIdentityInstance(),
       },
     });
 
@@ -180,12 +143,6 @@ describe('setCustodian procedure', () => {
           getReceived: receivedAuthorizations,
         },
       },
-      numberedPortfolioOptions: {
-        custodian: entityMockUtils.getCurrentIdentityInstance(),
-      },
-      defaultPortfolioOptions: {
-        custodian: entityMockUtils.getCurrentIdentityInstance(),
-      },
     });
 
     mockContext.getSecondaryKeys.resolves([
@@ -229,5 +186,18 @@ describe('setCustodian procedure', () => {
       rawAuthorizationData,
       rawExpiry
     );
+  });
+});
+
+describe('getRequiredRoles', () => {
+  test('should return a portfolio custodian role', () => {
+    const args = {
+      id: new BigNumber(1),
+      did: 'someDid',
+    } as Params;
+
+    const portfolioId = { did: args.did, id: args.id };
+
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
   });
 });
