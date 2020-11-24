@@ -196,8 +196,8 @@ let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
-let numberedPortfolioGetCustodianStub: SinonStub;
 let numberedPortfolioExistsStub: SinonStub;
+let numberedPortfolioGetCustodianStub: SinonStub;
 let numberedPortfolioIsCustodiedByStub: SinonStub;
 let defaultPortfolioIsOwnedByStub: SinonStub;
 let defaultPortfolioGetTokenBalancesStub: SinonStub;
@@ -455,6 +455,7 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   ],
   did: 'someDid',
   exists: true,
+  custodian: {} as MockIdentity,
   uuid: 'someUuid',
   custodian: ('identity' as unknown) as Identity,
   isCustodiedBy: true,
@@ -470,6 +471,7 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
     },
   ],
   did: 'someDid',
+  custodian: {} as MockIdentity,
   uuid: 'someUuid',
   custodian: ('identity' as unknown) as Identity,
   isCustodiedBy: true,
@@ -600,6 +602,7 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
   numberedPortfolioGetTokenBalancesStub = sinon.stub();
   numberedPortfolioGetCustodianStub = sinon.stub();
   numberedPortfolioExistsStub = sinon.stub();
+  numberedPortfolioGetCustodianStub = sinon.stub();
   numberedPortfolioIsCustodiedByStub = sinon.stub();
 
   numberedPortfolioOptions = { ...defaultNumberedPortfolioOptions, ...opts };
@@ -1546,4 +1549,12 @@ export function getInstructionDetailsStub(details?: Partial<InstructionDetails>)
     });
   }
   return instructionDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
+ */
+export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
+  return defaultPortfolioIsCustodiedByStub;
 }

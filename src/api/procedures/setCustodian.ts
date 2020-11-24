@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
-import { AuthorizationType, ErrorCode } from '~/types';
+import { AuthorizationType, ErrorCode, Role, RoleType } from '~/types';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -43,25 +43,16 @@ export async function prepareSetCustodian(
     ? new NumberedPortfolio({ did, id }, context)
     : new DefaultPortfolio({ did }, context);
 
-  const [currentIdentity, custodian] = await Promise.all([
-    context.getCurrentIdentity(),
-    portfolio.getCustodian(),
-  ]);
-
-  if (custodian.did !== currentIdentity.did) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You are not the custodian of this portfolio',
-    });
-  }
-
   const targetDid = signerToString(targetIdentity);
   const target = new Identity({ did: targetDid }, context);
 
-  const authorizationRequests = await target.authorizations.getReceived({
-    type: AuthorizationType.PortfolioCustody,
-    includeExpired: false,
-  });
+  const [authorizationRequests, currentIdentity] = await Promise.all([
+    target.authorizations.getReceived({
+      type: AuthorizationType.PortfolioCustody,
+      includeExpired: false,
+    }),
+    context.getCurrentIdentity(),
+  ]);
 
   const hasPendingAuth = authorizationRequests.find(authorizationRequest => {
     const { issuer, data } = authorizationRequest;
@@ -87,6 +78,14 @@ export async function prepareSetCustodian(
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
   this.addTransaction(identity.addAuthorization, {}, rawSignatory, rawAuthorizationData, rawExpiry);
+}
+
+/**
+ * @hidden
+ */
+export function getRequiredRoles({ did, id }: Params): Role[] {
+  const portfolioId = { did, id };
+  return [{ type: RoleType.PortfolioCustodian, portfolioId }];
 }
 
 /**
