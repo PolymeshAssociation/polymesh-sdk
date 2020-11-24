@@ -143,6 +143,49 @@ export function eventByIndexedArgs(
 /**
  * @hidden
  *
+ * Get all events by any of its indexed arguments
+ */
+export function eventsByIndexedArgs(
+  variables: QueryEventsByIndexedArgsArgs
+): GraphqlQuery<QueryEventsByIndexedArgsArgs> {
+  const query = gql`
+    query EventsByIndexedArgsQuery(
+      $moduleId: ModuleIdEnum!
+      $eventId: EventIdEnum!
+      $eventArg0: String
+      $eventArg1: String
+      $eventArg2: String
+      $count: Int
+      $skip: Int
+    ) {
+      eventsByIndexedArgs(
+        moduleId: $moduleId
+        eventId: $eventId
+        eventArg0: $eventArg0
+        eventArg1: $eventArg1
+        eventArg2: $eventArg2
+        count: $count
+        skip: $skip
+      ) {
+        block_id
+        event_idx
+        extrinsic_idx
+        block {
+          datetime
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
  * Get all proposals optionally filtered by pipId, proposer or state
  */
 export function proposals(
