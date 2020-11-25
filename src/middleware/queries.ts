@@ -10,6 +10,7 @@ import {
   QueryScopesByIdentityArgs,
   QueryTokensByTrustedClaimIssuerArgs,
   QueryTokensHeldByDidArgs,
+  QueryTransactionByHashArgs,
   QueryTransactionsArgs,
 } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
@@ -173,6 +174,37 @@ export function eventsByIndexedArgs(
         block {
           datetime
         }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get a transaction by hash
+ */
+export function transactionByHash(
+  variables: QueryTransactionByHashArgs
+): GraphqlQuery<QueryTransactionByHashArgs> {
+  const query = gql`
+    query TransactionByHashQuery($transactionHash: String) {
+      transactionByHash(transactionHash: $transactionHash) {
+        block_id
+        extrinsic_idx
+        address
+        nonce
+        module_id
+        call_id
+        params
+        success
+        spec_version_id
+        extrinsic_hash
       }
     }
   `;
