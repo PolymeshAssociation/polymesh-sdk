@@ -2,7 +2,14 @@ import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import { CddStatus, DidRecord } from 'polymesh-types/types';
 
-import { Entity, SecurityToken, TickerReservation, Venue } from '~/api/entities';
+import {
+  DefaultPortfolio,
+  Entity,
+  NumberedPortfolio,
+  SecurityToken,
+  TickerReservation,
+  Venue,
+} from '~/api/entities';
 import { Context, PolymeshError } from '~/base';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
@@ -10,6 +17,7 @@ import {
   Ensured,
   ErrorCode,
   isCddProviderRole,
+  isPortfolioCustodianRole,
   isTickerOwnerRole,
   isTokenOwnerRole,
   isVenueOwnerRole,
@@ -113,6 +121,20 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const { owner } = await venue.details();
 
       return owner.did === did;
+    } else if (isPortfolioCustodianRole(role)) {
+      const {
+        portfolioId: { did: portfolioDid, number },
+      } = role;
+
+      let portfolio;
+
+      if (number) {
+        portfolio = new NumberedPortfolio({ did: portfolioDid, id: number }, context);
+      } else {
+        portfolio = new DefaultPortfolio({ did: portfolioDid }, context);
+      }
+
+      return portfolio.isCustodiedBy();
     }
 
     throw new PolymeshError({

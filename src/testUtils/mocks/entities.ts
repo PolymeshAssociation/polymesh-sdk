@@ -139,6 +139,7 @@ interface NumberedPortfolioOptions {
   did?: string;
   exists?: boolean;
   uuid?: string;
+  isCustodiedBy?: boolean;
 }
 
 interface DefaultPortfolioOptions {
@@ -147,6 +148,7 @@ interface DefaultPortfolioOptions {
   did?: string;
   custodian?: Identity;
   uuid?: string;
+  isCustodiedBy?: boolean;
 }
 
 interface InstructionOptions {
@@ -194,11 +196,13 @@ let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
-let numberedPortfolioGetCustodianStub: SinonStub;
 let numberedPortfolioExistsStub: SinonStub;
+let numberedPortfolioGetCustodianStub: SinonStub;
+let numberedPortfolioIsCustodiedByStub: SinonStub;
 let defaultPortfolioIsOwnedByStub: SinonStub;
 let defaultPortfolioGetTokenBalancesStub: SinonStub;
 let defaultPortfolioGetCustodianStub: SinonStub;
+let defaultPortfolioIsCustodiedByStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -451,7 +455,9 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   ],
   did: 'someDid',
   exists: true,
+  custodian: {} as MockIdentity,
   uuid: 'someUuid',
+  isCustodiedBy: true,
 };
 let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
 const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
@@ -464,7 +470,9 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
     },
   ],
   did: 'someDid',
+  custodian: {} as MockIdentity,
   uuid: 'someUuid',
+  isCustodiedBy: true,
 };
 let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
 const defaultInstructionOptions: InstructionOptions = {
@@ -568,6 +576,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
     getCustodian: numberedPortfolioGetCustodianStub.resolves(opts.custodian),
     owner: { did: opts.did },
     exists: numberedPortfolioExistsStub.resolves(opts.exists),
+    isCustodiedBy: numberedPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
   } as unknown) as MockNumberedPortfolio;
 
   Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
@@ -591,6 +600,8 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
   numberedPortfolioGetTokenBalancesStub = sinon.stub();
   numberedPortfolioGetCustodianStub = sinon.stub();
   numberedPortfolioExistsStub = sinon.stub();
+  numberedPortfolioGetCustodianStub = sinon.stub();
+  numberedPortfolioIsCustodiedByStub = sinon.stub();
 
   numberedPortfolioOptions = { ...defaultNumberedPortfolioOptions, ...opts };
 
@@ -608,6 +619,7 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
     getTokenBalances: defaultPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
     owner: { did: opts.did },
     getCustodian: defaultPortfolioGetCustodianStub.resolves(opts.custodian),
+    isCustodiedBy: defaultPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
   } as unknown) as MockDefaultPortfolio;
 
   Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
@@ -615,8 +627,8 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
     const value = merge({}, defaultPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/api/entities');
-    Object.setPrototypeOf(entities.NumberedPortfolio.prototype, entities.Portfolio.prototype);
-    Object.setPrototypeOf(value, entities.NumberedPortfolio.prototype);
+    Object.setPrototypeOf(entities.DefaultPortfolio.prototype, entities.Portfolio.prototype);
+    Object.setPrototypeOf(value, entities.DefaultPortfolio.prototype);
     return value;
   });
 }
@@ -630,6 +642,7 @@ function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
   defaultPortfolioIsOwnedByStub = sinon.stub();
   defaultPortfolioGetTokenBalancesStub = sinon.stub();
   defaultPortfolioGetCustodianStub = sinon.stub();
+  defaultPortfolioIsCustodiedByStub = sinon.stub();
 
   defaultPortfolioOptions = { ...defaultDefaultPortfolioOptions, ...opts };
 
@@ -1518,4 +1531,12 @@ export function getInstructionDetailsStub(details?: Partial<InstructionDetails>)
     });
   }
   return instructionDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
+ */
+export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
+  return defaultPortfolioIsCustodiedByStub;
 }
