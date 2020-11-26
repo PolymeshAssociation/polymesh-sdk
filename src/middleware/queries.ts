@@ -10,6 +10,7 @@ import {
   QueryScopesByIdentityArgs,
   QueryTokensByTrustedClaimIssuerArgs,
   QueryTokensHeldByDidArgs,
+  QueryTransactionByHashArgs,
   QueryTransactionsArgs,
 } from '~/middleware/types';
 import { GraphqlQuery } from '~/types/internal';
@@ -130,6 +131,80 @@ export function eventByIndexedArgs(
         block {
           datetime
         }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get all events by any of its indexed arguments
+ */
+export function eventsByIndexedArgs(
+  variables: QueryEventsByIndexedArgsArgs
+): GraphqlQuery<QueryEventsByIndexedArgsArgs> {
+  const query = gql`
+    query EventsByIndexedArgsQuery(
+      $moduleId: ModuleIdEnum!
+      $eventId: EventIdEnum!
+      $eventArg0: String
+      $eventArg1: String
+      $eventArg2: String
+      $count: Int
+      $skip: Int
+    ) {
+      eventsByIndexedArgs(
+        moduleId: $moduleId
+        eventId: $eventId
+        eventArg0: $eventArg0
+        eventArg1: $eventArg1
+        eventArg2: $eventArg2
+        count: $count
+        skip: $skip
+      ) {
+        block_id
+        event_idx
+        extrinsic_idx
+        block {
+          datetime
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get a transaction by hash
+ */
+export function transactionByHash(
+  variables: QueryTransactionByHashArgs
+): GraphqlQuery<QueryTransactionByHashArgs> {
+  const query = gql`
+    query TransactionByHashQuery($transactionHash: String) {
+      transactionByHash(transactionHash: $transactionHash) {
+        block_id
+        extrinsic_idx
+        address
+        nonce
+        module_id
+        call_id
+        params
+        success
+        spec_version_id
+        extrinsic_hash
       }
     }
   `;

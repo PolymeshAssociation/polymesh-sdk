@@ -47,6 +47,7 @@ import { getDid, stringIsClean } from '~/utils/internal';
 
 import { Claims } from './Claims';
 // import { Governance } from './Governance';
+import { Middleware } from './Middleware';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
@@ -75,6 +76,7 @@ export class Polymesh {
   // NOTE uncomment in Governance v2 upgrade
   // public governance: Governance;
   public claims: Claims;
+  public middleware: Middleware;
 
   /**
    * @hidden
@@ -85,6 +87,7 @@ export class Polymesh {
     // NOTE uncomment in Governance v2 upgrade
     // this.governance = new Governance(context);
     this.claims = new Claims(context);
+    this.middleware = new Middleware(context);
   }
 
   /**
