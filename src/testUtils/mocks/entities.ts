@@ -455,8 +455,8 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   ],
   did: 'someDid',
   exists: true,
-  custodian: {} as MockIdentity,
   uuid: 'someUuid',
+  custodian: ('identity' as unknown) as Identity,
   isCustodiedBy: true,
 };
 let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
@@ -470,8 +470,8 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
     },
   ],
   did: 'someDid',
-  custodian: {} as MockIdentity,
   uuid: 'someUuid',
+  custodian: ('identity' as unknown) as Identity,
   isCustodiedBy: true,
 };
 let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
@@ -1337,6 +1337,22 @@ export function getCurrentAccountGetTransactionHistoryStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `NumberedPortfolio.isCustodiedBy` method
+ */
+export function getNumberedPortfolioIsCustodiedByStub(): SinonStub {
+  return numberedPortfolioIsCustodiedByStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
+ */
+export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
+  return defaultPortfolioIsCustodiedByStub;
+}
+
+/**
+ * @hidden
  * Retrieve a Ticker Reservation instance
  */
 export function getTickerReservationInstance(
@@ -1531,12 +1547,4 @@ export function getInstructionDetailsStub(details?: Partial<InstructionDetails>)
     });
   }
   return instructionDetailsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
- */
-export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
-  return defaultPortfolioIsCustodiedByStub;
 }
