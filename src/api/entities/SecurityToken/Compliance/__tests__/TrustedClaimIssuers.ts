@@ -3,11 +3,11 @@ import sinon from 'sinon';
 
 import {
   Context,
+  DefaultTrustedClaimIssuer,
   modifyTokenTrustedClaimIssuers,
   Namespace,
   SecurityToken,
   TransactionQueue,
-  TrustedClaimIssuer,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
@@ -141,7 +141,7 @@ describe('TrustedClaimIssuers class', () => {
     let context: Context;
     let token: SecurityToken;
     let expectedDids: string[];
-    let expectedTrustedClaimIssuers: TrustedClaimIssuer[];
+    let expectedTrustedClaimIssuers: DefaultTrustedClaimIssuer[];
     let claimIssuers: IdentityId[];
 
     let trustedClaimIssuerStub: sinon.SinonStub;
@@ -161,7 +161,7 @@ describe('TrustedClaimIssuers class', () => {
       claimIssuers = [];
 
       expectedDids.forEach(did => {
-        expectedTrustedClaimIssuers.push(new TrustedClaimIssuer({ did, ticker }, context));
+        expectedTrustedClaimIssuers.push(new DefaultTrustedClaimIssuer({ did, ticker }, context));
         claimIssuers.push(dsMockUtils.createMockIdentityId(did));
       });
 

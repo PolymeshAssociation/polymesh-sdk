@@ -41,8 +41,10 @@ import {
   KeyTypeId,
   Moment,
   Perbill,
+  Releases,
   ValidatorId,
 } from '@polkadot/types/interfaces/runtime';
+import { Scheduled, TaskAddress } from '@polkadot/types/interfaces/scheduler';
 import { Keys, SessionIndex } from '@polkadot/types/interfaces/session';
 import {
   ActiveEraInfo,
@@ -72,25 +74,33 @@ import {
 } from '@polkadot/types/interfaces/system';
 import { Multiplier } from '@polkadot/types/interfaces/txpayment';
 import {
+  AffirmationStatus,
   AssetCompliance,
   AssetIdentifier,
   AssetOwnershipRelation,
   Authorization,
   AuthorizationNonce,
-  AuthorizationStatus,
   Ballot,
-  BridgeTx,
+  BallotMeta,
+  BallotTimeRange,
+  BallotVote,
   BridgeTxDetail,
+  CAId,
+  CheckpointId,
   Claim1stKey,
   Claim2ndKey,
   ClassicTickerRegistration,
-  Commission,
+  CorporateAction,
   Counter,
   DepositInfo,
   DidRecord,
+  DispatchableName,
+  Distribution,
   Dividend,
   Document,
-  DocumentName,
+  DocumentId,
+  ExtVersion,
+  ExtensionAttributes,
   FundingRoundName,
   Fundraiser,
   IdentityClaim,
@@ -100,8 +110,10 @@ import {
   Investment,
   Leg,
   LegStatus,
-  LinkedKeyInfo,
+  LocalCAId,
+  MaybeBlock,
   OfflineSlashingParams,
+  PalletName,
   Pip,
   PipId,
   PipsMetadata,
@@ -114,18 +126,27 @@ import {
   ProtocolOp,
   ProverTickerKey,
   STO,
+  ScheduleId,
+  ScopeId,
   SecurityToken,
   Signatory,
   SkippedCount,
+  SlashingSwitch,
   SmartExtension,
   SmartExtensionType,
   SnapshotMetadata,
   SnapshottedPip,
+  StoredSchedule,
   TargetIdAuthorization,
+  TargetIdentities,
+  Tax,
+  TemplateDetails,
+  TemplateMetadata,
   Ticker,
   TickerRangeProof,
   TickerRegistration,
   TickerRegistrationConfig,
+  TrustedIssuer,
   Venue,
   VotingResult,
 } from 'polymesh-types/polymesh';
@@ -135,12 +156,34 @@ declare module '@polkadot/api/types/storage' {
   export interface AugmentedQueries<ApiType> {
     asset: {
       /**
+       * Store aggregate balance of those identities that has the same `ScopeId`.
+       * (Ticker, ScopeId) => Balance.
+       **/
+      aggregateBalance: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Ticker | string | Uint8Array,
+          key2: ScopeId | string | Uint8Array
+        ) => Observable<Balance>
+      >;
+      /**
        * Documents attached to an Asset
-       * (ticker, document_name) -> document
+       * (ticker, doc_id) -> document
        **/
       assetDocuments: AugmentedQueryDoubleMap<
         ApiType,
-        (key1: Ticker | string | Uint8Array, key2: DocumentName | string) => Observable<Document>
+        (
+          key1: Ticker | string | Uint8Array,
+          key2: DocumentId | AnyNumber | Uint8Array
+        ) => Observable<Document>
+      >;
+      /**
+       * Per-ticker document ID counter.
+       * (ticker) -> doc_id
+       **/
+      assetDocumentsIdSequence: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<DocumentId>
       >;
       /**
        * Tickers and token owned by a user
@@ -165,29 +208,15 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
-       * Balance of a DID at a checkpoint.
-       * (ticker, did, checkpoint ID) -> Balance of a DID at a checkpoint
+       * Balances get stored on the basis of the `ScopeId`.
+       * Right now it is only helpful for the UI purposes but in future it can be used to do miracles on-chain.
+       * (ScopeId, IdentityId) => Balance.
        **/
-      checkpointBalance: AugmentedQuery<
+      balanceOfAtScope: AugmentedQueryDoubleMap<
         ApiType,
         (
-          arg:
-            | ITuple<[Ticker, IdentityId, u64]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentityId | string | Uint8Array,
-                u64 | AnyNumber | Uint8Array
-              ]
-        ) => Observable<Balance>
-      >;
-      /**
-       * Total supply of the token at the checkpoint.
-       * (ticker, checkpointId) -> total supply at given checkpoint
-       **/
-      checkpointTotalSupply: AugmentedQuery<
-        ApiType,
-        (
-          arg: ITuple<[Ticker, u64]> | [Ticker | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+          key1: ScopeId | string | Uint8Array,
+          key2: IdentityId | string | Uint8Array
         ) => Observable<Balance>
       >;
       /**
@@ -196,6 +225,22 @@ declare module '@polkadot/api/types/storage' {
       classicTickers: AugmentedQuery<
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<Option<ClassicTickerRegistration>>
+      >;
+      /**
+       * Supported extension version.
+       **/
+      compatibleSmartExtVersion: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | SmartExtensionType
+            | { TransferManager: any }
+            | { Offerings: any }
+            | { SmartWallet: any }
+            | { Custom: any }
+            | string
+            | Uint8Array
+        ) => Observable<ExtVersion>
       >;
       /**
        * List of Smart extension added for the given tokens.
@@ -224,6 +269,7 @@ declare module '@polkadot/api/types/storage' {
                   | SmartExtensionType
                   | { TransferManager: any }
                   | { Offerings: any }
+                  | { SmartWallet: any }
                   | { Custom: any }
                   | string
                   | Uint8Array
@@ -264,6 +310,17 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Balance>
       >;
       /**
+       * Tracks the ScopeId of the identity for a given ticker.
+       * (Ticker, IdentityId) => ScopeId.
+       **/
+      scopeIdOf: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Ticker | string | Uint8Array,
+          key2: IdentityId | string | Uint8Array
+        ) => Observable<ScopeId>
+      >;
+      /**
        * Ticker registration config.
        * (ticker) -> TickerRegistrationConfig
        **/
@@ -283,26 +340,6 @@ declare module '@polkadot/api/types/storage' {
       tokens: AugmentedQuery<
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<SecurityToken>
-      >;
-      /**
-       * Checkpoints created per token.
-       * (ticker) -> no. of checkpoints
-       **/
-      totalCheckpoints: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<u64>
-      >;
-      /**
-       * Last checkpoint updated for a DID's balance.
-       * (ticker, did) -> List of checkpoints where user balance changed
-       **/
-      userCheckpoints: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, IdentityId]>
-            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
-        ) => Observable<Vec<u64>>
       >;
     };
     authorship: {
@@ -408,6 +445,39 @@ declare module '@polkadot/api/types/storage' {
        **/
       totalIssuance: AugmentedQuery<ApiType, () => Observable<Balance>>;
     };
+    baseContracts: {
+      /**
+       * The subtrie counter.
+       **/
+      accountCounter: AugmentedQuery<ApiType, () => Observable<u64>>;
+      /**
+       * A mapping between an original code hash and instrumented wasm code, ready for execution.
+       **/
+      codeStorage: AugmentedQuery<
+        ApiType,
+        (arg: CodeHash | string | Uint8Array) => Observable<Option<PrefabWasmModule>>
+      >;
+      /**
+       * The code associated with a given account.
+       *
+       * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+       **/
+      contractInfoOf: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Option<ContractInfo>>
+      >;
+      /**
+       * Current cost schedule for contracts.
+       **/
+      currentSchedule: AugmentedQuery<ApiType, () => Observable<Schedule>>;
+      /**
+       * A mapping from an original code hash to the original code, untouched by instrumentation.
+       **/
+      pristineCode: AugmentedQuery<
+        ApiType,
+        (arg: CodeHash | string | Uint8Array) => Observable<Option<Bytes>>
+      >;
+    };
     bridge: {
       /**
        * The admin key.
@@ -459,14 +529,34 @@ declare module '@polkadot/api/types/storage' {
        * transaction proposal during which the admin key can freeze the transaction.
        **/
       timelock: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+    };
+    capitalDistribution: {
       /**
-       * The list of timelocked transactions with the block numbers in which those transactions
-       * become unlocked. Pending transactions are also included here to be retried
-       * automatically.
+       * All capital distributions, tied to their respective corporate actions (CAs).
+       *
+       * (CAId) => Distribution
        **/
-      timelockedTxs: AugmentedQuery<
+      distributions: AugmentedQuery<
         ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<BridgeTx>>
+        (
+          arg: CAId | { ticker?: any; local_id?: any } | string | Uint8Array
+        ) => Observable<Option<Distribution>>
+      >;
+      /**
+       * Has an asset holder been paid yet?
+       *
+       * (CAId, DID) -> Was DID paid in the CAId?
+       **/
+      holderPaid: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[CAId, IdentityId]>
+            | [
+                CAId | { ticker?: any; local_id?: any } | string | Uint8Array,
+                IdentityId | string | Uint8Array
+              ]
+        ) => Observable<bool>
       >;
     };
     cddServiceProviders: {
@@ -482,6 +572,121 @@ declare module '@polkadot/api/types/storage' {
        * The current "inactive" membership, stored as an ordered Vec.
        **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>>;
+    };
+    checkpoint: {
+      /**
+       * Balance of a DID at a checkpoint.
+       *
+       * (ticker, did, checkpoint ID) -> Balance of a DID at a checkpoint
+       **/
+      balance: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, IdentityId, CheckpointId]>
+            | [
+                Ticker | string | Uint8Array,
+                IdentityId | string | Uint8Array,
+                CheckpointId | AnyNumber | Uint8Array
+              ]
+        ) => Observable<Balance>
+      >;
+      /**
+       * Checkpoints where a DID's balance was updated.
+       * (ticker, did) -> [checkpoint ID where user balance changed]
+       **/
+      balanceUpdates: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, IdentityId]>
+            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
+        ) => Observable<Vec<CheckpointId>>
+      >;
+      /**
+       * Checkpoints ID generator sequence.
+       * ID of first checkpoint is 1 instead of 0.
+       *
+       * (ticker) -> no. of checkpoints
+       **/
+      checkpointIdSequence: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<CheckpointId>
+      >;
+      /**
+       * Checkpoint schedule ID sequence for tickers.
+       *
+       * (ticker) -> schedule ID
+       **/
+      scheduleIdSequence: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<ScheduleId>
+      >;
+      /**
+       * All the checkpoints a given schedule originated.
+       *
+       * (ticker, schedule ID) -> [checkpoint ID]
+       **/
+      schedulePoints: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, ScheduleId]>
+            | [Ticker | string | Uint8Array, ScheduleId | AnyNumber | Uint8Array]
+        ) => Observable<Vec<CheckpointId>>
+      >;
+      /**
+       * Is the schedule removable?
+       *
+       * (ticker, schedule ID) -> removable?
+       **/
+      scheduleRemovable: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, ScheduleId]>
+            | [Ticker | string | Uint8Array, ScheduleId | AnyNumber | Uint8Array]
+        ) => Observable<bool>
+      >;
+      /**
+       * Checkpoint schedules for tickers.
+       *
+       * (ticker) -> [schedule]
+       **/
+      schedules: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<Vec<StoredSchedule>>
+      >;
+      /**
+       * The maximum complexity allowed for an arbitrary ticker's schedule set
+       * (i.e. `Schedules` storage item below).
+       **/
+      schedulesMaxComplexity: AugmentedQuery<ApiType, () => Observable<u64>>;
+      /**
+       * Checkpoint timestamps.
+       *
+       * Every schedule-originated checkpoint maps its ID to its due time.
+       * Every checkpoint manually created maps its ID to the time of recording.
+       *
+       * (checkpoint ID) -> checkpoint timestamp
+       **/
+      timestamps: AugmentedQuery<
+        ApiType,
+        (arg: CheckpointId | AnyNumber | Uint8Array) => Observable<Moment>
+      >;
+      /**
+       * Total supply of the token at the checkpoint.
+       *
+       * (ticker, checkpointId) -> total supply at given checkpoint
+       **/
+      totalSupply: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | ITuple<[Ticker, CheckpointId]>
+            | [Ticker | string | Uint8Array, CheckpointId | AnyNumber | Uint8Array]
+        ) => Observable<Balance>
+      >;
     };
     committeeMembership: {
       /**
@@ -510,7 +715,7 @@ declare module '@polkadot/api/types/storage' {
        **/
       trustedClaimIssuer: AugmentedQuery<
         ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<Vec<IdentityId>>
+        (arg: Ticker | string | Uint8Array) => Observable<Vec<TrustedIssuer>>
       >;
     };
     confidential: {
@@ -536,35 +741,205 @@ declare module '@polkadot/api/types/storage' {
     };
     contracts: {
       /**
-       * The subtrie counter.
+       * Details of extension get updated.
        **/
-      accountCounter: AugmentedQuery<ApiType, () => Observable<u64>>;
-      /**
-       * A mapping between an original code hash and instrumented wasm code, ready for execution.
-       **/
-      codeStorage: AugmentedQuery<
+      extensionInfo: AugmentedQuery<
         ApiType,
-        (arg: CodeHash | string | Uint8Array) => Observable<Option<PrefabWasmModule>>
+        (arg: AccountId | string | Uint8Array) => Observable<ExtensionAttributes>
       >;
       /**
-       * The code associated with a given account.
+       * Nonce for the smart extension account id generation.
+       * Using explicit nonce as in batch transaction accounts nonce doesn't get incremented.
+       **/
+      extensionNonce: AugmentedQuery<ApiType, () => Observable<u64>>;
+      /**
+       * Store the meta details of the smart extension template.
+       **/
+      metadataOfTemplate: AugmentedQuery<
+        ApiType,
+        (arg: CodeHash | string | Uint8Array) => Observable<TemplateMetadata>
+      >;
+      /**
+       * Store the details of the template (Ex- owner, frozen etc).
+       **/
+      templateInfo: AugmentedQuery<
+        ApiType,
+        (arg: CodeHash | string | Uint8Array) => Observable<TemplateDetails>
+      >;
+    };
+    corporateAction: {
+      /**
+       * A corporate action agent (CAA) of a ticker, if specified,
+       * that may be different from the asset owner (AO).
+       * If `None`, the AO is the CAA.
        *
-       * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+       * The CAA may be distict from the AO because the CAA may require a money services license,
+       * and the assets would need to originate from the CAA's identity, not the AO's identity.
+       *
+       * (ticker => did?)
        **/
-      contractInfoOf: AugmentedQuery<
+      agent: AugmentedQuery<
         ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Option<ContractInfo>>
+        (arg: Ticker | string | Uint8Array) => Observable<Option<IdentityId>>
       >;
       /**
-       * Current cost schedule for contracts.
+       * Associations from CAs to `Document`s via their IDs.
+       * (CAId => [DocumentId])
+       *
+       * The `CorporateActions` map stores `Ticker => LocalId => The CA`,
+       * so we can infer `Ticker => CAId`. Therefore, we don't need a double map.
        **/
-      currentSchedule: AugmentedQuery<ApiType, () => Observable<Schedule>>;
-      /**
-       * A mapping from an original code hash to the original code, untouched by instrumentation.
-       **/
-      pristineCode: AugmentedQuery<
+      caDocLink: AugmentedQuery<
         ApiType,
-        (arg: CodeHash | string | Uint8Array) => Observable<Option<Bytes>>
+        (
+          arg: CAId | { ticker?: any; local_id?: any } | string | Uint8Array
+        ) => Observable<Vec<DocumentId>>
+      >;
+      /**
+       * The next per-`Ticker` CA ID in the sequence.
+       * The full ID is defined as a combination of `Ticker` and a number in this sequence.
+       **/
+      caIdSequence: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<LocalCAId>
+      >;
+      /**
+       * All recorded CAs thus far.
+       * Only generic information is stored here.
+       * Specific `CAKind`s, e.g., benefits and corporate ballots, may use additional on-chain storage.
+       *
+       * (ticker => local ID => the corporate action)
+       **/
+      corporateActions: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Ticker | string | Uint8Array,
+          key2: LocalCAId | AnyNumber | Uint8Array
+        ) => Observable<Option<CorporateAction>>
+      >;
+      /**
+       * The identities targeted by default for CAs for this ticker,
+       * either to be excluded or included.
+       *
+       * (ticker => target identities)
+       **/
+      defaultTargetIdentities: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<TargetIdentities>
+      >;
+      /**
+       * The default amount of tax to withhold ("withholding tax", WT) for this ticker when distributing dividends.
+       *
+       * To understand withholding tax, e.g., let's assume that you hold ACME shares.
+       * ACME now decides to distribute 100 SEK to Alice.
+       * Alice lives in Sweden, so Skatteverket (the Swedish tax authority) wants 30% of that.
+       * Then those 100 * 30% are withheld from Alice, and ACME will send them to Skatteverket.
+       *
+       * (ticker => % to withhold)
+       **/
+      defaultWithholdingTax: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<Tax>
+      >;
+      /**
+       * The amount of tax to withhold ("withholding tax", WT) for a certain ticker x DID.
+       * If an entry exists for a certain DID, it overrides the default in `DefaultWithholdingTax`.
+       *
+       * (ticker => [(did, % to withhold)]
+       **/
+      didWithholdingTax: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<Vec<ITuple<[IdentityId, Tax]>>>
+      >;
+      /**
+       * Determines the maximum number of bytes that the free-form `details` of a CA can store.
+       *
+       * Note that this is not the number of `char`s or the number of [graphemes].
+       * While this may be unnatural in terms of human understanding of a text's length,
+       * it more closely reflects actual storage costs (`'a'` is cheaper to store than an emoji).
+       *
+       * [graphemes]: https://en.wikipedia.org/wiki/Grapheme
+       **/
+      maxDetailsLength: AugmentedQuery<ApiType, () => Observable<u32>>;
+    };
+    corporateBallot: {
+      /**
+       * Metadata of a corporate ballot.
+       *
+       * (CAId) => BallotMeta
+       **/
+      metas: AugmentedQuery<
+        ApiType,
+        (
+          arg: CAId | { ticker?: any; local_id?: any } | string | Uint8Array
+        ) => Observable<Option<BallotMeta>>
+      >;
+      /**
+       * Stores how many choices there are in each motion.
+       *
+       * At all times, the invariant holds that `motion_choices[idx]` is equal to
+       * `metas.unwrap().motions[idx].choices.len()`. That is, this is just a cache,
+       * used to avoid fetching all the motions with their associated texts.
+       *
+       * `u16` choices should be more than enough to fit real use cases.
+       *
+       * (CAId) => Number of choices in each motion.
+       **/
+      motionNumChoices: AugmentedQuery<
+        ApiType,
+        (arg: CAId | { ticker?: any; local_id?: any } | string | Uint8Array) => Observable<Vec<u16>>
+      >;
+      /**
+       * Is ranked choice voting (RCV) enabled for this ballot?
+       * For an understanding of how RCV is handled, see note on `BallotVote`'s `fallback` field.
+       *
+       * (CAId) => bool
+       **/
+      rcv: AugmentedQuery<
+        ApiType,
+        (arg: CAId | { ticker?: any; local_id?: any } | string | Uint8Array) => Observable<bool>
+      >;
+      /**
+       * Stores the total vote tally on each choice.
+       *
+       * RCV is not accounted for,
+       * as there are too many wants to interpret the graph,
+       * and because it would not be efficient.
+       *
+       * (CAId) => [current vote weights]
+       **/
+      results: AugmentedQuery<
+        ApiType,
+        (
+          arg: CAId | { ticker?: any; local_id?: any } | string | Uint8Array
+        ) => Observable<Vec<Balance>>
+      >;
+      /**
+       * Time details of a corporate ballot associated with a CA.
+       * The timestamps denote when voting starts and stops.
+       *
+       * (CAId) => BallotTimeRange
+       **/
+      timeRanges: AugmentedQuery<
+        ApiType,
+        (
+          arg: CAId | { ticker?: any; local_id?: any } | string | Uint8Array
+        ) => Observable<Option<BallotTimeRange>>
+      >;
+      /**
+       * Stores each DID's votes in a given ballot.
+       * See the documentation of `BallotVote` for notes on semantics.
+       *
+       * (CAId) => (DID) => [vote weight]
+       *
+       * User must enter 0 vote weight if they don't want to vote for a choice.
+       **/
+      votes: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: CAId | { ticker?: any; local_id?: any } | string | Uint8Array,
+          key2: IdentityId | string | Uint8Array
+        ) => Observable<Vec<BallotVote>>
       >;
     };
     dividend: {
@@ -717,7 +1092,7 @@ declare module '@polkadot/api/types/storage' {
       >;
       keyToIdentityIds: AugmentedQuery<
         ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<Option<LinkedKeyInfo>>
+        (arg: AccountId | string | Uint8Array) => Observable<IdentityId>
       >;
       /**
        * Nonce to ensure unique actions. starts from 1.
@@ -885,6 +1260,10 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Option<Proposal>>
       >;
       /**
+       * The last transaction version, used for `on_runtime_upgrade`.
+       **/
+      transactionVersion: AugmentedQuery<ApiType, () => Observable<u32>>;
+      /**
        * Individual multisig signer votes. (multi sig, signer, proposal) => vote.
        **/
       votes: AugmentedQuery<
@@ -936,6 +1315,16 @@ declare module '@polkadot/api/types/storage' {
         (arg: Kind | string | Uint8Array) => Observable<Bytes>
       >;
     };
+    permissions: {
+      /**
+       * The name of the current function (aka extrinsic).
+       **/
+      currentDispatchableName: AugmentedQuery<ApiType, () => Observable<DispatchableName>>;
+      /**
+       * The name of the current pallet (aka module name).
+       **/
+      currentPalletName: AugmentedQuery<ApiType, () => Observable<PalletName>>;
+    };
     pips: {
       /**
        * Total count of current pending or scheduled PIPs.
@@ -975,6 +1364,14 @@ declare module '@polkadot/api/types/storage' {
         (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
       >;
       /**
+       * Maps block numbers to list of PIPs which should be expired at the block number.
+       * block number -> Pip id
+       **/
+      expirySchedule: AugmentedQuery<
+        ApiType,
+        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
+      >;
+      /**
        * Maximum times a PIP can be skipped before triggering `CannotSkipPip` in `enact_snapshot_results`.
        **/
       maxPipSkipCount: AugmentedQuery<ApiType, () => Observable<SkippedCount>>;
@@ -982,6 +1379,11 @@ declare module '@polkadot/api/types/storage' {
        * The minimum amount to be used as a deposit for community PIP creation.
        **/
       minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
+      /**
+       * How many blocks will it take, after a `Pending` PIP's cooling-off period is over,
+       * until the the PIP expires, assuming it has not transitioned to another `ProposalState`?
+       **/
+      pendingPipExpiry: AugmentedQuery<ApiType, () => Observable<MaybeBlock>>;
       /**
        * Proposals so far. id can be used to keep track of PIPs off-chain.
        **/
@@ -1062,6 +1464,10 @@ declare module '@polkadot/api/types/storage' {
       snapshotQueue: AugmentedQuery<ApiType, () => Observable<Vec<SnapshottedPip>>>;
     };
     polymeshCommittee: {
+      /**
+       * Time after which a proposal will expire.
+       **/
+      expiresAfter: AugmentedQuery<ApiType, () => Observable<MaybeBlock>>;
       /**
        * The current members of the committee.
        **/
@@ -1172,6 +1578,7 @@ declare module '@polkadot/api/types/storage' {
             | 'AssetRegisterTicker'
             | 'AssetIssue'
             | 'AssetAddDocument'
+            | 'AssetCheckpoint'
             | 'AssetCreateAsset'
             | 'DividendNew'
             | 'ComplianceManagerAddComplianceRequirement'
@@ -1198,6 +1605,28 @@ declare module '@polkadot/api/types/storage' {
        * the oldest hash.
        **/
       randomMaterial: AugmentedQuery<ApiType, () => Observable<Vec<Hash>>>;
+    };
+    scheduler: {
+      /**
+       * Items to be executed, indexed by the block number that they should be executed on.
+       **/
+      agenda: AugmentedQuery<
+        ApiType,
+        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<Option<Scheduled>>>
+      >;
+      /**
+       * Lookup from identity to the block number and index of the task.
+       **/
+      lookup: AugmentedQuery<
+        ApiType,
+        (arg: Bytes | string | Uint8Array) => Observable<Option<TaskAddress>>
+      >;
+      /**
+       * Storage version of the pallet.
+       *
+       * New networks start with last version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Releases>>;
     };
     session: {
       /**
@@ -1245,19 +1674,19 @@ declare module '@polkadot/api/types/storage' {
     };
     settlement: {
       /**
-       * Tracks authorizations received for an instruction. (instruction_id, counter_party) -> AuthorizationStatus
+       * Tracks affirmations received for an instruction. (instruction_id, counter_party) -> AffirmationStatus
        **/
-      authsReceived: AugmentedQueryDoubleMap<
+      affirmsReceived: AugmentedQueryDoubleMap<
         ApiType,
         (
           key1: u64 | AnyNumber | Uint8Array,
           key2: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
-        ) => Observable<AuthorizationStatus>
+        ) => Observable<AffirmationStatus>
       >;
       /**
-       * Number of authorizations pending before instruction is executed. instruction_id -> auths_pending
+       * Number of affirmations pending before instruction is executed. instruction_id -> affirm_pending
        **/
-      instructionAuthsPending: AugmentedQuery<
+      instructionAffirmsPending: AugmentedQuery<
         ApiType,
         (arg: u64 | AnyNumber | Uint8Array) => Observable<u64>
       >;
@@ -1300,23 +1729,15 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<bool>
       >;
       /**
-       * The list of scheduled instructions with the block numbers in which those instructions
-       * become eligible to be executed. BlockNumber -> Vec<instruction_id>
+       * Helps a user track their pending instructions and affirmations (only needed for UI).
+       * (counter_party, instruction_id) -> AffirmationStatus
        **/
-      scheduledInstructions: AugmentedQuery<
-        ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<u64>>
-      >;
-      /**
-       * Helps a user track their pending instructions and authorizations (only needed for UI).
-       * (counter_party, instruction_id) -> AuthorizationStatus
-       **/
-      userAuths: AugmentedQueryDoubleMap<
+      userAffirmations: AugmentedQueryDoubleMap<
         ApiType,
         (
           key1: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           key2: u64 | AnyNumber | Uint8Array
-        ) => Observable<AuthorizationStatus>
+        ) => Observable<AffirmationStatus>
       >;
       /**
        * Array of venues created by an identity. Only needed for the UI. IdentityId -> Vec<venue_id>
@@ -1347,9 +1768,12 @@ declare module '@polkadot/api/types/storage' {
       /**
        * Info about a venue. venue_id -> venue_details
        **/
-      venueInfo: AugmentedQuery<ApiType, (arg: u64 | AnyNumber | Uint8Array) => Observable<Venue>>;
+      venueInfo: AugmentedQuery<
+        ApiType,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<Option<Venue>>
+      >;
       /**
-       * Signers authorized by the venue. (venue_id, signer) -> authorized_bool
+       * Signers allowed by the venue. (venue_id, signer) -> bool
        **/
       venueSigners: AugmentedQueryDoubleMap<
         ApiType,
@@ -1548,11 +1972,11 @@ declare module '@polkadot/api/types/storage' {
         (arg: AccountId | string | Uint8Array) => Observable<RewardDestination>
       >;
       /**
-       * The map from (wannabe) validators to the status of compliance.
+       * Entities that are allowed to run operator/validator nodes.
        **/
-      permissionedValidators: AugmentedQuery<
+      permissionedIdentity: AugmentedQuery<
         ApiType,
-        (arg: AccountId | string | Uint8Array) => Observable<bool>
+        (arg: IdentityId | string | Uint8Array) => Observable<bool>
       >;
       /**
        * The next validator set. At the end of an era, if this is available (potentially from the
@@ -1564,6 +1988,7 @@ declare module '@polkadot/api/types/storage' {
        * The score of the current [`QueuedElected`].
        **/
       queuedScore: AugmentedQuery<ApiType, () => Observable<Option<ElectionScore>>>;
+      slashingAllowedFor: AugmentedQuery<ApiType, () => Observable<SlashingSwitch>>;
       /**
        * Slashing spans for stash accounts.
        **/
@@ -1600,6 +2025,13 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<SpanRecord>
       >;
       /**
+       * True if network has been upgraded to this version.
+       * Storage version of the pallet.
+       *
+       * This is set to v5.0.0 for new networks.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Releases>>;
+      /**
        * All unapplied slashes that are queued for later.
        **/
       unappliedSlashes: AugmentedQuery<
@@ -1607,9 +2039,9 @@ declare module '@polkadot/api/types/storage' {
         (arg: EraIndex | AnyNumber | Uint8Array) => Observable<Vec<UnappliedSlash>>
       >;
       /**
-       * Commission rate to be used by all validators.
+       * Every validator has commission that should be in the range [0, Cap].
        **/
-      validatorCommission: AugmentedQuery<ApiType, () => Observable<Commission>>;
+      validatorCommissionCap: AugmentedQuery<ApiType, () => Observable<Perbill>>;
       /**
        * The ideal number of staking participants.
        **/
@@ -1658,7 +2090,7 @@ declare module '@polkadot/api/types/storage' {
         (
           key1: Ticker | string | Uint8Array,
           key2: u64 | AnyNumber | Uint8Array
-        ) => Observable<Fundraiser>
+        ) => Observable<Option<Fundraiser>>
       >;
     };
     stoCapped: {
@@ -1798,8 +2230,16 @@ declare module '@polkadot/api/types/storage' {
        * Hash of the previous block.
        **/
       parentHash: AugmentedQuery<ApiType, () => Observable<Hash>>;
+      /**
+       * True if we have upgraded so that `type RefCount` is `u32`. False (default) if not.
+       **/
+      upgradedToU32RefCount: AugmentedQuery<ApiType, () => Observable<bool>>;
     };
     technicalCommittee: {
+      /**
+       * Time after which a proposal will expire.
+       **/
+      expiresAfter: AugmentedQuery<ApiType, () => Observable<MaybeBlock>>;
       /**
        * The current members of the committee.
        **/
@@ -1863,6 +2303,10 @@ declare module '@polkadot/api/types/storage' {
       nextFeeMultiplier: AugmentedQuery<ApiType, () => Observable<Multiplier>>;
     };
     upgradeCommittee: {
+      /**
+       * Time after which a proposal will expire.
+       **/
+      expiresAfter: AugmentedQuery<ApiType, () => Observable<MaybeBlock>>;
       /**
        * The current members of the committee.
        **/

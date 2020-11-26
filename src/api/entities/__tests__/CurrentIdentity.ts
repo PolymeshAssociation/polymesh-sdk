@@ -47,7 +47,11 @@ describe('CurrentIdentity class', () => {
       const fakeResult = [
         {
           signer: entityMockUtils.getAccountInstance({ address: 'someAddress' }),
-          permissions: [],
+          permissions: {
+            tokens: null,
+            transactions: null,
+            portfolios: null,
+          },
         },
       ];
 
@@ -183,7 +187,7 @@ describe('CurrentIdentity class', () => {
         .withArgs({ did, number: numberedPortfolioId }, context)
         .returns(rawNumberedPortfolio);
 
-      const userAuthsStub = dsMockUtils.createQueryStub('settlement', 'userAuths');
+      const userAuthsStub = dsMockUtils.createQueryStub('settlement', 'userAffirmations');
 
       const rawId1 = dsMockUtils.createMockU64(id1.toNumber());
       const rawId2 = dsMockUtils.createMockU64(id2.toNumber());
@@ -197,15 +201,15 @@ describe('CurrentIdentity class', () => {
         .resolves([
           tuple(
             { args: [rawPortfolio, rawId1] },
-            dsMockUtils.createMockAuthorizationStatus('Pending')
+            dsMockUtils.createMockAffirmationStatus('Pending')
           ),
           tuple(
             { args: [rawPortfolio, rawId2] },
-            dsMockUtils.createMockAuthorizationStatus('Pending')
+            dsMockUtils.createMockAffirmationStatus('Pending')
           ),
           tuple(
             { args: [rawPortfolio, rawId3] },
-            dsMockUtils.createMockAuthorizationStatus('Pending')
+            dsMockUtils.createMockAffirmationStatus('Pending')
           ),
         ]);
 
@@ -214,15 +218,15 @@ describe('CurrentIdentity class', () => {
         .resolves([
           tuple(
             { args: [rawNumberedPortfolio, rawId2] },
-            dsMockUtils.createMockAuthorizationStatus('Pending')
+            dsMockUtils.createMockAffirmationStatus('Pending')
           ),
           tuple(
             { args: [rawNumberedPortfolio, rawId4] },
-            dsMockUtils.createMockAuthorizationStatus('Pending')
+            dsMockUtils.createMockAffirmationStatus('Pending')
           ),
           tuple(
             { args: [rawNumberedPortfolio, rawId5] },
-            dsMockUtils.createMockAuthorizationStatus('Pending')
+            dsMockUtils.createMockAffirmationStatus('Pending')
           ),
         ]);
 
@@ -244,7 +248,7 @@ describe('CurrentIdentity class', () => {
           instruction_id: dsMockUtils.createMockU64(id1.toNumber()),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAuthorization'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
           valid_from: dsMockUtils.createMockOption(),
         }),
@@ -252,7 +256,7 @@ describe('CurrentIdentity class', () => {
           instruction_id: dsMockUtils.createMockU64(id2.toNumber()),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAuthorization'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
           valid_from: dsMockUtils.createMockOption(),
         }),
@@ -260,7 +264,7 @@ describe('CurrentIdentity class', () => {
           instruction_id: dsMockUtils.createMockU64(id3.toNumber()),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAuthorization'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
           valid_from: dsMockUtils.createMockOption(),
         }),
@@ -268,7 +272,7 @@ describe('CurrentIdentity class', () => {
           instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAuthorization'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
           valid_from: dsMockUtils.createMockOption(),
         }),
@@ -276,7 +280,7 @@ describe('CurrentIdentity class', () => {
           instruction_id: dsMockUtils.createMockU64(id5.toNumber()),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAuthorization'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
           valid_from: dsMockUtils.createMockOption(),
         }),

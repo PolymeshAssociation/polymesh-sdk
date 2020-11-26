@@ -170,18 +170,13 @@ export interface ExtrinsicIdentifier {
   callId: CallIdEnum;
 }
 
-export interface TokenDocumentData {
-  uri: string;
-  contentHash: string;
-}
-
 export interface PortfolioId {
   did: string;
   number?: BigNumber;
 }
 
-export enum InstructionAuthorizationOperation {
-  Authorize = 'Authorize',
-  Unauthorize = 'Unauthorize',
+export enum InstructionAffirmationOperation {
+  Affirm = 'Affirm',
+  Withdraw = 'Withdraw',
   Reject = 'Reject',
 }

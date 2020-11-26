@@ -29,7 +29,7 @@ import {
   TokenIdentifierType,
   TokenType,
 } from '~/types';
-import { PolymeshTx, TokenDocumentData } from '~/types/internal';
+import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -52,8 +52,7 @@ describe('createSecurityToken procedure', () => {
     AssetIdentifier
   >;
   let stringToFundingRoundNameStub: sinon.SinonStub<[string, Context], FundingRoundName>;
-  let stringToDocumentNameStub: sinon.SinonStub<[string, Context], DocumentName>;
-  let tokenDocumentDataToDocumentStub: sinon.SinonStub<[TokenDocumentData, Context], Document>;
+  let tokenDocumentToDocumentStub: sinon.SinonStub<[TokenDocument, Context], Document>;
   let ticker: string;
   let name: string;
   let totalSupply: BigNumber;
@@ -89,11 +88,7 @@ describe('createSecurityToken procedure', () => {
       'tokenIdentifierToAssetIdentifier'
     );
     stringToFundingRoundNameStub = sinon.stub(utilsConversionModule, 'stringToFundingRoundName');
-    stringToDocumentNameStub = sinon.stub(utilsConversionModule, 'stringToDocumentName');
-    tokenDocumentDataToDocumentStub = sinon.stub(
-      utilsConversionModule,
-      'tokenDocumentDataToDocument'
-    );
+    tokenDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'tokenDocumentToDocument');
     ticker = 'someTicker';
     name = 'someName';
     totalSupply = new BigNumber(100);
@@ -123,11 +118,19 @@ describe('createSecurityToken procedure', () => {
         [type as 'Lei']: dsMockUtils.createMockU8aFixed(value),
       })
     );
-    rawDocuments = documents.map(({ uri, contentHash }) =>
+    rawDocuments = documents.map(({ uri, contentHash, name: docName, type, filedAt }) =>
       dsMockUtils.createMockDocument({
+        name: dsMockUtils.createMockDocumentName(docName),
         uri: dsMockUtils.createMockDocumentUri(uri),
-        // eslint-disable-next-line @typescript-eslint/camelcase
+        /* eslint-disable @typescript-eslint/camelcase */
         content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+        doc_type: dsMockUtils.createMockOption(
+          type ? dsMockUtils.createMockDocumentType(type) : null
+        ),
+        filing_date: dsMockUtils.createMockOption(
+          filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
+        ),
+        /* eslint-enable @typescript-eslint/camelcase */
       })
     );
     rawDocumentTuples = documents.map(({ name: documentName }, index) =>
@@ -179,11 +182,11 @@ describe('createSecurityToken procedure', () => {
       .withArgs(tokenIdentifiers[0], mockContext)
       .returns(rawIdentifiers[0]);
     stringToFundingRoundNameStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
-    stringToDocumentNameStub
-      .withArgs(documents[0].name, mockContext)
-      .returns(rawDocumentTuples[0][0]);
-    tokenDocumentDataToDocumentStub
-      .withArgs({ uri: documents[0].uri, contentHash: documents[0].contentHash }, mockContext)
+    tokenDocumentToDocumentStub
+      .withArgs(
+        { uri: documents[0].uri, contentHash: documents[0].contentHash, name: documents[0].name },
+        mockContext
+      )
       .returns(rawDocuments[0]);
   });
 
@@ -266,7 +269,7 @@ describe('createSecurityToken procedure', () => {
 
   test('should add a document add transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
-    const tx = dsMockUtils.createTxStub('asset', 'batchAddDocument');
+    const tx = dsMockUtils.createTxStub('asset', 'addDocuments');
 
     const result = await prepareCreateSecurityToken.call(proc, { ...args, documents });
 

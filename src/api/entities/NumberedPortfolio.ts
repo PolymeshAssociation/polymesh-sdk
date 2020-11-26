@@ -11,7 +11,7 @@ import {
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier } from '~/types';
-import { bytesToString, numberToU64, stringToIdentityId } from '~/utils/conversion';
+import { numberToU64, stringToIdentityId, textToString } from '~/utils/conversion';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -89,7 +89,8 @@ export class NumberedPortfolio extends Portfolio {
     } = this;
 
     const rawPortfolioName = await portfolio.portfolios(did, numberToU64(id, context));
-    return bytesToString(rawPortfolioName);
+
+    return textToString(rawPortfolioName);
   }
 
   /**

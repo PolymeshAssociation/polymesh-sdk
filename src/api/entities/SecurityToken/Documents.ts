@@ -1,5 +1,3 @@
-import { DocumentName } from 'polymesh-types/types';
-
 import {
   Namespace,
   SecurityToken,
@@ -8,11 +6,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { PaginationOptions, ResultSet, TokenDocument } from '~/types';
-import {
-  documentNameToString,
-  documentToTokenDocumentData,
-  stringToTicker,
-} from '~/utils/conversion';
+import { documentToTokenDocument, stringToTicker } from '~/utils/conversion';
 import { requestPaginated } from '~/utils/internal';
 
 /**
@@ -53,10 +47,7 @@ export class Documents extends Namespace<SecurityToken> {
       paginationOpts,
     });
 
-    const data: TokenDocument[] = entries.map(([key, doc]) => ({
-      ...documentToTokenDocumentData(doc),
-      name: documentNameToString(key.args[1] as DocumentName),
-    }));
+    const data: TokenDocument[] = entries.map(([, doc]) => documentToTokenDocument(doc));
 
     return {
       data,

@@ -24,7 +24,7 @@ import {
   DocumentUri,
   FundingRoundName,
   IdentityId,
-  Permission as MeshPermission,
+  Permissions as MeshPermissions,
   ProtocolOp,
   Scope as MeshScope,
   Signatory,
@@ -46,8 +46,8 @@ import {
 import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  AffirmationStatus,
   Authorization,
-  AuthorizationStatus,
   AuthorizationType,
   Claim,
   ClaimType,
@@ -59,7 +59,7 @@ import {
   InstructionStatus,
   InstructionType,
   KnownTokenType,
-  Permission,
+  Permissions,
   PortfolioLike,
   PortfolioMovement,
   Scope,
@@ -97,7 +97,7 @@ import {
   dateToMoment,
   documentHashToString,
   documentNameToString,
-  documentToTokenDocumentData,
+  documentToTokenDocument,
   documentUriToString,
   endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
@@ -107,10 +107,10 @@ import {
   isIsinValid,
   isLeiValid,
   keyToAddress,
-  meshAuthorizationStatusToAuthorizationStatus,
+  meshAffirmationStatusToAffirmationStatus,
   meshClaimToClaim,
   meshInstructionStatusToInstructionStatus,
-  meshPermissionToPermission,
+  meshPermissionsToPermissions,
   meshScopeToScope,
   meshVenueTypeToVenueType,
   middlewareScopeToScope,
@@ -121,7 +121,7 @@ import {
   numberToPipId,
   numberToU32,
   numberToU64,
-  permissionToMeshPermission,
+  permissionsToMeshPermissions,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
@@ -152,7 +152,7 @@ import {
   tickerToDid,
   tickerToString,
   toIdentityWithClaimsArray,
-  tokenDocumentDataToDocument,
+  tokenDocumentToDocument,
   tokenIdentifierToAssetIdentifier,
   tokenTypeToAssetType,
   transactionHexToTxTag,
@@ -824,10 +824,10 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     fakeResult = {
       type: AuthorizationType.JoinIdentity,
-      value: [Permission.Operator],
+      value: { tokens: [], portfolios: [], transactions: [] },
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
-      JoinIdentity: [dsMockUtils.createMockPermission('Operator')],
+      JoinIdentity: dsMockUtils.createMockPermissions({ asset: [], portfolio: [], extrinsic: [] }),
     });
 
     result = authorizationDataToAuthorization(authorizationData, context);
@@ -896,9 +896,13 @@ describe('permissionToMeshPermission and meshPermissionToPermission', () => {
     dsMockUtils.cleanup();
   });
 
-  test('permissionToMeshPermission should convert a Permission to a polkadot Permission object', () => {
-    const value = Permission.Admin;
-    const fakeResult = ('convertedPermission' as unknown) as MeshPermission;
+  test('permissionsToMeshPermissions should convert a Permission to a polkadot Permission object', () => {
+    const value = {
+      tokens: null,
+      transactions: null,
+      portfolios: null,
+    };
+    const fakeResult = ('convertedPermission' as unknown) as MeshPermissions;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils
@@ -906,34 +910,39 @@ describe('permissionToMeshPermission and meshPermissionToPermission', () => {
       .withArgs('Permission', value)
       .returns(fakeResult);
 
-    const result = permissionToMeshPermission(value, context);
+    const result = permissionsToMeshPermissions(value, context);
 
     expect(result).toEqual(fakeResult);
   });
 
-  test('meshPermissionToPermission should convert a polkadot Permission object to a Permission', () => {
-    let fakeResult = Permission.Admin;
-    let permission = dsMockUtils.createMockPermission(fakeResult);
+  test('meshPermissionsToPermissions should convert a polkadot Permission object to a Permission', () => {
+    const context = dsMockUtils.getContextInstance();
+    let fakeResult: Permissions = {
+      tokens: [],
+      transactions: [],
+      portfolios: [],
+    };
+    let permissions = dsMockUtils.createMockPermissions({
+      asset: [],
+      extrinsic: [],
+      portfolio: [],
+    });
 
-    let result = meshPermissionToPermission(permission);
+    let result = meshPermissionsToPermissions(permissions, context);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = Permission.Full;
-    permission = dsMockUtils.createMockPermission(fakeResult);
+    fakeResult = {
+      tokens: null,
+      transactions: null,
+      portfolios: null,
+    };
+    permissions = dsMockUtils.createMockPermissions({
+      asset: null,
+      extrinsic: null,
+      portfolio: null,
+    });
 
-    result = meshPermissionToPermission(permission);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = Permission.Operator;
-    permission = dsMockUtils.createMockPermission(fakeResult);
-
-    result = meshPermissionToPermission(permission);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = Permission.SpendFunds;
-    permission = dsMockUtils.createMockPermission(fakeResult);
-
-    result = meshPermissionToPermission(permission);
+    result = meshPermissionsToPermissions(permissions, context);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -1599,7 +1608,7 @@ describe('stringToDocumentHash and documentHashToString', () => {
   });
 });
 
-describe('tokenDocumentDataToDocument and documentToTokenDocumentData', () => {
+describe('tokenDocumentToDocument and documentToTokenDocument', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1612,12 +1621,14 @@ describe('tokenDocumentDataToDocument and documentToTokenDocumentData', () => {
     dsMockUtils.cleanup();
   });
 
-  test('tokenDocumentDataToDocument should convert a TokenDocumentData object to a polkadot Document object', () => {
+  test('tokenDocumentToDocument should convert a TokenDocument object to a polkadot Document object', () => {
     const uri = 'someUri';
     const contentHash = 'someHash';
+    const name = 'someName';
     const value = {
       uri,
       contentHash,
+      name,
     };
     const fakeResult = ('convertedDocument' as unknown) as Document;
     const context = dsMockUtils.getContextInstance();
@@ -1631,26 +1642,31 @@ describe('tokenDocumentDataToDocument and documentToTokenDocumentData', () => {
       })
       .returns(fakeResult);
 
-    const result = tokenDocumentDataToDocument(value, context);
+    const result = tokenDocumentToDocument(value, context);
 
     expect(result).toEqual(fakeResult);
   });
 
-  test('documentToTokenDocumentData should convert a polkadot Document object to a TokenDocumentData object', () => {
+  test('documentToTokenDocument should convert a polkadot Document object to a TokenDocument object', () => {
+    const name = 'someName';
     const uri = 'someUri';
     const contentHash = 'someHash';
     const fakeResult = {
       uri,
       contentHash,
     };
-    const mockDocument = {
-      uri: dsMockUtils.createMockDocumentUri(uri),
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      content_hash: dsMockUtils.createMockDocumentHash(contentHash),
-    };
-    const doc = dsMockUtils.createMockDocument(mockDocument);
 
-    const result = documentToTokenDocumentData(doc);
+    const doc = dsMockUtils.createMockDocument({
+      uri: dsMockUtils.createMockDocumentUri(uri),
+      name: dsMockUtils.createMockDocumentName(name),
+      /* eslint-disable @typescript-eslint/camelcase */
+      content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+      doc_type: dsMockUtils.createMockOption(),
+      filing_date: dsMockUtils.createMockOption(),
+      /* eslint-enable @typescript-eslint/camelcase */
+    });
+
+    const result = documentToTokenDocument(doc);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -3110,7 +3126,7 @@ describe('meshProposalStateToProposalState', () => {
   // });
 });
 
-describe('meshAuthorizationStatusToAuthorizationStatus', () => {
+describe('meshAffirmationStatusToAffirmationStatus', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -3123,29 +3139,29 @@ describe('meshAuthorizationStatusToAuthorizationStatus', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshAuthorizationStatusToAuthorizationStatus should convert a polkadot AuthorizationStatus object to a AuthorizationStatus', () => {
-    let fakeResult = AuthorizationStatus.Authorized;
-    let permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+  test('meshAffirmationStatusToAffirmationStatus should convert a polkadot AffirmationStatus object to a AffirmationStatus', () => {
+    let fakeResult = AffirmationStatus.Affirmed;
+    let permission = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    let result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    let result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Pending;
-    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Pending;
+    permission = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Rejected;
-    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Rejected;
+    permission = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Unknown;
-    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Unknown;
+    permission = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -3171,23 +3187,29 @@ describe('secondaryKeyToMeshSecondaryKey', () => {
     const context = dsMockUtils.getContextInstance();
     const secondaryKey = {
       signer: entityMockUtils.getAccountInstance(),
-      permissions: [Permission.Full],
+      permissions: {
+        tokens: null,
+        transactions: null,
+        portfolios: null,
+      },
     };
     const mockAccountId = dsMockUtils.createMockAccountId(address);
     const mockSignatory = dsMockUtils.createMockSignatory({ Account: mockAccountId });
-    const mockPermission = dsMockUtils.createMockPermission(secondaryKey.permissions[0]);
+    const mockPermissions = dsMockUtils.createMockPermissions({
+      asset: null,
+      extrinsic: null,
+      portfolio: null,
+    });
     const fakeResult = dsMockUtils.createMockSecondaryKey({
       signer: mockSignatory,
-      permissions: [mockPermission],
+      permissions: mockPermissions,
     });
 
     dsMockUtils
       .getCreateTypeStub()
       .withArgs('SecondaryKey', {
         signer: signerValueToSignatory({ type: SignerType.Account, value: address }, context),
-        permissions: secondaryKey.permissions.map(permission =>
-          permissionToMeshPermission(permission, context)
-        ),
+        permissions: permissionsToMeshPermissions(secondaryKey.permissions, context),
       })
       .returns(fakeResult);
 
@@ -3317,7 +3339,7 @@ describe('meshInstructionStatusToInstructionStatus', () => {
   });
 });
 
-describe('meshAuthorizationStatusToAuthorizationStatus', () => {
+describe('meshAffirmationStatusToAffirmationStatus', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -3330,29 +3352,29 @@ describe('meshAuthorizationStatusToAuthorizationStatus', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshAuthorizationStatusToAuthorizationStatus should convert a polkadot AuthorizationStatus object to a AuthorizationStatus', () => {
-    let fakeResult = AuthorizationStatus.Unknown;
-    let authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+  test('meshAffirmationStatusToAffirmationStatus should convert a polkadot AffirmationStatus object to a AffirmationStatus', () => {
+    let fakeResult = AffirmationStatus.Unknown;
+    let authorizationStatus = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    let result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    let result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Rejected;
-    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Rejected;
+    authorizationStatus = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Pending;
-    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Pending;
+    authorizationStatus = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Authorized;
-    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Affirmed;
+    authorizationStatus = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -3376,11 +3398,11 @@ describe('endConditionToSettlementType', () => {
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('SettlementType', InstructionType.SettleOnAuthorization)
+      .withArgs('SettlementType', InstructionType.SettleOnAffirmation)
       .returns(fakeResult);
 
     let result = endConditionToSettlementType(
-      { type: InstructionType.SettleOnAuthorization },
+      { type: InstructionType.SettleOnAffirmation },
       context
     );
 

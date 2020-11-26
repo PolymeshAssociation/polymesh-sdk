@@ -11,7 +11,7 @@ import {
 import { Context, Identity, PostTransactionValue, RegisterIdentityParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Permission, RoleType, SecondaryKey } from '~/types';
+import { RoleType, SecondaryKey } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -62,7 +62,7 @@ describe('registerIdentity procedure', () => {
     const secondaryKeys = [
       {
         signer: new Identity({ did: 'someValue' }, mockContext),
-        permissions: [Permission.Full],
+        permissions: { tokens: null, portfolios: null, transactions: null },
       },
     ];
     const args = {
@@ -74,7 +74,11 @@ describe('registerIdentity procedure', () => {
       signer: dsMockUtils.createMockSignatory({
         Identity: dsMockUtils.createMockIdentityId(secondaryKeys[0].signer.did),
       }),
-      permissions: [dsMockUtils.createMockPermission(secondaryKeys[0].permissions[0])],
+      permissions: dsMockUtils.createMockPermissions({
+        asset: null,
+        extrinsic: null,
+        portfolio: null,
+      }),
     });
 
     const proc = procedureMockUtils.getInstance<RegisterIdentityParams, Identity>(mockContext);

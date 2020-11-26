@@ -1,5 +1,10 @@
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
-import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
+import {
+  booleanToBool,
+  numberToU64,
+  signerToSignerValue,
+  signerValueToSignatory,
+} from '~/utils/conversion';
 import { getDid } from '~/utils/internal';
 
 /**
@@ -39,7 +44,8 @@ export async function prepareConsumeJoinIdentityAuthorization(
       identity.removeAuthorization,
       { paidByThirdParty: true },
       signerValueToSignatory(signerToSignerValue(target), context),
-      rawAuthId
+      rawAuthId,
+      booleanToBool(true, context)
     );
 
     return;

@@ -64,7 +64,11 @@ describe('inviteAccount procedure', () => {
       Account: dsMockUtils.createMockAccountId('someAccountId'),
     });
     const rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
-      JoinIdentity: [],
+      JoinIdentity: dsMockUtils.createMockPermissions({
+        asset: null,
+        extrinsic: null,
+        portfolio: null,
+      }),
     });
     const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
@@ -75,7 +79,14 @@ describe('inviteAccount procedure', () => {
             issuer: entityMockUtils.getIdentityInstance(),
             authId,
             expiry: null,
-            data: { type: AuthorizationType.JoinIdentity, value: [] },
+            data: {
+              type: AuthorizationType.JoinIdentity,
+              value: {
+                tokens: null,
+                transactions: null,
+                portfolios: null,
+              },
+            },
           },
           mockContext
         ),
@@ -179,7 +190,14 @@ describe('inviteAccount procedure', () => {
             issuer: entityMockUtils.getIdentityInstance(),
             authId,
             expiry: null,
-            data: { type: AuthorizationType.JoinIdentity, value: [] },
+            data: {
+              type: AuthorizationType.JoinIdentity,
+              value: {
+                tokens: null,
+                transactions: null,
+                portfolios: null,
+              },
+            },
           },
           mockContext
         ),

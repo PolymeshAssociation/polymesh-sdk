@@ -2,17 +2,23 @@
 export default {
   types: {
     IdentityId: '[u8; 32]',
-    InvestorUid: '[u8; 32]',
+    EventDid: 'IdentityId',
+    InvestorUid: '[u8; 16]',
     Ticker: '[u8; 12]',
     CddId: '[u8; 32]',
     ScopeId: '[u8; 32]',
     PosRatio: '(u32, u32)',
+    DocumentId: 'u32',
     DocumentName: 'Text',
     DocumentUri: 'Text',
     DocumentHash: 'Text',
+    DocumentType: 'Text',
     Document: {
       uri: 'DocumentUri',
       content_hash: 'DocumentHash',
+      name: 'DocumentName',
+      doc_type: 'Option<DocumentType>',
+      filing_date: 'Option<Moment>',
     },
     AssetType: {
       _enum: {
@@ -54,14 +60,26 @@ export default {
       asset_type: 'AssetType',
       primary_issuance_agent: 'Option<IdentityId>',
     },
-    LinkedKeyInfo: {
-      _enum: {
-        Unique: 'IdentityId',
-        Group: 'Vec<IdentityId>',
-      },
+    PalletName: 'Text',
+    DispatchableName: 'Text',
+    PalletPermissions: {
+      pallet_name: 'PalletName',
+      dispatchable_names: 'Option<Vec<DispatchableName>>',
     },
-    Permission: {
-      _enum: ['Full', 'Admin', 'Operator', 'SpendFunds'],
+    Permissions: {
+      asset: 'Option<Vec<Ticker>>',
+      extrinsic: 'Option<Vec<PalletPermissions>>',
+      portfolio: 'Option<Vec<PortfolioId>>',
+    },
+    LegacyPalletPermissions: {
+      pallet_name: 'PalletName',
+      total: 'bool',
+      dispatchable_names: 'Vec<DispatchableName>',
+    },
+    LegacyPermissions: {
+      asset: 'Option<Vec<Ticker>>',
+      extrinsic: 'Option<Vec<LegacyPalletPermissions>>',
+      portfolio: 'Option<Vec<PortfolioId>>',
     },
     Signatory: {
       _enum: {
@@ -71,7 +89,7 @@ export default {
     },
     SecondaryKey: {
       signer: 'Signatory',
-      permissions: 'Vec<Permission>',
+      permissions: 'Permissions',
     },
     SecondaryKeyWithAuth: {
       secondary_key: 'SecondaryKey',
@@ -96,13 +114,12 @@ export default {
       secondary_key: 'SecondaryKey',
     },
     DidRecord: {
-      roles: 'Vec<IdentityRole>',
       primary_key: 'AccountId',
       secondary_keys: 'Vec<SecondaryKey>',
     },
     KeyIdentityData: {
       identity: 'IdentityId',
-      permissions: 'Option<Vec<Permission>>',
+      permissions: 'Option<Permissions>',
     },
     CountryCode: {
       _enum: [
@@ -374,7 +391,7 @@ export default {
         Jurisdiction: '(CountryCode, Scope)',
         Exempted: 'Scope',
         Blocked: 'Scope',
-        InvestorZKProof: '(Scope, ScopeId, CddId, InvestorZKProofData)',
+        InvestorUniqueness: '(Scope, ScopeId, CddId)',
         NoData: '',
       },
     },
@@ -389,7 +406,8 @@ export default {
         Jurisdiction: '',
         Exempted: '',
         Blocked: '',
-        NoType: '',
+        InvestorUniqueness: '',
+        NoData: '',
       },
     },
     IdentityClaim: {
@@ -423,9 +441,19 @@ export default {
         IsIdentity: 'TargetIdentity',
       },
     },
+    TrustedFor: {
+      _enum: {
+        Any: '',
+        Specific: 'Vec<ClaimType>',
+      },
+    },
+    TrustedIssuer: {
+      issuer: 'IdentityId',
+      trusted_for: 'TrustedFor',
+    },
     Condition: {
       condition_type: 'ConditionType',
-      issuers: 'Vec<IdentityId>',
+      issuers: 'Vec<TrustedIssuer>',
     },
     ConditionResult: {
       condition: 'Condition',
@@ -477,20 +505,46 @@ export default {
       eth_owner: 'EthereumAddress',
       is_created: 'bool',
     },
+    ClassicTickerImport: {
+      eth_owner: 'EthereumAddress',
+      ticker: 'Ticker',
+      is_contract: 'bool',
+      is_created: 'bool',
+    },
     EthereumAddress: '[u8; 20]',
     EcdsaSignature: '[u8; 65]',
     MotionTitle: 'Text',
     MotionInfoLink: 'Text',
+    ChoiceTitle: 'Text',
     Motion: {
       title: 'MotionTitle',
       info_link: 'MotionInfoLink',
-      choices: 'Vec<MotionTitle>',
+      choices: 'Vec<ChoiceTitle>',
     },
     Ballot: {
       checkpoint_id: 'u64',
       voting_start: 'Moment',
       voting_end: 'Moment',
       motions: 'Vec<Motion>',
+    },
+    BallotTitle: 'Text',
+    BallotMeta: {
+      title: 'BallotTitle',
+      motions: 'Vec<Motion>',
+    },
+    BallotTimeRange: {
+      start: 'Moment',
+      end: 'Moment',
+    },
+    BallotVote: {
+      power: 'Balance',
+      fallback: 'Option<u16>',
+    },
+    MaybeBlock: {
+      _enum: {
+        Some: 'BlockNumber',
+        None: '',
+      },
     },
     Url: 'Text',
     PipDescription: 'Text',
@@ -500,6 +554,7 @@ export default {
       description: 'Option<PipDescription>',
       created_at: 'BlockNumber',
       transaction_version: 'u32',
+      expiry: 'MaybeBlock',
     },
     Proposer: {
       _enum: {
@@ -543,10 +598,12 @@ export default {
       index: 'u32',
       ayes: 'Vec<(IdentityId, Balance)>',
       nays: 'Vec<(IdentityId, Balance)>',
+      end: 'BlockNumber',
+      expiry: 'MaybeBlock',
     },
     PipId: 'u32',
     ProposalState: {
-      _enum: ['Pending', 'Cancelled', 'Rejected', 'Scheduled', 'Failed', 'Executed'],
+      _enum: ['Pending', 'Cancelled', 'Rejected', 'Scheduled', 'Failed', 'Executed', 'Expired'],
     },
     ReferendumState: {
       _enum: ['Pending', 'Scheduled', 'Rejected', 'Failed', 'Executed'],
@@ -599,10 +656,11 @@ export default {
         TransferPrimaryIssuanceAgent: 'Ticker',
         AddMultiSigSigner: 'AccountId',
         TransferAssetOwnership: 'Ticker',
-        JoinIdentity: 'Vec<Permission>',
+        JoinIdentity: 'Permissions',
         PortfolioCustody: 'PortfolioId',
         Custom: 'Ticker',
         NoData: '',
+        TransferCorporateActionAgent: 'Ticker',
       },
     },
     AuthIdentifier: {
@@ -613,6 +671,7 @@ export default {
       _enum: {
         TransferManager: '',
         Offerings: '',
+        SmartWallet: '',
         Custom: 'Vec<u8>',
       },
     },
@@ -622,6 +681,22 @@ export default {
       extension_name: 'SmartExtensionName',
       extension_id: 'AccountId',
       is_archive: 'bool',
+    },
+    MetaUrl: 'Text',
+    MetaDescription: 'Text',
+    MetaVersion: 'u32',
+    ExtVersion: 'u32',
+    TemplateMetadata: {
+      url: 'Option<MetaUrl>',
+      se_type: 'SmartExtensionType',
+      usage_fee: 'Balance',
+      description: 'MetaDescription',
+      version: 'MetaVersion',
+    },
+    TemplateDetails: {
+      instantiation_fee: 'Balance',
+      owner: 'IdentityId',
+      frozen: 'bool',
     },
     ProportionMatch: {
       _enum: ['AtLeast', 'MoreThan'],
@@ -701,6 +776,7 @@ export default {
         'AssetRegisterTicker',
         'AssetIssue',
         'AssetAddDocument',
+        'AssetCheckpoint',
         'AssetCreateAsset',
         'DividendNew',
         'ComplianceManagerAddComplianceRequirement',
@@ -767,12 +843,6 @@ export default {
         Handled: '',
       },
     },
-    HandledTxStatus: {
-      _enum: {
-        Success: '',
-        Error: 'Text',
-      },
-    },
     CappedFee: 'u64',
     CanTransferResult: {
       _enum: {
@@ -785,12 +855,14 @@ export default {
         AttestPrimaryKeyRotation: '',
         RotatePrimaryKey: '',
         TransferTicker: '',
+        TransferPrimaryIssuanceAgent: '',
         AddMultiSigSigner: '',
         TransferAssetOwnership: '',
         JoinIdentity: '',
         PortfolioCustody: '',
         Custom: '',
         NoData: '',
+        TransferCorporateActionAgent: '',
       },
     },
     ProposalDetails: {
@@ -820,7 +892,7 @@ export default {
       identity_did: 'IdentityId',
       value: 'Balance',
     },
-    PortfolioName: 'Vec<u8>',
+    PortfolioName: 'Text',
     PortfolioNumber: 'u64',
     PortfolioKind: {
       _enum: {
@@ -841,6 +913,29 @@ export default {
       final_response: 'Vec<u8>',
       max_two_exp: 'u32',
     },
+    Moment: 'u64',
+    CalendarUnit: {
+      _enum: ['Second', 'Minute', 'Hour', 'Day', 'Week', 'Month', 'Year'],
+    },
+    CalendarPeriod: {
+      unit: 'CalendarUnit',
+      amount: 'Option<u64>',
+    },
+    CheckpointSchedule: {
+      start: 'Moment',
+      period: 'CalendarPeriod',
+    },
+    CheckpointId: 'u64',
+    ScheduleId: 'u64',
+    StoredSchedule: {
+      schedule: 'CheckpointSchedule',
+      id: 'ScheduleId',
+      at: 'Moment',
+    },
+    ScheduleSpec: {
+      start: 'Option<Moment>',
+      period: 'CalendarPeriod',
+    },
     InstructionStatus: {
       _enum: {
         Unknown: '',
@@ -854,17 +949,17 @@ export default {
         ExecutionToBeSkipped: '(AccountId, u64)',
       },
     },
-    AuthorizationStatus: {
+    AffirmationStatus: {
       _enum: {
         Unknown: '',
         Pending: '',
-        Authorized: '',
+        Affirmed: '',
         Rejected: '',
       },
     },
     SettlementType: {
       _enum: {
-        SettleOnAuthorization: '',
+        SettleOnAffirmation: '',
         SettleOnBlock: 'BlockNumber',
       },
     },
@@ -895,11 +990,13 @@ export default {
       asset: 'Ticker',
       amount: 'Balance',
     },
+    ReceiptMetadata: 'Text',
     ReceiptDetails: {
       receipt_uid: 'u64',
       leg_id: 'u64',
       signer: 'AccountId',
       signature: 'OffChainSignature',
+      metadata: 'ReceiptMetadata',
     },
     UniqueCall: {
       nonce: 'u64',
@@ -930,6 +1027,78 @@ export default {
     VenueType: {
       _enum: ['Other', 'Distribution', 'Sto', 'Exchange'],
     },
+    Payload: {
+      block_number: 'BlockNumber',
+      nominators: 'Vec<AccountId>',
+      public: 'H256',
+    },
+    ExtensionAttributes: {
+      usage_fee: 'Balance',
+      version: 'MetaVersion',
+    },
+    Tax: 'Permill',
+    TargetIdentities: {
+      identities: 'Vec<IdentityId>',
+      treatment: 'TargetTreatment',
+    },
+    TargetTreatment: {
+      _enum: ['Include', 'Exclude'],
+    },
+    CAKind: {
+      _enum: [
+        'PredictableBenefit',
+        'UnpredictableBenfit',
+        'IssuerNotice',
+        'Reorganization',
+        'Other',
+      ],
+    },
+    CADetails: 'Text',
+    CACheckpoint: {
+      _enum: {
+        Scheduled: 'ScheduleId',
+        Existing: 'CheckpointId',
+      },
+    },
+    RecordDate: {
+      date: 'Moment',
+      checkpoint: 'CACheckpoint',
+    },
+    RecordDateSpec: {
+      _enum: {
+        Scheduled: 'Moment',
+        Existing: 'CheckpointId',
+      },
+    },
+    CorporateAction: {
+      kind: 'CAKind',
+      record_date: 'Option<RecordDate>',
+      details: 'Text',
+      targets: 'TargetIdentities',
+      default_withholding_tax: 'Tax',
+      withholding_tax: 'Vec<(IdentityId, Tax)>',
+    },
+    LocalCAId: 'u32',
+    CAId: {
+      ticker: 'Ticker',
+      local_id: 'LocalCAId',
+    },
+    Distribution: {
+      from: 'PortfolioId',
+      currency: 'Ticker',
+      amount: 'Balance',
+      remaining: 'Balance',
+      reclaimed: 'bool',
+      payment_at: 'Moment',
+      expires_at: 'Option<Moment>',
+    },
+    SlashingSwitch: {
+      _enum: ['Validator', 'ValidatorAndNominator', 'None'],
+    },
+    PriceTier: {
+      total: 'Balance',
+      price: 'Balance',
+    },
   },
   rpc: {
     compliance: {
@@ -949,11 +1118,6 @@ export default {
           },
           {
             name: 'to_did',
-            type: 'Option<IdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'primary_issuance_agent',
             type: 'Option<IdentityId>',
             isOptional: false,
           },

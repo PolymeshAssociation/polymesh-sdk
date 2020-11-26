@@ -1,12 +1,12 @@
-import { IdentityId } from 'polymesh-types/types';
+import { TrustedIssuer } from 'polymesh-types/types';
 
 import {
+  DefaultTrustedClaimIssuer,
   modifyTokenTrustedClaimIssuers,
   ModifyTokenTrustedClaimIssuersParams,
   Namespace,
   SecurityToken,
   TransactionQueue,
-  TrustedClaimIssuer,
 } from '~/internal';
 import { SubCallback, UnsubCallback } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
@@ -73,13 +73,13 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
    *
    * @note can be subscribed to
    */
-  public get(): Promise<TrustedClaimIssuer[]>;
-  public get(callback: SubCallback<TrustedClaimIssuer[]>): Promise<UnsubCallback>;
+  public get(): Promise<DefaultTrustedClaimIssuer[]>;
+  public get(callback: SubCallback<DefaultTrustedClaimIssuer[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async get(
-    callback?: SubCallback<TrustedClaimIssuer[]>
-  ): Promise<TrustedClaimIssuer[] | UnsubCallback> {
+    callback?: SubCallback<DefaultTrustedClaimIssuer[]>
+  ): Promise<DefaultTrustedClaimIssuer[] | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -92,10 +92,10 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResult = (issuers: IdentityId[]): TrustedClaimIssuer[] =>
+    const assembleResult = (issuers: TrustedIssuer[]): DefaultTrustedClaimIssuer[] =>
       issuers.map(
-        claimIssuer =>
-          new TrustedClaimIssuer({ did: identityIdToString(claimIssuer), ticker }, context)
+        ({ issuer }) =>
+          new DefaultTrustedClaimIssuer({ did: identityIdToString(issuer), ticker }, context)
       );
 
     if (callback) {

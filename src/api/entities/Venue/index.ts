@@ -69,9 +69,9 @@ export class Venue extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const { creator, details, venue_type: type } = await settlement.venueInfo(
-      numberToU64(id, context)
-    );
+    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
+
+    const { creator, details, venue_type: type } = venueInfo.unwrap();
 
     return {
       owner: new Identity({ did: identityIdToString(creator) }, context),
@@ -94,7 +94,9 @@ export class Venue extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const { instructions: rawInstructions } = await settlement.venueInfo(numberToU64(id, context));
+    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
+
+    const { instructions: rawInstructions } = venueInfo.unwrap();
 
     const instructions = rawInstructions.map(
       instructionId => new Instruction({ id: u64ToBigNumber(instructionId) }, context)

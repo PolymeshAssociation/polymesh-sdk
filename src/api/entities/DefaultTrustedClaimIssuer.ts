@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Context, Entity, Identity } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, EventIdentifier } from '~/types';
+import { ClaimType, Ensured, EventIdentifier } from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import { padString } from '~/utils/internal';
 
@@ -12,10 +12,14 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
+export interface Params {
+  trustedFor?: ClaimType[];
+}
+
 /**
- * Represents a trusted claim issuer for a specific token in the Polymesh blockchain
+ * Represents a default trusted claim issuer for a specific token in the Polymesh blockchain
  */
-export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
+export class DefaultTrustedClaimIssuer extends Entity<UniqueIdentifiers> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -32,6 +36,11 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
   public identity: Identity;
 
   /**
+   * claim types for which this Claim Issuer is trusted
+   */
+  public trustedFor?: ClaimType[];
+
+  /**
    * ticker of the Security Token
    */
   public ticker: string;
@@ -39,13 +48,16 @@ export class TrustedClaimIssuer extends Entity<UniqueIdentifiers> {
   /**
    * @hidden
    */
-  public constructor(identifiers: UniqueIdentifiers, context: Context) {
+  public constructor(args: UniqueIdentifiers & Params, context: Context) {
+    const { trustedFor, ...identifiers } = args;
+
     super(identifiers, context);
 
     const { did, ticker } = identifiers;
 
     this.identity = new Identity({ did }, context);
     this.ticker = ticker;
+    this.trustedFor = trustedFor;
   }
 
   /**

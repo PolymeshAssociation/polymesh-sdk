@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import {
-  AuthorizationStatus as MeshAuthorizationStatus,
+  AffirmationStatus as MeshAffirmationStatus,
   PortfolioId as MeshPortfolioId,
 } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
@@ -11,14 +11,14 @@ import {
   Entity,
   Identity,
   Instruction,
-  modifyInstructionAuthorization,
+  modifyInstructionAffirmation,
   TransactionQueue,
   Venue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AuthorizationStatus, InstructionStatus, InstructionType } from '~/types';
-import { InstructionAuthorizationOperation } from '~/types/internal';
+import { AffirmationStatus, InstructionStatus, InstructionType } from '~/types';
+import { InstructionAffirmationOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -34,7 +34,7 @@ jest.mock(
 describe('Instruction class', () => {
   let context: Mocked<Context>;
   let instruction: Instruction;
-  let prepareModifyInstructionAuthorizationStub: SinonStub;
+  let prepareModifyInstructionAffirmationStub: SinonStub;
   let id: BigNumber;
   let rawId: u64;
 
@@ -84,7 +84,7 @@ describe('Instruction class', () => {
       const validFrom = new Date('11/17/1987');
       const venueId = new BigNumber(1);
       const venue = new Venue({ id: venueId }, context);
-      let type = InstructionType.SettleOnAuthorization;
+      let type = InstructionType.SettleOnAffirmation;
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
@@ -144,11 +144,11 @@ describe('Instruction class', () => {
     });
   });
 
-  describe('method: getAuthorizations', () => {
+  describe('method: getAffirmations', () => {
     const did = 'someDid';
-    const status = AuthorizationStatus.Authorized;
+    const status = AffirmationStatus.Affirmed;
     let rawStorageKey: [u64, MeshPortfolioId][];
-    let authsReceivedEntries: [[u64, MeshPortfolioId], MeshAuthorizationStatus][];
+    let authsReceivedEntries: [[u64, MeshPortfolioId], MeshAffirmationStatus][];
 
     afterAll(() => {
       sinon.restore();
@@ -167,24 +167,22 @@ describe('Instruction class', () => {
       authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
         tuple(
           [instructionId, portfolioId],
-          dsMockUtils.createMockAuthorizationStatus(AuthorizationStatus.Authorized)
+          dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
         )
       );
-      dsMockUtils.createQueryStub('settlement', 'authsReceived', {
+      dsMockUtils.createQueryStub('settlement', 'affirmsReceived', {
         entries: [authsReceivedEntries[0]],
       });
       sinon.stub(utilsConversionModule, 'identityIdToString').returns(did);
-      sinon
-        .stub(utilsConversionModule, 'meshAuthorizationStatusToAuthorizationStatus')
-        .returns(status);
+      sinon.stub(utilsConversionModule, 'meshAffirmationStatusToAffirmationStatus').returns(status);
     });
 
-    test('should return a list of Authorization Statuses', async () => {
-      const result = await instruction.getAuthorizations();
+    test('should return a list of Affirmation Statuses', async () => {
+      const result = await instruction.getAffirmations();
 
       expect(result).toHaveLength(1);
       expect(result[0].identity).toEqual(new Identity({ did }, context));
-      expect(result[0].authorizationStatus).toEqual(status);
+      expect(result[0].status).toEqual(status);
     });
   });
 
@@ -234,10 +232,7 @@ describe('Instruction class', () => {
 
   describe('method: reject', () => {
     beforeAll(() => {
-      prepareModifyInstructionAuthorizationStub = sinon.stub(
-        modifyInstructionAuthorization,
-        'prepare'
-      );
+      prepareModifyInstructionAffirmationStub = sinon.stub(modifyInstructionAffirmation, 'prepare');
     });
 
     afterAll(() => {
@@ -247,8 +242,8 @@ describe('Instruction class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      prepareModifyInstructionAuthorizationStub
-        .withArgs({ id, operation: InstructionAuthorizationOperation.Reject }, context)
+      prepareModifyInstructionAffirmationStub
+        .withArgs({ id, operation: InstructionAffirmationOperation.Reject }, context)
         .resolves(expectedQueue);
 
       const queue = await instruction.reject();
@@ -256,12 +251,9 @@ describe('Instruction class', () => {
     });
   });
 
-  describe('method: authorize', () => {
+  describe('method: affirm', () => {
     beforeAll(() => {
-      prepareModifyInstructionAuthorizationStub = sinon.stub(
-        modifyInstructionAuthorization,
-        'prepare'
-      );
+      prepareModifyInstructionAffirmationStub = sinon.stub(modifyInstructionAffirmation, 'prepare');
     });
 
     afterAll(() => {
@@ -271,22 +263,19 @@ describe('Instruction class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
-      prepareModifyInstructionAuthorizationStub
-        .withArgs({ id, operation: InstructionAuthorizationOperation.Authorize }, context)
+      prepareModifyInstructionAffirmationStub
+        .withArgs({ id, operation: InstructionAffirmationOperation.Affirm }, context)
         .resolves(expectedQueue);
 
-      const queue = await instruction.authorize();
+      const queue = await instruction.affirm();
 
       expect(queue).toBe(expectedQueue);
     });
   });
 
-  describe('method: unauthorize', () => {
+  describe('method: withdraw', () => {
     beforeAll(() => {
-      prepareModifyInstructionAuthorizationStub = sinon.stub(
-        modifyInstructionAuthorization,
-        'prepare'
-      );
+      prepareModifyInstructionAffirmationStub = sinon.stub(modifyInstructionAffirmation, 'prepare');
     });
 
     afterAll(() => {
@@ -296,11 +285,11 @@ describe('Instruction class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
-      prepareModifyInstructionAuthorizationStub
-        .withArgs({ id, operation: InstructionAuthorizationOperation.Unauthorize }, context)
+      prepareModifyInstructionAffirmationStub
+        .withArgs({ id, operation: InstructionAffirmationOperation.Withdraw }, context)
         .resolves(expectedQueue);
 
-      const queue = await instruction.unauthorize();
+      const queue = await instruction.withdraw();
 
       expect(queue).toBe(expectedQueue);
     });

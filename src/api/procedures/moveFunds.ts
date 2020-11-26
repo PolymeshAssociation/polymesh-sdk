@@ -6,6 +6,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
+  portfolioToPortfolioId,
 } from '~/utils/conversion';
 
 export interface MoveFundsParams {
@@ -52,8 +53,9 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     owner: { did: toDid },
   } = toPortfolio;
 
-  const [fromPortfolioId, toPortfolioId, currentIdentity] = await Promise.all([
-    portfolioLikeToPortfolioId(fromPortfolio, context),
+  const fromPortfolioId = portfolioToPortfolioId(fromPortfolio);
+
+  const [toPortfolioId, currentIdentity] = await Promise.all([
     portfolioLikeToPortfolioId(toPortfolio, context),
     context.getCurrentIdentity(),
   ]);

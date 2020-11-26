@@ -62,13 +62,9 @@ describe('transferPolyX procedure', () => {
   });
 
   test("should throw an error if sender Identity doesn't have valid CDD", () => {
-    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
-      dsMockUtils.createMockOption(
-        dsMockUtils.createMockLinkedKeyInfo({
-          Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
-        })
-      )
-    );
+    dsMockUtils
+      .createQueryStub('identity', 'keyToIdentityIds')
+      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
 
     dsMockUtils.configureMocks({
       contextOptions: {
@@ -84,13 +80,9 @@ describe('transferPolyX procedure', () => {
   });
 
   test("should throw an error if destination Account doesn't have valid CDD", () => {
-    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
-      dsMockUtils.createMockOption(
-        dsMockUtils.createMockLinkedKeyInfo({
-          Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
-        })
-      )
-    );
+    dsMockUtils
+      .createQueryStub('identity', 'keyToIdentityIds')
+      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
 
     entityMockUtils.configureMocks({
       identityOptions: {
@@ -113,13 +105,9 @@ describe('transferPolyX procedure', () => {
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
     const rawMemo = ('memo' as unknown) as Memo;
 
-    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').returns(
-      dsMockUtils.createMockOption(
-        dsMockUtils.createMockLinkedKeyInfo({
-          Unique: dsMockUtils.createMockIdentityId('currentIdentityId'),
-        })
-      )
-    );
+    dsMockUtils
+      .createQueryStub('identity', 'keyToIdentityIds')
+      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
 
     sinon.stub(utilsConversionModule, 'stringToAccountId').returns(rawAccount);
     sinon.stub(utilsConversionModule, 'numberToBalance').returns(rawAmount);

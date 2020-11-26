@@ -36,7 +36,7 @@ import { GraphqlQuery } from '~/types/internal';
 import { ROOT_TYPES } from '~/utils/constants';
 import {
   balanceToBigNumber,
-  meshPermissionToPermission,
+  meshPermissionsToPermissions,
   numberToU32,
   posRatioToBigNumber,
   signatoryToSignerValue,
@@ -573,7 +573,7 @@ export class Context {
     const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SecondaryKey[] => {
       return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
         signer: signerValueToSigner(signatoryToSignerValue(rawSigner), this),
-        permissions: permissions.map(permission => meshPermissionToPermission(permission)),
+        permissions: meshPermissionsToPermissions(permissions, this),
       }));
     };
 
