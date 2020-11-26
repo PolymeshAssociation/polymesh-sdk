@@ -2,11 +2,11 @@ import BigNumber from 'bignumber.js';
 import { MovePortfolioItem, PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
+import { getRequiredRoles, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
 import { Context, DefaultPortfolio, NumberedPortfolio, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, PortfolioMovement } from '~/types';
+import { PortfolioBalance, PortfolioMovement, RoleType } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -100,28 +100,6 @@ describe('moveFunds procedure', () => {
     ).rejects.toThrow('Both portfolios should have the same owner');
   });
 
-  test('should throw an error if current identity is not the owner of the origin portfolio', async () => {
-    const id = new BigNumber(1);
-    const did = 'otherDid';
-    const samePortfolio = entityMockUtils.getNumberedPortfolioInstance({
-      id,
-      did,
-    });
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-    const fakePortfolioId = { did, number: id };
-
-    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio, mockContext).resolves(fakePortfolioId);
-    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio, mockContext).resolves(fakePortfolioId);
-
-    return expect(
-      prepareMoveFunds.call(proc, {
-        from: samePortfolio,
-        to: samePortfolio,
-        items: [],
-      })
-    ).rejects.toThrow('The current identity should be the owner of the origin portfolio');
-  });
-
   test('should throw an error if both portfolios are the same', async () => {
     const id = new BigNumber(1);
     const did = 'someDid';
@@ -139,33 +117,6 @@ describe('moveFunds procedure', () => {
         items: [],
       })
     ).rejects.toThrow('Origin and destination should be different Portfolios');
-  });
-
-  test('should throw an error if the Identity is not the owner of both Portfolios', async () => {
-    const fromId = new BigNumber(1);
-    const toId = new BigNumber(2);
-    const did = 'someDid';
-    const from = new NumberedPortfolio({ id: fromId, did }, mockContext);
-    const to = new NumberedPortfolio({ id: toId, did }, mockContext);
-
-    portfolioLikeToPortfolioIdStub.withArgs(from, mockContext).resolves({ did, number: fromId });
-    portfolioLikeToPortfolioIdStub.withArgs(to, mockContext).resolves({ did, number: toId });
-
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        isOwnedBy: false,
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    return expect(
-      prepareMoveFunds.call(proc, {
-        from,
-        to,
-        items: [],
-      })
-    ).rejects.toThrow('You must be the owner of both Portfolios');
   });
 
   test('should throw an error if some of the amount token to move exceed its balance', async () => {
@@ -374,5 +325,36 @@ describe('moveFunds procedure', () => {
       rawToMeshPortfolioId,
       [rawMovePortfolioItem]
     );
+  });
+});
+
+describe('getRequiredRoles', () => {
+  const mockContext = dsMockUtils.getContextInstance();
+
+  test('should return a portfolio custodian role with did and number', () => {
+    const id = new BigNumber(1);
+    const did = 'someDid';
+    const from = new NumberedPortfolio({ id, did }, mockContext);
+
+    const args = {
+      from,
+    } as Params;
+
+    const portfolioId = { did, number: id };
+
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
+  });
+
+  test('should return a portfolio custodian role with did', () => {
+    const did = 'someDid';
+    const from = new DefaultPortfolio({ did }, mockContext);
+
+    const args = {
+      from,
+    } as Params;
+
+    const portfolioId = { did };
+
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
   });
 });

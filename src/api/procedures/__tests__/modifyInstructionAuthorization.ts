@@ -22,6 +22,12 @@ jest.mock(
   '~/api/entities/Instruction',
   require('~/testUtils/mocks/entities').mockInstructionModule('~/api/entities/Instruction')
 );
+jest.mock(
+  '~/api/entities/DefaultPortfolio',
+  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+    '~/api/entities/DefaultPortfolio'
+  )
+);
 
 describe('modifyInstructionAffirmation procedure', () => {
   const id = new BigNumber(1);
@@ -227,6 +233,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
   test('should add an reject instruction transaction to the queue', async () => {
     const currentDid = (await mockContext.getCurrentIdentity()).did;
+
     entityMockUtils.configureMocks({
       instructionOptions: {
         getLegs: [
@@ -252,6 +259,12 @@ describe('modifyInstructionAffirmation procedure', () => {
     meshAffirmationStatusToAffirmationStatusStub
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Pending);
+
+    const isCustodiedByStub = entityMockUtils.getDefaultPortfolioIsCustodiedByStub();
+    isCustodiedByStub.onCall(0).returns(true);
+    isCustodiedByStub.onCall(1).returns(true);
+    isCustodiedByStub.onCall(2).returns(false);
+    isCustodiedByStub.onCall(3).returns(false);
 
     const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
       mockContext

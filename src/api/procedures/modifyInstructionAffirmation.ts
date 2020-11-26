@@ -81,13 +81,16 @@ export async function prepareModifyInstructionAffirmation(
       const fromId = portfolioToPortfolioId(from);
       const toId = portfolioToPortfolioId(to);
 
-      const [fromIsOwned, toIsOwned] = await Promise.all([from.isOwnedBy(), to.isOwnedBy()]);
+      const [fromIsCustodied, toIsCustodied] = await Promise.all([
+        from.isCustodiedBy(),
+        to.isCustodiedBy(),
+      ]);
 
-      if (fromIsOwned) {
+      if (fromIsCustodied) {
         rawPortfolioIds.push(portfolioIdToMeshPortfolioId(fromId, context));
       }
 
-      if (toIsOwned) {
+      if (toIsCustodied) {
         rawPortfolioIds.push(portfolioIdToMeshPortfolioId(toId, context));
       }
     }),

@@ -124,7 +124,6 @@ import {
   PortfolioId,
   SignerType,
   SignerValue,
-  TokenDocumentData,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {

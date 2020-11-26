@@ -154,27 +154,46 @@ describe('CurrentIdentity class', () => {
       const id2 = new BigNumber(2);
       const id3 = new BigNumber(3);
       const id4 = new BigNumber(4);
-      const id5 = new BigNumber(5);
 
       const did = 'someDid';
       const identity = new CurrentIdentity({ did }, context);
 
+      const defaultPortfolioDid = 'someDid';
+      const numberedPortfolioDid = 'someDid';
       const numberedPortfolioId = new BigNumber(1);
+
+      const defaultPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: defaultPortfolioDid,
+        isCustodiedBy: true,
+      });
+
+      const numberedPortfolio = entityMockUtils.getNumberedPortfolioInstance({
+        did: numberedPortfolioDid,
+        id: numberedPortfolioId,
+        isCustodiedBy: false,
+      });
 
       identity.portfolios.getPortfolios = sinon
         .stub()
-        .resolves([{ owner: { did } }, { owner: { did }, id: numberedPortfolioId }]);
+        .resolves([defaultPortfolio, numberedPortfolio]);
+
+      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves([]);
+
+      const portfolioLikeToPortfolioIdStub = sinon.stub(
+        utilsConversionModule,
+        'portfolioLikeToPortfolioId'
+      );
+
+      portfolioLikeToPortfolioIdStub
+        .withArgs(defaultPortfolio, context)
+        .resolves({ did: defaultPortfolioDid, number: undefined });
+      portfolioLikeToPortfolioIdStub
+        .withArgs(numberedPortfolio, context)
+        .resolves({ did: numberedPortfolioDid, number: numberedPortfolioId });
 
       const rawPortfolio = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),
         kind: dsMockUtils.createMockPortfolioKind('Default'),
-      });
-
-      const rawNumberedPortfolio = dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId(did),
-        kind: dsMockUtils.createMockPortfolioKind({
-          User: dsMockUtils.createMockU64(numberedPortfolioId.toNumber()),
-        }),
       });
 
       const portfolioIdToMeshPortfolioIdStub = sinon.stub(
@@ -182,18 +201,15 @@ describe('CurrentIdentity class', () => {
         'portfolioIdToMeshPortfolioId'
       );
 
-      portfolioIdToMeshPortfolioIdStub.withArgs({ did }, context).returns(rawPortfolio);
       portfolioIdToMeshPortfolioIdStub
-        .withArgs({ did, number: numberedPortfolioId }, context)
-        .returns(rawNumberedPortfolio);
+        .withArgs({ did, number: undefined }, context)
+        .returns(rawPortfolio);
 
       const userAuthsStub = dsMockUtils.createQueryStub('settlement', 'userAffirmations');
 
       const rawId1 = dsMockUtils.createMockU64(id1.toNumber());
       const rawId2 = dsMockUtils.createMockU64(id2.toNumber());
       const rawId3 = dsMockUtils.createMockU64(id3.toNumber());
-      const rawId4 = dsMockUtils.createMockU64(id4.toNumber());
-      const rawId5 = dsMockUtils.createMockU64(id5.toNumber());
 
       const entriesStub = sinon.stub();
       entriesStub
@@ -213,23 +229,6 @@ describe('CurrentIdentity class', () => {
           ),
         ]);
 
-      entriesStub
-        .withArgs(rawNumberedPortfolio)
-        .resolves([
-          tuple(
-            { args: [rawNumberedPortfolio, rawId2] },
-            dsMockUtils.createMockAffirmationStatus('Pending')
-          ),
-          tuple(
-            { args: [rawNumberedPortfolio, rawId4] },
-            dsMockUtils.createMockAffirmationStatus('Pending')
-          ),
-          tuple(
-            { args: [rawNumberedPortfolio, rawId5] },
-            dsMockUtils.createMockAffirmationStatus('Pending')
-          ),
-        ]);
-
       userAuthsStub.entries = entriesStub;
 
       /* eslint-disable @typescript-eslint/camelcase */
@@ -243,7 +242,7 @@ describe('CurrentIdentity class', () => {
 
       const multiStub = sinon.stub();
 
-      multiStub.withArgs([rawId1, rawId2, rawId3, rawId4, rawId5]).resolves([
+      multiStub.withArgs([rawId1, rawId2, rawId3]).resolves([
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id1.toNumber()),
           venue_id: dsMockUtils.createMockU64(),
@@ -272,14 +271,6 @@ describe('CurrentIdentity class', () => {
           instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          valid_from: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id5.toNumber()),
-          venue_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Unknown'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
           valid_from: dsMockUtils.createMockOption(),
