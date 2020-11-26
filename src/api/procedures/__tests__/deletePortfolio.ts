@@ -3,11 +3,15 @@ import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { DeletePortfolioParams, prepareDeletePortfolio } from '~/api/procedures/deletePortfolio';
+import {
+  DeletePortfolioParams,
+  getRequiredRoles,
+  prepareDeletePortfolio,
+} from '~/api/procedures/deletePortfolio';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance } from '~/types';
+import { PortfolioBalance, RoleType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -75,23 +79,6 @@ describe('deletePortfolio procedure', () => {
     ).rejects.toThrow("The Portfolio doesn't exist");
   });
 
-  test('should throw an error if the Identity is not the owner of the Portfolio', async () => {
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        isOwnedBy: false,
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
-
-    return expect(
-      prepareDeletePortfolio.call(proc, {
-        id,
-        did,
-      })
-    ).rejects.toThrow('You are not the owner of this Portfolio');
-  });
-
   test('should throw an error if the portfolio has balance in it', async () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
@@ -140,5 +127,18 @@ describe('deletePortfolio procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, portfolioNumber);
+  });
+});
+
+describe('getRequiredRoles', () => {
+  test('should return a portfolio custodian role', () => {
+    const args = {
+      id: new BigNumber(1),
+      did: 'someDid',
+    };
+
+    const portfolioId = { did: args.did, number: args.id };
+
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
   });
 });

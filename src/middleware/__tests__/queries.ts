@@ -12,6 +12,7 @@ import {
 import {
   didsWithClaims,
   eventByIndexedArgs,
+  eventsByIndexedArgs,
   issuerDidsWithClaimsByTarget,
   proposal,
   proposals,
@@ -19,6 +20,7 @@ import {
   scopesByIdentity,
   tokensByTrustedClaimIssuer,
   tokensHeldByDid,
+  transactionByHash,
   transactions,
 } from '../queries';
 
@@ -69,6 +71,34 @@ describe('eventByIndexedArgs', () => {
     };
 
     const result = eventByIndexedArgs(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('eventsByIndexedArgs', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      moduleId: ModuleIdEnum.Asset,
+      eventId: EventIdEnum.AssetFrozen,
+      eventArg0: 'someData',
+    };
+
+    const result = eventsByIndexedArgs(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('transactionByHash', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      transactionHash: 'someTransactionHash',
+    };
+
+    const result = transactionByHash(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

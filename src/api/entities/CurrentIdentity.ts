@@ -15,9 +15,12 @@ import {
   Venue,
 } from '~/internal';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
-import { PortfolioId } from '~/types/internal';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
-import { portfolioIdToMeshPortfolioId, u64ToBigNumber } from '~/utils/conversion';
+import {
+  portfolioIdToMeshPortfolioId,
+  portfolioLikeToPortfolioId,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 
 /**
  * Represents the Identity associated to the current [[Account]]
@@ -84,12 +87,18 @@ export class CurrentIdentity extends Identity {
       context,
     } = this;
 
-    const [, ...numberedPortfolios] = await portfolios.getPortfolios();
+    const ownedPortfolios = await portfolios.getPortfolios();
 
-    const portfolioIds: PortfolioId[] = [
-      { did },
-      ...numberedPortfolios.map(({ id: number }) => ({ did, number })),
-    ];
+    const [ownedCustodiedPortfolios, custodiedPortfolios] = await Promise.all([
+      P.filter(ownedPortfolios, portfolio => portfolio.isCustodiedBy({ identity: did })),
+      this.portfolios.getCustodiedPortfolios(),
+    ]);
+
+    const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
+
+    const portfolioIds = await P.map(allPortfolios, portfolio =>
+      portfolioLikeToPortfolioId(portfolio, context)
+    );
 
     const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 

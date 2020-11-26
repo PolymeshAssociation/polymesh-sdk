@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, PortfolioMovement } from '~/types';
+import { ErrorCode, PortfolioMovement, Role, RoleType } from '~/types';
+import { PortfolioId } from '~/types/internal';
 import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
@@ -52,23 +53,15 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     owner: { did: toDid },
   } = toPortfolio;
 
-  const [fromPortfolioId, toPortfolioId, currentIdentity] = await Promise.all([
+  const [fromPortfolioId, toPortfolioId] = await Promise.all([
     portfolioLikeToPortfolioId(fromPortfolio, context),
     portfolioLikeToPortfolioId(toPortfolio, context),
-    context.getCurrentIdentity(),
   ]);
 
   if (fromDid !== toDid) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Both portfolios should have the same owner',
-    });
-  }
-
-  if (currentIdentity.did !== fromDid) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The current identity should be the owner of the origin portfolio',
     });
   }
 
@@ -79,21 +72,9 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     });
   }
 
-  const [fromIsOwned, toIsOwned, portfolioBalances] = await Promise.all([
-    fromPortfolio.isOwnedBy(),
-    toPortfolio.isOwnedBy(),
-    fromPortfolio.getTokenBalances({
-      tokens: items.map(({ token }) => token),
-    }),
-  ]);
-
-  if (!fromIsOwned || !toIsOwned) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You must be the owner of both Portfolios',
-    });
-  }
-
+  const portfolioBalances = await fromPortfolio.getTokenBalances({
+    tokens: items.map(({ token }) => token),
+  });
   const balanceExceeded: (PortfolioMovement & { free: BigNumber })[] = [];
 
   portfolioBalances.forEach(({ token: { ticker }, total, locked }) => {
@@ -131,4 +112,16 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
 /**
  * @hidden
  */
-export const moveFunds = new Procedure(prepareMoveFunds);
+export function getRequiredRoles({ from }: Params): Role[] {
+  let portfolioId: PortfolioId = { did: from.owner.did };
+
+  if (from instanceof NumberedPortfolio) {
+    portfolioId = { ...portfolioId, number: from.id };
+  }
+  return [{ type: RoleType.PortfolioCustodian, portfolioId }];
+}
+
+/**
+ * @hidden
+ */
+export const moveFunds = new Procedure(prepareMoveFunds, getRequiredRoles);
