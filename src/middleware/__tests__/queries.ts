@@ -1,4 +1,5 @@
 import {
+  ClaimScopeTypeEnum,
   ClaimTypeEnum,
   EventIdEnum,
   ModuleIdEnum,
@@ -11,6 +12,7 @@ import {
 import {
   didsWithClaims,
   eventByIndexedArgs,
+  eventsByIndexedArgs,
   issuerDidsWithClaimsByTarget,
   proposal,
   proposals,
@@ -18,6 +20,7 @@ import {
   scopesByIdentity,
   tokensByTrustedClaimIssuer,
   tokensHeldByDid,
+  transactionByHash,
   transactions,
 } from '../queries';
 
@@ -45,7 +48,7 @@ describe('didsWithClaims', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       dids: ['someDid', 'otherDid'],
-      scope: 'someScope',
+      scope: { type: ClaimScopeTypeEnum.Ticker, value: 'someScope' },
       trustedClaimIssuers: ['someTrustedClaim'],
       claimTypes: [ClaimTypeEnum.Accredited],
       count: 100,
@@ -68,6 +71,34 @@ describe('eventByIndexedArgs', () => {
     };
 
     const result = eventByIndexedArgs(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('eventsByIndexedArgs', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      moduleId: ModuleIdEnum.Asset,
+      eventId: EventIdEnum.AssetFrozen,
+      eventArg0: 'someData',
+    };
+
+    const result = eventsByIndexedArgs(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('transactionByHash', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      transactionHash: 'someTransactionHash',
+    };
+
+    const result = transactionByHash(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
@@ -152,7 +183,7 @@ describe('issuerDidsWithClaimsByTarget', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       target: 'someDid',
-      scope: 'someScope',
+      scope: { type: ClaimScopeTypeEnum.Identity, value: 'someScope' },
       trustedClaimIssuers: ['aTrustedClaimIssuer'],
     };
 

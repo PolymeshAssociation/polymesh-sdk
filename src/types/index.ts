@@ -3,8 +3,20 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
-import { Account, Identity, Proposal } from '~/api/entities';
-import { ProposalDetails } from '~/api/entities/Proposal/types';
+// NOTE uncomment in Governance v2 upgrade
+import {
+  Account,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  /*, Proposal */
+  SecurityToken,
+} from '~/api/entities';
+// import { ProposalDetails } from '~/api/entities/Proposal/types';
+import { CountryCode } from '~/generated/types';
+import { PortfolioId } from '~/types/internal';
+
+export * from '~/generated/types';
 
 export enum TransactionStatus {
   /**
@@ -66,6 +78,8 @@ export enum RoleType {
   TickerOwner = 'TickerOwner',
   TokenOwner = 'TokenOwner',
   CddProvider = 'CddProvider',
+  VenueOwner = 'VenueOwner',
+  PortfolioCustodian = 'PortfolioCustodian',
 }
 
 export interface TickerOwnerRole {
@@ -103,7 +117,36 @@ export function isCddProviderRole(role: Role): role is CddProviderRole {
   return role.type === RoleType.CddProvider;
 }
 
-export type Role = TickerOwnerRole | TokenOwnerRole | CddProviderRole;
+export interface VenueOwnerRole {
+  type: RoleType.VenueOwner;
+  venueId: BigNumber;
+}
+
+/**
+ * @hidden
+ */
+export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
+  return role.type === RoleType.VenueOwner;
+}
+
+export interface PortfolioCustodianRole {
+  type: RoleType.PortfolioCustodian;
+  portfolioId: PortfolioId;
+}
+
+/**
+ * @hidden
+ */
+export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodianRole {
+  return role.type === RoleType.PortfolioCustodian;
+}
+
+export type Role =
+  | TickerOwnerRole
+  | TokenOwnerRole
+  | CddProviderRole
+  | VenueOwnerRole
+  | PortfolioCustodianRole;
 
 export enum KnownTokenType {
   EquityCommon = 'EquityCommon',
@@ -126,6 +169,7 @@ export enum TokenIdentifierType {
   Isin = 'Isin',
   Cusip = 'Cusip',
   Cins = 'Cins',
+  Lei = 'Lei',
 }
 
 // NOTE: query.asset.identifiers doesn’t support custom identifier types properly for now
@@ -152,12 +196,14 @@ export interface TokenDocument {
  * Type of authorization request
  */
 export enum AuthorizationType {
-  AttestMasterKeyRotation = 'AttestMasterKeyRotation',
-  RotateMasterKey = 'RotateMasterKey',
+  AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
+  RotatePrimaryKey = 'RotatePrimaryKey',
   TransferTicker = 'TransferTicker',
   AddMultiSigSigner = 'AddMultiSigSigner',
   TransferAssetOwnership = 'TransferAssetOwnership',
+  TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
   JoinIdentity = 'JoinIdentity',
+  PortfolioCustody = 'PortfolioCustody',
   Custom = 'Custom',
   NoData = 'NoData',
 }
@@ -166,14 +212,15 @@ export enum AuthorizationType {
  * Authorization request data corresponding to type
  */
 export type Authorization =
-  | { type: AuthorizationType.NoData | AuthorizationType.AddMultiSigSigner }
+  | { type: AuthorizationType.NoData }
   | { type: AuthorizationType.JoinIdentity; value: Permission[] }
+  | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
   | {
       type: Exclude<
         AuthorizationType,
         | AuthorizationType.NoData
-        | AuthorizationType.AddMultiSigSigner
         | AuthorizationType.JoinIdentity
+        | AuthorizationType.PortfolioCustody
       >;
       value: string;
     };
@@ -182,6 +229,18 @@ export enum ConditionTarget {
   Sender = 'Sender',
   Receiver = 'Receiver',
   Both = 'Both',
+}
+
+export enum ScopeType {
+  // eslint-disable-next-line no-shadow
+  Identity = 'Identity',
+  Ticker = 'Ticker',
+  Custom = 'Custom',
+}
+
+export interface Scope {
+  type: ScopeType;
+  value: string;
 }
 
 export enum ClaimType {
@@ -198,10 +257,12 @@ export enum ClaimType {
 }
 
 export type ScopedClaim =
-  | { type: ClaimType.Jurisdiction; name: string; scope: string }
-  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: string };
+  | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
+  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: Scope };
 
-export type UnscopedClaim = { type: ClaimType.NoData | ClaimType.CustomerDueDiligence };
+export type UnscopedClaim =
+  | { type: ClaimType.NoData }
+  | { type: ClaimType.CustomerDueDiligence; id: string };
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -211,7 +272,7 @@ export type Claim = ScopedClaim | UnscopedClaim;
 export function isScopedClaim(claim: Claim): claim is ScopedClaim {
   const { type } = claim;
 
-  return type !== ClaimType.NoData && type !== ClaimType.CustomerDueDiligence;
+  return ![ClaimType.NoData, ClaimType.CustomerDueDiligence].includes(type);
 }
 
 export interface ClaimData {
@@ -233,14 +294,14 @@ export interface ExtrinsicData {
   address: string | null;
   nonce: number;
   txTag: TxTag;
-  params: object;
+  params: object[];
   success: boolean;
   specVersionId: number;
   extrinsicHash: string;
 }
 
 export interface ClaimScope {
-  scope: string | null;
+  scope: Scope | null;
   ticker?: string;
 }
 
@@ -249,6 +310,8 @@ export enum ConditionType {
   IsAbsent = 'IsAbsent',
   IsAnyOf = 'IsAnyOf',
   IsNoneOf = 'IsNoneOf',
+  IsPrimaryIssuanceAgent = 'IsPrimaryIssuanceAgent',
+  IsIdentity = 'IsIdentity',
 }
 
 export type ConditionBase = { target: ConditionTarget; trustedClaimIssuers?: string[] };
@@ -263,7 +326,20 @@ export type MultiClaimCondition = ConditionBase & {
   claims: Claim[];
 };
 
-export type Condition = SingleClaimCondition | MultiClaimCondition;
+export type IdentityCondition = ConditionBase & {
+  type: ConditionType.IsIdentity;
+  identity: Identity;
+};
+
+export type PrimaryIssuanceAgentCondition = ConditionBase & {
+  type: ConditionType.IsPrimaryIssuanceAgent;
+};
+
+export type Condition =
+  | SingleClaimCondition
+  | MultiClaimCondition
+  | IdentityCondition
+  | PrimaryIssuanceAgentCondition;
 
 /**
  * @hidden
@@ -279,15 +355,24 @@ export function isMultiClaimCondition(condition: Condition): condition is MultiC
   return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
 }
 
-export interface Rule {
+export interface Requirement {
   id: number;
   conditions: Condition[];
 }
 
-export interface RuleCompliance {
-  rules: (Rule & {
-    complies: boolean;
-  })[];
+export interface ConditionCompliance {
+  condition: Condition;
+  complies: boolean;
+}
+
+export interface RequirementCompliance {
+  id: number;
+  conditions: ConditionCompliance[];
+  complies: boolean;
+}
+
+export interface Compliance {
+  requirements: RequirementCompliance[];
   complies: boolean;
 }
 
@@ -305,14 +390,6 @@ export enum ErrorCode {
   MiddlewareError = 'MiddlewareError',
   IdentityNotPresent = 'IdentityNotPresent',
   DataUnavailable = 'DataUnavailable',
-}
-
-/**
- * Represents an amount of tokens to be issued to an Identity
- */
-export interface IssuanceData {
-  identity: string | Identity;
-  amount: BigNumber;
 }
 
 export enum TransferStatus {
@@ -333,6 +410,8 @@ export enum TransferStatus {
   VolumeLimitReached = 'VolumeLimitReached', // 165
   BlockedTransaction = 'BlockedTransaction', // 166
   FundsLimitReached = 'FundsLimitReached', // 168
+  PortfolioFailure = 'PortfolioFailure', // 169
+  CustodianError = 'CustodianError', // 170
 }
 
 export interface ClaimTarget {
@@ -462,14 +541,27 @@ export type TransactionArgument = {
 
 export type Signer = Identity | Account;
 
-export interface ProposalWithDetails {
-  proposal: Proposal;
-  details: ProposalDetails;
-}
+// NOTE uncomment in Governance v2 upgrade
+// export interface ProposalWithDetails {
+//   proposal: Proposal;
+//   details: ProposalDetails;
+// }
 
-export interface SigningKey {
+export interface SecondaryKey {
   signer: Signer;
   permissions: Permission[];
+}
+
+export type PortfolioLike =
+  | string
+  | Identity
+  | NumberedPortfolio
+  | DefaultPortfolio
+  | { identity: string | Identity; id: BigNumber };
+
+export interface PortfolioMovement {
+  token: string | SecurityToken;
+  amount: BigNumber;
 }
 
 export { TxTags } from 'polymesh-types/types';

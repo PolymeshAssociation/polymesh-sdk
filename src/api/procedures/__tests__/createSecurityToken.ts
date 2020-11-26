@@ -1,6 +1,5 @@
 import { bool, Option, Vec } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
-import { ITuple } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
@@ -9,8 +8,6 @@ import {
   Document,
   DocumentName,
   FundingRoundName,
-  IdentifierType,
-  IdentityId,
   Ticker,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -35,7 +32,7 @@ import {
 } from '~/types';
 import { PolymeshTx, TokenDocumentData } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -47,17 +44,15 @@ jest.mock(
 describe('createSecurityToken procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context], Balance>;
+  let numberToBalanceStub: sinon.SinonStub;
   let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let tokenTypeToAssetTypeStub: sinon.SinonStub<[TokenType, Context], AssetType>;
-  let tokenIdentifierTypeToIdentifierTypeStub: sinon.SinonStub<
-    [TokenIdentifierType, Context],
-    IdentifierType
+  let tokenIdentifierToAssetIdentifierStub: sinon.SinonStub<
+    [TokenIdentifier, Context],
+    AssetIdentifier
   >;
-  let stringToAssetIdentifierStub: sinon.SinonStub<[string, Context], AssetIdentifier>;
   let stringToFundingRoundNameStub: sinon.SinonStub<[string, Context], FundingRoundName>;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let stringToDocumentNameStub: sinon.SinonStub<[string, Context], DocumentName>;
   let tokenDocumentDataToDocumentStub: sinon.SinonStub<[TokenDocumentData, Context], Document>;
   let ticker: string;
@@ -67,16 +62,14 @@ describe('createSecurityToken procedure', () => {
   let tokenType: TokenType;
   let tokenIdentifiers: TokenIdentifier[];
   let fundingRound: string;
-  let treasury: string;
   let documents: TokenDocument[];
   let rawTicker: Ticker;
   let rawName: AssetName;
   let rawTotalSupply: Balance;
   let rawIsDivisible: bool;
   let rawType: AssetType;
-  let rawIdentifiers: [IdentifierType, AssetIdentifier][];
+  let rawIdentifiers: AssetIdentifier[];
   let rawFundingRound: FundingRoundName;
-  let rawTreasury: IdentityId;
   let rawDocuments: Document[];
   let rawDocumentTuples: [DocumentName, Document][];
   let args: Params;
@@ -87,20 +80,21 @@ describe('createSecurityToken procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    numberToBalanceStub = sinon.stub(utilsModule, 'numberToBalance');
-    stringToAssetNameStub = sinon.stub(utilsModule, 'stringToAssetName');
-    booleanToBoolStub = sinon.stub(utilsModule, 'booleanToBool');
-    tokenTypeToAssetTypeStub = sinon.stub(utilsModule, 'tokenTypeToAssetType');
-    tokenIdentifierTypeToIdentifierTypeStub = sinon.stub(
-      utilsModule,
-      'tokenIdentifierTypeToIdentifierType'
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
+    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
+    tokenTypeToAssetTypeStub = sinon.stub(utilsConversionModule, 'tokenTypeToAssetType');
+    tokenIdentifierToAssetIdentifierStub = sinon.stub(
+      utilsConversionModule,
+      'tokenIdentifierToAssetIdentifier'
     );
-    stringToAssetIdentifierStub = sinon.stub(utilsModule, 'stringToAssetIdentifier');
-    stringToFundingRoundNameStub = sinon.stub(utilsModule, 'stringToFundingRoundName');
-    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
-    stringToDocumentNameStub = sinon.stub(utilsModule, 'stringToDocumentName');
-    tokenDocumentDataToDocumentStub = sinon.stub(utilsModule, 'tokenDocumentDataToDocument');
+    stringToFundingRoundNameStub = sinon.stub(utilsConversionModule, 'stringToFundingRoundName');
+    stringToDocumentNameStub = sinon.stub(utilsConversionModule, 'stringToDocumentName');
+    tokenDocumentDataToDocumentStub = sinon.stub(
+      utilsConversionModule,
+      'tokenDocumentDataToDocument'
+    );
     ticker = 'someTicker';
     name = 'someName';
     totalSupply = new BigNumber(100);
@@ -113,7 +107,6 @@ describe('createSecurityToken procedure', () => {
       },
     ];
     fundingRound = 'Series A';
-    treasury = 'someDid';
     documents = [
       {
         name: 'someDocument',
@@ -126,12 +119,11 @@ describe('createSecurityToken procedure', () => {
     rawTotalSupply = dsMockUtils.createMockBalance(totalSupply.toNumber());
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
     rawType = dsMockUtils.createMockAssetType(tokenType);
-    rawIdentifiers = tokenIdentifiers.map(({ type, value }) => {
-      return [
-        dsMockUtils.createMockIdentifierType(type),
-        dsMockUtils.createMockAssetIdentifier(value),
-      ];
-    });
+    rawIdentifiers = tokenIdentifiers.map(({ type, value }) =>
+      dsMockUtils.createMockAssetIdentifier({
+        [type as 'Lei']: dsMockUtils.createMockU8aFixed(value),
+      })
+    );
     rawDocuments = documents.map(({ uri, contentHash }) =>
       dsMockUtils.createMockDocument({
         uri: dsMockUtils.createMockDocumentUri(uri),
@@ -143,7 +135,6 @@ describe('createSecurityToken procedure', () => {
       tuple(dsMockUtils.createMockDocumentName(documentName), rawDocuments[index])
     );
     rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
-    rawTreasury = dsMockUtils.createMockIdentityId(treasury);
     args = {
       ticker,
       name,
@@ -152,7 +143,6 @@ describe('createSecurityToken procedure', () => {
       tokenType,
       tokenIdentifiers,
       fundingRound,
-      treasury,
     };
   });
 
@@ -165,7 +155,7 @@ describe('createSecurityToken procedure', () => {
     Balance,
     bool,
     AssetType,
-    Vec<ITuple<[IdentifierType, AssetIdentifier]>>,
+    Vec<AssetIdentifier>,
     Option<FundingRoundName>
   ]>;
   /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -182,18 +172,14 @@ describe('createSecurityToken procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    numberToBalanceStub.withArgs(totalSupply, mockContext).returns(rawTotalSupply);
+    numberToBalanceStub.withArgs(totalSupply, mockContext, isDivisible).returns(rawTotalSupply);
     stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     tokenTypeToAssetTypeStub.withArgs(tokenType, mockContext).returns(rawType);
-    tokenIdentifierTypeToIdentifierTypeStub
-      .withArgs(tokenIdentifiers[0].type, mockContext)
-      .returns(rawIdentifiers[0][0]);
-    stringToAssetIdentifierStub
-      .withArgs(tokenIdentifiers[0].value, mockContext)
-      .returns(rawIdentifiers[0][1]);
+    tokenIdentifierToAssetIdentifierStub
+      .withArgs(tokenIdentifiers[0], mockContext)
+      .returns(rawIdentifiers[0]);
     stringToFundingRoundNameStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
-    stringToIdentityIdStub.withArgs(treasury, mockContext).returns(rawTreasury);
     stringToDocumentNameStub
       .withArgs(documents[0].name, mockContext)
       .returns(rawDocumentTuples[0][0]);
@@ -255,8 +241,7 @@ describe('createSecurityToken procedure', () => {
       rawIsDivisible,
       rawType,
       rawIdentifiers,
-      rawFundingRound,
-      rawTreasury
+      rawFundingRound
     );
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
 
@@ -264,7 +249,6 @@ describe('createSecurityToken procedure', () => {
       ...args,
       tokenIdentifiers: undefined,
       fundingRound: undefined,
-      treasury: undefined,
     });
 
     sinon.assert.calledWith(
@@ -277,7 +261,6 @@ describe('createSecurityToken procedure', () => {
       rawIsDivisible,
       rawType,
       [],
-      null,
       null
     );
   });

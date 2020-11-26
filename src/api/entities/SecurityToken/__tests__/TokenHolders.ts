@@ -8,9 +8,10 @@ import { Identity, Namespace } from '~/api/entities';
 import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { IdentityBalance, TokenHolderProperties, TransferStatus } from '~/types';
+import { IdentityBalance } from '~/types';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 import { TokenHolders } from '../TokenHolders';
 
@@ -43,11 +44,11 @@ describe('TokenHolders class', () => {
     ticker = 'TEST';
     mockContext = dsMockUtils.getContextInstance();
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    requestPaginatedStub = sinon.stub(utilsModule, 'requestPaginated');
-    identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
-    balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
+    requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+    balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
     sinon
-      .stub(utilsModule, 'stringToTicker')
+      .stub(utilsConversionModule, 'stringToTicker')
       .withArgs(ticker, mockContext)
       .returns(rawTicker);
   });
@@ -177,102 +178,6 @@ describe('TokenHolders class', () => {
       const tokenHolders = new TokenHolders(token, context);
 
       const result = await tokenHolders.get();
-
-      expect(result).toEqual({ data: expectedHolders, next: null });
-    });
-
-    test('should have canBeIssuedTo set to false for all holders if transfers are frozen', async () => {
-      dsMockUtils.createQueryStub('asset', 'balanceOf');
-
-      const expectedHolders: (IdentityBalance &
-        Pick<TokenHolderProperties, 'canBeIssuedTo'>)[] = [];
-
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          transfersAreFrozen: true,
-        },
-      });
-
-      const balanceOfEntries: [StorageKey, Balance][] = [];
-
-      const context = dsMockUtils.getContextInstance();
-
-      fakeData.forEach(({ identity, value }) => {
-        const identityId = dsMockUtils.createMockIdentityId(identity);
-        const fakeBalance = dsMockUtils.createMockBalance(value);
-        const balance = new BigNumber(value);
-
-        identityIdToStringStub.withArgs(identityId).returns(identity);
-        balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
-
-        balanceOfEntries.push(
-          tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, fakeBalance)
-        );
-
-        expectedHolders.push({
-          identity: new Identity({ did: identity }, context),
-          balance,
-          canBeIssuedTo: false,
-        });
-      });
-
-      requestPaginatedStub.resolves({ entries: balanceOfEntries, lastKey: null });
-
-      const token = entityMockUtils.getSecurityTokenInstance();
-      const tokenHolders = new TokenHolders(token, context);
-
-      const result = await tokenHolders.get({ canBeIssuedTo: true });
-
-      expect(result).toEqual({ data: expectedHolders, next: null });
-    });
-
-    test('should return whether each token holder can receive primary issuance if canBeIssuedTo is passed as true', async () => {
-      dsMockUtils.createQueryStub('asset', 'balanceOf');
-
-      const expectedHolders: (IdentityBalance &
-        Pick<TokenHolderProperties, 'canBeIssuedTo'>)[] = [];
-
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          transfersAreFrozen: false,
-        },
-      });
-
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          transfersCanMint: TransferStatus.Success,
-        },
-      });
-
-      const balanceOfEntries: [StorageKey, Balance][] = [];
-
-      const context = dsMockUtils.getContextInstance();
-
-      fakeData.forEach(({ identity, value }) => {
-        const identityId = dsMockUtils.createMockIdentityId(identity);
-        const fakeBalance = dsMockUtils.createMockBalance(value);
-        const balance = new BigNumber(value);
-
-        identityIdToStringStub.withArgs(identityId).returns(identity);
-        balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
-
-        balanceOfEntries.push(
-          tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, fakeBalance)
-        );
-
-        expectedHolders.push({
-          identity: new Identity({ did: identity }, context),
-          balance,
-          canBeIssuedTo: true,
-        });
-      });
-
-      requestPaginatedStub.resolves({ entries: balanceOfEntries, lastKey: null });
-
-      const token = entityMockUtils.getSecurityTokenInstance();
-      const tokenHolders = new TokenHolders(token, context);
-
-      const result = await tokenHolders.get({ canBeIssuedTo: true });
 
       expect(result).toEqual({ data: expectedHolders, next: null });
     });

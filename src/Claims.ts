@@ -7,15 +7,23 @@ import {
   scopesByIdentity,
 } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
-import { ClaimData, ClaimScope, ClaimType, Ensured, IdentityWithClaims, ResultSet } from '~/types';
+import {
+  ClaimData,
+  ClaimScope,
+  ClaimType,
+  Ensured,
+  IdentityWithClaims,
+  ResultSet,
+  Scope,
+} from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import {
-  calculateNextKey,
-  getDid,
-  removePadding,
+  middlewareScopeToScope,
+  scopeToMiddlewareScope,
   signerToString,
   toIdentityWithClaimsArray,
-} from '~/utils';
+} from '~/utils/conversion';
+import { calculateNextKey, getDid, removePadding } from '~/utils/internal';
 
 /**
  * Handles all Claims related functionality
@@ -74,10 +82,10 @@ export class Claims {
       includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = { includeExpired: true }
+    } = {}
   ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
-    const { target, includeExpired, size, start } = opts;
+    const { target, includeExpired = true, size, start } = opts;
 
     const did = await getDid(target, context);
 
@@ -109,21 +117,29 @@ export class Claims {
     opts: {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
-      scope?: string;
+      scope?: Scope;
       claimTypes?: ClaimType[];
       includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = { includeExpired: true }
+    } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
 
-    const { targets, trustedClaimIssuers, scope, claimTypes, includeExpired, size, start } = opts;
+    const {
+      targets,
+      trustedClaimIssuers,
+      scope,
+      claimTypes,
+      includeExpired = true,
+      size,
+      start,
+    } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
         dids: targets?.map(target => signerToString(target)),
-        scope,
+        scope: scope ? scopeToMiddlewareScope(scope) : undefined,
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
           signerToString(trustedClaimIssuer)
         ),
@@ -181,7 +197,7 @@ export class Claims {
       }
 
       return {
-        scope: scope ?? null,
+        scope: scope ? middlewareScopeToScope(scope) : null,
         ticker,
       };
     });
@@ -204,10 +220,10 @@ export class Claims {
       includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = { includeExpired: true }
+    } = {}
   ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
-    const { target, includeExpired, size, start } = opts;
+    const { target, includeExpired = true, size, start } = opts;
 
     const did = await getDid(target, context);
 
@@ -234,23 +250,23 @@ export class Claims {
   public async getTargetingClaims(
     opts: {
       target?: string | Identity;
-      scope?: string;
+      scope?: Scope;
       trustedClaimIssuers?: (string | Identity)[];
       includeExpired?: boolean;
       size?: number;
       start?: number;
-    } = { includeExpired: true }
+    } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
 
-    const { target, trustedClaimIssuers, scope, includeExpired, size, start } = opts;
+    const { target, trustedClaimIssuers, scope, includeExpired = true, size, start } = opts;
 
     const did = await getDid(target, context);
 
     const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
       issuerDidsWithClaimsByTarget({
         target: did,
-        scope,
+        scope: scope ? scopeToMiddlewareScope(scope) : undefined,
         trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
           signerToString(trustedClaimIssuer)
         ),

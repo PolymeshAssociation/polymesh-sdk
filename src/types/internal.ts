@@ -98,6 +98,10 @@ export interface TransactionSpec<
    * number of elements in the batch (only applicable to batch transactions)
    */
   batchSize: number | null;
+  /**
+   * whether the transaction fees are paid by a third party (for example when joining an identity as a secondary key)
+   */
+  paidByThirdParty: boolean;
 }
 
 export enum SignerType {
@@ -141,4 +145,15 @@ export interface ExtrinsicIdentifier {
 export interface TokenDocumentData {
   uri: string;
   contentHash: string;
+}
+
+export interface PortfolioId {
+  did: string;
+  number?: BigNumber;
+}
+
+export enum InstructionAuthorizationOperation {
+  Authorize = 'Authorize',
+  Unauthorize = 'Unauthorize',
+  Reject = 'Reject',
 }

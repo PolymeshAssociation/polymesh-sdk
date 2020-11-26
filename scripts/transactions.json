@@ -1,0 +1,389 @@
+{
+  "System": {
+    "fill_block": "fill_block",
+    "remark": "remark",
+    "set_heap_pages": "set_heap_pages",
+    "set_code": "set_code",
+    "set_code_without_checks": "set_code_without_checks",
+    "set_changes_trie_config": "set_changes_trie_config",
+    "set_storage": "set_storage",
+    "kill_storage": "kill_storage",
+    "kill_prefix": "kill_prefix",
+    "suicide": "suicide"
+  },
+  "Babe": {
+    "report_equivocation": "report_equivocation",
+    "report_equivocation_unsigned": "report_equivocation_unsigned"
+  },
+  "Timestamp": {
+    "set": "set"
+  },
+  "Indices": {
+    "claim": "claim",
+    "transfer": "transfer",
+    "free": "free",
+    "force_transfer": "force_transfer",
+    "freeze": "freeze"
+  },
+  "Balances": {
+    "transfer": "transfer",
+    "transfer_with_memo": "transfer_with_memo",
+    "deposit_block_reward_reserve_balance": "deposit_block_reward_reserve_balance",
+    "set_balance": "set_balance",
+    "force_transfer": "force_transfer",
+    "burn_account_balance": "burn_account_balance"
+  },
+  "Authorship": {
+    "set_uncles": "set_uncles"
+  },
+  "Staking": {
+    "bond": "bond",
+    "bond_extra": "bond_extra",
+    "unbond": "unbond",
+    "withdraw_unbonded": "withdraw_unbonded",
+    "validate": "validate",
+    "nominate": "nominate",
+    "chill": "chill",
+    "set_payee": "set_payee",
+    "set_controller": "set_controller",
+    "set_validator_count": "set_validator_count",
+    "increase_validator_count": "increase_validator_count",
+    "scale_validator_count": "scale_validator_count",
+    "add_permissioned_validator": "add_permissioned_validator",
+    "remove_permissioned_validator": "remove_permissioned_validator",
+    "validate_cdd_expiry_nominators": "validate_cdd_expiry_nominators",
+    "enable_individual_commissions": "enable_individual_commissions",
+    "set_global_commission": "set_global_commission",
+    "set_min_bond_threshold": "set_min_bond_threshold",
+    "force_no_eras": "force_no_eras",
+    "force_new_era": "force_new_era",
+    "set_invulnerables": "set_invulnerables",
+    "force_unstake": "force_unstake",
+    "force_new_era_always": "force_new_era_always",
+    "cancel_deferred_slash": "cancel_deferred_slash",
+    "payout_stakers": "payout_stakers",
+    "rebond": "rebond",
+    "set_history_depth": "set_history_depth",
+    "reap_stash": "reap_stash",
+    "submit_election_solution": "submit_election_solution",
+    "submit_election_solution_unsigned": "submit_election_solution_unsigned"
+  },
+  "Session": {
+    "set_keys": "set_keys",
+    "purge_keys": "purge_keys"
+  },
+  "FinalityTracker": {
+    "final_hint": "final_hint"
+  },
+  "Grandpa": {
+    "report_equivocation": "report_equivocation",
+    "report_equivocation_unsigned": "report_equivocation_unsigned",
+    "note_stalled": "note_stalled"
+  },
+  "ImOnline": {
+    "heartbeat": "heartbeat",
+    "set_slashing_params": "set_slashing_params"
+  },
+  "Sudo": {
+    "sudo": "sudo",
+    "sudo_unchecked_weight": "sudo_unchecked_weight",
+    "set_key": "set_key",
+    "sudo_as": "sudo_as"
+  },
+  "MultiSig": {
+    "make_multisig_master": "make_multisig_master",
+    "create_multisig": "create_multisig",
+    "create_or_approve_proposal_as_identity": "create_or_approve_proposal_as_identity",
+    "create_or_approve_proposal_as_key": "create_or_approve_proposal_as_key",
+    "create_proposal_as_identity": "create_proposal_as_identity",
+    "create_proposal_as_key": "create_proposal_as_key",
+    "approve_as_identity": "approve_as_identity",
+    "approve_as_key": "approve_as_key",
+    "reject_as_identity": "reject_as_identity",
+    "reject_as_key": "reject_as_key",
+    "accept_multisig_signer_as_identity": "accept_multisig_signer_as_identity",
+    "accept_multisig_signer_as_key": "accept_multisig_signer_as_key",
+    "add_multisig_signer": "add_multisig_signer",
+    "remove_multisig_signer": "remove_multisig_signer",
+    "add_multisig_signers_via_creator": "add_multisig_signers_via_creator",
+    "remove_multisig_signers_via_creator": "remove_multisig_signers_via_creator",
+    "change_sigs_required": "change_sigs_required",
+    "change_all_signers_and_sigs_required": "change_all_signers_and_sigs_required",
+    "make_multisig_signer": "make_multisig_signer",
+    "make_multisig_primary": "make_multisig_primary"
+  },
+  "Contracts": {
+    "update_schedule": "update_schedule",
+    "put_code": "put_code",
+    "call": "call",
+    "instantiate": "instantiate",
+    "claim_surcharge": "claim_surcharge"
+  },
+  "Treasury": {
+    "disbursement": "disbursement",
+    "reimbursement": "reimbursement"
+  },
+  "PolymeshCommittee": {
+    "vote_or_propose": "vote_or_propose",
+    "vote": "vote",
+    "set_vote_threshold": "set_vote_threshold",
+    "close": "close",
+    "set_release_coordinator": "set_release_coordinator",
+    "vote_enact_referendum": "vote_enact_referendum",
+    "vote_reject_referendum": "vote_reject_referendum"
+  },
+  "CommitteeMembership": {
+    "set_active_members_limit": "set_active_members_limit",
+    "disable_member": "disable_member",
+    "add_member": "add_member",
+    "remove_member": "remove_member",
+    "swap_member": "swap_member",
+    "reset_members": "reset_members",
+    "abdicate_membership": "abdicate_membership"
+  },
+  "Pips": {
+    "set_max_pip_skip_count": "set_max_pip_skip_count",
+    "set_active_pip_limit": "set_active_pip_limit",
+    "approve_committee_proposal": "approve_committee_proposal",
+    "reject_proposal": "reject_proposal",
+    "reschedule_execution": "reschedule_execution",
+    "clear_snapshot": "clear_snapshot",
+    "snapshot": "snapshot",
+    "enact_snapshot_results": "enact_snapshot_results",
+    "set_prune_historical_pips": "set_prune_historical_pips",
+    "set_min_proposal_deposit": "set_min_proposal_deposit",
+    "set_quorum_threshold": "set_quorum_threshold",
+    "set_proposal_duration": "set_proposal_duration",
+    "set_proposal_cool_off_period": "set_proposal_cool_off_period",
+    "set_default_enactment_period": "set_default_enactment_period",
+    "propose": "propose",
+    "amend_proposal": "amend_proposal",
+    "cancel_proposal": "cancel_proposal",
+    "bond_additional_deposit": "bond_additional_deposit",
+    "unbond_deposit": "unbond_deposit",
+    "vote": "vote",
+    "kill_proposal": "kill_proposal",
+    "prune_proposal": "prune_proposal",
+    "fast_track_proposal": "fast_track_proposal",
+    "emergency_referendum": "emergency_referendum",
+    "enact_referendum": "enact_referendum",
+    "reject_referendum": "reject_referendum",
+    "override_referendum_enactment_period": "override_referendum_enactment_period"
+  },
+  "TechnicalCommittee": {
+    "set_vote_threshold": "set_vote_threshold",
+    "set_release_coordinator": "set_release_coordinator",
+    "close": "close",
+    "vote_or_propose": "vote_or_propose",
+    "vote": "vote"
+  },
+  "TechnicalCommitteeMembership": {
+    "set_active_members_limit": "set_active_members_limit",
+    "disable_member": "disable_member",
+    "add_member": "add_member",
+    "remove_member": "remove_member",
+    "swap_member": "swap_member",
+    "reset_members": "reset_members",
+    "abdicate_membership": "abdicate_membership"
+  },
+  "UpgradeCommittee": {
+    "set_vote_threshold": "set_vote_threshold",
+    "set_release_coordinator": "set_release_coordinator",
+    "close": "close",
+    "vote_or_propose": "vote_or_propose",
+    "vote": "vote"
+  },
+  "UpgradeCommitteeMembership": {
+    "set_active_members_limit": "set_active_members_limit",
+    "disable_member": "disable_member",
+    "add_member": "add_member",
+    "remove_member": "remove_member",
+    "swap_member": "swap_member",
+    "reset_members": "reset_members",
+    "abdicate_membership": "abdicate_membership"
+  },
+  "Asset": {
+    "transfer": "transfer",
+    "controller_transfer": "controller_transfer",
+    "approve": "approve",
+    "transfer_from": "transfer_from",
+    "batch_issue": "batch_issue",
+    "redeem": "redeem",
+    "redeem_from": "redeem_from",
+    "controller_redeem": "controller_redeem",
+    "transfer_with_data": "transfer_with_data",
+    "transfer_from_with_data": "transfer_from_with_data",
+    "is_issuable": "is_issuable",
+    "increase_custody_allowance": "increase_custody_allowance",
+    "increase_custody_allowance_of": "increase_custody_allowance_of",
+    "transfer_by_custodian": "transfer_by_custodian",
+    "set_treasury_did": "set_treasury_did",
+    "register_ticker": "register_ticker",
+    "accept_ticker_transfer": "accept_ticker_transfer",
+    "accept_primary_issuance_agent_transfer": "accept_primary_issuance_agent_transfer",
+    "accept_asset_ownership_transfer": "accept_asset_ownership_transfer",
+    "create_asset": "create_asset",
+    "freeze": "freeze",
+    "unfreeze": "unfreeze",
+    "rename_asset": "rename_asset",
+    "create_checkpoint": "create_checkpoint",
+    "issue": "issue",
+    "make_divisible": "make_divisible",
+    "batch_add_document": "batch_add_document",
+    "batch_remove_document": "batch_remove_document",
+    "set_funding_round": "set_funding_round",
+    "update_identifiers": "update_identifiers",
+    "add_extension": "add_extension",
+    "archive_extension": "archive_extension",
+    "unarchive_extension": "unarchive_extension",
+    "remove_primary_issuance_agent": "remove_primary_issuance_agent",
+    "remove_smart_extension": "remove_smart_extension",
+    "claim_classic_ticker": "claim_classic_ticker"
+  },
+  "Dividend": {
+    "new": "new",
+    "cancel": "cancel",
+    "claim": "claim",
+    "claim_unclaimed": "claim_unclaimed"
+  },
+  "Identity": {
+    "remove_signing_keys": "remove_signing_keys",
+    "set_master_key": "set_master_key",
+    "accept_master_key": "accept_master_key",
+    "freeze_signing_keys": "freeze_signing_keys",
+    "unfreeze_signing_keys": "unfreeze_signing_keys",
+    "batch_add_signing_key_with_authorization": "batch_add_signing_key_with_authorization",
+    "register_did": "register_did",
+    "cdd_register_did": "cdd_register_did",
+    "mock_cdd_register_did": "mock_cdd_register_did",
+    "invalidate_cdd_claims": "invalidate_cdd_claims",
+    "remove_secondary_keys": "remove_secondary_keys",
+    "set_primary_key": "set_primary_key",
+    "accept_primary_key": "accept_primary_key",
+    "change_cdd_requirement_for_mk_rotation": "change_cdd_requirement_for_mk_rotation",
+    "join_identity_as_key": "join_identity_as_key",
+    "join_identity_as_identity": "join_identity_as_identity",
+    "leave_identity_as_key": "leave_identity_as_key",
+    "leave_identity_as_identity": "leave_identity_as_identity",
+    "add_claim": "add_claim",
+    "batch_add_claim": "batch_add_claim",
+    "forwarded_call": "forwarded_call",
+    "revoke_claim": "revoke_claim",
+    "batch_revoke_claim": "batch_revoke_claim",
+    "set_permission_to_signer": "set_permission_to_signer",
+    "freeze_secondary_keys": "freeze_secondary_keys",
+    "unfreeze_secondary_keys": "unfreeze_secondary_keys",
+    "get_my_did": "get_my_did",
+    "get_cdd_of": "get_cdd_of",
+    "add_authorization": "add_authorization",
+    "batch_add_authorization": "batch_add_authorization",
+    "remove_authorization": "remove_authorization",
+    "batch_remove_authorization": "batch_remove_authorization",
+    "accept_authorization": "accept_authorization",
+    "batch_accept_authorization": "batch_accept_authorization",
+    "batch_add_secondary_key_with_authorization": "batch_add_secondary_key_with_authorization",
+    "revoke_offchain_authorization": "revoke_offchain_authorization"
+  },
+  "Bridge": {
+    "change_controller": "change_controller",
+    "change_admin": "change_admin",
+    "change_timelock": "change_timelock",
+    "freeze": "freeze",
+    "unfreeze": "unfreeze",
+    "change_bridge_limit": "change_bridge_limit",
+    "change_bridge_exempted": "change_bridge_exempted",
+    "force_handle_bridge_tx": "force_handle_bridge_tx",
+    "batch_force_handle_bridge_tx": "batch_force_handle_bridge_tx",
+    "propose_bridge_tx": "propose_bridge_tx",
+    "batch_propose_bridge_tx": "batch_propose_bridge_tx",
+    "handle_bridge_tx": "handle_bridge_tx",
+    "batch_handle_bridge_tx": "batch_handle_bridge_tx",
+    "batch_freeze_tx": "batch_freeze_tx",
+    "batch_unfreeze_tx": "batch_unfreeze_tx"
+  },
+  "ComplianceManager": {
+    "add_active_rule": "add_active_rule",
+    "remove_active_rule": "remove_active_rule",
+    "replace_asset_rules": "replace_asset_rules",
+    "reset_active_rules": "reset_active_rules",
+    "pause_asset_rules": "pause_asset_rules",
+    "resume_asset_rules": "resume_asset_rules",
+    "change_asset_rule": "change_asset_rule",
+    "batch_change_asset_rule": "batch_change_asset_rule",
+    "add_compliance_requirement": "add_compliance_requirement",
+    "remove_compliance_requirement": "remove_compliance_requirement",
+    "replace_asset_compliance": "replace_asset_compliance",
+    "reset_asset_compliance": "reset_asset_compliance",
+    "pause_asset_compliance": "pause_asset_compliance",
+    "resume_asset_compliance": "resume_asset_compliance",
+    "add_default_trusted_claim_issuer": "add_default_trusted_claim_issuer",
+    "remove_default_trusted_claim_issuer": "remove_default_trusted_claim_issuer",
+    "batch_add_default_trusted_claim_issuer": "batch_add_default_trusted_claim_issuer",
+    "batch_remove_default_trusted_claim_issuer": "batch_remove_default_trusted_claim_issuer",
+    "change_compliance_requirement": "change_compliance_requirement",
+    "batch_change_compliance_requirement": "batch_change_compliance_requirement"
+  },
+  "Voting": {
+    "add_ballot": "add_ballot",
+    "vote": "vote",
+    "cancel_ballot": "cancel_ballot"
+  },
+  "StoCapped": {
+    "launch_sto": "launch_sto",
+    "buy_tokens": "buy_tokens",
+    "pause_sto": "pause_sto",
+    "unpause_sto": "unpause_sto"
+  },
+  "Exemption": {
+    "modify_exemption_list": "modify_exemption_list"
+  },
+  "Settlement": {
+    "create_venue": "create_venue",
+    "update_venue": "update_venue",
+    "add_instruction": "add_instruction",
+    "add_and_authorize_instruction": "add_and_authorize_instruction",
+    "authorize_instruction": "authorize_instruction",
+    "unauthorize_instruction": "unauthorize_instruction",
+    "reject_instruction": "reject_instruction",
+    "authorize_with_receipts": "authorize_with_receipts",
+    "claim_receipt": "claim_receipt",
+    "unclaim_receipt": "unclaim_receipt",
+    "set_venue_filtering": "set_venue_filtering",
+    "allow_venues": "allow_venues",
+    "disallow_venues": "disallow_venues"
+  },
+  "Sto": {
+    "create_fundraiser": "create_fundraiser",
+    "invest": "invest"
+  },
+  "CddServiceProviders": {
+    "set_active_members_limit": "set_active_members_limit",
+    "disable_member": "disable_member",
+    "add_member": "add_member",
+    "remove_member": "remove_member",
+    "swap_member": "swap_member",
+    "reset_members": "reset_members",
+    "abdicate_membership": "abdicate_membership"
+  },
+  "ProtocolFee": {
+    "change_coefficient": "change_coefficient",
+    "change_base_fee": "change_base_fee"
+  },
+  "Utility": {
+    "batch": "batch",
+    "batch_atomic": "batch_atomic",
+    "batch_optimistic": "batch_optimistic",
+    "relay_tx": "relay_tx"
+  },
+  "Portfolio": {
+    "move_portfolio": "move_portfolio",
+    "create_portfolio": "create_portfolio",
+    "delete_portfolio": "delete_portfolio",
+    "move_portfolio_funds": "move_portfolio_funds",
+    "rename_portfolio": "rename_portfolio"
+  },
+  "Confidential": {
+    "add_range_proof": "add_range_proof",
+    "add_verify_range_proof": "add_verify_range_proof"
+  }
+}

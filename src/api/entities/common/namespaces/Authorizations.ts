@@ -13,7 +13,7 @@ import {
   signerValueToSignatory,
   signerValueToSigner,
   u64ToBigNumber,
-} from '~/utils';
+} from '~/utils/conversion';
 
 /**
  * Handles all Authorization related functionality
@@ -83,7 +83,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
         return {
           authId: u64ToBigNumber(authId),
           expiry: expiry.isSome ? momentToDate(expiry.unwrap()) : null,
-          data: authorizationDataToAuthorization(data),
+          data: authorizationDataToAuthorization(data, context),
           target,
           issuer: new Identity({ did: identityIdToString(issuer) }, context),
         };

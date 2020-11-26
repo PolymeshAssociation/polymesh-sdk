@@ -9,24 +9,37 @@ import {
   AuthorizationRequest,
   CurrentAccount,
   CurrentIdentity,
+  DefaultPortfolio,
   Identity,
-  Proposal,
+  Instruction,
+  NumberedPortfolio,
+  // NOTE uncomment in Governance v2 upgrade
+  // Proposal,
   SecurityToken,
   TickerReservation,
+  Venue,
 } from '~/api/entities';
-import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
+import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
   Authorization,
   AuthorizationType,
   ExtrinsicData,
+  InstructionDetails,
+  InstructionStatus,
+  InstructionType,
+  Leg,
+  PortfolioBalance,
+  SecondaryKey,
   SecurityTokenDetails,
-  SigningKey,
   TickerReservationDetails,
   TickerReservationStatus,
   TransferStatus,
-  TxTags,
+  VenueDetails,
+  VenueType,
+  // NOTE uncomment in Governance v2 upgrade
+  // TxTags,
 } from '~/types';
 
 const mockInstanceContainer = {
@@ -35,9 +48,14 @@ const mockInstanceContainer = {
   tickerReservation: {} as MockTickerReservation,
   securityToken: {} as MockSecurityToken,
   authorizationRequest: {} as MockAuthorizationRequest,
-  proposal: {} as MockProposal,
+  // NOTE uncomment in Governance v2 upgrade
+  // proposal: {} as MockProposal,
   account: {} as MockAccount,
   currentAccount: {} as MockCurrentAccount,
+  venue: {} as MockVenue,
+  instruction: {} as MockInstruction,
+  numberedPortfolio: {} as MockNumberedPortfolio,
+  defaultPortfolio: {} as MockDefaultPortfolio,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -47,18 +65,26 @@ type MockCurrentAccount = Mocked<CurrentAccount>;
 type MockTickerReservation = Mocked<TickerReservation>;
 type MockSecurityToken = Mocked<SecurityToken>;
 type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
-type MockProposal = Mocked<Proposal>;
+// NOTE uncomment in Governance v2 upgrade
+// type MockProposal = Mocked<Proposal>;
+type MockVenue = Mocked<Venue>;
+type MockInstruction = Mocked<Instruction>;
+type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
+type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
 
 interface IdentityOptions {
   did?: string;
   hasRoles?: boolean;
   hasRole?: boolean;
   hasValidCdd?: boolean;
-  getMasterKey?: string;
+  getPrimaryKey?: string;
+  authorizations?: {
+    getReceived: AuthorizationRequest[];
+  };
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
-  getSigningKeys?: SigningKey[];
+  getSecondaryKeys?: SecondaryKey[];
 }
 
 interface TickerReservationOptions {
@@ -70,9 +96,8 @@ interface SecurityTokenOptions {
   ticker?: string;
   details?: Partial<SecurityTokenDetails>;
   currentFundingRound?: string;
-  transfersAreFrozen?: boolean;
+  isFrozen?: boolean;
   transfersCanTransfer?: TransferStatus;
-  transfersCanMint?: TransferStatus;
 }
 
 interface AuthorizationRequestOptions {
@@ -101,6 +126,37 @@ interface CurrentAccountOptions extends AccountOptions {
   getIdentity?: CurrentIdentity;
 }
 
+interface VenueOptions {
+  id?: BigNumber;
+  details?: Partial<VenueDetails>;
+}
+
+interface NumberedPortfolioOptions {
+  id?: BigNumber;
+  isOwnedBy?: boolean;
+  tokenBalances?: PortfolioBalance[];
+  custodian?: Identity;
+  did?: string;
+  exists?: boolean;
+  uuid?: string;
+  isCustodiedBy?: boolean;
+}
+
+interface DefaultPortfolioOptions {
+  isOwnedBy?: boolean;
+  tokenBalances?: PortfolioBalance[];
+  did?: string;
+  custodian?: Identity;
+  uuid?: string;
+  isCustodiedBy?: boolean;
+}
+
+interface InstructionOptions {
+  id?: BigNumber;
+  details?: Partial<InstructionDetails>;
+  getLegs?: Leg[];
+}
+
 let identityConstructorStub: SinonStub;
 let currentIdentityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
@@ -109,17 +165,25 @@ let tickerReservationConstructorStub: SinonStub;
 let securityTokenConstructorStub: SinonStub;
 let authorizationRequestConstructorStub: SinonStub;
 let proposalConstructorStub: SinonStub;
+let venueConstructorStub: SinonStub;
+let instructionConstructorStub: SinonStub;
+let numberedPortfolioConstructorStub: SinonStub;
+let defaultPortfolioConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
+let securityTokenCurrentFundingRoundStub: SinonStub;
+let securityTokenIsFrozenStub: SinonStub;
+let securityTokenTransfersCanTransferStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
-let identityGetMasterKeyStub: SinonStub;
+let identityGetPrimaryKeyStub: SinonStub;
+let identityGetReceivedStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
-let currentIdentityGetMasterKeyStub: SinonStub;
-let currentIdentityGetSigningKeysStub: SinonStub;
+let currentIdentityGetPrimaryKeyStub: SinonStub;
+let currentIdentityGetSecondaryKeysStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -127,10 +191,18 @@ let currentAccountGetBalanceStub: SinonStub;
 let currentAccountGetIdentityStub: SinonStub;
 let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
-let securityTokenCurrentFundingRoundStub: SinonStub;
-let securityTokenTransfersAreFrozenStub: SinonStub;
-let securityTokenTransfersCanTransferStub: SinonStub;
-let securityTokenTransfersCanMintStub: SinonStub;
+let venueDetailsStub: SinonStub;
+let instructionDetailsStub: SinonStub;
+let instructionGetLegsStub: SinonStub;
+let numberedPortfolioIsOwnedByStub: SinonStub;
+let numberedPortfolioGetTokenBalancesStub: SinonStub;
+let numberedPortfolioExistsStub: SinonStub;
+let numberedPortfolioGetCustodianStub: SinonStub;
+let numberedPortfolioIsCustodiedByStub: SinonStub;
+let defaultPortfolioIsOwnedByStub: SinonStub;
+let defaultPortfolioGetTokenBalancesStub: SinonStub;
+let defaultPortfolioGetCustodianStub: SinonStub;
+let defaultPortfolioIsCustodiedByStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -204,6 +276,42 @@ const MockProposalClass = class {
   }
 };
 
+const MockVenueClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return venueConstructorStub(...args);
+  }
+};
+
+const MockNumberedPortfolioClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return numberedPortfolioConstructorStub(...args);
+  }
+};
+
+const MockDefaultPortfolioClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return defaultPortfolioConstructorStub(...args);
+  }
+};
+
+const MockInstructionClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return instructionConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -244,17 +352,40 @@ export const mockProposalModule = (path: string) => (): object => ({
   Proposal: MockProposalClass,
 });
 
+export const mockVenueModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Venue: MockVenueClass,
+});
+
+export const mockInstructionModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Instruction: MockInstructionClass,
+});
+
+export const mockNumberedPortfolioModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  NumberedPortfolio: MockNumberedPortfolioClass,
+});
+
+export const mockDefaultPortfolioModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  DefaultPortfolio: MockDefaultPortfolioClass,
+});
+
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
-  getMasterKey: 'someAddress',
+  getPrimaryKey: 'someAddress',
+  authorizations: {
+    getReceived: [],
+  },
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
-  getMasterKey: 'someAddress',
-  getSigningKeys: [],
+  getPrimaryKey: 'someAddress',
+  getSecondaryKeys: [],
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -293,9 +424,8 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     isDivisible: false,
   },
   currentFundingRound: 'Series A',
-  transfersAreFrozen: false,
+  isFrozen: false,
   transfersCanTransfer: TransferStatus.Success,
-  transfersCanMint: TransferStatus.Success,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -305,45 +435,218 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
   expiry: null,
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
-const defaultProposalOptions: ProposalOptions = {
-  pipId: new BigNumber(1),
-  getDetails: {
-    lastState: ProposalState.Referendum,
-    transaction: TxTags.treasury.Disbursement,
-  } as ProposalDetails,
-  getStage: ProposalStage.Open,
-  identityHasVoted: false,
+const defaultVenueOptions: VenueOptions = {
+  id: new BigNumber(1),
+  details: {
+    type: VenueType.Distribution,
+    description: 'someDescription',
+  },
 };
-let proposalOptions = defaultProposalOptions;
+let venueOptions = defaultVenueOptions;
+const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
+  id: new BigNumber(1),
+  isOwnedBy: true,
+  tokenBalances: [
+    {
+      token: ('someToken' as unknown) as SecurityToken,
+      total: new BigNumber(1),
+      locked: new BigNumber(0),
+    },
+  ],
+  did: 'someDid',
+  exists: true,
+  uuid: 'someUuid',
+  custodian: ('identity' as unknown) as Identity,
+  isCustodiedBy: true,
+};
+let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
+const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
+  isOwnedBy: true,
+  tokenBalances: [
+    {
+      token: ('someToken' as unknown) as SecurityToken,
+      total: new BigNumber(1),
+      locked: new BigNumber(0),
+    },
+  ],
+  did: 'someDid',
+  uuid: 'someUuid',
+  custodian: ('identity' as unknown) as Identity,
+  isCustodiedBy: true,
+};
+let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
+const defaultInstructionOptions: InstructionOptions = {
+  id: new BigNumber(1),
+  details: {
+    status: InstructionStatus.Pending,
+    createdAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
+    validFrom: null,
+    type: InstructionType.SettleOnAuthorization,
+  },
+};
+let instructionOptions = defaultInstructionOptions;
+// NOTE uncomment in Governance v2 upgrade
+// const defaultProposalOptions: ProposalOptions = {
+//   pipId: new BigNumber(1),
+//   getDetails: {
+//     lastState: ProposalState.Referendum,
+//     transaction: TxTags.treasury.Disbursement,
+//   } as ProposalDetails,
+//   getStage: ProposalStage.Open,
+//   identityHasVoted: false,
+// };
+
+// let proposalOptions = defaultProposalOptions;
 
 /**
  * @hidden
  * Configure the Proposal instance
  */
-function configureProposal(opts: ProposalOptions): void {
-  const proposal = ({
-    pipId: opts.pipId,
-    getDetails: sinon.stub().returns(opts.getDetails),
-    getStage: sinon.stub().returns(opts.getStage),
-    identityHasVoted: sinon.stub().returns(opts.identityHasVoted),
-  } as unknown) as MockProposal;
+// NOTE uncomment in Governance v2 upgrade
 
-  Object.assign(mockInstanceContainer.proposal, proposal);
-  proposalConstructorStub.callsFake(args => {
-    return merge({}, proposal, args);
-  });
-}
+// function configureProposal(opts: ProposalOptions): void {
+//   const proposal = ({
+//     pipId: opts.pipId,
+//     getDetails: sinon.stub().returns(opts.getDetails),
+//     getStage: sinon.stub().returns(opts.getStage),
+//     identityHasVoted: sinon.stub().returns(opts.identityHasVoted),
+//   } as unknown) as MockProposal;
+
+//   Object.assign(mockInstanceContainer.proposal, proposal);
+//   proposalConstructorStub.callsFake(args => {
+//     return merge({}, proposal, args);
+//   });
+// }
 
 /**
  * @hidden
  * Initialize the Proposal instance
  */
-function initProposal(opts?: ProposalOptions): void {
-  proposalConstructorStub = sinon.stub();
+// NOTE uncomment in Governance v2 upgrade
+// function initProposal(opts?: ProposalOptions): void {
+//   proposalConstructorStub = sinon.stub();
 
-  proposalOptions = { ...defaultProposalOptions, ...opts };
+//   proposalOptions = { ...defaultProposalOptions, ...opts };
 
-  configureProposal(proposalOptions);
+//   configureProposal(proposalOptions);
+// }
+
+/**
+ * @hidden
+ * Configure the Authorization Request instance
+ */
+function configureVenue(opts: VenueOptions): void {
+  const details = { owner: mockInstanceContainer.identity, ...opts.details };
+  const venue = ({
+    id: opts.id,
+    details: venueDetailsStub.resolves(details),
+  } as unknown) as MockVenue;
+
+  Object.assign(mockInstanceContainer.venue, venue);
+  venueConstructorStub.callsFake(args => {
+    const value = merge({}, venue, args);
+    Object.setPrototypeOf(value, require('~/api/entities').Venue.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Venue instance
+ */
+function initVenue(opts?: VenueOptions): void {
+  venueConstructorStub = sinon.stub();
+  venueDetailsStub = sinon.stub();
+
+  venueOptions = { ...defaultVenueOptions, ...opts };
+
+  configureVenue(venueOptions);
+}
+
+/**
+ * @hidden
+ * Configure the Numbered Portfolio instance
+ */
+function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
+  const numberedPortfolio = ({
+    uuid: opts.uuid,
+    id: opts.id,
+    isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
+    getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
+    getCustodian: numberedPortfolioGetCustodianStub.resolves(opts.custodian),
+    owner: { did: opts.did },
+    exists: numberedPortfolioExistsStub.resolves(opts.exists),
+    isCustodiedBy: numberedPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
+  } as unknown) as MockNumberedPortfolio;
+
+  Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
+  numberedPortfolioConstructorStub.callsFake(args => {
+    const value = merge({}, numberedPortfolio, args);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/api/entities');
+    Object.setPrototypeOf(entities.NumberedPortfolio.prototype, entities.Portfolio.prototype);
+    Object.setPrototypeOf(value, entities.NumberedPortfolio.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the NumberedPortfolio instance
+ */
+function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
+  numberedPortfolioConstructorStub = sinon.stub();
+  numberedPortfolioIsOwnedByStub = sinon.stub();
+  numberedPortfolioGetTokenBalancesStub = sinon.stub();
+  numberedPortfolioGetCustodianStub = sinon.stub();
+  numberedPortfolioExistsStub = sinon.stub();
+  numberedPortfolioGetCustodianStub = sinon.stub();
+  numberedPortfolioIsCustodiedByStub = sinon.stub();
+
+  numberedPortfolioOptions = { ...defaultNumberedPortfolioOptions, ...opts };
+
+  configureNumberedPortfolio(numberedPortfolioOptions);
+}
+
+/**
+ * @hidden
+ * Configure the Default Portfolio instance
+ */
+function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
+  const defaultPortfolio = ({
+    uuid: opts.uuid,
+    isOwnedBy: defaultPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
+    getTokenBalances: defaultPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
+    owner: { did: opts.did },
+    getCustodian: defaultPortfolioGetCustodianStub.resolves(opts.custodian),
+    isCustodiedBy: defaultPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
+  } as unknown) as MockDefaultPortfolio;
+
+  Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
+  defaultPortfolioConstructorStub.callsFake(args => {
+    const value = merge({}, defaultPortfolio, args);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/api/entities');
+    Object.setPrototypeOf(entities.DefaultPortfolio.prototype, entities.Portfolio.prototype);
+    Object.setPrototypeOf(value, entities.DefaultPortfolio.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the DefaultPortfolio instance
+ */
+function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
+  defaultPortfolioConstructorStub = sinon.stub();
+  defaultPortfolioIsOwnedByStub = sinon.stub();
+  defaultPortfolioGetTokenBalancesStub = sinon.stub();
+  defaultPortfolioGetCustodianStub = sinon.stub();
+  defaultPortfolioIsCustodiedByStub = sinon.stub();
+
+  defaultPortfolioOptions = { ...defaultDefaultPortfolioOptions, ...opts };
+
+  configureDefaultPortfolio(defaultPortfolioOptions);
 }
 
 /**
@@ -360,7 +663,9 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
 
   Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
   authorizationRequestConstructorStub.callsFake(args => {
-    return merge({}, authorizationRequest, args);
+    const value = merge({}, authorizationRequest, args);
+    Object.setPrototypeOf(value, require('~/api/entities').AuthorizationRequest.prototype);
+    return value;
   });
 }
 
@@ -386,16 +691,17 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     ticker: opts.ticker,
     details: securityTokenDetailsStub.resolves(details),
     currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(opts.currentFundingRound),
+    isFrozen: securityTokenIsFrozenStub.resolves(opts.isFrozen),
     transfers: {
-      areFrozen: securityTokenTransfersAreFrozenStub.resolves(opts.transfersAreFrozen),
       canTransfer: securityTokenTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
-      canMint: securityTokenTransfersCanMintStub.resolves(opts.transfersCanMint),
     },
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
   securityTokenConstructorStub.callsFake(args => {
-    return merge({}, securityToken, args);
+    const value = merge({}, securityToken, args);
+    Object.setPrototypeOf(value, require('~/api/entities').SecurityToken.prototype);
+    return value;
   });
 }
 
@@ -407,9 +713,8 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenConstructorStub = sinon.stub();
   securityTokenDetailsStub = sinon.stub();
   securityTokenCurrentFundingRoundStub = sinon.stub();
-  securityTokenTransfersAreFrozenStub = sinon.stub();
+  securityTokenIsFrozenStub = sinon.stub();
   securityTokenTransfersCanTransferStub = sinon.stub();
-  securityTokenTransfersCanMintStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -429,7 +734,9 @@ function configureTickerReservation(opts: TickerReservationOptions): void {
 
   Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
   tickerReservationConstructorStub.callsFake(args => {
-    return merge({}, tickerReservation, args);
+    const value = merge({}, tickerReservation, args);
+    Object.setPrototypeOf(value, require('~/api/entities').TickerReservation.prototype);
+    return value;
   });
 }
 
@@ -459,12 +766,18 @@ function configureIdentity(opts: IdentityOptions): void {
     hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
-    getMasterKey: identityGetMasterKeyStub.resolves(opts.getMasterKey),
+    getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
+    portfolios: {},
+    authorizations: {
+      getReceived: sinon.stub().resolves(opts.authorizations?.getReceived),
+    },
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
   identityConstructorStub.callsFake(args => {
-    return merge({}, identity, args);
+    const value = merge({}, identity, args);
+    Object.setPrototypeOf(value, require('~/api/entities').Identity.prototype);
+    return value;
   });
 }
 
@@ -477,11 +790,53 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRolesStub = sinon.stub();
   identityHasRoleStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
-  identityGetMasterKeyStub = sinon.stub();
+  identityGetPrimaryKeyStub = sinon.stub();
+  identityGetReceivedStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
   configureIdentity(identityOptions);
+}
+
+/**
+ * @hidden
+ * Configure the Instruction instance
+ */
+function configureInstruction(opts: InstructionOptions): void {
+  const details = { venue: mockInstanceContainer.venue, ...opts.details };
+  const legs = opts.getLegs || [
+    {
+      from: mockInstanceContainer.numberedPortfolio,
+      to: mockInstanceContainer.numberedPortfolio,
+      token: mockInstanceContainer.securityToken,
+      amount: new BigNumber(100),
+    },
+  ];
+  const instruction = ({
+    details: instructionDetailsStub.resolves(details),
+    getLegs: instructionGetLegsStub.resolves(legs),
+  } as unknown) as MockInstruction;
+
+  Object.assign(mockInstanceContainer.instruction, instruction);
+  instructionConstructorStub.callsFake(args => {
+    const value = merge({}, instruction, args);
+    Object.setPrototypeOf(value, require('~/api/entities').Instruction.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Instruction instance
+ */
+function initInstruction(opts?: InstructionOptions): void {
+  instructionConstructorStub = sinon.stub();
+  instructionDetailsStub = sinon.stub();
+  instructionGetLegsStub = sinon.stub();
+
+  instructionOptions = { ...defaultInstructionOptions, ...opts };
+
+  configureInstruction(instructionOptions);
 }
 
 /**
@@ -494,13 +849,18 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
     hasRoles: currentIdentityHasRolesStub.resolves(opts.hasRoles),
     hasRole: currentIdentityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: currentIdentityHasValidCddStub.resolves(opts.hasValidCdd),
-    getMasterKey: currentIdentityGetMasterKeyStub.resolves(opts.getMasterKey),
-    getSigningKeys: currentIdentityGetSigningKeysStub.resolves(opts.getSigningKeys),
+    getPrimaryKey: currentIdentityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
+    getSecondaryKeys: currentIdentityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
   currentIdentityConstructorStub.callsFake(args => {
-    return merge({}, identity, args);
+    const value = merge({}, identity, args);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/api/entities');
+    Object.setPrototypeOf(entities.CurrentIdentity.prototype, entities.Identity.prototype);
+    Object.setPrototypeOf(value, entities.CurrentIdentity.prototype);
+    return value;
   });
 }
 
@@ -513,8 +873,8 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityHasRolesStub = sinon.stub();
   currentIdentityHasRoleStub = sinon.stub();
   currentIdentityHasValidCddStub = sinon.stub();
-  currentIdentityGetMasterKeyStub = sinon.stub();
-  currentIdentityGetSigningKeysStub = sinon.stub();
+  currentIdentityGetPrimaryKeyStub = sinon.stub();
+  currentIdentityGetSecondaryKeysStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
 
@@ -538,7 +898,9 @@ function configureAccount(opts: AccountOptions): void {
 
   Object.assign(mockInstanceContainer.account, account);
   accountConstructorStub.callsFake(args => {
-    return merge({}, account, args);
+    const value = merge({}, account, args);
+    Object.setPrototypeOf(value, require('~/api/entities').Account.prototype);
+    return value;
   });
 }
 
@@ -576,7 +938,11 @@ function configureCurrentAccount(opts: CurrentAccountOptions): void {
 
   Object.assign(mockInstanceContainer.currentAccount, account);
   currentAccountConstructorStub.callsFake(args => {
-    return merge({}, account, args);
+    const value = merge({}, account, args);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/api/entities');
+    Object.setPrototypeOf(value, entities.CurrentAccount.prototype);
+    return value;
   });
 }
 
@@ -609,6 +975,10 @@ export function configureMocks(opts?: {
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
   proposalOptions?: ProposalOptions;
+  venueOptions?: VenueOptions;
+  instructionOptions?: InstructionOptions;
+  numberedPortfolioOptions?: NumberedPortfolioOptions;
+  defaultPortfolioOptions?: DefaultPortfolioOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -654,12 +1024,38 @@ export function configureMocks(opts?: {
 
   configureAuthorizationRequest(tempAuthorizationRequestOptions);
 
-  const tempProposalOptions = {
-    ...defaultProposalOptions,
-    ...opts?.proposalOptions,
-  };
+  // NOTE uncomment in Governance v2 upgrade
+  // const tempProposalOptions = {
+  //   ...defaultProposalOptions,
+  //   ...opts?.proposalOptions,
+  // };
 
-  configureProposal(tempProposalOptions);
+  // NOTE uncomment in Governance v2 upgrade
+  // configureProposal(tempProposalOptions);
+
+  const tempVenueOptions = {
+    ...defaultVenueOptions,
+    ...opts?.venueOptions,
+  };
+  configureVenue(tempVenueOptions);
+
+  const tempNumberedPortfolioOptions = {
+    ...defaultNumberedPortfolioOptions,
+    ...opts?.numberedPortfolioOptions,
+  };
+  configureNumberedPortfolio(tempNumberedPortfolioOptions);
+
+  const tempDefaultPortfolioOptions = {
+    ...defaultDefaultPortfolioOptions,
+    ...opts?.defaultPortfolioOptions,
+  };
+  configureDefaultPortfolio(tempDefaultPortfolioOptions);
+
+  const tempInstructionOptions = {
+    ...defaultInstructionOptions,
+    ...opts?.instructionOptions,
+  };
+  configureInstruction(tempInstructionOptions);
 }
 
 /**
@@ -676,6 +1072,10 @@ export function initMocks(opts?: {
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
   proposalOptions?: ProposalOptions;
+  venueOptions?: VenueOptions;
+  instructionOptions?: InstructionOptions;
+  numberedPortfolioOptions?: NumberedPortfolioOptions;
+  defaultPortfolioOptions?: DefaultPortfolioOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -698,8 +1098,24 @@ export function initMocks(opts?: {
   // Authorization Request
   initAuthorizationRequest(opts?.authorizationRequestOptions);
 
+  // Instruction Request
+  initInstruction(opts?.instructionOptions);
+
   // Proposal
-  initProposal(opts?.proposalOptions);
+  // NOTE uncomment in Governance v2 upgrade
+  // initProposal(opts?.proposalOptions);
+
+  // Venue
+  initVenue(opts?.venueOptions);
+
+  // NumberedPortfolio
+  initNumberedPortfolio(opts?.numberedPortfolioOptions);
+
+  // DefaultPortfolio
+  initDefaultPortfolio(opts?.defaultPortfolioOptions);
+
+  // Instruction
+  initInstruction(opts?.instructionOptions);
 }
 
 /**
@@ -714,7 +1130,10 @@ export function cleanup(): void {
   mockInstanceContainer.tickerReservation = {} as MockTickerReservation;
   mockInstanceContainer.securityToken = {} as MockSecurityToken;
   mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
-  mockInstanceContainer.proposal = {} as MockProposal;
+  // NOTE uncomment in Governance v2 upgrade
+  // mockInstanceContainer.proposal = {} as MockProposal;
+  mockInstanceContainer.venue = {} as MockVenue;
+  mockInstanceContainer.instruction = {} as MockInstruction;
 }
 
 /**
@@ -731,7 +1150,12 @@ export function reset(): void {
     tickerReservationOptions,
     securityTokenOptions,
     authorizationRequestOptions,
-    proposalOptions,
+    // NOTE uncomment in Governance v2 upgrade
+    // proposalOptions,
+    venueOptions,
+    instructionOptions,
+    numberedPortfolioOptions,
+    defaultPortfolioOptions,
   });
 }
 
@@ -744,7 +1168,15 @@ export function getIdentityInstance(opts?: IdentityOptions): MockIdentity {
     configureIdentity(opts);
   }
 
-  return mockInstanceContainer.identity;
+  return new MockIdentityClass() as MockIdentity;
+}
+
+/**
+ * @hidden
+ * Retrieve the Identity constructor stub
+ */
+export function getIdentityConstructorStub(): SinonStub {
+  return identityConstructorStub;
 }
 
 /**
@@ -773,10 +1205,18 @@ export function getIdentityHasValidCddStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `Identity.getMasterKey` method
+ * Retrieve the stub of the `Identity.getPrimaryKey` method
  */
-export function getIdentityGetMasterKeyStub(): SinonStub {
-  return identityGetMasterKeyStub;
+export function getIdentityGetPrimaryKeyStub(): SinonStub {
+  return identityGetPrimaryKeyStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Identity.authorizations.getReceived` method
+ */
+export function getIdentityGetReceivedStub(): SinonStub {
+  return identityGetReceivedStub;
 }
 
 /**
@@ -788,7 +1228,7 @@ export function getCurrentIdentityInstance(opts?: CurrentIdentityOptions): MockC
     configureCurrentIdentity(opts);
   }
 
-  return mockInstanceContainer.currentIdentity;
+  return new MockCurrentIdentityClass() as MockCurrentIdentity;
 }
 
 /**
@@ -817,10 +1257,10 @@ export function getCurrentIdentityHasValidCddStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `CurrentIdentity.getMasterKey` method
+ * Retrieve the stub of the `CurrentIdentity.getPrimaryKey` method
  */
-export function getCurrentIdentityGetMasterKeyStub(): SinonStub {
-  return currentIdentityGetMasterKeyStub;
+export function getCurrentIdentityGetPrimaryKeyStub(): SinonStub {
+  return currentIdentityGetPrimaryKeyStub;
 }
 
 /**
@@ -832,7 +1272,7 @@ export function getAccountInstance(opts?: AccountOptions): MockAccount {
     configureAccount(opts);
   }
 
-  return mockInstanceContainer.account;
+  return new MockAccountClass() as MockAccount;
 }
 
 /**
@@ -868,7 +1308,7 @@ export function getCurrentAccountInstance(opts?: CurrentAccountOptions): MockCur
     configureCurrentAccount(opts);
   }
 
-  return mockInstanceContainer.currentAccount;
+  return new MockCurrentAccountClass() as MockCurrentAccount;
 }
 
 /**
@@ -897,6 +1337,22 @@ export function getCurrentAccountGetTransactionHistoryStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `NumberedPortfolio.isCustodiedBy` method
+ */
+export function getNumberedPortfolioIsCustodiedByStub(): SinonStub {
+  return numberedPortfolioIsCustodiedByStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
+ */
+export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
+  return defaultPortfolioIsCustodiedByStub;
+}
+
+/**
+ * @hidden
  * Retrieve a Ticker Reservation instance
  */
 export function getTickerReservationInstance(
@@ -906,7 +1362,7 @@ export function getTickerReservationInstance(
     configureTickerReservation(opts);
   }
 
-  return mockInstanceContainer.tickerReservation;
+  return new MockTickerReservationClass() as MockTickerReservation;
 }
 
 /**
@@ -934,7 +1390,7 @@ export function getSecurityTokenInstance(opts?: SecurityTokenOptions): MockSecur
     configureSecurityToken(opts);
   }
 
-  return mockInstanceContainer.securityToken;
+  return new MockSecurityTokenClass() as MockSecurityToken;
 }
 
 /**
@@ -965,14 +1421,14 @@ export function getSecurityTokenCurrentFundingRoundStub(currentFundingRound?: st
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.Transfers.areFrozen` method
+ * Retrieve the stub of the `SecurityToken.isFrozen` method
  */
-export function getSecurityTokenTransfersAreFrozenStub(frozen?: boolean): SinonStub {
+export function getSecurityTokenIsFrozenStub(frozen?: boolean): SinonStub {
   if (frozen !== undefined) {
-    return securityTokenTransfersAreFrozenStub.resolves(frozen);
+    return securityTokenIsFrozenStub.resolves(frozen);
   }
 
-  return securityTokenTransfersAreFrozenStub;
+  return securityTokenIsFrozenStub;
 }
 
 /**
@@ -989,18 +1445,6 @@ export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.Transfers.canMint` method
- */
-export function getSecurityTokenTransfersCanMintStub(status?: TransferStatus): SinonStub {
-  if (status) {
-    return securityTokenTransfersCanMintStub.resolves(status);
-  }
-
-  return securityTokenTransfersCanMintStub;
-}
-
-/**
- * @hidden
  * Retrieve an Authorization Request instance
  */
 export function getAuthorizationRequestInstance(
@@ -1010,17 +1454,97 @@ export function getAuthorizationRequestInstance(
     configureAuthorizationRequest(opts);
   }
 
-  return mockInstanceContainer.authorizationRequest;
+  return new MockAuthorizationRequestClass() as MockAuthorizationRequest;
 }
 
 /**
  * @hidden
  * Retrieve a Proposal instance
  */
-export function getProposalInstance(opts?: ProposalOptions): MockProposal {
+// NOTE uncomment in Governance v2 upgrade
+
+// export function getProposalInstance(opts?: ProposalOptions): MockProposal {
+//   if (opts) {
+//     configureProposal(opts);
+//   }
+
+//   return mockInstanceContainer.proposal;
+// }
+
+/**
+ * @hidden
+ * Retrieve a Venue instance
+ */
+export function getVenueInstance(opts?: VenueOptions): MockVenue {
   if (opts) {
-    configureProposal(opts);
+    configureVenue(opts);
   }
 
-  return mockInstanceContainer.proposal;
+  return new MockVenueClass() as MockVenue;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Venue.details` method
+ */
+export function getVenueDetailsStub(details?: Partial<VenueDetails>): SinonStub {
+  if (details) {
+    return venueDetailsStub.resolves({
+      ...defaultVenueOptions.details,
+      ...details,
+    });
+  }
+  return venueDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a NumberedPortfolio instance
+ */
+export function getNumberedPortfolioInstance(
+  opts?: NumberedPortfolioOptions
+): MockNumberedPortfolio {
+  if (opts) {
+    configureNumberedPortfolio(opts);
+  }
+
+  return new MockNumberedPortfolioClass() as MockNumberedPortfolio;
+}
+
+/**
+ * @hidden
+ * Retrieve a DefaultPortfolio instance
+ */
+export function getDefaultPortfolioInstance(opts?: DefaultPortfolioOptions): MockDefaultPortfolio {
+  if (opts) {
+    configureDefaultPortfolio(opts);
+  }
+
+  return new MockDefaultPortfolioClass() as MockDefaultPortfolio;
+}
+
+/**
+ * @hidden
+ * Retrieve an Instruction instance
+ */
+export function getInstructionInstance(opts?: InstructionOptions): MockInstruction {
+  if (opts) {
+    configureInstruction(opts);
+  }
+
+  return new MockInstructionClass() as MockInstruction;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Instruction.details` method
+ */
+export function getInstructionDetailsStub(details?: Partial<InstructionDetails>): SinonStub {
+  if (details) {
+    return instructionDetailsStub.resolves({
+      ...defaultInstructionOptions.details,
+      ...details,
+    });
+  }
+  return instructionDetailsStub;
 }

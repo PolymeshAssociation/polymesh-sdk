@@ -1,43 +1,40 @@
 import BigNumber from 'bignumber.js';
-import { AssetIdentifier, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
+import { SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import { Entity, Identity } from '~/api/entities';
 import {
+  modifyPrimaryIssuanceAgent,
+  ModifyPrimaryIssuanceAgentParams,
   modifyToken,
   ModifyTokenParams,
+  removePrimaryIssuanceAgent,
+  toggleFreezeTransfers,
   transferTokenOwnership,
   TransferTokenOwnershipParams,
 } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Ensured, EventIdentifier, SubCallback, TokenIdentifier, UnsubCallback } from '~/types';
+import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
-  Ensured,
-  EventIdentifier,
-  SubCallback,
-  TokenIdentifier,
-  TokenIdentifierType,
-  UnsubCallback,
-} from '~/types';
-import {
-  assetIdentifierToString,
+  assetIdentifierToTokenIdentifier,
   assetNameToString,
   assetTypeToString,
   balanceToBigNumber,
   boolToBoolean,
   fundingRoundNameToString,
   identityIdToString,
-  padString,
+  stringToTicker,
   tickerToDid,
-  tokenIdentifierTypeToIdentifierType,
-} from '~/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
+} from '~/utils/conversion';
+import { padString } from '~/utils/internal';
 
 import { Compliance } from './Compliance';
 import { Documents } from './Documents';
 import { Issuance } from './Issuance';
+import { Settlements } from './Settlements';
 import { TokenHolders } from './TokenHolders';
-import { Transfers } from './Transfers';
 import { SecurityTokenDetails } from './types';
 
 /**
@@ -76,7 +73,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
   // Namespaces
   public documents: Documents;
-  public transfers: Transfers;
+  public settlements: Settlements;
   public tokenHolders: TokenHolders;
   public issuance: Issuance;
   public compliance: Compliance;
@@ -93,7 +90,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.did = tickerToDid(ticker);
 
     this.documents = new Documents(this, context);
-    this.transfers = new Transfers(this, context);
+    this.settlements = new Settlements(this, context);
     this.tokenHolders = new TokenHolders(this, context);
     this.issuance = new Issuance(this, context);
     this.compliance = new Compliance(this, context);
@@ -156,26 +153,28 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       divisible,
       owner_did,
       asset_type,
-      treasury_did,
+      primary_issuance_agent,
     }: MeshSecurityToken): SecurityTokenDetails => ({
       assetType: assetTypeToString(asset_type),
       isDivisible: boolToBoolean(divisible),
       name: assetNameToString(name),
       owner: new Identity({ did: identityIdToString(owner_did) }, context),
       totalSupply: balanceToBigNumber(total_supply),
-      treasuryIdentity: treasury_did.isSome
-        ? new Identity({ did: identityIdToString(treasury_did.unwrap()) }, context)
+      primaryIssuanceAgent: primary_issuance_agent.isSome
+        ? new Identity({ did: identityIdToString(primary_issuance_agent.unwrap()) }, context)
         : null,
     });
     /* eslint-enable @typescript-eslint/camelcase */
 
+    const rawTicker = stringToTicker(ticker, context);
+
     if (callback) {
-      return asset.tokens(ticker, securityToken => {
+      return asset.tokens(rawTicker, securityToken => {
         callback(assembleResult(securityToken));
       });
     }
 
-    const token = await asset.tokens(ticker);
+    const token = await asset.tokens(rawTicker);
 
     return assembleResult(token);
   }
@@ -199,15 +198,18 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
         },
       },
       ticker,
+      context,
     } = this;
 
+    const rawTicker = stringToTicker(ticker, context);
+
     if (callback) {
-      return asset.fundingRound(ticker, round => {
+      return asset.fundingRound(rawTicker, round => {
         callback(fundingRoundNameToString(round));
       });
     }
 
-    const fundingRound = await asset.fundingRound(ticker);
+    const fundingRound = await asset.fundingRound(rawTicker);
     return fundingRoundNameToString(fundingRound);
   }
 
@@ -233,28 +235,17 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const tokenIdentifierTypes = Object.values(TokenIdentifierType);
-
-    const assembleResult = (identifiers: AssetIdentifier[]): TokenIdentifier[] =>
-      tokenIdentifierTypes.map((type, i) => ({
-        type,
-        value: assetIdentifierToString(identifiers[i]),
-      }));
-
-    const identifierTypes = tokenIdentifierTypes.map(type => [
-      ticker,
-      tokenIdentifierTypeToIdentifierType(type, context),
-    ]);
+    const rawTicker = stringToTicker(ticker, context);
 
     if (callback) {
-      return asset.identifiers.multi<AssetIdentifier>(identifierTypes, identifiers => {
-        callback(assembleResult(identifiers));
+      return asset.identifiers(rawTicker, identifiers => {
+        callback(identifiers.map(assetIdentifierToTokenIdentifier));
       });
     }
 
-    const assetIdentifiers = await asset.identifiers.multi<AssetIdentifier>(identifierTypes);
+    const assetIdentifiers = await asset.identifiers(rawTicker);
 
-    return assembleResult(assetIdentifiers);
+    return assetIdentifiers.map(assetIdentifierToTokenIdentifier);
   }
 
   /**
@@ -276,15 +267,90 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
     if (result.data.eventByIndexedArgs) {
       // TODO remove null check once types fixed
-      /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
-        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id!),
-        blockDate: result.data.eventByIndexedArgs.block!.datetime!,
-        eventIndex: result.data.eventByIndexedArgs.event_idx!,
+        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        blockDate: result.data.eventByIndexedArgs.block!.datetime,
+        eventIndex: result.data.eventByIndexedArgs.event_idx,
       };
-      /* eslint-enabled @typescript-eslint/no-non-null-assertion */
     }
 
     return null;
+  }
+
+  /**
+   * Freezes transfers and minting of the Security Token
+   */
+  public freeze(): Promise<TransactionQueue<SecurityToken>> {
+    const { ticker, context } = this;
+    return toggleFreezeTransfers.prepare({ ticker, freeze: true }, context);
+  }
+
+  /**
+   * Unfreeze transfers and minting of the Security Token
+   */
+  public unfreeze(): Promise<TransactionQueue<SecurityToken>> {
+    const { ticker, context } = this;
+    return toggleFreezeTransfers.prepare({ ticker, freeze: false }, context);
+  }
+
+  /**
+   * Check whether transfers are frozen for the Security Token
+   *
+   * @note can be subscribed to
+   */
+  public isFrozen(): Promise<boolean>;
+  public isFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async isFrozen(callback?: SubCallback<boolean>): Promise<boolean | UnsubCallback> {
+    const {
+      ticker,
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      context,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    if (callback) {
+      return asset.frozen(rawTicker, frozen => {
+        callback(boolToBoolean(frozen));
+      });
+    }
+
+    const result = await asset.frozen(rawTicker);
+
+    return boolToBoolean(result);
+  }
+
+  /**
+   * Assign a new primary issuance agent for the Security Token
+   *
+   * @param args.target - identity to be set as primary issuance agent
+   * @param args.requestExpiry - date at which the authorization request to modify the primary issuance agent expires (optional, never expires if a date is not provided)
+   *
+   * @note this may create AuthorizationRequest which have to be accepted by
+   *   the corresponding Account. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   */
+  public modifyPrimaryIssuanceAgent(
+    args: ModifyPrimaryIssuanceAgentParams
+  ): Promise<TransactionQueue<void>> {
+    const { ticker, context } = this;
+    return modifyPrimaryIssuanceAgent.prepare({ ticker, ...args }, context);
+  }
+
+  /**
+   * Remove the primary issuance agent of the Security Token
+   *
+   * @note if primary issuance agent is not set, Security Token owner would be used by default
+   */
+  public removePrimaryIssuanceAgent(): Promise<TransactionQueue<void>> {
+    const { ticker, context } = this;
+    return removePrimaryIssuanceAgent.prepare({ ticker }, context);
   }
 }

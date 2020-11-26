@@ -1,7 +1,15 @@
+import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import { CddStatus, DidRecord } from 'polymesh-types/types';
 
-import { Entity, SecurityToken, TickerReservation } from '~/api/entities';
+import {
+  DefaultPortfolio,
+  Entity,
+  NumberedPortfolio,
+  SecurityToken,
+  TickerReservation,
+  Venue,
+} from '~/api/entities';
 import { Context, PolymeshError } from '~/base';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
@@ -9,8 +17,10 @@ import {
   Ensured,
   ErrorCode,
   isCddProviderRole,
+  isPortfolioCustodianRole,
   isTickerOwnerRole,
   isTokenOwnerRole,
+  isVenueOwnerRole,
   Order,
   ResultSet,
   Role,
@@ -20,15 +30,16 @@ import {
 import {
   accountIdToString,
   balanceToBigNumber,
-  calculateNextKey,
   cddStatusToBoolean,
   identityIdToString,
-  removePadding,
   stringToIdentityId,
   stringToTicker,
-} from '~/utils';
+  u64ToBigNumber,
+} from '~/utils/conversion';
+import { calculateNextKey, removePadding } from '~/utils/internal';
 
 import { IdentityAuthorizations } from './IdentityAuthorizations';
+import { Portfolios } from './Portfolios';
 
 /**
  * Properties that uniquely identify an Identity
@@ -58,6 +69,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
   // Namespaces
   public authorizations: IdentityAuthorizations;
+  public portfolios: Portfolios;
 
   /**
    * Create an Identity entity
@@ -69,6 +81,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
     this.did = did;
     this.authorizations = new IdentityAuthorizations(this, context);
+    this.portfolios = new Portfolios(this, context);
   }
 
   /**
@@ -102,6 +115,26 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const memberDids = activeMembers.map(identityIdToString);
 
       return memberDids.includes(did);
+    } else if (isVenueOwnerRole(role)) {
+      const venue = new Venue({ id: role.venueId }, context);
+
+      const { owner } = await venue.details();
+
+      return owner.did === did;
+    } else if (isPortfolioCustodianRole(role)) {
+      const {
+        portfolioId: { did: portfolioDid, number },
+      } = role;
+
+      let portfolio;
+
+      if (number) {
+        portfolio = new NumberedPortfolio({ did: portfolioDid, id: number }, context);
+      } else {
+        portfolio = new DefaultPortfolio({ did: portfolioDid }, context);
+      }
+
+      return portfolio.isCustodiedBy();
     }
 
     throw new PolymeshError({
@@ -212,15 +245,15 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the master key associated with the Identity
+   * Retrieve the primary key associated with the Identity
    *
    * @note can be subscribed to
    */
-  public async getMasterKey(): Promise<string>;
-  public async getMasterKey(callback: SubCallback<string>): Promise<UnsubCallback>;
+  public async getPrimaryKey(): Promise<string>;
+  public async getPrimaryKey(callback: SubCallback<string>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getMasterKey(callback?: SubCallback<string>): Promise<string | UnsubCallback> {
+  public async getPrimaryKey(callback?: SubCallback<string>): Promise<string | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -231,8 +264,8 @@ export class Identity extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const assembleResult = ({ master_key: masterKey }: DidRecord): string => {
-      return accountIdToString(masterKey);
+    const assembleResult = ({ primary_key: primaryKey }: DidRecord): string => {
+      return accountIdToString(primaryKey);
     };
 
     const rawDid = stringToIdentityId(did, context);
@@ -315,5 +348,39 @@ export class Identity extends Entity<UniqueIdentifiers> {
     );
 
     return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
+  }
+
+  /**
+   * Retrieve all Venues created by this Identity
+   *
+   * @note can be subscribed to
+   */
+  public async getVenues(): Promise<Venue[]>;
+  public async getVenues(callback: SubCallback<Venue[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getVenues(callback?: SubCallback<Venue[]>): Promise<Venue[] | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      did,
+      context,
+    } = this;
+
+    const assembleResult = (ids: u64[]): Venue[] =>
+      ids.map(id => new Venue({ id: u64ToBigNumber(id) }, context));
+
+    const rawDid = stringToIdentityId(did, context);
+
+    if (callback) {
+      return settlement.userVenues(rawDid, ids => callback(assembleResult(ids)));
+    }
+
+    const venueIds = await settlement.userVenues(rawDid);
+
+    return assembleResult(venueIds);
   }
 }

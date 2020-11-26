@@ -4,12 +4,83 @@ const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const util = require('util');
+const { upperFirst, toLower } = require('lodash');
 
-const dirName = path.resolve('src', 'polkadot', 'polymesh');
-const urlPath = 'https://pmf.polymath.network/code';
+const definitionsDir = path.resolve('src', 'polkadot', 'polymesh');
+const generatedDir = path.resolve('src', 'generated');
 
-rimraf.sync(dirName);
-fs.mkdirSync(dirName);
+const urlPath = 'https://pme.polymath.network/code';
+
+rimraf.sync(definitionsDir);
+fs.mkdirSync(definitionsDir);
+
+rimraf.sync(generatedDir);
+fs.mkdirSync(generatedDir);
+
+function writeDefinitions(schemaObj) {
+  fs.writeFileSync(
+    path.resolve(definitionsDir, 'definitions.ts'),
+    `/* eslint-disable @typescript-eslint/camelcase */\nexport default ${util.inspect(schemaObj, {
+      compact: false,
+      depth: null,
+      maxArrayLength: null,
+    })}`
+  );
+}
+
+/**
+ * Autogenerate types and conversion utils which are too large to write manually
+ */
+function writeGenerated({ types }) {
+  const instanbulIgnore = '/* istanbul ignore file */';
+  let typesFile = `${instanbulIgnore}
+
+`;
+  let utilsFile = `${instanbulIgnore}
+
+import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
+
+import { Context } from '~/base';
+import { CountryCode } from '~/types';
+
+`;
+
+  let countryCodeEnum = 'export enum CountryCode {';
+  let countryCodeFunctions = `/**
+ * @hidden
+ */
+export function countryCodeToMeshCountryCode(countryCode: CountryCode, context: Context): MeshCountryCode {
+  return context.polymeshApi.createType('CountryCode', countryCode);
+}
+
+/**
+ * @hidden
+ */
+export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): CountryCode {`;
+
+  const countryCodes = types.CountryCode._enum;
+  countryCodes.forEach((code, index) => {
+    const isLast = index === countryCodes.length - 1;
+    const pascalCaseCode = upperFirst(toLower(code));
+
+    countryCodeEnum = `${countryCodeEnum}\n  ${pascalCaseCode} = '${pascalCaseCode}',${
+      isLast ? '\n}' : ''
+    }`;
+
+    const returnStatement = `return CountryCode.${pascalCaseCode}`;
+    if (isLast) {
+      countryCodeFunctions = `${countryCodeFunctions}\n  ${returnStatement};\n}`;
+    } else {
+      countryCodeFunctions = `${countryCodeFunctions}\n  if (meshCountryCode.is${pascalCaseCode}) {\n    ${returnStatement};\n  }\n`;
+    }
+  });
+
+  typesFile = `${typesFile}${countryCodeEnum}\n`;
+  utilsFile = `${utilsFile}${countryCodeFunctions}\n`;
+
+  fs.writeFileSync(path.resolve(generatedDir, 'types.ts'), typesFile);
+  fs.writeFileSync(path.resolve(generatedDir, 'utils.ts'), utilsFile);
+}
 
 https.get(`${urlPath}/polymesh_schema.json`, res => {
   const chunks = [];
@@ -19,15 +90,9 @@ https.get(`${urlPath}/polymesh_schema.json`, res => {
 
   res.on('end', () => {
     const schema = Buffer.concat(chunks);
-    fs.writeFileSync(
-      path.resolve(dirName, 'definitions.ts'),
-      `/* eslint-disable @typescript-eslint/camelcase */\nexport default ${util.inspect(
-        JSON.parse(schema),
-        {
-          compact: false,
-          depth: null,
-        }
-      )}`
-    );
+    const schemaObj = JSON.parse(schema);
+
+    writeDefinitions(schemaObj);
+    writeGenerated(schemaObj);
   });
 });

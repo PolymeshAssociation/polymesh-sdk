@@ -1,6 +1,6 @@
 import { Context, PolymeshError } from '~/base';
 import { ErrorCode } from '~/types';
-import { serialize, unserialize } from '~/utils';
+import { serialize, unserialize } from '~/utils/internal';
 
 /**
  * Represents an object or resource in the Polymesh Ecosystem with its own set of properties and functionality

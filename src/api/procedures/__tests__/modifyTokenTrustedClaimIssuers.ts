@@ -13,7 +13,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
 import { PolymeshTx, TrustedClaimIssuerOperation } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('setTokenTrustedClaimIssuers procedure', () => {
   let mockContext: Mocked<Context>;
@@ -31,9 +31,9 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
-    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
-    identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
     ticker = 'someTicker';
     claimIssuerIdentities = ['aDid', 'otherDid', 'differentDid'];
     rawTicker = dsMockUtils.createMockTicker(ticker);

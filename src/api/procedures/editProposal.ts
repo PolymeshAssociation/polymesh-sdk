@@ -1,78 +1,80 @@
-import BigNumber from 'bignumber.js';
+// NOTE uncomment in Governance v2 upgrade
 
-import { assertProposalUnlocked } from '~/api/procedures/utils';
-import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode } from '~/types';
-import { accountIdToString, numberToPipId, stringToText } from '~/utils';
+// import BigNumber from 'bignumber.js';
 
-export type EditProposalParams =
-  | {
-      description?: string;
-      discussionUrl: string;
-    }
-  | {
-      description: string;
-      discussionUrl?: string;
-    };
+// import { assertProposalUnlocked } from '~/api/procedures/utils';
+// import { PolymeshError, Procedure } from '~/base';
+// import { ErrorCode } from '~/types';
+// import { accountIdToString, numberToPipId, stringToText } from '~/utils';
 
-/**
- * @hidden
- */
-export type Params = { pipId: BigNumber } & EditProposalParams;
+// export type EditProposalParams =
+//   | {
+//       description?: string;
+//       discussionUrl: string;
+//     }
+//   | {
+//       description: string;
+//       discussionUrl?: string;
+//     };
 
-/**
- * @hidden
- */
-export async function prepareEditProposal(
-  this: Procedure<Params, void>,
-  args: Params
-): Promise<void> {
-  const {
-    context: {
-      polymeshApi: { tx },
-    },
-    context,
-  } = this;
-  const { pipId, description, discussionUrl } = args;
+// /**
+//  * @hidden
+//  */
+// export type Params = { pipId: BigNumber } & EditProposalParams;
 
-  if (description === undefined && discussionUrl === undefined) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Nothing to modify',
-    });
-  }
+// /**
+//  * @hidden
+//  */
+// export async function prepareEditProposal(
+//   this: Procedure<Params, void>,
+//   args: Params
+// ): Promise<void> {
+//   const {
+//     context: {
+//       polymeshApi: { tx },
+//     },
+//     context,
+//   } = this;
+//   const { pipId, description, discussionUrl } = args;
 
-  await assertProposalUnlocked(pipId, context);
+//   if (description === undefined && discussionUrl === undefined) {
+//     throw new PolymeshError({
+//       code: ErrorCode.ValidationError,
+//       message: 'Nothing to modify',
+//     });
+//   }
 
-  this.addTransaction(
-    tx.pips.amendProposal,
-    {},
-    numberToPipId(pipId, context),
-    discussionUrl ? stringToText(discussionUrl, context) : null,
-    description ? stringToText(description, context) : null
-  );
-}
+//   await assertProposalUnlocked(pipId, context);
 
-/**
- * @hidden
- */
-export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): Promise<boolean> {
-  const {
-    context: {
-      polymeshApi: {
-        query: { pips },
-      },
-    },
-    context,
-  } = this;
+//   this.addTransaction(
+//     tx.pips.amendProposal,
+//     {},
+//     numberToPipId(pipId, context),
+//     discussionUrl ? stringToText(discussionUrl, context) : null,
+//     description ? stringToText(description, context) : null
+//   );
+// }
 
-  const metadata = await pips.proposalMetadata(numberToPipId(pipId, context));
-  const { proposer } = metadata.unwrap();
+// /**
+//  * @hidden
+//  */
+// export async function isAuthorized(this: Procedure<Params>, { pipId }: Params): Promise<boolean> {
+//   const {
+//     context: {
+//       polymeshApi: {
+//         query: { pips },
+//       },
+//     },
+//     context,
+//   } = this;
 
-  return accountIdToString(proposer) === context.getCurrentPair().address;
-}
+//   const metadata = await pips.proposalMetadata(numberToPipId(pipId, context));
+//   const { proposer } = metadata.unwrap();
 
-/**
- * @hidden
- */
-export const editProposal = new Procedure(prepareEditProposal, isAuthorized);
+//   return accountIdToString(proposer) === context.getCurrentPair().address;
+// }
+
+// /**
+//  * @hidden
+//  */
+// export const editProposal = new Procedure(prepareEditProposal, isAuthorized);

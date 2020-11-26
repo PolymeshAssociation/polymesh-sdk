@@ -14,7 +14,7 @@ import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AccountBalance, SubCallback, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '@polkadot/api',
@@ -443,7 +443,7 @@ describe('Polymesh Class', () => {
 
   describe('method: getTickerReservations', () => {
     beforeAll(() => {
-      sinon.stub(utilsModule, 'signerValueToSignatory');
+      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     });
 
     afterAll(() => {
@@ -486,6 +486,41 @@ describe('Polymesh Class', () => {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+          ),
+        ],
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const tickerReservations = await polymesh.getTickerReservations();
+
+      expect(tickerReservations).toHaveLength(1);
+      expect(tickerReservations[0].ticker).toBe(fakeTicker);
+    });
+
+    test('should filter out tickers with unreadable characters', async () => {
+      const fakeTicker = 'TEST';
+      const unreadableTicker = String.fromCharCode(65533);
+      const did = 'someDid';
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+          ),
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('someTicker')],
+            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(unreadableTicker)],
             dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
           ),
         ],
@@ -664,7 +699,7 @@ describe('Polymesh Class', () => {
 
   describe('method: getSecurityTokens', () => {
     beforeAll(() => {
-      sinon.stub(utilsModule, 'signerValueToSignatory');
+      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     });
 
     afterAll(() => {
@@ -722,6 +757,41 @@ describe('Polymesh Class', () => {
       expect(securityTokens).toHaveLength(1);
       expect(securityTokens[0].ticker).toBe(fakeTicker);
     });
+
+    test('should filter out tokens whose tickers have unreadable characters', async () => {
+      const fakeTicker = 'TEST';
+      const unreadableTicker = String.fromCharCode(65533);
+      const did = 'someDid';
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('someTicker')],
+            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+          ),
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(unreadableTicker)],
+            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+        ],
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const securityTokens = await polymesh.getSecurityTokens();
+
+      expect(securityTokens).toHaveLength(1);
+      expect(securityTokens[0].ticker).toBe(fakeTicker);
+    });
   });
 
   describe('method: transferPolyX', () => {
@@ -762,7 +832,7 @@ describe('Polymesh Class', () => {
           name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
-          treasury_did: dsMockUtils.createMockOption(),
+          primary_issuance_agent: dsMockUtils.createMockOption(),
           total_supply: dsMockUtils.createMockBalance(),
           /* eslint-enable @typescript-eslint/camelcase */
         }),
@@ -787,7 +857,7 @@ describe('Polymesh Class', () => {
           name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
-          treasury_did: dsMockUtils.createMockOption(),
+          primary_issuance_agent: dsMockUtils.createMockOption(),
           total_supply: dsMockUtils.createMockBalance(),
           /* eslint-enable @typescript-eslint/camelcase */
         }),

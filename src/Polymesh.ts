@@ -6,6 +6,7 @@ import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import BigNumber from 'bignumber.js';
+import fetch from 'cross-fetch';
 import { polymesh } from 'polymesh-types/definitions';
 import { Ticker, TxTag } from 'polymesh-types/types';
 
@@ -34,7 +35,6 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
-  getDid,
   moduleAddressToString,
   signerToString,
   stringToIdentityId,
@@ -42,10 +42,12 @@ import {
   textToString,
   tickerToString,
   u32ToBigNumber,
-} from '~/utils';
+} from '~/utils/conversion';
+import { getDid, stringIsClean } from '~/utils/internal';
 
 import { Claims } from './Claims';
-import { Governance } from './Governance';
+// import { Governance } from './Governance';
+import { Middleware } from './Middleware';
 import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
@@ -70,8 +72,11 @@ export class Polymesh {
   private context: Context = {} as Context;
 
   // Namespaces
-  public governance: Governance;
+
+  // NOTE uncomment in Governance v2 upgrade
+  // public governance: Governance;
   public claims: Claims;
+  public middleware: Middleware;
 
   /**
    * @hidden
@@ -79,8 +84,10 @@ export class Polymesh {
   private constructor(context: Context) {
     this.context = context;
 
-    this.governance = new Governance(context);
+    // NOTE uncomment in Governance v2 upgrade
+    // this.governance = new Governance(context);
     this.claims = new Claims(context);
+    this.middleware = new Middleware(context);
   }
 
   /**
@@ -143,7 +150,11 @@ export class Polymesh {
 
       const polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
-        types,
+        // https://github.com/polkadot-js/api/releases/tag/v2.0.1 TODO @monitz87: remove once Polymesh is updated to substrate 2.0
+        types: {
+          ...types,
+          RefCount: 'RefCountTo259',
+        },
         rpc,
       });
 
@@ -162,6 +173,7 @@ export class Polymesh {
             ApolloLink.from([
               new HttpLink({
                 uri: middleware.link,
+                fetch,
               }),
             ])
           ),
@@ -344,6 +356,8 @@ export class Polymesh {
    *   have already been launched
    *
    * @param args.owner - identity representation or Identity ID as stored in the blockchain
+   *
+   * * @note reservations with unreadable characters in their tickers will be left out
    */
   public async getTickerReservations(args?: {
     owner: string | Identity;
@@ -361,13 +375,20 @@ export class Polymesh {
       stringToIdentityId(did, context)
     );
 
-    const tickerReservations: TickerReservation[] = entries
-      .filter(([, relation]) => relation.isTickerOwned)
-      .map(([key]) => {
-        const ticker = tickerToString(key.args[1] as Ticker);
+    const tickerReservations: TickerReservation[] = entries.reduce<TickerReservation[]>(
+      (result, [key, relation]) => {
+        if (relation.isTickerOwned) {
+          const ticker = tickerToString(key.args[1] as Ticker);
 
-        return new TickerReservation({ ticker }, context);
-      });
+          if (stringIsClean(ticker)) {
+            return [...result, new TickerReservation({ ticker }, context)];
+          }
+        }
+
+        return result;
+      },
+      []
+    );
 
     return tickerReservations;
   }
@@ -494,6 +515,8 @@ export class Polymesh {
    * Retrieve all the Security Tokens owned by an Identity
    *
    * @param args.owner - identity representation or Identity ID as stored in the blockchain
+   *
+   * @note tokens with unreadable characters in their tickers will be left out
    */
   public async getSecurityTokens(args?: { owner: string | Identity }): Promise<SecurityToken[]> {
     const {
@@ -509,13 +532,20 @@ export class Polymesh {
       stringToIdentityId(did, context)
     );
 
-    const securityTokens: SecurityToken[] = entries
-      .filter(([, relation]) => relation.isAssetOwned)
-      .map(([key]) => {
-        const ticker = tickerToString(key.args[1] as Ticker);
+    const securityTokens: SecurityToken[] = entries.reduce<SecurityToken[]>(
+      (result, [key, relation]) => {
+        if (relation.isAssetOwned) {
+          const ticker = tickerToString(key.args[1] as Ticker);
 
-        return new SecurityToken({ ticker }, context);
-      });
+          if (stringIsClean(ticker)) {
+            return [...result, new SecurityToken({ ticker }, context)];
+          }
+        }
+
+        return result;
+      },
+      []
+    );
 
     return securityTokens;
   }
