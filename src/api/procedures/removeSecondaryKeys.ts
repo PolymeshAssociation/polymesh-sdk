@@ -1,6 +1,6 @@
 import { find } from 'lodash';
 
-import { PolymeshError, Procedure } from '~/base';
+import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, Signer } from '~/types';
 import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 

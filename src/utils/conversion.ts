@@ -55,10 +55,17 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { Account, DefaultPortfolio, Identity, NumberedPortfolio, Portfolio } from '~/api/entities';
-// import { ProposalDetails } from '~/api/types';
-import { Context, PolymeshError } from '~/base';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
+// import { ProposalDetails } from '~/api/types';
+import {
+  Account,
+  Context,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  PolymeshError,
+  Portfolio,
+} from '~/internal';
 import {
   CallIdEnum,
   ClaimScopeTypeEnum,
@@ -107,6 +114,7 @@ import {
 import {
   AuthTarget,
   ExtrinsicIdentifier,
+  PolymeshTx,
   PortfolioId,
   SignerType,
   SignerValue,
@@ -1528,6 +1536,13 @@ export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
     moduleId: sectionName.toLowerCase() as ModuleIdEnum,
     callId: methodName as CallIdEnum,
   });
+}
+
+/**
+ * @hidden
+ */
+export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>): TxTag {
+  return `${tx.section}.${tx.method}` as TxTag;
 }
 
 // /**

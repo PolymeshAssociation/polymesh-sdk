@@ -4,6 +4,7 @@ import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
+import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
 import {
   Account,
   AuthorizationRequest,
@@ -18,8 +19,7 @@ import {
   SecurityToken,
   TickerReservation,
   Venue,
-} from '~/api/entities';
-import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
+} from '~/internal';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -545,7 +545,7 @@ function configureVenue(opts: VenueOptions): void {
   Object.assign(mockInstanceContainer.venue, venue);
   venueConstructorStub.callsFake(args => {
     const value = merge({}, venue, args);
-    Object.setPrototypeOf(value, require('~/api/entities').Venue.prototype);
+    Object.setPrototypeOf(value, require('~/internal').Venue.prototype);
     return value;
   });
 }
@@ -583,7 +583,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
   numberedPortfolioConstructorStub.callsFake(args => {
     const value = merge({}, numberedPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/api/entities');
+    const entities = require('~/internal');
     Object.setPrototypeOf(entities.NumberedPortfolio.prototype, entities.Portfolio.prototype);
     Object.setPrototypeOf(value, entities.NumberedPortfolio.prototype);
     return value;
@@ -626,7 +626,7 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
   defaultPortfolioConstructorStub.callsFake(args => {
     const value = merge({}, defaultPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/api/entities');
+    const entities = require('~/internal');
     Object.setPrototypeOf(entities.DefaultPortfolio.prototype, entities.Portfolio.prototype);
     Object.setPrototypeOf(value, entities.DefaultPortfolio.prototype);
     return value;
@@ -664,7 +664,7 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
   Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
   authorizationRequestConstructorStub.callsFake(args => {
     const value = merge({}, authorizationRequest, args);
-    Object.setPrototypeOf(value, require('~/api/entities').AuthorizationRequest.prototype);
+    Object.setPrototypeOf(value, require('~/internal').AuthorizationRequest.prototype);
     return value;
   });
 }
@@ -700,7 +700,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
   Object.assign(mockInstanceContainer.securityToken, securityToken);
   securityTokenConstructorStub.callsFake(args => {
     const value = merge({}, securityToken, args);
-    Object.setPrototypeOf(value, require('~/api/entities').SecurityToken.prototype);
+    Object.setPrototypeOf(value, require('~/internal').SecurityToken.prototype);
     return value;
   });
 }
@@ -735,7 +735,7 @@ function configureTickerReservation(opts: TickerReservationOptions): void {
   Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
   tickerReservationConstructorStub.callsFake(args => {
     const value = merge({}, tickerReservation, args);
-    Object.setPrototypeOf(value, require('~/api/entities').TickerReservation.prototype);
+    Object.setPrototypeOf(value, require('~/internal').TickerReservation.prototype);
     return value;
   });
 }
@@ -776,7 +776,7 @@ function configureIdentity(opts: IdentityOptions): void {
   Object.assign(mockInstanceContainer.identity, identity);
   identityConstructorStub.callsFake(args => {
     const value = merge({}, identity, args);
-    Object.setPrototypeOf(value, require('~/api/entities').Identity.prototype);
+    Object.setPrototypeOf(value, require('~/internal').Identity.prototype);
     return value;
   });
 }
@@ -820,7 +820,7 @@ function configureInstruction(opts: InstructionOptions): void {
   Object.assign(mockInstanceContainer.instruction, instruction);
   instructionConstructorStub.callsFake(args => {
     const value = merge({}, instruction, args);
-    Object.setPrototypeOf(value, require('~/api/entities').Instruction.prototype);
+    Object.setPrototypeOf(value, require('~/internal').Instruction.prototype);
     return value;
   });
 }
@@ -857,7 +857,7 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
   currentIdentityConstructorStub.callsFake(args => {
     const value = merge({}, identity, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/api/entities');
+    const entities = require('~/internal');
     Object.setPrototypeOf(entities.CurrentIdentity.prototype, entities.Identity.prototype);
     Object.setPrototypeOf(value, entities.CurrentIdentity.prototype);
     return value;
@@ -899,7 +899,7 @@ function configureAccount(opts: AccountOptions): void {
   Object.assign(mockInstanceContainer.account, account);
   accountConstructorStub.callsFake(args => {
     const value = merge({}, account, args);
-    Object.setPrototypeOf(value, require('~/api/entities').Account.prototype);
+    Object.setPrototypeOf(value, require('~/internal').Account.prototype);
     return value;
   });
 }
@@ -940,7 +940,8 @@ function configureCurrentAccount(opts: CurrentAccountOptions): void {
   currentAccountConstructorStub.callsFake(args => {
     const value = merge({}, account, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/api/entities');
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.CurrentAccount.prototype, entities.Account.prototype);
     Object.setPrototypeOf(value, entities.CurrentAccount.prototype);
     return value;
   });

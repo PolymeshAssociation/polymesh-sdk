@@ -2,9 +2,17 @@ import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 import { Ticker } from 'polymesh-types/types';
 
-import { Entity, Identity, SecurityToken } from '~/api/entities';
-import { moveFunds, MoveFundsParams, setCustodian, SetCustodianParams } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import {
+  Context,
+  Entity,
+  Identity,
+  moveFunds,
+  MoveFundsParams,
+  SecurityToken,
+  setCustodian,
+  SetCustodianParams,
+  TransactionQueue,
+} from '~/internal';
 import {
   balanceToBigNumber,
   identityIdToString,

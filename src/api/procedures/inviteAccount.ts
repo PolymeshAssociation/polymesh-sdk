@@ -1,5 +1,4 @@
-import { Account } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { Account, PolymeshError, Procedure } from '~/internal';
 import { AuthorizationType, ErrorCode } from '~/types';
 import { SignerType } from '~/types/internal';
 import {

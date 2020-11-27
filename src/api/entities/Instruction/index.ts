@@ -1,9 +1,15 @@
 import BigNumber from 'bignumber.js';
 import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 
-import { Entity, Identity, SecurityToken, Venue } from '~/api/entities';
-import { modifyInstructionAuthorization } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import {
+  Context,
+  Entity,
+  Identity,
+  modifyInstructionAuthorization,
+  SecurityToken,
+  TransactionQueue,
+  Venue,
+} from '~/internal';
 import { InstructionAuthorizationOperation } from '~/types/internal';
 import {
   balanceToBigNumber,

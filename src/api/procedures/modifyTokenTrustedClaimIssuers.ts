@@ -1,17 +1,16 @@
 import { difference, intersection } from 'lodash';
-import { IdentityId, TxTags } from 'polymesh-types/types';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 
-import { Identity, SecurityToken } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, Role, RoleType } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import {
   identityIdToString,
   signerToString,
   stringToIdentityId,
   stringToTicker,
 } from '~/utils/conversion';
-import { batchArguments } from '~/utils/internal';
 
 export interface ModifyTokenTrustedClaimIssuersParams {
   claimIssuerIdentities: (string | Identity)[];
@@ -42,18 +41,20 @@ export async function prepareModifyTokenTrustedClaimIssuers(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  let claimIssuersToDelete: IdentityId[] = [];
-  let claimIssuersToAdd: IdentityId[] = [];
+  let claimIssuersToDelete: [IdentityId, Ticker][] = [];
+  let claimIssuersToAdd: [IdentityId, Ticker][] = [];
 
   const inputDids = claimIssuerIdentities.map(signerToString);
 
   const rawCurrentClaimIssuers = await query.complianceManager.trustedClaimIssuer(rawTicker);
   const currentClaimIssuers = rawCurrentClaimIssuers.map(issuer => identityIdToString(issuer));
 
-  const rawInput = inputDids.map(did => stringToIdentityId(did, context));
+  const rawInput = inputDids
+    .map(did => stringToIdentityId(did, context))
+    .map(issuer => tuple(issuer, rawTicker));
 
   if (operation === TrustedClaimIssuerOperation.Set) {
-    claimIssuersToDelete = rawCurrentClaimIssuers;
+    claimIssuersToDelete = rawCurrentClaimIssuers.map(issuer => [issuer, rawTicker]);
 
     if (
       !difference(currentClaimIssuers, inputDids).length &&
@@ -111,31 +112,19 @@ export async function prepareModifyTokenTrustedClaimIssuers(
   }
 
   if (claimIssuersToDelete.length) {
-    batchArguments<IdentityId>(
-      claimIssuersToDelete,
-      TxTags.complianceManager.BatchRemoveDefaultTrustedClaimIssuer
-    ).forEach(issuersBatch => {
-      this.addTransaction(
-        tx.complianceManager.batchRemoveDefaultTrustedClaimIssuer,
-        { batchSize: issuersBatch.length },
-        issuersBatch,
-        rawTicker
-      );
-    });
+    this.addBatchTransaction(
+      tx.complianceManager.removeDefaultTrustedClaimIssuer,
+      {},
+      claimIssuersToDelete
+    );
   }
 
   if (claimIssuersToAdd.length) {
-    batchArguments(
-      claimIssuersToAdd,
-      TxTags.complianceManager.BatchAddDefaultTrustedClaimIssuer
-    ).forEach(issuersBatch => {
-      this.addTransaction(
-        tx.complianceManager.batchAddDefaultTrustedClaimIssuer,
-        { batchSize: issuersBatch.length },
-        issuersBatch,
-        rawTicker
-      );
-    });
+    this.addBatchTransaction(
+      tx.complianceManager.addDefaultTrustedClaimIssuer,
+      {},
+      claimIssuersToAdd
+    );
   }
 
   return new SecurityToken({ ticker }, context);

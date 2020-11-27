@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { TxTags } from 'polymesh-types/types';
 
-import { SecurityToken, TickerReservation } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { PolymeshError, Procedure, SecurityToken, TickerReservation } from '~/internal';
 import {
   ErrorCode,
   Role,

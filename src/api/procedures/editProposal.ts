@@ -3,7 +3,7 @@
 // import BigNumber from 'bignumber.js';
 
 // import { assertProposalUnlocked } from '~/api/procedures/utils';
-// import { PolymeshError, Procedure } from '~/base';
+// import { PolymeshError, Procedure } from '~/internal';
 // import { ErrorCode } from '~/types';
 // import { accountIdToString, numberToPipId, stringToText } from '~/utils';
 

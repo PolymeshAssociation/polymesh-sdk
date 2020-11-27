@@ -3,7 +3,7 @@ import { Memo } from 'polymesh-types/polymesh';
 import sinon from 'sinon';
 
 import { prepareTransferPolyX, TransferPolyXParams } from '~/api/procedures/transferPolyX';
-import { Context } from '~/base';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';

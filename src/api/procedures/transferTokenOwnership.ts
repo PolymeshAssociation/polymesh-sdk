@@ -1,5 +1,4 @@
-import { Identity, SecurityToken } from '~/api/entities';
-import { Procedure } from '~/base';
+import { Identity, Procedure, SecurityToken } from '~/internal';
 import { AuthorizationType, Role, RoleType } from '~/types';
 import { SignerType } from '~/types/internal';
 import {

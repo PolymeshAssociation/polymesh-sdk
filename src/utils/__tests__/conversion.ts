@@ -36,13 +36,13 @@ import sinon from 'sinon';
 
 import {
   Account,
+  Context,
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
   SecurityToken,
-} from '~/api/entities';
+} from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
-import { Context } from '~/base';
 import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {

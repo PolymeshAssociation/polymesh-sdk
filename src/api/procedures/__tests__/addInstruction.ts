@@ -5,14 +5,13 @@ import BigNumber from 'bignumber.js';
 import { PortfolioId, SettlementType, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Instruction } from '~/api/entities';
 import {
   createAddInstructionResolver,
   getRequiredRoles,
   Params,
   prepareAddInstruction,
 } from '~/api/procedures/addInstruction';
-import { Context, PostTransactionValue } from '~/base';
+import { Context, Instruction, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { InstructionType, PortfolioLike, RoleType, TickerReservationStatus } from '~/types';

@@ -3,9 +3,8 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { AuthorizationStatus as MeshAuthorizationStatus, PortfolioId } from 'polymesh-types/types';
 
-import { Instruction } from '~/api/entities';
 import { assertInstructionValid } from '~/api/procedures/utils';
-import { PolymeshError, Procedure } from '~/base';
+import { Instruction, PolymeshError, Procedure } from '~/internal';
 import { AuthorizationStatus, ErrorCode } from '~/types';
 import { InstructionAuthorizationOperation, PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';

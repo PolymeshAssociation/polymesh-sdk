@@ -1,8 +1,13 @@
 import BigNumber from 'bignumber.js';
 
-import { Portfolio } from '~/api/entities';
-import { deletePortfolio, renamePortfolio, RenamePortfolioParams } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import {
+  Context,
+  deletePortfolio,
+  Portfolio,
+  renamePortfolio,
+  RenamePortfolioParams,
+  TransactionQueue,
+} from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier } from '~/types';

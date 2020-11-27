@@ -1,9 +1,7 @@
 import sinon from 'sinon';
 
-import { Identity } from '~/api/entities';
-import { modifyClaims } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
 import { Claims } from '~/Claims';
+import { Context, Identity, modifyClaims, TransactionQueue } from '~/internal';
 import {
   didsWithClaims,
   issuerDidsWithClaimsByTarget,

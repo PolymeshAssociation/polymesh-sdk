@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
-import { Account } from '~/api/entities';
+import { Account } from '~/internal';
 import { ProposalState } from '~/middleware/types';
 
 export interface ProposalVote {

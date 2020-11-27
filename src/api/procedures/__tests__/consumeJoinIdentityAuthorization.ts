@@ -2,13 +2,12 @@ import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Account, AuthorizationRequest, Identity } from '~/api/entities';
 import {
   ConsumeJoinIdentityAuthorizationParams,
   isAuthorized,
   prepareConsumeJoinIdentityAuthorization,
 } from '~/api/procedures/consumeJoinIdentityAuthorization';
-import { Context } from '~/base';
+import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType } from '~/types';

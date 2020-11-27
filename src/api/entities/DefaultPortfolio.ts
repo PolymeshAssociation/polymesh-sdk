@@ -1,4 +1,4 @@
-import { Portfolio } from '~/api/entities';
+import { Portfolio } from '~/internal';
 
 /**
  * Represents the default Portfolio for an Identity

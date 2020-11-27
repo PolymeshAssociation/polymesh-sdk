@@ -2,10 +2,16 @@ import { Vec } from '@polkadot/types/codec';
 import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity, Namespace, SecurityToken } from '~/api/entities';
-import { togglePauseRequirements } from '~/api/procedures';
-import { Params, setAssetRequirements } from '~/api/procedures/setAssetRequirements';
-import { Context, TransactionQueue } from '~/base';
+import { Params } from '~/api/procedures/setAssetRequirements';
+import {
+  Context,
+  Identity,
+  Namespace,
+  SecurityToken,
+  setAssetRequirements,
+  togglePauseRequirements,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ClaimType, ConditionTarget, ConditionType, Requirement, ScopeType } from '~/types';

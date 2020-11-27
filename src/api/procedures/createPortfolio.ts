@@ -2,8 +2,13 @@ import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { IdentityId } from 'polymesh-types/types';
 
-import { NumberedPortfolio } from '~/api/entities';
-import { Context, PolymeshError, PostTransactionValue, Procedure } from '~/base';
+import {
+  Context,
+  NumberedPortfolio,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+} from '~/internal';
 import { ErrorCode } from '~/types';
 import {
   bytesToString,

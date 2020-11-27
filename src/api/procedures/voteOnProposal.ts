@@ -2,9 +2,9 @@
 
 // import BigNumber from 'bignumber.js';
 
-// import { Proposal } from '~/api/entities';
+// import { Proposal } from '~/internal';
 // import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
-// import { PolymeshError, Procedure } from '~/base';
+// import { PolymeshError, Procedure } from '~/internal';
 // import { ErrorCode } from '~/types';
 // import { booleanToBool, numberToBalance, numberToPipId } from '~/utils';
 

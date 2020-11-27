@@ -1,6 +1,4 @@
-import { Identity } from '~/api/entities';
-import { modifyClaims, ModifyClaimsParams } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import { Context, Identity, modifyClaims, ModifyClaimsParams, TransactionQueue } from '~/internal';
 import {
   didsWithClaims,
   issuerDidsWithClaimsByTarget,

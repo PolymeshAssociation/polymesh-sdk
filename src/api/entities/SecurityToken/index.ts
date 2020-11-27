@@ -1,18 +1,20 @@
 import BigNumber from 'bignumber.js';
 import { SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
-import { Entity, Identity } from '~/api/entities';
 import {
+  Context,
+  Entity,
+  Identity,
   modifyPrimaryIssuanceAgent,
   ModifyPrimaryIssuanceAgentParams,
   modifyToken,
   ModifyTokenParams,
   removePrimaryIssuanceAgent,
   toggleFreezeTransfers,
+  TransactionQueue,
   transferTokenOwnership,
   TransferTokenOwnershipParams,
-} from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+} from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier, SubCallback, TokenIdentifier, UnsubCallback } from '~/types';

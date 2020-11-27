@@ -2,13 +2,15 @@ import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
 import { AssetCompliance, AssetComplianceResult, IdentityId } from 'polymesh-types/types';
 
-import { Identity, Namespace, SecurityToken } from '~/api/entities';
 import {
+  Identity,
+  Namespace,
+  SecurityToken,
   setAssetRequirements,
   SetAssetRequirementsParams,
   togglePauseRequirements,
-} from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+  TransactionQueue,
+} from '~/internal';
 import { Compliance, Requirement, SubCallback, UnsubCallback } from '~/types';
 import {
   assetComplianceResultToCompliance,

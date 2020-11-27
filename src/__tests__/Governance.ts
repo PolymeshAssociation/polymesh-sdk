@@ -12,10 +12,10 @@ describe('Governance class', () => {
 // import { TxTag } from 'polymesh-types/types';
 // import sinon from 'sinon';
 
-// import { Identity, Proposal } from '~/api/entities';
+// import { Identity, Proposal } from '~/internal';
 // import { ProposalState } from '~/api/entities/Proposal/types';
-// import { createProposal } from '~/api/procedures';
-// import { Context, TransactionQueue } from '~/base';
+// import { createProposal } from '~/internal';
+// import { Context, TransactionQueue } from '~/internal';
 // import { Governance } from '~/Governance';
 // import { proposals } from '~/middleware/queries';
 // import { dsMockUtils } from '~/testUtils/mocks';

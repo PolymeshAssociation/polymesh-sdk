@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { SecurityToken } from '~/api/entities';
+import { SecurityToken } from '~/internal';
 
 export interface PortfolioBalance {
   token: SecurityToken;

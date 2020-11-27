@@ -3,15 +3,17 @@ import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
 import { Instruction as MeshInstruction } from 'polymesh-types/types';
 
-import { Identity, Instruction, Venue } from '~/api/entities';
 import {
   createVenue,
   CreateVenueParams,
+  Identity,
+  Instruction,
   inviteAccount,
   InviteAccountParams,
   removeSecondaryKeys,
-} from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+  TransactionQueue,
+  Venue,
+} from '~/internal';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
 import {

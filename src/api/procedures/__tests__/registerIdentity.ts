@@ -3,14 +3,12 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import { SecondaryKey as MeshSecondaryKey } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity } from '~/api/entities';
-import { RegisterIdentityParams } from '~/api/procedures';
 import {
   createRegisterIdentityResolver,
   getRequiredRoles,
   prepareRegisterIdentity,
 } from '~/api/procedures/registerIdentity';
-import { Context, PostTransactionValue } from '~/base';
+import { Context, Identity, PostTransactionValue, RegisterIdentityParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Permission, RoleType, SecondaryKey } from '~/types';

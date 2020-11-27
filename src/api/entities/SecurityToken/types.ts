@@ -1,6 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 
-import { Identity } from '~/api/entities';
+import { Identity } from '~/internal';
 
 export interface SecurityTokenDetails {
   assetType: string;

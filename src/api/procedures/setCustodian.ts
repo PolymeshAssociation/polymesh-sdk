@@ -1,7 +1,12 @@
 import BigNumber from 'bignumber.js';
 
-import { DefaultPortfolio, Identity, NumberedPortfolio } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import {
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  PolymeshError,
+  Procedure,
+} from '~/internal';
 import { AuthorizationType, ErrorCode, Role, RoleType } from '~/types';
 import {
   authorizationToAuthorizationData,

@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 
-import { Account, Identity } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { Account, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode } from '~/types';
 import {
   identityIdToString,

@@ -10,16 +10,21 @@ import fetch from 'cross-fetch';
 import { polymesh } from 'polymesh-types/definitions';
 import { Ticker, TxTag } from 'polymesh-types/types';
 
-import { Account, Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
+  Account,
+  Context,
+  Identity,
+  PolymeshError,
   registerIdentity,
   RegisterIdentityParams,
   reserveTicker,
   ReserveTickerParams,
+  SecurityToken,
+  TickerReservation,
+  TransactionQueue,
   transferPolyX,
   TransferPolyXParams,
-} from '~/api/procedures';
-import { Context, PolymeshError, TransactionQueue } from '~/base';
+} from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import {
   AccountBalance,

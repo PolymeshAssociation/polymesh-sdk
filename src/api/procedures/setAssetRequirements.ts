@@ -1,7 +1,6 @@
 import { differenceWith, isEqual } from 'lodash';
 
-import { SecurityToken } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { Condition, ErrorCode, Role, RoleType } from '~/types';
 import {
   complianceRequirementToRequirement,

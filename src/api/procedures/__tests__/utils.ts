@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-import { Instruction } from '~/api/entities';
 import { assertInstructionValid } from '~/api/procedures/utils';
-import { Context } from '~/base';
+import { Context, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';

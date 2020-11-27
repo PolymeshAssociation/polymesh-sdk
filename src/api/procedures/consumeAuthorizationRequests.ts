@@ -1,10 +1,9 @@
 import P from 'bluebird';
-import { TxTags } from 'polymesh-types/types';
 
-import { Account, AuthorizationRequest } from '~/api/entities';
-import { Procedure } from '~/base';
-import { authTargetToAuthIdentifier, numberToU64, signerToSignerValue } from '~/utils/conversion';
-import { batchArguments, getDid } from '~/utils/internal';
+import { Account, AuthorizationRequest, Procedure } from '~/internal';
+import { tuple } from '~/types/utils';
+import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
+import { getDid } from '~/utils/internal';
 
 export interface ConsumeParams {
   accept: boolean;
@@ -35,27 +34,16 @@ export async function prepareConsumeAuthorizationRequests(
   const liveRequests = authRequests.filter(request => !request.isExpired());
 
   if (accept) {
-    const requestIds = liveRequests.map(({ authId }) => numberToU64(authId, context));
-    batchArguments(requestIds, TxTags.identity.BatchAcceptAuthorization).forEach(idBatch => {
-      this.addTransaction(
-        tx.identity.batchAcceptAuthorization,
-        { batchSize: idBatch.length },
-        idBatch
-      );
-    });
+    const requestIds = liveRequests.map(({ authId }) => tuple(numberToU64(authId, context)));
+    this.addBatchTransaction(tx.identity.acceptAuthorization, {}, requestIds);
   } else {
     const authIdentifiers = liveRequests.map(({ authId, target }) =>
-      authTargetToAuthIdentifier({ authId, target: signerToSignerValue(target) }, context)
+      tuple(
+        signerValueToSignatory(signerToSignerValue(target), context),
+        numberToU64(authId, context)
+      )
     );
-    batchArguments(authIdentifiers, TxTags.identity.BatchRemoveAuthorization).forEach(
-      identifierBatch => {
-        this.addTransaction(
-          tx.identity.batchRemoveAuthorization,
-          { batchSize: identifierBatch.length },
-          identifierBatch
-        );
-      }
-    );
+    this.addBatchTransaction(tx.identity.removeAuthorization, {}, authIdentifiers);
   }
 }
 

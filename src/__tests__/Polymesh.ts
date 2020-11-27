@@ -6,9 +6,15 @@ import BigNumber from 'bignumber.js';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Identity, TickerReservation } from '~/api/entities';
-import { registerIdentity, reserveTicker, transferPolyX } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+import {
+  Account,
+  Identity,
+  registerIdentity,
+  reserveTicker,
+  TickerReservation,
+  TransactionQueue,
+  transferPolyX,
+} from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';

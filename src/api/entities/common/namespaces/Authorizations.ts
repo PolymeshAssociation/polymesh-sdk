@@ -1,6 +1,6 @@
 import { Authorization } from 'polymesh-types/types';
 
-import { AuthorizationRequest, Identity, Namespace } from '~/api/entities';
+import { AuthorizationRequest, Identity, Namespace } from '~/internal';
 import { AuthorizationType, Signer } from '~/types';
 import { SignerValue } from '~/types/internal';
 import {
