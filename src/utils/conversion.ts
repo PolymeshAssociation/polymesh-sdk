@@ -58,7 +58,6 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { SecurityToken } from '~/api/entities/SecurityToken';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 // import { ProposalDetails } from '~/api/types';
 import {
@@ -69,6 +68,7 @@ import {
   NumberedPortfolio,
   PolymeshError,
   Portfolio,
+  SecurityToken,
 } from '~/internal';
 import {
   CallIdEnum,
@@ -471,10 +471,10 @@ export function permissionsToMeshPermissions(
       pallet.push(dispatchableName);
     });
 
-    extrinsic = map(extrinsicDict, (value, key) => ({
+    extrinsic = map(extrinsicDict, (val, key) => ({
       /* eslint-disable @typescript-eslint/camelcase */
       pallet_name: key,
-      dispatchable_names: value,
+      dispatchable_names: val,
       /* eslint-enable @typescript-eslint/camelcase */
     }));
   }
@@ -1517,6 +1517,7 @@ export function complianceRequirementResultToRequirementCompliance(
         },
         complies: boolToBoolean(result),
       };
+
       const existingCondition = conditions.find(condition =>
         conditionCompliancesAreEqual(condition, newCondition)
       );

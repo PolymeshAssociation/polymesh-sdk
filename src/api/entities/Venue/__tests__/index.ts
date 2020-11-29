@@ -79,13 +79,17 @@ describe('Venue class', () => {
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
         .withArgs(rawId)
-        .resolves({
-          creator: dsMockUtils.createMockIdentityId(owner),
-          instructions: [],
-          details: dsMockUtils.createMockVenueDetails(description),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          venue_type: dsMockUtils.createMockVenueType(type),
-        });
+        .resolves(
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockVenue({
+              creator: dsMockUtils.createMockIdentityId(owner),
+              instructions: [],
+              details: dsMockUtils.createMockVenueDetails(description),
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              venue_type: dsMockUtils.createMockVenueType(type),
+            })
+          )
+        );
 
       const result = await venue.details();
 
@@ -117,13 +121,17 @@ describe('Venue class', () => {
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
         .withArgs(rawId)
-        .resolves({
-          creator: dsMockUtils.createMockIdentityId(owner),
-          instructions: [dsMockUtils.createMockU64(instructionId.toNumber())],
-          details: dsMockUtils.createMockVenueDetails(description),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          venue_type: dsMockUtils.createMockVenueType(type),
-        });
+        .resolves(
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockVenue({
+              creator: dsMockUtils.createMockIdentityId(owner),
+              instructions: [dsMockUtils.createMockU64(instructionId.toNumber())],
+              details: dsMockUtils.createMockVenueDetails(description),
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              venue_type: dsMockUtils.createMockVenueType(type),
+            })
+          )
+        );
 
       const result = await venue.getPendingInstructions();
 

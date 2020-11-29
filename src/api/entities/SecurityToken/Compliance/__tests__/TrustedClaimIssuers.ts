@@ -1,4 +1,4 @@
-import { IdentityId, Ticker } from 'polymesh-types/types';
+import { Ticker, TrustedIssuer } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -142,7 +142,7 @@ describe('TrustedClaimIssuers class', () => {
     let token: SecurityToken;
     let expectedDids: string[];
     let expectedTrustedClaimIssuers: DefaultTrustedClaimIssuer[];
-    let claimIssuers: IdentityId[];
+    let claimIssuers: TrustedIssuer[];
 
     let trustedClaimIssuerStub: sinon.SinonStub;
 
@@ -162,7 +162,13 @@ describe('TrustedClaimIssuers class', () => {
 
       expectedDids.forEach(did => {
         expectedTrustedClaimIssuers.push(new DefaultTrustedClaimIssuer({ did, ticker }, context));
-        claimIssuers.push(dsMockUtils.createMockIdentityId(did));
+        claimIssuers.push(
+          dsMockUtils.createMockTrustedIssuer({
+            issuer: dsMockUtils.createMockIdentityId(did),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+          })
+        );
       });
 
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);

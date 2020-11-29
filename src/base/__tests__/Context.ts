@@ -1012,8 +1012,8 @@ describe('Context class', () => {
         meta: {
           args: [
             {
-              type: 'Permission',
-              name: 'permission',
+              type: 'AssetOwnershipRelation',
+              name: 'relation',
             },
           ],
         },
@@ -1022,9 +1022,9 @@ describe('Context class', () => {
       expect(context.getTransactionArguments({ tag: TxTags.asset.SetFundingRound })).toMatchObject([
         {
           type: TransactionArgumentType.SimpleEnum,
-          name: 'permission',
+          name: 'relation',
           optional: false,
-          internal: ['Full', 'Admin', 'Operator', 'SpendFunds'],
+          internal: ['NotOwned', 'TickerOwned', 'AssetOwned'],
         },
       ]);
 
@@ -1052,6 +1052,18 @@ describe('Context class', () => {
             {
               name: 'content_hash',
               type: TransactionArgumentType.Text,
+            },
+            {
+              name: 'name',
+              type: TransactionArgumentType.Text,
+            },
+            {
+              name: 'doc_type',
+              type: TransactionArgumentType.Text,
+            },
+            {
+              name: 'filing_date',
+              type: TransactionArgumentType.Date,
             },
           ],
         },

@@ -166,7 +166,12 @@ describe('Requirements class', () => {
                       Exempted: scope,
                     }),
                   }),
-                  issuers: [dsMockUtils.createMockIdentityId(notDefaultClaimIssuer)],
+                  issuers: [
+                    dsMockUtils.createMockTrustedIssuer({
+                      issuer: dsMockUtils.createMockIdentityId(notDefaultClaimIssuer),
+                      trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+                    }),
+                  ],
                 }),
               ],
               receiver_conditions: [],
@@ -241,7 +246,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should return all requirement attached to the Security Token, using the default trusted claim issuers where none are set', async () => {
+    test('should return all requirements attached to the Security Token, using the default trusted claim issuers where none are set', async () => {
       queryMultiStub.resolves(queryMultiResult);
       const result = await requirements.get();
 

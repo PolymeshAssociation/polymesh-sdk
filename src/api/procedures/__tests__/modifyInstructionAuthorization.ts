@@ -182,7 +182,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     ).rejects.toThrow('The instruction is not affirmed');
   });
 
-  test('should add an withdraw instruction transaction to the queue', async () => {
+  test('should add a withdraw instruction transaction to the queue', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],

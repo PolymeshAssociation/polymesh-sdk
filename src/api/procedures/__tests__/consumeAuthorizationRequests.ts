@@ -1,4 +1,4 @@
-import { u64 } from '@polkadot/types';
+import { bool, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -19,6 +19,7 @@ describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let authParams: {
     authId: BigNumber;
     expiry: Date | null;
@@ -27,8 +28,9 @@ describe('consumeAuthorizationRequests procedure', () => {
     data: Authorization;
   }[];
   let auths: AuthorizationRequest[];
-  let rawAuthIdentifiers: [Signatory, u64][];
+  let rawAuthIdentifiers: [Signatory, u64, bool][];
   let rawAuthIds: [u64][];
+  let rawFalseBool: bool;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -36,6 +38,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     entityMockUtils.initMocks();
     signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     sinon.stub(utilsConversionModule, 'addressToKey');
   });
 
@@ -44,6 +47,7 @@ describe('consumeAuthorizationRequests procedure', () => {
   beforeEach(() => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
+    rawFalseBool = dsMockUtils.createMockBool(false);
     authParams = [
       {
         authId: new BigNumber(1),
@@ -93,9 +97,10 @@ describe('consumeAuthorizationRequests procedure', () => {
         Identity: dsMockUtils.createMockIdentityId(signerValue.value),
       });
 
-      rawAuthIdentifiers.push([rawSignatory, rawAuthId]);
+      rawAuthIdentifiers.push([rawSignatory, rawAuthId, rawFalseBool]);
       signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
     });
+    booleanToBoolStub.withArgs(false, mockContext).returns(rawFalseBool);
   });
 
   afterEach(() => {
