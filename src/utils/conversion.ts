@@ -471,10 +471,10 @@ export function permissionsToMeshPermissions(
       pallet.push(dispatchableName);
     });
 
-    extrinsic = map(extrinsicDict, (value, key) => ({
+    extrinsic = map(extrinsicDict, (val, key) => ({
       /* eslint-disable @typescript-eslint/camelcase */
       pallet_name: key,
-      dispatchable_names: value,
+      dispatchable_names: val,
       /* eslint-enable @typescript-eslint/camelcase */
     }));
   }
