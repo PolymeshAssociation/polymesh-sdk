@@ -77,6 +77,9 @@ export enum StakingTx {
   ReapStash = 'staking.reapStash',
   SubmitElectionSolution = 'staking.submitElectionSolution',
   SubmitElectionSolutionUnsigned = 'staking.submitElectionSolutionUnsigned',
+  SetCommissionCap = 'staking.setCommissionCap',
+  PayoutStakersBySystem = 'staking.payoutStakersBySystem',
+  ChangeSlashingAllowedFor = 'staking.changeSlashingAllowedFor',
 }
 
 export enum SessionTx {
@@ -135,6 +138,11 @@ export enum ContractsTx {
   Call = 'contracts.call',
   Instantiate = 'contracts.instantiate',
   ClaimSurcharge = 'contracts.claimSurcharge',
+  FreezeInstantiation = 'contracts.freezeInstantiation',
+  UnfreezeInstantiation = 'contracts.unfreezeInstantiation',
+  TransferTemplateOwnership = 'contracts.transferTemplateOwnership',
+  ChangeTemplateFees = 'contracts.changeTemplateFees',
+  ChangeTemplateMetaUrl = 'contracts.changeTemplateMetaUrl',
 }
 
 export enum TreasuryTx {
@@ -150,6 +158,7 @@ export enum PolymeshCommitteeTx {
   SetReleaseCoordinator = 'polymeshCommittee.setReleaseCoordinator',
   VoteEnactReferendum = 'polymeshCommittee.voteEnactReferendum',
   VoteRejectReferendum = 'polymeshCommittee.voteRejectReferendum',
+  SetExpiresAfter = 'polymeshCommittee.setExpiresAfter',
 }
 
 export enum CommitteeMembershipTx {
@@ -190,6 +199,7 @@ export enum PipsTx {
   EnactReferendum = 'pips.enactReferendum',
   RejectReferendum = 'pips.rejectReferendum',
   OverrideReferendumEnactmentPeriod = 'pips.overrideReferendumEnactmentPeriod',
+  SetPendingPipExpiry = 'pips.setPendingPipExpiry',
 }
 
 export enum TechnicalCommitteeTx {
@@ -198,6 +208,7 @@ export enum TechnicalCommitteeTx {
   Close = 'technicalCommittee.close',
   VoteOrPropose = 'technicalCommittee.voteOrPropose',
   Vote = 'technicalCommittee.vote',
+  SetExpiresAfter = 'technicalCommittee.setExpiresAfter',
 }
 
 export enum TechnicalCommitteeMembershipTx {
@@ -216,6 +227,7 @@ export enum UpgradeCommitteeTx {
   Close = 'upgradeCommittee.close',
   VoteOrPropose = 'upgradeCommittee.voteOrPropose',
   Vote = 'upgradeCommittee.vote',
+  SetExpiresAfter = 'upgradeCommittee.setExpiresAfter',
 }
 
 export enum UpgradeCommitteeMembershipTx {
@@ -265,6 +277,9 @@ export enum AssetTx {
   RemovePrimaryIssuanceAgent = 'asset.removePrimaryIssuanceAgent',
   RemoveSmartExtension = 'asset.removeSmartExtension',
   ClaimClassicTicker = 'asset.claimClassicTicker',
+  AddDocuments = 'asset.addDocuments',
+  RemoveDocuments = 'asset.removeDocuments',
+  ReserveClassicTicker = 'asset.reserveClassicTicker',
 }
 
 export enum DividendTx {
@@ -311,6 +326,11 @@ export enum IdentityTx {
   BatchAcceptAuthorization = 'identity.batchAcceptAuthorization',
   BatchAddSecondaryKeyWithAuthorization = 'identity.batchAddSecondaryKeyWithAuthorization',
   RevokeOffchainAuthorization = 'identity.revokeOffchainAuthorization',
+  LegacySetPermissionToSigner = 'identity.legacySetPermissionToSigner',
+  AddSecondaryKeysWithAuthorization = 'identity.addSecondaryKeysWithAuthorization',
+  AddInvestorUniquenessClaim = 'identity.addInvestorUniquenessClaim',
+  GcAddCddClaim = 'identity.gcAddCddClaim',
+  GcRevokeCddClaim = 'identity.gcRevokeCddClaim',
 }
 
 export enum BridgeTx {
@@ -329,6 +349,9 @@ export enum BridgeTx {
   BatchHandleBridgeTx = 'bridge.batchHandleBridgeTx',
   BatchFreezeTx = 'bridge.batchFreezeTx',
   BatchUnfreezeTx = 'bridge.batchUnfreezeTx',
+  FreezeTxs = 'bridge.freezeTxs',
+  UnfreezeTxs = 'bridge.unfreezeTxs',
+  HandleScheduledBridgeTx = 'bridge.handleScheduledBridgeTx',
 }
 
 export enum ComplianceManagerTx {
@@ -385,11 +408,20 @@ export enum SettlementTx {
   SetVenueFiltering = 'settlement.setVenueFiltering',
   AllowVenues = 'settlement.allowVenues',
   DisallowVenues = 'settlement.disallowVenues',
+  AddAndAffirmInstruction = 'settlement.addAndAffirmInstruction',
+  AffirmInstruction = 'settlement.affirmInstruction',
+  WithdrawAffirmation = 'settlement.withdrawAffirmation',
+  AffirmWithReceipts = 'settlement.affirmWithReceipts',
+  ExecuteScheduledInstruction = 'settlement.executeScheduledInstruction',
 }
 
 export enum StoTx {
   CreateFundraiser = 'sto.createFundraiser',
   Invest = 'sto.invest',
+  FreezeFundraiser = 'sto.freezeFundraiser',
+  UnfreezeFundraiser = 'sto.unfreezeFundraiser',
+  ModifyFundraiserWindow = 'sto.modifyFundraiserWindow',
+  Stop = 'sto.stop',
 }
 
 export enum CddServiceProvidersTx {
@@ -425,6 +457,51 @@ export enum PortfolioTx {
 export enum ConfidentialTx {
   AddRangeProof = 'confidential.addRangeProof',
   AddVerifyRangeProof = 'confidential.addVerifyRangeProof',
+}
+
+export enum SchedulerTx {
+  Schedule = 'scheduler.schedule',
+  Cancel = 'scheduler.cancel',
+  ScheduleNamed = 'scheduler.scheduleNamed',
+  CancelNamed = 'scheduler.cancelNamed',
+  ScheduleAfter = 'scheduler.scheduleAfter',
+  ScheduleNamedAfter = 'scheduler.scheduleNamedAfter',
+}
+
+export enum CorporateActionTx {
+  SetMaxDetailsLength = 'corporateAction.setMaxDetailsLength',
+  ResetCaa = 'corporateAction.resetCaa',
+  SetDefaultTargets = 'corporateAction.setDefaultTargets',
+  SetDefaultWithholdingTax = 'corporateAction.setDefaultWithholdingTax',
+  SetDidWithholdingTax = 'corporateAction.setDidWithholdingTax',
+  InitiateCorporateAction = 'corporateAction.initiateCorporateAction',
+  LinkCaDoc = 'corporateAction.linkCaDoc',
+  RemoveCa = 'corporateAction.removeCa',
+  ChangeRecordDate = 'corporateAction.changeRecordDate',
+}
+
+export enum CorporateBallotTx {
+  AttachBallot = 'corporateBallot.attachBallot',
+  Vote = 'corporateBallot.vote',
+  ChangeEnd = 'corporateBallot.changeEnd',
+  ChangeMeta = 'corporateBallot.changeMeta',
+  ChangeRcv = 'corporateBallot.changeRcv',
+  RemoveBallot = 'corporateBallot.removeBallot',
+}
+
+export enum CapitalDistributionTx {
+  Distribute = 'capitalDistribution.distribute',
+  Claim = 'capitalDistribution.claim',
+  PushBenefit = 'capitalDistribution.pushBenefit',
+  Reclaim = 'capitalDistribution.reclaim',
+  RemoveDistribution = 'capitalDistribution.removeDistribution',
+}
+
+export enum CheckpointTx {
+  CreateCheckpoint = 'checkpoint.createCheckpoint',
+  SetSchedulesMaxComplexity = 'checkpoint.setSchedulesMaxComplexity',
+  CreateSchedule = 'checkpoint.createSchedule',
+  RemoveSchedule = 'checkpoint.removeSchedule',
 }
 
 export type TxTag =
@@ -464,7 +541,12 @@ export type TxTag =
   | ProtocolFeeTx
   | UtilityTx
   | PortfolioTx
-  | ConfidentialTx;
+  | ConfidentialTx
+  | SchedulerTx
+  | CorporateActionTx
+  | CorporateBallotTx
+  | CapitalDistributionTx
+  | CheckpointTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -504,4 +586,9 @@ export const TxTags = {
   utility: UtilityTx,
   portfolio: PortfolioTx,
   confidential: ConfidentialTx,
+  scheduler: SchedulerTx,
+  corporateAction: CorporateActionTx,
+  corporateBallot: CorporateBallotTx,
+  capitalDistribution: CapitalDistributionTx,
+  checkpoint: CheckpointTx,
 };

@@ -7,7 +7,7 @@ import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
-import { ClaimType, Permission, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
+import { ClaimType, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -69,11 +69,7 @@ describe('Context class', () => {
       },
     });
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockLinkedKeyInfo({
-          Unique: dsMockUtils.createMockIdentityId('someDid'),
-        })
-      ),
+      returnValue: dsMockUtils.createMockIdentityId('someDid'),
     });
 
     const context = await Context.create({
@@ -99,11 +95,7 @@ describe('Context class', () => {
       },
     });
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockLinkedKeyInfo({
-          Unique: dsMockUtils.createMockIdentityId('someDid'),
-        })
-      ),
+      returnValue: dsMockUtils.createMockIdentityId('someDid'),
     });
 
     const middlewareApi = dsMockUtils.getMiddlewareApi();
@@ -337,11 +329,7 @@ describe('Context class', () => {
         }),
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
       dsMockUtils.createQueryStub('system', 'account', { returnValue });
 
@@ -368,11 +356,7 @@ describe('Context class', () => {
         }),
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
       dsMockUtils.createQueryStub('system', 'account', { returnValue });
 
@@ -403,11 +387,7 @@ describe('Context class', () => {
         }),
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
       dsMockUtils.createQueryStub('system', 'account').callsFake(async (_, cbFunc) => {
         cbFunc(returnValue);
@@ -447,11 +427,7 @@ describe('Context class', () => {
     test('should return the current Identity', async () => {
       const did = 'someDid';
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId(did),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId(did),
       });
 
       const context = await Context.create({
@@ -547,11 +523,7 @@ describe('Context class', () => {
         },
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
 
       const context = await Context.create({
@@ -591,11 +563,7 @@ describe('Context class', () => {
         },
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
 
       const context = await Context.create({
@@ -620,11 +588,7 @@ describe('Context class', () => {
         },
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
 
       const context = await Context.create({
@@ -669,11 +633,7 @@ describe('Context class', () => {
         },
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
 
       const context = await Context.create({
@@ -702,11 +662,7 @@ describe('Context class', () => {
         },
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
       dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(1, 2),
@@ -788,11 +744,11 @@ describe('Context class', () => {
       fakeResult = [
         {
           signer: identity,
-          permissions: [],
+          permissions: { tokens: [], portfolios: [], transactions: [] },
         },
         {
           signer: account,
-          permissions: [Permission.Full],
+          permissions: { tokens: null, portfolios: null, transactions: null },
         },
       ];
     });
@@ -806,22 +762,26 @@ describe('Context class', () => {
         secondary_keys: [
           dsMockUtils.createMockSecondaryKey({
             signer: signerIdentityId,
-            permissions: [],
+            permissions: dsMockUtils.createMockPermissions({
+              asset: [],
+              portfolio: [],
+              extrinsic: [],
+            }),
           }),
           dsMockUtils.createMockSecondaryKey({
             signer: signerAccountId,
-            permissions: [dsMockUtils.createMockPermission('Full')],
+            permissions: dsMockUtils.createMockPermissions({
+              asset: null,
+              portfolio: null,
+              extrinsic: null,
+            }),
           }),
         ],
       });
       /* eslint-enabled @typescript-eslint/camelcase */
 
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
     });
 
@@ -881,11 +841,7 @@ describe('Context class', () => {
         },
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
       dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(1, 2),
@@ -1031,7 +987,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'batchRemoveDocument', {
+      dsMockUtils.createTxStub('asset', 'updateIdentifiers', {
         meta: {
           args: [
             {
@@ -1043,7 +999,7 @@ describe('Context class', () => {
       });
 
       expect(
-        context.getTransactionArguments({ tag: TxTags.asset.BatchRemoveDocument })
+        context.getTransactionArguments({ tag: TxTags.asset.UpdateIdentifiers })
       ).toMatchObject([
         {
           type: TransactionArgumentType.Text,
@@ -1056,8 +1012,8 @@ describe('Context class', () => {
         meta: {
           args: [
             {
-              type: 'Permission',
-              name: 'permission',
+              type: 'AssetOwnershipRelation',
+              name: 'relation',
             },
           ],
         },
@@ -1066,9 +1022,9 @@ describe('Context class', () => {
       expect(context.getTransactionArguments({ tag: TxTags.asset.SetFundingRound })).toMatchObject([
         {
           type: TransactionArgumentType.SimpleEnum,
-          name: 'permission',
+          name: 'relation',
           optional: false,
-          internal: ['Full', 'Admin', 'Operator', 'SpendFunds'],
+          internal: ['NotOwned', 'TickerOwned', 'AssetOwned'],
         },
       ]);
 
@@ -1096,6 +1052,18 @@ describe('Context class', () => {
             {
               name: 'content_hash',
               type: TransactionArgumentType.Text,
+            },
+            {
+              name: 'name',
+              type: TransactionArgumentType.Text,
+            },
+            {
+              name: 'doc_type',
+              type: TransactionArgumentType.Text,
+            },
+            {
+              name: 'filing_date',
+              type: TransactionArgumentType.Date,
             },
           ],
         },
@@ -1127,11 +1095,7 @@ describe('Context class', () => {
   describe('method: issuedClaims', () => {
     beforeEach(() => {
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
     });
 
@@ -1247,11 +1211,7 @@ describe('Context class', () => {
   describe('method: queryMiddleware', () => {
     beforeEach(() => {
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
     });
 
@@ -1302,11 +1262,7 @@ describe('Context class', () => {
   describe('method: issuedClaims', () => {
     beforeEach(() => {
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
     });
 
@@ -1422,11 +1378,7 @@ describe('Context class', () => {
   describe('method: queryMiddleware', () => {
     beforeEach(() => {
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
     });
 

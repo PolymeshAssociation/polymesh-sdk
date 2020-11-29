@@ -104,7 +104,7 @@ export class CurrentIdentity extends Identity {
 
     const chunkedInstructions = await P.mapSeries(portfolioIdChunks, async portfolioIdChunk => {
       const auths = await P.map(portfolioIdChunk, portfolioId =>
-        settlement.userAuths.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
+        settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
       );
 
       const instructionIds = uniqBy(

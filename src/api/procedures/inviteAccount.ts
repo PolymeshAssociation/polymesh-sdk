@@ -90,7 +90,10 @@ export async function prepareInviteAccount(
   );
 
   const rawAuthorizationData = authorizationToAuthorizationData(
-    { type: AuthorizationType.JoinIdentity, value: [] },
+    {
+      type: AuthorizationType.JoinIdentity,
+      value: { tokens: [], transactions: [], portfolios: [] },
+    },
     context
   );
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;

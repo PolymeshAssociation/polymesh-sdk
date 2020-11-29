@@ -210,7 +210,7 @@ describe('assertInstructionValid', () => {
       instructionOptions: {
         details: {
           status: InstructionStatus.Pending,
-          type: InstructionType.SettleOnAuthorization,
+          type: InstructionType.SettleOnAffirmation,
         } as InstructionDetails,
       },
     });

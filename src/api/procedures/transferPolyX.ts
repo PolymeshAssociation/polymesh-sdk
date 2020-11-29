@@ -1,10 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
 
 import { Account, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { AccountBalance, ErrorCode } from '~/types';
 import {
-  identityIdToString,
   numberToBalance,
   signerToString,
   stringToAccountId,
@@ -26,25 +24,28 @@ export async function prepareTransferPolyX(
 ): Promise<void> {
   const {
     context: {
-      polymeshApi: {
-        query: { identity },
-        tx,
-      },
+      polymeshApi: { tx },
     },
     context,
   } = this;
 
   const { to, amount, memo } = args;
 
-  let identityId: IdentityId;
+  let toAccount: Account;
+
+  if (to instanceof Account) {
+    toAccount = to;
+  } else {
+    toAccount = new Account({ address: to }, context);
+  }
 
   const rawAccountId = stringToAccountId(signerToString(to), context);
 
   // TODO: queryMulti
-  const [{ free: freeBalance }, identityIds] = await Promise.all([
-    context.accountBalance(),
-    identity.keyToIdentityIds(rawAccountId),
-  ]);
+  const [{ free: freeBalance }, receiverIdentity] = await Promise.all<
+    AccountBalance,
+    Identity | null
+  >([context.accountBalance(), toAccount.getIdentity()]);
 
   if (amount.isGreaterThan(freeBalance)) {
     throw new PolymeshError({
@@ -56,9 +57,7 @@ export async function prepareTransferPolyX(
     });
   }
 
-  try {
-    identityId = identityIds.unwrap().asUnique;
-  } catch (err) {
+  if (!receiverIdentity) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: "The destination account doesn't have an asssociated Identity",
@@ -66,7 +65,6 @@ export async function prepareTransferPolyX(
   }
 
   const senderIdentity = await context.getCurrentIdentity();
-  const receiverIdentity = new Identity({ did: identityIdToString(identityId) }, context);
 
   // TODO: queryMulti
   const [senderCdd, receiverCdd] = await Promise.all([

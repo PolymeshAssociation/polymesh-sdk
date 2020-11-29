@@ -105,7 +105,14 @@ describe('AuthorizationRequest class', () => {
           expiry: null,
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.JoinIdentity, value: [] },
+          data: {
+            type: AuthorizationType.JoinIdentity,
+            value: {
+              tokens: null,
+              transactions: null,
+              portfolios: null,
+            },
+          },
         },
         context
       );
@@ -169,7 +176,14 @@ describe('AuthorizationRequest class', () => {
           expiry: null,
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.JoinIdentity, value: [] },
+          data: {
+            type: AuthorizationType.JoinIdentity,
+            value: {
+              tokens: null,
+              transactions: null,
+              portfolios: null,
+            },
+          },
         },
         context
       );

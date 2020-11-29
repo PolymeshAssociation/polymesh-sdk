@@ -98,11 +98,7 @@ describe('Account class', () => {
     test('should return the Identity associated to the Account', async () => {
       const did = 'someDid';
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId(did),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId(did),
       });
 
       const result = await account.getIdentity();
@@ -110,7 +106,9 @@ describe('Account class', () => {
     });
 
     test('should return null if there is no Identity associated to the Account', async () => {
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').throws();
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockIdentityId(),
+      });
 
       const result = await account.getIdentity();
 

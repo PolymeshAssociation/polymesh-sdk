@@ -66,7 +66,10 @@
     "set_history_depth": "set_history_depth",
     "reap_stash": "reap_stash",
     "submit_election_solution": "submit_election_solution",
-    "submit_election_solution_unsigned": "submit_election_solution_unsigned"
+    "submit_election_solution_unsigned": "submit_election_solution_unsigned",
+    "set_commission_cap": "set_commission_cap",
+    "payout_stakers_by_system": "payout_stakers_by_system",
+    "change_slashing_allowed_for": "change_slashing_allowed_for"
   },
   "Session": {
     "set_keys": "set_keys",
@@ -117,7 +120,12 @@
     "put_code": "put_code",
     "call": "call",
     "instantiate": "instantiate",
-    "claim_surcharge": "claim_surcharge"
+    "claim_surcharge": "claim_surcharge",
+    "freeze_instantiation": "freeze_instantiation",
+    "unfreeze_instantiation": "unfreeze_instantiation",
+    "transfer_template_ownership": "transfer_template_ownership",
+    "change_template_fees": "change_template_fees",
+    "change_template_meta_url": "change_template_meta_url"
   },
   "Treasury": {
     "disbursement": "disbursement",
@@ -130,7 +138,8 @@
     "close": "close",
     "set_release_coordinator": "set_release_coordinator",
     "vote_enact_referendum": "vote_enact_referendum",
-    "vote_reject_referendum": "vote_reject_referendum"
+    "vote_reject_referendum": "vote_reject_referendum",
+    "set_expires_after": "set_expires_after"
   },
   "CommitteeMembership": {
     "set_active_members_limit": "set_active_members_limit",
@@ -168,14 +177,16 @@
     "emergency_referendum": "emergency_referendum",
     "enact_referendum": "enact_referendum",
     "reject_referendum": "reject_referendum",
-    "override_referendum_enactment_period": "override_referendum_enactment_period"
+    "override_referendum_enactment_period": "override_referendum_enactment_period",
+    "set_pending_pip_expiry": "set_pending_pip_expiry"
   },
   "TechnicalCommittee": {
     "set_vote_threshold": "set_vote_threshold",
     "set_release_coordinator": "set_release_coordinator",
     "close": "close",
     "vote_or_propose": "vote_or_propose",
-    "vote": "vote"
+    "vote": "vote",
+    "set_expires_after": "set_expires_after"
   },
   "TechnicalCommitteeMembership": {
     "set_active_members_limit": "set_active_members_limit",
@@ -191,7 +202,8 @@
     "set_release_coordinator": "set_release_coordinator",
     "close": "close",
     "vote_or_propose": "vote_or_propose",
-    "vote": "vote"
+    "vote": "vote",
+    "set_expires_after": "set_expires_after"
   },
   "UpgradeCommitteeMembership": {
     "set_active_members_limit": "set_active_members_limit",
@@ -238,7 +250,10 @@
     "unarchive_extension": "unarchive_extension",
     "remove_primary_issuance_agent": "remove_primary_issuance_agent",
     "remove_smart_extension": "remove_smart_extension",
-    "claim_classic_ticker": "claim_classic_ticker"
+    "claim_classic_ticker": "claim_classic_ticker",
+    "add_documents": "add_documents",
+    "remove_documents": "remove_documents",
+    "reserve_classic_ticker": "reserve_classic_ticker"
   },
   "Dividend": {
     "new": "new",
@@ -282,7 +297,12 @@
     "accept_authorization": "accept_authorization",
     "batch_accept_authorization": "batch_accept_authorization",
     "batch_add_secondary_key_with_authorization": "batch_add_secondary_key_with_authorization",
-    "revoke_offchain_authorization": "revoke_offchain_authorization"
+    "revoke_offchain_authorization": "revoke_offchain_authorization",
+    "legacy_set_permission_to_signer": "legacy_set_permission_to_signer",
+    "add_secondary_keys_with_authorization": "add_secondary_keys_with_authorization",
+    "add_investor_uniqueness_claim": "add_investor_uniqueness_claim",
+    "gc_add_cdd_claim": "gc_add_cdd_claim",
+    "gc_revoke_cdd_claim": "gc_revoke_cdd_claim"
   },
   "Bridge": {
     "change_controller": "change_controller",
@@ -299,7 +319,10 @@
     "handle_bridge_tx": "handle_bridge_tx",
     "batch_handle_bridge_tx": "batch_handle_bridge_tx",
     "batch_freeze_tx": "batch_freeze_tx",
-    "batch_unfreeze_tx": "batch_unfreeze_tx"
+    "batch_unfreeze_tx": "batch_unfreeze_tx",
+    "freeze_txs": "freeze_txs",
+    "unfreeze_txs": "unfreeze_txs",
+    "handle_scheduled_bridge_tx": "handle_scheduled_bridge_tx"
   },
   "ComplianceManager": {
     "add_active_rule": "add_active_rule",
@@ -350,11 +373,20 @@
     "unclaim_receipt": "unclaim_receipt",
     "set_venue_filtering": "set_venue_filtering",
     "allow_venues": "allow_venues",
-    "disallow_venues": "disallow_venues"
+    "disallow_venues": "disallow_venues",
+    "add_and_affirm_instruction": "add_and_affirm_instruction",
+    "affirm_instruction": "affirm_instruction",
+    "withdraw_affirmation": "withdraw_affirmation",
+    "affirm_with_receipts": "affirm_with_receipts",
+    "execute_scheduled_instruction": "execute_scheduled_instruction"
   },
   "Sto": {
     "create_fundraiser": "create_fundraiser",
-    "invest": "invest"
+    "invest": "invest",
+    "freeze_fundraiser": "freeze_fundraiser",
+    "unfreeze_fundraiser": "unfreeze_fundraiser",
+    "modify_fundraiser_window": "modify_fundraiser_window",
+    "stop": "stop"
   },
   "CddServiceProviders": {
     "set_active_members_limit": "set_active_members_limit",
@@ -385,5 +417,45 @@
   "Confidential": {
     "add_range_proof": "add_range_proof",
     "add_verify_range_proof": "add_verify_range_proof"
+  },
+  "Scheduler": {
+    "schedule": "schedule",
+    "cancel": "cancel",
+    "schedule_named": "schedule_named",
+    "cancel_named": "cancel_named",
+    "schedule_after": "schedule_after",
+    "schedule_named_after": "schedule_named_after"
+  },
+  "CorporateAction": {
+    "set_max_details_length": "set_max_details_length",
+    "reset_caa": "reset_caa",
+    "set_default_targets": "set_default_targets",
+    "set_default_withholding_tax": "set_default_withholding_tax",
+    "set_did_withholding_tax": "set_did_withholding_tax",
+    "initiate_corporate_action": "initiate_corporate_action",
+    "link_ca_doc": "link_ca_doc",
+    "remove_ca": "remove_ca",
+    "change_record_date": "change_record_date"
+  },
+  "CorporateBallot": {
+    "attach_ballot": "attach_ballot",
+    "vote": "vote",
+    "change_end": "change_end",
+    "change_meta": "change_meta",
+    "change_rcv": "change_rcv",
+    "remove_ballot": "remove_ballot"
+  },
+  "CapitalDistribution": {
+    "distribute": "distribute",
+    "claim": "claim",
+    "push_benefit": "push_benefit",
+    "reclaim": "reclaim",
+    "remove_distribution": "remove_distribution"
+  },
+  "Checkpoint": {
+    "create_checkpoint": "create_checkpoint",
+    "set_schedules_max_complexity": "set_schedules_max_complexity",
+    "create_schedule": "create_schedule",
+    "remove_schedule": "remove_schedule"
   }
 }

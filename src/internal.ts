@@ -30,9 +30,9 @@ export { inviteAccount, InviteAccountParams } from '~/api/procedures/inviteAccou
 export { issueTokens, IssueTokensParams } from '~/api/procedures/issueTokens';
 export { modifyClaims, ModifyClaimsParams } from '~/api/procedures/modifyClaims';
 export {
-  modifyInstructionAuthorization,
-  ModifyInstructionAuthorizationParams,
-} from '~/api/procedures/modifyInstructionAuthorization';
+  modifyInstructionAffirmation,
+  ModifyInstructionAffirmationParams,
+} from '~/api/procedures/modifyInstructionAffirmation';
 export { modifyToken, ModifyTokenParams } from '~/api/procedures/modifyToken';
 export {
   modifyPrimaryIssuanceAgent,
@@ -81,7 +81,7 @@ export { SecurityToken } from '~/api/entities/SecurityToken';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 // NOTE uncomment in Governance v2 upgrade
 // export { Proposal } from '~/api/entities/Proposal';
-export { TrustedClaimIssuer } from '~/api/entities/TrustedClaimIssuer';
+export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
 export { Venue } from '~/api/entities/Venue';
 export { Instruction } from '~/api/entities/Instruction';
 export { Portfolio } from '~/api/entities/Portfolio';

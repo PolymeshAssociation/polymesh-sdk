@@ -98,7 +98,7 @@ export async function prepareAddInstruction(
   } else {
     ({ did } = await context.getCurrentIdentity());
 
-    endCondition = { type: InstructionType.SettleOnAuthorization } as const;
+    endCondition = { type: InstructionType.SettleOnAffirmation } as const;
   }
 
   const rawVenueId = numberToU64(venueId, context);
@@ -143,7 +143,7 @@ export async function prepareAddInstruction(
 
   if (rawPortfolios.length) {
     [newInstruction] = this.addTransaction(
-      settlement.addAndAuthorizeInstruction,
+      settlement.addAndAffirmInstruction,
       {
         resolvers: [createAddInstructionResolver(context)],
       },

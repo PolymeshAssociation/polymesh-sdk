@@ -11,6 +11,11 @@ import { Authorization, AuthorizationType, Identity, ResultSet } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+
 describe('inviteAccount procedure', () => {
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
@@ -64,7 +69,11 @@ describe('inviteAccount procedure', () => {
       Account: dsMockUtils.createMockAccountId('someAccountId'),
     });
     const rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
-      JoinIdentity: [],
+      JoinIdentity: dsMockUtils.createMockPermissions({
+        asset: null,
+        extrinsic: null,
+        portfolio: null,
+      }),
     });
     const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
@@ -75,7 +84,14 @@ describe('inviteAccount procedure', () => {
             issuer: entityMockUtils.getIdentityInstance(),
             authId,
             expiry: null,
-            data: { type: AuthorizationType.JoinIdentity, value: [] },
+            data: {
+              type: AuthorizationType.JoinIdentity,
+              value: {
+                tokens: null,
+                transactions: null,
+                portfolios: null,
+              },
+            },
           },
           mockContext
         ),
@@ -96,6 +112,8 @@ describe('inviteAccount procedure', () => {
         permissions: [],
       },
     ]);
+
+    entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
     signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);
@@ -151,6 +169,7 @@ describe('inviteAccount procedure', () => {
   test('should throw an error if the passed account is already present in the secondary keys list', async () => {
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
 
+    entityMockUtils.getAccountGetIdentityStub().resolves(null);
     mockContext.getSecondaryKeys.resolves([
       {
         signer,
@@ -169,8 +188,11 @@ describe('inviteAccount procedure', () => {
   });
 
   test('should throw an error if the passed account has a pending authorization to accept', async () => {
-    const target = new Account({ address: args.targetAccount }, mockContext);
+    const target = entityMockUtils.getAccountInstance({
+      address: args.targetAccount,
+    });
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
+
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [
         new AuthorizationRequest(
@@ -179,7 +201,14 @@ describe('inviteAccount procedure', () => {
             issuer: entityMockUtils.getIdentityInstance(),
             authId,
             expiry: null,
-            data: { type: AuthorizationType.JoinIdentity, value: [] },
+            data: {
+              type: AuthorizationType.JoinIdentity,
+              value: {
+                tokens: null,
+                transactions: null,
+                portfolios: null,
+              },
+            },
           },
           mockContext
         ),
@@ -200,6 +229,8 @@ describe('inviteAccount procedure', () => {
         permissions: [],
       },
     ]);
+
+    entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
     signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);

@@ -66,7 +66,14 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
           issuer: entityMockUtils.getIdentityInstance(),
           authId,
           expiry: null,
-          data: { type: AuthorizationType.JoinIdentity, value: [] },
+          data: {
+            type: AuthorizationType.JoinIdentity,
+            value: {
+              tokens: null,
+              transactions: null,
+              portfolios: null,
+            },
+          },
         },
         mockContext
       ),
@@ -92,7 +99,14 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
           issuer: entityMockUtils.getIdentityInstance(),
           authId,
           expiry: null,
-          data: { type: AuthorizationType.JoinIdentity, value: [] },
+          data: {
+            type: AuthorizationType.JoinIdentity,
+            value: {
+              tokens: null,
+              transactions: null,
+              portfolios: null,
+            },
+          },
         },
         mockContext
       ),
@@ -124,7 +138,14 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
           issuer: entityMockUtils.getIdentityInstance(),
           authId,
           expiry: null,
-          data: { type: AuthorizationType.JoinIdentity, value: [] },
+          data: {
+            type: AuthorizationType.JoinIdentity,
+            value: {
+              tokens: null,
+              transactions: null,
+              portfolios: null,
+            },
+          },
         },
         mockContext
       ),

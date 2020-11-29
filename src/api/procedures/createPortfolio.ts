@@ -11,10 +11,10 @@ import {
 } from '~/internal';
 import { ErrorCode } from '~/types';
 import {
-  bytesToString,
   identityIdToString,
-  stringToBytes,
   stringToIdentityId,
+  stringToText,
+  textToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { findEventRecord } from '~/utils/internal';
@@ -62,7 +62,7 @@ export async function prepareCreatePortfolio(
 
   const rawPortfolios = await portfolio.portfolios.entries(stringToIdentityId(did, context));
 
-  const portfolioNames = rawPortfolios.map(([, name]) => bytesToString(name));
+  const portfolioNames = rawPortfolios.map(([, name]) => textToString(name));
 
   if (portfolioNames.includes(portfolioName)) {
     throw new PolymeshError({
@@ -71,7 +71,7 @@ export async function prepareCreatePortfolio(
     });
   }
 
-  const rawName = stringToBytes(portfolioName, context);
+  const rawName = stringToText(portfolioName, context);
 
   const [newNumberedPortfolio] = this.addTransaction(
     tx.portfolio.createPortfolio,

@@ -8,7 +8,7 @@ export enum InstructionStatus {
 }
 
 export enum InstructionType {
-  SettleOnAuthorization = 'SettleOnAuthorization',
+  SettleOnAffirmation = 'SettleOnAffirmation',
   SettleOnBlock = 'SettleOnBlock',
 }
 
@@ -22,7 +22,7 @@ export type InstructionDetails = {
   venue: Venue;
 } & (
   | {
-      type: InstructionType.SettleOnAuthorization;
+      type: InstructionType.SettleOnAffirmation;
     }
   | {
       type: InstructionType.SettleOnBlock;
@@ -37,14 +37,14 @@ export interface Leg {
   token: SecurityToken;
 }
 
-export enum AuthorizationStatus {
+export enum AffirmationStatus {
   Unknown = 'Unknown',
   Pending = 'Pending',
-  Authorized = 'Authorized',
+  Affirmed = 'Affirmed',
   Rejected = 'Rejected',
 }
 
-export interface InstructionAuthorization {
+export interface InstructionAffirmation {
   identity: Identity;
-  authorizationStatus: AuthorizationStatus;
+  status: AffirmationStatus;
 }

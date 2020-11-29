@@ -4,7 +4,19 @@
 
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { Signer } from '@polkadot/api/types';
-import { bool, Bytes, Compact, Enum, Option, Text, u8, U8aFixed, u32, u64 } from '@polkadot/types';
+import {
+  bool,
+  Bytes,
+  Compact,
+  Enum,
+  Option,
+  Text,
+  u8,
+  U8aFixed,
+  u32,
+  u64,
+  Vec,
+} from '@polkadot/types';
 import { CompactEncodable } from '@polkadot/types/codec/Compact';
 import {
   AccountData,
@@ -30,6 +42,7 @@ import { BigNumber } from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { cloneDeep, merge, upperFirst } from 'lodash';
 import {
+  AffirmationStatus,
   AssetComplianceResult,
   AssetIdentifier,
   AssetName,
@@ -38,12 +51,12 @@ import {
   AuthIdentifier,
   Authorization,
   AuthorizationData,
-  AuthorizationStatus,
   AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
   CddId,
   CddStatus,
   Claim,
+  ClaimType as MeshClaimType,
   ComplianceRequirement,
   ComplianceRequirementResult,
   Condition,
@@ -51,9 +64,11 @@ import {
   ConditionType,
   CountryCode,
   DidRecord,
+  DispatchableName,
   Document,
   DocumentHash,
   DocumentName,
+  DocumentType,
   DocumentUri,
   FundingRoundName,
   IdentityId,
@@ -61,9 +76,10 @@ import {
   Instruction,
   InstructionStatus,
   IssueAssetItem,
-  LinkedKeyInfo,
   MovePortfolioItem,
-  Permission,
+  PalletName,
+  PalletPermissions,
+  Permissions,
   Pip,
   PipId,
   PipsMetadata,
@@ -80,6 +96,9 @@ import {
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
+  TrustedFor,
+  TrustedIssuer,
+  Venue,
   VenueDetails,
   VenueType,
 } from 'polymesh-types/types';
@@ -1169,10 +1188,18 @@ export const createMockDocumentHash = (hash?: string): DocumentHash =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockDocumentType = (name?: string): DocumentType =>
+  createMockStringCodec(name) as DocumentType;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockOption = <T extends Codec>(wrapped: T | null = null): Option<T> =>
   createMockCodec(
     {
       unwrap: () => wrapped as T,
+      unwrapOr: (val: unknown) => wrapped ?? val,
       isNone: !wrapped,
       isSome: !!wrapped,
     },
@@ -1412,10 +1439,16 @@ export const createMockSecurityToken = (token?: {
 export const createMockDocument = (document?: {
   uri: DocumentUri;
   content_hash: DocumentHash;
+  name: DocumentName;
+  doc_type: Option<DocumentType>;
+  filing_date: Option<Moment>;
 }): Document => {
   const doc = document || {
     uri: createMockDocumentUri(),
     content_hash: createMockDocumentHash(),
+    name: createMockDocumentName(),
+    doc_type: createMockOption(),
+    filing_date: createMockOption(),
   };
   return createMockCodec(
     {
@@ -1561,10 +1594,70 @@ export const createMockFundingRoundName = (roundName?: string): FundingRoundName
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPermission = (
-  permission: 'Admin' | 'Full' | 'Operator' | 'SpendFunds'
-): Permission => {
-  return createMockEnum(permission) as Permission;
+export const createMockPalletName = (name?: string): PalletName =>
+  createMockStringCodec(name) as PalletName;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockDispatchableName = (name?: string): DispatchableName =>
+  createMockStringCodec(name) as DispatchableName;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPalletPermissions = (permissions?: {
+  pallet_name: PalletName;
+  dispatchable_names: DispatchableName[] | null;
+}): PalletPermissions => {
+  const aux = permissions || { pallet_name: createMockPalletName(), dispatchable_names: null };
+
+  const { pallet_name, dispatchable_names } = aux;
+
+  const perms = {
+    pallet_name,
+    dispatchable_names: dispatchable_names
+      ? createMockOption(dispatchable_names as Vec<DispatchableName>)
+      : createMockOption(),
+  };
+
+  return createMockCodec(
+    {
+      ...perms,
+    },
+    !permissions
+  ) as PalletPermissions;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPermissions = (permissions?: {
+  asset: Ticker[] | null;
+  extrinsic: PalletPermissions[] | null;
+  portfolio: PortfolioId[] | null;
+}): Permissions => {
+  const aux = permissions || { asset: null, extrinsic: null, portfolio: null };
+
+  const { asset, extrinsic, portfolio } = aux;
+
+  const perms = {
+    asset: asset ? createMockOption(asset as Vec<Ticker>) : createMockOption(),
+    extrinsic: extrinsic
+      ? createMockOption(extrinsic as Vec<PalletPermissions>)
+      : createMockOption(),
+    portfolio: portfolio ? createMockOption(portfolio as Vec<PortfolioId>) : createMockOption(),
+  };
+
+  return createMockCodec(
+    {
+      ...perms,
+    },
+    !permissions
+  ) as Permissions;
 };
 
 /**
@@ -1578,7 +1671,7 @@ export const createMockAuthorizationData = (
     | { TransferTicker: Ticker }
     | { AddMultiSigSigner: AccountId }
     | { TransferAssetOwnership: Ticker }
-    | { JoinIdentity: Permission[] }
+    | { JoinIdentity: Permissions }
     | { TransferPrimaryIssuanceAgent: Ticker }
     | { PortfolioCustody: PortfolioId }
     | { custom: Bytes }
@@ -1622,14 +1715,6 @@ export const createMockEventRecord = (data: unknown[]): EventRecord =>
       data,
     },
   } as unknown) as EventRecord);
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockLinkedKeyInfo = (
-  linkedKeyInfo?: { Unique: IdentityId } | { Group: IdentityId[] }
-): LinkedKeyInfo => createMockEnum(linkedKeyInfo) as LinkedKeyInfo;
 
 /**
  * @hidden
@@ -1701,9 +1786,45 @@ export const createMockConditionType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockClaimType = (claimType?: ClaimType): MeshClaimType =>
+  createMockEnum(claimType) as MeshClaimType;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockTrustedFor = (
+  trustedFor?: 'Any' | { Specific: MeshClaimType[] }
+): TrustedFor => createMockEnum(trustedFor) as TrustedFor;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockTrustedIssuer = (issuer?: {
+  issuer: IdentityId;
+  trusted_for: TrustedFor;
+}): TrustedIssuer => {
+  const trustedIssuer = issuer || {
+    issuer: createMockIdentityId(),
+    trusted_for: createMockTrustedFor(),
+  };
+
+  return createMockCodec(
+    {
+      ...trustedIssuer,
+    },
+    !issuer
+  ) as TrustedIssuer;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockCondition = (condition?: {
   condition_type: ConditionType;
-  issuers: IdentityId[];
+  issuers: TrustedIssuer[];
 }): Condition => {
   const auxCondition = condition || {
     condition_type: createMockConditionType(),
@@ -1938,11 +2059,11 @@ export const createMockPipsMetadata = (metadata?: {
  */
 export const createMockSecondaryKey = (secondaryKey?: {
   signer: Signatory;
-  permissions: Permission[];
+  permissions: Permissions;
 }): MeshSecondaryKey => {
   const key = secondaryKey || {
     signer: createMockSignatory(),
-    permissions: [],
+    permissions: createMockPermissions(),
   };
   return createMockCodec(
     {
@@ -1980,6 +2101,32 @@ export const createMockVenueType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockVenue = (venue?: {
+  creator: IdentityId;
+  instructions: u64[];
+  details: VenueDetails;
+  venue_type: VenueType;
+}): Venue => {
+  const vn = venue || {
+    creator: createMockIdentityId(),
+    instructions: [],
+    details: createMockVenueDetails(),
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    venue_type: createMockVenueType(),
+  };
+
+  return createMockCodec(
+    {
+      ...vn,
+    },
+    !venue
+  ) as Venue;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockInstructionStatus = (
   instructionStatus?: 'Pending' | 'Unknown'
 ): InstructionStatus => {
@@ -1991,7 +2138,7 @@ export const createMockInstructionStatus = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSettlementType = (
-  settlementType?: 'SettleOnAuthorization' | { SettleOnBlock: u32 }
+  settlementType?: 'SettleOnAffirmation' | { SettleOnBlock: u32 }
 ): SettlementType => {
   return createMockEnum(settlementType) as SettlementType;
 };
@@ -2000,10 +2147,10 @@ export const createMockSettlementType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockAuthorizationStatus = (
-  authorizationStatus?: 'Unknown' | 'Pending' | 'Authorized' | 'Rejected'
-): AuthorizationStatus => {
-  return createMockEnum(authorizationStatus) as AuthorizationStatus;
+export const createMockAffirmationStatus = (
+  authorizationStatus?: 'Unknown' | 'Pending' | 'Affirmed' | 'Rejected'
+): AffirmationStatus => {
+  return createMockEnum(authorizationStatus) as AffirmationStatus;
 };
 
 /**

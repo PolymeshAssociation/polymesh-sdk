@@ -1,13 +1,13 @@
-import { IdentityId, Ticker } from 'polymesh-types/types';
+import { Ticker, TrustedIssuer } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
   Context,
+  DefaultTrustedClaimIssuer,
   modifyTokenTrustedClaimIssuers,
   Namespace,
   SecurityToken,
   TransactionQueue,
-  TrustedClaimIssuer,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
@@ -141,8 +141,8 @@ describe('TrustedClaimIssuers class', () => {
     let context: Context;
     let token: SecurityToken;
     let expectedDids: string[];
-    let expectedTrustedClaimIssuers: TrustedClaimIssuer[];
-    let claimIssuers: IdentityId[];
+    let expectedTrustedClaimIssuers: DefaultTrustedClaimIssuer[];
+    let claimIssuers: TrustedIssuer[];
 
     let trustedClaimIssuerStub: sinon.SinonStub;
 
@@ -161,8 +161,14 @@ describe('TrustedClaimIssuers class', () => {
       claimIssuers = [];
 
       expectedDids.forEach(did => {
-        expectedTrustedClaimIssuers.push(new TrustedClaimIssuer({ did, ticker }, context));
-        claimIssuers.push(dsMockUtils.createMockIdentityId(did));
+        expectedTrustedClaimIssuers.push(new DefaultTrustedClaimIssuer({ did, ticker }, context));
+        claimIssuers.push(
+          dsMockUtils.createMockTrustedIssuer({
+            issuer: dsMockUtils.createMockIdentityId(did),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+          })
+        );
       });
 
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);

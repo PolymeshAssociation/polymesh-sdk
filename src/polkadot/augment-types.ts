@@ -598,6 +598,7 @@ import { Multiplier } from '@polkadot/types/interfaces/txpayment';
 import { Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
 import { VestingInfo } from '@polkadot/types/interfaces/vesting';
 import {
+  AffirmationStatus,
   AssetCompliance,
   AssetComplianceResult,
   AssetDidResult,
@@ -609,23 +610,36 @@ import {
   Authorization,
   AuthorizationData,
   AuthorizationNonce,
-  AuthorizationStatus,
   AuthorizationType,
   Ballot,
+  BallotMeta,
+  BallotTimeRange,
+  BallotTitle,
+  BallotVote,
   BatchAddClaimItem,
   BatchRevokeClaimItem,
   Beneficiary,
   BridgeTx,
   BridgeTxDetail,
   BridgeTxStatus,
+  CACheckpoint,
+  CADetails,
+  CAId,
+  CAKind,
+  CalendarPeriod,
+  CalendarUnit,
   CanTransferResult,
   CappedFee,
   CddId,
   CddStatus,
+  CheckpointId,
+  CheckpointSchedule,
+  ChoiceTitle,
   Claim,
   Claim1stKey,
   Claim2ndKey,
   ClaimType,
+  ClassicTickerImport,
   ClassicTickerRegistration,
   Commission,
   Committee,
@@ -634,6 +648,7 @@ import {
   Condition,
   ConditionResult,
   ConditionType,
+  CorporateAction,
   Counter,
   CountryCode,
   DepositInfo,
@@ -641,15 +656,21 @@ import {
   DidRecords,
   DidRecordsSuccess,
   DidStatus,
+  DispatchableName,
+  Distribution,
   Dividend,
   Document,
   DocumentHash,
+  DocumentId,
   DocumentName,
+  DocumentType,
   DocumentUri,
+  EventDid,
+  ExtVersion,
+  ExtensionAttributes,
   FeeOf,
   FundingRoundName,
   Fundraiser,
-  HandledTxStatus,
   HistoricalVotingByAddress,
   HistoricalVotingById,
   IdentityClaim,
@@ -667,16 +688,25 @@ import {
   KeyIdentityData,
   Leg,
   LegStatus,
-  LinkedKeyInfo,
+  LegacyPalletPermissions,
+  LegacyPermissions,
+  LocalCAId,
+  MaybeBlock,
   Memo,
+  MetaDescription,
+  MetaUrl,
+  MetaVersion,
   Motion,
   MotionInfoLink,
   MotionTitle,
   MovePortfolioItem,
   OffChainSignature,
   OfflineSlashingParams,
+  PalletName,
+  PalletPermissions,
+  Payload,
   PendingTx,
-  Permission,
+  Permissions,
   Pip,
   PipDescription,
   PipId,
@@ -688,6 +718,7 @@ import {
   PortfolioNumber,
   PosRatio,
   PreAuthorizedKeyInfo,
+  PriceTier,
   ProportionMatch,
   ProposalData,
   ProposalDetails,
@@ -698,11 +729,16 @@ import {
   ProverTickerKey,
   Receipt,
   ReceiptDetails,
+  ReceiptMetadata,
+  RecordDate,
+  RecordDateSpec,
   Referendum,
   ReferendumState,
   ReferendumType,
   RestrictionResult,
   STO,
+  ScheduleId,
+  ScheduleSpec,
   Scope,
   ScopeId,
   SecondaryKey,
@@ -712,6 +748,7 @@ import {
   Signatory,
   SimpleTokenRecord,
   SkippedCount,
+  SlashingSwitch,
   SmartExtension,
   SmartExtensionName,
   SmartExtensionType,
@@ -719,13 +756,21 @@ import {
   SnapshotMetadata,
   SnapshotResult,
   SnapshottedPip,
+  StoredSchedule,
   TargetIdAuthorization,
+  TargetIdentities,
   TargetIdentity,
+  TargetTreatment,
+  Tax,
+  TemplateDetails,
+  TemplateMetadata,
   Ticker,
   TickerRangeProof,
   TickerRegistration,
   TickerRegistrationConfig,
   TickerTransferApproval,
+  TrustedFor,
+  TrustedIssuer,
   UniqueCall,
   Url,
   Venue,
@@ -2482,6 +2527,9 @@ declare module '@polkadot/types/types/registry' {
     IdentityId: IdentityId;
     'Option<IdentityId>': Option<IdentityId>;
     'Vec<IdentityId>': Vec<IdentityId>;
+    EventDid: EventDid;
+    'Option<EventDid>': Option<EventDid>;
+    'Vec<EventDid>': Vec<EventDid>;
     InvestorUid: InvestorUid;
     'Option<InvestorUid>': Option<InvestorUid>;
     'Vec<InvestorUid>': Vec<InvestorUid>;
@@ -2497,6 +2545,10 @@ declare module '@polkadot/types/types/registry' {
     PosRatio: PosRatio;
     'Option<PosRatio>': Option<PosRatio>;
     'Vec<PosRatio>': Vec<PosRatio>;
+    DocumentId: DocumentId;
+    'Compact<DocumentId>': Compact<DocumentId>;
+    'Option<DocumentId>': Option<DocumentId>;
+    'Vec<DocumentId>': Vec<DocumentId>;
     DocumentName: DocumentName;
     'Option<DocumentName>': Option<DocumentName>;
     'Vec<DocumentName>': Vec<DocumentName>;
@@ -2506,6 +2558,9 @@ declare module '@polkadot/types/types/registry' {
     DocumentHash: DocumentHash;
     'Option<DocumentHash>': Option<DocumentHash>;
     'Vec<DocumentHash>': Vec<DocumentHash>;
+    DocumentType: DocumentType;
+    'Option<DocumentType>': Option<DocumentType>;
+    'Vec<DocumentType>': Vec<DocumentType>;
     Document: Document;
     'Option<Document>': Option<Document>;
     'Vec<Document>': Vec<Document>;
@@ -2530,12 +2585,24 @@ declare module '@polkadot/types/types/registry' {
     SecurityToken: SecurityToken;
     'Option<SecurityToken>': Option<SecurityToken>;
     'Vec<SecurityToken>': Vec<SecurityToken>;
-    LinkedKeyInfo: LinkedKeyInfo;
-    'Option<LinkedKeyInfo>': Option<LinkedKeyInfo>;
-    'Vec<LinkedKeyInfo>': Vec<LinkedKeyInfo>;
-    Permission: Permission;
-    'Option<Permission>': Option<Permission>;
-    'Vec<Permission>': Vec<Permission>;
+    PalletName: PalletName;
+    'Option<PalletName>': Option<PalletName>;
+    'Vec<PalletName>': Vec<PalletName>;
+    DispatchableName: DispatchableName;
+    'Option<DispatchableName>': Option<DispatchableName>;
+    'Vec<DispatchableName>': Vec<DispatchableName>;
+    PalletPermissions: PalletPermissions;
+    'Option<PalletPermissions>': Option<PalletPermissions>;
+    'Vec<PalletPermissions>': Vec<PalletPermissions>;
+    Permissions: Permissions;
+    'Option<Permissions>': Option<Permissions>;
+    'Vec<Permissions>': Vec<Permissions>;
+    LegacyPalletPermissions: LegacyPalletPermissions;
+    'Option<LegacyPalletPermissions>': Option<LegacyPalletPermissions>;
+    'Vec<LegacyPalletPermissions>': Vec<LegacyPalletPermissions>;
+    LegacyPermissions: LegacyPermissions;
+    'Option<LegacyPermissions>': Option<LegacyPermissions>;
+    'Vec<LegacyPermissions>': Vec<LegacyPermissions>;
     Signatory: Signatory;
     'Option<Signatory>': Option<Signatory>;
     'Vec<Signatory>': Vec<Signatory>;
@@ -2587,6 +2654,12 @@ declare module '@polkadot/types/types/registry' {
     ConditionType: ConditionType;
     'Option<ConditionType>': Option<ConditionType>;
     'Vec<ConditionType>': Vec<ConditionType>;
+    TrustedFor: TrustedFor;
+    'Option<TrustedFor>': Option<TrustedFor>;
+    'Vec<TrustedFor>': Vec<TrustedFor>;
+    TrustedIssuer: TrustedIssuer;
+    'Option<TrustedIssuer>': Option<TrustedIssuer>;
+    'Vec<TrustedIssuer>': Vec<TrustedIssuer>;
     Condition: Condition;
     'Option<Condition>': Option<Condition>;
     'Vec<Condition>': Vec<Condition>;
@@ -2621,18 +2694,39 @@ declare module '@polkadot/types/types/registry' {
     ClassicTickerRegistration: ClassicTickerRegistration;
     'Option<ClassicTickerRegistration>': Option<ClassicTickerRegistration>;
     'Vec<ClassicTickerRegistration>': Vec<ClassicTickerRegistration>;
+    ClassicTickerImport: ClassicTickerImport;
+    'Option<ClassicTickerImport>': Option<ClassicTickerImport>;
+    'Vec<ClassicTickerImport>': Vec<ClassicTickerImport>;
     MotionTitle: MotionTitle;
     'Option<MotionTitle>': Option<MotionTitle>;
     'Vec<MotionTitle>': Vec<MotionTitle>;
     MotionInfoLink: MotionInfoLink;
     'Option<MotionInfoLink>': Option<MotionInfoLink>;
     'Vec<MotionInfoLink>': Vec<MotionInfoLink>;
+    ChoiceTitle: ChoiceTitle;
+    'Option<ChoiceTitle>': Option<ChoiceTitle>;
+    'Vec<ChoiceTitle>': Vec<ChoiceTitle>;
     Motion: Motion;
     'Option<Motion>': Option<Motion>;
     'Vec<Motion>': Vec<Motion>;
     Ballot: Ballot;
     'Option<Ballot>': Option<Ballot>;
     'Vec<Ballot>': Vec<Ballot>;
+    BallotTitle: BallotTitle;
+    'Option<BallotTitle>': Option<BallotTitle>;
+    'Vec<BallotTitle>': Vec<BallotTitle>;
+    BallotMeta: BallotMeta;
+    'Option<BallotMeta>': Option<BallotMeta>;
+    'Vec<BallotMeta>': Vec<BallotMeta>;
+    BallotTimeRange: BallotTimeRange;
+    'Option<BallotTimeRange>': Option<BallotTimeRange>;
+    'Vec<BallotTimeRange>': Vec<BallotTimeRange>;
+    BallotVote: BallotVote;
+    'Option<BallotVote>': Option<BallotVote>;
+    'Vec<BallotVote>': Vec<BallotVote>;
+    MaybeBlock: MaybeBlock;
+    'Option<MaybeBlock>': Option<MaybeBlock>;
+    'Vec<MaybeBlock>': Vec<MaybeBlock>;
     Url: Url;
     'Option<Url>': Option<Url>;
     'Vec<Url>': Vec<Url>;
@@ -2720,6 +2814,26 @@ declare module '@polkadot/types/types/registry' {
     SmartExtension: SmartExtension;
     'Option<SmartExtension>': Option<SmartExtension>;
     'Vec<SmartExtension>': Vec<SmartExtension>;
+    MetaUrl: MetaUrl;
+    'Option<MetaUrl>': Option<MetaUrl>;
+    'Vec<MetaUrl>': Vec<MetaUrl>;
+    MetaDescription: MetaDescription;
+    'Option<MetaDescription>': Option<MetaDescription>;
+    'Vec<MetaDescription>': Vec<MetaDescription>;
+    MetaVersion: MetaVersion;
+    'Compact<MetaVersion>': Compact<MetaVersion>;
+    'Option<MetaVersion>': Option<MetaVersion>;
+    'Vec<MetaVersion>': Vec<MetaVersion>;
+    ExtVersion: ExtVersion;
+    'Compact<ExtVersion>': Compact<ExtVersion>;
+    'Option<ExtVersion>': Option<ExtVersion>;
+    'Vec<ExtVersion>': Vec<ExtVersion>;
+    TemplateMetadata: TemplateMetadata;
+    'Option<TemplateMetadata>': Option<TemplateMetadata>;
+    'Vec<TemplateMetadata>': Vec<TemplateMetadata>;
+    TemplateDetails: TemplateDetails;
+    'Option<TemplateDetails>': Option<TemplateDetails>;
+    'Vec<TemplateDetails>': Vec<TemplateDetails>;
     ProportionMatch: ProportionMatch;
     'Option<ProportionMatch>': Option<ProportionMatch>;
     'Vec<ProportionMatch>': Vec<ProportionMatch>;
@@ -2812,9 +2926,6 @@ declare module '@polkadot/types/types/registry' {
     BridgeTxStatus: BridgeTxStatus;
     'Option<BridgeTxStatus>': Option<BridgeTxStatus>;
     'Vec<BridgeTxStatus>': Vec<BridgeTxStatus>;
-    HandledTxStatus: HandledTxStatus;
-    'Option<HandledTxStatus>': Option<HandledTxStatus>;
-    'Vec<HandledTxStatus>': Vec<HandledTxStatus>;
     CappedFee: CappedFee;
     'Compact<CappedFee>': Compact<CappedFee>;
     'Option<CappedFee>': Option<CappedFee>;
@@ -2856,15 +2967,38 @@ declare module '@polkadot/types/types/registry' {
     TickerRangeProof: TickerRangeProof;
     'Option<TickerRangeProof>': Option<TickerRangeProof>;
     'Vec<TickerRangeProof>': Vec<TickerRangeProof>;
+    CalendarUnit: CalendarUnit;
+    'Option<CalendarUnit>': Option<CalendarUnit>;
+    'Vec<CalendarUnit>': Vec<CalendarUnit>;
+    CalendarPeriod: CalendarPeriod;
+    'Option<CalendarPeriod>': Option<CalendarPeriod>;
+    'Vec<CalendarPeriod>': Vec<CalendarPeriod>;
+    CheckpointSchedule: CheckpointSchedule;
+    'Option<CheckpointSchedule>': Option<CheckpointSchedule>;
+    'Vec<CheckpointSchedule>': Vec<CheckpointSchedule>;
+    CheckpointId: CheckpointId;
+    'Compact<CheckpointId>': Compact<CheckpointId>;
+    'Option<CheckpointId>': Option<CheckpointId>;
+    'Vec<CheckpointId>': Vec<CheckpointId>;
+    ScheduleId: ScheduleId;
+    'Compact<ScheduleId>': Compact<ScheduleId>;
+    'Option<ScheduleId>': Option<ScheduleId>;
+    'Vec<ScheduleId>': Vec<ScheduleId>;
+    StoredSchedule: StoredSchedule;
+    'Option<StoredSchedule>': Option<StoredSchedule>;
+    'Vec<StoredSchedule>': Vec<StoredSchedule>;
+    ScheduleSpec: ScheduleSpec;
+    'Option<ScheduleSpec>': Option<ScheduleSpec>;
+    'Vec<ScheduleSpec>': Vec<ScheduleSpec>;
     InstructionStatus: InstructionStatus;
     'Option<InstructionStatus>': Option<InstructionStatus>;
     'Vec<InstructionStatus>': Vec<InstructionStatus>;
     LegStatus: LegStatus;
     'Option<LegStatus>': Option<LegStatus>;
     'Vec<LegStatus>': Vec<LegStatus>;
-    AuthorizationStatus: AuthorizationStatus;
-    'Option<AuthorizationStatus>': Option<AuthorizationStatus>;
-    'Vec<AuthorizationStatus>': Vec<AuthorizationStatus>;
+    AffirmationStatus: AffirmationStatus;
+    'Option<AffirmationStatus>': Option<AffirmationStatus>;
+    'Vec<AffirmationStatus>': Vec<AffirmationStatus>;
     SettlementType: SettlementType;
     'Option<SettlementType>': Option<SettlementType>;
     'Vec<SettlementType>': Vec<SettlementType>;
@@ -2880,6 +3014,9 @@ declare module '@polkadot/types/types/registry' {
     Receipt: Receipt;
     'Option<Receipt>': Option<Receipt>;
     'Vec<Receipt>': Vec<Receipt>;
+    ReceiptMetadata: ReceiptMetadata;
+    'Option<ReceiptMetadata>': Option<ReceiptMetadata>;
+    'Vec<ReceiptMetadata>': Vec<ReceiptMetadata>;
     ReceiptDetails: ReceiptDetails;
     'Option<ReceiptDetails>': Option<ReceiptDetails>;
     'Vec<ReceiptDetails>': Vec<ReceiptDetails>;
@@ -2898,5 +3035,55 @@ declare module '@polkadot/types/types/registry' {
     VenueType: VenueType;
     'Option<VenueType>': Option<VenueType>;
     'Vec<VenueType>': Vec<VenueType>;
+    Payload: Payload;
+    'Option<Payload>': Option<Payload>;
+    'Vec<Payload>': Vec<Payload>;
+    ExtensionAttributes: ExtensionAttributes;
+    'Option<ExtensionAttributes>': Option<ExtensionAttributes>;
+    'Vec<ExtensionAttributes>': Vec<ExtensionAttributes>;
+    Tax: Tax;
+    'Compact<Tax>': Compact<Tax>;
+    'Option<Tax>': Option<Tax>;
+    'Vec<Tax>': Vec<Tax>;
+    TargetIdentities: TargetIdentities;
+    'Option<TargetIdentities>': Option<TargetIdentities>;
+    'Vec<TargetIdentities>': Vec<TargetIdentities>;
+    TargetTreatment: TargetTreatment;
+    'Option<TargetTreatment>': Option<TargetTreatment>;
+    'Vec<TargetTreatment>': Vec<TargetTreatment>;
+    CAKind: CAKind;
+    'Option<CAKind>': Option<CAKind>;
+    'Vec<CAKind>': Vec<CAKind>;
+    CADetails: CADetails;
+    'Option<CADetails>': Option<CADetails>;
+    'Vec<CADetails>': Vec<CADetails>;
+    CACheckpoint: CACheckpoint;
+    'Option<CACheckpoint>': Option<CACheckpoint>;
+    'Vec<CACheckpoint>': Vec<CACheckpoint>;
+    RecordDate: RecordDate;
+    'Option<RecordDate>': Option<RecordDate>;
+    'Vec<RecordDate>': Vec<RecordDate>;
+    RecordDateSpec: RecordDateSpec;
+    'Option<RecordDateSpec>': Option<RecordDateSpec>;
+    'Vec<RecordDateSpec>': Vec<RecordDateSpec>;
+    CorporateAction: CorporateAction;
+    'Option<CorporateAction>': Option<CorporateAction>;
+    'Vec<CorporateAction>': Vec<CorporateAction>;
+    LocalCAId: LocalCAId;
+    'Compact<LocalCAId>': Compact<LocalCAId>;
+    'Option<LocalCAId>': Option<LocalCAId>;
+    'Vec<LocalCAId>': Vec<LocalCAId>;
+    CAId: CAId;
+    'Option<CAId>': Option<CAId>;
+    'Vec<CAId>': Vec<CAId>;
+    Distribution: Distribution;
+    'Option<Distribution>': Option<Distribution>;
+    'Vec<Distribution>': Vec<Distribution>;
+    SlashingSwitch: SlashingSwitch;
+    'Option<SlashingSwitch>': Option<SlashingSwitch>;
+    'Vec<SlashingSwitch>': Vec<SlashingSwitch>;
+    PriceTier: PriceTier;
+    'Option<PriceTier>': Option<PriceTier>;
+    'Vec<PriceTier>': Vec<PriceTier>;
   }
 }

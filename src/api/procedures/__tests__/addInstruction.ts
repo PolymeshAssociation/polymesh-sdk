@@ -32,7 +32,7 @@ describe('addInstruction procedure', () => {
   let endConditionToSettlementTypeStub: sinon.SinonStub<
     [
       (
-        | { type: InstructionType.SettleOnAuthorization }
+        | { type: InstructionType.SettleOnAffirmation }
         | { type: InstructionType.SettleOnBlock; value: BigNumber }
       ),
       Context
@@ -108,7 +108,7 @@ describe('addInstruction procedure', () => {
     rawToken = dsMockUtils.createMockTicker(token);
     rawValidFrom = dsMockUtils.createMockMoment(validFrom.getTime());
     rawEndBlock = dsMockUtils.createMockU32(endBlock.toNumber());
-    rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAuthorization');
+    rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAffirmation');
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
     rawLeg = {
       from: rawFrom,
@@ -158,7 +158,7 @@ describe('addInstruction procedure', () => {
 
     addAndAuthorizeInstructionTransaction = dsMockUtils.createTxStub(
       'settlement',
-      'addAndAuthorizeInstruction'
+      'addAndAffirmInstruction'
     );
     addInstructionTransaction = dsMockUtils.createTxStub('settlement', 'addInstruction');
 
@@ -179,7 +179,7 @@ describe('addInstruction procedure', () => {
       .withArgs({ type: InstructionType.SettleOnBlock, value: endBlock }, mockContext)
       .returns(rawBlockSettlementType);
     endConditionToSettlementTypeStub
-      .withArgs({ type: InstructionType.SettleOnAuthorization }, mockContext)
+      .withArgs({ type: InstructionType.SettleOnAffirmation }, mockContext)
       .returns(rawAuthSettlementType);
     dateToMomentStub.withArgs(validFrom, mockContext).returns(rawValidFrom);
   });

@@ -1,31 +1,31 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { AuthorizationStatus as MeshAuthorizationStatus, PortfolioId } from 'polymesh-types/types';
+import { AffirmationStatus as MeshAffirmationStatus, PortfolioId } from 'polymesh-types/types';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Instruction, PolymeshError, Procedure } from '~/internal';
-import { AuthorizationStatus, ErrorCode } from '~/types';
-import { InstructionAuthorizationOperation, PolymeshTx } from '~/types/internal';
+import { AffirmationStatus, ErrorCode } from '~/types';
+import { InstructionAffirmationOperation, PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
-  meshAuthorizationStatusToAuthorizationStatus,
+  meshAffirmationStatusToAffirmationStatus,
   numberToU64,
   portfolioIdToMeshPortfolioId,
-  portfolioLikeToPortfolioId,
+  portfolioToPortfolioId,
 } from '~/utils/conversion';
 
-export interface ModifyInstructionAuthorizationParams {
+export interface ModifyInstructionAffirmationParams {
   id: BigNumber;
-  operation: InstructionAuthorizationOperation;
+  operation: InstructionAffirmationOperation;
 }
 
 /**
  * @hidden
  */
-export async function prepareModifyInstructionAuthorization(
-  this: Procedure<ModifyInstructionAuthorizationParams, Instruction>,
-  args: ModifyInstructionAuthorizationParams
+export async function prepareModifyInstructionAffirmation(
+  this: Procedure<ModifyInstructionAffirmationParams, Instruction>,
+  args: ModifyInstructionAffirmationParams
 ): Promise<Instruction> {
   const {
     context: {
@@ -48,27 +48,27 @@ export async function prepareModifyInstructionAuthorization(
   const rawInstructionId = numberToU64(id, context);
   const rawPortfolioIds: PortfolioId[] = [];
 
-  const excludeCriteria: AuthorizationStatus[] = [];
+  const excludeCriteria: AffirmationStatus[] = [];
   let errorMessage: string;
   let transaction: PolymeshTx<[u64, PortfolioId[]]>;
 
   switch (operation) {
-    case InstructionAuthorizationOperation.Authorize: {
-      excludeCriteria.push(AuthorizationStatus.Authorized);
-      errorMessage = 'The Instruction is already authorized';
-      transaction = settlementTx.authorizeInstruction;
+    case InstructionAffirmationOperation.Affirm: {
+      excludeCriteria.push(AffirmationStatus.Affirmed);
+      errorMessage = 'The Instruction is already affirmed';
+      transaction = settlementTx.affirmInstruction;
 
       break;
     }
-    case InstructionAuthorizationOperation.Unauthorize: {
-      excludeCriteria.push(AuthorizationStatus.Pending, AuthorizationStatus.Rejected);
-      errorMessage = 'The instruction is not authorized';
-      transaction = settlementTx.unauthorizeInstruction;
+    case InstructionAffirmationOperation.Withdraw: {
+      excludeCriteria.push(AffirmationStatus.Pending, AffirmationStatus.Rejected);
+      errorMessage = 'The instruction is not affirmed';
+      transaction = settlementTx.withdrawAffirmation;
 
       break;
     }
-    case InstructionAuthorizationOperation.Reject: {
-      excludeCriteria.push(AuthorizationStatus.Rejected);
+    case InstructionAffirmationOperation.Reject: {
+      excludeCriteria.push(AffirmationStatus.Rejected);
       errorMessage = 'The Instruction cannot be rejected';
       transaction = settlementTx.rejectInstruction;
 
@@ -78,10 +78,8 @@ export async function prepareModifyInstructionAuthorization(
 
   await Promise.all([
     P.map(legs, async ({ from, to }) => {
-      const [fromId, toId] = await Promise.all([
-        portfolioLikeToPortfolioId(from, context),
-        portfolioLikeToPortfolioId(to, context),
-      ]);
+      const fromId = portfolioToPortfolioId(from);
+      const toId = portfolioToPortfolioId(to);
 
       const [fromIsCustodied, toIsCustodied] = await Promise.all([
         from.isCustodiedBy(),
@@ -100,16 +98,14 @@ export async function prepareModifyInstructionAuthorization(
 
   const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
 
-  const rawAuthorizationStatuses = await settlement.userAuths.multi<MeshAuthorizationStatus>(
+  const rawAffirmationStatuses = await settlement.userAffirmations.multi<MeshAffirmationStatus>(
     multiArgs
   );
 
-  const authorizationStatuses = rawAuthorizationStatuses.map(
-    meshAuthorizationStatusToAuthorizationStatus
-  );
+  const affirmationStatuses = rawAffirmationStatuses.map(meshAffirmationStatusToAffirmationStatus);
 
   const validPortfolioIds = rawPortfolioIds.filter(
-    (_, index) => !excludeCriteria.includes(authorizationStatuses[index])
+    (_, index) => !excludeCriteria.includes(affirmationStatuses[index])
   );
 
   if (!validPortfolioIds.length) {
@@ -127,4 +123,4 @@ export async function prepareModifyInstructionAuthorization(
 /**
  * @hidden
  */
-export const modifyInstructionAuthorization = new Procedure(prepareModifyInstructionAuthorization);
+export const modifyInstructionAffirmation = new Procedure(prepareModifyInstructionAffirmation);

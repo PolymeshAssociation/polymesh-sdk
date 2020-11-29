@@ -100,16 +100,15 @@ export class Account extends Entity<UniqueIdentifiers> {
       address,
     } = this;
 
-    try {
-      const identityIdWrapper = await identity.keyToIdentityIds(
-        stringToAccountId(address, context)
-      );
-      const did = identityIdToString(identityIdWrapper.unwrap().asUnique);
+    const identityId = await identity.keyToIdentityIds(stringToAccountId(address, context));
 
-      return new Identity({ did }, context);
-    } catch (err) {
+    if (identityId.isEmpty) {
       return null;
     }
+
+    const did = identityIdToString(identityId);
+
+    return new Identity({ did }, context);
   }
 
   /**

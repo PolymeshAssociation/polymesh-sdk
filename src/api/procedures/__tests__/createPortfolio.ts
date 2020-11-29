@@ -1,4 +1,4 @@
-import { Bytes, u64 } from '@polkadot/types';
+import { Text, u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId, PortfolioName } from 'polymesh-types/types';
@@ -19,22 +19,22 @@ import * as utilsInternalModule from '~/utils/internal';
 describe('createPortfolio procedure', () => {
   let mockContext: Mocked<Context>;
   let numberedPortfolio: PostTransactionValue<NumberedPortfolio>;
-  let bytesToStringStub: sinon.SinonStub<[Bytes], string>;
-  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
+  let textToStringStub: sinon.SinonStub<[Text], string>;
+  let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
   let rawPortfolios: [PortfolioName][];
   let portfolioEntries: [[], PortfolioName][];
   let portfolioNames: { name: string }[];
   let newPortfolioName: string;
   let addTransactionStub: sinon.SinonStub;
-  let rawNewPortfolioName: Bytes;
+  let rawNewPortfolioName: Text;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     numberedPortfolio = ('numberedPortfolio' as unknown) as PostTransactionValue<NumberedPortfolio>;
-    bytesToStringStub = sinon.stub(utilsConversionModule, 'bytesToString');
-    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
+    textToStringStub = sinon.stub(utilsConversionModule, 'textToString');
+    stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
 
     portfolioNames = [
       {
@@ -42,19 +42,19 @@ describe('createPortfolio procedure', () => {
       },
     ];
 
-    rawPortfolios = portfolioNames.map(({ name }) => tuple(dsMockUtils.createMockBytes(name)));
+    rawPortfolios = portfolioNames.map(({ name }) => tuple(dsMockUtils.createMockText(name)));
 
     portfolioEntries = rawPortfolios.map(([name]) => tuple([], name));
 
     newPortfolioName = 'newPortfolioName';
-    rawNewPortfolioName = dsMockUtils.createMockBytes(newPortfolioName);
+    rawNewPortfolioName = dsMockUtils.createMockText(newPortfolioName);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([numberedPortfolio]);
-    bytesToStringStub.withArgs(rawPortfolios[0][0]).returns(portfolioNames[0].name);
-    stringToBytesStub.withArgs(newPortfolioName, mockContext).returns(rawNewPortfolioName);
+    textToStringStub.withArgs(rawPortfolios[0][0]).returns(portfolioNames[0].name);
+    stringToTextStub.withArgs(newPortfolioName, mockContext).returns(rawNewPortfolioName);
 
     dsMockUtils.createQueryStub('portfolio', 'portfolios', {
       entries: [portfolioEntries[0]],

@@ -2,7 +2,12 @@ import P from 'bluebird';
 
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
 import { tuple } from '~/types/utils';
-import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
+import {
+  booleanToBool,
+  numberToU64,
+  signerToSignerValue,
+  signerValueToSignatory,
+} from '~/utils/conversion';
 import { getDid } from '~/utils/internal';
 
 export interface ConsumeParams {
@@ -37,10 +42,12 @@ export async function prepareConsumeAuthorizationRequests(
     const requestIds = liveRequests.map(({ authId }) => tuple(numberToU64(authId, context)));
     this.addBatchTransaction(tx.identity.acceptAuthorization, {}, requestIds);
   } else {
+    const falseBool = booleanToBool(false, context);
     const authIdentifiers = liveRequests.map(({ authId, target }) =>
       tuple(
         signerValueToSignatory(signerToSignerValue(target), context),
-        numberToU64(authId, context)
+        numberToU64(authId, context),
+        falseBool
       )
     );
     this.addBatchTransaction(tx.identity.removeAuthorization, {}, authIdentifiers);
