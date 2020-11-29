@@ -12,6 +12,10 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
 
 describe('transferPolyX procedure', () => {
   let mockContext: Mocked<Context>;
@@ -52,7 +56,7 @@ describe('transferPolyX procedure', () => {
   });
 
   test("should throw an error if destination account doesn't have an associated Identity", () => {
-    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
+    entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
     const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
 
@@ -98,10 +102,10 @@ describe('transferPolyX procedure', () => {
   });
 
   test('should add a balance transfer transaction to the queue', async () => {
-    const to = 'someAccount';
+    const to = entityMockUtils.getAccountInstance({ address: 'someAccount' });
     const amount = new BigNumber(99);
     const memo = 'someMessage';
-    const rawAccount = dsMockUtils.createMockAccountId(to);
+    const rawAccount = dsMockUtils.createMockAccountId(to.address);
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
     const rawMemo = ('memo' as unknown) as Memo;
 

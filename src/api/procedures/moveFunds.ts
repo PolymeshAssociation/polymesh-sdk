@@ -54,9 +54,10 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     owner: { did: toDid },
   } = toPortfolio;
 
-  const fromPortfolioId = portfolioToPortfolioId(fromPortfolio);
-
-  const toPortfolioId = await portfolioLikeToPortfolioId(toPortfolio, context);
+  const [fromPortfolioId, toPortfolioId] = await Promise.all([
+    portfolioLikeToPortfolioId(fromPortfolio, context),
+    portfolioLikeToPortfolioId(toPortfolio, context),
+  ]);
 
   if (fromDid !== toDid) {
     throw new PolymeshError({

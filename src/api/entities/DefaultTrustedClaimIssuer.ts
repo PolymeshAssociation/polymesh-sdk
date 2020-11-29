@@ -36,9 +36,9 @@ export class DefaultTrustedClaimIssuer extends Entity<UniqueIdentifiers> {
   public identity: Identity;
 
   /**
-   * claim types for which this Claim Issuer is trusted
+   * claim types for which this Claim Issuer is trusted. A null value means all claim types are trusted
    */
-  public trustedFor?: ClaimType[];
+  public trustedFor: ClaimType[] | null;
 
   /**
    * ticker of the Security Token
@@ -49,7 +49,7 @@ export class DefaultTrustedClaimIssuer extends Entity<UniqueIdentifiers> {
    * @hidden
    */
   public constructor(args: UniqueIdentifiers & Params, context: Context) {
-    const { trustedFor, ...identifiers } = args;
+    const { trustedFor = null, ...identifiers } = args;
 
     super(identifiers, context);
 

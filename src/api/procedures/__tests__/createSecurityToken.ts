@@ -6,7 +6,6 @@ import {
   AssetName,
   AssetType,
   Document,
-  DocumentName,
   FundingRoundName,
   Ticker,
 } from 'polymesh-types/types';
@@ -30,7 +29,6 @@ import {
   TokenType,
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -69,7 +67,6 @@ describe('createSecurityToken procedure', () => {
   let rawIdentifiers: AssetIdentifier[];
   let rawFundingRound: FundingRoundName;
   let rawDocuments: Document[];
-  let rawDocumentTuples: [DocumentName, Document][];
   let args: Params;
 
   beforeAll(() => {
@@ -132,9 +129,6 @@ describe('createSecurityToken procedure', () => {
         ),
         /* eslint-enable @typescript-eslint/camelcase */
       })
-    );
-    rawDocumentTuples = documents.map(({ name: documentName }, index) =>
-      tuple(dsMockUtils.createMockDocumentName(documentName), rawDocuments[index])
     );
     rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
     args = {
@@ -276,8 +270,8 @@ describe('createSecurityToken procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       tx,
-      { isCritical: false, batchSize: rawDocumentTuples.length },
-      rawDocumentTuples,
+      { isCritical: false, batchSize: rawDocuments.length },
+      rawDocuments,
       rawTicker
     );
 

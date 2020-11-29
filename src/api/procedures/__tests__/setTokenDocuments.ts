@@ -127,7 +127,7 @@ describe('setTokenDocuments procedure', () => {
       addTransactionStub.firstCall,
       removeDocumentsTransaction,
       { batchSize: 1 },
-      [rawDocuments[0]],
+      [documentEntries[0][0][1]],
       rawTicker
     );
     sinon.assert.calledWith(
@@ -168,7 +168,7 @@ describe('setTokenDocuments procedure', () => {
       addTransactionStub.firstCall,
       removeDocumentsTransaction,
       { batchSize: 1 },
-      [rawDocuments[0]],
+      [documentEntries[0][0][1]],
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);

@@ -92,7 +92,7 @@ export async function prepareInviteAccount(
   const rawAuthorizationData = authorizationToAuthorizationData(
     {
       type: AuthorizationType.JoinIdentity,
-      value: { tokens: null, transactions: null, portfolios: null },
+      value: { tokens: [], transactions: [], portfolios: [] },
     },
     context
   );

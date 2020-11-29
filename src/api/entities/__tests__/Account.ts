@@ -106,7 +106,9 @@ describe('Account class', () => {
     });
 
     test('should return null if there is no Identity associated to the Account', async () => {
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds').throws();
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockIdentityId(),
+      });
 
       const result = await account.getIdentity();
 

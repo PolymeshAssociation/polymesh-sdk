@@ -1,5 +1,5 @@
 import { Vec } from '@polkadot/types';
-import { IdentityId, Ticker } from 'polymesh-types/types';
+import { IdentityId, Ticker, TrustedIssuer } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -7,23 +7,26 @@ import {
   Params,
   prepareModifyTokenTrustedClaimIssuers,
 } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
-import { Context, SecurityToken } from '~/internal';
+import { Context, Identity, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
+import { RoleType, TrustedClaimIssuer } from '~/types';
 import { PolymeshTx, TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
-describe('setTokenTrustedClaimIssuers procedure', () => {
+describe('modifyTokenTrustedClaimIssuers procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
+  let trustedClaimIssuerToTrustedIssuerStub: sinon.SinonStub<
+    [TrustedClaimIssuer, Context],
+    TrustedIssuer
+  >;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
   let trustedClaimIssuerStub: sinon.SinonStub;
   let ticker: string;
   let claimIssuerIdentities: string[];
   let rawTicker: Ticker;
-  let rawClaimIssuerDids: IdentityId[];
+  let rawClaimIssuers: TrustedIssuer[];
   let args: Omit<Params, 'operation'>;
 
   beforeAll(() => {
@@ -31,13 +34,21 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    trustedClaimIssuerToTrustedIssuerStub = sinon.stub(
+      utilsConversionModule,
+      'trustedClaimIssuerToTrustedIssuer'
+    );
     identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
     ticker = 'someTicker';
     claimIssuerIdentities = ['aDid', 'otherDid', 'differentDid'];
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawClaimIssuerDids = claimIssuerIdentities.map(dsMockUtils.createMockIdentityId);
-    /* eslint-enable @typescript-eslint/camelcase */
+    rawClaimIssuers = claimIssuerIdentities.map(did =>
+      dsMockUtils.createMockTrustedIssuer({
+        issuer: dsMockUtils.createMockIdentityId(did),
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+      })
+    );
     args = {
       ticker,
       claimIssuerIdentities,
@@ -73,8 +84,10 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     claimIssuerIdentities.forEach((did, index) => {
-      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawClaimIssuerDids[index]);
-      identityIdToStringStub.withArgs(rawClaimIssuerDids[index]).returns(did);
+      trustedClaimIssuerToTrustedIssuerStub
+        .withArgs({ identity: new Identity({ did }, mockContext) }, mockContext)
+        .returns(rawClaimIssuers[index]);
+      identityIdToStringStub.withArgs(rawClaimIssuers[index].issuer).returns(did);
     });
   });
 
@@ -91,7 +104,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   });
 
   test('should throw an error if the new list is the same as the current one (set)', () => {
-    trustedClaimIssuerStub.withArgs(rawTicker).returns(rawClaimIssuerDids);
+    trustedClaimIssuerStub.withArgs(rawTicker).returns(rawClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
@@ -123,8 +136,8 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   });
 
   test('should add a transaction to remove the current claim issuers and another one to add the ones in the input (set)', async () => {
-    const currentClaimIssuerDids = rawClaimIssuerDids.slice(0, -1);
-    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
+    const currentClaimIssuers = rawClaimIssuers.slice(0, -1);
+    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareModifyTokenTrustedClaimIssuers.call(proc, {
@@ -136,13 +149,13 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
       addBatchTransactionStub.firstCall,
       removeDefaultTrustedClaimIssuerTransaction,
       {},
-      currentClaimIssuerDids.map(did => [did, rawTicker])
+      currentClaimIssuers.map(issuer => [rawTicker, issuer])
     );
     sinon.assert.calledWith(
       addBatchTransactionStub.secondCall,
       addDefaultTrustedClaimIssuerTransaction,
       {},
-      rawClaimIssuerDids.map(did => [did, rawTicker])
+      rawClaimIssuers.map(issuer => [rawTicker, issuer])
     );
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
@@ -159,15 +172,15 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
       addBatchTransactionStub.firstCall,
       addDefaultTrustedClaimIssuerTransaction,
       {},
-      rawClaimIssuerDids.map(did => [did, rawTicker])
+      rawClaimIssuers.map(issuer => [rawTicker, issuer])
     );
     sinon.assert.calledOnce(addBatchTransactionStub);
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
 
   test('should not add an add claim issuers transaction if there are no claim issuers passed as arguments (set)', async () => {
-    const currentClaimIssuerDids = rawClaimIssuerDids.slice(0, -1);
-    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
+    const currentClaimIssuers = rawClaimIssuers.slice(0, -1);
+    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareModifyTokenTrustedClaimIssuers.call(proc, {
@@ -180,15 +193,15 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
       addBatchTransactionStub.firstCall,
       removeDefaultTrustedClaimIssuerTransaction,
       {},
-      currentClaimIssuerDids.map(did => [did, rawTicker])
+      currentClaimIssuers.map(issuer => [rawTicker, issuer])
     );
     sinon.assert.calledOnce(addBatchTransactionStub);
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
 
   test('should throw an error if trying to remove an Identity that is not a trusted claim issuer', async () => {
-    const currentClaimIssuerDids: IdentityId[] = [];
-    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
+    const currentClaimIssuers: IdentityId[] = [];
+    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     let error;
@@ -209,8 +222,8 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   });
 
   test('should add a transaction to remove the supplied Trusted Claim Issuers (remove)', async () => {
-    const currentClaimIssuerDids = rawClaimIssuerDids;
-    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
+    const currentClaimIssuers = rawClaimIssuers;
+    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareModifyTokenTrustedClaimIssuers.call(proc, {
@@ -222,14 +235,14 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
       addBatchTransactionStub,
       removeDefaultTrustedClaimIssuerTransaction,
       {},
-      currentClaimIssuerDids.map(did => [did, rawTicker])
+      currentClaimIssuers.map(issuer => [rawTicker, issuer])
     );
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
 
   test('should throw an error if trying to add an Identity that is already a Trusted Claim Issuer', async () => {
-    const currentClaimIssuerDids = rawClaimIssuerDids;
-    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
+    const currentClaimIssuers = rawClaimIssuers;
+    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     let error;
@@ -250,8 +263,8 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
   });
 
   test('should add a transaction to add the supplied Trusted Claim Issuers (add)', async () => {
-    const currentClaimIssuerDids: IdentityId[] = [];
-    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuerDids);
+    const currentClaimIssuers: IdentityId[] = [];
+    trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareModifyTokenTrustedClaimIssuers.call(proc, {
@@ -263,7 +276,7 @@ describe('setTokenTrustedClaimIssuers procedure', () => {
       addBatchTransactionStub,
       addDefaultTrustedClaimIssuerTransaction,
       {},
-      rawClaimIssuerDids.map(did => [did, rawTicker])
+      rawClaimIssuers.map(issuer => [rawTicker, issuer])
     );
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });

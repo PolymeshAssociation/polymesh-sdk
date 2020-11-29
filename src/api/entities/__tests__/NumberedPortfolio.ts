@@ -104,7 +104,7 @@ describe('Numberedortfolio class', () => {
       const id = new BigNumber(1);
       const did = 'someDid';
       const portfolioName = 'someName';
-      const rawPortfolioName = dsMockUtils.createMockBytes(portfolioName);
+      const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {

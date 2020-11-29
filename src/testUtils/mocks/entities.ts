@@ -118,12 +118,12 @@ interface AccountOptions {
   address?: string;
   key?: string;
   getBalance?: AccountBalance;
-  getIdentity?: Identity;
+  getIdentity?: Identity | null;
   getTransactionHistory?: ExtrinsicData[];
 }
 
 interface CurrentAccountOptions extends AccountOptions {
-  getIdentity?: CurrentIdentity;
+  getIdentity?: CurrentIdentity | null;
 }
 
 interface VenueOptions {
@@ -623,8 +623,8 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
   } as unknown) as MockDefaultPortfolio;
 
   Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
-  defaultPortfolioConstructorStub.callsFake(args => {
-    const value = merge({}, defaultPortfolio, args);
+  defaultPortfolioConstructorStub.callsFake(() => {
+    const value = merge({}, defaultPortfolio);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
     Object.setPrototypeOf(entities.DefaultPortfolio.prototype, entities.Portfolio.prototype);
@@ -891,7 +891,7 @@ function configureAccount(opts: AccountOptions): void {
     key: opts.key,
     getBalance: accountGetBalanceStub.resolves(opts.getBalance),
     getIdentity: accountGetIdentityStub.resolves(
-      opts.getIdentity || mockInstanceContainer.identity
+      opts.getIdentity === undefined ? mockInstanceContainer.identity : opts.getIdentity
     ),
     getTransactionHistory: accountGetTransactionHistoryStub.resolves(opts.getTransactionHistory),
   } as unknown) as MockAccount;
@@ -929,7 +929,7 @@ function configureCurrentAccount(opts: CurrentAccountOptions): void {
     key: opts.key,
     getBalance: currentAccountGetBalanceStub.resolves(opts.getBalance),
     getIdentity: currentAccountGetIdentityStub.resolves(
-      opts.getIdentity || mockInstanceContainer.currentIdentity
+      opts.getIdentity === undefined ? mockInstanceContainer.identity : opts.getIdentity
     ),
     getTransactionHistory: currentAccountGetTransactionHistoryStub.resolves(
       opts.getTransactionHistory
