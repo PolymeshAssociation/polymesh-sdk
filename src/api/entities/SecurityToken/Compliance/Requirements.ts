@@ -160,7 +160,7 @@ export class Requirements extends Namespace<SecurityToken> {
       context,
     } = this;
 
-    const { from = await this.context.getCurrentIdentity(), to } = args;
+    const { from = await context.getCurrentIdentity(), to } = args;
 
     const fromDid = stringToIdentityId(signerToString(from), context);
     const toDid = signerToString(to);
