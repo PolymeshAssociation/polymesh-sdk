@@ -1,5 +1,13 @@
-import { Account, PolymeshError, Procedure } from '~/internal';
-import { AuthorizationType, ErrorCode } from '~/types';
+import {
+  Account,
+  DefaultPortfolio,
+  NumberedPortfolio,
+  PolymeshError,
+  Procedure,
+  SecurityToken,
+} from '~/internal';
+import { TxTag } from '~/polkadot/types';
+import { AuthorizationType, ErrorCode, Permissions } from '~/types';
 import { SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
@@ -10,6 +18,11 @@ import {
 
 export interface InviteAccountParams {
   targetAccount: string | Account;
+  permissions?: {
+    tokens?: (string | SecurityToken)[];
+    transactions?: TxTag[];
+    portfolios?: (DefaultPortfolio | NumberedPortfolio)[];
+  };
   expiry?: Date;
 }
 
@@ -29,7 +42,7 @@ export async function prepareInviteAccount(
     context,
   } = this;
 
-  const { targetAccount, expiry } = args;
+  const { targetAccount, permissions, expiry } = args;
 
   const address = signerToString(targetAccount);
 
@@ -89,10 +102,34 @@ export async function prepareInviteAccount(
     context
   );
 
+  let authorizationValue = {
+    tokens: [],
+    transactions: [],
+    portfolios: [],
+  } as Permissions;
+
+  if (permissions) {
+    const { tokens, transactions, portfolios } = permissions;
+
+    const rawTokens =
+      tokens?.map(token => {
+        if (token instanceof SecurityToken) {
+          return token;
+        }
+        return new SecurityToken({ ticker: token }, context);
+      }) ?? [];
+
+    authorizationValue = {
+      tokens: rawTokens,
+      transactions: transactions ?? [],
+      portfolios: portfolios ?? [],
+    };
+  }
+
   const rawAuthorizationData = authorizationToAuthorizationData(
     {
       type: AuthorizationType.JoinIdentity,
-      value: { tokens: [], transactions: [], portfolios: [] },
+      value: authorizationValue,
     },
     context
   );
