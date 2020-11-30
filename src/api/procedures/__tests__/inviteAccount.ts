@@ -3,8 +3,11 @@ import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
+import { SecurityToken } from '~/api/entities/SecurityToken';
 import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { Account, AuthorizationRequest, Context, InviteAccountParams } from '~/internal';
+import { AssetTx } from '~/polkadot/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, Identity, ResultSet } from '~/types';
@@ -70,9 +73,9 @@ describe('inviteAccount procedure', () => {
     });
     const rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
       JoinIdentity: dsMockUtils.createMockPermissions({
-        asset: null,
-        extrinsic: null,
-        portfolio: null,
+        asset: [],
+        extrinsic: [],
+        portfolio: [],
       }),
     });
     const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
@@ -148,6 +151,76 @@ describe('inviteAccount procedure', () => {
       rawSignatory,
       rawAuthorizationData,
       rawExpiry
+    );
+
+    const tokens = ['someTicker', new SecurityToken({ ticker: 'otherTicker' }, mockContext)];
+    const transactions = [AssetTx.Approve];
+    const portfolios = [new DefaultPortfolio({ did: 'someDid' }, mockContext)];
+
+    await prepareInviteAccount.call(proc, {
+      ...args,
+      permissions: {
+        tokens,
+        transactions,
+        portfolios,
+      },
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      {},
+      rawSignatory,
+      rawAuthorizationData,
+      null
+    );
+
+    await prepareInviteAccount.call(proc, {
+      ...args,
+      permissions: {
+        transactions,
+      },
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      {},
+      rawSignatory,
+      rawAuthorizationData,
+      null
+    );
+
+    await prepareInviteAccount.call(proc, {
+      ...args,
+      permissions: {
+        portfolios,
+      },
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      {},
+      rawSignatory,
+      rawAuthorizationData,
+      null
+    );
+
+    await prepareInviteAccount.call(proc, {
+      ...args,
+      permissions: {
+        tokens,
+      },
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      {},
+      rawSignatory,
+      rawAuthorizationData,
+      null
     );
   });
 
