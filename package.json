@@ -12,7 +12,7 @@
     "generate:middleware-types": "graphql-codegen -r dotenv/config",
     "fetch-definitions": "node scripts/fetchDefinitions.js",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package polymesh-types --input ./src/polkadot",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://pmf.polymath.network --output ./src/polkadot --strict",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://pme.polymath.network --output ./src/polkadot --strict",
     "generate:tags": "node scripts/generateTxTags.js",
     "test": "jest --coverage",
     "build:ts": "ttsc -b",
@@ -28,7 +28,7 @@
     "@commitlint/config-conventional": "^7.6.0",
     "@graphql-codegen/cli": "1.17.7",
     "@graphql-codegen/typescript": "1.17.7",
-    "@polkadot/typegen": "1.29.1",
+    "@polkadot/typegen": "2.6.1",
     "@semantic-release/changelog": "^3.0.4",
     "@types/bluebird": "^3.5.30",
     "@types/jest": "^23.3.10",
@@ -84,9 +84,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@polkadot/api": "1.29.1",
-    "@polkadot/util": "3.2.1",
-    "@polkadot/util-crypto": "3.2.1",
+    "@polkadot/api": "2.6.1",
+    "@polkadot/util": "4.0",
+    "@polkadot/util-crypto": "4.0",
     "@types/bignumber.js": "^5.0.0",
     "apollo-cache-inmemory": "^1.6.6",
     "apollo-client": "^2.6.10",
@@ -97,8 +97,10 @@
     "apollo-link-state": "^0.4.2",
     "bignumber.js": "^9.0.0",
     "bluebird": "^3.7.2",
+    "cross-fetch": "^3.0.6",
     "graphql": "15.0.0",
     "graphql-tag": "^2.10.3",
+    "iso-7064": "^1.0.2",
     "json-stable-stringify": "^1.0.1",
     "lodash": "^4.17.15"
   }

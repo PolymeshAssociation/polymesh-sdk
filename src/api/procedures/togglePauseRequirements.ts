@@ -1,23 +1,23 @@
 import { SecurityToken } from '~/api/entities';
 import { PolymeshError, Procedure } from '~/base';
 import { ErrorCode, Role, RoleType } from '~/types';
-import { boolToBoolean, stringToTicker } from '~/utils';
+import { boolToBoolean, stringToTicker } from '~/utils/conversion';
 
-export interface TogglePauseRulesParams {
+export interface TogglePauseRequirementsParams {
   pause: boolean;
 }
 
 /**
  * @hidden
  */
-export type Params = TogglePauseRulesParams & {
+export type Params = TogglePauseRequirementsParams & {
   ticker: string;
 };
 
 /**
  * @hidden
  */
-export async function prepareTogglePauseRules(
+export async function prepareTogglePauseRequirements(
   this: Procedure<Params, SecurityToken>,
   args: Params
 ): Promise<SecurityToken> {
@@ -31,17 +31,17 @@ export async function prepareTogglePauseRules(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const { is_paused: isPaused } = await query.complianceManager.assetRulesMap(rawTicker);
+  const { is_paused: isPaused } = await query.complianceManager.assetCompliances(rawTicker);
 
   if (pause === boolToBoolean(isPaused)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Rules are already ${isPaused ? '' : 'un'}paused`,
+      message: `Requirements are already ${isPaused ? '' : 'un'}paused`,
     });
   }
 
   this.addTransaction(
-    pause ? tx.complianceManager.pauseAssetRules : tx.complianceManager.resumeAssetRules,
+    pause ? tx.complianceManager.pauseAssetCompliance : tx.complianceManager.resumeAssetCompliance,
     {},
     rawTicker
   );
@@ -59,4 +59,7 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
 /**
  * @hidden
  */
-export const togglePauseRules = new Procedure(prepareTogglePauseRules, getRequiredRoles);
+export const togglePauseRequirements = new Procedure(
+  prepareTogglePauseRequirements,
+  getRequiredRoles
+);

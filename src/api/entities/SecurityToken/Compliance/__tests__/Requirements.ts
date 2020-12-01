@@ -1,39 +1,36 @@
 import { Vec } from '@polkadot/types/codec';
-import {
-  AssetTransferRules,
-  AssetTransferRulesResult,
-  IdentityId,
-  Ticker,
-} from 'polymesh-types/types';
+import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Namespace, SecurityToken } from '~/api/entities';
-import { setTokenRules, togglePauseRules } from '~/api/procedures';
-import { Params } from '~/api/procedures/setTokenRules';
+import { Identity, Namespace, SecurityToken } from '~/api/entities';
+import { togglePauseRequirements } from '~/api/procedures';
+import { Params, setAssetRequirements } from '~/api/procedures/setAssetRequirements';
 import { Context, TransactionQueue } from '~/base';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, ConditionTarget, ConditionType, Rule } from '~/types';
-import * as utilsModule from '~/utils';
+import { ClaimType, ConditionTarget, ConditionType, Requirement, ScopeType } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
-import { Rules } from '../Rules';
+import { Requirements } from '../Requirements';
 
-describe('Rules class', () => {
+describe('Requirements class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
   });
 
   afterEach(() => {
+    entityMockUtils.reset();
     dsMockUtils.reset();
   });
 
   afterAll(() => {
+    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
-    expect(Rules.prototype instanceof Namespace).toBe(true);
+    expect(Requirements.prototype instanceof Namespace).toBe(true);
   });
 
   describe('method: set', () => {
@@ -44,16 +41,16 @@ describe('Rules class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
-      const rules = new Rules(token, context);
+      const requirements = new Requirements(token, context);
 
       const args: Omit<Params, 'ticker'> = {
-        rules: [
+        requirements: [
           [
             {
               type: ConditionType.IsPresent,
               claim: {
                 type: ClaimType.Exempted,
-                scope: 'someTokenDid',
+                scope: { type: ScopeType.Ticker, value: 'someTicker' },
               },
               target: ConditionTarget.Both,
             },
@@ -61,7 +58,7 @@ describe('Rules class', () => {
               type: ConditionType.IsAbsent,
               claim: {
                 type: ClaimType.Blocked,
-                scope: 'someTokenDid',
+                scope: { type: ScopeType.Ticker, value: 'someTicker' },
               },
               target: ConditionTarget.Both,
             },
@@ -72,11 +69,11 @@ describe('Rules class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
       sinon
-        .stub(setTokenRules, 'prepare')
+        .stub(setAssetRequirements, 'prepare')
         .withArgs({ ticker: token.ticker, ...args }, context)
         .resolves(expectedQueue);
 
-      const queue = await rules.set(args);
+      const queue = await requirements.set(args);
 
       expect(queue).toBe(expectedQueue);
     });
@@ -90,16 +87,16 @@ describe('Rules class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
-      const rules = new Rules(token, context);
+      const requirements = new Requirements(token, context);
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
       sinon
-        .stub(setTokenRules, 'prepare')
-        .withArgs({ ticker: token.ticker, rules: [] }, context)
+        .stub(setAssetRequirements, 'prepare')
+        .withArgs({ ticker: token.ticker, requirements: [] }, context)
         .resolves(expectedQueue);
 
-      const queue = await rules.reset();
+      const queue = await requirements.reset();
 
       expect(queue).toBe(expectedQueue);
     });
@@ -109,38 +106,44 @@ describe('Rules class', () => {
     let ticker: string;
     let context: Context;
     let token: SecurityToken;
-    let rules: Rules;
+    let requirements: Requirements;
     let defaultClaimIssuers: string[];
     let notDefaultClaimIssuer: string;
     let tokenDid: string;
+    let cddId: string;
 
-    let expected: Rule[];
+    let expected: Requirement[];
 
     let queryMultiStub: sinon.SinonStub;
-    let queryMultiResult: [AssetTransferRules, Vec<IdentityId>];
+    let queryMultiResult: [AssetCompliance, Vec<IdentityId>];
 
     beforeEach(() => {
       ticker = 'test';
       context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance({ ticker });
-      rules = new Rules(token, context);
+      requirements = new Requirements(token, context);
       defaultClaimIssuers = ['defaultissuer'];
       notDefaultClaimIssuer = 'notDefaultClaimIssuer';
       tokenDid = 'someTokenDid';
-      dsMockUtils.createQueryStub('complianceManager', 'assetRulesMap');
+      cddId = 'someCddId';
+      dsMockUtils.createQueryStub('complianceManager', 'assetCompliances');
       dsMockUtils.createQueryStub('complianceManager', 'trustedClaimIssuer');
 
       queryMultiStub = dsMockUtils.getQueryMultiStub();
 
-      const scope = dsMockUtils.createMockScope(tokenDid);
-      const ruleForBoth = dsMockUtils.createMockRule({
+      const scope = dsMockUtils.createMockScope({
+        Identity: dsMockUtils.createMockIdentityId(tokenDid),
+      });
+      const conditionForBoth = dsMockUtils.createMockCondition({
         // eslint-disable-next-line @typescript-eslint/camelcase
-        rule_type: dsMockUtils.createMockRuleType({
+        condition_type: dsMockUtils.createMockConditionType({
           IsAnyOf: [
             dsMockUtils.createMockClaim({
               KnowYourCustomer: scope,
             }),
-            dsMockUtils.createMockClaim('CustomerDueDiligence'),
+            dsMockUtils.createMockClaim({
+              CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+            }),
           ],
         }),
         issuers: [],
@@ -148,12 +151,12 @@ describe('Rules class', () => {
 
       queryMultiResult = [
         {
-          rules: [
-            dsMockUtils.createMockAssetTransferRule({
+          requirements: [
+            dsMockUtils.createMockComplianceRequirement({
               /* eslint-disable @typescript-eslint/camelcase */
-              sender_rules: [
-                dsMockUtils.createMockRule({
-                  rule_type: dsMockUtils.createMockRuleType({
+              sender_conditions: [
+                dsMockUtils.createMockCondition({
+                  condition_type: dsMockUtils.createMockConditionType({
                     IsPresent: dsMockUtils.createMockClaim({
                       Exempted: scope,
                     }),
@@ -161,15 +164,15 @@ describe('Rules class', () => {
                   issuers: [dsMockUtils.createMockIdentityId(notDefaultClaimIssuer)],
                 }),
               ],
-              receiver_rules: [],
-              rule_id: dsMockUtils.createMockU32(1),
+              receiver_conditions: [],
+              id: dsMockUtils.createMockU32(1),
             }),
-            dsMockUtils.createMockAssetTransferRule({
-              sender_rules: [ruleForBoth],
-              receiver_rules: [
-                ruleForBoth,
-                dsMockUtils.createMockRule({
-                  rule_type: dsMockUtils.createMockRuleType({
+            dsMockUtils.createMockComplianceRequirement({
+              sender_conditions: [conditionForBoth],
+              receiver_conditions: [
+                conditionForBoth,
+                dsMockUtils.createMockCondition({
+                  condition_type: dsMockUtils.createMockConditionType({
                     IsAbsent: dsMockUtils.createMockClaim({
                       Blocked: scope,
                     }),
@@ -177,11 +180,11 @@ describe('Rules class', () => {
                   issuers: [],
                 }),
               ],
-              rule_id: dsMockUtils.createMockU32(2),
+              id: dsMockUtils.createMockU32(2),
               /* eslint-enable @typescript-eslint/camelcase */
             }),
           ],
-        } as AssetTransferRules,
+        } as AssetCompliance,
         (defaultClaimIssuers as unknown) as Vec<IdentityId>,
       ];
 
@@ -194,7 +197,7 @@ describe('Rules class', () => {
               type: ConditionType.IsPresent,
               claim: {
                 type: ClaimType.Exempted,
-                scope: tokenDid,
+                scope: { type: ScopeType.Identity, value: tokenDid },
               },
               trustedClaimIssuers: [notDefaultClaimIssuer],
             },
@@ -209,9 +212,9 @@ describe('Rules class', () => {
               claims: [
                 {
                   type: ClaimType.KnowYourCustomer,
-                  scope: tokenDid,
+                  scope: { type: ScopeType.Identity, value: tokenDid },
                 },
-                { type: ClaimType.CustomerDueDiligence },
+                { type: ClaimType.CustomerDueDiligence, id: cddId },
               ],
               trustedClaimIssuers: defaultClaimIssuers,
             },
@@ -220,7 +223,7 @@ describe('Rules class', () => {
               type: ConditionType.IsAbsent,
               claim: {
                 type: ClaimType.Blocked,
-                scope: tokenDid,
+                scope: { type: ScopeType.Identity, value: tokenDid },
               },
               trustedClaimIssuers: defaultClaimIssuers,
             },
@@ -233,9 +236,9 @@ describe('Rules class', () => {
       sinon.restore();
     });
 
-    test('should return all transfer rules attached to the Security Token, using the default trusted claim issuers where none are set', async () => {
+    test('should return all requirement attached to the Security Token, using the default trusted claim issuers where none are set', async () => {
       queryMultiStub.resolves(queryMultiResult);
-      const result = await rules.get();
+      const result = await requirements.get();
 
       expect(result).toEqual(expected);
     });
@@ -249,7 +252,7 @@ describe('Rules class', () => {
 
       const callback = sinon.stub();
 
-      const result = await rules.get(callback);
+      const result = await requirements.get(callback);
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, expected);
@@ -264,16 +267,16 @@ describe('Rules class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
-      const rules = new Rules(token, context);
+      const requirements = new Requirements(token, context);
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
       sinon
-        .stub(togglePauseRules, 'prepare')
+        .stub(togglePauseRequirements, 'prepare')
         .withArgs({ ticker: token.ticker, pause: true }, context)
         .resolves(expectedQueue);
 
-      const queue = await rules.pause();
+      const queue = await requirements.pause();
 
       expect(queue).toBe(expectedQueue);
     });
@@ -287,16 +290,16 @@ describe('Rules class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
-      const rules = new Rules(token, context);
+      const requirements = new Requirements(token, context);
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
       sinon
-        .stub(togglePauseRules, 'prepare')
+        .stub(togglePauseRequirements, 'prepare')
         .withArgs({ ticker: token.ticker, pause: false }, context)
         .resolves(expectedQueue);
 
-      const queue = await rules.unpause();
+      const queue = await requirements.unpause();
 
       expect(queue).toBe(expectedQueue);
     });
@@ -307,41 +310,41 @@ describe('Rules class', () => {
       sinon.restore();
     });
 
-    test('should return whether compliance rules are paused or not', async () => {
+    test('should return whether compliance conditions are paused or not', async () => {
       const fakeResult = false;
       const context = dsMockUtils.getContextInstance();
       const token = entityMockUtils.getSecurityTokenInstance();
       const rawTicker = dsMockUtils.createMockTicker(token.ticker);
       const mockBool = dsMockUtils.createMockBool(fakeResult);
 
-      const rules = new Rules(token, context);
+      const requeriments = new Requirements(token, context);
 
       sinon
-        .stub(utilsModule, 'stringToTicker')
+        .stub(utilsConversionModule, 'stringToTicker')
         .withArgs(token.ticker, context)
         .returns(rawTicker);
 
       sinon
-        .stub(utilsModule, 'boolToBoolean')
+        .stub(utilsConversionModule, 'boolToBoolean')
         .withArgs(mockBool)
         .returns(fakeResult);
 
       dsMockUtils
-        .createQueryStub('complianceManager', 'assetRulesMap')
+        .createQueryStub('complianceManager', 'assetCompliances')
         .withArgs(rawTicker)
         // eslint-disable-next-line @typescript-eslint/camelcase
         .resolves({ is_paused: mockBool });
 
-      const result = await rules.arePaused();
+      const result = await requeriments.arePaused();
 
       expect(result).toEqual(fakeResult);
     });
   });
 
-  describe('method: checkTransfer/checkMint', () => {
+  describe('method: checkSettle', () => {
     let context: Mocked<Context>;
     let token: SecurityToken;
-    let rules: Rules;
+    let requirements: Requirements;
     let currentDid: string;
     let fromDid: string;
     let toDid: string;
@@ -349,91 +352,99 @@ describe('Rules class', () => {
     let rawToDid: IdentityId;
     let rawCurrentDid: IdentityId;
     let rawTicker: Ticker;
+    let primaryIssuanceAgentDid: string;
+    let rawPrimaryIssuanceAgentDid: IdentityId;
 
     let stringToIdentityIdStub: sinon.SinonStub;
-    let assetTransferRulesResultToRuleComplianceStub: sinon.SinonStub;
+    let assetComplianceResultToRequirementComplianceStub: sinon.SinonStub;
     let stringToTickerStub: sinon.SinonStub;
 
     beforeAll(() => {
       fromDid = 'fromDid';
       toDid = 'toDid';
+      primaryIssuanceAgentDid = 'primaryIssuanceAgentDid';
 
-      stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
-      assetTransferRulesResultToRuleComplianceStub = sinon.stub(
-        utilsModule,
-        'assetTransferRulesResultToRuleCompliance'
+      stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+      assetComplianceResultToRequirementComplianceStub = sinon.stub(
+        utilsConversionModule,
+        'assetComplianceResultToCompliance'
       );
-      stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+      stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     });
 
     beforeEach(async () => {
       context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance();
-      rules = new Rules(token, context);
+      requirements = new Requirements(token, context);
       ({ did: currentDid } = await context.getCurrentIdentity());
 
       rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
       rawToDid = dsMockUtils.createMockIdentityId(toDid);
       rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
       rawTicker = dsMockUtils.createMockTicker(token.ticker);
+      rawPrimaryIssuanceAgentDid = dsMockUtils.createMockIdentityId(primaryIssuanceAgentDid);
 
       stringToIdentityIdStub.withArgs(currentDid, context).returns(rawCurrentDid);
       stringToIdentityIdStub.withArgs(fromDid, context).returns(rawFromDid);
       stringToIdentityIdStub.withArgs(toDid, context).returns(rawToDid);
       stringToTickerStub.withArgs(token.ticker, context).returns(rawTicker);
+      stringToIdentityIdStub
+        .withArgs(primaryIssuanceAgentDid, context)
+        .returns(rawPrimaryIssuanceAgentDid);
     });
 
     afterAll(() => {
       sinon.restore();
     });
 
-    test('checkTransfer should return the current rules and whether the transfer complies', async () => {
-      const rawResponse = ('response' as unknown) as AssetTransferRulesResult;
+    test('checkSettle should return the current requirement compliance and whether the transfer complies', async () => {
+      const rawResponse = ('response' as unknown) as AssetComplianceResult;
+
+      const primaryIssuanceAgent = new Identity({ did: primaryIssuanceAgentDid }, context);
+
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          details: {
+            primaryIssuanceAgent,
+          },
+        },
+      });
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawCurrentDid, rawToDid)
+        .withArgs(rawTicker, rawCurrentDid, rawToDid, rawPrimaryIssuanceAgentDid)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
 
-      assetTransferRulesResultToRuleComplianceStub.withArgs(rawResponse).returns(fakeResult);
+      assetComplianceResultToRequirementComplianceStub.withArgs(rawResponse).returns(fakeResult);
 
-      const result = await rules.checkTransfer({ to: toDid });
+      const result = await requirements.checkSettle({ to: toDid });
 
       expect(result).toEqual(fakeResult);
     });
 
-    test('checkTransfer should return the current rules and whether the transfer complies with another Identity', async () => {
-      const rawResponse = ('response' as unknown) as AssetTransferRulesResult;
+    test('checkSettle should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
+      const rawResponse = ('response' as unknown) as AssetComplianceResult;
+
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          details: {
+            primaryIssuanceAgent: null,
+          },
+        },
+      });
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawFromDid, rawToDid)
+        .withArgs(rawTicker, rawFromDid, rawToDid, null)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
 
-      assetTransferRulesResultToRuleComplianceStub.withArgs(rawResponse).returns(fakeResult);
+      assetComplianceResultToRequirementComplianceStub.withArgs(rawResponse).returns(fakeResult);
 
-      const result = await rules.checkTransfer({ from: fromDid, to: toDid });
-
-      expect(result).toBe(fakeResult);
-    });
-
-    test('checkMint should return the current rules and whether the mint complies', async () => {
-      const rawResponse = ('response' as unknown) as AssetTransferRulesResult;
-
-      dsMockUtils
-        .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, null, rawToDid)
-        .resolves(rawResponse);
-
-      const fakeResult = 'result';
-
-      assetTransferRulesResultToRuleComplianceStub.withArgs(rawResponse).returns(fakeResult);
-
-      const result = await rules.checkMint({ to: toDid });
+      const result = await requirements.checkSettle({ from: fromDid, to: toDid });
 
       expect(result).toBe(fakeResult);
     });

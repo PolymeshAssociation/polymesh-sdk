@@ -8,9 +8,9 @@ import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
-import { ClaimType, Permission, Signer, SigningKey, TransactionArgumentType } from '~/types';
+import { ClaimType, Permission, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '@polkadot/api',
@@ -303,7 +303,7 @@ describe('Context class', () => {
       });
 
       sinon
-        .stub(utilsModule, 'stringToAccountId')
+        .stub(utilsConversionModule, 'stringToAccountId')
         .withArgs(newAddress, context)
         .returns(accountId);
 
@@ -353,7 +353,7 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance();
-      expect(result.free).toEqual(utilsModule.balanceToBigNumber(freeBalance));
+      expect(result.free).toEqual(utilsConversionModule.balanceToBigNumber(freeBalance));
     });
 
     test('should return the account POLYX balance if accountId is set', async () => {
@@ -384,7 +384,7 @@ describe('Context class', () => {
       });
 
       const result = await context.accountBalance('accountId');
-      expect(result.free).toEqual(utilsModule.balanceToBigNumber(freeBalance));
+      expect(result.free).toEqual(utilsConversionModule.balanceToBigNumber(freeBalance));
     });
 
     test('should allow subscription', async () => {
@@ -426,8 +426,8 @@ describe('Context class', () => {
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, {
-        free: utilsModule.balanceToBigNumber(free),
-        locked: utilsModule.balanceToBigNumber(feeFrozen),
+        free: utilsConversionModule.balanceToBigNumber(free),
+        locked: utilsConversionModule.balanceToBigNumber(feeFrozen),
       });
     });
   });
@@ -586,13 +586,13 @@ describe('Context class', () => {
         multi: [
           dsMockUtils.createMockDidRecord({
             roles: [],
-            master_key: createMockAccountId('someId'),
-            signing_keys: [],
+            primary_key: createMockAccountId('someId'),
+            secondary_keys: [],
           }),
           dsMockUtils.createMockDidRecord({
             roles: [],
-            master_key: createMockAccountId('otherId'),
-            signing_keys: [],
+            primary_key: createMockAccountId('otherId'),
+            secondary_keys: [],
           }),
           dsMockUtils.createMockDidRecord(),
           dsMockUtils.createMockDidRecord(),
@@ -659,7 +659,7 @@ describe('Context class', () => {
         seed: 'Alice'.padEnd(32, ' '),
       });
 
-      const txTagToProtocolOpStub = sinon.stub(utilsModule, 'txTagToProtocolOp');
+      const txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
 
       txTagToProtocolOpStub
         .withArgs(TxTags.asset.CreateAsset, context)
@@ -691,7 +691,7 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: getSigningKeys', () => {
+  describe('method: getSecondaryKeys', () => {
     const did = 'someDid';
     const accountId = 'someAccountId';
     const signerValues = [
@@ -707,7 +707,7 @@ describe('Context class', () => {
 
     let identity: Identity;
     let account: Account;
-    let fakeResult: SigningKey[];
+    let fakeResult: SecondaryKey[];
 
     let signatoryToSignerValueStub: sinon.SinonStub<[Signatory], SignerValue>;
     let signerValueToSignerStub: sinon.SinonStub<[SignerValue, Context], Signer>;
@@ -716,13 +716,13 @@ describe('Context class', () => {
 
     beforeAll(() => {
       entityMockUtils.initMocks();
-      signatoryToSignerValueStub = sinon.stub(utilsModule, 'signatoryToSignerValue');
+      signatoryToSignerValueStub = sinon.stub(utilsConversionModule, 'signatoryToSignerValue');
       signatoryToSignerValueStub.withArgs(signerIdentityId).returns(signerValues[0]);
       signatoryToSignerValueStub.withArgs(signerAccountId).returns(signerValues[1]);
 
       identity = entityMockUtils.getIdentityInstance({ did });
       account = entityMockUtils.getAccountInstance({ address: accountId });
-      signerValueToSignerStub = sinon.stub(utilsModule, 'signerValueToSigner');
+      signerValueToSignerStub = sinon.stub(utilsConversionModule, 'signerValueToSigner');
       signerValueToSignerStub.withArgs(signerValues[0], sinon.match.object).returns(identity);
       signerValueToSignerStub.withArgs(signerValues[1], sinon.match.object).returns(account);
 
@@ -743,13 +743,13 @@ describe('Context class', () => {
       /* eslint-disable @typescript-eslint/camelcase */
       rawDidRecord = dsMockUtils.createMockDidRecord({
         roles: [],
-        master_key: dsMockUtils.createMockAccountId(),
-        signing_keys: [
-          dsMockUtils.createMockSigningKey({
+        primary_key: dsMockUtils.createMockAccountId(),
+        secondary_keys: [
+          dsMockUtils.createMockSecondaryKey({
             signer: signerIdentityId,
             permissions: [],
           }),
-          dsMockUtils.createMockSigningKey({
+          dsMockUtils.createMockSecondaryKey({
             signer: signerAccountId,
             permissions: [dsMockUtils.createMockPermission('Full')],
           }),
@@ -783,7 +783,7 @@ describe('Context class', () => {
 
       didRecordsStub.returns(rawDidRecord);
 
-      const result = await context.getSigningKeys();
+      const result = await context.getSecondaryKeys();
       expect(result).toEqual(fakeResult);
     });
 
@@ -802,7 +802,7 @@ describe('Context class', () => {
       });
 
       const callback = sinon.stub();
-      const result = await context.getSigningKeys(callback);
+      const result = await context.getSecondaryKeys(callback);
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeResult);
@@ -865,12 +865,16 @@ describe('Context class', () => {
               name: 'target',
             },
             {
-              type: 'Claim',
-              name: 'claim',
+              type: 'Commission',
+              name: 'commission',
             },
             {
               type: 'Option<Moment>',
               name: 'expiry',
+            },
+            {
+              type: '(IdentityId, u32)',
+              name: 'identityPair',
             },
           ],
         },
@@ -883,70 +887,18 @@ describe('Context class', () => {
           optional: false,
         },
         {
-          name: 'claim',
+          name: 'commission',
           type: TransactionArgumentType.RichEnum,
           optional: false,
           internal: [
             {
-              name: 'Accredited',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'Affiliate',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'BuyLockup',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'SellLockup',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'CustomerDueDiligence',
+              name: 'Individual',
               type: TransactionArgumentType.Null,
               optional: false,
             },
             {
-              name: 'KnowYourCustomer',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'Jurisdiction',
-              type: TransactionArgumentType.Tuple,
-              optional: false,
-              internal: [
-                {
-                  name: '0',
-                  type: TransactionArgumentType.Text,
-                  optional: false,
-                },
-                {
-                  name: '1',
-                  type: TransactionArgumentType.Did,
-                  optional: false,
-                },
-              ],
-            },
-            {
-              name: 'Exempted',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'Blocked',
-              type: TransactionArgumentType.Did,
-              optional: false,
-            },
-            {
-              name: 'NoData',
-              type: TransactionArgumentType.Null,
+              name: 'Global',
+              type: TransactionArgumentType.Number,
               optional: false,
             },
           ],
@@ -955,6 +907,23 @@ describe('Context class', () => {
           name: 'expiry',
           type: TransactionArgumentType.Date,
           optional: true,
+        },
+        {
+          name: 'identityPair',
+          type: TransactionArgumentType.Tuple,
+          optional: false,
+          internal: [
+            {
+              name: '0',
+              optional: false,
+              type: TransactionArgumentType.Did,
+            },
+            {
+              name: '1',
+              optional: false,
+              type: TransactionArgumentType.Number,
+            },
+          ],
         },
       ]);
 
@@ -1199,7 +1168,7 @@ describe('Context class', () => {
           dids: undefined,
           trustedClaimIssuers: undefined,
           claimTypes: undefined,
-          includeExpired: undefined,
+          includeExpired: true,
           count: undefined,
           skip: undefined,
         }),
@@ -1374,7 +1343,7 @@ describe('Context class', () => {
           dids: undefined,
           trustedClaimIssuers: undefined,
           claimTypes: undefined,
-          includeExpired: undefined,
+          includeExpired: true,
           count: undefined,
           skip: undefined,
         }),

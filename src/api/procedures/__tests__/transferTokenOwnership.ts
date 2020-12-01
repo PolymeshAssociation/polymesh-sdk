@@ -15,7 +15,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, RoleType, TickerReservationStatus } from '~/types';
 import { PolymeshTx, SignerType, SignerValue } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('transferTokenOwnership procedure', () => {
   let mockContext: Mocked<Context>;
@@ -39,12 +39,12 @@ describe('transferTokenOwnership procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatoryStub = sinon.stub(utilsModule, 'signerValueToSignatory');
+    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     authorizationToAuthorizationDataStub = sinon.stub(
-      utilsModule,
+      utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = sinon.stub(utilsModule, 'dateToMoment');
+    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
     ticker = 'someTicker';
     did = 'someOtherDid';
     expiry = new Date('10/14/3040');

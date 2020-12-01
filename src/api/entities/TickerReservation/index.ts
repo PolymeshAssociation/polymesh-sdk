@@ -2,11 +2,10 @@ import { QueryableStorageEntry } from '@polkadot/api/types';
 import { SecurityToken as MeshToken, TickerRegistration } from 'polymesh-types/types';
 
 import { Entity, Identity, SecurityToken } from '~/api/entities';
-import { createSecurityToken, reserveTicker } from '~/api/procedures';
-import { CreateSecurityTokenParams } from '~/api/procedures/createSecurityToken';
+import { createSecurityToken, CreateSecurityTokenParams, reserveTicker } from '~/api/procedures';
 import { Context, TransactionQueue } from '~/base';
 import { SubCallback, UnsubCallback } from '~/types';
-import { identityIdToString, momentToDate, stringToTicker } from '~/utils';
+import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
 
 import { TickerReservationDetails, TickerReservationStatus } from './types';
 
@@ -149,6 +148,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
 
   /**
    * Create a Security Token using the reserved ticker
+   *
+   * @note the issuer DID will be set as the primary issuance agent
    *
    * @param args.totalSupply - amount of tokens that will be minted on creation
    * @param args.isDivisible - whether a single token can be divided into decimal parts

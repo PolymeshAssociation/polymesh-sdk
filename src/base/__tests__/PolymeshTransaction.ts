@@ -11,7 +11,7 @@ import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Polymesh Transaction class', () => {
   let context: Mocked<Context>;
@@ -29,6 +29,7 @@ describe('Polymesh Transaction class', () => {
     isCritical: false,
     fee: new BigNumber(100),
     batchSize: null,
+    paidByThirdParty: false,
   };
 
   afterEach(() => {
@@ -360,7 +361,7 @@ describe('Polymesh Transaction class', () => {
     let rawGasFees: Balance[];
 
     beforeAll(() => {
-      balanceToBigNumberStub = sinon.stub(utilsModule, 'balanceToBigNumber');
+      balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
       protocolFees = [new BigNumber(250), new BigNumber(150)];
       gasFees = [5, 10];
       rawGasFees = gasFees.map(dsMockUtils.createMockBalance);
@@ -465,45 +466,6 @@ describe('Polymesh Transaction class', () => {
       return expect(transaction.getFees()).rejects.toThrow(
         'Did not set batch size for batch transaction. Please report this error to the Polymath team'
       );
-    });
-
-    test('should return all fees as zero if the transaction is paid by a third party', async () => {
-      const tx1 = dsMockUtils.createTxStub('identity', 'joinIdentityAsKey', { gas: rawGasFees[0] });
-      const tx2 = dsMockUtils.createTxStub('identity', 'joinIdentityAsIdentity', {
-        gas: rawGasFees[1],
-      });
-
-      const args = tuple('I_SWEAR_TO_ANY_GOD_THAT_IS_LISTENING_THIS_IS_THE_LAST_TIME');
-
-      let transaction = new PolymeshTransaction(
-        {
-          ...txSpec,
-          fee: null,
-          tx: tx1,
-          args,
-        },
-        context
-      );
-
-      let result = await transaction.getFees();
-
-      expect(result?.protocol).toEqual(new BigNumber(0));
-      expect(result?.gas).toEqual(new BigNumber(0));
-
-      transaction = new PolymeshTransaction(
-        {
-          ...txSpec,
-          fee: null,
-          tx: tx2,
-          args,
-        },
-        context
-      );
-
-      result = await transaction.getFees();
-
-      expect(result?.protocol).toEqual(new BigNumber(0));
-      expect(result?.gas).toEqual(new BigNumber(0));
     });
   });
 });

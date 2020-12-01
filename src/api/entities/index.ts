@@ -7,5 +7,11 @@ export { CurrentAccount } from './CurrentAccount';
 export { TickerReservation } from './TickerReservation';
 export { SecurityToken } from './SecurityToken';
 export { AuthorizationRequest } from './AuthorizationRequest';
-export { Proposal } from './Proposal';
+// NOTE uncomment in Governance v2 upgrade
+// export { Proposal } from './Proposal';
 export { TrustedClaimIssuer } from './TrustedClaimIssuer';
+export { Venue } from './Venue';
+export { Instruction } from './Instruction';
+export { Portfolio } from './Portfolio';
+export { DefaultPortfolio } from './DefaultPortfolio';
+export { NumberedPortfolio } from './NumberedPortfolio';

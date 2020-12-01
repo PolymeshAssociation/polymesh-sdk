@@ -1,82 +1,84 @@
-import BigNumber from 'bignumber.js';
+// NOTE uncomment in Governance v2 upgrade
 
-import { Proposal } from '~/api/entities';
-import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
-import { PolymeshError, Procedure } from '~/base';
-import { ErrorCode } from '~/types';
-import { booleanToBool, numberToBalance, numberToPipId } from '~/utils';
+// import BigNumber from 'bignumber.js';
 
-export type VoteOnProposalParams = {
-  vote: boolean;
-  bondAmount: BigNumber;
-};
+// import { Proposal } from '~/api/entities';
+// import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
+// import { PolymeshError, Procedure } from '~/base';
+// import { ErrorCode } from '~/types';
+// import { booleanToBool, numberToBalance, numberToPipId } from '~/utils';
 
-export type Params = { pipId: BigNumber } & VoteOnProposalParams;
+// export type VoteOnProposalParams = {
+//   vote: boolean;
+//   bondAmount: BigNumber;
+// };
 
-/**
- * @hidden
- */
-export async function prepareVoteOnProposal(
-  this: Procedure<Params, void>,
-  args: Params
-): Promise<void> {
-  const {
-    context: {
-      polymeshApi: { tx },
-    },
-    context,
-  } = this;
-  const { pipId, vote, bondAmount } = args;
+// export type Params = { pipId: BigNumber } & VoteOnProposalParams;
 
-  const proposal = new Proposal({ pipId }, context);
+// /**
+//  * @hidden
+//  */
+// export async function prepareVoteOnProposal(
+//   this: Procedure<Params, void>,
+//   args: Params
+// ): Promise<void> {
+//   const {
+//     context: {
+//       polymeshApi: { tx },
+//     },
+//     context,
+//   } = this;
+//   const { pipId, vote, bondAmount } = args;
 
-  const [details, stage, hasVoted, { free: freeBalance }] = await Promise.all([
-    proposal.getDetails(),
-    proposal.getStage(),
-    proposal.identityHasVoted(),
-    context.accountBalance(),
-  ]);
+//   const proposal = new Proposal({ pipId }, context);
 
-  const { lastState } = details;
+//   const [details, stage, hasVoted, { free: freeBalance }] = await Promise.all([
+//     proposal.getDetails(),
+//     proposal.getStage(),
+//     proposal.identityHasVoted(),
+//     context.accountBalance(),
+//   ]);
 
-  if (lastState !== ProposalState.Pending) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The proposal must be in pending state',
-    });
-  }
+//   const { lastState } = details;
 
-  if (stage === ProposalStage.CoolOff) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The proposal must not be in its cool-off period',
-    });
-  }
+//   if (lastState !== ProposalState.Pending) {
+//     throw new PolymeshError({
+//       code: ErrorCode.ValidationError,
+//       message: 'The proposal must be in pending state',
+//     });
+//   }
 
-  if (hasVoted) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The Identity has already voted on this proposal',
-    });
-  }
+//   if (stage === ProposalStage.CoolOff) {
+//     throw new PolymeshError({
+//       code: ErrorCode.ValidationError,
+//       message: 'The proposal must not be in its cool-off period',
+//     });
+//   }
 
-  if (bondAmount.isGreaterThan(freeBalance)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: "The Identity doesn't have enough balance",
-      data: {
-        freeBalance,
-      },
-    });
-  }
+//   if (hasVoted) {
+//     throw new PolymeshError({
+//       code: ErrorCode.ValidationError,
+//       message: 'The Identity has already voted on this proposal',
+//     });
+//   }
 
-  this.addTransaction(
-    tx.pips.vote,
-    {},
-    numberToPipId(pipId, context),
-    booleanToBool(vote, context),
-    numberToBalance(bondAmount, context)
-  );
-}
+//   if (bondAmount.isGreaterThan(freeBalance)) {
+//     throw new PolymeshError({
+//       code: ErrorCode.ValidationError,
+//       message: "The Identity doesn't have enough balance",
+//       data: {
+//         freeBalance,
+//       },
+//     });
+//   }
 
-export const voteOnProposal = new Procedure(prepareVoteOnProposal);
+//   this.addTransaction(
+//     tx.pips.vote,
+//     {},
+//     numberToPipId(pipId, context),
+//     booleanToBool(vote, context),
+//     numberToBalance(bondAmount, context)
+//   );
+// }
+
+// export const voteOnProposal = new Procedure(prepareVoteOnProposal);

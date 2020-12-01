@@ -1,5 +1,5 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { cloneDeep, uniq } from 'lodash';
+import { cloneDeep, isEqual, uniq } from 'lodash';
 import { Claim as MeshClaim, IdentityId, TxTag, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure } from '~/base';
@@ -17,13 +17,14 @@ import {
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import {
-  batchArguments,
   claimToMeshClaim,
   dateToMoment,
   identityIdToString,
+  middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
-} from '~/utils';
+} from '~/utils/conversion';
+import { batchArguments } from '~/utils/internal';
 
 interface AddClaimItem {
   target: IdentityId;
@@ -128,7 +129,7 @@ export async function prepareModifyClaims(
         let isSameScope = true;
 
         if (isScopedClaim(claim)) {
-          isSameScope = claim.scope === scope;
+          isSameScope = scope ? isEqual(middlewareScopeToScope(scope), claim.scope) : false;
         }
 
         return isSameScope && ClaimType[type] === claim.type;

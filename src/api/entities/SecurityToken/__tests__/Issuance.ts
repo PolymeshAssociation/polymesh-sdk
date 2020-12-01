@@ -39,19 +39,15 @@ describe('Issuance class', () => {
       const issuance = new Issuance(token, context);
 
       const args = {
-        issuanceData: [
-          {
-            identity: 'someDid',
-            amount: new BigNumber(100),
-          },
-        ],
+        ticker: token.ticker,
+        amount: new BigNumber(100),
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
       sinon
         .stub(issueTokens, 'prepare')
-        .withArgs({ ticker: token.ticker, ...args }, context)
+        .withArgs(args, context)
         .resolves(expectedQueue);
 
       const queue = await issuance.issue(args);

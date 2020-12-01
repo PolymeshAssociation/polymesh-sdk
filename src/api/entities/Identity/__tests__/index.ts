@@ -1,3 +1,4 @@
+import { u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
@@ -7,8 +8,16 @@ import { Entity, Identity } from '~/api/entities';
 import { Context } from '~/base';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { Order, Role, RoleType, TickerOwnerRole, TokenOwnerRole } from '~/types';
-import * as utilsModule from '~/utils';
+import {
+  Order,
+  PortfolioCustodianRole,
+  Role,
+  RoleType,
+  TickerOwnerRole,
+  TokenOwnerRole,
+  VenueOwnerRole,
+} from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -20,6 +29,22 @@ jest.mock(
   '~/api/entities/SecurityToken',
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
+jest.mock(
+  '~/api/entities/Venue',
+  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
+);
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
+);
+jest.mock(
+  '~/api/entities/DefaultPortfolio',
+  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+    '~/api/entities/DefaultPortfolio'
+  )
+);
 
 describe('Identity class', () => {
   let context: Context;
@@ -28,8 +53,8 @@ describe('Identity class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
-    stringToIdentityIdStub = sinon.stub(utilsModule, 'stringToIdentityId');
-    identityIdToStringStub = sinon.stub(utilsModule, 'identityIdToString');
+    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
   });
 
   beforeEach(() => {
@@ -129,6 +154,51 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
+    test('hasRole should check whether the Identity has the Venue Owner role', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const role: VenueOwnerRole = { type: RoleType.VenueOwner, venueId: new BigNumber(10) };
+
+      entityMockUtils.configureMocks({
+        venueOptions: { details: { owner: new Identity({ did }, context) } },
+      });
+
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      identity.did = 'otherDid';
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+    });
+
+    test('hasRole should check whether the Identity has the Portfolio Custodian role', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const portfolioId = {
+        did,
+        number: new BigNumber(1),
+      };
+      let role: PortfolioCustodianRole = { type: RoleType.PortfolioCustodian, portfolioId };
+
+      entityMockUtils.configureMocks({
+        numberedPortfolioOptions: { isCustodiedBy: true },
+        defaultPortfolioOptions: { isCustodiedBy: false },
+      });
+
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      role = { type: RoleType.PortfolioCustodian, portfolioId: { did } };
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+    });
+
     test('hasRole should throw an error if the role is not recognized', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const type = 'Fake' as RoleType;
@@ -199,12 +269,12 @@ describe('Identity class', () => {
       identity = new Identity({ did }, mockContext);
 
       sinon
-        .stub(utilsModule, 'stringToTicker')
+        .stub(utilsConversionModule, 'stringToTicker')
         .withArgs(ticker, mockContext)
         .returns(rawTicker);
 
       sinon
-        .stub(utilsModule, 'balanceToBigNumber')
+        .stub(utilsConversionModule, 'balanceToBigNumber')
         .withArgs(fakeBalance)
         .returns(fakeValue);
     });
@@ -217,7 +287,7 @@ describe('Identity class', () => {
           total_supply: dsMockUtils.createMockBalance(3000),
           divisible: dsMockUtils.createMockBool(true),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
-          treasury_did: dsMockUtils.createMockOption(),
+          primary_issuance_agent: dsMockUtils.createMockOption(),
           name: dsMockUtils.createMockAssetName('someToken'),
         })
       );
@@ -280,7 +350,7 @@ describe('Identity class', () => {
         .resolves(fakeHasValidCdd);
 
       sinon
-        .stub(utilsModule, 'cddStatusToBoolean')
+        .stub(utilsConversionModule, 'cddStatusToBoolean')
         .withArgs(fakeHasValidCdd)
         .returns(statusResponse);
 
@@ -329,16 +399,16 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getMasterKey', () => {
+  describe('method: getPrimaryKey', () => {
     const did = 'someDid';
-    const accountId = 'someMasterKey';
+    const accountId = 'somePrimaryKey';
 
     let accountIdToStringStub: sinon.SinonStub<[AccountId], string>;
     let didRecordsStub: sinon.SinonStub;
     let rawDidRecord: DidRecord;
 
     beforeAll(() => {
-      accountIdToStringStub = sinon.stub(utilsModule, 'accountIdToString');
+      accountIdToStringStub = sinon.stub(utilsConversionModule, 'accountIdToString');
       accountIdToStringStub.returns(accountId);
     });
 
@@ -347,19 +417,19 @@ describe('Identity class', () => {
       /* eslint-disable @typescript-eslint/camelcase */
       rawDidRecord = dsMockUtils.createMockDidRecord({
         roles: [],
-        master_key: dsMockUtils.createMockAccountId(accountId),
-        signing_keys: [],
+        primary_key: dsMockUtils.createMockAccountId(accountId),
+        secondary_keys: [],
       });
       /* eslint-enabled @typescript-eslint/camelcase */
     });
 
-    test('should return a MasterKey', async () => {
+    test('should return a PrimaryKey', async () => {
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
 
       didRecordsStub.returns(rawDidRecord);
 
-      const result = await identity.getMasterKey();
+      const result = await identity.getPrimaryKey();
       expect(result).toEqual(accountId);
     });
 
@@ -375,7 +445,7 @@ describe('Identity class', () => {
       });
 
       const callback = sinon.stub();
-      const result = await identity.getMasterKey(callback);
+      const result = await identity.getPrimaryKey(callback);
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, accountId);
@@ -421,6 +491,62 @@ describe('Identity class', () => {
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
+    });
+  });
+
+  describe('method: getVenues', () => {
+    let did: string;
+    let venueId: BigNumber;
+
+    let rawDid: IdentityId;
+    let rawVenueId: u64;
+
+    beforeAll(() => {
+      did = 'someDid';
+      venueId = new BigNumber(10);
+
+      rawDid = dsMockUtils.createMockIdentityId(did);
+      rawVenueId = dsMockUtils.createMockU64(venueId.toNumber());
+    });
+
+    beforeEach(() => {
+      stringToIdentityIdStub.withArgs(did, context).returns(rawDid);
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return a list of Venues', async () => {
+      const fakeResult = [entityMockUtils.getVenueInstance({ id: venueId })];
+
+      dsMockUtils
+        .createQueryStub('settlement', 'userVenues')
+        .withArgs(rawDid)
+        .resolves([rawVenueId]);
+
+      const identity = new Identity({ did }, context);
+
+      const result = await identity.getVenues();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      const fakeResult = [entityMockUtils.getVenueInstance({ id: venueId })];
+
+      dsMockUtils.createQueryStub('settlement', 'userVenues').callsFake(async (_, cbFunc) => {
+        cbFunc([rawVenueId]);
+        return unsubCallback;
+      });
+
+      const identity = new Identity({ did }, context);
+
+      const callback = sinon.stub();
+      const result = await identity.getVenues(callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeResult);
     });
   });
 });

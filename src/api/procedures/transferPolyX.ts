@@ -10,7 +10,7 @@ import {
   signerToString,
   stringToAccountId,
   stringToMemo,
-} from '~/utils';
+} from '~/utils/conversion';
 
 export interface TransferPolyXParams {
   to: string | Account;
@@ -89,7 +89,7 @@ export async function prepareTransferPolyX(
     });
   }
 
-  const rawAmount = numberToBalance(amount, context);
+  const rawAmount = numberToBalance(amount, context, false);
 
   if (memo) {
     this.addTransaction(

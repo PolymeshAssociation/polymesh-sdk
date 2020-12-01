@@ -11,7 +11,7 @@ import { Context } from '~/base';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/SecurityToken',
@@ -28,7 +28,7 @@ describe('toggleFreezeTransfers procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsModule, 'stringToTicker');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'tickerFrozen';
     rawTicker = dsMockUtils.createMockTicker(ticker);
   });
@@ -56,7 +56,7 @@ describe('toggleFreezeTransfers procedure', () => {
   test('should throw an error if freeze is set to true and the security token is already frozen', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        transfersAreFrozen: true,
+        isFrozen: true,
       },
     });
 
@@ -99,7 +99,7 @@ describe('toggleFreezeTransfers procedure', () => {
   test('should add a unfreeze transaction to the queue', async () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        transfersAreFrozen: true,
+        isFrozen: true,
       },
     });
 

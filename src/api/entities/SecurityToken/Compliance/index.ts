@@ -1,7 +1,7 @@
 import { Namespace, SecurityToken } from '~/api/entities';
 import { Context } from '~/base';
 
-import { Rules } from './Rules';
+import { Requirements } from './Requirements';
 import { TrustedClaimIssuers } from './TrustedClaimIssuers';
 
 /**
@@ -9,7 +9,7 @@ import { TrustedClaimIssuers } from './TrustedClaimIssuers';
  */
 export class Compliance extends Namespace<SecurityToken> {
   public trustedClaimIssuers: TrustedClaimIssuers;
-  public rules: Rules;
+  public requirements: Requirements;
 
   /**
    * @hidden
@@ -18,6 +18,6 @@ export class Compliance extends Namespace<SecurityToken> {
     super(parent, context);
 
     this.trustedClaimIssuers = new TrustedClaimIssuers(parent, context);
-    this.rules = new Rules(parent, context);
+    this.requirements = new Requirements(parent, context);
   }
 }

@@ -11,7 +11,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, Identity, ResultSet } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
-import * as utilsModule from '~/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('inviteAccount procedure', () => {
   let mockContext: Mocked<Context>;
@@ -33,12 +33,12 @@ describe('inviteAccount procedure', () => {
     entityMockUtils.initMocks();
 
     authorizationToAuthorizationDataStub = sinon.stub(
-      utilsModule,
+      utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = sinon.stub(utilsModule, 'dateToMoment');
-    signerToStringStub = sinon.stub(utilsModule, 'signerToString');
-    signerValueToSignatoryStub = sinon.stub(utilsModule, 'signerValueToSignatory');
+    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
+    signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
+    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
   });
 
   beforeEach(() => {
@@ -92,7 +92,7 @@ describe('inviteAccount procedure', () => {
       },
     });
 
-    mockContext.getSigningKeys.resolves([
+    mockContext.getSecondaryKeys.resolves([
       {
         signer,
         permissions: [],
@@ -140,7 +140,6 @@ describe('inviteAccount procedure', () => {
       address: 'someAddress',
       getIdentity: entityMockUtils.getIdentityInstance(),
     });
-    Object.setPrototypeOf(targetAccount, Account.prototype);
 
     signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);
 
@@ -151,10 +150,10 @@ describe('inviteAccount procedure', () => {
     );
   });
 
-  test('should throw an error if the passed account is already present in the signing keys list', async () => {
+  test('should throw an error if the passed account is already present in the secondary keys list', async () => {
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
 
-    mockContext.getSigningKeys.resolves([
+    mockContext.getSecondaryKeys.resolves([
       {
         signer,
         permissions: [],
@@ -167,7 +166,7 @@ describe('inviteAccount procedure', () => {
     const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
 
     await expect(prepareInviteAccount.call(proc, args)).rejects.toThrow(
-      'The target Account is already a signing key for this Identity'
+      'The target Account is already a secondary key for this Identity'
     );
   });
 
@@ -197,7 +196,7 @@ describe('inviteAccount procedure', () => {
       },
     });
 
-    mockContext.getSigningKeys.resolves([
+    mockContext.getSecondaryKeys.resolves([
       {
         signer,
         permissions: [],

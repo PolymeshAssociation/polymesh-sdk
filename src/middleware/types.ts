@@ -22,7 +22,7 @@ export type Query = {
   heartbeat: Scalars['Boolean'];
   /** Get the chain  information */
   chainInfo?: Maybe<ChainInfo>;
-  latestBlock?: Block;
+  latestBlock: Block;
   /** Get all blocks */
   blocks?: Maybe<Array<Maybe<Block>>>;
   /** Get a block by block number */
@@ -154,7 +154,7 @@ export type QueryPolyxTransfersSentArgs = {
 
 export type QueryDidsWithClaimsArgs = {
   dids?: Maybe<Array<Scalars['String']>>;
-  scope?: Maybe<Scalars['String']>;
+  scope?: Maybe<ScopeInput>;
   trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
   claimTypes?: Maybe<Array<ClaimTypeEnum>>;
   includeExpired?: Maybe<Scalars['Boolean']>;
@@ -164,7 +164,7 @@ export type QueryDidsWithClaimsArgs = {
 
 export type QueryIssuerDidsWithClaimsByTargetArgs = {
   target: Scalars['String'];
-  scope?: Maybe<Scalars['String']>;
+  scope?: Maybe<ScopeInput>;
   trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
   claimTypes?: Maybe<Array<ClaimTypeEnum>>;
   includeExpired?: Maybe<Scalars['Boolean']>;
@@ -295,7 +295,7 @@ export type Block = {
   count_extrinsics_signedby_index?: Maybe<Scalars['Int']>;
   count_extrinsics_success?: Maybe<Scalars['Int']>;
   count_extrinsics_unsigned?: Maybe<Scalars['Int']>;
-  datetime?: Maybe<Scalars['DateTime']>;
+  datetime: Scalars['DateTime'];
   day?: Maybe<Scalars['Int']>;
   hour?: Maybe<Scalars['Int']>;
   month?: Maybe<Scalars['Int']>;
@@ -324,8 +324,8 @@ export type Block = {
 export type Event = {
   __typename?: 'Event';
   /** Blockchain event */
-  block_id?: Maybe<Scalars['Int']>;
-  event_idx?: Maybe<Scalars['Int']>;
+  block_id: Scalars['Int'];
+  event_idx: Scalars['Int'];
   extrinsic_idx?: Maybe<Scalars['Int']>;
   type?: Maybe<Scalars['String']>;
   spec_version_id?: Maybe<Scalars['Int']>;
@@ -339,7 +339,7 @@ export type Event = {
   event_arg_1?: Maybe<Scalars['String']>;
   event_arg_2?: Maybe<Scalars['String']>;
   claim_type?: Maybe<ClaimTypeEnum>;
-  claim_scope?: Maybe<Scalars['String']>;
+  claim_scope?: Maybe<Scope>;
   claim_issuer?: Maybe<Scalars['String']>;
   claim_expiry?: Maybe<Scalars['String']>;
   codec_error?: Maybe<Scalars['Int']>;
@@ -380,6 +380,7 @@ export enum ModuleIdEnum {
   Stocapped = 'stocapped',
   Exemption = 'exemption',
   Settlement = 'settlement',
+  Sto = 'sto',
   Cddserviceproviders = 'cddserviceproviders',
   Statistic = 'statistic',
   Protocolfee = 'protocolfee',
@@ -448,7 +449,6 @@ export enum EventIdEnum {
   Restored = 'Restored',
   CodeStored = 'CodeStored',
   ScheduleUpdated = 'ScheduleUpdated',
-  Dispatched = 'Dispatched',
   ContractExecution = 'ContractExecution',
   TreasuryDisbursement = 'TreasuryDisbursement',
   TreasuryReimbursement = 'TreasuryReimbursement',
@@ -481,6 +481,7 @@ export enum EventIdEnum {
   ReferendumStateUpdated = 'ReferendumStateUpdated',
   DefaultEnactmentPeriodChanged = 'DefaultEnactmentPeriodChanged',
   MinimumProposalDepositChanged = 'MinimumProposalDepositChanged',
+  QuorumThresholdChanged = 'QuorumThresholdChanged',
   ProposalCoolOffPeriodChanged = 'ProposalCoolOffPeriodChanged',
   ProposalDurationChanged = 'ProposalDurationChanged',
   ProposalRefund = 'ProposalRefund',
@@ -494,8 +495,6 @@ export enum EventIdEnum {
   DivisibilityChanged = 'DivisibilityChanged',
   TransferWithData = 'TransferWithData',
   IsIssuable = 'IsIssuable',
-  CustodyTransfer = 'CustodyTransfer',
-  CustodyAllowanceChanged = 'CustodyAllowanceChanged',
   TickerRegistered = 'TickerRegistered',
   TickerTransferred = 'TickerTransferred',
   AssetOwnershipTransferred = 'AssetOwnershipTransferred',
@@ -507,19 +506,21 @@ export enum EventIdEnum {
   ExtensionArchived = 'ExtensionArchived',
   ExtensionUnArchived = 'ExtensionUnArchived',
   CheckpointCreated = 'CheckpointCreated',
-  TreasuryDidSet = 'TreasuryDidSet',
+  PrimaryIssuanceAgentTransfered = 'PrimaryIssuanceAgentTransfered',
   DocumentAdded = 'DocumentAdded',
   DocumentRemoved = 'DocumentRemoved',
+  ExtensionRemoved = 'ExtensionRemoved',
+  ClassicTickerClaimed = 'ClassicTickerClaimed',
   DividendCreated = 'DividendCreated',
   DividendCanceled = 'DividendCanceled',
   DividendPaidOutToUser = 'DividendPaidOutToUser',
   DividendRemainingClaimed = 'DividendRemainingClaimed',
   DidCreated = 'DidCreated',
-  SigningKeysAdded = 'SigningKeysAdded',
-  SigningKeysRemoved = 'SigningKeysRemoved',
+  SecondaryKeysAdded = 'SecondaryKeysAdded',
+  SecondaryKeysRemoved = 'SecondaryKeysRemoved',
   SignerLeft = 'SignerLeft',
-  SigningPermissionsUpdated = 'SigningPermissionsUpdated',
-  MasterKeyUpdated = 'MasterKeyUpdated',
+  SecondaryPermissionsUpdated = 'SecondaryPermissionsUpdated',
+  PrimaryKeyUpdated = 'PrimaryKeyUpdated',
   ClaimAdded = 'ClaimAdded',
   ClaimRevoked = 'ClaimRevoked',
   DidStatus = 'DidStatus',
@@ -530,10 +531,10 @@ export enum EventIdEnum {
   AuthorizationRejected = 'AuthorizationRejected',
   AuthorizationConsumed = 'AuthorizationConsumed',
   OffChainAuthorizationRevoked = 'OffChainAuthorizationRevoked',
-  CddRequirementForMasterKeyUpdated = 'CddRequirementForMasterKeyUpdated',
+  CddRequirementForPrimaryKeyUpdated = 'CddRequirementForPrimaryKeyUpdated',
   CddClaimsInvalidated = 'CddClaimsInvalidated',
-  SigningKeysFrozen = 'SigningKeysFrozen',
-  SigningKeysUnfrozen = 'SigningKeysUnfrozen',
+  SecondaryKeysFrozen = 'SecondaryKeysFrozen',
+  SecondaryKeysUnfrozen = 'SecondaryKeysUnfrozen',
   ControllerChanged = 'ControllerChanged',
   AdminChanged = 'AdminChanged',
   TimelockChanged = 'TimelockChanged',
@@ -546,13 +547,13 @@ export enum EventIdEnum {
   BridgeLimitUpdated = 'BridgeLimitUpdated',
   TxsHandled = 'TxsHandled',
   BridgeTxScheduled = 'BridgeTxScheduled',
-  NewAssetRuleCreated = 'NewAssetRuleCreated',
-  AssetRuleRemoved = 'AssetRuleRemoved',
-  AssetRulesReplaced = 'AssetRulesReplaced',
-  AssetRulesReset = 'AssetRulesReset',
-  AssetRulesResumed = 'AssetRulesResumed',
-  AssetRulesPaused = 'AssetRulesPaused',
-  AssetRuleChanged = 'AssetRuleChanged',
+  ComplianceRequirementCreated = 'ComplianceRequirementCreated',
+  ComplianceRequirementRemoved = 'ComplianceRequirementRemoved',
+  AssetComplianceReplaced = 'AssetComplianceReplaced',
+  AssetComplianceReset = 'AssetComplianceReset',
+  AssetComplianceResumed = 'AssetComplianceResumed',
+  AssetCompliancePaused = 'AssetCompliancePaused',
+  ComplianceRequirementChanged = 'ComplianceRequirementChanged',
   TrustedDefaultClaimIssuerAdded = 'TrustedDefaultClaimIssuerAdded',
   TrustedDefaultClaimIssuerRemoved = 'TrustedDefaultClaimIssuerRemoved',
   BallotCreated = 'BallotCreated',
@@ -561,6 +562,7 @@ export enum EventIdEnum {
   AssetPurchased = 'AssetPurchased',
   ExemptionListModified = 'ExemptionListModified',
   VenueCreated = 'VenueCreated',
+  VenueUpdated = 'VenueUpdated',
   InstructionCreated = 'InstructionCreated',
   InstructionAuthorized = 'InstructionAuthorized',
   InstructionUnauthorized = 'InstructionUnauthorized',
@@ -574,16 +576,20 @@ export enum EventIdEnum {
   InstructionFailed = 'InstructionFailed',
   InstructionExecuted = 'InstructionExecuted',
   VenueUnauthorized = 'VenueUnauthorized',
+  FundraiserCreated = 'FundraiserCreated',
+  FundsRaised = 'FundsRaised',
   FeeSet = 'FeeSet',
   CoefficientSet = 'CoefficientSet',
   FeeCharged = 'FeeCharged',
   BatchInterrupted = 'BatchInterrupted',
+  BatchOptimisticFailed = 'BatchOptimisticFailed',
   BatchCompleted = 'BatchCompleted',
   PortfolioCreated = 'PortfolioCreated',
   PortfolioDeleted = 'PortfolioDeleted',
   MovedBetweenPortfolios = 'MovedBetweenPortfolios',
   PortfolioRenamed = 'PortfolioRenamed',
   UserPortfolios = 'UserPortfolios',
+  PortfolioCustodianChanged = 'PortfolioCustodianChanged',
   RangeProofAdded = 'RangeProofAdded',
   RangeProofVerified = 'RangeProofVerified',
 }
@@ -601,11 +607,23 @@ export enum ClaimTypeEnum {
   NoData = 'NoData',
 }
 
+export type Scope = {
+  __typename?: 'Scope';
+  type: ClaimScopeTypeEnum;
+  value: Scalars['String'];
+};
+
+export enum ClaimScopeTypeEnum {
+  Identity = 'Identity',
+  Ticker = 'Ticker',
+  Custom = 'Custom',
+}
+
 export type Extrinsic = {
   __typename?: 'Extrinsic';
   /** Extrinsic details */
-  block_id?: Maybe<Scalars['Int']>;
-  extrinsic_idx?: Maybe<Scalars['Int']>;
+  block_id: Scalars['Int'];
+  extrinsic_idx: Scalars['Int'];
   extrinsic_length?: Maybe<Scalars['String']>;
   extrinsic_version?: Maybe<Scalars['String']>;
   signed?: Maybe<Scalars['Int']>;
@@ -617,12 +635,12 @@ export type Extrinsic = {
   nonce?: Maybe<Scalars['Int']>;
   era?: Maybe<Scalars['String']>;
   call?: Maybe<Scalars['String']>;
-  module_id?: Maybe<ModuleIdEnum>;
-  call_id?: Maybe<CallIdEnum>;
-  params?: Maybe<Scalars['Object']>;
-  success?: Maybe<Scalars['Int']>;
+  module_id: ModuleIdEnum;
+  call_id: CallIdEnum;
+  params: Array<Maybe<Scalars['Object']>>;
+  success: Scalars['Int'];
   error?: Maybe<Scalars['Int']>;
-  spec_version_id?: Maybe<Scalars['Int']>;
+  spec_version_id: Scalars['Int'];
   codec_error?: Maybe<Scalars['Int']>;
   extrinsic_hash?: Maybe<Scalars['String']>;
   account_idx?: Maybe<Scalars['Int']>;
@@ -643,6 +661,8 @@ export enum CallIdEnum {
   KillStorage = 'kill_storage',
   KillPrefix = 'kill_prefix',
   Suicide = 'suicide',
+  ReportEquivocation = 'report_equivocation',
+  ReportEquivocationUnsigned = 'report_equivocation_unsigned',
   Set = 'set',
   Claim = 'claim',
   Transfer = 'transfer',
@@ -687,7 +707,7 @@ export enum CallIdEnum {
   SetKeys = 'set_keys',
   PurgeKeys = 'purge_keys',
   FinalHint = 'final_hint',
-  ReportEquivocation = 'report_equivocation',
+  NoteStalled = 'note_stalled',
   Heartbeat = 'heartbeat',
   SetSlashingParams = 'set_slashing_params',
   Sudo = 'sudo',
@@ -712,7 +732,7 @@ export enum CallIdEnum {
   ChangeSigsRequired = 'change_sigs_required',
   ChangeAllSignersAndSigsRequired = 'change_all_signers_and_sigs_required',
   MakeMultisigSigner = 'make_multisig_signer',
-  MakeMultisigMaster = 'make_multisig_master',
+  MakeMultisigPrimary = 'make_multisig_primary',
   UpdateSchedule = 'update_schedule',
   PutCode = 'put_code',
   Call = 'call',
@@ -752,43 +772,34 @@ export enum CallIdEnum {
   OverrideReferendumEnactmentPeriod = 'override_referendum_enactment_period',
   RegisterTicker = 'register_ticker',
   AcceptTickerTransfer = 'accept_ticker_transfer',
+  AcceptPrimaryIssuanceAgentTransfer = 'accept_primary_issuance_agent_transfer',
   AcceptAssetOwnershipTransfer = 'accept_asset_ownership_transfer',
   CreateAsset = 'create_asset',
   Unfreeze = 'unfreeze',
   RenameAsset = 'rename_asset',
-  ControllerTransfer = 'controller_transfer',
-  Approve = 'approve',
-  TransferFrom = 'transfer_from',
   CreateCheckpoint = 'create_checkpoint',
   Issue = 'issue',
-  BatchIssue = 'batch_issue',
-  Redeem = 'redeem',
-  RedeemFrom = 'redeem_from',
-  ControllerRedeem = 'controller_redeem',
   MakeDivisible = 'make_divisible',
-  TransferWithData = 'transfer_with_data',
-  TransferFromWithData = 'transfer_from_with_data',
-  IsIssuable = 'is_issuable',
   BatchAddDocument = 'batch_add_document',
   BatchRemoveDocument = 'batch_remove_document',
-  IncreaseCustodyAllowance = 'increase_custody_allowance',
-  IncreaseCustodyAllowanceOf = 'increase_custody_allowance_of',
-  TransferByCustodian = 'transfer_by_custodian',
   SetFundingRound = 'set_funding_round',
   UpdateIdentifiers = 'update_identifiers',
   AddExtension = 'add_extension',
   ArchiveExtension = 'archive_extension',
   UnarchiveExtension = 'unarchive_extension',
-  SetTreasuryDid = 'set_treasury_did',
+  RemovePrimaryIssuanceAgent = 'remove_primary_issuance_agent',
+  RemoveSmartExtension = 'remove_smart_extension',
+  ClaimClassicTicker = 'claim_classic_ticker',
   New = 'new',
   Cancel = 'cancel',
   ClaimUnclaimed = 'claim_unclaimed',
   RegisterDid = 'register_did',
   CddRegisterDid = 'cdd_register_did',
+  MockCddRegisterDid = 'mock_cdd_register_did',
   InvalidateCddClaims = 'invalidate_cdd_claims',
-  RemoveSigningKeys = 'remove_signing_keys',
-  SetMasterKey = 'set_master_key',
-  AcceptMasterKey = 'accept_master_key',
+  RemoveSecondaryKeys = 'remove_secondary_keys',
+  SetPrimaryKey = 'set_primary_key',
+  AcceptPrimaryKey = 'accept_primary_key',
   ChangeCddRequirementForMkRotation = 'change_cdd_requirement_for_mk_rotation',
   JoinIdentityAsKey = 'join_identity_as_key',
   JoinIdentityAsIdentity = 'join_identity_as_identity',
@@ -800,8 +811,8 @@ export enum CallIdEnum {
   RevokeClaim = 'revoke_claim',
   BatchRevokeClaim = 'batch_revoke_claim',
   SetPermissionToSigner = 'set_permission_to_signer',
-  FreezeSigningKeys = 'freeze_signing_keys',
-  UnfreezeSigningKeys = 'unfreeze_signing_keys',
+  FreezeSecondaryKeys = 'freeze_secondary_keys',
+  UnfreezeSecondaryKeys = 'unfreeze_secondary_keys',
   GetMyDid = 'get_my_did',
   GetCddOf = 'get_cdd_of',
   AddAuthorization = 'add_authorization',
@@ -810,7 +821,7 @@ export enum CallIdEnum {
   BatchRemoveAuthorization = 'batch_remove_authorization',
   AcceptAuthorization = 'accept_authorization',
   BatchAcceptAuthorization = 'batch_accept_authorization',
-  BatchAddSigningKeyWithAuthorization = 'batch_add_signing_key_with_authorization',
+  BatchAddSecondaryKeyWithAuthorization = 'batch_add_secondary_key_with_authorization',
   RevokeOffchainAuthorization = 'revoke_offchain_authorization',
   ChangeController = 'change_controller',
   ChangeAdmin = 'change_admin',
@@ -825,18 +836,18 @@ export enum CallIdEnum {
   BatchHandleBridgeTx = 'batch_handle_bridge_tx',
   BatchFreezeTx = 'batch_freeze_tx',
   BatchUnfreezeTx = 'batch_unfreeze_tx',
-  AddActiveRule = 'add_active_rule',
-  RemoveActiveRule = 'remove_active_rule',
-  ReplaceAssetRules = 'replace_asset_rules',
-  ResetActiveRules = 'reset_active_rules',
-  PauseAssetRules = 'pause_asset_rules',
-  ResumeAssetRules = 'resume_asset_rules',
+  AddComplianceRequirement = 'add_compliance_requirement',
+  RemoveComplianceRequirement = 'remove_compliance_requirement',
+  ReplaceAssetCompliance = 'replace_asset_compliance',
+  ResetAssetCompliance = 'reset_asset_compliance',
+  PauseAssetCompliance = 'pause_asset_compliance',
+  ResumeAssetCompliance = 'resume_asset_compliance',
   AddDefaultTrustedClaimIssuer = 'add_default_trusted_claim_issuer',
   RemoveDefaultTrustedClaimIssuer = 'remove_default_trusted_claim_issuer',
   BatchAddDefaultTrustedClaimIssuer = 'batch_add_default_trusted_claim_issuer',
   BatchRemoveDefaultTrustedClaimIssuer = 'batch_remove_default_trusted_claim_issuer',
-  ChangeAssetRule = 'change_asset_rule',
-  BatchChangeAssetRule = 'batch_change_asset_rule',
+  ChangeComplianceRequirement = 'change_compliance_requirement',
+  BatchChangeComplianceRequirement = 'batch_change_compliance_requirement',
   AddBallot = 'add_ballot',
   CancelBallot = 'cancel_ballot',
   LaunchSto = 'launch_sto',
@@ -845,7 +856,9 @@ export enum CallIdEnum {
   UnpauseSto = 'unpause_sto',
   ModifyExemptionList = 'modify_exemption_list',
   CreateVenue = 'create_venue',
+  UpdateVenue = 'update_venue',
   AddInstruction = 'add_instruction',
+  AddAndAuthorizeInstruction = 'add_and_authorize_instruction',
   AuthorizeInstruction = 'authorize_instruction',
   UnauthorizeInstruction = 'unauthorize_instruction',
   RejectInstruction = 'reject_instruction',
@@ -855,13 +868,17 @@ export enum CallIdEnum {
   SetVenueFiltering = 'set_venue_filtering',
   AllowVenues = 'allow_venues',
   DisallowVenues = 'disallow_venues',
+  CreateFundraiser = 'create_fundraiser',
+  Invest = 'invest',
   ChangeCoefficient = 'change_coefficient',
   ChangeBaseFee = 'change_base_fee',
   Batch = 'batch',
+  BatchAtomic = 'batch_atomic',
+  BatchOptimistic = 'batch_optimistic',
   RelayTx = 'relay_tx',
   CreatePortfolio = 'create_portfolio',
   DeletePortfolio = 'delete_portfolio',
-  MovePortfolio = 'move_portfolio',
+  MovePortfolioFunds = 'move_portfolio_funds',
   RenamePortfolio = 'rename_portfolio',
   AddRangeProof = 'add_range_proof',
   AddVerifyRangeProof = 'add_verify_range_proof',
@@ -921,6 +938,11 @@ export type PolyxTransfer = {
   balance: Scalars['Float'];
 };
 
+export type ScopeInput = {
+  type: ClaimScopeTypeEnum;
+  value: Scalars['String'];
+};
+
 export type IdentityWithClaimsResult = {
   __typename?: 'IdentityWithClaimsResult';
   totalCount: Scalars['Int'];
@@ -942,12 +964,13 @@ export type Claim = {
   expiry?: Maybe<Scalars['BigInt']>;
   type: ClaimTypeEnum;
   jurisdiction?: Maybe<Scalars['String']>;
-  scope?: Maybe<Scalars['String']>;
+  scope?: Maybe<Scope>;
+  cdd_id?: Maybe<Scalars['String']>;
 };
 
 export type ClaimScope = {
   __typename?: 'ClaimScope';
-  scope?: Maybe<Scalars['String']>;
+  scope?: Maybe<Scope>;
   ticker?: Maybe<Scalars['String']>;
 };
 
@@ -990,12 +1013,14 @@ export type FailedTokenTransfer = {
 };
 
 export enum AuthTypeEnum {
-  AttestMasterKeyRotation = 'AttestMasterKeyRotation',
-  RotateMasterKey = 'RotateMasterKey',
+  AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
+  RotatePrimaryKey = 'RotatePrimaryKey',
   TransferTicker = 'TransferTicker',
   AddMultiSigSigner = 'AddMultiSigSigner',
   TransferAssetOwnership = 'TransferAssetOwnership',
+  TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
   JoinIdentity = 'JoinIdentity',
+  PortfolioCustody = 'PortfolioCustody',
   Custom = 'Custom',
   NoData = 'NoData',
 }
