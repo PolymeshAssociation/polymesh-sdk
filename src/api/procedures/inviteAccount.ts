@@ -1,17 +1,13 @@
-import {
-  Account,
-  DefaultPortfolio,
-  NumberedPortfolio,
-  PolymeshError,
-  Procedure,
-  SecurityToken,
-} from '~/internal';
+import P from 'bluebird';
+
+import { Account, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { TxTag } from '~/polkadot/types';
-import { AuthorizationType, ErrorCode, Permissions } from '~/types';
+import { AuthorizationType, ErrorCode, Permissions, PortfolioLike } from '~/types';
 import { SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
+  portfolioLikeToPortfolio,
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
@@ -19,9 +15,9 @@ import {
 export interface InviteAccountParams {
   targetAccount: string | Account;
   permissions?: {
-    tokens?: (string | SecurityToken)[];
-    transactions?: TxTag[];
-    portfolios?: (DefaultPortfolio | NumberedPortfolio)[];
+    tokens?: (string | SecurityToken)[] | null;
+    transactions?: TxTag[] | null;
+    portfolios?: PortfolioLike[] | null;
   };
   expiry?: Date;
 }
@@ -102,24 +98,42 @@ export async function prepareInviteAccount(
     context
   );
 
-  let authorizationValue = {
+  let authorizationValue: Permissions = {
     tokens: [],
     transactions: [],
     portfolios: [],
-  } as Permissions;
+  };
 
   if (permissions) {
     const { tokens, transactions, portfolios } = permissions;
 
-    const rawTokens =
-      tokens?.map(ticker =>
-        typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
-      ) ?? [];
+    let rawTokens = null;
+    let rawPortfolios = null;
+
+    if (tokens !== null) {
+      rawTokens = undefined;
+
+      if (tokens !== undefined) {
+        rawTokens = tokens.map(ticker =>
+          typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
+        );
+      }
+    }
+
+    if (portfolios !== null) {
+      rawPortfolios = undefined;
+
+      if (portfolios !== undefined) {
+        rawPortfolios = await P.map(portfolios, portfolio =>
+          portfolioLikeToPortfolio(portfolio, context)
+        );
+      }
+    }
 
     authorizationValue = {
-      tokens: rawTokens,
-      transactions: transactions ?? [],
-      portfolios: portfolios ?? [],
+      tokens: rawTokens === null ? null : rawTokens ?? [],
+      transactions: transactions === null ? null : transactions ?? [],
+      portfolios: rawPortfolios === null ? null : rawPortfolios ?? [],
     };
   }
 

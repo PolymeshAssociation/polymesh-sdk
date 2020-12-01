@@ -62,9 +62,9 @@ export class CurrentIdentity extends Identity {
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    *
    * @param args.permissions - list of allowed permissions (optional, defaults to no permissions)
-   * @param args.permissions.tokens - array of Security Tokens (or tickers) for which to allow permission (optional, no permissions if not passed)
-   * @param args.permissions.transactions - array of tags associated with the transaction that will be executed for which to allow permission (optional, no permissions if not passed)
-   * @param args.permissions.portfolios - array of portfolios for which to allow permission (optional, no permissions if not passed)
+   * @param args.permissions.tokens - array of Security Tokens (or tickers) for which to allow permission. Sets null to allow all. (optional, no permissions if not passed)
+   * @param args.permissions.transactions - array of tags associated with the transaction that will be executed for which to allow permission. Sets null to allow all. (optional, no permissions if not passed)
+   * @param args.permissions.portfolios - array of portfolios for which to allow permission. Sets null to allow all. (optional, no permissions if not passed)
    */
   public inviteAccount(args: InviteAccountParams): Promise<TransactionQueue<void>> {
     return inviteAccount.prepare(args, this.context);

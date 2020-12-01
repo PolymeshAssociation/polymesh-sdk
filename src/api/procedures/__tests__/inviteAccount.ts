@@ -29,6 +29,7 @@ describe('inviteAccount procedure', () => {
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
+  let portfolioLikeToPortfolioStub: sinon.SinonStub;
 
   const args = { targetAccount: 'targetAccount' };
   const authId = new BigNumber(1);
@@ -45,6 +46,7 @@ describe('inviteAccount procedure', () => {
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
     signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
     signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+    portfolioLikeToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolio');
   });
 
   beforeEach(() => {
@@ -178,7 +180,9 @@ describe('inviteAccount procedure', () => {
     await prepareInviteAccount.call(proc, {
       ...args,
       permissions: {
+        tokens: null,
         transactions,
+        portfolios: null,
       },
     });
 
@@ -194,9 +198,12 @@ describe('inviteAccount procedure', () => {
     await prepareInviteAccount.call(proc, {
       ...args,
       permissions: {
+        transactions: null,
         portfolios,
       },
     });
+
+    portfolioLikeToPortfolioStub.resolves({} as DefaultPortfolio);
 
     sinon.assert.calledWith(
       addTransactionStub,

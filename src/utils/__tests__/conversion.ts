@@ -121,6 +121,7 @@ import {
   numberToU64,
   permissionsToMeshPermissions,
   portfolioIdToMeshPortfolioId,
+  portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
@@ -3742,6 +3743,44 @@ describe('portfolioLikeToPortfolioId', () => {
       did,
       portfolioId: number,
     });
+  });
+});
+
+describe('portfolioLikeToPortfolio', () => {
+  let did: string;
+  let id: BigNumber;
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+
+    did = 'someDid';
+    id = new BigNumber(1);
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('should convert a PortfolioLike to a DefaultPortfolio instance', async () => {
+    const result = await portfolioLikeToPortfolio(did, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+  });
+
+  test('should convert a PortfolioLike to a NumberedPortfolio instance', async () => {
+    const result = await portfolioLikeToPortfolio({ identity: did, id }, context);
+    expect(result instanceof NumberedPortfolio).toBe(true);
   });
 });
 
