@@ -71,7 +71,7 @@ export async function isAuthorized(
   const { context } = this;
 
   let condition;
-  let did: string;
+  let did: string | undefined;
   const fetchDid = async (): Promise<string> => getDid(did, context);
 
   if (target instanceof Account) {
@@ -83,7 +83,11 @@ export async function isAuthorized(
   }
 
   if (!accept) {
-    did = await fetchDid();
+    try {
+      did = await fetchDid();
+    } catch (err) {
+      // do nothing
+    }
     condition = condition || did === issuer.did;
   }
 

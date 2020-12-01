@@ -671,6 +671,7 @@ import {
   FeeOf,
   FundingRoundName,
   Fundraiser,
+  HandledTxStatus,
   HistoricalVotingByAddress,
   HistoricalVotingById,
   IdentityClaim,
@@ -2926,6 +2927,9 @@ declare module '@polkadot/types/types/registry' {
     BridgeTxStatus: BridgeTxStatus;
     'Option<BridgeTxStatus>': Option<BridgeTxStatus>;
     'Vec<BridgeTxStatus>': Vec<BridgeTxStatus>;
+    HandledTxStatus: HandledTxStatus;
+    'Option<HandledTxStatus>': Option<HandledTxStatus>;
+    'Vec<HandledTxStatus>': Vec<HandledTxStatus>;
     CappedFee: CappedFee;
     'Compact<CappedFee>': Compact<CappedFee>;
     'Option<CappedFee>': Option<CappedFee>;
