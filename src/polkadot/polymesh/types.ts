@@ -243,7 +243,7 @@ export interface CAKind extends Enum {
 /** @name CalendarPeriod */
 export interface CalendarPeriod extends Struct {
   readonly unit: CalendarUnit;
-  readonly amount: Option<u64>;
+  readonly amount: u64;
 }
 
 /** @name CalendarUnit */
@@ -786,6 +786,13 @@ export interface Fundraiser extends Struct {
   readonly remaining_amount: Balance;
   readonly price_per_token: Balance;
   readonly venue_id: u64;
+}
+
+/** @name HandledTxStatus */
+export interface HandledTxStatus extends Enum {
+  readonly isSuccess: boolean;
+  readonly isError: boolean;
+  readonly asError: Text;
 }
 
 /** @name HistoricalVotingByAddress */
