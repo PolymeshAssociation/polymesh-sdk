@@ -5,7 +5,6 @@ import sinon from 'sinon';
 import { Params } from '~/api/procedures/setAssetRequirements';
 import {
   Context,
-  Identity,
   Namespace,
   SecurityToken,
   setAssetRequirements,
@@ -363,8 +362,6 @@ describe('Requirements class', () => {
     let rawToDid: IdentityId;
     let rawCurrentDid: IdentityId;
     let rawTicker: Ticker;
-    let primaryIssuanceAgentDid: string;
-    let rawPrimaryIssuanceAgentDid: IdentityId;
 
     let stringToIdentityIdStub: sinon.SinonStub;
     let assetComplianceResultToRequirementComplianceStub: sinon.SinonStub;
@@ -373,7 +370,6 @@ describe('Requirements class', () => {
     beforeAll(() => {
       fromDid = 'fromDid';
       toDid = 'toDid';
-      primaryIssuanceAgentDid = 'primaryIssuanceAgentDid';
 
       stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
       assetComplianceResultToRequirementComplianceStub = sinon.stub(
@@ -393,15 +389,11 @@ describe('Requirements class', () => {
       rawToDid = dsMockUtils.createMockIdentityId(toDid);
       rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
       rawTicker = dsMockUtils.createMockTicker(token.ticker);
-      rawPrimaryIssuanceAgentDid = dsMockUtils.createMockIdentityId(primaryIssuanceAgentDid);
 
       stringToIdentityIdStub.withArgs(currentDid, context).returns(rawCurrentDid);
       stringToIdentityIdStub.withArgs(fromDid, context).returns(rawFromDid);
       stringToIdentityIdStub.withArgs(toDid, context).returns(rawToDid);
       stringToTickerStub.withArgs(token.ticker, context).returns(rawTicker);
-      stringToIdentityIdStub
-        .withArgs(primaryIssuanceAgentDid, context)
-        .returns(rawPrimaryIssuanceAgentDid);
     });
 
     afterAll(() => {
@@ -411,19 +403,9 @@ describe('Requirements class', () => {
     test('checkSettle should return the current requirement compliance and whether the transfer complies', async () => {
       const rawResponse = ('response' as unknown) as AssetComplianceResult;
 
-      const primaryIssuanceAgent = new Identity({ did: primaryIssuanceAgentDid }, context);
-
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          details: {
-            primaryIssuanceAgent,
-          },
-        },
-      });
-
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawCurrentDid, rawToDid, rawPrimaryIssuanceAgentDid)
+        .withArgs(rawTicker, rawCurrentDid, rawToDid)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
@@ -438,17 +420,9 @@ describe('Requirements class', () => {
     test('checkSettle should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
       const rawResponse = ('response' as unknown) as AssetComplianceResult;
 
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          details: {
-            primaryIssuanceAgent: null,
-          },
-        },
-      });
-
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawFromDid, rawToDid, null)
+        .withArgs(rawTicker, rawFromDid, rawToDid)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
