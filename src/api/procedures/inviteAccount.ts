@@ -112,12 +112,9 @@ export async function prepareInviteAccount(
     const { tokens, transactions, portfolios } = permissions;
 
     const rawTokens =
-      tokens?.map(token => {
-        if (token instanceof SecurityToken) {
-          return token;
-        }
-        return new SecurityToken({ ticker: token }, context);
-      }) ?? [];
+      tokens?.map(ticker =>
+        typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
+      ) ?? [];
 
     authorizationValue = {
       tokens: rawTokens,
