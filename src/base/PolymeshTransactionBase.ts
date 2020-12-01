@@ -379,9 +379,7 @@ export abstract class PolymeshTransactionBase<
       // known error
       const mod = error.asModule;
 
-      const { section, name, documentation }: RegistryError = mod.registry.findMetaError(
-        new Uint8Array([mod.index.toNumber(), mod.error.toNumber()])
-      );
+      const { section, name, documentation }: RegistryError = mod.registry.findMetaError(mod);
       message = `${section}.${name}: ${documentation.join(' ')}`;
     } else if (error.isBadOrigin) {
       message = 'Bad origin';

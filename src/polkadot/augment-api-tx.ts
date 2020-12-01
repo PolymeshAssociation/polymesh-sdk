@@ -404,18 +404,18 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # Arguments
        * * `origin` which must be root.
-       * * `import` specification for the PMC ticker.
-       * * `contract_did` to reserve the ticker to if `import.is_contract` holds.
+       * * `classic_ticker_import` specification for the PMC ticker.
+       * * `contract_did` to reserve the ticker to if `classic_ticker_import.is_contract` holds.
        * * `config` to use for expiry and ticker length.
        *
        * # Errors
-       * * `AssetAlreadyCreated` if `import.ticker` was created as an asset.
-       * * `TickerTooLong` if the `config` considers the `import.ticker` too long.
-       * * `TickerAlreadyRegistered` if `import.ticker` was already registered.
+       * * `AssetAlreadyCreated` if `classic_ticker_import.ticker` was created as an asset.
+       * * `TickerTooLong` if the `config` considers the `classic_ticker_import.ticker` too long.
+       * * `TickerAlreadyRegistered` if `classic_ticker_import.ticker` was already registered.
        **/
       reserveClassicTicker: AugmentedSubmittable<
         (
-          _import:
+          classicTickerImport:
             | ClassicTickerImport
             | { eth_owner?: any; ticker?: any; is_contract?: any; is_created?: any }
             | string
@@ -667,6 +667,26 @@ declare module '@polkadot/api/types/submittable' {
       >;
     };
     bridge: {
+      /**
+       * Proposes a vector of bridge transactions. The vector is processed until the first
+       * proposal which causes an error, in which case the error is returned and the rest of
+       * proposals are not processed.
+       *
+       * # Weight
+       * `500_000_000 + 7_000_000 * bridge_txs.len()`
+       **/
+      batchProposeBridgeTx: AugmentedSubmittable<
+        (
+          bridgeTxs:
+            | Vec<BridgeTx>
+            | (
+                | BridgeTx
+                | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
+                | string
+                | Uint8Array
+              )[]
+        ) => SubmittableExtrinsic<ApiType>
+      >;
       /**
        * Changes the bridge admin key.
        **/
@@ -3719,13 +3739,15 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
-       * Switch slashing status on the basis of given `SlashingSwitch`. Only be called by the root.
+       * Switch slashing status on the basis of given `SlashingSwitch`. Can only be called by root.
+       *
        * # Arguments
        * * origin - AccountId of root.
+       * * slashing_switch - Switch used to set the targets for slashing.
        **/
       changeSlashingAllowedFor: AugmentedSubmittable<
         (
-          _switch:
+          slashingSwitch:
             | SlashingSwitch
             | 'Validator'
             | 'ValidatorAndNominator'
