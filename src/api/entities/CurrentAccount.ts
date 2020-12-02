@@ -1,5 +1,5 @@
 import { Account, CurrentIdentity } from '~/internal';
-import { Permissions, Signer } from '~/types';
+import { Permissions } from '~/types';
 import { signerToString } from '~/utils/conversion';
 
 /**
