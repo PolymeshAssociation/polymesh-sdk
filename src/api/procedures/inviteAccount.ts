@@ -2,7 +2,14 @@ import P from 'bluebird';
 
 import { Account, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { TxTag } from '~/polkadot/types';
-import { AuthorizationType, ErrorCode, Permissions, PortfolioLike } from '~/types';
+import {
+  AuthorizationType,
+  DefaultPortfolio,
+  ErrorCode,
+  NumberedPortfolio,
+  Permissions,
+  PortfolioLike,
+} from '~/types';
 import { SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
@@ -104,36 +111,39 @@ export async function prepareInviteAccount(
     portfolios: [],
   };
 
+  let tokenPermissions: SecurityToken[] | null = [];
+  let transactionPermissions: TxTag[] | null = [];
+  let portfolioPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null = [];
+
   if (permissions) {
     const { tokens, transactions, portfolios } = permissions;
 
-    let rawTokens = null;
-    let rawPortfolios = null;
-
-    if (tokens !== null) {
-      rawTokens = undefined;
-
-      if (tokens !== undefined) {
-        rawTokens = tokens.map(ticker =>
-          typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
-        );
-      }
+    if (tokens === null) {
+      tokenPermissions = null;
+    } else if (tokens) {
+      tokenPermissions = tokens.map(ticker =>
+        typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
+      );
     }
 
-    if (portfolios !== null) {
-      rawPortfolios = undefined;
+    if (transactions === null) {
+      transactionPermissions = null;
+    } else if (transactions) {
+      transactionPermissions = transactions;
+    }
 
-      if (portfolios !== undefined) {
-        rawPortfolios = await P.map(portfolios, portfolio =>
-          portfolioLikeToPortfolio(portfolio, context)
-        );
-      }
+    if (portfolios === null) {
+      portfolioPermissions = null;
+    } else if (portfolios) {
+      portfolioPermissions = await P.map(portfolios, portfolio =>
+        portfolioLikeToPortfolio(portfolio, context)
+      );
     }
 
     authorizationValue = {
-      tokens: rawTokens === null ? null : rawTokens ?? [],
-      transactions: transactions === null ? null : transactions ?? [],
-      portfolios: rawPortfolios === null ? null : rawPortfolios ?? [],
+      tokens: tokenPermissions,
+      transactions: transactionPermissions,
+      portfolios: portfolioPermissions,
     };
   }
 
