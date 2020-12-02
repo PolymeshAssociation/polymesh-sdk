@@ -51,8 +51,8 @@ describe('TrustedClaimIssuers class', () => {
 
       const args: ModifyTokenTrustedClaimIssuersAddSetParams = {
         claimIssuers: [
-          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }), trustedFor: null },
-          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }), trustedFor: null },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }) },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }) },
         ],
       };
 
@@ -86,8 +86,8 @@ describe('TrustedClaimIssuers class', () => {
 
       const args: ModifyTokenTrustedClaimIssuersAddSetParams = {
         claimIssuers: [
-          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }), trustedFor: null },
-          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }), trustedFor: null },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }) },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }) },
         ],
       };
 
@@ -168,9 +168,7 @@ describe('TrustedClaimIssuers class', () => {
       claimIssuers = [];
 
       expectedDids.forEach(did => {
-        expectedTrustedClaimIssuers.push(
-          new DefaultTrustedClaimIssuer({ did, ticker, trustedFor: null }, context)
-        );
+        expectedTrustedClaimIssuers.push(new DefaultTrustedClaimIssuer({ did, ticker }, context));
         claimIssuers.push(
           dsMockUtils.createMockTrustedIssuer({
             issuer: dsMockUtils.createMockIdentityId(did),

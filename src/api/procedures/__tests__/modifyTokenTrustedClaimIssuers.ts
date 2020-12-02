@@ -44,7 +44,6 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
     claimIssuerDids = ['aDid', 'otherDid', 'differentDid'];
     claimIssuers = claimIssuerDids.map(did => ({
       identity: new Identity({ did }, mockContext),
-      trustedFor: null,
     }));
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawClaimIssuers = claimIssuerDids.map(did =>

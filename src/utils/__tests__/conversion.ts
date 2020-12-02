@@ -3936,7 +3936,6 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
 
     let issuer: TrustedClaimIssuer = {
       identity: entityMockUtils.getIdentityInstance({ did }),
-      trustedFor: null,
     };
 
     dsMockUtils
@@ -3972,7 +3971,6 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
     const context = dsMockUtils.getContextInstance();
     let fakeResult: TrustedClaimIssuer = {
       identity: new Identity({ did }, context),
-      trustedFor: null,
     };
     let trustedIssuer = dsMockUtils.createMockTrustedIssuer({
       issuer: dsMockUtils.createMockIdentityId(did),

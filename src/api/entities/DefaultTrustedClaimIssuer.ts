@@ -13,7 +13,7 @@ export interface UniqueIdentifiers {
 }
 
 export interface Params {
-  trustedFor: ClaimType[] | null;
+  trustedFor?: ClaimType[];
 }
 
 /**
@@ -36,9 +36,9 @@ export class DefaultTrustedClaimIssuer extends Entity<UniqueIdentifiers> {
   public identity: Identity;
 
   /**
-   * claim types for which this Claim Issuer is trusted. A null value means that the issuer is trusted for all claim types
+   * claim types for which this Claim Issuer is trusted. An undefined value means that the issuer is trusted for all claim types
    */
-  public trustedFor: ClaimType[] | null;
+  public trustedFor?: ClaimType[];
 
   /**
    * ticker of the Security Token

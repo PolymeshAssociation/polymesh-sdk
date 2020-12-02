@@ -100,10 +100,7 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
     const assembleResult = (issuers: TrustedIssuer[]): DefaultTrustedClaimIssuer[] =>
       issuers.map(
         ({ issuer }) =>
-          new DefaultTrustedClaimIssuer(
-            { did: identityIdToString(issuer), ticker, trustedFor: null },
-            context
-          )
+          new DefaultTrustedClaimIssuer({ did: identityIdToString(issuer), ticker }, context)
       );
 
     if (callback) {

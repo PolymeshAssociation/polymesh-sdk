@@ -310,9 +310,9 @@ export interface ClaimScope {
 export interface TrustedClaimIssuer {
   identity: Identity;
   /**
-   * a null value means that the issuer is trusted for all claim types
+   * an undefined value means that the issuer is trusted for all claim types.
    */
-  trustedFor: ClaimType[] | null;
+  trustedFor?: ClaimType[];
 }
 
 export enum ConditionType {
