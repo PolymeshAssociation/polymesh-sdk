@@ -107,6 +107,7 @@ import {
   keyToAddress,
   meshAffirmationStatusToAffirmationStatus,
   meshClaimToClaim,
+  meshClaimTypeToClaimType,
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
   meshScopeToScope,
@@ -157,6 +158,7 @@ import {
   transactionHexToTxTag,
   transactionToTxTag,
   trustedClaimIssuerToTrustedIssuer,
+  trustedIssuerToTrustedClaimIssuer,
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToTransferStatus,
@@ -2222,6 +2224,92 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
   });
 });
 
+describe('meshClaimTypeToClaimType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshClaimTypeToClaimType should convert a polkadot ClaimType object to a ClaimType', () => {
+    let fakeResult: ClaimType = ClaimType.Accredited;
+
+    let claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    let result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Affiliate;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Blocked;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.BuyLockup;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.CustomerDueDiligence;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Exempted;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Jurisdiction;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.KnowYourCustomer;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.NoData;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.SellLockup;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
 describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
   test('should convert a MiddlewareScope object to a Scope', () => {
     let result = middlewareScopeToScope({
@@ -3825,7 +3913,7 @@ describe('toIdentityWithClaimsArray', () => {
   });
 });
 
-describe('trustedClaimIssuerToTrustedIssuer and identityIdToString', () => {
+describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssuer', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -3876,5 +3964,31 @@ describe('trustedClaimIssuerToTrustedIssuer and identityIdToString', () => {
 
     result = trustedClaimIssuerToTrustedIssuer(issuer, context);
     expect(result).toBe(fakeResult);
+  });
+
+  test('trustedIssuerToTrustedClaimIssuer should convert an IdentityId to a did string', () => {
+    const did = 'someDid';
+    const context = dsMockUtils.getContextInstance();
+    let fakeResult: TrustedClaimIssuer = {
+      identity: new Identity({ did }, context),
+    };
+    let trustedIssuer = dsMockUtils.createMockTrustedIssuer({
+      issuer: dsMockUtils.createMockIdentityId(did),
+      trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+    });
+
+    let result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = { identity: new Identity({ did }, context), trustedFor: [ClaimType.SellLockup] };
+    trustedIssuer = dsMockUtils.createMockTrustedIssuer({
+      issuer: dsMockUtils.createMockIdentityId(did),
+      trusted_for: dsMockUtils.createMockTrustedFor({
+        Specific: [dsMockUtils.createMockClaimType(ClaimType.SellLockup)],
+      }),
+    });
+
+    result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+    expect(result).toEqual(fakeResult);
   });
 });
