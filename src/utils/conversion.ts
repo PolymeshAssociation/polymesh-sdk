@@ -26,6 +26,7 @@ import {
   CddId,
   CddStatus,
   Claim as MeshClaim,
+  ClaimType as MeshClaimType,
   ComplianceRequirement,
   ComplianceRequirementResult,
   Condition as MeshCondition,
@@ -1968,4 +1969,70 @@ export function trustedClaimIssuerToTrustedIssuer(
     // eslint-disable-next-line @typescript-eslint/camelcase
     trusted_for: trustedFor,
   });
+}
+
+/**
+ * @hidden
+ */
+export function meshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
+  if (claimType.isJurisdiction) {
+    return ClaimType.Jurisdiction;
+  }
+
+  if (claimType.isNoData) {
+    return ClaimType.NoData;
+  }
+
+  if (claimType.isAccredited) {
+    return ClaimType.Accredited;
+  }
+
+  if (claimType.isAffiliate) {
+    return ClaimType.Affiliate;
+  }
+
+  if (claimType.isBuyLockup) {
+    return ClaimType.BuyLockup;
+  }
+
+  if (claimType.isSellLockup) {
+    return ClaimType.SellLockup;
+  }
+
+  if (claimType.isCustomerDueDiligence) {
+    return ClaimType.CustomerDueDiligence;
+  }
+
+  if (claimType.isKnowYourCustomer) {
+    return ClaimType.KnowYourCustomer;
+  }
+
+  if (claimType.isExempted) {
+    return ClaimType.Exempted;
+  }
+
+  return ClaimType.Blocked;
+}
+
+/**
+ * @hidden
+ */
+export function trustedIssuerToTrustedClaimIssuer(
+  trustedIssuer: TrustedIssuer,
+  context: Context
+): TrustedClaimIssuer {
+  const { issuer, trusted_for: claimTypes } = trustedIssuer;
+
+  const identity = new Identity({ did: identityIdToString(issuer) }, context);
+
+  let trustedFor: ClaimType[] | null = null;
+
+  if (claimTypes.isSpecific) {
+    trustedFor = claimTypes.asSpecific.map(meshClaimTypeToClaimType);
+  }
+
+  return {
+    identity,
+    trustedFor,
+  };
 }

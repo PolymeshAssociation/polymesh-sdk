@@ -2,27 +2,35 @@ import { difference, intersection } from 'lodash';
 import { Ticker, TrustedIssuer } from 'polymesh-types/types';
 
 import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, Role, RoleType } from '~/types';
+import { ErrorCode, Role, RoleType, TrustedClaimIssuer } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
-  identityIdToString,
   signerToString,
   stringToTicker,
   trustedClaimIssuerToTrustedIssuer,
+  trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
 
-export interface ModifyTokenTrustedClaimIssuersParams {
-  claimIssuerIdentities: (string | Identity)[];
+export interface ModifyTokenTrustedClaimIssuersAddSetParams {
+  claimIssuers: TrustedClaimIssuer[];
+}
+
+export interface ModifyTokenTrustedClaimIssuersRemoveParams {
+  claimIssuers: (string | Identity)[];
 }
 
 /**
  * @hidden
  */
-export type Params = ModifyTokenTrustedClaimIssuersParams & {
-  ticker: string;
-  operation: TrustedClaimIssuerOperation;
-};
+export type Params = { ticker: string } & (
+  | (ModifyTokenTrustedClaimIssuersAddSetParams & {
+      operation: TrustedClaimIssuerOperation.Add | TrustedClaimIssuerOperation.Set;
+    })
+  | (ModifyTokenTrustedClaimIssuersRemoveParams & {
+      operation: TrustedClaimIssuerOperation.Remove;
+    })
+);
 
 /**
  * @hidden
@@ -37,45 +45,26 @@ export async function prepareModifyTokenTrustedClaimIssuers(
     },
     context,
   } = this;
-  const { ticker, claimIssuerIdentities, operation } = args;
+  const { ticker } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
   let claimIssuersToDelete: [Ticker, TrustedIssuer][] = [];
   let claimIssuersToAdd: [Ticker, TrustedIssuer][] = [];
 
-  const inputDids = claimIssuerIdentities.map(signerToString);
+  let inputDids: string[];
 
   const rawCurrentClaimIssuers = await query.complianceManager.trustedClaimIssuer(rawTicker);
-  const currentClaimIssuers = rawCurrentClaimIssuers.map(({ issuer }) =>
-    identityIdToString(issuer)
+
+  const currentClaimIssuers = rawCurrentClaimIssuers.map(issuer =>
+    trustedIssuerToTrustedClaimIssuer(issuer, context)
   );
+  const currentClaimIssuerDids = currentClaimIssuers.map(({ identity: { did } }) => did);
 
-  const rawInput = inputDids.map(did =>
-    tuple(
-      rawTicker,
-      trustedClaimIssuerToTrustedIssuer({ identity: new Identity({ did }, context) }, context)
-    )
-  );
+  if (args.operation === TrustedClaimIssuerOperation.Remove) {
+    inputDids = args.claimIssuers.map(signerToString);
 
-  if (operation === TrustedClaimIssuerOperation.Set) {
-    claimIssuersToDelete = rawCurrentClaimIssuers.map(issuer => [rawTicker, issuer]);
-
-    if (
-      !difference(currentClaimIssuers, inputDids).length &&
-      currentClaimIssuers.length === inputDids.length
-    ) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The supplied claim issuer list is equal to the current one',
-      });
-    }
-  }
-
-  if (operation === TrustedClaimIssuerOperation.Remove) {
-    claimIssuersToDelete = rawInput;
-
-    const notPresent = difference(inputDids, currentClaimIssuers);
+    const notPresent = difference(inputDids, currentClaimIssuerDids);
 
     if (notPresent.length) {
       throw new PolymeshError({
@@ -86,12 +75,35 @@ export async function prepareModifyTokenTrustedClaimIssuers(
         },
       });
     }
+
+    claimIssuersToDelete = currentClaimIssuers
+      .filter(({ identity: { did } }) => inputDids.includes(did))
+      .map(issuer => tuple(rawTicker, trustedClaimIssuerToTrustedIssuer(issuer, context)));
   } else {
-    claimIssuersToAdd = rawInput;
+    claimIssuersToAdd = [];
+    inputDids = [];
+    args.claimIssuers.forEach(issuer => {
+      claimIssuersToAdd.push(tuple(rawTicker, trustedClaimIssuerToTrustedIssuer(issuer, context)));
+      inputDids.push(issuer.identity.did);
+    });
   }
 
-  if (operation === TrustedClaimIssuerOperation.Add) {
-    const present = intersection(inputDids, currentClaimIssuers);
+  if (args.operation === TrustedClaimIssuerOperation.Set) {
+    claimIssuersToDelete = rawCurrentClaimIssuers.map(issuer => [rawTicker, issuer]);
+
+    if (
+      !difference(currentClaimIssuerDids, inputDids).length &&
+      currentClaimIssuers.length === inputDids.length
+    ) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The supplied claim issuer list is equal to the current one',
+      });
+    }
+  }
+
+  if (args.operation === TrustedClaimIssuerOperation.Add) {
+    const present = intersection(inputDids, currentClaimIssuerDids);
 
     if (present.length) {
       throw new PolymeshError({
@@ -104,7 +116,7 @@ export async function prepareModifyTokenTrustedClaimIssuers(
     }
   }
 
-  const nonExistentDids: string[] = await context.getInvalidDids(claimIssuerIdentities);
+  const nonExistentDids: string[] = await context.getInvalidDids(inputDids);
 
   if (nonExistentDids.length) {
     throw new PolymeshError({

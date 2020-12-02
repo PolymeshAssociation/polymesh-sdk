@@ -35,7 +35,10 @@ describe('DefaultTrustedClaimIssuer class', () => {
       const did = 'someDid';
       const ticker = 'SOMETICKER';
       const identity = new Identity({ did }, context);
-      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer(
+        { did, ticker, trustedFor: null },
+        context
+      );
 
       expect(trustedClaimIssuer.ticker).toBe(ticker);
       expect(trustedClaimIssuer.identity).toEqual(identity);
@@ -68,7 +71,10 @@ describe('DefaultTrustedClaimIssuer class', () => {
       const blockDate = new Date('4/14/2020');
       const eventIdx = 1;
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
-      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer(
+        { did, ticker, trustedFor: null },
+        context
+      );
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
         /* eslint-disable @typescript-eslint/camelcase */
@@ -86,7 +92,10 @@ describe('DefaultTrustedClaimIssuer class', () => {
     });
 
     test('should return null if the query result is empty', async () => {
-      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer(
+        { did, ticker, trustedFor: null },
+        context
+      );
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
       const result = await trustedClaimIssuer.addedAt();

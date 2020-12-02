@@ -3,7 +3,8 @@ import { TrustedIssuer } from 'polymesh-types/types';
 import {
   DefaultTrustedClaimIssuer,
   modifyTokenTrustedClaimIssuers,
-  ModifyTokenTrustedClaimIssuersParams,
+  ModifyTokenTrustedClaimIssuersAddSetParams,
+  ModifyTokenTrustedClaimIssuersRemoveParams,
   Namespace,
   SecurityToken,
   TransactionQueue,
@@ -23,7 +24,9 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
    *
    * @param args.claimIssuerDids - array of Identity IDs of the default Trusted Claim Issuers
    */
-  public set(args: ModifyTokenTrustedClaimIssuersParams): Promise<TransactionQueue<SecurityToken>> {
+  public set(
+    args: ModifyTokenTrustedClaimIssuersAddSetParams
+  ): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
       context,
@@ -37,9 +40,11 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   /**
    * Add the supplied Identities to the Security Token's list of trusted claim issuers
    *
-   * @param args.claimIssuerDids - array of Identity IDs of the default claim issuers
+   * @param args.claimIssuers - array of [[TrustedClaimIssuer | Trusted Claim Issuers]]
    */
-  public add(args: ModifyTokenTrustedClaimIssuersParams): Promise<TransactionQueue<SecurityToken>> {
+  public add(
+    args: ModifyTokenTrustedClaimIssuersAddSetParams
+  ): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
       context,
@@ -53,10 +58,10 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   /**
    * Remove the supplied Identities from the Security Token's list of trusted claim issuers   *
    *
-   * @param args.claimIssuerDids - array of Identity IDs of the default claim issuers
+   * @param args.claimIssuers - array of Identities (or DIDs) of the default claim issuers
    */
   public remove(
-    args: ModifyTokenTrustedClaimIssuersParams
+    args: ModifyTokenTrustedClaimIssuersRemoveParams
   ): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
@@ -95,7 +100,10 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
     const assembleResult = (issuers: TrustedIssuer[]): DefaultTrustedClaimIssuer[] =>
       issuers.map(
         ({ issuer }) =>
-          new DefaultTrustedClaimIssuer({ did: identityIdToString(issuer), ticker }, context)
+          new DefaultTrustedClaimIssuer(
+            { did: identityIdToString(issuer), ticker, trustedFor: null },
+            context
+          )
       );
 
     if (callback) {
