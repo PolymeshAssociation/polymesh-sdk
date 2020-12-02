@@ -11,10 +11,13 @@ import {
   inviteAccount,
   InviteAccountParams,
   removeSecondaryKeys,
+  RemoveSecondaryKeysParams,
+  revokePermissions,
+  RevokePermissionsParams,
   TransactionQueue,
   Venue,
 } from '~/internal';
-import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
+import { SecondaryKey, SubCallback, UnsubCallback } from '~/types';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
 import {
   portfolioIdToMeshPortfolioId,
@@ -50,8 +53,15 @@ export class CurrentIdentity extends Identity {
   /**
    * Remove a list of secondary keys associated with the Identity
    */
-  public removeSecondaryKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
+  public removeSecondaryKeys(args: RemoveSecondaryKeysParams): Promise<TransactionQueue<void>> {
     return removeSecondaryKeys.prepare(args, this.context);
+  }
+
+  /**
+   * Revoke all permissions of a list of secondary keys associated with the Identity
+   */
+  public revokePermissions(args: RevokePermissionsParams): Promise<TransactionQueue<void>> {
+    return revokePermissions.prepare(args, this.context);
   }
 
   /**
