@@ -40,7 +40,8 @@ export {
 } from '~/api/procedures/modifyPrimaryIssuanceAgent';
 export {
   modifyTokenTrustedClaimIssuers,
-  ModifyTokenTrustedClaimIssuersParams,
+  ModifyTokenTrustedClaimIssuersAddSetParams,
+  ModifyTokenTrustedClaimIssuersRemoveParams,
 } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
 export { registerIdentity, RegisterIdentityParams } from '~/api/procedures/registerIdentity';
 export {

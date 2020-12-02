@@ -843,6 +843,12 @@ export default {
         Handled: '',
       },
     },
+    HandledTxStatus: {
+      _enum: {
+        Success: '',
+        Error: 'Text',
+      },
+    },
     CappedFee: 'u64',
     CanTransferResult: {
       _enum: {
@@ -919,7 +925,7 @@ export default {
     },
     CalendarPeriod: {
       unit: 'CalendarUnit',
-      amount: 'Option<u64>',
+      amount: 'u64',
     },
     CheckpointSchedule: {
       start: 'Moment',
