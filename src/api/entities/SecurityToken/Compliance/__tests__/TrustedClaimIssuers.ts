@@ -1,6 +1,7 @@
 import { Ticker, TrustedIssuer } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { ModifyTokenTrustedClaimIssuersAddSetParams } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
 import {
   Context,
   DefaultTrustedClaimIssuer,
@@ -48,8 +49,11 @@ describe('TrustedClaimIssuers class', () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
 
-      const args = {
-        claimIssuerIdentities: ['someDid', 'otherDid'],
+      const args: ModifyTokenTrustedClaimIssuersAddSetParams = {
+        claimIssuers: [
+          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }) },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }) },
+        ],
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
@@ -80,8 +84,11 @@ describe('TrustedClaimIssuers class', () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
 
-      const args = {
-        claimIssuerIdentities: ['someDid', 'otherDid'],
+      const args: ModifyTokenTrustedClaimIssuersAddSetParams = {
+        claimIssuers: [
+          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }) },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }) },
+        ],
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
@@ -113,7 +120,7 @@ describe('TrustedClaimIssuers class', () => {
       const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
 
       const args = {
-        claimIssuerIdentities: ['someDid', 'otherDid'],
+        claimIssuers: ['someDid', 'otherDid'],
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
