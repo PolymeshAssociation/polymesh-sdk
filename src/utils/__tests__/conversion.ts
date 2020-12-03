@@ -1336,9 +1336,13 @@ describe('u8ToTransferStatus', () => {
 
     expect(result).toBe(TransferStatus.PortfolioFailure);
 
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(170));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(176));
 
     expect(result).toBe(TransferStatus.CustodianError);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(177));
+
+    expect(result).toBe(TransferStatus.ScopeClaimMissing);
 
     const fakeStatusCode = 1;
     expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
