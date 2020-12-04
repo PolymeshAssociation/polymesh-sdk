@@ -1,5 +1,6 @@
-import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, Signer } from '~/types';
+import { assertSecondaryKeys } from '~/api/procedures/utils';
+import { Procedure } from '~/internal';
+import { Signer } from '~/types';
 import { tuple } from '~/types/utils';
 import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 
@@ -26,25 +27,7 @@ export async function prepareRevokePermissions(
   const secondaryKeys = await context.getSecondaryKeys();
   const signerValues = signers.map(signer => signerToSignerValue(signer));
 
-  const notInTheList: string[] = [];
-  signerValues.forEach(({ value: itemValue }) => {
-    const isPresent = secondaryKeys
-      .map(({ signer }) => signerToSignerValue(signer))
-      .find(({ value }) => value === itemValue);
-    if (!isPresent) {
-      notInTheList.push(itemValue);
-    }
-  });
-
-  if (notInTheList.length) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'One of the Signers is not a Secondary Key for the Identity',
-      data: {
-        missing: notInTheList,
-      },
-    });
-  }
+  assertSecondaryKeys(signerValues, secondaryKeys);
 
   const signersList = signerValues.map(signer =>
     tuple(signerValueToSignatory(signer, context), { asset: [], extrinsic: [], portfolio: [] })

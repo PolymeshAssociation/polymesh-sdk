@@ -96,7 +96,7 @@ describe('removeSecondaryKeys procedure', () => {
     const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
 
     await expect(prepareRemoveSecondaryKeys.call(proc, args)).rejects.toThrow(
-      'You cannot remove a key that is not present in your secondary keys list'
+      'One of the Signers is not a Secondary Key for the Identity'
     );
   });
 
