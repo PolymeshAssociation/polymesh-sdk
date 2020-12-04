@@ -39,8 +39,7 @@ export async function prepareRevokePermissions(
   if (notInTheList.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message:
-        'You cannot revoke permissions for a key that is not present in your secondary keys list',
+      message: 'One of the Signers is not a Secondary Key for the Identity',
       data: {
         missing: notInTheList,
       },
@@ -57,16 +56,4 @@ export async function prepareRevokePermissions(
 /**
  * @hidden
  */
-export async function isAuthorized(this: Procedure<RevokePermissionsParams>): Promise<boolean> {
-  const { context } = this;
-
-  const identity = await context.getCurrentIdentity();
-  const primaryKey = await identity.getPrimaryKey();
-
-  return primaryKey === context.getCurrentPair().address;
-}
-
-/**
- * @hidden
- */
-export const revokePermissions = new Procedure(prepareRevokePermissions, isAuthorized);
+export const revokePermissions = new Procedure(prepareRevokePermissions);
