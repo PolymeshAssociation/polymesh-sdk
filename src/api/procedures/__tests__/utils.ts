@@ -249,7 +249,7 @@ describe('assertSecondaryKeys', () => {
     signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
   });
 
-  test('should not throw an error', async () => {
+  test('should not throw an error if all signers are secondary keys', async () => {
     const address = 'someAddress';
     const secondaryKeys = [
       {
