@@ -48,6 +48,7 @@ export {
   removeSecondaryKeys,
   RemoveSecondaryKeysParams,
 } from '~/api/procedures/removeSecondaryKeys';
+export { revokePermissions, RevokePermissionsParams } from '~/api/procedures/revokePermissions';
 export { reserveTicker, ReserveTickerParams } from '~/api/procedures/reserveTicker';
 export { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures/setTokenDocuments';
 export {

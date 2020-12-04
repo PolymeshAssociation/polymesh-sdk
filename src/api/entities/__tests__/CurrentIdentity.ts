@@ -8,6 +8,7 @@ import {
   Identity,
   inviteAccount,
   removeSecondaryKeys,
+  revokePermissions,
   TransactionQueue,
   Venue,
 } from '~/internal';
@@ -98,6 +99,26 @@ describe('CurrentIdentity class', () => {
         .resolves(expectedQueue);
 
       const queue = await identity.removeSecondaryKeys({ signers });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: revokePermissions', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new CurrentIdentity({ did }, context);
+
+      const signers = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(revokePermissions, 'prepare')
+        .withArgs({ signers }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.revokePermissions({ signers });
 
       expect(queue).toBe(expectedQueue);
     });
