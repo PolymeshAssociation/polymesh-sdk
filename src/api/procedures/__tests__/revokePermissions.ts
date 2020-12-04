@@ -73,7 +73,7 @@ describe('revokePermissions procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, signersList);
   });
 
-  test('should throw an error if at least one of the secondary keys to remove is not present in the secondary keys list', async () => {
+  test('should throw an error if at least one of the Signers for which to revoke permissions is not a Secondary Key for the Identity', async () => {
     const { signers } = args;
     const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
 
