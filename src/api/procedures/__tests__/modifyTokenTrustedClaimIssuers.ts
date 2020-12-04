@@ -86,10 +86,12 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    claimIssuers.forEach((issuer, index) => {
+    claimIssuerDids.forEach((did, index) => {
       trustedClaimIssuerToTrustedIssuerStub
-        .withArgs(issuer, mockContext)
+        .withArgs(sinon.match({ identity: sinon.match({ did }) }), mockContext)
         .returns(rawClaimIssuers[index]);
+    });
+    claimIssuers.forEach((issuer, index) => {
       identityIdToStringStub.withArgs(rawClaimIssuers[index].issuer).returns(issuer.identity.did);
     });
   });
@@ -171,7 +173,10 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
 
     const result = await prepareModifyTokenTrustedClaimIssuers.call(proc, {
       ...args,
-      claimIssuers,
+      claimIssuers: claimIssuers.map(({ identity: { did }, trustedFor }) => ({
+        identity: did,
+        trustedFor,
+      })),
       operation: TrustedClaimIssuerOperation.Set,
     });
 
@@ -233,11 +238,6 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
     const currentClaimIssuers = rawClaimIssuers;
     trustedClaimIssuerStub.withArgs(rawTicker).returns(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
-    claimIssuerDids.forEach((did, index) => {
-      trustedClaimIssuerToTrustedIssuerStub
-        .withArgs(sinon.match({ identity: sinon.match({ did }) }), mockContext)
-        .returns(rawClaimIssuers[index]);
-    });
 
     const result = await prepareModifyTokenTrustedClaimIssuers.call(proc, {
       ...args,
