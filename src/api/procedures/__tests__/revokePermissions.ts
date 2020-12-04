@@ -2,9 +2,9 @@ import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  prepareRemoveSecondaryKeys,
-  RemoveSecondaryKeysParams,
-} from '~/api/procedures/removeSecondaryKeys';
+  prepareRevokePermissions,
+  RevokePermissionsParams,
+} from '~/api/procedures/revokePermissions';
 import { Account, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -12,9 +12,9 @@ import { Signer } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
-describe('removeSecondaryKeys procedure', () => {
+describe('revokePermissions procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
+  let addBatchTransactionStub: sinon.SinonStub;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
 
@@ -29,7 +29,7 @@ describe('removeSecondaryKeys procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
 
     args = {
@@ -49,52 +49,38 @@ describe('removeSecondaryKeys procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a remove secondary items transaction to the queue', async () => {
+  test('should add a batch of revoke permissions transactions to the queue', async () => {
     const { signers } = args;
     const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
-
     const rawSignatory = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId(signerValue.value),
     });
+
+    const signersList = [[rawSignatory, { asset: [], extrinsic: [], portfolio: [] }]];
 
     mockContext.getSecondaryKeys.resolves(signers.map(signer => ({ signer, permissions: [] })));
 
     signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
     signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
 
-    const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<RevokePermissionsParams, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('identity', 'removeSecondaryKeys');
+    const transaction = dsMockUtils.createTxStub('identity', 'setPermissionToSigner');
 
-    await prepareRemoveSecondaryKeys.call(proc, args);
+    await prepareRevokePermissions.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, [rawSignatory]);
+    sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, signersList);
   });
 
-  test('should throw an error if attempting to remove the primary key', async () => {
-    const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
-    const signer = entityMockUtils.getAccountInstance({ address: 'primaryKey' });
-
-    signerToSignerValueStub
-      .withArgs(signer)
-      .returns({ type: SignerType.Account, value: signer.address });
-
-    await expect(
-      prepareRemoveSecondaryKeys.call(proc, {
-        signers: [signer],
-      })
-    ).rejects.toThrow('You cannot remove the primary key');
-  });
-
-  test('should throw an error if at least one of the secondary keys to remove is not present in the secondary keys list', async () => {
+  test('should throw an error if at least one of the Signers for which to revoke permissions is not a Secondary Key for the Identity', async () => {
     const { signers } = args;
     const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
 
     signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
 
-    const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<RevokePermissionsParams, void>(mockContext);
 
-    await expect(prepareRemoveSecondaryKeys.call(proc, args)).rejects.toThrow(
+    await expect(prepareRevokePermissions.call(proc, args)).rejects.toThrow(
       'One of the Signers is not a Secondary Key for the Identity'
     );
   });
