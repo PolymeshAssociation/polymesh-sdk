@@ -54,16 +54,4 @@ export async function prepareRemoveSecondaryKeys(
 /**
  * @hidden
  */
-export async function isAuthorized(this: Procedure<RemoveSecondaryKeysParams>): Promise<boolean> {
-  const { context } = this;
-
-  const identity = await context.getCurrentIdentity();
-  const primaryKey = await identity.getPrimaryKey();
-
-  return primaryKey === context.getCurrentPair().address;
-}
-
-/**
- * @hidden
- */
-export const removeSecondaryKeys = new Procedure(prepareRemoveSecondaryKeys, isAuthorized);
+export const removeSecondaryKeys = new Procedure(prepareRemoveSecondaryKeys);

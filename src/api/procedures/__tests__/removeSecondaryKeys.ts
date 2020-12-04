@@ -2,7 +2,6 @@ import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  isAuthorized,
   prepareRemoveSecondaryKeys,
   RemoveSecondaryKeysParams,
 } from '~/api/procedures/removeSecondaryKeys';
@@ -98,30 +97,5 @@ describe('removeSecondaryKeys procedure', () => {
     await expect(prepareRemoveSecondaryKeys.call(proc, args)).rejects.toThrow(
       'One of the Signers is not a Secondary Key for the Identity'
     );
-  });
-
-  describe('isAuthorized', () => {
-    test('should return whether the current address is the primary key', async () => {
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          currentPairAddress: 'primaryKey',
-        },
-      });
-
-      const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
-
-      const boundFunc = isAuthorized.bind(proc);
-      let result = await boundFunc();
-      expect(result).toBe(true);
-
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          currentPairAddress: 'otherAccountId',
-        },
-      });
-
-      result = await boundFunc();
-      expect(result).toBe(false);
-    });
   });
 });
