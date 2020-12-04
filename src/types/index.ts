@@ -421,7 +421,8 @@ export enum TransferStatus {
   BlockedTransaction = 'BlockedTransaction', // 166
   FundsLimitReached = 'FundsLimitReached', // 168
   PortfolioFailure = 'PortfolioFailure', // 169
-  CustodianError = 'CustodianError', // 170
+  CustodianError = 'CustodianError', // 176
+  ScopeClaimMissing = 'MissingScopeClaimMissingScopedClaim', // 177
 }
 
 export interface ClaimTarget {

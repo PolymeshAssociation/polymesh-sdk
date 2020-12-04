@@ -11,7 +11,7 @@ import {
 } from '~/internal';
 import { SubCallback, UnsubCallback } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
-import { identityIdToString, stringToTicker } from '~/utils/conversion';
+import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
 
 /**
  * Handles all Security Token Default Trusted Claim Issuers related functionality
@@ -98,10 +98,13 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
     const rawTicker = stringToTicker(ticker, context);
 
     const assembleResult = (issuers: TrustedIssuer[]): DefaultTrustedClaimIssuer[] =>
-      issuers.map(
-        ({ issuer }) =>
-          new DefaultTrustedClaimIssuer({ did: identityIdToString(issuer), ticker }, context)
-      );
+      issuers.map(issuer => {
+        const {
+          identity: { did },
+          trustedFor,
+        } = trustedIssuerToTrustedClaimIssuer(issuer, context);
+        return new DefaultTrustedClaimIssuer({ did, ticker, trustedFor }, context);
+      });
 
     if (callback) {
       return complianceManager.trustedClaimIssuer(rawTicker, issuers => {

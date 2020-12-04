@@ -423,6 +423,19 @@ export async function portfolioLikeToPortfolioId(
 /**
  * @hidden
  */
+export async function portfolioLikeToPortfolio(
+  value: PortfolioLike,
+  context: Context
+): Promise<DefaultPortfolio | NumberedPortfolio> {
+  const { did, number } = await portfolioLikeToPortfolioId(value, context);
+  return number
+    ? new NumberedPortfolio({ did, id: number }, context)
+    : new DefaultPortfolio({ did }, context);
+}
+
+/**
+ * @hidden
+ */
 export function portfolioIdToMeshPortfolioId(
   portfolioId: PortfolioId,
   context: Context
@@ -784,8 +797,11 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     case 169: {
       return TransferStatus.PortfolioFailure;
     }
-    case 170: {
+    case 176: {
       return TransferStatus.CustodianError;
+    }
+    case 177: {
+      return TransferStatus.ScopeClaimMissing;
     }
     case 80: {
       return TransferStatus.Failure;
