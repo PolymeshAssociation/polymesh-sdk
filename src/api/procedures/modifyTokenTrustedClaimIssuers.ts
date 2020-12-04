@@ -2,7 +2,7 @@ import { difference, intersection } from 'lodash';
 import { Ticker, TrustedIssuer } from 'polymesh-types/types';
 
 import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, Role, RoleType, TrustedClaimIssuer } from '~/types';
+import { ClaimType, ErrorCode, Role, RoleType } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -13,7 +13,7 @@ import {
 } from '~/utils/conversion';
 
 export interface ModifyTokenTrustedClaimIssuersAddSetParams {
-  claimIssuers: TrustedClaimIssuer[];
+  claimIssuers: { identity: string | Identity; trustedFor?: ClaimType[] }[];
 }
 
 export interface ModifyTokenTrustedClaimIssuersRemoveParams {
@@ -82,9 +82,20 @@ export async function prepareModifyTokenTrustedClaimIssuers(
   } else {
     claimIssuersToAdd = [];
     inputDids = [];
-    args.claimIssuers.forEach(issuer => {
-      claimIssuersToAdd.push(tuple(rawTicker, trustedClaimIssuerToTrustedIssuer(issuer, context)));
-      inputDids.push(issuer.identity.did);
+    args.claimIssuers.forEach(({ identity, trustedFor }) => {
+      let issuerIdentity: Identity;
+      if (typeof identity === 'string') {
+        issuerIdentity = new Identity({ did: identity }, context);
+      } else {
+        issuerIdentity = identity;
+      }
+      claimIssuersToAdd.push(
+        tuple(
+          rawTicker,
+          trustedClaimIssuerToTrustedIssuer({ identity: issuerIdentity, trustedFor }, context)
+        )
+      );
+      inputDids.push(issuerIdentity.did);
     });
   }
 
