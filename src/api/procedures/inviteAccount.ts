@@ -1,15 +1,31 @@
-import { Account, PolymeshError, Procedure } from '~/internal';
-import { AuthorizationType, ErrorCode } from '~/types';
+import P from 'bluebird';
+
+import { Account, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { TxTag } from '~/polkadot/types';
+import {
+  AuthorizationType,
+  DefaultPortfolio,
+  ErrorCode,
+  NumberedPortfolio,
+  Permissions,
+  PortfolioLike,
+} from '~/types';
 import { SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
+  portfolioLikeToPortfolio,
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
 
 export interface InviteAccountParams {
   targetAccount: string | Account;
+  permissions?: {
+    tokens?: (string | SecurityToken)[] | null;
+    transactions?: TxTag[] | null;
+    portfolios?: PortfolioLike[] | null;
+  };
   expiry?: Date;
 }
 
@@ -29,7 +45,7 @@ export async function prepareInviteAccount(
     context,
   } = this;
 
-  const { targetAccount, expiry } = args;
+  const { targetAccount, permissions, expiry } = args;
 
   const address = signerToString(targetAccount);
 
@@ -89,10 +105,52 @@ export async function prepareInviteAccount(
     context
   );
 
+  let authorizationValue: Permissions = {
+    tokens: [],
+    transactions: [],
+    portfolios: [],
+  };
+
+  let tokenPermissions: SecurityToken[] | null = [];
+  let transactionPermissions: TxTag[] | null = [];
+  let portfolioPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null = [];
+
+  if (permissions) {
+    const { tokens, transactions, portfolios } = permissions;
+
+    if (tokens === null) {
+      tokenPermissions = null;
+    } else if (tokens) {
+      tokenPermissions = tokens.map(ticker =>
+        typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
+      );
+    }
+
+    if (transactions === null) {
+      transactionPermissions = null;
+    } else if (transactions) {
+      transactionPermissions = transactions;
+    }
+
+    if (portfolios === null) {
+      portfolioPermissions = null;
+    } else if (portfolios) {
+      portfolioPermissions = await P.map(portfolios, portfolio =>
+        portfolioLikeToPortfolio(portfolio, context)
+      );
+    }
+
+    authorizationValue = {
+      tokens: tokenPermissions,
+      transactions: transactionPermissions,
+      portfolios: portfolioPermissions,
+    };
+  }
+
   const rawAuthorizationData = authorizationToAuthorizationData(
     {
       type: AuthorizationType.JoinIdentity,
-      value: { tokens: [], transactions: [], portfolios: [] },
+      value: authorizationValue,
     },
     context
   );
