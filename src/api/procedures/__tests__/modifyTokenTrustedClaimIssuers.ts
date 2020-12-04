@@ -109,13 +109,25 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
   });
 
   test('should throw an error if the new list is the same as the current one (set)', () => {
-    trustedClaimIssuerStub.withArgs(rawTicker).returns(rawClaimIssuers);
+    const alternativeClaimIssuers: TrustedIssuer[] = rawClaimIssuers.map(({ issuer }) =>
+      dsMockUtils.createMockTrustedIssuer({
+        issuer,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        trusted_for: dsMockUtils.createMockTrustedFor({ Specific: [] }),
+      })
+    );
+    trustedClaimIssuerStub.withArgs(rawTicker).returns(alternativeClaimIssuers);
+    claimIssuerDids.forEach((did, index) => {
+      trustedClaimIssuerToTrustedIssuerStub
+        .withArgs(sinon.match({ identity: sinon.match({ did }) }), mockContext)
+        .returns(alternativeClaimIssuers[index]);
+    });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
       prepareModifyTokenTrustedClaimIssuers.call(proc, {
         ...args,
-        claimIssuers,
+        claimIssuers: claimIssuers.map(({ identity }) => ({ identity, trustedFor: [] })),
         operation: TrustedClaimIssuerOperation.Set,
       })
     ).rejects.toThrow('The supplied claim issuer list is equal to the current one');
