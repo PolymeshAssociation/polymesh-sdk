@@ -265,7 +265,7 @@ describe('assertSecondaryKeys', () => {
 
     signerToSignerValueStub.returns(signerValues[0]);
 
-    const result = await assertSecondaryKeys(signerValues, secondaryKeys);
+    const result = assertSecondaryKeys(signerValues, secondaryKeys);
     expect(result).toBeUndefined();
   });
 
