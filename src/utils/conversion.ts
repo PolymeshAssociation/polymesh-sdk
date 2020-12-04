@@ -423,6 +423,19 @@ export async function portfolioLikeToPortfolioId(
 /**
  * @hidden
  */
+export async function portfolioLikeToPortfolio(
+  value: PortfolioLike,
+  context: Context
+): Promise<DefaultPortfolio | NumberedPortfolio> {
+  const { did, number } = await portfolioLikeToPortfolioId(value, context);
+  return number
+    ? new NumberedPortfolio({ did, id: number }, context)
+    : new DefaultPortfolio({ did }, context);
+}
+
+/**
+ * @hidden
+ */
 export function portfolioIdToMeshPortfolioId(
   portfolioId: PortfolioId,
   context: Context
