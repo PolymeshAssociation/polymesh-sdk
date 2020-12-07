@@ -10,14 +10,14 @@ import {
   Instruction,
   inviteAccount,
   InviteAccountParams,
+  modifySignerPermissions,
+  ModifySignerPermissionsParams,
   removeSecondaryKeys,
   RemoveSecondaryKeysParams,
-  revokePermissions,
-  RevokePermissionsParams,
   TransactionQueue,
   Venue,
 } from '~/internal';
-import { SecondaryKey, SubCallback, UnsubCallback } from '~/types';
+import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
 import {
   portfolioIdToMeshPortfolioId,
@@ -60,8 +60,26 @@ export class CurrentIdentity extends Identity {
   /**
    * Revoke all permissions of a list of secondary keys associated with the Identity
    */
-  public revokePermissions(args: RevokePermissionsParams): Promise<TransactionQueue<void>> {
-    return revokePermissions.prepare(args, this.context);
+  public revokePermissions(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
+    const { signers } = args;
+    const secondaryKeys = signers.map(signer => {
+      return {
+        signer,
+        permissions: { tokens: [], transactions: [], portfolios: [] },
+      };
+    });
+    return modifySignerPermissions.prepare({ secondaryKeys }, this.context);
+  }
+
+  /**
+   * Modify all permissions of a list of secondary keys associated with the Identity
+   *
+   * @param args.secondaryKeys.permissions.tokens - array of Security Tokens for which to allow permission. Set null to allow all (optional, no permissions if not passed)
+   * @param args.secondaryKeys.permissions.transactions - array of tags associated with the transaction that will be executed for which to allow permission. Set null to allow all (optional, no permissions if not passed)
+   * @param args.secondaryKeys.permissions.portfolios - array of portfolios for which to allow permission. Set null to allow all (optional, no permissions if not passed)
+   */
+  public modifyPermissions(args: ModifySignerPermissionsParams): Promise<TransactionQueue<void>> {
+    return modifySignerPermissions.prepare(args, this.context);
   }
 
   /**
