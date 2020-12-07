@@ -20,6 +20,7 @@ export default {
       doc_type: 'Option<DocumentType>',
       filing_date: 'Option<Moment>',
     },
+    Version: 'u8',
     AssetType: {
       _enum: {
         EquityCommon: '',
@@ -776,8 +777,8 @@ export default {
         'AssetRegisterTicker',
         'AssetIssue',
         'AssetAddDocument',
-        'AssetCheckpoint',
         'AssetCreateAsset',
+        'AssetCreateCheckpointSchedule',
         'DividendNew',
         'ComplianceManagerAddComplianceRequirement',
         'IdentityRegisterDid',
@@ -787,6 +788,9 @@ export default {
         'IdentityAddSecondaryKeysWithAuthorization',
         'PipsPropose',
         'VotingAddBallot',
+        'ContractsPutCode',
+        'BallotAttachBallot',
+        'DistributionDistribute',
       ],
     },
     CddStatus: {
@@ -1073,11 +1077,13 @@ export default {
     RecordDateSpec: {
       _enum: {
         Scheduled: 'Moment',
+        ExistingSchedule: 'ScheduleId',
         Existing: 'CheckpointId',
       },
     },
     CorporateAction: {
       kind: 'CAKind',
+      decl_date: 'Moment',
       record_date: 'Option<RecordDate>',
       details: 'Text',
       targets: 'TargetIdentities',
