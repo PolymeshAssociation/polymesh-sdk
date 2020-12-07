@@ -178,7 +178,9 @@
     "enact_referendum": "enact_referendum",
     "reject_referendum": "reject_referendum",
     "override_referendum_enactment_period": "override_referendum_enactment_period",
-    "set_pending_pip_expiry": "set_pending_pip_expiry"
+    "set_pending_pip_expiry": "set_pending_pip_expiry",
+    "execute_scheduled_pip": "execute_scheduled_pip",
+    "expire_scheduled_pip": "expire_scheduled_pip"
   },
   "TechnicalCommittee": {
     "set_vote_threshold": "set_vote_threshold",
