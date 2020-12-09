@@ -1,4 +1,4 @@
-import { difference, intersection } from 'lodash';
+import { difference, differenceWith, intersection, isEqual, sortBy } from 'lodash';
 import { Ticker, TrustedIssuer } from 'polymesh-types/types';
 
 import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
@@ -103,7 +103,19 @@ export async function prepareModifyTokenTrustedClaimIssuers(
     claimIssuersToDelete = rawCurrentClaimIssuers.map(issuer => [rawTicker, issuer]);
 
     if (
-      !difference(currentClaimIssuerDids, inputDids).length &&
+      !differenceWith(
+        currentClaimIssuers,
+        args.claimIssuers,
+        (
+          { identity: { did: aDid }, trustedFor: aTrustedFor },
+          { identity: bIdentity, trustedFor: bTrustedFor }
+        ) => {
+          const sameClaimTypes =
+            (aTrustedFor === undefined && bTrustedFor === undefined) ||
+            (aTrustedFor && bTrustedFor && isEqual(sortBy(aTrustedFor), sortBy(bTrustedFor)));
+          return aDid === signerToString(bIdentity) && !!sameClaimTypes;
+        }
+      ).length &&
       currentClaimIssuers.length === inputDids.length
     ) {
       throw new PolymeshError({
