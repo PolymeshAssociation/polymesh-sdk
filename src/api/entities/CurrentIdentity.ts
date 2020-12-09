@@ -74,9 +74,10 @@ export class CurrentIdentity extends Identity {
   /**
    * Modify all permissions of a list of secondary keys associated with the Identity
    *
-   * @param args.secondaryKeys.permissions.tokens - array of Security Tokens for which to allow permission. Set null to allow all (optional, no permissions if not passed)
-   * @param args.secondaryKeys.permissions.transactions - array of tags associated with the transaction that will be executed for which to allow permission. Set null to allow all (optional, no permissions if not passed)
-   * @param args.secondaryKeys.permissions.portfolios - array of portfolios for which to allow permission. Set null to allow all (optional, no permissions if not passed)
+   * @param args.secondaryKeys.permissions - list of allowed permissions
+   * @param args.secondaryKeys.permissions.tokens - array of Security Tokens for which to allow permission. Set null to allow all
+   * @param args.secondaryKeys.permissions.transactions - array of tags associated with the transaction that will be executed for which to allow permission. Set null to allow all
+   * @param args.secondaryKeys.permissions.portfolios - array of portfolios for which to allow permission. Set null to allow all
    */
   public modifyPermissions(args: ModifySignerPermissionsParams): Promise<TransactionQueue<void>> {
     return modifySignerPermissions.prepare(args, this.context);
