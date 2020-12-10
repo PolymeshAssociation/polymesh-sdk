@@ -2,6 +2,7 @@ import gql from 'graphql-tag';
 
 import {
   QueryDidsWithClaimsArgs,
+  QueryEventByAddedTrustedClaimIssuerArgs,
   QueryEventsByIndexedArgsArgs,
   QueryIssuerDidsWithClaimsByTargetArgs,
   QueryProposalArgs,
@@ -504,5 +505,32 @@ export function heartbeat(): GraphqlQuery {
   return {
     query,
     variables: undefined,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get an added trusted claim issuer event by its indexed arguments
+ */
+export function eventByAddedTrustedClaimIssuer(
+  variables: QueryEventByAddedTrustedClaimIssuerArgs
+): GraphqlQuery<QueryEventByAddedTrustedClaimIssuerArgs> {
+  const query = gql`
+    query EventByAddedTrustedClaimIssuerQuery($ticker: String!, $identityId: String!) {
+      eventByAddedTrustedClaimIssuer(ticker: $ticker, identityId: $identityId) {
+        block_id
+        event_idx
+        extrinsic_idx
+        block {
+          datetime
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
   };
 }
