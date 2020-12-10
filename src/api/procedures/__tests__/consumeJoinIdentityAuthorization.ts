@@ -1,4 +1,4 @@
-import { u64 } from '@polkadot/types';
+import { bool,u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -10,22 +10,34 @@ import {
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType } from '~/types';
+import { Authorization, AuthorizationType, Signer } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('consumeJoinIdentityAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
+  let targetAddress: string;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
+  let rawTrue: bool;
+  let rawFalse: bool;
   let authId: BigNumber;
   let rawAuthId: u64;
 
   beforeAll(() => {
-    dsMockUtils.initMocks();
+    targetAddress = 'someAddress';
+    dsMockUtils.initMocks({
+      contextOptions: {
+        currentPairAddress: targetAddress,
+      },
+    });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     authId = new BigNumber(1);
     rawAuthId = dsMockUtils.createMockU64(authId.toNumber());
+    rawTrue = dsMockUtils.createMockBool(true);
+    rawFalse = dsMockUtils.createMockBool(false);
 
     sinon.stub(utilsConversionModule, 'addressToKey');
   });
@@ -36,6 +48,8 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     numberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
+    booleanToBoolStub.withArgs(true, mockContext).returns(rawTrue);
+    booleanToBoolStub.withArgs(false, mockContext).returns(rawFalse);
   });
 
   afterEach(() => {
@@ -123,7 +137,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
 
-    const target = new Identity({ did: 'someOtherDid' }, mockContext);
+    let target: Signer = new Identity({ did: 'someOtherDid' }, mockContext);
 
     const rawSignatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(target.did),
@@ -155,9 +169,42 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
+      { paidByThirdParty: false },
+      rawSignatory,
+      rawAuthId,
+      rawFalse
+    );
+
+    target = new Account({ address: targetAddress }, mockContext);
+
+    await prepareConsumeJoinIdentityAuthorization.call(proc, {
+      authRequest: new AuthorizationRequest(
+        {
+          target,
+          issuer: entityMockUtils.getIdentityInstance(),
+          authId,
+          expiry: null,
+          data: {
+            type: AuthorizationType.JoinIdentity,
+            value: {
+              tokens: null,
+              transactions: null,
+              portfolios: null,
+            },
+          },
+        },
+        mockContext
+      ),
+      accept: false,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
       { paidByThirdParty: true },
       rawSignatory,
-      rawAuthId
+      rawAuthId,
+      rawTrue
     );
   });
 
