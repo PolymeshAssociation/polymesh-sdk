@@ -1385,6 +1385,99 @@ export function stringToTargetIdentity(did: string | null, context: Context): Ta
 /**
  * @hidden
  */
+export function trustedClaimIssuerToTrustedIssuer(
+  issuer: TrustedClaimIssuer,
+  context: Context
+): TrustedIssuer {
+  const {
+    identity: { did },
+    trustedFor: claimTypes,
+  } = issuer;
+
+  let trustedFor;
+
+  if (!claimTypes) {
+    trustedFor = 'Any';
+  } else {
+    trustedFor = { Specific: claimTypes };
+  }
+
+  return context.polymeshApi.createType('TrustedIssuer', {
+    issuer: stringToIdentityId(did, context),
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    trusted_for: trustedFor,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function meshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
+  if (claimType.isJurisdiction) {
+    return ClaimType.Jurisdiction;
+  }
+
+  if (claimType.isNoData) {
+    return ClaimType.NoData;
+  }
+
+  if (claimType.isAccredited) {
+    return ClaimType.Accredited;
+  }
+
+  if (claimType.isAffiliate) {
+    return ClaimType.Affiliate;
+  }
+
+  if (claimType.isBuyLockup) {
+    return ClaimType.BuyLockup;
+  }
+
+  if (claimType.isSellLockup) {
+    return ClaimType.SellLockup;
+  }
+
+  if (claimType.isCustomerDueDiligence) {
+    return ClaimType.CustomerDueDiligence;
+  }
+
+  if (claimType.isKnowYourCustomer) {
+    return ClaimType.KnowYourCustomer;
+  }
+
+  if (claimType.isExempted) {
+    return ClaimType.Exempted;
+  }
+
+  return ClaimType.Blocked;
+}
+
+/**
+ * @hidden
+ */
+export function trustedIssuerToTrustedClaimIssuer(
+  trustedIssuer: TrustedIssuer,
+  context: Context
+): TrustedClaimIssuer {
+  const { issuer, trusted_for: claimTypes } = trustedIssuer;
+
+  const identity = new Identity({ did: identityIdToString(issuer) }, context);
+
+  let trustedFor: ClaimType[] | undefined;
+
+  if (claimTypes.isSpecific) {
+    trustedFor = claimTypes.asSpecific.map(meshClaimTypeToClaimType);
+  }
+
+  return {
+    identity,
+    trustedFor,
+  };
+}
+
+/**
+ * @hidden
+ */
 export function requirementToComplianceRequirement(
   requirement: Requirement,
   context: Context
@@ -1420,7 +1513,9 @@ export function requirementToComplianceRequirement(
       condition_type: {
         [type]: conditionContent,
       },
-      issuers: trustedClaimIssuers.map(issuer => stringToIdentityId(issuer, context)),
+      issuers: trustedClaimIssuers.map(issuer =>
+        trustedClaimIssuerToTrustedIssuer(issuer, context)
+      ),
     });
 
     if ([ConditionTarget.Both, ConditionTarget.Receiver].includes(target)) {
@@ -1530,7 +1625,9 @@ export function complianceRequirementResultToRequirementCompliance(
         condition: {
           ...meshConditionTypeToCondition(conditionType, context),
           target: ConditionTarget.Sender,
-          trustedClaimIssuers: issuers.map(({ issuer }) => identityIdToString(issuer)),
+          trustedClaimIssuers: issuers.map(trustedIssuer =>
+            trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+          ),
         },
         complies: boolToBoolean(result),
       };
@@ -1551,7 +1648,9 @@ export function complianceRequirementResultToRequirementCompliance(
         condition: {
           ...meshConditionTypeToCondition(conditionType, context),
           target: ConditionTarget.Receiver,
-          trustedClaimIssuers: issuers.map(({ issuer }) => identityIdToString(issuer)),
+          trustedClaimIssuers: issuers.map(trustedIssuer =>
+            trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+          ),
         },
         complies: boolToBoolean(result),
       };
@@ -1602,7 +1701,9 @@ export function complianceRequirementToRequirement(
     const newCondition = {
       ...meshConditionTypeToCondition(conditionType, context),
       target: ConditionTarget.Sender,
-      trustedClaimIssuers: issuers.map(({ issuer }) => identityIdToString(issuer)),
+      trustedClaimIssuers: issuers.map(trustedIssuer =>
+        trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+      ),
     };
     const existingCondition = conditions.find(condition =>
       conditionsAreEqual(condition, newCondition)
@@ -1618,7 +1719,9 @@ export function complianceRequirementToRequirement(
       const newCondition = {
         ...meshConditionTypeToCondition(conditionType, context),
         target: ConditionTarget.Receiver,
-        trustedClaimIssuers: issuers.map(({ issuer }) => identityIdToString(issuer)),
+        trustedClaimIssuers: issuers.map(trustedIssuer =>
+          trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+        ),
       };
 
       const existingCondition = conditions.find(condition =>
@@ -1958,97 +2061,4 @@ export function portfolioMovementToMovePortfolioItem(
     ticker: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
     amount: numberToBalance(amount, context),
   });
-}
-
-/**
- * @hidden
- */
-export function trustedClaimIssuerToTrustedIssuer(
-  issuer: TrustedClaimIssuer,
-  context: Context
-): TrustedIssuer {
-  const {
-    identity: { did },
-    trustedFor: claimTypes,
-  } = issuer;
-
-  let trustedFor;
-
-  if (!claimTypes) {
-    trustedFor = 'Any';
-  } else {
-    trustedFor = { Specific: claimTypes };
-  }
-
-  return context.polymeshApi.createType('TrustedIssuer', {
-    issuer: stringToIdentityId(did, context),
-    // eslint-disable-next-line @typescript-eslint/camelcase
-    trusted_for: trustedFor,
-  });
-}
-
-/**
- * @hidden
- */
-export function meshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
-  if (claimType.isJurisdiction) {
-    return ClaimType.Jurisdiction;
-  }
-
-  if (claimType.isNoData) {
-    return ClaimType.NoData;
-  }
-
-  if (claimType.isAccredited) {
-    return ClaimType.Accredited;
-  }
-
-  if (claimType.isAffiliate) {
-    return ClaimType.Affiliate;
-  }
-
-  if (claimType.isBuyLockup) {
-    return ClaimType.BuyLockup;
-  }
-
-  if (claimType.isSellLockup) {
-    return ClaimType.SellLockup;
-  }
-
-  if (claimType.isCustomerDueDiligence) {
-    return ClaimType.CustomerDueDiligence;
-  }
-
-  if (claimType.isKnowYourCustomer) {
-    return ClaimType.KnowYourCustomer;
-  }
-
-  if (claimType.isExempted) {
-    return ClaimType.Exempted;
-  }
-
-  return ClaimType.Blocked;
-}
-
-/**
- * @hidden
- */
-export function trustedIssuerToTrustedClaimIssuer(
-  trustedIssuer: TrustedIssuer,
-  context: Context
-): TrustedClaimIssuer {
-  const { issuer, trusted_for: claimTypes } = trustedIssuer;
-
-  const identity = new Identity({ did: identityIdToString(issuer) }, context);
-
-  let trustedFor: ClaimType[] | undefined;
-
-  if (claimTypes.isSpecific) {
-    trustedFor = claimTypes.asSpecific.map(meshClaimTypeToClaimType);
-  }
-
-  return {
-    identity,
-    trustedFor,
-  };
 }

@@ -324,7 +324,7 @@ export enum ConditionType {
   IsIdentity = 'IsIdentity',
 }
 
-export type ConditionBase = { target: ConditionTarget; trustedClaimIssuers?: string[] };
+export type ConditionBase = { target: ConditionTarget; trustedClaimIssuers?: TrustedClaimIssuer[] };
 
 export type SingleClaimCondition = ConditionBase & {
   type: ConditionType.IsPresent | ConditionType.IsAbsent;
