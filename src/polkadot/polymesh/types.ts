@@ -414,6 +414,7 @@ export interface ConditionType extends Enum {
 /** @name CorporateAction */
 export interface CorporateAction extends Struct {
   readonly kind: CAKind;
+  readonly decl_date: Moment;
   readonly record_date: Option<RecordDate>;
   readonly details: Text;
   readonly targets: TargetIdentities;
@@ -1134,8 +1135,8 @@ export interface ProtocolOp extends Enum {
   readonly isAssetRegisterTicker: boolean;
   readonly isAssetIssue: boolean;
   readonly isAssetAddDocument: boolean;
-  readonly isAssetCheckpoint: boolean;
   readonly isAssetCreateAsset: boolean;
+  readonly isAssetCreateCheckpointSchedule: boolean;
   readonly isDividendNew: boolean;
   readonly isComplianceManagerAddComplianceRequirement: boolean;
   readonly isIdentityRegisterDid: boolean;
@@ -1145,6 +1146,9 @@ export interface ProtocolOp extends Enum {
   readonly isIdentityAddSecondaryKeysWithAuthorization: boolean;
   readonly isPipsPropose: boolean;
   readonly isVotingAddBallot: boolean;
+  readonly isContractsPutCode: boolean;
+  readonly isBallotAttachBallot: boolean;
+  readonly isDistributionDistribute: boolean;
 }
 
 /** @name ProverTickerKey */
@@ -1184,6 +1188,8 @@ export interface RecordDate extends Struct {
 export interface RecordDateSpec extends Enum {
   readonly isScheduled: boolean;
   readonly asScheduled: Moment;
+  readonly isExistingSchedule: boolean;
+  readonly asExistingSchedule: ScheduleId;
   readonly isExisting: boolean;
   readonly asExisting: CheckpointId;
 }
@@ -1470,6 +1476,9 @@ export interface VenueType extends Enum {
   readonly isSto: boolean;
   readonly isExchange: boolean;
 }
+
+/** @name Version */
+export interface Version extends u8 {}
 
 /** @name Vote */
 export interface Vote extends ITuple<[bool, Balance]> {}

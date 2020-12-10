@@ -21,6 +21,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
     [TrustedClaimIssuer, Context],
     TrustedIssuer
   >;
+  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
   let trustedClaimIssuerStub: sinon.SinonStub;
   let ticker: string;
@@ -39,6 +40,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       utilsConversionModule,
       'trustedClaimIssuerToTrustedIssuer'
     );
+    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
     ticker = 'someTicker';
     claimIssuerDids = ['aDid', 'otherDid', 'differentDid'];
@@ -61,7 +63,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
   let addBatchTransactionStub: sinon.SinonStub;
 
   let removeDefaultTrustedClaimIssuerTransaction: PolymeshTx<[Vec<IdentityId>, Ticker]>;
-  let addDefaultTrustedClaimIssuerTransaction: PolymeshTx<[Vec<IdentityId>, Ticker]>;
+  let addDefaultTrustedClaimIssuerTransaction: PolymeshTx<[Vec<TrustedIssuer>, Ticker]>;
 
   beforeEach(() => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
@@ -93,6 +95,9 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
     });
     claimIssuers.forEach((issuer, index) => {
       identityIdToStringStub.withArgs(rawClaimIssuers[index].issuer).returns(issuer.identity.did);
+      stringToIdentityIdStub
+        .withArgs(issuer.identity.did, mockContext)
+        .returns(rawClaimIssuers[index].issuer);
     });
   });
 
@@ -169,7 +174,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       addBatchTransactionStub.firstCall,
       removeDefaultTrustedClaimIssuerTransaction,
       {},
-      currentClaimIssuers.map(issuer => [rawTicker, issuer])
+      currentClaimIssuers.map(({ issuer }) => [rawTicker, issuer])
     );
     sinon.assert.calledWith(
       addBatchTransactionStub.secondCall,
@@ -217,7 +222,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       addBatchTransactionStub.firstCall,
       removeDefaultTrustedClaimIssuerTransaction,
       {},
-      currentClaimIssuers.map(issuer => [rawTicker, issuer])
+      currentClaimIssuers.map(({ issuer }) => [rawTicker, issuer])
     );
     sinon.assert.calledOnce(addBatchTransactionStub);
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
@@ -261,7 +266,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       addBatchTransactionStub,
       removeDefaultTrustedClaimIssuerTransaction,
       {},
-      currentClaimIssuers.map(issuer => [rawTicker, issuer])
+      currentClaimIssuers.map(({ issuer }) => [rawTicker, issuer])
     );
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });

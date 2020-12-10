@@ -148,6 +148,7 @@ import {
   TickerRegistrationConfig,
   TrustedIssuer,
   Venue,
+  Version,
   VotingResult,
 } from 'polymesh-types/polymesh';
 import { ApiTypes } from '@polkadot/api/types';
@@ -320,6 +321,10 @@ declare module '@polkadot/api/types/storage' {
           key2: IdentityId | string | Uint8Array
         ) => Observable<ScopeId>
       >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>>;
       /**
        * Ticker registration config.
        * (ticker) -> TickerRegistrationConfig
@@ -525,6 +530,10 @@ declare module '@polkadot/api/types/storage' {
         (arg: IdentityId | string | Uint8Array) => Observable<ITuple<[Balance, BlockNumber]>>
       >;
       /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>>;
+      /**
        * The bridge transaction timelock period, in blocks, since the acceptance of the
        * transaction proposal during which the admin key can freeze the transaction.
        **/
@@ -710,6 +719,10 @@ declare module '@polkadot/api/types/storage' {
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<AssetCompliance>
       >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>>;
       /**
        * List of trusted claim issuer Ticker -> Issuer Identity
        **/
@@ -1124,6 +1137,10 @@ declare module '@polkadot/api/types/storage' {
               ]
         ) => Observable<bool>
       >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>>;
     };
     imOnline: {
       /**
@@ -1356,22 +1373,6 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<DepositInfo>
       >;
       /**
-       * Maps block numbers to list of PIPs which should be executed at the block number.
-       * block number -> Pip id
-       **/
-      executionSchedule: AugmentedQuery<
-        ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
-      >;
-      /**
-       * Maps block numbers to list of PIPs which should be expired at the block number.
-       * block number -> Pip id
-       **/
-      expirySchedule: AugmentedQuery<
-        ApiType,
-        (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Vec<PipId>>
-      >;
-      /**
        * Maximum times a PIP can be skipped before triggering `CannotSkipPip` in `enact_snapshot_results`.
        **/
       maxPipSkipCount: AugmentedQuery<ApiType, () => Observable<SkippedCount>>;
@@ -1578,8 +1579,8 @@ declare module '@polkadot/api/types/storage' {
             | 'AssetRegisterTicker'
             | 'AssetIssue'
             | 'AssetAddDocument'
-            | 'AssetCheckpoint'
             | 'AssetCreateAsset'
+            | 'AssetCreateCheckpointSchedule'
             | 'DividendNew'
             | 'ComplianceManagerAddComplianceRequirement'
             | 'IdentityRegisterDid'
@@ -1589,6 +1590,9 @@ declare module '@polkadot/api/types/storage' {
             | 'IdentityAddSecondaryKeysWithAuthorization'
             | 'PipsPropose'
             | 'VotingAddBallot'
+            | 'ContractsPutCode'
+            | 'BallotAttachBallot'
+            | 'DistributionDistribute'
             | number
             | Uint8Array
         ) => Observable<BalanceOf>
@@ -1728,6 +1732,10 @@ declare module '@polkadot/api/types/storage' {
           key2: u64 | AnyNumber | Uint8Array
         ) => Observable<bool>
       >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>>;
       /**
        * Helps a user track their pending instructions and affirmations (only needed for UI).
        * (counter_party, instruction_id) -> AffirmationStatus

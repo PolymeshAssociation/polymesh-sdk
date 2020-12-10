@@ -1,5 +1,5 @@
 import { difference, differenceWith, intersection, isEqual, sortBy } from 'lodash';
-import { Ticker, TrustedIssuer } from 'polymesh-types/types';
+import { IdentityId, Ticker, TrustedIssuer } from 'polymesh-types/types';
 
 import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ClaimType, ErrorCode, Role, RoleType } from '~/types';
@@ -7,6 +7,7 @@ import { TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   signerToString,
+  stringToIdentityId,
   stringToTicker,
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
@@ -49,7 +50,7 @@ export async function prepareModifyTokenTrustedClaimIssuers(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  let claimIssuersToDelete: [Ticker, TrustedIssuer][] = [];
+  let claimIssuersToDelete: [Ticker, IdentityId][] = [];
   let claimIssuersToAdd: [Ticker, TrustedIssuer][] = [];
 
   let inputDids: string[];
@@ -78,7 +79,7 @@ export async function prepareModifyTokenTrustedClaimIssuers(
 
     claimIssuersToDelete = currentClaimIssuers
       .filter(({ identity: { did } }) => inputDids.includes(did))
-      .map(issuer => tuple(rawTicker, trustedClaimIssuerToTrustedIssuer(issuer, context)));
+      .map(({ identity: { did } }) => tuple(rawTicker, stringToIdentityId(did, context)));
   } else {
     claimIssuersToAdd = [];
     inputDids = [];
@@ -100,7 +101,7 @@ export async function prepareModifyTokenTrustedClaimIssuers(
   }
 
   if (args.operation === TrustedClaimIssuerOperation.Set) {
-    claimIssuersToDelete = rawCurrentClaimIssuers.map(issuer => [rawTicker, issuer]);
+    claimIssuersToDelete = rawCurrentClaimIssuers.map(({ issuer }) => [rawTicker, issuer]);
 
     if (
       !differenceWith(
