@@ -1,19 +1,21 @@
 import P from 'bluebird';
 
 import { assertSecondaryKeys } from '~/api/procedures/utils';
-import { DefaultPortfolio, NumberedPortfolio, Procedure, SecurityToken } from '~/internal';
-import { TxTag } from '~/polkadot/types';
-import { SecondaryKey } from '~/types';
+import { Procedure } from '~/internal';
+import { PermissionsLike, Signer } from '~/types';
 import { tuple } from '~/types/utils';
 import {
+  permissionsLikeToPermissions,
   permissionsToMeshPermissions,
-  portfolioLikeToPortfolio,
   signerToSignerValue,
   signerValueToSignatory,
 } from '~/utils/conversion';
 
 export interface ModifySignerPermissionsParams {
-  secondaryKeys: SecondaryKey[];
+  secondaryKeys: {
+    signer: Signer;
+    permissions: PermissionsLike;
+  }[];
 }
 
 /**
@@ -45,44 +47,16 @@ export async function prepareModifySignerPermissions(
     secondaryKeys
   );
 
-  const signersList = await P.map(signerValues, async ({ signer, permissions }) => {
-    const { tokens, transactions, portfolios } = permissions;
+  const signersList = await P.map(
+    signerValues,
+    async ({ signer, permissions: permissionsLike }) => {
+      const permissions = await permissionsLikeToPermissions(permissionsLike, context);
 
-    let tokenPermissions: SecurityToken[] | null = [];
-    let transactionPermissions: TxTag[] | null = [];
-    let portfolioPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null = [];
+      const rawPermissions = permissionsToMeshPermissions(permissions, context);
 
-    if (tokens === null) {
-      tokenPermissions = null;
-    } else {
-      tokenPermissions = tokens;
+      return tuple(signerValueToSignatory(signer, context), rawPermissions);
     }
-
-    if (transactions === null) {
-      transactionPermissions = null;
-    } else {
-      transactionPermissions = transactions;
-    }
-
-    if (portfolios === null) {
-      portfolioPermissions = null;
-    } else {
-      portfolioPermissions = await P.map(portfolios, portfolio =>
-        portfolioLikeToPortfolio(portfolio, context)
-      );
-    }
-
-    const rawPermissionToSigner = permissionsToMeshPermissions(
-      {
-        tokens: tokenPermissions,
-        transactions: transactionPermissions,
-        portfolios: portfolioPermissions,
-      },
-      context
-    );
-
-    return tuple(signerValueToSignatory(signer, context), rawPermissionToSigner);
-  });
+  );
 
   this.addBatchTransaction(tx.identity.setPermissionToSigner, {}, signersList);
 }

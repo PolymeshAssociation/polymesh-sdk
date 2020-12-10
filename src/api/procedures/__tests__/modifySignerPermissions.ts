@@ -1,8 +1,6 @@
 import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
-import { SecurityToken } from '~/api/entities/SecurityToken';
 import {
   ModifySignerPermissionsParams,
   prepareModifySignerPermissions,
@@ -20,7 +18,7 @@ describe('modifySignerPermissions procedure', () => {
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
   let permissionsToMeshPermissionsStub: sinon.SinonStub;
-  let portfolioLikeToPortfolioStub: sinon.SinonStub;
+  let permissionsLikeToPermissionsStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -32,7 +30,10 @@ describe('modifySignerPermissions procedure', () => {
       utilsConversionModule,
       'permissionsToMeshPermissions'
     );
-    portfolioLikeToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolio');
+    permissionsLikeToPermissionsStub = sinon.stub(
+      utilsConversionModule,
+      'permissionsLikeToPermissions'
+    );
   });
 
   beforeEach(() => {
@@ -118,39 +119,7 @@ describe('modifySignerPermissions procedure', () => {
 
     signersList = [[rawSignatory, fakeMeshPermissions]];
 
-    await prepareModifySignerPermissions.call(proc, { secondaryKeys });
-
-    sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, signersList);
-
-    const fakeTicker = 'TICKER';
-    const fakeDid = 'someDid';
-    const fakePortfolio = new DefaultPortfolio({ did: fakeDid }, mockContext);
-    secondaryKeys = [
-      {
-        signer: account,
-        permissions: {
-          tokens: [new SecurityToken({ ticker: fakeTicker }, mockContext)],
-          transactions: null,
-          portfolios: [fakePortfolio],
-        },
-      },
-    ];
-    fakeMeshPermissions = dsMockUtils.createMockPermissions({
-      asset: [dsMockUtils.createMockTicker(fakeTicker)],
-      extrinsic: null,
-      portfolio: [
-        dsMockUtils.createMockPortfolioId({
-          did: dsMockUtils.createMockIdentityId(fakeDid),
-          kind: dsMockUtils.createMockPortfolioKind('Default'),
-        }),
-      ],
-    });
-
-    portfolioLikeToPortfolioStub.returns(fakePortfolio);
-
-    permissionsToMeshPermissionsStub.returns(fakeMeshPermissions);
-
-    signersList = [[rawSignatory, fakeMeshPermissions]];
+    permissionsLikeToPermissionsStub.resolves(secondaryKeys[0].permissions);
 
     await prepareModifySignerPermissions.call(proc, { secondaryKeys });
 

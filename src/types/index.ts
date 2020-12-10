@@ -570,6 +570,12 @@ export interface SecondaryKey {
   permissions: Permissions;
 }
 
+export interface PermissionsLike {
+  tokens?: (string | SecurityToken)[] | null;
+  transactions?: TxTag[] | null;
+  portfolios?: PortfolioLike[] | null;
+}
+
 export type PortfolioLike =
   | string
   | Identity

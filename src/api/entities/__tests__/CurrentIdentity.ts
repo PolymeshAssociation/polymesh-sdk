@@ -124,7 +124,7 @@ describe('CurrentIdentity class', () => {
 
       modifySignerPermissionsStub.withArgs({ secondaryKeys }, context).resolves(expectedQueue);
 
-      const queue = await identity.revokePermissions({ signers });
+      const queue = await identity.revokePermissions({ secondaryKeys: signers });
 
       expect(queue).toBe(expectedQueue);
     });

@@ -3,11 +3,8 @@ import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
-import { SecurityToken } from '~/api/entities/SecurityToken';
 import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { Account, AuthorizationRequest, Context, InviteAccountParams } from '~/internal';
-import { AssetTx } from '~/polkadot/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, Identity, ResultSet } from '~/types';
@@ -29,7 +26,7 @@ describe('inviteAccount procedure', () => {
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
-  let portfolioLikeToPortfolioStub: sinon.SinonStub;
+  let permissionsLikeToPermissionsStub: sinon.SinonStub;
 
   const args = { targetAccount: 'targetAccount' };
   const authId = new BigNumber(1);
@@ -46,7 +43,10 @@ describe('inviteAccount procedure', () => {
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
     signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
     signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    portfolioLikeToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolio');
+    permissionsLikeToPermissionsStub = sinon.stub(
+      utilsConversionModule,
+      'permissionsLikeToPermissions'
+    );
   });
 
   beforeEach(() => {
@@ -155,69 +155,18 @@ describe('inviteAccount procedure', () => {
       rawExpiry
     );
 
-    const tokens = ['someTicker', new SecurityToken({ ticker: 'otherTicker' }, mockContext)];
-    const transactions = [AssetTx.Approve];
-    const portfolios = [new DefaultPortfolio({ did: 'someDid' }, mockContext)];
-
-    await prepareInviteAccount.call(proc, {
-      ...args,
-      permissions: {
-        tokens,
-        transactions,
-        portfolios,
-      },
+    permissionsLikeToPermissionsStub.resolves({
+      tokens: null,
+      transactions: null,
+      portfolios: null,
     });
-
-    sinon.assert.calledWith(
-      addTransactionStub,
-      transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
 
     await prepareInviteAccount.call(proc, {
       ...args,
       permissions: {
         tokens: null,
-        transactions,
-        portfolios: null,
-      },
-    });
-
-    sinon.assert.calledWith(
-      addTransactionStub,
-      transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
-
-    await prepareInviteAccount.call(proc, {
-      ...args,
-      permissions: {
         transactions: null,
-        portfolios,
-      },
-    });
-
-    portfolioLikeToPortfolioStub.resolves({} as DefaultPortfolio);
-
-    sinon.assert.calledWith(
-      addTransactionStub,
-      transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
-
-    await prepareInviteAccount.call(proc, {
-      ...args,
-      permissions: {
-        tokens,
+        portfolios: null,
       },
     });
 
