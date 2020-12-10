@@ -3,6 +3,7 @@ import {
   booleanToBool,
   numberToU64,
   signerToSignerValue,
+  signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
 import { getDid } from '~/utils/internal';
@@ -40,12 +41,15 @@ export async function prepareConsumeJoinIdentityAuthorization(
   const rawAuthId = numberToU64(authId, context);
 
   if (!accept) {
+    const { address } = context.getCurrentAccount();
+    const paidByThirdParty = address === signerToString(target);
+
     this.addTransaction(
       identity.removeAuthorization,
-      { paidByThirdParty: true },
+      { paidByThirdParty },
       signerValueToSignatory(signerToSignerValue(target), context),
       rawAuthId,
-      booleanToBool(true, context)
+      booleanToBool(paidByThirdParty, context)
     );
 
     return;
