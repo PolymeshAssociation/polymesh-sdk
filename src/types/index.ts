@@ -255,6 +255,7 @@ export enum ClaimType {
   Jurisdiction = 'Jurisdiction',
   Exempted = 'Exempted',
   Blocked = 'Blocked',
+  InvestorUniqueness = 'InvestorUniqueness',
   NoData = 'NoData',
 }
 
