@@ -2076,9 +2076,7 @@ export async function permissionsLikeToPermissions(
     );
   }
 
-  if (transactions === null) {
-    transactionPermissions = null;
-  } else if (transactions) {
+  if (transactions !== undefined) {
     transactionPermissions = transactions;
   }
 
