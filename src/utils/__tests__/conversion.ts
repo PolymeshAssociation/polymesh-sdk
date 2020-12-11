@@ -4056,7 +4056,7 @@ describe('permissionsLikeToPermissions', () => {
     entityMockUtils.cleanup();
   });
 
-  test('permissionsLikeToPermissions should convert a permissions like into an Permissions', async () => {
+  test('permissionsLikeToPermissions should convert a PermissionsLike into a Permissions', async () => {
     const context = dsMockUtils.getContextInstance();
     let args: PermissionsLike = { tokens: null, transactions: null, portfolios: null };
     let result = await permissionsLikeToPermissions(args, context);
