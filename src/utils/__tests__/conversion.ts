@@ -2409,7 +2409,10 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           type: ClaimType.Exempted,
           scope: { type: ScopeType.Identity, value: 'someTickerDid' },
         },
-        trustedClaimIssuers: ['someDid', 'otherDid'],
+        trustedClaimIssuers: [
+          { identity: new Identity({ did }, context) },
+          { identity: new Identity({ did: 'otherDid' }, context) },
+        ],
       },
       {
         type: ConditionType.IsNoneOf,
@@ -2493,9 +2496,12 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
     const id = 1;
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
-    const issuerDids = ['someDid', 'otherDid'];
-    const targetIdentityDid = 'someDid';
     const context = dsMockUtils.getContextInstance();
+    const issuerDids = [
+      { identity: new Identity({ did: 'someDid' }, context) },
+      { identity: new Identity({ did: 'otherDid' }, context) },
+    ];
+    const targetIdentityDid = 'someDid';
     const conditions: Condition[] = [
       {
         type: ConditionType.IsPresent,
@@ -2566,9 +2572,9 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
     /* eslint-disable @typescript-eslint/camelcase */
-    const issuers = issuerDids.map(did =>
+    const issuers = issuerDids.map(({ identity }) =>
       dsMockUtils.createMockTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(did),
+        issuer: dsMockUtils.createMockIdentityId(identity.did),
         trusted_for: dsMockUtils.createMockTrustedFor(),
       })
     );
@@ -2867,9 +2873,12 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     const id = 1;
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
-    const issuerDids = ['someDid', 'otherDid'];
-    const targetIdentityDid = 'someDid';
     const context = dsMockUtils.getContextInstance();
+    const issuerDids = [
+      { identity: new Identity({ did: 'someDid' }, context) },
+      { identity: new Identity({ did: 'otherDid' }, context) },
+    ];
+    const targetIdentityDid = 'someDid';
     const conditions: ConditionCompliance[] = [
       {
         condition: {
@@ -2959,9 +2968,9 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
     /* eslint-disable @typescript-eslint/camelcase */
-    const issuers = issuerDids.map(did =>
+    const issuers = issuerDids.map(({ identity }) =>
       dsMockUtils.createMockTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(did),
+        issuer: dsMockUtils.createMockIdentityId(identity.did),
         trusted_for: dsMockUtils.createMockTrustedFor(),
       })
     );
@@ -3076,8 +3085,11 @@ describe('assetComplianceResultToCompliance', () => {
     const id = 1;
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
-    const issuerDids = ['someDid', 'otherDid'];
     const context = dsMockUtils.getContextInstance();
+    const issuerDids = [
+      { identity: new Identity({ did: 'someDid' }, context) },
+      { identity: new Identity({ did: 'otherDid' }, context) },
+    ];
     const conditions: ConditionCompliance[] = [
       {
         condition: {
@@ -3149,9 +3161,9 @@ describe('assetComplianceResultToCompliance', () => {
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
     /* eslint-disable @typescript-eslint/camelcase */
-    const issuers = issuerDids.map(did =>
+    const issuers = issuerDids.map(({ identity }) =>
       dsMockUtils.createMockTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(did),
+        issuer: dsMockUtils.createMockIdentityId(identity.did),
         trusted_for: dsMockUtils.createMockTrustedFor(),
       })
     );
