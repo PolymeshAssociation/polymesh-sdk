@@ -1,7 +1,7 @@
 import P from 'bluebird';
 
 import { Account, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { TxTag } from '~/polkadot/types';
+import { TxTag, TxTags } from '~/polkadot/types';
 import {
   AuthorizationType,
   DefaultPortfolio,
@@ -162,4 +162,10 @@ export async function prepareInviteAccount(
 /**
  * @hidden
  */
-export const inviteAccount = new Procedure(prepareInviteAccount);
+export const inviteAccount = new Procedure(prepareInviteAccount, {
+  signerPermissions: {
+    tokens: [],
+    portfolios: [],
+    transactions: [TxTags.identity.AddAuthorization],
+  },
+});

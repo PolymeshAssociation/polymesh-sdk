@@ -580,7 +580,8 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
   } as unknown) as MockNumberedPortfolio;
 
   Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
-  numberedPortfolioConstructorStub.callsFake(args => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  numberedPortfolioConstructorStub.callsFake(({ did, ...args } = {}) => {
     const value = merge({}, numberedPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
@@ -623,8 +624,9 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
   } as unknown) as MockDefaultPortfolio;
 
   Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
-  defaultPortfolioConstructorStub.callsFake(() => {
-    const value = merge({}, defaultPortfolio);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  defaultPortfolioConstructorStub.callsFake(({ did, ...args } = {}) => {
+    const value = merge({}, defaultPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
     Object.setPrototypeOf(entities.DefaultPortfolio.prototype, entities.Portfolio.prototype);
@@ -1346,6 +1348,14 @@ export function getNumberedPortfolioIsCustodiedByStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `NumberedPortfolio.getCustodian` method
+ */
+export function getNumberedPortfolioGetCustodianStub(): SinonStub {
+  return numberedPortfolioGetCustodianStub;
+}
+
+/**
+ * @hidden
  * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
  */
 export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
@@ -1548,4 +1558,18 @@ export function getInstructionDetailsStub(details?: Partial<InstructionDetails>)
     });
   }
   return instructionDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Instruction.getLegs` method
+ */
+export function getInstructionGetLegsStub(legs?: Leg[]): SinonStub {
+  if (legs) {
+    return instructionGetLegsStub.resolves({
+      ...defaultInstructionOptions.getLegs,
+      ...legs,
+    });
+  }
+  return instructionGetLegsStub;
 }

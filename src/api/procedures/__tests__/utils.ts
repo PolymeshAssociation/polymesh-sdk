@@ -1,11 +1,18 @@
 import BigNumber from 'bignumber.js';
 
-import { assertInstructionValid } from '~/api/procedures/utils';
+import { assertInstructionValid, assertPortfolioExists } from '~/api/procedures/utils';
 import { Context, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import { InstructionDetails, InstructionStatus, InstructionType } from '~/types';
+
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
+);
 
 // NOTE uncomment in Governance v2 upgrade
 
@@ -236,5 +243,38 @@ describe('assertInstructionValid', () => {
     result = await assertInstructionValid(instruction, mockContext);
 
     expect(result).toBeUndefined();
+  });
+});
+
+describe('assertPortfolioExists', () => {
+  test("should throw an error if the portfolio doesn't exist", async () => {
+    entityMockUtils.configureMocks({ numberedPortfolioOptions: { exists: false } });
+
+    const context = dsMockUtils.getContextInstance();
+
+    let error;
+    try {
+      await assertPortfolioExists({ did: 'someDid', number: new BigNumber(10) }, context);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe("The Portfolio doesn't exist");
+  });
+
+  test('should not throw an error if the portfolio exists', async () => {
+    entityMockUtils.configureMocks({ numberedPortfolioOptions: { exists: true } });
+
+    const context = dsMockUtils.getContextInstance();
+
+    let error;
+    try {
+      await assertPortfolioExists({ did: 'someDid', number: new BigNumber(10) }, context);
+      await assertPortfolioExists({ did: 'someDid' }, context);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error).toBeUndefined();
   });
 });

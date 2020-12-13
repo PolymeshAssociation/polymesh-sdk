@@ -1,7 +1,7 @@
 import { find } from 'lodash';
 
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, Signer } from '~/types';
+import { ErrorCode, Signer, TxTags } from '~/types';
 import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 
 export interface RemoveSecondaryKeysParams {
@@ -71,16 +71,10 @@ export async function prepareRemoveSecondaryKeys(
 /**
  * @hidden
  */
-export async function isAuthorized(this: Procedure<RemoveSecondaryKeysParams>): Promise<boolean> {
-  const { context } = this;
-
-  const identity = await context.getCurrentIdentity();
-  const primaryKey = await identity.getPrimaryKey();
-
-  return primaryKey === context.getCurrentPair().address;
-}
-
-/**
- * @hidden
- */
-export const removeSecondaryKeys = new Procedure(prepareRemoveSecondaryKeys, isAuthorized);
+export const removeSecondaryKeys = new Procedure(prepareRemoveSecondaryKeys, {
+  signerPermissions: {
+    transactions: [TxTags.identity.RemoveSecondaryKeys],
+    tokens: [],
+    portfolios: [],
+  },
+});

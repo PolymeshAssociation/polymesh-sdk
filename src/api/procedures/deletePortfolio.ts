@@ -1,8 +1,9 @@
 import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, Role, RoleType } from '~/types';
-import { numberToU64, stringToIdentityId } from '~/utils/conversion';
+import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
+import { numberToU64, portfolioLikeToPortfolio, stringToIdentityId } from '~/utils/conversion';
 
 export interface DeletePortfolioParams {
   did: string;
@@ -57,12 +58,23 @@ export async function prepareDeletePortfolio(
 /**
  * @hidden
  */
-export function getRequiredRoles({ did, id }: DeletePortfolioParams): Role[] {
+export function getAuthorization(
+  this: Procedure<DeletePortfolioParams>,
+  { did, id }: DeletePortfolioParams
+): ProcedureAuthorization {
+  const { context } = this;
   const portfolioId = { did, number: id };
-  return [{ type: RoleType.PortfolioCustodian, portfolioId }];
+  return {
+    identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+    signerPermissions: {
+      transactions: [TxTags.portfolio.DeletePortfolio],
+      portfolios: [portfolioLikeToPortfolio({ identity: did, id }, context)],
+      tokens: [],
+    },
+  };
 }
 
 /**
  * @hidden
  */
-export const deletePortfolio = new Procedure(prepareDeletePortfolio, getRequiredRoles);
+export const deletePortfolio = new Procedure(prepareDeletePortfolio, getAuthorization);

@@ -1,7 +1,8 @@
 // import BigNumber from 'bignumber.js';
 
-import { Context, Instruction, PolymeshError } from '~/internal';
+import { Context, Instruction, NumberedPortfolio, PolymeshError } from '~/internal';
 import { ErrorCode, InstructionStatus, InstructionType } from '~/types';
+import { PortfolioId } from '~/types/internal';
 
 // import { Proposal } from '~/internal';
 // import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
@@ -75,6 +76,32 @@ export async function assertInstructionValid(
         data: {
           currentBlock: latestBlock,
           endBlock,
+        },
+      });
+    }
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertPortfolioExists(
+  portfolioId: PortfolioId,
+  context: Context
+): Promise<void> {
+  const { did, number } = portfolioId;
+
+  if (number) {
+    const numberedPortfolio = new NumberedPortfolio({ did, id: number }, context);
+    const exists = await numberedPortfolio.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Portfolio doesn't exist",
+        data: {
+          did,
+          portfolioId: number,
         },
       });
     }

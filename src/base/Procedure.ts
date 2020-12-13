@@ -10,12 +10,13 @@ import {
   PostTransactionValue,
   TransactionQueue,
 } from '~/internal';
-import { ErrorCode, Role } from '~/types';
+import { ErrorCode } from '~/types';
 import {
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
   PolymeshTx,
   PostTransactionValueArray,
+  ProcedureAuthorization,
   ResolverFunctionArray,
 } from '~/types/internal';
 import { transactionToTxTag } from '~/utils/conversion';
@@ -50,10 +51,10 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     args: Args
   ) => Promise<MaybePostTransactionValue<ReturnValue>>;
 
-  private checkRoles: (
+  private checkAuthorization: (
     this: Procedure<Args, ReturnValue>,
     args: Args
-  ) => Promise<boolean> | boolean | Role[];
+  ) => Promise<boolean> | boolean | Promise<ProcedureAuthorization> | ProcedureAuthorization;
 
   private transactions: (
     | PolymeshTransaction<unknown[]>
@@ -73,19 +74,23 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       this: Procedure<Args, ReturnValue>,
       args: Args
     ) => Promise<MaybePostTransactionValue<ReturnValue>>,
-    checkRoles:
-      | Role[]
+    checkAuthorization:
+      | ProcedureAuthorization
       | ((
           this: Procedure<Args, ReturnValue>,
           args: Args
-        ) => Promise<boolean> | boolean | Role[]) = async (): Promise<boolean> => true
+        ) =>
+          | Promise<boolean>
+          | boolean
+          | Promise<ProcedureAuthorization>
+          | ProcedureAuthorization) = async (): Promise<boolean> => true
   ) {
     this.prepareTransactions = prepareTransactions;
 
-    if (Array.isArray(checkRoles)) {
-      this.checkRoles = (): Role[] => checkRoles;
+    if (typeof checkAuthorization !== 'function') {
+      this.checkAuthorization = (): ProcedureAuthorization => checkAuthorization;
     } else {
-      this.checkRoles = checkRoles;
+      this.checkAuthorization = checkAuthorization;
     }
   }
 
@@ -107,14 +112,31 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
   public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
     this.context = context;
 
-    const checkRolesResult = await this.checkRoles(args);
+    const checkAuthorizationResult = await this.checkAuthorization(args);
     let allowed: boolean;
 
-    if (typeof checkRolesResult !== 'boolean') {
-      const identity = await context.getCurrentIdentity();
-      allowed = await identity.hasRoles(checkRolesResult);
+    if (typeof checkAuthorizationResult !== 'boolean') {
+      const { signerPermissions = true, identityRoles = true } = checkAuthorizationResult;
+
+      let identityAllowed: boolean;
+      if (typeof identityRoles !== 'boolean') {
+        const identity = await context.getCurrentIdentity();
+        identityAllowed = await identity.hasRoles(identityRoles);
+      } else {
+        identityAllowed = identityRoles;
+      }
+
+      let signerAllowed: boolean;
+      if (typeof signerPermissions !== 'boolean') {
+        const account = context.getCurrentAccount();
+        signerAllowed = await account.hasPermissions(signerPermissions);
+      } else {
+        signerAllowed = signerPermissions;
+      }
+
+      allowed = identityAllowed && signerAllowed;
     } else {
-      allowed = checkRolesResult;
+      allowed = checkAuthorizationResult;
     }
 
     if (!allowed) {

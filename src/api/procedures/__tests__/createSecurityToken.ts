@@ -8,11 +8,12 @@ import {
   Document,
   FundingRoundName,
   Ticker,
+  TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareCreateSecurityToken,
 } from '~/api/procedures/createSecurityToken';
@@ -279,13 +280,29 @@ describe('createSecurityToken procedure', () => {
   });
 });
 
-describe('getRequiredRoles', () => {
-  test('should return a ticker owner role', () => {
+describe('getAuthorization', () => {
+  test('should return the appropriate roles and permissions', () => {
     const ticker = 'someTicker';
     const args = {
       ticker,
     } as Params;
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TickerOwner, ticker }]);
+    expect(getAuthorization(args)).toEqual({
+      identityRoles: [{ type: RoleType.TickerOwner, ticker }],
+      signerPermissions: {
+        tokens: [],
+        portfolios: [],
+        transactions: [TxTags.asset.CreateAsset],
+      },
+    });
+
+    expect(getAuthorization({ ...args, documents: [] })).toEqual({
+      identityRoles: [{ type: RoleType.TickerOwner, ticker }],
+      signerPermissions: {
+        tokens: [],
+        portfolios: [],
+        transactions: [TxTags.asset.CreateAsset, TxTags.asset.AddDocuments],
+      },
+    });
   });
 });

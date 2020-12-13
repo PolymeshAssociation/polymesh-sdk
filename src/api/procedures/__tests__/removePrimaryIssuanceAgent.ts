@@ -1,8 +1,9 @@
-import { Ticker } from 'polymesh-types/types';
+import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { SecurityToken } from '~/api/entities/SecurityToken';
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareRemovePrimaryIssuanceAgent,
 } from '~/api/procedures/removePrimaryIssuanceAgent';
@@ -58,15 +59,23 @@ describe('removePrimaryIssuanceAgent procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const args = {
+        ticker,
+      } as Params;
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [TxTags.asset.RemovePrimaryIssuanceAgent],
+          tokens: [new SecurityToken({ ticker }, mockContext)],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

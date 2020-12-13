@@ -203,6 +203,7 @@ interface ContextOptions {
   withSeed?: boolean;
   balance?: AccountBalance;
   hasRoles?: boolean;
+  hasPermissions?: boolean;
   validCdd?: boolean;
   tokenBalance?: BigNumber;
   invalidDids?: string[];
@@ -407,6 +408,7 @@ const defaultContextOptions: ContextOptions = {
     locked: new BigNumber(10),
   },
   hasRoles: true,
+  hasPermissions: true,
   validCdd: true,
   tokenBalance: new BigNumber(1000),
   invalidDids: [],
@@ -480,6 +482,7 @@ function configureContext(opts: ContextOptions): void {
         getBalance: sinon.stub().resolves(opts.balance),
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
+        hasPermissions: sinon.stub().resolves(opts.hasPermissions),
       })
     : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
   const currentPair = opts.withSeed

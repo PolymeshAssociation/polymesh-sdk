@@ -1,5 +1,6 @@
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, Role, RoleType } from '~/types';
+import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { boolToBoolean, stringToTicker } from '~/utils/conversion';
 
 export interface TogglePauseRequirementsParams {
@@ -51,8 +52,18 @@ export async function prepareTogglePauseRequirements(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+export function getAuthorization(
+  this: Procedure<Params, SecurityToken>,
+  { ticker }: Params
+): ProcedureAuthorization {
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      transactions: [TxTags.complianceManager.PauseAssetCompliance],
+      tokens: [new SecurityToken({ ticker }, this.context)],
+      portfolios: [],
+    },
+  };
 }
 
 /**
@@ -60,5 +71,5 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
  */
 export const togglePauseRequirements = new Procedure(
   prepareTogglePauseRequirements,
-  getRequiredRoles
+  getAuthorization
 );

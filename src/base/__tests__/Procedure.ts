@@ -176,8 +176,36 @@ describe('Procedure class', () => {
         return 'success';
       };
 
-      let proc = new Procedure(func, [({ type: 'FakeRole' } as unknown) as Role]);
-      context = dsMockUtils.getContextInstance({ hasRoles: false });
+      let proc = new Procedure(func, {
+        identityRoles: [({ type: 'FakeRole' } as unknown) as Role],
+      });
+      context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
+
+      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+        'Current account is not authorized to execute this procedure'
+      );
+
+      proc = new Procedure(func, { identityRoles: false });
+
+      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+        'Current account is not authorized to execute this procedure'
+      );
+
+      proc = new Procedure(func, {
+        signerPermissions: {
+          tokens: [],
+          transactions: [],
+          portfolios: [],
+        },
+      });
+
+      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+        'Current account is not authorized to execute this procedure'
+      );
+
+      proc = new Procedure(func, {
+        signerPermissions: false,
+      });
 
       await expect(proc.prepare(procArgs, context)).rejects.toThrow(
         'Current account is not authorized to execute this procedure'

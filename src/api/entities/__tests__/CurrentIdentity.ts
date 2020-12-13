@@ -185,11 +185,11 @@ describe('CurrentIdentity class', () => {
       );
 
       portfolioLikeToPortfolioIdStub
-        .withArgs(defaultPortfolio, context)
-        .resolves({ did: defaultPortfolioDid, number: undefined });
+        .withArgs(defaultPortfolio)
+        .returns({ did: defaultPortfolioDid, number: undefined });
       portfolioLikeToPortfolioIdStub
-        .withArgs(numberedPortfolio, context)
-        .resolves({ did: numberedPortfolioDid, number: numberedPortfolioId });
+        .withArgs(numberedPortfolio)
+        .returns({ did: numberedPortfolioDid, number: numberedPortfolioId });
 
       const rawPortfolio = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),

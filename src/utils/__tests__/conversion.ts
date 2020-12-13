@@ -55,7 +55,6 @@ import {
   InstructionType,
   KnownTokenType,
   Permissions,
-  PortfolioLike,
   PortfolioMovement,
   Scope,
   ScopeType,
@@ -3774,7 +3773,7 @@ describe('portfolioLikeToPortfolioId', () => {
   });
 
   test('should convert a DID string to a PortfolioId', async () => {
-    const result = await portfolioLikeToPortfolioId(did, context);
+    const result = await portfolioLikeToPortfolioId(did);
 
     expect(result).toEqual({ did, number: undefined });
   });
@@ -3782,7 +3781,7 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert an Identity to a PortfolioId', async () => {
     const identity = entityMockUtils.getIdentityInstance({ did });
 
-    const result = await portfolioLikeToPortfolioId(identity, context);
+    const result = await portfolioLikeToPortfolioId(identity);
 
     expect(result).toEqual({ did, number: undefined });
   });
@@ -3790,7 +3789,7 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert a NumberedPortfolio to a PortfolioId', async () => {
     const portfolio = new NumberedPortfolio({ did, id: number }, context);
 
-    const result = await portfolioLikeToPortfolioId(portfolio, context);
+    const result = await portfolioLikeToPortfolioId(portfolio);
 
     expect(result).toEqual({ did, number });
   });
@@ -3798,43 +3797,20 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert a DefaultPortfolio to a PortfolioId', async () => {
     const portfolio = new DefaultPortfolio({ did }, context);
 
-    const result = await portfolioLikeToPortfolioId(portfolio, context);
+    const result = await portfolioLikeToPortfolioId(portfolio);
 
     expect(result).toEqual({ did, number: undefined });
   });
 
   test('should convert a Portfolio identifier object to a PortfolioId', async () => {
-    const result = await portfolioLikeToPortfolioId({ identity: did, id: number }, context);
+    let result = await portfolioLikeToPortfolioId({ identity: did, id: number });
     expect(result).toEqual({ did, number });
-  });
 
-  test("should throw an error if the Portfolio identifier object refers to a Portfolio that doesn't exist", async () => {
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        exists: false,
-      },
-    });
-
-    const portfolioIdentifier: PortfolioLike = {
-      identity: entityMockUtils.getIdentityInstance({
-        did,
-      }),
+    result = await portfolioLikeToPortfolioId({
+      identity: entityMockUtils.getIdentityInstance({ did }),
       id: number,
-    };
-
-    let err;
-
-    try {
-      await portfolioLikeToPortfolioId(portfolioIdentifier, context);
-    } catch (e) {
-      err = e;
-    }
-
-    expect(err.message).toBe("The Portfolio doesn't exist");
-    expect(err.data).toEqual({
-      did,
-      portfolioId: number,
     });
+    expect(result).toEqual({ did, number });
   });
 });
 

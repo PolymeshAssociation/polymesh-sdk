@@ -3,6 +3,7 @@ import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
 import { Instruction as MeshInstruction } from 'polymesh-types/types';
 
+import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   createVenue,
   CreateVenueParams,
@@ -101,9 +102,9 @@ export class CurrentIdentity extends Identity {
 
     const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
 
-    const portfolioIds = await P.map(allPortfolios, portfolio =>
-      portfolioLikeToPortfolioId(portfolio, context)
-    );
+    const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
+
+    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
 
     const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 

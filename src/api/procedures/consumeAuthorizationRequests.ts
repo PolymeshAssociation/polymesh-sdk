@@ -1,6 +1,8 @@
 import P from 'bluebird';
 
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
+import { TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   booleanToBool,
@@ -57,10 +59,10 @@ export async function prepareConsumeAuthorizationRequests(
 /**
  * @hidden
  */
-export async function isAuthorized(
+export async function getAuthorization(
   this: Procedure<ConsumeAuthorizationRequestsParams>,
   { authRequests, accept }: ConsumeAuthorizationRequestsParams
-): Promise<boolean> {
+): Promise<ProcedureAuthorization> {
   const { context } = this;
 
   let did: string;
@@ -88,7 +90,18 @@ export async function isAuthorized(
     return condition;
   });
 
-  return authorized.every(res => res);
+  const transactions = [
+    accept ? TxTags.identity.AcceptAuthorization : TxTags.identity.RemoveAuthorization,
+  ];
+
+  return {
+    identityRoles: authorized.every(res => res),
+    signerPermissions: {
+      transactions,
+      tokens: [],
+      portfolios: [],
+    },
+  };
 }
 
 /**
@@ -96,5 +109,5 @@ export async function isAuthorized(
  */
 export const consumeAuthorizationRequests = new Procedure(
   prepareConsumeAuthorizationRequests,
-  isAuthorized
+  getAuthorization
 );
