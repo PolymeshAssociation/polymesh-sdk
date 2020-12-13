@@ -200,6 +200,8 @@ export enum PipsTx {
   RejectReferendum = 'pips.rejectReferendum',
   OverrideReferendumEnactmentPeriod = 'pips.overrideReferendumEnactmentPeriod',
   SetPendingPipExpiry = 'pips.setPendingPipExpiry',
+  ExecuteScheduledPip = 'pips.executeScheduledPip',
+  ExpireScheduledPip = 'pips.expireScheduledPip',
 }
 
 export enum TechnicalCommitteeTx {

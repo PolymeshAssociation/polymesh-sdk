@@ -777,6 +777,7 @@ import {
   Venue,
   VenueDetails,
   VenueType,
+  Version,
   VoteByPip,
   VoteCount,
   VoteCountProposalFound,
@@ -2565,6 +2566,10 @@ declare module '@polkadot/types/types/registry' {
     Document: Document;
     'Option<Document>': Option<Document>;
     'Vec<Document>': Vec<Document>;
+    Version: Version;
+    'Compact<Version>': Compact<Version>;
+    'Option<Version>': Option<Version>;
+    'Vec<Version>': Vec<Version>;
     AssetType: AssetType;
     'Option<AssetType>': Option<AssetType>;
     'Vec<AssetType>': Vec<AssetType>;

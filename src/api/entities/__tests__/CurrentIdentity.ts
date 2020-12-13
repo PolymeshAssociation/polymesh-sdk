@@ -7,6 +7,7 @@ import {
   CurrentIdentity,
   Identity,
   inviteAccount,
+  modifySignerPermissions,
   removeSecondaryKeys,
   TransactionQueue,
   Venue,
@@ -18,10 +19,13 @@ import * as utilsConversionModule from '~/utils/conversion';
 
 describe('CurrentIdentity class', () => {
   let context: Context;
+  let modifySignerPermissionsStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+
+    modifySignerPermissionsStub = sinon.stub(modifySignerPermissions, 'prepare');
   });
 
   beforeEach(() => {
@@ -98,6 +102,51 @@ describe('CurrentIdentity class', () => {
         .resolves(expectedQueue);
 
       const queue = await identity.removeSecondaryKeys({ signers });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: revokePermissions', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new CurrentIdentity({ did }, context);
+
+      const signers = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
+      const secondaryKeys = [
+        {
+          signer: signers[0],
+          permissions: { tokens: [], transactions: [], portfolios: [] },
+        },
+      ];
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      modifySignerPermissionsStub.withArgs({ secondaryKeys }, context).resolves(expectedQueue);
+
+      const queue = await identity.revokePermissions({ secondaryKeys: signers });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: modifyPermissions', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new CurrentIdentity({ did }, context);
+
+      const secondaryKeys = [
+        {
+          signer: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
+          permissions: { tokens: [], transactions: [], portfolios: [] },
+        },
+      ];
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      modifySignerPermissionsStub.withArgs({ secondaryKeys }, context).resolves(expectedQueue);
+
+      const queue = await identity.modifyPermissions({ secondaryKeys });
 
       expect(queue).toBe(expectedQueue);
     });

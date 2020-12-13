@@ -15,6 +15,7 @@ import {
 import {
   AssetIdentifier,
   AssetName,
+  AssetTx,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
@@ -36,6 +37,7 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { SecurityToken } from '~/api/entities/SecurityToken';
 import { Account, Context, DefaultPortfolio, Identity, NumberedPortfolio } from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
 import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
@@ -55,6 +57,7 @@ import {
   InstructionType,
   KnownTokenType,
   Permissions,
+  PermissionsLike,
   PortfolioMovement,
   Scope,
   ScopeType,
@@ -119,6 +122,7 @@ import {
   numberToPipId,
   numberToU32,
   numberToU64,
+  permissionsLikeToPermissions,
   permissionsToMeshPermissions,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
@@ -4009,5 +4013,53 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
 
     result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('permissionsLikeToPermissions', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('permissionsLikeToPermissions should convert a PermissionsLike into a Permissions', async () => {
+    const context = dsMockUtils.getContextInstance();
+    let args: PermissionsLike = { tokens: null, transactions: null, portfolios: null };
+    let result = await permissionsLikeToPermissions(args, context);
+    expect(result).toEqual(args);
+
+    const firstToken = new SecurityToken({ ticker: 'TICKER' }, context);
+    const ticker = 'OTHERTICKER';
+    const secondToken = new SecurityToken({ ticker: ticker }, context);
+    const portfolio = new DefaultPortfolio({ did: 'someDid' }, context);
+
+    args = {
+      tokens: [firstToken, ticker],
+      transactions: [AssetTx.Transfer],
+      portfolios: [portfolio],
+    };
+    result = await permissionsLikeToPermissions(args, context);
+    expect(result).toEqual({
+      tokens: [firstToken, secondToken],
+      transactions: [AssetTx.Transfer],
+      portfolios: [portfolio],
+    });
+
+    result = await permissionsLikeToPermissions({}, context);
+    expect(result).toEqual({
+      tokens: [],
+      transactions: [],
+      portfolios: [],
+    });
   });
 });

@@ -48,6 +48,10 @@ export {
   removeSecondaryKeys,
   RemoveSecondaryKeysParams,
 } from '~/api/procedures/removeSecondaryKeys';
+export {
+  modifySignerPermissions,
+  ModifySignerPermissionsParams,
+} from '~/api/procedures/modifySignerPermissions';
 export { reserveTicker, ReserveTickerParams } from '~/api/procedures/reserveTicker';
 export { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures/setTokenDocuments';
 export {

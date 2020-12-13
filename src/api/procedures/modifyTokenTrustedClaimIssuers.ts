@@ -1,5 +1,5 @@
-import { difference, intersection } from 'lodash';
-import { Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
+import { difference, differenceWith, intersection, isEqual, sortBy } from 'lodash';
+import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
 
 import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ClaimType, ErrorCode, RoleType } from '~/types';
@@ -7,6 +7,7 @@ import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/int
 import { tuple } from '~/types/utils';
 import {
   signerToString,
+  stringToIdentityId,
   stringToTicker,
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
@@ -49,7 +50,7 @@ export async function prepareModifyTokenTrustedClaimIssuers(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  let claimIssuersToDelete: [Ticker, TrustedIssuer][] = [];
+  let claimIssuersToDelete: [Ticker, IdentityId][] = [];
   let claimIssuersToAdd: [Ticker, TrustedIssuer][] = [];
 
   let inputDids: string[];
@@ -78,7 +79,7 @@ export async function prepareModifyTokenTrustedClaimIssuers(
 
     claimIssuersToDelete = currentClaimIssuers
       .filter(({ identity: { did } }) => inputDids.includes(did))
-      .map(issuer => tuple(rawTicker, trustedClaimIssuerToTrustedIssuer(issuer, context)));
+      .map(({ identity: { did } }) => tuple(rawTicker, stringToIdentityId(did, context)));
   } else {
     claimIssuersToAdd = [];
     inputDids = [];
@@ -100,10 +101,22 @@ export async function prepareModifyTokenTrustedClaimIssuers(
   }
 
   if (args.operation === TrustedClaimIssuerOperation.Set) {
-    claimIssuersToDelete = rawCurrentClaimIssuers.map(issuer => [rawTicker, issuer]);
+    claimIssuersToDelete = rawCurrentClaimIssuers.map(({ issuer }) => [rawTicker, issuer]);
 
     if (
-      !difference(currentClaimIssuerDids, inputDids).length &&
+      !differenceWith(
+        currentClaimIssuers,
+        args.claimIssuers,
+        (
+          { identity: { did: aDid }, trustedFor: aTrustedFor },
+          { identity: bIdentity, trustedFor: bTrustedFor }
+        ) => {
+          const sameClaimTypes =
+            (aTrustedFor === undefined && bTrustedFor === undefined) ||
+            (aTrustedFor && bTrustedFor && isEqual(sortBy(aTrustedFor), sortBy(bTrustedFor)));
+          return aDid === signerToString(bIdentity) && !!sameClaimTypes;
+        }
+      ).length &&
       currentClaimIssuers.length === inputDids.length
     ) {
       throw new PolymeshError({

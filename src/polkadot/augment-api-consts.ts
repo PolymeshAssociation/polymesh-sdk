@@ -114,7 +114,7 @@ declare module '@polkadot/api/types/consts' {
       deposit: BalanceOf & AugmentedConst<ApiType>;
     };
     settlement: {
-      maxLegsInAInstruction: u32 & AugmentedConst<ApiType>;
+      maxLegsInInstruction: u32 & AugmentedConst<ApiType>;
     };
     staking: {
       /**

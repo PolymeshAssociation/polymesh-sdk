@@ -255,6 +255,7 @@ export enum ClaimType {
   Jurisdiction = 'Jurisdiction',
   Exempted = 'Exempted',
   Blocked = 'Blocked',
+  InvestorUniqueness = 'InvestorUniqueness',
   NoData = 'NoData',
 }
 
@@ -568,6 +569,12 @@ export type Signer = Identity | Account;
 export interface SecondaryKey {
   signer: Signer;
   permissions: Permissions;
+}
+
+export interface PermissionsLike {
+  tokens?: (string | SecurityToken)[] | null;
+  transactions?: TxTag[] | null;
+  portfolios?: PortfolioLike[] | null;
 }
 
 export type PortfolioLike =

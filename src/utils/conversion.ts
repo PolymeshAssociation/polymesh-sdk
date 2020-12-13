@@ -11,6 +11,7 @@ import {
 } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 import { computeWithoutCheck } from 'iso-7064';
 import { camelCase, isEqual, map, padEnd, range, rangeRight, snakeCase, values } from 'lodash';
 import {
@@ -100,6 +101,7 @@ import {
   KnownTokenType,
   MultiClaimCondition,
   Permissions,
+  PermissionsLike,
   PortfolioLike,
   PortfolioMovement,
   PrimaryIssuanceAgentCondition,
@@ -2031,5 +2033,45 @@ export function trustedIssuerToTrustedClaimIssuer(
   return {
     identity,
     trustedFor,
+  };
+}
+
+/**
+ * @hidden
+ */
+export async function permissionsLikeToPermissions(
+  permissionsLike: PermissionsLike,
+  context: Context
+): Promise<Permissions> {
+  let tokenPermissions: SecurityToken[] | null = [];
+  let transactionPermissions: TxTag[] | null = [];
+  let portfolioPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null = [];
+
+  const { tokens, transactions, portfolios } = permissionsLike;
+
+  if (tokens === null) {
+    tokenPermissions = null;
+  } else if (tokens) {
+    tokenPermissions = tokens.map(ticker =>
+      typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
+    );
+  }
+
+  if (transactions !== undefined) {
+    transactionPermissions = transactions;
+  }
+
+  if (portfolios === null) {
+    portfolioPermissions = null;
+  } else if (portfolios) {
+    portfolioPermissions = await P.map(portfolios, portfolio =>
+      portfolioLikeToPortfolio(portfolio, context)
+    );
+  }
+
+  return {
+    tokens: tokenPermissions,
+    transactions: transactionPermissions,
+    portfolios: portfolioPermissions,
   };
 }

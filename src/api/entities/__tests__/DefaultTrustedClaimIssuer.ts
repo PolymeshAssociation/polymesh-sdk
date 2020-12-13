@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Context, DefaultTrustedClaimIssuer, Entity, Identity } from '~/internal';
-import { eventByIndexedArgs } from '~/middleware/queries';
-import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsInternalModule from '~/utils/internal';
@@ -57,10 +56,8 @@ describe('DefaultTrustedClaimIssuer class', () => {
     const did = 'someDid';
     const ticker = 'SOMETICKER';
     const variables = {
-      moduleId: ModuleIdEnum.Compliancemanager,
-      eventId: EventIdEnum.TrustedDefaultClaimIssuerAdded,
-      eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
-      eventArg2: did,
+      ticker: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
+      identityId: did,
     };
 
     test('should return the event identifier object of the trusted claim issuer creation', async () => {
@@ -70,9 +67,9 @@ describe('DefaultTrustedClaimIssuer class', () => {
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
+      dsMockUtils.createApolloQueryStub(eventByAddedTrustedClaimIssuer(variables), {
         /* eslint-disable @typescript-eslint/camelcase */
-        eventByIndexedArgs: {
+        eventByAddedTrustedClaimIssuer: {
           block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
           event_idx: eventIdx,
@@ -88,7 +85,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
     test('should return null if the query result is empty', async () => {
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
+      dsMockUtils.createApolloQueryStub(eventByAddedTrustedClaimIssuer(variables), {});
       const result = await trustedClaimIssuer.addedAt();
       expect(result).toBeNull();
     });

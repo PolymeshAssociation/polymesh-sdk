@@ -1325,7 +1325,7 @@ declare module '@polkadot/api/types/submittable' {
       removeDefaultTrustedClaimIssuer: AugmentedSubmittable<
         (
           ticker: Ticker | string | Uint8Array,
-          issuer: TrustedIssuer | { issuer?: any; trusted_for?: any } | string | Uint8Array
+          issuer: IdentityId | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
@@ -1581,6 +1581,7 @@ declare module '@polkadot/api/types/submittable' {
             | 'Other'
             | number
             | Uint8Array,
+          declDate: Moment | AnyNumber | Uint8Array,
           recordDate: Option<RecordDateSpec> | null | object | string | Uint8Array,
           details: CADetails | string,
           targets: Option<TargetIdentities> | null | object | string | Uint8Array,
@@ -2246,6 +2247,11 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Registers a new Identity for the `target_account` and issues a CDD claim to it.
+       * The Investor UID is generated deterministically by the hash of the generated DID and
+       * then we fix it to be compliant with UUID v4.
+       *
+       * # See
+       * - [RFC 4122: UUID](https://tools.ietf.org/html/rfc4122)
        *
        * # Failure
        * - `origin` has to be a active CDD provider. Inactive CDD providers cannot add new
@@ -2881,6 +2887,21 @@ declare module '@polkadot/api/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>
       >;
       /**
+       * Internal dispatchable that handles execution of a PIP.
+       **/
+      executeScheduledPip: AugmentedSubmittable<
+        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
+       * Internal dispatchable that handles expiration of a PIP.
+       **/
+      expireScheduledPip: AugmentedSubmittable<
+        (
+          did: IdentityId | string | Uint8Array,
+          id: PipId | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>
+      >;
+      /**
        * A network member creates a PIP by submitting a dispatchable which
        * changes the network in someway. A minimum deposit is required to open a new proposal.
        *
@@ -3211,8 +3232,8 @@ declare module '@polkadot/api/types/submittable' {
             | 'AssetRegisterTicker'
             | 'AssetIssue'
             | 'AssetAddDocument'
-            | 'AssetCheckpoint'
             | 'AssetCreateAsset'
+            | 'AssetCreateCheckpointSchedule'
             | 'DividendNew'
             | 'ComplianceManagerAddComplianceRequirement'
             | 'IdentityRegisterDid'
@@ -3222,6 +3243,9 @@ declare module '@polkadot/api/types/submittable' {
             | 'IdentityAddSecondaryKeysWithAuthorization'
             | 'PipsPropose'
             | 'VotingAddBallot'
+            | 'ContractsPutCode'
+            | 'BallotAttachBallot'
+            | 'DistributionDistribute'
             | number
             | Uint8Array,
           baseFee: BalanceOf | AnyNumber | Uint8Array
@@ -5315,8 +5339,6 @@ declare module '@polkadot/api/types/submittable' {
        * - `signature`: Signature from target authorizing the relay
        * - `call`: Call to be relayed on behalf of target
        *
-       * # Weight
-       * - The weight of the call to be relayed plus a static 900_000_000.
        **/
       relayTx: AugmentedSubmittable<
         (
