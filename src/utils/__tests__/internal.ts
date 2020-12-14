@@ -3,7 +3,7 @@ import { range } from 'lodash';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, PostTransactionValue } from '~/base';
+import { Context, PostTransactionValue } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { ClaimType, CountryCode } from '~/types';

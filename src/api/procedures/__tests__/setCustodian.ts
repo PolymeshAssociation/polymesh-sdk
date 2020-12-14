@@ -3,9 +3,8 @@ import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, AuthorizationRequest, DefaultPortfolio, Identity } from '~/api/entities';
 import { getRequiredRoles, Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
-import { Context } from '~/base';
+import { Account, AuthorizationRequest, Context, DefaultPortfolio, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, RoleType } from '~/types';

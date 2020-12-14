@@ -14,7 +14,7 @@ import {
   SecurityToken as SecurityTokenClass,
   TickerReservation as TickerReservationClass,
   Venue as VenueClass,
-} from './';
+} from '~/internal';
 
 export type SecurityToken = InstanceType<typeof SecurityTokenClass>;
 export type TickerReservation = InstanceType<typeof TickerReservationClass>;

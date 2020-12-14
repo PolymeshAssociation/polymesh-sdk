@@ -1,4 +1,5 @@
 import { ApiPromise, Keyring } from '@polkadot/api';
+import { AddressOrPair } from '@polkadot/api/types';
 import { getTypeDef } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
 import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
@@ -9,8 +10,7 @@ import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
-import { Account, CurrentAccount, CurrentIdentity, Identity } from '~/api/entities';
-import { PolymeshError } from '~/base';
+import { Account, CurrentAccount, CurrentIdentity, Identity, PolymeshError } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
@@ -36,7 +36,7 @@ import { GraphqlQuery } from '~/types/internal';
 import { ROOT_TYPES } from '~/utils/constants';
 import {
   balanceToBigNumber,
-  meshPermissionToPermission,
+  meshPermissionsToPermissions,
   numberToU32,
   posRatioToBigNumber,
   signatoryToSignerValue,
@@ -342,6 +342,19 @@ export class Context {
   }
 
   /**
+   * Retrieve the signer address (or keyring pair)
+   */
+  public getSigner(): AddressOrPair {
+    const currentPair = this.getCurrentPair();
+    const { isLocked, address } = currentPair;
+    /*
+     * if the keyring pair is locked, it means it most likely got added from the polkadot extension
+     * with a custom signer. This means we have to pass just the address to signAndSend
+     */
+    return isLocked ? address : currentPair;
+  }
+
+  /**
    * Check whether Identities exist
    */
   public async getInvalidDids(identities: (string | Identity)[]): Promise<string[]> {
@@ -560,7 +573,7 @@ export class Context {
     const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SecondaryKey[] => {
       return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
         signer: signerValueToSigner(signatoryToSignerValue(rawSigner), this),
-        permissions: permissions.map(permission => meshPermissionToPermission(permission)),
+        permissions: meshPermissionsToPermissions(permissions, this),
       }));
     };
 

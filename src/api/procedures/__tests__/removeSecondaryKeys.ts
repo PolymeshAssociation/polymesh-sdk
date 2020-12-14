@@ -1,13 +1,11 @@
 import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account } from '~/api/entities';
 import {
-  isAuthorized,
   prepareRemoveSecondaryKeys,
   RemoveSecondaryKeysParams,
 } from '~/api/procedures/removeSecondaryKeys';
-import { Context } from '~/base';
+import { Account, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Signer } from '~/types';
@@ -97,32 +95,7 @@ describe('removeSecondaryKeys procedure', () => {
     const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
 
     await expect(prepareRemoveSecondaryKeys.call(proc, args)).rejects.toThrow(
-      'You cannot remove a key that is not present in your secondary keys list'
+      'One of the Signers is not a Secondary Key for the Identity'
     );
-  });
-
-  describe('isAuthorized', () => {
-    test('should return whether the current address is the primary key', async () => {
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          currentPairAddress: 'primaryKey',
-        },
-      });
-
-      const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
-
-      const boundFunc = isAuthorized.bind(proc);
-      let result = await boundFunc();
-      expect(result).toBe(true);
-
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          currentPairAddress: 'otherAccountId',
-        },
-      });
-
-      result = await boundFunc();
-      expect(result).toBe(false);
-    });
   });
 });

@@ -13,7 +13,7 @@ describe('editProposal procedure', () => {
 
 // import { isAuthorized, Params, prepareEditProposal } from '~/api/procedures/editProposal';
 // import * as proceduresUtilsModule from '~/api/procedures/utils';
-// import { Context, PostTransactionValue } from '~/base';
+// import { Context, PostTransactionValue } from '~/internal';
 // import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 // import { Mocked } from '~/testUtils/types';
 // import { PolymeshTx } from '~/types/internal';

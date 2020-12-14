@@ -9,7 +9,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
-import { PostTransactionValue } from '~/base';
+import { PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 
 /**
@@ -61,12 +61,12 @@ export type MapMaybePostTransactionValue<T extends unknown[]> = {
 };
 
 /**
- * Schema of a specific transaction
+ * Base Transaction Schema
  *
  * @param Args - arguments of the transaction
  * @param Values - values that will be returned wrapped in [[PostTransactionValue]] after the transaction runs
  */
-export interface TransactionSpec<
+export interface BaseTransactionSpec<
   Args extends unknown[] = unknown[],
   Values extends unknown[] = unknown[]
 > {
@@ -74,10 +74,6 @@ export interface TransactionSpec<
    * underlying polkadot transaction object
    */
   tx: MaybePostTransactionValue<PolymeshTx<Args>>;
-  /**
-   * arguments that the transaction will receive (some of them can be [[PostTransactionValue]] from an earlier transaction)
-   */
-  args: MapMaybePostTransactionValue<Args>;
   /**
    * wrapped values that will be returned after this transaction is run
    */
@@ -95,13 +91,45 @@ export interface TransactionSpec<
    */
   fee: BigNumber | null;
   /**
-   * number of elements in the batch (only applicable to batch transactions)
-   */
-  batchSize: number | null;
-  /**
    * whether the transaction fees are paid by a third party (for example when joining an identity as a secondary key)
    */
   paidByThirdParty: boolean;
+}
+
+/**
+ * Schema of a transaction batch
+ *
+ * @param Args - arguments of the transaction
+ * @param Values - values that will be returned wrapped in [[PostTransactionValue]] after the transaction runs
+ */
+export interface BatchTransactionSpec<
+  Args extends unknown[] = unknown[],
+  Values extends unknown[] = unknown[]
+> extends BaseTransactionSpec<Args, Values> {
+  /**
+   * arguments of each transaction in the batch (some of them can be [[PostTransactionValue]] from an earlier transaction)
+   */
+  args: MapMaybePostTransactionValue<Args>[];
+}
+
+/**
+ * Schema of a specific transaction
+ *
+ * @param Args - arguments of the transaction
+ * @param Values - values that will be returned wrapped in [[PostTransactionValue]] after the transaction runs
+ */
+export interface TransactionSpec<
+  Args extends unknown[] = unknown[],
+  Values extends unknown[] = unknown[]
+> extends BaseTransactionSpec<Args, Values> {
+  /**
+   * arguments that the transaction will receive (some of them can be [[PostTransactionValue]] from an earlier transaction)
+   */
+  args: MapMaybePostTransactionValue<Args>;
+  /**
+   * number of elements in the batch (only applicable to batch transactions)
+   */
+  batchSize: number | null;
 }
 
 export enum SignerType {
@@ -142,18 +170,13 @@ export interface ExtrinsicIdentifier {
   callId: CallIdEnum;
 }
 
-export interface TokenDocumentData {
-  uri: string;
-  contentHash: string;
-}
-
 export interface PortfolioId {
   did: string;
   number?: BigNumber;
 }
 
-export enum InstructionAuthorizationOperation {
-  Authorize = 'Authorize',
-  Unauthorize = 'Unauthorize',
+export enum InstructionAffirmationOperation {
+  Affirm = 'Affirm',
+  Withdraw = 'Withdraw',
   Reject = 'Reject',
 }

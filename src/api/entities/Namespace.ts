@@ -1,5 +1,4 @@
-import { Entity } from '~/api/entities';
-import { Context } from '~/base';
+import { Context, Entity } from '~/internal';
 
 /**
  * @hidden

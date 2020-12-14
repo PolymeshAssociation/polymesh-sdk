@@ -10,16 +10,21 @@ import fetch from 'cross-fetch';
 import { polymesh } from 'polymesh-types/definitions';
 import { Ticker, TxTag } from 'polymesh-types/types';
 
-import { Account, Identity, SecurityToken, TickerReservation } from '~/api/entities';
 import {
+  Account,
+  Context,
+  Identity,
+  PolymeshError,
   registerIdentity,
   RegisterIdentityParams,
   reserveTicker,
   ReserveTickerParams,
+  SecurityToken,
+  TickerReservation,
+  TransactionQueue,
   transferPolyX,
   TransferPolyXParams,
-} from '~/api/procedures';
-import { Context, PolymeshError, TransactionQueue } from '~/base';
+} from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import {
   AccountBalance,
@@ -153,7 +158,6 @@ export class Polymesh {
         // https://github.com/polkadot-js/api/releases/tag/v2.0.1 TODO @monitz87: remove once Polymesh is updated to substrate 2.0
         types: {
           ...types,
-          RefCount: 'RefCountTo259',
         },
         rpc,
       });

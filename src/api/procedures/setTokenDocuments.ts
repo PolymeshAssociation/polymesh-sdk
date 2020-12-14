@@ -1,16 +1,12 @@
 import { differenceWith } from 'lodash';
-import { DocumentName, TxTags } from 'polymesh-types/types';
+import { DocumentId, TxTags } from 'polymesh-types/types';
 
-import { SecurityToken } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, Role, RoleType, TokenDocument } from '~/types';
-import { tuple } from '~/types/utils';
 import {
-  documentNameToString,
-  documentToTokenDocumentData,
-  stringToDocumentName,
+  documentToTokenDocument,
   stringToTicker,
-  tokenDocumentDataToDocument,
+  tokenDocumentToDocument,
 } from '~/utils/conversion';
 import { batchArguments } from '~/utils/internal';
 
@@ -44,20 +40,23 @@ export async function prepareSetTokenDocuments(
     stringToTicker(ticker, context)
   );
 
-  const currentDocNames: DocumentName[] = [];
+  const currentDocIds: DocumentId[] = [];
   const currentDocs: TokenDocument[] = [];
 
   currentDocEntries.forEach(([key, doc]) => {
-    const name = key.args[1] as DocumentName;
-    currentDocNames.push(name);
-    currentDocs.push({
-      ...documentToTokenDocumentData(doc),
-      name: documentNameToString(name),
-    });
+    const id = key.args[1] as DocumentId;
+    currentDocIds.push(id);
+    currentDocs.push(documentToTokenDocument(doc));
   });
 
   const comparator = (a: TokenDocument, b: TokenDocument): boolean => {
-    return a.name === b.name && a.uri === b.uri && a.contentHash === b.contentHash;
+    return (
+      a.name === b.name &&
+      a.uri === b.uri &&
+      a.contentHash === b.contentHash &&
+      a.type === b.type &&
+      a.filedAt === b.filedAt
+    );
   };
 
   if (
@@ -70,18 +69,16 @@ export async function prepareSetTokenDocuments(
     });
   }
 
-  const rawDocuments = documents.map(({ name, ...documentData }) =>
-    tuple(stringToDocumentName(name, context), tokenDocumentDataToDocument(documentData, context))
-  );
+  const rawDocuments = documents.map(doc => tokenDocumentToDocument(doc, context));
 
   const rawTicker = stringToTicker(ticker, context);
 
-  if (currentDocNames.length) {
-    batchArguments(currentDocNames, TxTags.asset.BatchRemoveDocument).forEach(docNameBatch => {
+  if (currentDocIds.length) {
+    batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).forEach(docIdBatch => {
       this.addTransaction(
-        tx.asset.batchRemoveDocument,
-        { batchSize: docNameBatch.length },
-        docNameBatch,
+        tx.asset.removeDocuments,
+        { batchSize: docIdBatch.length },
+        docIdBatch,
         rawTicker
       );
     });
@@ -90,7 +87,7 @@ export async function prepareSetTokenDocuments(
   if (rawDocuments.length) {
     batchArguments(rawDocuments, TxTags.asset.BatchAddDocument).forEach(rawDocumentBatch => {
       this.addTransaction(
-        tx.asset.batchAddDocument,
+        tx.asset.addDocuments,
         { batchSize: rawDocumentBatch.length },
         rawDocumentBatch,
         rawTicker

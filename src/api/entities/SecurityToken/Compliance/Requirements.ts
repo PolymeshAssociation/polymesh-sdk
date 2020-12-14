@@ -2,13 +2,15 @@ import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
 import { AssetCompliance, AssetComplianceResult, IdentityId } from 'polymesh-types/types';
 
-import { Identity, Namespace, SecurityToken } from '~/api/entities';
 import {
+  Identity,
+  Namespace,
+  SecurityToken,
   setAssetRequirements,
   SetAssetRequirementsParams,
   togglePauseRequirements,
-} from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+  TransactionQueue,
+} from '~/internal';
 import { Compliance, Requirement, SubCallback, UnsubCallback } from '~/types';
 import {
   assetComplianceResultToCompliance,
@@ -156,22 +158,18 @@ export class Requirements extends Namespace<SecurityToken> {
         polymeshApi: { rpc },
       },
       context,
-      parent,
     } = this;
 
-    const { from = await this.context.getCurrentIdentity(), to } = args;
+    const { from = await context.getCurrentIdentity(), to } = args;
 
     const fromDid = stringToIdentityId(signerToString(from), context);
     const toDid = signerToString(to);
-
-    const { primaryIssuanceAgent } = await parent.details();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res: AssetComplianceResult = await (rpc as any).compliance.canTransfer(
       stringToTicker(ticker, context),
       fromDid,
-      stringToIdentityId(toDid, context),
-      primaryIssuanceAgent ? stringToIdentityId(primaryIssuanceAgent.did, context) : null
+      stringToIdentityId(toDid, context)
     );
 
     return assetComplianceResultToCompliance(res, context);

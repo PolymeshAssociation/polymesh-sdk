@@ -3,14 +3,15 @@ import { BigNumber } from 'bignumber.js';
 import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import {
+  Context,
   DefaultPortfolio,
   Entity,
   NumberedPortfolio,
+  PolymeshError,
   SecurityToken,
   TickerReservation,
   Venue,
-} from '~/api/entities';
-import { Context, PolymeshError } from '~/base';
+} from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {

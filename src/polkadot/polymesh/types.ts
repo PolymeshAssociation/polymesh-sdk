@@ -3,7 +3,7 @@
 
 import { ITuple } from '@polkadot/types/types';
 import { Enum, Option, Struct, U8aFixed, Vec } from '@polkadot/types/codec';
-import { Bytes, Text, bool, u32, u64, u8 } from '@polkadot/types/primitive';
+import { Bytes, Text, bool, u16, u32, u64, u8 } from '@polkadot/types/primitive';
 import { Signature } from '@polkadot/types/interfaces/extrinsics';
 import {
   AccountId,
@@ -13,9 +13,17 @@ import {
   H256,
   H512,
   Hash,
-  Moment,
   Perbill,
+  Permill,
 } from '@polkadot/types/interfaces/runtime';
+
+/** @name AffirmationStatus */
+export interface AffirmationStatus extends Enum {
+  readonly isUnknown: boolean;
+  readonly isPending: boolean;
+  readonly isAffirmed: boolean;
+  readonly isRejected: boolean;
+}
 
 /** @name AssetCompliance */
 export interface AssetCompliance extends Struct {
@@ -104,36 +112,32 @@ export interface AuthorizationData extends Enum {
   readonly isTransferAssetOwnership: boolean;
   readonly asTransferAssetOwnership: Ticker;
   readonly isJoinIdentity: boolean;
-  readonly asJoinIdentity: Vec<Permission>;
+  readonly asJoinIdentity: Permissions;
   readonly isPortfolioCustody: boolean;
   readonly asPortfolioCustody: PortfolioId;
   readonly isCustom: boolean;
   readonly asCustom: Ticker;
   readonly isNoData: boolean;
+  readonly isTransferCorporateActionAgent: boolean;
+  readonly asTransferCorporateActionAgent: Ticker;
 }
 
 /** @name AuthorizationNonce */
 export interface AuthorizationNonce extends u64 {}
-
-/** @name AuthorizationStatus */
-export interface AuthorizationStatus extends Enum {
-  readonly isUnknown: boolean;
-  readonly isPending: boolean;
-  readonly isAuthorized: boolean;
-  readonly isRejected: boolean;
-}
 
 /** @name AuthorizationType */
 export interface AuthorizationType extends Enum {
   readonly isAttestPrimaryKeyRotation: boolean;
   readonly isRotatePrimaryKey: boolean;
   readonly isTransferTicker: boolean;
+  readonly isTransferPrimaryIssuanceAgent: boolean;
   readonly isAddMultiSigSigner: boolean;
   readonly isTransferAssetOwnership: boolean;
   readonly isJoinIdentity: boolean;
   readonly isPortfolioCustody: boolean;
   readonly isCustom: boolean;
   readonly isNoData: boolean;
+  readonly isTransferCorporateActionAgent: boolean;
 }
 
 /** @name Ballot */
@@ -142,6 +146,27 @@ export interface Ballot extends Struct {
   readonly voting_start: Moment;
   readonly voting_end: Moment;
   readonly motions: Vec<Motion>;
+}
+
+/** @name BallotMeta */
+export interface BallotMeta extends Struct {
+  readonly title: BallotTitle;
+  readonly motions: Vec<Motion>;
+}
+
+/** @name BallotTimeRange */
+export interface BallotTimeRange extends Struct {
+  readonly start: Moment;
+  readonly end: Moment;
+}
+
+/** @name BallotTitle */
+export interface BallotTitle extends Text {}
+
+/** @name BallotVote */
+export interface BallotVote extends Struct {
+  readonly power: Balance;
+  readonly fallback: Option<u16>;
 }
 
 /** @name BatchAddClaimItem */
@@ -189,6 +214,49 @@ export interface BridgeTxStatus extends Enum {
   readonly isHandled: boolean;
 }
 
+/** @name CACheckpoint */
+export interface CACheckpoint extends Enum {
+  readonly isScheduled: boolean;
+  readonly asScheduled: ScheduleId;
+  readonly isExisting: boolean;
+  readonly asExisting: CheckpointId;
+}
+
+/** @name CADetails */
+export interface CADetails extends Text {}
+
+/** @name CAId */
+export interface CAId extends Struct {
+  readonly ticker: Ticker;
+  readonly local_id: LocalCAId;
+}
+
+/** @name CAKind */
+export interface CAKind extends Enum {
+  readonly isPredictableBenefit: boolean;
+  readonly isUnpredictableBenfit: boolean;
+  readonly isIssuerNotice: boolean;
+  readonly isReorganization: boolean;
+  readonly isOther: boolean;
+}
+
+/** @name CalendarPeriod */
+export interface CalendarPeriod extends Struct {
+  readonly unit: CalendarUnit;
+  readonly amount: u64;
+}
+
+/** @name CalendarUnit */
+export interface CalendarUnit extends Enum {
+  readonly isSecond: boolean;
+  readonly isMinute: boolean;
+  readonly isHour: boolean;
+  readonly isDay: boolean;
+  readonly isWeek: boolean;
+  readonly isMonth: boolean;
+  readonly isYear: boolean;
+}
+
 /** @name CanTransferResult */
 export interface CanTransferResult extends Enum {
   readonly isOk: boolean;
@@ -211,6 +279,18 @@ export interface CddStatus extends Enum {
   readonly asErr: Bytes;
 }
 
+/** @name CheckpointId */
+export interface CheckpointId extends u64 {}
+
+/** @name CheckpointSchedule */
+export interface CheckpointSchedule extends Struct {
+  readonly start: Moment;
+  readonly period: CalendarPeriod;
+}
+
+/** @name ChoiceTitle */
+export interface ChoiceTitle extends Text {}
+
 /** @name Claim */
 export interface Claim extends Enum {
   readonly isAccredited: boolean;
@@ -231,8 +311,8 @@ export interface Claim extends Enum {
   readonly asExempted: Scope;
   readonly isBlocked: boolean;
   readonly asBlocked: Scope;
-  readonly isInvestorZkProof: boolean;
-  readonly asInvestorZkProof: ITuple<[Scope, ScopeId, CddId, InvestorZKProofData]>;
+  readonly isInvestorUniqueness: boolean;
+  readonly asInvestorUniqueness: ITuple<[Scope, ScopeId, CddId]>;
   readonly isNoData: boolean;
 }
 
@@ -259,7 +339,16 @@ export interface ClaimType extends Enum {
   readonly isJurisdiction: boolean;
   readonly isExempted: boolean;
   readonly isBlocked: boolean;
-  readonly isNoType: boolean;
+  readonly isInvestorUniqueness: boolean;
+  readonly isNoData: boolean;
+}
+
+/** @name ClassicTickerImport */
+export interface ClassicTickerImport extends Struct {
+  readonly eth_owner: EthereumAddress;
+  readonly ticker: Ticker;
+  readonly is_contract: bool;
+  readonly is_created: bool;
 }
 
 /** @name ClassicTickerRegistration */
@@ -299,7 +388,7 @@ export interface ComplianceRequirementResult extends Struct {
 /** @name Condition */
 export interface Condition extends Struct {
   readonly condition_type: ConditionType;
-  readonly issuers: Vec<IdentityId>;
+  readonly issuers: Vec<TrustedIssuer>;
 }
 
 /** @name ConditionResult */
@@ -320,6 +409,17 @@ export interface ConditionType extends Enum {
   readonly asIsNoneOf: Vec<Claim>;
   readonly isIsIdentity: boolean;
   readonly asIsIdentity: TargetIdentity;
+}
+
+/** @name CorporateAction */
+export interface CorporateAction extends Struct {
+  readonly kind: CAKind;
+  readonly decl_date: Moment;
+  readonly record_date: Option<RecordDate>;
+  readonly details: Text;
+  readonly targets: TargetIdentities;
+  readonly default_withholding_tax: Tax;
+  readonly withholding_tax: Vec<ITuple<[IdentityId, Tax]>>;
 }
 
 /** @name Counter */
@@ -584,7 +684,6 @@ export interface DepositInfo extends Struct {
 
 /** @name DidRecord */
 export interface DidRecord extends Struct {
-  readonly roles: Vec<IdentityRole>;
   readonly primary_key: AccountId;
   readonly secondary_keys: Vec<SecondaryKey>;
 }
@@ -610,6 +709,20 @@ export interface DidStatus extends Enum {
   readonly isCddVerified: boolean;
 }
 
+/** @name DispatchableName */
+export interface DispatchableName extends Text {}
+
+/** @name Distribution */
+export interface Distribution extends Struct {
+  readonly from: PortfolioId;
+  readonly currency: Ticker;
+  readonly amount: Balance;
+  readonly remaining: Balance;
+  readonly reclaimed: bool;
+  readonly payment_at: Moment;
+  readonly expires_at: Option<Moment>;
+}
+
 /** @name Dividend */
 export interface Dividend extends Struct {
   readonly amount: Balance;
@@ -624,13 +737,22 @@ export interface Dividend extends Struct {
 export interface Document extends Struct {
   readonly uri: DocumentUri;
   readonly content_hash: DocumentHash;
+  readonly name: DocumentName;
+  readonly doc_type: Option<DocumentType>;
+  readonly filing_date: Option<Moment>;
 }
 
 /** @name DocumentHash */
 export interface DocumentHash extends Text {}
 
+/** @name DocumentId */
+export interface DocumentId extends u32 {}
+
 /** @name DocumentName */
 export interface DocumentName extends Text {}
+
+/** @name DocumentType */
+export interface DocumentType extends Text {}
 
 /** @name DocumentUri */
 export interface DocumentUri extends Text {}
@@ -640,6 +762,18 @@ export interface EcdsaSignature extends U8aFixed {}
 
 /** @name EthereumAddress */
 export interface EthereumAddress extends U8aFixed {}
+
+/** @name EventDid */
+export interface EventDid extends IdentityId {}
+
+/** @name ExtensionAttributes */
+export interface ExtensionAttributes extends Struct {
+  readonly usage_fee: Balance;
+  readonly version: MetaVersion;
+}
+
+/** @name ExtVersion */
+export interface ExtVersion extends u32 {}
 
 /** @name FeeOf */
 export interface FeeOf extends Balance {}
@@ -754,7 +888,7 @@ export interface IssueRecipient extends Enum {
 /** @name KeyIdentityData */
 export interface KeyIdentityData extends Struct {
   readonly identity: IdentityId;
-  readonly permissions: Option<Vec<Permission>>;
+  readonly permissions: Option<Permissions>;
 }
 
 /** @name Leg */
@@ -765,6 +899,20 @@ export interface Leg extends Struct {
   readonly amount: Balance;
 }
 
+/** @name LegacyPalletPermissions */
+export interface LegacyPalletPermissions extends Struct {
+  readonly pallet_name: PalletName;
+  readonly total: bool;
+  readonly dispatchable_names: Vec<DispatchableName>;
+}
+
+/** @name LegacyPermissions */
+export interface LegacyPermissions extends Struct {
+  readonly asset: Option<Vec<Ticker>>;
+  readonly extrinsic: Option<Vec<LegacyPalletPermissions>>;
+  readonly portfolio: Option<Vec<PortfolioId>>;
+}
+
 /** @name LegStatus */
 export interface LegStatus extends Enum {
   readonly isPendingTokenLock: boolean;
@@ -773,22 +921,36 @@ export interface LegStatus extends Enum {
   readonly asExecutionToBeSkipped: ITuple<[AccountId, u64]>;
 }
 
-/** @name LinkedKeyInfo */
-export interface LinkedKeyInfo extends Enum {
-  readonly isUnique: boolean;
-  readonly asUnique: IdentityId;
-  readonly isGroup: boolean;
-  readonly asGroup: Vec<IdentityId>;
+/** @name LocalCAId */
+export interface LocalCAId extends u32 {}
+
+/** @name MaybeBlock */
+export interface MaybeBlock extends Enum {
+  readonly isSome: boolean;
+  readonly asSome: BlockNumber;
+  readonly isNone: boolean;
 }
 
 /** @name Memo */
 export interface Memo extends U8aFixed {}
 
+/** @name MetaDescription */
+export interface MetaDescription extends Text {}
+
+/** @name MetaUrl */
+export interface MetaUrl extends Text {}
+
+/** @name MetaVersion */
+export interface MetaVersion extends u32 {}
+
+/** @name Moment */
+export interface Moment extends u64 {}
+
 /** @name Motion */
 export interface Motion extends Struct {
   readonly title: MotionTitle;
   readonly info_link: MotionInfoLink;
-  readonly choices: Vec<MotionTitle>;
+  readonly choices: Vec<ChoiceTitle>;
 }
 
 /** @name MotionInfoLink */
@@ -820,18 +982,33 @@ export interface OfflineSlashingParams extends Struct {
   readonly max_slash_percent: u32;
 }
 
+/** @name PalletName */
+export interface PalletName extends Text {}
+
+/** @name PalletPermissions */
+export interface PalletPermissions extends Struct {
+  readonly pallet_name: PalletName;
+  readonly dispatchable_names: Option<Vec<DispatchableName>>;
+}
+
+/** @name Payload */
+export interface Payload extends Struct {
+  readonly block_number: BlockNumber;
+  readonly nominators: Vec<AccountId>;
+  readonly public: H256;
+}
+
 /** @name PendingTx */
 export interface PendingTx extends Struct {
   readonly did: IdentityId;
   readonly bridge_tx: BridgeTx;
 }
 
-/** @name Permission */
-export interface Permission extends Enum {
-  readonly isFull: boolean;
-  readonly isAdmin: boolean;
-  readonly isOperator: boolean;
-  readonly isSpendFunds: boolean;
+/** @name Permissions */
+export interface Permissions extends Struct {
+  readonly asset: Option<Vec<Ticker>>;
+  readonly extrinsic: Option<Vec<PalletPermissions>>;
+  readonly portfolio: Option<Vec<PortfolioId>>;
 }
 
 /** @name Pip */
@@ -856,6 +1033,7 @@ export interface PipsMetadata extends Struct {
   readonly description: Option<PipDescription>;
   readonly created_at: BlockNumber;
   readonly transaction_version: u32;
+  readonly expiry: MaybeBlock;
 }
 
 /** @name PolymeshVotes */
@@ -863,6 +1041,8 @@ export interface PolymeshVotes extends Struct {
   readonly index: u32;
   readonly ayes: Vec<ITuple<[IdentityId, Balance]>>;
   readonly nays: Vec<ITuple<[IdentityId, Balance]>>;
+  readonly end: BlockNumber;
+  readonly expiry: MaybeBlock;
 }
 
 /** @name PortfolioId */
@@ -879,7 +1059,7 @@ export interface PortfolioKind extends Enum {
 }
 
 /** @name PortfolioName */
-export interface PortfolioName extends Bytes {}
+export interface PortfolioName extends Text {}
 
 /** @name PortfolioNumber */
 export interface PortfolioNumber extends u64 {}
@@ -891,6 +1071,12 @@ export interface PosRatio extends ITuple<[u32, u32]> {}
 export interface PreAuthorizedKeyInfo extends Struct {
   readonly target_id: IdentityId;
   readonly secondary_key: SecondaryKey;
+}
+
+/** @name PriceTier */
+export interface PriceTier extends Struct {
+  readonly total: Balance;
+  readonly price: Balance;
 }
 
 /** @name ProportionMatch */
@@ -924,6 +1110,7 @@ export interface ProposalState extends Enum {
   readonly isScheduled: boolean;
   readonly isFailed: boolean;
   readonly isExecuted: boolean;
+  readonly isExpired: boolean;
 }
 
 /** @name ProposalStatus */
@@ -949,6 +1136,7 @@ export interface ProtocolOp extends Enum {
   readonly isAssetIssue: boolean;
   readonly isAssetAddDocument: boolean;
   readonly isAssetCreateAsset: boolean;
+  readonly isAssetCreateCheckpointSchedule: boolean;
   readonly isDividendNew: boolean;
   readonly isComplianceManagerAddComplianceRequirement: boolean;
   readonly isIdentityRegisterDid: boolean;
@@ -958,6 +1146,9 @@ export interface ProtocolOp extends Enum {
   readonly isIdentityAddSecondaryKeysWithAuthorization: boolean;
   readonly isPipsPropose: boolean;
   readonly isVotingAddBallot: boolean;
+  readonly isContractsPutCode: boolean;
+  readonly isBallotAttachBallot: boolean;
+  readonly isDistributionDistribute: boolean;
 }
 
 /** @name ProverTickerKey */
@@ -981,6 +1172,26 @@ export interface ReceiptDetails extends Struct {
   readonly leg_id: u64;
   readonly signer: AccountId;
   readonly signature: OffChainSignature;
+  readonly metadata: ReceiptMetadata;
+}
+
+/** @name ReceiptMetadata */
+export interface ReceiptMetadata extends Text {}
+
+/** @name RecordDate */
+export interface RecordDate extends Struct {
+  readonly date: Moment;
+  readonly checkpoint: CACheckpoint;
+}
+
+/** @name RecordDateSpec */
+export interface RecordDateSpec extends Enum {
+  readonly isScheduled: boolean;
+  readonly asScheduled: Moment;
+  readonly isExistingSchedule: boolean;
+  readonly asExistingSchedule: ScheduleId;
+  readonly isExisting: boolean;
+  readonly asExisting: CheckpointId;
 }
 
 /** @name Referendum */
@@ -1014,6 +1225,15 @@ export interface RestrictionResult extends Enum {
   readonly isForceValid: boolean;
 }
 
+/** @name ScheduleId */
+export interface ScheduleId extends u64 {}
+
+/** @name ScheduleSpec */
+export interface ScheduleSpec extends Struct {
+  readonly start: Option<Moment>;
+  readonly period: CalendarPeriod;
+}
+
 /** @name Scope */
 export interface Scope extends Enum {
   readonly isIdentity: boolean;
@@ -1030,7 +1250,7 @@ export interface ScopeId extends U8aFixed {}
 /** @name SecondaryKey */
 export interface SecondaryKey extends Struct {
   readonly signer: Signatory;
-  readonly permissions: Vec<Permission>;
+  readonly permissions: Permissions;
 }
 
 /** @name SecondaryKeyWithAuth */
@@ -1051,7 +1271,7 @@ export interface SecurityToken extends Struct {
 
 /** @name SettlementType */
 export interface SettlementType extends Enum {
-  readonly isSettleOnAuthorization: boolean;
+  readonly isSettleOnAffirmation: boolean;
   readonly isSettleOnBlock: boolean;
   readonly asSettleOnBlock: BlockNumber;
 }
@@ -1074,6 +1294,13 @@ export interface SimpleTokenRecord extends Struct {
 /** @name SkippedCount */
 export interface SkippedCount extends u8 {}
 
+/** @name SlashingSwitch */
+export interface SlashingSwitch extends Enum {
+  readonly isValidator: boolean;
+  readonly isValidatorAndNominator: boolean;
+  readonly isNone: boolean;
+}
+
 /** @name SmartExtension */
 export interface SmartExtension extends Struct {
   readonly extension_type: SmartExtensionType;
@@ -1089,6 +1316,7 @@ export interface SmartExtensionName extends Text {}
 export interface SmartExtensionType extends Enum {
   readonly isTransferManager: boolean;
   readonly isOfferings: boolean;
+  readonly isSmartWallet: boolean;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
 }
@@ -1127,6 +1355,13 @@ export interface STO extends Struct {
   readonly active: bool;
 }
 
+/** @name StoredSchedule */
+export interface StoredSchedule extends Struct {
+  readonly schedule: CheckpointSchedule;
+  readonly id: ScheduleId;
+  readonly at: Moment;
+}
+
 /** @name TargetIdAuthorization */
 export interface TargetIdAuthorization extends Struct {
   readonly target_id: IdentityId;
@@ -1134,11 +1369,42 @@ export interface TargetIdAuthorization extends Struct {
   readonly expires_at: Moment;
 }
 
+/** @name TargetIdentities */
+export interface TargetIdentities extends Struct {
+  readonly identities: Vec<IdentityId>;
+  readonly treatment: TargetTreatment;
+}
+
 /** @name TargetIdentity */
 export interface TargetIdentity extends Enum {
   readonly isPrimaryIssuanceAgent: boolean;
   readonly isSpecific: boolean;
   readonly asSpecific: IdentityId;
+}
+
+/** @name TargetTreatment */
+export interface TargetTreatment extends Enum {
+  readonly isInclude: boolean;
+  readonly isExclude: boolean;
+}
+
+/** @name Tax */
+export interface Tax extends Permill {}
+
+/** @name TemplateDetails */
+export interface TemplateDetails extends Struct {
+  readonly instantiation_fee: Balance;
+  readonly owner: IdentityId;
+  readonly frozen: bool;
+}
+
+/** @name TemplateMetadata */
+export interface TemplateMetadata extends Struct {
+  readonly url: Option<MetaUrl>;
+  readonly se_type: SmartExtensionType;
+  readonly usage_fee: Balance;
+  readonly description: MetaDescription;
+  readonly version: MetaVersion;
 }
 
 /** @name Ticker */
@@ -1170,6 +1436,19 @@ export interface TickerTransferApproval extends Struct {
   readonly previous_ticker: Option<Ticker>;
 }
 
+/** @name TrustedFor */
+export interface TrustedFor extends Enum {
+  readonly isAny: boolean;
+  readonly isSpecific: boolean;
+  readonly asSpecific: Vec<ClaimType>;
+}
+
+/** @name TrustedIssuer */
+export interface TrustedIssuer extends Struct {
+  readonly issuer: IdentityId;
+  readonly trusted_for: TrustedFor;
+}
+
 /** @name UniqueCall */
 export interface UniqueCall extends Struct {
   readonly nonce: u64;
@@ -1197,6 +1476,9 @@ export interface VenueType extends Enum {
   readonly isSto: boolean;
   readonly isExchange: boolean;
 }
+
+/** @name Version */
+export interface Version extends u8 {}
 
 /** @name Vote */
 export interface Vote extends ITuple<[bool, Balance]> {}

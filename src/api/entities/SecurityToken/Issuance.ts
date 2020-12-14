@@ -1,8 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Namespace, SecurityToken } from '~/api/entities';
-import { issueTokens } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+import { issueTokens, Namespace, SecurityToken, TransactionQueue } from '~/internal';
 
 /**
  * Handles all Security Token Issuance related functionality

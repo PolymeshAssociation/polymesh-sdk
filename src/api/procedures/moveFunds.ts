@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { DefaultPortfolio, NumberedPortfolio } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, PortfolioMovement, Role, RoleType } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import {

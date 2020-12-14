@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { PolymeshError } from '~/base';
+import { PolymeshError } from '~/internal';
 import { ErrorCode } from '~/types';
 
 /**
