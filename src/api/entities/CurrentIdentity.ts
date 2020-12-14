@@ -10,14 +10,14 @@ import {
   Instruction,
   inviteAccount,
   InviteAccountParams,
+  modifySignerPermissions,
+  ModifySignerPermissionsParams,
   removeSecondaryKeys,
   RemoveSecondaryKeysParams,
-  revokePermissions,
-  RevokePermissionsParams,
   TransactionQueue,
   Venue,
 } from '~/internal';
-import { SecondaryKey, SubCallback, UnsubCallback } from '~/types';
+import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
 import {
   portfolioIdToMeshPortfolioId,
@@ -60,8 +60,27 @@ export class CurrentIdentity extends Identity {
   /**
    * Revoke all permissions of a list of secondary keys associated with the Identity
    */
-  public revokePermissions(args: RevokePermissionsParams): Promise<TransactionQueue<void>> {
-    return revokePermissions.prepare(args, this.context);
+  public revokePermissions(args: { secondaryKeys: Signer[] }): Promise<TransactionQueue<void>> {
+    const { secondaryKeys } = args;
+    const signers = secondaryKeys.map(signer => {
+      return {
+        signer,
+        permissions: { tokens: [], transactions: [], portfolios: [] },
+      };
+    });
+    return modifySignerPermissions.prepare({ secondaryKeys: signers }, this.context);
+  }
+
+  /**
+   * Modify all permissions of a list of secondary keys associated with the Identity
+   *
+   * @param args.secondaryKeys.permissions - list of permissions
+   * @param args.secondaryKeys.permissions.tokens - array of Security Tokens on which to grant permissions. A null value represents full permissions
+   * @param args.secondaryKeys.permissions.transactions - array of transaction tags that the Secondary Key has permission to execute. A null value represents full permissions
+   * @param args.secondaryKeys.permissions.portfolios - array of Portfolios for which to grant permissions. A null value represents full permissions
+   */
+  public modifyPermissions(args: ModifySignerPermissionsParams): Promise<TransactionQueue<void>> {
+    return modifySignerPermissions.prepare(args, this.context);
   }
 
   /**
