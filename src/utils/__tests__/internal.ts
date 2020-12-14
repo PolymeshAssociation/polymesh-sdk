@@ -220,6 +220,16 @@ describe('createClaim', () => {
       type: ClaimType.CustomerDueDiligence,
       id,
     });
+
+    type = 'InvestorUniqueness';
+    scope = { type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' };
+
+    result = createClaim(type, null, scope, id);
+    expect(result).toEqual({
+      type: ClaimType.InvestorUniqueness,
+      ticker: scope.value,
+      cddId: id,
+    });
   });
 });
 

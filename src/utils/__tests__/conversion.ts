@@ -4,10 +4,12 @@ import BigNumber from 'bignumber.js';
 import {
   CddId,
   ComplianceRequirement,
+  InvestorZKProofData,
   Memo,
   MovePortfolioItem,
   PipId,
   PortfolioId,
+  ScopeId,
   SettlementType,
   TrustedIssuer,
   VenueDetails,
@@ -149,7 +151,9 @@ import {
   stringToDocumentUri,
   stringToFundingRoundName,
   stringToIdentityId,
+  stringToInvestorZKProofData,
   stringToMemo,
+  stringToScopeId,
   stringToText,
   stringToTicker,
   stringToVenueDetails,
@@ -320,6 +324,35 @@ describe('stringToBytes and bytesToString', () => {
 
     const result = bytesToString(ticker);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToInvestorZKProofData', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToInvestorZKProofData should convert a string to a polkadot InvestorZKProofData object', () => {
+    const value = 'someProof';
+    const fakeResult = ('convertedProof' as unknown) as InvestorZKProofData;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('InvestorZKProofData', value)
+      .returns(fakeResult);
+
+    const result = stringToInvestorZKProofData(value, context);
+
+    expect(result).toBe(fakeResult);
   });
 });
 
@@ -2089,10 +2122,43 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
     expect(result).toBe(fakeResult);
 
     value = {
+      type: ClaimType.CustomerDueDiligence,
+      id: 'someCddId',
+    };
+
+    createTypeStub
+      .withArgs('Claim', { [value.type]: stringToCddId(value.id, context) })
+      .returns(fakeResult);
+
+    result = claimToMeshClaim(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    value = {
       type: ClaimType.NoData,
     };
 
     createTypeStub.withArgs('Claim', { [value.type]: null }).returns(fakeResult);
+
+    result = claimToMeshClaim(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    value = {
+      type: ClaimType.InvestorUniqueness,
+      ticker: 'someTicker',
+      cddId: 'someCddId',
+    };
+
+    createTypeStub
+      .withArgs('Claim', {
+        [value.type]: [
+          scopeToMeshScope({ type: ScopeType.Ticker, value: value.ticker }, context),
+          stringToScopeId(value.ticker, context),
+          stringToCddId(value.cddId, context),
+        ],
+      })
+      .returns(fakeResult);
 
     result = claimToMeshClaim(value, context);
 
@@ -2365,7 +2431,7 @@ describe('stringToCddId and cddIdToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToCddId should convert a cdd id string into an CddId', () => {
+  test('stringToCddId should convert a cdd id string into a CddId', () => {
     const cddId = 'someId';
     const fakeResult = ('type' as unknown) as CddId;
     const context = dsMockUtils.getContextInstance();
@@ -2385,6 +2451,35 @@ describe('stringToCddId and cddIdToString', () => {
     const cddId = dsMockUtils.createMockCddId(fakeResult);
 
     const result = cddIdToString(cddId);
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('stringToCddId', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToScopeId should convert a scope id string into a ScopeId', () => {
+    const scopeId = 'someId';
+    const fakeResult = ('type' as unknown) as ScopeId;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ScopeId', scopeId)
+      .returns(fakeResult);
+
+    const result = stringToScopeId(scopeId, context);
+
     expect(result).toBe(fakeResult);
   });
 });

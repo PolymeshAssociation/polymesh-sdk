@@ -261,11 +261,21 @@ export enum ClaimType {
 
 export type ScopedClaim =
   | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
-  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: Scope };
+  | {
+      type: Exclude<
+        ClaimType,
+        | ClaimType.NoData
+        | ClaimType.Jurisdiction
+        | ClaimType.CustomerDueDiligence
+        | ClaimType.InvestorUniqueness
+      >;
+      scope: Scope;
+    };
 
 export type UnscopedClaim =
   | { type: ClaimType.NoData }
-  | { type: ClaimType.CustomerDueDiligence; id: string };
+  | { type: ClaimType.CustomerDueDiligence; id: string }
+  | { type: ClaimType.InvestorUniqueness; ticker: string; cddId: string };
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
