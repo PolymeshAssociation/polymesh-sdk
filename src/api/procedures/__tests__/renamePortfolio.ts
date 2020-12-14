@@ -3,11 +3,11 @@ import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
+import { getRequiredRoles, Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { NumberedPortfolio } from '~/types';
+import { NumberedPortfolio, RoleType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -63,24 +63,6 @@ describe('renamePortfolio procedure', () => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-  });
-
-  test('should throw an error if the Current Identity is not the Portfolio owner', async () => {
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        isOwnedBy: false,
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
-
-    return expect(
-      prepareRenamePortfolio.call(proc, {
-        id,
-        did,
-        name: 'newName',
-      })
-    ).rejects.toThrow('You are not the owner of this Portfolio');
   });
 
   test('should throw an error if the new name is the same as the current one', async () => {
@@ -150,5 +132,19 @@ describe('renamePortfolio procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawPortfolioNumber, rawNewName);
     expect(result.id).toBe(id);
+  });
+});
+
+describe('getRequiredRoles', () => {
+  test('should return a portfolio custodian role', () => {
+    const args = {
+      id: new BigNumber(1),
+      did: 'someDid',
+      name: 'newName',
+    };
+
+    const portfolioId = { did: args.did, number: args.id };
+
+    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
   });
 });

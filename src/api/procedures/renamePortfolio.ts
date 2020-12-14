@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, Role, RoleType } from '~/types';
 import { numberToU64, stringToIdentityId, stringToText, textToString } from '~/utils/conversion';
 
 export interface RenamePortfolioParams {
@@ -32,22 +32,13 @@ export async function prepareRenamePortfolio(
 
   const { did, id, name: newName } = args;
 
-  const numberedPortfolio = new NumberedPortfolio({ did, id }, context);
   const identityId = stringToIdentityId(did, context);
   const rawPortfolioNumber = numberToU64(id, context);
 
-  const [isOwned, rawPortfolioName, rawPortfolios] = await Promise.all([
-    numberedPortfolio.isOwnedBy(),
+  const [rawPortfolioName, rawPortfolios] = await Promise.all([
     queryPortfolio.portfolios(identityId, rawPortfolioNumber),
     queryPortfolio.portfolios.entries(identityId),
   ]);
-
-  if (!isOwned) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You are not the owner of this Portfolio',
-    });
-  }
 
   if (textToString(rawPortfolioName) === newName) {
     throw new PolymeshError({
@@ -78,4 +69,12 @@ export async function prepareRenamePortfolio(
 /**
  * @hidden
  */
-export const renamePortfolio = new Procedure(prepareRenamePortfolio);
+export function getRequiredRoles({ did, id }: Params): Role[] {
+  const portfolioId = { did, number: id };
+  return [{ type: RoleType.PortfolioCustodian, portfolioId }];
+}
+
+/**
+ * @hidden
+ */
+export const renamePortfolio = new Procedure(prepareRenamePortfolio, getRequiredRoles);
