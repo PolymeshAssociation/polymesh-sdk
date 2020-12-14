@@ -54,7 +54,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
   private checkAuthorization: (
     this: Procedure<Args, ReturnValue>,
     args: Args
-  ) => Promise<boolean> | boolean | Promise<ProcedureAuthorization> | ProcedureAuthorization;
+  ) => Promise<ProcedureAuthorization> | ProcedureAuthorization;
 
   private transactions: (
     | PolymeshTransaction<unknown[]>
@@ -67,7 +67,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    * @hidden
    *
    * @param prepareTransactions - function that prepares the transaction queue
-   * @param checkRoles - can be an array of roles, a function that returns an array of roles, or a function that returns a boolean that determines whether the procedure can be executed by the current user
+   * @param checkRoles - can be a ProcedureAuthorization object or a function that returns a ProcedureAuthorization object
    */
   constructor(
     prepareTransactions: (
@@ -79,11 +79,9 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       | ((
           this: Procedure<Args, ReturnValue>,
           args: Args
-        ) =>
-          | Promise<boolean>
-          | boolean
-          | Promise<ProcedureAuthorization>
-          | ProcedureAuthorization) = async (): Promise<boolean> => true
+        ) => Promise<ProcedureAuthorization> | ProcedureAuthorization) = async (): Promise<
+      ProcedureAuthorization
+    > => ({})
   ) {
     this.prepareTransactions = prepareTransactions;
 
@@ -113,36 +111,36 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     this.context = context;
 
     const checkAuthorizationResult = await this.checkAuthorization(args);
-    let allowed: boolean;
 
-    if (typeof checkAuthorizationResult !== 'boolean') {
-      const { signerPermissions = true, identityRoles = true } = checkAuthorizationResult;
+    const { signerPermissions = true, identityRoles = true } = checkAuthorizationResult;
 
-      let identityAllowed: boolean;
-      if (typeof identityRoles !== 'boolean') {
-        const identity = await context.getCurrentIdentity();
-        identityAllowed = await identity.hasRoles(identityRoles);
-      } else {
-        identityAllowed = identityRoles;
-      }
-
-      let signerAllowed: boolean;
-      if (typeof signerPermissions !== 'boolean') {
-        const account = context.getCurrentAccount();
-        signerAllowed = await account.hasPermissions(signerPermissions);
-      } else {
-        signerAllowed = signerPermissions;
-      }
-
-      allowed = identityAllowed && signerAllowed;
+    let identityAllowed: boolean;
+    if (typeof identityRoles !== 'boolean') {
+      const identity = await context.getCurrentIdentity();
+      identityAllowed = await identity.hasRoles(identityRoles);
     } else {
-      allowed = checkAuthorizationResult;
+      identityAllowed = identityRoles;
     }
 
-    if (!allowed) {
+    let signerAllowed: boolean;
+    if (typeof signerPermissions !== 'boolean') {
+      const account = context.getCurrentAccount();
+      signerAllowed = await account.hasPermissions(signerPermissions);
+    } else {
+      signerAllowed = signerPermissions;
+    }
+
+    if (!signerAllowed) {
       throw new PolymeshError({
         code: ErrorCode.NotAuthorized,
-        message: 'Current account is not authorized to execute this procedure',
+        message: "Current Account doesn't have the required permissions to execute this procedure",
+      });
+    }
+
+    if (!identityAllowed) {
+      throw new PolymeshError({
+        code: ErrorCode.NotAuthorized,
+        message: "Current Identity doesn't have the required roles to execute this procedure",
       });
     }
 

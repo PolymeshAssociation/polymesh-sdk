@@ -2,7 +2,7 @@ import P from 'bluebird';
 
 import { assertSecondaryKeys } from '~/api/procedures/utils';
 import { Procedure } from '~/internal';
-import { PermissionsLike, Signer } from '~/types';
+import { PermissionsLike, Signer, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
@@ -64,4 +64,10 @@ export async function prepareModifySignerPermissions(
 /**
  * @hidden
  */
-export const modifySignerPermissions = new Procedure(prepareModifySignerPermissions);
+export const modifySignerPermissions = new Procedure(prepareModifySignerPermissions, {
+  signerPermissions: {
+    transactions: [TxTags.identity.SetPermissionToSigner],
+    tokens: [],
+    portfolios: [],
+  },
+});

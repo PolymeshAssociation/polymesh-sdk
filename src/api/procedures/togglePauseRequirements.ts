@@ -54,12 +54,16 @@ export async function prepareTogglePauseRequirements(
  */
 export function getAuthorization(
   this: Procedure<Params, SecurityToken>,
-  { ticker }: Params
+  { ticker, pause }: Params
 ): ProcedureAuthorization {
   return {
     identityRoles: [{ type: RoleType.TokenOwner, ticker }],
     signerPermissions: {
-      transactions: [TxTags.complianceManager.PauseAssetCompliance],
+      transactions: [
+        pause
+          ? TxTags.complianceManager.PauseAssetCompliance
+          : TxTags.complianceManager.ResumeAssetCompliance,
+      ],
       tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],
     },

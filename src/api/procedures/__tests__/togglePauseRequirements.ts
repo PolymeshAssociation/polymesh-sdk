@@ -134,14 +134,26 @@ describe('togglePauseRequirements procedure', () => {
     test('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
-      const args = {
+      const args: Params = {
         ticker,
-      } as Params;
+        pause: true,
+      };
 
       expect(boundFunc(args)).toEqual({
         identityRoles: [{ type: RoleType.TokenOwner, ticker }],
         signerPermissions: {
           transactions: [TxTags.complianceManager.PauseAssetCompliance],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          portfolios: [],
+        },
+      });
+
+      args.pause = false;
+
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [TxTags.complianceManager.ResumeAssetCompliance],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],
         },

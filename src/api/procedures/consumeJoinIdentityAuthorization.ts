@@ -82,12 +82,13 @@ export async function getAuthorization(
 
   let transactions: TxTag[] = [];
 
-  let paidByThirdParty = false;
+  let bypassSignerPermissions = false;
 
   if (target instanceof Account) {
     const { address } = context.getCurrentAccount();
     condition = address === target.address;
-    paidByThirdParty = condition;
+    // if the current account is joining an identity, it doesn't need (and couldn't possibly have) any permissions
+    bypassSignerPermissions = condition;
   } else {
     did = await fetchDid();
     condition = did === target.did;
@@ -106,7 +107,7 @@ export async function getAuthorization(
 
   const identityRoles = condition && !authRequest.isExpired();
 
-  if (paidByThirdParty) {
+  if (bypassSignerPermissions) {
     return {
       identityRoles,
     };

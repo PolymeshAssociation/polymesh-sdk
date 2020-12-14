@@ -86,7 +86,7 @@ export async function prepareSetTokenDocuments(
   }
 
   if (rawDocuments.length) {
-    batchArguments(rawDocuments, TxTags.asset.BatchAddDocument).forEach(rawDocumentBatch => {
+    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
       this.addTransaction(
         tx.asset.addDocuments,
         { batchSize: rawDocumentBatch.length },

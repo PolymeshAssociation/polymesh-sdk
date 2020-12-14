@@ -3777,7 +3777,7 @@ describe('portfolioLikeToPortfolioId', () => {
   });
 
   test('should convert a DID string to a PortfolioId', async () => {
-    const result = await portfolioLikeToPortfolioId(did);
+    const result = portfolioLikeToPortfolioId(did);
 
     expect(result).toEqual({ did, number: undefined });
   });
@@ -3785,7 +3785,7 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert an Identity to a PortfolioId', async () => {
     const identity = entityMockUtils.getIdentityInstance({ did });
 
-    const result = await portfolioLikeToPortfolioId(identity);
+    const result = portfolioLikeToPortfolioId(identity);
 
     expect(result).toEqual({ did, number: undefined });
   });
@@ -3793,7 +3793,7 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert a NumberedPortfolio to a PortfolioId', async () => {
     const portfolio = new NumberedPortfolio({ did, id: number }, context);
 
-    const result = await portfolioLikeToPortfolioId(portfolio);
+    const result = portfolioLikeToPortfolioId(portfolio);
 
     expect(result).toEqual({ did, number });
   });
@@ -3801,16 +3801,16 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert a DefaultPortfolio to a PortfolioId', async () => {
     const portfolio = new DefaultPortfolio({ did }, context);
 
-    const result = await portfolioLikeToPortfolioId(portfolio);
+    const result = portfolioLikeToPortfolioId(portfolio);
 
     expect(result).toEqual({ did, number: undefined });
   });
 
   test('should convert a Portfolio identifier object to a PortfolioId', async () => {
-    let result = await portfolioLikeToPortfolioId({ identity: did, id: number });
+    let result = portfolioLikeToPortfolioId({ identity: did, id: number });
     expect(result).toEqual({ did, number });
 
-    result = await portfolioLikeToPortfolioId({
+    result = portfolioLikeToPortfolioId({
       identity: entityMockUtils.getIdentityInstance({ did }),
       id: number,
     });
@@ -3846,12 +3846,12 @@ describe('portfolioLikeToPortfolio', () => {
   });
 
   test('should convert a PortfolioLike to a DefaultPortfolio instance', async () => {
-    const result = await portfolioLikeToPortfolio(did, context);
+    const result = portfolioLikeToPortfolio(did, context);
     expect(result instanceof DefaultPortfolio).toBe(true);
   });
 
   test('should convert a PortfolioLike to a NumberedPortfolio instance', async () => {
-    const result = await portfolioLikeToPortfolio({ identity: did, id }, context);
+    const result = portfolioLikeToPortfolio({ identity: did, id }, context);
     expect(result instanceof NumberedPortfolio).toBe(true);
   });
 });
