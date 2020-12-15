@@ -137,7 +137,7 @@ export function createClaim(
     case ClaimType.InvestorUniqueness: {
       return {
         type,
-        ticker: scope.value,
+        scope,
         scopeId: scopeId as string,
         cddId: cddId as string,
       };

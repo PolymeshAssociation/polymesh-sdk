@@ -338,7 +338,13 @@ describe('Claims Class', () => {
       const scopeId = 'someScopeId';
       const expiry = new Date();
 
-      const args = { ticker, cddId, proof, scopeId, expiry };
+      const args = {
+        scope: { type: ScopeType.Ticker, value: ticker },
+        cddId,
+        proof,
+        scopeId,
+        expiry,
+      };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 

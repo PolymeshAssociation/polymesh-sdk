@@ -227,7 +227,7 @@ describe('createClaim', () => {
     result = createClaim(type, null, scope, id, undefined);
     expect(result).toEqual({
       type: ClaimType.InvestorUniqueness,
-      ticker: scope.value,
+      scope: scope,
       cddId: id,
     });
   });

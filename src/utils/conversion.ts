@@ -1276,17 +1276,15 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
       break;
     }
     case ClaimType.Jurisdiction: {
-      value = tuple(claim.code, scopeToMeshScope(claim.scope, context));
+      const { code, scope } = claim;
+      value = tuple(code, scopeToMeshScope(scope, context));
       break;
     }
     case ClaimType.InvestorUniqueness: {
-      const { ticker, cddId } = claim;
+      const { scope, cddId, scopeId } = claim;
       value = tuple(
-        scopeToMeshScope({ type: ScopeType.Ticker, value: ticker }, context),
-        stringToScopeId(
-          '0x3aba26d7b0abb1532b9d8d48314915cbdf9a64d1541f4177982aee62a6a87205',
-          context
-        ),
+        scopeToMeshScope(scope, context),
+        stringToScopeId(scopeId, context),
         stringToCddId(cddId, context)
       );
       break;

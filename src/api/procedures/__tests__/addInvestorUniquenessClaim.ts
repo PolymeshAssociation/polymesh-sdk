@@ -15,7 +15,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Claim, ClaimType } from '~/types';
+import { Claim, ClaimType, ScopeType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('addInvestorUniquenessClaim procedure', () => {
@@ -80,7 +80,15 @@ describe('addInvestorUniquenessClaim procedure', () => {
 
     stringToIdentityIdStub.withArgs(did, mockContext).returns(rawDid);
     claimToMeshClaimStub
-      .withArgs({ type: ClaimType.InvestorUniqueness, ticker, cddId, scopeId }, mockContext)
+      .withArgs(
+        {
+          type: ClaimType.InvestorUniqueness,
+          scope: { type: ScopeType.Ticker, value: ticker },
+          cddId,
+          scopeId,
+        },
+        mockContext
+      )
       .returns(rawClaim);
     stringToInvestorZKProofDataStub.withArgs(proof, mockContext).returns(rawProof);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
@@ -108,7 +116,13 @@ describe('addInvestorUniquenessClaim procedure', () => {
       'addInvestorUniquenessClaim'
     );
 
-    await prepareAddInvestorUniquenessClaim.call(proc, { ticker, proof, cddId, scopeId, expiry });
+    await prepareAddInvestorUniquenessClaim.call(proc, {
+      scope: { type: ScopeType.Ticker, value: ticker },
+      proof,
+      cddId,
+      scopeId,
+      expiry,
+    });
 
     sinon.assert.calledWith(
       addTransactionStub,
@@ -120,7 +134,12 @@ describe('addInvestorUniquenessClaim procedure', () => {
       rawExpiry
     );
 
-    await prepareAddInvestorUniquenessClaim.call(proc, { ticker, proof, cddId, scopeId });
+    await prepareAddInvestorUniquenessClaim.call(proc, {
+      scope: { type: ScopeType.Ticker, value: ticker },
+      proof,
+      cddId,
+      scopeId,
+    });
 
     sinon.assert.calledWith(
       addTransactionStub,
@@ -140,7 +159,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
 
     expect(
       prepareAddInvestorUniquenessClaim.call(proc, {
-        ticker,
+        scope: { type: ScopeType.Ticker, value: ticker },
         proof,
         cddId,
         scopeId,

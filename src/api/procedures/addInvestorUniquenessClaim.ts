@@ -1,6 +1,6 @@
 import { PolymeshError } from '~/base/PolymeshError';
 import { Procedure } from '~/internal';
-import { ClaimType, ErrorCode } from '~/types';
+import { ClaimType, ErrorCode, Scope } from '~/types';
 import {
   claimToMeshClaim,
   dateToMoment,
@@ -12,7 +12,7 @@ import {
  * @hidden
  */
 export interface AddInvestorUniquenessClaimParams {
-  ticker: string;
+  scope: Scope;
   cddId: string;
   proof: string;
   scopeId: string;
@@ -32,7 +32,7 @@ export async function prepareAddInvestorUniquenessClaim(
     },
     context,
   } = this;
-  const { ticker, cddId, scopeId, proof, expiry } = args;
+  const { scope, cddId, scopeId, proof, expiry } = args;
 
   const { did } = await context.getCurrentIdentity();
 
@@ -47,7 +47,7 @@ export async function prepareAddInvestorUniquenessClaim(
     tx.identity.addInvestorUniquenessClaim,
     {},
     stringToIdentityId(did, context),
-    claimToMeshClaim({ type: ClaimType.InvestorUniqueness, ticker, cddId, scopeId }, context),
+    claimToMeshClaim({ type: ClaimType.InvestorUniqueness, scope, cddId, scopeId }, context),
     stringToInvestorZKProofData(proof, context),
     expiry ? dateToMoment(expiry, context) : null
   );

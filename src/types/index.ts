@@ -261,6 +261,7 @@ export enum ClaimType {
 
 export type ScopedClaim =
   | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
+  | { type: ClaimType.InvestorUniqueness; scope: Scope; cddId: string; scopeId: string }
   | {
       type: Exclude<
         ClaimType,
@@ -274,8 +275,7 @@ export type ScopedClaim =
 
 export type UnscopedClaim =
   | { type: ClaimType.NoData }
-  | { type: ClaimType.CustomerDueDiligence; id: string }
-  | { type: ClaimType.InvestorUniqueness; ticker: string; cddId: string; scopeId: string };
+  | { type: ClaimType.CustomerDueDiligence; id: string };
 
 export type Claim = ScopedClaim | UnscopedClaim;
 

@@ -2146,7 +2146,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
     value = {
       type: ClaimType.InvestorUniqueness,
-      ticker: 'someTicker',
+      scope: { type: ScopeType.Ticker, value: 'someTicker' },
       cddId: 'someCddId',
       scopeId: 'someScopeId',
     };
@@ -2154,7 +2154,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
     createTypeStub
       .withArgs('Claim', {
         [value.type]: [
-          scopeToMeshScope({ type: ScopeType.Ticker, value: value.ticker }, context),
+          scopeToMeshScope(value.scope, context),
           stringToScopeId(value.scopeId, context),
           stringToCddId(value.cddId, context),
         ],
