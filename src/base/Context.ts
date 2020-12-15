@@ -33,7 +33,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { DEFAULT_GQL_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
+import { ROOT_TYPES } from '~/utils/constants';
 import {
   balanceToBigNumber,
   claimTypeToMeshClaimType,
@@ -51,7 +51,7 @@ import {
   txTagToProtocolOp,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createClaim, requestPaginated } from '~/utils/internal';
+import { calculateNextKey, createClaim } from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -610,7 +610,7 @@ export class Context {
       size?: number;
       start?: number;
     } = {}
-  ): Promise<ResultSet<ClaimData>> {
+  ): Promise<ResultSet<ClaimData> | ClaimData[]> {
     const {
       polymeshApi: {
         query: { identity },
@@ -619,7 +619,9 @@ export class Context {
 
     const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
 
-    try {
+    const data: ClaimData[] = [];
+
+    if (this.isMiddlewareAvailable()) {
       const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
         didsWithClaims({
           dids: targets?.map(target => signerToString(target)),
@@ -638,7 +640,6 @@ export class Context {
           didsWithClaims: { items: didsWithClaimsList, totalCount: count },
         },
       } = result;
-      const data: ClaimData[] = [];
 
       didsWithClaimsList.forEach(({ claims }) => {
         claims.forEach(
@@ -670,37 +671,28 @@ export class Context {
         next,
         count,
       };
-    } catch (_) {
+    } else {
       const { did } = await this.getCurrentIdentity();
-      const { entries, lastKey: next } = await requestPaginated(identity.claims, {
-        arg: {
-          target: stringToIdentityId(did, this),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          claim_type: claimTypeToMeshClaimType(ClaimType.CustomerDueDiligence, this),
-        },
-        paginationOpts: {
-          size: size ?? DEFAULT_GQL_PAGE_SIZE,
-        },
+      const entries = await identity.claims.entries({
+        target: stringToIdentityId(did, this),
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        claim_type: claimTypeToMeshClaimType(ClaimType.CustomerDueDiligence, this),
       });
 
-      const data: ClaimData[] = [];
-      entries.forEach(([key, identityClaim]) => {
-        const claim1stKey = key.args[0] as Claim1stKey;
+      entries.forEach(
+        ([key, { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry, claim }]) => {
+          const { target } = key.args[0] as Claim1stKey;
+          data.push({
+            target: new Identity({ did: identityIdToString(target) }, this),
+            issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
+            issuedAt: momentToDate(issuanceDate),
+            expiry: expiry.isEmpty ? null : momentToDate(expiry.unwrap()),
+            claim: meshClaimToClaim(claim),
+          });
+        }
+      );
 
-        data.push({
-          target: new Identity({ did: identityIdToString(claim1stKey.target) }, this),
-          issuer: new Identity({ did: identityIdToString(identityClaim.claim_issuer) }, this),
-          issuedAt: momentToDate(identityClaim.issuance_date),
-          expiry: identityClaim.expiry.isEmpty ? null : momentToDate(identityClaim.expiry.unwrap()),
-          claim: meshClaimToClaim(identityClaim.claim),
-        });
-      });
-
-      return {
-        data,
-        next,
-        count: undefined,
-      };
+      return data;
     }
   }
 
