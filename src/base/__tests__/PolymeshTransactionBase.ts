@@ -38,7 +38,7 @@ describe('Polymesh Transaction Base class', () => {
 
   describe('method: run', () => {
     test('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
-      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker', { autoresolve: false });
       const args = tuple('A_TICKER');
 
       const transaction = new PolymeshTransaction(
@@ -50,7 +50,15 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      await transaction.run();
+      transaction.run();
+
+      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.InBlock);
+
+      await fakePromise();
+
+      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.Succeeded);
+
+      await fakePromise();
 
       sinon.assert.calledWith(tx, ...args);
       expect(transaction.blockHash).toBeDefined();
@@ -59,7 +67,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     test('should unwrap PostTransactionValue arguments', async () => {
-      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker', { autoresolve: false });
       const ticker = 'A_DIFFERENT_TICKER';
       const postTransactionTicker = new PostTransactionValue(async () => ticker);
       await postTransactionTicker.run({} as ISubmittableResult);
@@ -74,7 +82,15 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      await transaction.run();
+      transaction.run();
+
+      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.InBlock);
+
+      await fakePromise();
+
+      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.Succeeded);
+
+      await fakePromise();
 
       sinon.assert.calledWith(tx, ticker);
       expect(transaction.blockHash).toBeDefined();
@@ -83,7 +99,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     test('should unwrap the method if it is a PostTransactionValue', async () => {
-      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker', { autoresolve: false });
       const ticker = 'NOT_THE_SAME_ONE';
       const postTransactionTx = new PostTransactionValue(async () => tx);
       const args = tuple(ticker);
@@ -99,7 +115,15 @@ describe('Polymesh Transaction Base class', () => {
 
       await postTransactionTx.run({} as ISubmittableResult);
 
-      await transaction.run();
+      transaction.run();
+
+      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.InBlock);
+
+      await fakePromise();
+
+      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.Succeeded);
+
+      await fakePromise();
 
       sinon.assert.calledWith(tx, ticker);
       expect(transaction.blockHash).toBeDefined();
@@ -133,6 +157,12 @@ describe('Polymesh Transaction Base class', () => {
       expect(transaction.status).toBe(TransactionStatus.Running);
 
       dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.Intermediate);
+
+      await fakePromise();
+
+      expect(transaction.status).toBe(TransactionStatus.Running);
+
+      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.InBlock);
 
       await fakePromise();
 
