@@ -189,7 +189,7 @@ describe('createClaim', () => {
     const jurisdiction = 'CL';
     let scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    let result = createClaim(type, jurisdiction, scope, null);
+    let result = createClaim(type, jurisdiction, scope, null, undefined);
     expect(result).toEqual({
       type: ClaimType.Jurisdiction,
       code: CountryCode.Cl,
@@ -199,7 +199,7 @@ describe('createClaim', () => {
     type = 'BuyLockup';
     scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    result = createClaim(type, null, scope, null);
+    result = createClaim(type, null, scope, null, undefined);
     expect(result).toEqual({
       type: ClaimType.BuyLockup,
       scope,
@@ -207,7 +207,7 @@ describe('createClaim', () => {
 
     type = 'NoData';
 
-    result = createClaim(type, null, null, null);
+    result = createClaim(type, null, null, null, undefined);
     expect(result).toEqual({
       type: ClaimType.NoData,
     });
@@ -215,10 +215,20 @@ describe('createClaim', () => {
     type = 'CustomerDueDiligence';
     const id = 'someId';
 
-    result = createClaim(type, null, null, id);
+    result = createClaim(type, null, null, id, undefined);
     expect(result).toEqual({
       type: ClaimType.CustomerDueDiligence,
       id,
+    });
+
+    type = 'InvestorUniqueness';
+    scope = { type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' };
+
+    result = createClaim(type, null, scope, id, undefined);
+    expect(result).toEqual({
+      type: ClaimType.InvestorUniqueness,
+      scope: scope,
+      cddId: id,
     });
   });
 });

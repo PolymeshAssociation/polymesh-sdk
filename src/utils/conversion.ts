@@ -40,6 +40,7 @@ import {
   FundingRoundName,
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
+  InvestorZKProofData,
   Memo,
   MovePortfolioItem,
   Permissions as MeshPermissions,
@@ -48,6 +49,7 @@ import {
   PosRatio,
   ProtocolOp,
   Scope as MeshScope,
+  ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SettlementType,
   Signatory,
@@ -217,8 +219,14 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
  * @hidden
  */
 export function tickerToString(ticker: Ticker): string {
-  // eslint-disable-next-line no-control-regex
   return removePadding(u8aToString(ticker));
+}
+
+/**
+ * @hidden
+ */
+export function stringToInvestorZKProofData(proof: string, context: Context): InvestorZKProofData {
+  return context.polymeshApi.createType('InvestorZKProofData', proof);
 }
 
 /**
@@ -1234,17 +1242,51 @@ export function meshScopeToScope(scope: MeshScope): Scope {
 /**
  * @hidden
  */
+export function stringToCddId(cddId: string, context: Context): CddId {
+  return context.polymeshApi.createType('CddId', cddId);
+}
+
+/**
+ * @hidden
+ */
+export function cddIdToString(cddId: CddId): string {
+  return cddId.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToScopeId(scopeId: string, context: Context): ScopeId {
+  return context.polymeshApi.createType('ScopeId', scopeId);
+}
+
+/**
+ * @hidden
+ */
 export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
   let value;
 
   switch (claim.type) {
-    case ClaimType.NoData:
-    case ClaimType.CustomerDueDiligence: {
+    case ClaimType.NoData: {
       value = null;
       break;
     }
+    case ClaimType.CustomerDueDiligence: {
+      value = stringToCddId(claim.id, context);
+      break;
+    }
     case ClaimType.Jurisdiction: {
-      value = tuple(claim.code, scopeToMeshScope(claim.scope, context));
+      const { code, scope } = claim;
+      value = tuple(code, scopeToMeshScope(scope, context));
+      break;
+    }
+    case ClaimType.InvestorUniqueness: {
+      const { scope, cddId, scopeId } = claim;
+      value = tuple(
+        scopeToMeshScope(scope, context),
+        stringToScopeId(scopeId, context),
+        stringToCddId(cddId, context)
+      );
       break;
     }
     default: {
@@ -1284,20 +1326,6 @@ export function scopeToMiddlewareScope(scope: Scope): MiddlewareScope {
     case ScopeType.Custom:
       return { type: ClaimScopeTypeEnum[scope.type], value };
   }
-}
-
-/**
- * @hidden
- */
-export function stringToCddId(cddId: string, context: Context): CddId {
-  return context.polymeshApi.createType('CddId', cddId);
-}
-
-/**
- * @hidden
- */
-export function cddIdToString(cddId: CddId): string {
-  return cddId.toString();
 }
 
 /**
@@ -1942,7 +1970,7 @@ export function toIdentityWithClaimsArray(
         issuer: new Identity({ did: issuer }, context),
         issuedAt: new Date(issuanceDate),
         expiry: expiry ? new Date(expiry) : null,
-        claim: createClaim(type, jurisdiction, claimScope, cddId),
+        claim: createClaim(type, jurisdiction, claimScope, cddId, undefined),
       })
     ),
   }));
