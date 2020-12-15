@@ -77,6 +77,10 @@ export { deletePortfolio } from '~/api/procedures/deletePortfolio';
 export { renamePortfolio, RenamePortfolioParams } from '~/api/procedures/renamePortfolio';
 export { moveFunds, MoveFundsParams } from '~/api/procedures/moveFunds';
 export { setCustodian, SetCustodianParams } from '~/api/procedures/setCustodian';
+export {
+  addInvestorUniquenessClaim,
+  AddInvestorUniquenessClaimParams,
+} from '~/api/procedures/addInvestorUniquenessClaim';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
