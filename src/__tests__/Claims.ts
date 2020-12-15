@@ -335,9 +335,10 @@ describe('Claims Class', () => {
       const ticker = 'SOME_TOKEN';
       const cddId = 'someId';
       const proof = 'someProof';
+      const scopeId = 'someScopeId';
       const expiry = new Date();
 
-      const args = { ticker, cddId, proof, expiry };
+      const args = { ticker, cddId, proof, scopeId, expiry };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 

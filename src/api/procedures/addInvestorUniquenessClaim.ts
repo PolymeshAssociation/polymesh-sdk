@@ -15,6 +15,7 @@ export interface AddInvestorUniquenessClaimParams {
   ticker: string;
   cddId: string;
   proof: string;
+  scopeId: string;
   expiry?: Date;
 }
 
@@ -31,7 +32,7 @@ export async function prepareAddInvestorUniquenessClaim(
     },
     context,
   } = this;
-  const { ticker, cddId, proof, expiry } = args;
+  const { ticker, cddId, scopeId, proof, expiry } = args;
 
   const { did } = await context.getCurrentIdentity();
 
@@ -46,7 +47,7 @@ export async function prepareAddInvestorUniquenessClaim(
     tx.identity.addInvestorUniquenessClaim,
     {},
     stringToIdentityId(did, context),
-    claimToMeshClaim({ type: ClaimType.InvestorUniqueness, ticker, cddId }, context),
+    claimToMeshClaim({ type: ClaimType.InvestorUniqueness, ticker, cddId, scopeId }, context),
     stringToInvestorZKProofData(proof, context),
     expiry ? dateToMoment(expiry, context) : null
   );

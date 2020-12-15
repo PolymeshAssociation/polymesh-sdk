@@ -1283,7 +1283,10 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
       const { ticker, cddId } = claim;
       value = tuple(
         scopeToMeshScope({ type: ScopeType.Ticker, value: ticker }, context),
-        stringToScopeId(ticker, context),
+        stringToScopeId(
+          '0x3aba26d7b0abb1532b9d8d48314915cbdf9a64d1541f4177982aee62a6a87205',
+          context
+        ),
         stringToCddId(cddId, context)
       );
       break;
@@ -1969,7 +1972,7 @@ export function toIdentityWithClaimsArray(
         issuer: new Identity({ did: issuer }, context),
         issuedAt: new Date(issuanceDate),
         expiry: expiry ? new Date(expiry) : null,
-        claim: createClaim(type, jurisdiction, claimScope, cddId),
+        claim: createClaim(type, jurisdiction, claimScope, cddId, undefined),
       })
     ),
   }));

@@ -107,7 +107,8 @@ export function createClaim(
   claimType: string,
   jurisdiction: string | null | undefined,
   middlewareScope: MiddlewareScope | null | undefined,
-  cddId: string | null | undefined
+  cddId: string | null | undefined,
+  scopeId: string | null | undefined
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
@@ -137,6 +138,7 @@ export function createClaim(
       return {
         type,
         ticker: scope.value,
+        scopeId: scopeId as string,
         cddId: cddId as string,
       };
     }

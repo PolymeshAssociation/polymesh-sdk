@@ -275,7 +275,7 @@ export type ScopedClaim =
 export type UnscopedClaim =
   | { type: ClaimType.NoData }
   | { type: ClaimType.CustomerDueDiligence; id: string }
-  | { type: ClaimType.InvestorUniqueness; ticker: string; cddId: string };
+  | { type: ClaimType.InvestorUniqueness; ticker: string; cddId: string; scopeId: string };
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
