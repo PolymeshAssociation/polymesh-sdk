@@ -33,7 +33,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { ROOT_TYPES } from '~/utils/constants';
+import { DEFAULT_GQL_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
 import {
   balanceToBigNumber,
   claimTypeToMeshClaimType,
@@ -679,7 +679,7 @@ export class Context {
           claim_type: claimTypeToMeshClaimType(ClaimType.CustomerDueDiligence, this),
         },
         paginationOpts: {
-          size: size ?? 20,
+          size: size ?? DEFAULT_GQL_PAGE_SIZE,
         },
       });
 
