@@ -2035,6 +2035,13 @@ export function meshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
 /**
  * @hidden
  */
+export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context): MeshClaimType {
+  return context.polymeshApi.createType('ClaimType', claimType);
+}
+
+/**
+ * @hidden
+ */
 export function trustedIssuerToTrustedClaimIssuer(
   trustedIssuer: TrustedIssuer,
   context: Context
