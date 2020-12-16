@@ -81,7 +81,7 @@ describe('Polymesh Class', () => {
     });
 
     test('should instantiate Context with a seed and return a Polymesh instance', async () => {
-      const accountSeed = 'Alice'.padEnd(32, ' ');
+      const accountSeed = 'Alice'.padEnd(66, ' ');
       const createStub = dsMockUtils.getContextCreateStub();
 
       await Polymesh.connect({
@@ -227,7 +227,7 @@ describe('Polymesh Class', () => {
     });
 
     test('should set an optional signer for the polkadot API', async () => {
-      const accountSeed = 'Alice'.padEnd(32, ' ');
+      const accountSeed = 'Alice'.padEnd(66, ' ');
       const createStub = dsMockUtils.getContextCreateStub();
       const signer = 'signer' as PolkadotSigner;
 
