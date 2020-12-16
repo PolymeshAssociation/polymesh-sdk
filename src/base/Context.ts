@@ -3,7 +3,7 @@ import { AddressOrPair } from '@polkadot/api/types';
 import { getTypeDef } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
 import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
-import stringToU8a from '@polkadot/util/string/toU8a';
+import { hexToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
@@ -156,14 +156,14 @@ export class Context {
       keyring = passedKeyring;
       currentPair = keyring.getPairs()[0];
     } else if (seed) {
-      if (seed.length !== 32) {
+      if (seed.length !== 66) {
         throw new PolymeshError({
           code: ErrorCode.ValidationError,
-          message: 'Seed must be 32 characters in length',
+          message: 'Seed must be 66 characters in length',
         });
       }
 
-      currentPair = keyring.addFromSeed(stringToU8a(seed));
+      currentPair = keyring.addFromSeed(hexToU8a(seed), undefined, 'sr25519');
     } else if (uri) {
       currentPair = keyring.addFromUri(uri);
     }
@@ -659,7 +659,7 @@ export class Context {
               issuer: new Identity({ did: issuer }, this),
               issuedAt: new Date(issuanceDate),
               expiry: expiry ? new Date(expiry) : null,
-              claim: createClaim(type, jurisdiction, scope, cddId),
+              claim: createClaim(type, jurisdiction, scope, cddId, undefined),
             });
           }
         );

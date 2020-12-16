@@ -1,3 +1,7 @@
+import {
+  addInvestorUniquenessClaim,
+  AddInvestorUniquenessClaimParams,
+} from '~/api/procedures/addInvestorUniquenessClaim';
 import { Context, Identity, modifyClaims, ModifyClaimsParams, TransactionQueue } from '~/internal';
 import {
   didsWithClaims,
@@ -34,6 +38,17 @@ export class Claims {
    */
   constructor(context: Context) {
     this.context = context;
+  }
+
+  /**
+   * Add an Investor Uniqueness Claim to the current Identity
+   *
+   * @param args
+   */
+  public addInvestorUniquenessClaim(
+    args: AddInvestorUniquenessClaimParams
+  ): Promise<TransactionQueue<void>> {
+    return addInvestorUniquenessClaim.prepare(args, this.context);
   }
 
   /**
