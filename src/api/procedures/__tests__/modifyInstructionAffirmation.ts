@@ -3,10 +3,12 @@ import BigNumber from 'bignumber.js';
 import {
   AffirmationStatus as MeshAffirmationStatus,
   PortfolioId as MeshPortfolioId,
+  TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
+  getAuthorization,
   ModifyInstructionAffirmationParams,
   prepareModifyInstructionAffirmation,
 } from '~/api/procedures/modifyInstructionAffirmation';
@@ -283,5 +285,63 @@ describe('modifyInstructionAffirmation procedure', () => {
     ]);
 
     expect(result.id).toEqual(id);
+  });
+
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', async () => {
+      const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
+        mockContext
+      );
+      const boundFunc = getAuthorization.bind(proc);
+      const args = {
+        id: new BigNumber(1),
+        operation: InstructionAffirmationOperation.Affirm,
+      };
+      let from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
+      let to = entityMockUtils.getDefaultPortfolioInstance({ isCustodiedBy: true });
+      const amount = new BigNumber(1);
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TOKEN' });
+
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          getLegs: [{ from, to, amount, token }],
+        },
+      });
+
+      let result = await boundFunc(args);
+
+      expect(result).toEqual({
+        signerPermissions: {
+          tokens: [],
+          portfolios: [from, to],
+          transactions: [TxTags.settlement.AffirmInstruction],
+        },
+      });
+
+      from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
+      to = entityMockUtils.getDefaultPortfolioInstance({ isCustodiedBy: false });
+
+      entityMockUtils.getInstructionGetLegsStub().resolves([{ from, to, amount, token }]);
+
+      result = await boundFunc({ ...args, operation: InstructionAffirmationOperation.Reject });
+
+      expect(result).toEqual({
+        signerPermissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.settlement.RejectInstruction],
+        },
+      });
+
+      result = await boundFunc({ ...args, operation: InstructionAffirmationOperation.Withdraw });
+
+      expect(result).toEqual({
+        signerPermissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.settlement.WithdrawAffirmation],
+        },
+      });
+    });
   });
 });

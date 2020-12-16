@@ -1,6 +1,6 @@
 import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
-import { IdentityId } from 'polymesh-types/types';
+import { IdentityId, TxTags } from 'polymesh-types/types';
 
 import {
   Context,
@@ -87,4 +87,10 @@ export async function prepareCreatePortfolio(
 /**
  * @hidden
  */
-export const createPortfolio = new Procedure(prepareCreatePortfolio);
+export const createPortfolio = new Procedure(prepareCreatePortfolio, {
+  signerPermissions: {
+    transactions: [TxTags.portfolio.CreatePortfolio],
+    tokens: [],
+    portfolios: [],
+  },
+});

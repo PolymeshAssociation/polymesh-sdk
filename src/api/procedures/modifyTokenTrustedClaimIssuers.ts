@@ -1,9 +1,9 @@
 import { difference, differenceWith, intersection, isEqual, sortBy } from 'lodash';
-import { IdentityId, Ticker, TrustedIssuer } from 'polymesh-types/types';
+import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
 
 import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ClaimType, ErrorCode, Role, RoleType } from '~/types';
-import { TrustedClaimIssuerOperation } from '~/types/internal';
+import { ClaimType, ErrorCode, RoleType } from '~/types';
+import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   signerToString,
@@ -174,8 +174,26 @@ export async function prepareModifyTokenTrustedClaimIssuers(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+export function getAuthorization(
+  this: Procedure<Params, SecurityToken>,
+  { ticker, operation }: Params
+): ProcedureAuthorization {
+  const transactions = [];
+  if (operation !== TrustedClaimIssuerOperation.Add) {
+    transactions.push(TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer);
+  }
+  if (operation !== TrustedClaimIssuerOperation.Remove) {
+    transactions.push(TxTags.complianceManager.AddDefaultTrustedClaimIssuer);
+  }
+
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      transactions,
+      tokens: [new SecurityToken({ ticker }, this.context)],
+      portfolios: [],
+    },
+  };
 }
 
 /**
@@ -183,5 +201,5 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
  */
 export const modifyTokenTrustedClaimIssuers = new Procedure(
   prepareModifyTokenTrustedClaimIssuers,
-  getRequiredRoles
+  getAuthorization
 );

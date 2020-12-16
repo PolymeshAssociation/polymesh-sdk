@@ -7,7 +7,8 @@ import {
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { AuthorizationType, ErrorCode, Role, RoleType } from '~/types';
+import { AuthorizationType, ErrorCode, RoleType, TxTags } from '~/types';
+import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -43,7 +44,6 @@ export async function prepareSetCustodian(
   } = this;
 
   const { targetIdentity, expiry, did, id } = args;
-
   const portfolio = id
     ? new NumberedPortfolio({ did, id }, context)
     : new DefaultPortfolio({ did }, context);
@@ -88,12 +88,25 @@ export async function prepareSetCustodian(
 /**
  * @hidden
  */
-export function getRequiredRoles({ did, id }: Params): Role[] {
-  const portfolioId = { did, id };
-  return [{ type: RoleType.PortfolioCustodian, portfolioId }];
+export function getAuthorization(
+  this: Procedure<Params>,
+  { did, id }: Params
+): ProcedureAuthorization {
+  const { context } = this;
+  const portfolioId: PortfolioId = { did, number: id };
+  return {
+    identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+    signerPermissions: {
+      transactions: [TxTags.identity.AddAuthorization],
+      portfolios: [
+        id ? new NumberedPortfolio({ did, id }, context) : new DefaultPortfolio({ did }, context),
+      ],
+      tokens: [],
+    },
+  };
 }
 
 /**
  * @hidden
  */
-export const setCustodian = new Procedure(prepareSetCustodian);
+export const setCustodian = new Procedure(prepareSetCustodian, getAuthorization);

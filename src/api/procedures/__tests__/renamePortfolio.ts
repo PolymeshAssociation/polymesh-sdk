@@ -1,13 +1,12 @@
 import { Text, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
+import { IdentityId, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { getRequiredRoles, Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
-import { Context } from '~/internal';
+import { getAuthorization, Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
+import { Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { NumberedPortfolio, RoleType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -133,18 +132,24 @@ describe('renamePortfolio procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawPortfolioNumber, rawNewName);
     expect(result.id).toBe(id);
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a portfolio custodian role', () => {
-    const args = {
-      id: new BigNumber(1),
-      did: 'someDid',
-      name: 'newName',
-    };
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const args = {
+        did,
+        id,
+      } as Params;
+      const portfolio = entityMockUtils.getNumberedPortfolioInstance({ did, id });
 
-    const portfolioId = { did: args.did, number: args.id };
-
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
+      expect(boundFunc(args)).toEqual({
+        signerPermissions: {
+          tokens: [],
+          portfolios: [portfolio],
+          transactions: [TxTags.portfolio.RenamePortfolio],
+        },
+      });
+    });
   });
 });

@@ -1,5 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { Ticker } from 'polymesh-types/types';
+import { Ticker, TxTags } from 'polymesh-types/types';
 
 import {
   Context,
@@ -8,7 +8,8 @@ import {
   Procedure,
   TickerReservation,
 } from '~/internal';
-import { ErrorCode, Role, RoleType, TickerReservationStatus } from '~/types';
+import { ErrorCode, RoleType, TickerReservationStatus } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker, tickerToString } from '~/utils/conversion';
 import { findEventRecord } from '~/utils/internal';
 
@@ -99,11 +100,26 @@ export async function prepareReserveTicker(
  * @hidden
  * If extending a reservation, the user must be the ticker owner
  */
-export function getRequiredRoles({ ticker, extendPeriod }: ReserveTickerParams): Role[] {
-  return extendPeriod ? [{ type: RoleType.TickerOwner, ticker }] : [];
+export function getAuthorization({
+  ticker,
+  extendPeriod,
+}: ReserveTickerParams): ProcedureAuthorization {
+  const auth: ProcedureAuthorization = {
+    signerPermissions: {
+      transactions: [TxTags.asset.RegisterTicker],
+      tokens: [],
+      portfolios: [],
+    },
+  };
+
+  if (extendPeriod) {
+    return { ...auth, identityRoles: [{ type: RoleType.TickerOwner, ticker }] };
+  }
+
+  return auth;
 }
 
 /**
  * @hidden
  */
-export const reserveTicker = new Procedure(prepareReserveTicker, getRequiredRoles);
+export const reserveTicker = new Procedure(prepareReserveTicker, getAuthorization);

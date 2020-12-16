@@ -1,11 +1,11 @@
 import { bool, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Signatory } from 'polymesh-types/types';
+import { Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
   ConsumeAuthorizationRequestsParams,
-  isAuthorized,
+  getAuthorization,
   prepareConsumeAuthorizationRequests,
 } from '~/api/procedures/consumeAuthorizationRequests';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
@@ -149,7 +149,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, authIds);
   });
 
-  describe('isAuthorized', () => {
+  describe('getAuthorization', () => {
     test('should return whether the current Identity or Account is the target of all non-expired requests if trying to accept', async () => {
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
         mockContext
@@ -182,75 +182,41 @@ describe('consumeAuthorizationRequests procedure', () => {
         ),
       } as ConsumeAuthorizationRequestsParams;
 
-      const boundFunc = isAuthorized.bind(proc);
+      const boundFunc = getAuthorization.bind(proc);
       let result = await boundFunc(args);
-      expect(result).toBe(true);
+      expect(result).toEqual({
+        identityRoles: true,
+        signerPermissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.identity.AcceptAuthorization],
+        },
+      });
 
       args.authRequests[0].target = new Identity({ did: 'notTheCurrentIdentity' }, mockContext);
+      args.accept = false;
 
       result = await boundFunc(args);
-      expect(result).toBe(false);
-    });
+      expect(result).toEqual({
+        identityRoles: false,
+        signerPermissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.identity.RemoveAuthorization],
+        },
+      });
 
-    test('should return whether the current Identity or Account is the target or issuer of all non-expired requests if trying to remove', async () => {
-      const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
-        mockContext
-      );
-      const { did } = await mockContext.getCurrentIdentity();
-      const { address } = mockContext.getCurrentAccount();
-      const constructorParams = [
-        {
-          authId: new BigNumber(1),
-          expiry: null,
-          target: new Account({ address }, mockContext),
-          issuer: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
-          data: {
-            type: AuthorizationType.NoData,
-          } as Authorization,
-        },
-        {
-          authId: new BigNumber(2),
-          expiry: new Date('10/14/3040'),
-          target: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
-          issuer: new Identity({ did }, mockContext),
-          data: {
-            type: AuthorizationType.NoData,
-          } as Authorization,
-        },
-        {
-          authId: new BigNumber(3),
-          expiry: new Date('10/14/1987'), // expired
-          target: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
-          issuer: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
-          data: {
-            type: AuthorizationType.NoData,
-          } as Authorization,
-        },
-        {
-          authId: new BigNumber(4),
-          expiry: new Date('10/14/3040'),
-          target: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
-          issuer: new Identity({ did }, mockContext),
-          data: {
-            type: AuthorizationType.NoData,
-          } as Authorization,
-        },
-      ];
-      const args = {
-        accept: false,
-        authRequests: constructorParams.map(
-          params => new AuthorizationRequest(params, mockContext)
-        ),
-      } as ConsumeAuthorizationRequestsParams;
-
-      const boundFunc = isAuthorized.bind(proc);
-      let result = await boundFunc(args);
-      expect(result).toBe(true);
-
-      args.authRequests[0].target = new Identity({ did: 'notTheCurrentIdentity' }, mockContext);
+      args.authRequests[0].target = new Account({ address: 'someAddress' }, mockContext);
 
       result = await boundFunc(args);
-      expect(result).toBe(false);
+      expect(result).toEqual({
+        identityRoles: false,
+        signerPermissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.identity.RemoveAuthorization],
+        },
+      });
     });
   });
 });

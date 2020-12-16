@@ -2,23 +2,29 @@ import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { PortfolioId, Ticker } from 'polymesh-types/types';
+import P from 'bluebird';
+import { PortfolioId, Ticker, TxTag, TxTags } from 'polymesh-types/types';
 
+import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Context,
+  DefaultPortfolio,
   Instruction,
+  NumberedPortfolio,
   PolymeshError,
   PostTransactionValue,
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, InstructionType, PortfolioLike, Role, RoleType } from '~/types';
+import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   dateToMoment,
   endConditionToSettlementType,
   numberToBalance,
   numberToU64,
   portfolioIdToMeshPortfolioId,
+  portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
   stringToTicker,
   u64ToBigNumber,
@@ -114,25 +120,33 @@ export async function prepareAddInstruction(
 
   await Promise.all(
     legs.map(async ({ from, to, amount, token }) => {
-      const [
-        { did: fromDid, number: fromNumber },
-        { did: toDid, number: toNumber },
-      ] = await Promise.all([
-        portfolioLikeToPortfolioId(from, context),
-        portfolioLikeToPortfolioId(to, context),
-      ]);
-      const fromPortfolio = portfolioIdToMeshPortfolioId(
-        { did: fromDid, number: fromNumber },
-        context
-      );
+      const fromId = portfolioLikeToPortfolioId(from);
+      const toId = portfolioLikeToPortfolioId(to);
 
-      if (fromDid === did) {
-        rawPortfolios.push(fromPortfolio);
+      const fromPortfolio = portfolioLikeToPortfolio(from, context);
+      const toPortfolio = portfolioLikeToPortfolio(to, context);
+
+      const [{ did: fromCustodian }, { did: toCustodian }] = await Promise.all([
+        fromPortfolio.getCustodian(),
+        toPortfolio.getCustodian(),
+        assertPortfolioExists(fromId, context),
+        assertPortfolioExists(toId, context),
+      ]);
+
+      const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
+      const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
+
+      if (fromCustodian === did) {
+        rawPortfolios.push(rawFromPortfolio);
+      }
+
+      if (toCustodian === did) {
+        rawPortfolios.push(rawToPortfolio);
       }
 
       rawLegs.push({
-        from: fromPortfolio,
-        to: portfolioIdToMeshPortfolioId({ did: toDid, number: toNumber }, context),
+        from: rawFromPortfolio,
+        to: rawToPortfolio,
         asset: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
         amount: numberToBalance(amount, context),
       });
@@ -172,11 +186,51 @@ export async function prepareAddInstruction(
 /**
  * @hidden
  */
-export function getRequiredRoles({ venueId }: Params): Role[] {
-  return [{ type: RoleType.VenueOwner, venueId }];
+export async function getAuthorization(
+  this: Procedure<Params, Instruction>,
+  { venueId, legs }: Params
+): Promise<ProcedureAuthorization> {
+  const { context } = this;
+  const portfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
+  let transactions: TxTag[];
+
+  const identity = await context.getCurrentIdentity();
+
+  await P.map(legs, async ({ from, to }) => {
+    const fromPortfolio = portfolioLikeToPortfolio(from, context);
+    const toPortfolio = portfolioLikeToPortfolio(to, context);
+
+    const [fromCustodied, toCustodied] = await Promise.all([
+      fromPortfolio.isCustodiedBy({ identity }),
+      toPortfolio.isCustodiedBy({ identity }),
+    ]);
+
+    if (fromCustodied) {
+      portfolios.push(fromPortfolio);
+    }
+
+    if (toCustodied) {
+      portfolios.push(toPortfolio);
+    }
+  });
+
+  if (portfolios.length) {
+    transactions = [TxTags.settlement.AddAndAffirmInstruction];
+  } else {
+    transactions = [TxTags.settlement.AddInstruction];
+  }
+
+  return {
+    identityRoles: [{ type: RoleType.VenueOwner, venueId }],
+    signerPermissions: {
+      tokens: [],
+      portfolios,
+      transactions,
+    },
+  };
 }
 
 /**
  * @hidden
  */
-export const addInstruction = new Procedure(prepareAddInstruction, getRequiredRoles);
+export const addInstruction = new Procedure(prepareAddInstruction, getAuthorization);

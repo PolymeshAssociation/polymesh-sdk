@@ -1,9 +1,14 @@
 import { Vec } from '@polkadot/types';
-import { ComplianceRequirement, Condition as MeshCondition, Ticker } from 'polymesh-types/types';
+import {
+  ComplianceRequirement,
+  Condition as MeshCondition,
+  Ticker,
+  TxTags,
+} from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareSetAssetRequirements,
 } from '~/api/procedures/setAssetRequirements';
@@ -225,15 +230,26 @@ describe('setAssetRequirements procedure', () => {
     sinon.assert.calledOnce(addTransactionStub);
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const params = {
+        ticker,
+      } as Params;
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(boundFunc(params)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [
+            TxTags.complianceManager.ResetAssetCompliance,
+            TxTags.complianceManager.AddComplianceRequirement,
+          ],
+          tokens: [new SecurityToken({ ticker }, mockContext)],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

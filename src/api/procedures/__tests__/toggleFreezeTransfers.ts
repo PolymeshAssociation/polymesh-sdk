@@ -1,8 +1,8 @@
-import { Ticker } from 'polymesh-types/types';
+import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareToggleFreezeTransfers,
 } from '~/api/procedures/toggleFreezeTransfers';
@@ -115,15 +115,32 @@ describe('toggleFreezeTransfers procedure', () => {
 
     expect(ticker).toBe(result.ticker);
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+      const identityRoles = [{ type: RoleType.TokenOwner, ticker }];
+
+      expect(boundFunc({ ticker, freeze: true })).toEqual({
+        identityRoles,
+        signerPermissions: {
+          transactions: [TxTags.asset.Freeze],
+          tokens: [token],
+          portfolios: [],
+        },
+      });
+
+      expect(boundFunc({ ticker, freeze: false })).toEqual({
+        identityRoles,
+        signerPermissions: {
+          transactions: [TxTags.asset.Unfreeze],
+          tokens: [token],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

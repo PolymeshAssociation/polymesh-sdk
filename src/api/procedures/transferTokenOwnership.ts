@@ -1,6 +1,6 @@
 import { Identity, Procedure, SecurityToken } from '~/internal';
-import { AuthorizationType, Role, RoleType } from '~/types';
-import { SignerType } from '~/types/internal';
+import { AuthorizationType, RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization, SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -57,8 +57,18 @@ export async function prepareTransferTokenOwnership(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+export function getAuthorization(
+  this: Procedure<Params, SecurityToken>,
+  { ticker }: Params
+): ProcedureAuthorization {
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      tokens: [new SecurityToken({ ticker }, this.context)],
+      transactions: [TxTags.identity.AddAuthorization],
+      portfolios: [],
+    },
+  };
 }
 
 /**
@@ -66,5 +76,5 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
  */
 export const transferTokenOwnership = new Procedure(
   prepareTransferTokenOwnership,
-  getRequiredRoles
+  getAuthorization
 );
