@@ -1,4 +1,4 @@
-import { bool,u64 } from '@polkadot/types';
+import { bool, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
