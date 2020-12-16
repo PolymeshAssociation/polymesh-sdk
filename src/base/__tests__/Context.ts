@@ -1219,7 +1219,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const targetDid = 'someTargetDid';
