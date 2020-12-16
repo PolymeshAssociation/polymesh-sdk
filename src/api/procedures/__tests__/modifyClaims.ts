@@ -257,9 +257,9 @@ describe('modifyClaims procedure', () => {
     await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke });
 
     const rawRevokeClaimItems = [
-      [rawSomeDid, rawCddClaim, null],
-      [rawOtherDid, rawCddClaim, null],
-      [rawSomeDid, rawBuyLockupClaim, rawExpiry],
+      [rawSomeDid, rawCddClaim],
+      [rawOtherDid, rawCddClaim],
+      [rawSomeDid, rawBuyLockupClaim],
     ];
 
     sinon.assert.calledWith(
