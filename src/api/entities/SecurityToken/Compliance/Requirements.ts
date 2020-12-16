@@ -1,6 +1,6 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
-import { AssetCompliance, AssetComplianceResult, IdentityId } from 'polymesh-types/types';
+import { AssetCompliance, AssetComplianceResult, TrustedIssuer } from 'polymesh-types/types';
 
 import {
   Identity,
@@ -16,10 +16,10 @@ import {
   assetComplianceResultToCompliance,
   boolToBoolean,
   complianceRequirementToRequirement,
-  identityIdToString,
   signerToString,
   stringToIdentityId,
   stringToTicker,
+  trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
 
 /**
@@ -70,9 +70,11 @@ export class Requirements extends Namespace<SecurityToken> {
 
     const assembleResult = ([assetCompliance, claimIssuers]: [
       AssetCompliance,
-      Vec<IdentityId>
+      Vec<TrustedIssuer>
     ]): Requirement[] => {
-      const defaultTrustedClaimIssuers = claimIssuers.map(identityIdToString);
+      const defaultTrustedClaimIssuers = claimIssuers.map(claimIssuer => {
+        return trustedIssuerToTrustedClaimIssuer(claimIssuer, context);
+      });
 
       return assetCompliance.requirements.map(complianceRequirement => {
         const requirement = complianceRequirementToRequirement(complianceRequirement, context);
@@ -88,7 +90,7 @@ export class Requirements extends Namespace<SecurityToken> {
     };
 
     if (callback) {
-      return queryMulti<[AssetCompliance, Vec<IdentityId>]>(
+      return queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>(
         [
           [complianceManager.assetCompliances as QueryableStorageEntry<'promise'>, rawTicker],
           [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
@@ -99,7 +101,7 @@ export class Requirements extends Namespace<SecurityToken> {
       );
     }
 
-    const result = await queryMulti<[AssetCompliance, Vec<IdentityId>]>([
+    const result = await queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>([
       [complianceManager.assetCompliances as QueryableStorageEntry<'promise'>, rawTicker],
       [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
     ]);

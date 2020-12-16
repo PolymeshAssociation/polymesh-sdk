@@ -75,7 +75,7 @@ describe('Context class', () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi: null,
-      seed: 'Alice'.padEnd(32, ' '),
+      seed: '0x6'.padEnd(66, '0'),
     });
 
     expect(() => context.middlewareApi).toThrow(
@@ -103,7 +103,7 @@ describe('Context class', () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi,
-      seed: 'Alice'.padEnd(32, ' '),
+      seed: '0x6'.padEnd(66, '0'),
     });
 
     expect(context.middlewareApi).toEqual(middlewareApi);
@@ -121,14 +121,14 @@ describe('Context class', () => {
       });
     });
 
-    test('should throw if seed parameter is not a 32 length string', async () => {
+    test('should throw if seed parameter is not a 66 length string', async () => {
       const context = Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'abc',
       });
 
-      return expect(context).rejects.toThrow(new Error('Seed must be 32 characters in length'));
+      return expect(context).rejects.toThrow(new Error('Seed must be 66 characters in length'));
     });
 
     test('should create a Context object from a seed with Pair attached', async () => {
@@ -146,7 +146,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       expect(context.currentPair).toEqual(newPair);
@@ -290,7 +290,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       sinon
@@ -336,7 +336,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = await context.accountBalance();
@@ -363,7 +363,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = await context.accountBalance('accountId');
@@ -397,7 +397,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const callback = sinon.stub();
@@ -433,7 +433,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = await context.getCurrentIdentity();
@@ -446,7 +446,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       return expect(context.getCurrentIdentity()).rejects.toThrow(
@@ -485,7 +485,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = context.getCurrentAccount();
@@ -529,7 +529,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = context.getCurrentPair();
@@ -569,7 +569,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       expect(context.getSigner()).toBe(pair.address);
@@ -594,7 +594,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       expect(context.getSigner()).toEqual(pair);
@@ -671,7 +671,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
@@ -797,7 +797,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       didRecordsStub.returns(rawDidRecord);
@@ -810,7 +810,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const unsubCallback = 'unsubCallBack';
@@ -850,7 +850,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.createTxStub('asset', 'registerTicker', {
@@ -1103,7 +1103,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const targetDid = 'someTargetDid';
@@ -1219,7 +1219,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.throwOnMiddlewareQuery();
@@ -1248,7 +1248,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
@@ -1270,7 +1270,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const targetDid = 'someTargetDid';
@@ -1386,7 +1386,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.throwOnMiddlewareQuery();
@@ -1403,7 +1403,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
@@ -1427,7 +1427,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = await context.getLatestBlock();
@@ -1441,7 +1441,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = context.isMiddlewareEnabled();
@@ -1453,7 +1453,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = context.isMiddlewareEnabled();
@@ -1467,7 +1467,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
@@ -1481,7 +1481,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.throwOnMiddlewareQuery();
