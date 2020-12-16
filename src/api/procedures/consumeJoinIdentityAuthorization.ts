@@ -1,6 +1,11 @@
-import { Account, AuthorizationRequest } from '~/api/entities';
-import { Procedure } from '~/base';
-import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
+import { Account, AuthorizationRequest, Procedure } from '~/internal';
+import {
+  booleanToBool,
+  numberToU64,
+  signerToSignerValue,
+  signerToString,
+  signerValueToSignatory,
+} from '~/utils/conversion';
 import { getDid } from '~/utils/internal';
 
 /**
@@ -36,11 +41,15 @@ export async function prepareConsumeJoinIdentityAuthorization(
   const rawAuthId = numberToU64(authId, context);
 
   if (!accept) {
+    const { address } = context.getCurrentAccount();
+    const paidByThirdParty = address === signerToString(target);
+
     this.addTransaction(
       identity.removeAuthorization,
-      { paidByThirdParty: true },
+      { paidByThirdParty },
       signerValueToSignatory(signerToSignerValue(target), context),
-      rawAuthId
+      rawAuthId,
+      booleanToBool(paidByThirdParty, context)
     );
 
     return;
@@ -66,7 +75,7 @@ export async function isAuthorized(
   const { context } = this;
 
   let condition;
-  let did: string;
+  let did: string | undefined;
   const fetchDid = async (): Promise<string> => getDid(did, context);
 
   if (target instanceof Account) {
@@ -78,7 +87,11 @@ export async function isAuthorized(
   }
 
   if (!accept) {
-    did = await fetchDid();
+    try {
+      did = await fetchDid();
+    } catch (err) {
+      // do nothing
+    }
     condition = condition || did === issuer.did;
   }
 

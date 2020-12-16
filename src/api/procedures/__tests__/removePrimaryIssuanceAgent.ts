@@ -6,7 +6,7 @@ import {
   Params,
   prepareRemovePrimaryIssuanceAgent,
 } from '~/api/procedures/removePrimaryIssuanceAgent';
-import { Context } from '~/base';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';

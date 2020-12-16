@@ -1,12 +1,13 @@
 // import BigNumber from 'bignumber.js';
 
-import { Instruction } from '~/api/entities';
-import { Context, PolymeshError } from '~/base';
-import { ErrorCode, InstructionStatus, InstructionType } from '~/types';
+import { Context, Instruction, PolymeshError } from '~/internal';
+import { ErrorCode, InstructionStatus, InstructionType, SecondaryKey } from '~/types';
+import { SignerValue } from '~/types/internal';
+import { signerToSignerValue } from '~/utils/conversion';
 
-// import { Proposal } from '~/api/entities';
+// import { Proposal } from '~/internal';
 // import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
-// import { Context, PolymeshError } from '~/base';
+// import { Context, PolymeshError } from '~/internal';
 // import { ErrorCode } from '~/types';
 
 // /**
@@ -79,5 +80,33 @@ export async function assertInstructionValid(
         },
       });
     }
+  }
+}
+
+/**
+ * @hidden
+ */
+export function assertSecondaryKeys(
+  signerValues: SignerValue[],
+  secondaryKeys: SecondaryKey[]
+): void {
+  const notInTheList: string[] = [];
+  signerValues.forEach(({ value: itemValue }) => {
+    const isPresent = secondaryKeys
+      .map(({ signer }) => signerToSignerValue(signer))
+      .find(({ value }) => value === itemValue);
+    if (!isPresent) {
+      notInTheList.push(itemValue);
+    }
+  });
+
+  if (notInTheList.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'One of the Signers is not a Secondary Key for the Identity',
+      data: {
+        missing: notInTheList,
+      },
+    });
   }
 }

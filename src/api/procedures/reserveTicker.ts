@@ -1,8 +1,13 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import { Ticker } from 'polymesh-types/types';
 
-import { TickerReservation } from '~/api/entities';
-import { Context, PolymeshError, PostTransactionValue, Procedure } from '~/base';
+import {
+  Context,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+  TickerReservation,
+} from '~/internal';
 import { ErrorCode, Role, RoleType, TickerReservationStatus } from '~/types';
 import { stringToTicker, tickerToString } from '~/utils/conversion';
 import { findEventRecord } from '~/utils/internal';

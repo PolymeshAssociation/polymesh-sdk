@@ -1,5 +1,4 @@
-import { SecurityToken } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, Role, RoleType } from '~/types';
 import { boolToBoolean, stringToTicker } from '~/utils/conversion';
 

@@ -12,10 +12,10 @@ describe('Proposal class', () => {
 // import { TxTags } from 'polymesh-types/types';
 // import sinon from 'sinon';
 
-// import { Entity, Proposal } from '~/api/entities';
+// import { Entity, Proposal } from '~/internal';
 // import { ProposalStage } from '~/api/entities/Proposal/types';
-// import { cancelProposal, editProposal, voteOnProposal } from '~/api/procedures';
-// import { Context, TransactionQueue } from '~/base';
+// import { cancelProposal, editProposal, voteOnProposal } from '~/internal';
+// import { Context, TransactionQueue } from '~/internal';
 // import { eventByIndexedArgs, proposal as proposalQuery, proposalVotes } from '~/middleware/queries';
 // import { EventIdEnum, ModuleIdEnum, ProposalState } from '~/middleware/types';
 // import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';

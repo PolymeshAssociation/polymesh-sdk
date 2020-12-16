@@ -1,9 +1,14 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Entity, SecurityToken, TickerReservation } from '~/api/entities';
-import { createSecurityToken, reserveTicker } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+import {
+  createSecurityToken,
+  Entity,
+  reserveTicker,
+  SecurityToken,
+  TickerReservation,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { KnownTokenType, TickerReservationStatus, TokenIdentifierType } from '~/types';
 

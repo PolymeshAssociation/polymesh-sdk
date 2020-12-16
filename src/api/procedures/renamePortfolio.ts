@@ -1,9 +1,8 @@
 import BigNumber from 'bignumber.js';
 
-import { NumberedPortfolio } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode } from '~/types';
-import { bytesToString, numberToU64, stringToBytes, stringToIdentityId } from '~/utils/conversion';
+import { numberToU64, stringToIdentityId, stringToText, textToString } from '~/utils/conversion';
 
 export interface RenamePortfolioParams {
   name: string;
@@ -50,14 +49,14 @@ export async function prepareRenamePortfolio(
     });
   }
 
-  if (bytesToString(rawPortfolioName) === newName) {
+  if (textToString(rawPortfolioName) === newName) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'New name is the same as current name',
     });
   }
 
-  const portfolioNames = rawPortfolios.map(([, name]) => bytesToString(name));
+  const portfolioNames = rawPortfolios.map(([, name]) => textToString(name));
 
   if (portfolioNames.includes(newName)) {
     throw new PolymeshError({
@@ -70,7 +69,7 @@ export async function prepareRenamePortfolio(
     portfolio.renamePortfolio,
     {},
     rawPortfolioNumber,
-    stringToBytes(newName, context)
+    stringToText(newName, context)
   );
 
   return new NumberedPortfolio({ did, id }, context);

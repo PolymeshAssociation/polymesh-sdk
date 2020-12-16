@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { TxTags } from 'polymesh-types/types';
 
-import { SecurityToken, TickerReservation } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { PolymeshError, Procedure, SecurityToken, TickerReservation } from '~/internal';
 import {
   ErrorCode,
   Role,
@@ -12,15 +11,13 @@ import {
   TokenIdentifier,
   TokenType,
 } from '~/types';
-import { tuple } from '~/types/utils';
 import {
   booleanToBool,
   numberToBalance,
   stringToAssetName,
-  stringToDocumentName,
   stringToFundingRoundName,
   stringToTicker,
-  tokenDocumentDataToDocument,
+  tokenDocumentToDocument,
   tokenIdentifierToAssetIdentifier,
   tokenTypeToAssetType,
 } from '~/utils/conversion';
@@ -108,15 +105,10 @@ export async function prepareCreateSecurityToken(
   );
 
   if (documents) {
-    const rawDocuments = documents.map(({ name: documentName, ...documentData }) =>
-      tuple(
-        stringToDocumentName(documentName, context),
-        tokenDocumentDataToDocument(documentData, context)
-      )
-    );
-    batchArguments(rawDocuments, TxTags.asset.BatchAddDocument).forEach(rawDocumentBatch => {
+    const rawDocuments = documents.map(doc => tokenDocumentToDocument(doc, context));
+    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
       this.addTransaction(
-        tx.asset.batchAddDocument,
+        tx.asset.addDocuments,
         { isCritical: false, batchSize: rawDocumentBatch.length },
         rawDocumentBatch,
         rawTicker

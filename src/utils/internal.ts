@@ -6,9 +6,9 @@ import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd, range } from 'lodash';
+import { TxTag } from 'polymesh-types/types';
 
-import { Identity } from '~/api/entities';
-import { Context, PolymeshError, PostTransactionValue } from '~/base';
+import { Context, Identity, PolymeshError, PostTransactionValue } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
   Claim,
@@ -24,7 +24,11 @@ import {
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
 } from '~/types/internal';
-import { DEFAULT_GQL_PAGE_SIZE, MAX_BATCH_ELEMENTS } from '~/utils/constants';
+import {
+  DEFAULT_GQL_PAGE_SIZE,
+  DEFAULT_MAX_BATCH_ELEMENTS,
+  MAX_BATCH_ELEMENTS,
+} from '~/utils/constants';
 import { middlewareScopeToScope, signerToString } from '~/utils/conversion';
 
 export * from '~/generated/utils';
@@ -103,28 +107,41 @@ export function createClaim(
   claimType: string,
   jurisdiction: string | null | undefined,
   middlewareScope: MiddlewareScope | null | undefined,
-  cddId: string | null | undefined
+  cddId: string | null | undefined,
+  scopeId: string | null | undefined
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
 
-  if (type === ClaimType.Jurisdiction) {
-    return {
-      type,
-      // this assertion is necessary because CountryCode is not in the middleware types
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      code: stringUpperFirst(jurisdiction!.toLowerCase()) as CountryCode,
-      scope,
-    };
-  } else if (type === ClaimType.NoData) {
-    return {
-      type,
-    };
-  } else if (type === ClaimType.CustomerDueDiligence) {
-    return {
-      type,
-      id: cddId as string,
-    };
+  switch (type) {
+    case ClaimType.Jurisdiction: {
+      return {
+        type,
+        // this assertion is necessary because CountryCode is not in the middleware types
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        code: stringUpperFirst(jurisdiction!.toLowerCase()) as CountryCode,
+        scope,
+      };
+    }
+    case ClaimType.NoData: {
+      return {
+        type,
+      };
+    }
+    case ClaimType.CustomerDueDiligence: {
+      return {
+        type,
+        id: cddId as string,
+      };
+    }
+    case ClaimType.InvestorUniqueness: {
+      return {
+        type,
+        scope,
+        scopeId: scopeId as string,
+        cddId: cddId as string,
+      };
+    }
   }
 
   return { type, scope };
@@ -278,16 +295,17 @@ export async function requestAtBlock<F extends AnyFunction>(
  * Separates an array into smaller batches
  *
  * @param args - elements to separate
- * @param tag - transaction for which the elements are arguments. This serves to determine the size of the batches
+ * @param tag - transaction for which the elements are arguments. This serves to determine the size of the batches. A null value
+ *   means that the minimum batch size will be used
  * @param groupByFn - optional function that takes an element and returns a value by which to group the elements.
  *   If supplied, all elements of the same group will be contained in the same batch
  */
 export function batchArguments<Args>(
   args: Args[],
-  tag: keyof typeof MAX_BATCH_ELEMENTS,
+  tag: TxTag | null,
   groupByFn?: (obj: Args) => string
 ): Args[][] {
-  const batchLimit = MAX_BATCH_ELEMENTS[tag];
+  const batchLimit = (tag && MAX_BATCH_ELEMENTS[tag]) ?? DEFAULT_MAX_BATCH_ELEMENTS;
 
   if (!groupByFn) {
     return chunk(args, batchLimit);

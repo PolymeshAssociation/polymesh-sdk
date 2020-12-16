@@ -1,9 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Namespace, SecurityToken } from '~/api/entities';
-import { issueTokens } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+import { issueTokens, Namespace, SecurityToken, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 
 import { Issuance } from '../Issuance';

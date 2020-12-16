@@ -1,4 +1,4 @@
-import { Context, PolymeshError } from '~/base';
+import { Context, PolymeshError } from '~/internal';
 import { ErrorCode } from '~/types';
 import { serialize, unserialize } from '~/utils/internal';
 

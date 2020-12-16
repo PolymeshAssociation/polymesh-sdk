@@ -1,10 +1,9 @@
 import { StorageKey } from '@polkadot/types';
 import sinon from 'sinon';
 
-import { Namespace, SecurityToken } from '~/api/entities';
-import { setTokenDocuments } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+import { Namespace, SecurityToken, setTokenDocuments, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { TokenDocument } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -71,7 +70,7 @@ describe('Documents class', () => {
       dsMockUtils.createQueryStub('asset', 'assetDocuments');
       const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
 
-      const expectedDocuments = [
+      const expectedDocuments: TokenDocument[] = [
         {
           name: 'someDocument',
           uri: 'someUri',
@@ -83,18 +82,23 @@ describe('Documents class', () => {
           contentHash: 'otherHash',
         },
       ];
-      const entries = expectedDocuments.map(({ name, uri, contentHash }) =>
+      const entries = expectedDocuments.map(({ name, uri, contentHash, type, filedAt }, index) =>
         tuple(
           ({
-            args: [
-              dsMockUtils.createMockTicker(token.ticker),
-              dsMockUtils.createMockDocumentName(name),
-            ],
+            args: [dsMockUtils.createMockTicker(token.ticker), dsMockUtils.createMockU32(index)],
           } as unknown) as StorageKey,
           dsMockUtils.createMockDocument({
             uri: dsMockUtils.createMockDocumentUri(uri),
-            // eslint-disable-next-line @typescript-eslint/camelcase
+            name: dsMockUtils.createMockDocumentName(name),
+            /* eslint-disable @typescript-eslint/camelcase */
             content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+            doc_type: dsMockUtils.createMockOption(
+              type ? dsMockUtils.createMockDocumentType(type) : null
+            ),
+            filing_date: dsMockUtils.createMockOption(
+              filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
+            ),
+            /* eslint-enable @typescript-eslint/camelcase */
           })
         )
       );

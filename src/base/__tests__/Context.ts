@@ -2,13 +2,12 @@ import BigNumber from 'bignumber.js';
 import { DidRecord, ProtocolOp, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Identity } from '~/api/entities';
-import { Context } from '~/base';
+import { Account, Context, Identity } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
-import { ClaimType, Permission, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
+import { ClaimType, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -70,17 +69,13 @@ describe('Context class', () => {
       },
     });
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockLinkedKeyInfo({
-          Unique: dsMockUtils.createMockIdentityId('someDid'),
-        })
-      ),
+      returnValue: dsMockUtils.createMockIdentityId('someDid'),
     });
 
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi: null,
-      seed: 'Alice'.padEnd(32, ' '),
+      seed: '0x6'.padEnd(66, '0'),
     });
 
     expect(() => context.middlewareApi).toThrow(
@@ -100,11 +95,7 @@ describe('Context class', () => {
       },
     });
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockLinkedKeyInfo({
-          Unique: dsMockUtils.createMockIdentityId('someDid'),
-        })
-      ),
+      returnValue: dsMockUtils.createMockIdentityId('someDid'),
     });
 
     const middlewareApi = dsMockUtils.getMiddlewareApi();
@@ -112,7 +103,7 @@ describe('Context class', () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi,
-      seed: 'Alice'.padEnd(32, ' '),
+      seed: '0x6'.padEnd(66, '0'),
     });
 
     expect(context.middlewareApi).toEqual(middlewareApi);
@@ -130,14 +121,14 @@ describe('Context class', () => {
       });
     });
 
-    test('should throw if seed parameter is not a 32 length string', async () => {
+    test('should throw if seed parameter is not a 66 length string', async () => {
       const context = Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
         seed: 'abc',
       });
 
-      return expect(context).rejects.toThrow(new Error('Seed must be 32 characters in length'));
+      return expect(context).rejects.toThrow(new Error('Seed must be 66 characters in length'));
     });
 
     test('should create a Context object from a seed with Pair attached', async () => {
@@ -155,7 +146,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       expect(context.currentPair).toEqual(newPair);
@@ -299,7 +290,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       sinon
@@ -338,18 +329,14 @@ describe('Context class', () => {
         }),
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
       dsMockUtils.createQueryStub('system', 'account', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = await context.accountBalance();
@@ -369,18 +356,14 @@ describe('Context class', () => {
         }),
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
       dsMockUtils.createQueryStub('system', 'account', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = await context.accountBalance('accountId');
@@ -404,11 +387,7 @@ describe('Context class', () => {
         }),
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
       dsMockUtils.createQueryStub('system', 'account').callsFake(async (_, cbFunc) => {
         cbFunc(returnValue);
@@ -418,7 +397,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const callback = sinon.stub();
@@ -448,17 +427,13 @@ describe('Context class', () => {
     test('should return the current Identity', async () => {
       const did = 'someDid';
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId(did),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId(did),
       });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = await context.getCurrentIdentity();
@@ -471,7 +446,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       return expect(context.getCurrentIdentity()).rejects.toThrow(
@@ -510,7 +485,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = context.getCurrentAccount();
@@ -548,17 +523,13 @@ describe('Context class', () => {
         },
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = context.getCurrentPair();
@@ -575,6 +546,58 @@ describe('Context class', () => {
       expect(() => context.getCurrentPair()).toThrow(
         'There is no account associated with the current SDK instance'
       );
+    });
+  });
+
+  describe('method: getSigner', () => {
+    test('should return the signer address if the current pair is locked', async () => {
+      const pair = {
+        address: 'someAddress1',
+        meta: {},
+        publicKey: 'publicKey',
+        isLocked: true,
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          addFromSeed: pair,
+        },
+      });
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: '0x6'.padEnd(66, '0'),
+      });
+
+      expect(context.getSigner()).toBe(pair.address);
+    });
+
+    test('should return the signer address if the current pair is locked', async () => {
+      const pair = {
+        address: 'someAddress1',
+        meta: {},
+        publicKey: 'publicKey',
+        isLocked: false,
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          addFromSeed: pair,
+        },
+      });
+      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: '0x6'.padEnd(66, '0'),
+      });
+
+      expect(context.getSigner()).toEqual(pair);
     });
   });
 
@@ -610,11 +633,7 @@ describe('Context class', () => {
         },
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
 
       const context = await Context.create({
@@ -643,11 +662,7 @@ describe('Context class', () => {
         },
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
       dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(1, 2),
@@ -656,7 +671,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
@@ -729,11 +744,11 @@ describe('Context class', () => {
       fakeResult = [
         {
           signer: identity,
-          permissions: [],
+          permissions: { tokens: [], portfolios: [], transactions: [] },
         },
         {
           signer: account,
-          permissions: [Permission.Full],
+          permissions: { tokens: null, portfolios: null, transactions: null },
         },
       ];
     });
@@ -747,22 +762,26 @@ describe('Context class', () => {
         secondary_keys: [
           dsMockUtils.createMockSecondaryKey({
             signer: signerIdentityId,
-            permissions: [],
+            permissions: dsMockUtils.createMockPermissions({
+              asset: [],
+              portfolio: [],
+              extrinsic: [],
+            }),
           }),
           dsMockUtils.createMockSecondaryKey({
             signer: signerAccountId,
-            permissions: [dsMockUtils.createMockPermission('Full')],
+            permissions: dsMockUtils.createMockPermissions({
+              asset: null,
+              portfolio: null,
+              extrinsic: null,
+            }),
           }),
         ],
       });
       /* eslint-enabled @typescript-eslint/camelcase */
 
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
     });
 
@@ -778,7 +797,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       didRecordsStub.returns(rawDidRecord);
@@ -791,7 +810,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const unsubCallback = 'unsubCallBack';
@@ -822,11 +841,7 @@ describe('Context class', () => {
         },
       });
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
       dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(1, 2),
@@ -835,7 +850,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.createTxStub('asset', 'registerTicker', {
@@ -972,7 +987,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'batchRemoveDocument', {
+      dsMockUtils.createTxStub('asset', 'updateIdentifiers', {
         meta: {
           args: [
             {
@@ -984,7 +999,7 @@ describe('Context class', () => {
       });
 
       expect(
-        context.getTransactionArguments({ tag: TxTags.asset.BatchRemoveDocument })
+        context.getTransactionArguments({ tag: TxTags.asset.UpdateIdentifiers })
       ).toMatchObject([
         {
           type: TransactionArgumentType.Text,
@@ -997,8 +1012,8 @@ describe('Context class', () => {
         meta: {
           args: [
             {
-              type: 'Permission',
-              name: 'permission',
+              type: 'AssetOwnershipRelation',
+              name: 'relation',
             },
           ],
         },
@@ -1007,9 +1022,9 @@ describe('Context class', () => {
       expect(context.getTransactionArguments({ tag: TxTags.asset.SetFundingRound })).toMatchObject([
         {
           type: TransactionArgumentType.SimpleEnum,
-          name: 'permission',
+          name: 'relation',
           optional: false,
-          internal: ['Full', 'Admin', 'Operator', 'SpendFunds'],
+          internal: ['NotOwned', 'TickerOwned', 'AssetOwned'],
         },
       ]);
 
@@ -1037,6 +1052,18 @@ describe('Context class', () => {
             {
               name: 'content_hash',
               type: TransactionArgumentType.Text,
+            },
+            {
+              name: 'name',
+              type: TransactionArgumentType.Text,
+            },
+            {
+              name: 'doc_type',
+              type: TransactionArgumentType.Text,
+            },
+            {
+              name: 'filing_date',
+              type: TransactionArgumentType.Date,
             },
           ],
         },
@@ -1068,11 +1095,7 @@ describe('Context class', () => {
   describe('method: issuedClaims', () => {
     beforeEach(() => {
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
     });
 
@@ -1080,7 +1103,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const targetDid = 'someTargetDid';
@@ -1188,11 +1211,7 @@ describe('Context class', () => {
   describe('method: queryMiddleware', () => {
     beforeEach(() => {
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
     });
 
@@ -1200,7 +1219,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.throwOnMiddlewareQuery();
@@ -1229,7 +1248,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
@@ -1243,11 +1262,7 @@ describe('Context class', () => {
   describe('method: issuedClaims', () => {
     beforeEach(() => {
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
     });
 
@@ -1255,7 +1270,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const targetDid = 'someTargetDid';
@@ -1363,11 +1378,7 @@ describe('Context class', () => {
   describe('method: queryMiddleware', () => {
     beforeEach(() => {
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockLinkedKeyInfo({
-            Unique: dsMockUtils.createMockIdentityId('someDid'),
-          })
-        ),
+        returnValue: dsMockUtils.createMockIdentityId('someDid'),
       });
     });
 
@@ -1375,7 +1386,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.throwOnMiddlewareQuery();
@@ -1392,7 +1403,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
@@ -1416,7 +1427,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = await context.getLatestBlock();
@@ -1430,7 +1441,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = context.isMiddlewareEnabled();
@@ -1442,7 +1453,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       const result = context.isMiddlewareEnabled();
@@ -1456,7 +1467,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
@@ -1470,7 +1481,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        seed: 'Alice'.padEnd(32, ' '),
+        seed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.throwOnMiddlewareQuery();

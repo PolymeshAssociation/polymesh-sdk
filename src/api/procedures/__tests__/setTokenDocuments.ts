@@ -1,33 +1,30 @@
 import { Vec } from '@polkadot/types';
-import { ITuple } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { Document, DocumentName, Ticker } from 'polymesh-types/types';
+import { Document, DocumentId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities';
 import {
   getRequiredRoles,
   Params,
   prepareSetTokenDocuments,
 } from '~/api/procedures/setTokenDocuments';
-import { Context } from '~/base';
+import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TokenDocument } from '~/types';
-import { PolymeshTx, TokenDocumentData } from '~/types/internal';
+import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('setTokenDocuments procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let tokenDocumentDataToDocumentStub: sinon.SinonStub<[TokenDocumentData, Context], Document>;
-  let stringToDocumentNameStub: sinon.SinonStub<[string, Context], DocumentName>;
+  let tokenDocumentToDocumentStub: sinon.SinonStub<[TokenDocument, Context], Document>;
   let ticker: string;
   let documents: TokenDocument[];
   let rawTicker: Ticker;
-  let rawDocuments: [DocumentName, Document][];
-  let documentEntries: [[Ticker, DocumentName], Document][];
+  let rawDocuments: Document[];
+  let documentEntries: [[Ticker, DocumentId], Document][];
   let args: Params;
 
   beforeAll(() => {
@@ -38,11 +35,7 @@ describe('setTokenDocuments procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    tokenDocumentDataToDocumentStub = sinon.stub(
-      utilsConversionModule,
-      'tokenDocumentDataToDocument'
-    );
-    stringToDocumentNameStub = sinon.stub(utilsConversionModule, 'stringToDocumentName');
+    tokenDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'tokenDocumentToDocument');
     ticker = 'someTicker';
     documents = [
       {
@@ -57,17 +50,24 @@ describe('setTokenDocuments procedure', () => {
       },
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawDocuments = documents.map(({ name, uri, contentHash }) =>
-      tuple(
-        dsMockUtils.createMockDocumentName(name),
-        dsMockUtils.createMockDocument({
-          uri: dsMockUtils.createMockDocumentUri(uri),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          content_hash: dsMockUtils.createMockDocumentHash(contentHash),
-        })
-      )
+    rawDocuments = documents.map(({ name, uri, contentHash, type, filedAt }) =>
+      dsMockUtils.createMockDocument({
+        name: dsMockUtils.createMockDocumentName(name),
+        uri: dsMockUtils.createMockDocumentUri(uri),
+        /* eslint-disable @typescript-eslint/camelcase */
+        content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+        doc_type: dsMockUtils.createMockOption(
+          type ? dsMockUtils.createMockDocumentType(type) : null
+        ),
+        filing_date: dsMockUtils.createMockOption(
+          filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
+        ),
+        /* eslint-enabled @typescript-eslint/camelcase */
+      })
     );
-    documentEntries = rawDocuments.map(([name, doc]) => tuple([rawTicker, name], doc));
+    documentEntries = rawDocuments.map((doc, index) =>
+      tuple([rawTicker, dsMockUtils.createMockU32(index)], doc)
+    );
     args = {
       ticker,
       documents,
@@ -76,8 +76,8 @@ describe('setTokenDocuments procedure', () => {
 
   let addTransactionStub: sinon.SinonStub;
 
-  let batchRemoveDocumentTransaction: PolymeshTx<[Vec<DocumentName>, Ticker]>;
-  let batchAddDocumentTransaction: PolymeshTx<[Vec<ITuple<[DocumentName, Document]>>, Ticker]>;
+  let removeDocumentsTransaction: PolymeshTx<[Vec<DocumentId>, Ticker]>;
+  let addDocumentsTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
@@ -86,17 +86,14 @@ describe('setTokenDocuments procedure', () => {
       entries: [documentEntries[0]],
     });
 
-    batchRemoveDocumentTransaction = dsMockUtils.createTxStub('asset', 'batchRemoveDocument');
-    batchAddDocumentTransaction = dsMockUtils.createTxStub('asset', 'batchAddDocument');
+    removeDocumentsTransaction = dsMockUtils.createTxStub('asset', 'removeDocuments');
+    addDocumentsTransaction = dsMockUtils.createTxStub('asset', 'addDocuments');
 
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    documents.forEach(({ uri, contentHash, name }, index) => {
-      stringToDocumentNameStub.withArgs(name, mockContext).returns(rawDocuments[index][0]);
-      tokenDocumentDataToDocumentStub
-        .withArgs({ uri, contentHash }, mockContext)
-        .returns(rawDocuments[index][1]);
+    documents.forEach((doc, index) => {
+      tokenDocumentToDocumentStub.withArgs(doc, mockContext).returns(rawDocuments[index]);
     });
   });
 
@@ -128,14 +125,14 @@ describe('setTokenDocuments procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
-      batchRemoveDocumentTransaction,
+      removeDocumentsTransaction,
       { batchSize: 1 },
-      [rawDocuments[0][0]],
+      [documentEntries[0][0][1]],
       rawTicker
     );
     sinon.assert.calledWith(
       addTransactionStub.secondCall,
-      batchAddDocumentTransaction,
+      addDocumentsTransaction,
       { batchSize: rawDocuments.length },
       rawDocuments,
       rawTicker
@@ -153,7 +150,7 @@ describe('setTokenDocuments procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
-      batchAddDocumentTransaction,
+      addDocumentsTransaction,
       { batchSize: rawDocuments.length },
       rawDocuments,
       rawTicker
@@ -169,9 +166,9 @@ describe('setTokenDocuments procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
-      batchRemoveDocumentTransaction,
+      removeDocumentsTransaction,
       { batchSize: 1 },
-      [rawDocuments[0][0]],
+      [documentEntries[0][0][1]],
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);

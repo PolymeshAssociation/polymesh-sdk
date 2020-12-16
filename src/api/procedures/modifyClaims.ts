@@ -1,8 +1,8 @@
 import { Moment } from '@polkadot/types/interfaces';
 import { cloneDeep, isEqual, uniq } from 'lodash';
-import { Claim as MeshClaim, IdentityId, TxTag, TxTags } from 'polymesh-types/types';
+import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
 
-import { PolymeshError, Procedure } from '~/base';
+import { PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import {
@@ -15,7 +15,8 @@ import {
   Role,
   RoleType,
 } from '~/types';
-import { ClaimOperation } from '~/types/internal';
+import { ClaimOperation, Extrinsics, MapMaybePostTransactionValue } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import {
   claimToMeshClaim,
   dateToMoment,
@@ -24,13 +25,6 @@ import {
   signerToString,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { batchArguments } from '~/utils/internal';
-
-interface AddClaimItem {
-  target: IdentityId;
-  claim: MeshClaim;
-  expiry: Moment | null;
-}
 
 interface AddClaimsParams {
   claims: ClaimTarget[];
@@ -52,6 +46,15 @@ export type ModifyClaimsParams = AddClaimsParams | EditClaimsParams | RevokeClai
 /**
  * @hidden
  */
+export function groupByDid([target]: MapMaybePostTransactionValue<
+  Parameters<Extrinsics['identity']['addClaim']>
+>): string {
+  return identityIdToString(target as IdentityId);
+}
+
+/**
+ * @hidden
+ */
 export async function prepareModifyClaims(
   this: Procedure<ModifyClaimsParams, void>,
   args: ModifyClaimsParams
@@ -67,16 +70,18 @@ export async function prepareModifyClaims(
     context,
   } = this;
 
-  const modifyClaimItems: AddClaimItem[] = [];
+  const modifyClaimArgs: [IdentityId, MeshClaim, Moment | null][] = [];
   let allTargets: string[] = [];
 
   claims.forEach(({ target, expiry, claim }: ClaimTarget) => {
     allTargets.push(signerToString(target));
-    modifyClaimItems.push({
-      target: stringToIdentityId(signerToString(target), context),
-      claim: claimToMeshClaim(claim, context),
-      expiry: expiry ? dateToMoment(expiry, context) : null,
-    });
+    modifyClaimArgs.push(
+      tuple(
+        stringToIdentityId(signerToString(target), context),
+        claimToMeshClaim(claim, context),
+        expiry ? dateToMoment(expiry, context) : null
+      )
+    );
   });
 
   allTargets = uniq(allTargets);
@@ -153,22 +158,15 @@ export async function prepareModifyClaims(
     }
   }
 
-  let transaction: typeof identity.batchAddClaim | typeof identity.batchRevokeClaim;
-  let tag: TxTag;
+  let transaction: typeof identity.addClaim | typeof identity.revokeClaim;
 
   if (operation === ClaimOperation.Revoke) {
-    transaction = identity.batchRevokeClaim;
-    tag = TxTags.identity.BatchRevokeClaim;
+    transaction = identity.revokeClaim;
   } else {
-    transaction = identity.batchAddClaim;
-    tag = TxTags.identity.BatchAddClaim;
+    transaction = identity.addClaim;
   }
 
-  batchArguments(modifyClaimItems, tag, ({ target }) => identityIdToString(target)).forEach(
-    itemBatch => {
-      this.addTransaction(transaction, { batchSize: itemBatch.length }, itemBatch);
-    }
-  );
+  this.addBatchTransaction(transaction, { groupByFn: groupByDid }, modifyClaimArgs);
 }
 
 /**

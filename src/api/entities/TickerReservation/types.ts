@@ -1,4 +1,4 @@
-import { Identity } from '~/api/entities';
+import { Identity } from '~/internal';
 
 export interface TickerReservationDetails {
   /**

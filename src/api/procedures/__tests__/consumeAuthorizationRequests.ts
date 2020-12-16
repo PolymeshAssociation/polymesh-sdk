@@ -1,25 +1,25 @@
-import { u64 } from '@polkadot/types';
+import { bool, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { AuthIdentifier } from 'polymesh-types/types';
+import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, AuthorizationRequest, Identity } from '~/api/entities';
 import {
   ConsumeAuthorizationRequestsParams,
   isAuthorized,
   prepareConsumeAuthorizationRequests,
 } from '~/api/procedures/consumeAuthorizationRequests';
-import { Context } from '~/base';
+import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType } from '~/types';
-import { AuthTarget } from '~/types/internal';
+import { SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
-  let authTargetToAuthIdentifierStub: sinon.SinonStub<[AuthTarget, Context], AuthIdentifier>;
+  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let authParams: {
     authId: BigNumber;
     expiry: Date | null;
@@ -28,26 +28,26 @@ describe('consumeAuthorizationRequests procedure', () => {
     data: Authorization;
   }[];
   let auths: AuthorizationRequest[];
-  let rawAuthIdentifiers: AuthIdentifier[];
-  let rawAuthIds: u64[];
+  let rawAuthIdentifiers: [Signatory, u64, bool][];
+  let rawAuthIds: [u64][];
+  let rawFalseBool: bool;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    authTargetToAuthIdentifierStub = sinon.stub(
-      utilsConversionModule,
-      'authTargetToAuthIdentifier'
-    );
+    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     sinon.stub(utilsConversionModule, 'addressToKey');
   });
 
-  let addTransactionStub: sinon.SinonStub;
+  let addBatchTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
+    rawFalseBool = dsMockUtils.createMockBool(false);
     authParams = [
       {
         authId: new BigNumber(1),
@@ -91,21 +91,16 @@ describe('consumeAuthorizationRequests procedure', () => {
       auths.push(new AuthorizationRequest(params, mockContext));
 
       const rawAuthId = dsMockUtils.createMockU64(authId.toNumber());
-      rawAuthIds.push(rawAuthId);
+      rawAuthIds.push([rawAuthId]);
       numberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
-
-      const rawAuthIdentifier = dsMockUtils.createMockAuthIdentifier({
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        auth_id: dsMockUtils.createMockU64(authId.toNumber()),
-        signatory: dsMockUtils.createMockSignatory({
-          Identity: dsMockUtils.createMockIdentityId(signerValue.value),
-        }),
+      const rawSignatory = dsMockUtils.createMockSignatory({
+        Identity: dsMockUtils.createMockIdentityId(signerValue.value),
       });
-      rawAuthIdentifiers.push(rawAuthIdentifier);
-      authTargetToAuthIdentifierStub
-        .withArgs({ authId, target: signerValue }, mockContext)
-        .returns(rawAuthIdentifier);
+
+      rawAuthIdentifiers.push([rawSignatory, rawAuthId, rawFalseBool]);
+      signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
     });
+    booleanToBoolStub.withArgs(false, mockContext).returns(rawFalseBool);
   });
 
   afterEach(() => {
@@ -120,12 +115,12 @@ describe('consumeAuthorizationRequests procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a batch accept authorization transaction to the queue and ignore expired requests', async () => {
+  test('should add a batch of accept authorization transactions to the queue and ignore expired requests', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('identity', 'batchAcceptAuthorization');
+    const transaction = dsMockUtils.createTxStub('identity', 'acceptAuthorization');
 
     await prepareConsumeAuthorizationRequests.call(proc, {
       accept: true,
@@ -134,20 +129,15 @@ describe('consumeAuthorizationRequests procedure', () => {
 
     const authIds = rawAuthIds.slice(0, -1);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      transaction,
-      { batchSize: authIds.length },
-      authIds
-    );
+    sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, authIds);
   });
 
-  test('should add a batch remove authorization transaction to the queue and ignore expired requests', async () => {
+  test('should add a batch of remove authorization transactions to the queue and ignore expired requests', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('identity', 'batchRemoveAuthorization');
+    const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
 
     await prepareConsumeAuthorizationRequests.call(proc, {
       accept: false,
@@ -156,12 +146,7 @@ describe('consumeAuthorizationRequests procedure', () => {
 
     const authIds = rawAuthIdentifiers.slice(0, -1);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      transaction,
-      { batchSize: authIds.length },
-      authIds
-    );
+    sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, authIds);
   });
 
   describe('isAuthorized', () => {

@@ -1,9 +1,15 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Entity, Identity, NumberedPortfolio } from '~/api/entities';
-import { deletePortfolio, renamePortfolio } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import {
+  Context,
+  deletePortfolio,
+  Entity,
+  Identity,
+  NumberedPortfolio,
+  renamePortfolio,
+  TransactionQueue,
+} from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
@@ -98,7 +104,7 @@ describe('Numberedortfolio class', () => {
       const id = new BigNumber(1);
       const did = 'someDid';
       const portfolioName = 'someName';
-      const rawPortfolioName = dsMockUtils.createMockBytes(portfolioName);
+      const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {

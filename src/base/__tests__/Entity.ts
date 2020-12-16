@@ -1,6 +1,6 @@
 import sinon from 'sinon';
 
-import { Entity } from '~/api/entities';
+import { Entity } from '~/internal';
 import * as utilsInternalModule from '~/utils/internal';
 
 describe('Entity class', () => {

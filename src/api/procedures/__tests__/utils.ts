@@ -1,12 +1,14 @@
 import BigNumber from 'bignumber.js';
+import sinon from 'sinon';
 
-import { Instruction } from '~/api/entities';
-import { assertInstructionValid } from '~/api/procedures/utils';
-import { Context } from '~/base';
+import { assertInstructionValid, assertSecondaryKeys } from '~/api/procedures/utils';
+import { Context, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
-import { InstructionDetails, InstructionStatus, InstructionType } from '~/types';
+import { InstructionDetails, InstructionStatus, InstructionType, Signer } from '~/types';
+import { SignerType, SignerValue } from '~/types/internal';
+import * as utilsConversionModule from '~/utils/conversion';
 
 // NOTE uncomment in Governance v2 upgrade
 
@@ -211,7 +213,7 @@ describe('assertInstructionValid', () => {
       instructionOptions: {
         details: {
           status: InstructionStatus.Pending,
-          type: InstructionType.SettleOnAuthorization,
+          type: InstructionType.SettleOnAffirmation,
         } as InstructionDetails,
       },
     });
@@ -237,5 +239,61 @@ describe('assertInstructionValid', () => {
     result = await assertInstructionValid(instruction, mockContext);
 
     expect(result).toBeUndefined();
+  });
+});
+
+describe('assertSecondaryKeys', () => {
+  let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
+
+  beforeAll(() => {
+    signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
+  });
+
+  test('should not throw an error if all signers are secondary keys', async () => {
+    const address = 'someAddress';
+    const secondaryKeys = [
+      {
+        signer: entityMockUtils.getAccountInstance({ address }),
+        permissions: {
+          tokens: null,
+          transactions: null,
+          portfolios: null,
+        },
+      },
+    ];
+    const signerValues = [{ type: SignerType.Account, value: address }];
+
+    signerToSignerValueStub.returns(signerValues[0]);
+
+    const result = assertSecondaryKeys(signerValues, secondaryKeys);
+    expect(result).toBeUndefined();
+  });
+
+  test('should throw an error if one of the Signers is not a Secondary Key for the Identity', () => {
+    const address = 'someAddress';
+    const secondaryKeys = [
+      {
+        signer: entityMockUtils.getAccountInstance({ address }),
+        permissions: {
+          tokens: null,
+          transactions: null,
+          portfolios: null,
+        },
+      },
+    ];
+    const signerValues = [{ type: SignerType.Account, value: 'otherAddress' }];
+
+    signerToSignerValueStub.returns({ type: SignerType.Account, value: address });
+
+    let error;
+
+    try {
+      assertSecondaryKeys(signerValues, secondaryKeys);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('One of the Signers is not a Secondary Key for the Identity');
+    expect(error.data.missing).toEqual([signerValues[0].value]);
   });
 });

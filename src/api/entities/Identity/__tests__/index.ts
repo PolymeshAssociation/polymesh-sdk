@@ -4,8 +4,7 @@ import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Entity, Identity } from '~/api/entities';
-import { Context } from '~/base';
+import { Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {

@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { NumberedPortfolio } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, Role, RoleType } from '~/types';
 import { numberToU64, stringToIdentityId } from '~/utils/conversion';
 

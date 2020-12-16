@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Context } from '~/base';
+import { Context } from '~/internal';
 import { Middleware } from '~/Middleware';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';

@@ -1,6 +1,7 @@
 import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
 import {
+  stringLowerFirst,
   stringToU8a,
   stringUpperFirst,
   u8aConcat,
@@ -10,21 +11,23 @@ import {
 } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 import { computeWithoutCheck } from 'iso-7064';
-import { camelCase, isEqual, padEnd, range, rangeRight, snakeCase } from 'lodash';
+import { camelCase, isEqual, map, padEnd, range, rangeRight, snakeCase, values } from 'lodash';
 import {
+  AffirmationStatus as MeshAffirmationStatus,
   AssetComplianceResult,
   AssetIdentifier,
   AssetName,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
-  AuthorizationStatus as MeshAuthorizationStatus,
   AuthorizationType as MeshAuthorizationType,
   CanTransferResult,
   CddId,
   CddStatus,
   Claim as MeshClaim,
+  ClaimType as MeshClaimType,
   ComplianceRequirement,
   ComplianceRequirementResult,
   Condition as MeshCondition,
@@ -32,33 +35,45 @@ import {
   Document,
   DocumentHash,
   DocumentName,
+  DocumentType,
   DocumentUri,
   FundingRoundName,
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
+  InvestorZKProofData,
   Memo,
   MovePortfolioItem,
-  Permission as MeshPermission,
+  Permissions as MeshPermissions,
   PipId,
   PortfolioId as MeshPortfolioId,
   PosRatio,
   ProtocolOp,
   Scope as MeshScope,
+  ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SettlementType,
   Signatory,
   TargetIdentity,
   Ticker,
+  TrustedIssuer,
   TxTag,
   TxTags,
   VenueDetails,
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { Account, DefaultPortfolio, Identity, NumberedPortfolio, Portfolio } from '~/api/entities';
-// import { ProposalDetails } from '~/api/types';
-import { Context, PolymeshError } from '~/base';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
+// import { ProposalDetails } from '~/api/types';
+import {
+  Account,
+  Context,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  PolymeshError,
+  Portfolio,
+  SecurityToken,
+} from '~/internal';
 import {
   CallIdEnum,
   ClaimScopeTypeEnum,
@@ -68,8 +83,8 @@ import {
   Scope as MiddlewareScope,
 } from '~/middleware/types';
 import {
+  AffirmationStatus,
   Authorization,
-  AuthorizationStatus,
   AuthorizationType,
   Claim,
   ClaimType,
@@ -87,7 +102,8 @@ import {
   isSingleClaimCondition,
   KnownTokenType,
   MultiClaimCondition,
-  Permission,
+  Permissions,
+  PermissionsLike,
   PortfolioLike,
   PortfolioMovement,
   PrimaryIssuanceAgentCondition,
@@ -98,23 +114,24 @@ import {
   SecondaryKey,
   Signer,
   SingleClaimCondition,
+  TokenDocument,
   TokenIdentifier,
   TokenIdentifierType,
   TokenType,
   TransferStatus,
+  TrustedClaimIssuer,
   VenueType,
 } from '~/types';
 import {
   AuthTarget,
   ExtrinsicIdentifier,
+  PolymeshTx,
   PortfolioId,
   SignerType,
   SignerValue,
-  TokenDocumentData,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
-  BATCH_REGEX,
   IGNORE_CHECKSUM,
   MAX_DECIMALS,
   MAX_MODULE_LENGTH,
@@ -202,8 +219,14 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
  * @hidden
  */
 export function tickerToString(ticker: Ticker): string {
-  // eslint-disable-next-line no-control-regex
   return removePadding(u8aToString(ticker));
+}
+
+/**
+ * @hidden
+ */
+export function stringToInvestorZKProofData(proof: string, context: Context): InvestorZKProofData {
+  return context.polymeshApi.createType('InvestorZKProofData', proof);
 }
 
 /**
@@ -316,14 +339,258 @@ export function signerToString(signer: string | Signer): string {
 /**
  * @hidden
  */
+export function u64ToBigNumber(value: u64): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function numberToU64(value: number | BigNumber, context: Context): u64 {
+  return context.polymeshApi.createType('u64', new BigNumber(value).toString());
+}
+
+/**
+ * @hidden
+ */
+export function meshPortfolioIdToPortfolio(
+  portfolioId: MeshPortfolioId,
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, kind } = portfolioId;
+  const identityId = identityIdToString(did);
+
+  if (kind.isDefault) {
+    return new DefaultPortfolio({ did: identityId }, context);
+  }
+  return new NumberedPortfolio({ did: identityId, id: u64ToBigNumber(kind.asUser) }, context);
+}
+
+/**
+ * @hidden
+ */
+export function portfolioToPortfolioId(
+  portfolio: DefaultPortfolio | NumberedPortfolio
+): PortfolioId {
+  const {
+    owner: { did },
+  } = portfolio;
+  if (portfolio instanceof DefaultPortfolio) {
+    return { did };
+  } else {
+    const { id: number } = portfolio;
+
+    return { did, number };
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function portfolioLikeToPortfolioId(
+  value: PortfolioLike,
+  context: Context
+): Promise<PortfolioId> {
+  let did: string;
+  let number: BigNumber | undefined;
+
+  if (typeof value === 'string') {
+    did = value;
+  } else if (value instanceof Identity) {
+    ({ did } = value);
+  } else if (value instanceof Portfolio) {
+    ({ did, number } = portfolioToPortfolioId(value));
+  } else {
+    const { identity: valueIdentity } = value;
+    ({ id: number } = value);
+
+    if (typeof valueIdentity === 'string') {
+      did = valueIdentity;
+    } else {
+      ({ did } = valueIdentity);
+    }
+  }
+
+  if (number) {
+    const numberedPortfolio = new NumberedPortfolio({ did, id: number }, context);
+    const exists = await numberedPortfolio.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Portfolio doesn't exist",
+        data: {
+          did,
+          portfolioId: number,
+        },
+      });
+    }
+  }
+
+  return { did, number };
+}
+
+/**
+ * @hidden
+ */
+export async function portfolioLikeToPortfolio(
+  value: PortfolioLike,
+  context: Context
+): Promise<DefaultPortfolio | NumberedPortfolio> {
+  const { did, number } = await portfolioLikeToPortfolioId(value, context);
+  return number
+    ? new NumberedPortfolio({ did, id: number }, context)
+    : new DefaultPortfolio({ did }, context);
+}
+
+/**
+ * @hidden
+ */
+export function portfolioIdToMeshPortfolioId(
+  portfolioId: PortfolioId,
+  context: Context
+): MeshPortfolioId {
+  const { did, number } = portfolioId;
+  return context.polymeshApi.createType('PortfolioId', {
+    did: stringToIdentityId(did, context),
+    kind: number ? { User: numberToU64(number, context) } : 'Default',
+  });
+}
+
+/**
+ * @hidden
+ */
+export function stringToText(text: string, context: Context): Text {
+  return context.polymeshApi.createType('Text', text);
+}
+
+/**
+ * @hidden
+ */
+export function textToString(value: Text): string {
+  return value.toString();
+}
+
+/**
+ * @hidden
+ */
+export function permissionsToMeshPermissions(
+  permissions: Permissions,
+  context: Context
+): MeshPermissions {
+  const { tokens, transactions, portfolios } = permissions;
+
+  const extrinsicDict: Record<string, string[]> = {};
+  let extrinsic: { pallet_name: string; dispatchable_names: string[] }[] | null = null;
+
+  if (transactions) {
+    transactions.forEach(tag => {
+      const [modName, txName] = tag.split('.');
+
+      const palletName = stringUpperFirst(modName);
+      const dispatchableName = snakeCase(txName);
+
+      const pallet = (extrinsicDict[palletName] = extrinsicDict[palletName] || []);
+
+      pallet.push(dispatchableName);
+    });
+
+    extrinsic = map(extrinsicDict, (val, key) => ({
+      /* eslint-disable @typescript-eslint/camelcase */
+      pallet_name: key,
+      dispatchable_names: val,
+      /* eslint-enable @typescript-eslint/camelcase */
+    }));
+  }
+
+  const value = {
+    asset: tokens?.map(({ ticker }) => stringToTicker(ticker, context)) ?? null,
+    extrinsic,
+    portfolio:
+      portfolios?.map(portfolio =>
+        portfolioIdToMeshPortfolioId(portfolioToPortfolioId(portfolio), context)
+      ) ?? null,
+  };
+
+  return context.polymeshApi.createType('Permissions', value);
+}
+
+/**
+ * @hidden
+ */
+export function meshPermissionsToPermissions(
+  permissions: MeshPermissions,
+  context: Context
+): Permissions {
+  const { asset, extrinsic, portfolio } = permissions;
+
+  let tokens = null;
+  let transactions = null;
+  let portfolios = null;
+
+  if (asset.isSome) {
+    tokens = asset
+      .unwrap()
+      .map(ticker => new SecurityToken({ ticker: tickerToString(ticker) }, context));
+  }
+
+  if (extrinsic.isSome) {
+    transactions = extrinsic
+      .unwrap()
+      .reduce<TxTag[]>(
+        (result, { pallet_name: palletName, dispatchable_names: dispatchableNames }) => {
+          const moduleName = stringLowerFirst(textToString(palletName));
+
+          let newTags: TxTag[];
+
+          if (dispatchableNames.isSome) {
+            newTags = dispatchableNames
+              .unwrap()
+              .map(name => `${moduleName}.${camelCase(textToString(name))}` as TxTag);
+          } else {
+            newTags = values(TxTags[moduleName as keyof typeof TxTags]);
+          }
+
+          return [...result, ...newTags];
+        },
+        []
+      );
+  }
+
+  if (portfolio.isSome) {
+    portfolios = portfolio
+      .unwrap()
+      .map(portfolioId => meshPortfolioIdToPortfolio(portfolioId, context));
+  }
+
+  return {
+    tokens,
+    transactions,
+    portfolios,
+  };
+}
+
+/**
+ * @hidden
+ */
 export function authorizationToAuthorizationData(
   auth: Authorization,
   context: Context
 ): AuthorizationData {
-  const { type, value = null } = auth as { type: AuthorizationType; value?: string };
+  let value;
+
+  if (auth.type === AuthorizationType.NoData) {
+    value = null;
+  } else if (auth.type === AuthorizationType.JoinIdentity) {
+    value = permissionsToMeshPermissions(auth.value, context);
+  } else if (auth.type === AuthorizationType.PortfolioCustody) {
+    value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
+  } else {
+    value = auth.value;
+  }
 
   return context.polymeshApi.createType('AuthorizationData', {
-    [type]: value,
+    [auth.type]: value,
   });
 }
 
@@ -335,58 +602,6 @@ export function authorizationTypeToMeshAuthorizationType(
   context: Context
 ): MeshAuthorizationType {
   return context.polymeshApi.createType('AuthorizationType', authorizationType);
-}
-
-/**
- * @hidden
- */
-export function permissionToMeshPermission(
-  permission: Permission,
-  context: Context
-): MeshPermission {
-  return context.polymeshApi.createType('Permission', permission);
-}
-
-/**
- * @hidden
- */
-export function meshPermissionToPermission(permission: MeshPermission): Permission {
-  if (permission.isAdmin) {
-    return Permission.Admin;
-  }
-
-  if (permission.isFull) {
-    return Permission.Full;
-  }
-
-  if (permission.isOperator) {
-    return Permission.Operator;
-  }
-
-  return Permission.SpendFunds;
-}
-
-/**
- * @hidden
- */
-export function u64ToBigNumber(value: u64): BigNumber {
-  return new BigNumber(value.toString());
-}
-
-/**
- * @hidden
- */
-export function portfolioIdToPortfolio(
-  portfolioId: MeshPortfolioId,
-  context: Context
-): DefaultPortfolio | NumberedPortfolio {
-  const { did, kind } = portfolioId;
-  const identityId = identityIdToString(did);
-
-  if (kind.isDefault) {
-    return new DefaultPortfolio({ did: identityId }, context);
-  }
-  return new NumberedPortfolio({ did: identityId, id: u64ToBigNumber(kind.asUser) }, context);
 }
 
 /**
@@ -434,14 +649,14 @@ export function authorizationDataToAuthorization(
   if (auth.isPortfolioCustody) {
     return {
       type: AuthorizationType.PortfolioCustody,
-      value: portfolioIdToPortfolio(auth.asPortfolioCustody, context),
+      value: meshPortfolioIdToPortfolio(auth.asPortfolioCustody, context),
     };
   }
 
   if (auth.isJoinIdentity) {
     return {
       type: AuthorizationType.JoinIdentity,
-      value: auth.asJoinIdentity.map(meshPermissionToPermission),
+      value: meshPermissionsToPermissions(auth.asJoinIdentity, context),
     };
   }
 
@@ -537,13 +752,6 @@ export function u32ToBigNumber(value: u32): BigNumber {
 /**
  * @hidden
  */
-export function numberToU64(value: number | BigNumber, context: Context): u64 {
-  return context.polymeshApi.createType('u64', new BigNumber(value).toString());
-}
-
-/**
- * @hidden
- */
 export function u8ToTransferStatus(status: u8): TransferStatus {
   const code = status.toNumber();
 
@@ -599,8 +807,11 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     case 169: {
       return TransferStatus.PortfolioFailure;
     }
-    case 170: {
+    case 176: {
       return TransferStatus.CustodianError;
+    }
+    case 177: {
+      return TransferStatus.ScopeClaimMissing;
     }
     case 80: {
       return TransferStatus.Failure;
@@ -857,6 +1068,20 @@ export function documentNameToString(docName: DocumentName): string {
 /**
  * @hidden
  */
+export function stringToDocumentType(docType: string, context: Context): DocumentType {
+  return context.polymeshApi.createType('DocumentType', docType);
+}
+
+/**
+ * @hidden
+ */
+export function documentTypeToString(docType: DocumentType): string {
+  return docType.toString();
+}
+
+/**
+ * @hidden
+ */
 export function stringToDocumentUri(docUri: string, context: Context): DocumentUri {
   return context.polymeshApi.createType('DocumentUri', docUri);
 }
@@ -885,28 +1110,45 @@ export function documentHashToString(docHash: DocumentHash): string {
 /**
  * @hidden
  */
-export function tokenDocumentDataToDocument(
-  { uri, contentHash }: TokenDocumentData,
+export function tokenDocumentToDocument(
+  { uri, contentHash, name, filedAt, type }: TokenDocument,
   context: Context
 ): Document {
   return context.polymeshApi.createType('Document', {
     uri: stringToDocumentUri(uri, context),
-    // eslint-disable-next-line @typescript-eslint/camelcase
+    name: stringToDocumentName(name, context),
+    /* eslint-disable @typescript-eslint/camelcase */
     content_hash: stringToDocumentHash(contentHash, context),
+    doc_type: type ? stringToDocumentType(type, context) : null,
+    filing_date: filedAt ? dateToMoment(filedAt, context) : null,
+    /* eslint-enable @typescript-eslint/camelcase */
   });
 }
 
 /**
  * @hidden
  */
-export function documentToTokenDocumentData(
+export function documentToTokenDocument(
   // eslint-disable-next-line @typescript-eslint/camelcase
-  { uri, content_hash }: Document
-): TokenDocumentData {
-  return {
+  { uri, content_hash: contentHash, name, doc_type: docType, filing_date: filingDate }: Document
+): TokenDocument {
+  const filedAt = filingDate.unwrapOr(undefined);
+  const type = docType.unwrapOr(undefined);
+  let doc: TokenDocument = {
     uri: documentUriToString(uri),
-    contentHash: documentHashToString(content_hash),
+    contentHash: documentHashToString(contentHash),
+    name: documentNameToString(name),
   };
+
+  if (filedAt) {
+    doc = { ...doc, filedAt: momentToDate(filedAt) };
+  }
+
+  if (type) {
+    doc = { ...doc, type: documentTypeToString(type) };
+  }
+
+  return doc;
 }
 
 /**
@@ -1000,17 +1242,51 @@ export function meshScopeToScope(scope: MeshScope): Scope {
 /**
  * @hidden
  */
+export function stringToCddId(cddId: string, context: Context): CddId {
+  return context.polymeshApi.createType('CddId', cddId);
+}
+
+/**
+ * @hidden
+ */
+export function cddIdToString(cddId: CddId): string {
+  return cddId.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToScopeId(scopeId: string, context: Context): ScopeId {
+  return context.polymeshApi.createType('ScopeId', scopeId);
+}
+
+/**
+ * @hidden
+ */
 export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
   let value;
 
   switch (claim.type) {
-    case ClaimType.NoData:
-    case ClaimType.CustomerDueDiligence: {
+    case ClaimType.NoData: {
       value = null;
       break;
     }
+    case ClaimType.CustomerDueDiligence: {
+      value = stringToCddId(claim.id, context);
+      break;
+    }
     case ClaimType.Jurisdiction: {
-      value = tuple(claim.code, scopeToMeshScope(claim.scope, context));
+      const { code, scope } = claim;
+      value = tuple(code, scopeToMeshScope(scope, context));
+      break;
+    }
+    case ClaimType.InvestorUniqueness: {
+      const { scope, cddId, scopeId } = claim;
+      value = tuple(
+        scopeToMeshScope(scope, context),
+        stringToScopeId(scopeId, context),
+        stringToCddId(cddId, context)
+      );
       break;
     }
     default: {
@@ -1050,20 +1326,6 @@ export function scopeToMiddlewareScope(scope: Scope): MiddlewareScope {
     case ScopeType.Custom:
       return { type: ClaimScopeTypeEnum[scope.type], value };
   }
-}
-
-/**
- * @hidden
- */
-export function stringToCddId(cddId: string, context: Context): CddId {
-  return context.polymeshApi.createType('CddId', cddId);
-}
-
-/**
- * @hidden
- */
-export function cddIdToString(cddId: CddId): string {
-  return cddId.toString();
 }
 
 /**
@@ -1153,6 +1415,99 @@ export function stringToTargetIdentity(did: string | null, context: Context): Ta
 /**
  * @hidden
  */
+export function trustedClaimIssuerToTrustedIssuer(
+  issuer: TrustedClaimIssuer,
+  context: Context
+): TrustedIssuer {
+  const {
+    identity: { did },
+    trustedFor: claimTypes,
+  } = issuer;
+
+  let trustedFor;
+
+  if (!claimTypes) {
+    trustedFor = 'Any';
+  } else {
+    trustedFor = { Specific: claimTypes };
+  }
+
+  return context.polymeshApi.createType('TrustedIssuer', {
+    issuer: stringToIdentityId(did, context),
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    trusted_for: trustedFor,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function meshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
+  if (claimType.isJurisdiction) {
+    return ClaimType.Jurisdiction;
+  }
+
+  if (claimType.isNoData) {
+    return ClaimType.NoData;
+  }
+
+  if (claimType.isAccredited) {
+    return ClaimType.Accredited;
+  }
+
+  if (claimType.isAffiliate) {
+    return ClaimType.Affiliate;
+  }
+
+  if (claimType.isBuyLockup) {
+    return ClaimType.BuyLockup;
+  }
+
+  if (claimType.isSellLockup) {
+    return ClaimType.SellLockup;
+  }
+
+  if (claimType.isCustomerDueDiligence) {
+    return ClaimType.CustomerDueDiligence;
+  }
+
+  if (claimType.isKnowYourCustomer) {
+    return ClaimType.KnowYourCustomer;
+  }
+
+  if (claimType.isExempted) {
+    return ClaimType.Exempted;
+  }
+
+  return ClaimType.Blocked;
+}
+
+/**
+ * @hidden
+ */
+export function trustedIssuerToTrustedClaimIssuer(
+  trustedIssuer: TrustedIssuer,
+  context: Context
+): TrustedClaimIssuer {
+  const { issuer, trusted_for: claimTypes } = trustedIssuer;
+
+  const identity = new Identity({ did: identityIdToString(issuer) }, context);
+
+  let trustedFor: ClaimType[] | undefined;
+
+  if (claimTypes.isSpecific) {
+    trustedFor = claimTypes.asSpecific.map(meshClaimTypeToClaimType);
+  }
+
+  return {
+    identity,
+    trustedFor,
+  };
+}
+
+/**
+ * @hidden
+ */
 export function requirementToComplianceRequirement(
   requirement: Requirement,
   context: Context
@@ -1188,7 +1543,9 @@ export function requirementToComplianceRequirement(
       condition_type: {
         [type]: conditionContent,
       },
-      issuers: trustedClaimIssuers.map(issuer => stringToIdentityId(issuer, context)),
+      issuers: trustedClaimIssuers.map(issuer =>
+        trustedClaimIssuerToTrustedIssuer(issuer, context)
+      ),
     });
 
     if ([ConditionTarget.Both, ConditionTarget.Receiver].includes(target)) {
@@ -1298,10 +1655,13 @@ export function complianceRequirementResultToRequirementCompliance(
         condition: {
           ...meshConditionTypeToCondition(conditionType, context),
           target: ConditionTarget.Sender,
-          trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
+          trustedClaimIssuers: issuers.map(trustedIssuer =>
+            trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+          ),
         },
         complies: boolToBoolean(result),
       };
+
       const existingCondition = conditions.find(condition =>
         conditionCompliancesAreEqual(condition, newCondition)
       );
@@ -1318,7 +1678,9 @@ export function complianceRequirementResultToRequirementCompliance(
         condition: {
           ...meshConditionTypeToCondition(conditionType, context),
           target: ConditionTarget.Receiver,
-          trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
+          trustedClaimIssuers: issuers.map(trustedIssuer =>
+            trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+          ),
         },
         complies: boolToBoolean(result),
       };
@@ -1369,7 +1731,9 @@ export function complianceRequirementToRequirement(
     const newCondition = {
       ...meshConditionTypeToCondition(conditionType, context),
       target: ConditionTarget.Sender,
-      trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
+      trustedClaimIssuers: issuers.map(trustedIssuer =>
+        trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+      ),
     };
     const existingCondition = conditions.find(condition =>
       conditionsAreEqual(condition, newCondition)
@@ -1385,7 +1749,9 @@ export function complianceRequirementToRequirement(
       const newCondition = {
         ...meshConditionTypeToCondition(conditionType, context),
         target: ConditionTarget.Receiver,
-        trustedClaimIssuers: issuers.map(issuer => identityIdToString(issuer)),
+        trustedClaimIssuers: issuers.map(trustedIssuer =>
+          trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+        ),
       };
 
       const existingCondition = conditions.find(condition =>
@@ -1412,7 +1778,7 @@ export function complianceRequirementToRequirement(
 export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
   const [moduleName, extrinsicName] = tag.split('.');
   const value = `${stringUpperFirst(moduleName)}${stringUpperFirst(
-    extrinsicName.replace(BATCH_REGEX, '')
+    extrinsicName.replace(new RegExp('Documents$'), 'Document') // `asset.addDocuments` and `asset.removeDocuments`
   )}`;
 
   return context.polymeshApi.createType('ProtocolOp', value);
@@ -1449,34 +1815,6 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
  */
 export function numberToPipId(id: number | BigNumber, context: Context): PipId {
   return context.polymeshApi.createType('PipId', new BigNumber(id).toString());
-}
-
-/**
- * @hidden
- */
-export function stringToText(text: string, context: Context): Text {
-  return context.polymeshApi.createType('Text', text);
-}
-
-/**
- * @hidden
- */
-export function textToString(value: Text): string {
-  return value.toString();
-}
-
-/**
- * @hidden
- */
-export function portfolioIdToMeshPortfolioId(
-  portfolioId: PortfolioId,
-  context: Context
-): MeshPortfolioId {
-  const { did, number } = portfolioId;
-  return context.polymeshApi.createType('PortfolioId', {
-    did: stringToIdentityId(did, context),
-    kind: number ? { User: numberToU64(number, context) } : 'Default',
-  });
 }
 
 /**
@@ -1528,6 +1866,13 @@ export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
     moduleId: sectionName.toLowerCase() as ModuleIdEnum,
     callId: methodName as CallIdEnum,
   });
+}
+
+/**
+ * @hidden
+ */
+export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>): TxTag {
+  return `${tx.section}.${tx.method}` as TxTag;
 }
 
 // /**
@@ -1604,7 +1949,7 @@ export function secondaryKeyToMeshSecondaryKey(
 
   return polymeshApi.createType('SecondaryKey', {
     signer: signerValueToSignatory(signerToSignerValue(signer), context),
-    permissions: permissions.map(permission => permissionToMeshPermission(permission, context)),
+    permissions: permissionsToMeshPermissions(permissions, context),
   });
 }
 
@@ -1664,22 +2009,22 @@ export function meshInstructionStatusToInstructionStatus(
 /**
  * @hidden
  */
-export function meshAuthorizationStatusToAuthorizationStatus(
-  status: MeshAuthorizationStatus
-): AuthorizationStatus {
+export function meshAffirmationStatusToAffirmationStatus(
+  status: MeshAffirmationStatus
+): AffirmationStatus {
   if (status.isUnknown) {
-    return AuthorizationStatus.Unknown;
+    return AffirmationStatus.Unknown;
   }
 
   if (status.isPending) {
-    return AuthorizationStatus.Pending;
+    return AffirmationStatus.Pending;
   }
 
-  if (status.isAuthorized) {
-    return AuthorizationStatus.Authorized;
+  if (status.isAffirmed) {
+    return AffirmationStatus.Affirmed;
   }
 
-  return AuthorizationStatus.Rejected;
+  return AffirmationStatus.Rejected;
 }
 
 /**
@@ -1687,14 +2032,14 @@ export function meshAuthorizationStatusToAuthorizationStatus(
  */
 export function endConditionToSettlementType(
   endCondition:
-    | { type: InstructionType.SettleOnAuthorization }
+    | { type: InstructionType.SettleOnAffirmation }
     | { type: InstructionType; value: BigNumber },
   context: Context
 ): SettlementType {
   let value;
 
-  if (endCondition.type === InstructionType.SettleOnAuthorization) {
-    value = InstructionType.SettleOnAuthorization;
+  if (endCondition.type === InstructionType.SettleOnAffirmation) {
+    value = InstructionType.SettleOnAffirmation;
   } else {
     value = {
       [InstructionType.SettleOnBlock]: numberToU32(endCondition.value, context),
@@ -1702,58 +2047,6 @@ export function endConditionToSettlementType(
   }
 
   return context.polymeshApi.createType('SettlementType', value);
-}
-
-/**
- * @hidden
- */
-export async function portfolioLikeToPortfolioId(
-  value: PortfolioLike,
-  context: Context
-): Promise<PortfolioId> {
-  let did: string;
-  let number: BigNumber | undefined;
-
-  if (typeof value === 'string') {
-    did = value;
-  } else if (value instanceof Identity) {
-    ({ did } = value);
-  } else if (value instanceof Portfolio) {
-    ({
-      owner: { did },
-    } = value);
-
-    if (value instanceof NumberedPortfolio) {
-      ({ id: number } = value);
-    }
-  } else {
-    const { identity: valueIdentity } = value;
-    ({ id: number } = value);
-
-    if (typeof valueIdentity === 'string') {
-      did = valueIdentity;
-    } else {
-      ({ did } = valueIdentity);
-    }
-  }
-
-  if (number) {
-    const numberedPortfolio = new NumberedPortfolio({ did, id: number }, context);
-    const exists = await numberedPortfolio.exists();
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "The Portfolio doesn't exist",
-        data: {
-          did,
-          portfolioId: number,
-        },
-      });
-    }
-  }
-
-  return { did, number };
 }
 
 /**
@@ -1780,7 +2073,7 @@ export function toIdentityWithClaimsArray(
         issuer: new Identity({ did: issuer }, context),
         issuedAt: new Date(issuanceDate),
         expiry: expiry ? new Date(expiry) : null,
-        claim: createClaim(type, jurisdiction, claimScope, cddId),
+        claim: createClaim(type, jurisdiction, claimScope, cddId, undefined),
       })
     ),
   }));
@@ -1798,4 +2091,44 @@ export function portfolioMovementToMovePortfolioItem(
     ticker: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
     amount: numberToBalance(amount, context),
   });
+}
+
+/**
+ * @hidden
+ */
+export async function permissionsLikeToPermissions(
+  permissionsLike: PermissionsLike,
+  context: Context
+): Promise<Permissions> {
+  let tokenPermissions: SecurityToken[] | null = [];
+  let transactionPermissions: TxTag[] | null = [];
+  let portfolioPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null = [];
+
+  const { tokens, transactions, portfolios } = permissionsLike;
+
+  if (tokens === null) {
+    tokenPermissions = null;
+  } else if (tokens) {
+    tokenPermissions = tokens.map(ticker =>
+      typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
+    );
+  }
+
+  if (transactions !== undefined) {
+    transactionPermissions = transactions;
+  }
+
+  if (portfolios === null) {
+    portfolioPermissions = null;
+  } else if (portfolios) {
+    portfolioPermissions = await P.map(portfolios, portfolio =>
+      portfolioLikeToPortfolio(portfolio, context)
+    );
+  }
+
+  return {
+    tokens: tokenPermissions,
+    transactions: transactionPermissions,
+    portfolios: portfolioPermissions,
+  };
 }

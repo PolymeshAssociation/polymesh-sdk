@@ -2,14 +2,19 @@ import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { IdentityId } from 'polymesh-types/types';
 
-import { NumberedPortfolio } from '~/api/entities';
-import { Context, PolymeshError, PostTransactionValue, Procedure } from '~/base';
+import {
+  Context,
+  NumberedPortfolio,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+} from '~/internal';
 import { ErrorCode } from '~/types';
 import {
-  bytesToString,
   identityIdToString,
-  stringToBytes,
   stringToIdentityId,
+  stringToText,
+  textToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { findEventRecord } from '~/utils/internal';
@@ -57,7 +62,7 @@ export async function prepareCreatePortfolio(
 
   const rawPortfolios = await portfolio.portfolios.entries(stringToIdentityId(did, context));
 
-  const portfolioNames = rawPortfolios.map(([, name]) => bytesToString(name));
+  const portfolioNames = rawPortfolios.map(([, name]) => textToString(name));
 
   if (portfolioNames.includes(portfolioName)) {
     throw new PolymeshError({
@@ -66,7 +71,7 @@ export async function prepareCreatePortfolio(
     });
   }
 
-  const rawName = stringToBytes(portfolioName, context);
+  const rawName = stringToText(portfolioName, context);
 
   const [newNumberedPortfolio] = this.addTransaction(
     tx.portfolio.createPortfolio,

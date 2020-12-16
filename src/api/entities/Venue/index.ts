@@ -1,9 +1,15 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
-import { Entity, Identity, Instruction } from '~/api/entities';
-import { addInstruction, AddInstructionParams } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import {
+  addInstruction,
+  AddInstructionParams,
+  Context,
+  Entity,
+  Identity,
+  Instruction,
+  TransactionQueue,
+} from '~/internal';
 import { InstructionStatus } from '~/types';
 import {
   identityIdToString,
@@ -63,9 +69,9 @@ export class Venue extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const { creator, details, venue_type: type } = await settlement.venueInfo(
-      numberToU64(id, context)
-    );
+    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
+
+    const { creator, details, venue_type: type } = venueInfo.unwrap();
 
     return {
       owner: new Identity({ did: identityIdToString(creator) }, context),
@@ -88,7 +94,9 @@ export class Venue extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const { instructions: rawInstructions } = await settlement.venueInfo(numberToU64(id, context));
+    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
+
+    const { instructions: rawInstructions } = venueInfo.unwrap();
 
     const instructions = rawInstructions.map(
       instructionId => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
