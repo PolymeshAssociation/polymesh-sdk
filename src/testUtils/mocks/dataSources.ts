@@ -56,6 +56,7 @@ import {
   CddId,
   CddStatus,
   Claim,
+  Claim1stKey,
   ClaimType as MeshClaimType,
   ComplianceRequirement,
   ComplianceRequirementResult,
@@ -71,6 +72,7 @@ import {
   DocumentType,
   DocumentUri,
   FundingRoundName,
+  IdentityClaim,
   IdentityId,
   IdentityRole,
   Instruction,
@@ -1765,6 +1767,32 @@ export const createMockClaim = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockIdentityClaim = (identityClaim?: {
+  claim_issuer: IdentityId;
+  issuance_date: Moment;
+  last_update_date: Moment;
+  expiry: Option<Moment>;
+  claim: Claim;
+}): IdentityClaim => {
+  const identityClaimMock = identityClaim || {
+    claim_issuer: createMockIdentityId(),
+    issuance_date: createMockMoment(),
+    last_update_date: createMockMoment(),
+    expiry: createMockOption(),
+    claim: createMockClaim(),
+  };
+  return createMockCodec(
+    {
+      ...identityClaimMock,
+    },
+    !identityClaimMock
+  ) as IdentityClaim;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockTargetIdentity = (
   targetIdentity?: { Specific: IdentityId } | 'PrimaryIssuanceAgent'
 ): TargetIdentity => createMockEnum(targetIdentity) as TargetIdentity;
@@ -1788,6 +1816,26 @@ export const createMockConditionType = (
  */
 export const createMockClaimType = (claimType?: ClaimType): MeshClaimType =>
   createMockEnum(claimType) as MeshClaimType;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockClaim1stKey = (claim1stKey?: {
+  target: IdentityId;
+  claim_type: MeshClaimType;
+}): Claim1stKey => {
+  const claimTypeMock = claim1stKey || {
+    target: createMockIdentityId(),
+    claim_type: createMockClaimType(),
+  };
+  return createMockCodec(
+    {
+      ...claimTypeMock,
+    },
+    !claimTypeMock
+  ) as Claim1stKey;
+};
 
 /**
  * @hidden

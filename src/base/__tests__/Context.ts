@@ -7,8 +7,16 @@ import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
-import { ClaimType, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
+import {
+  ClaimData,
+  ClaimType,
+  ResultSet,
+  SecondaryKey,
+  Signer,
+  TransactionArgumentType,
+} from '~/types';
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -1099,7 +1107,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return a list of claims', async () => {
+    test('should return a result set of claims', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -1174,13 +1182,13 @@ describe('Context class', () => {
         }
       );
 
-      let result = await context.issuedClaims({
+      let result = (await context.issuedClaims({
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
         includeExpired: true,
         size: 1,
-      });
+      })) as ResultSet<ClaimData>;
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(25);
@@ -1200,11 +1208,86 @@ describe('Context class', () => {
         }
       );
 
-      result = await context.issuedClaims();
+      result = (await context.issuedClaims()) as ResultSet<ClaimData>;
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(25);
       expect(result.next).toBeNull();
+    });
+
+    test('should return a list of claims', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: 'Alice'.padEnd(32, ' '),
+      });
+
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const cddId = 'someCddId';
+      const issuedAt = new Date('10/14/2019');
+      const expiry = new Date('10/14/3019');
+
+      const claim1stKey = dsMockUtils.createMockClaim1stKey({
+        target: dsMockUtils.createMockIdentityId(targetDid),
+        claim_type: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
+      });
+
+      const identityClaim = {
+        claim_issuer: dsMockUtils.createMockIdentityId(issuerDid),
+        issuance_date: dsMockUtils.createMockMoment(issuedAt.getTime()),
+        last_update_date: dsMockUtils.createMockMoment(),
+        claim: dsMockUtils.createMockClaim({
+          CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+        }),
+      };
+
+      const fakeClaims = [
+        {
+          target: new Identity({ did: targetDid }, context),
+          issuer: new Identity({ did: issuerDid }, context),
+          issuedAt,
+          expiry,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
+        {
+          target: new Identity({ did: targetDid }, context),
+          issuer: new Identity({ did: issuerDid }, context),
+          issuedAt,
+          expiry: null,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
+      ];
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          middlewareAvailable: false,
+        },
+      });
+
+      const entriesStub = sinon.stub();
+      entriesStub.resolves([
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiry.getTime())),
+          }
+        ),
+        tuple({ args: [claim1stKey] }, identityClaim),
+      ]);
+
+      dsMockUtils.createQueryStub('identity', 'claims').entries = entriesStub;
+
+      const result = (await context.issuedClaims()) as ClaimData[];
+
+      expect(result).toEqual(fakeClaims);
     });
   });
 
@@ -1266,7 +1349,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return a list of claims', async () => {
+    test('should return a result set of claims', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -1341,13 +1424,13 @@ describe('Context class', () => {
         }
       );
 
-      let result = await context.issuedClaims({
+      let result = (await context.issuedClaims({
         targets: [targetDid],
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
         includeExpired: true,
         size: 1,
-      });
+      })) as ResultSet<ClaimData>;
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(25);
@@ -1367,7 +1450,7 @@ describe('Context class', () => {
         }
       );
 
-      result = await context.issuedClaims();
+      result = (await context.issuedClaims()) as ResultSet<ClaimData>;
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(25);

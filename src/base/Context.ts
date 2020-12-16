@@ -620,8 +620,9 @@ export class Context {
     const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
 
     const data: ClaimData[] = [];
+    const isMiddlewareAvailable = await this.isMiddlewareAvailable();
 
-    if (this.isMiddlewareAvailable()) {
+    if (isMiddlewareAvailable) {
       const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
         didsWithClaims({
           dids: targets?.map(target => signerToString(target)),
@@ -686,7 +687,7 @@ export class Context {
             target: new Identity({ did: identityIdToString(target) }, this),
             issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
             issuedAt: momentToDate(issuanceDate),
-            expiry: expiry.isEmpty ? null : momentToDate(expiry.unwrap()),
+            expiry: expiry ? momentToDate(expiry.unwrap()) : null,
             claim: meshClaimToClaim(claim),
           });
         }
