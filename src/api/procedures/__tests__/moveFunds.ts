@@ -1,8 +1,9 @@
 import BigNumber from 'bignumber.js';
-import { MovePortfolioItem, PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
+import { MovePortfolioItem, PortfolioId as MeshPortfolioId, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { getRequiredRoles, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
+import { getAuthorization, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
+import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, NumberedPortfolio, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -32,6 +33,7 @@ describe('moveFunds procedure', () => {
     MovePortfolioItem
   >;
   let portfolioLikeToPortfolioIdStub: sinon.SinonStub;
+  let assertPortfolioExistsStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -49,6 +51,7 @@ describe('moveFunds procedure', () => {
       utilsConversionModule,
       'portfolioLikeToPortfolioId'
     );
+    assertPortfolioExistsStub = sinon.stub(procedureUtilsModule, 'assertPortfolioExists');
   });
 
   beforeEach(() => {
@@ -58,6 +61,7 @@ describe('moveFunds procedure', () => {
         isOwnedBy: true,
       },
     });
+    assertPortfolioExistsStub.returns(true);
   });
 
   afterEach(() => {
@@ -84,12 +88,8 @@ describe('moveFunds procedure', () => {
     });
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    portfolioLikeToPortfolioIdStub
-      .withArgs(fromPortfolio, mockContext)
-      .resolves({ did: fromDid, number: toId });
-    portfolioLikeToPortfolioIdStub
-      .withArgs(toPortfolio, mockContext)
-      .resolves({ did: fromDid, number: toId });
+    portfolioLikeToPortfolioIdStub.withArgs(fromPortfolio).returns({ did: fromDid, number: toId });
+    portfolioLikeToPortfolioIdStub.withArgs(toPortfolio).returns({ did: toDid, number: toId });
 
     return expect(
       prepareMoveFunds.call(proc, {
@@ -107,8 +107,8 @@ describe('moveFunds procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const fakePortfolioId = { did, number: id };
 
-    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio, mockContext).resolves(fakePortfolioId);
-    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio, mockContext).resolves(fakePortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio).returns(fakePortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio).returns(fakePortfolioId);
 
     return expect(
       prepareMoveFunds.call(proc, {
@@ -139,10 +139,8 @@ describe('moveFunds procedure', () => {
       },
     ];
 
-    portfolioLikeToPortfolioIdStub
-      .withArgs(from, mockContext)
-      .resolves({ did: fromDid, number: fromId });
-    portfolioLikeToPortfolioIdStub.withArgs(to, mockContext).resolves({ did: toDid, number: toId });
+    portfolioLikeToPortfolioIdStub.withArgs(from).returns({ did: fromDid, number: fromId });
+    portfolioLikeToPortfolioIdStub.withArgs(to).returns({ did: toDid, number: toId });
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
@@ -201,8 +199,8 @@ describe('moveFunds procedure', () => {
     let fromPortfolioId: { did: string; number?: BigNumber } = { did, number: fromId };
     let toPortfolioId: { did: string; number?: BigNumber } = { did, number: toId };
 
-    portfolioLikeToPortfolioIdStub.withArgs(from, mockContext).resolves(fromPortfolioId);
-    portfolioLikeToPortfolioIdStub.withArgs(to, mockContext).resolves(toPortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(from).returns(fromPortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(to).returns(toPortfolioId);
 
     let rawFromMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -257,7 +255,7 @@ describe('moveFunds procedure', () => {
 
     toPortfolioId = { did };
 
-    portfolioLikeToPortfolioIdStub.withArgs(defaultTo, mockContext).resolves(toPortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(defaultTo).returns(toPortfolioId);
 
     rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -288,8 +286,8 @@ describe('moveFunds procedure', () => {
     fromPortfolioId = { did };
     toPortfolioId = { did, number: toId };
 
-    portfolioLikeToPortfolioIdStub.withArgs(defaultFrom, mockContext).resolves(fromPortfolioId);
-    portfolioLikeToPortfolioIdStub.withArgs(to, mockContext).resolves(toPortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(defaultFrom).returns(fromPortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(to).returns(toPortfolioId);
 
     rawFromMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -326,35 +324,68 @@ describe('moveFunds procedure', () => {
       [rawMovePortfolioItem]
     );
   });
-});
 
-describe('getRequiredRoles', () => {
-  const mockContext = dsMockUtils.getContextInstance();
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const fromId = new BigNumber(1);
+      const toId = new BigNumber(10);
+      const did = 'someDid';
+      let from: DefaultPortfolio | NumberedPortfolio = new NumberedPortfolio(
+        { id: fromId, did },
+        mockContext
+      );
+      const toPortfolio = new NumberedPortfolio({ did, id: toId }, mockContext);
 
-  test('should return a portfolio custodian role with did and number', () => {
-    const id = new BigNumber(1);
-    const did = 'someDid';
-    const from = new NumberedPortfolio({ id, did }, mockContext);
+      let args = {
+        from,
+      } as Params;
 
-    const args = {
-      from,
-    } as Params;
+      let portfolioId: PortfolioId = { did, number: fromId };
 
-    const portfolioId = { did, number: id };
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        signerPermissions: {
+          transactions: [TxTags.portfolio.MovePortfolioFunds],
+          portfolios: [from, new DefaultPortfolio({ did }, mockContext)],
+          tokens: [],
+        },
+      });
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
-  });
+      from = new DefaultPortfolio({ did }, mockContext);
 
-  test('should return a portfolio custodian role with did', () => {
-    const did = 'someDid';
-    const from = new DefaultPortfolio({ did }, mockContext);
+      args = {
+        from,
+        to: toId,
+      } as Params;
 
-    const args = {
-      from,
-    } as Params;
+      portfolioId = { did };
 
-    const portfolioId = { did };
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        signerPermissions: {
+          transactions: [TxTags.portfolio.MovePortfolioFunds],
+          portfolios: [from, toPortfolio],
+          tokens: [],
+        },
+      });
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
+      args = {
+        from,
+        to: toPortfolio,
+      } as Params;
+
+      portfolioId = { did };
+
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        signerPermissions: {
+          transactions: [TxTags.portfolio.MovePortfolioFunds],
+          portfolios: [from, toPortfolio],
+          tokens: [],
+        },
+      });
+    });
   });
 });

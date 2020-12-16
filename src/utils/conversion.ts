@@ -387,10 +387,7 @@ export function portfolioToPortfolioId(
 /**
  * @hidden
  */
-export async function portfolioLikeToPortfolioId(
-  value: PortfolioLike,
-  context: Context
-): Promise<PortfolioId> {
+export function portfolioLikeToPortfolioId(value: PortfolioLike): PortfolioId {
   let did: string;
   let number: BigNumber | undefined;
 
@@ -411,33 +408,17 @@ export async function portfolioLikeToPortfolioId(
     }
   }
 
-  if (number) {
-    const numberedPortfolio = new NumberedPortfolio({ did, id: number }, context);
-    const exists = await numberedPortfolio.exists();
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "The Portfolio doesn't exist",
-        data: {
-          did,
-          portfolioId: number,
-        },
-      });
-    }
-  }
-
   return { did, number };
 }
 
 /**
  * @hidden
  */
-export async function portfolioLikeToPortfolio(
+export function portfolioLikeToPortfolio(
   value: PortfolioLike,
   context: Context
-): Promise<DefaultPortfolio | NumberedPortfolio> {
-  const { did, number } = await portfolioLikeToPortfolioId(value, context);
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, number } = portfolioLikeToPortfolioId(value);
   return number
     ? new NumberedPortfolio({ did, id: number }, context)
     : new DefaultPortfolio({ did }, context);

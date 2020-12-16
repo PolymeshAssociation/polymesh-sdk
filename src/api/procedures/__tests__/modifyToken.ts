@@ -1,7 +1,7 @@
-import { AssetName, FundingRoundName, Ticker } from 'polymesh-types/types';
+import { AssetName, FundingRoundName, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { getRequiredRoles, Params, prepareModifyToken } from '~/api/procedures/modifyToken';
+import { getAuthorization, Params, prepareModifyToken } from '~/api/procedures/modifyToken';
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -159,15 +159,37 @@ describe('modifyToken procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawFundingRound);
     expect(result.ticker).toBe(ticker);
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const name = 'NEW NAME';
+      const args = {
+        ticker,
+      } as Params;
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [],
+          portfolios: [],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+        },
+      });
+
+      expect(boundFunc({ ...args, makeDivisible: true, name, fundingRound })).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [
+            TxTags.asset.MakeDivisible,
+            TxTags.asset.RenameAsset,
+            TxTags.asset.SetFundingRound,
+          ],
+          portfolios: [],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+        },
+      });
+    });
   });
 });

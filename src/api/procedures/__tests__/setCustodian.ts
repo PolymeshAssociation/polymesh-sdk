@@ -1,14 +1,21 @@
 import { Moment } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory } from 'polymesh-types/types';
+import { AuthorizationData, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { getRequiredRoles, Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
-import { Account, AuthorizationRequest, Context, DefaultPortfolio, Identity } from '~/internal';
+import { getAuthorization, Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
+import {
+  Account,
+  AuthorizationRequest,
+  Context,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, RoleType } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
+import { PortfolioId, SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -186,17 +193,43 @@ describe('setCustodian procedure', () => {
       rawExpiry
     );
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a portfolio custodian role', () => {
-    const args = {
-      id: new BigNumber(1),
-      did: 'someDid',
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const id = new BigNumber(1);
+      const did = 'someDid';
+      let args = {
+        id,
+        did,
+      } as Params;
 
-    const portfolioId = { did: args.did, id: args.id };
+      let portfolioId: PortfolioId = { did: args.did, number: args.id };
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        signerPermissions: {
+          transactions: [TxTags.identity.AddAuthorization],
+          portfolios: [new NumberedPortfolio({ did, id }, mockContext)],
+          tokens: [],
+        },
+      });
+
+      args = {
+        did,
+      } as Params;
+
+      portfolioId = { did: args.did };
+
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        signerPermissions: {
+          transactions: [TxTags.identity.AddAuthorization],
+          portfolios: [new DefaultPortfolio({ did }, mockContext)],
+          tokens: [],
+        },
+      });
+    });
   });
 });

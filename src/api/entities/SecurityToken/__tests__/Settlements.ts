@@ -22,10 +22,7 @@ describe('Settlements class', () => {
   let stringToTickerStub: SinonStub<[string, Context], Ticker>;
   let numberToBalanceStub: sinon.SinonStub;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
-  let portfolioLikeToPortfolioIdStub: sinon.SinonStub<
-    [PortfolioLike, Context],
-    Promise<PortfolioId>
-  >;
+  let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
   let rawAccountId: AccountId;
   let rawTicker: Ticker;
   let rawAmount: Balance;
@@ -95,8 +92,8 @@ describe('Settlements class', () => {
     });
 
     beforeEach(() => {
-      portfolioLikeToPortfolioIdStub.withArgs(fromDid, mockContext).resolves(fromPortfolioId);
-      portfolioLikeToPortfolioIdStub.withArgs(toDid, mockContext).resolves(toPortfolioId);
+      portfolioLikeToPortfolioIdStub.withArgs(fromDid).returns(fromPortfolioId);
+      portfolioLikeToPortfolioIdStub.withArgs(toDid).returns(toPortfolioId);
       portfolioIdToMeshPortfolioIdStub.withArgs(toPortfolioId, mockContext).returns(rawToPortfolio);
     });
 
@@ -107,9 +104,7 @@ describe('Settlements class', () => {
       const rawDummyAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
       const currentDefaultPortfolioId = { did: currentDid };
 
-      portfolioLikeToPortfolioIdStub
-        .withArgs(currentIdentity, mockContext)
-        .resolves(currentDefaultPortfolioId);
+      portfolioLikeToPortfolioIdStub.withArgs(currentIdentity).returns(currentDefaultPortfolioId);
       portfolioIdToMeshPortfolioIdStub
         .withArgs(currentDefaultPortfolioId, mockContext)
         .returns(rawFromPortfolio);

@@ -1,11 +1,11 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
+import { IdentityId, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
   DeletePortfolioParams,
-  getRequiredRoles,
+  getAuthorization,
   prepareDeletePortfolio,
 } from '~/api/procedures/deletePortfolio';
 import { Context } from '~/internal';
@@ -128,17 +128,32 @@ describe('deletePortfolio procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, portfolioNumber);
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a portfolio custodian role', () => {
-    const args = {
-      id: new BigNumber(1),
-      did: 'someDid',
-    };
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const args = {
+        id: new BigNumber(1),
+        did: 'someDid',
+      };
 
-    const portfolioId = { did: args.did, number: args.id };
+      const portfolioId = { did: args.did, number: args.id };
+      const portfolio = entityMockUtils.getNumberedPortfolioInstance(args);
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
+      sinon
+        .stub(utilsConversionModule, 'portfolioLikeToPortfolio')
+        .withArgs({ identity: args.did, id: args.id }, mockContext)
+        .returns(portfolio);
+
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        signerPermissions: {
+          tokens: [],
+          portfolios: [portfolio],
+          transactions: [TxTags.portfolio.DeletePortfolio],
+        },
+      });
+    });
   });
 });

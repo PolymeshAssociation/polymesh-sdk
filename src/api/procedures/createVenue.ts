@@ -2,7 +2,7 @@ import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, PostTransactionValue, Procedure, Venue } from '~/internal';
-import { VenueType } from '~/types';
+import { TxTags, VenueType } from '~/types';
 import { stringToVenueDetails, u64ToBigNumber, venueTypeToMeshVenueType } from '~/utils/conversion';
 import { findEventRecord } from '~/utils/internal';
 
@@ -61,4 +61,10 @@ export async function prepareCreateVenue(
 /**
  * @hidden
  */
-export const createVenue = new Procedure(prepareCreateVenue);
+export const createVenue = new Procedure(prepareCreateVenue, {
+  signerPermissions: {
+    transactions: [TxTags.settlement.CreateVenue],
+    tokens: [],
+    portfolios: [],
+  },
+});

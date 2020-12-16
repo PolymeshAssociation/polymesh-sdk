@@ -11,6 +11,7 @@ import { DocumentNode } from 'graphql';
 
 import { PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { Permissions, Role } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -179,4 +180,9 @@ export enum InstructionAffirmationOperation {
   Affirm = 'Affirm',
   Withdraw = 'Withdraw',
   Reject = 'Reject',
+}
+
+export interface ProcedureAuthorization {
+  signerPermissions?: Permissions | boolean;
+  identityRoles?: Role[] | boolean;
 }

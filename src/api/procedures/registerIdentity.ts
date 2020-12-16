@@ -1,8 +1,8 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { IdentityId } from 'polymesh-types/types';
+import { IdentityId, TxTags } from 'polymesh-types/types';
 
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
-import { Role, RoleType, SecondaryKey } from '~/types';
+import { RoleType, SecondaryKey } from '~/types';
 import {
   identityIdToString,
   secondaryKeyToMeshSecondaryKey,
@@ -66,11 +66,11 @@ export async function prepareRegisterIdentity(
 /**
  * @hidden
  */
-export function getRequiredRoles(): Role[] {
-  return [{ type: RoleType.CddProvider }];
-}
-
-/**
- * @hidden
- */
-export const registerIdentity = new Procedure(prepareRegisterIdentity, getRequiredRoles);
+export const registerIdentity = new Procedure(prepareRegisterIdentity, {
+  identityRoles: [{ type: RoleType.CddProvider }],
+  signerPermissions: {
+    tokens: [],
+    portfolios: [],
+    transactions: [TxTags.identity.CddRegisterDid],
+  },
+});

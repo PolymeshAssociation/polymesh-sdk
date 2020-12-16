@@ -2,7 +2,7 @@ import { find } from 'lodash';
 
 import { assertSecondaryKeys } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, Signer } from '~/types';
+import { ErrorCode, Signer, TxTags } from '~/types';
 import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 
 export interface RemoveSecondaryKeysParams {
@@ -54,4 +54,10 @@ export async function prepareRemoveSecondaryKeys(
 /**
  * @hidden
  */
-export const removeSecondaryKeys = new Procedure(prepareRemoveSecondaryKeys);
+export const removeSecondaryKeys = new Procedure(prepareRemoveSecondaryKeys, {
+  signerPermissions: {
+    transactions: [TxTags.identity.RemoveSecondaryKeys],
+    tokens: [],
+    portfolios: [],
+  },
+});
