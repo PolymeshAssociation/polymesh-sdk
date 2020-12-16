@@ -7,6 +7,7 @@ import { getAuthorization, Params, prepareRenamePortfolio } from '~/api/procedur
 import { Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { RoleType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -144,6 +145,7 @@ describe('renamePortfolio procedure', () => {
       const portfolio = entityMockUtils.getNumberedPortfolioInstance({ did, id });
 
       expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did, number: id } }],
         signerPermissions: {
           tokens: [],
           portfolios: [portfolio],
