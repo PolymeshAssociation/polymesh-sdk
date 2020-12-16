@@ -1,8 +1,9 @@
 import BigNumber from 'bignumber.js';
 
+import { assertPortfolioExists } from '~/api/procedures/utils';
 import { DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, PortfolioMovement, Role, RoleType } from '~/types';
-import { PortfolioId } from '~/types/internal';
+import { ErrorCode, PortfolioMovement, RoleType, TxTags } from '~/types';
+import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
@@ -53,9 +54,12 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     owner: { did: toDid },
   } = toPortfolio;
 
-  const [fromPortfolioId, toPortfolioId] = await Promise.all([
-    portfolioLikeToPortfolioId(fromPortfolio, context),
-    portfolioLikeToPortfolioId(toPortfolio, context),
+  const fromPortfolioId = portfolioLikeToPortfolioId(fromPortfolio);
+  const toPortfolioId = portfolioLikeToPortfolioId(toPortfolio);
+
+  await Promise.all([
+    assertPortfolioExists(fromPortfolioId, context),
+    assertPortfolioExists(toPortfolioId, context),
   ]);
 
   if (fromDid !== toDid) {
@@ -112,16 +116,40 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
 /**
  * @hidden
  */
-export function getRequiredRoles({ from }: Params): Role[] {
-  let portfolioId: PortfolioId = { did: from.owner.did };
+export function getAuthorization(
+  this: Procedure<Params>,
+  { from, to }: Params
+): ProcedureAuthorization {
+  const { context } = this;
+  const {
+    owner: { did },
+  } = from;
+  let portfolioId: PortfolioId = { did };
 
   if (from instanceof NumberedPortfolio) {
     portfolioId = { ...portfolioId, number: from.id };
   }
-  return [{ type: RoleType.PortfolioCustodian, portfolioId }];
+
+  let toPortfolio;
+  if (!to) {
+    toPortfolio = new DefaultPortfolio({ did }, context);
+  } else if (to instanceof BigNumber) {
+    toPortfolio = new NumberedPortfolio({ did, id: to }, context);
+  } else {
+    toPortfolio = to;
+  }
+
+  return {
+    signerPermissions: {
+      transactions: [TxTags.portfolio.MovePortfolioFunds],
+      tokens: [],
+      portfolios: [from, toPortfolio],
+    },
+    identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+  };
 }
 
 /**
  * @hidden
  */
-export const moveFunds = new Procedure(prepareMoveFunds, getRequiredRoles);
+export const moveFunds = new Procedure(prepareMoveFunds, getAuthorization);

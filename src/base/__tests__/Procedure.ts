@@ -176,17 +176,39 @@ describe('Procedure class', () => {
         return 'success';
       };
 
-      let proc = new Procedure(func, [({ type: 'FakeRole' } as unknown) as Role]);
-      context = dsMockUtils.getContextInstance({ hasRoles: false });
+      let proc = new Procedure(func, {
+        identityRoles: [({ type: 'FakeRole' } as unknown) as Role],
+      });
+      context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
 
       await expect(proc.prepare(procArgs, context)).rejects.toThrow(
-        'Current account is not authorized to execute this procedure'
+        "Current Identity doesn't have the required roles to execute this procedure"
       );
 
-      proc = new Procedure(func, async () => false);
+      proc = new Procedure(func, {
+        signerPermissions: {
+          tokens: [],
+          transactions: [],
+          portfolios: [],
+        },
+      });
 
       await expect(proc.prepare(procArgs, context)).rejects.toThrow(
-        'Current account is not authorized to execute this procedure'
+        "Current Account doesn't have the required permissions to execute this procedure"
+      );
+
+      proc = new Procedure(func, {
+        signerPermissions: false,
+      });
+
+      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+        "Current Account doesn't have the required permissions to execute this procedure"
+      );
+
+      proc = new Procedure(func, async () => ({ identityRoles: false }));
+
+      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+        "Current Identity doesn't have the required roles to execute this procedure"
       );
     });
   });

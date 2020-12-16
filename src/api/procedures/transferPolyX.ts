@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { Account, Identity, PolymeshError, Procedure } from '~/internal';
-import { AccountBalance, ErrorCode } from '~/types';
+import { AccountBalance, ErrorCode, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   numberToBalance,
   signerToString,
@@ -104,4 +105,17 @@ export async function prepareTransferPolyX(
 /**
  * @hidden
  */
-export const transferPolyX = new Procedure(prepareTransferPolyX);
+export function getAuthorization({ memo }: TransferPolyXParams): ProcedureAuthorization {
+  return {
+    signerPermissions: {
+      transactions: [memo ? TxTags.balances.TransferWithMemo : TxTags.balances.Transfer],
+      tokens: [],
+      portfolios: [],
+    },
+  };
+}
+
+/**
+ * @hidden
+ */
+export const transferPolyX = new Procedure(prepareTransferPolyX, getAuthorization);

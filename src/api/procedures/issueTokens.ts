@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, Role, RoleType } from '~/types';
+import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { MAX_TOKEN_AMOUNT } from '~/utils/constants';
 import { numberToBalance, stringToTicker } from '~/utils/conversion';
 
@@ -55,11 +56,22 @@ export async function prepareIssueTokens(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: IssueTokensParams): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+export function getAuthorization(
+  this: Procedure<IssueTokensParams, SecurityToken>,
+  { ticker }: IssueTokensParams
+): ProcedureAuthorization {
+  const { context } = this;
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      transactions: [TxTags.asset.Issue],
+      tokens: [new SecurityToken({ ticker }, context)],
+      portfolios: [],
+    },
+  };
 }
 
 /**
  * @hidden
  */
-export const issueTokens = new Procedure(prepareIssueTokens, getRequiredRoles);
+export const issueTokens = new Procedure(prepareIssueTokens, getAuthorization);

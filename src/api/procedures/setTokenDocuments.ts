@@ -2,7 +2,8 @@ import { differenceWith } from 'lodash';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, Role, RoleType, TokenDocument } from '~/types';
+import { ErrorCode, RoleType, TokenDocument } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   documentToTokenDocument,
   stringToTicker,
@@ -85,7 +86,7 @@ export async function prepareSetTokenDocuments(
   }
 
   if (rawDocuments.length) {
-    batchArguments(rawDocuments, TxTags.asset.BatchAddDocument).forEach(rawDocumentBatch => {
+    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
       this.addTransaction(
         tx.asset.addDocuments,
         { batchSize: rawDocumentBatch.length },
@@ -101,11 +102,21 @@ export async function prepareSetTokenDocuments(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+export function getAuthorization(
+  this: Procedure<Params, SecurityToken>,
+  { ticker }: Params
+): ProcedureAuthorization {
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      tokens: [new SecurityToken({ ticker }, this.context)],
+      transactions: [TxTags.asset.AddDocuments, TxTags.asset.RemoveDocuments],
+      portfolios: [],
+    },
+  };
 }
 
 /**
  * @hidden
  */
-export const setTokenDocuments = new Procedure(prepareSetTokenDocuments, getRequiredRoles);
+export const setTokenDocuments = new Procedure(prepareSetTokenDocuments, getAuthorization);

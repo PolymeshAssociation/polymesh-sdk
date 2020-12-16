@@ -4,13 +4,13 @@ import { TxTags } from 'polymesh-types/types';
 import { PolymeshError, Procedure, SecurityToken, TickerReservation } from '~/internal';
 import {
   ErrorCode,
-  Role,
   RoleType,
   TickerReservationStatus,
   TokenDocument,
   TokenIdentifier,
   TokenType,
 } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   booleanToBool,
   numberToBalance,
@@ -122,11 +122,24 @@ export async function prepareCreateSecurityToken(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TickerOwner, ticker }];
+export function getAuthorization({ ticker, documents }: Params): ProcedureAuthorization {
+  const transactions = [TxTags.asset.CreateAsset];
+
+  if (documents) {
+    transactions.push(TxTags.asset.AddDocuments);
+  }
+
+  return {
+    identityRoles: [{ type: RoleType.TickerOwner, ticker }],
+    signerPermissions: {
+      transactions,
+      tokens: [],
+      portfolios: [],
+    },
+  };
 }
 
 /**
  * @hidden
  */
-export const createSecurityToken = new Procedure(prepareCreateSecurityToken, getRequiredRoles);
+export const createSecurityToken = new Procedure(prepareCreateSecurityToken, getAuthorization);

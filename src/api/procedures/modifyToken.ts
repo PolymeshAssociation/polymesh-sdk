@@ -1,5 +1,6 @@
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, Role, RoleType } from '~/types';
+import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { stringToAssetName, stringToFundingRoundName, stringToTicker } from '~/utils/conversion';
 
 export type ModifyTokenParams =
@@ -93,11 +94,38 @@ export async function prepareModifyToken(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+/**
+ * @hidden
+ */
+export function getAuthorization(
+  this: Procedure<Params, SecurityToken>,
+  { ticker, makeDivisible, name, fundingRound }: Params
+): ProcedureAuthorization {
+  const transactions = [];
+
+  if (makeDivisible !== undefined) {
+    transactions.push(TxTags.asset.MakeDivisible);
+  }
+
+  if (name) {
+    transactions.push(TxTags.asset.RenameAsset);
+  }
+
+  if (fundingRound) {
+    transactions.push(TxTags.asset.SetFundingRound);
+  }
+
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      transactions,
+      portfolios: [],
+      tokens: [new SecurityToken({ ticker }, this.context)],
+    },
+  };
 }
 
 /**
  * @hidden
  */
-export const modifyToken = new Procedure(prepareModifyToken, getRequiredRoles);
+export const modifyToken = new Procedure(prepareModifyToken, getAuthorization);
