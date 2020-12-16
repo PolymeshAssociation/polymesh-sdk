@@ -2972,9 +2972,9 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
     /* eslint-disable @typescript-eslint/camelcase */
-    const issuers = issuerDids.map(({ identity }) =>
+    const issuers = issuerDids.map(({ identity: { did } }) =>
       dsMockUtils.createMockTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(identity.did),
+        issuer: dsMockUtils.createMockIdentityId(did),
         trusted_for: dsMockUtils.createMockTrustedFor(),
       })
     );
@@ -3165,9 +3165,9 @@ describe('assetComplianceResultToCompliance', () => {
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
     /* eslint-disable @typescript-eslint/camelcase */
-    const issuers = issuerDids.map(({ identity }) =>
+    const issuers = issuerDids.map(({ identity: { did } }) =>
       dsMockUtils.createMockTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(identity.did),
+        issuer: dsMockUtils.createMockIdentityId(did),
         trusted_for: dsMockUtils.createMockTrustedFor(),
       })
     );
