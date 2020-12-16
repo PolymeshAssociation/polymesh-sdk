@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToIdentityId, stringToText, textToString } from '~/utils/conversion';
 
@@ -74,7 +74,9 @@ export function getAuthorization(
   this: Procedure<Params, NumberedPortfolio>,
   { did, id }: Params
 ): ProcedureAuthorization {
+  const portfolioId = { did, number: id };
   return {
+    identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
     signerPermissions: {
       transactions: [TxTags.portfolio.RenamePortfolio],
       portfolios: [new NumberedPortfolio({ did, id }, this.context)],
