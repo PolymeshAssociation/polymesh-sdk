@@ -593,7 +593,7 @@ export class Context {
   /**
    * @hidden
    */
-  public async identityClaimsEntries(args: {
+  private async identityClaimsEntries(args: {
     targets: (string | Identity)[];
     claimTypes: ClaimType[];
   }): Promise<ClaimData[]> {
