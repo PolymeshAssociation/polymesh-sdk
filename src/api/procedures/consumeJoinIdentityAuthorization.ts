@@ -1,4 +1,6 @@
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
+import { TxTag, TxTags } from '~/polkadot';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   booleanToBool,
   numberToU64,
@@ -67,10 +69,10 @@ export async function prepareConsumeJoinIdentityAuthorization(
 /**
  * @hidden
  */
-export async function isAuthorized(
+export async function getAuthorization(
   this: Procedure<ConsumeJoinIdentityAuthorizationParams>,
   { authRequest, accept }: ConsumeJoinIdentityAuthorizationParams
-): Promise<boolean> {
+): Promise<ProcedureAuthorization> {
   const { target, issuer } = authRequest;
   const { context } = this;
 
@@ -78,15 +80,23 @@ export async function isAuthorized(
   let did: string | undefined;
   const fetchDid = async (): Promise<string> => getDid(did, context);
 
+  let transactions: TxTag[] = [];
+
+  let bypassSignerPermissions = false;
+
   if (target instanceof Account) {
     const { address } = context.getCurrentAccount();
     condition = address === target.address;
+    // if the current account is joining an identity, it doesn't need (and couldn't possibly have) any permissions
+    bypassSignerPermissions = condition;
   } else {
     did = await fetchDid();
     condition = did === target.did;
+    transactions = [TxTags.identity.JoinIdentityAsIdentity];
   }
 
   if (!accept) {
+    transactions = [TxTags.identity.RemoveAuthorization];
     try {
       did = await fetchDid();
     } catch (err) {
@@ -95,7 +105,18 @@ export async function isAuthorized(
     condition = condition || did === issuer.did;
   }
 
-  return condition && !authRequest.isExpired();
+  const identityRoles = condition && !authRequest.isExpired();
+
+  if (bypassSignerPermissions) {
+    return {
+      identityRoles,
+    };
+  }
+
+  return {
+    identityRoles,
+    signerPermissions: { transactions, tokens: [], portfolios: [] },
+  };
 }
 
 /**
@@ -103,5 +124,5 @@ export async function isAuthorized(
  */
 export const consumeJoinIdentityAuthorization = new Procedure(
   prepareConsumeJoinIdentityAuthorization,
-  isAuthorized
+  getAuthorization
 );

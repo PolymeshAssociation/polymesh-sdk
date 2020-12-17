@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { CanTransferResult } from 'polymesh-types/types';
 
+import { assertPortfolioExists } from '~/api/procedures/utils';
 import { Namespace, SecurityToken } from '~/internal';
 import { PortfolioLike, TransferStatus } from '~/types';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
@@ -59,9 +60,12 @@ export class Settlements extends Namespace<SecurityToken> {
      */
     const senderAddress = context.currentPair?.address || DUMMY_ACCOUNT_ID;
 
-    const [fromPortfolio, toPortfolio] = await Promise.all([
-      portfolioLikeToPortfolioId(from, context),
-      portfolioLikeToPortfolioId(to, context),
+    const fromPortfolio = portfolioLikeToPortfolioId(from);
+    const toPortfolio = portfolioLikeToPortfolioId(to);
+
+    await Promise.all([
+      assertPortfolioExists(fromPortfolio, context),
+      assertPortfolioExists(toPortfolio, context),
     ]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

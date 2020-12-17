@@ -10,12 +10,13 @@ import {
   PostTransactionValue,
   TransactionQueue,
 } from '~/internal';
-import { ErrorCode, Role } from '~/types';
+import { ErrorCode } from '~/types';
 import {
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
   PolymeshTx,
   PostTransactionValueArray,
+  ProcedureAuthorization,
   ResolverFunctionArray,
 } from '~/types/internal';
 import { transactionToTxTag } from '~/utils/conversion';
@@ -50,10 +51,10 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     args: Args
   ) => Promise<MaybePostTransactionValue<ReturnValue>>;
 
-  private checkRoles: (
+  private checkAuthorization: (
     this: Procedure<Args, ReturnValue>,
     args: Args
-  ) => Promise<boolean> | boolean | Role[];
+  ) => Promise<ProcedureAuthorization> | ProcedureAuthorization;
 
   private transactions: (
     | PolymeshTransaction<unknown[]>
@@ -66,26 +67,28 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    * @hidden
    *
    * @param prepareTransactions - function that prepares the transaction queue
-   * @param checkRoles - can be an array of roles, a function that returns an array of roles, or a function that returns a boolean that determines whether the procedure can be executed by the current user
+   * @param checkRoles - can be a ProcedureAuthorization object or a function that returns a ProcedureAuthorization object
    */
   constructor(
     prepareTransactions: (
       this: Procedure<Args, ReturnValue>,
       args: Args
     ) => Promise<MaybePostTransactionValue<ReturnValue>>,
-    checkRoles:
-      | Role[]
+    checkAuthorization:
+      | ProcedureAuthorization
       | ((
           this: Procedure<Args, ReturnValue>,
           args: Args
-        ) => Promise<boolean> | boolean | Role[]) = async (): Promise<boolean> => true
+        ) => Promise<ProcedureAuthorization> | ProcedureAuthorization) = async (): Promise<
+      ProcedureAuthorization
+    > => ({})
   ) {
     this.prepareTransactions = prepareTransactions;
 
-    if (Array.isArray(checkRoles)) {
-      this.checkRoles = (): Role[] => checkRoles;
+    if (typeof checkAuthorization !== 'function') {
+      this.checkAuthorization = (): ProcedureAuthorization => checkAuthorization;
     } else {
-      this.checkRoles = checkRoles;
+      this.checkAuthorization = checkAuthorization;
     }
   }
 
@@ -107,20 +110,37 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
   public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
     this.context = context;
 
-    const checkRolesResult = await this.checkRoles(args);
-    let allowed: boolean;
+    const checkAuthorizationResult = await this.checkAuthorization(args);
 
-    if (typeof checkRolesResult !== 'boolean') {
+    const { signerPermissions = true, identityRoles = true } = checkAuthorizationResult;
+
+    let identityAllowed: boolean;
+    if (typeof identityRoles !== 'boolean') {
       const identity = await context.getCurrentIdentity();
-      allowed = await identity.hasRoles(checkRolesResult);
+      identityAllowed = await identity.hasRoles(identityRoles);
     } else {
-      allowed = checkRolesResult;
+      identityAllowed = identityRoles;
     }
 
-    if (!allowed) {
+    let signerAllowed: boolean;
+    if (typeof signerPermissions !== 'boolean') {
+      const account = context.getCurrentAccount();
+      signerAllowed = await account.hasPermissions(signerPermissions);
+    } else {
+      signerAllowed = signerPermissions;
+    }
+
+    if (!signerAllowed) {
       throw new PolymeshError({
         code: ErrorCode.NotAuthorized,
-        message: 'Current account is not authorized to execute this procedure',
+        message: "Current Account doesn't have the required permissions to execute this procedure",
+      });
+    }
+
+    if (!identityAllowed) {
+      throw new PolymeshError({
+        code: ErrorCode.NotAuthorized,
+        message: "Current Identity doesn't have the required roles to execute this procedure",
       });
     }
 

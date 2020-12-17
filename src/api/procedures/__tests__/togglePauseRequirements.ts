@@ -1,9 +1,9 @@
 import { bool } from '@polkadot/types';
-import { Ticker } from 'polymesh-types/types';
+import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareTogglePauseRequirements,
 } from '~/api/procedures/togglePauseRequirements';
@@ -129,15 +129,35 @@ describe('togglePauseRequirements procedure', () => {
 
     expect(ticker).toBe(result.ticker);
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const args: Params = {
+        ticker,
+        pause: true,
+      };
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [TxTags.complianceManager.PauseAssetCompliance],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          portfolios: [],
+        },
+      });
+
+      args.pause = false;
+
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [TxTags.complianceManager.ResumeAssetCompliance],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

@@ -1,6 +1,6 @@
 import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { AuthorizationType, ErrorCode, Role, RoleType } from '~/types';
-import { SignerType } from '~/types/internal';
+import { AuthorizationType, ErrorCode, RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization, SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -91,8 +91,18 @@ export async function prepareModifyPrimaryIssuanceAgent(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+export function getAuthorization(
+  this: Procedure<Params>,
+  { ticker }: Params
+): ProcedureAuthorization {
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      transactions: [TxTags.identity.AddAuthorization],
+      portfolios: [],
+      tokens: [new SecurityToken({ ticker }, this.context)],
+    },
+  };
 }
 
 /**
@@ -100,5 +110,5 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
  */
 export const modifyPrimaryIssuanceAgent = new Procedure(
   prepareModifyPrimaryIssuanceAgent,
-  getRequiredRoles
+  getAuthorization
 );

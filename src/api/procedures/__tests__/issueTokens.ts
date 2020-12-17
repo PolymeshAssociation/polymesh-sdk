@@ -1,10 +1,10 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
+import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   IssueTokensParams,
   prepareIssueTokens,
 } from '~/api/procedures/issueTokens';
@@ -120,15 +120,23 @@ describe('issueTokens procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAmount);
     expect(result.ticker).toBe(ticker);
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as IssueTokensParams;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const args = {
+        ticker,
+      } as IssueTokensParams;
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [TxTags.asset.Issue],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

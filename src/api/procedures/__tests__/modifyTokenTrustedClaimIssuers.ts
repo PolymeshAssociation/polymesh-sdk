@@ -1,9 +1,9 @@
 import { Vec } from '@polkadot/types';
-import { IdentityId, Ticker, TrustedIssuer } from 'polymesh-types/types';
+import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareModifyTokenTrustedClaimIssuers,
 } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
@@ -313,15 +313,48 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
     );
     expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const token = new SecurityToken({ ticker }, mockContext);
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(
+        boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Add, claimIssuers: [] })
+      ).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [TxTags.complianceManager.AddDefaultTrustedClaimIssuer],
+          tokens: [token],
+          portfolios: [],
+        },
+      });
+
+      expect(
+        boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Remove, claimIssuers: [] })
+      ).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer],
+          tokens: [token],
+          portfolios: [],
+        },
+      });
+
+      expect(
+        boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Set, claimIssuers: [] })
+      ).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [
+            TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
+            TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
+          ],
+          tokens: [token],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

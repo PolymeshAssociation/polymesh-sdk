@@ -4,13 +4,13 @@ import sinon from 'sinon';
 
 import {
   ConsumeJoinIdentityAuthorizationParams,
-  isAuthorized,
+  getAuthorization,
   prepareConsumeJoinIdentityAuthorization,
 } from '~/api/procedures/consumeJoinIdentityAuthorization';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, Signer } from '~/types';
+import { Authorization, AuthorizationType, Signer, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('consumeJoinIdentityAuthorization procedure', () => {
@@ -208,8 +208,8 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
     );
   });
 
-  describe('isAuthorized', () => {
-    test('should return whether the current Identity or Account is the target of the authorization request', async () => {
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', async () => {
       const proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void>(
         mockContext
       );
@@ -228,20 +228,36 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
         accept: true,
       };
 
-      const boundFunc = isAuthorized.bind(proc);
+      const boundFunc = getAuthorization.bind(proc);
       let result = await boundFunc(args);
-      expect(result).toBe(true);
+      expect(result).toEqual({
+        identityRoles: true,
+      });
 
       args.authRequest.target = new Identity({ did: 'notTheCurrentIdentity' }, mockContext);
 
       result = await boundFunc(args);
-      expect(result).toBe(false);
+      expect(result).toEqual({
+        identityRoles: false,
+        signerPermissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.identity.JoinIdentityAsIdentity],
+        },
+      });
 
       args.accept = false;
       args.authRequest.issuer = await mockContext.getCurrentIdentity();
 
       result = await boundFunc(args);
-      expect(result).toBe(true);
+      expect(result).toEqual({
+        identityRoles: true,
+        signerPermissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.identity.RemoveAuthorization],
+        },
+      });
     });
   });
 });

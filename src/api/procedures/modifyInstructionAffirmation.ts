@@ -1,12 +1,21 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { AffirmationStatus as MeshAffirmationStatus, PortfolioId } from 'polymesh-types/types';
+import {
+  AffirmationStatus as MeshAffirmationStatus,
+  PortfolioId,
+  TxTag,
+  TxTags,
+} from 'polymesh-types/types';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Instruction, PolymeshError, Procedure } from '~/internal';
-import { AffirmationStatus, ErrorCode } from '~/types';
-import { InstructionAffirmationOperation, PolymeshTx } from '~/types/internal';
+import { AffirmationStatus, DefaultPortfolio, ErrorCode, Leg, NumberedPortfolio } from '~/types';
+import {
+  InstructionAffirmationOperation,
+  PolymeshTx,
+  ProcedureAuthorization,
+} from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   meshAffirmationStatusToAffirmationStatus,
@@ -123,4 +132,70 @@ export async function prepareModifyInstructionAffirmation(
 /**
  * @hidden
  */
-export const modifyInstructionAffirmation = new Procedure(prepareModifyInstructionAffirmation);
+export async function getAuthorization(
+  this: Procedure<ModifyInstructionAffirmationParams, Instruction>,
+  { operation, id }: ModifyInstructionAffirmationParams
+): Promise<ProcedureAuthorization> {
+  const { context } = this;
+  const instruction = new Instruction({ id }, context);
+  const legs = await instruction.getLegs();
+
+  const portfolios = await P.reduce<Leg, (DefaultPortfolio | NumberedPortfolio)[]>(
+    legs,
+    async (result, { from, to }) => {
+      const [fromIsCustodied, toIsCustodied] = await Promise.all([
+        from.isCustodiedBy(),
+        to.isCustodiedBy(),
+      ]);
+
+      let res = [...result];
+
+      if (fromIsCustodied) {
+        res = [...res, from];
+      }
+
+      if (toIsCustodied) {
+        res = [...res, to];
+      }
+
+      return res;
+    },
+    []
+  );
+
+  let transactions: TxTag[];
+
+  switch (operation) {
+    case InstructionAffirmationOperation.Affirm: {
+      transactions = [TxTags.settlement.AffirmInstruction];
+
+      break;
+    }
+    case InstructionAffirmationOperation.Withdraw: {
+      transactions = [TxTags.settlement.WithdrawAffirmation];
+
+      break;
+    }
+    case InstructionAffirmationOperation.Reject: {
+      transactions = [TxTags.settlement.RejectInstruction];
+
+      break;
+    }
+  }
+
+  return {
+    signerPermissions: {
+      portfolios,
+      transactions,
+      tokens: [],
+    },
+  };
+}
+
+/**
+ * @hidden
+ */
+export const modifyInstructionAffirmation = new Procedure(
+  prepareModifyInstructionAffirmation,
+  getAuthorization
+);
