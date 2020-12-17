@@ -1,9 +1,15 @@
-import { IdentityId, Ticker } from 'polymesh-types/types';
+import { Ticker, TrustedIssuer } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Namespace, SecurityToken, TrustedClaimIssuer } from '~/api/entities';
-import { modifyTokenTrustedClaimIssuers } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import { ModifyTokenTrustedClaimIssuersAddSetParams } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
+import {
+  Context,
+  DefaultTrustedClaimIssuer,
+  modifyTokenTrustedClaimIssuers,
+  Namespace,
+  SecurityToken,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -43,8 +49,11 @@ describe('TrustedClaimIssuers class', () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
 
-      const args = {
-        claimIssuerIdentities: ['someDid', 'otherDid'],
+      const args: ModifyTokenTrustedClaimIssuersAddSetParams = {
+        claimIssuers: [
+          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }) },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }) },
+        ],
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
@@ -75,8 +84,11 @@ describe('TrustedClaimIssuers class', () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
 
-      const args = {
-        claimIssuerIdentities: ['someDid', 'otherDid'],
+      const args: ModifyTokenTrustedClaimIssuersAddSetParams = {
+        claimIssuers: [
+          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }) },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }) },
+        ],
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
@@ -108,7 +120,7 @@ describe('TrustedClaimIssuers class', () => {
       const trustedClaimIssuers = new TrustedClaimIssuers(token, context);
 
       const args = {
-        claimIssuerIdentities: ['someDid', 'otherDid'],
+        claimIssuers: ['someDid', 'otherDid'],
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
@@ -136,8 +148,8 @@ describe('TrustedClaimIssuers class', () => {
     let context: Context;
     let token: SecurityToken;
     let expectedDids: string[];
-    let expectedTrustedClaimIssuers: TrustedClaimIssuer[];
-    let claimIssuers: IdentityId[];
+    let expectedTrustedClaimIssuers: DefaultTrustedClaimIssuer[];
+    let claimIssuers: TrustedIssuer[];
 
     let trustedClaimIssuerStub: sinon.SinonStub;
 
@@ -156,8 +168,14 @@ describe('TrustedClaimIssuers class', () => {
       claimIssuers = [];
 
       expectedDids.forEach(did => {
-        expectedTrustedClaimIssuers.push(new TrustedClaimIssuer({ did, ticker }, context));
-        claimIssuers.push(dsMockUtils.createMockIdentityId(did));
+        expectedTrustedClaimIssuers.push(new DefaultTrustedClaimIssuer({ did, ticker }, context));
+        claimIssuers.push(
+          dsMockUtils.createMockTrustedIssuer({
+            issuer: dsMockUtils.createMockIdentityId(did),
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+          })
+        );
       });
 
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);

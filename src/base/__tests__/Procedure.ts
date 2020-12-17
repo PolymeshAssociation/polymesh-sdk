@@ -1,10 +1,11 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { range } from 'lodash';
 import { PosRatio, ProtocolOp, TxTag, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import * as baseModule from '~/base';
+import * as baseModule from '~/internal';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { KeyringPair, Role } from '~/types';
 import { MaybePostTransactionValue } from '~/types/internal';
@@ -218,34 +219,82 @@ describe('Procedure class', () => {
       expect(num.value).toBe(resolvedNum);
       expect(str.value).toBe(resolvedStr);
     });
+  });
 
-    test('should use the current pair as a default signer', async () => {
+  describe('method: addBatchTransaction', () => {
+    test('should return an array of post transaction values corresponding to the resolver functions passed to it', async () => {
       const ticker = 'MY_TOKEN';
+      const resolvedNum = 1;
+      const resolvedStr = 'something';
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const proc = new Procedure(async () => undefined);
       proc.context = context;
 
-      proc.addTransaction(tx, {}, ticker);
+      const values = proc.addBatchTransaction(
+        tx,
+        {
+          resolvers: tuple(
+            async (): Promise<number> => resolvedNum,
+            async (): Promise<string> => resolvedStr
+          ),
+          signer: {} as KeyringPair,
+        },
+        [[ticker]]
+      );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((proc as any).transactions[0].signer).toBe(context.getCurrentPair());
+      await Promise.all(values.map(value => value.run({} as ISubmittableResult)));
+      const [num, str] = values;
+
+      expect(num.value).toBe(resolvedNum);
+      expect(str.value).toBe(resolvedStr);
     });
 
-    test("should use the current pair's address as a default signer if the pair is locked", async () => {
+    test('should add a non-batch transaction to the queue if only one set of arguments is passed', async () => {
       const ticker = 'MY_TOKEN';
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const proc = new Procedure(async () => undefined);
       proc.context = context;
 
-      const pair = context.getCurrentPair();
-      pair.isLocked = true;
-
-      proc.addTransaction(tx, {}, ticker);
+      proc.addBatchTransaction(
+        tx,
+        {
+          signer: {} as KeyringPair,
+        },
+        [[ticker]]
+      );
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((proc as any).transactions[0].signer).toBe(pair.address);
+      const transactions = (proc as any).transactions;
+      expect(transactions[0] instanceof baseModule.PolymeshTransaction).toBe(true);
+      expect(transactions.length).toBe(1);
+    });
+
+    test('should separate large argument lists into multiple batches', async () => {
+      const ticker = 'MY_TOKEN';
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
+
+      const proc = new Procedure(async () => undefined);
+      proc.context = context;
+
+      let i = 0;
+
+      proc.addBatchTransaction(
+        new baseModule.PostTransactionValue(() => tx),
+        {
+          fee: new BigNumber(100),
+          groupByFn: () => `${i++}`,
+        },
+        [...range(22).map(() => [ticker])]
+      );
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const transactions = (proc as any).transactions;
+
+      expect(transactions.length).toBe(2);
+      expect(transactions[0] instanceof baseModule.PolymeshTransactionBatch).toBe(true);
+      expect(transactions[1] instanceof baseModule.PolymeshTransactionBatch).toBe(true);
     });
   });
 

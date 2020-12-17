@@ -13,7 +13,7 @@ describe('voteOnProposal procedure', () => {
 
 // import { ProposalDetails, ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
 // import { Params, prepareVoteOnProposal } from '~/api/procedures/voteOnProposal';
-// import { Context } from '~/base';
+// import { Context } from '~/internal';
 // import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 // import { Mocked } from '~/testUtils/types';
 // import { PolymeshTx } from '~/types/internal';

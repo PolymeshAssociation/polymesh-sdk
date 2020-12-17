@@ -1,10 +1,10 @@
-import { Bytes, u64 } from '@polkadot/types';
+import { Text, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
-import { Context } from '~/base';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { NumberedPortfolio } from '~/types';
@@ -18,7 +18,7 @@ jest.mock(
   )
 );
 
-describe('modifyNamePortfolio procedure', () => {
+describe('renamePortfolio procedure', () => {
   const id = new BigNumber(1);
   const did = 'someDid';
   const identityId = dsMockUtils.createMockIdentityId(did);
@@ -26,8 +26,8 @@ describe('modifyNamePortfolio procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
-  let bytesToStringStub: sinon.SinonStub<[Bytes], string>;
-  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
+  let textToStringStub: sinon.SinonStub<[Text], string>;
+  let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
   let portfoliosStub: sinon.SinonStub;
 
   beforeAll(() => {
@@ -36,8 +36,8 @@ describe('modifyNamePortfolio procedure', () => {
     entityMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
-    bytesToStringStub = sinon.stub(utilsConversionModule, 'bytesToString');
-    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
+    textToStringStub = sinon.stub(utilsConversionModule, 'textToString');
+    stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
   });
 
   beforeEach(() => {
@@ -85,9 +85,9 @@ describe('modifyNamePortfolio procedure', () => {
 
   test('should throw an error if the new name is the same as the current one', async () => {
     const newName = 'newName';
-    const rawNewName = dsMockUtils.createMockBytes(newName);
+    const rawNewName = dsMockUtils.createMockText(newName);
 
-    bytesToStringStub.withArgs(rawNewName).returns(newName);
+    textToStringStub.withArgs(rawNewName).returns(newName);
     portfoliosStub.resolves(rawNewName);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
@@ -103,15 +103,15 @@ describe('modifyNamePortfolio procedure', () => {
 
   test('should throw an error if there already is a portfolio with the new name', async () => {
     const portfolioName = 'portfolioName';
-    const rawPortfolioName = dsMockUtils.createMockBytes(portfolioName);
+    const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
     const entryPortfolioName = 'someName';
-    const rawEntryPortfolioName = dsMockUtils.createMockBytes(entryPortfolioName);
+    const rawEntryPortfolioName = dsMockUtils.createMockText(entryPortfolioName);
 
-    bytesToStringStub.withArgs(rawPortfolioName).returns(portfolioName);
-    bytesToStringStub.withArgs(rawEntryPortfolioName).returns(entryPortfolioName);
+    textToStringStub.withArgs(rawPortfolioName).returns(portfolioName);
+    textToStringStub.withArgs(rawEntryPortfolioName).returns(entryPortfolioName);
 
     portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios', {
-      entries: [tuple([], dsMockUtils.createMockBytes(entryPortfolioName))],
+      entries: [tuple([], rawEntryPortfolioName)],
     });
     portfoliosStub.resolves(rawPortfolioName);
 
@@ -128,12 +128,12 @@ describe('modifyNamePortfolio procedure', () => {
 
   test('should add a rename portfolio transaction to the queue', async () => {
     const portfolioName = 'portfolioName';
-    const rawPortfolioName = dsMockUtils.createMockBytes(portfolioName);
+    const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
     const newName = 'newName';
-    const rawNewName = dsMockUtils.createMockBytes(newName);
+    const rawNewName = dsMockUtils.createMockText(newName);
 
-    bytesToStringStub.withArgs(rawPortfolioName).returns(portfolioName);
-    stringToBytesStub.returns(rawNewName);
+    textToStringStub.withArgs(rawPortfolioName).returns(portfolioName);
+    stringToTextStub.returns(rawNewName);
 
     portfoliosStub.resolves(rawPortfolioName);
 

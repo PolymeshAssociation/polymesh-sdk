@@ -5,14 +5,14 @@
 // import BigNumber from 'bignumber.js';
 // import { TxTag } from 'polymesh-types/types';
 
-// import { Identity, Proposal } from '~/api/entities';
+// import { Identity, Proposal } from '~/internal';
 // import {
 //   ProposalOrderByInput,
 //   ProposalState,
 //   ProposalTimeFrames,
 // } from '~/api/entities/Proposal/types';
-// import { createProposal, CreateProposalParams } from '~/api/procedures';
-// import { Context, TransactionQueue } from '~/base';
+// import { createProposal, CreateProposalParams } from '~/internal';
+// import { Context, TransactionQueue } from '~/internal';
 // import { proposals } from '~/middleware/queries';
 // import { Query } from '~/middleware/types';
 // import {

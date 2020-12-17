@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { SecurityToken } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
+import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, Role, RoleType } from '~/types';
 import { MAX_TOKEN_AMOUNT } from '~/utils/constants';
 import { numberToBalance, stringToTicker } from '~/utils/conversion';

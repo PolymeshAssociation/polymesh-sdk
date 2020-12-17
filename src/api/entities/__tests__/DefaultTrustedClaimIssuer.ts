@@ -1,14 +1,12 @@
 import BigNumber from 'bignumber.js';
 
-import { Entity, Identity, TrustedClaimIssuer } from '~/api/entities';
-import { Context } from '~/base';
-import { eventByIndexedArgs } from '~/middleware/queries';
-import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { Context, DefaultTrustedClaimIssuer, Entity, Identity } from '~/internal';
+import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsInternalModule from '~/utils/internal';
 
-describe('TrustedClaimIssuer class', () => {
+describe('DefaultTrustedClaimIssuer class', () => {
   let context: Context;
 
   beforeAll(() => {
@@ -28,7 +26,7 @@ describe('TrustedClaimIssuer class', () => {
   });
 
   test('should extend entity', () => {
-    expect(TrustedClaimIssuer.prototype instanceof Entity).toBe(true);
+    expect(DefaultTrustedClaimIssuer.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
@@ -36,7 +34,7 @@ describe('TrustedClaimIssuer class', () => {
       const did = 'someDid';
       const ticker = 'SOMETICKER';
       const identity = new Identity({ did }, context);
-      const trustedClaimIssuer = new TrustedClaimIssuer({ did, ticker }, context);
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
       expect(trustedClaimIssuer.ticker).toBe(ticker);
       expect(trustedClaimIssuer.identity).toEqual(identity);
@@ -45,12 +43,12 @@ describe('TrustedClaimIssuer class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(TrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid', ticker: 'symbol' })).toBe(
-        true
-      );
-      expect(TrustedClaimIssuer.isUniqueIdentifiers({})).toBe(false);
-      expect(TrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid' })).toBe(false);
-      expect(TrustedClaimIssuer.isUniqueIdentifiers({ did: 1 })).toBe(false);
+      expect(
+        DefaultTrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid', ticker: 'symbol' })
+      ).toBe(true);
+      expect(DefaultTrustedClaimIssuer.isUniqueIdentifiers({})).toBe(false);
+      expect(DefaultTrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid' })).toBe(false);
+      expect(DefaultTrustedClaimIssuer.isUniqueIdentifiers({ did: 1 })).toBe(false);
     });
   });
 
@@ -58,10 +56,8 @@ describe('TrustedClaimIssuer class', () => {
     const did = 'someDid';
     const ticker = 'SOMETICKER';
     const variables = {
-      moduleId: ModuleIdEnum.Compliancemanager,
-      eventId: EventIdEnum.TrustedDefaultClaimIssuerAdded,
-      eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
-      eventArg2: did,
+      ticker: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
+      identityId: did,
     };
 
     test('should return the event identifier object of the trusted claim issuer creation', async () => {
@@ -69,11 +65,11 @@ describe('TrustedClaimIssuer class', () => {
       const blockDate = new Date('4/14/2020');
       const eventIdx = 1;
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
-      const trustedClaimIssuer = new TrustedClaimIssuer({ did, ticker }, context);
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
+      dsMockUtils.createApolloQueryStub(eventByAddedTrustedClaimIssuer(variables), {
         /* eslint-disable @typescript-eslint/camelcase */
-        eventByIndexedArgs: {
+        eventByAddedTrustedClaimIssuer: {
           block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
           event_idx: eventIdx,
@@ -87,9 +83,9 @@ describe('TrustedClaimIssuer class', () => {
     });
 
     test('should return null if the query result is empty', async () => {
-      const trustedClaimIssuer = new TrustedClaimIssuer({ did, ticker }, context);
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
+      dsMockUtils.createApolloQueryStub(eventByAddedTrustedClaimIssuer(variables), {});
       const result = await trustedClaimIssuer.addedAt();
       expect(result).toBeNull();
     });

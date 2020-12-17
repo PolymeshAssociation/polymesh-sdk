@@ -1,9 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
-import { Entity, Identity } from '~/api/entities';
-import { Authorizations } from '~/api/entities/common/namespaces/Authorizations';
-import { Context } from '~/base';
+import { Authorizations, Context, Entity, Identity } from '~/internal';
 import { transactions } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
@@ -102,16 +100,15 @@ export class Account extends Entity<UniqueIdentifiers> {
       address,
     } = this;
 
-    try {
-      const identityIdWrapper = await identity.keyToIdentityIds(
-        stringToAccountId(address, context)
-      );
-      const did = identityIdToString(identityIdWrapper.unwrap().asUnique);
+    const identityId = await identity.keyToIdentityIds(stringToAccountId(address, context));
 
-      return new Identity({ did }, context);
-    } catch (err) {
+    if (identityId.isEmpty) {
       return null;
     }
+
+    const did = identityIdToString(identityId);
+
+    return new Identity({ did }, context);
   }
 
   /**

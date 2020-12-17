@@ -3,15 +3,20 @@ import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
 import { Instruction as MeshInstruction } from 'polymesh-types/types';
 
-import { Identity, Instruction, Venue } from '~/api/entities';
 import {
   createVenue,
   CreateVenueParams,
+  Identity,
+  Instruction,
   inviteAccount,
   InviteAccountParams,
+  modifySignerPermissions,
+  ModifySignerPermissionsParams,
   removeSecondaryKeys,
-} from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+  RemoveSecondaryKeysParams,
+  TransactionQueue,
+  Venue,
+} from '~/internal';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
 import {
@@ -48,16 +53,47 @@ export class CurrentIdentity extends Identity {
   /**
    * Remove a list of secondary keys associated with the Identity
    */
-  public removeSecondaryKeys(args: { signers: Signer[] }): Promise<TransactionQueue<void>> {
+  public removeSecondaryKeys(args: RemoveSecondaryKeysParams): Promise<TransactionQueue<void>> {
     return removeSecondaryKeys.prepare(args, this.context);
   }
 
   /**
-   * Send an invitation to an Account to join to your Identity
+   * Revoke all permissions of a list of secondary keys associated with the Identity
+   */
+  public revokePermissions(args: { secondaryKeys: Signer[] }): Promise<TransactionQueue<void>> {
+    const { secondaryKeys } = args;
+    const signers = secondaryKeys.map(signer => {
+      return {
+        signer,
+        permissions: { tokens: [], transactions: [], portfolios: [] },
+      };
+    });
+    return modifySignerPermissions.prepare({ secondaryKeys: signers }, this.context);
+  }
+
+  /**
+   * Modify all permissions of a list of secondary keys associated with the Identity
+   *
+   * @param args.secondaryKeys.permissions - list of permissions
+   * @param args.secondaryKeys.permissions.tokens - array of Security Tokens on which to grant permissions. A null value represents full permissions
+   * @param args.secondaryKeys.permissions.transactions - array of transaction tags that the Secondary Key has permission to execute. A null value represents full permissions
+   * @param args.secondaryKeys.permissions.portfolios - array of Portfolios for which to grant permissions. A null value represents full permissions
+   */
+  public modifyPermissions(args: ModifySignerPermissionsParams): Promise<TransactionQueue<void>> {
+    return modifySignerPermissions.prepare(args, this.context);
+  }
+
+  /**
+   * Send an invitation to an Account to join this Identity
    *
    * @note this may create AuthorizationRequest which have to be accepted by
    *   the corresponding Account. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @param args.permissions - list of allowed permissions (optional, defaults to no permissions)
+   * @param args.permissions.tokens - array of Security Tokens (or tickers) for which to allow permission. Set null to allow all (optional, no permissions if not passed)
+   * @param args.permissions.transactions - array of tags associated with the transaction that will be executed for which to allow permission. Set null to allow all (optional, no permissions if not passed)
+   * @param args.permissions.portfolios - array of portfolios for which to allow permission. Set null to allow all (optional, no permissions if not passed)
    */
   public inviteAccount(args: InviteAccountParams): Promise<TransactionQueue<void>> {
     return inviteAccount.prepare(args, this.context);
@@ -102,7 +138,7 @@ export class CurrentIdentity extends Identity {
 
     const chunkedInstructions = await P.mapSeries(portfolioIdChunks, async portfolioIdChunk => {
       const auths = await P.map(portfolioIdChunk, portfolioId =>
-        settlement.userAuths.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
+        settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
       );
 
       const instructionIds = uniqBy(

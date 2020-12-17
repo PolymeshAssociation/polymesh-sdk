@@ -1,9 +1,16 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { SecurityToken as MeshToken, TickerRegistration } from 'polymesh-types/types';
 
-import { Entity, Identity, SecurityToken } from '~/api/entities';
-import { createSecurityToken, CreateSecurityTokenParams, reserveTicker } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import {
+  Context,
+  createSecurityToken,
+  CreateSecurityTokenParams,
+  Entity,
+  Identity,
+  reserveTicker,
+  SecurityToken,
+  TransactionQueue,
+} from '~/internal';
 import { SubCallback, UnsubCallback } from '~/types';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
 

@@ -1,16 +1,16 @@
 import { ApiPromise, Keyring } from '@polkadot/api';
+import { AddressOrPair } from '@polkadot/api/types';
 import { getTypeDef } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
 import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
-import stringToU8a from '@polkadot/util/string/toU8a';
+import { hexToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
-import { Account, CurrentAccount, CurrentIdentity, Identity } from '~/api/entities';
-import { PolymeshError } from '~/base';
+import { Account, CurrentAccount, CurrentIdentity, Identity, PolymeshError } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
@@ -36,7 +36,7 @@ import { GraphqlQuery } from '~/types/internal';
 import { ROOT_TYPES } from '~/utils/constants';
 import {
   balanceToBigNumber,
-  meshPermissionToPermission,
+  meshPermissionsToPermissions,
   numberToU32,
   posRatioToBigNumber,
   signatoryToSignerValue,
@@ -152,14 +152,14 @@ export class Context {
       keyring = passedKeyring;
       currentPair = keyring.getPairs()[0];
     } else if (seed) {
-      if (seed.length !== 32) {
+      if (seed.length !== 66) {
         throw new PolymeshError({
           code: ErrorCode.ValidationError,
-          message: 'Seed must be 32 characters in length',
+          message: 'Seed must be 66 characters in length',
         });
       }
 
-      currentPair = keyring.addFromSeed(stringToU8a(seed));
+      currentPair = keyring.addFromSeed(hexToU8a(seed), undefined, 'sr25519');
     } else if (uri) {
       currentPair = keyring.addFromUri(uri);
     }
@@ -339,6 +339,19 @@ export class Context {
     }
 
     return currentPair;
+  }
+
+  /**
+   * Retrieve the signer address (or keyring pair)
+   */
+  public getSigner(): AddressOrPair {
+    const currentPair = this.getCurrentPair();
+    const { isLocked, address } = currentPair;
+    /*
+     * if the keyring pair is locked, it means it most likely got added from the polkadot extension
+     * with a custom signer. This means we have to pass just the address to signAndSend
+     */
+    return isLocked ? address : currentPair;
   }
 
   /**
@@ -560,7 +573,7 @@ export class Context {
     const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SecondaryKey[] => {
       return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
         signer: signerValueToSigner(signatoryToSignerValue(rawSigner), this),
-        permissions: permissions.map(permission => meshPermissionToPermission(permission)),
+        permissions: meshPermissionsToPermissions(permissions, this),
       }));
     };
 
@@ -633,7 +646,7 @@ export class Context {
             issuer: new Identity({ did: issuer }, this),
             issuedAt: new Date(issuanceDate),
             expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, scope, cddId),
+            claim: createClaim(type, jurisdiction, scope, cddId, undefined),
           });
         }
       );

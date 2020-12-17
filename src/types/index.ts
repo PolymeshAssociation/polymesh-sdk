@@ -3,7 +3,9 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
+import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
+// import { ProposalDetails } from '~/api/entities/Proposal/types';
 import {
   Account,
   DefaultPortfolio,
@@ -11,9 +13,7 @@ import {
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,
-} from '~/api/entities';
-// import { ProposalDetails } from '~/api/entities/Proposal/types';
-import { CountryCode } from '~/generated/types';
+} from '~/internal';
 import { PortfolioId } from '~/types/internal';
 
 export * from '~/generated/types';
@@ -190,6 +190,8 @@ export interface TokenDocument {
   name: string;
   uri: string;
   contentHash: string;
+  type?: string;
+  filedAt?: Date;
 }
 
 /**
@@ -213,7 +215,7 @@ export enum AuthorizationType {
  */
 export type Authorization =
   | { type: AuthorizationType.NoData }
-  | { type: AuthorizationType.JoinIdentity; value: Permission[] }
+  | { type: AuthorizationType.JoinIdentity; value: Permissions }
   | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
   | {
       type: Exclude<
@@ -253,12 +255,23 @@ export enum ClaimType {
   Jurisdiction = 'Jurisdiction',
   Exempted = 'Exempted',
   Blocked = 'Blocked',
+  InvestorUniqueness = 'InvestorUniqueness',
   NoData = 'NoData',
 }
 
 export type ScopedClaim =
   | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
-  | { type: Exclude<ClaimType, ClaimType.NoData | ClaimType.Jurisdiction>; scope: Scope };
+  | { type: ClaimType.InvestorUniqueness; scope: Scope; cddId: string; scopeId: string }
+  | {
+      type: Exclude<
+        ClaimType,
+        | ClaimType.NoData
+        | ClaimType.Jurisdiction
+        | ClaimType.CustomerDueDiligence
+        | ClaimType.InvestorUniqueness
+      >;
+      scope: Scope;
+    };
 
 export type UnscopedClaim =
   | { type: ClaimType.NoData }
@@ -305,6 +318,14 @@ export interface ClaimScope {
   ticker?: string;
 }
 
+export interface TrustedClaimIssuer {
+  identity: Identity;
+  /**
+   * an undefined value means that the issuer is trusted for all claim types.
+   */
+  trustedFor?: ClaimType[];
+}
+
 export enum ConditionType {
   IsPresent = 'IsPresent',
   IsAbsent = 'IsAbsent',
@@ -314,7 +335,7 @@ export enum ConditionType {
   IsIdentity = 'IsIdentity',
 }
 
-export type ConditionBase = { target: ConditionTarget; trustedClaimIssuers?: string[] };
+export type ConditionBase = { target: ConditionTarget; trustedClaimIssuers?: TrustedClaimIssuer[] };
 
 export type SingleClaimCondition = ConditionBase & {
   type: ConditionType.IsPresent | ConditionType.IsAbsent;
@@ -411,7 +432,8 @@ export enum TransferStatus {
   BlockedTransaction = 'BlockedTransaction', // 166
   FundsLimitReached = 'FundsLimitReached', // 168
   PortfolioFailure = 'PortfolioFailure', // 169
-  CustodianError = 'CustodianError', // 170
+  CustodianError = 'CustodianError', // 176
+  ScopeClaimMissing = 'MissingScopeClaimMissingScopedClaim', // 177
 }
 
 export interface ClaimTarget {
@@ -475,11 +497,18 @@ export interface Fees {
   gas: BigNumber;
 }
 
-export enum Permission {
-  Full = 'Full',
-  Admin = 'Admin',
-  Operator = 'Operator',
-  SpendFunds = 'SpendFunds',
+/**
+ * Permissions a Secondary Key has over the Identity. A null value means the key has
+ *   all permissions of that type (i.e. if `tokens` is null, the key has permissions over all
+ *   of the Identity's Security Tokens)
+ */
+export interface Permissions {
+  /* list of Security Tokens over which this key has permissions */
+  tokens: SecurityToken[] | null;
+  /* list of Transactions this key can execute */
+  transactions: TxTag[] | null;
+  /* list of Portfolios over which this key has permissions */
+  portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
 }
 
 export enum TransactionArgumentType {
@@ -549,7 +578,13 @@ export type Signer = Identity | Account;
 
 export interface SecondaryKey {
   signer: Signer;
-  permissions: Permission[];
+  permissions: Permissions;
+}
+
+export interface PermissionsLike {
+  tokens?: (string | SecurityToken)[] | null;
+  transactions?: TxTag[] | null;
+  portfolios?: PortfolioLike[] | null;
 }
 
 export type PortfolioLike =

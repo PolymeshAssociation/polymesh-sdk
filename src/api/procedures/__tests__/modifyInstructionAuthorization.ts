@@ -1,22 +1,21 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import {
-  AuthorizationStatus as MeshAuthorizationStatus,
+  AffirmationStatus as MeshAffirmationStatus,
   PortfolioId as MeshPortfolioId,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { DefaultPortfolio, Instruction } from '~/api/entities';
 import {
-  ModifyInstructionAuthorizationParams,
-  prepareModifyInstructionAuthorization,
-} from '~/api/procedures/modifyInstructionAuthorization';
+  ModifyInstructionAffirmationParams,
+  prepareModifyInstructionAffirmation,
+} from '~/api/procedures/modifyInstructionAffirmation';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Context } from '~/base';
+import { Context, DefaultPortfolio, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AuthorizationStatus } from '~/types';
-import { InstructionAuthorizationOperation, PortfolioId } from '~/types/internal';
+import { AffirmationStatus } from '~/types';
+import { InstructionAffirmationOperation, PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -30,7 +29,7 @@ jest.mock(
   )
 );
 
-describe('modifyInstructionAuthorization procedure', () => {
+describe('modifyInstructionAffirmation procedure', () => {
   const id = new BigNumber(1);
   const rawInstructionId = dsMockUtils.createMockU64(1);
   const rawPortfolioId = dsMockUtils.createMockPortfolioId({
@@ -41,9 +40,9 @@ describe('modifyInstructionAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
-  let meshAuthorizationStatusToAuthorizationStatusStub: sinon.SinonStub<
-    [MeshAuthorizationStatus],
-    AuthorizationStatus
+  let meshAffirmationStatusToAffirmationStatusStub: sinon.SinonStub<
+    [MeshAffirmationStatus],
+    AffirmationStatus
   >;
 
   beforeAll(() => {
@@ -60,9 +59,9 @@ describe('modifyInstructionAuthorization procedure', () => {
       'portfolioIdToMeshPortfolioId'
     );
     sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolioId');
-    meshAuthorizationStatusToAuthorizationStatusStub = sinon.stub(
+    meshAffirmationStatusToAffirmationStatusStub = sinon.stub(
       utilsConversionModule,
-      'meshAuthorizationStatusToAuthorizationStatus'
+      'meshAffirmationStatusToAffirmationStatus'
     );
 
     sinon.stub(procedureUtilsModule, 'assertInstructionValid');
@@ -71,8 +70,8 @@ describe('modifyInstructionAuthorization procedure', () => {
   let addTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
-    dsMockUtils.createTxStub('settlement', 'authorizeInstruction');
-    dsMockUtils.createTxStub('settlement', 'unauthorizeInstruction');
+    dsMockUtils.createTxStub('settlement', 'affirmInstruction');
+    dsMockUtils.createTxStub('settlement', 'withdrawAffirmation');
     dsMockUtils.createTxStub('settlement', 'rejectInstruction');
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
@@ -92,45 +91,45 @@ describe('modifyInstructionAuthorization procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if the operation is Authorize and all of the current Identity's Portfolios are authorized", () => {
-    const rawAuthorizationStatus = dsMockUtils.createMockAuthorizationStatus('Authorized');
-    dsMockUtils.createQueryStub('settlement', 'userAuths', {
-      multi: [rawAuthorizationStatus, rawAuthorizationStatus],
+  test("should throw an error if the operation is Affirm and all of the current Identity's Portfolios are affirmed", () => {
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
+    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
+      multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAuthorizationStatusToAuthorizationStatusStub
-      .withArgs(rawAuthorizationStatus)
-      .returns(AuthorizationStatus.Authorized);
+    meshAffirmationStatusToAffirmationStatusStub
+      .withArgs(rawAffirmationStatus)
+      .returns(AffirmationStatus.Affirmed);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
       mockContext
     );
 
     return expect(
-      prepareModifyInstructionAuthorization.call(proc, {
+      prepareModifyInstructionAffirmation.call(proc, {
         id,
-        operation: InstructionAuthorizationOperation.Authorize,
+        operation: InstructionAffirmationOperation.Affirm,
       })
-    ).rejects.toThrow('The Instruction is already authorized');
+    ).rejects.toThrow('The Instruction is already affirmed');
   });
 
-  test('should add an authorize instruction transaction to the queue', async () => {
-    const rawAuthorizationStatus = dsMockUtils.createMockAuthorizationStatus('Pending');
-    dsMockUtils.createQueryStub('settlement', 'userAuths', {
-      multi: [rawAuthorizationStatus, rawAuthorizationStatus],
+  test('should add an affirm instruction transaction to the queue', async () => {
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
+    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
+      multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAuthorizationStatusToAuthorizationStatusStub
-      .withArgs(rawAuthorizationStatus)
-      .returns(AuthorizationStatus.Pending);
+    meshAffirmationStatusToAffirmationStatusStub
+      .withArgs(rawAffirmationStatus)
+      .returns(AffirmationStatus.Pending);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('settlement', 'authorizeInstruction');
+    const transaction = dsMockUtils.createTxStub('settlement', 'affirmInstruction');
 
-    const result = await prepareModifyInstructionAuthorization.call(proc, {
+    const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
-      operation: InstructionAuthorizationOperation.Authorize,
+      operation: InstructionAffirmationOperation.Affirm,
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawInstructionId, [
@@ -141,66 +140,66 @@ describe('modifyInstructionAuthorization procedure', () => {
     expect(result.id).toEqual(id);
   });
 
-  test('should throw an error if operation is Unauthorize and the current status of the instruction is pending', () => {
-    const rawAuthorizationStatus = dsMockUtils.createMockAuthorizationStatus('Pending');
-    dsMockUtils.createQueryStub('settlement', 'userAuths', {
-      multi: [rawAuthorizationStatus, rawAuthorizationStatus],
+  test('should throw an error if operation is Withdraw and the current status of the instruction is pending', () => {
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
+    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
+      multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAuthorizationStatusToAuthorizationStatusStub
-      .withArgs(rawAuthorizationStatus)
-      .returns(AuthorizationStatus.Pending);
+    meshAffirmationStatusToAffirmationStatusStub
+      .withArgs(rawAffirmationStatus)
+      .returns(AffirmationStatus.Pending);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
       mockContext
     );
 
     return expect(
-      prepareModifyInstructionAuthorization.call(proc, {
+      prepareModifyInstructionAffirmation.call(proc, {
         id,
-        operation: InstructionAuthorizationOperation.Unauthorize,
+        operation: InstructionAffirmationOperation.Withdraw,
       })
-    ).rejects.toThrow('The instruction is not authorized');
+    ).rejects.toThrow('The instruction is not affirmed');
   });
 
-  test('should throw an error if operation is Unauthorize and the current status of the instruction is rejected', () => {
-    const rawAuthorizationStatus = dsMockUtils.createMockAuthorizationStatus('Rejected');
-    dsMockUtils.createQueryStub('settlement', 'userAuths', {
-      multi: [rawAuthorizationStatus, rawAuthorizationStatus],
+  test('should throw an error if operation is Withdraw and the current status of the instruction is rejected', () => {
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Rejected');
+    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
+      multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAuthorizationStatusToAuthorizationStatusStub
-      .withArgs(rawAuthorizationStatus)
-      .returns(AuthorizationStatus.Rejected);
+    meshAffirmationStatusToAffirmationStatusStub
+      .withArgs(rawAffirmationStatus)
+      .returns(AffirmationStatus.Rejected);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
       mockContext
     );
 
     return expect(
-      prepareModifyInstructionAuthorization.call(proc, {
+      prepareModifyInstructionAffirmation.call(proc, {
         id,
-        operation: InstructionAuthorizationOperation.Unauthorize,
+        operation: InstructionAffirmationOperation.Withdraw,
       })
-    ).rejects.toThrow('The instruction is not authorized');
+    ).rejects.toThrow('The instruction is not affirmed');
   });
 
-  test('should add an unauthorize instruction transaction to the queue', async () => {
-    const rawAuthorizationStatus = dsMockUtils.createMockAuthorizationStatus('Authorized');
-    dsMockUtils.createQueryStub('settlement', 'userAuths', {
-      multi: [rawAuthorizationStatus, rawAuthorizationStatus],
+  test('should add a withdraw instruction transaction to the queue', async () => {
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
+    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
+      multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAuthorizationStatusToAuthorizationStatusStub
-      .withArgs(rawAuthorizationStatus)
-      .returns(AuthorizationStatus.Authorized);
+    meshAffirmationStatusToAffirmationStatusStub
+      .withArgs(rawAffirmationStatus)
+      .returns(AffirmationStatus.Affirmed);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('settlement', 'unauthorizeInstruction');
+    const transaction = dsMockUtils.createTxStub('settlement', 'withdrawAffirmation');
 
-    const result = await prepareModifyInstructionAuthorization.call(proc, {
+    const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
-      operation: InstructionAuthorizationOperation.Unauthorize,
+      operation: InstructionAffirmationOperation.Withdraw,
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawInstructionId, [
@@ -212,22 +211,22 @@ describe('modifyInstructionAuthorization procedure', () => {
   });
 
   test('should throw an error if operation is Reject and the current status of the instruction is rejected', () => {
-    const rawAuthorizationStatus = dsMockUtils.createMockAuthorizationStatus('Rejected');
-    dsMockUtils.createQueryStub('settlement', 'userAuths', {
-      multi: [rawAuthorizationStatus, rawAuthorizationStatus],
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Rejected');
+    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
+      multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAuthorizationStatusToAuthorizationStatusStub
-      .withArgs(rawAuthorizationStatus)
-      .returns(AuthorizationStatus.Rejected);
+    meshAffirmationStatusToAffirmationStatusStub
+      .withArgs(rawAffirmationStatus)
+      .returns(AffirmationStatus.Rejected);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
       mockContext
     );
 
     return expect(
-      prepareModifyInstructionAuthorization.call(proc, {
+      prepareModifyInstructionAffirmation.call(proc, {
         id,
-        operation: InstructionAuthorizationOperation.Reject,
+        operation: InstructionAffirmationOperation.Reject,
       })
     ).rejects.toThrow('The Instruction cannot be rejected');
   });
@@ -253,13 +252,13 @@ describe('modifyInstructionAuthorization procedure', () => {
         ],
       },
     });
-    const rawAuthorizationStatus = dsMockUtils.createMockAuthorizationStatus('Pending');
-    dsMockUtils.createQueryStub('settlement', 'userAuths', {
-      multi: [rawAuthorizationStatus, rawAuthorizationStatus],
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
+    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
+      multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAuthorizationStatusToAuthorizationStatusStub
-      .withArgs(rawAuthorizationStatus)
-      .returns(AuthorizationStatus.Pending);
+    meshAffirmationStatusToAffirmationStatusStub
+      .withArgs(rawAffirmationStatus)
+      .returns(AffirmationStatus.Pending);
 
     const isCustodiedByStub = entityMockUtils.getDefaultPortfolioIsCustodiedByStub();
     isCustodiedByStub.onCall(0).returns(true);
@@ -267,15 +266,15 @@ describe('modifyInstructionAuthorization procedure', () => {
     isCustodiedByStub.onCall(2).returns(false);
     isCustodiedByStub.onCall(3).returns(false);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAuthorizationParams, Instruction>(
+    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
       mockContext
     );
 
     const transaction = dsMockUtils.createTxStub('settlement', 'rejectInstruction');
 
-    const result = await prepareModifyInstructionAuthorization.call(proc, {
+    const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
-      operation: InstructionAuthorizationOperation.Reject,
+      operation: InstructionAffirmationOperation.Reject,
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawInstructionId, [

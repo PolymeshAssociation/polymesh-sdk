@@ -40,7 +40,7 @@ function writeGenerated({ types }) {
 
 import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
 
-import { Context } from '~/base';
+import { Context } from '~/internal';
 import { CountryCode } from '~/types';
 
 `;

@@ -1,9 +1,15 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { AuthorizationRequest, Entity, Identity } from '~/api/entities';
-import { consumeAuthorizationRequests, consumeJoinIdentityAuthorization } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import {
+  AuthorizationRequest,
+  consumeAuthorizationRequests,
+  consumeJoinIdentityAuthorization,
+  Context,
+  Entity,
+  Identity,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Authorization, AuthorizationType } from '~/types';
 
@@ -99,7 +105,14 @@ describe('AuthorizationRequest class', () => {
           expiry: null,
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.JoinIdentity, value: [] },
+          data: {
+            type: AuthorizationType.JoinIdentity,
+            value: {
+              tokens: null,
+              transactions: null,
+              portfolios: null,
+            },
+          },
         },
         context
       );
@@ -163,7 +176,14 @@ describe('AuthorizationRequest class', () => {
           expiry: null,
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.JoinIdentity, value: [] },
+          data: {
+            type: AuthorizationType.JoinIdentity,
+            value: {
+              tokens: null,
+              transactions: null,
+              portfolios: null,
+            },
+          },
         },
         context
       );

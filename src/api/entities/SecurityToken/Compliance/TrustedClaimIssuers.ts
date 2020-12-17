@@ -1,14 +1,17 @@
-import { IdentityId } from 'polymesh-types/types';
+import { TrustedIssuer } from 'polymesh-types/types';
 
-import { Namespace, SecurityToken, TrustedClaimIssuer } from '~/api/entities';
 import {
+  DefaultTrustedClaimIssuer,
   modifyTokenTrustedClaimIssuers,
-  ModifyTokenTrustedClaimIssuersParams,
-} from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+  ModifyTokenTrustedClaimIssuersAddSetParams,
+  ModifyTokenTrustedClaimIssuersRemoveParams,
+  Namespace,
+  SecurityToken,
+  TransactionQueue,
+} from '~/internal';
 import { SubCallback, UnsubCallback } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
-import { identityIdToString, stringToTicker } from '~/utils/conversion';
+import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
 
 /**
  * Handles all Security Token Default Trusted Claim Issuers related functionality
@@ -21,7 +24,9 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
    *
    * @param args.claimIssuerDids - array of Identity IDs of the default Trusted Claim Issuers
    */
-  public set(args: ModifyTokenTrustedClaimIssuersParams): Promise<TransactionQueue<SecurityToken>> {
+  public set(
+    args: ModifyTokenTrustedClaimIssuersAddSetParams
+  ): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
       context,
@@ -35,9 +40,11 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   /**
    * Add the supplied Identities to the Security Token's list of trusted claim issuers
    *
-   * @param args.claimIssuerDids - array of Identity IDs of the default claim issuers
+   * @param args.claimIssuers - array of [[TrustedClaimIssuer | Trusted Claim Issuers]]
    */
-  public add(args: ModifyTokenTrustedClaimIssuersParams): Promise<TransactionQueue<SecurityToken>> {
+  public add(
+    args: ModifyTokenTrustedClaimIssuersAddSetParams
+  ): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
       context,
@@ -51,10 +58,10 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   /**
    * Remove the supplied Identities from the Security Token's list of trusted claim issuers   *
    *
-   * @param args.claimIssuerDids - array of Identity IDs of the default claim issuers
+   * @param args.claimIssuers - array of Identities (or DIDs) of the default claim issuers
    */
   public remove(
-    args: ModifyTokenTrustedClaimIssuersParams
+    args: ModifyTokenTrustedClaimIssuersRemoveParams
   ): Promise<TransactionQueue<SecurityToken>> {
     const {
       parent: { ticker },
@@ -71,13 +78,13 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
    *
    * @note can be subscribed to
    */
-  public get(): Promise<TrustedClaimIssuer[]>;
-  public get(callback: SubCallback<TrustedClaimIssuer[]>): Promise<UnsubCallback>;
+  public get(): Promise<DefaultTrustedClaimIssuer[]>;
+  public get(callback: SubCallback<DefaultTrustedClaimIssuer[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async get(
-    callback?: SubCallback<TrustedClaimIssuer[]>
-  ): Promise<TrustedClaimIssuer[] | UnsubCallback> {
+    callback?: SubCallback<DefaultTrustedClaimIssuer[]>
+  ): Promise<DefaultTrustedClaimIssuer[] | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -90,11 +97,14 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResult = (issuers: IdentityId[]): TrustedClaimIssuer[] =>
-      issuers.map(
-        claimIssuer =>
-          new TrustedClaimIssuer({ did: identityIdToString(claimIssuer), ticker }, context)
-      );
+    const assembleResult = (issuers: TrustedIssuer[]): DefaultTrustedClaimIssuer[] =>
+      issuers.map(issuer => {
+        const {
+          identity: { did },
+          trustedFor,
+        } = trustedIssuerToTrustedClaimIssuer(issuer, context);
+        return new DefaultTrustedClaimIssuer({ did, ticker, trustedFor }, context);
+      });
 
     if (callback) {
       return complianceManager.trustedClaimIssuer(rawTicker, issuers => {

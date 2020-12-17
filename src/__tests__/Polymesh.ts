@@ -6,9 +6,15 @@ import BigNumber from 'bignumber.js';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Identity, TickerReservation } from '~/api/entities';
-import { registerIdentity, reserveTicker, transferPolyX } from '~/api/procedures';
-import { TransactionQueue } from '~/base';
+import {
+  Account,
+  Identity,
+  registerIdentity,
+  reserveTicker,
+  TickerReservation,
+  TransactionQueue,
+  transferPolyX,
+} from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -75,7 +81,7 @@ describe('Polymesh Class', () => {
     });
 
     test('should instantiate Context with a seed and return a Polymesh instance', async () => {
-      const accountSeed = 'Alice'.padEnd(32, ' ');
+      const accountSeed = 'Alice'.padEnd(66, ' ');
       const createStub = dsMockUtils.getContextCreateStub();
 
       await Polymesh.connect({
@@ -221,7 +227,7 @@ describe('Polymesh Class', () => {
     });
 
     test('should set an optional signer for the polkadot API', async () => {
-      const accountSeed = 'Alice'.padEnd(32, ' ');
+      const accountSeed = 'Alice'.padEnd(66, ' ');
       const createStub = dsMockUtils.getContextCreateStub();
       const signer = 'signer' as PolkadotSigner;
 

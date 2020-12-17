@@ -4,16 +4,20 @@ import BigNumber from 'bignumber.js';
 import {
   CddId,
   ComplianceRequirement,
+  InvestorZKProofData,
   Memo,
   MovePortfolioItem,
   PipId,
   PortfolioId,
+  ScopeId,
   SettlementType,
+  TrustedIssuer,
   VenueDetails,
 } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
+  AssetTx,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
@@ -21,10 +25,11 @@ import {
   Claim as MeshClaim,
   DocumentHash,
   DocumentName,
+  DocumentType,
   DocumentUri,
   FundingRoundName,
   IdentityId,
-  Permission as MeshPermission,
+  Permissions as MeshPermissions,
   ProtocolOp,
   Scope as MeshScope,
   Signatory,
@@ -34,20 +39,14 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Account,
-  DefaultPortfolio,
-  Identity,
-  NumberedPortfolio,
-  SecurityToken,
-} from '~/api/entities';
+import { SecurityToken } from '~/api/entities/SecurityToken';
+import { Account, Context, DefaultPortfolio, Identity, NumberedPortfolio } from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
-import { Context } from '~/base';
 import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  AffirmationStatus,
   Authorization,
-  AuthorizationStatus,
   AuthorizationType,
   Claim,
   ClaimType,
@@ -59,14 +58,17 @@ import {
   InstructionStatus,
   InstructionType,
   KnownTokenType,
-  Permission,
+  Permissions,
+  PermissionsLike,
   PortfolioLike,
   PortfolioMovement,
   Scope,
   ScopeType,
   Signer,
+  TokenDocument,
   TokenIdentifierType,
   TransferStatus,
+  TrustedClaimIssuer,
   VenueType,
 } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
@@ -97,7 +99,8 @@ import {
   dateToMoment,
   documentHashToString,
   documentNameToString,
-  documentToTokenDocumentData,
+  documentToTokenDocument,
+  documentTypeToString,
   documentUriToString,
   endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
@@ -107,10 +110,11 @@ import {
   isIsinValid,
   isLeiValid,
   keyToAddress,
-  meshAuthorizationStatusToAuthorizationStatus,
+  meshAffirmationStatusToAffirmationStatus,
   meshClaimToClaim,
+  meshClaimTypeToClaimType,
   meshInstructionStatusToInstructionStatus,
-  meshPermissionToPermission,
+  meshPermissionsToPermissions,
   meshScopeToScope,
   meshVenueTypeToVenueType,
   middlewareScopeToScope,
@@ -121,8 +125,10 @@ import {
   numberToPipId,
   numberToU32,
   numberToU64,
-  permissionToMeshPermission,
+  permissionsLikeToPermissions,
+  permissionsToMeshPermissions,
   portfolioIdToMeshPortfolioId,
+  portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
@@ -141,10 +147,13 @@ import {
   stringToCddId,
   stringToDocumentHash,
   stringToDocumentName,
+  stringToDocumentType,
   stringToDocumentUri,
   stringToFundingRoundName,
   stringToIdentityId,
+  stringToInvestorZKProofData,
   stringToMemo,
+  stringToScopeId,
   stringToText,
   stringToTicker,
   stringToVenueDetails,
@@ -152,10 +161,13 @@ import {
   tickerToDid,
   tickerToString,
   toIdentityWithClaimsArray,
-  tokenDocumentDataToDocument,
+  tokenDocumentToDocument,
   tokenIdentifierToAssetIdentifier,
   tokenTypeToAssetType,
   transactionHexToTxTag,
+  transactionToTxTag,
+  trustedClaimIssuerToTrustedIssuer,
+  trustedIssuerToTrustedClaimIssuer,
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToTransferStatus,
@@ -167,6 +179,16 @@ import {
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+jest.mock(
+  '~/api/entities/DefaultPortfolio',
+  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+    '~/api/entities/DefaultPortfolio'
+  )
 );
 jest.mock(
   '~/api/entities/NumberedPortfolio',
@@ -305,7 +327,7 @@ describe('stringToBytes and bytesToString', () => {
   });
 });
 
-describe('portfolioMovementToMovePortfolioItem', () => {
+describe('stringToInvestorZKProofData', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -318,11 +340,43 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     dsMockUtils.cleanup();
   });
 
+  test('stringToInvestorZKProofData should convert a string to a polkadot InvestorZKProofData object', () => {
+    const value = 'someProof';
+    const fakeResult = ('convertedProof' as unknown) as InvestorZKProofData;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('InvestorZKProofData', value)
+      .returns(fakeResult);
+
+    const result = stringToInvestorZKProofData(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('portfolioMovementToMovePortfolioItem', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
   test('portfolioMovementToMovePortfolioItem should convert a portfolio item into a polkadot move portfolio item', () => {
     const context = dsMockUtils.getContextInstance();
     const ticker = 'someToken';
     const amount = new BigNumber(100);
-    const token = new SecurityToken({ ticker }, context);
+    const token = entityMockUtils.getSecurityTokenInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
     const fakeResult = ('MovePortfolioItem' as unknown) as MovePortfolioItem;
@@ -711,13 +765,56 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     };
     const fakeResult = ('AuthorizationDataEnum' as unknown) as AuthorizationData;
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: value.value })
-      .returns(fakeResult);
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    createTypeStub.withArgs('AuthorizationData', { [value.type]: value.value }).returns(fakeResult);
 
     let result = authorizationToAuthorizationData(value, context);
+    expect(result).toBe(fakeResult);
 
+    value = {
+      type: AuthorizationType.JoinIdentity,
+      value: {
+        tokens: null,
+        transactions: null,
+        portfolios: null,
+      },
+    };
+
+    const rawPermissions = dsMockUtils.createMockPermissions({
+      asset: null,
+      extrinsic: null,
+      portfolio: null,
+    });
+
+    createTypeStub.withArgs('Permissions', sinon.match(sinon.match.object)).returns(rawPermissions);
+    createTypeStub
+      .withArgs('AuthorizationData', {
+        [value.type]: rawPermissions,
+      })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+    expect(result).toBe(fakeResult);
+
+    const did = 'someDid';
+    value = {
+      type: AuthorizationType.PortfolioCustody,
+      value: entityMockUtils.getDefaultPortfolioInstance({ did }),
+    };
+
+    const rawPortfolioId = dsMockUtils.createMockPortfolioId({
+      did: dsMockUtils.createMockIdentityId(did),
+      kind: dsMockUtils.createMockPortfolioKind('Default'),
+    });
+
+    createTypeStub.withArgs('PortfolioId', sinon.match(sinon.match.object)).returns(rawPortfolioId);
+    createTypeStub
+      .withArgs('AuthorizationData', {
+        [value.type]: rawPortfolioId,
+      })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
 
     value = {
@@ -730,7 +827,6 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       .returns(fakeResult);
 
     result = authorizationToAuthorizationData(value, context);
-
     expect(result).toBe(fakeResult);
   });
 
@@ -824,10 +920,10 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     fakeResult = {
       type: AuthorizationType.JoinIdentity,
-      value: [Permission.Operator],
+      value: { tokens: [], portfolios: [], transactions: [] },
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
-      JoinIdentity: [dsMockUtils.createMockPermission('Operator')],
+      JoinIdentity: dsMockUtils.createMockPermissions({ asset: [], portfolio: [], extrinsic: [] }),
     });
 
     result = authorizationDataToAuthorization(authorizationData, context);
@@ -883,57 +979,128 @@ describe('authorizationTypeToMeshAuthorizationType', () => {
   });
 });
 
-describe('permissionToMeshPermission and meshPermissionToPermission', () => {
+describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
-  test('permissionToMeshPermission should convert a Permission to a polkadot Permission object', () => {
-    const value = Permission.Admin;
-    const fakeResult = ('convertedPermission' as unknown) as MeshPermission;
+  test('permissionsToMeshPermissions should convert a Permissions to a polkadot Permissions object', () => {
+    let value: Permissions = {
+      tokens: null,
+      transactions: null,
+      portfolios: null,
+    };
+    const fakeResult = ('convertedPermission' as unknown) as MeshPermissions;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Permission', value)
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
+
+    createTypeStub
+      .withArgs('Permissions', {
+        asset: null,
+        extrinsic: null,
+        portfolio: null,
+      })
       .returns(fakeResult);
 
-    const result = permissionToMeshPermission(value, context);
+    let result = permissionsToMeshPermissions(value, context);
+    expect(result).toEqual(fakeResult);
 
+    const ticker = 'someTicker';
+    const did = 'someDid';
+    value = {
+      tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+      transactions: [TxTags.identity.AddClaim],
+      portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+    };
+
+    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const rawPortfolioId = dsMockUtils.createMockPortfolioId({
+      did: dsMockUtils.createMockIdentityId(did),
+      kind: dsMockUtils.createMockPortfolioKind('Default'),
+    });
+    createTypeStub
+      .withArgs('Permissions', {
+        asset: [rawTicker],
+        extrinsic: [
+          {
+            /* eslint-disable @typescript-eslint/camelcase */
+            pallet_name: 'Identity',
+            dispatchable_names: ['add_claim'],
+            /* eslint-enable @typescript-eslint/camelcase */
+          },
+        ],
+        portfolio: [rawPortfolioId],
+      })
+      .returns(fakeResult);
+    createTypeStub.withArgs('Ticker', ticker).returns(rawTicker);
+    createTypeStub.withArgs('PortfolioId', sinon.match(sinon.match.object)).returns(rawPortfolioId);
+
+    result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
   });
 
-  test('meshPermissionToPermission should convert a polkadot Permission object to a Permission', () => {
-    let fakeResult = Permission.Admin;
-    let permission = dsMockUtils.createMockPermission(fakeResult);
+  test('meshPermissionsToPermissions should convert a polkadot Permissions object to a Permissions', () => {
+    const context = dsMockUtils.getContextInstance();
+    const ticker = 'someTicker';
+    const did = 'someDid';
+    let fakeResult: Permissions = {
+      tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+      transactions: [
+        TxTags.identity.AddClaim,
+        TxTags.confidential.AddRangeProof,
+        TxTags.confidential.AddVerifyRangeProof,
+      ],
+      portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+    };
+    let permissions = dsMockUtils.createMockPermissions({
+      asset: [dsMockUtils.createMockTicker(ticker)],
+      extrinsic: [
+        /* eslint-disable @typescript-eslint/camelcase */
+        dsMockUtils.createMockPalletPermissions({
+          pallet_name: dsMockUtils.createMockPalletName('Identity'),
+          dispatchable_names: [dsMockUtils.createMockDispatchableName('add_claim')],
+        }),
+        dsMockUtils.createMockPalletPermissions({
+          pallet_name: dsMockUtils.createMockPalletName('Confidential'),
+          dispatchable_names: null,
+        }),
+        /* eslint-enable @typescript-eslint/camelcase */
+      ],
+      portfolio: [
+        dsMockUtils.createMockPortfolioId({
+          did: dsMockUtils.createMockIdentityId(did),
+          kind: dsMockUtils.createMockPortfolioKind('Default'),
+        }),
+      ],
+    });
 
-    let result = meshPermissionToPermission(permission);
+    let result = meshPermissionsToPermissions(permissions, context);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = Permission.Full;
-    permission = dsMockUtils.createMockPermission(fakeResult);
+    fakeResult = {
+      tokens: null,
+      transactions: null,
+      portfolios: null,
+    };
+    permissions = dsMockUtils.createMockPermissions({
+      asset: null,
+      extrinsic: null,
+      portfolio: null,
+    });
 
-    result = meshPermissionToPermission(permission);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = Permission.Operator;
-    permission = dsMockUtils.createMockPermission(fakeResult);
-
-    result = meshPermissionToPermission(permission);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = Permission.SpendFunds;
-    permission = dsMockUtils.createMockPermission(fakeResult);
-
-    result = meshPermissionToPermission(permission);
+    result = meshPermissionsToPermissions(permissions, context);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -1207,9 +1374,13 @@ describe('u8ToTransferStatus', () => {
 
     expect(result).toBe(TransferStatus.PortfolioFailure);
 
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(170));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(176));
 
     expect(result).toBe(TransferStatus.CustodianError);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(177));
+
+    expect(result).toBe(TransferStatus.ScopeClaimMissing);
 
     const fakeStatusCode = 1;
     expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
@@ -1599,7 +1770,7 @@ describe('stringToDocumentHash and documentHashToString', () => {
   });
 });
 
-describe('tokenDocumentDataToDocument and documentToTokenDocumentData', () => {
+describe('stringToDocumentType and documentTypeToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1612,12 +1783,53 @@ describe('tokenDocumentDataToDocument and documentToTokenDocumentData', () => {
     dsMockUtils.cleanup();
   });
 
-  test('tokenDocumentDataToDocument should convert a TokenDocumentData object to a polkadot Document object', () => {
+  test('stringToDocumentType should convert a string to a polkadot DocumentType object', () => {
+    const value = 'someType';
+    const fakeResult = ('convertedType' as unknown) as DocumentType;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('DocumentType', value)
+      .returns(fakeResult);
+
+    const result = stringToDocumentType(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('documentTypeToString should convert a polkadot DocumentType object to a string', () => {
+    const fakeResult = 'someDocumentType';
+    const docType = dsMockUtils.createMockDocumentType(fakeResult);
+
+    const result = documentTypeToString(docType);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('tokenDocumentToDocument and documentToTokenDocument', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('tokenDocumentToDocument should convert a TokenDocument object to a polkadot Document object', () => {
     const uri = 'someUri';
     const contentHash = 'someHash';
+    const name = 'someName';
+    const type = 'someType';
+    const filedAt = new Date();
     const value = {
       uri,
       contentHash,
+      name,
     };
     const fakeResult = ('convertedDocument' as unknown) as Document;
     const context = dsMockUtils.getContextInstance();
@@ -1626,31 +1838,77 @@ describe('tokenDocumentDataToDocument and documentToTokenDocumentData', () => {
       .getCreateTypeStub()
       .withArgs('Document', {
         uri: stringToDocumentUri(uri, context),
-        // eslint-disable-next-line @typescript-eslint/camelcase
+        name: stringToDocumentName(name, context),
+        /* eslint-disable @typescript-eslint/camelcase */
         content_hash: stringToDocumentHash(contentHash, context),
+        doc_type: null,
+        filing_date: null,
+        /* eslint-enable @typescript-eslint/camelcase */
       })
       .returns(fakeResult);
 
-    const result = tokenDocumentDataToDocument(value, context);
+    let result = tokenDocumentToDocument(value, context);
+    expect(result).toEqual(fakeResult);
 
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Document', {
+        uri: stringToDocumentUri(uri, context),
+        name: stringToDocumentName(name, context),
+        /* eslint-disable @typescript-eslint/camelcase */
+        content_hash: stringToDocumentHash(contentHash, context),
+        doc_type: stringToDocumentType(type, context),
+        filing_date: dateToMoment(filedAt, context),
+        /* eslint-enable @typescript-eslint/camelcase */
+      })
+      .returns(fakeResult);
+
+    result = tokenDocumentToDocument({ ...value, filedAt, type }, context);
     expect(result).toEqual(fakeResult);
   });
 
-  test('documentToTokenDocumentData should convert a polkadot Document object to a TokenDocumentData object', () => {
+  test('documentToTokenDocument should convert a polkadot Document object to a TokenDocument object', () => {
+    const name = 'someName';
     const uri = 'someUri';
     const contentHash = 'someHash';
-    const fakeResult = {
+    const filedAt = new Date();
+    const type = 'someType';
+    let fakeResult: TokenDocument = {
+      name,
       uri,
       contentHash,
     };
-    const mockDocument = {
-      uri: dsMockUtils.createMockDocumentUri(uri),
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      content_hash: dsMockUtils.createMockDocumentHash(contentHash),
-    };
-    const doc = dsMockUtils.createMockDocument(mockDocument);
 
-    const result = documentToTokenDocumentData(doc);
+    let doc = dsMockUtils.createMockDocument({
+      uri: dsMockUtils.createMockDocumentUri(uri),
+      name: dsMockUtils.createMockDocumentName(name),
+      /* eslint-disable @typescript-eslint/camelcase */
+      content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+      doc_type: dsMockUtils.createMockOption(),
+      filing_date: dsMockUtils.createMockOption(),
+      /* eslint-enable @typescript-eslint/camelcase */
+    });
+
+    let result = documentToTokenDocument(doc);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      ...fakeResult,
+      filedAt,
+      type,
+    };
+
+    doc = dsMockUtils.createMockDocument({
+      uri: dsMockUtils.createMockDocumentUri(uri),
+      name: dsMockUtils.createMockDocumentName(name),
+      /* eslint-disable @typescript-eslint/camelcase */
+      content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+      doc_type: dsMockUtils.createMockOption(dsMockUtils.createMockDocumentType(type)),
+      filing_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(filedAt.getTime())),
+      /* eslint-enable @typescript-eslint/camelcase */
+    });
+
+    result = documentToTokenDocument(doc);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -1864,10 +2122,44 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
     expect(result).toBe(fakeResult);
 
     value = {
+      type: ClaimType.CustomerDueDiligence,
+      id: 'someCddId',
+    };
+
+    createTypeStub
+      .withArgs('Claim', { [value.type]: stringToCddId(value.id, context) })
+      .returns(fakeResult);
+
+    result = claimToMeshClaim(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    value = {
       type: ClaimType.NoData,
     };
 
     createTypeStub.withArgs('Claim', { [value.type]: null }).returns(fakeResult);
+
+    result = claimToMeshClaim(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    value = {
+      type: ClaimType.InvestorUniqueness,
+      scope: { type: ScopeType.Ticker, value: 'someTicker' },
+      cddId: 'someCddId',
+      scopeId: 'someScopeId',
+    };
+
+    createTypeStub
+      .withArgs('Claim', {
+        [value.type]: [
+          scopeToMeshScope(value.scope, context),
+          stringToScopeId(value.scopeId, context),
+          stringToCddId(value.cddId, context),
+        ],
+      })
+      .returns(fakeResult);
 
     result = claimToMeshClaim(value, context);
 
@@ -2008,6 +2300,92 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
   });
 });
 
+describe('meshClaimTypeToClaimType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshClaimTypeToClaimType should convert a polkadot ClaimType object to a ClaimType', () => {
+    let fakeResult: ClaimType = ClaimType.Accredited;
+
+    let claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    let result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Affiliate;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Blocked;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.BuyLockup;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.CustomerDueDiligence;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Exempted;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Jurisdiction;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.KnowYourCustomer;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.NoData;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.SellLockup;
+
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
 describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
   test('should convert a MiddlewareScope object to a Scope', () => {
     let result = middlewareScopeToScope({
@@ -2054,7 +2432,7 @@ describe('stringToCddId and cddIdToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToCddId should convert a cdd id string into an CddId', () => {
+  test('stringToCddId should convert a cdd id string into a CddId', () => {
     const cddId = 'someId';
     const fakeResult = ('type' as unknown) as CddId;
     const context = dsMockUtils.getContextInstance();
@@ -2074,6 +2452,35 @@ describe('stringToCddId and cddIdToString', () => {
     const cddId = dsMockUtils.createMockCddId(fakeResult);
 
     const result = cddIdToString(cddId);
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('stringToCddId', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToScopeId should convert a scope id string into a ScopeId', () => {
+    const scopeId = 'someId';
+    const fakeResult = ('type' as unknown) as ScopeId;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ScopeId', scopeId)
+      .returns(fakeResult);
+
+    const result = stringToScopeId(scopeId, context);
+
     expect(result).toBe(fakeResult);
   });
 });
@@ -2102,7 +2509,10 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           type: ClaimType.Exempted,
           scope: { type: ScopeType.Identity, value: 'someTickerDid' },
         },
-        trustedClaimIssuers: ['someDid', 'otherDid'],
+        trustedClaimIssuers: [
+          { identity: new Identity({ did }, context) },
+          { identity: new Identity({ did: 'otherDid' }, context) },
+        ],
       },
       {
         type: ConditionType.IsNoneOf,
@@ -2186,9 +2596,12 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
     const id = 1;
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
-    const issuerDids = ['someDid', 'otherDid'];
-    const targetIdentityDid = 'someDid';
     const context = dsMockUtils.getContextInstance();
+    const issuerDids = [
+      { identity: new Identity({ did: 'someDid' }, context) },
+      { identity: new Identity({ did: 'otherDid' }, context) },
+    ];
+    const targetIdentityDid = 'someDid';
     const conditions: Condition[] = [
       {
         type: ConditionType.IsPresent,
@@ -2258,9 +2671,14 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
     const scope = dsMockUtils.createMockScope({
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
-    const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
+    /* eslint-disable @typescript-eslint/camelcase */
+    const issuers = issuerDids.map(({ identity }) =>
+      dsMockUtils.createMockTrustedIssuer({
+        issuer: dsMockUtils.createMockIdentityId(identity.did),
+        trusted_for: dsMockUtils.createMockTrustedFor(),
+      })
+    );
     const rawConditions = [
-      /* eslint-disable @typescript-eslint/camelcase */
       dsMockUtils.createMockCondition({
         condition_type: dsMockUtils.createMockConditionType({
           IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
@@ -2364,27 +2782,16 @@ describe('txTagToProtocolOp', () => {
   });
 
   test('txTagToProtocolOp should ignore "batch" prefixes and postfixes', () => {
-    let value = TxTags.identity.BatchAcceptAuthorization;
+    const value = TxTags.asset.AddDocuments;
     const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('ProtocolOp', 'IdentityAcceptAuthorization')
+      .withArgs('ProtocolOp', 'AssetAddDocument')
       .returns(fakeResult);
 
-    let result = txTagToProtocolOp(value, context);
-
-    expect(result).toEqual(fakeResult);
-
-    value = TxTags.identity.BatchAddClaim;
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ProtocolOp', 'IdentityAddClaim')
-      .returns(fakeResult);
-
-    result = txTagToProtocolOp(value, context);
+    const result = txTagToProtocolOp(value, context);
 
     expect(result).toEqual(fakeResult);
   });
@@ -2566,9 +2973,12 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     const id = 1;
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
-    const issuerDids = ['someDid', 'otherDid'];
-    const targetIdentityDid = 'someDid';
     const context = dsMockUtils.getContextInstance();
+    const issuerDids = [
+      { identity: new Identity({ did: 'someDid' }, context) },
+      { identity: new Identity({ did: 'otherDid' }, context) },
+    ];
+    const targetIdentityDid = 'someDid';
     const conditions: ConditionCompliance[] = [
       {
         condition: {
@@ -2657,9 +3067,14 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     const scope = dsMockUtils.createMockScope({
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
-    const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
+    /* eslint-disable @typescript-eslint/camelcase */
+    const issuers = issuerDids.map(({ identity: { did } }) =>
+      dsMockUtils.createMockTrustedIssuer({
+        issuer: dsMockUtils.createMockIdentityId(did),
+        trusted_for: dsMockUtils.createMockTrustedFor(),
+      })
+    );
     const rawConditions = [
-      /* eslint-disable @typescript-eslint/camelcase */
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
           condition_type: dsMockUtils.createMockConditionType({
@@ -2770,8 +3185,11 @@ describe('assetComplianceResultToCompliance', () => {
     const id = 1;
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
-    const issuerDids = ['someDid', 'otherDid'];
     const context = dsMockUtils.getContextInstance();
+    const issuerDids = [
+      { identity: new Identity({ did: 'someDid' }, context) },
+      { identity: new Identity({ did: 'otherDid' }, context) },
+    ];
     const conditions: ConditionCompliance[] = [
       {
         condition: {
@@ -2842,8 +3260,13 @@ describe('assetComplianceResultToCompliance', () => {
     const scope = dsMockUtils.createMockScope({
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
-    const issuers = issuerDids.map(dsMockUtils.createMockIdentityId);
     /* eslint-disable @typescript-eslint/camelcase */
+    const issuers = issuerDids.map(({ identity: { did } }) =>
+      dsMockUtils.createMockTrustedIssuer({
+        issuer: dsMockUtils.createMockIdentityId(did),
+        trusted_for: dsMockUtils.createMockTrustedFor(),
+      })
+    );
     const rawConditions = [
       /* eslint-disable @typescript-eslint/camelcase */
       dsMockUtils.createMockConditionResult({
@@ -2962,7 +3385,7 @@ describe('transactionHexToTxTag', () => {
     dsMockUtils.cleanup();
   });
 
-  test('transactionHexToTxTag should convert a hex string to a TxTag type', () => {
+  test('transactionHexToTxTag should convert a hex string to a TxTag', () => {
     const hex = '0x110000';
     const fakeResult = TxTags.treasury.Disbursement;
     const mockResult = {
@@ -2978,6 +3401,28 @@ describe('transactionHexToTxTag', () => {
       .returns(mockResult);
 
     const result = transactionHexToTxTag(hex, context);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('transactionToTxTag', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('transactionToTxTag should convert a transaction to a TxTag', () => {
+    const tx = dsMockUtils.createTxStub('asset', 'unfreeze');
+    const fakeResult = TxTags.asset.Unfreeze;
+
+    const result = transactionToTxTag(tx);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -3110,7 +3555,7 @@ describe('meshProposalStateToProposalState', () => {
   // });
 });
 
-describe('meshAuthorizationStatusToAuthorizationStatus', () => {
+describe('meshAffirmationStatusToAffirmationStatus', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -3123,29 +3568,29 @@ describe('meshAuthorizationStatusToAuthorizationStatus', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshAuthorizationStatusToAuthorizationStatus should convert a polkadot AuthorizationStatus object to a AuthorizationStatus', () => {
-    let fakeResult = AuthorizationStatus.Authorized;
-    let permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+  test('meshAffirmationStatusToAffirmationStatus should convert a polkadot AffirmationStatus object to a AffirmationStatus', () => {
+    let fakeResult = AffirmationStatus.Affirmed;
+    let permission = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    let result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    let result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Pending;
-    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Pending;
+    permission = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Rejected;
-    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Rejected;
+    permission = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Unknown;
-    permission = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Unknown;
+    permission = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(permission);
+    result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -3171,23 +3616,29 @@ describe('secondaryKeyToMeshSecondaryKey', () => {
     const context = dsMockUtils.getContextInstance();
     const secondaryKey = {
       signer: entityMockUtils.getAccountInstance(),
-      permissions: [Permission.Full],
+      permissions: {
+        tokens: null,
+        transactions: null,
+        portfolios: null,
+      },
     };
     const mockAccountId = dsMockUtils.createMockAccountId(address);
     const mockSignatory = dsMockUtils.createMockSignatory({ Account: mockAccountId });
-    const mockPermission = dsMockUtils.createMockPermission(secondaryKey.permissions[0]);
+    const mockPermissions = dsMockUtils.createMockPermissions({
+      asset: null,
+      extrinsic: null,
+      portfolio: null,
+    });
     const fakeResult = dsMockUtils.createMockSecondaryKey({
       signer: mockSignatory,
-      permissions: [mockPermission],
+      permissions: mockPermissions,
     });
 
     dsMockUtils
       .getCreateTypeStub()
       .withArgs('SecondaryKey', {
         signer: signerValueToSignatory({ type: SignerType.Account, value: address }, context),
-        permissions: secondaryKey.permissions.map(permission =>
-          permissionToMeshPermission(permission, context)
-        ),
+        permissions: permissionsToMeshPermissions(secondaryKey.permissions, context),
       })
       .returns(fakeResult);
 
@@ -3317,7 +3768,7 @@ describe('meshInstructionStatusToInstructionStatus', () => {
   });
 });
 
-describe('meshAuthorizationStatusToAuthorizationStatus', () => {
+describe('meshAffirmationStatusToAffirmationStatus', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -3330,29 +3781,29 @@ describe('meshAuthorizationStatusToAuthorizationStatus', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshAuthorizationStatusToAuthorizationStatus should convert a polkadot AuthorizationStatus object to a AuthorizationStatus', () => {
-    let fakeResult = AuthorizationStatus.Unknown;
-    let authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+  test('meshAffirmationStatusToAffirmationStatus should convert a polkadot AffirmationStatus object to a AffirmationStatus', () => {
+    let fakeResult = AffirmationStatus.Unknown;
+    let authorizationStatus = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    let result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    let result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Rejected;
-    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Rejected;
+    authorizationStatus = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Pending;
-    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Pending;
+    authorizationStatus = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AuthorizationStatus.Authorized;
-    authorizationStatus = dsMockUtils.createMockAuthorizationStatus(fakeResult);
+    fakeResult = AffirmationStatus.Affirmed;
+    authorizationStatus = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
-    result = meshAuthorizationStatusToAuthorizationStatus(authorizationStatus);
+    result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -3376,11 +3827,11 @@ describe('endConditionToSettlementType', () => {
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('SettlementType', InstructionType.SettleOnAuthorization)
+      .withArgs('SettlementType', InstructionType.SettleOnAffirmation)
       .returns(fakeResult);
 
     let result = endConditionToSettlementType(
-      { type: InstructionType.SettleOnAuthorization },
+      { type: InstructionType.SettleOnAffirmation },
       context
     );
 
@@ -3499,6 +3950,44 @@ describe('portfolioLikeToPortfolioId', () => {
   });
 });
 
+describe('portfolioLikeToPortfolio', () => {
+  let did: string;
+  let id: BigNumber;
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+
+    did = 'someDid';
+    id = new BigNumber(1);
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('should convert a PortfolioLike to a DefaultPortfolio instance', async () => {
+    const result = await portfolioLikeToPortfolio(did, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+  });
+
+  test('should convert a PortfolioLike to a NumberedPortfolio instance', async () => {
+    const result = await portfolioLikeToPortfolio({ identity: did, id }, context);
+    expect(result instanceof NumberedPortfolio).toBe(true);
+  });
+});
+
 describe('toIdentityWithClaimsArray', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -3576,5 +4065,133 @@ describe('toIdentityWithClaimsArray', () => {
     const result = toIdentityWithClaimsArray(fakeMiddlewareIdentityWithClaims, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssuer', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('trustedClaimIssuerToTrustedIssuer should convert a did string into an IdentityId', () => {
+    const did = 'someDid';
+    const fakeResult = ('type' as unknown) as TrustedIssuer;
+    const context = dsMockUtils.getContextInstance();
+
+    let issuer: TrustedClaimIssuer = {
+      identity: entityMockUtils.getIdentityInstance({ did }),
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('TrustedIssuer', {
+        issuer: stringToIdentityId(did, context),
+        trusted_for: 'Any',
+      })
+      .returns(fakeResult);
+
+    let result = trustedClaimIssuerToTrustedIssuer(issuer, context);
+    expect(result).toBe(fakeResult);
+
+    issuer = {
+      identity: entityMockUtils.getIdentityInstance({ did }),
+      trustedFor: [ClaimType.Accredited, ClaimType.Blocked],
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('TrustedIssuer', {
+        issuer: stringToIdentityId(did, context),
+        trusted_for: { Specific: [ClaimType.Accredited, ClaimType.Blocked] },
+      })
+      .returns(fakeResult);
+
+    result = trustedClaimIssuerToTrustedIssuer(issuer, context);
+    expect(result).toBe(fakeResult);
+  });
+
+  test('trustedIssuerToTrustedClaimIssuer should convert an IdentityId to a did string', () => {
+    const did = 'someDid';
+    const context = dsMockUtils.getContextInstance();
+    let fakeResult: TrustedClaimIssuer = {
+      identity: new Identity({ did }, context),
+    };
+    let trustedIssuer = dsMockUtils.createMockTrustedIssuer({
+      issuer: dsMockUtils.createMockIdentityId(did),
+      trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+    });
+
+    let result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = { identity: new Identity({ did }, context), trustedFor: [ClaimType.SellLockup] };
+    trustedIssuer = dsMockUtils.createMockTrustedIssuer({
+      issuer: dsMockUtils.createMockIdentityId(did),
+      trusted_for: dsMockUtils.createMockTrustedFor({
+        Specific: [dsMockUtils.createMockClaimType(ClaimType.SellLockup)],
+      }),
+    });
+
+    result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('permissionsLikeToPermissions', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('permissionsLikeToPermissions should convert a PermissionsLike into a Permissions', async () => {
+    const context = dsMockUtils.getContextInstance();
+    let args: PermissionsLike = { tokens: null, transactions: null, portfolios: null };
+    let result = await permissionsLikeToPermissions(args, context);
+    expect(result).toEqual(args);
+
+    const firstToken = new SecurityToken({ ticker: 'TICKER' }, context);
+    const ticker = 'OTHERTICKER';
+    const secondToken = new SecurityToken({ ticker: ticker }, context);
+    const portfolio = new DefaultPortfolio({ did: 'someDid' }, context);
+
+    args = {
+      tokens: [firstToken, ticker],
+      transactions: [AssetTx.Transfer],
+      portfolios: [portfolio],
+    };
+    result = await permissionsLikeToPermissions(args, context);
+    expect(result).toEqual({
+      tokens: [firstToken, secondToken],
+      transactions: [AssetTx.Transfer],
+      portfolios: [portfolio],
+    });
+
+    result = await permissionsLikeToPermissions({}, context);
+    expect(result).toEqual({
+      tokens: [],
+      transactions: [],
+      portfolios: [],
+    });
   });
 });

@@ -1,16 +1,17 @@
-import { Account } from '~/api/entities';
-import { PolymeshError, Procedure } from '~/base';
-import { AuthorizationType, ErrorCode } from '~/types';
+import { Account, PolymeshError, Procedure } from '~/internal';
+import { AuthorizationType, ErrorCode, Permissions, PermissionsLike } from '~/types';
 import { SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
+  permissionsLikeToPermissions,
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
 
 export interface InviteAccountParams {
   targetAccount: string | Account;
+  permissions?: PermissionsLike;
   expiry?: Date;
 }
 
@@ -30,7 +31,7 @@ export async function prepareInviteAccount(
     context,
   } = this;
 
-  const { targetAccount, expiry } = args;
+  const { targetAccount, permissions: permissionsLike, expiry } = args;
 
   const address = signerToString(targetAccount);
 
@@ -90,8 +91,21 @@ export async function prepareInviteAccount(
     context
   );
 
+  let authorizationValue: Permissions = {
+    tokens: [],
+    transactions: [],
+    portfolios: [],
+  };
+
+  if (permissionsLike) {
+    authorizationValue = await permissionsLikeToPermissions(permissionsLike, context);
+  }
+
   const rawAuthorizationData = authorizationToAuthorizationData(
-    { type: AuthorizationType.JoinIdentity, value: [] },
+    {
+      type: AuthorizationType.JoinIdentity,
+      value: authorizationValue,
+    },
     context
   );
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;

@@ -41,10 +41,7 @@ declare module '@polkadot/api/types/consts' {
        **/
       existentialDeposit: Balance & AugmentedConst<ApiType>;
     };
-    bridge: {
-      maxTimelockedTxsPerBlock: u32 & AugmentedConst<ApiType>;
-    };
-    contracts: {
+    baseContracts: {
       /**
        * The maximum nesting level of a call/instantiate stack. A reasonable default
        * value is 100.
@@ -94,6 +91,12 @@ declare module '@polkadot/api/types/consts' {
        **/
       tombstoneDeposit: BalanceOf & AugmentedConst<ApiType>;
     };
+    contracts: {
+      /**
+       * The minimum amount required to generate a tombstone.
+       **/
+      networkShareInInstantiationFee: Perbill & AugmentedConst<ApiType>;
+    };
     finalityTracker: {
       /**
        * The delay after which point things become suspicious. Default is 1000.
@@ -104,9 +107,14 @@ declare module '@polkadot/api/types/consts' {
        **/
       windowSize: BlockNumber & AugmentedConst<ApiType>;
     };
+    indices: {
+      /**
+       * The deposit needed for reserving an index.
+       **/
+      deposit: BalanceOf & AugmentedConst<ApiType>;
+    };
     settlement: {
-      maxLegsInAInstruction: u32 & AugmentedConst<ApiType>;
-      maxScheduledInstructionLegsPerBlock: u32 & AugmentedConst<ApiType>;
+      maxLegsInInstruction: u32 & AugmentedConst<ApiType>;
     };
     staking: {
       /**

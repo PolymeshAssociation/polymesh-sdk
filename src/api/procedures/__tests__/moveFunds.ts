@@ -2,9 +2,8 @@ import BigNumber from 'bignumber.js';
 import { MovePortfolioItem, PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { DefaultPortfolio, NumberedPortfolio, SecurityToken } from '~/api/entities';
 import { getRequiredRoles, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
-import { Context } from '~/base';
+import { Context, DefaultPortfolio, NumberedPortfolio, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, PortfolioMovement, RoleType } from '~/types';

@@ -2,9 +2,7 @@ import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Entity, Instruction, Venue } from '~/api/entities';
-import { addInstruction } from '~/api/procedures';
-import { Context, TransactionQueue } from '~/base';
+import { addInstruction, Context, Entity, Instruction, TransactionQueue, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { VenueType } from '~/types';
@@ -81,13 +79,17 @@ describe('Venue class', () => {
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
         .withArgs(rawId)
-        .resolves({
-          creator: dsMockUtils.createMockIdentityId(owner),
-          instructions: [],
-          details: dsMockUtils.createMockVenueDetails(description),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          venue_type: dsMockUtils.createMockVenueType(type),
-        });
+        .resolves(
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockVenue({
+              creator: dsMockUtils.createMockIdentityId(owner),
+              instructions: [],
+              details: dsMockUtils.createMockVenueDetails(description),
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              venue_type: dsMockUtils.createMockVenueType(type),
+            })
+          )
+        );
 
       const result = await venue.details();
 
@@ -119,13 +121,17 @@ describe('Venue class', () => {
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
         .withArgs(rawId)
-        .resolves({
-          creator: dsMockUtils.createMockIdentityId(owner),
-          instructions: [dsMockUtils.createMockU64(instructionId.toNumber())],
-          details: dsMockUtils.createMockVenueDetails(description),
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          venue_type: dsMockUtils.createMockVenueType(type),
-        });
+        .resolves(
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockVenue({
+              creator: dsMockUtils.createMockIdentityId(owner),
+              instructions: [dsMockUtils.createMockU64(instructionId.toNumber())],
+              details: dsMockUtils.createMockVenueDetails(description),
+              // eslint-disable-next-line @typescript-eslint/camelcase
+              venue_type: dsMockUtils.createMockVenueType(type),
+            })
+          )
+        );
 
       const result = await venue.getPendingInstructions();
 

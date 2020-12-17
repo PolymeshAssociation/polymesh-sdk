@@ -1,4 +1,4 @@
-import { DefaultPortfolio, Portfolio } from '~/api/entities';
+import { DefaultPortfolio, Portfolio } from '~/internal';
 
 describe('DefaultPortfolio class', () => {
   test('should extend Portfolio', () => {

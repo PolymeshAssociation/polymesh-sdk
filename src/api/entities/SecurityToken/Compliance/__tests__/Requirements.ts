@@ -2,13 +2,26 @@ import { Vec } from '@polkadot/types/codec';
 import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Identity, Namespace, SecurityToken } from '~/api/entities';
-import { togglePauseRequirements } from '~/api/procedures';
-import { Params, setAssetRequirements } from '~/api/procedures/setAssetRequirements';
-import { Context, TransactionQueue } from '~/base';
+import { Params } from '~/api/procedures/setAssetRequirements';
+import {
+  Context,
+  Identity,
+  Namespace,
+  SecurityToken,
+  setAssetRequirements,
+  togglePauseRequirements,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, ConditionTarget, ConditionType, Requirement, ScopeType } from '~/types';
+import {
+  ClaimType,
+  ConditionTarget,
+  ConditionType,
+  Requirement,
+  ScopeType,
+  TrustedClaimIssuer,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Requirements } from '../Requirements';
@@ -107,29 +120,46 @@ describe('Requirements class', () => {
     let context: Context;
     let token: SecurityToken;
     let requirements: Requirements;
-    let defaultClaimIssuers: string[];
-    let notDefaultClaimIssuer: string;
+    let defaultClaimIssuers: TrustedClaimIssuer[];
+    let notDefaultClaimIssuer: TrustedClaimIssuer;
     let tokenDid: string;
     let cddId: string;
+    let trustedIssuerToTrustedClaimIssuerStub: sinon.SinonStub;
 
     let expected: Requirement[];
 
     let queryMultiStub: sinon.SinonStub;
     let queryMultiResult: [AssetCompliance, Vec<IdentityId>];
 
+    beforeAll(() => {
+      trustedIssuerToTrustedClaimIssuerStub = sinon.stub(
+        utilsConversionModule,
+        'trustedIssuerToTrustedClaimIssuer'
+      );
+    });
+
     beforeEach(() => {
       ticker = 'test';
       context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance({ ticker });
       requirements = new Requirements(token, context);
-      defaultClaimIssuers = ['defaultissuer'];
-      notDefaultClaimIssuer = 'notDefaultClaimIssuer';
+      defaultClaimIssuers = [
+        { identity: entityMockUtils.getIdentityInstance({ did: 'defaultissuer' }) },
+      ];
+      notDefaultClaimIssuer = {
+        identity: new Identity({ did: 'notDefaultClaimIssuer' }, context),
+        trustedFor: undefined,
+      };
       tokenDid = 'someTokenDid';
       cddId = 'someCddId';
       dsMockUtils.createQueryStub('complianceManager', 'assetCompliances');
       dsMockUtils.createQueryStub('complianceManager', 'trustedClaimIssuer');
 
       queryMultiStub = dsMockUtils.getQueryMultiStub();
+
+      trustedIssuerToTrustedClaimIssuerStub.returns({
+        identity: defaultClaimIssuers[0].identity,
+      });
 
       const scope = dsMockUtils.createMockScope({
         Identity: dsMockUtils.createMockIdentityId(tokenDid),
@@ -161,7 +191,12 @@ describe('Requirements class', () => {
                       Exempted: scope,
                     }),
                   }),
-                  issuers: [dsMockUtils.createMockIdentityId(notDefaultClaimIssuer)],
+                  issuers: [
+                    dsMockUtils.createMockTrustedIssuer({
+                      issuer: dsMockUtils.createMockIdentityId(notDefaultClaimIssuer.identity.did),
+                      trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+                    }),
+                  ],
                 }),
               ],
               receiver_conditions: [],
@@ -236,7 +271,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should return all requirement attached to the Security Token, using the default trusted claim issuers where none are set', async () => {
+    test('should return all requirements attached to the Security Token, using the default trusted claim issuers where none are set', async () => {
       queryMultiStub.resolves(queryMultiResult);
       const result = await requirements.get();
 
@@ -255,6 +290,7 @@ describe('Requirements class', () => {
       const result = await requirements.get(callback);
 
       expect(result).toBe(unsubCallback);
+
       sinon.assert.calledWithExactly(callback, expected);
     });
   });
@@ -352,8 +388,6 @@ describe('Requirements class', () => {
     let rawToDid: IdentityId;
     let rawCurrentDid: IdentityId;
     let rawTicker: Ticker;
-    let primaryIssuanceAgentDid: string;
-    let rawPrimaryIssuanceAgentDid: IdentityId;
 
     let stringToIdentityIdStub: sinon.SinonStub;
     let assetComplianceResultToRequirementComplianceStub: sinon.SinonStub;
@@ -362,7 +396,6 @@ describe('Requirements class', () => {
     beforeAll(() => {
       fromDid = 'fromDid';
       toDid = 'toDid';
-      primaryIssuanceAgentDid = 'primaryIssuanceAgentDid';
 
       stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
       assetComplianceResultToRequirementComplianceStub = sinon.stub(
@@ -382,15 +415,11 @@ describe('Requirements class', () => {
       rawToDid = dsMockUtils.createMockIdentityId(toDid);
       rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
       rawTicker = dsMockUtils.createMockTicker(token.ticker);
-      rawPrimaryIssuanceAgentDid = dsMockUtils.createMockIdentityId(primaryIssuanceAgentDid);
 
       stringToIdentityIdStub.withArgs(currentDid, context).returns(rawCurrentDid);
       stringToIdentityIdStub.withArgs(fromDid, context).returns(rawFromDid);
       stringToIdentityIdStub.withArgs(toDid, context).returns(rawToDid);
       stringToTickerStub.withArgs(token.ticker, context).returns(rawTicker);
-      stringToIdentityIdStub
-        .withArgs(primaryIssuanceAgentDid, context)
-        .returns(rawPrimaryIssuanceAgentDid);
     });
 
     afterAll(() => {
@@ -400,19 +429,9 @@ describe('Requirements class', () => {
     test('checkSettle should return the current requirement compliance and whether the transfer complies', async () => {
       const rawResponse = ('response' as unknown) as AssetComplianceResult;
 
-      const primaryIssuanceAgent = new Identity({ did: primaryIssuanceAgentDid }, context);
-
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          details: {
-            primaryIssuanceAgent,
-          },
-        },
-      });
-
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawCurrentDid, rawToDid, rawPrimaryIssuanceAgentDid)
+        .withArgs(rawTicker, rawCurrentDid, rawToDid)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
@@ -427,17 +446,9 @@ describe('Requirements class', () => {
     test('checkSettle should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
       const rawResponse = ('response' as unknown) as AssetComplianceResult;
 
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          details: {
-            primaryIssuanceAgent: null,
-          },
-        },
-      });
-
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawFromDid, rawToDid, null)
+        .withArgs(rawTicker, rawFromDid, rawToDid)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
