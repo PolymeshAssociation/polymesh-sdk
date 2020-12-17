@@ -42,6 +42,7 @@ export {
   modifyTokenTrustedClaimIssuers,
   ModifyTokenTrustedClaimIssuersAddSetParams,
   ModifyTokenTrustedClaimIssuersRemoveParams,
+  Params as ModifyTokenTrustedClaimIssuersParams,
 } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
 export { registerIdentity, RegisterIdentityParams } from '~/api/procedures/registerIdentity';
 export {

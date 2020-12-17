@@ -1,4 +1,4 @@
-import { Context, Identity, modifyClaims, ModifyClaimsParams, TransactionQueue } from '~/internal';
+import { Context, Identity, modifyClaims, ModifyClaimsParams } from '~/internal';
 import {
   didsWithClaims,
   issuerDidsWithClaimsByTarget,
@@ -14,14 +14,14 @@ import {
   ResultSet,
   Scope,
 } from '~/types';
-import { ClaimOperation } from '~/types/internal';
+import { ClaimOperation, ProcedureMethod } from '~/types/internal';
 import {
   middlewareScopeToScope,
   scopeToMiddlewareScope,
   signerToString,
   toIdentityWithClaimsArray,
 } from '~/utils/conversion';
-import { calculateNextKey, getDid, removePadding } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
 
 /**
  * Handles all Claims related functionality
@@ -34,6 +34,51 @@ export class Claims {
    */
   constructor(context: Context) {
     this.context = context;
+
+    this.addClaims = createProcedureMethod<
+      Omit<ModifyClaimsParams, 'operation'>,
+      ModifyClaimsParams,
+      void
+    >(
+      args => [
+        modifyClaims,
+        {
+          ...args,
+          operation: ClaimOperation.Add,
+        } as ModifyClaimsParams,
+      ],
+      context
+    );
+
+    this.editClaims = createProcedureMethod<
+      Omit<ModifyClaimsParams, 'operation'>,
+      ModifyClaimsParams,
+      void
+    >(
+      args => [
+        modifyClaims,
+        {
+          ...args,
+          operation: ClaimOperation.Edit,
+        } as ModifyClaimsParams,
+      ],
+      context
+    );
+
+    this.revokeClaims = createProcedureMethod<
+      Omit<ModifyClaimsParams, 'operation'>,
+      ModifyClaimsParams,
+      void
+    >(
+      args => [
+        modifyClaims,
+        {
+          ...args,
+          operation: ClaimOperation.Revoke,
+        } as ModifyClaimsParams,
+      ],
+      context
+    );
   }
 
   /**
@@ -41,29 +86,22 @@ export class Claims {
    *
    * @param args.claims - array of claims to be added
    */
-  public addClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Add }, this.context);
-  }
+  public addClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
   /**
    * Edit claims associated to Identities (only the expiry date can be modified)
    *
    * * @param args.claims - array of claims to be edited
    */
-  public editClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Edit }, this.context);
-  }
+
+  public editClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
   /**
    * Revoke claims from Identities
    *
    * @param args.claims - array of claims to be revoked
    */
-  public revokeClaims(
-    args: Omit<ModifyClaimsParams, 'operation'>
-  ): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Revoke }, this.context);
-  }
+  public revokeClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
   /**
    * Retrieve all claims issued by an Identity

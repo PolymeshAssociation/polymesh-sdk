@@ -38,6 +38,10 @@ jest.mock(
     '~/api/entities/TickerReservation'
   )
 );
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
 
 describe('createSecurityToken procedure', () => {
   let mockContext: Mocked<Context>;
@@ -240,7 +244,7 @@ describe('createSecurityToken procedure', () => {
       rawIdentifiers,
       rawFundingRound
     );
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
 
     await prepareCreateSecurityToken.call(proc, {
       ...args,
@@ -276,7 +280,7 @@ describe('createSecurityToken procedure', () => {
       rawTicker
     );
 
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 });
 

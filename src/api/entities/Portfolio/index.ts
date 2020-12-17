@@ -11,15 +11,15 @@ import {
   SecurityToken,
   setCustodian,
   SetCustodianParams,
-  TransactionQueue,
 } from '~/internal';
+import { ProcedureMethod } from '~/types/internal';
 import {
   balanceToBigNumber,
   identityIdToString,
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
-import { getDid } from '~/utils/internal';
+import { createProcedureMethod, getDid } from '~/utils/internal';
 
 import { PortfolioBalance } from './types';
 
@@ -62,6 +62,12 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
 
     this.owner = new Identity({ did }, context);
     this._id = id;
+
+    this.setCustodian = createProcedureMethod(
+      args => [setCustodian, { ...args, did, id }],
+      context
+    );
+    this.moveFunds = createProcedureMethod(args => [moveFunds, { ...args, from: this }], context);
   }
 
   /**
@@ -171,15 +177,8 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
    *   the corresponding Identity. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
-  public setCustodian(args: SetCustodianParams): Promise<TransactionQueue<void>> {
-    const {
-      owner: { did },
-      _id: id,
-      context,
-    } = this;
 
-    return setCustodian.prepare({ ...args, did, id }, context);
-  }
+  public setCustodian: ProcedureMethod<SetCustodianParams, void>;
 
   /**
    * Moves funds from this Portfolio to another one owned by the same Identity
@@ -187,9 +186,8 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
    * @param args.to - portfolio (or portfolio ID) that will receive the funds. Optional, if no value is passed, the funds will be moved to the default Portfolio of this Portfolio's owner
    * @param args.movements - list of tokens (and their corresponding amounts) that will be moved
    */
-  public async moveFunds(args: MoveFundsParams): Promise<TransactionQueue<void>> {
-    return moveFunds.prepare({ ...args, from: this }, this.context);
-  }
+
+  public moveFunds: ProcedureMethod<MoveFundsParams, void>;
 
   /**
    * Retrieve the custodian Identity of this Portfolio

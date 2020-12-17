@@ -6,7 +6,6 @@ import sinon from 'sinon';
 import {
   Context,
   Entity,
-  Identity,
   moveFunds,
   NumberedPortfolio,
   Portfolio,
@@ -14,15 +13,21 @@ import {
   setCustodian,
   TransactionQueue,
 } from '~/internal';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 describe('Portfolio class', () => {
   let context: Context;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -31,10 +36,12 @@ describe('Portfolio class', () => {
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -44,7 +51,7 @@ describe('Portfolio class', () => {
   describe('constructor', () => {
     test('should assign Identity to instance', () => {
       const did = 'someDid';
-      const identity = new Identity({ did }, context);
+      const identity = entityMockUtils.getIdentityInstance({ did });
       const portfolio = new Portfolio({ did }, context);
 
       expect(portfolio.owner).toEqual(identity);

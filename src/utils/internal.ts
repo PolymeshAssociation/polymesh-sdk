@@ -8,7 +8,14 @@ import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd, range } from 'lodash';
 import { TxTag } from 'polymesh-types/types';
 
-import { Context, Identity, PolymeshError, PostTransactionValue } from '~/internal';
+import { Procedure } from '~/base/Procedure';
+import {
+  Context,
+  Identity,
+  PolymeshError,
+  PostTransactionValue,
+  TransactionQueue,
+} from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
   Claim,
@@ -17,13 +24,16 @@ import {
   ErrorCode,
   NextKey,
   PaginationOptions,
+  ProcedureAuthorizationStatus,
   Scope,
 } from '~/types';
 import {
   Extrinsics,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
+  ProcedureMethod,
 } from '~/types/internal';
+import { UnionOfProcedures } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   DEFAULT_MAX_BATCH_ELEMENTS,
@@ -344,4 +354,31 @@ export function batchArguments<Args>(
 export function calculateNextKey(totalCount: number, size?: number, start?: number): NextKey {
   const next = (start ?? 0) + (size ?? DEFAULT_GQL_PAGE_SIZE);
   return totalCount > next ? next : null;
+}
+
+/**
+ * Create a method that prepares a procedure
+ */
+export function createProcedureMethod<MethodArgs, ProcedureArgs extends unknown, ReturnValue>(
+  getProcedureAndArgs: (
+    args: MethodArgs
+  ) => [
+    UnionOfProcedures<ProcedureArgs, ReturnValue> | Procedure<ProcedureArgs, ReturnValue>,
+    ProcedureArgs
+  ],
+  context: Context
+): ProcedureMethod<MethodArgs, ReturnValue> {
+  const method = (args: MethodArgs): Promise<TransactionQueue<ReturnValue>> => {
+    const [proc, procArgs] = getProcedureAndArgs(args);
+
+    return proc.prepare(procArgs, context);
+  };
+
+  method.checkAuthorization = async (args: MethodArgs): Promise<ProcedureAuthorizationStatus> => {
+    const [proc, procArgs] = getProcedureAndArgs(args);
+
+    return proc.checkAuthorization(procArgs, context);
+  };
+
+  return method;
 }

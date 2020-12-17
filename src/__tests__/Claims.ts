@@ -1,7 +1,7 @@
 import sinon from 'sinon';
 
 import { Claims } from '~/Claims';
-import { Context, Identity, modifyClaims, TransactionQueue } from '~/internal';
+import { Context, modifyClaims, TransactionQueue } from '~/internal';
 import {
   didsWithClaims,
   issuerDidsWithClaimsByTarget,
@@ -21,6 +21,11 @@ import {
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 describe('Claims Class', () => {
   let context: Mocked<Context>;
@@ -52,8 +57,8 @@ describe('Claims Class', () => {
       const issuedClaims: ResultSet<ClaimData> = {
         data: [
           {
-            target: new Identity({ did: target }, context),
-            issuer: new Identity({ did: 'otherDid' }, context),
+            target: entityMockUtils.getIdentityInstance({ did: target }),
+            issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
             issuedAt: new Date(),
             expiry: null,
             claim: { type: ClaimType.NoData },
@@ -83,29 +88,30 @@ describe('Claims Class', () => {
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
       const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
+      const cddId = 'someCddId';
+      const claimData = {
+        type: ClaimTypeEnum.CustomerDueDiligence,
+        id: cddId,
+      };
       const claim = {
-        target: new Identity({ did: targetDid }, context),
-        issuer: new Identity({ did: issuerDid }, context),
+        target: entityMockUtils.getIdentityInstance({ did: targetDid }),
+        issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
         issuedAt: new Date(date),
       };
 
       const fakeClaims = [
         {
-          identity: new Identity({ did: targetDid }, context),
+          identity: entityMockUtils.getIdentityInstance({ did: targetDid }),
           claims: [
             {
               ...claim,
               expiry: new Date(date),
-              claim: {
-                type: customerDueDiligenceType,
-              },
+              claim: claimData,
             },
             {
               ...claim,
               expiry: null,
-              claim: {
-                type: customerDueDiligenceType,
-              },
+              claim: claimData,
             },
           ],
         },
@@ -127,11 +133,13 @@ describe('Claims Class', () => {
                 ...commonClaimData,
                 expiry: date,
                 type: customerDueDiligenceType,
+                cdd_id: cddId,
               },
               {
                 ...commonClaimData,
                 expiry: null,
                 type: customerDueDiligenceType,
+                cdd_id: cddId,
               },
             ],
           },
@@ -164,7 +172,7 @@ describe('Claims Class', () => {
         size: 1,
       });
 
-      expect(result.data).toEqual(fakeClaims);
+      expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
       expect(result.count).toEqual(25);
       expect(result.next).toEqual(1);
 
@@ -185,7 +193,7 @@ describe('Claims Class', () => {
 
       result = await claims.getIdentitiesWithClaims();
 
-      expect(result.data).toEqual(fakeClaims);
+      expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
       expect(result.count).toEqual(25);
       expect(result.next).toEqual(null);
     });
@@ -197,14 +205,14 @@ describe('Claims Class', () => {
       const date = 1589816265000;
       const accreditedType = ClaimTypeEnum.Accredited;
       const claim = {
-        target: new Identity({ did: targetDid }, context),
-        issuer: new Identity({ did: issuerDid }, context),
+        target: entityMockUtils.getIdentityInstance({ did: targetDid }),
+        issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
         issuedAt: new Date(date),
       };
 
       const fakeClaims = [
         {
-          identity: new Identity({ did: targetDid }, context),
+          identity: entityMockUtils.getIdentityInstance({ did: targetDid }),
           claims: [
             {
               ...claim,
@@ -288,9 +296,9 @@ describe('Claims Class', () => {
         size: 1,
       });
 
-      expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
-      expect(result.next).toEqual(1);
+      expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
+      expect(result.count).toBe(25);
+      expect(result.next).toBe(1);
     });
   });
 
@@ -394,8 +402,8 @@ describe('Claims Class', () => {
       const issuedClaims: ResultSet<ClaimData> = {
         data: [
           {
-            target: new Identity({ did: target }, context),
-            issuer: new Identity({ did: 'otherDid' }, context),
+            target: entityMockUtils.getIdentityInstance({ did: target }),
+            issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
             issuedAt: new Date(),
             expiry: null,
             claim: { type: ClaimType.CustomerDueDiligence, id: 'someCddId' },
@@ -470,13 +478,13 @@ describe('Claims Class', () => {
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
       const claim = {
-        target: new Identity({ did }, context),
-        issuer: new Identity({ did: issuerDid }, context),
+        target: entityMockUtils.getIdentityInstance({ did }),
+        issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
         issuedAt: new Date(date),
       };
       const fakeClaims: IdentityWithClaims[] = [
         {
-          identity: new Identity({ did }, context),
+          identity: entityMockUtils.getIdentityInstance({ did }),
           claims: [
             {
               ...claim,
@@ -573,13 +581,13 @@ describe('Claims Class', () => {
     const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
     const date = 1589816265000;
     const claim = {
-      target: new Identity({ did }, context),
-      issuer: new Identity({ did: issuerDid }, context),
+      target: entityMockUtils.getIdentityInstance({ did }),
+      issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
       issuedAt: new Date(date),
     };
     const fakeClaims: IdentityWithClaims[] = [
       {
-        identity: new Identity({ did }, context),
+        identity: entityMockUtils.getIdentityInstance({ did }),
         claims: [
           {
             ...claim,
