@@ -1285,9 +1285,30 @@ describe('Context class', () => {
 
       dsMockUtils.createQueryStub('identity', 'claims').entries = entriesStub;
 
-      const result = (await context.issuedClaims()) as ClaimData[];
+      const result = (await context.issuedClaims({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+      })) as ClaimData[];
 
       expect(result).toEqual(fakeClaims);
+    });
+
+    test('should throw if the middleware query fails and targets or claimTypes are not seted', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: '0x6'.padEnd(66, '0'),
+      });
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          middlewareAvailable: false,
+        },
+      });
+
+      await expect(context.issuedClaims()).rejects.toThrow(
+        'Cannot perform this action without an active middleware connection'
+      );
     });
   });
 

@@ -7,6 +7,7 @@ import { hexToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 import { polymesh } from 'polymesh-types/definitions';
 import { Claim1stKey, DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
@@ -590,6 +591,48 @@ export class Context {
   }
 
   /**
+   * @hidden
+   */
+  private async identityClaimsEntries(args: {
+    targets: (string | Identity)[];
+    claimTypes: ClaimType[];
+  }): Promise<ClaimData[]> {
+    const {
+      polymeshApi: {
+        query: { identity },
+      },
+    } = this;
+
+    const { targets, claimTypes } = args;
+    const data: ClaimData[] = [];
+
+    await P.each(targets, async rawTarget => {
+      await P.each(claimTypes, async rawClaimType => {
+        const entries = await identity.claims.entries({
+          target: signerToString(rawTarget),
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          claim_type: claimTypeToMeshClaimType(rawClaimType, this),
+        });
+
+        entries.forEach(
+          ([key, { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry, claim }]) => {
+            const { target } = key.args[0] as Claim1stKey;
+            data.push({
+              target: new Identity({ did: identityIdToString(target) }, this),
+              issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
+              issuedAt: momentToDate(issuanceDate),
+              expiry: expiry ? momentToDate(expiry.unwrap()) : null,
+              claim: meshClaimToClaim(claim),
+            });
+          }
+        );
+      });
+    });
+
+    return data;
+  }
+
+  /**
    * Retrieve a list of claims. Can be filtered using parameters
    *
    * @param opts.targets - identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
@@ -611,18 +654,13 @@ export class Context {
       start?: number;
     } = {}
   ): Promise<ResultSet<ClaimData> | ClaimData[]> {
-    const {
-      polymeshApi: {
-        query: { identity },
-      },
-    } = this;
-
     const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
 
-    const data: ClaimData[] = [];
     const isMiddlewareAvailable = await this.isMiddlewareAvailable();
 
     if (isMiddlewareAvailable) {
+      const data: ClaimData[] = [];
+
       const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
         didsWithClaims({
           dids: targets?.map(target => signerToString(target)),
@@ -673,27 +711,16 @@ export class Context {
         count,
       };
     } else {
-      const { did } = await this.getCurrentIdentity();
-      const entries = await identity.claims.entries({
-        target: stringToIdentityId(did, this),
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        claim_type: claimTypeToMeshClaimType(ClaimType.CustomerDueDiligence, this),
-      });
+      if (!targets || !claimTypes) {
+        throw new PolymeshError({
+          code: ErrorCode.FatalError,
+          message: 'Cannot perform this action without an active middleware connection',
+        });
+      }
 
-      entries.forEach(
-        ([key, { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry, claim }]) => {
-          const { target } = key.args[0] as Claim1stKey;
-          data.push({
-            target: new Identity({ did: identityIdToString(target) }, this),
-            issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
-            issuedAt: momentToDate(issuanceDate),
-            expiry: expiry ? momentToDate(expiry.unwrap()) : null,
-            claim: meshClaimToClaim(claim),
-          });
-        }
-      );
+      const identityClaimsEntries = await this.identityClaimsEntries({ targets, claimTypes });
 
-      return data;
+      return identityClaimsEntries;
     }
   }
 
