@@ -593,7 +593,7 @@ export class Context {
   /**
    * @hidden
    */
-  private async identityClaimsEntries(args: {
+  private async getIdentityClaimsFromChain(args: {
     targets: (string | Identity)[];
     claimTypes: ClaimType[];
     includeExpired: boolean;
@@ -607,12 +607,14 @@ export class Context {
     const { targets, claimTypes, includeExpired } = args;
     const data: ClaimData[] = [];
 
+    console.log('re entre');
+
     await P.each(targets, async rawTarget => {
-      await P.each(claimTypes, async rawClaimType => {
+      await P.each(claimTypes, async claimType => {
         const entries = await identity.claims.entries({
           target: signerToString(rawTarget),
           // eslint-disable-next-line @typescript-eslint/camelcase
-          claim_type: claimTypeToMeshClaimType(rawClaimType, this),
+          claim_type: claimTypeToMeshClaimType(claimType, this),
         });
 
         entries.forEach(
@@ -735,14 +737,14 @@ export class Context {
       });
     }
 
-    const identityClaimsEntries = await this.identityClaimsEntries({
+    const identityClaimsFromChain = await this.getIdentityClaimsFromChain({
       targets,
       claimTypes,
       includeExpired,
     });
 
     return {
-      data: identityClaimsEntries,
+      data: identityClaimsFromChain,
       next: null,
       count: undefined,
     };
