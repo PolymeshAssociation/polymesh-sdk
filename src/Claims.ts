@@ -96,7 +96,7 @@ export class Claims {
       size?: number;
       start?: number;
     } = {}
-  ): Promise<ResultSet<ClaimData> | ClaimData[]> {
+  ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
     const { target, includeExpired = true, size, start } = opts;
 
@@ -234,7 +234,7 @@ export class Claims {
       size?: number;
       start?: number;
     } = {}
-  ): Promise<ResultSet<ClaimData> | ClaimData[]> {
+  ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
     const { target, includeExpired = true, size, start } = opts;
 

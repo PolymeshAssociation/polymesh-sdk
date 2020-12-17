@@ -1226,7 +1226,8 @@ describe('Context class', () => {
       const issuerDid = 'someIssuerDid';
       const cddId = 'someCddId';
       const issuedAt = new Date('10/14/2019');
-      const expiry = new Date('10/14/3019');
+      const expiry = new Date('10/14/2020');
+      const expiryTwo = new Date('10/14/2060');
 
       const claim1stKey = dsMockUtils.createMockClaim1stKey({
         target: dsMockUtils.createMockIdentityId(targetDid),
@@ -1263,6 +1264,16 @@ describe('Context class', () => {
             id: cddId,
           },
         },
+        {
+          target: new Identity({ did: targetDid }, context),
+          issuer: new Identity({ did: issuerDid }, context),
+          issuedAt,
+          expiry: expiryTwo,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
       ];
 
       dsMockUtils.configureMocks({
@@ -1281,16 +1292,33 @@ describe('Context class', () => {
           }
         ),
         tuple({ args: [claim1stKey] }, identityClaim),
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryTwo.getTime())),
+          }
+        ),
       ]);
 
       dsMockUtils.createQueryStub('identity', 'claims').entries = entriesStub;
 
-      const result = (await context.issuedClaims({
+      const result = await context.issuedClaims({
         targets: [targetDid],
         claimTypes: [ClaimType.CustomerDueDiligence],
-      })) as ClaimData[];
+      });
 
-      expect(result).toEqual(fakeClaims);
+      expect(result.data).toEqual(fakeClaims);
+
+      const { data } = await context.issuedClaims({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+        includeExpired: false,
+      });
+
+      expect(data.length).toEqual(2);
+      expect(data[0]).toEqual(fakeClaims[1]);
+      expect(data[1]).toEqual(fakeClaims[2]);
     });
 
     test('should throw if the middleware query fails and targets or claimTypes are not seted', async () => {

@@ -596,6 +596,7 @@ export class Context {
   private async identityClaimsEntries(args: {
     targets: (string | Identity)[];
     claimTypes: ClaimType[];
+    includeExpired: boolean;
   }): Promise<ClaimData[]> {
     const {
       polymeshApi: {
@@ -603,7 +604,7 @@ export class Context {
       },
     } = this;
 
-    const { targets, claimTypes } = args;
+    const { targets, claimTypes, includeExpired } = args;
     const data: ClaimData[] = [];
 
     await P.each(targets, async rawTarget => {
@@ -615,15 +616,30 @@ export class Context {
         });
 
         entries.forEach(
-          ([key, { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry, claim }]) => {
+          ([
+            key,
+            { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
+          ]) => {
             const { target } = key.args[0] as Claim1stKey;
-            data.push({
-              target: new Identity({ did: identityIdToString(target) }, this),
-              issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
-              issuedAt: momentToDate(issuanceDate),
-              expiry: expiry ? momentToDate(expiry.unwrap()) : null,
-              claim: meshClaimToClaim(claim),
-            });
+            const expiry = rawExpiry ? momentToDate(rawExpiry.unwrap()) : null;
+            const now = new Date();
+
+            let claimExpired = false;
+            if (expiry === null) {
+              claimExpired = false;
+            } else if (now.getTime() > expiry.getTime()) {
+              claimExpired = true;
+            }
+
+            if (includeExpired || (!includeExpired && !claimExpired)) {
+              data.push({
+                target: new Identity({ did: identityIdToString(target) }, this),
+                issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
+                issuedAt: momentToDate(issuanceDate),
+                expiry,
+                claim: meshClaimToClaim(claim),
+              });
+            }
           }
         );
       });
@@ -653,7 +669,7 @@ export class Context {
       size?: number;
       start?: number;
     } = {}
-  ): Promise<ResultSet<ClaimData> | ClaimData[]> {
+  ): Promise<ResultSet<ClaimData>> {
     const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
 
     const isMiddlewareAvailable = await this.isMiddlewareAvailable();
@@ -710,18 +726,26 @@ export class Context {
         next,
         count,
       };
-    } else {
-      if (!targets || !claimTypes) {
-        throw new PolymeshError({
-          code: ErrorCode.FatalError,
-          message: 'Cannot perform this action without an active middleware connection',
-        });
-      }
-
-      const identityClaimsEntries = await this.identityClaimsEntries({ targets, claimTypes });
-
-      return identityClaimsEntries;
     }
+
+    if (!targets || !claimTypes) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Cannot perform this action without an active middleware connection',
+      });
+    }
+
+    const identityClaimsEntries = await this.identityClaimsEntries({
+      targets,
+      claimTypes,
+      includeExpired,
+    });
+
+    return {
+      data: identityClaimsEntries,
+      next: null,
+      count: undefined,
+    };
   }
 
   /**
