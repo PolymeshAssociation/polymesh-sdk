@@ -51,7 +51,7 @@ export type ModifyClaimsParams = AddClaimsParams | EditClaimsParams | RevokeClai
  * @hidden
  */
 export function groupByDid([target]: MapMaybePostTransactionValue<
-  Parameters<Extrinsics['identity']['addClaim']>
+  Parameters<Extrinsics['identity']['revokeClaim']> | Parameters<Extrinsics['identity']['addClaim']>
 >): string {
   return identityIdToString(target as IdentityId);
 }
@@ -162,15 +162,15 @@ export async function prepareModifyClaims(
     }
   }
 
-  let transaction: typeof identity.addClaim | typeof identity.revokeClaim;
-
   if (operation === ClaimOperation.Revoke) {
-    transaction = identity.revokeClaim;
+    this.addBatchTransaction(
+      identity.revokeClaim,
+      { groupByFn: groupByDid },
+      modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim))
+    );
   } else {
-    transaction = identity.addClaim;
+    this.addBatchTransaction(identity.addClaim, { groupByFn: groupByDid }, modifyClaimArgs);
   }
-
-  this.addBatchTransaction(transaction, { groupByFn: groupByDid }, modifyClaimArgs);
 }
 
 /**
