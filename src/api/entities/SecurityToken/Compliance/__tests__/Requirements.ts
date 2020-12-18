@@ -13,10 +13,22 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, ConditionTarget, ConditionType, Requirement, ScopeType } from '~/types';
+import {
+  ClaimType,
+  ConditionTarget,
+  ConditionType,
+  Requirement,
+  ScopeType,
+  TrustedClaimIssuer,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Requirements } from '../Requirements';
+
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 describe('Requirements class', () => {
   beforeAll(() => {
@@ -112,29 +124,46 @@ describe('Requirements class', () => {
     let context: Context;
     let token: SecurityToken;
     let requirements: Requirements;
-    let defaultClaimIssuers: string[];
-    let notDefaultClaimIssuer: string;
+    let defaultClaimIssuers: TrustedClaimIssuer[];
+    let notDefaultClaimIssuer: TrustedClaimIssuer;
     let tokenDid: string;
     let cddId: string;
+    let trustedIssuerToTrustedClaimIssuerStub: sinon.SinonStub;
 
     let expected: Requirement[];
 
     let queryMultiStub: sinon.SinonStub;
     let queryMultiResult: [AssetCompliance, Vec<IdentityId>];
 
+    beforeAll(() => {
+      trustedIssuerToTrustedClaimIssuerStub = sinon.stub(
+        utilsConversionModule,
+        'trustedIssuerToTrustedClaimIssuer'
+      );
+    });
+
     beforeEach(() => {
       ticker = 'test';
       context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance({ ticker });
       requirements = new Requirements(token, context);
-      defaultClaimIssuers = ['defaultissuer'];
-      notDefaultClaimIssuer = 'notDefaultClaimIssuer';
+      defaultClaimIssuers = [
+        { identity: entityMockUtils.getIdentityInstance({ did: 'defaultissuer' }) },
+      ];
+      notDefaultClaimIssuer = {
+        identity: entityMockUtils.getIdentityInstance({ did: 'notDefaultClaimIssuer' }),
+        trustedFor: undefined,
+      };
       tokenDid = 'someTokenDid';
       cddId = 'someCddId';
       dsMockUtils.createQueryStub('complianceManager', 'assetCompliances');
       dsMockUtils.createQueryStub('complianceManager', 'trustedClaimIssuer');
 
       queryMultiStub = dsMockUtils.getQueryMultiStub();
+
+      trustedIssuerToTrustedClaimIssuerStub.returns({
+        identity: defaultClaimIssuers[0].identity,
+      });
 
       const scope = dsMockUtils.createMockScope({
         Identity: dsMockUtils.createMockIdentityId(tokenDid),
@@ -168,7 +197,7 @@ describe('Requirements class', () => {
                   }),
                   issuers: [
                     dsMockUtils.createMockTrustedIssuer({
-                      issuer: dsMockUtils.createMockIdentityId(notDefaultClaimIssuer),
+                      issuer: dsMockUtils.createMockIdentityId(notDefaultClaimIssuer.identity.did),
                       trusted_for: dsMockUtils.createMockTrustedFor('Any'),
                     }),
                   ],
@@ -265,6 +294,7 @@ describe('Requirements class', () => {
       const result = await requirements.get(callback);
 
       expect(result).toBe(unsubCallback);
+
       sinon.assert.calledWithExactly(callback, expected);
     });
   });

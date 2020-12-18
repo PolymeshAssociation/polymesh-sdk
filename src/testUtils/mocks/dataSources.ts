@@ -75,6 +75,7 @@ import {
   IdentityRole,
   Instruction,
   InstructionStatus,
+  InvestorZKProofData,
   IssueAssetItem,
   MovePortfolioItem,
   PalletName,
@@ -88,6 +89,7 @@ import {
   PosRatio,
   ProposalState,
   Scope,
+  ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SecurityToken,
   SettlementType,
@@ -257,7 +259,9 @@ export enum MockTxStatus {
   Aborted = 'Aborted',
   Rejected = 'Rejected',
   Intermediate = 'Intermediate',
+  InBlock = 'InBlock',
   BatchFailed = 'BatchFailed',
+  FinalizedFailed = 'FinalizedFailed',
 }
 
 export enum TxFailReason {
@@ -286,10 +290,16 @@ const intermediateReceipt: ISubmittableResult = merge({}, defaultReceipt, {
   isInBlock: false,
 });
 
-const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
+const inBlockReceipt: ISubmittableResult = merge({}, defaultReceipt, {
   status: { isReady: false, isInBlock: true, asInBlock: 'blockHash' },
   isCompleted: true,
   isInBlock: true,
+});
+
+const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
+  status: { isReady: false, isFinalized: true, asFinalized: 'blockHash' },
+  isCompleted: true,
+  isFinalized: true,
 });
 
 const batchFailedReceipt: ISubmittableResult = merge({}, successReceipt, {
@@ -302,8 +312,11 @@ const batchFailedReceipt: ISubmittableResult = merge({}, successReceipt, {
 /**
  * @hidden
  */
-const createFailReceipt = (err: Partial<DispatchError>): ISubmittableResult =>
-  merge({}, successReceipt, {
+const createFailReceipt = (
+  err: Partial<DispatchError>,
+  baseReceipt: ISubmittableResult = inBlockReceipt
+): ISubmittableResult =>
+  merge({}, baseReceipt, {
     findRecord: () => ({ event: { data: [err] } }),
   });
 
@@ -333,6 +346,8 @@ const abortReceipt: ISubmittableResult = merge({}, defaultReceipt, {
   isError: true,
   isCompleted: true,
 });
+
+const finalizedErrorReceipt = createFailReceipt({}, successReceipt);
 
 /**
  * @hidden
@@ -367,8 +382,14 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
   if (status === MockTxStatus.Intermediate) {
     return intermediateReceipt;
   }
+  if (status === MockTxStatus.InBlock) {
+    return inBlockReceipt;
+  }
   if (status === MockTxStatus.BatchFailed) {
     return batchFailedReceipt;
+  }
+  if (status === MockTxStatus.FinalizedFailed) {
+    return finalizedErrorReceipt;
   }
 
   throw new Error(`There is no receipt associated with status ${status}`);
@@ -1750,6 +1771,20 @@ export const createMockCddId = (cddId?: string): CddId => createMockStringCodec(
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockScopeId = (scopeId?: string): ScopeId =>
+  createMockStringCodec(scopeId) as ScopeId;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockInvestorZKProofData = (proof?: string): InvestorZKProofData =>
+  createMockStringCodec(proof) as InvestorZKProofData;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockClaim = (
   claim?:
     | { Accredited: Scope }
@@ -1761,6 +1796,7 @@ export const createMockClaim = (
     | { Jurisdiction: [CountryCode, Scope] }
     | { Exempted: Scope }
     | { Blocked: Scope }
+    | { InvestorUniqueness: [Scope, ScopeId, CddId] }
     | 'NoData'
 ): Claim => createMockEnum(claim) as Claim;
 

@@ -1,10 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-import { ConsumeAuthorizationRequestsParams } from '~/api/procedures/consumeAuthorizationRequests';
-import { ConsumeJoinIdentityAuthorizationParams } from '~/api/procedures/consumeJoinIdentityAuthorization';
 import {
   consumeAuthorizationRequests,
+  ConsumeAuthorizationRequestsParams,
   consumeJoinIdentityAuthorization,
+  ConsumeJoinIdentityAuthorizationParams,
   Context,
   Entity,
   Identity,

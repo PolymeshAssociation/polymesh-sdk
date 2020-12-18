@@ -117,28 +117,41 @@ export function createClaim(
   claimType: string,
   jurisdiction: string | null | undefined,
   middlewareScope: MiddlewareScope | null | undefined,
-  cddId: string | null | undefined
+  cddId: string | null | undefined,
+  scopeId: string | null | undefined
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
 
-  if (type === ClaimType.Jurisdiction) {
-    return {
-      type,
-      // this assertion is necessary because CountryCode is not in the middleware types
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      code: stringUpperFirst(jurisdiction!.toLowerCase()) as CountryCode,
-      scope,
-    };
-  } else if (type === ClaimType.NoData) {
-    return {
-      type,
-    };
-  } else if (type === ClaimType.CustomerDueDiligence) {
-    return {
-      type,
-      id: cddId as string,
-    };
+  switch (type) {
+    case ClaimType.Jurisdiction: {
+      return {
+        type,
+        // this assertion is necessary because CountryCode is not in the middleware types
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        code: stringUpperFirst(jurisdiction!.toLowerCase()) as CountryCode,
+        scope,
+      };
+    }
+    case ClaimType.NoData: {
+      return {
+        type,
+      };
+    }
+    case ClaimType.CustomerDueDiligence: {
+      return {
+        type,
+        id: cddId as string,
+      };
+    }
+    case ClaimType.InvestorUniqueness: {
+      return {
+        type,
+        scope,
+        scopeId: scopeId as string,
+        cddId: cddId as string,
+      };
+    }
   }
 
   return { type, scope };

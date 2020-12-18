@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Context, PolymeshTransactionBatch } from '~/internal';
+import { fakePromise } from '~/testUtils';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
@@ -52,7 +53,7 @@ describe('Polymesh Transaction Batch class', () => {
   describe('method: run', () => {
     test('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const batchStub = dsMockUtils.createTxStub('utility', 'batchAtomic');
+      const batchStub = dsMockUtils.createTxStub('utility', 'batchAtomic', { autoresolve: false });
       const args = [tuple('A_TICKER')];
 
       const transaction = new PolymeshTransactionBatch(
@@ -64,7 +65,15 @@ describe('Polymesh Transaction Batch class', () => {
         context
       );
 
-      await transaction.run();
+      transaction.run();
+
+      dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.InBlock);
+
+      await fakePromise();
+
+      dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.Succeeded);
+
+      await fakePromise();
 
       sinon.assert.calledWith(tx, ...args[0]);
       sinon.assert.calledOnce(batchStub);

@@ -1,7 +1,7 @@
 import sinon from 'sinon';
 
 import { Claims } from '~/Claims';
-import { Context, modifyClaims, TransactionQueue } from '~/internal';
+import { addInvestorUniquenessClaim, Context, modifyClaims, TransactionQueue } from '~/internal';
 import {
   didsWithClaims,
   issuerDidsWithClaimsByTarget,
@@ -328,6 +328,39 @@ describe('Claims Class', () => {
         .resolves(expectedQueue);
 
       const queue = await claims.addClaims(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: addInvestorUniquenessClaim', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'SOME_TOKEN';
+      const cddId = 'someId';
+      const proof = 'someProof';
+      const scopeId = 'someScopeId';
+      const expiry = new Date();
+
+      const args = {
+        scope: { type: ScopeType.Ticker, value: ticker },
+        cddId,
+        proof,
+        scopeId,
+        expiry,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(addInvestorUniquenessClaim, 'prepare')
+        .withArgs(args, context)
+        .resolves(expectedQueue);
+
+      const queue = await claims.addInvestorUniquenessClaim(args);
 
       expect(queue).toBe(expectedQueue);
     });

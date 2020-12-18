@@ -4,10 +4,12 @@ import BigNumber from 'bignumber.js';
 import {
   CddId,
   ComplianceRequirement,
+  InvestorZKProofData,
   Memo,
   MovePortfolioItem,
   PipId,
   PortfolioId,
+  ScopeId,
   SettlementType,
   TrustedIssuer,
   VenueDetails,
@@ -37,8 +39,14 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities/SecurityToken';
-import { Account, Context, DefaultPortfolio, Identity, NumberedPortfolio } from '~/internal';
+import {
+  Account,
+  Context,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  SecurityToken,
+} from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
 import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -148,7 +156,9 @@ import {
   stringToDocumentUri,
   stringToFundingRoundName,
   stringToIdentityId,
+  stringToInvestorZKProofData,
   stringToMemo,
+  stringToScopeId,
   stringToText,
   stringToTicker,
   stringToVenueDetails,
@@ -319,6 +329,35 @@ describe('stringToBytes and bytesToString', () => {
 
     const result = bytesToString(ticker);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToInvestorZKProofData', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToInvestorZKProofData should convert a string to a polkadot InvestorZKProofData object', () => {
+    const value = 'someProof';
+    const fakeResult = ('convertedProof' as unknown) as InvestorZKProofData;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('InvestorZKProofData', value)
+      .returns(fakeResult);
+
+    const result = stringToInvestorZKProofData(value, context);
+
+    expect(result).toBe(fakeResult);
   });
 });
 
@@ -2088,10 +2127,44 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
     expect(result).toBe(fakeResult);
 
     value = {
+      type: ClaimType.CustomerDueDiligence,
+      id: 'someCddId',
+    };
+
+    createTypeStub
+      .withArgs('Claim', { [value.type]: stringToCddId(value.id, context) })
+      .returns(fakeResult);
+
+    result = claimToMeshClaim(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    value = {
       type: ClaimType.NoData,
     };
 
     createTypeStub.withArgs('Claim', { [value.type]: null }).returns(fakeResult);
+
+    result = claimToMeshClaim(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    value = {
+      type: ClaimType.InvestorUniqueness,
+      scope: { type: ScopeType.Ticker, value: 'someTicker' },
+      cddId: 'someCddId',
+      scopeId: 'someScopeId',
+    };
+
+    createTypeStub
+      .withArgs('Claim', {
+        [value.type]: [
+          scopeToMeshScope(value.scope, context),
+          stringToScopeId(value.scopeId, context),
+          stringToCddId(value.cddId, context),
+        ],
+      })
+      .returns(fakeResult);
 
     result = claimToMeshClaim(value, context);
 
@@ -2364,7 +2437,7 @@ describe('stringToCddId and cddIdToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToCddId should convert a cdd id string into an CddId', () => {
+  test('stringToCddId should convert a cdd id string into a CddId', () => {
     const cddId = 'someId';
     const fakeResult = ('type' as unknown) as CddId;
     const context = dsMockUtils.getContextInstance();
@@ -2384,6 +2457,35 @@ describe('stringToCddId and cddIdToString', () => {
     const cddId = dsMockUtils.createMockCddId(fakeResult);
 
     const result = cddIdToString(cddId);
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('stringToCddId', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToScopeId should convert a scope id string into a ScopeId', () => {
+    const scopeId = 'someId';
+    const fakeResult = ('type' as unknown) as ScopeId;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ScopeId', scopeId)
+      .returns(fakeResult);
+
+    const result = stringToScopeId(scopeId, context);
+
     expect(result).toBe(fakeResult);
   });
 });
@@ -2412,7 +2514,10 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           type: ClaimType.Exempted,
           scope: { type: ScopeType.Identity, value: 'someTickerDid' },
         },
-        trustedClaimIssuers: ['someDid', 'otherDid'],
+        trustedClaimIssuers: [
+          { identity: new Identity({ did }, context) },
+          { identity: new Identity({ did: 'otherDid' }, context) },
+        ],
       },
       {
         type: ConditionType.IsNoneOf,
@@ -2496,9 +2601,12 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
     const id = 1;
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
-    const issuerDids = ['someDid', 'otherDid'];
-    const targetIdentityDid = 'someDid';
     const context = dsMockUtils.getContextInstance();
+    const issuerDids = [
+      { identity: new Identity({ did: 'someDid' }, context) },
+      { identity: new Identity({ did: 'otherDid' }, context) },
+    ];
+    const targetIdentityDid = 'someDid';
     const conditions: Condition[] = [
       {
         type: ConditionType.IsPresent,
@@ -2569,9 +2677,9 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
     /* eslint-disable @typescript-eslint/camelcase */
-    const issuers = issuerDids.map(did =>
+    const issuers = issuerDids.map(({ identity }) =>
       dsMockUtils.createMockTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(did),
+        issuer: dsMockUtils.createMockIdentityId(identity.did),
         trusted_for: dsMockUtils.createMockTrustedFor(),
       })
     );
@@ -2870,9 +2978,12 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     const id = 1;
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
-    const issuerDids = ['someDid', 'otherDid'];
-    const targetIdentityDid = 'someDid';
     const context = dsMockUtils.getContextInstance();
+    const issuerDids = [
+      { identity: new Identity({ did: 'someDid' }, context) },
+      { identity: new Identity({ did: 'otherDid' }, context) },
+    ];
+    const targetIdentityDid = 'someDid';
     const conditions: ConditionCompliance[] = [
       {
         condition: {
@@ -2962,7 +3073,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
     /* eslint-disable @typescript-eslint/camelcase */
-    const issuers = issuerDids.map(did =>
+    const issuers = issuerDids.map(({ identity: { did } }) =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
         trusted_for: dsMockUtils.createMockTrustedFor(),
@@ -3079,8 +3190,11 @@ describe('assetComplianceResultToCompliance', () => {
     const id = 1;
     const tokenDid = 'someTokenDid';
     const cddId = 'someCddId';
-    const issuerDids = ['someDid', 'otherDid'];
     const context = dsMockUtils.getContextInstance();
+    const issuerDids = [
+      { identity: new Identity({ did: 'someDid' }, context) },
+      { identity: new Identity({ did: 'otherDid' }, context) },
+    ];
     const conditions: ConditionCompliance[] = [
       {
         condition: {
@@ -3152,7 +3266,7 @@ describe('assetComplianceResultToCompliance', () => {
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
     /* eslint-disable @typescript-eslint/camelcase */
-    const issuers = issuerDids.map(did =>
+    const issuers = issuerDids.map(({ identity: { did } }) =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
         trusted_for: dsMockUtils.createMockTrustedFor(),

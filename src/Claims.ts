@@ -1,4 +1,11 @@
-import { Context, Identity, modifyClaims, ModifyClaimsParams } from '~/internal';
+import {
+  addInvestorUniquenessClaim,
+  AddInvestorUniquenessClaimParams,
+  Context,
+  Identity,
+  modifyClaims,
+  ModifyClaimsParams,
+} from '~/internal';
 import {
   didsWithClaims,
   issuerDidsWithClaimsByTarget,
@@ -79,7 +86,19 @@ export class Claims {
       ],
       context
     );
+
+    this.addInvestorUniquenessClaim = createProcedureMethod(
+      args => [addInvestorUniquenessClaim, args],
+      context
+    );
   }
+
+  /**
+   * Add an Investor Uniqueness Claim to the current Identity
+   *
+   * @param args
+   */
+  public addInvestorUniquenessClaim: ProcedureMethod<AddInvestorUniquenessClaimParams, void>;
 
   /**
    * Add claims to Identities
