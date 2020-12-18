@@ -8,6 +8,7 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
+import { flatMap } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import { Claim1stKey, DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
@@ -607,48 +608,38 @@ export class Context {
     const { targets, claimTypes, includeExpired } = args;
     const data: ClaimData[] = [];
 
-    await P.each(targets, async rawTarget => {
-      await P.each(claimTypes, async claimType => {
-        const entries = await identity.claims.entries({
-          target: signerToString(rawTarget),
+    const claim1stKeys = flatMap(targets, target =>
+      claimTypes.map(claimType => {
+        return {
+          target: signerToString(target),
           // eslint-disable-next-line @typescript-eslint/camelcase
           claim_type: claimTypeToMeshClaimType(claimType, this),
-        });
+        };
+      })
+    );
 
-        entries.forEach(
-          ([
-            key,
-            { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
-          ]) => {
-            const { target } = key.args[0] as Claim1stKey;
-            const expiry = rawExpiry ? momentToDate(rawExpiry.unwrap()) : null;
-            const now = new Date();
+    await P.map(claim1stKeys, async claim1stKey => {
+      const entries = await identity.claims.entries(claim1stKey);
 
-            let addToList;
-            if (includeExpired) {
-              addToList = true;
-            } else {
-              if (expiry === null) {
-                addToList = true;
-              } else if (now.getTime() > expiry.getTime()) {
-                addToList = false;
-              } else {
-                addToList = true;
-              }
-            }
+      entries.forEach(
+        ([
+          key,
+          { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
+        ]) => {
+          const { target } = key.args[0] as Claim1stKey;
+          const expiry = rawExpiry ? momentToDate(rawExpiry.unwrap()) : null;
 
-            if (addToList) {
-              data.push({
-                target: new Identity({ did: identityIdToString(target) }, this),
-                issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
-                issuedAt: momentToDate(issuanceDate),
-                expiry,
-                claim: meshClaimToClaim(claim),
-              });
-            }
+          if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
+            data.push({
+              target: new Identity({ did: identityIdToString(target) }, this),
+              issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
+              issuedAt: momentToDate(issuanceDate),
+              expiry,
+              claim: meshClaimToClaim(claim),
+            });
           }
-        );
-      });
+        }
+      );
     });
 
     return data;
