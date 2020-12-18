@@ -607,8 +607,6 @@ export class Context {
     const { targets, claimTypes, includeExpired } = args;
     const data: ClaimData[] = [];
 
-    console.log('re entre');
-
     await P.each(targets, async rawTarget => {
       await P.each(claimTypes, async claimType => {
         const entries = await identity.claims.entries({
@@ -626,14 +624,20 @@ export class Context {
             const expiry = rawExpiry ? momentToDate(rawExpiry.unwrap()) : null;
             const now = new Date();
 
-            let claimExpired = false;
-            if (expiry === null) {
-              claimExpired = false;
-            } else if (now.getTime() > expiry.getTime()) {
-              claimExpired = true;
+            let addToList;
+            if (includeExpired) {
+              addToList = true;
+            } else {
+              if (expiry === null) {
+                addToList = true;
+              } else if (now.getTime() > expiry.getTime()) {
+                addToList = false;
+              } else {
+                addToList = true;
+              }
             }
 
-            if (includeExpired || (!includeExpired && !claimExpired)) {
+            if (addToList) {
               data.push({
                 target: new Identity({ did: identityIdToString(target) }, this),
                 issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
