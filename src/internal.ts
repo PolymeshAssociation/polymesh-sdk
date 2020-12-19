@@ -16,6 +16,7 @@ export { addInstruction, AddInstructionParams } from '~/api/procedures/addInstru
 // export { cancelProposal } from '~/api/procedures/cancelProposal';
 export {
   consumeAuthorizationRequests,
+  ConsumeAuthorizationRequestsParams,
   ConsumeParams,
 } from '~/api/procedures/consumeAuthorizationRequests';
 export { createPortfolio } from '~/api/procedures/createPortfolio';
