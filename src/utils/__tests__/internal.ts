@@ -465,13 +465,13 @@ describe('createProcedureMethod', () => {
 
     const method = createProcedureMethod((args: number) => [fakeProcedure, args], context);
 
-    const args = 1;
-    await method(args);
+    const procArgs = 1;
+    await method(procArgs);
 
-    sinon.assert.calledWithExactly(prepare, args, context);
+    sinon.assert.calledWithExactly(prepare, procArgs, context);
 
-    await method.checkAuthorization(args);
+    await method.checkAuthorization(procArgs);
 
-    sinon.assert.calledWithExactly(checkAuthorization, args, context);
+    sinon.assert.calledWithExactly(checkAuthorization, procArgs, context);
   });
 });
