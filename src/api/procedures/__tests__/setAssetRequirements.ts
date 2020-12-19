@@ -19,6 +19,11 @@ import { Condition, Requirement, RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+
 describe('setAssetRequirements procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
@@ -187,7 +192,7 @@ describe('setAssetRequirements procedure', () => {
       );
     });
 
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should not add a remove claim issuers transaction if there are no default claim issuers set on the token', async () => {
@@ -209,7 +214,7 @@ describe('setAssetRequirements procedure', () => {
       );
     });
     sinon.assert.callCount(addTransactionStub, senderConditions.length);
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should not add an asset compliance transactions if there are no claim issuers passed as arguments', async () => {
@@ -228,7 +233,7 @@ describe('setAssetRequirements procedure', () => {
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -246,7 +251,7 @@ describe('setAssetRequirements procedure', () => {
             TxTags.complianceManager.ResetAssetCompliance,
             TxTags.complianceManager.AddComplianceRequirement,
           ],
-          tokens: [new SecurityToken({ ticker }, mockContext)],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],
         },
       });

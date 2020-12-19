@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { AuthorizationType as MeshAuthorizationType, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { AuthorizationRequest, Context, Identity, Namespace } from '~/internal';
+import { Context, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType } from '~/types';
 import { SignerValue } from '~/types/internal';
@@ -14,6 +14,12 @@ import { Authorizations } from '../Authorizations';
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/AuthorizationRequest',
+  require('~/testUtils/mocks/entities').mockAuthorizationRequestModule(
+    '~/api/entities/AuthorizationRequest'
+  )
 );
 
 describe('Authorizations class', () => {
@@ -74,15 +80,15 @@ describe('Authorizations class', () => {
           expiry: null,
           data: { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' },
           target: identity,
-          issuer: new Identity({ did: 'alice' }, context),
-        },
+          issuer: entityMockUtils.getIdentityInstance({ did: 'alice' }),
+        } as const,
         {
           authId: new BigNumber(2),
           expiry: new Date('10/14/3040'),
           data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
           target: identity,
-          issuer: new Identity({ did: 'bob' }, context),
-        },
+          issuer: entityMockUtils.getIdentityInstance({ did: 'bob' }),
+        } as const,
       ];
 
       const fakeAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
@@ -109,20 +115,26 @@ describe('Authorizations class', () => {
         .createRpcStub('identity', 'getFilteredAuthorizations')
         .resolves(fakeAuthorizations);
 
-      const expectedAuthorizations = authParams
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map(params => new AuthorizationRequest(params as any, context));
+      const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
+        entityMockUtils.getAuthorizationRequestInstance({
+          authId,
+          issuer,
+          target,
+          expiry,
+          data,
+        })
+      );
 
       let result = await authsNamespace.getReceived();
 
-      expect(result).toEqual(expectedAuthorizations);
+      expect(JSON.stringify(result)).toBe(JSON.stringify(expectedAuthorizations));
 
       result = await authsNamespace.getReceived({
         type: AuthorizationType.NoData,
         includeExpired: false,
       });
 
-      expect(result).toEqual(expectedAuthorizations);
+      expect(JSON.stringify(result)).toBe(JSON.stringify(expectedAuthorizations));
     });
   });
 });

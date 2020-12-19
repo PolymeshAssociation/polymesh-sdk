@@ -1,7 +1,6 @@
 import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities/SecurityToken';
 import {
   getAuthorization,
   Params,
@@ -12,6 +11,11 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
 
 describe('removePrimaryIssuanceAgent procedure', () => {
   let mockContext: Mocked<Context>;
@@ -72,7 +76,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
         identityRoles: [{ type: RoleType.TokenOwner, ticker }],
         signerPermissions: {
           transactions: [TxTags.asset.RemovePrimaryIssuanceAgent],
-          tokens: [new SecurityToken({ ticker }, mockContext)],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],
         },
       });

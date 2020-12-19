@@ -1,5 +1,4 @@
-import { SecurityToken } from '~/api/entities/SecurityToken';
-import { Procedure } from '~/internal';
+import { Procedure, SecurityToken } from '~/internal';
 import { RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
