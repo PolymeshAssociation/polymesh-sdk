@@ -3,7 +3,7 @@ import { range } from 'lodash';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, PostTransactionValue } from '~/internal';
+import { Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { ClaimType, CountryCode } from '~/types';
@@ -14,6 +14,7 @@ import {
   batchArguments,
   calculateNextKey,
   createClaim,
+  createProcedureMethod,
   delay,
   findEventRecord,
   getDid,
@@ -432,5 +433,45 @@ describe('calculateNextKey', () => {
     test("should return true if the string doesn't contain any forbidden characters", () => {
       expect(stringIsClean('Clean String')).toBe(true);
     });
+  });
+});
+
+describe('createProcedureMethod', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should return a ProcedureMethod object', async () => {
+    const prepare = sinon.stub();
+    const checkAuthorization = sinon.stub();
+    const fakeProcedure = ({
+      prepare,
+      checkAuthorization,
+    } as unknown) as Procedure<number, void>;
+
+    const method = createProcedureMethod((args: number) => [fakeProcedure, args], context);
+
+    const procArgs = 1;
+    await method(procArgs);
+
+    sinon.assert.calledWithExactly(prepare, procArgs, context);
+
+    await method.checkAuthorization(procArgs);
+
+    sinon.assert.calledWithExactly(checkAuthorization, procArgs, context);
   });
 });
