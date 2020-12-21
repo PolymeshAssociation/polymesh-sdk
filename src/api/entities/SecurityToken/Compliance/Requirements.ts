@@ -3,15 +3,16 @@ import { Vec } from '@polkadot/types/codec';
 import { AssetCompliance, AssetComplianceResult, TrustedIssuer } from 'polymesh-types/types';
 
 import {
+  Context,
   Identity,
   Namespace,
   SecurityToken,
   setAssetRequirements,
   SetAssetRequirementsParams,
   togglePauseRequirements,
-  TransactionQueue,
 } from '~/internal';
 import { Compliance, Requirement, SubCallback, UnsubCallback } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import {
   assetComplianceResultToCompliance,
   boolToBoolean,
@@ -21,11 +22,34 @@ import {
   stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Security Token Compliance Requirements related functionality
  */
 export class Requirements extends Namespace<SecurityToken> {
+  /**
+   * @hidden
+   */
+  constructor(parent: SecurityToken, context: Context) {
+    super(parent, context);
+
+    const { ticker } = parent;
+
+    this.set = createProcedureMethod(args => [setAssetRequirements, { ticker, ...args }], context);
+    this.reset = createProcedureMethod(
+      () => [setAssetRequirements, { ticker, requirements: [] }],
+      context
+    );
+    this.pause = createProcedureMethod(
+      () => [togglePauseRequirements, { ticker, pause: true }],
+      context
+    );
+    this.unpause = createProcedureMethod(
+      () => [togglePauseRequirements, { ticker, pause: false }],
+      context
+    );
+  }
   /**
    * Configure asset compliance requirements for the Security Token. This operation will replace all existing requirements with a new requirement set
    *
@@ -37,13 +61,8 @@ export class Requirements extends Namespace<SecurityToken> {
    * @example Say A, B, C, D and E are requirements and we arrange them as `[[A, B], [C, D], [E]]`.
    * For a transfer to succeed, it must either comply with A AND B, C AND D, OR E.
    */
-  public set(args: SetAssetRequirementsParams): Promise<TransactionQueue<SecurityToken>> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
-    return setAssetRequirements.prepare({ ticker, ...args }, context);
-  }
+
+  public set: ProcedureMethod<SetAssetRequirementsParams, SecurityToken>;
 
   /**
    * Retrieve all of the Security Token's requirements
@@ -112,35 +131,17 @@ export class Requirements extends Namespace<SecurityToken> {
   /**
    * Detele all the current requirements for the Security Token.
    */
-  public reset(): Promise<TransactionQueue<SecurityToken>> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
-    return setAssetRequirements.prepare({ ticker, requirements: [] }, context);
-  }
+  public reset: ProcedureMethod<void, SecurityToken>;
 
   /**
    * Pause all the Security Token's requirements. This means that all transfers will be allowed until requirements are unpaused
    */
-  public pause(): Promise<TransactionQueue<SecurityToken>> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
-    return togglePauseRequirements.prepare({ ticker, pause: true }, context);
-  }
+  public pause: ProcedureMethod<void, SecurityToken>;
 
   /**
    * Un-pause all the Security Token's current requirements
    */
-  public unpause(): Promise<TransactionQueue<SecurityToken>> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
-    return togglePauseRequirements.prepare({ ticker, pause: false }, context);
-  }
+  public unpause: ProcedureMethod<void, SecurityToken>;
 
   /**
    * Check whether the sender and receiver Identities in a transfer comply with all the requirements of this asset

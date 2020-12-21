@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import { PortfolioId, PortfolioNumber } from 'polymesh-types/types';
 
 import {
+  Context,
   createPortfolio,
   DefaultPortfolio,
   deletePortfolio,
@@ -9,15 +10,33 @@ import {
   Namespace,
   NumberedPortfolio,
   PolymeshError,
-  TransactionQueue,
 } from '~/internal';
 import { ErrorCode } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import { identityIdToString, stringToIdentityId, u64ToBigNumber } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
  */
 export class Portfolios extends Namespace<Identity> {
+  /**
+   * @hidden
+   */
+  constructor(parent: Identity, context: Context) {
+    super(parent, context);
+
+    const { did } = parent;
+
+    this.create = createProcedureMethod(args => [createPortfolio, args], context);
+    this.delete = createProcedureMethod(args => {
+      const { portfolio } = args;
+      const id = portfolio instanceof BigNumber ? portfolio : portfolio.id;
+
+      return [deletePortfolio, { id, did }];
+    }, context);
+  }
+
   /**
    * Retrieve all the Portfolios owned by this Identity
    */
@@ -116,23 +135,10 @@ export class Portfolios extends Namespace<Identity> {
   /**
    * Create a new Portfolio for the Identity
    */
-  public create(args: { name: string }): Promise<TransactionQueue<NumberedPortfolio>> {
-    return createPortfolio.prepare(args, this.context);
-  }
+  public create: ProcedureMethod<{ name: string }, NumberedPortfolio>;
 
   /**
    * Delete a Portfolio by ID
    */
-  public delete(args: {
-    portfolio: BigNumber | NumberedPortfolio;
-  }): Promise<TransactionQueue<void>> {
-    const {
-      parent: { did },
-    } = this;
-
-    const { portfolio } = args;
-    const id = portfolio instanceof BigNumber ? portfolio : portfolio.id;
-
-    return deletePortfolio.prepare({ id, did }, this.context);
-  }
+  public delete: ProcedureMethod<{ portfolio: BigNumber | NumberedPortfolio }, void>;
 }

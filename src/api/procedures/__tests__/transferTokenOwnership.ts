@@ -16,6 +16,11 @@ import { Authorization, AuthorizationType, RoleType, TickerReservationStatus } f
 import { PolymeshTx, SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+
 describe('transferTokenOwnership procedure', () => {
   let mockContext: Mocked<Context>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
@@ -111,7 +116,7 @@ describe('transferTokenOwnership procedure', () => {
       rawAuthorizationData,
       null
     );
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toEqual(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
@@ -127,7 +132,7 @@ describe('transferTokenOwnership procedure', () => {
       rawAuthorizationData,
       rawMoment
     );
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -138,7 +143,7 @@ describe('transferTokenOwnership procedure', () => {
       expect(boundFunc(args)).toEqual({
         identityRoles: [{ type: RoleType.TokenOwner, ticker }],
         signerPermissions: {
-          tokens: [new SecurityToken({ ticker }, mockContext)],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [],
         },
