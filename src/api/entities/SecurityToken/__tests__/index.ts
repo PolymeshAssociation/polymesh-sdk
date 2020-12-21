@@ -15,6 +15,7 @@ import {
   Identity,
   modifyPrimaryIssuanceAgent,
   modifyToken,
+  redeemToken,
   removePrimaryIssuanceAgent,
   SecurityToken,
   toggleFreezeTransfers,
@@ -497,6 +498,26 @@ describe('SecurityToken class', () => {
         .resolves(expectedQueue);
 
       const queue = await securityToken.removePrimaryIssuanceAgent();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: redeem', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const ticker = 'TICKER';
+      const balance = new BigNumber(100);
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(redeemToken, 'prepare')
+        .withArgs({ balance, ticker }, context)
+        .resolves(expectedQueue);
+
+      const queue = await securityToken.redeem({ balance });
 
       expect(queue).toBe(expectedQueue);
     });

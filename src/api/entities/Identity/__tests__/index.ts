@@ -13,6 +13,7 @@ import {
   Role,
   RoleType,
   TickerOwnerRole,
+  TokenOwnerOrPiaRole,
   TokenOwnerRole,
   VenueOwnerRole,
 } from '~/types';
@@ -126,6 +127,46 @@ describe('Identity class', () => {
       expect(hasRole).toBe(true);
 
       identity.did = 'otherDid';
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+    });
+
+    test('hasRole should check whether the Identity has the Token Owner role or the PIA role', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      const role: TokenOwnerOrPiaRole = { type: RoleType.TokenOwnerOrPia, ticker: 'someTicker' };
+
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      identity.did = 'otherDid';
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          details: {
+            primaryIssuanceAgent: identity,
+          },
+        },
+      });
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      entityMockUtils.reset();
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          details: {
+            primaryIssuanceAgent: new Identity({ did: 'anotherDid' }, context),
+          },
+        },
+      });
 
       hasRole = await identity.hasRole(role);
 

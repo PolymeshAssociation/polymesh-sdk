@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
+import { redeemToken, RedeemTokenParams } from '~/api/procedures/redeemToken';
 import {
   Context,
   Entity,
@@ -354,5 +355,14 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public removePrimaryIssuanceAgent(): Promise<TransactionQueue<void>> {
     const { ticker, context } = this;
     return removePrimaryIssuanceAgent.prepare({ ticker }, context);
+  }
+
+  /**
+   * Redeem the Security Tokens
+   */
+  public redeem(args: RedeemTokenParams): Promise<TransactionQueue<void>> {
+    const { ticker, context } = this;
+    const { balance } = args;
+    return redeemToken.prepare({ ticker, balance }, context);
   }
 }
