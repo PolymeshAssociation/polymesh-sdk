@@ -1296,7 +1296,7 @@ describe('Context class', () => {
 
       dsMockUtils.createQueryStub('identity', 'claims').entries = entriesStub;
 
-      const result = await context.issuedClaims({
+      let result = await context.issuedClaims({
         targets: [targetDid],
         claimTypes: [ClaimType.CustomerDueDiligence],
       });
@@ -1312,6 +1312,16 @@ describe('Context class', () => {
       expect(data.length).toEqual(2);
       expect(data[0]).toEqual(fakeClaims[1]);
       expect(data[1]).toEqual(fakeClaims[2]);
+
+      sinon.stub(utilsConversionModule, 'signerToString').returns(targetDid);
+
+      result = await context.issuedClaims({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+        trustedClaimIssuers: [targetDid],
+      });
+
+      expect(result.data.length).toEqual(0);
     });
 
     test('should throw if the middleware is not available and targets or claimTypes are not set', async () => {
