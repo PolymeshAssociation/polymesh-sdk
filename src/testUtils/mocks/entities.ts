@@ -101,8 +101,9 @@ interface SecurityTokenOptions {
 }
 
 interface AuthorizationRequestOptions {
-  targetDid?: string;
-  issuerDid?: string;
+  authId?: BigNumber;
+  target?: Identity;
+  issuer?: Identity;
   expiry?: Date | null;
   data?: Authorization;
 }
@@ -429,8 +430,9 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
-  targetDid: 'targetDid',
-  issuerDid: 'issuerDid',
+  authId: new BigNumber(1),
+  target: { did: 'targetDid' } as Identity,
+  issuer: { did: 'issuerDid' } as Identity,
   data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_TOKEN' },
   expiry: null,
 };
@@ -657,8 +659,9 @@ function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
  */
 function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void {
   const authorizationRequest = ({
-    targetDid: opts.targetDid,
-    issuerDid: opts.issuerDid,
+    authId: opts.authId,
+    issuer: opts.issuer,
+    target: opts.target,
     expiry: opts.expiry,
     data: opts.data,
   } as unknown) as MockAuthorizationRequest;
@@ -1168,7 +1171,7 @@ export function reset(): void {
  */
 export function getIdentityInstance(opts?: IdentityOptions): MockIdentity {
   if (opts) {
-    configureIdentity(opts);
+    configureIdentity({ ...defaultIdentityOptions, ...opts });
   }
 
   return new MockIdentityClass() as MockIdentity;
@@ -1228,7 +1231,7 @@ export function getIdentityGetReceivedStub(): SinonStub {
  */
 export function getCurrentIdentityInstance(opts?: CurrentIdentityOptions): MockCurrentIdentity {
   if (opts) {
-    configureCurrentIdentity(opts);
+    configureCurrentIdentity({ ...defaultCurrentIdentityOptions, ...opts });
   }
 
   return new MockCurrentIdentityClass() as MockCurrentIdentity;
@@ -1272,7 +1275,7 @@ export function getCurrentIdentityGetPrimaryKeyStub(): SinonStub {
  */
 export function getAccountInstance(opts?: AccountOptions): MockAccount {
   if (opts) {
-    configureAccount(opts);
+    configureAccount({ ...defaultAccountOptions, ...opts });
   }
 
   return new MockAccountClass() as MockAccount;
@@ -1308,7 +1311,7 @@ export function getAccountGetTransactionHistoryStub(): SinonStub {
  */
 export function getCurrentAccountInstance(opts?: CurrentAccountOptions): MockCurrentAccount {
   if (opts) {
-    configureCurrentAccount(opts);
+    configureCurrentAccount({ ...defaultCurrentAccountOptions, ...opts });
   }
 
   return new MockCurrentAccountClass() as MockCurrentAccount;
@@ -1370,7 +1373,7 @@ export function getTickerReservationInstance(
   opts?: TickerReservationOptions
 ): MockTickerReservation {
   if (opts) {
-    configureTickerReservation(opts);
+    configureTickerReservation({ ...defaultTickerReservationOptions, ...opts });
   }
 
   return new MockTickerReservationClass() as MockTickerReservation;
@@ -1398,7 +1401,7 @@ export function getTickerReservationDetailsStub(
  */
 export function getSecurityTokenInstance(opts?: SecurityTokenOptions): MockSecurityToken {
   if (opts) {
-    configureSecurityToken(opts);
+    configureSecurityToken({ ...defaultSecurityTokenOptions, ...opts });
   }
 
   return new MockSecurityTokenClass() as MockSecurityToken;
@@ -1462,7 +1465,7 @@ export function getAuthorizationRequestInstance(
   opts?: AuthorizationRequestOptions
 ): MockAuthorizationRequest {
   if (opts) {
-    configureAuthorizationRequest(opts);
+    configureAuthorizationRequest({ ...defaultAuthorizationRequestOptions, ...opts });
   }
 
   return new MockAuthorizationRequestClass() as MockAuthorizationRequest;
@@ -1488,7 +1491,7 @@ export function getAuthorizationRequestInstance(
  */
 export function getVenueInstance(opts?: VenueOptions): MockVenue {
   if (opts) {
-    configureVenue(opts);
+    configureVenue({ ...defaultVenueOptions, ...opts });
   }
 
   return new MockVenueClass() as MockVenue;
@@ -1516,7 +1519,7 @@ export function getNumberedPortfolioInstance(
   opts?: NumberedPortfolioOptions
 ): MockNumberedPortfolio {
   if (opts) {
-    configureNumberedPortfolio(opts);
+    configureNumberedPortfolio({ ...defaultNumberedPortfolioOptions, ...opts });
   }
 
   return new MockNumberedPortfolioClass() as MockNumberedPortfolio;
@@ -1528,7 +1531,7 @@ export function getNumberedPortfolioInstance(
  */
 export function getDefaultPortfolioInstance(opts?: DefaultPortfolioOptions): MockDefaultPortfolio {
   if (opts) {
-    configureDefaultPortfolio(opts);
+    configureDefaultPortfolio({ ...defaultDefaultPortfolioOptions, ...opts });
   }
 
   return new MockDefaultPortfolioClass() as MockDefaultPortfolio;
@@ -1540,7 +1543,7 @@ export function getDefaultPortfolioInstance(opts?: DefaultPortfolioOptions): Moc
  */
 export function getInstructionInstance(opts?: InstructionOptions): MockInstruction {
   if (opts) {
-    configureInstruction(opts);
+    configureInstruction({ ...defaultInstructionOptions, ...opts });
   }
 
   return new MockInstructionClass() as MockInstruction;

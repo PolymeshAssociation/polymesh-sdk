@@ -7,10 +7,9 @@ import {
   Identity,
   modifyInstructionAffirmation,
   SecurityToken,
-  TransactionQueue,
   Venue,
 } from '~/internal';
-import { InstructionAffirmationOperation } from '~/types/internal';
+import { InstructionAffirmationOperation, ProcedureMethod } from '~/types/internal';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -23,6 +22,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 import { InstructionAffirmation, InstructionDetails, InstructionType, Leg } from './types';
 
@@ -58,6 +58,27 @@ export class Instruction extends Entity<UniqueIdentifiers> {
     const { id } = identifiers;
 
     this.id = id;
+
+    this.reject = createProcedureMethod(() => {
+      return [
+        modifyInstructionAffirmation,
+        { id, operation: InstructionAffirmationOperation.Reject },
+      ];
+    }, context);
+
+    this.affirm = createProcedureMethod(() => {
+      return [
+        modifyInstructionAffirmation,
+        { id, operation: InstructionAffirmationOperation.Affirm },
+      ];
+    }, context);
+
+    this.withdraw = createProcedureMethod(() => {
+      return [
+        modifyInstructionAffirmation,
+        { id, operation: InstructionAffirmationOperation.Withdraw },
+      ];
+    }, context);
   }
 
   /**
@@ -170,33 +191,17 @@ export class Instruction extends Entity<UniqueIdentifiers> {
    * @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
    * @note reject on `SettleOnBlock` behaves just like unauthorize
    */
-  public reject(): Promise<TransactionQueue<Instruction>> {
-    const { id, context } = this;
-    return modifyInstructionAffirmation.prepare(
-      { id, operation: InstructionAffirmationOperation.Reject },
-      context
-    );
-  }
+
+  public reject: ProcedureMethod<void, Instruction>;
 
   /**
    * Affirm this instruction (authorize)
    */
-  public affirm(): Promise<TransactionQueue<Instruction>> {
-    const { id, context } = this;
-    return modifyInstructionAffirmation.prepare(
-      { id, operation: InstructionAffirmationOperation.Affirm },
-      context
-    );
-  }
+
+  public affirm: ProcedureMethod<void, Instruction>;
 
   /**
    * Withdraw affirmation from this instruction (unauthorize)
    */
-  public withdraw(): Promise<TransactionQueue<Instruction>> {
-    const { id, context } = this;
-    return modifyInstructionAffirmation.prepare(
-      { id, operation: InstructionAffirmationOperation.Withdraw },
-      context
-    );
-  }
+  public withdraw: ProcedureMethod<void, Instruction>;
 }
