@@ -12,7 +12,6 @@ import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import {
   Context,
   Entity,
-  Identity,
   modifyPrimaryIssuanceAgent,
   modifyToken,
   redeemToken,
@@ -24,11 +23,16 @@ import {
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
+
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 describe('SecurityToken class', () => {
   let prepareToggleFreezeTransfersStub: SinonStub<
@@ -38,15 +42,18 @@ describe('SecurityToken class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
     prepareToggleFreezeTransfersStub = sinon.stub(toggleFreezeTransfers, 'prepare');
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -110,6 +117,7 @@ describe('SecurityToken class', () => {
       context = dsMockUtils.getContextInstance();
       securityToken = new SecurityToken({ ticker }, context);
     });
+
     test('should return details for a security token', async () => {
       dsMockUtils.createQueryStub('asset', 'tokens', {
         returnValue: rawToken,
@@ -142,14 +150,17 @@ describe('SecurityToken class', () => {
       const result = await securityToken.details(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, {
-        assetType,
-        isDivisible,
-        name: ticker,
-        owner: new Identity({ did: owner }, context),
-        totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
-        primaryIssuanceAgent: null,
-      });
+      sinon.assert.calledWithExactly(
+        callback,
+        sinon.match({
+          assetType,
+          isDivisible,
+          name: ticker,
+          owner: sinon.match({ did: owner }),
+          totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
+          primaryIssuanceAgent: null,
+        })
+      );
     });
   });
 

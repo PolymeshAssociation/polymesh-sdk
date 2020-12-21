@@ -9,11 +9,9 @@ import sinon, { SinonStub } from 'sinon';
 import {
   Context,
   Entity,
-  Identity,
   Instruction,
   modifyInstructionAffirmation,
   TransactionQueue,
-  Venue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -29,6 +27,10 @@ jest.mock(
 jest.mock(
   '~/api/entities/SecurityToken',
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+jest.mock(
+  '~/api/entities/Venue',
+  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
 
 describe('Instruction class', () => {
@@ -83,7 +85,7 @@ describe('Instruction class', () => {
       const createdAt = new Date('10/14/1987');
       const validFrom = new Date('11/17/1987');
       const venueId = new BigNumber(1);
-      const venue = new Venue({ id: venueId }, context);
+      const venue = entityMockUtils.getVenueInstance({ id: venueId });
       let type = InstructionType.SettleOnAffirmation;
       const owner = 'someDid';
 
@@ -181,7 +183,7 @@ describe('Instruction class', () => {
       const result = await instruction.getAffirmations();
 
       expect(result).toHaveLength(1);
-      expect(result[0].identity).toEqual(new Identity({ did }, context));
+      expect(result[0].identity.did).toEqual(did);
       expect(result[0].status).toEqual(status);
     });
   });

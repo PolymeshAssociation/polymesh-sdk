@@ -613,6 +613,11 @@ export interface PortfolioMovement {
   amount: BigNumber;
 }
 
+export interface ProcedureAuthorizationStatus {
+  permissions: boolean;
+  roles: boolean;
+}
+
 export { TxTags } from 'polymesh-types/types';
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export * from '~/api/entities/types';

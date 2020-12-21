@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, Identity, Namespace } from '~/internal';
+import { Context, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { IdentityBalance } from '~/types';
@@ -17,6 +17,10 @@ import { TokenHolders } from '../TokenHolders';
 jest.mock(
   '~/api/entities/SecurityToken',
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 
 describe('TokenHolders class', () => {
@@ -93,7 +97,7 @@ describe('TokenHolders class', () => {
         );
 
         expectedHolders.push({
-          identity: new Identity({ did: identity }, context),
+          identity: entityMockUtils.getIdentityInstance({ did: identity }),
           balance,
         });
       });
@@ -105,7 +109,8 @@ describe('TokenHolders class', () => {
 
       const result = await tokenHolders.get();
 
-      expect(result).toEqual({ data: expectedHolders, next: null });
+      expect(JSON.stringify(result.data)).toBe(JSON.stringify(expectedHolders));
+      expect(result.next).toBeNull();
     });
 
     test('should retrieve the first page of results with only one token holder', async () => {
@@ -130,7 +135,7 @@ describe('TokenHolders class', () => {
       );
 
       expectedHolders.push({
-        identity: new Identity({ did: identity }, context),
+        identity: entityMockUtils.getIdentityInstance({ did: identity }),
         balance,
       });
 
@@ -142,43 +147,6 @@ describe('TokenHolders class', () => {
       const result = await tokenHolders.get({ size: 1 });
 
       expect(result).toEqual({ data: expectedHolders, next: 'someKey' });
-    });
-
-    test('should retrieve all the token holders with balance', async () => {
-      dsMockUtils.createQueryStub('asset', 'balanceOf');
-
-      const expectedHolders: IdentityBalance[] = [];
-
-      const balanceOfEntries: [StorageKey, Balance][] = [];
-
-      const context = dsMockUtils.getContextInstance();
-
-      fakeData.forEach(({ identity, value }) => {
-        const identityId = dsMockUtils.createMockIdentityId(identity);
-        const fakeBalance = dsMockUtils.createMockBalance(value);
-        const balance = new BigNumber(value);
-
-        identityIdToStringStub.withArgs(identityId).returns(identity);
-        balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
-
-        balanceOfEntries.push(
-          tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, fakeBalance)
-        );
-
-        expectedHolders.push({
-          identity: new Identity({ did: identity }, context),
-          balance,
-        });
-      });
-
-      requestPaginatedStub.resolves({ entries: balanceOfEntries, lastKey: null });
-
-      const token = entityMockUtils.getSecurityTokenInstance();
-      const tokenHolders = new TokenHolders(token, context);
-
-      const result = await tokenHolders.get();
-
-      expect(result).toEqual({ data: expectedHolders, next: null });
     });
   });
 });

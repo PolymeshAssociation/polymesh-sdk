@@ -10,7 +10,7 @@ import {
   PostTransactionValue,
   TransactionQueue,
 } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, ProcedureAuthorizationStatus } from '~/types';
 import {
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -51,7 +51,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     args: Args
   ) => Promise<MaybePostTransactionValue<ReturnValue>>;
 
-  private checkAuthorization: (
+  private _checkAuthorization: (
     this: Procedure<Args, ReturnValue>,
     args: Args
   ) => Promise<ProcedureAuthorization> | ProcedureAuthorization;
@@ -67,7 +67,7 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    * @hidden
    *
    * @param prepareTransactions - function that prepares the transaction queue
-   * @param checkRoles - can be a ProcedureAuthorization object or a function that returns a ProcedureAuthorization object
+   * @param checkAuthorization - can be a ProcedureAuthorization object or a function that returns a ProcedureAuthorization object
    */
   constructor(
     prepareTransactions: (
@@ -86,9 +86,9 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     this.prepareTransactions = prepareTransactions;
 
     if (typeof checkAuthorization !== 'function') {
-      this.checkAuthorization = (): ProcedureAuthorization => checkAuthorization;
+      this._checkAuthorization = (): ProcedureAuthorization => checkAuthorization;
     } else {
-      this.checkAuthorization = checkAuthorization;
+      this._checkAuthorization = checkAuthorization;
     }
   }
 
@@ -102,15 +102,17 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
   }
 
   /**
-   * Build a [[TransactionQueue]] that can be run
+   * Check if the current user has sufficient authorization to run the procedure
    *
-   * @param args - arguments required to prepare the queue
-   * @param context - context in which the resulting queue will run
+   * @param args - procedure arguments
    */
-  public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
+  public async checkAuthorization(
+    args: Args,
+    context: Context
+  ): Promise<ProcedureAuthorizationStatus> {
     this.context = context;
 
-    const checkAuthorizationResult = await this.checkAuthorization(args);
+    const checkAuthorizationResult = await this._checkAuthorization(args);
 
     const { signerPermissions = true, identityRoles = true } = checkAuthorizationResult;
 
@@ -130,14 +132,31 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
       signerAllowed = signerPermissions;
     }
 
-    if (!signerAllowed) {
+    return {
+      roles: identityAllowed,
+      permissions: signerAllowed,
+    };
+  }
+
+  /**
+   * Build a [[TransactionQueue]] that can be run
+   *
+   * @param args - arguments required to prepare the queue
+   * @param context - context in which the resulting queue will run
+   */
+  public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
+    this.context = context;
+
+    const { roles, permissions } = await this.checkAuthorization(args, context);
+
+    if (!permissions) {
       throw new PolymeshError({
         code: ErrorCode.NotAuthorized,
         message: "Current Account doesn't have the required permissions to execute this procedure",
       });
     }
 
-    if (!identityAllowed) {
+    if (!roles) {
       throw new PolymeshError({
         code: ErrorCode.NotAuthorized,
         message: "Current Identity doesn't have the required roles to execute this procedure",

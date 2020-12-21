@@ -7,8 +7,8 @@ import sinon from 'sinon';
 
 import * as baseModule from '~/internal';
 import { dsMockUtils } from '~/testUtils/mocks';
-import { KeyringPair, Role } from '~/types';
-import { MaybePostTransactionValue } from '~/types/internal';
+import { KeyringPair, Role, RoleType } from '~/types';
+import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -16,6 +16,7 @@ const { Procedure } = baseModule;
 
 describe('Procedure class', () => {
   let context: baseModule.Context;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -30,6 +31,51 @@ describe('Procedure class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
+  });
+
+  describe('method: checkAuthorization', () => {
+    test('should return whether the current user has sufficient authorization to run the procedure', async () => {
+      const prepareFunc = sinon.stub();
+      const authFunc = sinon.stub();
+      const authorization: ProcedureAuthorization = {
+        identityRoles: true,
+        signerPermissions: true,
+      };
+      authFunc.resolves(authorization);
+      let procedure = new Procedure(prepareFunc, authFunc);
+
+      const args = 'args';
+
+      let result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        permissions: true,
+        roles: true,
+      });
+
+      context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
+      authFunc.resolves({
+        identityRoles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
+        signerPermissions: {
+          tokens: null,
+          portfolios: null,
+          transactions: null,
+        },
+      });
+
+      result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        permissions: false,
+        roles: false,
+      });
+
+      procedure = new Procedure(prepareFunc, { signerPermissions: true, identityRoles: true });
+
+      result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        permissions: true,
+        roles: true,
+      });
+    });
   });
 
   describe('method: prepare', () => {
