@@ -21,7 +21,6 @@ import {
   ReserveTickerParams,
   SecurityToken,
   TickerReservation,
-  TransactionQueue,
   transferPolyX,
   TransferPolyXParams,
 } from '~/internal';
@@ -39,6 +38,7 @@ import {
   UiKeyring,
   UnsubCallback,
 } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import {
   moduleAddressToString,
   signerToString,
@@ -48,7 +48,7 @@ import {
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { getDid, stringIsClean } from '~/utils/internal';
+import { createProcedureMethod, getDid, stringIsClean } from '~/utils/internal';
 
 import { Claims } from './Claims';
 // import { Governance } from './Governance';
@@ -93,6 +93,12 @@ export class Polymesh {
     // this.governance = new Governance(context);
     this.claims = new Claims(context);
     this.middleware = new Middleware(context);
+
+    this.transferPolyX = createProcedureMethod(args => [transferPolyX, args], context);
+
+    this.reserveTicker = createProcedureMethod(args => [reserveTicker, args], context);
+
+    this.registerIdentity = createProcedureMethod(args => [registerIdentity, args], context);
   }
 
   /**
@@ -262,9 +268,8 @@ export class Polymesh {
    * @param args.amount - amount of POLYX to be transferred
    * @param args.memo - identifier string to help differentiate transfers
    */
-  public transferPolyX(args: TransferPolyXParams): Promise<TransactionQueue<void>> {
-    return transferPolyX.prepare(args, this.context);
-  }
+
+  public transferPolyX: ProcedureMethod<TransferPolyXParams, void>;
 
   /**
    * Get the free/locked POLYX balance of an Account
@@ -322,9 +327,7 @@ export class Polymesh {
    *
    * @param args.ticker - ticker symbol to reserve
    */
-  public reserveTicker(args: ReserveTickerParams): Promise<TransactionQueue<TickerReservation>> {
-    return reserveTicker.prepare(args, this.context);
-  }
+  public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
 
   /**
    * Check if a ticker hasn't been reserved
@@ -636,9 +639,7 @@ export class Polymesh {
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
-  public registerIdentity(args: RegisterIdentityParams): Promise<TransactionQueue<Identity>> {
-    return registerIdentity.prepare(args, this.context);
-  }
+  public registerIdentity: ProcedureMethod<RegisterIdentityParams, Identity>;
 
   /**
    * Retrieve the number of the latest block in the chain

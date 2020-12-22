@@ -8,7 +8,7 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { flatMap } from 'lodash';
+import { flatMap, flatten } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import { Claim1stKey, DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
@@ -597,6 +597,7 @@ export class Context {
   private async getIdentityClaimsFromChain(args: {
     targets: (string | Identity)[];
     claimTypes: ClaimType[];
+    trustedClaimIssuers?: (string | Identity)[];
     includeExpired: boolean;
   }): Promise<ClaimData[]> {
     const {
@@ -605,8 +606,7 @@ export class Context {
       },
     } = this;
 
-    const { targets, claimTypes, includeExpired } = args;
-    const data: ClaimData[] = [];
+    const { targets, claimTypes, trustedClaimIssuers, includeExpired } = args;
 
     const claim1stKeys = flatMap(targets, target =>
       claimTypes.map(claimType => {
@@ -618,9 +618,13 @@ export class Context {
       })
     );
 
-    await P.map(claim1stKeys, async claim1stKey => {
-      const entries = await identity.claims.entries(claim1stKey);
+    const claimIssuerDids = trustedClaimIssuers?.map(trustedClaimIssuer =>
+      signerToString(trustedClaimIssuer)
+    );
 
+    const claimData = await P.map(claim1stKeys, async claim1stKey => {
+      const entries = await identity.claims.entries(claim1stKey);
+      const data: ClaimData[] = [];
       entries.forEach(
         ([
           key,
@@ -628,7 +632,6 @@ export class Context {
         ]) => {
           const { target } = key.args[0] as Claim1stKey;
           const expiry = rawExpiry ? momentToDate(rawExpiry.unwrap()) : null;
-
           if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
             data.push({
               target: new Identity({ did: identityIdToString(target) }, this),
@@ -640,9 +643,12 @@ export class Context {
           }
         }
       );
+      return data;
     });
 
-    return data;
+    return flatten(claimData).filter(({ issuer }) =>
+      claimIssuerDids ? claimIssuerDids.includes(issuer.did) : true
+    );
   }
 
   /**
@@ -735,6 +741,7 @@ export class Context {
     const identityClaimsFromChain = await this.getIdentityClaimsFromChain({
       targets,
       claimTypes,
+      trustedClaimIssuers,
       includeExpired,
     });
 

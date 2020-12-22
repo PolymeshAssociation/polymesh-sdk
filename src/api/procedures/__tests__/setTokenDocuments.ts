@@ -16,6 +16,11 @@ import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+
 describe('setTokenDocuments procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
@@ -137,7 +142,7 @@ describe('setTokenDocuments procedure', () => {
       rawDocuments,
       rawTicker
     );
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should not add a remove documents transaction if there are no documents linked to the token', async () => {
@@ -156,7 +161,7 @@ describe('setTokenDocuments procedure', () => {
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should not add an add documents transaction if there are no documents passed as arguments', async () => {
@@ -172,7 +177,7 @@ describe('setTokenDocuments procedure', () => {
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -183,7 +188,7 @@ describe('setTokenDocuments procedure', () => {
       expect(boundFunc(args)).toEqual({
         identityRoles: [{ type: RoleType.TokenOwner, ticker }],
         signerPermissions: {
-          tokens: [new SecurityToken({ ticker }, mockContext)],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.asset.AddDocuments, TxTags.asset.RemoveDocuments],
           portfolios: [],
         },
