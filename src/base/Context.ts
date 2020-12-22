@@ -8,7 +8,7 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { compact, flatMap, flattenDeep } from 'lodash';
+import { compact, flatMap, flatten } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import { Claim1stKey, DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
@@ -629,32 +629,31 @@ export class Context {
 
     const claimData = await P.map(claim1stKeys, async claim1stKey => {
       const entries = await identity.claims.entries(claim1stKey);
-      const compactData = compact(
-        entries.map(
-          ([
-            key,
-            { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
-          ]) => {
-            const { target } = key.args[0] as Claim1stKey;
-            const expiry = rawExpiry ? momentToDate(rawExpiry.unwrap()) : null;
-            if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
-              return {
-                target: new Identity({ did: identityIdToString(target) }, this),
-                issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
-                issuedAt: momentToDate(issuanceDate),
-                expiry,
-                claim: meshClaimToClaim(claim),
-              };
-            }
-            return undefined;
+      const data: (ClaimData | undefined)[] = [];
+      entries.forEach(
+        ([
+          key,
+          { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
+        ]) => {
+          const { target } = key.args[0] as Claim1stKey;
+          const expiry = rawExpiry ? momentToDate(rawExpiry.unwrap()) : null;
+          if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
+            data.push({
+              target: new Identity({ did: identityIdToString(target) }, this),
+              issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
+              issuedAt: momentToDate(issuanceDate),
+              expiry,
+              claim: meshClaimToClaim(claim),
+            });
+          } else {
+            data.push(undefined);
           }
-        )
+        }
       );
-
-      return compactData;
+      return compact(data);
     });
 
-    return flattenDeep(claimData).filter(({ issuer }) =>
+    return flatten(claimData).filter(({ issuer }) =>
       trustedClaimIssuers ? trustedClaimIssuers.includes(issuer.did) : true
     );
   }
