@@ -8,7 +8,7 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { compact, flatMap, flatten } from 'lodash';
+import { flatMap, flatten } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import { Claim1stKey, DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
@@ -606,12 +606,7 @@ export class Context {
       },
     } = this;
 
-    const {
-      targets,
-      claimTypes,
-      trustedClaimIssuers: rawTrustedClaimIssuers,
-      includeExpired,
-    } = args;
+    const { targets, claimTypes, trustedClaimIssuers, includeExpired } = args;
 
     const claim1stKeys = flatMap(targets, target =>
       claimTypes.map(claimType => {
@@ -623,13 +618,13 @@ export class Context {
       })
     );
 
-    const trustedClaimIssuers = rawTrustedClaimIssuers?.map(trustedClaimIssuer =>
+    const claimIssuerDids = trustedClaimIssuers?.map(trustedClaimIssuer =>
       signerToString(trustedClaimIssuer)
     );
 
     const claimData = await P.map(claim1stKeys, async claim1stKey => {
       const entries = await identity.claims.entries(claim1stKey);
-      const data: (ClaimData | undefined)[] = [];
+      const data: ClaimData[] = [];
       entries.forEach(
         ([
           key,
@@ -645,16 +640,14 @@ export class Context {
               expiry,
               claim: meshClaimToClaim(claim),
             });
-          } else {
-            data.push(undefined);
           }
         }
       );
-      return compact(data);
+      return data;
     });
 
     return flatten(claimData).filter(({ issuer }) =>
-      trustedClaimIssuers ? trustedClaimIssuers.includes(issuer.did) : true
+      claimIssuerDids ? claimIssuerDids.includes(issuer.did) : true
     );
   }
 
