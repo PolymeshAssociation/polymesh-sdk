@@ -27,8 +27,8 @@ describe('redeemToken procedure', () => {
   let addTransactionStub: sinon.SinonStub;
   let ticker: string;
   let rawTicker: Ticker;
-  let balance: BigNumber;
-  let rawBalance: Balance;
+  let amount: BigNumber;
+  let rawAmount: Balance;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let numberToBalanceStub: sinon.SinonStub<
     [number | BigNumber, Context, (boolean | undefined)?],
@@ -41,8 +41,8 @@ describe('redeemToken procedure', () => {
     entityMockUtils.initMocks();
     ticker = 'SOMETICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    balance = new BigNumber(100);
-    rawBalance = dsMockUtils.createMockBalance(balance.toNumber());
+    amount = new BigNumber(100);
+    rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
   });
@@ -51,7 +51,7 @@ describe('redeemToken procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    numberToBalanceStub.withArgs(balance, mockContext).returns(rawBalance);
+    numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
   });
 
   afterEach(() => {
@@ -90,10 +90,10 @@ describe('redeemToken procedure', () => {
 
     await prepareRedeemToken.call(proc, {
       ticker,
-      balance,
+      amount,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawBalance);
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAmount);
   });
 
   test('should throw an error if the portfolio has not sufficient balance to redeem', () => {
@@ -120,7 +120,7 @@ describe('redeemToken procedure', () => {
     return expect(
       prepareRedeemToken.call(proc, {
         ticker,
-        balance,
+        amount,
       })
     ).rejects.toThrow('Insufficient balance');
   });
@@ -143,7 +143,7 @@ describe('redeemToken procedure', () => {
     return expect(
       prepareRedeemToken.call(proc, {
         ticker,
-        balance,
+        amount: new BigNumber(100.5),
       })
     ).rejects.toThrow('The Security Token must be divisible');
   });
@@ -152,7 +152,7 @@ describe('redeemToken procedure', () => {
     test('should return the appropriate roles and permissions', async () => {
       const params = {
         ticker,
-        balance,
+        amount,
       };
       const ownerDid = 'ownerDid';
       const someDid = 'someDid';

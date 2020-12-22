@@ -112,13 +112,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const token = new SecurityToken({ ticker }, context);
       const { owner, primaryIssuanceAgent } = await token.details();
 
-      if (primaryIssuanceAgent) {
-        if (primaryIssuanceAgent.did === did) {
-          return true;
-        }
-      }
-
-      return owner.did === did;
+      return (primaryIssuanceAgent && primaryIssuanceAgent.did === did) || owner.did === did;
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {

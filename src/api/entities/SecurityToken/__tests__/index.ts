@@ -517,7 +517,7 @@ describe('SecurityToken class', () => {
   describe('method: redeem', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'TICKER';
-      const balance = new BigNumber(100);
+      const amount = new BigNumber(100);
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
@@ -525,10 +525,10 @@ describe('SecurityToken class', () => {
 
       sinon
         .stub(redeemToken, 'prepare')
-        .withArgs({ balance, ticker }, context)
+        .withArgs({ amount, ticker }, context)
         .resolves(expectedQueue);
 
-      const queue = await securityToken.redeem({ balance });
+      const queue = await securityToken.redeem({ amount });
 
       expect(queue).toBe(expectedQueue);
     });

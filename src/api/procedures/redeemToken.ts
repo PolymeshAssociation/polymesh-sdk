@@ -6,7 +6,7 @@ import { ProcedureAuthorization } from '~/types/internal';
 import { numberToBalance, stringToTicker } from '~/utils/conversion';
 
 export interface RedeemTokenParams {
-  balance: BigNumber;
+  amount: BigNumber;
 }
 
 /**
@@ -27,7 +27,7 @@ export async function prepareRedeemToken(
       polymeshApi: { tx },
     },
   } = this;
-  const { ticker, balance } = args;
+  const { ticker, amount } = args;
 
   const securityToken = new SecurityToken({ ticker }, context);
   const rawTicker = stringToTicker(ticker, context);
@@ -41,21 +41,23 @@ export async function prepareRedeemToken(
 
   const portfolioBalance = await defaultPortfolio.getTokenBalances({ tokens: [ticker] });
 
-  if (portfolioBalance[0].total.lt(balance)) {
+  const { total, locked } = portfolioBalance[0];
+
+  if (total.minus(locked).lt(amount)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Insufficient balance',
     });
   }
 
-  if (!isDivisible) {
+  if (amount.mod(1) && !isDivisible) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The Security Token must be divisible',
     });
   }
 
-  this.addTransaction(tx.asset.redeem, {}, rawTicker, numberToBalance(balance, context));
+  this.addTransaction(tx.asset.redeem, {}, rawTicker, numberToBalance(amount, context));
 }
 
 /**

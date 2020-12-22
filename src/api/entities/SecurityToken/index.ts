@@ -362,7 +362,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public removePrimaryIssuanceAgent: ProcedureMethod<void, void>;
 
   /**
-   * Redeem the Security Tokens
+   * Redeem (burn) an amount of this Security Token
    */
   public redeem: ProcedureMethod<RedeemTokenParams, void>;
 }
