@@ -99,6 +99,7 @@ import {
   cddIdToString,
   cddStatusToBoolean,
   claimToMeshClaim,
+  claimTypeToMeshClaimType,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
   dateToMoment,
@@ -2305,7 +2306,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
   });
 });
 
-describe('meshClaimTypeToClaimType', () => {
+describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2387,6 +2388,16 @@ describe('meshClaimTypeToClaimType', () => {
     claimType = dsMockUtils.createMockClaimType(fakeResult);
 
     result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('claimTypeToMeshClaimType should convert a ClaimType to a polkadot ClaimType object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fakeResult = ('meshClaim' as unknown) as MeshClaim;
+
+    dsMockUtils.getCreateTypeStub().returns(fakeResult);
+
+    const result = claimTypeToMeshClaimType(ClaimType.SellLockup, context);
     expect(result).toEqual(fakeResult);
   });
 });

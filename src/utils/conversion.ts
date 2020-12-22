@@ -1396,33 +1396,6 @@ export function stringToTargetIdentity(did: string | null, context: Context): Ta
 /**
  * @hidden
  */
-export function trustedClaimIssuerToTrustedIssuer(
-  issuer: TrustedClaimIssuer,
-  context: Context
-): TrustedIssuer {
-  const {
-    identity: { did },
-    trustedFor: claimTypes,
-  } = issuer;
-
-  let trustedFor;
-
-  if (!claimTypes) {
-    trustedFor = 'Any';
-  } else {
-    trustedFor = { Specific: claimTypes };
-  }
-
-  return context.polymeshApi.createType('TrustedIssuer', {
-    issuer: stringToIdentityId(did, context),
-    // eslint-disable-next-line @typescript-eslint/camelcase
-    trusted_for: trustedFor,
-  });
-}
-
-/**
- * @hidden
- */
 export function meshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
   if (claimType.isJurisdiction) {
     return ClaimType.Jurisdiction;
@@ -1484,6 +1457,33 @@ export function trustedIssuerToTrustedClaimIssuer(
     identity,
     trustedFor,
   };
+}
+
+/**
+ * @hidden
+ */
+export function trustedClaimIssuerToTrustedIssuer(
+  issuer: TrustedClaimIssuer,
+  context: Context
+): TrustedIssuer {
+  const {
+    identity: { did },
+    trustedFor: claimTypes,
+  } = issuer;
+
+  let trustedFor;
+
+  if (!claimTypes) {
+    trustedFor = 'Any';
+  } else {
+    trustedFor = { Specific: claimTypes };
+  }
+
+  return context.polymeshApi.createType('TrustedIssuer', {
+    issuer: stringToIdentityId(did, context),
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    trusted_for: trustedFor,
+  });
 }
 
 /**
@@ -2072,6 +2072,13 @@ export function portfolioMovementToMovePortfolioItem(
     ticker: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
     amount: numberToBalance(amount, context),
   });
+}
+
+/**
+ * @hidden
+ */
+export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context): MeshClaimType {
+  return context.polymeshApi.createType('ClaimType', claimType);
 }
 
 /**

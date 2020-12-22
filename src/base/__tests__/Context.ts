@@ -9,6 +9,7 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
 import { ClaimType, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -1099,7 +1100,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return a list of claims', async () => {
+    test('should return a result set of claims', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -1205,6 +1206,140 @@ describe('Context class', () => {
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(25);
       expect(result.next).toBeNull();
+    });
+
+    test('should return a result set of claims from chain', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: '0x6'.padEnd(66, '0'),
+      });
+
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const cddId = 'someCddId';
+      const issuedAt = new Date('10/14/2019');
+      const expiryOne = new Date('10/14/2020');
+      const expiryTwo = new Date('10/14/2060');
+
+      const claim1stKey = dsMockUtils.createMockClaim1stKey({
+        target: dsMockUtils.createMockIdentityId(targetDid),
+        claim_type: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
+      });
+
+      const identityClaim = {
+        claim_issuer: dsMockUtils.createMockIdentityId(issuerDid),
+        issuance_date: dsMockUtils.createMockMoment(issuedAt.getTime()),
+        last_update_date: dsMockUtils.createMockMoment(),
+        claim: dsMockUtils.createMockClaim({
+          CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+        }),
+      };
+
+      const fakeClaims = [
+        {
+          target: new Identity({ did: targetDid }, context),
+          issuer: new Identity({ did: issuerDid }, context),
+          issuedAt,
+          expiry: expiryOne,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
+        {
+          target: new Identity({ did: targetDid }, context),
+          issuer: new Identity({ did: issuerDid }, context),
+          issuedAt,
+          expiry: null,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
+        {
+          target: new Identity({ did: targetDid }, context),
+          issuer: new Identity({ did: issuerDid }, context),
+          issuedAt,
+          expiry: expiryTwo,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
+      ];
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          middlewareAvailable: false,
+        },
+      });
+
+      const entriesStub = sinon.stub();
+      entriesStub.resolves([
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryOne.getTime())),
+          }
+        ),
+        tuple({ args: [claim1stKey] }, identityClaim),
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryTwo.getTime())),
+          }
+        ),
+      ]);
+
+      dsMockUtils.createQueryStub('identity', 'claims').entries = entriesStub;
+
+      let result = await context.issuedClaims({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+
+      const { data } = await context.issuedClaims({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+        includeExpired: false,
+      });
+
+      expect(data.length).toEqual(2);
+      expect(data[0]).toEqual(fakeClaims[1]);
+      expect(data[1]).toEqual(fakeClaims[2]);
+
+      sinon.stub(utilsConversionModule, 'signerToString').returns(targetDid);
+
+      result = await context.issuedClaims({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+        trustedClaimIssuers: [targetDid],
+      });
+
+      expect(result.data.length).toEqual(0);
+    });
+
+    test('should throw if the middleware is not available and targets or claimTypes are not set', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        seed: '0x6'.padEnd(66, '0'),
+      });
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          middlewareAvailable: false,
+        },
+      });
+
+      await expect(context.issuedClaims()).rejects.toThrow(
+        'Cannot perform this action without an active middleware connection'
+      );
     });
   });
 
@@ -1256,122 +1391,6 @@ describe('Context class', () => {
       const res = await context.queryMiddleware(fakeQuery);
 
       expect(res.data).toBe(fakeResult);
-    });
-  });
-
-  describe('method: issuedClaims', () => {
-    beforeEach(() => {
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockIdentityId('someDid'),
-      });
-    });
-
-    test('should return a list of claims', async () => {
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        seed: '0x6'.padEnd(66, '0'),
-      });
-
-      const targetDid = 'someTargetDid';
-      const issuerDid = 'someIssuerDid';
-      const date = 1589816265000;
-      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
-      const claim = {
-        target: new Identity({ did: targetDid }, context),
-        issuer: new Identity({ did: issuerDid }, context),
-        issuedAt: new Date(date),
-      };
-      const fakeClaims = [
-        {
-          ...claim,
-          expiry: new Date(date),
-          claim: {
-            type: customerDueDiligenceType,
-          },
-        },
-        {
-          ...claim,
-          expiry: null,
-          claim: {
-            type: customerDueDiligenceType,
-          },
-        },
-      ];
-      /* eslint-disable @typescript-eslint/camelcase */
-      const commonClaimData = {
-        targetDID: targetDid,
-        issuer: issuerDid,
-        issuance_date: date,
-        last_update_date: date,
-      };
-      const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
-        totalCount: 25,
-        items: [
-          {
-            did: targetDid,
-            claims: [
-              {
-                ...commonClaimData,
-                expiry: date,
-                type: customerDueDiligenceType,
-              },
-              {
-                ...commonClaimData,
-                expiry: null,
-                type: customerDueDiligenceType,
-              },
-            ],
-          },
-        ],
-      };
-      /* eslint-enabled @typescript-eslint/camelcase */
-
-      dsMockUtils.createApolloQueryStub(
-        didsWithClaims({
-          dids: [targetDid],
-          trustedClaimIssuers: [targetDid],
-          claimTypes: [ClaimTypeEnum.Accredited],
-          includeExpired: true,
-          count: 1,
-          skip: undefined,
-        }),
-        {
-          didsWithClaims: didsWithClaimsQueryResponse,
-        }
-      );
-
-      let result = await context.issuedClaims({
-        targets: [targetDid],
-        trustedClaimIssuers: [targetDid],
-        claimTypes: [ClaimType.Accredited],
-        includeExpired: true,
-        size: 1,
-      });
-
-      expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
-      expect(result.next).toEqual(1);
-
-      dsMockUtils.createApolloQueryStub(
-        didsWithClaims({
-          dids: undefined,
-          trustedClaimIssuers: undefined,
-          claimTypes: undefined,
-          includeExpired: true,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          didsWithClaims: didsWithClaimsQueryResponse,
-        }
-      );
-
-      result = await context.issuedClaims();
-
-      expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
-      expect(result.next).toBeNull();
     });
   });
 
