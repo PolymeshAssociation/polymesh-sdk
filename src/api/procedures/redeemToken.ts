@@ -50,7 +50,7 @@ export async function prepareRedeemToken(
     });
   }
 
-  if (amount.mod(1) && !isDivisible) {
+  if (amount.decimalPlaces() && !isDivisible) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The Security Token must be divisible',
