@@ -365,7 +365,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * Redeem (burn) an amount of this Security Token
    *
    * @note Tokens are removed from the Primary Issuance Agent's Default Portfolio.
-   *   If the Security Token has no Primary Issuance Agent, funds are removed the owner's
+   *   If the Security Token has no Primary Issuance Agent, funds are removed from the owner's
    *   Default Portfolio instead
    */
   public redeem: ProcedureMethod<RedeemTokenParams, void>;
