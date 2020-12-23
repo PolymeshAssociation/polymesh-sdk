@@ -15,6 +15,11 @@ export interface SetTokenDocumentsParams {
   documents: TokenDocument[];
 }
 
+export interface Storage {
+  currentDocIds: DocumentId[];
+  currentDocs: TokenDocument[];
+}
+
 /**
  * @hidden
  */
@@ -26,29 +31,17 @@ export type Params = SetTokenDocumentsParams & {
  * @hidden
  */
 export async function prepareSetTokenDocuments(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, SecurityToken, Storage>,
   args: Params
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { tx, query },
+      polymeshApi: { tx },
     },
     context,
+    storage: { currentDocIds, currentDocs },
   } = this;
   const { ticker, documents } = args;
-
-  const currentDocEntries = await query.asset.assetDocuments.entries(
-    stringToTicker(ticker, context)
-  );
-
-  const currentDocIds: DocumentId[] = [];
-  const currentDocs: TokenDocument[] = [];
-
-  currentDocEntries.forEach(([key, doc]) => {
-    const id = key.args[1] as DocumentId;
-    currentDocIds.push(id);
-    currentDocs.push(documentToTokenDocument(doc));
-  });
 
   const comparator = (a: TokenDocument, b: TokenDocument): boolean => {
     return (
@@ -103,16 +96,62 @@ export async function prepareSetTokenDocuments(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, SecurityToken>,
-  { ticker }: Params
+  this: Procedure<Params, SecurityToken, Storage>,
+  { ticker, documents }: Params
 ): ProcedureAuthorization {
+  const {
+    storage: { currentDocIds },
+  } = this;
+  const transactions = [];
+
+  if (documents.length) {
+    transactions.push(TxTags.asset.AddDocuments);
+  }
+
+  if (currentDocIds.length) {
+    transactions.push(TxTags.asset.RemoveDocuments);
+  }
+
   return {
     identityRoles: [{ type: RoleType.TokenOwner, ticker }],
     signerPermissions: {
       tokens: [new SecurityToken({ ticker }, this.context)],
-      transactions: [TxTags.asset.AddDocuments, TxTags.asset.RemoveDocuments],
+      transactions,
       portfolios: [],
     },
+  };
+}
+
+/**
+ * @hidden
+ */
+export async function prepareStorage(
+  this: Procedure<Params, SecurityToken, Storage>,
+  { ticker }: Params
+): Promise<Storage> {
+  const {
+    context: {
+      polymeshApi: { query },
+    },
+    context,
+  } = this;
+
+  const currentDocEntries = await query.asset.assetDocuments.entries(
+    stringToTicker(ticker, context)
+  );
+
+  const currentDocIds: DocumentId[] = [];
+  const currentDocs: TokenDocument[] = [];
+
+  currentDocEntries.forEach(([key, doc]) => {
+    const id = key.args[1] as DocumentId;
+    currentDocIds.push(id);
+    currentDocs.push(documentToTokenDocument(doc));
+  });
+
+  return {
+    currentDocIds,
+    currentDocs,
   };
 }
 

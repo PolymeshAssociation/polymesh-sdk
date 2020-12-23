@@ -11,12 +11,14 @@ import {
   getAuthorization,
   ModifyInstructionAffirmationParams,
   prepareModifyInstructionAffirmation,
+  prepareStorage,
+  Storage,
 } from '~/api/procedures/modifyInstructionAffirmation';
 import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AffirmationStatus } from '~/types';
+import { AffirmationStatus, PortfolioLike } from '~/types';
 import { InstructionAffirmationOperation, PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -38,9 +40,12 @@ describe('modifyInstructionAffirmation procedure', () => {
     did: dsMockUtils.createMockIdentityId('someDid'),
     kind: dsMockUtils.createMockPortfolioKind('Default'),
   });
+  let portfolio: DefaultPortfolio;
+  const portfolioId: PortfolioId = { did: 'someDid' };
   const latestBlock = new BigNumber(100);
   let mockContext: Mocked<Context>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let meshAffirmationStatusToAffirmationStatusStub: sinon.SinonStub<
     [MeshAffirmationStatus],
@@ -55,12 +60,17 @@ describe('modifyInstructionAffirmation procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
+
+    portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid ' });
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    portfolioLikeToPortfolioIdStub = sinon.stub(
+      utilsConversionModule,
+      'portfolioLikeToPortfolioId'
+    );
     portfolioIdToMeshPortfolioIdStub = sinon.stub(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolioId');
     meshAffirmationStatusToAffirmationStatusStub = sinon.stub(
       utilsConversionModule,
       'meshAffirmationStatusToAffirmationStatus'
@@ -78,7 +88,8 @@ describe('modifyInstructionAffirmation procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     numberToU64Stub.returns(rawInstructionId);
-    portfolioIdToMeshPortfolioIdStub.returns(rawPortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(portfolio).returns(portfolioId);
+    portfolioIdToMeshPortfolioIdStub.withArgs(portfolioId, mockContext).returns(rawPortfolioId);
   });
 
   afterEach(() => {
@@ -102,9 +113,13 @@ describe('modifyInstructionAffirmation procedure', () => {
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Affirmed);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
-      mockContext
-    );
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+    });
 
     return expect(
       prepareModifyInstructionAffirmation.call(proc, {
@@ -123,9 +138,11 @@ describe('modifyInstructionAffirmation procedure', () => {
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Pending);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
-      mockContext
-    );
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, { portfolios: [portfolio, portfolio] });
 
     const transaction = dsMockUtils.createTxStub('settlement', 'affirmInstruction');
 
@@ -151,9 +168,13 @@ describe('modifyInstructionAffirmation procedure', () => {
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Pending);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
-      mockContext
-    );
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+    });
 
     return expect(
       prepareModifyInstructionAffirmation.call(proc, {
@@ -172,9 +193,13 @@ describe('modifyInstructionAffirmation procedure', () => {
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Rejected);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
-      mockContext
-    );
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+    });
 
     return expect(
       prepareModifyInstructionAffirmation.call(proc, {
@@ -193,9 +218,13 @@ describe('modifyInstructionAffirmation procedure', () => {
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Affirmed);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
-      mockContext
-    );
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+    });
 
     const transaction = dsMockUtils.createTxStub('settlement', 'withdrawAffirmation');
 
@@ -221,9 +250,13 @@ describe('modifyInstructionAffirmation procedure', () => {
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Rejected);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
-      mockContext
-    );
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+    });
 
     return expect(
       prepareModifyInstructionAffirmation.call(proc, {
@@ -268,9 +301,13 @@ describe('modifyInstructionAffirmation procedure', () => {
     isCustodiedByStub.onCall(2).returns(false);
     isCustodiedByStub.onCall(3).returns(false);
 
-    const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
-      mockContext
-    );
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+    });
 
     const transaction = dsMockUtils.createTxStub('settlement', 'rejectInstruction');
 
@@ -289,24 +326,21 @@ describe('modifyInstructionAffirmation procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
-      const proc = procedureMockUtils.getInstance<ModifyInstructionAffirmationParams, Instruction>(
-        mockContext
-      );
-      const boundFunc = getAuthorization.bind(proc);
       const args = {
         id: new BigNumber(1),
         operation: InstructionAffirmationOperation.Affirm,
       };
-      let from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
-      let to = entityMockUtils.getDefaultPortfolioInstance({ isCustodiedBy: true });
-      const amount = new BigNumber(1);
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TOKEN' });
+      const from = entityMockUtils.getNumberedPortfolioInstance();
+      const to = entityMockUtils.getDefaultPortfolioInstance();
 
-      entityMockUtils.configureMocks({
-        instructionOptions: {
-          getLegs: [{ from, to, amount, token }],
-        },
+      let proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext, {
+        portfolios: [from, to],
       });
+      let boundFunc = getAuthorization.bind(proc);
 
       let result = await boundFunc(args);
 
@@ -318,10 +352,15 @@ describe('modifyInstructionAffirmation procedure', () => {
         },
       });
 
-      from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
-      to = entityMockUtils.getDefaultPortfolioInstance({ isCustodiedBy: false });
+      proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext, {
+        portfolios: [],
+      });
 
-      entityMockUtils.getInstructionGetLegsStub().resolves([{ from, to, amount, token }]);
+      boundFunc = getAuthorization.bind(proc);
 
       result = await boundFunc({ ...args, operation: InstructionAffirmationOperation.Reject });
 
@@ -341,6 +380,51 @@ describe('modifyInstructionAffirmation procedure', () => {
           portfolios: [],
           transactions: [TxTags.settlement.WithdrawAffirmation],
         },
+      });
+    });
+  });
+
+  describe('prepareStorage', () => {
+    test('should return the portfolios for which to modify affirmation status', async () => {
+      const proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      let from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
+      let to = entityMockUtils.getDefaultPortfolioInstance({ isCustodiedBy: true });
+      const amount = new BigNumber(1);
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TOKEN' });
+
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          getLegs: [{ from, to, amount, token }],
+        },
+      });
+
+      let result = await boundFunc({
+        id: new BigNumber(1),
+        operation: InstructionAffirmationOperation.Affirm,
+      });
+
+      expect(result).toEqual({
+        portfolios: [from, to],
+      });
+
+      from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
+      to = entityMockUtils.getDefaultPortfolioInstance({ isCustodiedBy: false });
+
+      entityMockUtils.getInstructionGetLegsStub().resolves([{ from, to, amount, token }]);
+
+      result = await boundFunc({
+        id: new BigNumber(1),
+        operation: InstructionAffirmationOperation.Affirm,
+      });
+
+      expect(result).toEqual({
+        portfolios: [],
       });
     });
   });

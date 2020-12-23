@@ -76,12 +76,14 @@ export function reset(): void {
  * @hidden
  * Retrieve a Procedure instance
  */
-export function getInstance<T, U>(context?: Context): Procedure<T, U> {
+export function getInstance<T, U, S = {}>(context: Context, storage?: S): Procedure<T, U, S> {
   const { procedure } = mockInstanceContainer;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   (procedure as any).context = context;
+  (procedure as any).storage = storage;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
-  return (procedure as unknown) as Procedure<T, U>;
+  return (procedure as unknown) as Procedure<T, U, S>;
 }
 
 /**

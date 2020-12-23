@@ -372,7 +372,6 @@ describe('Procedure class', () => {
 
       const proc1 = new Procedure(async () => returnValue);
       const proc2 = new Procedure(async () => undefined);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       proc2.context = context;
       const result = await proc2.addProcedure(proc1);
 
@@ -390,6 +389,28 @@ describe('Procedure class', () => {
       const result = proc2.addProcedure(proc1);
 
       return expect(result).rejects.toThrow(errorMsg);
+    });
+  });
+
+  describe('method: storage', () => {
+    let proc: baseModule.Procedure<void, undefined, { something: string }>;
+
+    beforeAll(() => {
+      proc = new Procedure(async () => undefined);
+    });
+
+    test('should return the storage', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc as any)._storage = { something: 'yeah' };
+
+      expect(proc.storage).toEqual({ something: 'yeah' });
+    });
+
+    test("should throw an error if the storage hasnt't been set", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc as any)._storage = null;
+
+      expect(() => proc.storage).toThrow('Attempt to access storage before it was set');
     });
   });
 });
