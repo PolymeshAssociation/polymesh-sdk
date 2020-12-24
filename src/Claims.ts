@@ -310,13 +310,11 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const result = await context.getIdentityClaimsFromChain({
+    return context.getIdentityClaimsFromChain({
       targets: [did],
       claimTypes: [ClaimType.InvestorUniqueness],
       includeExpired,
     });
-
-    return result;
   }
 
   /**
