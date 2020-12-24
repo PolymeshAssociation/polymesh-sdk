@@ -5,6 +5,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { PortfolioId, Ticker, TxTag, TxTags } from 'polymesh-types/types';
 
+import { Venue } from '~/api/entities/Venue';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Context,
@@ -75,6 +76,18 @@ export async function prepareAddInstruction(
     context,
   } = this;
   const { legs, venueId, endBlock, validFrom } = args;
+
+  const venue = new Venue({ id: venueId }, context);
+  const exists = await venue.exists();
+
+  console.log(exists);
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: "The Venue doesn't exist",
+    });
+  }
 
   if (!legs.length) {
     throw new PolymeshError({

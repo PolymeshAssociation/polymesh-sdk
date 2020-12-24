@@ -8,8 +8,9 @@ import {
   Entity,
   Identity,
   Instruction,
+  PolymeshError,
 } from '~/internal';
-import { InstructionStatus } from '~/types';
+import { ErrorCode, InstructionStatus } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import {
   identityIdToString,
@@ -62,6 +63,25 @@ export class Venue extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Retrieve if the venue still exists
+   */
+  public async exists(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
+
+    return !venueInfo.isEmpty;
+  }
+
+  /**
    * Retrieve information specific to this venue
    */
   public async details(): Promise<VenueDetails> {
@@ -74,6 +94,15 @@ export class Venue extends Entity<UniqueIdentifiers> {
       id,
       context,
     } = this;
+
+    const exists = await this.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Venue doesn't exist",
+      });
+    }
 
     const venueInfo = await settlement.venueInfo(numberToU64(id, context));
 
@@ -99,6 +128,15 @@ export class Venue extends Entity<UniqueIdentifiers> {
       id,
       context,
     } = this;
+
+    const exists = await this.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Venue doesn't exist",
+      });
+    }
 
     const venueInfo = await settlement.venueInfo(numberToU64(id, context));
 
