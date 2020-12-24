@@ -617,7 +617,7 @@ describe('Claims Class', () => {
         value: 'someIdentityScope',
       };
 
-      const getIdentityClaimsFromChain: ClaimData[] = [
+      const identityClaims: ClaimData[] = [
         {
           target: entityMockUtils.getIdentityInstance({ did: target }),
           issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
@@ -634,15 +634,15 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          getIdentityClaimsFromChain,
+          getIdentityClaimsFromChain: identityClaims,
         },
       });
 
       let result = await claims.getInvestorUniquenessClaims({ target });
-      expect(result).toEqual(getIdentityClaimsFromChain);
+      expect(result).toEqual(identityClaims);
 
       result = await claims.getInvestorUniquenessClaims();
-      expect(result).toEqual(getIdentityClaimsFromChain);
+      expect(result).toEqual(identityClaims);
     });
   });
 
