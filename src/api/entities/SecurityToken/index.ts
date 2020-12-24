@@ -9,6 +9,8 @@ import {
   ModifyPrimaryIssuanceAgentParams,
   modifyToken,
   ModifyTokenParams,
+  redeemToken,
+  RedeemTokenParams,
   removePrimaryIssuanceAgent,
   toggleFreezeTransfers,
   transferTokenOwnership,
@@ -118,6 +120,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       () => [removePrimaryIssuanceAgent, { ticker }],
       context
     );
+    this.redeem = createProcedureMethod(args => [redeemToken, { ticker, ...args }], context);
   }
 
   /**
@@ -357,4 +360,13 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * @note if primary issuance agent is not set, Security Token owner would be used by default
    */
   public removePrimaryIssuanceAgent: ProcedureMethod<void, void>;
+
+  /**
+   * Redeem (burn) an amount of this Security Token
+   *
+   * @note Tokens are removed from the Primary Issuance Agent's Default Portfolio.
+   *   If the Security Token has no Primary Issuance Agent, funds are removed from the owner's
+   *   Default Portfolio instead
+   */
+  public redeem: ProcedureMethod<RedeemTokenParams, void>;
 }

@@ -77,6 +77,7 @@ export enum TransactionQueueStatus {
 export enum RoleType {
   TickerOwner = 'TickerOwner',
   TokenOwner = 'TokenOwner',
+  TokenOwnerOrPia = 'TokenOwnerOrPia',
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
@@ -104,6 +105,18 @@ export interface TokenOwnerRole {
  */
 export function isTokenOwnerRole(role: Role): role is TokenOwnerRole {
   return role.type === RoleType.TokenOwner;
+}
+
+export interface TokenOwnerOrPiaRole {
+  type: RoleType.TokenOwnerOrPia;
+  ticker: string;
+}
+
+/**
+ * @hidden
+ */
+export function isTokenOwnerOrPiaRole(role: Role): role is TokenOwnerOrPiaRole {
+  return role.type === RoleType.TokenOwnerOrPia;
 }
 
 export interface CddProviderRole {
@@ -144,6 +157,7 @@ export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodian
 export type Role =
   | TickerOwnerRole
   | TokenOwnerRole
+  | TokenOwnerOrPiaRole
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole;
