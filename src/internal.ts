@@ -83,6 +83,7 @@ export {
   addInvestorUniquenessClaim,
   AddInvestorUniquenessClaimParams,
 } from '~/api/procedures/addInvestorUniquenessClaim';
+export { redeemToken, RedeemTokenParams } from '~/api/procedures/redeemToken';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
