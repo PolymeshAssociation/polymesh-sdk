@@ -372,11 +372,19 @@ export function calculateNextKey(totalCount: number, size?: number, start?: numb
 /**
  * Create a method that prepares a procedure
  */
-export function createProcedureMethod<MethodArgs, ProcedureArgs extends unknown, ReturnValue>(
+export function createProcedureMethod<
+  MethodArgs,
+  ProcedureArgs extends unknown,
+  ReturnValue,
+  Storage = {}
+>(
   getProcedureAndArgs: (
     args: MethodArgs
   ) => [
-    UnionOfProcedures<ProcedureArgs, ReturnValue> | Procedure<ProcedureArgs, ReturnValue>,
+    (
+      | UnionOfProcedures<ProcedureArgs, ReturnValue, Storage>
+      | Procedure<ProcedureArgs, ReturnValue, Storage>
+    ),
     ProcedureArgs
   ],
   context: Context
