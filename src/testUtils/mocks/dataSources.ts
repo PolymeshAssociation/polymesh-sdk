@@ -215,6 +215,7 @@ interface ContextOptions {
   currentPairAddress?: string;
   currentPairIsLocked?: boolean;
   issuedClaims?: ResultSet<ClaimData>;
+  getIdentityClaimsFromChain?: ClaimData[];
   primaryKey?: string;
   secondaryKeys?: SecondaryKey[];
   transactionHistory?: ResultSet<ExtrinsicData>;
@@ -451,6 +452,15 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 1,
   },
+  getIdentityClaimsFromChain: [
+    {
+      target: ('targetIdentity' as unknown) as Identity,
+      issuer: ('issuerIdentity' as unknown) as Identity,
+      issuedAt: new Date(),
+      expiry: null,
+      claim: { type: ClaimType.NoData },
+    },
+  ],
   primaryKey: 'primaryKey',
   secondaryKeys: [],
   transactionHistory: {
@@ -542,6 +552,7 @@ function configureContext(opts: ContextOptions): void {
     getTransactionArguments: sinon.stub().returns([]),
     getSecondaryKeys: sinon.stub().returns(opts.secondaryKeys),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
+    getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
     isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),

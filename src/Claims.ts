@@ -294,6 +294,30 @@ export class Claims {
   }
 
   /**
+   * Retrieve the list of InvestorUniqueness claims for a target Identity
+   *
+   * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current Identity)
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
+   */
+  public async getInvestorUniquenessClaims(
+    opts: {
+      target?: string | Identity;
+      includeExpired?: boolean;
+    } = {}
+  ): Promise<ClaimData[]> {
+    const { context } = this;
+    const { target, includeExpired = true } = opts;
+
+    const did = await getDid(target, context);
+
+    return context.getIdentityClaimsFromChain({
+      targets: [did],
+      claimTypes: [ClaimType.InvestorUniqueness],
+      includeExpired,
+    });
+  }
+
+  /**
    * Retrieve all claims issued about an Identity, grouped by claim issuer
    *
    * @param opts.target - identity for which to fetch targeting claims (optional, defaults to the current Identity)
