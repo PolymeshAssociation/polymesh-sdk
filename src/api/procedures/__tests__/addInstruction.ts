@@ -10,6 +10,8 @@ import {
   getAuthorization,
   Params,
   prepareAddInstruction,
+  prepareStorage,
+  Storage,
 } from '~/api/procedures/addInstruction';
 import {
   Context,
@@ -111,9 +113,11 @@ describe('addInstruction procedure', () => {
     toDid = 'toDid';
     fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({
       did: fromDid,
+      id: new BigNumber(1),
     });
     toPortfolio = entityMockUtils.getNumberedPortfolioInstance({
       did: toDid,
+      id: new BigNumber(2),
     });
     token = 'SOME_TOKEN';
     validFrom = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
@@ -189,6 +193,8 @@ describe('addInstruction procedure', () => {
 
     portfolioLikeToPortfolioIdStub.withArgs(from).returns({ did: fromDid });
     portfolioLikeToPortfolioIdStub.withArgs(to).returns({ did: toDid });
+    portfolioLikeToPortfolioIdStub.withArgs(fromPortfolio).returns({ did: fromDid });
+    portfolioLikeToPortfolioIdStub.withArgs(toPortfolio).returns({ did: toDid });
     portfolioLikeToPortfolioStub.withArgs(from, mockContext).returns(fromPortfolio);
     portfolioLikeToPortfolioStub.withArgs(to, mockContext).returns(toPortfolio);
     portfolioIdToMeshPortfolioIdStub.withArgs({ did: fromDid }, mockContext).returns(rawFrom);
@@ -221,7 +227,9 @@ describe('addInstruction procedure', () => {
   });
 
   test('should throw an error if the legs array is empty', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
 
     let error;
 
@@ -236,12 +244,16 @@ describe('addInstruction procedure', () => {
 
   test('should throw an error if the end block is in the past', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
+
     entityMockUtils.configureMocks({
       venueOptions: {
         exists: true,
       },
     });
-    const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
+
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
 
     let error;
 
@@ -262,7 +274,9 @@ describe('addInstruction procedure', () => {
       },
     });
     getCustodianStub.onCall(1).returns({ did: fromDid });
-    const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfoliosToAffirm: [fromPortfolio, toPortfolio],
+    });
 
     const result = await prepareAddInstruction.call(proc, args);
 
@@ -289,7 +303,9 @@ describe('addInstruction procedure', () => {
       },
     });
     getCustodianStub.onCall(0).returns({ did: toDid });
-    const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
 
     const result = await prepareAddInstruction.call(proc, {
       ...args,
@@ -321,7 +337,9 @@ describe('addInstruction procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
 
     let error;
 
@@ -336,13 +354,10 @@ describe('addInstruction procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
-      const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
-      const boundFunc = getAuthorization.bind(proc);
-      fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
-      toPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
-
-      portfolioLikeToPortfolioStub.withArgs(fromPortfolio).returns(fromPortfolio);
-      portfolioLikeToPortfolioStub.withArgs(toPortfolio).returns(toPortfolio);
+      let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+        portfoliosToAffirm: [fromPortfolio, toPortfolio],
+      });
+      let boundFunc = getAuthorization.bind(proc);
 
       let result = await boundFunc({
         venueId,
@@ -358,11 +373,10 @@ describe('addInstruction procedure', () => {
         },
       });
 
-      fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
-      toPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
-
-      portfolioLikeToPortfolioStub.withArgs(fromPortfolio).returns(fromPortfolio);
-      portfolioLikeToPortfolioStub.withArgs(toPortfolio).returns(toPortfolio);
+      proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+        portfoliosToAffirm: [],
+      });
+      boundFunc = getAuthorization.bind(proc);
 
       result = await boundFunc({
         venueId,
@@ -376,6 +390,37 @@ describe('addInstruction procedure', () => {
           portfolios: [],
           transactions: [TxTags.settlement.AddInstruction],
         },
+      });
+    });
+  });
+
+  describe('prepareStorage', () => {
+    test('should return the list of portfolios that will be affirmed', async () => {
+      const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
+      toPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
+
+      portfolioLikeToPortfolioStub.withArgs(from, mockContext).returns(fromPortfolio);
+      portfolioLikeToPortfolioStub.withArgs(to, mockContext).returns(toPortfolio);
+
+      let result = await boundFunc(args);
+
+      expect(result).toEqual({
+        portfoliosToAffirm: [fromPortfolio, toPortfolio],
+      });
+
+      fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
+      toPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
+
+      portfolioLikeToPortfolioStub.withArgs(from, mockContext).returns(fromPortfolio);
+      portfolioLikeToPortfolioStub.withArgs(to, mockContext).returns(toPortfolio);
+
+      result = await boundFunc(args);
+
+      expect(result).toEqual({
+        portfoliosToAffirm: [],
       });
     });
   });

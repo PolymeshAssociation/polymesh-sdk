@@ -3,6 +3,7 @@ import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
+import { compact, flatten } from 'lodash';
 import { PortfolioId, Ticker, TxTag, TxTags } from 'polymesh-types/types';
 
 import { Venue } from '~/api/entities/Venue';
@@ -47,6 +48,10 @@ export type Params = AddInstructionParams & {
   venueId: BigNumber;
 };
 
+export interface Storage {
+  portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[];
+}
+
 /**
  * @hidden
  */
@@ -64,7 +69,7 @@ export const createAddInstructionResolver = (context: Context) => (
  * @hidden
  */
 export async function prepareAddInstruction(
-  this: Procedure<Params, Instruction>,
+  this: Procedure<Params, Instruction, Storage>,
   args: Params
 ): Promise<PostTransactionValue<Instruction>> {
   const {
@@ -74,6 +79,7 @@ export async function prepareAddInstruction(
       },
     },
     context,
+    storage: { portfoliosToAffirm },
   } = this;
   const { legs, venueId, endBlock, validFrom } = args;
 
@@ -97,14 +103,9 @@ export async function prepareAddInstruction(
   }
 
   let endCondition;
-  let did: string;
 
   if (endBlock) {
-    let latestBlock;
-    [{ did }, latestBlock] = await Promise.all([
-      context.getCurrentIdentity(),
-      context.getLatestBlock(),
-    ]);
+    const latestBlock = await context.getLatestBlock();
 
     if (endBlock.lte(latestBlock)) {
       throw new PolymeshError({
@@ -115,8 +116,6 @@ export async function prepareAddInstruction(
 
     endCondition = { type: InstructionType.SettleOnBlock, value: endBlock } as const;
   } else {
-    ({ did } = await context.getCurrentIdentity());
-
     endCondition = { type: InstructionType.SettleOnAffirmation } as const;
   }
 
@@ -129,33 +128,19 @@ export async function prepareAddInstruction(
     asset: Ticker;
     amount: Balance;
   }[] = [];
-  const rawPortfolios: PortfolioId[] = [];
 
   await Promise.all(
     legs.map(async ({ from, to, amount, token }) => {
       const fromId = portfolioLikeToPortfolioId(from);
       const toId = portfolioLikeToPortfolioId(to);
 
-      const fromPortfolio = portfolioLikeToPortfolio(from, context);
-      const toPortfolio = portfolioLikeToPortfolio(to, context);
-
-      const [{ did: fromCustodian }, { did: toCustodian }] = await Promise.all([
-        fromPortfolio.getCustodian(),
-        toPortfolio.getCustodian(),
+      await Promise.all([
         assertPortfolioExists(fromId, context),
         assertPortfolioExists(toId, context),
       ]);
 
       const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
       const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
-
-      if (fromCustodian === did) {
-        rawPortfolios.push(rawFromPortfolio);
-      }
-
-      if (toCustodian === did) {
-        rawPortfolios.push(rawToPortfolio);
-      }
 
       rawLegs.push({
         from: rawFromPortfolio,
@@ -168,7 +153,7 @@ export async function prepareAddInstruction(
 
   let newInstruction;
 
-  if (rawPortfolios.length) {
+  if (portfoliosToAffirm.length) {
     [newInstruction] = this.addTransaction(
       settlement.addAndAffirmInstruction,
       {
@@ -178,7 +163,9 @@ export async function prepareAddInstruction(
       rawSettlementType,
       rawValidFrom,
       rawLegs,
-      rawPortfolios
+      portfoliosToAffirm.map(portfolio =>
+        portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
+      )
     );
   } else {
     [newInstruction] = this.addTransaction(
@@ -200,34 +187,15 @@ export async function prepareAddInstruction(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<Params, Instruction>,
-  { venueId, legs }: Params
+  this: Procedure<Params, Instruction, Storage>,
+  { venueId }: Params
 ): Promise<ProcedureAuthorization> {
-  const { context } = this;
-  const portfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
+  const {
+    storage: { portfoliosToAffirm },
+  } = this;
   let transactions: TxTag[];
 
-  const identity = await context.getCurrentIdentity();
-
-  await P.map(legs, async ({ from, to }) => {
-    const fromPortfolio = portfolioLikeToPortfolio(from, context);
-    const toPortfolio = portfolioLikeToPortfolio(to, context);
-
-    const [fromCustodied, toCustodied] = await Promise.all([
-      fromPortfolio.isCustodiedBy({ identity }),
-      toPortfolio.isCustodiedBy({ identity }),
-    ]);
-
-    if (fromCustodied) {
-      portfolios.push(fromPortfolio);
-    }
-
-    if (toCustodied) {
-      portfolios.push(toPortfolio);
-    }
-  });
-
-  if (portfolios.length) {
+  if (portfoliosToAffirm.length) {
     transactions = [TxTags.settlement.AddAndAffirmInstruction];
   } else {
     transactions = [TxTags.settlement.AddInstruction];
@@ -237,7 +205,7 @@ export async function getAuthorization(
     identityRoles: [{ type: RoleType.VenueOwner, venueId }],
     signerPermissions: {
       tokens: [],
-      portfolios,
+      portfolios: portfoliosToAffirm,
       transactions,
     },
   };
@@ -246,4 +214,49 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const addInstruction = new Procedure(prepareAddInstruction, getAuthorization);
+export async function prepareStorage(
+  this: Procedure<Params, Instruction, Storage>,
+  { legs }: Params
+): Promise<Storage> {
+  const { context } = this;
+
+  const identity = await context.getCurrentIdentity();
+
+  const portfolios = await P.map(legs, async ({ from, to }) => {
+    const fromPortfolio = portfolioLikeToPortfolio(from, context);
+    const toPortfolio = portfolioLikeToPortfolio(to, context);
+
+    const result = [];
+    const [fromCustodied, toCustodied] = await Promise.all([
+      fromPortfolio.isCustodiedBy({ identity }),
+      toPortfolio.isCustodiedBy({ identity }),
+    ]);
+
+    if (fromCustodied) {
+      result.push(fromPortfolio);
+    }
+
+    if (toCustodied) {
+      result.push(toPortfolio);
+    }
+
+    if (result.length) {
+      return result;
+    }
+
+    return undefined;
+  });
+
+  return {
+    portfoliosToAffirm: flatten(compact(portfolios)),
+  };
+}
+
+/**
+ * @hidden
+ */
+export const addInstruction = new Procedure(
+  prepareAddInstruction,
+  getAuthorization,
+  prepareStorage
+);

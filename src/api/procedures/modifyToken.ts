@@ -94,9 +94,6 @@ export async function prepareModifyToken(
 /**
  * @hidden
  */
-/**
- * @hidden
- */
 export function getAuthorization(
   this: Procedure<Params, SecurityToken>,
   { ticker, makeDivisible, name, fundingRound }: Params

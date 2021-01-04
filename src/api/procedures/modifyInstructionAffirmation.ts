@@ -21,7 +21,7 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   numberToU64,
   portfolioIdToMeshPortfolioId,
-  portfolioToPortfolioId,
+  portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
 
 export interface ModifyInstructionAffirmationParams {
@@ -29,11 +29,15 @@ export interface ModifyInstructionAffirmationParams {
   operation: InstructionAffirmationOperation;
 }
 
+export interface Storage {
+  portfolios: (DefaultPortfolio | NumberedPortfolio)[];
+}
+
 /**
  * @hidden
  */
 export async function prepareModifyInstructionAffirmation(
-  this: Procedure<ModifyInstructionAffirmationParams, Instruction>,
+  this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
   args: ModifyInstructionAffirmationParams
 ): Promise<Instruction> {
   const {
@@ -44,6 +48,7 @@ export async function prepareModifyInstructionAffirmation(
       },
     },
     context,
+    storage: { portfolios },
   } = this;
 
   const { operation, id } = args;
@@ -52,10 +57,10 @@ export async function prepareModifyInstructionAffirmation(
 
   await assertInstructionValid(instruction, context);
 
-  const legs = await instruction.getLegs();
-
   const rawInstructionId = numberToU64(id, context);
-  const rawPortfolioIds: PortfolioId[] = [];
+  const rawPortfolioIds: PortfolioId[] = portfolios.map(portfolio =>
+    portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
+  );
 
   const excludeCriteria: AffirmationStatus[] = [];
   let errorMessage: string;
@@ -85,26 +90,6 @@ export async function prepareModifyInstructionAffirmation(
     }
   }
 
-  await Promise.all([
-    P.map(legs, async ({ from, to }) => {
-      const fromId = portfolioToPortfolioId(from);
-      const toId = portfolioToPortfolioId(to);
-
-      const [fromIsCustodied, toIsCustodied] = await Promise.all([
-        from.isCustodiedBy(),
-        to.isCustodiedBy(),
-      ]);
-
-      if (fromIsCustodied) {
-        rawPortfolioIds.push(portfolioIdToMeshPortfolioId(fromId, context));
-      }
-
-      if (toIsCustodied) {
-        rawPortfolioIds.push(portfolioIdToMeshPortfolioId(toId, context));
-      }
-    }),
-  ]);
-
   const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
 
   const rawAffirmationStatuses = await settlement.userAffirmations.multi<MeshAffirmationStatus>(
@@ -133,35 +118,12 @@ export async function prepareModifyInstructionAffirmation(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<ModifyInstructionAffirmationParams, Instruction>,
-  { operation, id }: ModifyInstructionAffirmationParams
+  this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
+  { operation }: ModifyInstructionAffirmationParams
 ): Promise<ProcedureAuthorization> {
-  const { context } = this;
-  const instruction = new Instruction({ id }, context);
-  const legs = await instruction.getLegs();
-
-  const portfolios = await P.reduce<Leg, (DefaultPortfolio | NumberedPortfolio)[]>(
-    legs,
-    async (result, { from, to }) => {
-      const [fromIsCustodied, toIsCustodied] = await Promise.all([
-        from.isCustodiedBy(),
-        to.isCustodiedBy(),
-      ]);
-
-      let res = [...result];
-
-      if (fromIsCustodied) {
-        res = [...res, from];
-      }
-
-      if (toIsCustodied) {
-        res = [...res, to];
-      }
-
-      return res;
-    },
-    []
-  );
+  const {
+    storage: { portfolios },
+  } = this;
 
   let transactions: TxTag[];
 
@@ -190,6 +152,43 @@ export async function getAuthorization(
       tokens: [],
     },
   };
+}
+
+/**
+ * @hidden
+ */
+export async function prepareStorage(
+  this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
+  { id }: ModifyInstructionAffirmationParams
+): Promise<Storage> {
+  const { context } = this;
+  const instruction = new Instruction({ id }, context);
+  const legs = await instruction.getLegs();
+
+  const portfolios = await P.reduce<Leg, (DefaultPortfolio | NumberedPortfolio)[]>(
+    legs,
+    async (result, { from, to }) => {
+      const [fromIsCustodied, toIsCustodied] = await Promise.all([
+        from.isCustodiedBy(),
+        to.isCustodiedBy(),
+      ]);
+
+      let res = [...result];
+
+      if (fromIsCustodied) {
+        res = [...res, from];
+      }
+
+      if (toIsCustodied) {
+        res = [...res, to];
+      }
+
+      return res;
+    },
+    []
+  );
+
+  return { portfolios };
 }
 
 /**

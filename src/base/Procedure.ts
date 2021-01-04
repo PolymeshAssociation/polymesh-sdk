@@ -45,21 +45,32 @@ interface AddTransactionOpts<Values extends unknown[]> extends AddTransactionOpt
  * Represents an operation performed on the Polymesh blockchain.
  * A Procedure can be prepared to yield a [[TransactionQueue]] that can be run
  */
-export class Procedure<Args extends unknown = void, ReturnValue extends unknown = void> {
+export class Procedure<
+  Args extends unknown = void,
+  ReturnValue extends unknown = void,
+  Storage extends unknown = {}
+> {
   private prepareTransactions: (
-    this: Procedure<Args, ReturnValue>,
+    this: Procedure<Args, ReturnValue, Storage>,
     args: Args
   ) => Promise<MaybePostTransactionValue<ReturnValue>>;
 
-  private _checkAuthorization: (
-    this: Procedure<Args, ReturnValue>,
+  private getAuthorization: (
+    this: Procedure<Args, ReturnValue, Storage>,
     args: Args
   ) => Promise<ProcedureAuthorization> | ProcedureAuthorization;
+
+  private prepareStorage: (
+    this: Procedure<Args, ReturnValue, Storage>,
+    args: Args
+  ) => Promise<Storage> | Storage;
 
   private transactions: (
     | PolymeshTransaction<unknown[]>
     | PolymeshTransactionBatch<unknown[]>
   )[] = [];
+
+  private _storage: null | Storage = null;
 
   public context = {} as Context;
 
@@ -67,28 +78,45 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
    * @hidden
    *
    * @param prepareTransactions - function that prepares the transaction queue
-   * @param checkAuthorization - can be a ProcedureAuthorization object or a function that returns a ProcedureAuthorization object
+   * @param getAuthorization - can be a ProcedureAuthorization object or a function that returns a ProcedureAuthorization object
    */
   constructor(
     prepareTransactions: (
-      this: Procedure<Args, ReturnValue>,
+      this: Procedure<Args, ReturnValue, Storage>,
       args: Args
     ) => Promise<MaybePostTransactionValue<ReturnValue>>,
-    checkAuthorization:
+    getAuthorization:
       | ProcedureAuthorization
       | ((
-          this: Procedure<Args, ReturnValue>,
+          this: Procedure<Args, ReturnValue, Storage>,
           args: Args
         ) => Promise<ProcedureAuthorization> | ProcedureAuthorization) = async (): Promise<
       ProcedureAuthorization
-    > => ({})
+    > => ({}),
+    prepareStorage: (
+      this: Procedure<Args, ReturnValue, Storage>,
+      args: Args
+    ) => Promise<Storage> | Storage = async (): Promise<Storage> => ({} as Storage)
   ) {
     this.prepareTransactions = prepareTransactions;
 
-    if (typeof checkAuthorization !== 'function') {
-      this._checkAuthorization = (): ProcedureAuthorization => checkAuthorization;
+    if (typeof getAuthorization !== 'function') {
+      this.getAuthorization = (): ProcedureAuthorization => getAuthorization;
     } else {
-      this._checkAuthorization = checkAuthorization;
+      this.getAuthorization = getAuthorization;
+    }
+
+    this.prepareStorage = prepareStorage;
+  }
+
+  /**
+   * @hidden
+   * Set the context and storage (if not already set)
+   */
+  private async setup(args: Args, context: Context): Promise<void> {
+    this.context = context;
+    if (!this._storage) {
+      this._storage = await this.prepareStorage(args);
     }
   }
 
@@ -99,20 +127,21 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
   private cleanup(): void {
     this.transactions = [];
     this.context = {} as Context;
+    this._storage = null;
   }
 
   /**
-   * Check if the current user has sufficient authorization to run the procedure
    *
-   * @param args - procedure arguments
+   * @param args
+   * @param context
    */
-  public async checkAuthorization(
+  private async _checkAuthorization(
     args: Args,
     context: Context
   ): Promise<ProcedureAuthorizationStatus> {
-    this.context = context;
+    await this.setup(args, context);
 
-    const checkAuthorizationResult = await this._checkAuthorization(args);
+    const checkAuthorizationResult = await this.getAuthorization(args);
 
     const { signerPermissions = true, identityRoles = true } = checkAuthorizationResult;
 
@@ -139,15 +168,31 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
   }
 
   /**
+   * Check if the current user has sufficient authorization to run the procedure
+   *
+   * @param args - procedure arguments
+   */
+  public async checkAuthorization(
+    args: Args,
+    context: Context
+  ): Promise<ProcedureAuthorizationStatus> {
+    const status = await this._checkAuthorization(args, context);
+
+    this.cleanup();
+
+    return status;
+  }
+
+  /**
    * Build a [[TransactionQueue]] that can be run
    *
    * @param args - arguments required to prepare the queue
    * @param context - context in which the resulting queue will run
    */
   public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
-    this.context = context;
+    await this.setup(args, context);
 
-    const { roles, permissions } = await this.checkAuthorization(args, context);
+    const { roles, permissions } = await this._checkAuthorization(args, context);
 
     if (!permissions) {
       throw new PolymeshError({
@@ -384,5 +429,22 @@ export class Procedure<Args extends unknown = void, ReturnValue extends unknown 
     });
 
     return postTransactionValues;
+  }
+
+  /**
+   * internal data container. Used to store common fetched/processed data that is
+   *   used by both `prepareTransactions` and `checkAuthorization`
+   */
+  public get storage(): Storage {
+    const { _storage } = this;
+
+    if (!_storage) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Attempt to access storage before it was set',
+      });
+    }
+
+    return _storage;
   }
 }
