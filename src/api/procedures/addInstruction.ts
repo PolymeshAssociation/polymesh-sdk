@@ -86,8 +86,6 @@ export async function prepareAddInstruction(
   const venue = new Venue({ id: venueId }, context);
   const exists = await venue.exists();
 
-  console.log(exists);
-
   if (!exists) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
