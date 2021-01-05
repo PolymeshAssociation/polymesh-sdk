@@ -231,7 +231,7 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const { data: issuedClaimsData } = await context.issuedClaims({
+    const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
       targets: [did],
       claimTypes: [
         ClaimType.Accredited,
@@ -244,16 +244,11 @@ export class Claims {
         ClaimType.KnowYourCustomer,
         ClaimType.SellLockup,
       ],
+      trustedClaimIssuers: undefined,
+      includeExpired: true,
     });
 
-    // const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
-    //   targets: [did],
-    //   claimTypes: [ClaimType.Accredited, ClaimType.Affiliate, ClaimType.Blocked, ClaimType.BuyLockup, ClaimType.Exempted, ClaimType.InvestorUniqueness, ClaimType.Jurisdiction, ClaimType.KnowYourCustomer, ClaimType.SellLockup],
-    //   trustedClaimIssuers: undefined,
-    //   includeExpired: true,
-    // });
-
-    return issuedClaimsData.map(({ claim }) => {
+    return identityClaimsFromChain.map(({ claim }) => {
       const {
         scope: { type, value },
       } = claim as ScopedClaim;

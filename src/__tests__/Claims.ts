@@ -2,11 +2,7 @@ import sinon from 'sinon';
 
 import { Claims } from '~/Claims';
 import { addInvestorUniquenessClaim, Context, modifyClaims, TransactionQueue } from '~/internal';
-import {
-  didsWithClaims,
-  issuerDidsWithClaimsByTarget,
-  scopesByIdentity,
-} from '~/middleware/queries';
+import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimScopeTypeEnum, ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -460,44 +456,49 @@ describe('Claims Class', () => {
     });
   });
 
-  describe.only('method: getClaimScopes', () => {
+  describe('method: getClaimScopes', () => {
     test('should return a list of scopes and tickers', async () => {
       const target = 'someTarget';
-      const scopes = [
+      const ticker = 'FAKETICKER';
+      const someDid = 'someDid';
+      const fakeClaimData = [
         {
-          scope: { type: ScopeType.Identity, value: 'someScope' },
-          ticker: 'TOKEN\0\0',
+          claim: {
+            type: ClaimType.InvestorUniqueness,
+            scope: {
+              type: ScopeType.Ticker,
+              value: ticker,
+            },
+          },
         },
         {
-          scope: null,
+          claim: {
+            type: ClaimType.Jurisdiction,
+            scope: {
+              type: ScopeType.Identity,
+              value: someDid,
+            },
+          },
         },
-      ];
+      ] as ClaimData[];
 
       dsMockUtils.configureMocks({
         contextOptions: {
           did: target,
+          getIdentityClaimsFromChain: fakeClaimData,
         },
       });
 
-      dsMockUtils.createApolloQueryStub(scopesByIdentity({ did: target }), {
-        scopesByIdentity: scopes,
-      });
-
-      sinon.stub();
-
       let result = await claims.getClaimScopes({ target });
 
-      expect(result[0].ticker).toBe('TOKEN');
-      expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: 'someScope' });
+      expect(result[0].ticker).toBe(ticker);
+      expect(result[0].scope).toEqual({ type: ScopeType.Ticker, value: ticker });
       expect(result[1].ticker).toBeUndefined();
-      expect(result[1].scope).toBeNull();
+      expect(result[1].scope).toEqual({ type: ScopeType.Identity, value: someDid });
 
       result = await claims.getClaimScopes();
 
-      expect(result[0].ticker).toBe('TOKEN');
-      expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: 'someScope' });
-      expect(result[1].ticker).toBeUndefined();
-      expect(result[1].scope).toBeNull();
+      expect(result.length).toEqual(2);
     });
   });
 
