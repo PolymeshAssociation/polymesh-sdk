@@ -1284,7 +1284,13 @@ describe('Context class', () => {
             expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryOne.getTime())),
           }
         ),
-        tuple({ args: [claim1stKey] }, identityClaim),
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(),
+          }
+        ),
         tuple(
           { args: [claim1stKey] },
           {

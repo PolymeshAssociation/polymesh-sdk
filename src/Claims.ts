@@ -6,11 +6,7 @@ import {
   modifyClaims,
   ModifyClaimsParams,
 } from '~/internal';
-import {
-  didsWithClaims,
-  issuerDidsWithClaimsByTarget,
-  scopesByIdentity,
-} from '~/middleware/queries';
+import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   ClaimData,
@@ -20,10 +16,11 @@ import {
   IdentityWithClaims,
   ResultSet,
   Scope,
+  ScopedClaim,
+  ScopeType,
 } from '~/types';
 import { ClaimOperation, ProcedureMethod } from '~/types/internal';
 import {
-  middlewareScopeToScope,
   scopeToMiddlewareScope,
   signerToString,
   toIdentityWithClaimsArray,
@@ -227,9 +224,6 @@ export class Claims {
    *   If the scope is an asset DID, the corresponding ticker is returned as well
    *
    * @param opts.target - identity for which to fetch claim scopes (optional, defaults to the current Identity)
-   *
-   * @note a null scope means the Identity has scopeless claims (like CDD for example)
-   * @note uses the middleware
    */
   public async getClaimScopes(opts: { target?: string | Identity } = {}): Promise<ClaimScope[]> {
     const { context } = this;
@@ -237,22 +231,41 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const {
-      data: { scopesByIdentity: scopes },
-    } = await context.queryMiddleware<Ensured<Query, 'scopesByIdentity'>>(
-      scopesByIdentity({ did })
-    );
+    const { data: issuedClaimsData } = await context.issuedClaims({
+      targets: [did],
+      claimTypes: [
+        ClaimType.Accredited,
+        ClaimType.Affiliate,
+        ClaimType.Blocked,
+        ClaimType.BuyLockup,
+        ClaimType.Exempted,
+        ClaimType.InvestorUniqueness,
+        ClaimType.Jurisdiction,
+        ClaimType.KnowYourCustomer,
+        ClaimType.SellLockup,
+      ],
+    });
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return scopes.map(({ scope, ticker: symbol }) => {
+    // const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
+    //   targets: [did],
+    //   claimTypes: [ClaimType.Accredited, ClaimType.Affiliate, ClaimType.Blocked, ClaimType.BuyLockup, ClaimType.Exempted, ClaimType.InvestorUniqueness, ClaimType.Jurisdiction, ClaimType.KnowYourCustomer, ClaimType.SellLockup],
+    //   trustedClaimIssuers: undefined,
+    //   includeExpired: true,
+    // });
+
+    return issuedClaimsData.map(({ claim }) => {
+      const {
+        scope: { type, value },
+      } = claim as ScopedClaim;
+
       let ticker: string | undefined;
 
-      if (symbol) {
-        ticker = removePadding(symbol);
+      if (type === ScopeType.Ticker) {
+        ticker = removePadding(value);
       }
 
       return {
-        scope: scope ? middlewareScopeToScope(scope) : null,
+        scope: { type, value: ticker ?? value },
         ticker,
       };
     });

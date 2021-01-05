@@ -460,7 +460,7 @@ describe('Claims Class', () => {
     });
   });
 
-  describe('method: getClaimScopes', () => {
+  describe.only('method: getClaimScopes', () => {
     test('should return a list of scopes and tickers', async () => {
       const target = 'someTarget';
       const scopes = [

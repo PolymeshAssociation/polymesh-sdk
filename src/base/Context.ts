@@ -631,7 +631,7 @@ export class Context {
           { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
         ]) => {
           const { target } = key.args[0] as Claim1stKey;
-          const expiry = rawExpiry ? momentToDate(rawExpiry.unwrap()) : null;
+          const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
           if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
             data.push({
               target: new Identity({ did: identityIdToString(target) }, this),
