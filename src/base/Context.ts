@@ -594,7 +594,7 @@ export class Context {
   /**
    * @hidden
    */
-  private async getIdentityClaimsFromChain(args: {
+  public async getIdentityClaimsFromChain(args: {
     targets: (string | Identity)[];
     claimTypes: ClaimType[];
     trustedClaimIssuers?: (string | Identity)[];

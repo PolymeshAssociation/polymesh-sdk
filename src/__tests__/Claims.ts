@@ -608,6 +608,44 @@ describe('Claims Class', () => {
     });
   });
 
+  describe('method: getInvestorUniquenessClaims', () => {
+    test('should return a list of claim data', async () => {
+      const target = 'someTarget';
+
+      const scope = {
+        type: ScopeType.Identity,
+        value: 'someIdentityScope',
+      };
+
+      const identityClaims: ClaimData[] = [
+        {
+          target: entityMockUtils.getIdentityInstance({ did: target }),
+          issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
+          issuedAt: new Date(),
+          expiry: null,
+          claim: {
+            type: ClaimType.InvestorUniqueness,
+            scope,
+            cddId: 'someCddId',
+            scopeId: 'someScopeId',
+          },
+        },
+      ];
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          getIdentityClaimsFromChain: identityClaims,
+        },
+      });
+
+      let result = await claims.getInvestorUniquenessClaims({ target });
+      expect(result).toEqual(identityClaims);
+
+      result = await claims.getInvestorUniquenessClaims();
+      expect(result).toEqual(identityClaims);
+    });
+  });
+
   test('should return a list of claims issued with an Identity as target and a given Scope', async () => {
     const did = 'someDid';
     const issuerDid = 'someIssuerDid';
