@@ -61,25 +61,25 @@ const rootTypes: Record<
   | TransactionArgumentType.Date
 > = {};
 
-didTypes.forEach(type => {
+didTypes.forEach((type) => {
   rootTypes[type] = TransactionArgumentType.Did;
 });
-addressTypes.forEach(type => {
+addressTypes.forEach((type) => {
   rootTypes[type] = TransactionArgumentType.Address;
 });
-balanceTypes.forEach(type => {
+balanceTypes.forEach((type) => {
   rootTypes[type] = TransactionArgumentType.Balance;
 });
-numberTypes.forEach(type => {
+numberTypes.forEach((type) => {
   rootTypes[type] = TransactionArgumentType.Number;
 });
-textTypes.forEach(type => {
+textTypes.forEach((type) => {
   rootTypes[type] = TransactionArgumentType.Text;
 });
-booleanTypes.forEach(type => {
+booleanTypes.forEach((type) => {
   rootTypes[type] = TransactionArgumentType.Boolean;
 });
-dateTypes.forEach(type => {
+dateTypes.forEach((type) => {
   rootTypes[type] = TransactionArgumentType.Date;
 });
 

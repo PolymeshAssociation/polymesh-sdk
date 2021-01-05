@@ -1,11 +1,23 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import { ITuple } from '@polkadot/types/types';
-import { Enum, Option, Struct, U8aFixed, Vec } from '@polkadot/types/codec';
-import { Bytes, Text, bool, u16, u32, u64, u8 } from '@polkadot/types/primitive';
-import { Signature } from '@polkadot/types/interfaces/extrinsics';
-import {
+import type {
+  Bytes,
+  Enum,
+  Option,
+  Struct,
+  Text,
+  U8aFixed,
+  Vec,
+  bool,
+  u16,
+  u32,
+  u64,
+  u8,
+} from '@polkadot/types';
+import type { ITuple } from '@polkadot/types/types';
+import type { Signature } from '@polkadot/types/interfaces/extrinsics';
+import type {
   AccountId,
   Balance,
   BlockNumber,
@@ -787,6 +799,22 @@ export interface Fundraiser extends Struct {
   readonly remaining_amount: Balance;
   readonly price_per_token: Balance;
   readonly venue_id: u64;
+}
+
+/** @name GetPortfolioAssetsResult */
+export interface GetPortfolioAssetsResult extends Enum {
+  readonly isOk: boolean;
+  readonly asOk: Vec<ITuple<[Ticker, Balance]>>;
+  readonly isErr: boolean;
+  readonly asErr: Bytes;
+}
+
+/** @name GetPortfoliosResult */
+export interface GetPortfoliosResult extends Enum {
+  readonly isOk: boolean;
+  readonly asOk: Vec<ITuple<[PortfolioNumber, PortfolioName]>>;
+  readonly isErr: boolean;
+  readonly asErr: Bytes;
 }
 
 /** @name HandledTxStatus */

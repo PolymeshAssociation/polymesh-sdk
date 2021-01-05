@@ -79,7 +79,7 @@ describe('Transaction Queue class', () => {
       let returned = await queue.run();
 
       expect(returned).toBe(returnValue);
-      transactions.forEach(transaction => {
+      transactions.forEach((transaction) => {
         sinon.assert.calledOnce(transaction.run);
       });
 
@@ -272,7 +272,7 @@ describe('Transaction Queue class', () => {
       const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
-      queue.onStatusChange(q => listenerStub(q.status));
+      queue.onStatusChange((q) => listenerStub(q.status));
 
       await queue.run();
 
@@ -293,7 +293,7 @@ describe('Transaction Queue class', () => {
       const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
-      const unsub = queue.onStatusChange(q => listenerStub(q.status));
+      const unsub = queue.onStatusChange((q) => listenerStub(q.status));
 
       queue.run();
 
@@ -325,7 +325,7 @@ describe('Transaction Queue class', () => {
       const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
-      queue.onTransactionStatusChange(transaction => {
+      queue.onTransactionStatusChange((transaction) => {
         listenerStub(transaction.status);
       });
 
@@ -359,7 +359,7 @@ describe('Transaction Queue class', () => {
       const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
-      const unsub = queue.onTransactionStatusChange(transaction => {
+      const unsub = queue.onTransactionStatusChange((transaction) => {
         listenerStub(transaction.status);
       });
 
@@ -408,7 +408,7 @@ describe('Transaction Queue class', () => {
       const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
-      queue.onProcessedByMiddleware(err => listenerStub(err));
+      queue.onProcessedByMiddleware((err) => listenerStub(err));
 
       const stub = dsMockUtils.createApolloQueryStub(latestProcessedBlock(), {
         latestBlock: { id: blockNumber.minus(1).toNumber() },
@@ -443,7 +443,7 @@ describe('Transaction Queue class', () => {
       const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
-      queue.onProcessedByMiddleware(err => listenerStub(err));
+      queue.onProcessedByMiddleware((err) => listenerStub(err));
 
       dsMockUtils.createApolloQueryStub(latestProcessedBlock(), {
         latestBlock: { id: blockNumber.minus(1).toNumber() },
@@ -475,7 +475,7 @@ describe('Transaction Queue class', () => {
       const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
-      expect(() => queue.onProcessedByMiddleware(err => listenerStub(err))).toThrow(
+      expect(() => queue.onProcessedByMiddleware((err) => listenerStub(err))).toThrow(
         'Cannot subscribe without an enabled middleware connection'
       );
     });
@@ -493,7 +493,7 @@ describe('Transaction Queue class', () => {
       const queue = new TransactionQueue(transactions, returnValue, context);
 
       const listenerStub = sinon.stub();
-      const unsub = queue.onProcessedByMiddleware(err => listenerStub(err));
+      const unsub = queue.onProcessedByMiddleware((err) => listenerStub(err));
 
       dsMockUtils.createApolloQueryStub(latestProcessedBlock(), {
         latestBlock: { id: blockNumber.minus(1).toNumber() },

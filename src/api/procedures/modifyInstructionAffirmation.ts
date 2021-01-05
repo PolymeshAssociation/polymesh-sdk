@@ -58,7 +58,7 @@ export async function prepareModifyInstructionAffirmation(
   await assertInstructionValid(instruction, context);
 
   const rawInstructionId = numberToU64(id, context);
-  const rawPortfolioIds: PortfolioId[] = portfolios.map(portfolio =>
+  const rawPortfolioIds: PortfolioId[] = portfolios.map((portfolio) =>
     portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
   );
 
@@ -90,7 +90,7 @@ export async function prepareModifyInstructionAffirmation(
     }
   }
 
-  const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
+  const multiArgs = rawPortfolioIds.map((portfolioId) => tuple(portfolioId, rawInstructionId));
 
   const rawAffirmationStatuses = await settlement.userAffirmations.multi<MeshAffirmationStatus>(
     multiArgs

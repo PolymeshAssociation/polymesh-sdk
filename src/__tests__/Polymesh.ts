@@ -67,7 +67,7 @@ describe('Polymesh Class', () => {
 
   describe('method: create', () => {
     beforeAll(() => {
-      sinon.stub(apolloLinkContextModule, 'setContext').callsFake(cbFunc => {
+      sinon.stub(apolloLinkContextModule, 'setContext').callsFake((cbFunc) => {
         return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
       });
     });
@@ -363,10 +363,7 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
 
-      sinon
-        .stub(reserveTicker, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(reserveTicker, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await polymesh.reserveTicker(args);
 
@@ -424,7 +421,7 @@ describe('Polymesh Class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
-      entityMockUtils.getTickerReservationDetailsStub().callsFake(async cbFunc => {
+      entityMockUtils.getTickerReservationDetailsStub().callsFake(async (cbFunc) => {
         cbFunc({
           owner: entityMockUtils.getIdentityInstance(),
           expiryDate: new Date(),
@@ -816,10 +813,7 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(transferPolyX, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(transferPolyX, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await polymesh.transferPolyX(args);
 
@@ -925,7 +919,7 @@ describe('Polymesh Class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
 
-      entityMockUtils.getAccountInstance().getBalance.callsFake(async cbFunc => {
+      entityMockUtils.getAccountInstance().getBalance.callsFake(async (cbFunc) => {
         cbFunc(fakeBalance);
         return unsubCallback;
       });
@@ -980,10 +974,7 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Identity>;
 
-      sinon
-        .stub(registerIdentity, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(registerIdentity, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await polymesh.registerIdentity(args);
 

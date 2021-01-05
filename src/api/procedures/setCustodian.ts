@@ -59,7 +59,7 @@ export async function prepareSetCustodian(
     context.getCurrentIdentity(),
   ]);
 
-  const hasPendingAuth = authorizationRequests.find(authorizationRequest => {
+  const hasPendingAuth = authorizationRequests.find((authorizationRequest) => {
     const { issuer, data } = authorizationRequest;
     const authorizationData = data as { value: NumberedPortfolio | DefaultPortfolio };
     return currentIdentity.did === issuer.did && authorizationData.value.uuid === portfolio.uuid;

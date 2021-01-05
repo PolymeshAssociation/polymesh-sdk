@@ -4,28 +4,68 @@ const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const util = require('util');
-const { upperFirst, toLower } = require('lodash');
+const { upperFirst, toLower, forEach } = require('lodash');
 
-const definitionsDir = path.resolve('src', 'polkadot', 'polymesh');
+const definitionsDir = path.resolve('src', 'polkadot');
+const typesDir = path.resolve(definitionsDir, 'polymesh');
 const generatedDir = path.resolve('src', 'generated');
 
 const urlPath = 'https://pme.polymath.network/code';
 
-rimraf.sync(definitionsDir);
-fs.mkdirSync(definitionsDir);
+rimraf.sync(typesDir);
+fs.mkdirSync(typesDir);
 
 rimraf.sync(generatedDir);
 fs.mkdirSync(generatedDir);
 
 function writeDefinitions(schemaObj) {
+  const { types, rpc: rpcModules } = schemaObj;
+
   fs.writeFileSync(
-    path.resolve(definitionsDir, 'definitions.ts'),
+    path.resolve(typesDir, 'definitions.ts'),
+    `/* eslint-disable @typescript-eslint/camelcase */\nexport default ${util.inspect(
+      { rpc: {}, types },
+      {
+        compact: false,
+        depth: null,
+        maxArrayLength: null,
+      }
+    )}`
+  );
+
+  fs.writeFileSync(
+    path.resolve(definitionsDir, 'schema.ts'),
     `/* eslint-disable @typescript-eslint/camelcase */\nexport default ${util.inspect(schemaObj, {
       compact: false,
       depth: null,
       maxArrayLength: null,
     })}`
   );
+
+  let defExports = "export { default as polymesh } from './polymesh/definitions'\n";
+
+  forEach(rpcModules, (rpc, moduleName) => {
+    const moduleDir = path.resolve(definitionsDir, moduleName);
+
+    rimraf.sync(moduleDir);
+    fs.mkdirSync(moduleDir);
+
+    fs.writeFileSync(
+      path.resolve(moduleDir, 'definitions.ts'),
+      `/* eslint-disable @typescript-eslint/camelcase */\nexport default ${util.inspect(
+        { rpc, types: {} },
+        {
+          compact: false,
+          depth: null,
+          maxArrayLength: null,
+        }
+      )}`
+    );
+
+    defExports = `${defExports}export { default as ${moduleName} } from './${moduleName}/definitions'\n`;
+  });
+
+  fs.writeFileSync(path.resolve(definitionsDir, 'definitions.ts'), defExports);
 }
 
 /**
@@ -82,9 +122,9 @@ export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): 
   fs.writeFileSync(path.resolve(generatedDir, 'utils.ts'), utilsFile);
 }
 
-https.get(`${urlPath}/polymesh_schema.json`, res => {
+https.get(`${urlPath}/polymesh_schema.json`, (res) => {
   const chunks = [];
-  res.on('data', chunk => {
+  res.on('data', (chunk) => {
     chunks.push(chunk);
   });
 

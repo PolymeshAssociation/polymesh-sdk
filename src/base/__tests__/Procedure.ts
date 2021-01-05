@@ -117,7 +117,7 @@ describe('Procedure class', () => {
         .resolves(rawFees[1]);
 
       posRatioToBigNumberStub.withArgs(rawCoefficient).returns(coefficient);
-      txTags.forEach(txTag =>
+      txTags.forEach((txTag) =>
         txTagToProtocolOpStub.withArgs(txTag, context).returns((txTag as unknown) as ProtocolOp)
       );
 
@@ -138,7 +138,7 @@ describe('Procedure class', () => {
 
       const returnValue = 'good';
 
-      const func1 = async function(
+      const func1 = async function (
         this: baseModule.Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<string> {
@@ -166,7 +166,7 @@ describe('Procedure class', () => {
         context
       );
 
-      const func2 = async function(
+      const func2 = async function (
         this: baseModule.Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<MaybePostTransactionValue<string>> {
@@ -198,7 +198,7 @@ describe('Procedure class', () => {
       };
 
       const errorMsg = 'failed';
-      const func = async function(
+      const func = async function (
         this: baseModule.Procedure<typeof procArgs, string>
       ): Promise<string> {
         throw new Error(errorMsg);
@@ -216,7 +216,7 @@ describe('Procedure class', () => {
         ticker,
         secondaryKeys,
       };
-      const func = async function(
+      const func = async function (
         this: baseModule.Procedure<typeof procArgs, string>
       ): Promise<string> {
         return 'success';
@@ -281,7 +281,7 @@ describe('Procedure class', () => {
         ticker
       );
 
-      await Promise.all(values.map(value => value.run({} as ISubmittableResult)));
+      await Promise.all(values.map((value) => value.run({} as ISubmittableResult)));
       const [num, str] = values;
 
       expect(num.value).toBe(resolvedNum);
@@ -311,7 +311,7 @@ describe('Procedure class', () => {
         [[ticker]]
       );
 
-      await Promise.all(values.map(value => value.run({} as ISubmittableResult)));
+      await Promise.all(values.map((value) => value.run({} as ISubmittableResult)));
       const [num, str] = values;
 
       expect(num.value).toBe(resolvedNum);

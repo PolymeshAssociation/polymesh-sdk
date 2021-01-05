@@ -83,7 +83,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     auths = [];
     rawAuthIds = [];
     rawAuthIdentifiers = [];
-    authParams.forEach(params => {
+    authParams.forEach((params) => {
       const { authId, target } = params;
 
       const signerValue = utilsConversionModule.signerToSignerValue(target);
@@ -178,7 +178,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       const args = {
         accept: true,
         authRequests: constructorParams.map(
-          params => new AuthorizationRequest(params, mockContext)
+          (params) => new AuthorizationRequest(params, mockContext)
         ),
       } as ConsumeAuthorizationRequestsParams;
 

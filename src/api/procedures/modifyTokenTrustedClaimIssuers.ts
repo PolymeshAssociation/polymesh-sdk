@@ -57,7 +57,7 @@ export async function prepareModifyTokenTrustedClaimIssuers(
 
   const rawCurrentClaimIssuers = await query.complianceManager.trustedClaimIssuer(rawTicker);
 
-  const currentClaimIssuers = rawCurrentClaimIssuers.map(issuer =>
+  const currentClaimIssuers = rawCurrentClaimIssuers.map((issuer) =>
     trustedIssuerToTrustedClaimIssuer(issuer, context)
   );
   const currentClaimIssuerDids = currentClaimIssuers.map(({ identity: { did } }) => did);

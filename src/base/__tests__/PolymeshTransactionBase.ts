@@ -346,7 +346,7 @@ describe('Polymesh Transaction Base class', () => {
 
       const listenerStub = sinon.stub();
 
-      transaction.onStatusChange(t => listenerStub(t.status));
+      transaction.onStatusChange((t) => listenerStub(t.status));
 
       await transaction.run();
 
@@ -370,7 +370,7 @@ describe('Polymesh Transaction Base class', () => {
 
       const listenerStub = sinon.stub();
 
-      const unsub = transaction.onStatusChange(t => listenerStub(t.status));
+      const unsub = transaction.onStatusChange((t) => listenerStub(t.status));
 
       transaction.run();
 
@@ -466,7 +466,7 @@ describe('Polymesh Transaction Base class', () => {
           ...txSpec,
           fee: null,
           tx,
-          args: args.map(arg => new PostTransactionValue(async () => arg)),
+          args: args.map((arg) => new PostTransactionValue(async () => arg)),
         },
         context
       );

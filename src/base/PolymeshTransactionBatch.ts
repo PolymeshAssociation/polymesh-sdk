@@ -47,7 +47,7 @@ export class PolymeshTransactionBatch<
    */
   public get args(): Args[] {
     if (!this.unwrappedArgs) {
-      this.unwrappedArgs = this.inputArgs.map(arg => unwrapValues(arg));
+      this.unwrappedArgs = this.inputArgs.map((arg) => unwrapValues(arg));
     }
 
     return this.unwrappedArgs;
@@ -69,7 +69,7 @@ export class PolymeshTransactionBatch<
 
     const unwrappedTx = unwrapValue(tx);
 
-    return utility.batchAtomic(args.map(arg => unwrappedTx(...arg)));
+    return utility.batchAtomic(args.map((arg) => unwrappedTx(...arg)));
   }
 
   /**

@@ -36,7 +36,10 @@ export class Requirements extends Namespace<SecurityToken> {
 
     const { ticker } = parent;
 
-    this.set = createProcedureMethod(args => [setAssetRequirements, { ticker, ...args }], context);
+    this.set = createProcedureMethod(
+      (args) => [setAssetRequirements, { ticker, ...args }],
+      context
+    );
     this.reset = createProcedureMethod(
       () => [setAssetRequirements, { ticker, requirements: [] }],
       context
@@ -91,14 +94,14 @@ export class Requirements extends Namespace<SecurityToken> {
       AssetCompliance,
       Vec<TrustedIssuer>
     ]): Requirement[] => {
-      const defaultTrustedClaimIssuers = claimIssuers.map(claimIssuer => {
+      const defaultTrustedClaimIssuers = claimIssuers.map((claimIssuer) => {
         return trustedIssuerToTrustedClaimIssuer(claimIssuer, context);
       });
 
-      return assetCompliance.requirements.map(complianceRequirement => {
+      return assetCompliance.requirements.map((complianceRequirement) => {
         const requirement = complianceRequirementToRequirement(complianceRequirement, context);
 
-        requirement.conditions.forEach(condition => {
+        requirement.conditions.forEach((condition) => {
           if (!condition.trustedClaimIssuers || !condition.trustedClaimIssuers.length) {
             condition.trustedClaimIssuers = defaultTrustedClaimIssuers;
           }
@@ -111,18 +114,30 @@ export class Requirements extends Namespace<SecurityToken> {
     if (callback) {
       return queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>(
         [
-          [complianceManager.assetCompliances as QueryableStorageEntry<'promise'>, rawTicker],
-          [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
+          [
+            (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
+            rawTicker,
+          ],
+          [
+            (complianceManager.trustedClaimIssuer as unknown) as QueryableStorageEntry<'promise'>,
+            rawTicker,
+          ],
         ],
-        res => {
+        (res) => {
           callback(assembleResult(res));
         }
       );
     }
 
     const result = await queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>([
-      [complianceManager.assetCompliances as QueryableStorageEntry<'promise'>, rawTicker],
-      [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
+      [
+        (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
+        rawTicker,
+      ],
+      [
+        (complianceManager.trustedClaimIssuer as unknown) as QueryableStorageEntry<'promise'>,
+        rawTicker,
+      ],
     ]);
 
     return assembleResult(result);
@@ -168,8 +183,7 @@ export class Requirements extends Namespace<SecurityToken> {
     const fromDid = stringToIdentityId(signerToString(from), context);
     const toDid = signerToString(to);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res: AssetComplianceResult = await (rpc as any).compliance.canTransfer(
+    const res: AssetComplianceResult = await rpc.compliance.canTransfer(
       stringToTicker(ticker, context),
       fromDid,
       stringToIdentityId(toDid, context)

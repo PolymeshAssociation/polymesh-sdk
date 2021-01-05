@@ -545,7 +545,7 @@ function configureVenue(opts: VenueOptions): void {
   } as unknown) as MockVenue;
 
   Object.assign(mockInstanceContainer.venue, venue);
-  venueConstructorStub.callsFake(args => {
+  venueConstructorStub.callsFake((args) => {
     const value = merge({}, venue, args);
     Object.setPrototypeOf(value, require('~/internal').Venue.prototype);
     return value;
@@ -667,7 +667,7 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
   } as unknown) as MockAuthorizationRequest;
 
   Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
-  authorizationRequestConstructorStub.callsFake(args => {
+  authorizationRequestConstructorStub.callsFake((args) => {
     const value = merge({}, authorizationRequest, args);
     Object.setPrototypeOf(value, require('~/internal').AuthorizationRequest.prototype);
     return value;
@@ -703,7 +703,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
-  securityTokenConstructorStub.callsFake(args => {
+  securityTokenConstructorStub.callsFake((args) => {
     const value = merge({}, securityToken, args);
     Object.setPrototypeOf(value, require('~/internal').SecurityToken.prototype);
     return value;
@@ -738,7 +738,7 @@ function configureTickerReservation(opts: TickerReservationOptions): void {
   } as unknown) as MockTickerReservation;
 
   Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
-  tickerReservationConstructorStub.callsFake(args => {
+  tickerReservationConstructorStub.callsFake((args) => {
     const value = merge({}, tickerReservation, args);
     Object.setPrototypeOf(value, require('~/internal').TickerReservation.prototype);
     return value;
@@ -779,7 +779,7 @@ function configureIdentity(opts: IdentityOptions): void {
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
-  identityConstructorStub.callsFake(args => {
+  identityConstructorStub.callsFake((args) => {
     const value = merge({}, identity, args);
     Object.setPrototypeOf(value, require('~/internal').Identity.prototype);
     return value;
@@ -823,7 +823,7 @@ function configureInstruction(opts: InstructionOptions): void {
   } as unknown) as MockInstruction;
 
   Object.assign(mockInstanceContainer.instruction, instruction);
-  instructionConstructorStub.callsFake(args => {
+  instructionConstructorStub.callsFake((args) => {
     const value = merge({}, instruction, args);
     Object.setPrototypeOf(value, require('~/internal').Instruction.prototype);
     return value;
@@ -859,7 +859,7 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
-  currentIdentityConstructorStub.callsFake(args => {
+  currentIdentityConstructorStub.callsFake((args) => {
     const value = merge({}, identity, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
@@ -902,7 +902,7 @@ function configureAccount(opts: AccountOptions): void {
   } as unknown) as MockAccount;
 
   Object.assign(mockInstanceContainer.account, account);
-  accountConstructorStub.callsFake(args => {
+  accountConstructorStub.callsFake((args) => {
     const value = merge({}, account, args);
     Object.setPrototypeOf(value, require('~/internal').Account.prototype);
     return value;
@@ -942,7 +942,7 @@ function configureCurrentAccount(opts: CurrentAccountOptions): void {
   } as unknown) as MockAccount;
 
   Object.assign(mockInstanceContainer.currentAccount, account);
-  currentAccountConstructorStub.callsFake(args => {
+  currentAccountConstructorStub.callsFake((args) => {
     const value = merge({}, account, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');

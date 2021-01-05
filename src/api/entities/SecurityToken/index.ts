@@ -100,10 +100,10 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.compliance = new Compliance(this, context);
 
     this.transferOwnership = createProcedureMethod(
-      args => [transferTokenOwnership, { ticker, ...args }],
+      (args) => [transferTokenOwnership, { ticker, ...args }],
       context
     );
-    this.modify = createProcedureMethod(args => [modifyToken, { ticker, ...args }], context);
+    this.modify = createProcedureMethod((args) => [modifyToken, { ticker, ...args }], context);
     this.freeze = createProcedureMethod(
       () => [toggleFreezeTransfers, { ticker, freeze: true }],
       context
@@ -113,14 +113,14 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       context
     );
     this.modifyPrimaryIssuanceAgent = createProcedureMethod(
-      args => [modifyPrimaryIssuanceAgent, { ticker, ...args }],
+      (args) => [modifyPrimaryIssuanceAgent, { ticker, ...args }],
       context
     );
     this.removePrimaryIssuanceAgent = createProcedureMethod(
       () => [removePrimaryIssuanceAgent, { ticker }],
       context
     );
-    this.redeem = createProcedureMethod(args => [redeemToken, { ticker, ...args }], context);
+    this.redeem = createProcedureMethod((args) => [redeemToken, { ticker, ...args }], context);
   }
 
   /**
@@ -189,7 +189,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const rawTicker = stringToTicker(ticker, context);
 
     if (callback) {
-      return asset.tokens(rawTicker, securityToken => {
+      return asset.tokens(rawTicker, (securityToken) => {
         callback(assembleResult(securityToken));
       });
     }
@@ -224,7 +224,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const rawTicker = stringToTicker(ticker, context);
 
     if (callback) {
-      return asset.fundingRound(rawTicker, round => {
+      return asset.fundingRound(rawTicker, (round) => {
         callback(fundingRoundNameToString(round));
       });
     }
@@ -258,7 +258,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const rawTicker = stringToTicker(ticker, context);
 
     if (callback) {
-      return asset.identifiers(rawTicker, identifiers => {
+      return asset.identifiers(rawTicker, (identifiers) => {
         callback(identifiers.map(assetIdentifierToTokenIdentifier));
       });
     }
@@ -332,7 +332,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const rawTicker = stringToTicker(ticker, context);
 
     if (callback) {
-      return asset.frozen(rawTicker, frozen => {
+      return asset.frozen(rawTicker, (frozen) => {
         callback(boolToBoolean(frozen));
       });
     }

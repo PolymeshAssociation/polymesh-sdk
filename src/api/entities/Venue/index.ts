@@ -56,7 +56,7 @@ export class Venue extends Entity<UniqueIdentifiers> {
     this.id = id;
 
     this.addInstruction = createProcedureMethod(
-      args => [addInstruction, { ...args, venueId: id }],
+      (args) => [addInstruction, { ...args, venueId: id }],
       context
     );
   }
@@ -105,10 +105,10 @@ export class Venue extends Entity<UniqueIdentifiers> {
     const { instructions: rawInstructions } = venueInfo.unwrap();
 
     const instructions = rawInstructions.map(
-      instructionId => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
+      (instructionId) => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
     );
 
-    return P.filter(instructions, async instruction => {
+    return P.filter(instructions, async (instruction) => {
       const { status } = await instruction.details();
 
       return status === InstructionStatus.Pending;

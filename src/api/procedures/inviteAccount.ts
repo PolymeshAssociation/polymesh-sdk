@@ -68,7 +68,7 @@ export async function prepareInviteAccount(
     });
   }
 
-  const hasPendingAuth = !!authorizationRequests.data.find(authorizationRequest => {
+  const hasPendingAuth = !!authorizationRequests.data.find((authorizationRequest) => {
     const {
       target,
       data: { type },

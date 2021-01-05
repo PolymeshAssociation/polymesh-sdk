@@ -39,14 +39,17 @@ export class CurrentIdentity extends Identity {
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    this.removeSecondaryKeys = createProcedureMethod(args => [removeSecondaryKeys, args], context);
+    this.removeSecondaryKeys = createProcedureMethod(
+      (args) => [removeSecondaryKeys, args],
+      context
+    );
     this.revokePermissions = createProcedureMethod<
       { secondaryKeys: Signer[] },
       ModifySignerPermissionsParams,
       void
-    >(args => {
+    >((args) => {
       const { secondaryKeys } = args;
-      const signers = secondaryKeys.map(signer => {
+      const signers = secondaryKeys.map((signer) => {
         return {
           signer,
           permissions: { tokens: [], transactions: [], portfolios: [] },
@@ -55,11 +58,11 @@ export class CurrentIdentity extends Identity {
       return [modifySignerPermissions, { secondaryKeys: signers }];
     }, context);
     this.modifyPermissions = createProcedureMethod(
-      args => [modifySignerPermissions, args],
+      (args) => [modifySignerPermissions, args],
       context
     );
-    this.inviteAccount = createProcedureMethod(args => [inviteAccount, args], context);
-    this.createVenue = createProcedureMethod(args => [createVenue, args], context);
+    this.inviteAccount = createProcedureMethod((args) => [inviteAccount, args], context);
+    this.createVenue = createProcedureMethod((args) => [createVenue, args], context);
   }
 
   /**
@@ -140,7 +143,7 @@ export class CurrentIdentity extends Identity {
     const ownedPortfolios = await portfolios.getPortfolios();
 
     const [ownedCustodiedPortfolios, custodiedPortfolios] = await Promise.all([
-      P.filter(ownedPortfolios, portfolio => portfolio.isCustodiedBy({ identity: did })),
+      P.filter(ownedPortfolios, (portfolio) => portfolio.isCustodiedBy({ identity: did })),
       this.portfolios.getCustodiedPortfolios(),
     ]);
 
@@ -148,18 +151,18 @@ export class CurrentIdentity extends Identity {
 
     const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
 
-    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
+    await P.map(portfolioIds, (portfolioId) => assertPortfolioExists(portfolioId, context));
 
     const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 
-    const chunkedInstructions = await P.mapSeries(portfolioIdChunks, async portfolioIdChunk => {
-      const auths = await P.map(portfolioIdChunk, portfolioId =>
+    const chunkedInstructions = await P.mapSeries(portfolioIdChunks, async (portfolioIdChunk) => {
+      const auths = await P.map(portfolioIdChunk, (portfolioId) =>
         settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
       );
 
       const instructionIds = uniqBy(
         flatten(auths).map(([key]) => key.args[1] as u64),
-        id => id.toNumber()
+        (id) => id.toNumber()
       );
       return settlement.instructionDetails.multi<MeshInstruction>(instructionIds);
     });

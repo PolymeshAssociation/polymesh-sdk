@@ -90,9 +90,9 @@ export class Procedure<
       | ((
           this: Procedure<Args, ReturnValue, Storage>,
           args: Args
-        ) => Promise<ProcedureAuthorization> | ProcedureAuthorization) = async (): Promise<
-      ProcedureAuthorization
-    > => ({}),
+        ) =>
+          | Promise<ProcedureAuthorization>
+          | ProcedureAuthorization) = async (): Promise<ProcedureAuthorization> => ({}),
     prepareStorage: (
       this: Procedure<Args, ReturnValue, Storage>,
       args: Args
@@ -263,7 +263,7 @@ export class Procedure<
     const { context } = this;
     let { signer } = options;
     const postTransactionValues = resolvers.map(
-      resolver => new PostTransactionValue(resolver)
+      (resolver) => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
     if (!signer) {
@@ -376,7 +376,7 @@ export class Procedure<
     const { context } = this;
     let { signer } = options;
     const postTransactionValues = resolvers.map(
-      resolver => new PostTransactionValue(resolver)
+      (resolver) => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
     if (!signer) {

@@ -155,19 +155,23 @@ describe('addInstruction procedure', () => {
 
   let addTransactionStub: sinon.SinonStub;
 
-  let addAndAuthorizeInstructionTransaction: PolymeshTx<[
-    u64,
-    SettlementType,
-    Option<Moment>,
-    { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance }[],
-    PortfolioId[]
-  ]>;
-  let addInstructionTransaction: PolymeshTx<[
-    u64,
-    SettlementType,
-    Option<Moment>,
-    { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance }[]
-  ]>;
+  let addAndAuthorizeInstructionTransaction: PolymeshTx<
+    [
+      u64,
+      SettlementType,
+      Option<Moment>,
+      { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance }[],
+      PortfolioId[]
+    ]
+  >;
+  let addInstructionTransaction: PolymeshTx<
+    [
+      u64,
+      SettlementType,
+      Option<Moment>,
+      { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance }[]
+    ]
+  >;
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([instruction]);

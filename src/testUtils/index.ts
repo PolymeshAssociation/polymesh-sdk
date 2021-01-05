@@ -5,7 +5,7 @@
  *   and hence we need to await a lot of them to assure our tests return control to the tested functions
  */
 export async function fakePromise(): Promise<void> {
-  await new Promise(resolve => setImmediate(() => resolve()));
-  await new Promise(resolve => setImmediate(() => resolve()));
-  await new Promise(resolve => setImmediate(() => resolve()));
+  await new Promise((resolve) => setImmediate(() => resolve()));
+  await new Promise((resolve) => setImmediate(() => resolve()));
+  await new Promise((resolve) => setImmediate(() => resolve()));
 }

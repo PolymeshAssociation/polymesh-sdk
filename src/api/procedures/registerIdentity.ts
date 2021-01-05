@@ -47,7 +47,7 @@ export async function prepareRegisterIdentity(
   const { targetAccount, secondaryKeys = [] } = args;
 
   const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
-  const rawSecondaryKeys = secondaryKeys.map(secondaryKey =>
+  const rawSecondaryKeys = secondaryKeys.map((secondaryKey) =>
     secondaryKeyToMeshSecondaryKey(secondaryKey, context)
   );
 

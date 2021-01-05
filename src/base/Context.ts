@@ -2,7 +2,7 @@ import { ApiPromise, Keyring } from '@polkadot/api';
 import { AddressOrPair } from '@polkadot/api/types';
 import { getTypeDef } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
-import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
+import { CallFunction, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import { hexToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
@@ -280,7 +280,7 @@ export class Context {
     };
 
     if (callback) {
-      return system.account(address, info => {
+      return system.account(address, (info) => {
         callback(assembleResult(info));
       });
     }
@@ -365,7 +365,7 @@ export class Context {
    */
   public async getInvalidDids(identities: (string | Identity)[]): Promise<string[]> {
     const dids = identities.map(signerToString);
-    const rawIdentities = dids.map(did => stringToIdentityId(did, this));
+    const rawIdentities = dids.map((did) => stringToIdentityId(did, this));
     const records = await this.polymeshApi.query.identity.didRecords.multi<DidRecord>(
       rawIdentities
     );
@@ -527,7 +527,7 @@ export class Context {
             type: TransactionArgumentType.RichEnum,
             ...arg,
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            internal: subTypes.map(def => processType(def, def.name!)),
+            internal: subTypes.map((def) => processType(def, def.name!)),
           };
         }
         case TypeDefInfo.Struct: {
@@ -535,7 +535,7 @@ export class Context {
             type: TransactionArgumentType.Object,
             ...arg,
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            internal: (sub as TypeDef[]).map(def => processType(def, def.name!)),
+            internal: (sub as TypeDef[]).map((def) => processType(def, def.name!)),
           };
         }
         default: {
@@ -548,7 +548,7 @@ export class Context {
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return ((tx as any)[section][method] as CallBase).meta.args.map(({ name, type }) => {
+    return ((tx as any)[section][method] as CallFunction).meta.args.map(({ name, type }) => {
       const typeDef = getTypeDef(type.toString());
       const argName = textToString(name);
 
@@ -584,7 +584,7 @@ export class Context {
     };
 
     if (callback) {
-      return identity.didRecords(did, records => callback(assembleResult(records)));
+      return identity.didRecords(did, (records) => callback(assembleResult(records)));
     }
 
     const didRecords = await identity.didRecords(did);
@@ -608,8 +608,8 @@ export class Context {
 
     const { targets, claimTypes, trustedClaimIssuers, includeExpired } = args;
 
-    const claim1stKeys = flatMap(targets, target =>
-      claimTypes.map(claimType => {
+    const claim1stKeys = flatMap(targets, (target) =>
+      claimTypes.map((claimType) => {
         return {
           target: signerToString(target),
           // eslint-disable-next-line @typescript-eslint/camelcase
@@ -618,11 +618,11 @@ export class Context {
       })
     );
 
-    const claimIssuerDids = trustedClaimIssuers?.map(trustedClaimIssuer =>
+    const claimIssuerDids = trustedClaimIssuers?.map((trustedClaimIssuer) =>
       signerToString(trustedClaimIssuer)
     );
 
-    const claimData = await P.map(claim1stKeys, async claim1stKey => {
+    const claimData = await P.map(claim1stKeys, async (claim1stKey) => {
       const entries = await identity.claims.entries(claim1stKey);
       const data: ClaimData[] = [];
       entries.forEach(
@@ -682,11 +682,11 @@ export class Context {
 
       const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
         didsWithClaims({
-          dids: targets?.map(target => signerToString(target)),
-          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          dids: targets?.map((target) => signerToString(target)),
+          trustedClaimIssuers: trustedClaimIssuers?.map((trustedClaimIssuer) =>
             signerToString(trustedClaimIssuer)
           ),
-          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+          claimTypes: claimTypes?.map((ct) => ClaimTypeEnum[ct]),
           includeExpired,
           count: size,
           skip: start,

@@ -2,6 +2,13 @@
 /* eslint-disable */
 
 export * from './polymesh/types';
+export * from './compliance/types';
+export * from './identity/types';
+export * from './pips/types';
+export * from './protocolFee/types';
+export * from './staking/types';
+export * from './asset/types';
+export * from './portfolio/types';
 
 export enum SystemTx {
   FillBlock = 'system.fillBlock',

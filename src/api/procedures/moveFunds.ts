@@ -106,7 +106,7 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
   const rawFrom = portfolioIdToMeshPortfolioId(fromPortfolioId, context);
   const rawTo = portfolioIdToMeshPortfolioId(toPortfolioId, context);
 
-  const rawMovePortfolioItems = items.map(item =>
+  const rawMovePortfolioItems = items.map((item) =>
     portfolioMovementToMovePortfolioItem(item, context)
   );
 

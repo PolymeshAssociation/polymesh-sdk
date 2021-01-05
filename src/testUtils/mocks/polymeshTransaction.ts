@@ -110,7 +110,7 @@ export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransac
       }
 
       instance.isCritical = isCritical;
-      instance.onStatusChange = (sinon.stub().callsFake(listener => {
+      instance.onStatusChange = (sinon.stub().callsFake((listener) => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const mockData = transactionMocksData.get(instance)!;
 

@@ -192,7 +192,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     }
 
     if (callback) {
-      return asset.balanceOf(rawTicker, rawIdentityId, res => {
+      return asset.balanceOf(rawTicker, rawIdentityId, (res) => {
         callback(balanceToBigNumber(res));
       });
     }
@@ -214,8 +214,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
       },
     } = this;
     const identityId = stringToIdentityId(did, context);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: CddStatus = await (rpc as any).identity.isIdentityHasValidCdd(identityId);
+    const result: CddStatus = await rpc.identity.isIdentityHasValidCdd(identityId);
     return cddStatusToBoolean(result);
   }
 
@@ -280,7 +279,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const rawDid = stringToIdentityId(did, context);
 
     if (callback) {
-      return identity.didRecords(rawDid, records => callback(assembleResult(records)));
+      return identity.didRecords(rawDid, (records) => callback(assembleResult(records)));
     }
 
     const didRecords = await identity.didRecords(rawDid);
@@ -318,7 +317,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
       },
     } = result;
 
-    const data = tokensHeldByDidList.map(ticker => new SecurityToken({ ticker }, context));
+    const data = tokensHeldByDidList.map((ticker) => new SecurityToken({ ticker }, context));
 
     const next = calculateNextKey(count, size, start);
 
@@ -335,7 +334,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
   public async hasRoles(roles: Role[]): Promise<boolean> {
     const checkedRoles = await Promise.all(roles.map(this.hasRole.bind(this)));
 
-    return checkedRoles.every(hasRole => hasRole);
+    return checkedRoles.every((hasRole) => hasRole);
   }
 
   /**
@@ -356,7 +355,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
       tokensByTrustedClaimIssuer({ claimIssuerDid: did, order })
     );
 
-    return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
+    return tickers.map((ticker) => new SecurityToken({ ticker: removePadding(ticker) }, context));
   }
 
   /**
@@ -380,12 +379,12 @@ export class Identity extends Entity<UniqueIdentifiers> {
     } = this;
 
     const assembleResult = (ids: u64[]): Venue[] =>
-      ids.map(id => new Venue({ id: u64ToBigNumber(id) }, context));
+      ids.map((id) => new Venue({ id: u64ToBigNumber(id) }, context));
 
     const rawDid = stringToIdentityId(did, context);
 
     if (callback) {
-      return settlement.userVenues(rawDid, ids => callback(assembleResult(ids)));
+      return settlement.userVenues(rawDid, (ids) => callback(assembleResult(ids)));
     }
 
     const venueIds = await settlement.userVenues(rawDid);

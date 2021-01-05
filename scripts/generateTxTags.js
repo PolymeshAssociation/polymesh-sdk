@@ -1,5 +1,5 @@
 /* eslint-disable */
-const Metadata = require('@polkadot/metadata/Metadata').default;
+const { Metadata } = require('@polkadot/metadata/Metadata');
 const { w3cwebsocket } = require('websocket');
 const { TypeRegistry } = require('@polkadot/types/create');
 const { stringCamelCase, stringUpperFirst } = require('@polkadot/util');
@@ -12,7 +12,7 @@ const websocket = new w3cwebsocket('wss://pme.polymath.network');
 websocket.onopen = () => {
   websocket.send('{"id":"1","jsonrpc":"2.0","method":"state_getMetadata","params":[]}');
 };
-websocket.onmessage = message => {
+websocket.onmessage = (message) => {
   let namespaces = '';
   let txTag = 'export type TxTag =';
   let txTags = 'export const TxTags = {\n';
@@ -50,7 +50,7 @@ websocket.onmessage = message => {
 
     namespaces = namespaces.concat(`export enum ${moduleNamePascal}Tx {\n`);
 
-    forEach(calls, callName => {
+    forEach(calls, (callName) => {
       const nameCamelCase = stringCamelCase(callName);
       const namePascal = stringUpperFirst(nameCamelCase);
 
