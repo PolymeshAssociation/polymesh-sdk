@@ -8,11 +8,12 @@ import {
   Document,
   FundingRoundName,
   Ticker,
+  TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareCreateSecurityToken,
 } from '~/api/procedures/createSecurityToken';
@@ -36,6 +37,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockTickerReservationModule(
     '~/api/entities/TickerReservation'
   )
+);
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
 
 describe('createSecurityToken procedure', () => {
@@ -239,7 +244,7 @@ describe('createSecurityToken procedure', () => {
       rawIdentifiers,
       rawFundingRound
     );
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
 
     await prepareCreateSecurityToken.call(proc, {
       ...args,
@@ -275,17 +280,33 @@ describe('createSecurityToken procedure', () => {
       rawTicker
     );
 
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 });
 
-describe('getRequiredRoles', () => {
-  test('should return a ticker owner role', () => {
+describe('getAuthorization', () => {
+  test('should return the appropriate roles and permissions', () => {
     const ticker = 'someTicker';
     const args = {
       ticker,
     } as Params;
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TickerOwner, ticker }]);
+    expect(getAuthorization(args)).toEqual({
+      identityRoles: [{ type: RoleType.TickerOwner, ticker }],
+      signerPermissions: {
+        tokens: [],
+        portfolios: [],
+        transactions: [TxTags.asset.CreateAsset],
+      },
+    });
+
+    expect(getAuthorization({ ...args, documents: [] })).toEqual({
+      identityRoles: [{ type: RoleType.TickerOwner, ticker }],
+      signerPermissions: {
+        tokens: [],
+        portfolios: [],
+        transactions: [TxTags.asset.CreateAsset, TxTags.asset.AddDocuments],
+      },
+    });
   });
 });

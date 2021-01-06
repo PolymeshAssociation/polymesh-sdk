@@ -2,16 +2,24 @@ import { Option, u32, u64 } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { PortfolioId, SettlementType, Ticker } from 'polymesh-types/types';
+import { PortfolioId, SettlementType, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
   createAddInstructionResolver,
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareAddInstruction,
+  prepareStorage,
+  Storage,
 } from '~/api/procedures/addInstruction';
-import { Context, Instruction, PostTransactionValue } from '~/internal';
+import {
+  Context,
+  DefaultPortfolio,
+  Instruction,
+  NumberedPortfolio,
+  PostTransactionValue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { InstructionType, PortfolioLike, RoleType, TickerReservationStatus } from '~/types';
@@ -23,6 +31,8 @@ describe('addInstruction procedure', () => {
   let mockContext: Mocked<Context>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub;
   let portfolioLikeToPortfolioIdStub: sinon.SinonStub;
+  let portfolioLikeToPortfolioStub: sinon.SinonStub;
+  let getCustodianStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
   let numberToBalanceStub: sinon.SinonStub<
@@ -46,6 +56,8 @@ describe('addInstruction procedure', () => {
   let to: PortfolioLike;
   let fromDid: string;
   let toDid: string;
+  let fromPortfolio: DefaultPortfolio | NumberedPortfolio;
+  let toPortfolio: DefaultPortfolio | NumberedPortfolio;
   let token: string;
   let validFrom: Date;
   let endBlock: BigNumber;
@@ -78,6 +90,8 @@ describe('addInstruction procedure', () => {
       utilsConversionModule,
       'portfolioLikeToPortfolioId'
     );
+    portfolioLikeToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolio');
+    getCustodianStub = entityMockUtils.getNumberedPortfolioGetCustodianStub();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
     numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
@@ -92,6 +106,14 @@ describe('addInstruction procedure', () => {
     to = 'toDid';
     fromDid = 'fromDid';
     toDid = 'toDid';
+    fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({
+      did: fromDid,
+      id: new BigNumber(1),
+    });
+    toPortfolio = entityMockUtils.getNumberedPortfolioInstance({
+      did: toDid,
+      id: new BigNumber(2),
+    });
     token = 'SOME_TOKEN';
     validFrom = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
     endBlock = new BigNumber(1000);
@@ -164,14 +186,16 @@ describe('addInstruction procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    portfolioLikeToPortfolioIdStub.withArgs(from, mockContext).returns({ did: fromDid });
-    portfolioLikeToPortfolioIdStub.withArgs(to, mockContext).returns({ did: toDid });
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs({ did: fromDid, number: undefined }, mockContext)
-      .returns(rawFrom);
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs({ did: toDid, number: undefined }, mockContext)
-      .returns(rawTo);
+    portfolioLikeToPortfolioIdStub.withArgs(from).returns({ did: fromDid });
+    portfolioLikeToPortfolioIdStub.withArgs(to).returns({ did: toDid });
+    portfolioLikeToPortfolioIdStub.withArgs(fromPortfolio).returns({ did: fromDid });
+    portfolioLikeToPortfolioIdStub.withArgs(toPortfolio).returns({ did: toDid });
+    portfolioLikeToPortfolioStub.withArgs(from, mockContext).returns(fromPortfolio);
+    portfolioLikeToPortfolioStub.withArgs(to, mockContext).returns(toPortfolio);
+    portfolioIdToMeshPortfolioIdStub.withArgs({ did: fromDid }, mockContext).returns(rawFrom);
+    portfolioIdToMeshPortfolioIdStub.withArgs({ did: toDid }, mockContext).returns(rawTo);
+    getCustodianStub.onCall(0).returns({ did: fromDid });
+    getCustodianStub.onCall(1).returns({ did: toDid });
     stringToTickerStub.withArgs(token, mockContext).returns(rawToken);
     numberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
     numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
@@ -188,6 +212,7 @@ describe('addInstruction procedure', () => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
     dsMockUtils.reset();
+    sinon.reset();
   });
 
   afterAll(() => {
@@ -197,7 +222,9 @@ describe('addInstruction procedure', () => {
   });
 
   test('should throw an error if the legs array is empty', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
 
     let error;
 
@@ -212,7 +239,9 @@ describe('addInstruction procedure', () => {
 
   test('should throw an error if the end block is in the past', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
-    const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
 
     let error;
 
@@ -227,7 +256,10 @@ describe('addInstruction procedure', () => {
 
   test('should add an add and authorize instruction transaction to the queue', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
-    const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
+    getCustodianStub.onCall(1).returns({ did: fromDid });
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfoliosToAffirm: [fromPortfolio, toPortfolio],
+    });
 
     const result = await prepareAddInstruction.call(proc, args);
 
@@ -241,13 +273,17 @@ describe('addInstruction procedure', () => {
       rawAuthSettlementType,
       null,
       [rawLeg],
-      [rawFrom]
+      [rawFrom, rawTo]
     );
     expect(result).toBe(instruction);
   });
 
   test('should add an add instruction transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
+    dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
+    getCustodianStub.onCall(0).returns({ did: toDid });
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
 
     const result = await prepareAddInstruction.call(proc, {
       ...args,
@@ -271,16 +307,78 @@ describe('addInstruction procedure', () => {
     );
     expect(result).toBe(instruction);
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a venue owner role', () => {
-    const venueId = new BigNumber(100);
-    const args = {
-      venueId,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', async () => {
+      let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+        portfoliosToAffirm: [fromPortfolio, toPortfolio],
+      });
+      let boundFunc = getAuthorization.bind(proc);
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.VenueOwner, venueId }]);
+      let result = await boundFunc({
+        venueId,
+        legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }],
+      });
+
+      expect(result).toEqual({
+        identityRoles: [{ type: RoleType.VenueOwner, venueId }],
+        signerPermissions: {
+          tokens: [],
+          portfolios: [fromPortfolio, toPortfolio],
+          transactions: [TxTags.settlement.AddAndAffirmInstruction],
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+        portfoliosToAffirm: [],
+      });
+      boundFunc = getAuthorization.bind(proc);
+
+      result = await boundFunc({
+        venueId,
+        legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }],
+      });
+
+      expect(result).toEqual({
+        identityRoles: [{ type: RoleType.VenueOwner, venueId }],
+        signerPermissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.settlement.AddInstruction],
+        },
+      });
+    });
+  });
+
+  describe('prepareStorage', () => {
+    test('should return the list of portfolios that will be affirmed', async () => {
+      const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
+      toPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
+
+      portfolioLikeToPortfolioStub.withArgs(from, mockContext).returns(fromPortfolio);
+      portfolioLikeToPortfolioStub.withArgs(to, mockContext).returns(toPortfolio);
+
+      let result = await boundFunc(args);
+
+      expect(result).toEqual({
+        portfoliosToAffirm: [fromPortfolio, toPortfolio],
+      });
+
+      fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
+      toPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
+
+      portfolioLikeToPortfolioStub.withArgs(from, mockContext).returns(fromPortfolio);
+      portfolioLikeToPortfolioStub.withArgs(to, mockContext).returns(toPortfolio);
+
+      result = await boundFunc(args);
+
+      expect(result).toEqual({
+        portfoliosToAffirm: [],
+      });
+    });
   });
 });
 

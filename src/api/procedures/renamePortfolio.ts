@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToIdentityId, stringToText, textToString } from '~/utils/conversion';
 
 export interface RenamePortfolioParams {
@@ -32,22 +33,13 @@ export async function prepareRenamePortfolio(
 
   const { did, id, name: newName } = args;
 
-  const numberedPortfolio = new NumberedPortfolio({ did, id }, context);
   const identityId = stringToIdentityId(did, context);
   const rawPortfolioNumber = numberToU64(id, context);
 
-  const [isOwned, rawPortfolioName, rawPortfolios] = await Promise.all([
-    numberedPortfolio.isOwnedBy(),
+  const [rawPortfolioName, rawPortfolios] = await Promise.all([
     queryPortfolio.portfolios(identityId, rawPortfolioNumber),
     queryPortfolio.portfolios.entries(identityId),
   ]);
-
-  if (!isOwned) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You are not the owner of this Portfolio',
-    });
-  }
 
   if (textToString(rawPortfolioName) === newName) {
     throw new PolymeshError({
@@ -78,4 +70,22 @@ export async function prepareRenamePortfolio(
 /**
  * @hidden
  */
-export const renamePortfolio = new Procedure(prepareRenamePortfolio);
+export function getAuthorization(
+  this: Procedure<Params, NumberedPortfolio>,
+  { did, id }: Params
+): ProcedureAuthorization {
+  const portfolioId = { did, number: id };
+  return {
+    identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+    signerPermissions: {
+      transactions: [TxTags.portfolio.RenamePortfolio],
+      portfolios: [new NumberedPortfolio({ did, id }, this.context)],
+      tokens: [],
+    },
+  };
+}
+
+/**
+ * @hidden
+ */
+export const renamePortfolio = new Procedure(prepareRenamePortfolio, getAuthorization);

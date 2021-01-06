@@ -1,8 +1,8 @@
-import { Ticker } from 'polymesh-types/types';
+import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareRemovePrimaryIssuanceAgent,
 } from '~/api/procedures/removePrimaryIssuanceAgent';
@@ -11,6 +11,11 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
 
 describe('removePrimaryIssuanceAgent procedure', () => {
   let mockContext: Mocked<Context>;
@@ -58,15 +63,23 @@ describe('removePrimaryIssuanceAgent procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const args = {
+        ticker,
+      } as Params;
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [TxTags.asset.RemovePrimaryIssuanceAgent],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

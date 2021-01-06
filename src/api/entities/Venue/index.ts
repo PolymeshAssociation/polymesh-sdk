@@ -8,9 +8,9 @@ import {
   Entity,
   Identity,
   Instruction,
-  TransactionQueue,
 } from '~/internal';
 import { InstructionStatus } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import {
   identityIdToString,
   meshVenueTypeToVenueType,
@@ -18,6 +18,7 @@ import {
   u64ToBigNumber,
   venueDetailsToString,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 import { VenueDetails } from './types';
 
@@ -53,6 +54,11 @@ export class Venue extends Entity<UniqueIdentifiers> {
     const { id } = identifiers;
 
     this.id = id;
+
+    this.addInstruction = createProcedureMethod(
+      args => [addInstruction, { ...args, venueId: id }],
+      context
+    );
   }
 
   /**
@@ -116,9 +122,6 @@ export class Venue extends Entity<UniqueIdentifiers> {
    * @param args.validFrom - date from which the instruction is valid and can be authorized by the participants (optional, instruction will be valid from the start if not supplied)
    * @param args.endBlock - block at which the instruction will be executed automatically (optional, the instruction will be executed when all participants have authorized it if not supplied)
    */
-  public async addInstruction(args: AddInstructionParams): Promise<TransactionQueue<Instruction>> {
-    const { id, context } = this;
 
-    return addInstruction.prepare({ ...args, venueId: id }, context);
-  }
+  public addInstruction: ProcedureMethod<AddInstructionParams, Instruction>;
 }

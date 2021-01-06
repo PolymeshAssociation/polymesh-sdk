@@ -56,6 +56,7 @@ import {
   CddId,
   CddStatus,
   Claim,
+  Claim1stKey,
   ClaimType as MeshClaimType,
   ComplianceRequirement,
   ComplianceRequirementResult,
@@ -71,6 +72,7 @@ import {
   DocumentType,
   DocumentUri,
   FundingRoundName,
+  IdentityClaim,
   IdentityId,
   IdentityRole,
   Instruction,
@@ -205,6 +207,7 @@ interface ContextOptions {
   withSeed?: boolean;
   balance?: AccountBalance;
   hasRoles?: boolean;
+  hasPermissions?: boolean;
   validCdd?: boolean;
   tokenBalance?: BigNumber;
   invalidDids?: string[];
@@ -212,6 +215,7 @@ interface ContextOptions {
   currentPairAddress?: string;
   currentPairIsLocked?: boolean;
   issuedClaims?: ResultSet<ClaimData>;
+  getIdentityClaimsFromChain?: ClaimData[];
   primaryKey?: string;
   secondaryKeys?: SecondaryKey[];
   transactionHistory?: ResultSet<ExtrinsicData>;
@@ -428,6 +432,7 @@ const defaultContextOptions: ContextOptions = {
     locked: new BigNumber(10),
   },
   hasRoles: true,
+  hasPermissions: true,
   validCdd: true,
   tokenBalance: new BigNumber(1000),
   invalidDids: [],
@@ -447,6 +452,15 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 1,
   },
+  getIdentityClaimsFromChain: [
+    {
+      target: ('targetIdentity' as unknown) as Identity,
+      issuer: ('issuerIdentity' as unknown) as Identity,
+      issuedAt: new Date(),
+      expiry: null,
+      claim: { type: ClaimType.NoData },
+    },
+  ],
   primaryKey: 'primaryKey',
   secondaryKeys: [],
   transactionHistory: {
@@ -501,6 +515,7 @@ function configureContext(opts: ContextOptions): void {
         getBalance: sinon.stub().resolves(opts.balance),
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
+        hasPermissions: sinon.stub().resolves(opts.hasPermissions),
       })
     : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
   const currentPair = opts.withSeed
@@ -537,6 +552,7 @@ function configureContext(opts: ContextOptions): void {
     getTransactionArguments: sinon.stub().returns([]),
     getSecondaryKeys: sinon.stub().returns(opts.secondaryKeys),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
+    getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
     isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
@@ -1801,6 +1817,32 @@ export const createMockClaim = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockIdentityClaim = (identityClaim?: {
+  claim_issuer: IdentityId;
+  issuance_date: Moment;
+  last_update_date: Moment;
+  expiry: Option<Moment>;
+  claim: Claim;
+}): IdentityClaim => {
+  const identityClaimMock = identityClaim || {
+    claim_issuer: createMockIdentityId(),
+    issuance_date: createMockMoment(),
+    last_update_date: createMockMoment(),
+    expiry: createMockOption(),
+    claim: createMockClaim(),
+  };
+  return createMockCodec(
+    {
+      ...identityClaimMock,
+    },
+    !identityClaimMock
+  ) as IdentityClaim;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockTargetIdentity = (
   targetIdentity?: { Specific: IdentityId } | 'PrimaryIssuanceAgent'
 ): TargetIdentity => createMockEnum(targetIdentity) as TargetIdentity;
@@ -1824,6 +1866,26 @@ export const createMockConditionType = (
  */
 export const createMockClaimType = (claimType?: ClaimType): MeshClaimType =>
   createMockEnum(claimType) as MeshClaimType;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockClaim1stKey = (claim1stKey?: {
+  target: IdentityId;
+  claim_type: MeshClaimType;
+}): Claim1stKey => {
+  const claimTypeMock = claim1stKey || {
+    target: createMockIdentityId(),
+    claim_type: createMockClaimType(),
+  };
+  return createMockCodec(
+    {
+      ...claimTypeMock,
+    },
+    !claimTypeMock
+  ) as Claim1stKey;
+};
 
 /**
  * @hidden

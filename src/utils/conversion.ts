@@ -387,10 +387,7 @@ export function portfolioToPortfolioId(
 /**
  * @hidden
  */
-export async function portfolioLikeToPortfolioId(
-  value: PortfolioLike,
-  context: Context
-): Promise<PortfolioId> {
+export function portfolioLikeToPortfolioId(value: PortfolioLike): PortfolioId {
   let did: string;
   let number: BigNumber | undefined;
 
@@ -411,33 +408,17 @@ export async function portfolioLikeToPortfolioId(
     }
   }
 
-  if (number) {
-    const numberedPortfolio = new NumberedPortfolio({ did, id: number }, context);
-    const exists = await numberedPortfolio.exists();
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "The Portfolio doesn't exist",
-        data: {
-          did,
-          portfolioId: number,
-        },
-      });
-    }
-  }
-
   return { did, number };
 }
 
 /**
  * @hidden
  */
-export async function portfolioLikeToPortfolio(
+export function portfolioLikeToPortfolio(
   value: PortfolioLike,
   context: Context
-): Promise<DefaultPortfolio | NumberedPortfolio> {
-  const { did, number } = await portfolioLikeToPortfolioId(value, context);
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, number } = portfolioLikeToPortfolioId(value);
   return number
     ? new NumberedPortfolio({ did, id: number }, context)
     : new DefaultPortfolio({ did }, context);
@@ -1415,33 +1396,6 @@ export function stringToTargetIdentity(did: string | null, context: Context): Ta
 /**
  * @hidden
  */
-export function trustedClaimIssuerToTrustedIssuer(
-  issuer: TrustedClaimIssuer,
-  context: Context
-): TrustedIssuer {
-  const {
-    identity: { did },
-    trustedFor: claimTypes,
-  } = issuer;
-
-  let trustedFor;
-
-  if (!claimTypes) {
-    trustedFor = 'Any';
-  } else {
-    trustedFor = { Specific: claimTypes };
-  }
-
-  return context.polymeshApi.createType('TrustedIssuer', {
-    issuer: stringToIdentityId(did, context),
-    // eslint-disable-next-line @typescript-eslint/camelcase
-    trusted_for: trustedFor,
-  });
-}
-
-/**
- * @hidden
- */
 export function meshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
   if (claimType.isJurisdiction) {
     return ClaimType.Jurisdiction;
@@ -1503,6 +1457,33 @@ export function trustedIssuerToTrustedClaimIssuer(
     identity,
     trustedFor,
   };
+}
+
+/**
+ * @hidden
+ */
+export function trustedClaimIssuerToTrustedIssuer(
+  issuer: TrustedClaimIssuer,
+  context: Context
+): TrustedIssuer {
+  const {
+    identity: { did },
+    trustedFor: claimTypes,
+  } = issuer;
+
+  let trustedFor;
+
+  if (!claimTypes) {
+    trustedFor = 'Any';
+  } else {
+    trustedFor = { Specific: claimTypes };
+  }
+
+  return context.polymeshApi.createType('TrustedIssuer', {
+    issuer: stringToIdentityId(did, context),
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    trusted_for: trustedFor,
+  });
 }
 
 /**
@@ -2091,6 +2072,13 @@ export function portfolioMovementToMovePortfolioItem(
     ticker: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
     amount: numberToBalance(amount, context),
   });
+}
+
+/**
+ * @hidden
+ */
+export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context): MeshClaimType {
+  return context.polymeshApi.createType('ClaimType', claimType);
 }
 
 /**

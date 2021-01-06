@@ -3,7 +3,10 @@ import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
 import { Instruction as MeshInstruction } from 'polymesh-types/types';
 
+import { UniqueIdentifiers } from '~/api/entities/Identity';
+import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
+  Context,
   createVenue,
   CreateVenueParams,
   Identity,
@@ -14,21 +17,51 @@ import {
   ModifySignerPermissionsParams,
   removeSecondaryKeys,
   RemoveSecondaryKeysParams,
-  TransactionQueue,
   Venue,
 } from '~/internal';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
 import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Represents the Identity associated to the current [[Account]]
  */
 export class CurrentIdentity extends Identity {
+  /**
+   * Create a CurrentIdentity entity
+   */
+  constructor(identifiers: UniqueIdentifiers, context: Context) {
+    super(identifiers, context);
+
+    this.removeSecondaryKeys = createProcedureMethod(args => [removeSecondaryKeys, args], context);
+    this.revokePermissions = createProcedureMethod<
+      { secondaryKeys: Signer[] },
+      ModifySignerPermissionsParams,
+      void
+    >(args => {
+      const { secondaryKeys } = args;
+      const signers = secondaryKeys.map(signer => {
+        return {
+          signer,
+          permissions: { tokens: [], transactions: [], portfolios: [] },
+        };
+      });
+      return [modifySignerPermissions, { secondaryKeys: signers }];
+    }, context);
+    this.modifyPermissions = createProcedureMethod(
+      args => [modifySignerPermissions, args],
+      context
+    );
+    this.inviteAccount = createProcedureMethod(args => [inviteAccount, args], context);
+    this.createVenue = createProcedureMethod(args => [createVenue, args], context);
+  }
+
   /**
    * Get the list of secondary keys related to the Identity
    *
@@ -53,23 +86,12 @@ export class CurrentIdentity extends Identity {
   /**
    * Remove a list of secondary keys associated with the Identity
    */
-  public removeSecondaryKeys(args: RemoveSecondaryKeysParams): Promise<TransactionQueue<void>> {
-    return removeSecondaryKeys.prepare(args, this.context);
-  }
+  public removeSecondaryKeys: ProcedureMethod<RemoveSecondaryKeysParams, void>;
 
   /**
    * Revoke all permissions of a list of secondary keys associated with the Identity
    */
-  public revokePermissions(args: { secondaryKeys: Signer[] }): Promise<TransactionQueue<void>> {
-    const { secondaryKeys } = args;
-    const signers = secondaryKeys.map(signer => {
-      return {
-        signer,
-        permissions: { tokens: [], transactions: [], portfolios: [] },
-      };
-    });
-    return modifySignerPermissions.prepare({ secondaryKeys: signers }, this.context);
-  }
+  public revokePermissions: ProcedureMethod<{ secondaryKeys: Signer[] }, void>;
 
   /**
    * Modify all permissions of a list of secondary keys associated with the Identity
@@ -79,9 +101,7 @@ export class CurrentIdentity extends Identity {
    * @param args.secondaryKeys.permissions.transactions - array of transaction tags that the Secondary Key has permission to execute. A null value represents full permissions
    * @param args.secondaryKeys.permissions.portfolios - array of Portfolios for which to grant permissions. A null value represents full permissions
    */
-  public modifyPermissions(args: ModifySignerPermissionsParams): Promise<TransactionQueue<void>> {
-    return modifySignerPermissions.prepare(args, this.context);
-  }
+  public modifyPermissions: ProcedureMethod<ModifySignerPermissionsParams, void>;
 
   /**
    * Send an invitation to an Account to join this Identity
@@ -95,16 +115,12 @@ export class CurrentIdentity extends Identity {
    * @param args.permissions.transactions - array of tags associated with the transaction that will be executed for which to allow permission. Set null to allow all (optional, no permissions if not passed)
    * @param args.permissions.portfolios - array of portfolios for which to allow permission. Set null to allow all (optional, no permissions if not passed)
    */
-  public inviteAccount(args: InviteAccountParams): Promise<TransactionQueue<void>> {
-    return inviteAccount.prepare(args, this.context);
-  }
+  public inviteAccount: ProcedureMethod<InviteAccountParams, void>;
 
   /**
    * Create a Venue
    */
-  public createVenue(args: CreateVenueParams): Promise<TransactionQueue<Venue>> {
-    return createVenue.prepare(args, this.context);
-  }
+  public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
 
   /**
    * Retrieve all pending Instructions involving the Current Identity
@@ -130,9 +146,9 @@ export class CurrentIdentity extends Identity {
 
     const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
 
-    const portfolioIds = await P.map(allPortfolios, portfolio =>
-      portfolioLikeToPortfolioId(portfolio, context)
-    );
+    const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
+
+    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
 
     const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 

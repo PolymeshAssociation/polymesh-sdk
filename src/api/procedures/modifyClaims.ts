@@ -1,6 +1,6 @@
 import { Moment } from '@polkadot/types/interfaces';
 import { cloneDeep, isEqual, uniq } from 'lodash';
-import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
+import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
@@ -12,10 +12,14 @@ import {
   Ensured,
   ErrorCode,
   isScopedClaim,
-  Role,
   RoleType,
 } from '~/types';
-import { ClaimOperation, Extrinsics, MapMaybePostTransactionValue } from '~/types/internal';
+import {
+  ClaimOperation,
+  Extrinsics,
+  MapMaybePostTransactionValue,
+  ProcedureAuthorization,
+} from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   claimToMeshClaim,
@@ -172,14 +176,29 @@ export async function prepareModifyClaims(
 /**
  * @hidden
  */
-export function getRequiredRoles({ claims }: ModifyClaimsParams): Role[] {
+export function getAuthorization({
+  claims,
+  operation,
+}: ModifyClaimsParams): ProcedureAuthorization {
+  const permissions = {
+    transactions: [
+      operation === ClaimOperation.Revoke ? TxTags.identity.RevokeClaim : TxTags.identity.AddClaim,
+    ],
+    tokens: [],
+    portfolios: [],
+  };
   if (claims.some(({ claim: { type } }) => type === ClaimType.CustomerDueDiligence)) {
-    return [{ type: RoleType.CddProvider }];
+    return {
+      identityRoles: [{ type: RoleType.CddProvider }],
+      signerPermissions: permissions,
+    };
   }
-  return [];
+  return {
+    signerPermissions: permissions,
+  };
 }
 
 /**
  * @hidden
  */
-export const modifyClaims = new Procedure(prepareModifyClaims, getRequiredRoles);
+export const modifyClaims = new Procedure(prepareModifyClaims, getAuthorization);

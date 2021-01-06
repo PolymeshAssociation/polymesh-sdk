@@ -9,8 +9,9 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
-import { PostTransactionValue } from '~/internal';
+import { PostTransactionValue, TransactionQueue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { Permissions, ProcedureAuthorizationStatus, Role } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -179,4 +180,14 @@ export enum InstructionAffirmationOperation {
   Affirm = 'Affirm',
   Withdraw = 'Withdraw',
   Reject = 'Reject',
+}
+
+export interface ProcedureAuthorization {
+  signerPermissions?: Permissions | boolean;
+  identityRoles?: Role[] | boolean;
+}
+
+export interface ProcedureMethod<MethodArgs, ReturnValue> {
+  (args: MethodArgs): Promise<TransactionQueue<ReturnValue>>;
+  checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
 }

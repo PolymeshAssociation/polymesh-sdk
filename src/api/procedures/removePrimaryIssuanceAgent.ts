@@ -1,5 +1,6 @@
-import { Procedure } from '~/internal';
-import { Role, RoleType } from '~/types';
+import { Procedure, SecurityToken } from '~/internal';
+import { RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
 
 /**
@@ -35,8 +36,18 @@ export async function prepareRemovePrimaryIssuanceAgent(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+export function getAuthorization(
+  this: Procedure<Params>,
+  { ticker }: Params
+): ProcedureAuthorization {
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      transactions: [TxTags.asset.RemovePrimaryIssuanceAgent],
+      tokens: [new SecurityToken({ ticker }, this.context)],
+      portfolios: [],
+    },
+  };
 }
 
 /**
@@ -44,5 +55,5 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
  */
 export const removePrimaryIssuanceAgent = new Procedure(
   prepareRemovePrimaryIssuanceAgent,
-  getRequiredRoles
+  getAuthorization
 );

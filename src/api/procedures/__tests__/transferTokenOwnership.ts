@@ -1,11 +1,11 @@
 import { Option } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory } from 'polymesh-types/types';
+import { AuthorizationData, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareTransferTokenOwnership,
 } from '~/api/procedures/transferTokenOwnership';
@@ -15,6 +15,11 @@ import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, RoleType, TickerReservationStatus } from '~/types';
 import { PolymeshTx, SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
 
 describe('transferTokenOwnership procedure', () => {
   let mockContext: Mocked<Context>;
@@ -111,7 +116,7 @@ describe('transferTokenOwnership procedure', () => {
       rawAuthorizationData,
       null
     );
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toEqual(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
@@ -127,17 +132,22 @@ describe('transferTokenOwnership procedure', () => {
       rawAuthorizationData,
       rawMoment
     );
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          transactions: [TxTags.identity.AddAuthorization],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

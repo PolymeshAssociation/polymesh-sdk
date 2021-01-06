@@ -2,7 +2,7 @@ import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { AuthorizationRequest, Identity, Namespace } from '~/internal';
+import { Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType } from '~/types';
 import { tuple } from '~/types/utils';
@@ -14,6 +14,12 @@ import { IdentityAuthorizations } from '../IdentityAuthorizations';
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/AuthorizationRequest',
+  require('~/testUtils/mocks/entities').mockAuthorizationRequestModule(
+    '~/api/entities/AuthorizationRequest'
+  )
 );
 
 describe('IdentityAuthorizations class', () => {
@@ -59,28 +65,30 @@ describe('IdentityAuthorizations class', () => {
           authId: new BigNumber(1),
           expiry: null,
           data: { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' },
-          target: new Identity({ did: 'alice' }, context),
+          target: entityMockUtils.getIdentityInstance({ did: 'alice' }),
           issuer: identity,
-        },
+        } as const,
         {
           authId: new BigNumber(2),
           expiry: new Date('10/14/3040'),
           data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
-          target: new Identity({ did: 'bob' }, context),
+          target: entityMockUtils.getIdentityInstance({ did: 'bob' }),
           issuer: identity,
-        },
+        } as const,
       ];
 
-      const authorizations = authParams.map(({ authId, expiry, data }) => ({
-        auth_id: dsMockUtils.createMockU64(authId.toNumber()),
-        expiry: dsMockUtils.createMockOption(
-          expiry ? dsMockUtils.createMockMoment(expiry.getTime()) : expiry
-        ),
-        authorization_data: dsMockUtils.createMockAuthorizationData({
-          TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
-        }),
-        authorized_by: dsMockUtils.createMockIdentityId(did),
-      }));
+      const authorizations = authParams.map(({ authId, expiry, data }) =>
+        dsMockUtils.createMockAuthorization({
+          auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+          expiry: dsMockUtils.createMockOption(
+            expiry ? dsMockUtils.createMockMoment(expiry.getTime()) : expiry
+          ),
+          authorization_data: dsMockUtils.createMockAuthorizationData({
+            TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
+          }),
+          authorized_by: dsMockUtils.createMockIdentityId(did),
+        })
+      );
       /* eslint-enable @typescript-eslint/camelcase */
 
       const authorizationsGivenEntries = authorizations.map(
@@ -102,13 +110,36 @@ describe('IdentityAuthorizations class', () => {
       const authorizationsStub = dsMockUtils.createQueryStub('identity', 'authorizations');
       authorizationsStub.multi.withArgs(authsMultiArgs).resolves(authorizations);
 
-      const expectedAuthorizations = authParams
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map(params => new AuthorizationRequest(params as any, context));
+      const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
+        entityMockUtils.getAuthorizationRequestInstance({
+          authId,
+          issuer,
+          target,
+          expiry,
+          data,
+        })
+      );
 
       const result = await authsNamespace.getSent();
 
-      expect(result).toEqual({ data: expectedAuthorizations, next: null });
+      result.data.forEach(({ issuer, authId, target, expiry, data }, index) => {
+        const {
+          issuer: expectedIssuer,
+          authId: expectedAuthId,
+          target: expectedTarget,
+          expiry: expectedExpiry,
+          data: expectedData,
+        } = expectedAuthorizations[index];
+
+        expect(issuer.did).toBe(expectedIssuer.did);
+        expect(utilsConversionModule.signerToString(target)).toBe(
+          utilsConversionModule.signerToString(expectedTarget)
+        );
+        expect(authId).toEqual(expectedAuthId);
+        expect(expiry).toEqual(expectedExpiry);
+        expect(data).toEqual(expectedData);
+      });
+      expect(result.next).toBeNull();
     });
   });
 });

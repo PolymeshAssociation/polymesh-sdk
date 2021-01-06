@@ -39,8 +39,14 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities/SecurityToken';
-import { Account, Context, DefaultPortfolio, Identity, NumberedPortfolio } from '~/internal';
+import {
+  Account,
+  Context,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  SecurityToken,
+} from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
 import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -60,7 +66,6 @@ import {
   KnownTokenType,
   Permissions,
   PermissionsLike,
-  PortfolioLike,
   PortfolioMovement,
   Scope,
   ScopeType,
@@ -94,6 +99,7 @@ import {
   cddIdToString,
   cddStatusToBoolean,
   claimToMeshClaim,
+  claimTypeToMeshClaimType,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
   dateToMoment,
@@ -2300,7 +2306,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
   });
 });
 
-describe('meshClaimTypeToClaimType', () => {
+describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2382,6 +2388,16 @@ describe('meshClaimTypeToClaimType', () => {
     claimType = dsMockUtils.createMockClaimType(fakeResult);
 
     result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('claimTypeToMeshClaimType should convert a ClaimType to a polkadot ClaimType object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fakeResult = ('meshClaim' as unknown) as MeshClaim;
+
+    dsMockUtils.getCreateTypeStub().returns(fakeResult);
+
+    const result = claimTypeToMeshClaimType(ClaimType.SellLockup, context);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -3886,7 +3902,7 @@ describe('portfolioLikeToPortfolioId', () => {
   });
 
   test('should convert a DID string to a PortfolioId', async () => {
-    const result = await portfolioLikeToPortfolioId(did, context);
+    const result = portfolioLikeToPortfolioId(did);
 
     expect(result).toEqual({ did, number: undefined });
   });
@@ -3894,7 +3910,7 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert an Identity to a PortfolioId', async () => {
     const identity = entityMockUtils.getIdentityInstance({ did });
 
-    const result = await portfolioLikeToPortfolioId(identity, context);
+    const result = portfolioLikeToPortfolioId(identity);
 
     expect(result).toEqual({ did, number: undefined });
   });
@@ -3902,7 +3918,7 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert a NumberedPortfolio to a PortfolioId', async () => {
     const portfolio = new NumberedPortfolio({ did, id: number }, context);
 
-    const result = await portfolioLikeToPortfolioId(portfolio, context);
+    const result = portfolioLikeToPortfolioId(portfolio);
 
     expect(result).toEqual({ did, number });
   });
@@ -3910,43 +3926,20 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert a DefaultPortfolio to a PortfolioId', async () => {
     const portfolio = new DefaultPortfolio({ did }, context);
 
-    const result = await portfolioLikeToPortfolioId(portfolio, context);
+    const result = portfolioLikeToPortfolioId(portfolio);
 
     expect(result).toEqual({ did, number: undefined });
   });
 
   test('should convert a Portfolio identifier object to a PortfolioId', async () => {
-    const result = await portfolioLikeToPortfolioId({ identity: did, id: number }, context);
+    let result = portfolioLikeToPortfolioId({ identity: did, id: number });
     expect(result).toEqual({ did, number });
-  });
 
-  test("should throw an error if the Portfolio identifier object refers to a Portfolio that doesn't exist", async () => {
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        exists: false,
-      },
-    });
-
-    const portfolioIdentifier: PortfolioLike = {
-      identity: entityMockUtils.getIdentityInstance({
-        did,
-      }),
+    result = portfolioLikeToPortfolioId({
+      identity: entityMockUtils.getIdentityInstance({ did }),
       id: number,
-    };
-
-    let err;
-
-    try {
-      await portfolioLikeToPortfolioId(portfolioIdentifier, context);
-    } catch (e) {
-      err = e;
-    }
-
-    expect(err.message).toBe("The Portfolio doesn't exist");
-    expect(err.data).toEqual({
-      did,
-      portfolioId: number,
     });
+    expect(result).toEqual({ did, number });
   });
 });
 
@@ -3978,12 +3971,12 @@ describe('portfolioLikeToPortfolio', () => {
   });
 
   test('should convert a PortfolioLike to a DefaultPortfolio instance', async () => {
-    const result = await portfolioLikeToPortfolio(did, context);
+    const result = portfolioLikeToPortfolio(did, context);
     expect(result instanceof DefaultPortfolio).toBe(true);
   });
 
   test('should convert a PortfolioLike to a NumberedPortfolio instance', async () => {
-    const result = await portfolioLikeToPortfolio({ identity: did, id }, context);
+    const result = portfolioLikeToPortfolio({ identity: did, id }, context);
     expect(result instanceof NumberedPortfolio).toBe(true);
   });
 });

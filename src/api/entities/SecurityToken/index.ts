@@ -9,15 +9,17 @@ import {
   ModifyPrimaryIssuanceAgentParams,
   modifyToken,
   ModifyTokenParams,
+  redeemToken,
+  RedeemTokenParams,
   removePrimaryIssuanceAgent,
   toggleFreezeTransfers,
-  TransactionQueue,
   transferTokenOwnership,
   TransferTokenOwnershipParams,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier, SubCallback, TokenIdentifier, UnsubCallback } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToTokenIdentifier,
@@ -30,7 +32,7 @@ import {
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
-import { padString } from '~/utils/internal';
+import { createProcedureMethod, padString } from '~/utils/internal';
 
 import { Compliance } from './Compliance';
 import { Documents } from './Documents';
@@ -96,6 +98,29 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.tokenHolders = new TokenHolders(this, context);
     this.issuance = new Issuance(this, context);
     this.compliance = new Compliance(this, context);
+
+    this.transferOwnership = createProcedureMethod(
+      args => [transferTokenOwnership, { ticker, ...args }],
+      context
+    );
+    this.modify = createProcedureMethod(args => [modifyToken, { ticker, ...args }], context);
+    this.freeze = createProcedureMethod(
+      () => [toggleFreezeTransfers, { ticker, freeze: true }],
+      context
+    );
+    this.unfreeze = createProcedureMethod(
+      () => [toggleFreezeTransfers, { ticker, freeze: false }],
+      context
+    );
+    this.modifyPrimaryIssuanceAgent = createProcedureMethod(
+      args => [modifyPrimaryIssuanceAgent, { ticker, ...args }],
+      context
+    );
+    this.removePrimaryIssuanceAgent = createProcedureMethod(
+      () => [removePrimaryIssuanceAgent, { ticker }],
+      context
+    );
+    this.redeem = createProcedureMethod(args => [redeemToken, { ticker, ...args }], context);
   }
 
   /**
@@ -108,12 +133,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
-  public transferOwnership(
-    args: TransferTokenOwnershipParams
-  ): Promise<TransactionQueue<SecurityToken>> {
-    const { ticker } = this;
-    return transferTokenOwnership.prepare({ ticker, ...args }, this.context);
-  }
+  public transferOwnership: ProcedureMethod<TransferTokenOwnershipParams, SecurityToken>;
 
   /**
    * Modify some properties of the Security Token
@@ -121,10 +141,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * @param args.makeDivisible - makes an indivisible token divisible
    * @throws if the passed values result in no changes being made to the token
    */
-  public modify(args: ModifyTokenParams): Promise<TransactionQueue<SecurityToken>> {
-    const { ticker } = this;
-    return modifyToken.prepare({ ticker, ...args }, this.context);
-  }
+
+  public modify: ProcedureMethod<ModifyTokenParams, SecurityToken>;
 
   /**
    * Retrieve the Security Token's name, total supply, whether it is divisible or not and the Identity of the owner
@@ -283,18 +301,13 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   /**
    * Freezes transfers and minting of the Security Token
    */
-  public freeze(): Promise<TransactionQueue<SecurityToken>> {
-    const { ticker, context } = this;
-    return toggleFreezeTransfers.prepare({ ticker, freeze: true }, context);
-  }
+
+  public freeze: ProcedureMethod<void, SecurityToken>;
 
   /**
    * Unfreeze transfers and minting of the Security Token
    */
-  public unfreeze(): Promise<TransactionQueue<SecurityToken>> {
-    const { ticker, context } = this;
-    return toggleFreezeTransfers.prepare({ ticker, freeze: false }, context);
-  }
+  public unfreeze: ProcedureMethod<void, SecurityToken>;
 
   /**
    * Check whether transfers are frozen for the Security Token
@@ -339,20 +352,21 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *   the corresponding Account. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
-  public modifyPrimaryIssuanceAgent(
-    args: ModifyPrimaryIssuanceAgentParams
-  ): Promise<TransactionQueue<void>> {
-    const { ticker, context } = this;
-    return modifyPrimaryIssuanceAgent.prepare({ ticker, ...args }, context);
-  }
+  public modifyPrimaryIssuanceAgent: ProcedureMethod<ModifyPrimaryIssuanceAgentParams, void>;
 
   /**
    * Remove the primary issuance agent of the Security Token
    *
    * @note if primary issuance agent is not set, Security Token owner would be used by default
    */
-  public removePrimaryIssuanceAgent(): Promise<TransactionQueue<void>> {
-    const { ticker, context } = this;
-    return removePrimaryIssuanceAgent.prepare({ ticker }, context);
-  }
+  public removePrimaryIssuanceAgent: ProcedureMethod<void, void>;
+
+  /**
+   * Redeem (burn) an amount of this Security Token
+   *
+   * @note Tokens are removed from the Primary Issuance Agent's Default Portfolio.
+   *   If the Security Token has no Primary Issuance Agent, funds are removed from the owner's
+   *   Default Portfolio instead
+   */
+  public redeem: ProcedureMethod<RedeemTokenParams, void>;
 }

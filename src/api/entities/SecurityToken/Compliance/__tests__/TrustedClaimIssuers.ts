@@ -1,11 +1,11 @@
 import { Ticker, TrustedIssuer } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { ModifyTokenTrustedClaimIssuersAddSetParams } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
 import {
   Context,
   DefaultTrustedClaimIssuer,
   modifyTokenTrustedClaimIssuers,
+  ModifyTokenTrustedClaimIssuersAddSetParams,
   Namespace,
   SecurityToken,
   TransactionQueue,

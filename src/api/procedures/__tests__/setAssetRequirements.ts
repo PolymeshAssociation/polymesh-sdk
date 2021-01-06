@@ -1,9 +1,14 @@
 import { Vec } from '@polkadot/types';
-import { ComplianceRequirement, Condition as MeshCondition, Ticker } from 'polymesh-types/types';
+import {
+  ComplianceRequirement,
+  Condition as MeshCondition,
+  Ticker,
+  TxTags,
+} from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareSetAssetRequirements,
 } from '~/api/procedures/setAssetRequirements';
@@ -13,6 +18,11 @@ import { Mocked } from '~/testUtils/types';
 import { Condition, Requirement, RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
 
 describe('setAssetRequirements procedure', () => {
   let mockContext: Mocked<Context>;
@@ -182,7 +192,7 @@ describe('setAssetRequirements procedure', () => {
       );
     });
 
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should not add a remove claim issuers transaction if there are no default claim issuers set on the token', async () => {
@@ -204,7 +214,7 @@ describe('setAssetRequirements procedure', () => {
       );
     });
     sinon.assert.callCount(addTransactionStub, senderConditions.length);
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should not add an asset compliance transactions if there are no claim issuers passed as arguments', async () => {
@@ -223,17 +233,28 @@ describe('setAssetRequirements procedure', () => {
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const params = {
+        ticker,
+      } as Params;
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(boundFunc(params)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [
+            TxTags.complianceManager.ResetAssetCompliance,
+            TxTags.complianceManager.AddComplianceRequirement,
+          ],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

@@ -1,10 +1,10 @@
 import { Option } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
-import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
+import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   groupByDid,
   ModifyClaimsParams,
   prepareModifyClaims,
@@ -271,22 +271,28 @@ describe('modifyClaims procedure', () => {
   });
 });
 
-describe('getRequiredRoles', () => {
-  test('should return a cdd provider role if args has at least one customer due diligence claim type', () => {
-    const args = {
+describe('getAuthorization', () => {
+  test('should return the appropriate roles and permissions', () => {
+    let args = {
       claims: [
         {
           target: 'someDid',
           claim: { type: ClaimType.CustomerDueDiligence },
         },
       ],
+      operation: ClaimOperation.Add,
     } as ModifyClaimsParams;
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.CddProvider }]);
-  });
+    expect(getAuthorization(args)).toEqual({
+      identityRoles: [{ type: RoleType.CddProvider }],
+      signerPermissions: {
+        tokens: [],
+        portfolios: [],
+        transactions: [TxTags.identity.AddClaim],
+      },
+    });
 
-  test("should return an empty array if args doesn't have a customer due diligence claim type", () => {
-    const args = {
+    args = {
       claims: [
         {
           target: 'someDid',
@@ -296,8 +302,15 @@ describe('getRequiredRoles', () => {
           },
         },
       ],
+      operation: ClaimOperation.Revoke,
     } as ModifyClaimsParams;
 
-    expect(getRequiredRoles(args)).toEqual([]);
+    expect(getAuthorization(args)).toEqual({
+      signerPermissions: {
+        tokens: [],
+        portfolios: [],
+        transactions: [TxTags.identity.RevokeClaim],
+      },
+    });
   });
 });
