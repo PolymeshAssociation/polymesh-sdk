@@ -47,7 +47,7 @@ export class Claims {
       ModifyClaimsParams,
       void
     >(
-      (args) => [
+      args => [
         modifyClaims,
         {
           ...args,
@@ -62,7 +62,7 @@ export class Claims {
       ModifyClaimsParams,
       void
     >(
-      (args) => [
+      args => [
         modifyClaims,
         {
           ...args,
@@ -77,7 +77,7 @@ export class Claims {
       ModifyClaimsParams,
       void
     >(
-      (args) => [
+      args => [
         modifyClaims,
         {
           ...args,
@@ -88,7 +88,7 @@ export class Claims {
     );
 
     this.addInvestorUniquenessClaim = createProcedureMethod(
-      (args) => [addInvestorUniquenessClaim, args],
+      args => [addInvestorUniquenessClaim, args],
       context
     );
   }
@@ -193,12 +193,12 @@ export class Claims {
 
     const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
-        dids: targets?.map((target) => signerToString(target)),
+        dids: targets?.map(target => signerToString(target)),
         scope: scope ? scopeToMiddlewareScope(scope) : undefined,
-        trustedClaimIssuers: trustedClaimIssuers?.map((trustedClaimIssuer) =>
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
           signerToString(trustedClaimIssuer)
         ),
-        claimTypes: claimTypes?.map((ct) => ClaimTypeEnum[ct]),
+        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
         includeExpired,
         count: size,
         skip: start,
@@ -346,7 +346,7 @@ export class Claims {
       issuerDidsWithClaimsByTarget({
         target: did,
         scope: scope ? scopeToMiddlewareScope(scope) : undefined,
-        trustedClaimIssuers: trustedClaimIssuers?.map((trustedClaimIssuer) =>
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
           signerToString(trustedClaimIssuer)
         ),
         includeExpired,

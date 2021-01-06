@@ -465,7 +465,7 @@ export function permissionsToMeshPermissions(
   let extrinsic: { pallet_name: string; dispatchable_names: string[] }[] | null = null;
 
   if (transactions) {
-    transactions.forEach((tag) => {
+    transactions.forEach(tag => {
       const [modName, txName] = tag.split('.');
 
       const palletName = stringUpperFirst(modName);
@@ -488,7 +488,7 @@ export function permissionsToMeshPermissions(
     asset: tokens?.map(({ ticker }) => stringToTicker(ticker, context)) ?? null,
     extrinsic,
     portfolio:
-      portfolios?.map((portfolio) =>
+      portfolios?.map(portfolio =>
         portfolioIdToMeshPortfolioId(portfolioToPortfolioId(portfolio), context)
       ) ?? null,
   };
@@ -512,7 +512,7 @@ export function meshPermissionsToPermissions(
   if (asset.isSome) {
     tokens = asset
       .unwrap()
-      .map((ticker) => new SecurityToken({ ticker: tickerToString(ticker) }, context));
+      .map(ticker => new SecurityToken({ ticker: tickerToString(ticker) }, context));
   }
 
   if (extrinsic.isSome) {
@@ -527,7 +527,7 @@ export function meshPermissionsToPermissions(
           if (dispatchableNames.isSome) {
             newTags = dispatchableNames
               .unwrap()
-              .map((name) => `${moduleName}.${camelCase(textToString(name))}` as TxTag);
+              .map(name => `${moduleName}.${camelCase(textToString(name))}` as TxTag);
           } else {
             newTags = values(TxTags[moduleName as keyof typeof TxTags]);
           }
@@ -541,7 +541,7 @@ export function meshPermissionsToPermissions(
   if (portfolio.isSome) {
     portfolios = portfolio
       .unwrap()
-      .map((portfolioId) => meshPortfolioIdToPortfolio(portfolioId, context));
+      .map(portfolioId => meshPortfolioIdToPortfolio(portfolioId, context));
   }
 
   return {
@@ -868,7 +868,7 @@ export function isIsinValid(isin: string): boolean {
 
   const v: number[] = [];
 
-  rangeRight(11).forEach((i) => {
+  rangeRight(11).forEach(i => {
     const c = parseInt(isin.charAt(i));
     if (isNaN(c)) {
       const letterCode = isin.charCodeAt(i) - 55;
@@ -881,7 +881,7 @@ export function isIsinValid(isin: string): boolean {
 
   let sum = 0;
 
-  range(v.length).forEach((i) => {
+  range(v.length).forEach(i => {
     if (i % 2 === 0) {
       const d = v[i] * 2;
       sum += Math.floor(d / 10);
@@ -911,7 +911,7 @@ export function isCusipValid(cusip: string): boolean {
   const cusipChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ*@#'.split('');
   const cusipLength = cusip.length - 1;
 
-  range(cusipLength).forEach((i) => {
+  range(cusipLength).forEach(i => {
     const item = cusip[i];
     const code = item.charCodeAt(0);
 
@@ -1497,7 +1497,7 @@ export function requirementToComplianceRequirement(
   const senderConditions: MeshCondition[] = [];
   const receiverConditions: MeshCondition[] = [];
 
-  requirement.conditions.forEach((condition) => {
+  requirement.conditions.forEach(condition => {
     let conditionContent: MeshClaim | MeshClaim[] | TargetIdentity;
     let { type } = condition;
     if (isSingleClaimCondition(condition)) {
@@ -1505,7 +1505,7 @@ export function requirementToComplianceRequirement(
       conditionContent = claimToMeshClaim(claim, context);
     } else if (isMultiClaimCondition(condition)) {
       const { claims } = condition;
-      conditionContent = claims.map((claim) => claimToMeshClaim(claim, context));
+      conditionContent = claims.map(claim => claimToMeshClaim(claim, context));
     } else if (condition.type === ConditionType.IsIdentity) {
       const {
         identity: { did },
@@ -1524,7 +1524,7 @@ export function requirementToComplianceRequirement(
       condition_type: {
         [type]: conditionContent,
       },
-      issuers: trustedClaimIssuers.map((issuer) =>
+      issuers: trustedClaimIssuers.map(issuer =>
         trustedClaimIssuerToTrustedIssuer(issuer, context)
       ),
     });
@@ -1575,7 +1575,7 @@ function meshConditionTypeToCondition(
   if (meshConditionType.isIsAnyOf) {
     return {
       type: ConditionType.IsAnyOf,
-      claims: meshConditionType.asIsAnyOf.map((claim) => meshClaimToClaim(claim)),
+      claims: meshConditionType.asIsAnyOf.map(claim => meshClaimToClaim(claim)),
     };
   }
 
@@ -1596,7 +1596,7 @@ function meshConditionTypeToCondition(
 
   return {
     type: ConditionType.IsNoneOf,
-    claims: meshConditionType.asIsNoneOf.map((claim) => meshClaimToClaim(claim)),
+    claims: meshConditionType.asIsNoneOf.map(claim => meshClaimToClaim(claim)),
   };
 }
 
@@ -1636,14 +1636,14 @@ export function complianceRequirementResultToRequirementCompliance(
         condition: {
           ...meshConditionTypeToCondition(conditionType, context),
           target: ConditionTarget.Sender,
-          trustedClaimIssuers: issuers.map((trustedIssuer) =>
+          trustedClaimIssuers: issuers.map(trustedIssuer =>
             trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
           ),
         },
         complies: boolToBoolean(result),
       };
 
-      const existingCondition = conditions.find((condition) =>
+      const existingCondition = conditions.find(condition =>
         conditionCompliancesAreEqual(condition, newCondition)
       );
 
@@ -1659,14 +1659,14 @@ export function complianceRequirementResultToRequirementCompliance(
         condition: {
           ...meshConditionTypeToCondition(conditionType, context),
           target: ConditionTarget.Receiver,
-          trustedClaimIssuers: issuers.map((trustedIssuer) =>
+          trustedClaimIssuers: issuers.map(trustedIssuer =>
             trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
           ),
         },
         complies: boolToBoolean(result),
       };
 
-      const existingCondition = conditions.find((condition) =>
+      const existingCondition = conditions.find(condition =>
         conditionCompliancesAreEqual(condition, newCondition)
       );
 
@@ -1712,11 +1712,11 @@ export function complianceRequirementToRequirement(
     const newCondition = {
       ...meshConditionTypeToCondition(conditionType, context),
       target: ConditionTarget.Sender,
-      trustedClaimIssuers: issuers.map((trustedIssuer) =>
+      trustedClaimIssuers: issuers.map(trustedIssuer =>
         trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
       ),
     };
-    const existingCondition = conditions.find((condition) =>
+    const existingCondition = conditions.find(condition =>
       conditionsAreEqual(condition, newCondition)
     );
 
@@ -1730,12 +1730,12 @@ export function complianceRequirementToRequirement(
       const newCondition = {
         ...meshConditionTypeToCondition(conditionType, context),
         target: ConditionTarget.Receiver,
-        trustedClaimIssuers: issuers.map((trustedIssuer) =>
+        trustedClaimIssuers: issuers.map(trustedIssuer =>
           trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
         ),
       };
 
-      const existingCondition = conditions.find((condition) =>
+      const existingCondition = conditions.find(condition =>
         conditionsAreEqual(condition, newCondition)
       );
 
@@ -1806,7 +1806,7 @@ export function assetComplianceResultToCompliance(
   context: Context
 ): Compliance {
   const { requirements: rawRequirements, result, paused } = assetComplianceResult;
-  const requirements = rawRequirements.map((requirement) =>
+  const requirements = rawRequirements.map(requirement =>
     complianceRequirementResultToRequirementCompliance(requirement, context)
   );
 
@@ -2097,7 +2097,7 @@ export async function permissionsLikeToPermissions(
   if (tokens === null) {
     tokenPermissions = null;
   } else if (tokens) {
-    tokenPermissions = tokens.map((ticker) =>
+    tokenPermissions = tokens.map(ticker =>
       typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
     );
   }
@@ -2109,7 +2109,7 @@ export async function permissionsLikeToPermissions(
   if (portfolios === null) {
     portfolioPermissions = null;
   } else if (portfolios) {
-    portfolioPermissions = await P.map(portfolios, (portfolio) =>
+    portfolioPermissions = await P.map(portfolios, portfolio =>
       portfolioLikeToPortfolio(portfolio, context)
     );
   }

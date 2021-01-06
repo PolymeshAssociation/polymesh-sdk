@@ -38,7 +38,7 @@ export async function prepareConsumeAuthorizationRequests(
   } = this;
   const { accept, authRequests } = args;
 
-  const liveRequests = authRequests.filter((request) => !request.isExpired());
+  const liveRequests = authRequests.filter(request => !request.isExpired());
 
   if (accept) {
     const requestIds = liveRequests.map(({ authId }) => tuple(numberToU64(authId, context)));
@@ -67,7 +67,7 @@ export async function getAuthorization(
 
   let did: string;
 
-  const unexpiredRequests = authRequests.filter((request) => !request.isExpired());
+  const unexpiredRequests = authRequests.filter(request => !request.isExpired());
 
   const fetchDid = async (): Promise<string> => getDid(did, context);
 
@@ -95,7 +95,7 @@ export async function getAuthorization(
   ];
 
   return {
-    identityRoles: authorized.every((res) => res),
+    identityRoles: authorized.every(res => res),
     signerPermissions: {
       transactions,
       tokens: [],

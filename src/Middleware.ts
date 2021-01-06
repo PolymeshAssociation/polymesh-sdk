@@ -103,7 +103,7 @@ export class Middleware {
     } = result;
 
     if (events) {
-      return events.map((event) => {
+      return events.map(event => {
         return {
           blockNumber: new BigNumber(event!.block_id),
           blockDate: event!.block!.datetime,

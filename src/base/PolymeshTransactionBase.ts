@@ -155,7 +155,7 @@ export abstract class PolymeshTransactionBase<
       const receipt = await this.internalRun();
       this.receipt = receipt;
 
-      await Promise.all(this.postValues.map((postValue) => postValue.run(receipt)));
+      await Promise.all(this.postValues.map(postValue => postValue.run(receipt)));
 
       this.updateStatus(TransactionStatus.Succeeded);
     } catch (err) {
@@ -197,7 +197,7 @@ export abstract class PolymeshTransactionBase<
 
     const gettingReceipt: Promise<ISubmittableResult> = new Promise((resolve, reject) => {
       const txWithArgs = this.composeTx();
-      const gettingUnsub = txWithArgs.signAndSend(this.signer, (receipt) => {
+      const gettingUnsub = txWithArgs.signAndSend(this.signer, receipt => {
         const { status } = receipt;
         let unsubscribe = false;
 
@@ -220,7 +220,7 @@ export abstract class PolymeshTransactionBase<
           }
 
           if (unsubscribe) {
-            gettingUnsub.then((unsub) => {
+            gettingUnsub.then(unsub => {
               unsub();
             });
           }

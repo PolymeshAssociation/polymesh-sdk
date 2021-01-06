@@ -143,8 +143,8 @@ describe('unwrapValue', () => {
 describe('unwrapValues', () => {
   test('should unwrap all Post Transaction Values in the array', async () => {
     const values = [1, 2, 3, 4, 5];
-    const wrapped = values.map((value) => new PostTransactionValue(async () => value));
-    await Promise.all(wrapped.map((postValue) => postValue.run({} as ISubmittableResult)));
+    const wrapped = values.map(value => new PostTransactionValue(async () => value));
+    await Promise.all(wrapped.map(postValue => postValue.run({} as ISubmittableResult)));
 
     const unwrapped = unwrapValues(wrapped);
 
@@ -373,13 +373,13 @@ describe('batchArguments', () => {
 
     const elements = range(0, 2 * expectedBatchLength);
 
-    let batches = batchArguments(elements, tag, (element) => `${element % 2}`); // separate odd from even
+    let batches = batchArguments(elements, tag, element => `${element % 2}`); // separate odd from even
 
     expect(batches.length).toBe(2);
     expect(batches[0]).toEqual(range(0, 2 * expectedBatchLength, 2));
     expect(batches[1]).toEqual(range(1, 2 * expectedBatchLength, 2));
 
-    batches = batchArguments(elements, tag, (element) => `${element % 5}`); // separate in 5 groups
+    batches = batchArguments(elements, tag, element => `${element % 5}`); // separate in 5 groups
 
     expect(batches.length).toBe(3);
     expect(batches[0].length).toBeLessThan(expectedBatchLength);
@@ -393,7 +393,7 @@ describe('batchArguments', () => {
 
     const elements = range(0, 3 * expectedBatchLength);
 
-    expect(() => batchArguments(elements, tag, (element) => `${element % 2}`)).toThrowError(
+    expect(() => batchArguments(elements, tag, element => `${element % 2}`)).toThrowError(
       'Batch size exceeds limit'
     );
   });

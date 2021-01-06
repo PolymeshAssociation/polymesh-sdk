@@ -538,7 +538,7 @@ function configureContext(opts: ContextOptions): void {
     getCurrentPair,
     accountBalance: sinon.stub().resolves(opts.balance),
     getAccounts: sinon.stub().returns([]),
-    setPair: sinon.stub().callsFake((address) => {
+    setPair: sinon.stub().callsFake(address => {
       contextInstance.currentPair = { address } as KeyringPair;
     }),
     getSigner: sinon.stub().returns(currentPair),
@@ -546,7 +546,7 @@ function configureContext(opts: ContextOptions): void {
     middlewareApi: mockInstanceContainer.apolloInstance,
     queryMiddleware: sinon
       .stub()
-      .callsFake((query) => mockInstanceContainer.apolloInstance.query(query)),
+      .callsFake(query => mockInstanceContainer.apolloInstance.query(query)),
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),

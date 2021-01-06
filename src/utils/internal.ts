@@ -50,7 +50,7 @@ export * from '~/generated/utils';
  * @param amount - time to wait
  */
 export async function delay(amount: number): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     setTimeout(() => {
       resolve();
     }, amount);
@@ -226,7 +226,7 @@ export function removePadding(value: string): string {
 export function stringIsClean(value: string): boolean {
   const forbiddenCharCodes = [65533]; // this should be extended as we find more offending characters
 
-  return !range(value.length).some((index) => forbiddenCharCodes.includes(value.charCodeAt(index)));
+  return !range(value.length).some(index => forbiddenCharCodes.includes(value.charCodeAt(index)));
 }
 
 /**
@@ -321,13 +321,13 @@ export function batchArguments<Args>(
     return chunk(args, batchLimit);
   }
 
-  const groups = map(groupBy(args, groupByFn), (group) => group).sort(
+  const groups = map(groupBy(args, groupByFn), group => group).sort(
     ({ length: first }, { length: second }) => first - second
   );
 
   const batches: Args[][] = [];
 
-  groups.forEach((group) => {
+  groups.forEach(group => {
     if (group.length > batchLimit) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
@@ -338,7 +338,7 @@ export function batchArguments<Args>(
         },
       });
     }
-    let batchIndex = batches.findIndex((batch) => batch.length + group.length <= batchLimit);
+    let batchIndex = batches.findIndex(batch => batch.length + group.length <= batchLimit);
 
     if (batchIndex === -1) {
       batchIndex = batches.length;

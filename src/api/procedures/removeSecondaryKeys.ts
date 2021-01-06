@@ -32,7 +32,7 @@ export async function prepareRemoveSecondaryKeys(
     context.getSecondaryKeys(),
   ]);
 
-  const signerValues = signers.map((signer) => signerToSignerValue(signer));
+  const signerValues = signers.map(signer => signerToSignerValue(signer));
   const isPrimaryKeyPresent = find(signerValues, ({ value }) => value === primaryKey);
 
   if (isPrimaryKeyPresent) {
@@ -47,7 +47,7 @@ export async function prepareRemoveSecondaryKeys(
   this.addTransaction(
     tx.identity.removeSecondaryKeys,
     {},
-    signerValues.map((signer) => signerValueToSignatory(signer, context))
+    signerValues.map(signer => signerValueToSignatory(signer, context))
   );
 }
 

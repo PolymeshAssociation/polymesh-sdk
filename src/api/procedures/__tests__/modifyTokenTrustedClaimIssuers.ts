@@ -53,11 +53,11 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
     identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
     ticker = 'someTicker';
     claimIssuerDids = ['aDid', 'otherDid', 'differentDid'];
-    claimIssuers = claimIssuerDids.map((did) => ({
+    claimIssuers = claimIssuerDids.map(did => ({
       identity: entityMockUtils.getIdentityInstance({ did }),
     }));
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawClaimIssuers = claimIssuerDids.map((did) =>
+    rawClaimIssuers = claimIssuerDids.map(did =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
         // eslint-disable-next-line @typescript-eslint/camelcase
@@ -189,7 +189,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       addBatchTransactionStub.secondCall,
       addDefaultTrustedClaimIssuerTransaction,
       {},
-      rawClaimIssuers.map((issuer) => [rawTicker, issuer])
+      rawClaimIssuers.map(issuer => [rawTicker, issuer])
     );
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
@@ -210,7 +210,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       addBatchTransactionStub.firstCall,
       addDefaultTrustedClaimIssuerTransaction,
       {},
-      rawClaimIssuers.map((issuer) => [rawTicker, issuer])
+      rawClaimIssuers.map(issuer => [rawTicker, issuer])
     );
     sinon.assert.calledOnce(addBatchTransactionStub);
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
@@ -318,7 +318,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       addBatchTransactionStub,
       addDefaultTrustedClaimIssuerTransaction,
       {},
-      rawClaimIssuers.map((issuer) => [rawTicker, issuer])
+      rawClaimIssuers.map(issuer => [rawTicker, issuer])
     );
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });

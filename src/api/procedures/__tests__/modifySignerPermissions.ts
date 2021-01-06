@@ -80,7 +80,7 @@ describe('modifySignerPermissions procedure', () => {
     });
 
     mockContext.getSecondaryKeys.resolves(
-      secondaryKeys.map((signer) => ({ signer, permissions: [] }))
+      secondaryKeys.map(signer => ({ signer, permissions: [] }))
     );
 
     signerToSignerValueStub.returns(signerValue);

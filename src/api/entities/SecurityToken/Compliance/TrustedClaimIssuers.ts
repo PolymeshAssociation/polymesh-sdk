@@ -32,7 +32,7 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
       ModifyTokenTrustedClaimIssuersParams,
       SecurityToken
     >(
-      (args) => [
+      args => [
         modifyTokenTrustedClaimIssuers,
         { ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
       ],
@@ -43,7 +43,7 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
       ModifyTokenTrustedClaimIssuersParams,
       SecurityToken
     >(
-      (args) => [
+      args => [
         modifyTokenTrustedClaimIssuers,
         { ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
       ],
@@ -54,7 +54,7 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
       ModifyTokenTrustedClaimIssuersParams,
       SecurityToken
     >(
-      (args) => [
+      args => [
         modifyTokenTrustedClaimIssuers,
         { ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
       ],
@@ -110,7 +110,7 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
     const rawTicker = stringToTicker(ticker, context);
 
     const assembleResult = (issuers: TrustedIssuer[]): DefaultTrustedClaimIssuer[] =>
-      issuers.map((issuer) => {
+      issuers.map(issuer => {
         const {
           identity: { did },
           trustedFor,
@@ -119,7 +119,7 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
       });
 
     if (callback) {
-      return complianceManager.trustedClaimIssuer(rawTicker, (issuers) => {
+      return complianceManager.trustedClaimIssuer(rawTicker, issuers => {
         callback(assembleResult(issuers));
       });
     }

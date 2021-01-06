@@ -167,7 +167,7 @@ describe('TrustedClaimIssuers class', () => {
       expectedTrustedClaimIssuers = [];
       claimIssuers = [];
 
-      expectedDids.forEach((did) => {
+      expectedDids.forEach(did => {
         expectedTrustedClaimIssuers.push(new DefaultTrustedClaimIssuer({ did, ticker }, context));
         claimIssuers.push(
           dsMockUtils.createMockTrustedIssuer({

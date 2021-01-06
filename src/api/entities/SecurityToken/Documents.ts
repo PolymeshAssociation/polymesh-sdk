@@ -22,7 +22,7 @@ export class Documents extends Namespace<SecurityToken> {
 
     const { ticker } = parent;
 
-    this.set = createProcedureMethod((args) => [setTokenDocuments, { ticker, ...args }], context);
+    this.set = createProcedureMethod(args => [setTokenDocuments, { ticker, ...args }], context);
   }
   /**
    * Assign a new list of documents to the Security Token by replacing the existing list of documents with the one passed in the parameters

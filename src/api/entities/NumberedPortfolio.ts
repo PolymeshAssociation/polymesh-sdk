@@ -50,7 +50,7 @@ export class NumberedPortfolio extends Portfolio {
 
     this.delete = createProcedureMethod(() => [deletePortfolio, { did, id }], context);
     this.modifyName = createProcedureMethod(
-      (args) => [renamePortfolio, { ...args, did, id }],
+      args => [renamePortfolio, { ...args, did, id }],
       context
     );
   }

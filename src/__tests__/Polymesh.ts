@@ -67,7 +67,7 @@ describe('Polymesh Class', () => {
 
   describe('method: create', () => {
     beforeAll(() => {
-      sinon.stub(apolloLinkContextModule, 'setContext').callsFake((cbFunc) => {
+      sinon.stub(apolloLinkContextModule, 'setContext').callsFake(cbFunc => {
         return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
       });
     });
@@ -421,7 +421,7 @@ describe('Polymesh Class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
-      entityMockUtils.getTickerReservationDetailsStub().callsFake(async (cbFunc) => {
+      entityMockUtils.getTickerReservationDetailsStub().callsFake(async cbFunc => {
         cbFunc({
           owner: entityMockUtils.getIdentityInstance(),
           expiryDate: new Date(),
@@ -919,7 +919,7 @@ describe('Polymesh Class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
 
-      entityMockUtils.getAccountInstance().getBalance.callsFake(async (cbFunc) => {
+      entityMockUtils.getAccountInstance().getBalance.callsFake(async cbFunc => {
         cbFunc(fakeBalance);
         return unsubCallback;
       });

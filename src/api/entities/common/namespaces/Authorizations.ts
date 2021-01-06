@@ -54,7 +54,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
     }
 
     const data = this.createAuthorizationRequests(
-      result.map((auth) => ({ auth, target: signerValue }))
+      result.map(auth => ({ auth, target: signerValue }))
     );
 
     return data;
@@ -70,7 +70,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
   ): AuthorizationRequest[] {
     const { context } = this;
     return auths
-      .map((auth) => {
+      .map(auth => {
         const {
           auth: { expiry, auth_id: authId, authorization_data: data, authorized_by: issuer },
           target: rawTarget,
@@ -87,7 +87,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
         };
       })
       .filter(({ expiry }) => expiry === null || expiry > new Date())
-      .map((args) => {
+      .map(args => {
         return new AuthorizationRequest(args, context);
       });
   }

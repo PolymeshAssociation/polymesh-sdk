@@ -263,7 +263,7 @@ export class Procedure<
     const { context } = this;
     let { signer } = options;
     const postTransactionValues = resolvers.map(
-      (resolver) => new PostTransactionValue(resolver)
+      resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
     if (!signer) {
@@ -376,7 +376,7 @@ export class Procedure<
     const { context } = this;
     let { signer } = options;
     const postTransactionValues = resolvers.map(
-      (resolver) => new PostTransactionValue(resolver)
+      resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
     if (!signer) {

@@ -117,7 +117,7 @@ describe('Procedure class', () => {
         .resolves(rawFees[1]);
 
       posRatioToBigNumberStub.withArgs(rawCoefficient).returns(coefficient);
-      txTags.forEach((txTag) =>
+      txTags.forEach(txTag =>
         txTagToProtocolOpStub.withArgs(txTag, context).returns((txTag as unknown) as ProtocolOp)
       );
 
@@ -281,7 +281,7 @@ describe('Procedure class', () => {
         ticker
       );
 
-      await Promise.all(values.map((value) => value.run({} as ISubmittableResult)));
+      await Promise.all(values.map(value => value.run({} as ISubmittableResult)));
       const [num, str] = values;
 
       expect(num.value).toBe(resolvedNum);
@@ -311,7 +311,7 @@ describe('Procedure class', () => {
         [[ticker]]
       );
 
-      await Promise.all(values.map((value) => value.run({} as ISubmittableResult)));
+      await Promise.all(values.map(value => value.run({} as ISubmittableResult)));
       const [num, str] = values;
 
       expect(num.value).toBe(resolvedNum);

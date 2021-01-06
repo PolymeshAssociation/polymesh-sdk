@@ -64,10 +64,10 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     this._id = id;
 
     this.setCustodian = createProcedureMethod(
-      (args) => [setCustodian, { ...args, did, id }],
+      args => [setCustodian, { ...args, did, id }],
       context
     );
-    this.moveFunds = createProcedureMethod((args) => [moveFunds, { ...args, from: this }], context);
+    this.moveFunds = createProcedureMethod(args => [moveFunds, { ...args, from: this }], context);
   }
 
   /**
@@ -147,7 +147,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       assetBalances[ticker].locked = locked;
     });
 
-    const mask: PortfolioBalance[] | undefined = args?.tokens.map((ticker) => {
+    const mask: PortfolioBalance[] | undefined = args?.tokens.map(ticker => {
       const token = typeof ticker === 'string' ? new SecurityToken({ ticker }, context) : ticker;
 
       return {
@@ -158,7 +158,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     });
 
     if (mask) {
-      return mask.map((portfolioBalance) => {
+      return mask.map(portfolioBalance => {
         const {
           token: { ticker },
         } = portfolioBalance;

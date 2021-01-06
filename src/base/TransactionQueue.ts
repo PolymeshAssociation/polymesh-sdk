@@ -94,8 +94,8 @@ export class TransactionQueue<
     this.context = context;
     this.transactions = ([] as unknown) as PolymeshTransactionArray<TransactionArgs>;
 
-    transactions.forEach((transaction) => {
-      transaction.onStatusChange((updatedTransaction) => {
+    transactions.forEach(transaction => {
+      transaction.onStatusChange(updatedTransaction => {
         this.emitter.emit(Event.TransactionStatusChange, updatedTransaction, this);
       });
 
@@ -176,7 +176,7 @@ export class TransactionQueue<
    * @note transaction fees that are paid by a third party aren't included in this total
    */
   public async getMinFees(): Promise<Fees> {
-    const allFees = await P.map(this.transactions, (transaction) =>
+    const allFees = await P.map(this.transactions, transaction =>
       transaction.paidByThirdParty ? null : transaction.getFees()
     );
 
@@ -312,7 +312,7 @@ export class TransactionQueue<
 
     let done = false;
 
-    P.each(range(6), async (i) => {
+    P.each(range(6), async i => {
       if (done) {
         return;
       }

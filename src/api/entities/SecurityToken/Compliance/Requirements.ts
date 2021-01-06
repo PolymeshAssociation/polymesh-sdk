@@ -36,10 +36,7 @@ export class Requirements extends Namespace<SecurityToken> {
 
     const { ticker } = parent;
 
-    this.set = createProcedureMethod(
-      (args) => [setAssetRequirements, { ticker, ...args }],
-      context
-    );
+    this.set = createProcedureMethod(args => [setAssetRequirements, { ticker, ...args }], context);
     this.reset = createProcedureMethod(
       () => [setAssetRequirements, { ticker, requirements: [] }],
       context
@@ -94,14 +91,14 @@ export class Requirements extends Namespace<SecurityToken> {
       AssetCompliance,
       Vec<TrustedIssuer>
     ]): Requirement[] => {
-      const defaultTrustedClaimIssuers = claimIssuers.map((claimIssuer) => {
+      const defaultTrustedClaimIssuers = claimIssuers.map(claimIssuer => {
         return trustedIssuerToTrustedClaimIssuer(claimIssuer, context);
       });
 
-      return assetCompliance.requirements.map((complianceRequirement) => {
+      return assetCompliance.requirements.map(complianceRequirement => {
         const requirement = complianceRequirementToRequirement(complianceRequirement, context);
 
-        requirement.conditions.forEach((condition) => {
+        requirement.conditions.forEach(condition => {
           if (!condition.trustedClaimIssuers || !condition.trustedClaimIssuers.length) {
             condition.trustedClaimIssuers = defaultTrustedClaimIssuers;
           }
@@ -123,7 +120,7 @@ export class Requirements extends Namespace<SecurityToken> {
             rawTicker,
           ],
         ],
-        (res) => {
+        res => {
           callback(assembleResult(res));
         }
       );

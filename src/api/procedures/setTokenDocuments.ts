@@ -63,12 +63,12 @@ export async function prepareSetTokenDocuments(
     });
   }
 
-  const rawDocuments = documents.map((doc) => tokenDocumentToDocument(doc, context));
+  const rawDocuments = documents.map(doc => tokenDocumentToDocument(doc, context));
 
   const rawTicker = stringToTicker(ticker, context);
 
   if (currentDocIds.length) {
-    batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).forEach((docIdBatch) => {
+    batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).forEach(docIdBatch => {
       this.addTransaction(
         tx.asset.removeDocuments,
         { batchSize: docIdBatch.length },
@@ -79,7 +79,7 @@ export async function prepareSetTokenDocuments(
   }
 
   if (rawDocuments.length) {
-    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach((rawDocumentBatch) => {
+    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
       this.addTransaction(
         tx.asset.addDocuments,
         { batchSize: rawDocumentBatch.length },

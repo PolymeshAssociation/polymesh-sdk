@@ -150,7 +150,7 @@ export async function prepareAddInstruction(
       rawSettlementType,
       rawValidFrom,
       rawLegs,
-      portfoliosToAffirm.map((portfolio) =>
+      portfoliosToAffirm.map(portfolio =>
         portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
       )
     );

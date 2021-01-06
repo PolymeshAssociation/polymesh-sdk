@@ -87,7 +87,7 @@ export async function prepareCreateSecurityToken(
   const rawName = stringToAssetName(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawType = tokenTypeToAssetType(tokenType, context);
-  const rawIdentifiers = tokenIdentifiers.map((identifier) =>
+  const rawIdentifiers = tokenIdentifiers.map(identifier =>
     tokenIdentifierToAssetIdentifier(identifier, context)
   );
   const rawFundingRound = fundingRound ? stringToFundingRoundName(fundingRound, context) : null;
@@ -105,8 +105,8 @@ export async function prepareCreateSecurityToken(
   );
 
   if (documents) {
-    const rawDocuments = documents.map((doc) => tokenDocumentToDocument(doc, context));
-    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach((rawDocumentBatch) => {
+    const rawDocuments = documents.map(doc => tokenDocumentToDocument(doc, context));
+    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
       this.addTransaction(
         tx.asset.addDocuments,
         { isCritical: false, batchSize: rawDocumentBatch.length },
