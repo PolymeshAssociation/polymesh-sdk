@@ -122,9 +122,9 @@ export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): 
   fs.writeFileSync(path.resolve(generatedDir, 'utils.ts'), utilsFile);
 }
 
-https.get(`${urlPath}/polymesh_schema.json`, (res) => {
+https.get(`${urlPath}/polymesh_schema.json`, res => {
   const chunks = [];
-  res.on('data', (chunk) => {
+  res.on('data', chunk => {
     chunks.push(chunk);
   });
 
