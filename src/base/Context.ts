@@ -652,6 +652,72 @@ export class Context {
   }
 
   /**
+   * @hidden
+   */
+  public async getIdentityClaimsFromMiddleware(args: {
+    targets?: (string | Identity)[];
+    trustedClaimIssuers?: (string | Identity)[];
+    claimTypes?: ClaimType[];
+    includeExpired?: boolean;
+    size?: number;
+    start?: number;
+  }): Promise<ResultSet<ClaimData>> {
+    const { targets, claimTypes, trustedClaimIssuers, includeExpired, size, start } = args;
+
+    const data: ClaimData[] = [];
+
+    const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
+      didsWithClaims({
+        dids: targets?.map(target => signerToString(target)),
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          signerToString(trustedClaimIssuer)
+        ),
+        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        includeExpired,
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: {
+        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
+      },
+    } = result;
+
+    didsWithClaimsList.forEach(({ claims }) => {
+      claims.forEach(
+        ({
+          targetDID,
+          issuer,
+          issuance_date: issuanceDate,
+          expiry,
+          type,
+          jurisdiction,
+          scope,
+          cdd_id: cddId,
+        }) => {
+          data.push({
+            target: new Identity({ did: targetDID }, this),
+            issuer: new Identity({ did: issuer }, this),
+            issuedAt: new Date(issuanceDate),
+            expiry: expiry ? new Date(expiry) : null,
+            claim: createClaim(type, jurisdiction, scope, cddId, undefined),
+          });
+        }
+      );
+    });
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
    * Retrieve a list of claims. Can be filtered using parameters
    *
    * @param opts.targets - identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
@@ -678,57 +744,16 @@ export class Context {
     const isMiddlewareAvailable = await this.isMiddlewareAvailable();
 
     if (isMiddlewareAvailable) {
-      const data: ClaimData[] = [];
-
-      const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-        didsWithClaims({
-          dids: targets?.map(target => signerToString(target)),
-          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-            signerToString(trustedClaimIssuer)
-          ),
-          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-          includeExpired,
-          count: size,
-          skip: start,
-        })
-      );
-
-      const {
-        data: {
-          didsWithClaims: { items: didsWithClaimsList, totalCount: count },
-        },
-      } = result;
-
-      didsWithClaimsList.forEach(({ claims }) => {
-        claims.forEach(
-          ({
-            targetDID,
-            issuer,
-            issuance_date: issuanceDate,
-            expiry,
-            type,
-            jurisdiction,
-            scope,
-            cdd_id: cddId,
-          }) => {
-            data.push({
-              target: new Identity({ did: targetDID }, this),
-              issuer: new Identity({ did: issuer }, this),
-              issuedAt: new Date(issuanceDate),
-              expiry: expiry ? new Date(expiry) : null,
-              claim: createClaim(type, jurisdiction, scope, cddId, undefined),
-            });
-          }
-        );
+      const identityClaimsFromMiddleware = await this.getIdentityClaimsFromMiddleware({
+        targets,
+        trustedClaimIssuers,
+        claimTypes,
+        includeExpired,
+        size,
+        start,
       });
 
-      const next = calculateNextKey(count, size, start);
-
-      return {
-        data,
-        next,
-        count,
-      };
+      return identityClaimsFromMiddleware;
     }
 
     if (!targets || !claimTypes) {

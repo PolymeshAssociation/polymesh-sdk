@@ -141,7 +141,7 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const result = await context.issuedClaims({
+    const result = await context.getIdentityClaimsFromMiddleware({
       trustedClaimIssuers: [did],
       includeExpired,
       size,
@@ -285,6 +285,7 @@ export class Claims {
       start?: number;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
+    // SOLO STORAGE
     const { context } = this;
     const { target, includeExpired = true, size, start } = opts;
 
@@ -344,6 +345,8 @@ export class Claims {
       start?: number;
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
+    // MIDDLEWARE O STORAGE
+    // vr si se puede resolver por storage. siempre por target
     const { context } = this;
 
     const { target, trustedClaimIssuers, scope, includeExpired = true, size, start } = opts;
