@@ -414,7 +414,7 @@ export class Claims {
     );
 
     const identityWithClaims: IdentityWithClaims[] = [];
-    uniqIssuers.map(identity => {
+    uniqIssuers.forEach(identity => {
       identityWithClaims.push({
         identity,
         claims: filter(
