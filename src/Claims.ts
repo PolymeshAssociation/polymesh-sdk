@@ -1,3 +1,5 @@
+import { filter, uniqBy } from 'lodash';
+
 import {
   addInvestorUniquenessClaim,
   AddInvestorUniquenessClaimParams,
@@ -344,44 +346,88 @@ export class Claims {
       start?: number;
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
-    // MIDDLEWARE O STORAGE
-    // vr si se puede resolver por storage. siempre por target
     const { context } = this;
 
     const { target, trustedClaimIssuers, scope, includeExpired = true, size, start } = opts;
 
     const did = await getDid(target, context);
 
-    const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
-      issuerDidsWithClaimsByTarget({
-        target: did,
-        scope: scope ? scopeToMiddlewareScope(scope) : undefined,
-        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          signerToString(trustedClaimIssuer)
-        ),
-        includeExpired,
-        count: size,
-        skip: start,
-      })
+    const isMiddlewareAvailable = await context.isMiddlewareAvailable();
+
+    if (isMiddlewareAvailable) {
+      const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
+        issuerDidsWithClaimsByTarget({
+          target: did,
+          scope: scope ? scopeToMiddlewareScope(scope) : undefined,
+          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+            signerToString(trustedClaimIssuer)
+          ),
+          includeExpired,
+          count: size,
+          skip: start,
+        })
+      );
+
+      const {
+        data: {
+          issuerDidsWithClaimsByTarget: {
+            items: issuerDidsWithClaimsByTargetList,
+            totalCount: count,
+          },
+        },
+      } = result;
+
+      const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
+      const next = calculateNextKey(count, size, start);
+
+      return {
+        data,
+        next,
+        count,
+      };
+    }
+
+    const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
+      targets: [did],
+      claimTypes: [
+        ClaimType.Accredited,
+        ClaimType.Affiliate,
+        ClaimType.Blocked,
+        ClaimType.BuyLockup,
+        ClaimType.Exempted,
+        ClaimType.InvestorUniqueness,
+        ClaimType.Jurisdiction,
+        ClaimType.KnowYourCustomer,
+        ClaimType.SellLockup,
+        ClaimType.CustomerDueDiligence,
+        ClaimType.NoData,
+      ],
+      trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+        signerToString(trustedClaimIssuer)
+      ),
+      includeExpired,
+    });
+
+    const uniqIssuers = uniqBy(
+      identityClaimsFromChain.map(i => i.issuer),
+      identity => identity.did
     );
 
-    const {
-      data: {
-        issuerDidsWithClaimsByTarget: {
-          items: issuerDidsWithClaimsByTargetList,
-          totalCount: count,
-        },
-      },
-    } = result;
-
-    const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
-
-    const next = calculateNextKey(count, size, start);
+    const identityWithClaims: IdentityWithClaims[] = [];
+    uniqIssuers.map(identity => {
+      identityWithClaims.push({
+        identity,
+        claims: filter(
+          identityClaimsFromChain,
+          identityClaim => identityClaim.issuer.did === identity.did
+        ),
+      });
+    });
 
     return {
-      data,
-      next,
-      count,
+      data: identityWithClaims,
+      next: null,
+      count: undefined,
     };
   }
 }

@@ -607,6 +607,81 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(25);
       expect(result.next).toBeNull();
     });
+
+    test('should return a list of claims issued with an Identity as target from chain', async () => {
+      const target = 'someTarget';
+      const issuer = 'someIssuer';
+      const otherIssuer = 'otherIssuer';
+
+      const scope = {
+        type: ScopeType.Identity,
+        value: 'someIdentityScope',
+      };
+
+      const identityClaims: ClaimData[] = [
+        {
+          target: entityMockUtils.getIdentityInstance({ did: target }),
+          issuer: entityMockUtils.getIdentityInstance({ did: issuer }),
+          issuedAt: new Date(),
+          expiry: null,
+          claim: {
+            type: ClaimType.Accredited,
+            scope,
+          },
+        },
+        {
+          target: entityMockUtils.getIdentityInstance({ did: target }),
+          issuer: entityMockUtils.getIdentityInstance({ did: issuer }),
+          issuedAt: new Date(),
+          expiry: null,
+          claim: {
+            type: ClaimType.InvestorUniqueness,
+            scope,
+            cddId: 'someCddId',
+            scopeId: 'someScopeId',
+          },
+        },
+        {
+          target: entityMockUtils.getIdentityInstance({ did: target }),
+          issuer: entityMockUtils.getIdentityInstance({ did: otherIssuer }),
+          issuedAt: new Date(),
+          expiry: null,
+          claim: {
+            type: ClaimType.InvestorUniqueness,
+            scope,
+            cddId: 'otherCddId',
+            scopeId: 'someScopeId',
+          },
+        },
+      ];
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          middlewareAvailable: false,
+          getIdentityClaimsFromChain: identityClaims,
+        },
+      });
+
+      let result = await claims.getTargetingClaims({
+        target: target,
+      });
+
+      expect(result.data.length).toEqual(2);
+      expect(result.data[0].identity.did).toEqual(issuer);
+      expect(result.data[0].claims.length).toEqual(2);
+      expect(result.data[0].claims[0].claim).toEqual(identityClaims[0].claim);
+      expect(result.data[0].claims[1].claim).toEqual(identityClaims[1].claim);
+      expect(result.data[1].identity.did).toEqual(otherIssuer);
+      expect(result.data[1].claims.length).toEqual(1);
+      expect(result.data[1].claims[0].claim).toEqual(identityClaims[2].claim);
+
+      result = await claims.getTargetingClaims({
+        target: target,
+        trustedClaimIssuers: ['trusted'],
+      });
+
+      expect(result.data.length).toEqual(2);
+    });
   });
 
   describe('method: getInvestorUniquenessClaims', () => {
