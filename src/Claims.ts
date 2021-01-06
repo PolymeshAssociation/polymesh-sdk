@@ -285,13 +285,12 @@ export class Claims {
       start?: number;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
-    // SOLO STORAGE
     const { context } = this;
     const { target, includeExpired = true, size, start } = opts;
 
     const did = await getDid(target, context);
 
-    const result = await context.issuedClaims({
+    const result = await context.getIdentityClaimsFromMiddleware({
       targets: [did],
       claimTypes: [ClaimType.CustomerDueDiligence],
       includeExpired,

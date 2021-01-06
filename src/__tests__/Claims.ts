@@ -428,7 +428,7 @@ describe('Claims Class', () => {
     test('should return a list of cdd claims', async () => {
       const target = 'someTarget';
 
-      const issuedClaims: ResultSet<ClaimData> = {
+      const getIdentityClaimsFromMiddleware: ResultSet<ClaimData> = {
         data: [
           {
             target: entityMockUtils.getIdentityInstance({ did: target }),
@@ -444,15 +444,15 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          issuedClaims,
+          getIdentityClaimsFromMiddleware,
         },
       });
 
       let result = await claims.getCddClaims({ target });
-      expect(result).toEqual(issuedClaims);
+      expect(result).toEqual(getIdentityClaimsFromMiddleware);
 
       result = await claims.getCddClaims();
-      expect(result).toEqual(issuedClaims);
+      expect(result).toEqual(getIdentityClaimsFromMiddleware);
     });
   });
 
