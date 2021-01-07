@@ -35,6 +35,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       ExtensionAlreadyPresent: AugmentedError<ApiType>;
       /**
+       * Maximum length of the funding round name has been exceeded.
+       **/
+      FundingRoundNameMaxLengthExceeded: AugmentedError<ApiType>;
+      /**
        * Given smart extension is not compatible with the asset.
        **/
       IncompatibleExtensionVersion: AugmentedError<ApiType>;
@@ -62,6 +66,10 @@ declare module '@polkadot/api/types/errors' {
        * Number of Transfer Manager extensions attached to an asset is equal to MaxNumberOfTMExtensionForAsset.
        **/
       MaximumTMExtensionLimitReached: AugmentedError<ApiType>;
+      /**
+       * Maximum length of asset name has been exceeded.
+       **/
+      MaxLengthOfAssetNameExceeded: AugmentedError<ApiType>;
       /**
        * Not a primary issuance agent transfer auth.
        **/
@@ -114,6 +122,10 @@ declare module '@polkadot/api/types/errors' {
        * The ticker is already registered to someone else.
        **/
       TickerAlreadyRegistered: AugmentedError<ApiType>;
+      /**
+       * The ticker has non-ascii-encoded parts.
+       **/
+      TickerNotAscii: AugmentedError<ApiType>;
       /**
        * Registration of ticker has expired.
        **/
@@ -591,6 +603,14 @@ declare module '@polkadot/api/types/errors' {
        **/
       RecordDateAfterStart: AugmentedError<ApiType>;
       /**
+       * Too many withholding tax overrides were specified.
+       **/
+      TooManyDidTaxes: AugmentedError<ApiType>;
+      /**
+       * Too many identities in `TargetIdentities` were specified.
+       **/
+      TooManyTargetIds: AugmentedError<ApiType>;
+      /**
        * The signer is not authorized to act as a CAA for this asset.
        **/
       UnauthorizedAsAgent: AugmentedError<ApiType>;
@@ -652,88 +672,6 @@ declare module '@polkadot/api/types/errors' {
        * Provided list of balances does not match the total number of choices.
        **/
       WrongVoteCount: AugmentedError<ApiType>;
-    };
-    dividend: {
-      /**
-       * Multiplication of the balance with the total payout amount overflowed.
-       **/
-      BalanceAmountProductOverflowed: AugmentedError<ApiType>;
-      /**
-       * A failed division of the balance amount product by the total supply.
-       **/
-      BalanceAmountProductSupplyDivisionFailed: AugmentedError<ApiType>;
-      /**
-       * Underflow while calculating the new value for balance.
-       **/
-      BalanceUnderflow: AugmentedError<ApiType>;
-      /**
-       * Attempted to pay out after expiration.
-       **/
-      CannotPayAfterExpiration: AugmentedError<ApiType>;
-      /**
-       * Attempted to pay out before maturity.
-       **/
-      CannotPayBeforeMaturity: AugmentedError<ApiType>;
-      /**
-       * Could not add the share to sender's balance.
-       **/
-      CouldNotAddShare: AugmentedError<ApiType>;
-      /**
-       * Could not increase the paid out amount.
-       **/
-      CouldNotIncreaseAmount: AugmentedError<ApiType>;
-      /**
-       * Failed to pay back to the owner account.
-       **/
-      FailedToPayBackToOwner: AugmentedError<ApiType>;
-      /**
-       * The user has already been paid their share.
-       **/
-      HasAlreadyBeenPaid: AugmentedError<ApiType>;
-      /**
-       * Insufficient funds.
-       **/
-      InsufficientFunds: AugmentedError<ApiType>;
-      /**
-       * Dividend must mature in the future.
-       **/
-      MustMatureInFuture: AugmentedError<ApiType>;
-      /**
-       * The checkpoint for the dividend does not exist.
-       **/
-      NoSuchCheckpoint: AugmentedError<ApiType>;
-      /**
-       * The dividend was not found.
-       **/
-      NoSuchDividend: AugmentedError<ApiType>;
-      /**
-       * The dividend token entry was not found.
-       **/
-      NoSuchToken: AugmentedError<ApiType>;
-      /**
-       * The user is not an owner of the asset.
-       **/
-      NotAnOwner: AugmentedError<ApiType>;
-      /**
-       * Claiming unclaimed payouts requires an end date
-       **/
-      NotEnded: AugmentedError<ApiType>;
-      /**
-       * Dividend payout must end after it starts.
-       **/
-      PayoutMustEndAfterStart: AugmentedError<ApiType>;
-      /**
-       * Dividend payout must end in the future.
-       **/
-      PayoutMustEndInFuture: AugmentedError<ApiType>;
-      /**
-       * The remaining payout funds were already claimed.
-       **/
-      RemainingFundsAlreadyClaimed: AugmentedError<ApiType>;
-      /**
-       * The sender must be a secondary key for the DID.
-       **/
-      SenderMustBeSecondaryKeyForDid: AugmentedError<ApiType>;
     };
     finalityTracker: {
       /**
@@ -879,6 +817,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       TargetHasNoCdd: AugmentedError<ApiType>;
       /**
+       * Try to delete the IU claim even when the user has non zero balance at given scopeId.
+       **/
+      TargetHasNonZeroBalanceAtScopeId: AugmentedError<ApiType>;
+      /**
        * Signatory is not pre authorized by the identity
        **/
       Unauthorized: AugmentedError<ApiType>;
@@ -934,6 +876,10 @@ declare module '@polkadot/api/types/errors' {
        * Couldn't charge fee for the transaction.
        **/
       FailedToChargeFee: AugmentedError<ApiType>;
+      /**
+       * Scheduling of a proposal fails
+       **/
+      FailedToSchedule: AugmentedError<ApiType>;
       /**
        * Identity provided is not the multisig's creator.
        **/
@@ -1007,10 +953,6 @@ declare module '@polkadot/api/types/errors' {
     };
     pips: {
       /**
-       * Incorrect origin
-       **/
-      BadOrigin: AugmentedError<ApiType>;
-      /**
        * When enacting snapshot results, an unskippable PIP was skipped.
        **/
       CannotSkipPip: AugmentedError<ApiType>;
@@ -1057,17 +999,13 @@ declare module '@polkadot/api/types/errors' {
        **/
       NumberOfVotesExceeded: AugmentedError<ApiType>;
       /**
-       * Proposal is immutable after cool-off period.
-       **/
-      ProposalIsImmutable: AugmentedError<ApiType>;
-      /**
        * A proposal that is not in a scheduled state cannot be executed.
        **/
       ProposalNotInScheduledState: AugmentedError<ApiType>;
       /**
-       * After Cool-off period, proposals are not cancelable.
+       * Only the GC release coordinator is allowed to reschedule proposal execution.
        **/
-      ProposalOnCoolOffPeriod: AugmentedError<ApiType>;
+      RescheduleNotByReleaseCoordinator: AugmentedError<ApiType>;
       /**
        * Execution of a scheduled proposal failed because it is missing.
        **/
@@ -1092,10 +1030,6 @@ declare module '@polkadot/api/types/errors' {
     };
     polymeshCommittee: {
       /**
-       * The proposer or voter is not a committee member.
-       **/
-      BadOrigin: AugmentedError<ApiType>;
-      /**
        * The close call is made too early, before the end of the voting.
        **/
       CloseBeforeVoteEnd: AugmentedError<ApiType>;
@@ -1118,10 +1052,6 @@ declare module '@polkadot/api/types/errors' {
        **/
       InvalidProportion: AugmentedError<ApiType>;
       /**
-       * Sender Identity is not part of the committee.
-       **/
-      MemberNotFound: AugmentedError<ApiType>;
-      /**
        * Mismatched voting index.
        **/
       MismatchedVotingIndex: AugmentedError<ApiType>;
@@ -1133,6 +1063,11 @@ declare module '@polkadot/api/types/errors' {
        * When `MotionDuration` is set to 0.
        **/
       NotAllowed: AugmentedError<ApiType>;
+      /**
+       * A DID isn't part of the committee.
+       * The DID may either be a caller or some other context.
+       **/
+      NotAMember: AugmentedError<ApiType>;
       /**
        * Proposal exists, but it has expired.
        **/
@@ -1228,6 +1163,14 @@ declare module '@polkadot/api/types/errors' {
        **/
       FailedToLockTokens: AugmentedError<ApiType>;
       /**
+       * Scheduling of an instruction fails.
+       **/
+      FailedToSchedule: AugmentedError<ApiType>;
+      /**
+       * Instruction has invalid dates
+       **/
+      InstructionDatesInvalid: AugmentedError<ApiType>;
+      /**
        * Instruction failed to execute.
        **/
       InstructionFailed: AugmentedError<ApiType>;
@@ -1243,10 +1186,6 @@ declare module '@polkadot/api/types/errors' {
        * Instruction's target settle block reached.
        **/
       InstructionSettleBlockPassed: AugmentedError<ApiType>;
-      /**
-       * Instruction validity has not started yet.
-       **/
-      InstructionWaitingValidity: AugmentedError<ApiType>;
       /**
        * Offchain signature is invalid.
        **/
@@ -1338,6 +1277,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       FundedTarget: AugmentedError<ApiType>;
       /**
+       * Running validator count hit the intended count.
+       **/
+      HitIntendedValidatorCount: AugmentedError<ApiType>;
+      /**
        * Incorrect number of slashing spans provided.
        **/
       IncorrectSlashingSpans: AugmentedError<ApiType>;
@@ -1345,6 +1288,10 @@ declare module '@polkadot/api/types/errors' {
        * Can not bond with value less than minimum balance.
        **/
       InsufficientValue: AugmentedError<ApiType>;
+      /**
+       * When the intended number of validators to run is >= 2/3 of `validator_count`.
+       **/
+      IntendedCountIsExceedingConsensusLimit: AugmentedError<ApiType>;
       /**
        * Invalid era to reward.
        **/
@@ -1444,6 +1391,28 @@ declare module '@polkadot/api/types/errors' {
        * The snapshot data of the current window is missing.
        **/
       SnapshotUnavailable: AugmentedError<ApiType>;
+      /**
+       * Validator stash identity was not permissioned.
+       **/
+      StashIdentityNotPermissioned: AugmentedError<ApiType>;
+    };
+    statistics: {
+      /**
+       * The transfer manager already exists
+       **/
+      DuplicateTransferManager: AugmentedError<ApiType>;
+      /**
+       * Transfer not allowed
+       **/
+      InvalidTransfer: AugmentedError<ApiType>;
+      /**
+       * Transfer manager is not enabled
+       **/
+      TransferManagerMissing: AugmentedError<ApiType>;
+      /**
+       * The limit of transfer managers allowed for an asset has been reached
+       **/
+      TransferManagersLimitReached: AugmentedError<ApiType>;
     };
     sto: {
       /**
@@ -1521,10 +1490,6 @@ declare module '@polkadot/api/types/errors' {
     };
     technicalCommittee: {
       /**
-       * The proposer or voter is not a committee member.
-       **/
-      BadOrigin: AugmentedError<ApiType>;
-      /**
        * The close call is made too early, before the end of the voting.
        **/
       CloseBeforeVoteEnd: AugmentedError<ApiType>;
@@ -1547,10 +1512,6 @@ declare module '@polkadot/api/types/errors' {
        **/
       InvalidProportion: AugmentedError<ApiType>;
       /**
-       * Sender Identity is not part of the committee.
-       **/
-      MemberNotFound: AugmentedError<ApiType>;
-      /**
        * Mismatched voting index.
        **/
       MismatchedVotingIndex: AugmentedError<ApiType>;
@@ -1562,6 +1523,11 @@ declare module '@polkadot/api/types/errors' {
        * When `MotionDuration` is set to 0.
        **/
       NotAllowed: AugmentedError<ApiType>;
+      /**
+       * A DID isn't part of the committee.
+       * The DID may either be a caller or some other context.
+       **/
+      NotAMember: AugmentedError<ApiType>;
       /**
        * Proposal exists, but it has expired.
        **/
@@ -1601,10 +1567,6 @@ declare module '@polkadot/api/types/errors' {
     };
     upgradeCommittee: {
       /**
-       * The proposer or voter is not a committee member.
-       **/
-      BadOrigin: AugmentedError<ApiType>;
-      /**
        * The close call is made too early, before the end of the voting.
        **/
       CloseBeforeVoteEnd: AugmentedError<ApiType>;
@@ -1627,10 +1589,6 @@ declare module '@polkadot/api/types/errors' {
        **/
       InvalidProportion: AugmentedError<ApiType>;
       /**
-       * Sender Identity is not part of the committee.
-       **/
-      MemberNotFound: AugmentedError<ApiType>;
-      /**
        * Mismatched voting index.
        **/
       MismatchedVotingIndex: AugmentedError<ApiType>;
@@ -1642,6 +1600,11 @@ declare module '@polkadot/api/types/errors' {
        * When `MotionDuration` is set to 0.
        **/
       NotAllowed: AugmentedError<ApiType>;
+      /**
+       * A DID isn't part of the committee.
+       * The DID may either be a caller or some other context.
+       **/
+      NotAMember: AugmentedError<ApiType>;
       /**
        * Proposal exists, but it has expired.
        **/
@@ -1688,60 +1651,6 @@ declare module '@polkadot/api/types/errors' {
        * Target does not have a valid CDD
        **/
       TargetCddMissing: AugmentedError<ApiType>;
-    };
-    voting: {
-      /**
-       * Voting ended already
-       **/
-      AlreadyEnded: AugmentedError<ApiType>;
-      /**
-       * A ballot with same name already exisits
-       **/
-      AlreadyExists: AugmentedError<ApiType>;
-      /**
-       * Not enough balance
-       **/
-      InsufficientBalance: AugmentedError<ApiType>;
-      /**
-       * Could not decode choices
-       **/
-      InvalidChoicesType: AugmentedError<ApiType>;
-      /**
-       * Voting end date in past / Voting end date before voting start date
-       **/
-      InvalidDate: AugmentedError<ApiType>;
-      /**
-       * Sender must be the token owner
-       **/
-      InvalidOwner: AugmentedError<ApiType>;
-      /**
-       * sender must be a secondary key for DID
-       **/
-      InvalidSigner: AugmentedError<ApiType>;
-      /**
-       * Invalid vote
-       **/
-      InvalidVote: AugmentedError<ApiType>;
-      /**
-       * No checkpoints created
-       **/
-      NoCheckpoints: AugmentedError<ApiType>;
-      /**
-       * No choice submitted
-       **/
-      NoChoicesInMotions: AugmentedError<ApiType>;
-      /**
-       * No motion submitted
-       **/
-      NoMotions: AugmentedError<ApiType>;
-      /**
-       * Ballot does not exist
-       **/
-      NotExists: AugmentedError<ApiType>;
-      /**
-       * Voting hasn't started yet
-       **/
-      NotStarted: AugmentedError<ApiType>;
     };
   }
 

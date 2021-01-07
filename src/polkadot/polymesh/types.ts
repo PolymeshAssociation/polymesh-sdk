@@ -70,6 +70,12 @@ export interface AssetIdentifier extends Enum {
   readonly asLei: U8aFixed;
 }
 
+/** @name AssetMigrationError */
+export interface AssetMigrationError extends Enum {
+  readonly isAssetDocumentFail: boolean;
+  readonly asAssetDocumentFail: ITuple<[Ticker, DocumentId]>;
+}
+
 /** @name AssetName */
 export interface AssetName extends Text {}
 
@@ -150,14 +156,6 @@ export interface AuthorizationType extends Enum {
   readonly isCustom: boolean;
   readonly isNoData: boolean;
   readonly isTransferCorporateActionAgent: boolean;
-}
-
-/** @name Ballot */
-export interface Ballot extends Struct {
-  readonly checkpoint_id: u64;
-  readonly voting_start: Moment;
-  readonly voting_end: Moment;
-  readonly motions: Vec<Motion>;
 }
 
 /** @name BallotMeta */
@@ -246,7 +244,7 @@ export interface CAId extends Struct {
 /** @name CAKind */
 export interface CAKind extends Enum {
   readonly isPredictableBenefit: boolean;
-  readonly isUnpredictableBenfit: boolean;
+  readonly isUnpredictableBenefit: boolean;
   readonly isIssuerNotice: boolean;
   readonly isReorganization: boolean;
   readonly isOther: boolean;
@@ -367,13 +365,6 @@ export interface ClassicTickerImport extends Struct {
 export interface ClassicTickerRegistration extends Struct {
   readonly eth_owner: EthereumAddress;
   readonly is_created: bool;
-}
-
-/** @name Commission */
-export interface Commission extends Enum {
-  readonly isIndividual: boolean;
-  readonly isGlobal: boolean;
-  readonly asGlobal: u32;
 }
 
 /** @name Committee */
@@ -735,16 +726,6 @@ export interface Distribution extends Struct {
   readonly expires_at: Option<Moment>;
 }
 
-/** @name Dividend */
-export interface Dividend extends Struct {
-  readonly amount: Balance;
-  readonly active: bool;
-  readonly matures_at: Option<Moment>;
-  readonly expires_at: Option<Moment>;
-  readonly payout_currency: Option<Ticker>;
-  readonly checkpoint_id: u64;
-}
-
 /** @name Document */
 export interface Document extends Struct {
   readonly uri: DocumentUri;
@@ -755,7 +736,25 @@ export interface Document extends Struct {
 }
 
 /** @name DocumentHash */
-export interface DocumentHash extends Text {}
+export interface DocumentHash extends Enum {
+  readonly isNone: boolean;
+  readonly isH512: boolean;
+  readonly asH512: U8aFixed;
+  readonly isH384: boolean;
+  readonly asH384: U8aFixed;
+  readonly isH320: boolean;
+  readonly asH320: U8aFixed;
+  readonly isH256: boolean;
+  readonly asH256: U8aFixed;
+  readonly isH224: boolean;
+  readonly asH224: U8aFixed;
+  readonly isH192: boolean;
+  readonly asH192: U8aFixed;
+  readonly isH160: boolean;
+  readonly asH160: U8aFixed;
+  readonly isH128: boolean;
+  readonly asH128: U8aFixed;
+}
 
 /** @name DocumentId */
 export interface DocumentId extends u32 {}
@@ -795,10 +794,23 @@ export interface FundingRoundName extends Text {}
 
 /** @name Fundraiser */
 export interface Fundraiser extends Struct {
-  readonly raise_token: Ticker;
-  readonly remaining_amount: Balance;
-  readonly price_per_token: Balance;
+  readonly creator: IdentityId;
+  readonly offering_portfolio: PortfolioId;
+  readonly offering_asset: Ticker;
+  readonly raising_portfolio: PortfolioId;
+  readonly raising_asset: Ticker;
+  readonly tiers: Vec<FundraiserTier>;
   readonly venue_id: u64;
+  readonly start: Moment;
+  readonly end: Option<Moment>;
+  readonly frozen: bool;
+}
+
+/** @name FundraiserTier */
+export interface FundraiserTier extends Struct {
+  readonly total: Balance;
+  readonly price: Balance;
+  readonly remaining: Balance;
 }
 
 /** @name GetPortfolioAssetsResult */
@@ -876,21 +888,14 @@ export interface Instruction extends Struct {
   readonly status: InstructionStatus;
   readonly settlement_type: SettlementType;
   readonly created_at: Option<Moment>;
-  readonly valid_from: Option<Moment>;
+  readonly trade_date: Option<Moment>;
+  readonly value_date: Option<Moment>;
 }
 
 /** @name InstructionStatus */
 export interface InstructionStatus extends Enum {
   readonly isUnknown: boolean;
   readonly isPending: boolean;
-}
-
-/** @name Investment */
-export interface Investment extends Struct {
-  readonly investor_did: IdentityId;
-  readonly amount_paid: Balance;
-  readonly assets_purchased: Balance;
-  readonly last_purchase_date: Moment;
 }
 
 /** @name InvestorUid */
@@ -971,6 +976,14 @@ export interface MetaUrl extends Text {}
 /** @name MetaVersion */
 export interface MetaVersion extends u32 {}
 
+/** @name MigrationError */
+export interface MigrationError extends Enum {
+  readonly isDecodeKey: boolean;
+  readonly asDecodeKey: Bytes;
+  readonly isMap: boolean;
+  readonly asMap: AssetMigrationError;
+}
+
 /** @name Moment */
 export interface Moment extends u64 {}
 
@@ -1032,6 +1045,15 @@ export interface PendingTx extends Struct {
   readonly bridge_tx: BridgeTx;
 }
 
+/** @name Percentage */
+export interface Percentage extends Permill {}
+
+/** @name PermissionedIdentityPrefs */
+export interface PermissionedIdentityPrefs extends Struct {
+  readonly intended_count: u32;
+  readonly running_count: u32;
+}
+
 /** @name Permissions */
 export interface Permissions extends Struct {
   readonly asset: Option<Vec<Ticker>>;
@@ -1045,7 +1067,6 @@ export interface Pip extends Struct {
   readonly proposal: Call;
   readonly state: ProposalState;
   readonly proposer: Proposer;
-  readonly cool_off_until: u32;
 }
 
 /** @name PipDescription */
@@ -1133,7 +1154,6 @@ export interface ProposalDetails extends Struct {
 /** @name ProposalState */
 export interface ProposalState extends Enum {
   readonly isPending: boolean;
-  readonly isCancelled: boolean;
   readonly isRejected: boolean;
   readonly isScheduled: boolean;
   readonly isFailed: boolean;
@@ -1220,30 +1240,6 @@ export interface RecordDateSpec extends Enum {
   readonly asExistingSchedule: ScheduleId;
   readonly isExisting: boolean;
   readonly asExisting: CheckpointId;
-}
-
-/** @name Referendum */
-export interface Referendum extends Struct {
-  readonly id: PipId;
-  readonly state: ReferendumState;
-  readonly referendum_type: ReferendumType;
-  readonly enactment_period: u32;
-}
-
-/** @name ReferendumState */
-export interface ReferendumState extends Enum {
-  readonly isPending: boolean;
-  readonly isScheduled: boolean;
-  readonly isRejected: boolean;
-  readonly isFailed: boolean;
-  readonly isExecuted: boolean;
-}
-
-/** @name ReferendumType */
-export interface ReferendumType extends Enum {
-  readonly isFastTracked: boolean;
-  readonly isEmergency: boolean;
-  readonly isCommunity: boolean;
 }
 
 /** @name RestrictionResult */
@@ -1372,17 +1368,6 @@ export interface SnapshottedPip extends Struct {
   readonly weight: ITuple<[bool, Balance]>;
 }
 
-/** @name STO */
-export interface STO extends Struct {
-  readonly beneficiary_did: IdentityId;
-  readonly cap: Balance;
-  readonly sold: Balance;
-  readonly rate: u64;
-  readonly start_date: Moment;
-  readonly end_date: Moment;
-  readonly active: bool;
-}
-
 /** @name StoredSchedule */
 export interface StoredSchedule extends Struct {
   readonly schedule: CheckpointSchedule;
@@ -1462,6 +1447,14 @@ export interface TickerTransferApproval extends Struct {
   readonly authorized_by: IdentityId;
   readonly next_ticker: Option<Ticker>;
   readonly previous_ticker: Option<Ticker>;
+}
+
+/** @name TransferManager */
+export interface TransferManager extends Enum {
+  readonly isCountTransferManager: boolean;
+  readonly asCountTransferManager: Counter;
+  readonly isPercentageTransferManager: boolean;
+  readonly asPercentageTransferManager: Percentage;
 }
 
 /** @name TrustedFor */

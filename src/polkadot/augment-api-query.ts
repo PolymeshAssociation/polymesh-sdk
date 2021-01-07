@@ -79,7 +79,6 @@ import type {
   AssetOwnershipRelation,
   Authorization,
   AuthorizationNonce,
-  Ballot,
   BallotMeta,
   BallotTimeRange,
   BallotVote,
@@ -95,7 +94,6 @@ import type {
   DidRecord,
   DispatchableName,
   Distribution,
-  Dividend,
   Document,
   DocumentId,
   ExtVersion,
@@ -106,13 +104,13 @@ import type {
   IdentityId,
   InactiveMember,
   Instruction,
-  Investment,
   Leg,
   LegStatus,
   LocalCAId,
   MaybeBlock,
   OfflineSlashingParams,
   PalletName,
+  PermissionedIdentityPrefs,
   Pip,
   PipId,
   PipsMetadata,
@@ -124,7 +122,6 @@ import type {
   ProposalDetails,
   ProtocolOp,
   ProverTickerKey,
-  STO,
   ScheduleId,
   ScopeId,
   SecurityToken,
@@ -145,6 +142,7 @@ import type {
   TickerRangeProof,
   TickerRegistration,
   TickerRegistrationConfig,
+  TransferManager,
   TrustedIssuer,
   Venue,
   Version,
@@ -1016,59 +1014,6 @@ declare module '@polkadot/api/types/storage' {
         [CAId, IdentityId]
       >;
     };
-    dividend: {
-      /**
-       * How many dividends were created for a ticker so far; (ticker) => count
-       **/
-      dividendCount: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<u32>,
-        [Ticker]
-      >;
-      /**
-       * Dividend records; (ticker, dividend ID) => dividend entry
-       * Note: contrary to checkpoint IDs, dividend IDs are 0-indexed.
-       **/
-      dividends: AugmentedQuery<
-        ApiType,
-        (
-          arg: ITuple<[Ticker, u32]> | [Ticker | string | Uint8Array, u32 | AnyNumber | Uint8Array]
-        ) => Observable<Dividend>,
-        [ITuple<[Ticker, u32]>]
-      >;
-      /**
-       * Payout flags, decide whether a user already was paid their dividend
-       * (DID, ticker, dividend_id) -> whether they got their payout
-       **/
-      userPayoutCompleted: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[IdentityId, Ticker, u32]>
-            | [
-                IdentityId | string | Uint8Array,
-                Ticker | string | Uint8Array,
-                u32 | AnyNumber | Uint8Array
-              ]
-        ) => Observable<bool>,
-        [ITuple<[IdentityId, Ticker, u32]>]
-      >;
-    };
-    exemption: {
-      exemptionList: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, u16, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                u16 | AnyNumber | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<bool>,
-        [ITuple<[Ticker, u16, IdentityId]>]
-      >;
-    };
     grandpa: {
       /**
        * The number of changes (both in terms of keys and underlying economic responsibilities)
@@ -1465,6 +1410,15 @@ declare module '@polkadot/api/types/storage' {
         [PipId, AccountId]
       >;
       /**
+       * A live priority queue (lowest priority at index 0)
+       * of pending PIPs up to the active limit.
+       * Priority is defined by the `weight` in the `SnapshottedPip`.
+       *
+       * Unlike `SnapshotQueue`, this queue is live, getting updated with each vote cast.
+       * The snapshot is therefore essentially a point-in-time clone of this queue.
+       **/
+      liveQueue: AugmentedQuery<ApiType, () => Observable<Vec<SnapshottedPip>>, []>;
+      /**
        * Maximum times a PIP can be skipped before triggering `CannotSkipPip` in `enact_snapshot_results`.
        **/
       maxPipSkipCount: AugmentedQuery<ApiType, () => Observable<SkippedCount>, []>;
@@ -1473,8 +1427,8 @@ declare module '@polkadot/api/types/storage' {
        **/
       minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<BalanceOf>, []>;
       /**
-       * How many blocks will it take, after a `Pending` PIP's cooling-off period is over,
-       * until the the PIP expires, assuming it has not transitioned to another `ProposalState`?
+       * How many blocks will it take, after a `Pending` PIP expires,
+       * assuming it has not transitioned to another `ProposalState`?
        **/
       pendingPipExpiry: AugmentedQuery<ApiType, () => Observable<MaybeBlock>, []>;
       /**
@@ -1498,11 +1452,6 @@ declare module '@polkadot/api/types/storage' {
         (arg: PipId | AnyNumber | Uint8Array) => Observable<Option<BlockNumber>>,
         [PipId]
       >;
-      /**
-       * During Cool-off period, proposal owner can amend any PIP detail or cancel the entire
-       * proposal.
-       **/
-      proposalCoolOffPeriod: AugmentedQuery<ApiType, () => Observable<BlockNumber>, []>;
       /**
        * The metadata of the active proposals.
        **/
@@ -1555,7 +1504,7 @@ declare module '@polkadot/api/types/storage' {
       snapshotMeta: AugmentedQuery<ApiType, () => Observable<Option<SnapshotMetadata>>, []>;
       /**
        * The priority queue (lowest priority at index 0) of PIPs at the point of snapshotting.
-       * Priority is defined by the `weight` in the `SnapshottedPIP`.
+       * Priority is defined by the `weight` in the `SnapshottedPip`.
        *
        * A queued PIP can be skipped. Doing so bumps the `pip_skip_count`.
        * Once a (configurable) threshhold is exceeded, a PIP cannot be skipped again.
@@ -1672,6 +1621,10 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<bool>,
         [IdentityId, PortfolioId]
       >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>, []>;
     };
     protocolFee: {
       /**
@@ -2126,7 +2079,7 @@ declare module '@polkadot/api/types/storage' {
        **/
       permissionedIdentity: AugmentedQuery<
         ApiType,
-        (arg: IdentityId | string | Uint8Array) => Observable<bool>,
+        (arg: IdentityId | string | Uint8Array) => Observable<Option<PermissionedIdentityPrefs>>,
         [IdentityId]
       >;
       /**
@@ -2181,7 +2134,7 @@ declare module '@polkadot/api/types/storage' {
        * True if network has been upgraded to this version.
        * Storage version of the pallet.
        *
-       * This is set to v5.0.0 for new networks.
+       * This is set to v6.0.0 for new networks.
        **/
       storageVersion: AugmentedQuery<ApiType, () => Observable<Releases>, []>;
       /**
@@ -2221,9 +2174,41 @@ declare module '@polkadot/api/types/storage' {
         [EraIndex, AccountId]
       >;
     };
-    statistic: {
+    statistics: {
       /**
-       * Number of investor per asset.
+       * Transfer managers currently enabled for an Asset.
+       **/
+      activeTransferManagers: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<Vec<TransferManager>>,
+        [Ticker]
+      >;
+      /**
+       * Entities exempt from transfer managers. Exemptions requirements are based on TMS.
+       * TMs may require just the sender, just the receiver, both or either to be exempted.
+       * CTM requires sender to be exempted while PTM requires receiver to be exempted.
+       **/
+      exemptEntities: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1:
+            | ITuple<[Ticker, TransferManager]>
+            | [
+                Ticker | string | Uint8Array,
+                (
+                  | TransferManager
+                  | { CountTransferManager: any }
+                  | { PercentageTransferManager: any }
+                  | string
+                  | Uint8Array
+                )
+              ],
+          key2: ScopeId | string | Uint8Array
+        ) => Observable<bool>,
+        [ITuple<[Ticker, TransferManager]>, ScopeId]
+      >;
+      /**
+       * Number of current investors in an asset.
        **/
       investorCountPerAsset: AugmentedQuery<
         ApiType,
@@ -2250,62 +2235,6 @@ declare module '@polkadot/api/types/storage' {
           key2: u64 | AnyNumber | Uint8Array
         ) => Observable<Option<Fundraiser>>,
         [Ticker, u64]
-      >;
-    };
-    stoCapped: {
-      /**
-       * To track the investment data of the investor corresponds to ticker
-       * (asset_ticker, sto_id, DID) -> Investment structure
-       **/
-      investmentData: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, u32, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                u32 | AnyNumber | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<Investment>,
-        [ITuple<[Ticker, u32, IdentityId]>]
-      >;
-      /**
-       * To track the investment amount of the investor corresponds to ticker
-       * (asset_ticker, sto_id, accountId) -> Invested balance
-       **/
-      simpleTokenSpent: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, u32, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                u32 | AnyNumber | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<Balance>,
-        [ITuple<[Ticker, u32, IdentityId]>]
-      >;
-      /**
-       * It returns the sto count corresponds to its ticker
-       * ticker -> sto count
-       **/
-      stoCount: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<u32>,
-        [Ticker]
-      >;
-      /**
-       * Tokens can have multiple exemptions that (for now) check entries individually within each other
-       * (ticker, sto_id) -> STO
-       **/
-      stosByToken: AugmentedQuery<
-        ApiType,
-        (
-          arg: ITuple<[Ticker, u32]> | [Ticker | string | Uint8Array, u32 | AnyNumber | Uint8Array]
-        ) => Observable<STO>,
-        [ITuple<[Ticker, u32]>]
       >;
     };
     sudo: {
@@ -2539,60 +2468,6 @@ declare module '@polkadot/api/types/storage' {
         ApiType,
         (arg: AccountId | string | Uint8Array) => Observable<AuthorizationNonce>,
         [AccountId]
-      >;
-    };
-    voting: {
-      /**
-       * Mapping of ticker and ballot name -> ballot details
-       **/
-      ballots: AugmentedQuery<
-        ApiType,
-        (
-          arg: ITuple<[Ticker, Bytes]> | [Ticker | string | Uint8Array, Bytes | string | Uint8Array]
-        ) => Observable<Ballot>,
-        [ITuple<[Ticker, Bytes]>]
-      >;
-      /**
-       * (Ticker, BallotName) -> Vector of current vote weights.
-       * weight at 0 index means weight for choice 1 of motion 1.
-       * weight at 1 index means weight for choice 2 of motion 1.
-       **/
-      results: AugmentedQuery<
-        ApiType,
-        (
-          arg: ITuple<[Ticker, Bytes]> | [Ticker | string | Uint8Array, Bytes | string | Uint8Array]
-        ) => Observable<Vec<Balance>>,
-        [ITuple<[Ticker, Bytes]>]
-      >;
-      /**
-       * Helper data to make voting cheaper.
-       * (ticker, BallotName) -> NoOfChoices
-       **/
-      totalChoices: AugmentedQuery<
-        ApiType,
-        (
-          arg: ITuple<[Ticker, Bytes]> | [Ticker | string | Uint8Array, Bytes | string | Uint8Array]
-        ) => Observable<u64>,
-        [ITuple<[Ticker, Bytes]>]
-      >;
-      /**
-       * (Ticker, BallotName, DID) -> Vector of vote weights.
-       * weight at 0 index means weight for choice 1 of motion 1.
-       * weight at 1 index means weight for choice 2 of motion 1.
-       * User must enter 0 vote weight if they don't want to vote for a choice.
-       **/
-      votes: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, Bytes, IdentityId]>
-            | [
-                Ticker | string | Uint8Array,
-                Bytes | string | Uint8Array,
-                IdentityId | string | Uint8Array
-              ]
-        ) => Observable<Vec<Balance>>,
-        [ITuple<[Ticker, Bytes, IdentityId]>]
       >;
     };
   }

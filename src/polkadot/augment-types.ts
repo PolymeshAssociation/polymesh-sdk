@@ -696,6 +696,7 @@ import type {
   AssetComplianceResult,
   AssetDidResult,
   AssetIdentifier,
+  AssetMigrationError,
   AssetName,
   AssetOwnershipRelation,
   AssetType,
@@ -704,7 +705,6 @@ import type {
   AuthorizationData,
   AuthorizationNonce,
   AuthorizationType,
-  Ballot,
   BallotMeta,
   BallotTimeRange,
   BallotTitle,
@@ -734,7 +734,6 @@ import type {
   ClaimType,
   ClassicTickerImport,
   ClassicTickerRegistration,
-  Commission,
   Committee,
   ComplianceRequirement,
   ComplianceRequirementResult,
@@ -751,7 +750,6 @@ import type {
   DidStatus,
   DispatchableName,
   Distribution,
-  Dividend,
   Document,
   DocumentHash,
   DocumentId,
@@ -764,6 +762,7 @@ import type {
   FeeOf,
   FundingRoundName,
   Fundraiser,
+  FundraiserTier,
   GetPortfolioAssetsResult,
   GetPortfoliosResult,
   HandledTxStatus,
@@ -776,7 +775,6 @@ import type {
   InactiveMember,
   Instruction,
   InstructionStatus,
-  Investment,
   InvestorUid,
   InvestorZKProofData,
   IssueAssetItem,
@@ -792,6 +790,7 @@ import type {
   MetaDescription,
   MetaUrl,
   MetaVersion,
+  MigrationError,
   Motion,
   MotionInfoLink,
   MotionTitle,
@@ -802,6 +801,8 @@ import type {
   PalletPermissions,
   Payload,
   PendingTx,
+  Percentage,
+  PermissionedIdentityPrefs,
   Permissions,
   Pip,
   PipDescription,
@@ -828,11 +829,7 @@ import type {
   ReceiptMetadata,
   RecordDate,
   RecordDateSpec,
-  Referendum,
-  ReferendumState,
-  ReferendumType,
   RestrictionResult,
-  STO,
   ScheduleId,
   ScheduleSpec,
   Scope,
@@ -865,6 +862,7 @@ import type {
   TickerRegistration,
   TickerRegistrationConfig,
   TickerTransferApproval,
+  TransferManager,
   TrustedFor,
   TrustedIssuer,
   UniqueCall,
@@ -3008,12 +3006,6 @@ declare module '@polkadot/types/types/registry' {
     ConditionResult: ConditionResult;
     'Option<ConditionResult>': Option<ConditionResult>;
     'Vec<ConditionResult>': Vec<ConditionResult>;
-    STO: STO;
-    'Option<STO>': Option<STO>;
-    'Vec<STO>': Vec<STO>;
-    Investment: Investment;
-    'Option<Investment>': Option<Investment>;
-    'Vec<Investment>': Vec<Investment>;
     SimpleTokenRecord: SimpleTokenRecord;
     'Option<SimpleTokenRecord>': Option<SimpleTokenRecord>;
     'Vec<SimpleTokenRecord>': Vec<SimpleTokenRecord>;
@@ -3021,9 +3013,6 @@ declare module '@polkadot/types/types/registry' {
     'Compact<FeeOf>': Compact<FeeOf>;
     'Option<FeeOf>': Option<FeeOf>;
     'Vec<FeeOf>': Vec<FeeOf>;
-    Dividend: Dividend;
-    'Option<Dividend>': Option<Dividend>;
-    'Vec<Dividend>': Vec<Dividend>;
     TargetIdAuthorization: TargetIdAuthorization;
     'Option<TargetIdAuthorization>': Option<TargetIdAuthorization>;
     'Vec<TargetIdAuthorization>': Vec<TargetIdAuthorization>;
@@ -3051,9 +3040,6 @@ declare module '@polkadot/types/types/registry' {
     Motion: Motion;
     'Option<Motion>': Option<Motion>;
     'Vec<Motion>': Vec<Motion>;
-    Ballot: Ballot;
-    'Option<Ballot>': Option<Ballot>;
-    'Vec<Ballot>': Vec<Ballot>;
     BallotTitle: BallotTitle;
     'Option<BallotTitle>': Option<BallotTitle>;
     'Vec<BallotTitle>': Vec<BallotTitle>;
@@ -3117,21 +3103,12 @@ declare module '@polkadot/types/types/registry' {
     ProposalState: ProposalState;
     'Option<ProposalState>': Option<ProposalState>;
     'Vec<ProposalState>': Vec<ProposalState>;
-    ReferendumState: ReferendumState;
-    'Option<ReferendumState>': Option<ReferendumState>;
-    'Vec<ReferendumState>': Vec<ReferendumState>;
-    ReferendumType: ReferendumType;
-    'Option<ReferendumType>': Option<ReferendumType>;
-    'Vec<ReferendumType>': Vec<ReferendumType>;
     Pip: Pip;
     'Option<Pip>': Option<Pip>;
     'Vec<Pip>': Vec<Pip>;
     ProposalData: ProposalData;
     'Option<ProposalData>': Option<ProposalData>;
     'Vec<ProposalData>': Vec<ProposalData>;
-    Referendum: Referendum;
-    'Option<Referendum>': Option<Referendum>;
-    'Vec<Referendum>': Vec<Referendum>;
     TickerTransferApproval: TickerTransferApproval;
     'Option<TickerTransferApproval>': Option<TickerTransferApproval>;
     'Vec<TickerTransferApproval>': Vec<TickerTransferApproval>;
@@ -3187,9 +3164,13 @@ declare module '@polkadot/types/types/registry' {
     'Compact<Counter>': Compact<Counter>;
     'Option<Counter>': Option<Counter>;
     'Vec<Counter>': Vec<Counter>;
-    Commission: Commission;
-    'Option<Commission>': Option<Commission>;
-    'Vec<Commission>': Vec<Commission>;
+    Percentage: Percentage;
+    'Compact<Percentage>': Compact<Percentage>;
+    'Option<Percentage>': Option<Percentage>;
+    'Vec<Percentage>': Vec<Percentage>;
+    TransferManager: TransferManager;
+    'Option<TransferManager>': Option<TransferManager>;
+    'Vec<TransferManager>': Vec<TransferManager>;
     RestrictionResult: RestrictionResult;
     'Option<RestrictionResult>': Option<RestrictionResult>;
     'Vec<RestrictionResult>': Vec<RestrictionResult>;
@@ -3380,6 +3361,9 @@ declare module '@polkadot/types/types/registry' {
     TargetIdentity: TargetIdentity;
     'Option<TargetIdentity>': Option<TargetIdentity>;
     'Vec<TargetIdentity>': Vec<TargetIdentity>;
+    FundraiserTier: FundraiserTier;
+    'Option<FundraiserTier>': Option<FundraiserTier>;
+    'Vec<FundraiserTier>': Vec<FundraiserTier>;
     Fundraiser: Fundraiser;
     'Option<Fundraiser>': Option<Fundraiser>;
     'Vec<Fundraiser>': Vec<Fundraiser>;
@@ -3436,5 +3420,14 @@ declare module '@polkadot/types/types/registry' {
     PriceTier: PriceTier;
     'Option<PriceTier>': Option<PriceTier>;
     'Vec<PriceTier>': Vec<PriceTier>;
+    AssetMigrationError: AssetMigrationError;
+    'Option<AssetMigrationError>': Option<AssetMigrationError>;
+    'Vec<AssetMigrationError>': Vec<AssetMigrationError>;
+    MigrationError: MigrationError;
+    'Option<MigrationError>': Option<MigrationError>;
+    'Vec<MigrationError>': Vec<MigrationError>;
+    PermissionedIdentityPrefs: PermissionedIdentityPrefs;
+    'Option<PermissionedIdentityPrefs>': Option<PermissionedIdentityPrefs>;
+    'Vec<PermissionedIdentityPrefs>': Vec<PermissionedIdentityPrefs>;
   }
 }

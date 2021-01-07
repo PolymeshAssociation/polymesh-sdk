@@ -2261,7 +2261,7 @@ export const createMockInstruction = (instruction?: {
   status: InstructionStatus;
   settlement_type: SettlementType;
   created_at: Option<Moment>;
-  valid_from: Option<Moment>;
+  trade_date: Option<Moment>;
 }): Instruction => {
   const data = instruction || {
     instruction_id: createMockU64(),
@@ -2269,7 +2269,7 @@ export const createMockInstruction = (instruction?: {
     status: createMockInstructionStatus(),
     settlement_type: createMockSettlementType(),
     created_at: createMockOption(),
-    valid_from: createMockOption(),
+    trade_date: createMockOption(),
   };
 
   return createMockCodec(
