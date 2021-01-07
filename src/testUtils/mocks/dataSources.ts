@@ -17,7 +17,7 @@ import {
   u64,
   Vec,
 } from '@polkadot/types';
-import { CompactEncodable } from '@polkadot/types/codec/Compact';
+import { CompactEncodable } from '@polkadot/types/codec/types';
 import {
   AccountData,
   AccountId,

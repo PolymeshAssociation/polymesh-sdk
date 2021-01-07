@@ -71,10 +71,7 @@ describe('Venue class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-      sinon
-        .stub(utilsConversionModule, 'numberToU64')
-        .withArgs(id, context)
-        .returns(rawId);
+      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
 
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
@@ -113,10 +110,7 @@ describe('Venue class', () => {
       const instructionId = new BigNumber(1);
 
       entityMockUtils.configureMocks({ instructionOptions: { id: instructionId } });
-      sinon
-        .stub(utilsConversionModule, 'numberToU64')
-        .withArgs(id, context)
-        .returns(rawId);
+      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
 
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')

@@ -90,10 +90,7 @@ describe('Instruction class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-      sinon
-        .stub(utilsConversionModule, 'numberToU64')
-        .withArgs(id, context)
-        .returns(rawId);
+      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
 
       const queryResult = {
         status: dsMockUtils.createMockInstructionStatus(status),
@@ -201,10 +198,7 @@ describe('Instruction class', () => {
       const amount = new BigNumber(1000);
 
       entityMockUtils.configureMocks({ securityTokenOptions: { ticker } });
-      sinon
-        .stub(utilsConversionModule, 'numberToU64')
-        .withArgs(id, context)
-        .returns(rawId);
+      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
       dsMockUtils.createQueryStub('settlement', 'instructionLegs', {
         entries: [
           tuple(['instructionId', 'legId'], {

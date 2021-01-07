@@ -119,8 +119,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
       // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
       return queryMulti<[TickerRegistration, MeshToken]>(
         [
-          [asset.tickers as QueryableStorageEntry<'promise'>, rawTicker],
-          [asset.tokens as QueryableStorageEntry<'promise'>, rawTicker],
+          [(asset.tickers as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
+          [(asset.tokens as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
         ],
         ([registration, token]) => {
           callback(assembleResult(registration, token));
@@ -130,8 +130,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
 
     // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
     const [tickerRegistration, securityToken] = await queryMulti<[TickerRegistration, MeshToken]>([
-      [asset.tickers as QueryableStorageEntry<'promise'>, rawTicker],
-      [asset.tokens as QueryableStorageEntry<'promise'>, rawTicker],
+      [(asset.tickers as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
+      [(asset.tokens as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
     ]);
 
     return assembleResult(tickerRegistration, securityToken);

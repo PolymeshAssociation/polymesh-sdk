@@ -163,10 +163,7 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(inviteAccount, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(inviteAccount, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await identity.inviteAccount(args);
 
@@ -186,10 +183,7 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
 
-      sinon
-        .stub(createVenue, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(createVenue, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await identity.createVenue(args);
 

@@ -93,11 +93,9 @@ describe('setAssetRequirements procedure', () => {
   let addTransactionStub: sinon.SinonStub;
 
   let resetAssetComplianceTransaction: PolymeshTx<[Ticker]>;
-  let addComplianceRequirementTransaction: PolymeshTx<[
-    Ticker,
-    Vec<MeshCondition>,
-    Vec<MeshCondition>
-  ]>;
+  let addComplianceRequirementTransaction: PolymeshTx<
+    [Ticker, Vec<MeshCondition>, Vec<MeshCondition>]
+  >;
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();

@@ -2,7 +2,7 @@ import { ApiPromise, Keyring } from '@polkadot/api';
 import { AddressOrPair } from '@polkadot/api/types';
 import { getTypeDef } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
-import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
+import { CallFunction, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import { hexToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
@@ -548,7 +548,7 @@ export class Context {
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return ((tx as any)[section][method] as CallBase).meta.args.map(({ name, type }) => {
+    return ((tx as any)[section][method] as CallFunction).meta.args.map(({ name, type }) => {
       const typeDef = getTypeDef(type.toString());
       const argName = textToString(name);
 
