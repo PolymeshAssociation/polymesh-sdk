@@ -783,10 +783,23 @@ export interface FundingRoundName extends Text {}
 
 /** @name Fundraiser */
 export interface Fundraiser extends Struct {
-  readonly raise_token: Ticker;
-  readonly remaining_amount: Balance;
-  readonly price_per_token: Balance;
+  readonly creator: IdentityId;
+  readonly offering_portfolio: PortfolioId;
+  readonly offering_asset: Ticker;
+  readonly raising_portfolio: PortfolioId;
+  readonly raising_asset: Ticker;
+  readonly tiers: Vec<FundraiserTier>;
   readonly venue_id: u64;
+  readonly start: Moment;
+  readonly end: Option<Moment>;
+  readonly frozen: bool;
+}
+
+/** @name FundraiserTier */
+export interface FundraiserTier extends Struct {
+  readonly total: Balance;
+  readonly price: Balance;
+  readonly remaining: Balance;
 }
 
 /** @name HandledTxStatus */
