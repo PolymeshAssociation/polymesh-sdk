@@ -43,7 +43,7 @@ export async function assertInstructionValid(
   context: Context
 ): Promise<void> {
   const details = await instruction.details();
-  const { status, validFrom } = await instruction.details();
+  const { status, tradeDate } = await instruction.details();
 
   if (status !== InstructionStatus.Pending) {
     throw new PolymeshError({
@@ -52,15 +52,15 @@ export async function assertInstructionValid(
     });
   }
 
-  if (validFrom) {
+  if (tradeDate) {
     const now = new Date();
 
-    if (now < validFrom) {
+    if (now < tradeDate) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The instruction has not reached its validity period',
         data: {
-          validFrom,
+          tradeDate,
         },
       });
     }

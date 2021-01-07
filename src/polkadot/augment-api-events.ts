@@ -1,7 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { Bytes, Option, Vec, bool, u16, u32, u64 } from '@polkadot/types';
+import type { Bytes, Option, Vec, bool, u32, u64 } from '@polkadot/types';
 import type { ITuple } from '@polkadot/types/types';
 import type { BalanceStatus } from '@polkadot/types/interfaces/balances';
 import type { EthereumAddress } from '@polkadot/types/interfaces/claims';
@@ -33,7 +33,6 @@ import type {
   AssetName,
   AssetType,
   AuthorizationData,
-  Ballot,
   BallotMeta,
   BallotTimeRange,
   BallotVote,
@@ -56,6 +55,7 @@ import type {
   MaybeBlock,
   Memo,
   MetaUrl,
+  MigrationError,
   OfflineSlashingParams,
   Permissions,
   PipDescription,
@@ -68,6 +68,7 @@ import type {
   ProposalState,
   Proposer,
   ReceiptMetadata,
+  ScopeId,
   SecondaryKey,
   SettlementType,
   Signatory,
@@ -82,6 +83,7 @@ import type {
   Tax,
   Ticker,
   TickerRangeProof,
+  TransferManager,
   TrustedIssuer,
   Url,
   VenueDetails,
@@ -192,6 +194,10 @@ declare module '@polkadot/api/types/events' {
         ApiType,
         [IdentityId, Ticker, IdentityId, Balance, FundingRoundName, Balance, Option<IdentityId>]
       >;
+      /**
+       * Migration error event.
+       **/
+      MigrationFailure: AugmentedEvent<ApiType, [MigrationError]>;
       /**
        * An event emitted when the primary issuance agent of an asset is transferred.
        * First DID is the old primary issuance agent and the second DID is the new primary issuance agent.
@@ -681,27 +687,6 @@ declare module '@polkadot/api/types/events' {
        **/
       VoteCast: AugmentedEvent<ApiType, [IdentityId, CAId, Vec<BallotVote>]>;
     };
-    dividend: {
-      /**
-       * A dividend was canceled (ticker, dividend ID)
-       **/
-      DividendCanceled: AugmentedEvent<ApiType, [IdentityId, Ticker, u32]>;
-      /**
-       * A new dividend was created (ticker, amount, dividend ID)
-       **/
-      DividendCreated: AugmentedEvent<ApiType, [IdentityId, Ticker, Balance, u32]>;
-      /**
-       * Dividend was paid to a user (who, ticker, dividend ID, share)
-       **/
-      DividendPaidOutToUser: AugmentedEvent<ApiType, [IdentityId, Ticker, u32, Balance]>;
-      /**
-       * Unclaimed dividend was claimed back (ticker, dividend ID, amount)
-       **/
-      DividendRemainingClaimed: AugmentedEvent<ApiType, [IdentityId, Ticker, u32, Balance]>;
-    };
-    exemption: {
-      ExemptionListModified: AugmentedEvent<ApiType, [IdentityId, Ticker, u16, IdentityId, bool]>;
-    };
     grandpa: {
       /**
        * New authority set has been applied. \[authority_set\]
@@ -909,6 +894,10 @@ declare module '@polkadot/api/types/events' {
        * Arguments: caller DID, multisig, authorized signer, proposal id.
        **/
       ProposalRejectionVote: AugmentedEvent<ApiType, [IdentityId, AccountId, Signatory, u64]>;
+      /**
+       * Scheduling of proposal fails.
+       **/
+      SchedulingFailed: AugmentedEvent<ApiType, [DispatchError]>;
     };
     offences: {
       /**
@@ -940,7 +929,7 @@ declare module '@polkadot/api/types/events' {
       /**
        * Execution of a PIP has been scheduled at specific block.
        **/
-      ExecutionScheduled: AugmentedEvent<ApiType, [IdentityId, PipId, BlockNumber, BlockNumber]>;
+      ExecutionScheduled: AugmentedEvent<ApiType, [IdentityId, PipId, BlockNumber]>;
       /**
        * Scheduling of the PIP for execution failed in the scheduler pallet.
        **/
@@ -968,7 +957,7 @@ declare module '@polkadot/api/types/events' {
        **/
       MinimumProposalDepositChanged: AugmentedEvent<ApiType, [IdentityId, Balance, Balance]>;
       /**
-       * Amount of blocks, after the cool-off period, after which a pending PIP expires.
+       * Amount of blocks after which a pending PIP expires.
        * (caller DID, old expiry, new expiry)
        **/
       PendingPipExpiryChanged: AugmentedEvent<ApiType, [IdentityId, MaybeBlock, MaybeBlock]>;
@@ -982,16 +971,11 @@ declare module '@polkadot/api/types/events' {
        **/
       PipSkipped: AugmentedEvent<ApiType, [IdentityId, PipId, SkippedCount]>;
       /**
-       * Cool off period for proposals modified
-       * (caller DID, old period, new period)
-       **/
-      ProposalCoolOffPeriodChanged: AugmentedEvent<ApiType, [IdentityId, BlockNumber, BlockNumber]>;
-      /**
        * A PIP was made with a `Balance` stake.
        *
        * # Parameters:
        *
-       * Caller DID, Proposer, PIP ID, deposit, URL, description, cool-off period end, expiry time, proposal data.
+       * Caller DID, Proposer, PIP ID, deposit, URL, description, expiry time, proposal data.
        **/
       ProposalCreated: AugmentedEvent<
         ApiType,
@@ -1002,17 +986,9 @@ declare module '@polkadot/api/types/events' {
           Balance,
           Option<Url>,
           Option<PipDescription>,
-          BlockNumber,
           MaybeBlock,
           ProposalData
         ]
-      >;
-      /**
-       * A PIP's details (url & description) were amended.
-       **/
-      ProposalDetailsAmended: AugmentedEvent<
-        ApiType,
-        [IdentityId, Proposer, PipId, Option<Url>, Option<PipDescription>]
       >;
       /**
        * Refund proposal
@@ -1218,11 +1194,11 @@ declare module '@polkadot/api/types/events' {
       InstructionAffirmed: AugmentedEvent<ApiType, [IdentityId, PortfolioId, u64]>;
       /**
        * A new instruction has been created
-       * (did, venue_id, instruction_id, settlement_type, valid_from, legs)
+       * (did, venue_id, instruction_id, settlement_type, trade_date, value_date, legs)
        **/
       InstructionCreated: AugmentedEvent<
         ApiType,
-        [IdentityId, u64, u64, SettlementType, Option<Moment>, Vec<Leg>]
+        [IdentityId, u64, u64, SettlementType, Option<Moment>, Option<Moment>, Vec<Leg>]
       >;
       /**
        * Instruction executed successfully(did, instruction_id)
@@ -1251,6 +1227,10 @@ declare module '@polkadot/api/types/events' {
        * A receipt has been unclaimed (did, instruction_id, leg_id, receipt_uid, signer)
        **/
       ReceiptUnclaimed: AugmentedEvent<ApiType, [IdentityId, u64, u64, u64, AccountId]>;
+      /**
+       * Scheduling of instruction fails.
+       **/
+      SchedulingFailed: AugmentedEvent<ApiType, [DispatchError]>;
       /**
        * A new venue has been created (did, venue_id, details, type)
        **/
@@ -1361,24 +1341,38 @@ declare module '@polkadot/api/types/events' {
        **/
       Withdrawn: AugmentedEvent<ApiType, [AccountId, Balance]>;
     };
+    statistics: {
+      /**
+       * `ScopeId`s were added to the exemption list.
+       **/
+      ExemptionsAdded: AugmentedEvent<ApiType, [IdentityId, Ticker, TransferManager, Vec<ScopeId>]>;
+      /**
+       * `ScopeId`s were removed from the exemption list.
+       **/
+      ExemptionsRemoved: AugmentedEvent<
+        ApiType,
+        [IdentityId, Ticker, TransferManager, Vec<ScopeId>]
+      >;
+      /**
+       * A new transfer manager was added.
+       **/
+      TransferManagerAdded: AugmentedEvent<ApiType, [IdentityId, Ticker, TransferManager]>;
+      /**
+       * An existing transfer manager was removed.
+       **/
+      TransferManagerRemoved: AugmentedEvent<ApiType, [IdentityId, Ticker, TransferManager]>;
+    };
     sto: {
       /**
        * A new fundraiser has been created
-       * (primary issuance agent, fundraiser)
+       * (primary issuance agent, fundraiser id, fundraiser details)
        **/
-      FundraiserCreated: AugmentedEvent<ApiType, [IdentityId, Fundraiser]>;
+      FundraiserCreated: AugmentedEvent<ApiType, [IdentityId, u64, Fundraiser]>;
       /**
        * An investor invested in the fundraiser
        * (offering token, raise token, offering_token_amount, raise_token_amount, fundraiser_id)
        **/
       FundsRaised: AugmentedEvent<ApiType, [IdentityId, Ticker, Ticker, Balance, Balance, u64]>;
-    };
-    stoCapped: {
-      /**
-       * Emit when Asset get purchased by the investor
-       * caller DID/investor DID, Ticker, sto_id, amount invested, amount of token purchased
-       **/
-      AssetPurchased: AugmentedEvent<ApiType, [IdentityId, Ticker, u32, Balance, Balance]>;
     };
     sudo: {
       /**
@@ -1644,20 +1638,6 @@ declare module '@polkadot/api/types/events' {
        * Includes any failed dispatches with their indices and their associated error.
        **/
       BatchOptimisticFailed: AugmentedEvent<ApiType, [Vec<ITuple<[u32, DispatchError]>>]>;
-    };
-    voting: {
-      /**
-       * An existing ballot is cancelled (caller DID, Ticker, BallotName)
-       **/
-      BallotCancelled: AugmentedEvent<ApiType, [IdentityId, Ticker, Bytes]>;
-      /**
-       * A new ballot is created (caller DID, Ticker, BallotName, BallotDetails)
-       **/
-      BallotCreated: AugmentedEvent<ApiType, [IdentityId, Ticker, Bytes, Ballot]>;
-      /**
-       * A vote is cast (caller DID, Ticker, BallotName, Vote)
-       **/
-      VoteCast: AugmentedEvent<ApiType, [IdentityId, Ticker, Bytes, Vec<Balance>]>;
     };
   }
 

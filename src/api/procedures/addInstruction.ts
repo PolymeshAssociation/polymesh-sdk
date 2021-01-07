@@ -39,7 +39,7 @@ export interface AddInstructionParams {
     to: PortfolioLike;
     token: string | SecurityToken;
   }[];
-  validFrom?: Date;
+  tradeDate?: Date;
   endBlock?: BigNumber;
 }
 
@@ -80,7 +80,7 @@ export async function prepareAddInstruction(
     context,
     storage: { portfoliosToAffirm },
   } = this;
-  const { legs, venueId, endBlock, validFrom } = args;
+  const { legs, venueId, endBlock, tradeDate } = args;
 
   if (!legs.length) {
     throw new PolymeshError({
@@ -108,7 +108,7 @@ export async function prepareAddInstruction(
 
   const rawVenueId = numberToU64(venueId, context);
   const rawSettlementType = endConditionToSettlementType(endCondition, context);
-  const rawValidFrom = validFrom ? dateToMoment(validFrom, context) : null;
+  const rawTradeDate = tradeDate ? dateToMoment(tradeDate, context) : null;
   const rawLegs: {
     from: PortfolioId;
     to: PortfolioId;
@@ -148,7 +148,8 @@ export async function prepareAddInstruction(
       },
       rawVenueId,
       rawSettlementType,
-      rawValidFrom,
+      rawTradeDate,
+      null,
       rawLegs,
       portfoliosToAffirm.map(portfolio =>
         portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
@@ -162,7 +163,8 @@ export async function prepareAddInstruction(
       },
       rawVenueId,
       rawSettlementType,
-      rawValidFrom,
+      rawTradeDate,
+      null,
       rawLegs
     );
   }

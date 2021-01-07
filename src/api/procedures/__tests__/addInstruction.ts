@@ -59,7 +59,7 @@ describe('addInstruction procedure', () => {
   let fromPortfolio: DefaultPortfolio | NumberedPortfolio;
   let toPortfolio: DefaultPortfolio | NumberedPortfolio;
   let token: string;
-  let validFrom: Date;
+  let tradeDate: Date;
   let endBlock: BigNumber;
   let args: Params;
 
@@ -68,7 +68,7 @@ describe('addInstruction procedure', () => {
   let rawFrom: PortfolioId;
   let rawTo: PortfolioId;
   let rawToken: Ticker;
-  let rawValidFrom: Moment;
+  let rawTradeDate: Moment;
   let rawEndBlock: u32;
   let rawAuthSettlementType: SettlementType;
   let rawBlockSettlementType: SettlementType;
@@ -115,7 +115,7 @@ describe('addInstruction procedure', () => {
       id: new BigNumber(2),
     });
     token = 'SOME_TOKEN';
-    validFrom = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+    tradeDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
     endBlock = new BigNumber(1000);
     rawVenueId = dsMockUtils.createMockU64(venueId.toNumber());
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
@@ -128,7 +128,7 @@ describe('addInstruction procedure', () => {
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
     rawToken = dsMockUtils.createMockTicker(token);
-    rawValidFrom = dsMockUtils.createMockMoment(validFrom.getTime());
+    rawTradeDate = dsMockUtils.createMockMoment(tradeDate.getTime());
     rawEndBlock = dsMockUtils.createMockU32(endBlock.toNumber());
     rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAffirmation');
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
@@ -209,7 +209,7 @@ describe('addInstruction procedure', () => {
     endConditionToSettlementTypeStub
       .withArgs({ type: InstructionType.SettleOnAffirmation }, mockContext)
       .returns(rawAuthSettlementType);
-    dateToMomentStub.withArgs(validFrom, mockContext).returns(rawValidFrom);
+    dateToMomentStub.withArgs(tradeDate, mockContext).returns(rawTradeDate);
   });
 
   afterEach(() => {
@@ -276,6 +276,7 @@ describe('addInstruction procedure', () => {
       rawVenueId,
       rawAuthSettlementType,
       null,
+      null,
       [rawLeg],
       [rawFrom, rawTo]
     );
@@ -294,7 +295,7 @@ describe('addInstruction procedure', () => {
       legs: [
         { from, to, amount, token: entityMockUtils.getSecurityTokenInstance({ ticker: token }) },
       ],
-      validFrom,
+      tradeDate,
       endBlock,
     });
 
@@ -306,7 +307,8 @@ describe('addInstruction procedure', () => {
       }),
       rawVenueId,
       rawBlockSettlementType,
-      rawValidFrom,
+      rawTradeDate,
+      null,
       [rawLeg]
     );
     expect(result).toBe(instruction);

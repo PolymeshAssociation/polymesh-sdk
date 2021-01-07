@@ -83,7 +83,7 @@ describe('Instruction class', () => {
     test('should return the Instruction details', async () => {
       const status = InstructionStatus.Pending;
       const createdAt = new Date('10/14/1987');
-      const validFrom = new Date('11/17/1987');
+      const tradeDate = new Date('11/17/1987');
       const venueId = new BigNumber(1);
       const venue = entityMockUtils.getVenueInstance({ id: venueId });
       let type = InstructionType.SettleOnAffirmation;
@@ -97,7 +97,7 @@ describe('Instruction class', () => {
         /* eslint-disable @typescript-eslint/camelcase */
         venue_id: dsMockUtils.createMockU64(venueId.toNumber()),
         created_at: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(createdAt.getTime())),
-        valid_from: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(validFrom.getTime())),
+        trade_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(tradeDate.getTime())),
         settlement_type: dsMockUtils.createMockSettlementType(type),
         /* eslint-enable @typescript-eslint/camelcase */
       };
@@ -112,7 +112,7 @@ describe('Instruction class', () => {
       expect(result).toEqual({
         status,
         createdAt,
-        validFrom,
+        tradeDate,
         type,
         venue,
       });
@@ -123,7 +123,7 @@ describe('Instruction class', () => {
       instructionDetailsStub.resolves({
         ...queryResult,
         /* eslint-disable @typescript-eslint/camelcase */
-        valid_from: dsMockUtils.createMockOption(),
+        trade_date: dsMockUtils.createMockOption(),
         settlement_type: dsMockUtils.createMockSettlementType({
           SettleOnBlock: dsMockUtils.createMockU32(endBlock.toNumber()),
         }),
@@ -135,7 +135,7 @@ describe('Instruction class', () => {
       expect(result).toEqual({
         status,
         createdAt,
-        validFrom: null,
+        tradeDate: null,
         type,
         endBlock,
         venue,

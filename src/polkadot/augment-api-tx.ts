@@ -1,7 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { Bytes, Compact, Option, Vec, bool, u128, u16, u32, u64 } from '@polkadot/types';
+import type { Bytes, Compact, Option, Vec, bool, u32, u64 } from '@polkadot/types';
 import type { AnyNumber, ITuple } from '@polkadot/types/types';
 import type { BabeEquivocationProof } from '@polkadot/types/interfaces/babe';
 import type { MemberCount, ProposalIndex } from '@polkadot/types/interfaces/collective';
@@ -45,7 +45,6 @@ import type {
   AssetName,
   AssetType,
   AuthorizationData,
-  Ballot,
   BallotMeta,
   BallotTimeRange,
   BallotVote,
@@ -54,7 +53,6 @@ import type {
   CADetails,
   CAId,
   CAKind,
-  CheckpointId,
   Claim,
   ClassicTickerImport,
   ComplianceRequirement,
@@ -86,6 +84,7 @@ import type {
   RecordDateSpec,
   ScheduleId,
   ScheduleSpec,
+  ScopeId,
   SecondaryKey,
   SecondaryKeyWithAuth,
   SettlementType,
@@ -100,6 +99,7 @@ import type {
   TemplateMetadata,
   Ticker,
   TickerRegistrationConfig,
+  TransferManager,
   TrustedIssuer,
   UniqueCall,
   Url,
@@ -635,16 +635,6 @@ declare module '@polkadot/api/types/submittable' {
        * also decrease the total issuance of the system (`TotalIssuance`).
        *
        * The dispatch origin for this call is `root`.
-       *
-       * # <weight>
-       * - Independent of the arguments.
-       * - Contains a limited number of reads and writes.
-       * ---------------------
-       * - Base Weight:
-       * - Creating: 27.56 µs
-       * - Killing: 35.11 µs
-       * - DB Weight: 1 Read, 1 Write to `who`
-       * # </weight>
        **/
       setBalance: AugmentedSubmittable<
         (
@@ -820,7 +810,7 @@ declare module '@polkadot/api/types/submittable' {
         [BridgeTx]
       >;
       /**
-       * An internal call to handle a scheduled timelocked bridge transaction.
+       * Root callable extrinsic, used as an internal call to handle a scheduled timelocked bridge transaction.
        **/
       handleScheduledBridgeTx: AugmentedSubmittable<
         (
@@ -1638,6 +1628,7 @@ declare module '@polkadot/api/types/submittable' {
        * - `origin` which must be a signer for the CAA of `ca_id`.
        * - `ticker` that the CA is made for.
        * - `kind` of CA being initiated.
+       * - `decl_date` of CA bring initialized.
        * - `record_date`, if any, to calculate the impact of this CA.
        * If provided, this results in a scheduled balance snapshot ("checkpoint") at the date.
        * - `details` of the CA in free-text form, up to a certain number of bytes in length.
@@ -1653,7 +1644,10 @@ declare module '@polkadot/api/types/submittable' {
        * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
        * - `LocalCAIdOverflow` in the unlikely event that so many CAs were created for this `ticker`,
        * that integer overflow would have occured if instead allowed.
+       * - `TooManyDidTaxes` if `withholding_tax.unwrap().len()` would go over the limit `MaxDidWhts`.
        * - `DuplicateDidTax` if a DID is included more than once in `wt`.
+       * - `TooManyTargetIds` if `targets.unwrap().identities.len() > T::MaxTargetIds::get()`.
+       * - `DeclDateInFuture` if the declaration date is not in the past.
        * - When `record_date.is_some()`, other errors due to checkpoint scheduling may occur.
        **/
       initiateCorporateAction: AugmentedSubmittable<
@@ -1662,7 +1656,7 @@ declare module '@polkadot/api/types/submittable' {
           kind:
             | CAKind
             | 'PredictableBenefit'
-            | 'UnpredictableBenfit'
+            | 'UnpredictableBenefit'
             | 'IssuerNotice'
             | 'Reorganization'
             | 'Other'
@@ -1758,6 +1752,7 @@ declare module '@polkadot/api/types/submittable' {
        *
        * ## Errors
        * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `TooManyTargetIds` if `targets.identities.len() > T::MaxTargetIds::get()`.
        **/
       setDefaultTargets: AugmentedSubmittable<
         (
@@ -1797,6 +1792,7 @@ declare module '@polkadot/api/types/submittable' {
        *
        * ## Errors
        * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `TooManyDidTaxes` if `Some(tax)` and adding the override would go over the limit `MaxDidWhts`.
        **/
       setDidWithholdingTax: AugmentedSubmittable<
         (
@@ -1959,64 +1955,6 @@ declare module '@polkadot/api/types/submittable' {
             | (BallotVote | { power?: any; fallback?: any } | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
         [CAId, Vec<BallotVote>]
-      >;
-    };
-    dividend: {
-      /**
-       * Lets the owner cancel a dividend before start/maturity date
-       **/
-      cancel: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          dividendId: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, u32]
-      >;
-      /**
-       * Withdraws from a dividend the adequate share of the `amount` field. All dividend shares
-       * are rounded by truncation (down to first integer below)
-       **/
-      claim: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          dividendId: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, u32]
-      >;
-      /**
-       * After a dividend had expired, collect the remaining amount to owner address
-       **/
-      claimUnclaimed: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          dividendId: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, u32]
-      >;
-      /**
-       * Creates a new dividend entry without payout. Token must have at least one checkpoint.
-       **/
-      new: AugmentedSubmittable<
-        (
-          amount: Balance | AnyNumber | Uint8Array,
-          ticker: Ticker | string | Uint8Array,
-          maturesAt: Moment | AnyNumber | Uint8Array,
-          expiresAt: Moment | AnyNumber | Uint8Array,
-          payoutTicker: Ticker | string | Uint8Array,
-          checkpointId: CheckpointId | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Balance, Ticker, Moment, Moment, Ticker, CheckpointId]
-      >;
-    };
-    exemption: {
-      modifyExemptionList: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          tm: u16 | AnyNumber | Uint8Array,
-          assetHolderDid: IdentityId | string | Uint8Array,
-          exempted: bool | boolean | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, u16, IdentityId, bool]
       >;
     };
     finalityTracker: {
@@ -2891,6 +2829,17 @@ declare module '@polkadot/api/types/submittable' {
         [AccountId, Proposal, Option<Moment>, bool]
       >;
       /**
+       * Root callable extrinsic, used as an internal call for executing scheduled multisig proposal.
+       **/
+      executeScheduledProposal: AugmentedSubmittable<
+        (
+          multisig: AccountId | string | Uint8Array,
+          proposalId: u64 | AnyNumber | Uint8Array,
+          multisigDid: IdentityId | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId, u64, IdentityId]
+      >;
+      /**
        * Adds a multisig as the primary key of the current did if the current did is the creator
        * of the multisig.
        *
@@ -2980,45 +2929,15 @@ declare module '@polkadot/api/types/submittable' {
     };
     pips: {
       /**
-       * It amends the `url` and the `description` of the proposal with `id`.
-       *
-       * # Errors
-       * * `BadOrigin`: Only the owner of the proposal can amend it.
-       * * `ProposalIsImmutable`: A proposals is mutable only during its cool off period.
-       *
-       **/
-      amendProposal: AugmentedSubmittable<
-        (
-          id: PipId | AnyNumber | Uint8Array,
-          url: Option<Url> | null | object | string | Uint8Array,
-          description: Option<PipDescription> | null | object | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [PipId, Option<Url>, Option<PipDescription>]
-      >;
-      /**
-       * Approves the pending non-cooling committee PIP given by the `id`.
+       * Approves the pending committee PIP given by the `id`.
        *
        * # Errors
        * * `BadOrigin` unless a GC voting majority executes this function.
        * * `NoSuchProposal` if the PIP with `id` doesn't exist.
        * * `IncorrectProposalState` if the proposal isn't pending.
-       * * `ProposalOnCoolOffPeriod` if the proposal is cooling off.
        * * `NotByCommittee` if the proposal isn't by a committee.
        **/
       approveCommitteeProposal: AugmentedSubmittable<
-        (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [PipId]
-      >;
-      /**
-       * It cancels the proposal of the id `id`.
-       *
-       * Proposals can be cancelled only during its _cool-off period.
-       *
-       * # Errors
-       * * `BadOrigin`: Only the owner of the proposal can amend it.
-       * * `ProposalIsImmutable`: A Proposal is mutable only during its cool off period.
-       **/
-      cancelProposal: AugmentedSubmittable<
         (id: PipId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [PipId]
       >;
@@ -3042,7 +2961,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `CannotSkipPip` - a given PIP has already been skipped too many times.
        * * `SnapshotResultTooLarge` - on len(results) > len(snapshot_queue).
        * * `SnapshotIdMismatch` - if:
-       * ```
+       * ```text
        * ∃ (i ∈ 0..SnapshotQueue.len()).
        * results[i].0 ≠ SnapshotQueue[SnapshotQueue.len() - i].id
        * ```
@@ -3114,7 +3033,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Rejects the PIP given by the `id`, refunding any bonded funds,
        * assuming it hasn't been cancelled or executed.
-       * Note that cooling-off and proposals scheduled-for-execution can also be rejected.
+       * Note that proposals scheduled-for-execution can also be rejected.
        *
        * # Errors
        * * `BadOrigin` unless a GC voting majority executes this function.
@@ -3133,7 +3052,7 @@ declare module '@polkadot/api/types/submittable' {
        * `None` value means that enactment period is going to finish in the next block.
        *
        * # Errors
-       * * `BadOrigin` unless triggered by release coordinator.
+       * * `RescheduleNotByReleaseCoordinator` unless triggered by release coordinator.
        * * `IncorrectProposalState` unless the proposal was in a scheduled state.
        **/
       rescheduleExecution: AugmentedSubmittable<
@@ -3145,13 +3064,21 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Change the maximum number of active PIPs before community members cannot propose anything.
+       * Can only be called by root.
+       *
+       * # Arguments
+       * * `limit` of concurrent active PIPs.
        **/
       setActivePipLimit: AugmentedSubmittable<
-        (newMax: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        (limit: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u32]
       >;
       /**
-       * Change the default enact period.
+       * Change the default enactment period.
+       * Can only be called by root.
+       *
+       * # Arguments
+       * * `duration` the new default enactment period it takes for a scheduled PIP to be executed.
        **/
       setDefaultEnactmentPeriod: AugmentedSubmittable<
         (duration: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -3159,15 +3086,18 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Change the maximum skip count (`max_pip_skip_count`).
-       * New values only
+       * Can only be called by root.
+       *
+       * # Arguments
+       * * `max` skips before a PIP cannot be skipped by GC anymore.
        **/
       setMaxPipSkipCount: AugmentedSubmittable<
-        (newMax: SkippedCount | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        (max: SkippedCount | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [SkippedCount]
       >;
       /**
-       * Change the minimum proposal deposit amount required to start a proposal. Only Governance
-       * committee is allowed to change this value.
+       * Change the minimum proposal deposit amount required to start a proposal.
+       * Can only be called by root.
        *
        * # Arguments
        * * `deposit` the new min deposit required to start a proposal
@@ -3177,8 +3107,12 @@ declare module '@polkadot/api/types/submittable' {
         [BalanceOf]
       >;
       /**
-       * Change the amount of blocks, after the cool-off, for which a pending PIP is expired.
+       * Change the amount of blocks after which a pending PIP is expired.
        * If `expiry` is `None` then PIPs never expire.
+       * Can only be called by root.
+       *
+       * # Arguments
+       * * `expiry` the block-time it takes for a still-`Pending` PIP to expire.
        **/
       setPendingPipExpiry: AugmentedSubmittable<
         (
@@ -3187,24 +3121,14 @@ declare module '@polkadot/api/types/submittable' {
         [MaybeBlock]
       >;
       /**
-       * Change the proposal cool off period value. This is the number of blocks after which the proposer of a pip
-       * can modify or cancel their proposal, and other voting is prohibited
+       * Change whether completed PIPs are pruned.
+       * Can only be called by root.
        *
        * # Arguments
-       * * `duration` proposal cool off period duration in blocks
-       **/
-      setProposalCoolOffPeriod: AugmentedSubmittable<
-        (duration: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [BlockNumber]
-      >;
-      /**
-       * Change whether completed PIPs are pruned. Can only be called by governance council
-       *
-       * # Arguments
-       * * `deposit` the new min deposit required to start a proposal
+       * * `prune` specifies whether completed PIPs should be pruned.
        **/
       setPruneHistoricalPips: AugmentedSubmittable<
-        (newValue: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        (prune: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [bool]
       >;
       /**
@@ -3232,7 +3156,6 @@ declare module '@polkadot/api/types/submittable' {
        * # Errors
        * * `NoSuchProposal` if `id` doesn't reference a valid PIP.
        * * `NotFromCommunity` if proposal was made by a committee.
-       * * `ProposalOnCoolOffPeriod` if non-owner is voting and PIP is cooling off.
        * * `IncorrectProposalState` if PIP isn't pending.
        * * `InsufficientDeposit` if `origin` cannot reserve `deposit - old_deposit`.
        **/
@@ -3291,7 +3214,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `id` - The DID of the new release coordinator.
        *
        * # Errors
-       * * `MemberNotFound`, If the new coordinator `id` is not part of the committee.
+       * * `NotAMember`, If the new coordinator `id` is not part of the committee.
        **/
       setReleaseCoordinator: AugmentedSubmittable<
         (id: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -3323,7 +3246,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `approve` - If `true` than this is a `for` vote, and `against` otherwise.
        *
        * # Errors
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
+       * * `NotAMember`, if the `origin` is not a member of this committee.
        **/
       vote: AugmentedSubmittable<
         (
@@ -3350,7 +3273,7 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # Errors
        * * `FirstVoteReject`, if `call` hasn't been proposed and `approve == false`.
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
+       * * `NotAMember`, if the `origin` is not a member of this committee.
        **/
       voteOrPropose: AugmentedSubmittable<
         (
@@ -3617,8 +3540,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `venue_id` - ID of the venue this instruction belongs to.
        * * `settlement_type` - Defines if the instruction should be settled
-       * immediately after receiving all affirmations or waiting till a specific block.
-       * * `valid_from` - Optional date from which people can interact with this instruction.
+       * in the next block after receiving all affirmations or waiting till a specific block.
+       * * `trade_date` - Optional date from which people can interact with this instruction.
+       * * `value_date` - Optional date after which the instruction should be settled (not enforced)
        * * `legs` - Legs included in this instruction.
        * * `portfolios` - Portfolios that the sender controls and wants to use in this affirmations.
        **/
@@ -3631,7 +3555,8 @@ declare module '@polkadot/api/types/submittable' {
             | { SettleOnBlock: any }
             | string
             | Uint8Array,
-          validFrom: Option<Moment> | null | object | string | Uint8Array,
+          tradeDate: Option<Moment> | null | object | string | Uint8Array,
+          valueDate: Option<Moment> | null | object | string | Uint8Array,
           legs:
             | Vec<Leg>
             | (Leg | { from?: any; to?: any; asset?: any; amount?: any } | string | Uint8Array)[],
@@ -3639,7 +3564,7 @@ declare module '@polkadot/api/types/submittable' {
             | Vec<PortfolioId>
             | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
-        [u64, SettlementType, Option<Moment>, Vec<Leg>, Vec<PortfolioId>]
+        [u64, SettlementType, Option<Moment>, Option<Moment>, Vec<Leg>, Vec<PortfolioId>]
       >;
       /**
        * Adds a new instruction.
@@ -3647,8 +3572,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `venue_id` - ID of the venue this instruction belongs to.
        * * `settlement_type` - Defines if the instruction should be settled
-       * immediately after receiving all affirmations or waiting till a specific block.
-       * * `valid_from` - Optional date from which people can interact with this instruction.
+       * in the next block after receiving all affirmations or waiting till a specific block.
+       * * `trade_date` - Optional date from which people can interact with this instruction.
+       * * `value_date` - Optional date after which the instruction should be settled (not enforced)
        * * `legs` - Legs included in this instruction.
        *
        * # Weight
@@ -3663,12 +3589,13 @@ declare module '@polkadot/api/types/submittable' {
             | { SettleOnBlock: any }
             | string
             | Uint8Array,
-          validFrom: Option<Moment> | null | object | string | Uint8Array,
+          tradeDate: Option<Moment> | null | object | string | Uint8Array,
+          valueDate: Option<Moment> | null | object | string | Uint8Array,
           legs:
             | Vec<Leg>
             | (Leg | { from?: any; to?: any; asset?: any; amount?: any } | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
-        [u64, SettlementType, Option<Moment>, Vec<Leg>]
+        [u64, SettlementType, Option<Moment>, Option<Moment>, Vec<Leg>]
       >;
       /**
        * Provide affirmation to an existing instruction.
@@ -3786,7 +3713,7 @@ declare module '@polkadot/api/types/submittable' {
         [Ticker, Vec<u64>]
       >;
       /**
-       * An internal call to execute a scheduled settlement instruction.
+       * Root callable extrinsic, used as an internal call to execute a scheduled settlement instruction.
        **/
       executeScheduledInstruction: AugmentedSubmittable<
         (instructionId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -3881,10 +3808,14 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * origin Required origin for adding a potential validator.
        * * identity Validator's IdentityId.
+       * * intended_count No. of validators given identity intends to run.
        **/
       addPermissionedValidator: AugmentedSubmittable<
-        (identity: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [IdentityId]
+        (
+          identity: IdentityId | string | Uint8Array,
+          intendedCount: Option<u32> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [IdentityId, Option<u32>]
       >;
       /**
        * Take the origin account as a stash and lock up `value` of its balance. `controller` will
@@ -4547,6 +4478,21 @@ declare module '@polkadot/api/types/submittable' {
         [Compact<BalanceOf>]
       >;
       /**
+       * Update the intended validator count for a given DID.
+       *
+       * # Arguments
+       * * origin which must be the required origin for adding a potential validator.
+       * * identity to add as a validator.
+       * * new_intended_count New value of intended count.
+       **/
+      updatePermissionedValidatorIntendedCount: AugmentedSubmittable<
+        (
+          identity: IdentityId | string | Uint8Array,
+          newIntendedCount: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [IdentityId, u32]
+      >;
+      /**
        * Declare the desire to validate for the origin controller.
        *
        * Effects will be felt at the beginning of the next era.
@@ -4624,6 +4570,111 @@ declare module '@polkadot/api/types/submittable' {
       withdrawUnbonded: AugmentedSubmittable<
         (numSlashingSpans: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u32]
+      >;
+    };
+    statistics: {
+      /**
+       * Exempt entities from a transfer manager
+       *
+       * # Arguments
+       * * `origin` It contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `ticker` ticker for which the exemption list is being modified.
+       * * `transfer_manager` Transfer manager for which the exemption list is being modified.
+       * * `exempted_entities` ScopeIds for which the exemption list is being modified.
+       *
+       * # Errors
+       * * `Unauthorized` if `origin` is not the owner of the ticker.
+       *
+       **/
+      addExemptedEntities: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          transferManager:
+            | TransferManager
+            | { CountTransferManager: any }
+            | { PercentageTransferManager: any }
+            | string
+            | Uint8Array,
+          exemptedEntities: Vec<ScopeId> | (ScopeId | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [Ticker, TransferManager, Vec<ScopeId>]
+      >;
+      /**
+       * Adds a new transfer manager.
+       *
+       * # Arguments
+       * * `origin` It contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `ticker` ticker for which the transfer managers are being updated.
+       * * `new_transfer_manager` Transfer manager being added.
+       *
+       * # Errors
+       * * `Unauthorized` if `origin` is not the owner of the ticker.
+       * * `DuplicateTransferManager` if `new_transfer_manager` is already enabled for the ticker.
+       * * `TransferManagersLimitReached` if the `ticker` already has max TMs attached
+       *
+       **/
+      addTransferManager: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          newTransferManager:
+            | TransferManager
+            | { CountTransferManager: any }
+            | { PercentageTransferManager: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Ticker, TransferManager]
+      >;
+      /**
+       * remove entities from exemption list of a transfer manager
+       *
+       * # Arguments
+       * * `origin` It contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `ticker` ticker for which the exemption list is being modified.
+       * * `transfer_manager` Transfer manager for which the exemption list is being modified.
+       * * `scope_ids` ScopeIds for which the exemption list is being modified.
+       *
+       * # Errors
+       * * `Unauthorized` if `origin` is not the owner of the ticker.
+       *
+       **/
+      removeExemptedEntities: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          transferManager:
+            | TransferManager
+            | { CountTransferManager: any }
+            | { PercentageTransferManager: any }
+            | string
+            | Uint8Array,
+          entities: Vec<ScopeId> | (ScopeId | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [Ticker, TransferManager, Vec<ScopeId>]
+      >;
+      /**
+       * Removes a transfer manager.
+       *
+       * # Arguments
+       * * `origin` It contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `ticker` ticker for which the transfer managers are being updated.
+       * * `transfer_manager` Transfer manager being removed.
+       *
+       * # Errors
+       * * `Unauthorized` if `origin` is not the owner of the ticker.
+       * * `TransferManagerMissing` if `asset_compliance` contains multiple entries with the same `requirement_id`.
+       *
+       **/
+      removeTransferManager: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          transferManager:
+            | TransferManager
+            | { CountTransferManager: any }
+            | { PercentageTransferManager: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Ticker, TransferManager]
       >;
     };
     sto: {
@@ -4759,80 +4810,6 @@ declare module '@polkadot/api/types/submittable' {
           fundraiserId: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Ticker, u64]
-      >;
-    };
-    stoCapped: {
-      /**
-       * Used to buy tokens
-       *
-       * # Arguments
-       * * `origin` Secondary key of the investor
-       * * `ticker` Ticker of the token
-       * * `sto_id` A unique identifier to know which STO investor wants to invest in
-       * * `value` Amount of POLYX wants to invest in
-       **/
-      buyTokens: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          stoId: u32 | AnyNumber | Uint8Array,
-          value: Balance | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, u32, Balance]
-      >;
-      /**
-       * Used to initialize the STO for a given asset
-       *
-       * # Arguments
-       * * `origin` Secondary key of the token owner who wants to initialize the sto
-       * * `ticker` Ticker of the token
-       * * `beneficiary_did` DID which holds all the funds collected
-       * * `cap` Total amount of tokens allowed for sale
-       * * `rate` Rate of asset in terms of native currency
-       * * `start_date` Unix timestamp at when STO starts
-       * * `end_date` Unix timestamp at when STO ends
-       **/
-      launchSto: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          beneficiaryDid: IdentityId | string | Uint8Array,
-          cap: Balance | AnyNumber | Uint8Array,
-          rate: u128 | AnyNumber | Uint8Array,
-          startDate: Moment | AnyNumber | Uint8Array,
-          endDate: Moment | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, IdentityId, Balance, u128, Moment, Moment]
-      >;
-      /**
-       * Pause the STO, Can only be called by the token owner
-       * By doing this every operations on given sto_id would get freezed like buy_tokens
-       *
-       * # Arguments
-       * * `origin` Secondary key of the token owner
-       * * `ticker` Ticker of the token
-       * * `sto_id` A unique identifier to know which STO needs to paused
-       **/
-      pauseSto: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          stoId: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, u32]
-      >;
-      /**
-       * Un-pause the STO, Can only be called by the token owner
-       * By doing this every operations on given sto_id would get un freezed.
-       *
-       * # Arguments
-       * * `origin` Secondary key of the token owner
-       * * `ticker` Ticker of the token
-       * * `sto_id` A unique identifier to know which STO needs to un paused
-       **/
-      unpauseSto: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          stoId: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, u32]
       >;
     };
     sudo: {
@@ -5102,7 +5079,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `id` - The DID of the new release coordinator.
        *
        * # Errors
-       * * `MemberNotFound`, If the new coordinator `id` is not part of the committee.
+       * * `NotAMember`, If the new coordinator `id` is not part of the committee.
        **/
       setReleaseCoordinator: AugmentedSubmittable<
         (id: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -5134,7 +5111,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `approve` - If `true` than this is a `for` vote, and `against` otherwise.
        *
        * # Errors
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
+       * * `NotAMember`, if the `origin` is not a member of this committee.
        **/
       vote: AugmentedSubmittable<
         (
@@ -5161,7 +5138,7 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # Errors
        * * `FirstVoteReject`, if `call` hasn't been proposed and `approve == false`.
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
+       * * `NotAMember`, if the `origin` is not a member of this committee.
        **/
       voteOrPropose: AugmentedSubmittable<
         (
@@ -5376,7 +5353,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `id` - The DID of the new release coordinator.
        *
        * # Errors
-       * * `MemberNotFound`, If the new coordinator `id` is not part of the committee.
+       * * `NotAMember`, If the new coordinator `id` is not part of the committee.
        **/
       setReleaseCoordinator: AugmentedSubmittable<
         (id: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -5408,7 +5385,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `approve` - If `true` than this is a `for` vote, and `against` otherwise.
        *
        * # Errors
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
+       * * `NotAMember`, if the `origin` is not a member of this committee.
        **/
       vote: AugmentedSubmittable<
         (
@@ -5435,7 +5412,7 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # Errors
        * * `FirstVoteReject`, if `call` hasn't been proposed and `approve == false`.
-       * * `BadOrigin`, if the `origin` is not a member of this committee.
+       * * `NotAMember`, if the `origin` is not a member of this committee.
        **/
       voteOrPropose: AugmentedSubmittable<
         (
@@ -5662,58 +5639,6 @@ declare module '@polkadot/api/types/submittable' {
           call: UniqueCall | { nonce?: any; call?: any } | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [AccountId, OffChainSignature, UniqueCall]
-      >;
-    };
-    voting: {
-      /**
-       * Adds a ballot
-       *
-       * # Arguments
-       * * `ticker` - Ticker of the token for which ballot is to be created
-       * * `ballot_name` - Name of the ballot
-       * * `ballot_details` - Other details of the ballot
-       **/
-      addBallot: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          ballotName: Bytes | string | Uint8Array,
-          ballotDetails:
-            | Ballot
-            | { checkpoint_id?: any; voting_start?: any; voting_end?: any; motions?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, Bytes, Ballot]
-      >;
-      /**
-       * Cancels a vote by setting it as expired
-       *
-       * # Arguments
-       * * `ticker` - Ticker of the token for which ballot is to be cancelled
-       * * `ballot_name` - Name of the ballot
-       **/
-      cancelBallot: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          ballotName: Bytes | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, Bytes]
-      >;
-      /**
-       * Casts a vote
-       *
-       * # Arguments
-       * * `ticker` - Ticker of the token for which vote is to be cast
-       * * `ballot_name` - Name of the ballot
-       * * `votes` - The actual vote to be cast
-       **/
-      vote: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          ballotName: Bytes | string | Uint8Array,
-          votes: Vec<Balance> | (Balance | AnyNumber | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, Bytes, Vec<Balance>]
       >;
     };
   }

@@ -87,6 +87,7 @@ export enum StakingTx {
   SetCommissionCap = 'staking.setCommissionCap',
   PayoutStakersBySystem = 'staking.payoutStakersBySystem',
   ChangeSlashingAllowedFor = 'staking.changeSlashingAllowedFor',
+  UpdatePermissionedValidatorIntendedCount = 'staking.updatePermissionedValidatorIntendedCount',
 }
 
 export enum SessionTx {
@@ -137,6 +138,7 @@ export enum MultiSigTx {
   ChangeAllSignersAndSigsRequired = 'multiSig.changeAllSignersAndSigsRequired',
   MakeMultisigSigner = 'multiSig.makeMultisigSigner',
   MakeMultisigPrimary = 'multiSig.makeMultisigPrimary',
+  ExecuteScheduledProposal = 'multiSig.executeScheduledProposal',
 }
 
 export enum ContractsTx {
@@ -513,6 +515,13 @@ export enum CheckpointTx {
   RemoveSchedule = 'checkpoint.removeSchedule',
 }
 
+export enum StatisticsTx {
+  AddTransferManager = 'statistics.addTransferManager',
+  RemoveTransferManager = 'statistics.removeTransferManager',
+  AddExemptedEntities = 'statistics.addExemptedEntities',
+  RemoveExemptedEntities = 'statistics.removeExemptedEntities',
+}
+
 export type TxTag =
   | SystemTx
   | BabeTx
@@ -555,7 +564,8 @@ export type TxTag =
   | CorporateActionTx
   | CorporateBallotTx
   | CapitalDistributionTx
-  | CheckpointTx;
+  | CheckpointTx
+  | StatisticsTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -600,4 +610,5 @@ export const TxTags = {
   corporateBallot: CorporateBallotTx,
   capitalDistribution: CapitalDistributionTx,
   checkpoint: CheckpointTx,
+  statistics: StatisticsTx,
 };

@@ -11,7 +11,19 @@ export default {
     DocumentId: 'u32',
     DocumentName: 'Text',
     DocumentUri: 'Text',
-    DocumentHash: 'Text',
+    DocumentHash: {
+      _enum: {
+        None: '',
+        H512: '[u8; 64]',
+        H384: '[u8; 48]',
+        H320: '[u8; 40]',
+        H256: '[u8; 32]',
+        H224: '[u8; 28]',
+        H192: '[u8; 24]',
+        H160: '[u8; 20]',
+        H128: '[u8; 16]',
+      },
+    },
     DocumentType: 'Text',
     Document: {
       uri: 'DocumentUri',
@@ -460,35 +472,12 @@ export default {
       condition: 'Condition',
       result: 'bool',
     },
-    STO: {
-      beneficiary_did: 'IdentityId',
-      cap: 'Balance',
-      sold: 'Balance',
-      rate: 'u64',
-      start_date: 'Moment',
-      end_date: 'Moment',
-      active: 'bool',
-    },
-    Investment: {
-      investor_did: 'IdentityId',
-      amount_paid: 'Balance',
-      assets_purchased: 'Balance',
-      last_purchase_date: 'Moment',
-    },
     SimpleTokenRecord: {
       ticker: 'Ticker',
       total_supply: 'Balance',
       owner_did: 'IdentityId',
     },
     FeeOf: 'Balance',
-    Dividend: {
-      amount: 'Balance',
-      active: 'bool',
-      matures_at: 'Option<Moment>',
-      expires_at: 'Option<Moment>',
-      payout_currency: 'Option<Ticker>',
-      checkpoint_id: 'u64',
-    },
     TargetIdAuthorization: {
       target_id: 'IdentityId',
       nonce: 'u64',
@@ -521,12 +510,6 @@ export default {
       title: 'MotionTitle',
       info_link: 'MotionInfoLink',
       choices: 'Vec<ChoiceTitle>',
-    },
-    Ballot: {
-      checkpoint_id: 'u64',
-      voting_start: 'Moment',
-      voting_end: 'Moment',
-      motions: 'Vec<Motion>',
     },
     BallotTitle: 'Text',
     BallotMeta: {
@@ -604,32 +587,19 @@ export default {
     },
     PipId: 'u32',
     ProposalState: {
-      _enum: ['Pending', 'Cancelled', 'Rejected', 'Scheduled', 'Failed', 'Executed', 'Expired'],
-    },
-    ReferendumState: {
-      _enum: ['Pending', 'Scheduled', 'Rejected', 'Failed', 'Executed'],
-    },
-    ReferendumType: {
-      _enum: ['FastTracked', 'Emergency', 'Community'],
+      _enum: ['Pending', 'Rejected', 'Scheduled', 'Failed', 'Executed', 'Expired'],
     },
     Pip: {
       id: 'PipId',
       proposal: 'Call',
       state: 'ProposalState',
       proposer: 'Proposer',
-      cool_off_until: 'u32',
     },
     ProposalData: {
       _enum: {
         Hash: 'Hash',
         Proposal: 'Vec<u8>',
       },
-    },
-    Referendum: {
-      id: 'PipId',
-      state: 'ReferendumState',
-      referendum_type: 'ReferendumType',
-      enactment_period: 'u32',
     },
     TickerTransferApproval: {
       authorized_by: 'IdentityId',
@@ -704,10 +674,11 @@ export default {
     },
     AuthorizationNonce: 'u64',
     Counter: 'u64',
-    Commission: {
+    Percentage: 'Permill',
+    TransferManager: {
       _enum: {
-        Individual: '',
-        Global: 'u32',
+        CountTransferManager: 'Counter',
+        PercentageTransferManager: 'Percentage',
       },
     },
     RestrictionResult: {
@@ -991,7 +962,8 @@ export default {
       status: 'InstructionStatus',
       settlement_type: 'SettlementType',
       created_at: 'Option<Moment>',
-      valid_from: 'Option<Moment>',
+      trade_date: 'Option<Moment>',
+      value_date: 'Option<Moment>',
     },
     Leg: {
       from: 'PortfolioId',
@@ -1040,11 +1012,22 @@ export default {
         Specific: 'IdentityId',
       },
     },
+    FundraiserTier: {
+      total: 'Balance',
+      price: 'Balance',
+      remaining: 'Balance',
+    },
     Fundraiser: {
-      raise_token: 'Ticker',
-      remaining_amount: 'Balance',
-      price_per_token: 'Balance',
+      creator: 'IdentityId',
+      offering_portfolio: 'PortfolioId',
+      offering_asset: 'Ticker',
+      raising_portfolio: 'PortfolioId',
+      raising_asset: 'Ticker',
+      tiers: 'Vec<FundraiserTier>',
       venue_id: 'u64',
+      start: 'Moment',
+      end: 'Option<Moment>',
+      frozen: 'bool',
     },
     VenueType: {
       _enum: ['Other', 'Distribution', 'Sto', 'Exchange'],
@@ -1069,7 +1052,7 @@ export default {
     CAKind: {
       _enum: [
         'PredictableBenefit',
-        'UnpredictableBenfit',
+        'UnpredictableBenefit',
         'IssuerNotice',
         'Reorganization',
         'Other',
@@ -1122,6 +1105,21 @@ export default {
     PriceTier: {
       total: 'Balance',
       price: 'Balance',
+    },
+    AssetMigrationError: {
+      _enum: {
+        AssetDocumentFail: '(Ticker, DocumentId)',
+      },
+    },
+    MigrationError: {
+      _enum: {
+        DecodeKey: 'Vec<u8>',
+        Map: 'AssetMigrationError',
+      },
+    },
+    PermissionedIdentityPrefs: {
+      intended_count: 'u32',
+      running_count: 'u32',
     },
   },
   rpc: {
