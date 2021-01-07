@@ -162,32 +162,6 @@ describe('assertInstructionValid', () => {
     );
   });
 
-  test('should throw an error if instruction is blocked', async () => {
-    const tradeDate = new Date('12/12/2050');
-
-    entityMockUtils.configureMocks({
-      instructionOptions: {
-        details: {
-          status: InstructionStatus.Pending,
-          tradeDate,
-        } as InstructionDetails,
-      },
-    });
-
-    instruction = getInstructionInstance();
-
-    let error;
-
-    try {
-      await assertInstructionValid(instruction, mockContext);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('The instruction has not reached its validity period');
-    expect(error.data.tradeDate).toEqual(tradeDate);
-  });
-
   test('should throw an error if the instruction can not be modified', async () => {
     const endBlock = new BigNumber(10);
 

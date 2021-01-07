@@ -40,6 +40,7 @@ export interface AddInstructionParams {
     token: string | SecurityToken;
   }[];
   tradeDate?: Date;
+  valueDate?: Date;
   endBlock?: BigNumber;
 }
 
@@ -80,7 +81,7 @@ export async function prepareAddInstruction(
     context,
     storage: { portfoliosToAffirm },
   } = this;
-  const { legs, venueId, endBlock, tradeDate } = args;
+  const { legs, venueId, endBlock, tradeDate, valueDate } = args;
 
   if (!legs.length) {
     throw new PolymeshError({
@@ -106,9 +107,17 @@ export async function prepareAddInstruction(
     endCondition = { type: InstructionType.SettleOnAffirmation } as const;
   }
 
+  if (tradeDate && valueDate && tradeDate > valueDate) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Value date must be after trade date',
+    });
+  }
+
   const rawVenueId = numberToU64(venueId, context);
   const rawSettlementType = endConditionToSettlementType(endCondition, context);
   const rawTradeDate = tradeDate ? dateToMoment(tradeDate, context) : null;
+  const rawValueDate = valueDate ? dateToMoment(valueDate, context) : null;
   const rawLegs: {
     from: PortfolioId;
     to: PortfolioId;
@@ -149,7 +158,7 @@ export async function prepareAddInstruction(
       rawVenueId,
       rawSettlementType,
       rawTradeDate,
-      null,
+      rawValueDate,
       rawLegs,
       portfoliosToAffirm.map(portfolio =>
         portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
@@ -164,7 +173,7 @@ export async function prepareAddInstruction(
       rawVenueId,
       rawSettlementType,
       rawTradeDate,
-      null,
+      rawValueDate,
       rawLegs
     );
   }

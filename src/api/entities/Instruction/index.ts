@@ -99,6 +99,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       status,
       created_at: createdAt,
       trade_date: tradeDate,
+      value_date: valueDate,
       settlement_type: type,
       venue_id: venueId,
     } = await settlement.instructionDetails(numberToU64(id, context));
@@ -107,6 +108,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       status: meshInstructionStatusToInstructionStatus(status),
       createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
+      valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
       venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
     };
 
