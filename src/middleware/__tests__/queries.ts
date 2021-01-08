@@ -19,6 +19,7 @@ import {
   proposals,
   proposalVotes,
   scopesByIdentity,
+  settlements,
   tokensByTrustedClaimIssuer,
   tokensHeldByDid,
   transactionByHash,
@@ -216,6 +217,19 @@ describe('eventByAddedTrustedClaimIssuer', () => {
     };
 
     const result = eventByAddedTrustedClaimIssuer(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('settlements', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      identityId: 'someIdentityId',
+    };
+
+    const result = settlements(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

@@ -13,6 +13,12 @@ import {
   setCustodian,
   TransactionQueue,
 } from '~/internal';
+import { heartbeat, settlements } from '~/middleware/queries';
+import {
+  SettlementDirectionEnum,
+  SettlementResult,
+  SettlementResultEnum,
+} from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -331,6 +337,121 @@ describe('Portfolio class', () => {
 
         expect(queue).toBe(expectedQueue);
       });
+    });
+  });
+
+  describe('method: getTransactionHistory', () => {
+    test('should return a list of transactions', async () => {
+      const did = 'someDid';
+      const id = new BigNumber(1);
+      let portfolio = new Portfolio({ id, did }, context);
+
+      const account = 'someAccount';
+      const key = 'someKey';
+
+      const blockNumber1 = new BigNumber(1);
+      const blockNumber2 = new BigNumber(2);
+
+      const token1 = new SecurityToken({ ticker: 'TICKER1' }, context);
+      const amount1 = new BigNumber(1000);
+      const token2 = new SecurityToken({ ticker: 'TICKER2' }, context);
+      const amount2 = new BigNumber(2000);
+
+      const leg1 = [
+        {
+          ticker: token1.ticker,
+          amount: amount1.toString(),
+          direction: SettlementDirectionEnum.Incoming,
+        },
+      ];
+      const leg2 = [
+        {
+          ticker: token2.ticker,
+          amount: amount2.toString(),
+          direction: SettlementDirectionEnum.Outgoing,
+        },
+      ];
+
+      /* eslint-disable @typescript-eslint/camelcase */
+      const transactionsQueryResponse: SettlementResult = {
+        totalCount: 20,
+        items: [
+          {
+            block_id: blockNumber1.toNumber(),
+            key: 'someKey',
+            result: SettlementResultEnum.Executed,
+            legs: leg1,
+          },
+          {
+            block_id: blockNumber2.toNumber(),
+            key: 'someKey',
+            result: SettlementResultEnum.Executed,
+            legs: leg2,
+          },
+        ],
+      };
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+      sinon
+        .stub(utilsConversionModule, 'addressToKey')
+        .withArgs(account)
+        .returns(key);
+
+      dsMockUtils.createApolloQueryStub(
+        settlements({
+          identityId: did,
+          portfolioNumber: id.toString(),
+          keyFilter: key,
+          tickerFilter: undefined,
+          count: 5,
+          skip: 0,
+        }),
+        {
+          settlements: transactionsQueryResponse,
+        }
+      );
+
+      let result = await portfolio.getTransactionHistory({
+        account,
+        size: 5,
+        start: 0,
+      });
+
+      /* eslint-disable @typescript-eslint/no-non-null-assertion */
+      expect(result.data[0].blockNumber).toEqual(blockNumber1);
+      expect(result.data[1].blockNumber).toEqual(blockNumber2);
+      expect(result.data[0].legs![0].token.ticker).toEqual(token1.ticker);
+      expect(result.data[1].legs![0].token.ticker).toEqual(token2.ticker);
+      expect(result.data[0].legs![0].amount).toEqual(amount1);
+      expect(result.data[1].legs![0].amount).toEqual(amount2);
+      expect(result.count).toEqual(20);
+      expect(result.next).toEqual(5);
+      /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+
+      dsMockUtils.createApolloQueryStub(
+        settlements({
+          identityId: did,
+          portfolioNumber: null,
+          keyFilter: undefined,
+          tickerFilter: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          settlements: {
+            totalCount: 0,
+            items: null,
+          },
+        }
+      );
+
+      portfolio = new Portfolio({ did }, context);
+      result = await portfolio.getTransactionHistory();
+
+      expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
     });
   });
 });
