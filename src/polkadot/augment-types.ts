@@ -671,6 +671,7 @@ import {
   FeeOf,
   FundingRoundName,
   Fundraiser,
+  FundraiserTier,
   HandledTxStatus,
   HistoricalVotingByAddress,
   HistoricalVotingById,
@@ -3038,6 +3039,9 @@ declare module '@polkadot/types/types/registry' {
     TargetIdentity: TargetIdentity;
     'Option<TargetIdentity>': Option<TargetIdentity>;
     'Vec<TargetIdentity>': Vec<TargetIdentity>;
+    FundraiserTier: FundraiserTier;
+    'Option<FundraiserTier>': Option<FundraiserTier>;
+    'Vec<FundraiserTier>': Vec<FundraiserTier>;
     Fundraiser: Fundraiser;
     'Option<Fundraiser>': Option<Fundraiser>;
     'Vec<Fundraiser>': Vec<Fundraiser>;
