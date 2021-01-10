@@ -60,6 +60,7 @@ describe('addInstruction procedure', () => {
   let toPortfolio: DefaultPortfolio | NumberedPortfolio;
   let token: string;
   let tradeDate: Date;
+  let valueDate: Date;
   let endBlock: BigNumber;
   let args: Params;
 
@@ -69,6 +70,7 @@ describe('addInstruction procedure', () => {
   let rawTo: PortfolioId;
   let rawToken: Ticker;
   let rawTradeDate: Moment;
+  let rawValueDate: Moment;
   let rawEndBlock: u32;
   let rawAuthSettlementType: SettlementType;
   let rawBlockSettlementType: SettlementType;
@@ -115,7 +117,9 @@ describe('addInstruction procedure', () => {
       id: new BigNumber(2),
     });
     token = 'SOME_TOKEN';
-    tradeDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+    const now = new Date();
+    tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
     endBlock = new BigNumber(1000);
     rawVenueId = dsMockUtils.createMockU64(venueId.toNumber());
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
@@ -129,6 +133,7 @@ describe('addInstruction procedure', () => {
     });
     rawToken = dsMockUtils.createMockTicker(token);
     rawTradeDate = dsMockUtils.createMockMoment(tradeDate.getTime());
+    rawValueDate = dsMockUtils.createMockMoment(valueDate.getTime());
     rawEndBlock = dsMockUtils.createMockU32(endBlock.toNumber());
     rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAffirmation');
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
@@ -210,6 +215,7 @@ describe('addInstruction procedure', () => {
       .withArgs({ type: InstructionType.SettleOnAffirmation }, mockContext)
       .returns(rawAuthSettlementType);
     dateToMomentStub.withArgs(tradeDate, mockContext).returns(rawTradeDate);
+    dateToMomentStub.withArgs(valueDate, mockContext).returns(rawValueDate);
   });
 
   afterEach(() => {
@@ -258,6 +264,27 @@ describe('addInstruction procedure', () => {
     expect(error.message).toBe('End block must be a future block');
   });
 
+  test('should throw an error if the value date is before the trade date', async () => {
+    dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    let error;
+
+    try {
+      await prepareAddInstruction.call(proc, {
+        ...args,
+        tradeDate: new Date(valueDate.getTime() + 1),
+        valueDate,
+      });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Value date must be after trade date');
+  });
+
   test('should add an add and authorize instruction transaction to the queue', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
     getCustodianStub.onCall(1).returns({ did: fromDid });
@@ -296,6 +323,7 @@ describe('addInstruction procedure', () => {
         { from, to, amount, token: entityMockUtils.getSecurityTokenInstance({ ticker: token }) },
       ],
       tradeDate,
+      valueDate,
       endBlock,
     });
 
@@ -308,7 +336,7 @@ describe('addInstruction procedure', () => {
       rawVenueId,
       rawBlockSettlementType,
       rawTradeDate,
-      null,
+      rawValueDate,
       [rawLeg]
     );
     expect(result).toBe(instruction);

@@ -16,10 +16,13 @@ export type InstructionDetails = {
   status: InstructionStatus;
   createdAt: Date;
   /**
-   * Date from which the Instruction can be executed. A null value means
-   *   that it can be executed at any time
+   * Date at which the trade was agreed upon (optional, for offchain trades)
    */
   tradeDate: Date | null;
+  /**
+   * Date at which the trade was executed (optional, for offchain trades)
+   */
+  valueDate: Date | null;
   venue: Venue;
 } & (
   | {

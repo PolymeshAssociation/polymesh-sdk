@@ -483,6 +483,7 @@ const defaultInstructionOptions: InstructionOptions = {
     status: InstructionStatus.Pending,
     createdAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
     tradeDate: null,
+    valueDate: null,
     type: InstructionType.SettleOnAffirmation,
   },
 };
