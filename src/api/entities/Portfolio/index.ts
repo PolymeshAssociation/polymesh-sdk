@@ -3,6 +3,7 @@ import { values } from 'lodash';
 import { Ticker } from 'polymesh-types/types';
 
 import {
+  Account,
   Context,
   Entity,
   Identity,
@@ -25,7 +26,7 @@ import {
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, getDid } from '~/utils/internal';
 
-import { HistoryData, PortfolioBalance } from './types';
+import { HistoricSettlement, PortfolioBalance } from './types';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -240,7 +241,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       size?: number;
       start?: number;
     } = {}
-  ): Promise<ResultSet<HistoryData>> {
+  ): Promise<ResultSet<HistoricSettlement>> {
     const {
       context,
       owner: { did },
@@ -249,7 +250,6 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
 
     const { account, ticker, size, start } = filters;
 
-    /* eslint-disable @typescript-eslint/camelcase */
     const result = await context.queryMiddleware<Ensured<Query, 'settlements'>>(
       settlements({
         identityId: did,
@@ -268,18 +268,18 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const { items, totalCount: count } = settlementsResult!;
 
-    const data: HistoryData[] = [];
+    const data: HistoricSettlement[] = [];
     let next = null;
 
     if (items) {
-      items.forEach(i => {
+      items.forEach(item => {
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        const { block_id, result: status, key, legs: settlementLegs } = i!;
+        const { block_id: blockId, result: status, key, legs: settlementLegs } = item!;
 
         data.push({
-          blockNumber: new BigNumber(block_id),
+          blockNumber: new BigNumber(blockId),
           status,
-          account: key,
+          account: new Account({ address: key }, context),
           legs: settlementLegs.map(leg => {
             return {
               token: new SecurityToken({ ticker: leg!.ticker }, context),

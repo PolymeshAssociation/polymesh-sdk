@@ -1,7 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-import { SecurityToken } from '~/internal';
-import { SettlementDirectionEnum, SettlementResultEnum } from '~/middleware/types';
+import { Account, SecurityToken } from '~/internal';
+import {
+  SettlementDirectionEnum as SettlementDirection,
+  SettlementResultEnum as SettlementResult,
+} from '~/middleware/types';
 
 export interface PortfolioBalance {
   token: SecurityToken;
@@ -12,12 +15,12 @@ export interface PortfolioBalance {
 export interface SettlementLeg {
   token: SecurityToken;
   amount: BigNumber;
-  direction: SettlementDirectionEnum;
+  direction: SettlementDirection;
 }
 
-export interface HistoryData {
+export interface HistoricSettlement {
   blockNumber: BigNumber;
-  status: SettlementResultEnum;
-  account: string;
-  legs?: SettlementLeg[];
+  status: SettlementResult;
+  account: Account;
+  legs: SettlementLeg[];
 }
