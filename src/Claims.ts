@@ -273,34 +273,23 @@ export class Claims {
    *
    * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   *
-   * @note supports pagination
-   * @note uses the middleware
    */
   public async getCddClaims(
     opts: {
       target?: string | Identity;
       includeExpired?: boolean;
-      size?: number;
-      start?: number;
     } = {}
-  ): Promise<ResultSet<ClaimData>> {
+  ): Promise<ClaimData[]> {
     const { context } = this;
-    const { target, includeExpired = true, size, start } = opts;
+    const { target, includeExpired = true } = opts;
 
     const did = await getDid(target, context);
 
-    const result = await context.getIdentityClaimsFromMiddleware({
+    return context.getIdentityClaimsFromChain({
       targets: [did],
       claimTypes: [ClaimType.CustomerDueDiligence],
       includeExpired,
-      size,
-      start,
     });
-
-    return result;
   }
 
   /**

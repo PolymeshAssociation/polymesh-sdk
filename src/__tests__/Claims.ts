@@ -428,31 +428,30 @@ describe('Claims Class', () => {
     test('should return a list of cdd claims', async () => {
       const target = 'someTarget';
 
-      const getIdentityClaimsFromMiddleware: ResultSet<ClaimData> = {
-        data: [
-          {
-            target: entityMockUtils.getIdentityInstance({ did: target }),
-            issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
-            issuedAt: new Date(),
-            expiry: null,
-            claim: { type: ClaimType.CustomerDueDiligence, id: 'someCddId' },
+      const identityClaims: ClaimData[] = [
+        {
+          target: entityMockUtils.getIdentityInstance({ did: target }),
+          issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
+          issuedAt: new Date(),
+          expiry: null,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: 'someId',
           },
-        ],
-        next: 1,
-        count: 1,
-      };
+        },
+      ];
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          getIdentityClaimsFromMiddleware,
+          getIdentityClaimsFromChain: identityClaims,
         },
       });
 
       let result = await claims.getCddClaims({ target });
-      expect(result).toEqual(getIdentityClaimsFromMiddleware);
+      expect(result).toEqual(identityClaims);
 
       result = await claims.getCddClaims();
-      expect(result).toEqual(getIdentityClaimsFromMiddleware);
+      expect(result).toEqual(identityClaims);
     });
   });
 
