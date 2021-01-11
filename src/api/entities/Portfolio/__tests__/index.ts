@@ -422,10 +422,10 @@ describe('Portfolio class', () => {
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[1].blockNumber).toEqual(blockNumber2);
-      expect(result.data[0].legs![0].token.ticker).toEqual(token1.ticker);
-      expect(result.data[1].legs![0].token.ticker).toEqual(token2.ticker);
-      expect(result.data[0].legs![0].amount).toEqual(amount1);
-      expect(result.data[1].legs![0].amount).toEqual(amount2);
+      expect(result.data[0].legs[0].token.ticker).toEqual(token1.ticker);
+      expect(result.data[1].legs[0].token.ticker).toEqual(token2.ticker);
+      expect(result.data[0].legs[0].amount).toEqual(amount1);
+      expect(result.data[1].legs[0].amount).toEqual(amount2);
       expect(result.count).toEqual(20);
       expect(result.next).toEqual(5);
       /* eslint-enabled @typescript-eslint/no-non-null-assertion */
