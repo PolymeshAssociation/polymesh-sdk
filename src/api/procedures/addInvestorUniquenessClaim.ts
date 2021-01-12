@@ -8,9 +8,6 @@ import {
   stringToInvestorZKProofData,
 } from '~/utils/conversion';
 
-/**
- * @hidden
- */
 export interface AddInvestorUniquenessClaimParams {
   scope: Scope;
   cddId: string;

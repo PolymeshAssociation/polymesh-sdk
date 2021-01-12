@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { Context } from '~/internal';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
-import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier, ExtrinsicData } from '~/types';
 import { extrinsicIdentifierToTxTag } from '~/utils/conversion';
 
@@ -29,8 +29,8 @@ export class Middleware {
    * @param opts.eventArg2 - event value to filter in position 2
    */
   public async getEventByIndexedArgs(opts: {
-    moduleId: ModuleIdEnum;
-    eventId: EventIdEnum;
+    moduleId: ModuleId;
+    eventId: EventId;
     eventArg0?: string;
     eventArg1?: string;
     eventArg2?: string;
@@ -74,8 +74,8 @@ export class Middleware {
    * @param opts.start - page offset
    */
   public async getEventsByIndexedArgs(opts: {
-    moduleId: ModuleIdEnum;
-    eventId: EventIdEnum;
+    moduleId: ModuleId;
+    eventId: EventId;
     eventArg0?: string;
     eventArg1?: string;
     eventArg2?: string;

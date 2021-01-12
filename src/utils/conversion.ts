@@ -1,5 +1,5 @@
 import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Moment, Permill } from '@polkadot/types/interfaces';
 import {
   stringLowerFirst,
   stringToU8a,
@@ -55,6 +55,7 @@ import {
   Signatory,
   TargetIdentity,
   Ticker,
+  TransferManager,
   TrustedIssuer,
   TxTag,
   TxTags,
@@ -129,6 +130,8 @@ import {
   PortfolioId,
   SignerType,
   SignerValue,
+  TransferRestriction,
+  TransferRestrictionType,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -348,6 +351,25 @@ export function u64ToBigNumber(value: u64): BigNumber {
  */
 export function numberToU64(value: number | BigNumber, context: Context): u64 {
   return context.polymeshApi.createType('u64', new BigNumber(value).toString());
+}
+
+/**
+ * @hidden
+ */
+export function percentageToPermill(value: number | BigNumber, context: Context): Permill {
+  return context.polymeshApi.createType(
+    'Permill',
+    new BigNumber(value).multipliedBy(Math.pow(10, 4))
+  ); // (value : 100) * 10^6
+}
+
+/**
+ * @hidden
+ *
+ * @note returns a percentage value ([0, 100])
+ */
+export function permillToBigNumber(value: Permill): BigNumber {
+  return new BigNumber(value.toString()).dividedBy(Math.pow(10, 4)); // (value : 10^6) * 100
 }
 
 /**
@@ -2079,6 +2101,65 @@ export function portfolioMovementToMovePortfolioItem(
  */
 export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context): MeshClaimType {
   return context.polymeshApi.createType('ClaimType', claimType);
+}
+
+/**
+ * @hidden
+ */
+export function transferRestrictionToTransferManager(
+  restriction: TransferRestriction,
+  context: Context
+): TransferManager {
+  const { type, value } = restriction;
+  let tmType;
+  let tmValue;
+
+  if (type === TransferRestrictionType.Count) {
+    tmType = 'CountTransferManager';
+
+    if (!value.isInteger() || value.isNegative()) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Count should be a positive integer',
+      });
+    }
+
+    tmValue = numberToU64(value, context);
+  } else {
+    tmType = 'PercentageTransferManager';
+
+    if (value.lt(0) || value.gt(100)) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Percentage should be between 0 and 100',
+      });
+    }
+
+    tmValue = percentageToPermill(value, context);
+  }
+
+  return context.polymeshApi.createType('TransferManager', {
+    [tmType]: tmValue,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function transferManagerToTransferRestriction(
+  transferManager: TransferManager
+): TransferRestriction {
+  if (transferManager.isCountTransferManager) {
+    return {
+      type: TransferRestrictionType.Count,
+      value: u64ToBigNumber(transferManager.asCountTransferManager),
+    };
+  } else {
+    return {
+      type: TransferRestrictionType.Percentage,
+      value: permillToBigNumber(transferManager.asPercentageTransferManager),
+    };
+  }
 }
 
 /**

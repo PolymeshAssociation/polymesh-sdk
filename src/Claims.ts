@@ -243,7 +243,6 @@ export class Claims {
       scopesByIdentity({ did })
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return scopes.map(({ scope, ticker: symbol }) => {
       let ticker: string | undefined;
 
