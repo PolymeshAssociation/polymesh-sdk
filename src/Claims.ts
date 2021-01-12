@@ -211,7 +211,6 @@ export class Claims {
     } = result;
 
     const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
-
     const next = calculateNextKey(count, size, start);
 
     return {
