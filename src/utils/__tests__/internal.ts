@@ -18,6 +18,7 @@ import {
   delay,
   findEventRecord,
   getDid,
+  isPrintableASCII,
   padString,
   removePadding,
   requestAtBlock,
@@ -424,15 +425,25 @@ describe('calculateNextKey', () => {
 
     expect(nextKey).toEqual(30);
   });
+});
 
-  describe('stringIsClean', () => {
-    test('should return false if the string contains charcode 65533', () => {
-      expect(stringIsClean(String.fromCharCode(65533))).toBe(false);
-    });
+describe('stringIsClean', () => {
+  test('should return false if the string contains charcode 65533', () => {
+    expect(stringIsClean(String.fromCharCode(65533))).toBe(false);
+  });
 
-    test("should return true if the string doesn't contain any forbidden characters", () => {
-      expect(stringIsClean('Clean String')).toBe(true);
-    });
+  test("should return true if the string doesn't contain any forbidden characters", () => {
+    expect(stringIsClean('Clean String')).toBe(true);
+  });
+});
+
+describe('isPrintableASCII', () => {
+  test('should return true if the string contains printable ASCII', () => {
+    expect(isPrintableASCII('TICKET')).toBe(true);
+  });
+
+  test("should return false if the string doesn't contain printable ASCII", () => {
+    expect(isPrintableASCII(String.fromCharCode(10000000))).toBe(false);
   });
 });
 

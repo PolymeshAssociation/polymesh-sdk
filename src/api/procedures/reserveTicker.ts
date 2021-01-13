@@ -11,7 +11,7 @@ import {
 import { ErrorCode, RoleType, TickerReservationStatus } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker, tickerToString } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { findEventRecord, isPrintableASCII } from '~/utils/internal';
 
 export interface ReserveTickerParams {
   ticker: string;
@@ -46,6 +46,13 @@ export async function prepareReserveTicker(
     context,
   } = this;
   const { ticker, extendPeriod = false } = args;
+
+  if (!isPrintableASCII(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Only printable ASCII is alowed as ticker name',
+    });
+  }
 
   if (ticker.length < 1 || ticker.length > 12 || ticker !== ticker.toUpperCase()) {
     throw new PolymeshError({

@@ -48,7 +48,7 @@ import {
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, getDid, stringIsClean } from '~/utils/internal';
+import { createProcedureMethod, getDid, isPrintableASCII, stringIsClean } from '~/utils/internal';
 
 import { Claims } from './Claims';
 // import { Governance } from './Governance';
@@ -345,6 +345,13 @@ export class Polymesh {
     args: { ticker: string },
     callback?: SubCallback<boolean>
   ): Promise<boolean | UnsubCallback> {
+    if (!isPrintableASCII(args.ticker)) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Only printable ASCII is alowed as ticker name',
+      });
+    }
+
     const reservation = new TickerReservation(args, this.context);
 
     if (callback) {

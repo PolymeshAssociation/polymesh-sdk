@@ -91,6 +91,14 @@ describe('reserveTicker procedure', () => {
     let error;
 
     try {
+      await prepareReserveTicker.call(proc, { ticker: String.fromCharCode(10000000) });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Only printable ASCII is alowed as ticker name');
+
+    try {
       await prepareReserveTicker.call(proc, { ticker: '' });
     } catch (err) {
       error = err;
