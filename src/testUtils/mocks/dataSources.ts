@@ -485,7 +485,7 @@ const defaultKeyringOptions: KeyringOptions = {
   getPairs: [{ address: 'address', meta: {}, publicKey: 'publicKey2' }],
   addFromSeed: { address: 'address', meta: {}, publicKey: 'publicKey3' },
   addFromUri: { address: 'address', meta: {}, publicKey: 'publicKey4' },
-  addFromMnemonic: { address: 'address', meta: {}, publicKey: 'publicKey4' },
+  addFromMnemonic: { address: 'address', meta: {}, publicKey: 'publicKey5' },
 };
 let keyringOptions: KeyringOptions = defaultKeyringOptions;
 
