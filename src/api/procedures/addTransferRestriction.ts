@@ -11,6 +11,7 @@ import {
   transferManagerToTransferRestriction,
   transferRestrictionToTransferManager,
 } from '~/utils/conversion';
+import { batchArguments } from '~/utils/internal';
 
 interface BaseParams {
   exempted: string[];
@@ -95,13 +96,16 @@ export async function prepareAddTransferRestriction(
   this.addTransaction(statistics.addTransferManager, {}, rawTicker, rawTransferManager);
 
   if (exempted.length) {
-    this.addTransaction(
-      statistics.addExemptedEntities,
-      {},
-      rawTicker,
-      rawTransferManager,
-      exempted.map(scopeId => stringToScopeId(scopeId, context))
-    );
+    const scopeIds = exempted.map(scopeId => stringToScopeId(scopeId, context));
+    batchArguments(scopeIds, TxTags.statistics.AddExemptedEntities).forEach(scopeIdBatch => {
+      this.addTransaction(
+        statistics.addExemptedEntities,
+        { batchSize: scopeIdBatch.length },
+        rawTicker,
+        rawTransferManager,
+        scopeIdBatch
+      );
+    });
   }
 
   return restrictionAmount + 1;

@@ -136,10 +136,10 @@ import {
 import { tuple } from '~/types/utils';
 import {
   IGNORE_CHECKSUM,
+  MAX_BALANCE,
   MAX_DECIMALS,
   MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
-  MAX_TOKEN_AMOUNT,
   SS58_FORMAT,
 } from '~/utils/constants';
 import { createClaim, padString, removePadding, stringIsClean } from '~/utils/internal';
@@ -359,7 +359,7 @@ export function numberToU64(value: number | BigNumber, context: Context): u64 {
 export function percentageToPermill(value: number | BigNumber, context: Context): Permill {
   return context.polymeshApi.createType(
     'Permill',
-    new BigNumber(value).multipliedBy(Math.pow(10, 4))
+    new BigNumber(value).multipliedBy(Math.pow(10, 4)).toString()
   ); // (value : 100) * 10^6
 }
 
@@ -687,13 +687,13 @@ export function numberToBalance(
 
   divisible = divisible ?? true;
 
-  if (rawValue.isGreaterThan(MAX_TOKEN_AMOUNT)) {
+  if (rawValue.isGreaterThan(MAX_BALANCE)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The value exceed the amount limit allowed',
+      message: 'The value exceeds the maximum possible balance',
       data: {
         currentValue: rawValue,
-        amountLimit: MAX_TOKEN_AMOUNT,
+        amountLimit: MAX_BALANCE,
       },
     });
   }
@@ -702,7 +702,7 @@ export function numberToBalance(
     if (rawValue.decimalPlaces() > MAX_DECIMALS) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'The value exceed the decimals limit allowed',
+        message: 'The value has more decimal places than allowed',
         data: {
           currentValue: rawValue,
           decimalsLimit: MAX_DECIMALS,
@@ -713,7 +713,7 @@ export function numberToBalance(
     if (rawValue.decimalPlaces()) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'The value cannot have decimals if the token is indivisible',
+        message: 'The value has decimals but the token is indivisible',
       });
     }
   }
