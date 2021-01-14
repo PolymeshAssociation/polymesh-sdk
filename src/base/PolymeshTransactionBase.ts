@@ -92,9 +92,7 @@ export abstract class PolymeshTransactionBase<
    *
    * wrappers for values that will exist after this transaction has executed
    */
-  protected postValues: PostTransactionValueArray<
-    Values
-  > = ([] as unknown) as PostTransactionValueArray<Values>;
+  protected postValues: PostTransactionValueArray<Values> = ([] as unknown) as PostTransactionValueArray<Values>;
 
   /**
    * @hidden

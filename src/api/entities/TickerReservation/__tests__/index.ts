@@ -217,10 +217,7 @@ describe('TickerReservation class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
 
-      sinon
-        .stub(reserveTicker, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(reserveTicker, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await tickerReservation.extend();
 
@@ -246,10 +243,7 @@ describe('TickerReservation class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(createSecurityToken, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(createSecurityToken, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await tickerReservation.createToken(args);
 

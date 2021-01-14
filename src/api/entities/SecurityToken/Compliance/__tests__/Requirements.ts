@@ -364,10 +364,7 @@ describe('Requirements class', () => {
         .withArgs(token.ticker, context)
         .returns(rawTicker);
 
-      sinon
-        .stub(utilsConversionModule, 'boolToBoolean')
-        .withArgs(mockBool)
-        .returns(fakeResult);
+      sinon.stub(utilsConversionModule, 'boolToBoolean').withArgs(mockBool).returns(fakeResult);
 
       dsMockUtils
         .createQueryStub('complianceManager', 'assetCompliances')

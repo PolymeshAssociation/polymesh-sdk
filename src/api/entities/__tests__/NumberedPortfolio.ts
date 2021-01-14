@@ -76,10 +76,7 @@ describe('NumberedPortfolio class', () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(deletePortfolio, 'prepare')
-        .withArgs({ id, did }, context)
-        .resolves(expectedQueue);
+      sinon.stub(deletePortfolio, 'prepare').withArgs({ id, did }, context).resolves(expectedQueue);
 
       const queue = await numberedPortfolio.delete();
 

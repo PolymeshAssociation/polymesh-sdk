@@ -191,6 +191,28 @@ describe('Context class', () => {
       expect(context.currentPair).toEqual(newPair);
     });
 
+    test('should create a Context object from a mnemonic with Pair attached', async () => {
+      const newPair = {
+        address: 'someAddress',
+        meta: {},
+        publicKey: 'publicKey',
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          addFromMnemonic: newPair,
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        mnemonic:
+          'lorem ipsum dolor sit amet consectetur adipiscing elit nam hendrerit consectetur sagittis',
+      });
+
+      expect(context.currentPair).toEqual(newPair);
+    });
+
     test('should create a Context object without Pair attached', async () => {
       const newPair = {
         address: 'someAddress',
@@ -881,8 +903,8 @@ describe('Context class', () => {
               name: 'target',
             },
             {
-              type: 'Commission',
-              name: 'commission',
+              type: 'PortfolioKind',
+              name: 'portfolioKind',
             },
             {
               type: 'Option<Moment>',
@@ -903,17 +925,17 @@ describe('Context class', () => {
           optional: false,
         },
         {
-          name: 'commission',
+          name: 'portfolioKind',
           type: TransactionArgumentType.RichEnum,
           optional: false,
           internal: [
             {
-              name: 'Individual',
+              name: 'Default',
               type: TransactionArgumentType.Null,
               optional: false,
             },
             {
-              name: 'Global',
+              name: 'User',
               type: TransactionArgumentType.Number,
               optional: false,
             },
@@ -1033,8 +1055,8 @@ describe('Context class', () => {
         meta: {
           args: [
             {
-              type: 'Document',
-              name: 'document',
+              type: 'VoteCountProposalFound',
+              name: 'voteCountProposalFound',
             },
           ],
         },
@@ -1043,28 +1065,16 @@ describe('Context class', () => {
       expect(context.getTransactionArguments({ tag: TxTags.asset.Unfreeze })).toMatchObject([
         {
           type: TransactionArgumentType.Object,
-          name: 'document',
+          name: 'voteCountProposalFound',
           optional: false,
           internal: [
             {
-              name: 'uri',
-              type: TransactionArgumentType.Text,
+              name: 'ayes',
+              type: TransactionArgumentType.Number,
             },
             {
-              name: 'content_hash',
-              type: TransactionArgumentType.Text,
-            },
-            {
-              name: 'name',
-              type: TransactionArgumentType.Text,
-            },
-            {
-              name: 'doc_type',
-              type: TransactionArgumentType.Text,
-            },
-            {
-              name: 'filing_date',
-              type: TransactionArgumentType.Date,
+              name: 'nays',
+              type: TransactionArgumentType.Number,
             },
           ],
         },

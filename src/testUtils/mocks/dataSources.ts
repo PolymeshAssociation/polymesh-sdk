@@ -17,7 +17,7 @@ import {
   u64,
   Vec,
 } from '@polkadot/types';
-import { CompactEncodable } from '@polkadot/types/codec/Compact';
+import { CompactEncodable } from '@polkadot/types/codec/types';
 import {
   AccountData,
   AccountId,
@@ -238,6 +238,7 @@ interface KeyringOptions {
   getPairs?: Pair[];
   addFromUri?: Pair;
   addFromSeed?: Pair;
+  addFromMnemonic?: Pair;
   /**
    * @hidden
    * Whether keyring functions should throw
@@ -484,6 +485,7 @@ const defaultKeyringOptions: KeyringOptions = {
   getPairs: [{ address: 'address', meta: {}, publicKey: 'publicKey2' }],
   addFromSeed: { address: 'address', meta: {}, publicKey: 'publicKey3' },
   addFromUri: { address: 'address', meta: {}, publicKey: 'publicKey4' },
+  addFromMnemonic: { address: 'address', meta: {}, publicKey: 'publicKey5' },
 };
 let keyringOptions: KeyringOptions = defaultKeyringOptions;
 
@@ -684,7 +686,7 @@ function initApi(): void {
  * @hidden
  */
 function configureKeyring(opts: KeyringOptions): void {
-  const { error, getPair, getPairs, addFromUri, addFromSeed } = opts;
+  const { error, getPair, getPairs, addFromUri, addFromSeed, addFromMnemonic } = opts;
 
   const err = new Error('Error');
 
@@ -693,6 +695,7 @@ function configureKeyring(opts: KeyringOptions): void {
     getPairs: sinon.stub().returns(getPairs),
     addFromSeed: sinon.stub().returns(addFromSeed),
     addFromUri: sinon.stub().returns(addFromUri),
+    addFromMnemonic: sinon.stub().returns(addFromMnemonic),
   };
 
   if (error) {
@@ -700,6 +703,7 @@ function configureKeyring(opts: KeyringOptions): void {
     keyringInstance.getPairs.throws(err);
     keyringInstance.addFromSeed.throws(err);
     keyringInstance.addFromUri.throws(err);
+    keyringInstance.addFromMnemonic.throws(err);
   }
 
   Object.assign(mockInstanceContainer.keyringInstance, (keyringInstance as unknown) as Keyring);
@@ -2261,7 +2265,7 @@ export const createMockInstruction = (instruction?: {
   status: InstructionStatus;
   settlement_type: SettlementType;
   created_at: Option<Moment>;
-  valid_from: Option<Moment>;
+  trade_date: Option<Moment>;
 }): Instruction => {
   const data = instruction || {
     instruction_id: createMockU64(),
@@ -2269,7 +2273,7 @@ export const createMockInstruction = (instruction?: {
     status: createMockInstructionStatus(),
     settlement_type: createMockSettlementType(),
     created_at: createMockOption(),
-    valid_from: createMockOption(),
+    trade_date: createMockOption(),
   };
 
   return createMockCodec(

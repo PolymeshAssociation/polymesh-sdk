@@ -23,10 +23,7 @@ describe('Account class', () => {
     address = 'someAddress';
     key = 'someKey';
 
-    sinon
-      .stub(utilsConversionModule, 'addressToKey')
-      .withArgs(address)
-      .returns(key);
+    sinon.stub(utilsConversionModule, 'addressToKey').withArgs(address).returns(key);
   });
 
   beforeEach(() => {
@@ -124,13 +121,10 @@ describe('Account class', () => {
       const blockNumber1 = new BigNumber(1);
       const blockNumber2 = new BigNumber(2);
 
-      sinon
-        .stub(utilsConversionModule, 'txTagToExtrinsicIdentifier')
-        .withArgs(tag)
-        .returns({
-          moduleId,
-          callId,
-        });
+      sinon.stub(utilsConversionModule, 'txTagToExtrinsicIdentifier').withArgs(tag).returns({
+        moduleId,
+        callId,
+      });
 
       /* eslint-disable @typescript-eslint/camelcase */
       const transactionsQueryResponse: ExtrinsicResult = {

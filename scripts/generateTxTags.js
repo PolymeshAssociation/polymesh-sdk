@@ -1,5 +1,5 @@
 /* eslint-disable */
-const Metadata = require('@polkadot/metadata/Metadata').default;
+const { Metadata } = require('@polkadot/metadata/Metadata');
 const { w3cwebsocket } = require('websocket');
 const { TypeRegistry } = require('@polkadot/types/create');
 const { stringCamelCase, stringUpperFirst } = require('@polkadot/util');

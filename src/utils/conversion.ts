@@ -1841,11 +1841,11 @@ export function addressToKey(address: string): string {
  * @hidden
  */
 export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
-  const { sectionName, methodName } = context.polymeshApi.createType('Proposal', bytes);
+  const { section, method } = context.polymeshApi.createType('Proposal', bytes);
 
   return extrinsicIdentifierToTxTag({
-    moduleId: sectionName.toLowerCase() as ModuleIdEnum,
-    callId: methodName as CallIdEnum,
+    moduleId: section.toLowerCase() as ModuleIdEnum,
+    callId: method as CallIdEnum,
   });
 }
 
