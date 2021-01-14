@@ -14,7 +14,7 @@ import {
 import { batchArguments } from '~/utils/internal';
 
 interface BaseParams {
-  exempted: string[];
+  exempted?: string[];
 }
 
 export type AddCountTransferRestrictionParams = BaseParams & {
@@ -51,7 +51,7 @@ export async function prepareAddTransferRestriction(
     },
     context,
   } = this;
-  const { ticker, exempted } = args;
+  const { ticker, exempted = [] } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
@@ -116,7 +116,7 @@ export async function prepareAddTransferRestriction(
  */
 export function getAuthorization(
   this: Procedure<AddTransferRestrictionParams, number>,
-  { ticker, exempted }: AddTransferRestrictionParams
+  { ticker, exempted = [] }: AddTransferRestrictionParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.AddTransferManager];
 
