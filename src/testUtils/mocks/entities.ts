@@ -130,6 +130,7 @@ interface CurrentAccountOptions extends AccountOptions {
 interface VenueOptions {
   id?: BigNumber;
   details?: Partial<VenueDetails>;
+  exists?: boolean;
 }
 
 interface NumberedPortfolioOptions {
@@ -193,6 +194,7 @@ let currentAccountGetIdentityStub: SinonStub;
 let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let venueDetailsStub: SinonStub;
+let venueExistsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
@@ -443,6 +445,7 @@ const defaultVenueOptions: VenueOptions = {
     type: VenueType.Distribution,
     description: 'someDescription',
   },
+  exists: true,
 };
 let venueOptions = defaultVenueOptions;
 const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
@@ -543,6 +546,7 @@ function configureVenue(opts: VenueOptions): void {
   const venue = ({
     id: opts.id,
     details: venueDetailsStub.resolves(details),
+    exists: venueExistsStub.resolves(opts.exists),
   } as unknown) as MockVenue;
 
   Object.assign(mockInstanceContainer.venue, venue);
@@ -560,6 +564,7 @@ function configureVenue(opts: VenueOptions): void {
 function initVenue(opts?: VenueOptions): void {
   venueConstructorStub = sinon.stub();
   venueDetailsStub = sinon.stub();
+  venueExistsStub = sinon.stub();
 
   venueOptions = { ...defaultVenueOptions, ...opts };
 
