@@ -208,7 +208,6 @@ describe('addTransferRestriction procedure', () => {
   test('should throw an error if attempting to add a restriction that already exists', async () => {
     args = {
       type: TransferRestrictionType.Count,
-      exempted: [],
       count,
       ticker,
     };
@@ -235,7 +234,6 @@ describe('addTransferRestriction procedure', () => {
       args = {
         ticker,
         count,
-        exempted: [],
         type: TransferRestrictionType.Count,
       };
 
