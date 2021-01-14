@@ -123,6 +123,7 @@ import {
   meshPermissionsToPermissions,
   meshScopeToScope,
   meshVenueTypeToVenueType,
+  middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
   // middlewareProposalToProposalDetails,
   moduleAddressToString,
@@ -4186,5 +4187,46 @@ describe('permissionsLikeToPermissions', () => {
       transactions: [],
       portfolios: [],
     });
+  });
+});
+
+describe('middlewarePortfolioToPortfolio', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('middlewarePortfolioToPortfolio should convert a MiddlewarePortfolio into a Portfolio', async () => {
+    const context = dsMockUtils.getContextInstance();
+    let middlewarePortfolio = {
+      kind: 'Default',
+      did: 'someDid',
+    };
+
+    let result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+
+    middlewarePortfolio = {
+      kind: '0',
+      did: 'someDid',
+    };
+
+    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+
+    middlewarePortfolio = {
+      kind: '10',
+      did: 'someDid',
+    };
+
+    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
+    expect(result instanceof NumberedPortfolio).toBe(true);
   });
 });

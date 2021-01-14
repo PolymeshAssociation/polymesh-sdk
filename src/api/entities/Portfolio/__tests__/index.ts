@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import { PortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 import {
   Context,
   Entity,
@@ -26,6 +27,20 @@ import * as utilsConversionModule from '~/utils/conversion';
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
+);
+
+jest.mock(
+  '~/api/entities/DefaultPortfolio',
+  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+    '~/api/entities/DefaultPortfolio'
+  )
 );
 
 describe('Portfolio class', () => {
@@ -357,11 +372,31 @@ describe('Portfolio class', () => {
       const token2 = new SecurityToken({ ticker: 'TICKER2' }, context);
       const amount2 = new BigNumber(2000);
 
+      const portfolioDid1 = 'somePortfolioDid';
+      const portfolioKind1 = 'Default';
+
+      const portfolioDid2 = 'somePortfolioDid2';
+      const portfolioKind2 = '10';
+
+      const portfolio1 = new DefaultPortfolio({ did: portfolioDid1 }, context);
+      const portfolio2 = new NumberedPortfolio(
+        { did: portfolioDid2, id: new BigNumber(portfolioKind2) },
+        context
+      );
+
       const leg1 = [
         {
           ticker: token1.ticker,
           amount: amount1.toString(),
           direction: SettlementDirectionEnum.Incoming,
+          from: {
+            kind: portfolioKind1,
+            did: portfolioDid1,
+          },
+          to: {
+            kind: portfolioKind2,
+            did: portfolioDid2,
+          },
         },
       ];
       const leg2 = [
@@ -369,6 +404,14 @@ describe('Portfolio class', () => {
           ticker: token2.ticker,
           amount: amount2.toString(),
           direction: SettlementDirectionEnum.Outgoing,
+          from: {
+            kind: portfolioKind2,
+            did: portfolioDid2,
+          },
+          to: {
+            kind: portfolioKind1,
+            did: portfolioDid1,
+          },
         },
       ];
 
@@ -378,13 +421,13 @@ describe('Portfolio class', () => {
         items: [
           {
             block_id: blockNumber1.toNumber(),
-            key: 'someKey',
+            addresses: ['someKey', 'otherKey'],
             result: SettlementResultEnum.Executed,
             legs: leg1,
           },
           {
             block_id: blockNumber2.toNumber(),
-            key: 'someKey',
+            addresses: ['someKey', 'otherKey'],
             result: SettlementResultEnum.Executed,
             legs: leg2,
           },
@@ -403,7 +446,7 @@ describe('Portfolio class', () => {
         settlements({
           identityId: did,
           portfolioNumber: id.toString(),
-          keyFilter: key,
+          addressFilter: key,
           tickerFilter: undefined,
           count: 5,
           skip: 0,
@@ -426,6 +469,10 @@ describe('Portfolio class', () => {
       expect(result.data[1].legs[0].token.ticker).toEqual(token2.ticker);
       expect(result.data[0].legs[0].amount).toEqual(amount1);
       expect(result.data[1].legs[0].amount).toEqual(amount2);
+      expect(result.data[0].legs[0].from).toEqual(portfolio1);
+      expect(result.data[0].legs[0].to).toEqual(portfolio2);
+      expect(result.data[1].legs[0].from).toEqual(portfolio2);
+      expect(result.data[1].legs[0].to).toEqual(portfolio1);
       expect(result.count).toEqual(20);
       expect(result.next).toEqual(5);
       /* eslint-enabled @typescript-eslint/no-non-null-assertion */
@@ -434,7 +481,7 @@ describe('Portfolio class', () => {
         settlements({
           identityId: did,
           portfolioNumber: null,
-          keyFilter: undefined,
+          addressFilter: undefined,
           tickerFilter: undefined,
           count: undefined,
           skip: undefined,

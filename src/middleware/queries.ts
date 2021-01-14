@@ -546,7 +546,7 @@ export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<Query
     query SettlementsQuery(
       $identityId: String!
       $portfolioNumber: String
-      $keyFilter: String
+      $addressFilter: String
       $tickerFilter: String
       $count: Int
       $skip: Int
@@ -554,7 +554,7 @@ export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<Query
       settlements(
         identityId: $identityId
         portfolioNumber: $portfolioNumber
-        keyFilter: $keyFilter
+        addressFilter: $addressFilter
         tickerFilter: $tickerFilter
         count: $count
         skip: $skip
@@ -568,6 +568,8 @@ export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<Query
             ticker
             amount
             direction
+            from
+            to
           }
         }
       }

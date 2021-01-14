@@ -5,7 +5,7 @@ import {
   ModuleIdEnum,
   Order,
   ProposalOrderFields,
-  ProposalState,
+  ProposalStateEnum,
   ProposalVotesOrderFields,
 } from '~/middleware/types';
 
@@ -111,9 +111,9 @@ describe('proposals', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       proposers: ['someProposer'],
-      states: [ProposalState.Referendum],
+      states: [ProposalStateEnum.Scheduled],
       orderBy: {
-        field: ProposalOrderFields.CreatedAt,
+        field: ProposalOrderFields.VotesCount,
         order: Order.Desc,
       },
     };

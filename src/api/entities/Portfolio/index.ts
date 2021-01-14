@@ -21,6 +21,7 @@ import {
   addressToKey,
   balanceToBigNumber,
   identityIdToString,
+  middlewarePortfolioToPortfolio,
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
@@ -254,7 +255,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       settlements({
         identityId: did,
         portfolioNumber: _id ? _id.toString() : null,
-        keyFilter: account ? addressToKey(account) : undefined,
+        addressFilter: account ? addressToKey(account) : undefined,
         tickerFilter: ticker,
         count: size,
         skip: start,
@@ -274,17 +275,19 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     if (items) {
       items.forEach(item => {
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        const { block_id: blockId, result: status, key, legs: settlementLegs } = item!;
+        const { block_id: blockId, result: status, addresses, legs: settlementLegs } = item!;
 
         data.push({
           blockNumber: new BigNumber(blockId),
           status,
-          account: new Account({ address: key }, context),
+          accounts: addresses!.map(address => new Account({ address }, context)),
           legs: settlementLegs.map(leg => {
             return {
               token: new SecurityToken({ ticker: leg!.ticker }, context),
               amount: new BigNumber(leg!.amount),
               direction: leg!.direction,
+              from: middlewarePortfolioToPortfolio(leg!.from, context),
+              to: middlewarePortfolioToPortfolio(leg!.to, context),
             };
           }),
         });

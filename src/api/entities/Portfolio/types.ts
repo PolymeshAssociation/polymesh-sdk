@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { Leg } from '~/api/entities/Instruction/types';
 import { Account, SecurityToken } from '~/internal';
 import {
   SettlementDirectionEnum as SettlementDirection,
@@ -12,15 +13,13 @@ export interface PortfolioBalance {
   locked: BigNumber;
 }
 
-export interface SettlementLeg {
-  token: SecurityToken;
-  amount: BigNumber;
+export interface SettlementLeg extends Leg {
   direction: SettlementDirection;
 }
 
 export interface HistoricSettlement {
   blockNumber: BigNumber;
   status: SettlementResult;
-  account: Account;
+  accounts: Account[];
   legs: SettlementLeg[];
 }
