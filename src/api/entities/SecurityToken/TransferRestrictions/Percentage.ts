@@ -37,6 +37,7 @@ export class Percentage extends Namespace<SecurityToken> {
   /**
    * Add a Percentage Transfer Restriction to this Security Token
    *
+   * @param args.percentage - limit on the percentage of the total supply of this Security Token that a single (unique) investor can hold at once
    * @param args.exempted - array of Scope IDs that are exempted from the Restriction
    *
    * * @note the result is the total amount of restrictions after the procedure has run

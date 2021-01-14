@@ -34,6 +34,7 @@ export class Count extends Namespace<SecurityToken> {
   /**
    * Add a Count Transfer Restriction to this Security Token
    *
+   * @param args.count - limit on the amount of different (unique) investors that can hold this Security Token at once
    * @param args.exempted - array of Scope IDs that are exempted from the Restriction
    *
    * @note the result is the total amount of restrictions after the procedure has run
