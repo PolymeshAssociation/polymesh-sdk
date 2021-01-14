@@ -165,19 +165,23 @@ describe('addInstruction procedure', () => {
 
   let addTransactionStub: sinon.SinonStub;
 
-  let addAndAuthorizeInstructionTransaction: PolymeshTx<[
-    u64,
-    SettlementType,
-    Option<Moment>,
-    { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance }[],
-    PortfolioId[]
-  ]>;
-  let addInstructionTransaction: PolymeshTx<[
-    u64,
-    SettlementType,
-    Option<Moment>,
-    { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance }[]
-  ]>;
+  let addAndAuthorizeInstructionTransaction: PolymeshTx<
+    [
+      u64,
+      SettlementType,
+      Option<Moment>,
+      { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance }[],
+      PortfolioId[]
+    ]
+  >;
+  let addInstructionTransaction: PolymeshTx<
+    [
+      u64,
+      SettlementType,
+      Option<Moment>,
+      { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance }[]
+    ]
+  >;
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([instruction]);
@@ -274,6 +278,11 @@ describe('addInstruction procedure', () => {
 
   test('should throw an error if the value date is before the trade date', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+    });
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfoliosToAffirm: [],
     });
