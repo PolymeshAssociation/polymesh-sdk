@@ -6,7 +6,7 @@ import { TransactionArgumentType } from '~/types';
 export const MAX_DECIMALS = 6;
 export const MAX_TICKER_LENGTH = 12;
 export const MAX_MODULE_LENGTH = 32;
-export const MAX_TOKEN_AMOUNT = new BigNumber(Math.pow(10, 12));
+export const MAX_BALANCE = new BigNumber(Math.pow(10, 12));
 export const DUMMY_ACCOUNT_ID = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 export const MAX_BATCH_ELEMENTS: Record<string, number> = {
   [TxTags.asset.BatchAddDocument]: 20,
@@ -24,6 +24,7 @@ export const SS58_FORMAT = 42;
 export const MAX_CONCURRENT_REQUESTS = 200;
 export const TREASURY_MODULE_ADDRESS = 'modlpm/trsry';
 export const DEFAULT_GQL_PAGE_SIZE = 25;
+export const MAX_TRANSFER_MANAGERS = 3;
 
 const didTypes = ['IdentityId'];
 
