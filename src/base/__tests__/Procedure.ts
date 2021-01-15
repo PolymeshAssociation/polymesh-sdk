@@ -138,7 +138,7 @@ describe('Procedure class', () => {
 
       const returnValue = 'good';
 
-      const func1 = async function(
+      const func1 = async function (
         this: baseModule.Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<string> {
@@ -166,7 +166,7 @@ describe('Procedure class', () => {
         context
       );
 
-      const func2 = async function(
+      const func2 = async function (
         this: baseModule.Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<MaybePostTransactionValue<string>> {
@@ -198,7 +198,7 @@ describe('Procedure class', () => {
       };
 
       const errorMsg = 'failed';
-      const func = async function(
+      const func = async function (
         this: baseModule.Procedure<typeof procArgs, string>
       ): Promise<string> {
         throw new Error(errorMsg);
@@ -216,7 +216,7 @@ describe('Procedure class', () => {
         ticker,
         secondaryKeys,
       };
-      const func = async function(
+      const func = async function (
         this: baseModule.Procedure<typeof procArgs, string>
       ): Promise<string> {
         return 'success';

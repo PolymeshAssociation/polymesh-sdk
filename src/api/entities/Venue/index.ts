@@ -154,11 +154,12 @@ export class Venue extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Creates a settlement instruction in this Venue
+   * Creates a settlement Instruction in this Venue
    *
    * @param args.legs - array of token movements (amount, from, to, token)
-   * @param args.validFrom - date from which the instruction is valid and can be authorized by the participants (optional, instruction will be valid from the start if not supplied)
-   * @param args.endBlock - block at which the instruction will be executed automatically (optional, the instruction will be executed when all participants have authorized it if not supplied)
+   * @param args.tradeDate - date at which the trade was agreed upon (optional, for offchain trades)
+   * @param args.valueDate - date at which the trade was executed (optional, for offchain trades)
+   * @param args.endBlock - block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
    */
 
   public addInstruction: ProcedureMethod<AddInstructionParams, Instruction>;

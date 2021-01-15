@@ -219,16 +219,16 @@ describe('Venue class', () => {
         },
       ];
 
-      const validFrom = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+      const tradeDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
       const endBlock = new BigNumber(10000);
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
       prepareAddInstructionStub
-        .withArgs({ venueId: id, legs, validFrom, endBlock }, context)
+        .withArgs({ venueId: id, legs, tradeDate, endBlock }, context)
         .resolves(expectedQueue);
 
-      const queue = await venue.addInstruction({ legs, validFrom, endBlock });
+      const queue = await venue.addInstruction({ legs, tradeDate, endBlock });
 
       expect(queue).toBe(expectedQueue);
     });

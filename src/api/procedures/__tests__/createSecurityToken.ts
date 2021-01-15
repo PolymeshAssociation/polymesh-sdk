@@ -149,17 +149,9 @@ describe('createSecurityToken procedure', () => {
 
   let addTransactionStub: sinon.SinonStub;
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  let transaction: PolymeshTx<[
-    AssetName,
-    Ticker,
-    Balance,
-    bool,
-    AssetType,
-    Vec<AssetIdentifier>,
-    Option<FundingRoundName>
-  ]>;
-  /* eslint-enable @typescript-eslint/no-explicit-any */
+  let transaction: PolymeshTx<
+    [AssetName, Ticker, Balance, bool, AssetType, Vec<AssetIdentifier>, Option<FundingRoundName>]
+  >;
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();

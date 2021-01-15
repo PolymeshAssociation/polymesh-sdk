@@ -44,15 +44,13 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
     let result: Authorization[];
 
     if (opts?.type) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      result = await (rpc as any).identity.getFilteredAuthorizations(
+      result = await rpc.identity.getFilteredAuthorizations(
         signatory,
         rawBoolean,
         authorizationTypeToMeshAuthorizationType(opts.type, context)
       );
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      result = await (rpc as any).identity.getFilteredAuthorizations(signatory, rawBoolean);
+      result = await rpc.identity.getFilteredAuthorizations(signatory, rawBoolean);
     }
 
     const data = this.createAuthorizationRequests(

@@ -214,8 +214,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
       },
     } = this;
     const identityId = stringToIdentityId(did, context);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: CddStatus = await (rpc as any).identity.isIdentityHasValidCdd(identityId);
+    const result: CddStatus = await rpc.identity.isIdentityHasValidCdd(identityId);
     return cddStatusToBoolean(result);
   }
 

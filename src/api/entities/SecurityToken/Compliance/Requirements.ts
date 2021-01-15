@@ -111,8 +111,14 @@ export class Requirements extends Namespace<SecurityToken> {
     if (callback) {
       return queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>(
         [
-          [complianceManager.assetCompliances as QueryableStorageEntry<'promise'>, rawTicker],
-          [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
+          [
+            (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
+            rawTicker,
+          ],
+          [
+            (complianceManager.trustedClaimIssuer as unknown) as QueryableStorageEntry<'promise'>,
+            rawTicker,
+          ],
         ],
         res => {
           callback(assembleResult(res));
@@ -121,8 +127,14 @@ export class Requirements extends Namespace<SecurityToken> {
     }
 
     const result = await queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>([
-      [complianceManager.assetCompliances as QueryableStorageEntry<'promise'>, rawTicker],
-      [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
+      [
+        (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
+        rawTicker,
+      ],
+      [
+        (complianceManager.trustedClaimIssuer as unknown) as QueryableStorageEntry<'promise'>,
+        rawTicker,
+      ],
     ]);
 
     return assembleResult(result);
@@ -168,8 +180,7 @@ export class Requirements extends Namespace<SecurityToken> {
     const fromDid = stringToIdentityId(signerToString(from), context);
     const toDid = signerToString(to);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res: AssetComplianceResult = await (rpc as any).compliance.canTransfer(
+    const res: AssetComplianceResult = await rpc.compliance.canTransfer(
       stringToTicker(ticker, context),
       fromDid,
       stringToIdentityId(toDid, context)

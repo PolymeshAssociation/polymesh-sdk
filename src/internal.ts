@@ -84,6 +84,12 @@ export {
   AddInvestorUniquenessClaimParams,
 } from '~/api/procedures/addInvestorUniquenessClaim';
 export { redeemToken, RedeemTokenParams } from '~/api/procedures/redeemToken';
+export {
+  addTransferRestriction,
+  AddTransferRestrictionParams,
+  AddCountTransferRestrictionParams,
+  AddPercentageTransferRestrictionParams,
+} from '~/api/procedures/addTransferRestriction';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';

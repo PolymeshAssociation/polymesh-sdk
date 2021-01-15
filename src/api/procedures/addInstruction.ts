@@ -40,7 +40,8 @@ export interface AddInstructionParams {
     to: PortfolioLike;
     token: string | SecurityToken;
   }[];
-  validFrom?: Date;
+  tradeDate?: Date;
+  valueDate?: Date;
   endBlock?: BigNumber;
 }
 
@@ -81,7 +82,7 @@ export async function prepareAddInstruction(
     context,
     storage: { portfoliosToAffirm },
   } = this;
-  const { legs, venueId, endBlock, validFrom } = args;
+  const { legs, venueId, endBlock, tradeDate, valueDate } = args;
 
   const venue = new Venue({ id: venueId }, context);
   const exists = await venue.exists();
@@ -117,9 +118,17 @@ export async function prepareAddInstruction(
     endCondition = { type: InstructionType.SettleOnAffirmation } as const;
   }
 
+  if (tradeDate && valueDate && tradeDate > valueDate) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Value date must be after trade date',
+    });
+  }
+
   const rawVenueId = numberToU64(venueId, context);
   const rawSettlementType = endConditionToSettlementType(endCondition, context);
-  const rawValidFrom = validFrom ? dateToMoment(validFrom, context) : null;
+  const rawTradeDate = tradeDate ? dateToMoment(tradeDate, context) : null;
+  const rawValueDate = valueDate ? dateToMoment(valueDate, context) : null;
   const rawLegs: {
     from: PortfolioId;
     to: PortfolioId;
@@ -159,7 +168,8 @@ export async function prepareAddInstruction(
       },
       rawVenueId,
       rawSettlementType,
-      rawValidFrom,
+      rawTradeDate,
+      rawValueDate,
       rawLegs,
       portfoliosToAffirm.map(portfolio =>
         portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
@@ -173,7 +183,8 @@ export async function prepareAddInstruction(
       },
       rawVenueId,
       rawSettlementType,
-      rawValidFrom,
+      rawTradeDate,
+      rawValueDate,
       rawLegs
     );
   }
