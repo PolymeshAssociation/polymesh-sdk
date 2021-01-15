@@ -387,23 +387,6 @@ describe('Polymesh Class', () => {
       entityMockUtils.cleanup();
     });
 
-    test('should throw if ticker reservation does not exist', async () => {
-      entityMockUtils.getTickerReservationDetailsStub().resolves({
-        owner: entityMockUtils.getIdentityInstance(),
-        expiryDate: new Date(),
-        status: TickerReservationStatus.Free,
-      });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      return expect(
-        polymesh.isTickerAvailable({ ticker: String.fromCharCode(10000000) })
-      ).rejects.toThrow('Only printable ASCII is alowed as ticker name');
-    });
-
     test('should return true if ticker is available to reserve it', async () => {
       entityMockUtils.getTickerReservationDetailsStub().resolves({
         owner: entityMockUtils.getIdentityInstance(),

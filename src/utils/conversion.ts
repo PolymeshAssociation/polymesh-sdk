@@ -139,7 +139,7 @@ import {
   MAX_TOKEN_AMOUNT,
   SS58_FORMAT,
 } from '~/utils/constants';
-import { createClaim, padString, removePadding, stringIsClean } from '~/utils/internal';
+import { createClaim, isPrintableAscii, padString, removePadding } from '~/utils/internal';
 
 export * from '~/generated/utils';
 
@@ -205,10 +205,10 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
     });
   }
 
-  if (!stringIsClean(ticker)) {
+  if (!isPrintableAscii(ticker)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Ticker contains unreadable characters',
+      message: 'Only printable ASCII is alowed as ticker name',
     });
   }
 

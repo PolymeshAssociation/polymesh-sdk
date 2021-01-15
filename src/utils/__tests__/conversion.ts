@@ -466,7 +466,9 @@ describe('stringToTicker and tickerToString', () => {
     const value = `Illegal ${String.fromCharCode(65533)}`;
     const context = dsMockUtils.getContextInstance();
 
-    expect(() => stringToTicker(value, context)).toThrow('Ticker contains unreadable characters');
+    expect(() => stringToTicker(value, context)).toThrow(
+      'Only printable ASCII is alowed as ticker name'
+    );
   });
 
   test('tickerToString should convert a polkadot Ticker object to a string', () => {
