@@ -426,7 +426,7 @@ describe('calculateNextKey', () => {
   });
 });
 
-describe('isPrintableASCII', () => {
+describe('isPrintableAscii', () => {
   test('should return true if the string only contains printable ASCII characters', () => {
     expect(isPrintableAscii('TICKER')).toBe(true);
   });
