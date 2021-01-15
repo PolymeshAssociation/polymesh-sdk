@@ -38,7 +38,7 @@ export interface ProposalDetails {
 
 export {
   ProposalOrderByInput,
-  ProposalState,
+  // ProposalState,
   ProposalOrderFields,
   ProposalVotesOrderByInput,
 } from '~/middleware/types';
