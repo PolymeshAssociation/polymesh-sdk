@@ -2,7 +2,7 @@ import { ApiPromise, Keyring } from '@polkadot/api';
 import { AddressOrPair } from '@polkadot/api/types';
 import { getTypeDef } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
-import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
+import { CallFunction, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import { hexToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
@@ -136,6 +136,12 @@ export class Context {
   static async create(params: {
     polymeshApi: ApiPromise;
     middlewareApi: ApolloClient<NormalizedCacheObject> | null;
+    mnemonic: string;
+  }): Promise<Context>;
+
+  static async create(params: {
+    polymeshApi: ApiPromise;
+    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   }): Promise<Context>;
 
   /**
@@ -147,8 +153,9 @@ export class Context {
     seed?: string;
     keyring?: CommonKeyring;
     uri?: string;
+    mnemonic?: string;
   }): Promise<Context> {
-    const { polymeshApi, middlewareApi, seed, keyring: passedKeyring, uri } = params;
+    const { polymeshApi, middlewareApi, seed, keyring: passedKeyring, uri, mnemonic } = params;
 
     let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
     let currentPair: KeyringPair | undefined;
@@ -168,6 +175,8 @@ export class Context {
       currentPair = keyring.addFromSeed(hexToU8a(seed), undefined, 'sr25519');
     } else if (uri) {
       currentPair = keyring.addFromUri(uri);
+    } else if (mnemonic) {
+      currentPair = keyring.addFromMnemonic(mnemonic);
     }
 
     if (currentPair) {
@@ -548,7 +557,7 @@ export class Context {
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return ((tx as any)[section][method] as CallBase).meta.args.map(({ name, type }) => {
+    return ((tx as any)[section][method] as CallFunction).meta.args.map(({ name, type }) => {
       const typeDef = getTypeDef(type.toString());
       const argName = textToString(name);
 

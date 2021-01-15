@@ -1,5 +1,5 @@
 import { bool, Bytes, u64 } from '@polkadot/types';
-import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Moment, Permill } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import {
   CddId,
@@ -11,6 +11,7 @@ import {
   PortfolioId,
   ScopeId,
   SettlementType,
+  TransferManager,
   TrustedIssuer,
   VenueDetails,
 } from 'polymesh-types/polymesh';
@@ -76,8 +77,8 @@ import {
   TrustedClaimIssuer,
   VenueType,
 } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
-import { MAX_DECIMALS, MAX_TICKER_LENGTH, MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import { SignerType, SignerValue, TransferRestrictionType } from '~/types/internal';
+import { MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
   accountIdToString,
@@ -131,6 +132,8 @@ import {
   numberToPipId,
   numberToU32,
   numberToU64,
+  percentageToPermill,
+  permillToBigNumber,
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
   portfolioIdToMeshPortfolioId,
@@ -172,6 +175,8 @@ import {
   tokenTypeToAssetType,
   transactionHexToTxTag,
   transactionToTxTag,
+  transferManagerToTransferRestriction,
+  transferRestrictionToTransferManager,
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
   txTagToExtrinsicIdentifier,
@@ -240,10 +245,7 @@ describe('stringToAssetName and assetNameToString', () => {
     const fakeResult = ('convertedName' as unknown) as AssetName;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AssetName', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('AssetName', value).returns(fakeResult);
 
     const result = stringToAssetName(value, context);
 
@@ -277,10 +279,7 @@ describe('booleanToBool and boolToBoolean', () => {
     const fakeResult = ('true' as unknown) as bool;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('bool', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('bool', value).returns(fakeResult);
 
     const result = booleanToBool(value, context);
 
@@ -314,10 +313,7 @@ describe('stringToBytes and bytesToString', () => {
     const fakeResult = ('convertedBytes' as unknown) as Bytes;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Bytes', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Bytes', value).returns(fakeResult);
 
     const result = stringToBytes(value, context);
 
@@ -351,10 +347,7 @@ describe('stringToInvestorZKProofData', () => {
     const fakeResult = ('convertedProof' as unknown) as InvestorZKProofData;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('InvestorZKProofData', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('InvestorZKProofData', value).returns(fakeResult);
 
     const result = stringToInvestorZKProofData(value, context);
 
@@ -392,10 +385,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Ticker', ticker)
-      .returns(rawTicker);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', ticker).returns(rawTicker);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -443,10 +433,7 @@ describe('stringToTicker and tickerToString', () => {
     const fakeResult = ('convertedTicker' as unknown) as Ticker;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Ticker', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', value).returns(fakeResult);
 
     const result = stringToTicker(value, context);
 
@@ -535,10 +522,7 @@ describe('stringToAccountId and accountIdToSting', () => {
     const fakeResult = ('convertedAccountId' as unknown) as AccountId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AccountId', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('AccountId', value).returns(fakeResult);
 
     const result = stringToAccountId(value, context);
 
@@ -572,10 +556,7 @@ describe('stringToIdentityId and identityIdToString', () => {
     const fakeResult = ('type' as unknown) as IdentityId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('IdentityId', identity)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('IdentityId', identity).returns(fakeResult);
 
     const result = stringToIdentityId(identity, context);
 
@@ -591,7 +572,7 @@ describe('stringToIdentityId and identityIdToString', () => {
   });
 });
 
-describe('signerValueToSignatory and signatoryToSigner', () => {
+describe('signerValueToSignatory and signatoryToSignerValue', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -605,7 +586,7 @@ describe('signerValueToSignatory and signatoryToSigner', () => {
     sinon.restore();
   });
 
-  test('signerValueToSignatory should convert a Signer to a polkadot Signatory object', () => {
+  test('signerValueToSignatory should convert a SignerValue to a polkadot Signatory object', () => {
     const value = {
       type: SignerType.Identity,
       value: 'someIdentity',
@@ -623,7 +604,7 @@ describe('signerValueToSignatory and signatoryToSigner', () => {
     expect(result).toBe(fakeResult);
   });
 
-  test('signatoryToSigner should convert a polkadot Signatory object to a Signer', () => {
+  test('signatoryToSignerValue should convert a polkadot Signatory object to a SignerValue', () => {
     let fakeResult = {
       type: SignerType.Identity,
       value: 'someIdentity',
@@ -976,10 +957,7 @@ describe('authorizationTypeToMeshAuthorizationType', () => {
     const fakeResult = ('convertedAuthorizationType' as unknown) as MeshAuthorizationType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AuthorizationType', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('AuthorizationType', value).returns(fakeResult);
 
     const result = authorizationTypeToMeshAuthorizationType(value, context);
 
@@ -1131,10 +1109,7 @@ describe('numberToU64 and u64ToBigNumber', () => {
     const fakeResult = ('100' as unknown) as u64;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('u64', value.toString())
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('u64', value.toString()).returns(fakeResult);
 
     const result = numberToU64(value, context);
 
@@ -1143,10 +1118,47 @@ describe('numberToU64 and u64ToBigNumber', () => {
 
   test('u64ToBigNumber should convert a polkadot u64 object to a BigNumber', () => {
     const fakeResult = 100;
-    const balance = dsMockUtils.createMockBalance(fakeResult);
+    const num = dsMockUtils.createMockU64(fakeResult);
 
-    const result = u64ToBigNumber(balance);
+    const result = u64ToBigNumber(num);
     expect(result).toEqual(new BigNumber(fakeResult));
+  });
+});
+
+describe('percentageToPermill and permillToBigNumber', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('percentageToPermill should convert a number to a polkadot Permill object', () => {
+    const value = new BigNumber(49);
+    const fakeResult = ('100' as unknown) as Permill;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Permill', value.multipliedBy(Math.pow(10, 4)).toString())
+      .returns(fakeResult);
+
+    const result = percentageToPermill(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('permillToBigNumber should convert a polkadot Permill object to a BigNumber', () => {
+    const fakeResult = 490000;
+    const permill = dsMockUtils.createMockPermill(fakeResult);
+
+    const result = permillToBigNumber(permill);
+    expect(result).toEqual(new BigNumber(49));
   });
 });
 
@@ -1189,7 +1201,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
     expect(result).toBe(fakeResult);
   });
 
-  test('numberToBalance should throw an error if the value exceeds the max token amount constant', () => {
+  test('numberToBalance should throw an error if the value exceeds the max balance', () => {
     const value = new BigNumber(Math.pow(20, 15));
     const context = dsMockUtils.getContextInstance();
 
@@ -1201,11 +1213,11 @@ describe('numberToBalance and balanceToBigNumber', () => {
       error = err;
     }
 
-    expect(error.message).toBe('The value exceed the amount limit allowed');
-    expect(error.data).toMatchObject({ currentValue: value, amountLimit: MAX_TOKEN_AMOUNT });
+    expect(error.message).toBe('The value exceeds the maximum possible balance');
+    expect(error.data).toMatchObject({ currentValue: value, amountLimit: MAX_BALANCE });
   });
 
-  test('numberToBalance should throw an error if security token is divisible and the value exceeds the max decimals constant', () => {
+  test('numberToBalance should throw an error if the value has more decimal places than allowed', () => {
     const value = new BigNumber(50.1234567);
     const context = dsMockUtils.getContextInstance();
 
@@ -1217,16 +1229,16 @@ describe('numberToBalance and balanceToBigNumber', () => {
       error = err;
     }
 
-    expect(error.message).toBe('The value exceed the decimals limit allowed');
+    expect(error.message).toBe('The value has more decimal places than allowed');
     expect(error.data).toMatchObject({ currentValue: value, decimalsLimit: MAX_DECIMALS });
   });
 
-  test('numberToBalance should throw an error if security token is not divisible and the value has decimals', () => {
+  test('numberToBalance should throw an error if the value has decimals and the token is indivisible', () => {
     const value = new BigNumber(50.1234567);
     const context = dsMockUtils.getContextInstance();
 
     expect(() => numberToBalance(value, context, false)).toThrow(
-      'The value cannot have decimals if the token is indivisible'
+      'The value has decimals but the token is indivisible'
     );
   });
 
@@ -1297,10 +1309,7 @@ describe('stringToMemo', () => {
     const fakeResult = ('memoDescription' as unknown) as Memo;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Memo', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', value).returns(fakeResult);
 
     const result = stringToMemo(value, context);
 
@@ -1415,10 +1424,7 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
     const fakeResult = ('CommodityEnum' as unknown) as AssetType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AssetType', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('AssetType', value).returns(fakeResult);
 
     const result = tokenTypeToAssetType(value, context);
 
@@ -1648,10 +1654,7 @@ describe('stringToFundingRoundName and fundingRoundNameToString', () => {
     const fakeResult = ('convertedName' as unknown) as FundingRoundName;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('FundingRoundName', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('FundingRoundName', value).returns(fakeResult);
 
     const result = stringToFundingRoundName(value, context);
 
@@ -1685,10 +1688,7 @@ describe('stringToDocumentName and documentNameToString', () => {
     const fakeResult = ('convertedName' as unknown) as DocumentName;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('DocumentName', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('DocumentName', value).returns(fakeResult);
 
     const result = stringToDocumentName(value, context);
 
@@ -1722,10 +1722,7 @@ describe('stringToDocumentUri and documentUriToString', () => {
     const fakeResult = ('convertedUri' as unknown) as DocumentUri;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('DocumentUri', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('DocumentUri', value).returns(fakeResult);
 
     const result = stringToDocumentUri(value, context);
 
@@ -1759,10 +1756,7 @@ describe('stringToDocumentHash and documentHashToString', () => {
     const fakeResult = ('convertedHash' as unknown) as DocumentHash;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('DocumentHash', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('DocumentHash', value).returns(fakeResult);
 
     const result = stringToDocumentHash(value, context);
 
@@ -1796,10 +1790,7 @@ describe('stringToDocumentType and documentTypeToString', () => {
     const fakeResult = ('convertedType' as unknown) as DocumentType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('DocumentType', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('DocumentType', value).returns(fakeResult);
 
     const result = stringToDocumentType(value, context);
 
@@ -2455,10 +2446,7 @@ describe('stringToCddId and cddIdToString', () => {
     const fakeResult = ('type' as unknown) as CddId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('CddId', cddId)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('CddId', cddId).returns(fakeResult);
 
     const result = stringToCddId(cddId, context);
 
@@ -2492,10 +2480,7 @@ describe('stringToCddId', () => {
     const fakeResult = ('type' as unknown) as ScopeId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ScopeId', scopeId)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('ScopeId', scopeId).returns(fakeResult);
 
     const result = stringToScopeId(scopeId, context);
 
@@ -2804,10 +2789,7 @@ describe('txTagToProtocolOp', () => {
     const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ProtocolOp', 'AssetAddDocument')
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', 'AssetAddDocument').returns(fakeResult);
 
     const result = txTagToProtocolOp(value, context);
 
@@ -2867,10 +2849,7 @@ describe('numberToPipId', () => {
     const fakeResult = ('100' as unknown) as PipId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('PipId', value.toString())
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('PipId', value.toString()).returns(fakeResult);
 
     const result = numberToPipId(value, context);
 
@@ -2896,10 +2875,7 @@ describe('stringToText and textToString', () => {
     const fakeResult = ('convertedText' as unknown) as Text;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Text', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Text', value).returns(fakeResult);
 
     const result = stringToText(value, context);
 
@@ -2938,10 +2914,7 @@ describe('portfolioIdToMeshPortfolioId', () => {
     const fakeResult = ('PortfolioId' as unknown) as PortfolioId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('IdentityId', portfolioId.did)
-      .returns(rawIdentityId);
+    dsMockUtils.getCreateTypeStub().withArgs('IdentityId', portfolioId.did).returns(rawIdentityId);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -2955,10 +2928,7 @@ describe('portfolioIdToMeshPortfolioId', () => {
 
     expect(result).toBe(fakeResult);
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('u64', number.toString())
-      .returns(rawU64);
+    dsMockUtils.getCreateTypeStub().withArgs('u64', number.toString()).returns(rawU64);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -3407,16 +3377,13 @@ describe('transactionHexToTxTag', () => {
     const hex = '0x110000';
     const fakeResult = TxTags.treasury.Disbursement;
     const mockResult = {
-      methodName: 'disbursement',
-      sectionName: 'treasury',
+      method: 'disbursement',
+      section: 'treasury',
     };
 
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Proposal', hex)
-      .returns(mockResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Proposal', hex).returns(mockResult);
 
     const result = transactionHexToTxTag(hex, context);
     expect(result).toEqual(fakeResult);
@@ -3684,10 +3651,7 @@ describe('venueTypeToMeshVenueType and meshVenueTypeToVenueType', () => {
     const fakeResult = ('Other' as unknown) as MeshVenueType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('VenueType', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('VenueType', value).returns(fakeResult);
 
     const result = venueTypeToMeshVenueType(value, context);
 
@@ -3739,10 +3703,7 @@ describe('stringToVenueDetails and venueDetailsToString', () => {
     const fakeResult = ('type' as unknown) as VenueDetails;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('VenueDetails', details)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('VenueDetails', details).returns(fakeResult);
 
     const result = stringToVenueDetails(details, context);
 
@@ -3858,10 +3819,7 @@ describe('endConditionToSettlementType', () => {
     const blockNumber = new BigNumber(10);
     const rawBlockNumber = dsMockUtils.createMockU32(blockNumber.toNumber());
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('u32', blockNumber.toString())
-      .returns(rawBlockNumber);
+    dsMockUtils.getCreateTypeStub().withArgs('u32', blockNumber.toString()).returns(rawBlockNumber);
     dsMockUtils
       .getCreateTypeStub()
       .withArgs('SettlementType', { [InstructionType.SettleOnBlock]: rawBlockNumber })
@@ -4188,5 +4146,128 @@ describe('permissionsLikeToPermissions', () => {
       transactions: [],
       portfolios: [],
     });
+  });
+});
+
+describe('transferRestrictionToTransferManager and signatoryToSignerValue', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    sinon.restore();
+  });
+
+  test('transferRestrictionToTransferManager should convert a Transfer Restriction to a polkadot TransferManager object', () => {
+    const count = 10;
+    let value = {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(count),
+    };
+    const fakeResult = ('TransferManagerEnum' as unknown) as TransferManager;
+    const context = dsMockUtils.getContextInstance();
+
+    const rawCount = dsMockUtils.createMockU64(count);
+
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    createTypeStub
+      .withArgs('TransferManager', { CountTransferManager: rawCount })
+      .returns(fakeResult);
+
+    createTypeStub.withArgs('u64', count.toString()).returns(rawCount);
+
+    let result = transferRestrictionToTransferManager(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    const percentage = 49;
+    const rawPercentage = dsMockUtils.createMockPermill(percentage * 10000);
+    value = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(percentage),
+    };
+
+    createTypeStub
+      .withArgs('TransferManager', { PercentageTransferManager: rawPercentage })
+      .returns(fakeResult);
+
+    createTypeStub.withArgs('Permill', (percentage * 10000).toString()).returns(rawPercentage);
+
+    result = transferRestrictionToTransferManager(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('transferRestrictionToTransferManager should throw an error if the count is negative', () => {
+    let value = {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(-3),
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
+      'Count should be a positive integer'
+    );
+
+    value = {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(2.5),
+    };
+
+    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
+      'Count should be a positive integer'
+    );
+  });
+
+  test('transferRestrictionToTransferManager should throw an error if the percentage is out of range', () => {
+    let value = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(105),
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
+      'Percentage should be between 0 and 100'
+    );
+
+    value = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(-30),
+    };
+
+    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
+      'Percentage should be between 0 and 100'
+    );
+  });
+
+  test('transferManagerToTransferRestriction should convert a polkadot Signatory object to a SignerValue', () => {
+    const count = 10;
+    let fakeResult = {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(count),
+    };
+    let transferManager = dsMockUtils.createMockTransferManager({
+      CountTransferManager: dsMockUtils.createMockU64(count),
+    });
+
+    let result = transferManagerToTransferRestriction(transferManager);
+    expect(result).toEqual(fakeResult);
+
+    const percentage = 49;
+    fakeResult = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(percentage),
+    };
+    transferManager = dsMockUtils.createMockTransferManager({
+      PercentageTransferManager: dsMockUtils.createMockPermill(percentage * 10000),
+    });
+
+    result = transferManagerToTransferRestriction(transferManager);
+    expect(result).toEqual(fakeResult);
   });
 });

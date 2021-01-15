@@ -98,7 +98,8 @@ export class Instruction extends Entity<UniqueIdentifiers> {
     const {
       status,
       created_at: createdAt,
-      valid_from: validFrom,
+      trade_date: tradeDate,
+      value_date: valueDate,
       settlement_type: type,
       venue_id: venueId,
     } = await settlement.instructionDetails(numberToU64(id, context));
@@ -106,7 +107,8 @@ export class Instruction extends Entity<UniqueIdentifiers> {
     const details = {
       status: meshInstructionStatusToInstructionStatus(status),
       createdAt: momentToDate(createdAt.unwrap()),
-      validFrom: validFrom.isSome ? momentToDate(validFrom.unwrap()) : null,
+      tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
+      valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
       venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
     };
 

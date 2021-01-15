@@ -257,7 +257,7 @@ describe('removePadding', () => {
 
 describe('requestPaginated', () => {
   test('should fetch and return entries and the hex value of the last key', async () => {
-    const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
+    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
       entries: [
         tuple(['ticker0'], dsMockUtils.createMockU32(0)),
         tuple(['ticker1'], dsMockUtils.createMockU32(1)),
@@ -298,7 +298,7 @@ describe('requestAtBlock', () => {
       isArchiveNode: true,
     });
     const returnValue = dsMockUtils.createMockU32(5);
-    const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
+    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue,
     });
 
@@ -334,7 +334,7 @@ describe('requestAtBlock', () => {
       isArchiveNode: false,
     });
 
-    const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
+    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue: dsMockUtils.createMockU32(5),
     });
 

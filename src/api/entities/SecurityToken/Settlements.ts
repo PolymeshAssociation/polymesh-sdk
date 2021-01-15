@@ -68,8 +68,7 @@ export class Settlements extends Namespace<SecurityToken> {
       assertPortfolioExists(toPortfolio, context),
     ]);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res: CanTransferResult = await (rpc as any).asset.canTransfer(
+    const res: CanTransferResult = await rpc.asset.canTransfer(
       stringToAccountId(senderAddress, context),
       null,
       portfolioIdToMeshPortfolioId(fromPortfolio, context),

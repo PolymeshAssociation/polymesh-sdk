@@ -43,10 +43,7 @@ describe('Issuance class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(issueTokens, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(issueTokens, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await issuance.issue(args);
 

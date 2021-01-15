@@ -69,7 +69,8 @@
     "submit_election_solution_unsigned": "submit_election_solution_unsigned",
     "set_commission_cap": "set_commission_cap",
     "payout_stakers_by_system": "payout_stakers_by_system",
-    "change_slashing_allowed_for": "change_slashing_allowed_for"
+    "change_slashing_allowed_for": "change_slashing_allowed_for",
+    "update_permissioned_validator_intended_count": "update_permissioned_validator_intended_count"
   },
   "Session": {
     "set_keys": "set_keys",
@@ -113,7 +114,8 @@
     "change_sigs_required": "change_sigs_required",
     "change_all_signers_and_sigs_required": "change_all_signers_and_sigs_required",
     "make_multisig_signer": "make_multisig_signer",
-    "make_multisig_primary": "make_multisig_primary"
+    "make_multisig_primary": "make_multisig_primary",
+    "execute_scheduled_proposal": "execute_scheduled_proposal"
   },
   "Contracts": {
     "update_schedule": "update_schedule",
@@ -459,5 +461,11 @@
     "set_schedules_max_complexity": "set_schedules_max_complexity",
     "create_schedule": "create_schedule",
     "remove_schedule": "remove_schedule"
+  },
+  "Statistics": {
+    "add_transfer_manager": "add_transfer_manager",
+    "remove_transfer_manager": "remove_transfer_manager",
+    "add_exempted_entities": "add_exempted_entities",
+    "remove_exempted_entities": "remove_exempted_entities"
   }
 }
