@@ -60,9 +60,48 @@ describe('Venue class', () => {
     });
   });
 
+  describe('method: exists', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return whether if the venue exists or not', async () => {
+      const owner = 'someDid';
+
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+      sinon
+        .stub(utilsConversionModule, 'numberToU64')
+        .withArgs(id, context)
+        .returns(rawId);
+
+      dsMockUtils
+        .createQueryStub('settlement', 'venueInfo')
+        .withArgs(rawId)
+        .resolves(dsMockUtils.createMockOption());
+
+      const result = await venue.exists();
+
+      expect(result).toEqual(false);
+    });
+  });
+
   describe('method: details', () => {
     afterAll(() => {
       sinon.restore();
+    });
+
+    test("should throw an error if the venue doesn't exist", async () => {
+      dsMockUtils
+        .createQueryStub('settlement', 'venueInfo')
+        .resolves(dsMockUtils.createMockOption());
+
+      entityMockUtils.configureMocks({
+        numberedPortfolioOptions: {
+          exists: false,
+        },
+      });
+
+      return expect(venue.details()).rejects.toThrow("The Venue doesn't exist");
     });
 
     test('should return the Venue details', async () => {
@@ -71,7 +110,10 @@ describe('Venue class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
+      sinon
+        .stub(utilsConversionModule, 'numberToU64')
+        .withArgs(id, context)
+        .returns(rawId);
 
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
@@ -103,6 +145,20 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
+    test("should throw an error if the venue doesn't exist", async () => {
+      dsMockUtils
+        .createQueryStub('settlement', 'venueInfo')
+        .resolves(dsMockUtils.createMockOption());
+
+      entityMockUtils.configureMocks({
+        numberedPortfolioOptions: {
+          exists: false,
+        },
+      });
+
+      return expect(venue.getPendingInstructions()).rejects.toThrow("The Venue doesn't exist");
+    });
+
     test("should return the Venue's pending instructions", async () => {
       const description = 'someDescription';
       const type = VenueType.Other;
@@ -110,7 +166,10 @@ describe('Venue class', () => {
       const instructionId = new BigNumber(1);
 
       entityMockUtils.configureMocks({ instructionOptions: { id: instructionId } });
-      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
+      sinon
+        .stub(utilsConversionModule, 'numberToU64')
+        .withArgs(id, context)
+        .returns(rawId);
 
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')

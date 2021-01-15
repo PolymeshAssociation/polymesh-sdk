@@ -148,6 +148,24 @@ describe('Polymesh Class', () => {
       });
     });
 
+    test('should instantiate Context with a mnemonic and return a Polymesh instance', async () => {
+      const accountMnemonic =
+        'lorem ipsum dolor sit amet consectetur adipiscing elit nam hendrerit consectetur sagittis';
+      const createStub = dsMockUtils.getContextCreateStub();
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountMnemonic,
+      });
+
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledWith(createStub, {
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        mnemonic: accountMnemonic,
+      });
+    });
+
     test('should instantiate Context with middleware credentials and return a Polymesh instance', async () => {
       const accountUri = '//uri';
       const createStub = dsMockUtils.getContextCreateStub();

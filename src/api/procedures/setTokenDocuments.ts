@@ -158,4 +158,8 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const setTokenDocuments = new Procedure(prepareSetTokenDocuments, getAuthorization);
+export const setTokenDocuments = new Procedure(
+  prepareSetTokenDocuments,
+  getAuthorization,
+  prepareStorage
+);

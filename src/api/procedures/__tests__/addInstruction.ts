@@ -27,6 +27,11 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
+jest.mock(
+  '~/api/entities/Venue',
+  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
+);
+
 describe('addInstruction procedure', () => {
   let mockContext: Mocked<Context>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub;
@@ -249,6 +254,13 @@ describe('addInstruction procedure', () => {
 
   test('should throw an error if the end block is in the past', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
+
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+    });
+
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfoliosToAffirm: [],
     });
@@ -266,6 +278,11 @@ describe('addInstruction procedure', () => {
 
   test('should throw an error if the value date is before the trade date', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+    });
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfoliosToAffirm: [],
     });
@@ -287,6 +304,11 @@ describe('addInstruction procedure', () => {
 
   test('should add an add and authorize instruction transaction to the queue', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+    });
     getCustodianStub.onCall(1).returns({ did: fromDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfoliosToAffirm: [fromPortfolio, toPortfolio],
@@ -312,6 +334,11 @@ describe('addInstruction procedure', () => {
 
   test('should add an add instruction transaction to the queue', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+    });
     getCustodianStub.onCall(0).returns({ did: toDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfoliosToAffirm: [],
@@ -340,6 +367,28 @@ describe('addInstruction procedure', () => {
       [rawLeg]
     );
     expect(result).toBe(instruction);
+  });
+
+  test("should throw an error if the venue doesn't exist", async () => {
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: false,
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    let error;
+
+    try {
+      await prepareAddInstruction.call(proc, { ...args, legs: [] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe("The Venue doesn't exist");
   });
 
   describe('getAuthorization', () => {

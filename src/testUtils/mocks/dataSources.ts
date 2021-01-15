@@ -240,6 +240,7 @@ interface KeyringOptions {
   getPairs?: Pair[];
   addFromUri?: Pair;
   addFromSeed?: Pair;
+  addFromMnemonic?: Pair;
   /**
    * @hidden
    * Whether keyring functions should throw
@@ -486,6 +487,7 @@ const defaultKeyringOptions: KeyringOptions = {
   getPairs: [{ address: 'address', meta: {}, publicKey: 'publicKey2' }],
   addFromSeed: { address: 'address', meta: {}, publicKey: 'publicKey3' },
   addFromUri: { address: 'address', meta: {}, publicKey: 'publicKey4' },
+  addFromMnemonic: { address: 'address', meta: {}, publicKey: 'publicKey5' },
 };
 let keyringOptions: KeyringOptions = defaultKeyringOptions;
 
@@ -686,7 +688,7 @@ function initApi(): void {
  * @hidden
  */
 function configureKeyring(opts: KeyringOptions): void {
-  const { error, getPair, getPairs, addFromUri, addFromSeed } = opts;
+  const { error, getPair, getPairs, addFromUri, addFromSeed, addFromMnemonic } = opts;
 
   const err = new Error('Error');
 
@@ -695,6 +697,7 @@ function configureKeyring(opts: KeyringOptions): void {
     getPairs: sinon.stub().returns(getPairs),
     addFromSeed: sinon.stub().returns(addFromSeed),
     addFromUri: sinon.stub().returns(addFromUri),
+    addFromMnemonic: sinon.stub().returns(addFromMnemonic),
   };
 
   if (error) {
@@ -702,6 +705,7 @@ function configureKeyring(opts: KeyringOptions): void {
     keyringInstance.getPairs.throws(err);
     keyringInstance.addFromSeed.throws(err);
     keyringInstance.addFromUri.throws(err);
+    keyringInstance.addFromMnemonic.throws(err);
   }
 
   Object.assign(mockInstanceContainer.keyringInstance, (keyringInstance as unknown) as Keyring);
