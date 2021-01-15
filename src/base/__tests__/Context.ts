@@ -1328,6 +1328,13 @@ describe('Context class', () => {
       });
 
       expect(result.data.length).toEqual(0);
+
+      result = await context.issuedClaims({
+        targets: [targetDid],
+        trustedClaimIssuers: [targetDid],
+      });
+
+      expect(result.data.length).toEqual(0);
     });
 
     test('should throw if the middleware is not available and targets or claimTypes are not set', async () => {

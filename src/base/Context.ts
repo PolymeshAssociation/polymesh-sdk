@@ -761,7 +761,7 @@ export class Context {
       });
     }
 
-    if (!targets || !claimTypes) {
+    if (!targets) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'Cannot perform this action without an active middleware connection',
