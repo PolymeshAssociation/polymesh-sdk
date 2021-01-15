@@ -396,7 +396,7 @@ export class Claims {
         identity,
         claims: filter(
           identityClaimsFromChain,
-          ({ issuer: { did: _did } }) => _did === identity.did
+          ({ issuer: { did: issuerDid } }) => issuerDid === identity.did
         ),
       };
     });
