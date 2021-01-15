@@ -136,6 +136,12 @@ export class Context {
   static async create(params: {
     polymeshApi: ApiPromise;
     middlewareApi: ApolloClient<NormalizedCacheObject> | null;
+    mnemonic: string;
+  }): Promise<Context>;
+
+  static async create(params: {
+    polymeshApi: ApiPromise;
+    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   }): Promise<Context>;
 
   /**
@@ -147,8 +153,9 @@ export class Context {
     seed?: string;
     keyring?: CommonKeyring;
     uri?: string;
+    mnemonic?: string;
   }): Promise<Context> {
-    const { polymeshApi, middlewareApi, seed, keyring: passedKeyring, uri } = params;
+    const { polymeshApi, middlewareApi, seed, keyring: passedKeyring, uri, mnemonic } = params;
 
     let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
     let currentPair: KeyringPair | undefined;
@@ -168,6 +175,8 @@ export class Context {
       currentPair = keyring.addFromSeed(hexToU8a(seed), undefined, 'sr25519');
     } else if (uri) {
       currentPair = keyring.addFromUri(uri);
+    } else if (mnemonic) {
+      currentPair = keyring.addFromMnemonic(mnemonic);
     }
 
     if (currentPair) {
