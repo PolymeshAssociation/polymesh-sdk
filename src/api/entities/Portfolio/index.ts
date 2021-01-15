@@ -227,7 +227,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve a list of transactions where this portfolio was involved. Can be filtered using parameters
    *
-   * @param filters.account - account involved in the transaction
+   * @param filters.account - account involved in the settlement
    * @param filters.ticker - ticker involved in the transaction
    * @param filters.size - page size
    * @param filters.start - page offset

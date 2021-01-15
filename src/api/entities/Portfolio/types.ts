@@ -20,6 +20,9 @@ export interface SettlementLeg extends Leg {
 export interface HistoricSettlement {
   blockNumber: BigNumber;
   status: SettlementResult;
+  /**
+   * Array of accounts that participated by affirming the settlement
+   */
   accounts: Account[];
   legs: SettlementLeg[];
 }
