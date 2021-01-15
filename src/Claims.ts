@@ -1,4 +1,4 @@
-import { filter, uniqBy } from 'lodash';
+import { filter, isEqual, uniqBy, uniqWith } from 'lodash';
 
 import {
   addInvestorUniquenessClaim,
@@ -249,7 +249,8 @@ export class Claims {
       includeExpired: true,
     });
 
-    return identityClaimsFromChain.map(({ claim }) => {
+    const claimScopeList = identityClaimsFromChain.map(({ claim }) => {
+      // only Scoped Claims were fetched so this assertion is reasonable
       const {
         scope: { type, value },
       } = claim as ScopedClaim;
@@ -265,6 +266,8 @@ export class Claims {
         ticker,
       };
     });
+
+    return uniqWith(claimScopeList, isEqual);
   }
 
   /**
@@ -377,39 +380,25 @@ export class Claims {
 
     const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
       targets: [did],
-      claimTypes: [
-        ClaimType.Accredited,
-        ClaimType.Affiliate,
-        ClaimType.Blocked,
-        ClaimType.BuyLockup,
-        ClaimType.Exempted,
-        ClaimType.InvestorUniqueness,
-        ClaimType.Jurisdiction,
-        ClaimType.KnowYourCustomer,
-        ClaimType.SellLockup,
-        ClaimType.CustomerDueDiligence,
-        ClaimType.NoData,
-      ],
       trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
         signerToString(trustedClaimIssuer)
       ),
       includeExpired,
     });
 
-    const uniqIssuers = uniqBy(
+    const issuers = uniqBy(
       identityClaimsFromChain.map(i => i.issuer),
       identity => identity.did
     );
 
-    const identityWithClaims: IdentityWithClaims[] = [];
-    uniqIssuers.forEach(identity => {
-      identityWithClaims.push({
+    const identityWithClaims = issuers.map(identity => {
+      return {
         identity,
         claims: filter(
           identityClaimsFromChain,
-          identityClaim => identityClaim.issuer.did === identity.did
+          ({ issuer: { did: _did } }) => _did === identity.did
         ),
-      });
+      };
     });
 
     return {

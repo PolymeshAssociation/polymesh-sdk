@@ -479,6 +479,15 @@ describe('Claims Class', () => {
             },
           },
         },
+        {
+          claim: {
+            type: ClaimType.Jurisdiction,
+            scope: {
+              type: ScopeType.Identity,
+              value: someDid,
+            },
+          },
+        },
       ] as ClaimData[];
 
       dsMockUtils.configureMocks({

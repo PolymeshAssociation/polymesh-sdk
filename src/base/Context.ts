@@ -593,10 +593,12 @@ export class Context {
 
   /**
    * @hidden
+   *
+   * @note no claimTypes value means ALL claim types
    */
   public async getIdentityClaimsFromChain(args: {
     targets: (string | Identity)[];
-    claimTypes: ClaimType[];
+    claimTypes?: ClaimType[];
     trustedClaimIssuers?: (string | Identity)[];
     includeExpired: boolean;
   }): Promise<ClaimData[]> {
@@ -606,7 +608,12 @@ export class Context {
       },
     } = this;
 
-    const { targets, claimTypes, trustedClaimIssuers, includeExpired } = args;
+    const {
+      targets,
+      claimTypes = Object.values(ClaimType),
+      trustedClaimIssuers,
+      includeExpired,
+    } = args;
 
     const claim1stKeys = flatMap(targets, target =>
       claimTypes.map(claimType => {
@@ -744,7 +751,7 @@ export class Context {
     const isMiddlewareAvailable = await this.isMiddlewareAvailable();
 
     if (isMiddlewareAvailable) {
-      const identityClaimsFromMiddleware = await this.getIdentityClaimsFromMiddleware({
+      return this.getIdentityClaimsFromMiddleware({
         targets,
         trustedClaimIssuers,
         claimTypes,
@@ -752,8 +759,6 @@ export class Context {
         size,
         start,
       });
-
-      return identityClaimsFromMiddleware;
     }
 
     if (!targets || !claimTypes) {
