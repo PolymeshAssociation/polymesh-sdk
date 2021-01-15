@@ -182,6 +182,16 @@ export enum InstructionAffirmationOperation {
   Reject = 'Reject',
 }
 
+export enum TransferRestrictionType {
+  Count = 'Count',
+  Percentage = 'Percentage',
+}
+
+export interface TransferRestriction {
+  type: TransferRestrictionType;
+  value: BigNumber;
+}
+
 export interface ProcedureAuthorization {
   signerPermissions?: Permissions | boolean;
   identityRoles?: Role[] | boolean;

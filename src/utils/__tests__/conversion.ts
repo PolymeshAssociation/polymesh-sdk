@@ -1,5 +1,5 @@
 import { bool, Bytes, u64 } from '@polkadot/types';
-import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Moment, Permill } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import {
   CddId,
@@ -11,6 +11,7 @@ import {
   PortfolioId,
   ScopeId,
   SettlementType,
+  TransferManager,
   TrustedIssuer,
   VenueDetails,
 } from 'polymesh-types/polymesh';
@@ -76,8 +77,8 @@ import {
   TrustedClaimIssuer,
   VenueType,
 } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
-import { MAX_DECIMALS, MAX_TICKER_LENGTH, MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import { SignerType, SignerValue, TransferRestrictionType } from '~/types/internal';
+import { MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
   accountIdToString,
@@ -131,6 +132,8 @@ import {
   numberToPipId,
   numberToU32,
   numberToU64,
+  percentageToPermill,
+  permillToBigNumber,
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
   portfolioIdToMeshPortfolioId,
@@ -172,6 +175,8 @@ import {
   tokenTypeToAssetType,
   transactionHexToTxTag,
   transactionToTxTag,
+  transferManagerToTransferRestriction,
+  transferRestrictionToTransferManager,
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
   txTagToExtrinsicIdentifier,
@@ -565,7 +570,7 @@ describe('stringToIdentityId and identityIdToString', () => {
   });
 });
 
-describe('signerValueToSignatory and signatoryToSigner', () => {
+describe('signerValueToSignatory and signatoryToSignerValue', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -579,7 +584,7 @@ describe('signerValueToSignatory and signatoryToSigner', () => {
     sinon.restore();
   });
 
-  test('signerValueToSignatory should convert a Signer to a polkadot Signatory object', () => {
+  test('signerValueToSignatory should convert a SignerValue to a polkadot Signatory object', () => {
     const value = {
       type: SignerType.Identity,
       value: 'someIdentity',
@@ -597,7 +602,7 @@ describe('signerValueToSignatory and signatoryToSigner', () => {
     expect(result).toBe(fakeResult);
   });
 
-  test('signatoryToSigner should convert a polkadot Signatory object to a Signer', () => {
+  test('signatoryToSignerValue should convert a polkadot Signatory object to a SignerValue', () => {
     let fakeResult = {
       type: SignerType.Identity,
       value: 'someIdentity',
@@ -1111,10 +1116,47 @@ describe('numberToU64 and u64ToBigNumber', () => {
 
   test('u64ToBigNumber should convert a polkadot u64 object to a BigNumber', () => {
     const fakeResult = 100;
-    const balance = dsMockUtils.createMockBalance(fakeResult);
+    const num = dsMockUtils.createMockU64(fakeResult);
 
-    const result = u64ToBigNumber(balance);
+    const result = u64ToBigNumber(num);
     expect(result).toEqual(new BigNumber(fakeResult));
+  });
+});
+
+describe('percentageToPermill and permillToBigNumber', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('percentageToPermill should convert a number to a polkadot Permill object', () => {
+    const value = new BigNumber(49);
+    const fakeResult = ('100' as unknown) as Permill;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Permill', value.multipliedBy(Math.pow(10, 4)).toString())
+      .returns(fakeResult);
+
+    const result = percentageToPermill(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('permillToBigNumber should convert a polkadot Permill object to a BigNumber', () => {
+    const fakeResult = 490000;
+    const permill = dsMockUtils.createMockPermill(fakeResult);
+
+    const result = permillToBigNumber(permill);
+    expect(result).toEqual(new BigNumber(49));
   });
 });
 
@@ -1157,7 +1199,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
     expect(result).toBe(fakeResult);
   });
 
-  test('numberToBalance should throw an error if the value exceeds the max token amount constant', () => {
+  test('numberToBalance should throw an error if the value exceeds the max balance', () => {
     const value = new BigNumber(Math.pow(20, 15));
     const context = dsMockUtils.getContextInstance();
 
@@ -1169,11 +1211,11 @@ describe('numberToBalance and balanceToBigNumber', () => {
       error = err;
     }
 
-    expect(error.message).toBe('The value exceed the amount limit allowed');
-    expect(error.data).toMatchObject({ currentValue: value, amountLimit: MAX_TOKEN_AMOUNT });
+    expect(error.message).toBe('The value exceeds the maximum possible balance');
+    expect(error.data).toMatchObject({ currentValue: value, amountLimit: MAX_BALANCE });
   });
 
-  test('numberToBalance should throw an error if security token is divisible and the value exceeds the max decimals constant', () => {
+  test('numberToBalance should throw an error if the value has more decimal places than allowed', () => {
     const value = new BigNumber(50.1234567);
     const context = dsMockUtils.getContextInstance();
 
@@ -1185,16 +1227,16 @@ describe('numberToBalance and balanceToBigNumber', () => {
       error = err;
     }
 
-    expect(error.message).toBe('The value exceed the decimals limit allowed');
+    expect(error.message).toBe('The value has more decimal places than allowed');
     expect(error.data).toMatchObject({ currentValue: value, decimalsLimit: MAX_DECIMALS });
   });
 
-  test('numberToBalance should throw an error if security token is not divisible and the value has decimals', () => {
+  test('numberToBalance should throw an error if the value has decimals and the token is indivisible', () => {
     const value = new BigNumber(50.1234567);
     const context = dsMockUtils.getContextInstance();
 
     expect(() => numberToBalance(value, context, false)).toThrow(
-      'The value cannot have decimals if the token is indivisible'
+      'The value has decimals but the token is indivisible'
     );
   });
 
@@ -4102,5 +4144,128 @@ describe('permissionsLikeToPermissions', () => {
       transactions: [],
       portfolios: [],
     });
+  });
+});
+
+describe('transferRestrictionToTransferManager and signatoryToSignerValue', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    sinon.restore();
+  });
+
+  test('transferRestrictionToTransferManager should convert a Transfer Restriction to a polkadot TransferManager object', () => {
+    const count = 10;
+    let value = {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(count),
+    };
+    const fakeResult = ('TransferManagerEnum' as unknown) as TransferManager;
+    const context = dsMockUtils.getContextInstance();
+
+    const rawCount = dsMockUtils.createMockU64(count);
+
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    createTypeStub
+      .withArgs('TransferManager', { CountTransferManager: rawCount })
+      .returns(fakeResult);
+
+    createTypeStub.withArgs('u64', count.toString()).returns(rawCount);
+
+    let result = transferRestrictionToTransferManager(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    const percentage = 49;
+    const rawPercentage = dsMockUtils.createMockPermill(percentage * 10000);
+    value = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(percentage),
+    };
+
+    createTypeStub
+      .withArgs('TransferManager', { PercentageTransferManager: rawPercentage })
+      .returns(fakeResult);
+
+    createTypeStub.withArgs('Permill', (percentage * 10000).toString()).returns(rawPercentage);
+
+    result = transferRestrictionToTransferManager(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('transferRestrictionToTransferManager should throw an error if the count is negative', () => {
+    let value = {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(-3),
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
+      'Count should be a positive integer'
+    );
+
+    value = {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(2.5),
+    };
+
+    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
+      'Count should be a positive integer'
+    );
+  });
+
+  test('transferRestrictionToTransferManager should throw an error if the percentage is out of range', () => {
+    let value = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(105),
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
+      'Percentage should be between 0 and 100'
+    );
+
+    value = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(-30),
+    };
+
+    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
+      'Percentage should be between 0 and 100'
+    );
+  });
+
+  test('transferManagerToTransferRestriction should convert a polkadot Signatory object to a SignerValue', () => {
+    const count = 10;
+    let fakeResult = {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(count),
+    };
+    let transferManager = dsMockUtils.createMockTransferManager({
+      CountTransferManager: dsMockUtils.createMockU64(count),
+    });
+
+    let result = transferManagerToTransferRestriction(transferManager);
+    expect(result).toEqual(fakeResult);
+
+    const percentage = 49;
+    fakeResult = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(percentage),
+    };
+    transferManager = dsMockUtils.createMockTransferManager({
+      PercentageTransferManager: dsMockUtils.createMockPermill(percentage * 10000),
+    });
+
+    result = transferManagerToTransferRestriction(transferManager);
+    expect(result).toEqual(fakeResult);
   });
 });
