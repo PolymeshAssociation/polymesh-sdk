@@ -191,6 +191,28 @@ describe('Context class', () => {
       expect(context.currentPair).toEqual(newPair);
     });
 
+    test('should create a Context object from a mnemonic with Pair attached', async () => {
+      const newPair = {
+        address: 'someAddress',
+        meta: {},
+        publicKey: 'publicKey',
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          addFromMnemonic: newPair,
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        mnemonic:
+          'lorem ipsum dolor sit amet consectetur adipiscing elit nam hendrerit consectetur sagittis',
+      });
+
+      expect(context.currentPair).toEqual(newPair);
+    });
+
     test('should create a Context object without Pair attached', async () => {
       const newPair = {
         address: 'someAddress',
