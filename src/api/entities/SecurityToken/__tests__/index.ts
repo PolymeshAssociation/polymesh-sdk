@@ -93,7 +93,7 @@ describe('SecurityToken class', () => {
     let securityToken: SecurityToken;
 
     beforeAll(() => {
-      ticker = 'test';
+      ticker = 'FAKETICKER';
       totalSupply = 1000;
       isDivisible = true;
       owner = '0x0wn3r';
@@ -223,7 +223,7 @@ describe('SecurityToken class', () => {
     let securityToken: SecurityToken;
 
     beforeAll(() => {
-      ticker = 'test';
+      ticker = 'FAKETICKER';
       fundingRound = 'Series A';
     });
 

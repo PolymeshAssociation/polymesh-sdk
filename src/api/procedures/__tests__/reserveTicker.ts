@@ -83,52 +83,6 @@ describe('reserveTicker procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw if ticker symbol is invalid', async () => {
-    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
-      mockContext
-    );
-
-    let error;
-
-    try {
-      await prepareReserveTicker.call(proc, { ticker: String.fromCharCode(10000000) });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('Only printable ASCII is alowed as ticker name');
-
-    try {
-      await prepareReserveTicker.call(proc, { ticker: '' });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe(
-      'The ticker must be between 1 and 12 characters long and cannot contain lower case letters'
-    );
-
-    try {
-      await prepareReserveTicker.call(proc, { ticker: 'ALONGLONGTICKERSYMBOL' });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe(
-      'The ticker must be between 1 and 12 characters long and cannot contain lower case letters'
-    );
-
-    try {
-      await prepareReserveTicker.call(proc, { ticker: 'test' });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe(
-      'The ticker must be between 1 and 12 characters long and cannot contain lower case letters'
-    );
-  });
-
   test('should throw an error if the ticker is already reserved', async () => {
     const expiryDate = new Date(new Date().getTime() + 1000);
     entityMockUtils.getTickerReservationDetailsStub().resolves({

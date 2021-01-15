@@ -373,7 +373,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
   test('portfolioMovementToMovePortfolioItem should convert a portfolio item into a polkadot move portfolio item', () => {
     const context = dsMockUtils.getContextInstance();
-    const ticker = 'someToken';
+    const ticker = 'SOMETOKEN';
     const amount = new BigNumber(100);
     const token = entityMockUtils.getSecurityTokenInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -429,7 +429,7 @@ describe('stringToTicker and tickerToString', () => {
   });
 
   test('stringToTicker should convert a string to a polkadot Ticker object', () => {
-    const value = 'someTicker';
+    const value = 'SOMETICKER';
     const fakeResult = ('convertedTicker' as unknown) as Ticker;
     const context = dsMockUtils.getContextInstance();
 
@@ -438,6 +438,15 @@ describe('stringToTicker and tickerToString', () => {
     const result = stringToTicker(value, context);
 
     expect(result).toBe(fakeResult);
+  });
+
+  test('stringToTicker should throw an error if the string is empty', () => {
+    const value = '';
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => stringToTicker(value, context)).toThrow(
+      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
+    );
   });
 
   test('stringToTicker should throw an error if the string length exceeds the max ticker length', () => {
@@ -455,6 +464,15 @@ describe('stringToTicker and tickerToString', () => {
 
     expect(() => stringToTicker(value, context)).toThrow(
       'Only printable ASCII is alowed as ticker name'
+    );
+  });
+
+  test('stringToTicker should throw an error if the string is not in upper case', () => {
+    const value = 'FakeTicker';
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => stringToTicker(value, context)).toThrow(
+      'Ticker cannot contain lower case letters'
     );
   });
 
@@ -1003,7 +1021,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     let result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
 
-    const ticker = 'someTicker';
+    const ticker = 'SOMETICKER';
     const did = 'someDid';
     value = {
       tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
