@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import { MAX_BALANCE } from '~/utils/constants';
 import { numberToBalance, stringToTicker } from '~/utils/conversion';
 
 export interface IssueTokensParams {
@@ -34,13 +34,13 @@ export async function prepareIssueTokens(
 
   const supplyAfterMint = amount.plus(totalSupply);
 
-  if (supplyAfterMint.isGreaterThan(MAX_TOKEN_AMOUNT)) {
+  if (supplyAfterMint.isGreaterThan(MAX_BALANCE)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: `This issuance operation will cause the total supply of "${ticker}" to exceed the supply limit`,
       data: {
         currentSupply: totalSupply,
-        supplyLimit: MAX_TOKEN_AMOUNT,
+        supplyLimit: MAX_BALANCE,
       },
     });
   }

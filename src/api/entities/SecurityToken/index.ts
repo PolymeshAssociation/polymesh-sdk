@@ -39,6 +39,7 @@ import { Documents } from './Documents';
 import { Issuance } from './Issuance';
 import { Settlements } from './Settlements';
 import { TokenHolders } from './TokenHolders';
+import { TransferRestrictions } from './TransferRestrictions';
 import { SecurityTokenDetails } from './types';
 
 /**
@@ -81,6 +82,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public tokenHolders: TokenHolders;
   public issuance: Issuance;
   public compliance: Compliance;
+  public transferRestrictions: TransferRestrictions;
 
   /**
    * @hidden
@@ -98,6 +100,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.tokenHolders = new TokenHolders(this, context);
     this.issuance = new Issuance(this, context);
     this.compliance = new Compliance(this, context);
+    this.transferRestrictions = new TransferRestrictions(this, context);
 
     this.transferOwnership = createProcedureMethod(
       args => [transferTokenOwnership, { ticker, ...args }],

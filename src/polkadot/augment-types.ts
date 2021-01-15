@@ -1,17 +1,34 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import { Compact, Json, Option, Raw, Vec } from '@polkadot/types/codec';
-import {
+import type {
   BitVec,
+  Bool,
   Bytes,
+  Compact,
   Data,
   DoNotConstruct,
+  I128,
+  I16,
+  I256,
+  I32,
+  I64,
+  I8,
+  Json,
   Null,
+  Option,
+  Raw,
   StorageKey,
   Text,
   Type,
+  U128,
+  U16,
   U256,
+  U32,
+  U64,
+  U8,
+  USize,
+  Vec,
   bool,
   i128,
   i16,
@@ -26,16 +43,22 @@ import {
   u64,
   u8,
   usize,
-} from '@polkadot/types/primitive';
-import {
+} from '@polkadot/types';
+import type {
+  AssetBalance,
+  AssetDetails,
+  TAssetBalance,
+  TAssetDepositBalance,
+} from '@polkadot/types/interfaces/assets';
+import type {
   BlockAttestations,
   IncludedBlocks,
   MoreAttestations,
 } from '@polkadot/types/interfaces/attestations';
-import { RawAuraPreDigest } from '@polkadot/types/interfaces/aura';
-import { ExtrinsicOrHash, ExtrinsicStatus } from '@polkadot/types/interfaces/author';
-import { UncleEntryItem } from '@polkadot/types/interfaces/authorship';
-import {
+import type { RawAuraPreDigest } from '@polkadot/types/interfaces/aura';
+import type { ExtrinsicOrHash, ExtrinsicStatus } from '@polkadot/types/interfaces/author';
+import type { UncleEntryItem } from '@polkadot/types/interfaces/authorship';
+import type {
   AllowedSlots,
   BabeAuthorityWeight,
   BabeBlockWeight,
@@ -60,7 +83,7 @@ import {
   VrfOutput,
   VrfProof,
 } from '@polkadot/types/interfaces/babe';
-import {
+import type {
   AccountData,
   BalanceLock,
   BalanceLockTo212,
@@ -69,18 +92,18 @@ import {
   VestingSchedule,
   WithdrawReasons,
 } from '@polkadot/types/interfaces/balances';
-import { BlockHash } from '@polkadot/types/interfaces/chain';
-import { PrefixedStorageKey } from '@polkadot/types/interfaces/childstate';
-import { EthereumAddress, StatementKind } from '@polkadot/types/interfaces/claims';
-import {
+import type { BlockHash } from '@polkadot/types/interfaces/chain';
+import type { PrefixedStorageKey } from '@polkadot/types/interfaces/childstate';
+import type { EthereumAddress, StatementKind } from '@polkadot/types/interfaces/claims';
+import type {
   CollectiveOrigin,
   MemberCount,
   ProposalIndex,
   Votes,
   VotesTo230,
 } from '@polkadot/types/interfaces/collective';
-import { AuthorityId, RawVRFOutput } from '@polkadot/types/interfaces/consensus';
-import {
+import type { AuthorityId, RawVRFOutput } from '@polkadot/types/interfaces/consensus';
+import type {
   AliveContractInfo,
   CodeHash,
   ContractCallRequest,
@@ -98,6 +121,7 @@ import {
   Gas,
   HostFnWeights,
   InstructionWeights,
+  Limits,
   PrefabWasmModule,
   PrefabWasmModuleReserved,
   Schedule,
@@ -107,7 +131,7 @@ import {
   TombstoneContractInfo,
   TrieId,
 } from '@polkadot/types/interfaces/contracts';
-import {
+import type {
   ContractConstructorSpec,
   ContractContractSpec,
   ContractCryptoHasher,
@@ -132,7 +156,7 @@ import {
   ContractStorageLayout,
   ContractTypeSpec,
 } from '@polkadot/types/interfaces/contractsAbi';
-import {
+import type {
   AccountVote,
   AccountVoteSplit,
   AccountVoteStandard,
@@ -155,7 +179,7 @@ import {
   VotingDirect,
   VotingDirectVote,
 } from '@polkadot/types/interfaces/democracy';
-import {
+import type {
   ApprovalFlag,
   DefunctVoter,
   Renouncing,
@@ -165,10 +189,49 @@ import {
   VoteThreshold,
   VoterInfo,
 } from '@polkadot/types/interfaces/elections';
-import { CreatedBlock, ImportedAux } from '@polkadot/types/interfaces/engine';
-import { EthereumAccountId, EthereumLookupSource } from '@polkadot/types/interfaces/ethereum';
-import { Account, Log, Vicinity } from '@polkadot/types/interfaces/evm';
-import {
+import type { CreatedBlock, ImportedAux } from '@polkadot/types/interfaces/engine';
+import type {
+  EthAccount,
+  EthBlock,
+  EthBloom,
+  EthCallRequest,
+  EthFilter,
+  EthFilterAddress,
+  EthFilterTopic,
+  EthFilterTopicEntry,
+  EthFilterTopicInner,
+  EthHeader,
+  EthLog,
+  EthReceipt,
+  EthRichBlock,
+  EthRichHeader,
+  EthStorageProof,
+  EthSubKind,
+  EthSubParams,
+  EthSubResult,
+  EthSyncInfo,
+  EthSyncStatus,
+  EthTransaction,
+  EthTransactionCondition,
+  EthTransactionRequest,
+  EthTransactionStatus,
+  EthWork,
+  EthereumAccountId,
+  EthereumLookupSource,
+  EthereumSignature,
+} from '@polkadot/types/interfaces/eth';
+import type {
+  EvmAccount,
+  EvmLog,
+  EvmVicinity,
+  ExitError,
+  ExitFatal,
+  ExitReason,
+  ExitRevert,
+  ExitSucceed,
+} from '@polkadot/types/interfaces/evm';
+import type {
+  AnySignature,
   EcdsaSignature,
   Ed25519Signature,
   Extrinsic,
@@ -176,6 +239,7 @@ import {
   ExtrinsicPayload,
   ExtrinsicPayloadUnknown,
   ExtrinsicPayloadV4,
+  ExtrinsicSignature,
   ExtrinsicSignatureV4,
   ExtrinsicUnknown,
   ExtrinsicV4,
@@ -186,14 +250,14 @@ import {
   SignerPayload,
   Sr25519Signature,
 } from '@polkadot/types/interfaces/extrinsics';
-import {
+import type {
   AssetOptions,
   Owner,
   PermissionLatest,
   PermissionVersions,
   PermissionsV1,
 } from '@polkadot/types/interfaces/genericAsset';
-import {
+import type {
   AuthorityIndex,
   AuthorityList,
   AuthorityWeight,
@@ -215,17 +279,7 @@ import {
   StoredPendingChange,
   StoredState,
 } from '@polkadot/types/interfaces/grandpa';
-import {
-  IdentityFields,
-  IdentityInfo,
-  IdentityInfoAdditional,
-  IdentityJudgement,
-  RegistrarIndex,
-  RegistrarInfo,
-  Registration,
-  RegistrationJudgement,
-} from '@polkadot/types/interfaces/identity';
-import {
+import type {
   AuthIndex,
   AuthoritySignature,
   Heartbeat,
@@ -234,12 +288,13 @@ import {
   OpaqueNetworkState,
   OpaquePeerId,
 } from '@polkadot/types/interfaces/imOnline';
-import {
+import type {
   DoubleMapTypeLatest,
   DoubleMapTypeV10,
   DoubleMapTypeV11,
   DoubleMapTypeV12,
   DoubleMapTypeV9,
+  ErrorMetadataLatest,
   ErrorMetadataV10,
   ErrorMetadataV11,
   ErrorMetadataV12,
@@ -309,8 +364,8 @@ import {
   StorageMetadataV12,
   StorageMetadataV9,
 } from '@polkadot/types/interfaces/metadata';
-import { StorageKind } from '@polkadot/types/interfaces/offchain';
-import {
+import type { StorageKind } from '@polkadot/types/interfaces/offchain';
+import type {
   DeferredOffenceOf,
   Kind,
   OffenceDetails,
@@ -319,56 +374,128 @@ import {
   ReportIdOf,
   Reporter,
 } from '@polkadot/types/interfaces/offences';
-import {
+import type {
   AbridgedCandidateReceipt,
+  AbstractFungible,
+  AbstractNonFungible,
+  AccountId32Junction,
+  AccountIndex64Junction,
+  AccountKey20Junction,
+  AssetInstance,
+  AssignmentId,
+  AssignmentKind,
   AttestedCandidate,
   AuctionIndex,
+  AuthorityDiscoveryId,
+  AvailabilityBitfield,
+  AvailabilityBitfieldRecord,
+  BackedCandidate,
+  Balances,
   Bidder,
+  BufferedSessionChange,
   CandidateCommitments,
+  CandidateDescriptor,
+  CandidateHash,
+  CandidatePendingAvailability,
   CandidateReceipt,
   CollatorId,
   CollatorSignature,
+  CommittedCandidateReceipt,
+  ConcreteFungible,
+  ConcreteNonFungible,
+  CoreAssignment,
+  CoreIndex,
+  CoreOccupied,
+  DepositAsset,
+  DepositReserveAsset,
   DoubleVoteReport,
   DownwardMessage,
+  ExchangeAsset,
   GlobalValidationSchedule,
+  GroupIndex,
   HeadData,
+  HostConfiguration,
+  HrmpChannel,
+  HrmpChannelId,
+  HrmpOpenChannelRequest,
+  InboundDownwardMessage,
+  InboundHrmpMessage,
+  InboundHrmpMessages,
   IncomingParachain,
   IncomingParachainDeploy,
   IncomingParachainFixed,
+  InitiateReserveWithdraw,
+  InitiateTeleport,
+  Junction,
   LeasePeriod,
   LeasePeriodOf,
   LocalValidationData,
+  MessageIngestionType,
+  MultiAsset,
+  MultiLocation,
+  NetworkId,
   NewBidder,
+  Order,
+  OriginKind,
+  OutboundHrmpMessage,
   ParaId,
   ParaInfo,
   ParaPastCodeMeta,
   ParaScheduling,
   ParachainDispatchOrigin,
   ParachainProposal,
+  ParathreadClaim,
+  ParathreadClaimQueue,
+  ParathreadEntry,
+  PersistedValidationData,
+  QueryHolding,
+  QueuedParathread,
   RegisteredParachainInfo,
   RelayChainBlockNumber,
+  RelayTo,
+  RelayedFrom,
   Remark,
+  ReserveAssetDeposit,
   Retriable,
   Scheduling,
+  SessionInfo,
+  SignedAvailabilityBitfield,
+  SignedAvailabilityBitfields,
   SigningContext,
   SlotRange,
   Statement,
   SubId,
+  TeleportAsset,
+  Transact,
+  TransientValidationData,
   UpwardMessage,
   ValidationCode,
+  ValidationData,
   ValidationFunctionParams,
+  ValidatorGroup,
   ValidatorSignature,
   ValidityAttestation,
+  VersionedMultiAsset,
+  VersionedMultiLocation,
+  VersionedXcm,
   WinningData,
   WinningDataEntry,
+  WithdrawAsset,
+  Xcm,
+  XcmError,
+  XcmResult,
 } from '@polkadot/types/interfaces/parachains';
-import { RuntimeDispatchInfo } from '@polkadot/types/interfaces/payment';
-import { Approvals } from '@polkadot/types/interfaces/poll';
-import { ProxyAnnouncement, ProxyDefinition, ProxyType } from '@polkadot/types/interfaces/proxy';
-import { AccountStatus, AccountValidity } from '@polkadot/types/interfaces/purchase';
-import { ActiveRecovery, RecoveryConfig } from '@polkadot/types/interfaces/recovery';
-import { RpcMethods } from '@polkadot/types/interfaces/rpc';
-import {
+import type { RuntimeDispatchInfo } from '@polkadot/types/interfaces/payment';
+import type { Approvals } from '@polkadot/types/interfaces/poll';
+import type {
+  ProxyAnnouncement,
+  ProxyDefinition,
+  ProxyType,
+} from '@polkadot/types/interfaces/proxy';
+import type { AccountStatus, AccountValidity } from '@polkadot/types/interfaces/purchase';
+import type { ActiveRecovery, RecoveryConfig } from '@polkadot/types/interfaces/recovery';
+import type { RpcMethods } from '@polkadot/types/interfaces/rpc';
+import type {
   AccountId,
   AccountIdOf,
   AccountIndex,
@@ -393,14 +520,18 @@ import {
   FixedI64,
   FixedU128,
   FixedU64,
-  GenericAddress,
+  H1024,
+  H128,
   H160,
+  H2048,
   H256,
   H512,
+  H64,
   Hash,
   Header,
   I32F32,
   Index,
+  IndicesLookupSource,
   Justification,
   KeyTypeId,
   KeyValue,
@@ -436,7 +567,7 @@ import {
   Weight,
   WeightMultiplier,
 } from '@polkadot/types/interfaces/runtime';
-import {
+import type {
   SiField,
   SiLookupTypeId,
   SiPath,
@@ -450,7 +581,7 @@ import {
   SiTypeDefVariant,
   SiVariant,
 } from '@polkadot/types/interfaces/scaleInfo';
-import {
+import type {
   Period,
   Priority,
   SchedulePeriod,
@@ -459,7 +590,7 @@ import {
   ScheduledTo254,
   TaskAddress,
 } from '@polkadot/types/interfaces/scheduler';
-import {
+import type {
   FullIdentification,
   IdentificationTuple,
   Keys,
@@ -471,9 +602,12 @@ import {
   SessionKeys4,
   SessionKeys5,
   SessionKeys6,
+  SessionKeys7,
+  SessionKeys8,
+  SessionKeys9,
   ValidatorCount,
 } from '@polkadot/types/interfaces/session';
-import {
+import type {
   Bid,
   BidKind,
   SocietyJudgement,
@@ -481,54 +615,7 @@ import {
   StrikeCount,
   VouchingStatus,
 } from '@polkadot/types/interfaces/society';
-import {
-  ActiveEraInfo,
-  CompactAssignments,
-  CompactAssignmentsTo257,
-  CompactScore,
-  CompactScoreCompact,
-  ElectionCompute,
-  ElectionResult,
-  ElectionScore,
-  ElectionSize,
-  ElectionStatus,
-  EraIndex,
-  EraPoints,
-  EraRewardPoints,
-  EraRewards,
-  Exposure,
-  Forcing,
-  IndividualExposure,
-  KeyType,
-  MomentOf,
-  Nominations,
-  NominatorIndex,
-  NominatorIndexCompact,
-  OffchainAccuracy,
-  OffchainAccuracyCompact,
-  PhragmenScore,
-  Points,
-  RewardDestination,
-  RewardDestinationTo257,
-  RewardPoint,
-  SlashJournalEntry,
-  SlashingSpans,
-  SlashingSpansTo204,
-  SpanIndex,
-  SpanRecord,
-  StakingLedger,
-  StakingLedgerTo223,
-  StakingLedgerTo240,
-  UnappliedSlash,
-  UnappliedSlashOther,
-  UnlockChunk,
-  ValidatorIndex,
-  ValidatorIndexCompact,
-  ValidatorPrefs,
-  ValidatorPrefsTo145,
-  ValidatorPrefsTo196,
-} from '@polkadot/types/interfaces/staking';
-import {
+import type {
   ApiId,
   KeyValueOption,
   ReadProof,
@@ -536,12 +623,16 @@ import {
   RuntimeVersionApi,
   StorageChangeSet,
 } from '@polkadot/types/interfaces/state';
-import { WeightToFeeCoefficient } from '@polkadot/types/interfaces/support';
-import {
+import type { WeightToFeeCoefficient } from '@polkadot/types/interfaces/support';
+import type {
   AccountInfo,
+  AccountInfoWithProviders,
+  AccountInfoWithRefCount,
   ApplyExtrinsicResult,
+  BlockWeights,
   ChainProperties,
   ChainType,
+  ConsumedWeight,
   DigestOf,
   DispatchClass,
   DispatchError,
@@ -572,6 +663,7 @@ import {
   PeerEndpointAddr,
   PeerInfo,
   PeerPing,
+  PerDispatchClass,
   Phase,
   RawOrigin,
   RefCount,
@@ -580,8 +672,9 @@ import {
   SystemOrigin,
   TransactionValidityError,
   UnknownTransaction,
+  WeightPerClass,
 } from '@polkadot/types/interfaces/system';
-import {
+import type {
   Bounty,
   BountyIndex,
   BountyStatus,
@@ -594,15 +687,16 @@ import {
   OpenTipTo225,
   TreasuryProposal,
 } from '@polkadot/types/interfaces/treasury';
-import { Multiplier } from '@polkadot/types/interfaces/txpayment';
-import { Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
-import { VestingInfo } from '@polkadot/types/interfaces/vesting';
-import {
+import type { Multiplier } from '@polkadot/types/interfaces/txpayment';
+import type { Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
+import type { VestingInfo } from '@polkadot/types/interfaces/vesting';
+import type {
   AffirmationStatus,
   AssetCompliance,
   AssetComplianceResult,
   AssetDidResult,
   AssetIdentifier,
+  AssetMigrationError,
   AssetName,
   AssetOwnershipRelation,
   AssetType,
@@ -611,7 +705,6 @@ import {
   AuthorizationData,
   AuthorizationNonce,
   AuthorizationType,
-  Ballot,
   BallotMeta,
   BallotTimeRange,
   BallotTitle,
@@ -641,7 +734,6 @@ import {
   ClaimType,
   ClassicTickerImport,
   ClassicTickerRegistration,
-  Commission,
   Committee,
   ComplianceRequirement,
   ComplianceRequirementResult,
@@ -658,7 +750,6 @@ import {
   DidStatus,
   DispatchableName,
   Distribution,
-  Dividend,
   Document,
   DocumentHash,
   DocumentId,
@@ -672,6 +763,8 @@ import {
   FundingRoundName,
   Fundraiser,
   FundraiserTier,
+  GetPortfolioAssetsResult,
+  GetPortfoliosResult,
   HandledTxStatus,
   HistoricalVotingByAddress,
   HistoricalVotingById,
@@ -682,7 +775,6 @@ import {
   InactiveMember,
   Instruction,
   InstructionStatus,
-  Investment,
   InvestorUid,
   InvestorZKProofData,
   IssueAssetItem,
@@ -698,6 +790,7 @@ import {
   MetaDescription,
   MetaUrl,
   MetaVersion,
+  MigrationError,
   Motion,
   MotionInfoLink,
   MotionTitle,
@@ -708,6 +801,8 @@ import {
   PalletPermissions,
   Payload,
   PendingTx,
+  Percentage,
+  PermissionedIdentityPrefs,
   Permissions,
   Pip,
   PipDescription,
@@ -734,11 +829,7 @@ import {
   ReceiptMetadata,
   RecordDate,
   RecordDateSpec,
-  Referendum,
-  ReferendumState,
-  ReferendumType,
   RestrictionResult,
-  STO,
   ScheduleId,
   ScheduleSpec,
   Scope,
@@ -771,6 +862,7 @@ import {
   TickerRegistration,
   TickerRegistrationConfig,
   TickerTransferApproval,
+  TransferManager,
   TrustedFor,
   TrustedIssuer,
   UniqueCall,
@@ -793,6 +885,9 @@ declare module '@polkadot/types/types/registry' {
     bool: bool;
     'Option<bool>': Option<bool>;
     'Vec<bool>': Vec<bool>;
+    Bool: Bool;
+    'Option<Bool>': Option<Bool>;
+    'Vec<Bool>': Vec<Bool>;
     Bytes: Bytes;
     'Option<Bytes>': Option<Bytes>;
     'Vec<Bytes>': Vec<Bytes>;
@@ -805,21 +900,39 @@ declare module '@polkadot/types/types/registry' {
     i8: i8;
     'Option<i8>': Option<i8>;
     'Vec<i8>': Vec<i8>;
+    I8: I8;
+    'Option<I8>': Option<I8>;
+    'Vec<I8>': Vec<I8>;
     i16: i16;
     'Option<i16>': Option<i16>;
     'Vec<i16>': Vec<i16>;
+    I16: I16;
+    'Option<I16>': Option<I16>;
+    'Vec<I16>': Vec<I16>;
     i32: i32;
     'Option<i32>': Option<i32>;
     'Vec<i32>': Vec<i32>;
+    I32: I32;
+    'Option<I32>': Option<I32>;
+    'Vec<I32>': Vec<I32>;
     i64: i64;
     'Option<i64>': Option<i64>;
     'Vec<i64>': Vec<i64>;
+    I64: I64;
+    'Option<I64>': Option<I64>;
+    'Vec<I64>': Vec<I64>;
     i128: i128;
     'Option<i128>': Option<i128>;
     'Vec<i128>': Vec<i128>;
+    I128: I128;
+    'Option<I128>': Option<I128>;
+    'Vec<I128>': Vec<I128>;
     i256: i256;
     'Option<i256>': Option<i256>;
     'Vec<i256>': Vec<i256>;
+    I256: I256;
+    'Option<I256>': Option<I256>;
+    'Vec<I256>': Vec<I256>;
     Null: Null;
     'Option<Null>': Option<Null>;
     'Vec<Null>': Vec<Null>;
@@ -836,22 +949,42 @@ declare module '@polkadot/types/types/registry' {
     'Compact<u8>': Compact<u8>;
     'Option<u8>': Option<u8>;
     'Vec<u8>': Vec<u8>;
+    U8: U8;
+    'Compact<U8>': Compact<U8>;
+    'Option<U8>': Option<U8>;
+    'Vec<U8>': Vec<U8>;
     u16: u16;
     'Compact<u16>': Compact<u16>;
     'Option<u16>': Option<u16>;
     'Vec<u16>': Vec<u16>;
+    U16: U16;
+    'Compact<U16>': Compact<U16>;
+    'Option<U16>': Option<U16>;
+    'Vec<U16>': Vec<U16>;
     u32: u32;
     'Compact<u32>': Compact<u32>;
     'Option<u32>': Option<u32>;
     'Vec<u32>': Vec<u32>;
+    U32: U32;
+    'Compact<U32>': Compact<U32>;
+    'Option<U32>': Option<U32>;
+    'Vec<U32>': Vec<U32>;
     u64: u64;
     'Compact<u64>': Compact<u64>;
     'Option<u64>': Option<u64>;
     'Vec<u64>': Vec<u64>;
+    U64: U64;
+    'Compact<U64>': Compact<U64>;
+    'Option<U64>': Option<U64>;
+    'Vec<U64>': Vec<U64>;
     u128: u128;
     'Compact<u128>': Compact<u128>;
     'Option<u128>': Option<u128>;
     'Vec<u128>': Vec<u128>;
+    U128: U128;
+    'Compact<U128>': Compact<U128>;
+    'Option<U128>': Option<U128>;
+    'Vec<U128>': Vec<U128>;
     u256: u256;
     'Compact<u256>': Compact<u256>;
     'Option<u256>': Option<u256>;
@@ -864,6 +997,10 @@ declare module '@polkadot/types/types/registry' {
     'Compact<usize>': Compact<usize>;
     'Option<usize>': Option<usize>;
     'Vec<usize>': Vec<usize>;
+    USize: USize;
+    'Compact<USize>': Compact<USize>;
+    'Option<USize>': Option<USize>;
+    'Vec<USize>': Vec<USize>;
     Json: Json;
     'Option<Json>': Option<Json>;
     'Vec<Json>': Vec<Json>;
@@ -974,9 +1111,12 @@ declare module '@polkadot/types/types/registry' {
     ExtrinsicsWeight: ExtrinsicsWeight;
     'Option<ExtrinsicsWeight>': Option<ExtrinsicsWeight>;
     'Vec<ExtrinsicsWeight>': Vec<ExtrinsicsWeight>;
-    GenericAddress: GenericAddress;
-    'Option<GenericAddress>': Option<GenericAddress>;
-    'Vec<GenericAddress>': Vec<GenericAddress>;
+    H64: H64;
+    'Option<H64>': Option<H64>;
+    'Vec<H64>': Vec<H64>;
+    H128: H128;
+    'Option<H128>': Option<H128>;
+    'Vec<H128>': Vec<H128>;
     H160: H160;
     'Option<H160>': Option<H160>;
     'Vec<H160>': Vec<H160>;
@@ -986,12 +1126,21 @@ declare module '@polkadot/types/types/registry' {
     H512: H512;
     'Option<H512>': Option<H512>;
     'Vec<H512>': Vec<H512>;
+    H1024: H1024;
+    'Option<H1024>': Option<H1024>;
+    'Vec<H1024>': Vec<H1024>;
+    H2048: H2048;
+    'Option<H2048>': Option<H2048>;
+    'Vec<H2048>': Vec<H2048>;
     Hash: Hash;
     'Option<Hash>': Option<Hash>;
     'Vec<Hash>': Vec<Hash>;
     Header: Header;
     'Option<Header>': Option<Header>;
     'Vec<Header>': Vec<Header>;
+    IndicesLookupSource: IndicesLookupSource;
+    'Option<IndicesLookupSource>': Option<IndicesLookupSource>;
+    'Vec<IndicesLookupSource>': Vec<IndicesLookupSource>;
     Index: Index;
     'Compact<Index>': Compact<Index>;
     'Option<Index>': Option<Index>;
@@ -1087,6 +1236,20 @@ declare module '@polkadot/types/types/registry' {
     Consensus: Consensus;
     'Option<Consensus>': Option<Consensus>;
     'Vec<Consensus>': Vec<Consensus>;
+    AssetBalance: AssetBalance;
+    'Option<AssetBalance>': Option<AssetBalance>;
+    'Vec<AssetBalance>': Vec<AssetBalance>;
+    AssetDetails: AssetDetails;
+    'Option<AssetDetails>': Option<AssetDetails>;
+    'Vec<AssetDetails>': Vec<AssetDetails>;
+    TAssetBalance: TAssetBalance;
+    'Compact<TAssetBalance>': Compact<TAssetBalance>;
+    'Option<TAssetBalance>': Option<TAssetBalance>;
+    'Vec<TAssetBalance>': Vec<TAssetBalance>;
+    TAssetDepositBalance: TAssetDepositBalance;
+    'Compact<TAssetDepositBalance>': Compact<TAssetDepositBalance>;
+    'Option<TAssetDepositBalance>': Option<TAssetDepositBalance>;
+    'Vec<TAssetDepositBalance>': Vec<TAssetDepositBalance>;
     UncleEntryItem: UncleEntryItem;
     'Option<UncleEntryItem>': Option<UncleEntryItem>;
     'Vec<UncleEntryItem>': Vec<UncleEntryItem>;
@@ -1262,6 +1425,9 @@ declare module '@polkadot/types/types/registry' {
     InstructionWeights: InstructionWeights;
     'Option<InstructionWeights>': Option<InstructionWeights>;
     'Vec<InstructionWeights>': Vec<InstructionWeights>;
+    Limits: Limits;
+    'Option<Limits>': Option<Limits>;
+    'Vec<Limits>': Vec<Limits>;
     PrefabWasmModule: PrefabWasmModule;
     'Option<PrefabWasmModule>': Option<PrefabWasmModule>;
     'Vec<PrefabWasmModule>': Vec<PrefabWasmModule>;
@@ -1384,15 +1550,30 @@ declare module '@polkadot/types/types/registry' {
     ImportedAux: ImportedAux;
     'Option<ImportedAux>': Option<ImportedAux>;
     'Vec<ImportedAux>': Vec<ImportedAux>;
-    Account: Account;
-    'Option<Account>': Option<Account>;
-    'Vec<Account>': Vec<Account>;
-    Log: Log;
-    'Option<Log>': Option<Log>;
-    'Vec<Log>': Vec<Log>;
-    Vicinity: Vicinity;
-    'Option<Vicinity>': Option<Vicinity>;
-    'Vec<Vicinity>': Vec<Vicinity>;
+    EvmAccount: EvmAccount;
+    'Option<EvmAccount>': Option<EvmAccount>;
+    'Vec<EvmAccount>': Vec<EvmAccount>;
+    EvmLog: EvmLog;
+    'Option<EvmLog>': Option<EvmLog>;
+    'Vec<EvmLog>': Vec<EvmLog>;
+    EvmVicinity: EvmVicinity;
+    'Option<EvmVicinity>': Option<EvmVicinity>;
+    'Vec<EvmVicinity>': Vec<EvmVicinity>;
+    ExitError: ExitError;
+    'Option<ExitError>': Option<ExitError>;
+    'Vec<ExitError>': Vec<ExitError>;
+    ExitFatal: ExitFatal;
+    'Option<ExitFatal>': Option<ExitFatal>;
+    'Vec<ExitFatal>': Vec<ExitFatal>;
+    ExitReason: ExitReason;
+    'Option<ExitReason>': Option<ExitReason>;
+    'Vec<ExitReason>': Vec<ExitReason>;
+    ExitRevert: ExitRevert;
+    'Option<ExitRevert>': Option<ExitRevert>;
+    'Vec<ExitRevert>': Vec<ExitRevert>;
+    ExitSucceed: ExitSucceed;
+    'Option<ExitSucceed>': Option<ExitSucceed>;
+    'Vec<ExitSucceed>': Vec<ExitSucceed>;
     Extrinsic: Extrinsic;
     'Option<Extrinsic>': Option<Extrinsic>;
     'Vec<Extrinsic>': Vec<Extrinsic>;
@@ -1402,6 +1583,9 @@ declare module '@polkadot/types/types/registry' {
     ExtrinsicPayload: ExtrinsicPayload;
     'Option<ExtrinsicPayload>': Option<ExtrinsicPayload>;
     'Vec<ExtrinsicPayload>': Vec<ExtrinsicPayload>;
+    ExtrinsicSignature: ExtrinsicSignature;
+    'Option<ExtrinsicSignature>': Option<ExtrinsicSignature>;
+    'Vec<ExtrinsicSignature>': Vec<ExtrinsicSignature>;
     ExtrinsicV4: ExtrinsicV4;
     'Option<ExtrinsicV4>': Option<ExtrinsicV4>;
     'Vec<ExtrinsicV4>': Vec<ExtrinsicV4>;
@@ -1423,6 +1607,9 @@ declare module '@polkadot/types/types/registry' {
     MortalEra: MortalEra;
     'Option<MortalEra>': Option<MortalEra>;
     'Vec<MortalEra>': Vec<MortalEra>;
+    AnySignature: AnySignature;
+    'Option<AnySignature>': Option<AnySignature>;
+    'Vec<AnySignature>': Vec<AnySignature>;
     MultiSignature: MultiSignature;
     'Option<MultiSignature>': Option<MultiSignature>;
     'Vec<MultiSignature>': Vec<MultiSignature>;
@@ -1519,31 +1706,6 @@ declare module '@polkadot/types/types/registry' {
     StoredState: StoredState;
     'Option<StoredState>': Option<StoredState>;
     'Vec<StoredState>': Vec<StoredState>;
-    IdentityFields: IdentityFields;
-    'Option<IdentityFields>': Option<IdentityFields>;
-    'Vec<IdentityFields>': Vec<IdentityFields>;
-    IdentityInfoAdditional: IdentityInfoAdditional;
-    'Option<IdentityInfoAdditional>': Option<IdentityInfoAdditional>;
-    'Vec<IdentityInfoAdditional>': Vec<IdentityInfoAdditional>;
-    IdentityInfo: IdentityInfo;
-    'Option<IdentityInfo>': Option<IdentityInfo>;
-    'Vec<IdentityInfo>': Vec<IdentityInfo>;
-    IdentityJudgement: IdentityJudgement;
-    'Option<IdentityJudgement>': Option<IdentityJudgement>;
-    'Vec<IdentityJudgement>': Vec<IdentityJudgement>;
-    RegistrationJudgement: RegistrationJudgement;
-    'Option<RegistrationJudgement>': Option<RegistrationJudgement>;
-    'Vec<RegistrationJudgement>': Vec<RegistrationJudgement>;
-    Registration: Registration;
-    'Option<Registration>': Option<Registration>;
-    'Vec<Registration>': Vec<Registration>;
-    RegistrarIndex: RegistrarIndex;
-    'Compact<RegistrarIndex>': Compact<RegistrarIndex>;
-    'Option<RegistrarIndex>': Option<RegistrarIndex>;
-    'Vec<RegistrarIndex>': Vec<RegistrarIndex>;
-    RegistrarInfo: RegistrarInfo;
-    'Option<RegistrarInfo>': Option<RegistrarInfo>;
-    'Vec<RegistrarInfo>': Vec<RegistrarInfo>;
     AuthIndex: AuthIndex;
     'Compact<AuthIndex>': Compact<AuthIndex>;
     'Option<AuthIndex>': Option<AuthIndex>;
@@ -1646,6 +1808,15 @@ declare module '@polkadot/types/types/registry' {
     SessionKeys6: SessionKeys6;
     'Option<SessionKeys6>': Option<SessionKeys6>;
     'Vec<SessionKeys6>': Vec<SessionKeys6>;
+    SessionKeys7: SessionKeys7;
+    'Option<SessionKeys7>': Option<SessionKeys7>;
+    'Vec<SessionKeys7>': Vec<SessionKeys7>;
+    SessionKeys8: SessionKeys8;
+    'Option<SessionKeys8>': Option<SessionKeys8>;
+    'Vec<SessionKeys8>': Vec<SessionKeys8>;
+    SessionKeys9: SessionKeys9;
+    'Option<SessionKeys9>': Option<SessionKeys9>;
+    'Vec<SessionKeys9>': Vec<SessionKeys9>;
     FullIdentification: FullIdentification;
     'Option<FullIdentification>': Option<FullIdentification>;
     'Vec<FullIdentification>': Vec<FullIdentification>;
@@ -1682,164 +1853,33 @@ declare module '@polkadot/types/types/registry' {
     VouchingStatus: VouchingStatus;
     'Option<VouchingStatus>': Option<VouchingStatus>;
     'Vec<VouchingStatus>': Vec<VouchingStatus>;
-    Points: Points;
-    'Compact<Points>': Compact<Points>;
-    'Option<Points>': Option<Points>;
-    'Vec<Points>': Vec<Points>;
-    EraPoints: EraPoints;
-    'Option<EraPoints>': Option<EraPoints>;
-    'Vec<EraPoints>': Vec<EraPoints>;
-    ActiveEraInfo: ActiveEraInfo;
-    'Option<ActiveEraInfo>': Option<ActiveEraInfo>;
-    'Vec<ActiveEraInfo>': Vec<ActiveEraInfo>;
-    CompactAssignments: CompactAssignments;
-    'Option<CompactAssignments>': Option<CompactAssignments>;
-    'Vec<CompactAssignments>': Vec<CompactAssignments>;
-    CompactAssignmentsTo257: CompactAssignmentsTo257;
-    'Option<CompactAssignmentsTo257>': Option<CompactAssignmentsTo257>;
-    'Vec<CompactAssignmentsTo257>': Vec<CompactAssignmentsTo257>;
-    CompactScore: CompactScore;
-    'Option<CompactScore>': Option<CompactScore>;
-    'Vec<CompactScore>': Vec<CompactScore>;
-    CompactScoreCompact: CompactScoreCompact;
-    'Option<CompactScoreCompact>': Option<CompactScoreCompact>;
-    'Vec<CompactScoreCompact>': Vec<CompactScoreCompact>;
-    ElectionCompute: ElectionCompute;
-    'Option<ElectionCompute>': Option<ElectionCompute>;
-    'Vec<ElectionCompute>': Vec<ElectionCompute>;
-    ElectionResult: ElectionResult;
-    'Option<ElectionResult>': Option<ElectionResult>;
-    'Vec<ElectionResult>': Vec<ElectionResult>;
-    ElectionScore: ElectionScore;
-    'Option<ElectionScore>': Option<ElectionScore>;
-    'Vec<ElectionScore>': Vec<ElectionScore>;
-    ElectionSize: ElectionSize;
-    'Option<ElectionSize>': Option<ElectionSize>;
-    'Vec<ElectionSize>': Vec<ElectionSize>;
-    ElectionStatus: ElectionStatus;
-    'Option<ElectionStatus>': Option<ElectionStatus>;
-    'Vec<ElectionStatus>': Vec<ElectionStatus>;
-    EraIndex: EraIndex;
-    'Compact<EraIndex>': Compact<EraIndex>;
-    'Option<EraIndex>': Option<EraIndex>;
-    'Vec<EraIndex>': Vec<EraIndex>;
-    EraRewardPoints: EraRewardPoints;
-    'Option<EraRewardPoints>': Option<EraRewardPoints>;
-    'Vec<EraRewardPoints>': Vec<EraRewardPoints>;
-    EraRewards: EraRewards;
-    'Option<EraRewards>': Option<EraRewards>;
-    'Vec<EraRewards>': Vec<EraRewards>;
-    Exposure: Exposure;
-    'Option<Exposure>': Option<Exposure>;
-    'Vec<Exposure>': Vec<Exposure>;
-    Forcing: Forcing;
-    'Option<Forcing>': Option<Forcing>;
-    'Vec<Forcing>': Vec<Forcing>;
-    IndividualExposure: IndividualExposure;
-    'Option<IndividualExposure>': Option<IndividualExposure>;
-    'Vec<IndividualExposure>': Vec<IndividualExposure>;
-    KeyType: KeyType;
-    'Option<KeyType>': Option<KeyType>;
-    'Vec<KeyType>': Vec<KeyType>;
-    MomentOf: MomentOf;
-    'Compact<MomentOf>': Compact<MomentOf>;
-    'Option<MomentOf>': Option<MomentOf>;
-    'Vec<MomentOf>': Vec<MomentOf>;
-    Nominations: Nominations;
-    'Option<Nominations>': Option<Nominations>;
-    'Vec<Nominations>': Vec<Nominations>;
-    NominatorIndex: NominatorIndex;
-    'Compact<NominatorIndex>': Compact<NominatorIndex>;
-    'Option<NominatorIndex>': Option<NominatorIndex>;
-    'Vec<NominatorIndex>': Vec<NominatorIndex>;
-    NominatorIndexCompact: NominatorIndexCompact;
-    'Option<NominatorIndexCompact>': Option<NominatorIndexCompact>;
-    'Vec<NominatorIndexCompact>': Vec<NominatorIndexCompact>;
-    OffchainAccuracy: OffchainAccuracy;
-    'Compact<OffchainAccuracy>': Compact<OffchainAccuracy>;
-    'Option<OffchainAccuracy>': Option<OffchainAccuracy>;
-    'Vec<OffchainAccuracy>': Vec<OffchainAccuracy>;
-    OffchainAccuracyCompact: OffchainAccuracyCompact;
-    'Option<OffchainAccuracyCompact>': Option<OffchainAccuracyCompact>;
-    'Vec<OffchainAccuracyCompact>': Vec<OffchainAccuracyCompact>;
-    PhragmenScore: PhragmenScore;
-    'Option<PhragmenScore>': Option<PhragmenScore>;
-    'Vec<PhragmenScore>': Vec<PhragmenScore>;
-    RewardDestination: RewardDestination;
-    'Option<RewardDestination>': Option<RewardDestination>;
-    'Vec<RewardDestination>': Vec<RewardDestination>;
-    RewardDestinationTo257: RewardDestinationTo257;
-    'Option<RewardDestinationTo257>': Option<RewardDestinationTo257>;
-    'Vec<RewardDestinationTo257>': Vec<RewardDestinationTo257>;
-    RewardPoint: RewardPoint;
-    'Compact<RewardPoint>': Compact<RewardPoint>;
-    'Option<RewardPoint>': Option<RewardPoint>;
-    'Vec<RewardPoint>': Vec<RewardPoint>;
-    SlashJournalEntry: SlashJournalEntry;
-    'Option<SlashJournalEntry>': Option<SlashJournalEntry>;
-    'Vec<SlashJournalEntry>': Vec<SlashJournalEntry>;
-    SlashingSpansTo204: SlashingSpansTo204;
-    'Option<SlashingSpansTo204>': Option<SlashingSpansTo204>;
-    'Vec<SlashingSpansTo204>': Vec<SlashingSpansTo204>;
-    SlashingSpans: SlashingSpans;
-    'Option<SlashingSpans>': Option<SlashingSpans>;
-    'Vec<SlashingSpans>': Vec<SlashingSpans>;
-    SpanIndex: SpanIndex;
-    'Compact<SpanIndex>': Compact<SpanIndex>;
-    'Option<SpanIndex>': Option<SpanIndex>;
-    'Vec<SpanIndex>': Vec<SpanIndex>;
-    SpanRecord: SpanRecord;
-    'Option<SpanRecord>': Option<SpanRecord>;
-    'Vec<SpanRecord>': Vec<SpanRecord>;
-    StakingLedgerTo223: StakingLedgerTo223;
-    'Option<StakingLedgerTo223>': Option<StakingLedgerTo223>;
-    'Vec<StakingLedgerTo223>': Vec<StakingLedgerTo223>;
-    StakingLedgerTo240: StakingLedgerTo240;
-    'Option<StakingLedgerTo240>': Option<StakingLedgerTo240>;
-    'Vec<StakingLedgerTo240>': Vec<StakingLedgerTo240>;
-    StakingLedger: StakingLedger;
-    'Option<StakingLedger>': Option<StakingLedger>;
-    'Vec<StakingLedger>': Vec<StakingLedger>;
-    UnappliedSlashOther: UnappliedSlashOther;
-    'Option<UnappliedSlashOther>': Option<UnappliedSlashOther>;
-    'Vec<UnappliedSlashOther>': Vec<UnappliedSlashOther>;
-    UnappliedSlash: UnappliedSlash;
-    'Option<UnappliedSlash>': Option<UnappliedSlash>;
-    'Vec<UnappliedSlash>': Vec<UnappliedSlash>;
-    UnlockChunk: UnlockChunk;
-    'Option<UnlockChunk>': Option<UnlockChunk>;
-    'Vec<UnlockChunk>': Vec<UnlockChunk>;
-    ValidatorIndex: ValidatorIndex;
-    'Compact<ValidatorIndex>': Compact<ValidatorIndex>;
-    'Option<ValidatorIndex>': Option<ValidatorIndex>;
-    'Vec<ValidatorIndex>': Vec<ValidatorIndex>;
-    ValidatorIndexCompact: ValidatorIndexCompact;
-    'Option<ValidatorIndexCompact>': Option<ValidatorIndexCompact>;
-    'Vec<ValidatorIndexCompact>': Vec<ValidatorIndexCompact>;
-    ValidatorPrefs: ValidatorPrefs;
-    'Option<ValidatorPrefs>': Option<ValidatorPrefs>;
-    'Vec<ValidatorPrefs>': Vec<ValidatorPrefs>;
-    ValidatorPrefsTo196: ValidatorPrefsTo196;
-    'Option<ValidatorPrefsTo196>': Option<ValidatorPrefsTo196>;
-    'Vec<ValidatorPrefsTo196>': Vec<ValidatorPrefsTo196>;
-    ValidatorPrefsTo145: ValidatorPrefsTo145;
-    'Option<ValidatorPrefsTo145>': Option<ValidatorPrefsTo145>;
-    'Vec<ValidatorPrefsTo145>': Vec<ValidatorPrefsTo145>;
     WeightToFeeCoefficient: WeightToFeeCoefficient;
     'Option<WeightToFeeCoefficient>': Option<WeightToFeeCoefficient>;
     'Vec<WeightToFeeCoefficient>': Vec<WeightToFeeCoefficient>;
     AccountInfo: AccountInfo;
     'Option<AccountInfo>': Option<AccountInfo>;
     'Vec<AccountInfo>': Vec<AccountInfo>;
+    AccountInfoWithRefCount: AccountInfoWithRefCount;
+    'Option<AccountInfoWithRefCount>': Option<AccountInfoWithRefCount>;
+    'Vec<AccountInfoWithRefCount>': Vec<AccountInfoWithRefCount>;
+    AccountInfoWithProviders: AccountInfoWithProviders;
+    'Option<AccountInfoWithProviders>': Option<AccountInfoWithProviders>;
+    'Vec<AccountInfoWithProviders>': Vec<AccountInfoWithProviders>;
     ApplyExtrinsicResult: ApplyExtrinsicResult;
     'Option<ApplyExtrinsicResult>': Option<ApplyExtrinsicResult>;
     'Vec<ApplyExtrinsicResult>': Vec<ApplyExtrinsicResult>;
+    BlockWeights: BlockWeights;
+    'Option<BlockWeights>': Option<BlockWeights>;
+    'Vec<BlockWeights>': Vec<BlockWeights>;
     ChainProperties: ChainProperties;
     'Option<ChainProperties>': Option<ChainProperties>;
     'Vec<ChainProperties>': Vec<ChainProperties>;
     ChainType: ChainType;
     'Option<ChainType>': Option<ChainType>;
     'Vec<ChainType>': Vec<ChainType>;
+    ConsumedWeight: ConsumedWeight;
+    'Option<ConsumedWeight>': Option<ConsumedWeight>;
+    'Vec<ConsumedWeight>': Vec<ConsumedWeight>;
     DigestOf: DigestOf;
     'Option<DigestOf>': Option<DigestOf>;
     'Vec<DigestOf>': Vec<DigestOf>;
@@ -1931,6 +1971,9 @@ declare module '@polkadot/types/types/registry' {
     PeerInfo: PeerInfo;
     'Option<PeerInfo>': Option<PeerInfo>;
     'Vec<PeerInfo>': Vec<PeerInfo>;
+    PerDispatchClass: PerDispatchClass;
+    'Option<PerDispatchClass>': Option<PerDispatchClass>;
+    'Vec<PerDispatchClass>': Vec<PerDispatchClass>;
     Phase: Phase;
     'Option<Phase>': Option<Phase>;
     'Vec<Phase>': Vec<Phase>;
@@ -1957,6 +2000,9 @@ declare module '@polkadot/types/types/registry' {
     UnknownTransaction: UnknownTransaction;
     'Option<UnknownTransaction>': Option<UnknownTransaction>;
     'Vec<UnknownTransaction>': Vec<UnknownTransaction>;
+    WeightPerClass: WeightPerClass;
+    'Option<WeightPerClass>': Option<WeightPerClass>;
+    'Vec<WeightPerClass>': Vec<WeightPerClass>;
     Bounty: Bounty;
     'Option<Bounty>': Option<Bounty>;
     'Vec<Bounty>': Vec<Bounty>;
@@ -2027,19 +2073,49 @@ declare module '@polkadot/types/types/registry' {
     AbridgedCandidateReceipt: AbridgedCandidateReceipt;
     'Option<AbridgedCandidateReceipt>': Option<AbridgedCandidateReceipt>;
     'Vec<AbridgedCandidateReceipt>': Vec<AbridgedCandidateReceipt>;
+    AssignmentId: AssignmentId;
+    'Option<AssignmentId>': Option<AssignmentId>;
+    'Vec<AssignmentId>': Vec<AssignmentId>;
+    AssignmentKind: AssignmentKind;
+    'Option<AssignmentKind>': Option<AssignmentKind>;
+    'Vec<AssignmentKind>': Vec<AssignmentKind>;
     AttestedCandidate: AttestedCandidate;
     'Option<AttestedCandidate>': Option<AttestedCandidate>;
     'Vec<AttestedCandidate>': Vec<AttestedCandidate>;
+    AuthorityDiscoveryId: AuthorityDiscoveryId;
+    'Option<AuthorityDiscoveryId>': Option<AuthorityDiscoveryId>;
+    'Vec<AuthorityDiscoveryId>': Vec<AuthorityDiscoveryId>;
     AuctionIndex: AuctionIndex;
     'Compact<AuctionIndex>': Compact<AuctionIndex>;
     'Option<AuctionIndex>': Option<AuctionIndex>;
     'Vec<AuctionIndex>': Vec<AuctionIndex>;
+    AvailabilityBitfield: AvailabilityBitfield;
+    'Option<AvailabilityBitfield>': Option<AvailabilityBitfield>;
+    'Vec<AvailabilityBitfield>': Vec<AvailabilityBitfield>;
+    AvailabilityBitfieldRecord: AvailabilityBitfieldRecord;
+    'Option<AvailabilityBitfieldRecord>': Option<AvailabilityBitfieldRecord>;
+    'Vec<AvailabilityBitfieldRecord>': Vec<AvailabilityBitfieldRecord>;
+    BackedCandidate: BackedCandidate;
+    'Option<BackedCandidate>': Option<BackedCandidate>;
+    'Vec<BackedCandidate>': Vec<BackedCandidate>;
     Bidder: Bidder;
     'Option<Bidder>': Option<Bidder>;
     'Vec<Bidder>': Vec<Bidder>;
+    BufferedSessionChange: BufferedSessionChange;
+    'Option<BufferedSessionChange>': Option<BufferedSessionChange>;
+    'Vec<BufferedSessionChange>': Vec<BufferedSessionChange>;
     CandidateCommitments: CandidateCommitments;
     'Option<CandidateCommitments>': Option<CandidateCommitments>;
     'Vec<CandidateCommitments>': Vec<CandidateCommitments>;
+    CandidateDescriptor: CandidateDescriptor;
+    'Option<CandidateDescriptor>': Option<CandidateDescriptor>;
+    'Vec<CandidateDescriptor>': Vec<CandidateDescriptor>;
+    CandidateHash: CandidateHash;
+    'Option<CandidateHash>': Option<CandidateHash>;
+    'Vec<CandidateHash>': Vec<CandidateHash>;
+    CandidatePendingAvailability: CandidatePendingAvailability;
+    'Option<CandidatePendingAvailability>': Option<CandidatePendingAvailability>;
+    'Vec<CandidatePendingAvailability>': Vec<CandidatePendingAvailability>;
     CandidateReceipt: CandidateReceipt;
     'Option<CandidateReceipt>': Option<CandidateReceipt>;
     'Vec<CandidateReceipt>': Vec<CandidateReceipt>;
@@ -2049,18 +2125,56 @@ declare module '@polkadot/types/types/registry' {
     CollatorSignature: CollatorSignature;
     'Option<CollatorSignature>': Option<CollatorSignature>;
     'Vec<CollatorSignature>': Vec<CollatorSignature>;
+    CommittedCandidateReceipt: CommittedCandidateReceipt;
+    'Option<CommittedCandidateReceipt>': Option<CommittedCandidateReceipt>;
+    'Vec<CommittedCandidateReceipt>': Vec<CommittedCandidateReceipt>;
+    CoreAssignment: CoreAssignment;
+    'Option<CoreAssignment>': Option<CoreAssignment>;
+    'Vec<CoreAssignment>': Vec<CoreAssignment>;
+    CoreIndex: CoreIndex;
+    'Compact<CoreIndex>': Compact<CoreIndex>;
+    'Option<CoreIndex>': Option<CoreIndex>;
+    'Vec<CoreIndex>': Vec<CoreIndex>;
+    CoreOccupied: CoreOccupied;
+    'Option<CoreOccupied>': Option<CoreOccupied>;
+    'Vec<CoreOccupied>': Vec<CoreOccupied>;
     DoubleVoteReport: DoubleVoteReport;
     'Option<DoubleVoteReport>': Option<DoubleVoteReport>;
     'Vec<DoubleVoteReport>': Vec<DoubleVoteReport>;
     DownwardMessage: DownwardMessage;
     'Option<DownwardMessage>': Option<DownwardMessage>;
     'Vec<DownwardMessage>': Vec<DownwardMessage>;
+    GroupIndex: GroupIndex;
+    'Compact<GroupIndex>': Compact<GroupIndex>;
+    'Option<GroupIndex>': Option<GroupIndex>;
+    'Vec<GroupIndex>': Vec<GroupIndex>;
     GlobalValidationSchedule: GlobalValidationSchedule;
     'Option<GlobalValidationSchedule>': Option<GlobalValidationSchedule>;
     'Vec<GlobalValidationSchedule>': Vec<GlobalValidationSchedule>;
     HeadData: HeadData;
     'Option<HeadData>': Option<HeadData>;
     'Vec<HeadData>': Vec<HeadData>;
+    HostConfiguration: HostConfiguration;
+    'Option<HostConfiguration>': Option<HostConfiguration>;
+    'Vec<HostConfiguration>': Vec<HostConfiguration>;
+    HrmpChannel: HrmpChannel;
+    'Option<HrmpChannel>': Option<HrmpChannel>;
+    'Vec<HrmpChannel>': Vec<HrmpChannel>;
+    HrmpChannelId: HrmpChannelId;
+    'Option<HrmpChannelId>': Option<HrmpChannelId>;
+    'Vec<HrmpChannelId>': Vec<HrmpChannelId>;
+    HrmpOpenChannelRequest: HrmpOpenChannelRequest;
+    'Option<HrmpOpenChannelRequest>': Option<HrmpOpenChannelRequest>;
+    'Vec<HrmpOpenChannelRequest>': Vec<HrmpOpenChannelRequest>;
+    InboundDownwardMessage: InboundDownwardMessage;
+    'Option<InboundDownwardMessage>': Option<InboundDownwardMessage>;
+    'Vec<InboundDownwardMessage>': Vec<InboundDownwardMessage>;
+    InboundHrmpMessage: InboundHrmpMessage;
+    'Option<InboundHrmpMessage>': Option<InboundHrmpMessage>;
+    'Vec<InboundHrmpMessage>': Vec<InboundHrmpMessage>;
+    InboundHrmpMessages: InboundHrmpMessages;
+    'Option<InboundHrmpMessages>': Option<InboundHrmpMessages>;
+    'Vec<InboundHrmpMessages>': Vec<InboundHrmpMessages>;
     IncomingParachain: IncomingParachain;
     'Option<IncomingParachain>': Option<IncomingParachain>;
     'Vec<IncomingParachain>': Vec<IncomingParachain>;
@@ -2081,9 +2195,15 @@ declare module '@polkadot/types/types/registry' {
     LocalValidationData: LocalValidationData;
     'Option<LocalValidationData>': Option<LocalValidationData>;
     'Vec<LocalValidationData>': Vec<LocalValidationData>;
+    MessageIngestionType: MessageIngestionType;
+    'Option<MessageIngestionType>': Option<MessageIngestionType>;
+    'Vec<MessageIngestionType>': Vec<MessageIngestionType>;
     NewBidder: NewBidder;
     'Option<NewBidder>': Option<NewBidder>;
     'Vec<NewBidder>': Vec<NewBidder>;
+    OutboundHrmpMessage: OutboundHrmpMessage;
+    'Option<OutboundHrmpMessage>': Option<OutboundHrmpMessage>;
+    'Vec<OutboundHrmpMessage>': Vec<OutboundHrmpMessage>;
     ParachainDispatchOrigin: ParachainDispatchOrigin;
     'Option<ParachainDispatchOrigin>': Option<ParachainDispatchOrigin>;
     'Vec<ParachainDispatchOrigin>': Vec<ParachainDispatchOrigin>;
@@ -2100,10 +2220,25 @@ declare module '@polkadot/types/types/registry' {
     ParaScheduling: ParaScheduling;
     'Option<ParaScheduling>': Option<ParaScheduling>;
     'Vec<ParaScheduling>': Vec<ParaScheduling>;
+    ParathreadClaim: ParathreadClaim;
+    'Option<ParathreadClaim>': Option<ParathreadClaim>;
+    'Vec<ParathreadClaim>': Vec<ParathreadClaim>;
+    ParathreadClaimQueue: ParathreadClaimQueue;
+    'Option<ParathreadClaimQueue>': Option<ParathreadClaimQueue>;
+    'Vec<ParathreadClaimQueue>': Vec<ParathreadClaimQueue>;
+    ParathreadEntry: ParathreadEntry;
+    'Option<ParathreadEntry>': Option<ParathreadEntry>;
+    'Vec<ParathreadEntry>': Vec<ParathreadEntry>;
+    PersistedValidationData: PersistedValidationData;
+    'Option<PersistedValidationData>': Option<PersistedValidationData>;
+    'Vec<PersistedValidationData>': Vec<PersistedValidationData>;
     RelayChainBlockNumber: RelayChainBlockNumber;
     'Compact<RelayChainBlockNumber>': Compact<RelayChainBlockNumber>;
     'Option<RelayChainBlockNumber>': Option<RelayChainBlockNumber>;
     'Vec<RelayChainBlockNumber>': Vec<RelayChainBlockNumber>;
+    QueuedParathread: QueuedParathread;
+    'Option<QueuedParathread>': Option<QueuedParathread>;
+    'Vec<QueuedParathread>': Vec<QueuedParathread>;
     Remark: Remark;
     'Option<Remark>': Option<Remark>;
     'Vec<Remark>': Vec<Remark>;
@@ -2113,6 +2248,15 @@ declare module '@polkadot/types/types/registry' {
     Scheduling: Scheduling;
     'Option<Scheduling>': Option<Scheduling>;
     'Vec<Scheduling>': Vec<Scheduling>;
+    SessionInfo: SessionInfo;
+    'Option<SessionInfo>': Option<SessionInfo>;
+    'Vec<SessionInfo>': Vec<SessionInfo>;
+    SignedAvailabilityBitfield: SignedAvailabilityBitfield;
+    'Option<SignedAvailabilityBitfield>': Option<SignedAvailabilityBitfield>;
+    'Vec<SignedAvailabilityBitfield>': Vec<SignedAvailabilityBitfield>;
+    SignedAvailabilityBitfields: SignedAvailabilityBitfields;
+    'Option<SignedAvailabilityBitfields>': Option<SignedAvailabilityBitfields>;
+    'Vec<SignedAvailabilityBitfields>': Vec<SignedAvailabilityBitfields>;
     SigningContext: SigningContext;
     'Option<SigningContext>': Option<SigningContext>;
     'Vec<SigningContext>': Vec<SigningContext>;
@@ -2126,6 +2270,9 @@ declare module '@polkadot/types/types/registry' {
     'Compact<SubId>': Compact<SubId>;
     'Option<SubId>': Option<SubId>;
     'Vec<SubId>': Vec<SubId>;
+    TransientValidationData: TransientValidationData;
+    'Option<TransientValidationData>': Option<TransientValidationData>;
+    'Vec<TransientValidationData>': Vec<TransientValidationData>;
     UpwardMessage: UpwardMessage;
     'Option<UpwardMessage>': Option<UpwardMessage>;
     'Vec<UpwardMessage>': Vec<UpwardMessage>;
@@ -2135,18 +2282,123 @@ declare module '@polkadot/types/types/registry' {
     ValidationCode: ValidationCode;
     'Option<ValidationCode>': Option<ValidationCode>;
     'Vec<ValidationCode>': Vec<ValidationCode>;
+    ValidationData: ValidationData;
+    'Option<ValidationData>': Option<ValidationData>;
+    'Vec<ValidationData>': Vec<ValidationData>;
+    ValidatorGroup: ValidatorGroup;
+    'Option<ValidatorGroup>': Option<ValidatorGroup>;
+    'Vec<ValidatorGroup>': Vec<ValidatorGroup>;
     ValidatorSignature: ValidatorSignature;
     'Option<ValidatorSignature>': Option<ValidatorSignature>;
     'Vec<ValidatorSignature>': Vec<ValidatorSignature>;
     ValidityAttestation: ValidityAttestation;
     'Option<ValidityAttestation>': Option<ValidityAttestation>;
     'Vec<ValidityAttestation>': Vec<ValidityAttestation>;
+    VersionedXcm: VersionedXcm;
+    'Option<VersionedXcm>': Option<VersionedXcm>;
+    'Vec<VersionedXcm>': Vec<VersionedXcm>;
     WinningData: WinningData;
     'Option<WinningData>': Option<WinningData>;
     'Vec<WinningData>': Vec<WinningData>;
     WinningDataEntry: WinningDataEntry;
     'Option<WinningDataEntry>': Option<WinningDataEntry>;
     'Vec<WinningDataEntry>': Vec<WinningDataEntry>;
+    WithdrawAsset: WithdrawAsset;
+    'Option<WithdrawAsset>': Option<WithdrawAsset>;
+    'Vec<WithdrawAsset>': Vec<WithdrawAsset>;
+    ReserveAssetDeposit: ReserveAssetDeposit;
+    'Option<ReserveAssetDeposit>': Option<ReserveAssetDeposit>;
+    'Vec<ReserveAssetDeposit>': Vec<ReserveAssetDeposit>;
+    TeleportAsset: TeleportAsset;
+    'Option<TeleportAsset>': Option<TeleportAsset>;
+    'Vec<TeleportAsset>': Vec<TeleportAsset>;
+    Balances: Balances;
+    'Option<Balances>': Option<Balances>;
+    'Vec<Balances>': Vec<Balances>;
+    Transact: Transact;
+    'Option<Transact>': Option<Transact>;
+    'Vec<Transact>': Vec<Transact>;
+    RelayTo: RelayTo;
+    'Option<RelayTo>': Option<RelayTo>;
+    'Vec<RelayTo>': Vec<RelayTo>;
+    RelayedFrom: RelayedFrom;
+    'Option<RelayedFrom>': Option<RelayedFrom>;
+    'Vec<RelayedFrom>': Vec<RelayedFrom>;
+    Xcm: Xcm;
+    'Option<Xcm>': Option<Xcm>;
+    'Vec<Xcm>': Vec<Xcm>;
+    XcmError: XcmError;
+    'Option<XcmError>': Option<XcmError>;
+    'Vec<XcmError>': Vec<XcmError>;
+    XcmResult: XcmResult;
+    'Option<XcmResult>': Option<XcmResult>;
+    'Vec<XcmResult>': Vec<XcmResult>;
+    OriginKind: OriginKind;
+    'Option<OriginKind>': Option<OriginKind>;
+    'Vec<OriginKind>': Vec<OriginKind>;
+    NetworkId: NetworkId;
+    'Option<NetworkId>': Option<NetworkId>;
+    'Vec<NetworkId>': Vec<NetworkId>;
+    MultiLocation: MultiLocation;
+    'Option<MultiLocation>': Option<MultiLocation>;
+    'Vec<MultiLocation>': Vec<MultiLocation>;
+    AccountId32Junction: AccountId32Junction;
+    'Option<AccountId32Junction>': Option<AccountId32Junction>;
+    'Vec<AccountId32Junction>': Vec<AccountId32Junction>;
+    AccountIndex64Junction: AccountIndex64Junction;
+    'Option<AccountIndex64Junction>': Option<AccountIndex64Junction>;
+    'Vec<AccountIndex64Junction>': Vec<AccountIndex64Junction>;
+    AccountKey20Junction: AccountKey20Junction;
+    'Option<AccountKey20Junction>': Option<AccountKey20Junction>;
+    'Vec<AccountKey20Junction>': Vec<AccountKey20Junction>;
+    Junction: Junction;
+    'Option<Junction>': Option<Junction>;
+    'Vec<Junction>': Vec<Junction>;
+    VersionedMultiLocation: VersionedMultiLocation;
+    'Option<VersionedMultiLocation>': Option<VersionedMultiLocation>;
+    'Vec<VersionedMultiLocation>': Vec<VersionedMultiLocation>;
+    AssetInstance: AssetInstance;
+    'Option<AssetInstance>': Option<AssetInstance>;
+    'Vec<AssetInstance>': Vec<AssetInstance>;
+    AbstractFungible: AbstractFungible;
+    'Option<AbstractFungible>': Option<AbstractFungible>;
+    'Vec<AbstractFungible>': Vec<AbstractFungible>;
+    AbstractNonFungible: AbstractNonFungible;
+    'Option<AbstractNonFungible>': Option<AbstractNonFungible>;
+    'Vec<AbstractNonFungible>': Vec<AbstractNonFungible>;
+    ConcreteFungible: ConcreteFungible;
+    'Option<ConcreteFungible>': Option<ConcreteFungible>;
+    'Vec<ConcreteFungible>': Vec<ConcreteFungible>;
+    ConcreteNonFungible: ConcreteNonFungible;
+    'Option<ConcreteNonFungible>': Option<ConcreteNonFungible>;
+    'Vec<ConcreteNonFungible>': Vec<ConcreteNonFungible>;
+    MultiAsset: MultiAsset;
+    'Option<MultiAsset>': Option<MultiAsset>;
+    'Vec<MultiAsset>': Vec<MultiAsset>;
+    VersionedMultiAsset: VersionedMultiAsset;
+    'Option<VersionedMultiAsset>': Option<VersionedMultiAsset>;
+    'Vec<VersionedMultiAsset>': Vec<VersionedMultiAsset>;
+    DepositAsset: DepositAsset;
+    'Option<DepositAsset>': Option<DepositAsset>;
+    'Vec<DepositAsset>': Vec<DepositAsset>;
+    DepositReserveAsset: DepositReserveAsset;
+    'Option<DepositReserveAsset>': Option<DepositReserveAsset>;
+    'Vec<DepositReserveAsset>': Vec<DepositReserveAsset>;
+    ExchangeAsset: ExchangeAsset;
+    'Option<ExchangeAsset>': Option<ExchangeAsset>;
+    'Vec<ExchangeAsset>': Vec<ExchangeAsset>;
+    InitiateReserveWithdraw: InitiateReserveWithdraw;
+    'Option<InitiateReserveWithdraw>': Option<InitiateReserveWithdraw>;
+    'Vec<InitiateReserveWithdraw>': Vec<InitiateReserveWithdraw>;
+    InitiateTeleport: InitiateTeleport;
+    'Option<InitiateTeleport>': Option<InitiateTeleport>;
+    'Vec<InitiateTeleport>': Vec<InitiateTeleport>;
+    QueryHolding: QueryHolding;
+    'Option<QueryHolding>': Option<QueryHolding>;
+    'Vec<QueryHolding>': Vec<QueryHolding>;
+    Order: Order;
+    'Option<Order>': Option<Order>;
+    'Vec<Order>': Vec<Order>;
     Approvals: Approvals;
     'Option<Approvals>': Option<Approvals>;
     'Vec<Approvals>': Vec<Approvals>;
@@ -2269,6 +2521,84 @@ declare module '@polkadot/types/types/registry' {
     EthereumLookupSource: EthereumLookupSource;
     'Option<EthereumLookupSource>': Option<EthereumLookupSource>;
     'Vec<EthereumLookupSource>': Vec<EthereumLookupSource>;
+    EthereumSignature: EthereumSignature;
+    'Option<EthereumSignature>': Option<EthereumSignature>;
+    'Vec<EthereumSignature>': Vec<EthereumSignature>;
+    EthAccount: EthAccount;
+    'Option<EthAccount>': Option<EthAccount>;
+    'Vec<EthAccount>': Vec<EthAccount>;
+    EthBlock: EthBlock;
+    'Option<EthBlock>': Option<EthBlock>;
+    'Vec<EthBlock>': Vec<EthBlock>;
+    EthBloom: EthBloom;
+    'Option<EthBloom>': Option<EthBloom>;
+    'Vec<EthBloom>': Vec<EthBloom>;
+    EthCallRequest: EthCallRequest;
+    'Option<EthCallRequest>': Option<EthCallRequest>;
+    'Vec<EthCallRequest>': Vec<EthCallRequest>;
+    EthFilter: EthFilter;
+    'Option<EthFilter>': Option<EthFilter>;
+    'Vec<EthFilter>': Vec<EthFilter>;
+    EthFilterAddress: EthFilterAddress;
+    'Option<EthFilterAddress>': Option<EthFilterAddress>;
+    'Vec<EthFilterAddress>': Vec<EthFilterAddress>;
+    EthFilterTopic: EthFilterTopic;
+    'Option<EthFilterTopic>': Option<EthFilterTopic>;
+    'Vec<EthFilterTopic>': Vec<EthFilterTopic>;
+    EthFilterTopicEntry: EthFilterTopicEntry;
+    'Option<EthFilterTopicEntry>': Option<EthFilterTopicEntry>;
+    'Vec<EthFilterTopicEntry>': Vec<EthFilterTopicEntry>;
+    EthFilterTopicInner: EthFilterTopicInner;
+    'Option<EthFilterTopicInner>': Option<EthFilterTopicInner>;
+    'Vec<EthFilterTopicInner>': Vec<EthFilterTopicInner>;
+    EthHeader: EthHeader;
+    'Option<EthHeader>': Option<EthHeader>;
+    'Vec<EthHeader>': Vec<EthHeader>;
+    EthLog: EthLog;
+    'Option<EthLog>': Option<EthLog>;
+    'Vec<EthLog>': Vec<EthLog>;
+    EthReceipt: EthReceipt;
+    'Option<EthReceipt>': Option<EthReceipt>;
+    'Vec<EthReceipt>': Vec<EthReceipt>;
+    EthRichBlock: EthRichBlock;
+    'Option<EthRichBlock>': Option<EthRichBlock>;
+    'Vec<EthRichBlock>': Vec<EthRichBlock>;
+    EthRichHeader: EthRichHeader;
+    'Option<EthRichHeader>': Option<EthRichHeader>;
+    'Vec<EthRichHeader>': Vec<EthRichHeader>;
+    EthStorageProof: EthStorageProof;
+    'Option<EthStorageProof>': Option<EthStorageProof>;
+    'Vec<EthStorageProof>': Vec<EthStorageProof>;
+    EthSubKind: EthSubKind;
+    'Option<EthSubKind>': Option<EthSubKind>;
+    'Vec<EthSubKind>': Vec<EthSubKind>;
+    EthSubParams: EthSubParams;
+    'Option<EthSubParams>': Option<EthSubParams>;
+    'Vec<EthSubParams>': Vec<EthSubParams>;
+    EthSubResult: EthSubResult;
+    'Option<EthSubResult>': Option<EthSubResult>;
+    'Vec<EthSubResult>': Vec<EthSubResult>;
+    EthSyncInfo: EthSyncInfo;
+    'Option<EthSyncInfo>': Option<EthSyncInfo>;
+    'Vec<EthSyncInfo>': Vec<EthSyncInfo>;
+    EthSyncStatus: EthSyncStatus;
+    'Option<EthSyncStatus>': Option<EthSyncStatus>;
+    'Vec<EthSyncStatus>': Vec<EthSyncStatus>;
+    EthTransaction: EthTransaction;
+    'Option<EthTransaction>': Option<EthTransaction>;
+    'Vec<EthTransaction>': Vec<EthTransaction>;
+    EthTransactionCondition: EthTransactionCondition;
+    'Option<EthTransactionCondition>': Option<EthTransactionCondition>;
+    'Vec<EthTransactionCondition>': Vec<EthTransactionCondition>;
+    EthTransactionRequest: EthTransactionRequest;
+    'Option<EthTransactionRequest>': Option<EthTransactionRequest>;
+    'Vec<EthTransactionRequest>': Vec<EthTransactionRequest>;
+    EthTransactionStatus: EthTransactionStatus;
+    'Option<EthTransactionStatus>': Option<EthTransactionStatus>;
+    'Vec<EthTransactionStatus>': Vec<EthTransactionStatus>;
+    EthWork: EthWork;
+    'Option<EthWork>': Option<EthWork>;
+    'Vec<EthWork>': Vec<EthWork>;
     DoubleMapTypeV9: DoubleMapTypeV9;
     'Option<DoubleMapTypeV9>': Option<DoubleMapTypeV9>;
     'Vec<DoubleMapTypeV9>': Vec<DoubleMapTypeV9>;
@@ -2446,6 +2776,9 @@ declare module '@polkadot/types/types/registry' {
     DoubleMapTypeLatest: DoubleMapTypeLatest;
     'Option<DoubleMapTypeLatest>': Option<DoubleMapTypeLatest>;
     'Vec<DoubleMapTypeLatest>': Vec<DoubleMapTypeLatest>;
+    ErrorMetadataLatest: ErrorMetadataLatest;
+    'Option<ErrorMetadataLatest>': Option<ErrorMetadataLatest>;
+    'Vec<ErrorMetadataLatest>': Vec<ErrorMetadataLatest>;
     EventMetadataLatest: EventMetadataLatest;
     'Option<EventMetadataLatest>': Option<EventMetadataLatest>;
     'Vec<EventMetadataLatest>': Vec<EventMetadataLatest>;
@@ -2673,12 +3006,6 @@ declare module '@polkadot/types/types/registry' {
     ConditionResult: ConditionResult;
     'Option<ConditionResult>': Option<ConditionResult>;
     'Vec<ConditionResult>': Vec<ConditionResult>;
-    STO: STO;
-    'Option<STO>': Option<STO>;
-    'Vec<STO>': Vec<STO>;
-    Investment: Investment;
-    'Option<Investment>': Option<Investment>;
-    'Vec<Investment>': Vec<Investment>;
     SimpleTokenRecord: SimpleTokenRecord;
     'Option<SimpleTokenRecord>': Option<SimpleTokenRecord>;
     'Vec<SimpleTokenRecord>': Vec<SimpleTokenRecord>;
@@ -2686,9 +3013,6 @@ declare module '@polkadot/types/types/registry' {
     'Compact<FeeOf>': Compact<FeeOf>;
     'Option<FeeOf>': Option<FeeOf>;
     'Vec<FeeOf>': Vec<FeeOf>;
-    Dividend: Dividend;
-    'Option<Dividend>': Option<Dividend>;
-    'Vec<Dividend>': Vec<Dividend>;
     TargetIdAuthorization: TargetIdAuthorization;
     'Option<TargetIdAuthorization>': Option<TargetIdAuthorization>;
     'Vec<TargetIdAuthorization>': Vec<TargetIdAuthorization>;
@@ -2716,9 +3040,6 @@ declare module '@polkadot/types/types/registry' {
     Motion: Motion;
     'Option<Motion>': Option<Motion>;
     'Vec<Motion>': Vec<Motion>;
-    Ballot: Ballot;
-    'Option<Ballot>': Option<Ballot>;
-    'Vec<Ballot>': Vec<Ballot>;
     BallotTitle: BallotTitle;
     'Option<BallotTitle>': Option<BallotTitle>;
     'Vec<BallotTitle>': Vec<BallotTitle>;
@@ -2782,21 +3103,12 @@ declare module '@polkadot/types/types/registry' {
     ProposalState: ProposalState;
     'Option<ProposalState>': Option<ProposalState>;
     'Vec<ProposalState>': Vec<ProposalState>;
-    ReferendumState: ReferendumState;
-    'Option<ReferendumState>': Option<ReferendumState>;
-    'Vec<ReferendumState>': Vec<ReferendumState>;
-    ReferendumType: ReferendumType;
-    'Option<ReferendumType>': Option<ReferendumType>;
-    'Vec<ReferendumType>': Vec<ReferendumType>;
     Pip: Pip;
     'Option<Pip>': Option<Pip>;
     'Vec<Pip>': Vec<Pip>;
     ProposalData: ProposalData;
     'Option<ProposalData>': Option<ProposalData>;
     'Vec<ProposalData>': Vec<ProposalData>;
-    Referendum: Referendum;
-    'Option<Referendum>': Option<Referendum>;
-    'Vec<Referendum>': Vec<Referendum>;
     TickerTransferApproval: TickerTransferApproval;
     'Option<TickerTransferApproval>': Option<TickerTransferApproval>;
     'Vec<TickerTransferApproval>': Vec<TickerTransferApproval>;
@@ -2852,9 +3164,13 @@ declare module '@polkadot/types/types/registry' {
     'Compact<Counter>': Compact<Counter>;
     'Option<Counter>': Option<Counter>;
     'Vec<Counter>': Vec<Counter>;
-    Commission: Commission;
-    'Option<Commission>': Option<Commission>;
-    'Vec<Commission>': Vec<Commission>;
+    Percentage: Percentage;
+    'Compact<Percentage>': Compact<Percentage>;
+    'Option<Percentage>': Option<Percentage>;
+    'Vec<Percentage>': Vec<Percentage>;
+    TransferManager: TransferManager;
+    'Option<TransferManager>': Option<TransferManager>;
+    'Vec<TransferManager>': Vec<TransferManager>;
     RestrictionResult: RestrictionResult;
     'Option<RestrictionResult>': Option<RestrictionResult>;
     'Vec<RestrictionResult>': Vec<RestrictionResult>;
@@ -2943,6 +3259,12 @@ declare module '@polkadot/types/types/registry' {
     CanTransferResult: CanTransferResult;
     'Option<CanTransferResult>': Option<CanTransferResult>;
     'Vec<CanTransferResult>': Vec<CanTransferResult>;
+    GetPortfolioAssetsResult: GetPortfolioAssetsResult;
+    'Option<GetPortfolioAssetsResult>': Option<GetPortfolioAssetsResult>;
+    'Vec<GetPortfolioAssetsResult>': Vec<GetPortfolioAssetsResult>;
+    GetPortfoliosResult: GetPortfoliosResult;
+    'Option<GetPortfoliosResult>': Option<GetPortfoliosResult>;
+    'Vec<GetPortfoliosResult>': Vec<GetPortfoliosResult>;
     AuthorizationType: AuthorizationType;
     'Option<AuthorizationType>': Option<AuthorizationType>;
     'Vec<AuthorizationType>': Vec<AuthorizationType>;
@@ -3098,5 +3420,14 @@ declare module '@polkadot/types/types/registry' {
     PriceTier: PriceTier;
     'Option<PriceTier>': Option<PriceTier>;
     'Vec<PriceTier>': Vec<PriceTier>;
+    AssetMigrationError: AssetMigrationError;
+    'Option<AssetMigrationError>': Option<AssetMigrationError>;
+    'Vec<AssetMigrationError>': Vec<AssetMigrationError>;
+    MigrationError: MigrationError;
+    'Option<MigrationError>': Option<MigrationError>;
+    'Vec<MigrationError>': Vec<MigrationError>;
+    PermissionedIdentityPrefs: PermissionedIdentityPrefs;
+    'Option<PermissionedIdentityPrefs>': Option<PermissionedIdentityPrefs>;
+    'Vec<PermissionedIdentityPrefs>': Vec<PermissionedIdentityPrefs>;
   }
 }

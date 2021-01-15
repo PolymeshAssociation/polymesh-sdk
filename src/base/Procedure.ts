@@ -90,9 +90,9 @@ export class Procedure<
       | ((
           this: Procedure<Args, ReturnValue, Storage>,
           args: Args
-        ) => Promise<ProcedureAuthorization> | ProcedureAuthorization) = async (): Promise<
-      ProcedureAuthorization
-    > => ({}),
+        ) =>
+          | Promise<ProcedureAuthorization>
+          | ProcedureAuthorization) = async (): Promise<ProcedureAuthorization> => ({}),
     prepareStorage: (
       this: Procedure<Args, ReturnValue, Storage>,
       args: Args

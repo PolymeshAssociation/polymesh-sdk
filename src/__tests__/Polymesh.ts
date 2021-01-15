@@ -381,10 +381,7 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
 
-      sinon
-        .stub(reserveTicker, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(reserveTicker, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await polymesh.reserveTicker(args);
 
@@ -834,10 +831,7 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(transferPolyX, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(transferPolyX, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await polymesh.transferPolyX(args);
 
@@ -998,10 +992,7 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Identity>;
 
-      sinon
-        .stub(registerIdentity, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(registerIdentity, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await polymesh.registerIdentity(args);
 

@@ -7,7 +7,7 @@ import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
-import { polymesh } from 'polymesh-types/definitions';
+import schema from 'polymesh-types/schema';
 import { Ticker, TxTag } from 'polymesh-types/types';
 
 import {
@@ -176,14 +176,11 @@ export class Polymesh {
     let context: Context;
 
     try {
-      const { types, rpc } = polymesh;
+      const { types, rpc } = schema;
 
       const polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
-        // https://github.com/polkadot-js/api/releases/tag/v2.0.1 TODO @monitz87: remove once Polymesh is updated to substrate 2.0
-        types: {
-          ...types,
-        },
+        types,
         rpc,
       });
 
@@ -262,8 +259,9 @@ export class Polymesh {
       const { message, code } = err;
       throw new PolymeshError({
         code,
-        message: `Error while connecting to "${nodeUrl}": "${message ||
-          'The node couldn’t be reached'}"`,
+        message: `Error while connecting to "${nodeUrl}": "${
+          message || 'The node couldn’t be reached'
+        }"`,
       });
     }
 
