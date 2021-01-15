@@ -539,7 +539,7 @@ export function eventByAddedTrustedClaimIssuer(
 /**
  * @hidden
  *
- * Get settlements where a portfolio is envolved
+ * Get Settlements where a Portfolio is involved
  */
 export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<QuerySettlementsArgs> {
   const query = gql`
