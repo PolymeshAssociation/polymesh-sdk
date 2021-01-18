@@ -77,8 +77,8 @@ export type Query = {
   referendumVotes: VoteResult;
   /** Get a proposal by its pipId */
   proposal: Proposal;
-  /** Get all proposals optionally filtered by pipId, proposer or state */
-  proposals: Array<Proposal>;
+  /** Fetch governance proposals */
+  proposals?: Maybe<ProposalResult>;
   /** Get the current voters list for given pipId */
   proposalVotes: Array<ProposalVote>;
 };
@@ -106,7 +106,7 @@ export type QueryEventsArgs = {
 export type QuerySettlementsArgs = {
   identityId: Scalars['String'];
   portfolioNumber?: Maybe<Scalars['String']>;
-  keyFilter?: Maybe<Scalars['String']>;
+  addressFilter?: Maybe<Scalars['String']>;
   tickerFilter?: Maybe<Scalars['String']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
@@ -255,9 +255,8 @@ export type QueryProposalArgs = {
 };
 
 export type QueryProposalsArgs = {
-  pipIds?: Maybe<Array<Scalars['Int']>>;
-  proposers?: Maybe<Array<Scalars['String']>>;
-  states?: Maybe<Array<ProposalState>>;
+  state?: Maybe<ProposalStateEnum>;
+  snapshot?: Maybe<SnapshotEnum>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
   orderBy?: Maybe<ProposalOrderByInput>;
@@ -1106,7 +1105,7 @@ export type Settlement = {
   /** Settlement */
   block_id: Scalars['Int'];
   result: SettlementResultEnum;
-  key: Scalars['String'];
+  addresses?: Maybe<Array<Scalars['String']>>;
   legs: Array<Maybe<SettlementLeg>>;
 };
 
@@ -1123,6 +1122,8 @@ export type SettlementLeg = {
   ticker: Scalars['String'];
   amount: Scalars['String'];
   direction: SettlementDirectionEnum;
+  from: Portfolio;
+  to: Portfolio;
 };
 
 export enum SettlementDirectionEnum {
@@ -1130,6 +1131,12 @@ export enum SettlementDirectionEnum {
   Incoming = 'Incoming',
   Outgoing = 'Outgoing',
 }
+
+export type Portfolio = {
+  __typename?: 'Portfolio';
+  did: Scalars['String'];
+  kind: Scalars['String'];
+};
 
 export type TransactionOrderByInput = {
   field: TransactionOrderFields;
@@ -1280,27 +1287,31 @@ export type VoteResult = {
 
 export type Proposal = {
   __typename?: 'Proposal';
-  pipId: Scalars['Int'];
-  proposer: Scalars['String'];
-  createdAt: Scalars['Int'];
+  /** Proposal */
+  blockId: Scalars['Int'];
+  proposalId: Scalars['Int'];
+  state: ProposalStateEnum;
+  identityId: Scalars['String'];
+  balance: Scalars['BigInt'];
   url: Scalars['String'];
   description: Scalars['String'];
-  coolOffEndBlock: Scalars['Int'];
-  endBlock: Scalars['Int'];
-  proposal?: Maybe<Scalars['String']>;
-  lastState: ProposalState;
-  lastStateUpdatedAt: Scalars['Int'];
-  totalVotes: Scalars['Int'];
-  totalAyesWeight: Scalars['BigInt'];
-  totalNaysWeight: Scalars['BigInt'];
+  votesCount: Scalars['Int'];
 };
 
-export enum ProposalState {
+export enum ProposalStateEnum {
+  All = 'All',
   Pending = 'Pending',
-  Cancelled = 'Cancelled',
-  Killed = 'Killed',
   Rejected = 'Rejected',
-  Referendum = 'Referendum',
+  Scheduled = 'Scheduled',
+  Failed = 'Failed',
+  Executed = 'Executed',
+  Expired = 'Expired',
+}
+
+export enum SnapshotEnum {
+  All = 'All',
+  InSnapshot = 'InSnapshot',
+  NotInSnapshot = 'NotInSnapshot',
 }
 
 export type ProposalOrderByInput = {
@@ -1309,11 +1320,15 @@ export type ProposalOrderByInput = {
 };
 
 export enum ProposalOrderFields {
-  CreatedAt = 'createdAt',
-  EndBlock = 'endBlock',
-  LastState = 'lastState',
-  TotalVotes = 'totalVotes',
+  ProposalId = 'proposalId',
+  VotesCount = 'votesCount',
 }
+
+export type ProposalResult = {
+  __typename?: 'ProposalResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<Proposal>>>;
+};
 
 export type ProposalVotesOrderByInput = {
   field: ProposalVotesOrderFields;
