@@ -448,6 +448,7 @@ export enum TransferStatus {
   PortfolioFailure = 'PortfolioFailure', // 169
   CustodianError = 'CustodianError', // 176
   ScopeClaimMissing = 'MissingScopeClaimMissingScopedClaim', // 177
+  TransferRestrictionFailure = 'TransferRestrictionFailure', // 178
 }
 
 export interface ClaimTarget {
