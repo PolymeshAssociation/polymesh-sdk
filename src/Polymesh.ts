@@ -131,9 +131,19 @@ export class Polymesh {
    * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
    * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
    * @param params.middleware - middleware API URL and key (optional, used for historic queries)
-   * @param params.accountUri - account URI or mnemonic
+   * @param params.accountUri - account URI
    */
   static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
+
+  /**
+   * Create the instance and connect to the Polymesh node using an account mnemonic
+   *
+   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
+   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
+   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
+   * @param params.accountMnemonic - account mnemonic
+   */
+  static async connect(params: ConnectParamsBase & { accountMnemonic: string }): Promise<Polymesh>;
 
   /**
    * Create the instance and connect to the Polymesh node without an account
@@ -150,10 +160,19 @@ export class Polymesh {
       accountSeed?: string;
       keyring?: CommonKeyring | UiKeyring;
       accountUri?: string;
+      accountMnemonic?: string;
       middleware?: MiddlewareConfig;
     }
   ): Promise<Polymesh> {
-    const { nodeUrl, accountSeed, keyring, accountUri, signer, middleware } = params;
+    const {
+      nodeUrl,
+      accountSeed,
+      keyring,
+      accountUri,
+      accountMnemonic,
+      signer,
+      middleware,
+    } = params;
     let context: Context;
 
     try {
@@ -223,6 +242,12 @@ export class Polymesh {
           polymeshApi,
           middlewareApi,
           uri: accountUri,
+        });
+      } else if (accountMnemonic) {
+        context = await Context.create({
+          polymeshApi,
+          middlewareApi,
+          mnemonic: accountMnemonic,
         });
       } else {
         context = await Context.create({
