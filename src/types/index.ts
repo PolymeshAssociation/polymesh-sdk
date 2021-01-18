@@ -467,7 +467,10 @@ export interface MiddlewareConfig {
   key: string;
 }
 
-export type CommonKeyring = Pick<Keyring, 'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri'>;
+export type CommonKeyring = Pick<
+  Keyring,
+  'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri' | 'addFromMnemonic'
+>;
 
 export interface UiKeyring {
   keyring: CommonKeyring;
