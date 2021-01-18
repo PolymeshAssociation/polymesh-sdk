@@ -9,6 +9,7 @@ import {
   QueryProposalsArgs,
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
+  QuerySettlementsArgs,
   QueryTokensByTrustedClaimIssuerArgs,
   QueryTokensHeldByDidArgs,
   QueryTransactionByHashArgs,
@@ -524,6 +525,52 @@ export function eventByAddedTrustedClaimIssuer(
         extrinsic_idx
         block {
           datetime
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Settlements where a Portfolio is involved
+ */
+export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<QuerySettlementsArgs> {
+  const query = gql`
+    query SettlementsQuery(
+      $identityId: String!
+      $portfolioNumber: String
+      $addressFilter: String
+      $tickerFilter: String
+      $count: Int
+      $skip: Int
+    ) {
+      settlements(
+        identityId: $identityId
+        portfolioNumber: $portfolioNumber
+        addressFilter: $addressFilter
+        tickerFilter: $tickerFilter
+        count: $count
+        skip: $skip
+      ) {
+        totalCount
+        items {
+          block_id
+          result
+          key
+          legs {
+            ticker
+            amount
+            direction
+            from
+            to
+          }
         }
       }
     }

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
 import { Account } from '~/internal';
-import { ProposalState } from '~/middleware/types';
+import { ProposalStateEnum as ProposalState } from '~/middleware/types';
 
 export interface ProposalVote {
   account: Account;
@@ -38,7 +38,7 @@ export interface ProposalDetails {
 
 export {
   ProposalOrderByInput,
-  ProposalState,
+  ProposalStateEnum,
   ProposalOrderFields,
   ProposalVotesOrderByInput,
 } from '~/middleware/types';
