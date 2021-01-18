@@ -618,6 +618,28 @@ export interface ProcedureAuthorizationStatus {
   roles: boolean;
 }
 
+interface TransferRestrictionBase {
+  exempted: string[];
+}
+
+export interface CountTransferRestriction extends TransferRestrictionBase {
+  count: BigNumber;
+}
+
+export interface PercentageTransferRestriction extends TransferRestrictionBase {
+  percentage: BigNumber;
+}
+
+export interface ActiveTransferRestrictions<
+  Restriction extends CountTransferRestriction | PercentageTransferRestriction
+> {
+  restrictions: Restriction[];
+  /**
+   * amount of restrictions that can be added before reaching the shared limit
+   */
+  availableSlots: number;
+}
+
 export { TxTags } from 'polymesh-types/types';
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export * from '~/api/entities/types';
