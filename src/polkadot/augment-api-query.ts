@@ -100,6 +100,7 @@ import type {
   ExtensionAttributes,
   FundingRoundName,
   Fundraiser,
+  FundraiserName,
   IdentityClaim,
   IdentityId,
   InactiveMember,
@@ -2218,7 +2219,7 @@ declare module '@polkadot/api/types/storage' {
     };
     sto: {
       /**
-       * Total fundraisers created for a token
+       * Total fundraisers created for a token.
        **/
       fundraiserCount: AugmentedQuery<
         ApiType,
@@ -2226,7 +2227,20 @@ declare module '@polkadot/api/types/storage' {
         [Ticker]
       >;
       /**
-       * All fundraisers that are currently running. (ticker, fundraiser_id) -> Fundraiser
+       * Name for the Fundraiser. It is only used offchain.
+       * (ticker, fundraiser_id) -> Fundraiser name
+       **/
+      fundraiserNames: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Ticker | string | Uint8Array,
+          key2: u64 | AnyNumber | Uint8Array
+        ) => Observable<FundraiserName>,
+        [Ticker, u64]
+      >;
+      /**
+       * All fundraisers that are currently running.
+       * (ticker, fundraiser_id) -> Fundraiser
        **/
       fundraisers: AugmentedQueryDoubleMap<
         ApiType,
