@@ -124,6 +124,7 @@ import {
   meshPermissionsToPermissions,
   meshScopeToScope,
   meshVenueTypeToVenueType,
+  middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
   // middlewareProposalToProposalDetails,
   moduleAddressToString,
@@ -142,6 +143,7 @@ import {
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
+  scopeIdToString,
   scopeToMeshScope,
   scopeToMiddlewareScope,
   secondaryKeyToMeshSecondaryKey,
@@ -2460,7 +2462,7 @@ describe('stringToCddId and cddIdToString', () => {
   });
 });
 
-describe('stringToCddId', () => {
+describe('stringToScopeId and scopeIdToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2482,6 +2484,14 @@ describe('stringToCddId', () => {
 
     const result = stringToScopeId(scopeId, context);
 
+    expect(result).toBe(fakeResult);
+  });
+
+  test('scopeIdToString should convert a ScopeId to a scopeId string', () => {
+    const fakeResult = 'scopeId';
+    const scopeId = dsMockUtils.createMockScopeId(fakeResult);
+
+    const result = scopeIdToString(scopeId);
     expect(result).toBe(fakeResult);
   });
 });
@@ -4144,6 +4154,35 @@ describe('permissionsLikeToPermissions', () => {
       transactions: [],
       portfolios: [],
     });
+  });
+});
+
+describe('middlewarePortfolioToPortfolio', () => {
+  test('middlewarePortfolioToPortfolio should convert a MiddlewarePortfolio into a Portfolio', async () => {
+    const context = dsMockUtils.getContextInstance();
+    let middlewarePortfolio = {
+      kind: 'Default',
+      did: 'someDid',
+    };
+
+    let result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+
+    middlewarePortfolio = {
+      kind: '0',
+      did: 'someDid',
+    };
+
+    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+
+    middlewarePortfolio = {
+      kind: '10',
+      did: 'someDid',
+    };
+
+    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
+    expect(result instanceof NumberedPortfolio).toBe(true);
   });
 });
 

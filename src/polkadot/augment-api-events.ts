@@ -41,12 +41,14 @@ import type {
   CheckpointId,
   ComplianceRequirement,
   CorporateAction,
+  DispatchableName,
   Distribution,
   Document,
   DocumentId,
   EventDid,
   FundingRoundName,
   Fundraiser,
+  FundraiserName,
   HandledTxStatus,
   IdentityClaim,
   IdentityId,
@@ -57,6 +59,7 @@ import type {
   MetaUrl,
   MigrationError,
   OfflineSlashingParams,
+  PalletName,
   Permissions,
   PipDescription,
   PipId,
@@ -187,12 +190,11 @@ declare module '@polkadot/api/types/events' {
       IsIssuable: AugmentedEvent<ApiType, [Ticker, bool]>;
       /**
        * Emit when tokens get issued.
-       * caller DID, ticker, beneficiary DID, value, funding round, total issued in this funding round,
-       * primary issuance agent
+       * caller DID, ticker, beneficiary DID, value, funding round, total issued in this funding round
        **/
       Issued: AugmentedEvent<
         ApiType,
-        [IdentityId, Ticker, IdentityId, Balance, FundingRoundName, Balance, Option<IdentityId>]
+        [IdentityId, Ticker, IdentityId, Balance, FundingRoundName, Balance]
       >;
       /**
        * Migration error event.
@@ -758,6 +760,13 @@ declare module '@polkadot/api/types/events' {
        * DID queried
        **/
       DidStatus: AugmentedEvent<ApiType, [IdentityId, AccountId]>;
+      /**
+       * Forwarded Call - (calling DID, target DID, pallet name, function name)
+       **/
+      ForwardedCall: AugmentedEvent<
+        ApiType,
+        [IdentityId, IdentityId, PalletName, DispatchableName]
+      >;
       /**
        * Mocked InvestorUid created.
        **/
@@ -1364,15 +1373,30 @@ declare module '@polkadot/api/types/events' {
     };
     sto: {
       /**
-       * A new fundraiser has been created
-       * (primary issuance agent, fundraiser id, fundraiser details)
+       * An fundraiser has been stopped.
+       * (primary issuance agent, fundraiser id)
        **/
-      FundraiserCreated: AugmentedEvent<ApiType, [IdentityId, u64, Fundraiser]>;
+      FundraiserClosed: AugmentedEvent<ApiType, [IdentityId, u64]>;
       /**
-       * An investor invested in the fundraiser
-       * (offering token, raise token, offering_token_amount, raise_token_amount, fundraiser_id)
+       * A new fundraiser has been created.
+       * (primary issuance agent, fundraiser id, fundraiser name, fundraiser details)
        **/
-      FundsRaised: AugmentedEvent<ApiType, [IdentityId, Ticker, Ticker, Balance, Balance, u64]>;
+      FundraiserCreated: AugmentedEvent<ApiType, [IdentityId, u64, FundraiserName, Fundraiser]>;
+      /**
+       * An fundraiser has been frozen.
+       * (primary issuance agent, fundraiser id)
+       **/
+      FundraiserFrozen: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      /**
+       * An fundraiser has been unfrozen.
+       * (primary issuance agent, fundraiser id)
+       **/
+      FundraiserUnfrozen: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      /**
+       * An investor invested in the fundraiser.
+       * (Investor, fundraiser_id, offering token, raise token, offering_token_amount, raise_token_amount)
+       **/
+      Invested: AugmentedEvent<ApiType, [IdentityId, u64, Ticker, Ticker, Balance, Balance]>;
     };
     sudo: {
       /**

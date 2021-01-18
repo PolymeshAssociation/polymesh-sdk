@@ -1012,6 +1012,10 @@ export default {
         Specific: 'IdentityId',
       },
     },
+    FundraiserName: 'Text',
+    FundraiserStatus: {
+      _enum: ['Live', 'Frozen', 'Closed'],
+    },
     FundraiserTier: {
       total: 'Balance',
       price: 'Balance',
@@ -1027,7 +1031,8 @@ export default {
       venue_id: 'u64',
       start: 'Moment',
       end: 'Option<Moment>',
-      frozen: 'bool',
+      status: 'FundraiserStatus',
+      minimum_investment: 'Balance',
     },
     VenueType: {
       _enum: ['Other', 'Distribution', 'Sto', 'Exchange'],

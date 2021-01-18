@@ -3,6 +3,7 @@ import { values } from 'lodash';
 import { Ticker } from 'polymesh-types/types';
 
 import {
+  Account,
   Context,
   Entity,
   Identity,
@@ -12,16 +13,21 @@ import {
   setCustodian,
   SetCustodianParams,
 } from '~/internal';
+import { settlements } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
+import { Ensured, ResultSet } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import {
+  addressToKey,
   balanceToBigNumber,
   identityIdToString,
+  middlewarePortfolioToPortfolio,
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
-import { createProcedureMethod, getDid } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getDid } from '~/utils/internal';
 
-import { PortfolioBalance } from './types';
+import { HistoricSettlement, PortfolioBalance } from './types';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -216,5 +222,85 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     } catch (_) {
       return owner;
     }
+  }
+
+  /**
+   * Retrieve a list of transactions where this portfolio was involved. Can be filtered using parameters
+   *
+   * @param filters.account - account involved in the settlement
+   * @param filters.ticker - ticker involved in the transaction
+   * @param filters.size - page size
+   * @param filters.start - page offset
+   *
+   * @note supports pagination
+   * @note uses the middleware
+   */
+  public async getTransactionHistory(
+    filters: {
+      account?: string;
+      ticker?: string;
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<HistoricSettlement>> {
+    const {
+      context,
+      owner: { did },
+      _id,
+    } = this;
+
+    const { account, ticker, size, start } = filters;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'settlements'>>(
+      settlements({
+        identityId: did,
+        portfolioNumber: _id ? _id.toString() : null,
+        addressFilter: account ? addressToKey(account) : undefined,
+        tickerFilter: ticker,
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: { settlements: settlementsResult },
+    } = result;
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { items, totalCount: count } = settlementsResult!;
+
+    const data: HistoricSettlement[] = [];
+    let next = null;
+
+    if (items) {
+      items.forEach(item => {
+        /* eslint-disable @typescript-eslint/no-non-null-assertion */
+        const { block_id: blockId, result: status, addresses, legs: settlementLegs } = item!;
+
+        data.push({
+          blockNumber: new BigNumber(blockId),
+          status,
+          accounts: addresses!.map(address => new Account({ address }, context)),
+          legs: settlementLegs.map(leg => {
+            return {
+              token: new SecurityToken({ ticker: leg!.ticker }, context),
+              amount: new BigNumber(leg!.amount),
+              direction: leg!.direction,
+              from: middlewarePortfolioToPortfolio(leg!.from, context),
+              to: middlewarePortfolioToPortfolio(leg!.to, context),
+            };
+          }),
+        });
+        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+      });
+
+      next = calculateNextKey(count, size, start);
+    }
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }
