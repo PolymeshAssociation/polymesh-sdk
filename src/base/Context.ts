@@ -602,10 +602,12 @@ export class Context {
 
   /**
    * @hidden
+   *
+   * @note no claimTypes value means ALL claim types
    */
   public async getIdentityClaimsFromChain(args: {
     targets: (string | Identity)[];
-    claimTypes: ClaimType[];
+    claimTypes?: ClaimType[];
     trustedClaimIssuers?: (string | Identity)[];
     includeExpired: boolean;
   }): Promise<ClaimData[]> {
@@ -615,7 +617,12 @@ export class Context {
       },
     } = this;
 
-    const { targets, claimTypes, trustedClaimIssuers, includeExpired } = args;
+    const {
+      targets,
+      claimTypes = Object.values(ClaimType),
+      trustedClaimIssuers,
+      includeExpired,
+    } = args;
 
     const claim1stKeys = flatMap(targets, target =>
       claimTypes.map(claimType => {
@@ -640,7 +647,7 @@ export class Context {
           { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
         ]) => {
           const { target } = key.args[0] as Claim1stKey;
-          const expiry = rawExpiry ? momentToDate(rawExpiry.unwrap()) : null;
+          const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
           if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
             data.push({
               target: new Identity({ did: identityIdToString(target) }, this),
@@ -658,6 +665,72 @@ export class Context {
     return flatten(claimData).filter(({ issuer }) =>
       claimIssuerDids ? claimIssuerDids.includes(issuer.did) : true
     );
+  }
+
+  /**
+   * @hidden
+   */
+  public async getIdentityClaimsFromMiddleware(args: {
+    targets?: (string | Identity)[];
+    trustedClaimIssuers?: (string | Identity)[];
+    claimTypes?: ClaimType[];
+    includeExpired?: boolean;
+    size?: number;
+    start?: number;
+  }): Promise<ResultSet<ClaimData>> {
+    const { targets, claimTypes, trustedClaimIssuers, includeExpired, size, start } = args;
+
+    const data: ClaimData[] = [];
+
+    const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
+      didsWithClaims({
+        dids: targets?.map(target => signerToString(target)),
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          signerToString(trustedClaimIssuer)
+        ),
+        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        includeExpired,
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: {
+        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
+      },
+    } = result;
+
+    didsWithClaimsList.forEach(({ claims }) => {
+      claims.forEach(
+        ({
+          targetDID,
+          issuer,
+          issuance_date: issuanceDate,
+          expiry,
+          type,
+          jurisdiction,
+          scope,
+          cdd_id: cddId,
+        }) => {
+          data.push({
+            target: new Identity({ did: targetDID }, this),
+            issuer: new Identity({ did: issuer }, this),
+            issuedAt: new Date(issuanceDate),
+            expiry: expiry ? new Date(expiry) : null,
+            claim: createClaim(type, jurisdiction, scope, cddId, undefined),
+          });
+        }
+      );
+    });
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**
@@ -687,60 +760,17 @@ export class Context {
     const isMiddlewareAvailable = await this.isMiddlewareAvailable();
 
     if (isMiddlewareAvailable) {
-      const data: ClaimData[] = [];
-
-      const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-        didsWithClaims({
-          dids: targets?.map(target => signerToString(target)),
-          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-            signerToString(trustedClaimIssuer)
-          ),
-          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-          includeExpired,
-          count: size,
-          skip: start,
-        })
-      );
-
-      const {
-        data: {
-          didsWithClaims: { items: didsWithClaimsList, totalCount: count },
-        },
-      } = result;
-
-      didsWithClaimsList.forEach(({ claims }) => {
-        claims.forEach(
-          ({
-            targetDID,
-            issuer,
-            issuance_date: issuanceDate,
-            expiry,
-            type,
-            jurisdiction,
-            scope,
-            cdd_id: cddId,
-          }) => {
-            data.push({
-              target: new Identity({ did: targetDID }, this),
-              issuer: new Identity({ did: issuer }, this),
-              issuedAt: new Date(issuanceDate),
-              expiry: expiry ? new Date(expiry) : null,
-              claim: createClaim(type, jurisdiction, scope, cddId, undefined),
-            });
-          }
-        );
+      return this.getIdentityClaimsFromMiddleware({
+        targets,
+        trustedClaimIssuers,
+        claimTypes,
+        includeExpired,
+        size,
+        start,
       });
-
-      const next = calculateNextKey(count, size, start);
-
-      return {
-        data,
-        next,
-        count,
-      };
     }
 
-    if (!targets || !claimTypes) {
+    if (!targets) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'Cannot perform this action without an active middleware connection',

@@ -1,3 +1,5 @@
+import { filter, isEqual, uniqBy, uniqWith } from 'lodash';
+
 import {
   addInvestorUniquenessClaim,
   AddInvestorUniquenessClaimParams,
@@ -6,11 +8,7 @@ import {
   modifyClaims,
   ModifyClaimsParams,
 } from '~/internal';
-import {
-  didsWithClaims,
-  issuerDidsWithClaimsByTarget,
-  scopesByIdentity,
-} from '~/middleware/queries';
+import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   ClaimData,
@@ -20,10 +18,11 @@ import {
   IdentityWithClaims,
   ResultSet,
   Scope,
+  ScopedClaim,
+  ScopeType,
 } from '~/types';
 import { ClaimOperation, ProcedureMethod } from '~/types/internal';
 import {
-  middlewareScopeToScope,
   scopeToMiddlewareScope,
   signerToString,
   toIdentityWithClaimsArray,
@@ -144,7 +143,7 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const result = await context.issuedClaims({
+    const result = await context.getIdentityClaimsFromMiddleware({
       trustedClaimIssuers: [did],
       includeExpired,
       size,
@@ -212,7 +211,6 @@ export class Claims {
     } = result;
 
     const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
-
     const next = calculateNextKey(count, size, start);
 
     return {
@@ -227,9 +225,6 @@ export class Claims {
    *   If the scope is an asset DID, the corresponding ticker is returned as well
    *
    * @param opts.target - identity for which to fetch claim scopes (optional, defaults to the current Identity)
-   *
-   * @note a null scope means the Identity has scopeless claims (like CDD for example)
-   * @note uses the middleware
    */
   public async getClaimScopes(opts: { target?: string | Identity } = {}): Promise<ClaimScope[]> {
     const { context } = this;
@@ -237,25 +232,42 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const {
-      data: { scopesByIdentity: scopes },
-    } = await context.queryMiddleware<Ensured<Query, 'scopesByIdentity'>>(
-      scopesByIdentity({ did })
-    );
+    const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
+      targets: [did],
+      claimTypes: [
+        ClaimType.Accredited,
+        ClaimType.Affiliate,
+        ClaimType.Blocked,
+        ClaimType.BuyLockup,
+        ClaimType.Exempted,
+        ClaimType.InvestorUniqueness,
+        ClaimType.Jurisdiction,
+        ClaimType.KnowYourCustomer,
+        ClaimType.SellLockup,
+      ],
+      trustedClaimIssuers: undefined,
+      includeExpired: true,
+    });
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return scopes.map(({ scope, ticker: symbol }) => {
+    const claimScopeList = identityClaimsFromChain.map(({ claim }) => {
+      // only Scoped Claims were fetched so this assertion is reasonable
+      const {
+        scope: { type, value },
+      } = claim as ScopedClaim;
+
       let ticker: string | undefined;
 
-      if (symbol) {
-        ticker = removePadding(symbol);
+      if (type === ScopeType.Ticker) {
+        ticker = removePadding(value);
       }
 
       return {
-        scope: scope ? middlewareScopeToScope(scope) : null,
+        scope: { type, value: ticker ?? value },
         ticker,
       };
     });
+
+    return uniqWith(claimScopeList, isEqual);
   }
 
   /**
@@ -263,34 +275,23 @@ export class Claims {
    *
    * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   *
-   * @note supports pagination
-   * @note uses the middleware
    */
   public async getCddClaims(
     opts: {
       target?: string | Identity;
       includeExpired?: boolean;
-      size?: number;
-      start?: number;
     } = {}
-  ): Promise<ResultSet<ClaimData>> {
+  ): Promise<ClaimData[]> {
     const { context } = this;
-    const { target, includeExpired = true, size, start } = opts;
+    const { target, includeExpired = true } = opts;
 
     const did = await getDid(target, context);
 
-    const result = await context.issuedClaims({
+    return context.getIdentityClaimsFromChain({
       targets: [did],
       claimTypes: [ClaimType.CustomerDueDiligence],
       includeExpired,
-      size,
-      start,
     });
-
-    return result;
   }
 
   /**
@@ -342,36 +343,68 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
-      issuerDidsWithClaimsByTarget({
-        target: did,
-        scope: scope ? scopeToMiddlewareScope(scope) : undefined,
-        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          signerToString(trustedClaimIssuer)
-        ),
-        includeExpired,
-        count: size,
-        skip: start,
-      })
+    const isMiddlewareAvailable = await context.isMiddlewareAvailable();
+
+    if (isMiddlewareAvailable) {
+      const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
+        issuerDidsWithClaimsByTarget({
+          target: did,
+          scope: scope ? scopeToMiddlewareScope(scope) : undefined,
+          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+            signerToString(trustedClaimIssuer)
+          ),
+          includeExpired,
+          count: size,
+          skip: start,
+        })
+      );
+
+      const {
+        data: {
+          issuerDidsWithClaimsByTarget: {
+            items: issuerDidsWithClaimsByTargetList,
+            totalCount: count,
+          },
+        },
+      } = result;
+
+      const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
+      const next = calculateNextKey(count, size, start);
+
+      return {
+        data,
+        next,
+        count,
+      };
+    }
+
+    const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
+      targets: [did],
+      trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+        signerToString(trustedClaimIssuer)
+      ),
+      includeExpired,
+    });
+
+    const issuers = uniqBy(
+      identityClaimsFromChain.map(i => i.issuer),
+      identity => identity.did
     );
 
-    const {
-      data: {
-        issuerDidsWithClaimsByTarget: {
-          items: issuerDidsWithClaimsByTargetList,
-          totalCount: count,
-        },
-      },
-    } = result;
-
-    const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
-
-    const next = calculateNextKey(count, size, start);
+    const identityWithClaims = issuers.map(identity => {
+      return {
+        identity,
+        claims: filter(
+          identityClaimsFromChain,
+          ({ issuer: { did: issuerDid } }) => issuerDid === identity.did
+        ),
+      };
+    });
 
     return {
-      data,
-      next,
-      count,
+      data: identityWithClaims,
+      next: null,
+      count: undefined,
     };
   }
 }

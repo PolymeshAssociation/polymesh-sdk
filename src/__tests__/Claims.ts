@@ -2,11 +2,7 @@ import sinon from 'sinon';
 
 import { Claims } from '~/Claims';
 import { addInvestorUniquenessClaim, Context, modifyClaims, TransactionQueue } from '~/internal';
-import {
-  didsWithClaims,
-  issuerDidsWithClaimsByTarget,
-  scopesByIdentity,
-} from '~/middleware/queries';
+import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimScopeTypeEnum, ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -54,7 +50,7 @@ describe('Claims Class', () => {
   describe('method: getIssuedClaims', () => {
     test('should return a list of issued claims', async () => {
       const target = 'someDid';
-      const issuedClaims: ResultSet<ClaimData> = {
+      const getIdentityClaimsFromMiddleware: ResultSet<ClaimData> = {
         data: [
           {
             target: entityMockUtils.getIdentityInstance({ did: target }),
@@ -70,15 +66,15 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          issuedClaims,
+          getIdentityClaimsFromMiddleware,
         },
       });
 
       let result = await claims.getIssuedClaims();
-      expect(result).toEqual(issuedClaims);
+      expect(result).toEqual(getIdentityClaimsFromMiddleware);
 
       result = await claims.getIssuedClaims({ target });
-      expect(result).toEqual(issuedClaims);
+      expect(result).toEqual(getIdentityClaimsFromMiddleware);
     });
   });
 
@@ -432,72 +428,85 @@ describe('Claims Class', () => {
     test('should return a list of cdd claims', async () => {
       const target = 'someTarget';
 
-      const issuedClaims: ResultSet<ClaimData> = {
-        data: [
-          {
-            target: entityMockUtils.getIdentityInstance({ did: target }),
-            issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
-            issuedAt: new Date(),
-            expiry: null,
-            claim: { type: ClaimType.CustomerDueDiligence, id: 'someCddId' },
+      const identityClaims: ClaimData[] = [
+        {
+          target: entityMockUtils.getIdentityInstance({ did: target }),
+          issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
+          issuedAt: new Date(),
+          expiry: null,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: 'someId',
           },
-        ],
-        next: 1,
-        count: 1,
-      };
+        },
+      ];
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          issuedClaims,
+          getIdentityClaimsFromChain: identityClaims,
         },
       });
 
       let result = await claims.getCddClaims({ target });
-      expect(result).toEqual(issuedClaims);
+      expect(result).toEqual(identityClaims);
 
       result = await claims.getCddClaims();
-      expect(result).toEqual(issuedClaims);
+      expect(result).toEqual(identityClaims);
     });
   });
 
   describe('method: getClaimScopes', () => {
     test('should return a list of scopes and tickers', async () => {
       const target = 'someTarget';
-      const scopes = [
+      const ticker = 'FAKETICKER';
+      const someDid = 'someDid';
+      const fakeClaimData = [
         {
-          scope: { type: ScopeType.Identity, value: 'someScope' },
-          ticker: 'TOKEN\0\0',
+          claim: {
+            type: ClaimType.InvestorUniqueness,
+            scope: {
+              type: ScopeType.Ticker,
+              value: ticker,
+            },
+          },
         },
         {
-          scope: null,
+          claim: {
+            type: ClaimType.Jurisdiction,
+            scope: {
+              type: ScopeType.Identity,
+              value: someDid,
+            },
+          },
         },
-      ];
+        {
+          claim: {
+            type: ClaimType.Jurisdiction,
+            scope: {
+              type: ScopeType.Identity,
+              value: someDid,
+            },
+          },
+        },
+      ] as ClaimData[];
 
       dsMockUtils.configureMocks({
         contextOptions: {
           did: target,
+          getIdentityClaimsFromChain: fakeClaimData,
         },
       });
 
-      dsMockUtils.createApolloQueryStub(scopesByIdentity({ did: target }), {
-        scopesByIdentity: scopes,
-      });
-
-      sinon.stub();
-
       let result = await claims.getClaimScopes({ target });
 
-      expect(result[0].ticker).toBe('TOKEN');
-      expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: 'someScope' });
+      expect(result[0].ticker).toBe(ticker);
+      expect(result[0].scope).toEqual({ type: ScopeType.Ticker, value: ticker });
       expect(result[1].ticker).toBeUndefined();
-      expect(result[1].scope).toBeNull();
+      expect(result[1].scope).toEqual({ type: ScopeType.Identity, value: someDid });
 
       result = await claims.getClaimScopes();
 
-      expect(result[0].ticker).toBe('TOKEN');
-      expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: 'someScope' });
-      expect(result[1].ticker).toBeUndefined();
-      expect(result[1].scope).toBeNull();
+      expect(result.length).toEqual(2);
     });
   });
 
@@ -605,6 +614,81 @@ describe('Claims Class', () => {
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(25);
       expect(result.next).toBeNull();
+    });
+
+    test('should return a list of claims issued with an Identity as target from chain', async () => {
+      const target = 'someTarget';
+      const issuer = 'someIssuer';
+      const otherIssuer = 'otherIssuer';
+
+      const scope = {
+        type: ScopeType.Identity,
+        value: 'someIdentityScope',
+      };
+
+      const identityClaims: ClaimData[] = [
+        {
+          target: entityMockUtils.getIdentityInstance({ did: target }),
+          issuer: entityMockUtils.getIdentityInstance({ did: issuer }),
+          issuedAt: new Date(),
+          expiry: null,
+          claim: {
+            type: ClaimType.Accredited,
+            scope,
+          },
+        },
+        {
+          target: entityMockUtils.getIdentityInstance({ did: target }),
+          issuer: entityMockUtils.getIdentityInstance({ did: issuer }),
+          issuedAt: new Date(),
+          expiry: null,
+          claim: {
+            type: ClaimType.InvestorUniqueness,
+            scope,
+            cddId: 'someCddId',
+            scopeId: 'someScopeId',
+          },
+        },
+        {
+          target: entityMockUtils.getIdentityInstance({ did: target }),
+          issuer: entityMockUtils.getIdentityInstance({ did: otherIssuer }),
+          issuedAt: new Date(),
+          expiry: null,
+          claim: {
+            type: ClaimType.InvestorUniqueness,
+            scope,
+            cddId: 'otherCddId',
+            scopeId: 'someScopeId',
+          },
+        },
+      ];
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          middlewareAvailable: false,
+          getIdentityClaimsFromChain: identityClaims,
+        },
+      });
+
+      let result = await claims.getTargetingClaims({
+        target: target,
+      });
+
+      expect(result.data.length).toEqual(2);
+      expect(result.data[0].identity.did).toEqual(issuer);
+      expect(result.data[0].claims.length).toEqual(2);
+      expect(result.data[0].claims[0].claim).toEqual(identityClaims[0].claim);
+      expect(result.data[0].claims[1].claim).toEqual(identityClaims[1].claim);
+      expect(result.data[1].identity.did).toEqual(otherIssuer);
+      expect(result.data[1].claims.length).toEqual(1);
+      expect(result.data[1].claims[0].claim).toEqual(identityClaims[2].claim);
+
+      result = await claims.getTargetingClaims({
+        target: target,
+        trustedClaimIssuers: ['trusted'],
+      });
+
+      expect(result.data.length).toEqual(2);
     });
   });
 
