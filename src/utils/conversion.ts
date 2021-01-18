@@ -80,6 +80,7 @@ import {
   ClaimScopeTypeEnum,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
+  Portfolio as MiddlewarePortfolio,
   // Proposal,
   Scope as MiddlewareScope,
 } from '~/middleware/types';
@@ -2207,4 +2208,19 @@ export async function permissionsLikeToPermissions(
     transactions: transactionPermissions,
     portfolios: portfolioPermissions,
   };
+}
+
+/**
+ * @hidden
+ */
+export function middlewarePortfolioToPortfolio(
+  portfolio: MiddlewarePortfolio,
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, kind } = portfolio;
+
+  if (kind.toLowerCase() === 'default' || kind === '0') {
+    return new DefaultPortfolio({ did }, context);
+  }
+  return new NumberedPortfolio({ did, id: new BigNumber(kind) }, context);
 }
