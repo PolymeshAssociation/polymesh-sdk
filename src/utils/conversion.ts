@@ -1267,6 +1267,13 @@ export function stringToScopeId(scopeId: string, context: Context): ScopeId {
 /**
  * @hidden
  */
+export function scopeIdToString(scopeId: ScopeId): string {
+  return scopeId.toString();
+}
+
+/**
+ * @hidden
+ */
 export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
   let value;
 

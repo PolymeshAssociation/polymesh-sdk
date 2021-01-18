@@ -60,6 +60,7 @@ import type {
   Document,
   DocumentId,
   FundingRoundName,
+  FundraiserName,
   IdentityId,
   InvestorUid,
   InvestorZKProofData,
@@ -379,11 +380,8 @@ declare module '@polkadot/api/types/submittable' {
         [Vec<DocumentId>, Ticker]
       >;
       /**
-       * Sets the primary issuance agent to None. The caller must be the asset issuer. The asset
-       * issuer can always update the primary issuance agent using `transfer_primary_issuance_agent`. If the issuer
-       * removes their primary issuance agent then it will be immovable until either they transfer
-       * the primary issuance agent to an actual DID, or they add a claim to allow that DID to move the
-       * asset.
+       * Sets the primary issuance agent back to None. The caller must be the asset issuer. The asset
+       * issuer can always update the primary issuance agent using `transfer_primary_issuance_agent`.
        *
        * # Arguments
        * * `origin` - The asset issuer.
@@ -2702,30 +2700,6 @@ declare module '@polkadot/api/types/submittable' {
         [AccountId, u64]
       >;
       /**
-       * Replaces all existing signers of the given multisig and changes the number of required
-       * signatures.
-       *
-       * NOTE: Once this function get executed no other function of the multisig is allowed to
-       * execute until unless enough potential signers accept the authorization whose count is
-       * greater than or equal to the number of required signatures.
-       *
-       * # Arguments
-       * * signers - Vector of signers for a given multisig.
-       * * sigs_required - Number of signature required for a given multisig.
-       *
-       * # Weight
-       * `900_000_000 + 3_000_000 * signers.len()`
-       **/
-      changeAllSignersAndSigsRequired: AugmentedSubmittable<
-        (
-          signers:
-            | Vec<Signatory>
-            | (Signatory | { Identity: any } | { Account: any } | string | Uint8Array)[],
-          sigsRequired: u64 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Vec<Signatory>, u64]
-      >;
-      /**
        * Changes the number of signatures required by a multisig. This must be called by the
        * multisig itself.
        *
@@ -2835,9 +2809,10 @@ declare module '@polkadot/api/types/submittable' {
         (
           multisig: AccountId | string | Uint8Array,
           proposalId: u64 | AnyNumber | Uint8Array,
-          multisigDid: IdentityId | string | Uint8Array
+          multisigDid: IdentityId | string | Uint8Array,
+          proposalWeight: Weight | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [AccountId, u64, IdentityId]
+        [AccountId, u64, IdentityId, Weight]
       >;
       /**
        * Adds a multisig as the primary key of the current did if the current did is the creator
@@ -3778,7 +3753,7 @@ declare module '@polkadot/api/types/submittable' {
         (
           venueId: u64 | AnyNumber | Uint8Array,
           details: Option<VenueDetails> | null | object | string | Uint8Array,
-          venueType: Option<VenueType> | null | object | string | Uint8Array
+          typ: Option<VenueType> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [u64, Option<VenueDetails>, Option<VenueType>]
       >;
@@ -4704,7 +4679,9 @@ declare module '@polkadot/api/types/submittable' {
             | (PriceTier | { total?: any; price?: any } | string | Uint8Array)[],
           venueId: u64 | AnyNumber | Uint8Array,
           start: Option<Moment> | null | object | string | Uint8Array,
-          end: Option<Moment> | null | object | string | Uint8Array
+          end: Option<Moment> | null | object | string | Uint8Array,
+          minimumInvestment: Balance | AnyNumber | Uint8Array,
+          fundraiserName: FundraiserName | string
         ) => SubmittableExtrinsic<ApiType>,
         [
           PortfolioId,
@@ -4714,7 +4691,9 @@ declare module '@polkadot/api/types/submittable' {
           Vec<PriceTier>,
           u64,
           Option<Moment>,
-          Option<Moment>
+          Option<Moment>,
+          Balance,
+          FundraiserName
         ]
       >;
       /**

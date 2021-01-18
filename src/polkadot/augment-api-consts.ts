@@ -135,6 +135,10 @@ declare module '@polkadot/api/types/consts' {
        **/
       electionLookahead: BlockNumber & AugmentedConst<ApiType>;
       /**
+       * Total year rewards that gets paid during fixed reward schedule.
+       **/
+      fixedYearlyReward: BalanceOf & AugmentedConst<ApiType>;
+      /**
        * Maximum number of balancing iterations to run in the offchain submission.
        *
        * If set to 0, balance_solution will not be executed at all.
@@ -153,6 +157,10 @@ declare module '@polkadot/api/types/consts' {
        * Max number of validators count = `MaxValidatorPerIdentity * Self::validator_count()`.
        **/
       maxValidatorPerIdentity: Permill & AugmentedConst<ApiType>;
+      /**
+       * Maximum amount of `T::currency::total_issuance()` after that non-inflated rewards get paid.
+       **/
+      maxVariableInflationTotalIssuance: BalanceOf & AugmentedConst<ApiType>;
       /**
        * The threshold of improvement that should be provided for a new solution to be accepted.
        **/

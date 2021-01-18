@@ -9,10 +9,11 @@ import {
   Identity,
   reserveTicker,
   SecurityToken,
-  TransactionQueue,
 } from '~/internal';
 import { SubCallback, UnsubCallback } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 import { TickerReservationDetails, TickerReservationStatus } from './types';
 
@@ -53,6 +54,16 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
     const { ticker } = identifiers;
 
     this.ticker = ticker;
+
+    this.extend = createProcedureMethod(
+      () => [reserveTicker, { ticker, extendPeriod: true }],
+      context
+    );
+
+    this.createToken = createProcedureMethod(
+      args => [createSecurityToken, { ...args, ticker }],
+      context
+    );
   }
 
   /**
@@ -141,17 +152,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
    * Extend the Reservation time period of the ticker for 60 days from now
    * to later use it in the creation of a Security Token.
    */
-  public extend(): Promise<TransactionQueue<TickerReservation>> {
-    const { ticker, context } = this;
-    const extendPeriod = true;
-    return reserveTicker.prepare(
-      {
-        ticker,
-        extendPeriod,
-      },
-      context
-    );
-  }
+  public extend: ProcedureMethod<void, TickerReservation>;
 
   /**
    * Create a Security Token using the reserved ticker
@@ -164,8 +165,5 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
    * @param args.tokenIdentifiers - domestic or international alphanumeric security identifiers for the token (ISIN, CUSIP, etc)
    * @param args.fundingRound - (optional) funding round in which the token currently is (Series A, Series B, etc)
    */
-  public createToken(args: CreateSecurityTokenParams): Promise<TransactionQueue<SecurityToken>> {
-    const { ticker, context } = this;
-    return createSecurityToken.prepare({ ticker, ...args }, context);
-  }
+  public createToken: ProcedureMethod<CreateSecurityTokenParams, SecurityToken>;
 }

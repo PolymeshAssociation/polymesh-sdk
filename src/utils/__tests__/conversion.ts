@@ -143,6 +143,7 @@ import {
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
+  scopeIdToString,
   scopeToMeshScope,
   scopeToMiddlewareScope,
   secondaryKeyToMeshSecondaryKey,
@@ -2461,7 +2462,7 @@ describe('stringToCddId and cddIdToString', () => {
   });
 });
 
-describe('stringToCddId', () => {
+describe('stringToScopeId and scopeIdToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2483,6 +2484,14 @@ describe('stringToCddId', () => {
 
     const result = stringToScopeId(scopeId, context);
 
+    expect(result).toBe(fakeResult);
+  });
+
+  test('scopeIdToString should convert a ScopeId to a scopeId string', () => {
+    const fakeResult = 'scopeId';
+    const scopeId = dsMockUtils.createMockScopeId(fakeResult);
+
+    const result = scopeIdToString(scopeId);
     expect(result).toBe(fakeResult);
   });
 });

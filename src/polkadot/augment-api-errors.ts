@@ -737,6 +737,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       CannotDecodeSignerAccountId: AugmentedError<ApiType>;
       /**
+       * CDDId should be unique & same within all cdd claims possessed by a DID.
+       **/
+      CDDIdNotUniqueForIdentity: AugmentedError<ApiType>;
+      /**
        * Try to add a claim variant using un-designated extrinsic.
        **/
       ClaimVariantNotAllowed: AugmentedError<ApiType>;
@@ -781,6 +785,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       InvalidAuthorizationSignature: AugmentedError<ApiType>;
       /**
+       * Non systematic CDD providers can not create default cdd_id claims.
+       **/
+      InvalidCDDId: AugmentedError<ApiType>;
+      /**
        * Addition of a new scope claim gets invalidated.
        **/
       InvalidScopeClaim: AugmentedError<ApiType>;
@@ -808,6 +816,10 @@ declare module '@polkadot/api/types/errors' {
        * Only the primary key is allowed to revoke an Identity Signatory off-chain authorization.
        **/
       NotPrimaryKey: AugmentedError<ApiType>;
+      /**
+       * Do not allow forwarded call to be called recursively
+       **/
+      RecursionNotAllowed: AugmentedError<ApiType>;
       /**
        * The secondary keys contain the primary key.
        **/
@@ -946,6 +958,7 @@ declare module '@polkadot/api/types/errors' {
       SignerAlreadyLinked: AugmentedError<ApiType>;
     };
     permissions: {
+      RecursionNotAllowed: AugmentedError<ApiType>;
       /**
        * The caller is not authorized to call the current extrinsic.
        **/
@@ -1416,19 +1429,23 @@ declare module '@polkadot/api/types/errors' {
     };
     sto: {
       /**
+       * Fundraiser has been closed/stopped already.
+       **/
+      FundraiserClosed: AugmentedError<ApiType>;
+      /**
        * Interacting with a fundraiser past the end `Moment`.
        **/
       FundraiserExpired: AugmentedError<ApiType>;
       /**
-       * Fundraiser is frozen
-       **/
-      FundraiserFrozen: AugmentedError<ApiType>;
-      /**
-       * Fundraiser not found
+       * Fundraiser not found.
        **/
       FundraiserNotFound: AugmentedError<ApiType>;
       /**
-       * Not enough tokens left for sale
+       * Fundraiser is either frozen or stopped.
+       **/
+      FundraiserNotLive: AugmentedError<ApiType>;
+      /**
+       * Not enough tokens left for sale.
        **/
       InsufficientTokensRemaining: AugmentedError<ApiType>;
       /**
@@ -1436,23 +1453,27 @@ declare module '@polkadot/api/types/errors' {
        **/
       InvalidOfferingWindow: AugmentedError<ApiType>;
       /**
-       * An individual price tier was invalid or a set of price tiers was invalid
+       * An individual price tier was invalid or a set of price tiers was invalid.
        **/
       InvalidPriceTiers: AugmentedError<ApiType>;
       /**
-       * Using an invalid venue
+       * An invalid venue provided.
        **/
       InvalidVenue: AugmentedError<ApiType>;
       /**
-       * Price of an investment exceeded the max price
+       * Investment amount is lower than minimum investment amount.
+       **/
+      InvestmentAmountTooLow: AugmentedError<ApiType>;
+      /**
+       * Price of the investment exceeded the max price.
        **/
       MaxPriceExceeded: AugmentedError<ApiType>;
       /**
-       * An arithmetic operation overflowed
+       * An arithmetic operation overflowed.
        **/
       Overflow: AugmentedError<ApiType>;
       /**
-       * Sender does not have required permissions
+       * Sender does not have required permissions.
        **/
       Unauthorized: AugmentedError<ApiType>;
     };
