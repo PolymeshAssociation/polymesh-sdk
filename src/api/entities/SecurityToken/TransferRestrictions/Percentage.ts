@@ -1,49 +1,33 @@
-import {
-  AddPercentageTransferRestrictionParams,
-  addTransferRestriction,
-  AddTransferRestrictionParams,
-  Context,
-  Namespace,
-  SecurityToken,
-} from '~/internal';
+import { TransferRestrictionBase } from '~/api/entities/SecurityToken/TransferRestrictions/TransferRestrictionBase';
+import { AddPercentageTransferRestrictionParams } from '~/internal';
+import { ActiveTransferRestrictions, PercentageTransferRestriction } from '~/types';
 import { ProcedureMethod, TransferRestrictionType } from '~/types/internal';
-import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Percentage Transfer Restriction related functionality
  */
-export class Percentage extends Namespace<SecurityToken> {
-  /**
-   * @hidden
-   */
-  constructor(parent: SecurityToken, context: Context) {
-    super(parent, context);
-
-    const { ticker } = parent;
-
-    this.addRestriction = createProcedureMethod<
-      Omit<AddPercentageTransferRestrictionParams, 'type'>,
-      AddTransferRestrictionParams,
-      number
-    >(
-      args => [
-        addTransferRestriction,
-        { ...args, type: TransferRestrictionType.Percentage, ticker },
-      ],
-      context
-    );
-  }
+export class Percentage extends TransferRestrictionBase<TransferRestrictionType.Percentage> {
+  protected type = TransferRestrictionType.Percentage as const;
 
   /**
    * Add a Percentage Transfer Restriction to this Security Token
    *
-   * @param args.percentage - limit on the percentage of the total supply of this Security Token that a single (unique) investor can hold at once
+   * @param args.percentage - limit on the proportion of the total supply of this Security Token that can be held by a single investor at once
    * @param args.exempted - array of Scope IDs that are exempted from the Restriction
    *
-   * * @note the result is the total amount of restrictions after the procedure has run
+   * @note the result is the total amount of restrictions after the procedure has run
    */
-  public addRestriction: ProcedureMethod<
+  public addRestriction!: ProcedureMethod<
     Omit<AddPercentageTransferRestrictionParams, 'type'>,
     number
   >;
+
+  /**
+   * Retrieve all active Percentage Transfer Restrictions
+   *
+   * @note there is a maximum number of restrictions allowed accross all types.
+   *   The `availableSlots` property of the result represents how many more restrictions can be added
+   *   before reaching that limit
+   */
+  public get!: () => Promise<ActiveTransferRestrictions<PercentageTransferRestriction>>;
 }

@@ -803,7 +803,18 @@ export interface Fundraiser extends Struct {
   readonly venue_id: u64;
   readonly start: Moment;
   readonly end: Option<Moment>;
-  readonly frozen: bool;
+  readonly status: FundraiserStatus;
+  readonly minimum_investment: Balance;
+}
+
+/** @name FundraiserName */
+export interface FundraiserName extends Text {}
+
+/** @name FundraiserStatus */
+export interface FundraiserStatus extends Enum {
+  readonly isLive: boolean;
+  readonly isFrozen: boolean;
+  readonly isClosed: boolean;
 }
 
 /** @name FundraiserTier */

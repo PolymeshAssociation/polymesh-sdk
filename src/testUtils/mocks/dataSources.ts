@@ -218,6 +218,7 @@ interface ContextOptions {
   currentPairIsLocked?: boolean;
   issuedClaims?: ResultSet<ClaimData>;
   getIdentityClaimsFromChain?: ClaimData[];
+  getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   primaryKey?: string;
   secondaryKeys?: SecondaryKey[];
   transactionHistory?: ResultSet<ExtrinsicData>;
@@ -464,6 +465,19 @@ const defaultContextOptions: ContextOptions = {
       claim: { type: ClaimType.NoData },
     },
   ],
+  getIdentityClaimsFromMiddleware: {
+    data: [
+      {
+        target: ('targetIdentity' as unknown) as Identity,
+        issuer: ('issuerIdentity' as unknown) as Identity,
+        issuedAt: new Date(),
+        expiry: null,
+        claim: { type: ClaimType.NoData },
+      },
+    ],
+    next: 1,
+    count: 1,
+  },
   primaryKey: 'primaryKey',
   secondaryKeys: [],
   transactionHistory: {
@@ -557,6 +571,7 @@ function configureContext(opts: ContextOptions): void {
     getSecondaryKeys: sinon.stub().returns(opts.secondaryKeys),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
     getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),
+    getIdentityClaimsFromMiddleware: sinon.stub().resolves(opts.getIdentityClaimsFromMiddleware),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
     isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
@@ -1163,7 +1178,7 @@ const createMockStringCodec = (value?: string): Codec =>
 /**
  * @hidden
  */
-const createMockU8ACodec = (value?: string): Codec =>
+const createMockU8aCodec = (value?: string): Codec =>
   createMockCodec(stringToU8a(value), value === undefined);
 
 /**
@@ -1190,7 +1205,7 @@ export const createMockIdentityId = (did?: string): IdentityId =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockTicker = (ticker?: string): Ticker => createMockU8ACodec(ticker) as Ticker;
+export const createMockTicker = (ticker?: string): Ticker => createMockU8aCodec(ticker) as Ticker;
 
 /**
  * @hidden
@@ -1321,7 +1336,7 @@ export const createMockPermill = (value?: number): Permill =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockBytes = (value?: string): Bytes => createMockU8ACodec(value) as Bytes;
+export const createMockBytes = (value?: string): Bytes => createMockU8aCodec(value) as Bytes;
 
 /**
  * @hidden
@@ -1623,7 +1638,7 @@ export const createMockAuthorizationType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockU8aFixed = (value?: string): U8aFixed =>
-  createMockU8ACodec(value) as U8aFixed;
+  createMockU8aCodec(value) as U8aFixed;
 
 /**
  * @hidden
