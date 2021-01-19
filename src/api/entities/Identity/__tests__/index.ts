@@ -13,8 +13,8 @@ import {
   Role,
   RoleType,
   TickerOwnerRole,
-  TokenOwnerOrPiaRole,
   TokenOwnerRole,
+  TokenPiaRole,
   VenueOwnerRole,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -133,17 +133,11 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should check whether the Identity has the Token Owner role or the PIA role', async () => {
+    test('hasRole should check whether the Identity has the Token PIA role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      const role: TokenOwnerOrPiaRole = { type: RoleType.TokenOwnerOrPia, ticker: 'someTicker' };
+      const role: TokenPiaRole = { type: RoleType.TokenPia, ticker: 'someTicker' };
 
       let hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(true);
-
-      identity.did = 'otherDid';
-
-      hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
 
