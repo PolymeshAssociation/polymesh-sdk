@@ -218,6 +218,7 @@ interface ContextOptions {
   currentPairIsLocked?: boolean;
   issuedClaims?: ResultSet<ClaimData>;
   getIdentityClaimsFromChain?: ClaimData[];
+  getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   primaryKey?: string;
   secondaryKeys?: SecondaryKey[];
   transactionHistory?: ResultSet<ExtrinsicData>;
@@ -464,6 +465,19 @@ const defaultContextOptions: ContextOptions = {
       claim: { type: ClaimType.NoData },
     },
   ],
+  getIdentityClaimsFromMiddleware: {
+    data: [
+      {
+        target: ('targetIdentity' as unknown) as Identity,
+        issuer: ('issuerIdentity' as unknown) as Identity,
+        issuedAt: new Date(),
+        expiry: null,
+        claim: { type: ClaimType.NoData },
+      },
+    ],
+    next: 1,
+    count: 1,
+  },
   primaryKey: 'primaryKey',
   secondaryKeys: [],
   transactionHistory: {
@@ -557,6 +571,7 @@ function configureContext(opts: ContextOptions): void {
     getSecondaryKeys: sinon.stub().returns(opts.secondaryKeys),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
     getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),
+    getIdentityClaimsFromMiddleware: sinon.stub().resolves(opts.getIdentityClaimsFromMiddleware),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
     isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
