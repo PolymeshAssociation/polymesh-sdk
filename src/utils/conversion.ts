@@ -80,6 +80,7 @@ import {
   ClaimScopeTypeEnum,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
+  Portfolio as MiddlewarePortfolio,
   // Proposal,
   Scope as MiddlewareScope,
 } from '~/middleware/types';
@@ -1273,6 +1274,13 @@ export function stringToScopeId(scopeId: string, context: Context): ScopeId {
 /**
  * @hidden
  */
+export function scopeIdToString(scopeId: ScopeId): string {
+  return scopeId.toString();
+}
+
+/**
+ * @hidden
+ */
 export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
   let value;
 
@@ -2207,4 +2215,19 @@ export async function permissionsLikeToPermissions(
     transactions: transactionPermissions,
     portfolios: portfolioPermissions,
   };
+}
+
+/**
+ * @hidden
+ */
+export function middlewarePortfolioToPortfolio(
+  portfolio: MiddlewarePortfolio,
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, kind } = portfolio;
+
+  if (kind.toLowerCase() === 'default' || kind === '0') {
+    return new DefaultPortfolio({ did }, context);
+  }
+  return new NumberedPortfolio({ did, id: new BigNumber(kind) }, context);
 }

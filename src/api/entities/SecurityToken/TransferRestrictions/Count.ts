@@ -1,35 +1,13 @@
-import {
-  AddCountTransferRestrictionParams,
-  addTransferRestriction,
-  AddTransferRestrictionParams,
-  Context,
-  Namespace,
-  SecurityToken,
-} from '~/internal';
+import { TransferRestrictionBase } from '~/api/entities/SecurityToken/TransferRestrictions/TransferRestrictionBase';
+import { AddCountTransferRestrictionParams } from '~/internal';
+import { ActiveTransferRestrictions, CountTransferRestriction } from '~/types';
 import { ProcedureMethod, TransferRestrictionType } from '~/types/internal';
-import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Count Transfer Restriction related functionality
  */
-export class Count extends Namespace<SecurityToken> {
-  /**
-   * @hidden
-   */
-  constructor(parent: SecurityToken, context: Context) {
-    super(parent, context);
-
-    const { ticker } = parent;
-
-    this.addRestriction = createProcedureMethod<
-      Omit<AddCountTransferRestrictionParams, 'type'>,
-      AddTransferRestrictionParams,
-      number
-    >(
-      args => [addTransferRestriction, { ...args, type: TransferRestrictionType.Count, ticker }],
-      context
-    );
-  }
+export class Count extends TransferRestrictionBase<TransferRestrictionType.Count> {
+  protected type = TransferRestrictionType.Count as const;
 
   /**
    * Add a Count Transfer Restriction to this Security Token
@@ -39,5 +17,14 @@ export class Count extends Namespace<SecurityToken> {
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public addRestriction: ProcedureMethod<Omit<AddCountTransferRestrictionParams, 'type'>, number>;
+  public addRestriction!: ProcedureMethod<Omit<AddCountTransferRestrictionParams, 'type'>, number>;
+
+  /**
+   * Retrieve all active Count Transfer Restrictions
+   *
+   * @note there is a maximum number of restrictions allowed accross all types.
+   *   The `availableSlots` property of the result represents how many more restrictions can be added
+   *   before reaching that limit
+   */
+  public get!: () => Promise<ActiveTransferRestrictions<CountTransferRestriction>>;
 }

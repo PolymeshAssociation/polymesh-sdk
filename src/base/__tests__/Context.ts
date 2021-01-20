@@ -1294,7 +1294,13 @@ describe('Context class', () => {
             expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryOne.getTime())),
           }
         ),
-        tuple({ args: [claim1stKey] }, identityClaim),
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(),
+          }
+        ),
         tuple(
           { args: [claim1stKey] },
           {
@@ -1328,6 +1334,13 @@ describe('Context class', () => {
       result = await context.issuedClaims({
         targets: [targetDid],
         claimTypes: [ClaimType.CustomerDueDiligence],
+        trustedClaimIssuers: [targetDid],
+      });
+
+      expect(result.data.length).toEqual(0);
+
+      result = await context.issuedClaims({
+        targets: [targetDid],
         trustedClaimIssuers: [targetDid],
       });
 
