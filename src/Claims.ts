@@ -11,11 +11,13 @@ import {
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
+  CddClaim,
   ClaimData,
   ClaimScope,
   ClaimType,
   Ensured,
   IdentityWithClaims,
+  InvestorUniquenessClaim,
   ResultSet,
   Scope,
   ScopedClaim,
@@ -28,8 +30,6 @@ import {
   toIdentityWithClaimsArray,
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
-
-import { CddClaim, InvestorUniquenessClaim } from './types/index';
 
 /**
  * Handles all Claims related functionality
