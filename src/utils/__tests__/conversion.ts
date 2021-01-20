@@ -1411,15 +1411,15 @@ describe('u8ToTransferStatus', () => {
 
     expect(result).toBe(TransferStatus.PortfolioFailure);
 
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(176));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(170));
 
     expect(result).toBe(TransferStatus.CustodianError);
 
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(177));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(171));
 
     expect(result).toBe(TransferStatus.ScopeClaimMissing);
 
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(178));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(172));
 
     expect(result).toBe(TransferStatus.TransferRestrictionFailure);
 
