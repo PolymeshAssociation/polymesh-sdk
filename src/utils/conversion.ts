@@ -824,6 +824,9 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     case 177: {
       return TransferStatus.ScopeClaimMissing;
     }
+    case 178: {
+      return TransferStatus.TransferRestrictionFailure;
+    }
     case 80: {
       return TransferStatus.Failure;
     }
