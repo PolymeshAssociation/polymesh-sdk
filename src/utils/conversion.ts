@@ -201,17 +201,10 @@ export function bytesToString(bytes: Bytes): string {
  * @hidden
  */
 export function stringToTicker(ticker: string, context: Context): Ticker {
-  if (!ticker.length) {
+  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`,
-    });
-  }
-
-  if (ticker.length > MAX_TICKER_LENGTH) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `Ticker length cannot exceed ${MAX_TICKER_LENGTH} characters`,
     });
   }
 

@@ -454,7 +454,7 @@ describe('stringToTicker and tickerToString', () => {
     const context = dsMockUtils.getContextInstance();
 
     expect(() => stringToTicker(value, context)).toThrow(
-      `Ticker length cannot exceed ${MAX_TICKER_LENGTH} characters`
+      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
     );
   });
 
