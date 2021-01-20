@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
+import { Counter,SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import {
   Context,
@@ -31,6 +31,7 @@ import {
   identityIdToString,
   stringToTicker,
   tickerToDid,
+  u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod, padString } from '~/utils/internal';
 
@@ -372,4 +373,43 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *   Default Portfolio instead
    */
   public redeem: ProcedureMethod<RedeemTokenParams, void>;
+
+  /**
+   * Retrieve the amount of unique investors that hold this Security Token
+   *
+   * @note this takes into account the Scope ID of Investor Uniqueness Claims. If an investor holds balances
+   *   of this token in two or more different Identities, but they all have Investor Uniqueness Claims with the same
+   *   Scope ID, then they will only be counted once for the purposes of this result
+   *
+   * @note can be subscribed to
+   */
+  public investorCount(): Promise<number>;
+  public investorCount(callback: SubCallback<number>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async investorCount(callback?: SubCallback<number>): Promise<number | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { statistics },
+        },
+      },
+      context,
+      ticker,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const assembleResult = (value: Counter): number => u64ToBigNumber(value).toNumber();
+
+    if (callback) {
+      return statistics.investorCountPerAsset(rawTicker, count => {
+        callback(assembleResult(count));
+      });
+    }
+
+    const result = await statistics.investorCountPerAsset(stringToTicker(ticker, context));
+
+    return u64ToBigNumber(result).toNumber();
+  }
 }
