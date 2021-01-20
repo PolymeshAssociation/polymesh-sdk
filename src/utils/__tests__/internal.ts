@@ -18,12 +18,12 @@ import {
   delay,
   findEventRecord,
   getDid,
+  isPrintableAscii,
   padString,
   removePadding,
   requestAtBlock,
   requestPaginated,
   serialize,
-  stringIsClean,
   unserialize,
   unwrapValue,
   unwrapValues,
@@ -424,15 +424,15 @@ describe('calculateNextKey', () => {
 
     expect(nextKey).toEqual(30);
   });
+});
 
-  describe('stringIsClean', () => {
-    test('should return false if the string contains charcode 65533', () => {
-      expect(stringIsClean(String.fromCharCode(65533))).toBe(false);
-    });
+describe('isPrintableAscii', () => {
+  test('should return true if the string only contains printable ASCII characters', () => {
+    expect(isPrintableAscii('TICKER')).toBe(true);
+  });
 
-    test("should return true if the string doesn't contain any forbidden characters", () => {
-      expect(stringIsClean('Clean String')).toBe(true);
-    });
+  test("should return false if the string doesn't contain only printable ASCII characters", () => {
+    expect(isPrintableAscii(String.fromCharCode(10000000))).toBe(false);
   });
 });
 

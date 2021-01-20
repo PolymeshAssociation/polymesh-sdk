@@ -62,7 +62,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const { context } = this;
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    identityRoles: [{ type: RoleType.TokenPia, ticker }],
     signerPermissions: {
       transactions: [TxTags.asset.Issue],
       tokens: [new SecurityToken({ ticker }, context)],

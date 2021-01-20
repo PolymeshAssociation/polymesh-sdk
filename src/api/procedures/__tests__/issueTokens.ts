@@ -130,7 +130,7 @@ describe('issueTokens procedure', () => {
       } as IssueTokensParams;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        identityRoles: [{ type: RoleType.TokenPia, ticker }],
         signerPermissions: {
           transactions: [TxTags.asset.Issue],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
