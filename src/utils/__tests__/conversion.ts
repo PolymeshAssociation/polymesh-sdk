@@ -1399,6 +1399,10 @@ describe('u8ToTransferStatus', () => {
 
     expect(result).toBe(TransferStatus.ScopeClaimMissing);
 
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(178));
+
+    expect(result).toBe(TransferStatus.TransferRestrictionFailure);
+
     const fakeStatusCode = 1;
     expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
       `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymath team`
