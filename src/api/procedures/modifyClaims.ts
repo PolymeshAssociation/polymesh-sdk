@@ -169,6 +169,44 @@ export async function prepareModifyClaims(
       modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim))
     );
   } else {
+    if (operation === ClaimOperation.Add) {
+      const existingCddId: string[] = [];
+
+      const claimTargets = claims.filter(
+        ({ claim: { type } }) => type === ClaimType.CustomerDueDiligence
+      );
+      const issuedCddClaims = await context.issuedClaims({
+        targets: claimTargets.map(({ target }) => target),
+        claimTypes: [ClaimType.CustomerDueDiligence],
+        includeExpired: false,
+      });
+
+      claimTargets.map(({ target, claim }) => {
+        const did = signerToString(target);
+        const filterCdds = issuedCddClaims.data.filter(
+          ({ target: issuedTarget }) => issuedTarget.did === did
+        );
+
+        // we know the claim is a CDD claim, so it must have an id property
+        const { id } = filterCdds[0].claim as { id: string };
+        const { id: cddId } = claim as { id: string };
+
+        if (id !== cddId) {
+          existingCddId.push(id);
+        }
+      });
+
+      if (existingCddId.length) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'This Identity already has CDD claims with a different ID',
+          data: {
+            existingCddId: uniq(existingCddId),
+          },
+        });
+      }
+    }
+
     this.addBatchTransaction(identity.addClaim, { groupByFn: groupByDid }, modifyClaimArgs);
   }
 }
