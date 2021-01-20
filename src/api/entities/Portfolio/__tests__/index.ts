@@ -421,13 +421,13 @@ describe('Portfolio class', () => {
         items: [
           {
             block_id: blockNumber1.toNumber(),
-            addresses: ['someKey', 'otherKey'],
+            addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
             result: SettlementResultEnum.Executed,
             legs: leg1,
           },
           {
             block_id: blockNumber2.toNumber(),
-            addresses: ['someKey', 'otherKey'],
+            addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
             result: SettlementResultEnum.Executed,
             legs: leg2,
           },
@@ -437,10 +437,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      sinon
-        .stub(utilsConversionModule, 'addressToKey')
-        .withArgs(account)
-        .returns(key);
+      sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account).returns(key);
 
       dsMockUtils.createApolloQueryStub(
         settlements({
