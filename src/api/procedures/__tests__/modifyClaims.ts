@@ -9,7 +9,7 @@ import {
   ModifyClaimsParams,
   prepareModifyClaims,
 } from '~/api/procedures/modifyClaims';
-import { Context } from '~/internal';
+import { Context, Identity } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -29,6 +29,7 @@ describe('modifyClaims procedure', () => {
 
   let someDid: string;
   let otherDid: string;
+  let someId: string;
   let cddClaim: Claim;
   let buyLockupClaim: Claim;
   let expiry: Date;
@@ -54,7 +55,8 @@ describe('modifyClaims procedure', () => {
 
     someDid = 'someDid';
     otherDid = 'otherDid';
-    cddClaim = { type: ClaimType.CustomerDueDiligence, id: 'someId' };
+    someId = 'someId';
+    cddClaim = { type: ClaimType.CustomerDueDiligence, id: someId };
     buyLockupClaim = {
       type: ClaimType.BuyLockup,
       scope: { type: ScopeType.Identity, value: 'someIdentityId' },
@@ -140,6 +142,23 @@ describe('modifyClaims procedure', () => {
   });
 
   test('should add a batch of add claim transactions to the queue', async () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        issuedClaims: {
+          data: [
+            {
+              target: new Identity({ did: someDid }, mockContext),
+              issuer: ('issuerIdentity' as unknown) as Identity,
+              issuedAt: new Date(),
+              expiry: null,
+              claim: { type: ClaimType.CustomerDueDiligence, id: someId },
+            },
+          ],
+          next: 1,
+          count: 1,
+        },
+      },
+    });
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getCurrentIdentity();
 
@@ -192,6 +211,56 @@ describe('modifyClaims procedure', () => {
       { groupByFn: sinon.match(sinon.match.func) },
       rawAddClaimItems
     );
+  });
+
+  test('should throw an error if any of the cdd ids of the claims that will be added are not equals to the currents one already added', async () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        issuedClaims: {
+          data: [
+            {
+              target: new Identity({ did: someDid }, mockContext),
+              issuer: ('issuerIdentity' as unknown) as Identity,
+              issuedAt: new Date(),
+              expiry: null,
+              claim: { type: ClaimType.CustomerDueDiligence, id: 'otherId' },
+            },
+          ],
+          next: 1,
+          count: 1,
+        },
+      },
+    });
+    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
+    const { did } = await mockContext.getCurrentIdentity();
+
+    dsMockUtils.createApolloQueryStub(
+      didsWithClaims({
+        trustedClaimIssuers: [did],
+        dids: [someDid, otherDid],
+        includeExpired,
+        count: 2,
+      }),
+      {
+        didsWithClaims: {
+          totalCount: 2,
+          items: [
+            {
+              did: someDid,
+              claims: [cddClaim, buyLockupClaim],
+            },
+            {
+              did: otherDid,
+              claims: [cddClaim],
+            },
+          ],
+        },
+      }
+    );
+
+    await expect(
+      prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Add })
+    ).rejects.toThrow(new RegExp('This Identity already has CDD claims with a different ID'));
   });
 
   test("should throw an error if any of the claims that will be modified weren't issued by the current Identity", async () => {

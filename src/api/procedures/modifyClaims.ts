@@ -175,24 +175,27 @@ export async function prepareModifyClaims(
       const claimTargets = claims.filter(
         ({ claim: { type } }) => type === ClaimType.CustomerDueDiligence
       );
+
       const issuedCddClaims = await context.issuedClaims({
         targets: claimTargets.map(({ target }) => target),
         claimTypes: [ClaimType.CustomerDueDiligence],
         includeExpired: false,
       });
 
-      claimTargets.map(({ target, claim }) => {
+      claimTargets.forEach(({ target, claim }) => {
         const did = signerToString(target);
         const filterCdds = issuedCddClaims.data.filter(
           ({ target: issuedTarget }) => issuedTarget.did === did
         );
 
-        // we know the claim is a CDD claim, so it must have an id property
-        const { id } = filterCdds[0].claim as { id: string };
-        const { id: cddId } = claim as { id: string };
+        if (filterCdds.length) {
+          // we know the claim is a CDD claim, so it must have an id property
+          const { id } = filterCdds[0].claim as { id: string };
+          const { id: cddId } = claim as { id: string };
 
-        if (id !== cddId) {
-          existingCddId.push(id);
+          if (id !== cddId) {
+            existingCddId.push(id);
+          }
         }
       });
 
