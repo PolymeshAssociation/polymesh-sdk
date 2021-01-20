@@ -563,13 +563,19 @@ export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<Query
         items {
           block_id
           result
-          key
+          addresses
           legs {
             ticker
             amount
             direction
-            from
-            to
+            from {
+              did
+              kind
+            }
+            to {
+              did
+              kind
+            }
           }
         }
       }
