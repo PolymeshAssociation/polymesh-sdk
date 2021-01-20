@@ -29,6 +29,8 @@ import {
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
 
+import { CddClaim, InvestorUniquenessClaim } from './types/index';
+
 /**
  * Handles all Claims related functionality
  */
@@ -281,7 +283,7 @@ export class Claims {
       target?: string | Identity;
       includeExpired?: boolean;
     } = {}
-  ): Promise<ClaimData[]> {
+  ): Promise<ClaimData<CddClaim>[]> {
     const { context } = this;
     const { target, includeExpired = true } = opts;
 
@@ -291,7 +293,7 @@ export class Claims {
       targets: [did],
       claimTypes: [ClaimType.CustomerDueDiligence],
       includeExpired,
-    });
+    }) as Promise<ClaimData<CddClaim>[]>;
   }
 
   /**
@@ -305,7 +307,7 @@ export class Claims {
       target?: string | Identity;
       includeExpired?: boolean;
     } = {}
-  ): Promise<ClaimData[]> {
+  ): Promise<ClaimData<InvestorUniquenessClaim>[]> {
     const { context } = this;
     const { target, includeExpired = true } = opts;
 
@@ -315,7 +317,7 @@ export class Claims {
       targets: [did],
       claimTypes: [ClaimType.InvestorUniqueness],
       includeExpired,
-    });
+    }) as Promise<ClaimData<InvestorUniquenessClaim>[]>;
   }
 
   /**

@@ -273,9 +273,18 @@ export enum ClaimType {
   NoData = 'NoData',
 }
 
+export type CddClaim = { type: ClaimType.CustomerDueDiligence; id: string };
+
+export type InvestorUniquenessClaim = {
+  type: ClaimType.InvestorUniqueness;
+  scope: Scope;
+  cddId: string;
+  scopeId: string;
+};
+
 export type ScopedClaim =
   | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
-  | { type: ClaimType.InvestorUniqueness; scope: Scope; cddId: string; scopeId: string }
+  | InvestorUniquenessClaim
   | {
       type: Exclude<
         ClaimType,
@@ -287,9 +296,7 @@ export type ScopedClaim =
       scope: Scope;
     };
 
-export type UnscopedClaim =
-  | { type: ClaimType.NoData }
-  | { type: ClaimType.CustomerDueDiligence; id: string };
+export type UnscopedClaim = { type: ClaimType.NoData } | CddClaim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -302,12 +309,12 @@ export function isScopedClaim(claim: Claim): claim is ScopedClaim {
   return ![ClaimType.NoData, ClaimType.CustomerDueDiligence].includes(type);
 }
 
-export interface ClaimData {
+export interface ClaimData<ClaimType = Claim> {
   target: Identity;
   issuer: Identity;
   issuedAt: Date;
   expiry: Date | null;
-  claim: Claim;
+  claim: ClaimType;
 }
 
 export interface IdentityWithClaims {
