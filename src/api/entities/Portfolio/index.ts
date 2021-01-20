@@ -21,6 +21,7 @@ import {
   addressToKey,
   balanceToBigNumber,
   identityIdToString,
+  keyToAddress,
   middlewarePortfolioToPortfolio,
   portfolioIdToMeshPortfolioId,
   tickerToString,
@@ -280,7 +281,9 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
         data.push({
           blockNumber: new BigNumber(blockId),
           status,
-          accounts: addresses!.map(address => new Account({ address }, context)),
+          accounts: addresses!.map(
+            address => new Account({ address: keyToAddress('0x' + address) }, context)
+          ),
           legs: settlementLegs.map(leg => {
             return {
               token: new SecurityToken({ ticker: leg!.ticker }, context),
