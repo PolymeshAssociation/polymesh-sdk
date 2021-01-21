@@ -1,4 +1,5 @@
 import { Moment } from '@polkadot/types/interfaces';
+import P from 'bluebird';
 import { cloneDeep, isEqual, uniq } from 'lodash';
 import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 
@@ -13,6 +14,7 @@ import {
   ErrorCode,
   isScopedClaim,
   RoleType,
+  Scope,
 } from '~/types';
 import {
   ClaimOperation,
@@ -22,12 +24,15 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
+  balanceToBigNumber,
   claimToMeshClaim,
   dateToMoment,
   identityIdToString,
   middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
+  stringToScopeId,
+  stringToTicker,
 } from '~/utils/conversion';
 
 interface AddClaimsParams {
@@ -69,6 +74,7 @@ export async function prepareModifyClaims(
     context: {
       polymeshApi: {
         tx: { identity },
+        query: { asset },
       },
     },
     context,
@@ -163,6 +169,38 @@ export async function prepareModifyClaims(
   }
 
   if (operation === ClaimOperation.Revoke) {
+    const claimsWithBalance: Claim[] = [];
+
+    await P.each(
+      claims.filter(({ claim: { type } }) => type === ClaimType.InvestorUniqueness),
+      async ({ claim }) => {
+        const investorUniquenessClaim = claim as { scope: Scope; scopeId: string };
+        const {
+          scope: { value },
+          scopeId,
+        } = investorUniquenessClaim;
+
+        const balance = await asset.aggregateBalance(
+          stringToTicker(value, context),
+          stringToScopeId(scopeId, context)
+        );
+
+        if (!balanceToBigNumber(balance).isZero()) {
+          claimsWithBalance.push(claim);
+        }
+      }
+    );
+
+    if (claimsWithBalance.length) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Attempt to revoke Investor Uniqueness claims with positive balance',
+        data: {
+          claimsWithBalance,
+        },
+      });
+    }
+
     this.addBatchTransaction(
       identity.revokeClaim,
       { groupByFn: groupByDid },

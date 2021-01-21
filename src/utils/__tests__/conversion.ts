@@ -2320,6 +2320,23 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
     result = meshClaimToClaim(claim);
     expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.InvestorUniqueness,
+      scope,
+      scopeId: 'scopeId',
+      cddId: 'cddId',
+    };
+    claim = dsMockUtils.createMockClaim({
+      InvestorUniqueness: [
+        dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) }),
+        dsMockUtils.createMockScopeId(fakeResult.scopeId),
+        dsMockUtils.createMockCddId(fakeResult.cddId),
+      ],
+    });
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
   });
 });
 
