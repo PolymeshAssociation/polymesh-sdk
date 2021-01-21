@@ -439,6 +439,17 @@ describe('Portfolio class', () => {
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
       sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account).returns(key);
 
+      const mockBalance1 = dsMockUtils.createMockBalance(amount1.toNumber());
+      const mockBalance2 = dsMockUtils.createMockBalance(amount2.toNumber());
+
+      const numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+      const balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
+
+      numberToBalanceStub.withArgs(amount1, context).returns(mockBalance1);
+      numberToBalanceStub.withArgs(amount2, context).returns(mockBalance2);
+      balanceToBigNumberStub.withArgs(mockBalance1).returns(amount1);
+      balanceToBigNumberStub.withArgs(mockBalance2).returns(amount2);
+
       dsMockUtils.createApolloQueryStub(
         settlements({
           identityId: did,

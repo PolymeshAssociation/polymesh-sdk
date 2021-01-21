@@ -23,6 +23,7 @@ import {
   identityIdToString,
   keyToAddress,
   middlewarePortfolioToPortfolio,
+  numberToBalance,
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
@@ -287,7 +288,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
           legs: settlementLegs.map(leg => {
             return {
               token: new SecurityToken({ ticker: leg!.ticker }, context),
-              amount: new BigNumber(leg!.amount),
+              amount: balanceToBigNumber(numberToBalance(new BigNumber(leg!.amount), context)),
               direction: leg!.direction,
               from: middlewarePortfolioToPortfolio(leg!.from, context),
               to: middlewarePortfolioToPortfolio(leg!.to, context),
