@@ -1417,6 +1417,16 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
     };
   }
 
+  if (claim.isInvestorUniqueness) {
+    const [scope, scopeId, cddId] = claim.asInvestorUniqueness;
+    return {
+      type: ClaimType.InvestorUniqueness,
+      scope: meshScopeToScope(scope),
+      scopeId: scopeIdToString(scopeId),
+      cddId: cddIdToString(cddId),
+    };
+  }
+
   return {
     type: ClaimType.Blocked,
     scope: meshScopeToScope(claim.asBlocked),
