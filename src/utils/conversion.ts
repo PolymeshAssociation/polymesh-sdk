@@ -818,13 +818,13 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     case 169: {
       return TransferStatus.PortfolioFailure;
     }
-    case 176: {
+    case 170: {
       return TransferStatus.CustodianError;
     }
-    case 177: {
+    case 171: {
       return TransferStatus.ScopeClaimMissing;
     }
-    case 178: {
+    case 172: {
       return TransferStatus.TransferRestrictionFailure;
     }
     case 80: {
