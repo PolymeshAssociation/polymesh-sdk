@@ -653,6 +653,7 @@ export interface ActiveTransferRestrictions<
 
 export { TxTags } from 'polymesh-types/types';
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
+export { EventRecord } from '@polkadot/types/interfaces';
 export * from '~/api/entities/types';
 export * from '~/base/types';
 export { Order } from '~/middleware/types';
