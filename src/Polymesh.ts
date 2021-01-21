@@ -48,7 +48,7 @@ import {
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, getDid, stringIsClean } from '~/utils/internal';
+import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/internal';
 
 import { Claims } from './Claims';
 // import { Governance } from './Governance';
@@ -410,7 +410,7 @@ export class Polymesh {
         if (relation.isTickerOwned) {
           const ticker = tickerToString(key.args[1] as Ticker);
 
-          if (stringIsClean(ticker)) {
+          if (isPrintableAscii(ticker)) {
             return [...result, new TickerReservation({ ticker }, context)];
           }
         }
@@ -567,7 +567,7 @@ export class Polymesh {
         if (relation.isAssetOwned) {
           const ticker = tickerToString(key.args[1] as Ticker);
 
-          if (stringIsClean(ticker)) {
+          if (isPrintableAscii(ticker)) {
             return [...result, new SecurityToken({ ticker }, context)];
           }
         }
