@@ -35,6 +35,7 @@ import {
   SecurityTokenDetails,
   TickerReservationDetails,
   TickerReservationStatus,
+  TokenIdentifier,
   TransferStatus,
   VenueDetails,
   VenueType,
@@ -98,6 +99,7 @@ interface SecurityTokenOptions {
   currentFundingRound?: string;
   isFrozen?: boolean;
   transfersCanTransfer?: TransferStatus;
+  getIdentifiers?: TokenIdentifier[];
 }
 
 interface AuthorizationRequestOptions {
@@ -176,6 +178,7 @@ let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
 let securityTokenIsFrozenStub: SinonStub;
 let securityTokenTransfersCanTransferStub: SinonStub;
+let securityTokenGetIdentifiersStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -429,6 +432,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   currentFundingRound: 'Series A',
   isFrozen: false,
   transfersCanTransfer: TransferStatus.Success,
+  getIdentifiers: [],
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -706,6 +710,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     transfers: {
       canTransfer: securityTokenTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
     },
+    getIdentifiers: securityTokenGetIdentifiersStub.resolves(opts.getIdentifiers),
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -726,6 +731,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenCurrentFundingRoundStub = sinon.stub();
   securityTokenIsFrozenStub = sinon.stub();
   securityTokenTransfersCanTransferStub = sinon.stub();
+  securityTokenGetIdentifiersStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -1449,6 +1455,18 @@ export function getSecurityTokenIsFrozenStub(frozen?: boolean): SinonStub {
   }
 
   return securityTokenIsFrozenStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.getIdentifiers` method
+ */
+export function getSecurityTokenGetIdentifiersStub(ientifiers?: TokenIdentifier): SinonStub {
+  if (ientifiers !== undefined) {
+    return securityTokenGetIdentifiersStub.resolves(ientifiers);
+  }
+
+  return securityTokenGetIdentifiersStub;
 }
 
 /**
