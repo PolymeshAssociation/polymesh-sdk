@@ -137,17 +137,9 @@ describe('Identity class', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const role: TokenPiaRole = { type: RoleType.TokenPia, ticker: 'someTicker' };
 
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          details: {
-            primaryIssuanceAgent: null,
-          },
-        },
-      });
-
       let hasRole = await identity.hasRole(role);
 
-      expect(hasRole).toBe(true);
+      expect(hasRole).toBe(false);
 
       entityMockUtils.configureMocks({
         securityTokenOptions: {

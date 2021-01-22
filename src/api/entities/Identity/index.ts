@@ -115,7 +115,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
       if (primaryIssuanceAgent) {
         return primaryIssuanceAgent.did === did;
       }
-      return true;
+      return false;
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {
