@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { Counter,SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
+import { Counter, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import {
   Context,
