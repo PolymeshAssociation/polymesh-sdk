@@ -178,16 +178,19 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       owner_did,
       asset_type,
       primary_issuance_agent,
-    }: MeshSecurityToken): SecurityTokenDetails => ({
-      assetType: assetTypeToString(asset_type),
-      isDivisible: boolToBoolean(divisible),
-      name: assetNameToString(name),
-      owner: new Identity({ did: identityIdToString(owner_did) }, context),
-      totalSupply: balanceToBigNumber(total_supply),
-      primaryIssuanceAgent: primary_issuance_agent.isSome
-        ? new Identity({ did: identityIdToString(primary_issuance_agent.unwrap()) }, context)
-        : null,
-    });
+    }: MeshSecurityToken): SecurityTokenDetails => {
+      const owner = new Identity({ did: identityIdToString(owner_did) }, context);
+      return {
+        assetType: assetTypeToString(asset_type),
+        isDivisible: boolToBoolean(divisible),
+        name: assetNameToString(name),
+        owner,
+        totalSupply: balanceToBigNumber(total_supply),
+        primaryIssuanceAgent: primary_issuance_agent.isSome
+          ? new Identity({ did: identityIdToString(primary_issuance_agent.unwrap()) }, context)
+          : owner,
+      };
+    };
     /* eslint-enable @typescript-eslint/camelcase */
 
     const rawTicker = stringToTicker(ticker, context);
