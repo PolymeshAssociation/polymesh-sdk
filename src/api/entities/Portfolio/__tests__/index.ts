@@ -439,17 +439,6 @@ describe('Portfolio class', () => {
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
       sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account).returns(key);
 
-      const mockBalance1 = dsMockUtils.createMockBalance(amount1.toNumber());
-      const mockBalance2 = dsMockUtils.createMockBalance(amount2.toNumber());
-
-      const numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
-      const balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
-
-      numberToBalanceStub.withArgs(amount1, context).returns(mockBalance1);
-      numberToBalanceStub.withArgs(amount2, context).returns(mockBalance2);
-      balanceToBigNumberStub.withArgs(mockBalance1).returns(amount1);
-      balanceToBigNumberStub.withArgs(mockBalance2).returns(amount2);
-
       dsMockUtils.createApolloQueryStub(
         settlements({
           identityId: did,
@@ -475,8 +464,8 @@ describe('Portfolio class', () => {
       expect(result.data[1].blockNumber).toEqual(blockNumber2);
       expect(result.data[0].legs[0].token.ticker).toEqual(token1.ticker);
       expect(result.data[1].legs[0].token.ticker).toEqual(token2.ticker);
-      expect(result.data[0].legs[0].amount).toEqual(amount1);
-      expect(result.data[1].legs[0].amount).toEqual(amount2);
+      expect(result.data[0].legs[0].amount).toEqual(amount1.div(Math.pow(10, 6)));
+      expect(result.data[1].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect(result.data[0].legs[0].from).toEqual(portfolio1);
       expect(result.data[0].legs[0].to).toEqual(portfolio2);
       expect(result.data[1].legs[0].from).toEqual(portfolio2);
