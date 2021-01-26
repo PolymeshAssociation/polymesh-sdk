@@ -165,6 +165,56 @@ describe('TransferRestrictionBase class', () => {
     });
   });
 
+  describe('method: removeRestrictions', () => {
+    let context: Context;
+    let token: SecurityToken;
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+      token = entityMockUtils.getSecurityTokenInstance();
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const count = new Count(token, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
+
+      sinon
+        .stub(setTransferRestrictions, 'prepare')
+        .withArgs(
+          { ticker: token.ticker, restrictions: [], type: TransferRestrictionType.Count },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await count.removeRestrictions();
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    test('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const percentage = new Percentage(token, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
+
+      sinon
+        .stub(setTransferRestrictions, 'prepare')
+        .withArgs(
+          { ticker: token.ticker, restrictions: [], type: TransferRestrictionType.Percentage },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await percentage.removeRestrictions();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: get', () => {
     let context: Context;
     let token: SecurityToken;
