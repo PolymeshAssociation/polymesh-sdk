@@ -2,7 +2,13 @@ import BigNumber from 'bignumber.js';
 
 import { PolymeshError } from '~/base/PolymeshError';
 import { Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import {
+  CountTransferRestriction,
+  ErrorCode,
+  PercentageTransferRestriction,
+  RoleType,
+  TxTags,
+} from '~/types';
 import { ProcedureAuthorization, TransferRestrictionType } from '~/types/internal';
 import { MAX_TRANSFER_MANAGERS } from '~/utils/constants';
 import {
@@ -13,18 +19,12 @@ import {
 } from '~/utils/conversion';
 import { batchArguments } from '~/utils/internal';
 
-interface BaseParams {
-  exempted?: string[];
-}
-
-export type AddCountTransferRestrictionParams = BaseParams & {
+export type AddCountTransferRestrictionParams = CountTransferRestriction & {
   type: TransferRestrictionType.Count;
-  count: BigNumber;
 };
 
-export type AddPercentageTransferRestrictionParams = BaseParams & {
+export type AddPercentageTransferRestrictionParams = PercentageTransferRestriction & {
   type: TransferRestrictionType.Percentage;
-  percentage: BigNumber;
 };
 
 /**

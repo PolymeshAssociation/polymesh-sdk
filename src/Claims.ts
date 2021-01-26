@@ -325,7 +325,7 @@ export class Claims {
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
-   * @note uses the middleware
+   * @note uses the middleware (optional)
    */
   public async getTargetingClaims(
     opts: {
@@ -391,7 +391,7 @@ export class Claims {
       identity => identity.did
     );
 
-    const identityWithClaims = issuers.map(identity => {
+    const identitiesWithClaims = issuers.map(identity => {
       return {
         identity,
         claims: filter(
@@ -402,9 +402,9 @@ export class Claims {
     });
 
     return {
-      data: identityWithClaims,
+      data: identitiesWithClaims,
       next: null,
-      count: undefined,
+      count: identitiesWithClaims.length,
     };
   }
 }

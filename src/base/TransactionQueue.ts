@@ -300,6 +300,8 @@ export class TransactionQueue<
    *   block that reflects the changes brought on by this queue being run. If so,
    *   emit the corresponding event. After 5 retries (or if the middleware can't be reached),
    *   the event is emitted with an error
+   *
+   * @note uses the middleware
    */
   private async emitWhenMiddlewareIsSynced(): Promise<void> {
     const { context } = this;
