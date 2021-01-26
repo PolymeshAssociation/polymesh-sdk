@@ -271,20 +271,23 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     entityMockUtils.configureMocks({
       instructionOptions: {
-        getLegs: [
-          {
-            from: new DefaultPortfolio({ did: 'notTheCurrentIdentity' }, mockContext),
-            to: new DefaultPortfolio({ did: currentDid }, mockContext),
-            token: entityMockUtils.getSecurityTokenInstance(),
-            amount: new BigNumber(100),
-          },
-          {
-            from: new DefaultPortfolio({ did: currentDid }, mockContext),
-            to: new DefaultPortfolio({ did: 'notTheCurrentIdentity' }, mockContext),
-            token: entityMockUtils.getSecurityTokenInstance(),
-            amount: new BigNumber(200),
-          },
-        ],
+        getLegs: {
+          data: [
+            {
+              from: new DefaultPortfolio({ did: 'notTheCurrentIdentity' }, mockContext),
+              to: new DefaultPortfolio({ did: currentDid }, mockContext),
+              token: entityMockUtils.getSecurityTokenInstance(),
+              amount: new BigNumber(100),
+            },
+            {
+              from: new DefaultPortfolio({ did: currentDid }, mockContext),
+              to: new DefaultPortfolio({ did: 'notTheCurrentIdentity' }, mockContext),
+              token: entityMockUtils.getSecurityTokenInstance(),
+              amount: new BigNumber(200),
+            },
+          ],
+          next: null,
+        },
       },
     });
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
@@ -400,7 +403,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       entityMockUtils.configureMocks({
         instructionOptions: {
-          getLegs: [{ from, to, amount, token }],
+          getLegs: { data: [{ from, to, amount, token }], next: null },
         },
       });
 
@@ -416,7 +419,9 @@ describe('modifyInstructionAffirmation procedure', () => {
       from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
       to = entityMockUtils.getDefaultPortfolioInstance({ isCustodiedBy: false });
 
-      entityMockUtils.getInstructionGetLegsStub().resolves([{ from, to, amount, token }]);
+      entityMockUtils
+        .getInstructionGetLegsStub()
+        .resolves({ data: [{ from, to, amount, token }], next: null });
 
       result = await boundFunc({
         id: new BigNumber(1),

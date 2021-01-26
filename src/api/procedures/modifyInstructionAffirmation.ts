@@ -163,7 +163,8 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
   const instruction = new Instruction({ id }, context);
-  const legs = await instruction.getLegs();
+  const { data: legs } = await instruction.getLegs();
+  console.log(legs);
 
   const portfolios = await P.reduce<Leg, (DefaultPortfolio | NumberedPortfolio)[]>(
     legs,

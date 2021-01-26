@@ -9,6 +9,7 @@ import {
   SecurityToken,
   Venue,
 } from '~/internal';
+import { PaginationOptions, ResultSet } from '~/types';
 import { InstructionAffirmationOperation, ProcedureMethod } from '~/types/internal';
 import {
   balanceToBigNumber,
@@ -22,7 +23,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 
 import { InstructionAffirmation, InstructionDetails, InstructionType, Leg } from './types';
 
@@ -157,8 +158,10 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
   /**
    * Retrieve all legs of this Instruction
+   *
+   * @note supports pagination
    */
-  public async getLegs(): Promise<Leg[]> {
+  public async getLegs(paginationOpts?: PaginationOptions): Promise<ResultSet<Leg>> {
     const {
       context: {
         polymeshApi: {
@@ -169,22 +172,33 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const legs = await settlement.instructionLegs.entries(numberToU64(id, context));
+    // const legs = await settlement.instructionLegs.entries(numberToU64(id, context));
+    const { entries, lastKey: next } = await requestPaginated(settlement.instructionLegs, {
+      arg: numberToU64(id, context),
+      paginationOpts,
+    });
 
-    return legs.map(([, leg]) => {
+    const legs: Leg[] = [];
+
+    entries.forEach(([, leg]) => {
       const { from, to, amount, asset } = leg;
 
       const ticker = tickerToString(asset);
       const fromPortfolio = meshPortfolioIdToPortfolio(from, context);
       const toPortfolio = meshPortfolioIdToPortfolio(to, context);
 
-      return {
+      legs.push({
         from: fromPortfolio,
         to: toPortfolio,
         amount: balanceToBigNumber(amount),
         token: new SecurityToken({ ticker }, context),
-      };
+      });
     });
+
+    return {
+      data: legs,
+      next,
+    };
   }
 
   /**

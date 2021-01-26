@@ -1,5 +1,6 @@
 import { Keyring } from '@polkadot/api';
 import { Signer as PolkadotSigner } from '@polkadot/api/types';
+import { StorageKey } from '@polkadot/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
@@ -21,6 +22,7 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AccountBalance, SubCallback, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '@polkadot/api',
@@ -463,8 +465,15 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getTickerReservations', () => {
+    let requestPaginatedStub: sinon.SinonStub;
+
     beforeAll(() => {
       sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+      requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+    });
+
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations');
     });
 
     afterAll(() => {
@@ -477,14 +486,16 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
-          ),
-        ],
-      });
+      const entries = [
+        tuple(
+          ({
+            args: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+        ),
+      ];
+
+      requestPaginatedStub.resolves({ entries, lastKey: null });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -493,8 +504,8 @@ describe('Polymesh Class', () => {
 
       const tickerReservations = await polymesh.getTickerReservations({ owner: did });
 
-      expect(tickerReservations).toHaveLength(1);
-      expect(tickerReservations[0].ticker).toBe(fakeTicker);
+      expect(tickerReservations.data[0].ticker).toEqual(fakeTicker);
+      expect(tickerReservations.next).toBeNull();
     });
 
     test('should return a list of ticker reservations owned by the Identity', async () => {
@@ -503,14 +514,16 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
-          ),
-        ],
-      });
+      const entries = [
+        tuple(
+          ({
+            args: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+        ),
+      ];
+
+      requestPaginatedStub.resolves({ entries, lastKey: null });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -519,8 +532,8 @@ describe('Polymesh Class', () => {
 
       const tickerReservations = await polymesh.getTickerReservations();
 
-      expect(tickerReservations).toHaveLength(1);
-      expect(tickerReservations[0].ticker).toBe(fakeTicker);
+      expect(tickerReservations.data[0].ticker).toEqual(fakeTicker);
+      expect(tickerReservations.next).toBeNull();
     });
 
     test('should filter out tickers with unreadable characters', async () => {
@@ -530,22 +543,34 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
-          ),
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('someTicker')],
-            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
-          ),
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(unreadableTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
-          ),
-        ],
-      });
+      const entries = [
+        tuple(
+          ({
+            args: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+        ),
+        tuple(
+          ({
+            args: [
+              dsMockUtils.createMockIdentityId(did),
+              dsMockUtils.createMockTicker('someTicker'),
+            ],
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+        ),
+        tuple(
+          ({
+            args: [
+              dsMockUtils.createMockIdentityId(did),
+              dsMockUtils.createMockTicker(unreadableTicker),
+            ],
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+        ),
+      ];
+
+      requestPaginatedStub.resolves({ entries, lastKey: null });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -554,8 +579,8 @@ describe('Polymesh Class', () => {
 
       const tickerReservations = await polymesh.getTickerReservations();
 
-      expect(tickerReservations).toHaveLength(1);
-      expect(tickerReservations[0].ticker).toBe(fakeTicker);
+      expect(tickerReservations.data[0].ticker).toEqual(fakeTicker);
+      expect(tickerReservations.next).toBeNull();
     });
   });
 
@@ -719,8 +744,15 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getSecurityTokens', () => {
+    let requestPaginatedStub: sinon.SinonStub;
+
     beforeAll(() => {
       sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+      requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+    });
+
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations');
     });
 
     afterAll(() => {
@@ -733,14 +765,16 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
-          ),
-        ],
-      });
+      const entries = [
+        tuple(
+          ({
+            args: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+        ),
+      ];
+
+      requestPaginatedStub.resolves({ entries, lastKey: null });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -749,8 +783,8 @@ describe('Polymesh Class', () => {
 
       const securityTokens = await polymesh.getSecurityTokens({ owner: 'someDid' });
 
-      expect(securityTokens).toHaveLength(1);
-      expect(securityTokens[0].ticker).toBe(fakeTicker);
+      expect(securityTokens.data[0].ticker).toEqual(fakeTicker);
+      expect(securityTokens.next).toBeNull();
     });
 
     test('should return a list of security tokens owned by the current Identity if no did is supplied', async () => {
@@ -759,14 +793,16 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
-          ),
-        ],
-      });
+      const entries = [
+        tuple(
+          ({
+            args: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+        ),
+      ];
+
+      requestPaginatedStub.resolves({ entries, lastKey: null });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -775,8 +811,8 @@ describe('Polymesh Class', () => {
 
       const securityTokens = await polymesh.getSecurityTokens();
 
-      expect(securityTokens).toHaveLength(1);
-      expect(securityTokens[0].ticker).toBe(fakeTicker);
+      expect(securityTokens.data[0].ticker).toEqual(fakeTicker);
+      expect(securityTokens.next).toBeNull();
     });
 
     test('should filter out tokens whose tickers have unreadable characters', async () => {
@@ -786,22 +822,34 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
-          ),
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('someTicker')],
-            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
-          ),
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(unreadableTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
-          ),
-        ],
-      });
+      const entries = [
+        tuple(
+          ({
+            args: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+        ),
+        tuple(
+          ({
+            args: [
+              dsMockUtils.createMockIdentityId(did),
+              dsMockUtils.createMockTicker('someTicker'),
+            ],
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+        ),
+        tuple(
+          ({
+            args: [
+              dsMockUtils.createMockIdentityId(did),
+              dsMockUtils.createMockTicker(unreadableTicker),
+            ],
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+        ),
+      ];
+
+      requestPaginatedStub.resolves({ entries, lastKey: null });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -810,8 +858,8 @@ describe('Polymesh Class', () => {
 
       const securityTokens = await polymesh.getSecurityTokens();
 
-      expect(securityTokens).toHaveLength(1);
-      expect(securityTokens[0].ticker).toBe(fakeTicker);
+      expect(securityTokens.data[0].ticker).toEqual(fakeTicker);
+      expect(securityTokens.next).toBeNull();
     });
   });
 

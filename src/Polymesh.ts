@@ -33,6 +33,8 @@ import {
   ErrorCode,
   MiddlewareConfig,
   NetworkProperties,
+  PaginationOptions,
+  ResultSet,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
@@ -48,7 +50,12 @@ import {
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/internal';
+import {
+  createProcedureMethod,
+  getDid,
+  isPrintableAscii,
+  requestPaginated,
+} from '~/utils/internal';
 
 import { Claims } from './Claims';
 // import { Governance } from './Governance';
@@ -387,11 +394,13 @@ export class Polymesh {
    *
    * @param args.owner - identity representation or Identity ID as stored in the blockchain
    *
-   * * @note reservations with unreadable characters in their tickers will be left out
+   * @note reservations with unreadable characters in their tickers will be left out
+   * @note supports pagination
    */
   public async getTickerReservations(args?: {
     owner: string | Identity;
-  }): Promise<TickerReservation[]> {
+    paginationOpts?: PaginationOptions;
+  }): Promise<ResultSet<TickerReservation>> {
     const {
       context: {
         polymeshApi: { query },
@@ -401,9 +410,10 @@ export class Polymesh {
 
     const did = await getDid(args?.owner, context);
 
-    const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(did, context)
-    );
+    const { entries, lastKey: next } = await requestPaginated(query.asset.assetOwnershipRelations, {
+      arg: stringToIdentityId(did, context),
+      paginationOpts: args?.paginationOpts,
+    });
 
     const tickerReservations: TickerReservation[] = entries.reduce<TickerReservation[]>(
       (result, [key, relation]) => {
@@ -420,7 +430,10 @@ export class Polymesh {
       []
     );
 
-    return tickerReservations;
+    return {
+      data: tickerReservations,
+      next,
+    };
   }
 
   /**
@@ -547,8 +560,12 @@ export class Polymesh {
    * @param args.owner - identity representation or Identity ID as stored in the blockchain
    *
    * @note tokens with unreadable characters in their tickers will be left out
+   * @note supports pagination
    */
-  public async getSecurityTokens(args?: { owner: string | Identity }): Promise<SecurityToken[]> {
+  public async getSecurityTokens(args?: {
+    owner: string | Identity;
+    paginationOpts?: PaginationOptions;
+  }): Promise<ResultSet<SecurityToken>> {
     const {
       context: {
         polymeshApi: { query },
@@ -558,9 +575,10 @@ export class Polymesh {
 
     const did = await getDid(args?.owner, context);
 
-    const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(did, context)
-    );
+    const { entries, lastKey: next } = await requestPaginated(query.asset.assetOwnershipRelations, {
+      arg: stringToIdentityId(did, context),
+      paginationOpts: args?.paginationOpts,
+    });
 
     const securityTokens: SecurityToken[] = entries.reduce<SecurityToken[]>(
       (result, [key, relation]) => {
@@ -577,7 +595,10 @@ export class Polymesh {
       []
     );
 
-    return securityTokens;
+    return {
+      data: securityTokens,
+      next,
+    };
   }
 
   /**
