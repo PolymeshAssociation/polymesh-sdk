@@ -143,7 +143,7 @@ describe('Requirements class', () => {
     });
 
     beforeEach(() => {
-      ticker = 'test';
+      ticker = 'FAKETICKER';
       context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance({ ticker });
       requirements = new Requirements(token, context);

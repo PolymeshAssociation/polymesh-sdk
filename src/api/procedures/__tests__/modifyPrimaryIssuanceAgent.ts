@@ -123,7 +123,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
         details: {
-          primaryIssuanceAgent: null,
+          primaryIssuanceAgent: new Identity({ did: 'otherDid' }, mockContext),
         },
       },
     });
@@ -148,7 +148,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
         details: {
-          primaryIssuanceAgent: null,
+          primaryIssuanceAgent: new Identity({ did: 'otherDid' }, mockContext),
         },
       },
     });

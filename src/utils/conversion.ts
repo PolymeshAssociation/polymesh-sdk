@@ -143,7 +143,7 @@ import {
   MAX_TICKER_LENGTH,
   SS58_FORMAT,
 } from '~/utils/constants';
-import { createClaim, padString, removePadding, stringIsClean } from '~/utils/internal';
+import { createClaim, isPrintableAscii, padString, removePadding } from '~/utils/internal';
 
 export * from '~/generated/utils';
 
@@ -202,17 +202,24 @@ export function bytesToString(bytes: Bytes): string {
  * @hidden
  */
 export function stringToTicker(ticker: string, context: Context): Ticker {
-  if (ticker.length > MAX_TICKER_LENGTH) {
+  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Ticker length cannot exceed ${MAX_TICKER_LENGTH} characters`,
+      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`,
     });
   }
 
-  if (!stringIsClean(ticker)) {
+  if (!isPrintableAscii(ticker)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Ticker contains unreadable characters',
+      message: 'Only printable ASCII is alowed as ticker name',
+    });
+  }
+
+  if (ticker !== ticker.toUpperCase()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Ticker cannot contain lower case letters',
     });
   }
 
@@ -811,11 +818,14 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     case 169: {
       return TransferStatus.PortfolioFailure;
     }
-    case 176: {
+    case 170: {
       return TransferStatus.CustodianError;
     }
-    case 177: {
+    case 171: {
       return TransferStatus.ScopeClaimMissing;
+    }
+    case 172: {
+      return TransferStatus.TransferRestrictionFailure;
     }
     case 80: {
       return TransferStatus.Failure;
@@ -1404,6 +1414,16 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
     return {
       type: ClaimType.Exempted,
       scope: meshScopeToScope(claim.asExempted),
+    };
+  }
+
+  if (claim.isInvestorUniqueness) {
+    const [scope, scopeId, cddId] = claim.asInvestorUniqueness;
+    return {
+      type: ClaimType.InvestorUniqueness,
+      scope: meshScopeToScope(scope),
+      scopeId: scopeIdToString(scopeId),
+      cddId: cddIdToString(cddId),
     };
   }
 
