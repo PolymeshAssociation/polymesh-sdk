@@ -2,7 +2,7 @@ import { Moment } from '@polkadot/types/interfaces';
 import { cloneDeep, isEqual, uniq } from 'lodash';
 import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 
-import { PolymeshError, Procedure } from '~/internal';
+import { Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import {
@@ -170,43 +170,50 @@ export async function prepareModifyClaims(
     );
   } else {
     if (operation === ClaimOperation.Add) {
-      const existingCddId: string[] = [];
+      const invalidCddClaims: { target: Identity; currentCddId: string; newCddId: string }[] = [];
 
-      const claimTargets = claims.filter(
+      const newCddClaims = claims.filter(
         ({ claim: { type } }) => type === ClaimType.CustomerDueDiligence
       );
 
-      const issuedCddClaims = await context.issuedClaims({
-        targets: claimTargets.map(({ target }) => target),
-        claimTypes: [ClaimType.CustomerDueDiligence],
-        includeExpired: false,
-      });
-
-      claimTargets.forEach(({ target, claim }) => {
-        const did = signerToString(target);
-        const filterCdds = issuedCddClaims.data.filter(
-          ({ target: issuedTarget }) => issuedTarget.did === did
-        );
-
-        if (filterCdds.length) {
-          // we know the claim is a CDD claim, so it must have an id property
-          const { id } = filterCdds[0].claim as { id: string };
-          const { id: cddId } = claim as { id: string };
-
-          if (id !== cddId) {
-            existingCddId.push(id);
-          }
-        }
-      });
-
-      if (existingCddId.length) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'This Identity already has CDD claims with a different ID',
-          data: {
-            existingCddId: uniq(existingCddId),
-          },
+      if (newCddClaims.length) {
+        const issuedCddClaims = await context.issuedClaims({
+          targets: newCddClaims.map(({ target }) => target),
+          claimTypes: [ClaimType.CustomerDueDiligence],
+          includeExpired: false,
         });
+
+        newCddClaims.forEach(({ target, claim }) => {
+          const did = signerToString(target);
+          const issuedClaimsForTarget = issuedCddClaims.data.filter(
+            ({ target: issuedTarget }) => issuedTarget.did === did
+          );
+
+          if (issuedClaimsForTarget.length) {
+            // we know the claim is a CDD claim, so it must have an id property
+            const { id: newCddId } = issuedClaimsForTarget[0].claim as { id: string };
+            const { id: currentCddId } = claim as { id: string };
+
+            if (newCddId !== currentCddId) {
+              invalidCddClaims.push({
+                target:
+                  typeof target === 'string' ? new Identity({ did: target }, context) : target,
+                currentCddId,
+                newCddId,
+              });
+            }
+          }
+        });
+
+        if (invalidCddClaims.length) {
+          throw new PolymeshError({
+            code: ErrorCode.ValidationError,
+            message: 'A target Identity cannot have CDD claims with different IDs',
+            data: {
+              invalidCddClaims: uniq(invalidCddClaims),
+            },
+          });
+        }
       }
     }
 

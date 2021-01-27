@@ -29,7 +29,7 @@ describe('modifyClaims procedure', () => {
 
   let someDid: string;
   let otherDid: string;
-  let someId: string;
+  let cddId: string;
   let cddClaim: Claim;
   let buyLockupClaim: Claim;
   let expiry: Date;
@@ -55,8 +55,8 @@ describe('modifyClaims procedure', () => {
 
     someDid = 'someDid';
     otherDid = 'otherDid';
-    someId = 'someId';
-    cddClaim = { type: ClaimType.CustomerDueDiligence, id: someId };
+    cddId = 'cddId';
+    cddClaim = { type: ClaimType.CustomerDueDiligence, id: cddId };
     buyLockupClaim = {
       type: ClaimType.BuyLockup,
       scope: { type: ScopeType.Identity, value: 'someIdentityId' },
@@ -151,7 +151,7 @@ describe('modifyClaims procedure', () => {
               issuer: ('issuerIdentity' as unknown) as Identity,
               issuedAt: new Date(),
               expiry: null,
-              claim: { type: ClaimType.CustomerDueDiligence, id: someId },
+              claim: cddClaim,
             },
           ],
           next: 1,
@@ -161,6 +161,27 @@ describe('modifyClaims procedure', () => {
     });
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getCurrentIdentity();
+
+    await prepareModifyClaims.call(
+      procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext),
+      {
+        claims: [
+          {
+            target: someDid,
+            claim: buyLockupClaim,
+            expiry,
+          },
+        ],
+        operation: ClaimOperation.Add,
+      }
+    );
+
+    sinon.assert.calledWith(
+      addBatchTransactionStub,
+      addClaimTransaction,
+      { groupByFn: sinon.match(sinon.match.func) },
+      [[rawSomeDid, rawBuyLockupClaim, rawExpiry]]
+    );
 
     await prepareModifyClaims.call(proc, args);
 
@@ -213,7 +234,8 @@ describe('modifyClaims procedure', () => {
     );
   });
 
-  test('should throw an error if any of the cdd ids of the claims that will be added are not equals to the currents one already added', async () => {
+  test('should throw an error if any of the CDD IDs of the claims that will be added are not equal to the CDD ID of current CDD claims', async () => {
+    const otherId = 'otherId';
     dsMockUtils.configureMocks({
       contextOptions: {
         issuedClaims: {
@@ -223,7 +245,7 @@ describe('modifyClaims procedure', () => {
               issuer: ('issuerIdentity' as unknown) as Identity,
               issuedAt: new Date(),
               expiry: null,
-              claim: { type: ClaimType.CustomerDueDiligence, id: 'otherId' },
+              claim: { type: ClaimType.CustomerDueDiligence, id: otherId },
             },
           ],
           next: 1,
@@ -258,9 +280,40 @@ describe('modifyClaims procedure', () => {
       }
     );
 
-    await expect(
-      prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Add })
-    ).rejects.toThrow(new RegExp('This Identity already has CDD claims with a different ID'));
+    let error;
+
+    try {
+      await prepareModifyClaims.call(proc, {
+        claims: [
+          {
+            target: someDid,
+            claim: cddClaim,
+          },
+          {
+            target: otherDid,
+            claim: cddClaim,
+          },
+          {
+            target: new Identity({ did: someDid }, mockContext),
+            claim: cddClaim,
+          },
+        ],
+        operation: ClaimOperation.Add,
+      });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('A target Identity cannot have CDD claims with different IDs');
+
+    const {
+      target: { did: targetDid },
+      currentCddId,
+      newCddId,
+    } = error.data.invalidCddClaims[0];
+    expect(targetDid).toEqual(someDid);
+    expect(currentCddId).toEqual(cddId);
+    expect(newCddId).toEqual(otherId);
   });
 
   test("should throw an error if any of the claims that will be modified weren't issued by the current Identity", async () => {
