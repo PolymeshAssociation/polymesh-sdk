@@ -220,7 +220,7 @@ describe('CurrentIdentity class', () => {
         .stub()
         .resolves([defaultPortfolio, numberedPortfolio]);
 
-      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves([]);
+      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves({ data: [], next: null });
 
       const portfolioLikeToPortfolioIdStub = sinon.stub(
         utilsConversionModule,
