@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity, Offering } from '~/internal';
+import { Context, Entity, Sto } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 
 jest.mock(
@@ -8,7 +8,7 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 
-describe('Offering class', () => {
+describe('Sto class', () => {
   let context: Context;
 
   beforeAll(() => {
@@ -31,14 +31,14 @@ describe('Offering class', () => {
   });
 
   test('should extend entity', () => {
-    expect(Offering.prototype instanceof Entity).toBe(true);
+    expect(Sto.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
     test('should assign ticker and id to instance', () => {
       const ticker = 'SOMETICKER';
       const id = new BigNumber(1);
-      const trustedClaimIssuer = new Offering({ id, ticker }, context);
+      const trustedClaimIssuer = new Sto({ id, ticker }, context);
 
       expect(trustedClaimIssuer.ticker).toBe(ticker);
       expect(trustedClaimIssuer.id).toEqual(id);
@@ -47,10 +47,10 @@ describe('Offering class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(Offering.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 'symbol' })).toBe(true);
-      expect(Offering.isUniqueIdentifiers({})).toBe(false);
-      expect(Offering.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
-      expect(Offering.isUniqueIdentifiers({ id: 1 })).toBe(false);
+      expect(Sto.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 'symbol' })).toBe(true);
+      expect(Sto.isUniqueIdentifiers({})).toBe(false);
+      expect(Sto.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
+      expect(Sto.isUniqueIdentifiers({ id: 1 })).toBe(false);
     });
   });
 });

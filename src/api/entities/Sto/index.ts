@@ -10,7 +10,7 @@ export interface UniqueIdentifiers {
 /**
  * Represents a Security Token Offering in the Polymesh blockchain
  */
-export class Offering extends Entity<UniqueIdentifiers> {
+export class Sto extends Entity<UniqueIdentifiers> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
