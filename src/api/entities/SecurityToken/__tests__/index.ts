@@ -123,7 +123,7 @@ describe('SecurityToken class', () => {
         returnValue: rawToken,
       });
 
-      const details = await securityToken.details();
+      let details = await securityToken.details();
 
       expect(details.name).toBe(ticker);
       expect(details.totalSupply).toEqual(
@@ -132,7 +132,24 @@ describe('SecurityToken class', () => {
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
-      expect(details.primaryIssuanceAgent?.did).toBe(primaryIssuanceAgent);
+      expect(details.primaryIssuanceAgent.did).toBe(primaryIssuanceAgent);
+
+      dsMockUtils.createQueryStub('asset', 'tokens', {
+        returnValue: dsMockUtils.createMockSecurityToken({
+          /* eslint-disable @typescript-eslint/camelcase */
+          owner_did: dsMockUtils.createMockIdentityId(owner),
+          name: dsMockUtils.createMockAssetName(ticker),
+          asset_type: dsMockUtils.createMockAssetType(assetType),
+          divisible: dsMockUtils.createMockBool(isDivisible),
+          total_supply: dsMockUtils.createMockBalance(totalSupply),
+          primary_issuance_agent: dsMockUtils.createMockOption(),
+          /* eslint-enable @typescript-eslint/camelcase */
+        }),
+      });
+
+      details = await securityToken.details();
+
+      expect(details.primaryIssuanceAgent.did).toBe(owner);
     });
 
     test('should allow subscription', async () => {
@@ -158,7 +175,7 @@ describe('SecurityToken class', () => {
           name: ticker,
           owner: sinon.match({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
-          primaryIssuanceAgent: null,
+          primaryIssuanceAgent: sinon.match({ did: owner }),
         })
       );
     });

@@ -52,13 +52,11 @@ export async function prepareModifyPrimaryIssuanceAgent(
     });
   }
 
-  if (primaryIssuanceAgent) {
-    if (primaryIssuanceAgent.did === signerToString(target)) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The supplied Identity is currently the primary issuance agent',
-      });
-    }
+  if (primaryIssuanceAgent.did === signerToString(target)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The supplied Identity is currently the primary issuance agent',
+    });
   }
 
   const rawSignatory = signerValueToSignatory(
