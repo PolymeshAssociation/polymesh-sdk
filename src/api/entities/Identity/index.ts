@@ -20,8 +20,8 @@ import {
   isCddProviderRole,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
-  isTokenOwnerOrPiaRole,
   isTokenOwnerRole,
+  isTokenPiaRole,
   isVenueOwnerRole,
   Order,
   ResultSet,
@@ -106,13 +106,16 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const { owner } = await token.details();
 
       return owner.did === did;
-    } else if (isTokenOwnerOrPiaRole(role)) {
+    } else if (isTokenPiaRole(role)) {
       const { ticker } = role;
 
       const token = new SecurityToken({ ticker }, context);
-      const { owner, primaryIssuanceAgent } = await token.details();
+      const { primaryIssuanceAgent } = await token.details();
 
-      return (primaryIssuanceAgent && primaryIssuanceAgent.did === did) || owner.did === did;
+      if (primaryIssuanceAgent) {
+        return primaryIssuanceAgent.did === did;
+      }
+      return false;
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {

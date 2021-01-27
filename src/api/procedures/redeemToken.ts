@@ -73,7 +73,7 @@ export async function getAuthorization(
   const { owner, primaryIssuanceAgent } = await securityToken.details();
 
   return {
-    identityRoles: [{ type: RoleType.TokenOwnerOrPia, ticker }],
+    identityRoles: [{ type: RoleType.TokenPia, ticker }],
     signerPermissions: {
       transactions: [TxTags.asset.Redeem],
       tokens: [new SecurityToken({ ticker }, context)],
