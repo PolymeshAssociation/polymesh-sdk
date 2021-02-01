@@ -84,8 +84,8 @@ export class Sto extends Entity<UniqueIdentifiers> {
     const rawU64 = numberToU64(id, context);
 
     if (callback) {
-      return sto.fundraisers(rawTicker, rawU64, fundraiser => {
-        callback(assembleResult(fundraiser));
+      return sto.fundraisers(rawTicker, rawU64, fundraiserData => {
+        callback(assembleResult(fundraiserData));
       });
     }
 
