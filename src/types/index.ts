@@ -630,7 +630,7 @@ export interface ProcedureAuthorizationStatus {
 }
 
 interface TransferRestrictionBase {
-  exempted: string[];
+  exempted?: string[];
 }
 
 export interface CountTransferRestriction extends TransferRestrictionBase {
