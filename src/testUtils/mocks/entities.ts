@@ -24,13 +24,16 @@ import {
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
+  ActiveTransferRestrictions,
   Authorization,
   AuthorizationType,
+  CountTransferRestriction,
   ExtrinsicData,
   InstructionDetails,
   InstructionStatus,
   InstructionType,
   Leg,
+  PercentageTransferRestriction,
   PortfolioBalance,
   SecondaryKey,
   SecurityTokenDetails,
@@ -42,6 +45,7 @@ import {
   // NOTE uncomment in Governance v2 upgrade
   // TxTags,
 } from '~/types';
+import { MAX_TRANSFER_MANAGERS } from '~/utils/constants';
 
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
@@ -102,6 +106,8 @@ interface SecurityTokenOptions {
   currentFundingRound?: string;
   isFrozen?: boolean;
   transfersCanTransfer?: TransferStatus;
+  transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
+  transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
 }
 
 interface AuthorizationRequestOptions {
@@ -186,6 +192,8 @@ let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
 let securityTokenIsFrozenStub: SinonStub;
 let securityTokenTransfersCanTransferStub: SinonStub;
+let securityTokenTransferRestrictionsCountGetStub: SinonStub;
+let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -461,6 +469,14 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   currentFundingRound: 'Series A',
   isFrozen: false,
   transfersCanTransfer: TransferStatus.Success,
+  transferRestrictionsCountGet: {
+    restrictions: [],
+    availableSlots: MAX_TRANSFER_MANAGERS,
+  },
+  transferRestrictionsPercentageGet: {
+    restrictions: [],
+    availableSlots: MAX_TRANSFER_MANAGERS,
+  },
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -743,6 +759,18 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     transfers: {
       canTransfer: securityTokenTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
     },
+    transferRestrictions: {
+      count: {
+        get: securityTokenTransferRestrictionsCountGetStub.resolves(
+          opts.transferRestrictionsCountGet
+        ),
+      },
+      percentage: {
+        get: securityTokenTransferRestrictionsPercentageGetStub.resolves(
+          opts.transferRestrictionsPercentageGet
+        ),
+      },
+    },
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -763,6 +791,8 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenCurrentFundingRoundStub = sinon.stub();
   securityTokenIsFrozenStub = sinon.stub();
   securityTokenTransfersCanTransferStub = sinon.stub();
+  securityTokenTransferRestrictionsCountGetStub = sinon.stub();
+  securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -1568,7 +1598,7 @@ export function getSecurityTokenIsFrozenStub(frozen?: boolean): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.Transfers.canTransfer` method
+ * Retrieve the stub of the `SecurityToken.transfers.canTransfer` method
  */
 export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus): SinonStub {
   if (status) {
@@ -1576,6 +1606,34 @@ export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus
   }
 
   return securityTokenTransfersCanTransferStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.transferRestictions.count.get` method
+ */
+export function getSecurityTokenTransferRestrictionsCountGetStub(
+  restrictions?: ActiveTransferRestrictions<CountTransferRestriction>
+): SinonStub {
+  if (restrictions) {
+    return securityTokenTransferRestrictionsCountGetStub.resolves(restrictions);
+  }
+
+  return securityTokenTransferRestrictionsCountGetStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.transferRestictions.pecentage.get` method
+ */
+export function getSecurityTokenTransferRestrictionsPercentageGetStub(
+  restrictions?: ActiveTransferRestrictions<PercentageTransferRestriction>
+): SinonStub {
+  if (restrictions) {
+    return securityTokenTransferRestrictionsPercentageGetStub.resolves(restrictions);
+  }
+
+  return securityTokenTransferRestrictionsPercentageGetStub;
 }
 
 /**

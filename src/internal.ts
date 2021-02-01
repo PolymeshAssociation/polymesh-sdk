@@ -91,6 +91,13 @@ export {
   AddPercentageTransferRestrictionParams,
 } from '~/api/procedures/addTransferRestriction';
 export { launchSto, LaunchStoParams } from '~/api/procedures/launchSto';
+export {
+  setTransferRestrictions,
+  SetTransferRestrictionsParams,
+  SetCountTransferRestrictionsParams,
+  SetPercentageTransferRestrictionsParams,
+  Storage as SetTransferRestrictionsStorage,
+} from '~/api/procedures/setTransferRestrictions';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
