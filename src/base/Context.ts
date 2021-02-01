@@ -743,7 +743,7 @@ export class Context {
    * @param opts.size - page size
    * @param opts.start - page offset
    *
-   * @note uses the middleware
+   * @note uses the middleware (optional)
    */
   public async issuedClaims(
     opts: {
@@ -794,8 +794,7 @@ export class Context {
   /**
    * Retrieve the middleware client
    *
-   * @throws if cred
-   * entials are not set
+   * @throws if the middleware is not enabled
    */
   public get middlewareApi(): ApolloClient<NormalizedCacheObject> {
     const { _middlewareApi } = this;
