@@ -90,6 +90,13 @@ export {
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
 } from '~/api/procedures/addTransferRestriction';
+export {
+  setTransferRestrictions,
+  SetTransferRestrictionsParams,
+  SetCountTransferRestrictionsParams,
+  SetPercentageTransferRestrictionsParams,
+  Storage as SetTransferRestrictionsStorage,
+} from '~/api/procedures/setTransferRestrictions';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
@@ -100,6 +107,7 @@ export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 // NOTE uncomment in Governance v2 upgrade
 // export { Proposal } from '~/api/entities/Proposal';
 export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
+export { Sto } from '~/api/entities/Sto';
 export { Venue } from '~/api/entities/Venue';
 export { Instruction } from '~/api/entities/Instruction';
 export { Portfolio } from '~/api/entities/Portfolio';

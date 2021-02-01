@@ -1,5 +1,8 @@
 import { TransferRestrictionBase } from '~/api/entities/SecurityToken/TransferRestrictions/TransferRestrictionBase';
-import { AddPercentageTransferRestrictionParams } from '~/internal';
+import {
+  AddPercentageTransferRestrictionParams,
+  SetPercentageTransferRestrictionsParams,
+} from '~/internal';
 import { ActiveTransferRestrictions, PercentageTransferRestriction } from '~/types';
 import { ProcedureMethod, TransferRestrictionType } from '~/types/internal';
 
@@ -21,6 +24,25 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
     Omit<AddPercentageTransferRestrictionParams, 'type'>,
     number
   >;
+
+  /**
+   * Sets all Percentage Transfer Restrictions type on this Security Token
+   *
+   * @param args.restrictions - array of Percentage Transfer Restrictions with their corresponding exemptions (if applicable)
+   *
+   * @note the result is the total amount of restrictions after the procedure has run
+   */
+  public setRestrictions!: ProcedureMethod<
+    Omit<SetPercentageTransferRestrictionsParams, 'type'>,
+    number
+  >;
+
+  /**
+   * Removes all Percentage Transfer Restrictions from this Security Token
+   *
+   * @note the result is the total amount of restrictions after the procedure has run
+   */
+  public removeRestrictions!: ProcedureMethod<void, number>;
 
   /**
    * Retrieve all active Percentage Transfer Restrictions

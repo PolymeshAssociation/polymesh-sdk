@@ -292,6 +292,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve a list of all tokens which were held at one point by this Identity
    *
+   * @note uses the middleware
    * @note supports pagination
    */
   public async getHeldTokens(

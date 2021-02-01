@@ -1,5 +1,5 @@
 import { TransferRestrictionBase } from '~/api/entities/SecurityToken/TransferRestrictions/TransferRestrictionBase';
-import { AddCountTransferRestrictionParams } from '~/internal';
+import { AddCountTransferRestrictionParams, SetCountTransferRestrictionsParams } from '~/internal';
 import { ActiveTransferRestrictions, CountTransferRestriction } from '~/types';
 import { ProcedureMethod, TransferRestrictionType } from '~/types/internal';
 
@@ -18,6 +18,25 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    * @note the result is the total amount of restrictions after the procedure has run
    */
   public addRestriction!: ProcedureMethod<Omit<AddCountTransferRestrictionParams, 'type'>, number>;
+
+  /**
+   * Sets all Count Transfer Restrictions type on this Security Token
+   *
+   * @param args.restrictions - array of Count Transfer Restrictions with their corresponding exemptions (if applicable)
+   *
+   * @note the result is the total amount of restrictions after the procedure has run
+   */
+  public setRestrictions!: ProcedureMethod<
+    Omit<SetCountTransferRestrictionsParams, 'type'>,
+    number
+  >;
+
+  /**
+   * Removes all Count Transfer Restrictions from this Security Token
+   *
+   * @note the result is the total amount of restrictions after the procedure has run
+   */
+  public removeRestrictions!: ProcedureMethod<void, number>;
 
   /**
    * Retrieve all active Count Transfer Restrictions
