@@ -118,6 +118,8 @@ export class Account extends Entity<UniqueIdentifiers> {
    * @param filters.success - whether the transaction was successful or not
    * @param filters.size - page size
    * @param filters.start - page offset
+   *
+   * @note uses the middleware
    */
   public async getTransactionHistory(
     filters: {
