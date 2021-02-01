@@ -69,9 +69,9 @@ export class Sto extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const assembleResult = (fundraiser: Option<Fundraiser>): StoDetails => {
-      if (fundraiser.isSome) {
-        return fundraiserToStoDetails(fundraiser.unwrap(), context);
+    const assembleResult = (rawFundraiser: Option<Fundraiser>): StoDetails => {
+      if (rawFundraiser.isSome) {
+        return fundraiserToStoDetails(rawFundraiser.unwrap(), context);
       } else {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
