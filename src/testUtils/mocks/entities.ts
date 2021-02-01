@@ -5,6 +5,7 @@ import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
 import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
+import { StoDetails } from '~/api/entities/Sto/types';
 import {
   Account,
   AuthorizationRequest,
@@ -17,6 +18,7 @@ import {
   // NOTE uncomment in Governance v2 upgrade
   // Proposal,
   SecurityToken,
+  Sto,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -56,6 +58,7 @@ const mockInstanceContainer = {
   instruction: {} as MockInstruction,
   numberedPortfolio: {} as MockNumberedPortfolio,
   defaultPortfolio: {} as MockDefaultPortfolio,
+  sto: {} as MockSto,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -71,6 +74,7 @@ type MockVenue = Mocked<Venue>;
 type MockInstruction = Mocked<Instruction>;
 type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
 type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
+type MockSto = Mocked<Sto>;
 
 interface IdentityOptions {
   did?: string;
@@ -153,6 +157,10 @@ interface DefaultPortfolioOptions {
   isCustodiedBy?: boolean;
 }
 
+interface StoOptions {
+  details?: Partial<StoDetails>;
+}
+
 interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
@@ -171,6 +179,7 @@ let venueConstructorStub: SinonStub;
 let instructionConstructorStub: SinonStub;
 let numberedPortfolioConstructorStub: SinonStub;
 let defaultPortfolioConstructorStub: SinonStub;
+let stoConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
@@ -206,6 +215,7 @@ let defaultPortfolioIsOwnedByStub: SinonStub;
 let defaultPortfolioGetTokenBalancesStub: SinonStub;
 let defaultPortfolioGetCustodianStub: SinonStub;
 let defaultPortfolioIsCustodiedByStub: SinonStub;
+let stoDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -315,6 +325,15 @@ const MockInstructionClass = class {
   }
 };
 
+const MockStoClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return stoConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -373,6 +392,11 @@ export const mockNumberedPortfolioModule = (path: string) => (): object => ({
 export const mockDefaultPortfolioModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   DefaultPortfolio: MockDefaultPortfolioClass,
+});
+
+export const mockStoModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Sto: MockStoClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -491,6 +515,10 @@ const defaultInstructionOptions: InstructionOptions = {
   },
 };
 let instructionOptions = defaultInstructionOptions;
+const defaultStoOptions: StoOptions = {
+  details: {} as StoDetails,
+};
+let stoOptions = defaultStoOptions;
 // NOTE uncomment in Governance v2 upgrade
 // const defaultProposalOptions: ProposalOptions = {
 //   pipId: new BigNumber(1),
@@ -975,6 +1003,37 @@ function initCurrentAccount(opts?: CurrentAccountOptions): void {
 
 /**
  * @hidden
+ * Configure the Security Token Offering instance
+ */
+function configureSto(opts: StoOptions): void {
+  const details = { owner: mockInstanceContainer.identity, ...opts.details };
+  const sto = ({
+    details: stoDetailsStub.resolves(details),
+  } as unknown) as MockSto;
+
+  Object.assign(mockInstanceContainer.sto, sto);
+  stoConstructorStub.callsFake(args => {
+    const value = merge({}, sto, args);
+    Object.setPrototypeOf(value, require('~/internal').Sto.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Security Token Offering instance
+ */
+function initSto(opts?: StoOptions): void {
+  stoConstructorStub = sinon.stub();
+  stoDetailsStub = sinon.stub();
+
+  stoOptions = merge({}, defaultStoOptions, opts);
+
+  configureSto(stoOptions);
+}
+
+/**
+ * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
@@ -991,6 +1050,7 @@ export function configureMocks(opts?: {
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
+  stoOptions?: StoOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -1068,6 +1128,12 @@ export function configureMocks(opts?: {
     ...opts?.instructionOptions,
   };
   configureInstruction(tempInstructionOptions);
+
+  const tempStoOptions = {
+    ...stoOptions,
+    ...opts?.stoOptions,
+  };
+  configureSto(tempStoOptions);
 }
 
 /**
@@ -1088,6 +1154,7 @@ export function initMocks(opts?: {
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
+  stoOptions?: StoOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -1128,6 +1195,9 @@ export function initMocks(opts?: {
 
   // Instruction
   initInstruction(opts?.instructionOptions);
+
+  // Sto
+  initSto(opts?.stoOptions);
 }
 
 /**
@@ -1146,6 +1216,7 @@ export function cleanup(): void {
   // mockInstanceContainer.proposal = {} as MockProposal;
   mockInstanceContainer.venue = {} as MockVenue;
   mockInstanceContainer.instruction = {} as MockInstruction;
+  mockInstanceContainer.sto = {} as MockSto;
 }
 
 /**
@@ -1168,6 +1239,7 @@ export function reset(): void {
     instructionOptions,
     numberedPortfolioOptions,
     defaultPortfolioOptions,
+    stoOptions,
   });
 }
 
@@ -1581,4 +1653,30 @@ export function getInstructionGetLegsStub(legs?: Leg[]): SinonStub {
     });
   }
   return instructionGetLegsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a Sto instance
+ */
+export function getStoInstance(opts?: StoOptions): MockSto {
+  if (opts) {
+    configureSto({ ...defaultStoOptions, ...opts });
+  }
+
+  return new MockStoClass() as MockSto;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Sto.details` method
+ */
+export function getStoDetailsStub(details?: Partial<StoDetails>): SinonStub {
+  if (details) {
+    return stoDetailsStub.resolves({
+      ...defaultStoOptions.details,
+      ...details,
+    });
+  }
+  return stoDetailsStub;
 }
