@@ -45,10 +45,16 @@ export interface AddInstructionParams {
   endBlock?: BigNumber;
 }
 
+/**
+ * @hidden
+ */
 export type Params = AddInstructionParams & {
   venueId: BigNumber;
 };
 
+/**
+ * @hidden
+ */
 export interface Storage {
   portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[];
 }
