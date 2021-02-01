@@ -12,6 +12,7 @@ import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
+  portfolioIdToPortfolio,
   signerToSignerValue,
   signerToString,
   signerValueToSignatory,
@@ -44,9 +45,7 @@ export async function prepareSetCustodian(
   } = this;
 
   const { targetIdentity, expiry, did, id } = args;
-  const portfolio = id
-    ? new NumberedPortfolio({ did, id }, context)
-    : new DefaultPortfolio({ did }, context);
+  const portfolio = portfolioIdToPortfolio({ did, number: id }, context);
 
   const targetDid = signerToString(targetIdentity);
   const target = new Identity({ did: targetDid }, context);
@@ -98,9 +97,7 @@ export function getAuthorization(
     identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
     signerPermissions: {
       transactions: [TxTags.identity.AddAuthorization],
-      portfolios: [
-        id ? new NumberedPortfolio({ did, id }, context) : new DefaultPortfolio({ did }, context),
-      ],
+      portfolios: [portfolioIdToPortfolio({ did, number: id }, context)],
       tokens: [],
     },
   };

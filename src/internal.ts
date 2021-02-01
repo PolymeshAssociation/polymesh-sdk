@@ -90,6 +90,7 @@ export {
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
 } from '~/api/procedures/addTransferRestriction';
+export { launchSto, LaunchStoParams } from '~/api/procedures/launchSto';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
