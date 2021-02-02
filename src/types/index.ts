@@ -13,7 +13,6 @@ import {
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,
-  Venue,
 } from '~/internal';
 import { PortfolioId } from '~/types/internal';
 
@@ -650,32 +649,6 @@ export interface ActiveTransferRestrictions<
    * amount of restrictions that can be added before reaching the shared limit
    */
   availableSlots: number;
-}
-
-export enum StoStatus {
-  Live = 'Live',
-  Frozen = 'Frozen',
-  Closed = 'Closed',
-}
-
-export interface Tier {
-  amount: BigNumber;
-  price: BigNumber;
-  remaining: BigNumber;
-}
-
-export interface StoDetails {
-  creator: Identity;
-  offeringPortfolio: NumberedPortfolio | DefaultPortfolio;
-  offeringAsset: SecurityToken;
-  raisingPortfolio: NumberedPortfolio | DefaultPortfolio;
-  raisingCurrency: SecurityToken;
-  tiers: Tier[];
-  venue: Venue;
-  start: Date;
-  end: Date | null;
-  status: StoStatus;
-  minimumInvestment: BigNumber;
 }
 
 export { TxTags } from 'polymesh-types/types';
