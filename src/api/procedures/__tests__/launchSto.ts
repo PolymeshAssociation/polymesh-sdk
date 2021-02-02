@@ -286,6 +286,8 @@ describe('launchSto procedure', () => {
       rawMinInvestment,
       rawName
     );
+
+    expect(result).toEqual(sto);
   });
 
   describe('stoResolver', () => {
