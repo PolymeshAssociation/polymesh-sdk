@@ -4500,7 +4500,7 @@ describe('fundraiserToStoDetails', () => {
     const someDid = 'someDid';
     const ticker = 'TICKER';
     const otherDid = 'otherDid';
-    const otherTicker = 'OTHERTICKER';
+    const raisingCurrency = 'USD';
     const tierNumber = new BigNumber(10);
     const tier = {
       amount: tierNumber.div(Math.pow(10, 6)),
@@ -4515,7 +4515,7 @@ describe('fundraiserToStoDetails', () => {
       offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
       offeringAsset: new SecurityToken({ ticker }, context),
       raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
-      raisingCurrency: new SecurityToken({ ticker: otherTicker }, context),
+      raisingCurrency: raisingCurrency,
       tiers: [tier],
       venue: new Venue({ id: new BigNumber(1) }, context),
       start: date,
@@ -4534,7 +4534,7 @@ describe('fundraiserToStoDetails', () => {
       did: dsMockUtils.createMockIdentityId(otherDid),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    const raisingAsset = dsMockUtils.createMockTicker(otherTicker);
+    const raisingAsset = dsMockUtils.createMockTicker(raisingCurrency);
     const tiers = [
       dsMockUtils.createMockFundraiserTier({
         total: dsMockUtils.createMockBalance(tierNumber.toNumber()),

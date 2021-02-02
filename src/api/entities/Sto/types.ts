@@ -8,9 +8,12 @@ export enum StoStatus {
   Closed = 'Closed',
 }
 
-export interface Tier {
+export interface StoTier {
   amount: BigNumber;
   price: BigNumber;
+}
+
+export interface Tier extends StoTier {
   remaining: BigNumber;
 }
 
@@ -19,16 +22,11 @@ export interface StoDetails {
   offeringPortfolio: NumberedPortfolio | DefaultPortfolio;
   offeringAsset: SecurityToken;
   raisingPortfolio: NumberedPortfolio | DefaultPortfolio;
-  raisingCurrency: SecurityToken;
+  raisingCurrency: string;
   tiers: Tier[];
   venue: Venue;
   start: Date;
   end: Date | null;
   status: StoStatus;
   minimumInvestment: BigNumber;
-}
-
-export interface StoTier {
-  amount: BigNumber;
-  price: BigNumber;
 }

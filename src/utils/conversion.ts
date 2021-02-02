@@ -2327,7 +2327,7 @@ export function fundraiserToStoDetails(fundraiser: Fundraiser, context: Context)
     offeringPortfolio: meshPortfolioIdToPortfolio(offeringPortfolio, context),
     offeringAsset: new SecurityToken({ ticker: tickerToString(offeringAsset) }, context),
     raisingPortfolio: meshPortfolioIdToPortfolio(raisingPortfolio, context),
-    raisingCurrency: new SecurityToken({ ticker: tickerToString(raisingAsset) }, context),
+    raisingCurrency: tickerToString(raisingAsset),
     tiers: tiers.map(tier => fundraiserTierToTier(tier)),
     venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
     start: momentToDate(start),
