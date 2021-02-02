@@ -3,12 +3,10 @@ import BigNumber from 'bignumber.js';
 
 import { cancelSto, CancelStoParams, Context, Entity, PolymeshError } from '~/internal';
 import { Fundraiser } from '~/polkadot/polymesh/types';
-import { ErrorCode, SubCallback, UnsubCallback } from '~/types';
+import { ErrorCode, StoDetails, SubCallback, UnsubCallback } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
-
-import { StoDetails } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;

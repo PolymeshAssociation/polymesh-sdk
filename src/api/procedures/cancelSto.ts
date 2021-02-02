@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-import { StoStatus } from '~/api/entities/Sto/types';
 import { PolymeshError, Procedure, SecurityToken, Sto } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, RoleType, StoStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker } from '~/utils/conversion';
 

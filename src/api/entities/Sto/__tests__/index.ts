@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { StoDetails, StoStatus } from '~/api/entities/Sto/types';
 import {
   cancelSto,
   Context,
@@ -14,6 +13,7 @@ import {
   Venue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { StoDetails, StoStatus } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

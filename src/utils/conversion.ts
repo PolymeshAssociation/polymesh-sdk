@@ -66,7 +66,6 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { StoDetails, StoStatus, Tier } from '~/api/entities/Sto/types';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 // import { ProposalDetails } from '~/api/types';
 import {
@@ -121,6 +120,9 @@ import {
   SecondaryKey,
   Signer,
   SingleClaimCondition,
+  StoDetails,
+  StoStatus,
+  Tier,
   TokenDocument,
   TokenIdentifier,
   TokenIdentifierType,
