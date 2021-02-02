@@ -1,11 +1,16 @@
-import { AddPercentageTransferRestrictionParams } from '~/api/procedures/addTransferRestriction';
 import {
   AddCountTransferRestrictionParams,
+  AddPercentageTransferRestrictionParams,
   addTransferRestriction,
   AddTransferRestrictionParams,
   Context,
   Namespace,
   SecurityToken,
+  SetCountTransferRestrictionsParams,
+  SetPercentageTransferRestrictionsParams,
+  setTransferRestrictions,
+  SetTransferRestrictionsParams,
+  SetTransferRestrictionsStorage,
 } from '~/internal';
 import {
   ActiveTransferRestrictions,
@@ -25,6 +30,13 @@ type AddRestrictionParams<T> = Omit<
   T extends TransferRestrictionType.Count
     ? AddCountTransferRestrictionParams
     : AddPercentageTransferRestrictionParams,
+  'type'
+>;
+
+type SetRestrictionsParams<T> = Omit<
+  T extends TransferRestrictionType.Count
+    ? SetCountTransferRestrictionsParams
+    : SetPercentageTransferRestrictionsParams,
   'type'
 >;
 
@@ -59,6 +71,32 @@ export abstract class TransferRestrictionBase<
       ],
       context
     );
+
+    this.setRestrictions = createProcedureMethod<
+      SetRestrictionsParams<T>,
+      SetTransferRestrictionsParams,
+      number,
+      SetTransferRestrictionsStorage
+    >(
+      args => [
+        setTransferRestrictions,
+        ({ ...args, type: this.type, ticker } as unknown) as SetTransferRestrictionsParams,
+      ],
+      context
+    );
+
+    this.removeRestrictions = createProcedureMethod<
+      void,
+      SetTransferRestrictionsParams,
+      number,
+      SetTransferRestrictionsStorage
+    >(
+      () => [
+        setTransferRestrictions,
+        ({ restrictions: [], type: this.type, ticker } as unknown) as SetTransferRestrictionsParams,
+      ],
+      context
+    );
   }
 
   /**
@@ -69,6 +107,22 @@ export abstract class TransferRestrictionBase<
    * @note the result is the total amount of restrictions after the procedure has run
    */
   public addRestriction: ProcedureMethod<AddRestrictionParams<T>, number>;
+
+  /**
+   * Sets all Transfer Restrictions of the corresponding type on this Security Token
+   *
+   * @param args.restrictions - array of Transfer Restrictions with their corresponding exemptions (if applicable)
+   *
+   * @note the result is the total amount of restrictions after the procedure has run
+   */
+  public setRestrictions: ProcedureMethod<SetRestrictionsParams<T>, number>;
+
+  /**
+   * Removes all Transfer Restrictions of the corresponding type from this Security Token
+   *
+   * @note the result is the total amount of restrictions after the procedure has run
+   */
+  public removeRestrictions: ProcedureMethod<void, number>;
 
   /**
    * Retrieve all active Transfer Restrictions of the corresponding type
@@ -116,10 +170,14 @@ export abstract class TransferRestrictionBase<
           percentage: value,
         };
       }
-      return {
-        ...restriction,
-        exempted,
-      };
+
+      if (exempted.length) {
+        return {
+          ...restriction,
+          exempted,
+        };
+      }
+      return restriction;
     });
 
     return {

@@ -464,8 +464,8 @@ describe('Portfolio class', () => {
       expect(result.data[1].blockNumber).toEqual(blockNumber2);
       expect(result.data[0].legs[0].token.ticker).toEqual(token1.ticker);
       expect(result.data[1].legs[0].token.ticker).toEqual(token2.ticker);
-      expect(result.data[0].legs[0].amount).toEqual(amount1);
-      expect(result.data[1].legs[0].amount).toEqual(amount2);
+      expect(result.data[0].legs[0].amount).toEqual(amount1.div(Math.pow(10, 6)));
+      expect(result.data[1].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect(result.data[0].legs[0].from).toEqual(portfolio1);
       expect(result.data[0].legs[0].to).toEqual(portfolio2);
       expect(result.data[1].legs[0].from).toEqual(portfolio2);
