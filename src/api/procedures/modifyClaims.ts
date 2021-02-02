@@ -248,7 +248,7 @@ export async function prepareModifyClaims(
             code: ErrorCode.ValidationError,
             message: 'A target Identity cannot have CDD claims with different IDs',
             data: {
-              invalidCddClaims: invalidCddClaims,
+              invalidCddClaims,
             },
           });
         }
