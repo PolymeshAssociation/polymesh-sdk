@@ -89,6 +89,7 @@ interface IdentityOptions {
   authorizations?: {
     getReceived: AuthorizationRequest[];
   };
+  getVenues?: Venue[];
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -173,6 +174,11 @@ interface InstructionOptions {
   getLegs?: Leg[];
 }
 
+interface StoOptions {
+  id?: BigNumber;
+  ticker?: string;
+}
+
 let identityConstructorStub: SinonStub;
 let currentIdentityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
@@ -197,11 +203,14 @@ let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
 let identityGetPrimaryKeyStub: SinonStub;
-let identityGetReceivedStub: SinonStub;
+let identityAuthorizationsGetReceivedStub: SinonStub;
+let identityGetVenuesStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
 let currentIdentityGetPrimaryKeyStub: SinonStub;
+let currentIdentityAuthorizationsGetReceivedStub: SinonStub;
+let currentIdentityGetVenuesStub: SinonStub;
 let currentIdentityGetSecondaryKeysStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
@@ -414,6 +423,7 @@ const defaultIdentityOptions: IdentityOptions = {
   authorizations: {
     getReceived: [],
   },
+  getVenues: [],
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -421,6 +431,10 @@ const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   hasValidCdd: true,
   getPrimaryKey: 'someAddress',
   getSecondaryKeys: [],
+  authorizations: {
+    getReceived: [],
+  },
+  getVenues: [],
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -533,6 +547,8 @@ const defaultInstructionOptions: InstructionOptions = {
 let instructionOptions = defaultInstructionOptions;
 const defaultStoOptions: StoOptions = {
   details: {} as StoDetails,
+  ticker: 'SOME_TICKER',
+  id: new BigNumber(1),
 };
 let stoOptions = defaultStoOptions;
 // NOTE uncomment in Governance v2 upgrade
@@ -838,8 +854,9 @@ function configureIdentity(opts: IdentityOptions): void {
     getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
     portfolios: {},
     authorizations: {
-      getReceived: sinon.stub().resolves(opts.authorizations?.getReceived),
+      getReceived: identityAuthorizationsGetReceivedStub.resolves(opts.authorizations?.getReceived),
     },
+    getVenues: identityGetVenuesStub.resolves(opts.getVenues),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -860,7 +877,8 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRoleStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
   identityGetPrimaryKeyStub = sinon.stub();
-  identityGetReceivedStub = sinon.stub();
+  identityAuthorizationsGetReceivedStub = sinon.stub();
+  identityGetVenuesStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -920,6 +938,13 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
     hasValidCdd: currentIdentityHasValidCddStub.resolves(opts.hasValidCdd),
     getPrimaryKey: currentIdentityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
     getSecondaryKeys: currentIdentityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
+    portfolios: {},
+    authorizations: {
+      getReceived: currentIdentityAuthorizationsGetReceivedStub.resolves(
+        opts.authorizations?.getReceived
+      ),
+    },
+    getVenues: currentIdentityGetVenuesStub.resolves(opts.getVenues),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
@@ -943,6 +968,8 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityHasRoleStub = sinon.stub();
   currentIdentityHasValidCddStub = sinon.stub();
   currentIdentityGetPrimaryKeyStub = sinon.stub();
+  currentIdentityAuthorizationsGetReceivedStub = sinon.stub();
+  currentIdentityGetVenuesStub = sinon.stub();
   currentIdentityGetSecondaryKeysStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
@@ -1039,6 +1066,8 @@ function configureSto(opts: StoOptions): void {
   const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const sto = ({
     details: stoDetailsStub.resolves(details),
+    ticker: opts.ticker,
+    id: opts.id,
   } as unknown) as MockSto;
 
   Object.assign(mockInstanceContainer.sto, sto);
@@ -1051,7 +1080,7 @@ function configureSto(opts: StoOptions): void {
 
 /**
  * @hidden
- * Initialize the Security Token Offering instance
+ * Initialize the Sto instance
  */
 function initSto(opts?: StoOptions): void {
   stoConstructorStub = sinon.stub();
@@ -1329,8 +1358,16 @@ export function getIdentityGetPrimaryKeyStub(): SinonStub {
  * @hidden
  * Retrieve the stub of the `Identity.authorizations.getReceived` method
  */
-export function getIdentityGetReceivedStub(): SinonStub {
-  return identityGetReceivedStub;
+export function getIdentityAuthorizationsGetReceivedStub(): SinonStub {
+  return identityAuthorizationsGetReceivedStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Identity.getVenues` method
+ */
+export function getIdentityGetVenuesStub(): SinonStub {
+  return identityGetVenuesStub;
 }
 
 /**
@@ -1375,6 +1412,22 @@ export function getCurrentIdentityHasValidCddStub(): SinonStub {
  */
 export function getCurrentIdentityGetPrimaryKeyStub(): SinonStub {
   return currentIdentityGetPrimaryKeyStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.getVenues` method
+ */
+export function getCurrentIdentityGetVenuesStub(): SinonStub {
+  return currentIdentityGetVenuesStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.authorizations.getReceived` method
+ */
+export function getCurrentIdentityAuthorizationsGetReceivedStub(): SinonStub {
+  return currentIdentityAuthorizationsGetReceivedStub;
 }
 
 /**
@@ -1715,7 +1768,7 @@ export function getInstructionGetLegsStub(legs?: Leg[]): SinonStub {
 
 /**
  * @hidden
- * Retrieve a Sto instance
+ * Retrieve an Sto instance
  */
 export function getStoInstance(opts?: StoOptions): MockSto {
   if (opts) {
@@ -1737,4 +1790,12 @@ export function getStoDetailsStub(details?: Partial<StoDetails>): SinonStub {
     });
   }
   return stoDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the Sto constructor stub
+ */
+export function getStoConstructorStub(): SinonStub {
+  return stoConstructorStub;
 }

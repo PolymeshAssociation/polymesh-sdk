@@ -9,6 +9,7 @@ import {
   MovePortfolioItem,
   PipId,
   PortfolioId,
+  PriceTier,
   ScopeId,
   SettlementType,
   TransferManager,
@@ -73,6 +74,7 @@ import {
   ScopeType,
   Signer,
   StoStatus,
+  StoTier,
   TokenDocument,
   TokenIdentifierType,
   TransferStatus,
@@ -157,6 +159,7 @@ import {
   signerToString,
   signerValueToSignatory,
   signerValueToSigner,
+  stoTierToPriceTier,
   stringToAccountId,
   stringToAssetName,
   stringToBytes,
@@ -4356,6 +4359,58 @@ describe('transferRestrictionToTransferManager and signatoryToSignerValue', () =
 
     result = transferManagerToTransferRestriction(transferManager);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stoTierToPriceTier', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('stoTierToPriceTier should convert an Sto Tier into a polkadot PriceTier object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const total = new BigNumber(100);
+    const price = new BigNumber(1000);
+    const rawTotal = dsMockUtils.createMockBalance(total.toNumber());
+    const rawPrice = dsMockUtils.createMockBalance(price.toNumber());
+    const fakeResult = ('PriceTier' as unknown) as PriceTier;
+
+    const stoTier: StoTier = {
+      price,
+      amount: total,
+    };
+
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
+
+    createTypeStub
+      .withArgs('Balance', total.multipliedBy(Math.pow(10, 6)).toString())
+      .returns(rawTotal);
+    createTypeStub
+      .withArgs('Balance', price.multipliedBy(Math.pow(10, 6)).toString())
+      .returns(rawPrice);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PriceTier', {
+        total: rawTotal,
+        price: rawPrice,
+      })
+      .returns(fakeResult);
+
+    const result = stoTierToPriceTier(stoTier, context);
+
+    expect(result).toBe(fakeResult);
   });
 });
 

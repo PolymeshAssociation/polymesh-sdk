@@ -105,6 +105,10 @@ export class Portfolios extends Namespace<Identity> {
    *
    * @param args.porfolioId - optional, defaults to the default portfolio
    */
+  public async getPortfolio(): Promise<DefaultPortfolio>;
+  public async getPortfolio(args: { portfolioId: BigNumber }): Promise<NumberedPortfolio>;
+
+  // eslint-disable-next-line require-jsdoc
   public async getPortfolio(args?: {
     portfolioId: BigNumber;
   }): Promise<DefaultPortfolio | NumberedPortfolio> {

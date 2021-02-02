@@ -27,3 +27,8 @@ export interface StoDetails {
   status: StoStatus;
   minimumInvestment: BigNumber;
 }
+
+export interface StoTier {
+  amount: BigNumber;
+  price: BigNumber;
+}

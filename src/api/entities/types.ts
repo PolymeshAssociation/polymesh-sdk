@@ -6,6 +6,7 @@ import {
   CurrentAccount as CurrentAccountClass,
   CurrentIdentity as CurrentIdentityClass,
   DefaultPortfolio as DefaultPortfolioClass,
+  DefaultTrustedClaimIssuer as DefaultTrustedClaimIssuerClass,
   Identity as IdentityClass,
   Instruction as InstructionClass,
   NumberedPortfolio as NumberedPortfolioClass,
@@ -29,6 +30,7 @@ export type Instruction = InstanceType<typeof InstructionClass>;
 export type Portfolio = InstanceType<typeof PortfolioClass>;
 export type DefaultPortfolio = InstanceType<typeof DefaultPortfolioClass>;
 export type NumberedPortfolio = InstanceType<typeof NumberedPortfolioClass>;
+export type DefaultTrustedClaimIssuer = InstanceType<typeof DefaultTrustedClaimIssuerClass>;
 export type Sto = InstanceType<typeof StoClass>;
 // export type Proposal = InstanceType<typeof ProposalClass>;
 

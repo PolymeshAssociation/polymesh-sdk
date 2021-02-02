@@ -93,6 +93,7 @@ import {
   PortfolioId,
   PortfolioKind,
   PosRatio,
+  PriceTier,
   ProposalState,
   Scope,
   ScopeId,
@@ -2387,4 +2388,21 @@ export const createMockFundraiser = (fundraiser?: {
     },
     !fundraiser
   ) as Fundraiser;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPriceTier = (priceTier?: { total: Balance; price: Balance }): PriceTier => {
+  const data = priceTier || {
+    total: createMockBalance(),
+    price: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !priceTier
+  ) as PriceTier;
 };
