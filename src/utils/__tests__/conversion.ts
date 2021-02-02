@@ -48,6 +48,7 @@ import {
   Identity,
   NumberedPortfolio,
   SecurityToken,
+  Venue,
 } from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
 import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
@@ -72,6 +73,7 @@ import {
   Scope,
   ScopeType,
   Signer,
+  StoStatus,
   StoTier,
   TokenDocument,
   TokenIdentifierType,
@@ -114,6 +116,8 @@ import {
   endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
   fundingRoundNameToString,
+  fundraiserTierToTier,
+  fundraiserToStoDetails,
   identityIdToString,
   isCusipValid,
   isIsinValid,
@@ -122,6 +126,7 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshClaimToClaim,
   meshClaimTypeToClaimType,
+  meshFundraiserStatusToStoStatus,
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
   meshScopeToScope,
@@ -211,6 +216,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
     '~/api/entities/NumberedPortfolio'
   )
+);
+jest.mock(
+  '~/api/entities/Venue',
+  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
 
 describe('tickerToDid', () => {
@@ -4402,5 +4411,177 @@ describe('stoTierToPriceTier', () => {
     const result = stoTierToPriceTier(stoTier, context);
 
     expect(result).toBe(fakeResult);
+  });
+});
+
+describe('fundraiserTierToTier', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('fundraiserTierToTier should convert a polkadot FundraiserTier object to a FundraiserTier', () => {
+    const amount = new BigNumber(5);
+    const price = new BigNumber(5);
+    const remaining = new BigNumber(5);
+
+    const fundraiserTier = dsMockUtils.createMockFundraiserTier({
+      total: dsMockUtils.createMockBalance(amount.toNumber()),
+      price: dsMockUtils.createMockBalance(price.toNumber()),
+      remaining: dsMockUtils.createMockBalance(remaining.toNumber()),
+    });
+
+    const result = fundraiserTierToTier(fundraiserTier);
+    expect(result).toEqual({
+      amount: amount.div(Math.pow(10, 6)),
+      price: price.div(Math.pow(10, 6)),
+      remaining: remaining.div(Math.pow(10, 6)),
+    });
+  });
+});
+
+describe('meshFundraiserStatusToStoStatus', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshFundraiserStatusToStoStatus should convert a polkadot FundraiserStatus object to a StoStatus', () => {
+    let fakeResult = StoStatus.Live;
+    let stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
+
+    let result = meshFundraiserStatusToStoStatus(stoStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = StoStatus.Closed;
+    stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
+
+    result = meshFundraiserStatusToStoStatus(stoStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = StoStatus.Frozen;
+    stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
+
+    result = meshFundraiserStatusToStoStatus(stoStatus);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('fundraiserToStoDetails', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('fundraiserToStoDetails should convert a polkadot Fundraiser object to a StoDetails', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const someDid = 'someDid';
+    const ticker = 'TICKER';
+    const otherDid = 'otherDid';
+    const raisingCurrency = 'USD';
+    const tierNumber = new BigNumber(10);
+    const tier = {
+      amount: tierNumber.div(Math.pow(10, 6)),
+      price: tierNumber.div(Math.pow(10, 6)),
+      remaining: tierNumber.div(Math.pow(10, 6)),
+    };
+    const date = new Date();
+    const minimumInvestmentValue = new BigNumber(1);
+
+    const fakeResult = {
+      creator: new Identity({ did: someDid }, context),
+      offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
+      offeringAsset: new SecurityToken({ ticker }, context),
+      raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
+      raisingCurrency: raisingCurrency,
+      tiers: [tier],
+      venue: new Venue({ id: new BigNumber(1) }, context),
+      start: date,
+      end: date,
+      status: StoStatus.Live,
+      minimumInvestment: minimumInvestmentValue.div(Math.pow(10, 6)),
+    };
+
+    const creator = dsMockUtils.createMockIdentityId(someDid);
+    const offeringPortfolio = dsMockUtils.createMockPortfolioId({
+      did: creator,
+      kind: dsMockUtils.createMockPortfolioKind('Default'),
+    });
+    const offeringAsset = dsMockUtils.createMockTicker(ticker);
+    const raisingPortfolio = dsMockUtils.createMockPortfolioId({
+      did: dsMockUtils.createMockIdentityId(otherDid),
+      kind: dsMockUtils.createMockPortfolioKind('Default'),
+    });
+    const raisingAsset = dsMockUtils.createMockTicker(raisingCurrency);
+    const tiers = [
+      dsMockUtils.createMockFundraiserTier({
+        total: dsMockUtils.createMockBalance(tierNumber.toNumber()),
+        price: dsMockUtils.createMockBalance(tierNumber.toNumber()),
+        remaining: dsMockUtils.createMockBalance(tierNumber.toNumber()),
+      }),
+    ];
+    const venueId = dsMockUtils.createMockU64(1);
+    const start = dsMockUtils.createMockMoment(date.getTime());
+    const end = dsMockUtils.createMockOption(dsMockUtils.createMockMoment(date.getTime()));
+    const status = dsMockUtils.createMockFundraiserStatus('Live');
+    const minimumInvestment = dsMockUtils.createMockBalance(minimumInvestmentValue.toNumber());
+
+    let fundraiser = dsMockUtils.createMockFundraiser({
+      creator,
+      offering_portfolio: offeringPortfolio,
+      offering_asset: offeringAsset,
+      raising_portfolio: raisingPortfolio,
+      raising_asset: raisingAsset,
+      tiers,
+      venue_id: venueId,
+      start,
+      end,
+      status,
+      minimum_investment: minimumInvestment,
+    });
+
+    let result = fundraiserToStoDetails(fundraiser, context);
+
+    expect(result).toEqual(fakeResult);
+
+    fundraiser = dsMockUtils.createMockFundraiser({
+      creator,
+      offering_portfolio: offeringPortfolio,
+      offering_asset: offeringAsset,
+      raising_portfolio: raisingPortfolio,
+      raising_asset: raisingAsset,
+      tiers,
+      venue_id: venueId,
+      start,
+      end: dsMockUtils.createMockOption(),
+      status,
+      minimum_investment: minimumInvestment,
+    });
+
+    result = fundraiserToStoDetails(fundraiser, context);
+
+    expect(result).toEqual({ ...fakeResult, end: null });
   });
 });

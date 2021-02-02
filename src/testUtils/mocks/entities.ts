@@ -37,6 +37,7 @@ import {
   PortfolioBalance,
   SecondaryKey,
   SecurityTokenDetails,
+  StoDetails,
   TickerReservationDetails,
   TickerReservationStatus,
   TransferStatus,
@@ -163,6 +164,10 @@ interface DefaultPortfolioOptions {
   isCustodiedBy?: boolean;
 }
 
+interface StoOptions {
+  details?: Partial<StoDetails>;
+}
+
 interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
@@ -227,6 +232,7 @@ let defaultPortfolioIsOwnedByStub: SinonStub;
 let defaultPortfolioGetTokenBalancesStub: SinonStub;
 let defaultPortfolioGetCustodianStub: SinonStub;
 let defaultPortfolioIsCustodiedByStub: SinonStub;
+let stoDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -540,6 +546,7 @@ const defaultInstructionOptions: InstructionOptions = {
 };
 let instructionOptions = defaultInstructionOptions;
 const defaultStoOptions: StoOptions = {
+  details: {} as StoDetails,
   ticker: 'SOME_TICKER',
   id: new BigNumber(1),
 };
@@ -1053,10 +1060,12 @@ function initCurrentAccount(opts?: CurrentAccountOptions): void {
 
 /**
  * @hidden
- * Configure the Sto instance
+ * Configure the Security Token Offering instance
  */
 function configureSto(opts: StoOptions): void {
+  const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const sto = ({
+    details: stoDetailsStub.resolves(details),
     ticker: opts.ticker,
     id: opts.id,
   } as unknown) as MockSto;
@@ -1075,8 +1084,9 @@ function configureSto(opts: StoOptions): void {
  */
 function initSto(opts?: StoOptions): void {
   stoConstructorStub = sinon.stub();
+  stoDetailsStub = sinon.stub();
 
-  stoOptions = { ...defaultStoOptions, ...opts };
+  stoOptions = merge({}, defaultStoOptions, opts);
 
   configureSto(stoOptions);
 }
@@ -1179,7 +1189,7 @@ export function configureMocks(opts?: {
   configureInstruction(tempInstructionOptions);
 
   const tempStoOptions = {
-    ...defaultStoOptions,
+    ...stoOptions,
     ...opts?.stoOptions,
   };
   configureSto(tempStoOptions);
@@ -1766,6 +1776,20 @@ export function getStoInstance(opts?: StoOptions): MockSto {
   }
 
   return new MockStoClass() as MockSto;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Sto.details` method
+ */
+export function getStoDetailsStub(details?: Partial<StoDetails>): SinonStub {
+  if (details) {
+    return stoDetailsStub.resolves({
+      ...defaultStoOptions.details,
+      ...details,
+    });
+  }
+  return stoDetailsStub;
 }
 
 /**
