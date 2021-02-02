@@ -17,6 +17,7 @@ import {
   // NOTE uncomment in Governance v2 upgrade
   // Proposal,
   SecurityToken,
+  Sto,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -61,6 +62,7 @@ const mockInstanceContainer = {
   instruction: {} as MockInstruction,
   numberedPortfolio: {} as MockNumberedPortfolio,
   defaultPortfolio: {} as MockDefaultPortfolio,
+  sto: {} as MockSto,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -76,6 +78,7 @@ type MockVenue = Mocked<Venue>;
 type MockInstruction = Mocked<Instruction>;
 type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
 type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
+type MockSto = Mocked<Sto>;
 
 interface IdentityOptions {
   did?: string;
@@ -86,6 +89,7 @@ interface IdentityOptions {
   authorizations?: {
     getReceived: AuthorizationRequest[];
   };
+  getVenues?: Venue[];
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -167,6 +171,11 @@ interface InstructionOptions {
   getLegs?: Leg[];
 }
 
+interface StoOptions {
+  id?: BigNumber;
+  ticker?: string;
+}
+
 let identityConstructorStub: SinonStub;
 let currentIdentityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
@@ -179,6 +188,7 @@ let venueConstructorStub: SinonStub;
 let instructionConstructorStub: SinonStub;
 let numberedPortfolioConstructorStub: SinonStub;
 let defaultPortfolioConstructorStub: SinonStub;
+let stoConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
@@ -191,11 +201,14 @@ let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
 let identityGetPrimaryKeyStub: SinonStub;
-let identityGetReceivedStub: SinonStub;
+let identityAuthorizationsGetReceivedStub: SinonStub;
+let identityGetVenuesStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
 let currentIdentityGetPrimaryKeyStub: SinonStub;
+let currentIdentityAuthorizationsGetReceivedStub: SinonStub;
+let currentIdentityGetVenuesStub: SinonStub;
 let currentIdentityGetSecondaryKeysStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
@@ -326,6 +339,15 @@ const MockInstructionClass = class {
   }
 };
 
+const MockStoClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return stoConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -386,6 +408,11 @@ export const mockDefaultPortfolioModule = (path: string) => (): object => ({
   DefaultPortfolio: MockDefaultPortfolioClass,
 });
 
+export const mockStoModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Sto: MockStoClass,
+});
+
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
@@ -393,6 +420,7 @@ const defaultIdentityOptions: IdentityOptions = {
   authorizations: {
     getReceived: [],
   },
+  getVenues: [],
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -400,6 +428,10 @@ const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   hasValidCdd: true,
   getPrimaryKey: 'someAddress',
   getSecondaryKeys: [],
+  authorizations: {
+    getReceived: [],
+  },
+  getVenues: [],
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -511,6 +543,11 @@ const defaultInstructionOptions: InstructionOptions = {
   },
 };
 let instructionOptions = defaultInstructionOptions;
+const defaultStoOptions: StoOptions = {
+  ticker: 'SOME_TICKER',
+  id: new BigNumber(1),
+};
+let stoOptions = defaultStoOptions;
 // NOTE uncomment in Governance v2 upgrade
 // const defaultProposalOptions: ProposalOptions = {
 //   pipId: new BigNumber(1),
@@ -816,8 +853,9 @@ function configureIdentity(opts: IdentityOptions): void {
     getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
     portfolios: {},
     authorizations: {
-      getReceived: sinon.stub().resolves(opts.authorizations?.getReceived),
+      getReceived: identityAuthorizationsGetReceivedStub.resolves(opts.authorizations?.getReceived),
     },
+    getVenues: identityGetVenuesStub.resolves(opts.getVenues),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -838,7 +876,8 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRoleStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
   identityGetPrimaryKeyStub = sinon.stub();
-  identityGetReceivedStub = sinon.stub();
+  identityAuthorizationsGetReceivedStub = sinon.stub();
+  identityGetVenuesStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -898,6 +937,13 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
     hasValidCdd: currentIdentityHasValidCddStub.resolves(opts.hasValidCdd),
     getPrimaryKey: currentIdentityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
     getSecondaryKeys: currentIdentityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
+    portfolios: {},
+    authorizations: {
+      getReceived: currentIdentityAuthorizationsGetReceivedStub.resolves(
+        opts.authorizations?.getReceived
+      ),
+    },
+    getVenues: currentIdentityGetVenuesStub.resolves(opts.getVenues),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
@@ -921,6 +967,8 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityHasRoleStub = sinon.stub();
   currentIdentityHasValidCddStub = sinon.stub();
   currentIdentityGetPrimaryKeyStub = sinon.stub();
+  currentIdentityAuthorizationsGetReceivedStub = sinon.stub();
+  currentIdentityGetVenuesStub = sinon.stub();
   currentIdentityGetSecondaryKeysStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
@@ -1011,6 +1059,36 @@ function initCurrentAccount(opts?: CurrentAccountOptions): void {
 
 /**
  * @hidden
+ * Configure the Sto instance
+ */
+function configureSto(opts: StoOptions): void {
+  const sto = ({
+    ticker: opts.ticker,
+    id: opts.id,
+  } as unknown) as MockSto;
+
+  Object.assign(mockInstanceContainer.sto, sto);
+  stoConstructorStub.callsFake(args => {
+    const value = merge({}, sto, args);
+    Object.setPrototypeOf(value, require('~/internal').Sto.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Sto instance
+ */
+function initSto(opts?: StoOptions): void {
+  stoConstructorStub = sinon.stub();
+
+  stoOptions = { ...defaultStoOptions, ...opts };
+
+  configureSto(stoOptions);
+}
+
+/**
+ * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
@@ -1027,6 +1105,7 @@ export function configureMocks(opts?: {
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
+  stoOptions?: StoOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -1104,6 +1183,12 @@ export function configureMocks(opts?: {
     ...opts?.instructionOptions,
   };
   configureInstruction(tempInstructionOptions);
+
+  const tempStoOptions = {
+    ...defaultStoOptions,
+    ...opts?.stoOptions,
+  };
+  configureSto(tempStoOptions);
 }
 
 /**
@@ -1124,6 +1209,7 @@ export function initMocks(opts?: {
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
+  stoOptions?: StoOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -1164,6 +1250,9 @@ export function initMocks(opts?: {
 
   // Instruction
   initInstruction(opts?.instructionOptions);
+
+  // Sto
+  initSto(opts?.stoOptions);
 }
 
 /**
@@ -1182,6 +1271,7 @@ export function cleanup(): void {
   // mockInstanceContainer.proposal = {} as MockProposal;
   mockInstanceContainer.venue = {} as MockVenue;
   mockInstanceContainer.instruction = {} as MockInstruction;
+  mockInstanceContainer.sto = {} as MockSto;
 }
 
 /**
@@ -1204,6 +1294,7 @@ export function reset(): void {
     instructionOptions,
     numberedPortfolioOptions,
     defaultPortfolioOptions,
+    stoOptions,
   });
 }
 
@@ -1263,8 +1354,16 @@ export function getIdentityGetPrimaryKeyStub(): SinonStub {
  * @hidden
  * Retrieve the stub of the `Identity.authorizations.getReceived` method
  */
-export function getIdentityGetReceivedStub(): SinonStub {
-  return identityGetReceivedStub;
+export function getIdentityAuthorizationsGetReceivedStub(): SinonStub {
+  return identityAuthorizationsGetReceivedStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Identity.getVenues` method
+ */
+export function getIdentityGetVenuesStub(): SinonStub {
+  return identityGetVenuesStub;
 }
 
 /**
@@ -1309,6 +1408,22 @@ export function getCurrentIdentityHasValidCddStub(): SinonStub {
  */
 export function getCurrentIdentityGetPrimaryKeyStub(): SinonStub {
   return currentIdentityGetPrimaryKeyStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.getVenues` method
+ */
+export function getCurrentIdentityGetVenuesStub(): SinonStub {
+  return currentIdentityGetVenuesStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.authorizations.getReceived` method
+ */
+export function getCurrentIdentityAuthorizationsGetReceivedStub(): SinonStub {
+  return currentIdentityAuthorizationsGetReceivedStub;
 }
 
 /**
@@ -1657,4 +1772,24 @@ export function getInstructionGetLegsStub(legs?: Leg[]): SinonStub {
     });
   }
   return instructionGetLegsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve an Sto instance
+ */
+export function getStoInstance(opts?: StoOptions): MockSto {
+  if (opts) {
+    configureSto({ ...defaultStoOptions, ...opts });
+  }
+
+  return new MockStoClass() as MockSto;
+}
+
+/**
+ * @hidden
+ * Retrieve the Sto constructor stub
+ */
+export function getStoConstructorStub(): SinonStub {
+  return stoConstructorStub;
 }

@@ -90,6 +90,7 @@ export {
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
 } from '~/api/procedures/addTransferRestriction';
+export { launchSto, LaunchStoParams } from '~/api/procedures/launchSto';
 export {
   setTransferRestrictions,
   SetTransferRestrictionsParams,

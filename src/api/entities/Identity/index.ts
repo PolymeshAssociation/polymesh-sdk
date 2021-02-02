@@ -4,9 +4,7 @@ import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import {
   Context,
-  DefaultPortfolio,
   Entity,
-  NumberedPortfolio,
   PolymeshError,
   SecurityToken,
   TickerReservation,
@@ -34,6 +32,7 @@ import {
   balanceToBigNumber,
   cddStatusToBoolean,
   identityIdToString,
+  portfolioIdToPortfolio,
   stringToIdentityId,
   stringToTicker,
   u64ToBigNumber,
@@ -134,17 +133,9 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
       return owner.did === did;
     } else if (isPortfolioCustodianRole(role)) {
-      const {
-        portfolioId: { did: portfolioDid, number },
-      } = role;
+      const { portfolioId } = role;
 
-      let portfolio;
-
-      if (number) {
-        portfolio = new NumberedPortfolio({ did: portfolioDid, id: number }, context);
-      } else {
-        portfolio = new DefaultPortfolio({ did: portfolioDid }, context);
-      }
+      const portfolio = portfolioIdToPortfolio(portfolioId, context);
 
       return portfolio.isCustodiedBy();
     }
