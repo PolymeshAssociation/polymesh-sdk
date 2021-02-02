@@ -38,6 +38,9 @@ import {
   DocumentType,
   DocumentUri,
   FundingRoundName,
+  Fundraiser,
+  FundraiserStatus as MeshFundraiserStatus,
+  FundraiserTier,
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
   InvestorZKProofData,
@@ -75,6 +78,7 @@ import {
   PolymeshError,
   Portfolio,
   SecurityToken,
+  Venue,
 } from '~/internal';
 import {
   CallIdEnum,
@@ -117,7 +121,10 @@ import {
   SecondaryKey,
   Signer,
   SingleClaimCondition,
+  StoDetails,
+  StoStatus,
   StoTier,
+  Tier,
   TokenDocument,
   TokenIdentifier,
   TokenIdentifierType,
@@ -2266,4 +2273,66 @@ export function middlewarePortfolioToPortfolio(
     return new DefaultPortfolio({ did }, context);
   }
   return new NumberedPortfolio({ did, id: new BigNumber(kind) }, context);
+}
+
+/**
+ * @hidden
+ */
+export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
+  const { total, price, remaining } = fundraiserTier;
+  return {
+    amount: balanceToBigNumber(total),
+    price: balanceToBigNumber(price),
+    remaining: balanceToBigNumber(remaining),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function meshFundraiserStatusToStoStatus(
+  meshFundraiserStatus: MeshFundraiserStatus
+): StoStatus {
+  if (meshFundraiserStatus.isLive) {
+    return StoStatus.Live;
+  }
+
+  if (meshFundraiserStatus.isFrozen) {
+    return StoStatus.Frozen;
+  }
+
+  return StoStatus.Closed;
+}
+
+/**
+ * @hidden
+ */
+export function fundraiserToStoDetails(fundraiser: Fundraiser, context: Context): StoDetails {
+  const {
+    creator,
+    offering_portfolio: offeringPortfolio,
+    offering_asset: offeringAsset,
+    raising_portfolio: raisingPortfolio,
+    raising_asset: raisingAsset,
+    tiers,
+    venue_id: venueId,
+    start,
+    end,
+    status,
+    minimum_investment: minimumInvestment,
+  } = fundraiser;
+
+  return {
+    creator: new Identity({ did: identityIdToString(creator) }, context),
+    offeringPortfolio: meshPortfolioIdToPortfolio(offeringPortfolio, context),
+    offeringAsset: new SecurityToken({ ticker: tickerToString(offeringAsset) }, context),
+    raisingPortfolio: meshPortfolioIdToPortfolio(raisingPortfolio, context),
+    raisingCurrency: tickerToString(raisingAsset),
+    tiers: tiers.map(tier => fundraiserTierToTier(tier)),
+    venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
+    start: momentToDate(start),
+    end: end.isSome ? momentToDate(end.unwrap()) : null,
+    status: meshFundraiserStatusToStoStatus(status),
+    minimumInvestment: balanceToBigNumber(minimumInvestment),
+  };
 }

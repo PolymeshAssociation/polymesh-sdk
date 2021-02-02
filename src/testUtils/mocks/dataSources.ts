@@ -73,6 +73,9 @@ import {
   DocumentType,
   DocumentUri,
   FundingRoundName,
+  Fundraiser,
+  FundraiserStatus,
+  FundraiserTier,
   IdentityClaim,
   IdentityId,
   IdentityRole,
@@ -2319,6 +2322,75 @@ export const createMockTransferManager = (
 
 /**
  * @hidden
+ */
+export const createMockFundraiserTier = (fundraiserTier?: {
+  total: Balance;
+  price: Balance;
+  remaining: Balance;
+}): FundraiserTier => {
+  const data = fundraiserTier || {
+    total: createMockBalance(),
+    price: createMockBalance(),
+    remaining: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !fundraiserTier
+  ) as FundraiserTier;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockFundraiserStatus = (
+  fundraiserStatus?: 'Live' | 'Frozen' | 'Closed'
+): FundraiserStatus => {
+  return createMockEnum(fundraiserStatus) as FundraiserStatus;
+};
+
+/**
+ * @hidden
+ */
+export const createMockFundraiser = (fundraiser?: {
+  creator: IdentityId;
+  offering_portfolio: PortfolioId;
+  offering_asset: Ticker;
+  raising_portfolio: PortfolioId;
+  raising_asset: Ticker;
+  tiers: FundraiserTier[];
+  venue_id: u64;
+  start: Moment;
+  end: Option<Moment>;
+  status: FundraiserStatus;
+  minimum_investment: Balance;
+}): Fundraiser => {
+  const data = fundraiser || {
+    creator: createMockIdentityId(),
+    offering_portfolio: createMockPortfolioId(),
+    offering_asset: createMockTicker(),
+    raising_portfolio: createMockPortfolioId(),
+    raising_asset: createMockTicker(),
+    tiers: [],
+    venue_id: createMockU64(),
+    start: createMockMoment(),
+    end: createMockOption(),
+    status: createMockFundraiserStatus(),
+    minimum_investment: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !fundraiser
+  ) as Fundraiser;
+};
+
+/**
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPriceTier = (priceTier?: { total: Balance; price: Balance }): PriceTier => {
