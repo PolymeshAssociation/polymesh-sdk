@@ -147,7 +147,7 @@ describe('Portfolios class', () => {
       const result = await portfolios.getPortfolio({ portfolioId });
 
       expect(result instanceof NumberedPortfolio).toBe(true);
-      expect((result as NumberedPortfolio).id).toEqual(portfolioId);
+      expect(result.id).toEqual(portfolioId);
     });
 
     test("should throw an error if a numbered portfolio doesn't exist", async () => {
