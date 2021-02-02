@@ -23,7 +23,9 @@ export async function prepareToggleFreezeTransfers(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { tx },
+      polymeshApi: {
+        tx: { asset },
+      },
     },
     context,
   } = this;
@@ -43,7 +45,7 @@ export async function prepareToggleFreezeTransfers(
       });
     }
 
-    this.addTransaction(tx.asset.freeze, {}, rawTicker);
+    this.addTransaction(asset.freeze, {}, rawTicker);
   } else {
     if (!isFrozen) {
       throw new PolymeshError({
@@ -52,7 +54,7 @@ export async function prepareToggleFreezeTransfers(
       });
     }
 
-    this.addTransaction(tx.asset.unfreeze, {}, rawTicker);
+    this.addTransaction(asset.unfreeze, {}, rawTicker);
   }
 
   return securityToken;

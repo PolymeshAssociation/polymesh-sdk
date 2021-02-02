@@ -47,6 +47,7 @@ import {
   PipId,
   PortfolioId as MeshPortfolioId,
   PosRatio,
+  PriceTier,
   ProtocolOp,
   Scope as MeshScope,
   ScopeId,
@@ -116,6 +117,7 @@ import {
   SecondaryKey,
   Signer,
   SingleClaimCondition,
+  StoTier,
   TokenDocument,
   TokenIdentifier,
   TokenIdentifierType,
@@ -444,14 +446,24 @@ export function portfolioLikeToPortfolioId(value: PortfolioLike): PortfolioId {
 /**
  * @hidden
  */
+export function portfolioIdToPortfolio(
+  portfolioId: PortfolioId,
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, number } = portfolioId;
+  return number
+    ? new NumberedPortfolio({ did, id: number }, context)
+    : new DefaultPortfolio({ did }, context);
+}
+
+/**
+ * @hidden
+ */
 export function portfolioLikeToPortfolio(
   value: PortfolioLike,
   context: Context
 ): DefaultPortfolio | NumberedPortfolio {
-  const { did, number } = portfolioLikeToPortfolioId(value);
-  return number
-    ? new NumberedPortfolio({ did, id: number }, context)
-    : new DefaultPortfolio({ did }, context);
+  return portfolioIdToPortfolio(portfolioLikeToPortfolioId(value), context);
 }
 
 /**
@@ -2188,6 +2200,17 @@ export function transferManagerToTransferRestriction(
       value: permillToBigNumber(transferManager.asPercentageTransferManager),
     };
   }
+}
+
+/**
+ * @hidden
+ */
+export function stoTierToPriceTier(tier: StoTier, context: Context): PriceTier {
+  const { price, amount } = tier;
+  return context.polymeshApi.createType('PriceTier', {
+    total: numberToBalance(amount, context),
+    price: numberToBalance(price, context),
+  });
 }
 
 /**
