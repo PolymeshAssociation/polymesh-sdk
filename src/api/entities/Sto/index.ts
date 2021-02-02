@@ -49,7 +49,7 @@ export class Sto extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve the Security Token Offering's detail
+   * Retrieve the STO's details
    *
    * @note can be subscribed to
    */
