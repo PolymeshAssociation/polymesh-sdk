@@ -6,12 +6,14 @@ import {
   CurrentAccount as CurrentAccountClass,
   CurrentIdentity as CurrentIdentityClass,
   DefaultPortfolio as DefaultPortfolioClass,
+  DefaultTrustedClaimIssuer as DefaultTrustedClaimIssuerClass,
   Identity as IdentityClass,
   Instruction as InstructionClass,
   NumberedPortfolio as NumberedPortfolioClass,
   Portfolio as PortfolioClass,
   // Proposal as ProposalClass,
   SecurityToken as SecurityTokenClass,
+  Sto as StoClass,
   TickerReservation as TickerReservationClass,
   Venue as VenueClass,
 } from '~/internal';
@@ -28,6 +30,8 @@ export type Instruction = InstanceType<typeof InstructionClass>;
 export type Portfolio = InstanceType<typeof PortfolioClass>;
 export type DefaultPortfolio = InstanceType<typeof DefaultPortfolioClass>;
 export type NumberedPortfolio = InstanceType<typeof NumberedPortfolioClass>;
+export type DefaultTrustedClaimIssuer = InstanceType<typeof DefaultTrustedClaimIssuerClass>;
+export type Sto = InstanceType<typeof StoClass>;
 // export type Proposal = InstanceType<typeof ProposalClass>;
 
 export * from './TickerReservation/types';
@@ -35,4 +39,5 @@ export * from './SecurityToken/types';
 export * from './Venue/types';
 export * from './Instruction/types';
 export * from './Portfolio/types';
+export * from './Sto/types';
 // export * from './Proposal/types';

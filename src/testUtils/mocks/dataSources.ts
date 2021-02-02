@@ -90,6 +90,7 @@ import {
   PortfolioId,
   PortfolioKind,
   PosRatio,
+  PriceTier,
   ProposalState,
   Scope,
   ScopeId,
@@ -2315,3 +2316,21 @@ export const createMockInstruction = (instruction?: {
 export const createMockTransferManager = (
   transferManager?: { CountTransferManager: u64 } | { PercentageTransferManager: Permill }
 ): TransferManager => createMockEnum(transferManager) as TransferManager;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPriceTier = (priceTier?: { total: Balance; price: Balance }): PriceTier => {
+  const data = priceTier || {
+    total: createMockBalance(),
+    price: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !priceTier
+  ) as PriceTier;
+};
