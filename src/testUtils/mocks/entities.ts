@@ -1461,9 +1461,9 @@ export function getSecurityTokenIsFrozenStub(frozen?: boolean): SinonStub {
  * @hidden
  * Retrieve the stub of the `SecurityToken.getIdentifiers` method
  */
-export function getSecurityTokenGetIdentifiersStub(ientifiers?: TokenIdentifier): SinonStub {
-  if (ientifiers !== undefined) {
-    return securityTokenGetIdentifiersStub.resolves(ientifiers);
+export function getSecurityTokenGetIdentifiersStub(identifiers?: TokenIdentifier): SinonStub {
+  if (identifiers !== undefined) {
+    return securityTokenGetIdentifiersStub.resolves(identifiers);
   }
 
   return securityTokenGetIdentifiersStub;

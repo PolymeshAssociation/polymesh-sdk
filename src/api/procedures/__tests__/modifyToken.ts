@@ -131,7 +131,7 @@ describe('modifyToken procedure', () => {
         ticker,
         identifiers,
       })
-    ).rejects.toThrow('New identifiers are the same as current token identifiers');
+    ).rejects.toThrow('New identifiers are the same as current identifiers');
   });
 
   test('should add a make divisible transaction to the queue', async () => {

@@ -1,4 +1,4 @@
-import { isEqual } from 'lodash';
+import { differenceWith, isEqual } from 'lodash';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TokenIdentifier, TxTags } from '~/types';
@@ -109,10 +109,13 @@ export async function prepareModifyToken(
   }
 
   if (newIdentifiers) {
-    if (isEqual(identifiers, newIdentifiers)) {
+    if (
+      !differenceWith(identifiers, newIdentifiers, isEqual).length &&
+      identifiers.length === newIdentifiers.length
+    ) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'New identifiers are the same as current token identifiers',
+        message: 'New identifiers are the same as current identifiers',
       });
     }
 
