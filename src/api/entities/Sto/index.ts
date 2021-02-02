@@ -75,7 +75,7 @@ export class Sto extends Entity<UniqueIdentifiers> {
       } else {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
-          message: `There is no Security Token Offering with ticker "${ticker}"`,
+          message: `STO no longer exists`,
         });
       }
     };
