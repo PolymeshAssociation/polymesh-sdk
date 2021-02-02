@@ -97,6 +97,7 @@ export {
   SetPercentageTransferRestrictionsParams,
   Storage as SetTransferRestrictionsStorage,
 } from '~/api/procedures/setTransferRestrictions';
+export { cancelSto, CancelStoParams } from '~/api/procedures/cancelSto';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';

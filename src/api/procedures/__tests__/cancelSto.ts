@@ -1,16 +1,11 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { FundraiserStatus } from '~/api/entities/Sto/types';
-import {
-  CancelOfferingParams,
-  getAuthorization,
-  prepareCancelOffering,
-} from '~/api/procedures/cancelOffering';
+import { getAuthorization, Params, prepareCancelSto } from '~/api/procedures/cancelSto';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TxTags } from '~/types';
+import { RoleType, StoStatus, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -64,14 +59,14 @@ describe('cancelOffering procedure', () => {
     entityMockUtils.initMocks({
       stoOptions: {
         details: {
-          status: FundraiserStatus.Live,
+          status: StoStatus.Live,
         },
       },
     });
 
-    const proc = procedureMockUtils.getInstance<CancelOfferingParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareCancelOffering.call(proc, { ticker, id });
+    await prepareCancelSto.call(proc, { ticker, id });
 
     sinon.assert.calledWith(addTransactionStub, stopStoTransaction, {}, rawTicker, rawId);
   });
@@ -80,25 +75,25 @@ describe('cancelOffering procedure', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          status: FundraiserStatus.Closed,
+          status: StoStatus.Closed,
         },
       },
     });
 
-    const proc = procedureMockUtils.getInstance<CancelOfferingParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    return expect(prepareCancelOffering.call(proc, { ticker, id })).rejects.toThrow(
-      'The offering is already closed'
+    return expect(prepareCancelSto.call(proc, { ticker, id })).rejects.toThrow(
+      'The STO is already closed'
     );
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<CancelOfferingParams, void>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
         ticker,
-      } as CancelOfferingParams;
+      } as Params;
 
       expect(boundFunc(args)).toEqual({
         identityRoles: [{ type: RoleType.TokenPia, ticker }],

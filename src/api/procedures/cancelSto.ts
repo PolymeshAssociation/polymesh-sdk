@@ -1,29 +1,30 @@
 import BigNumber from 'bignumber.js';
 
-import { FundraiserStatus } from '~/api/entities/Sto/types';
+import { StoStatus } from '~/api/entities/Sto/types';
 import { PolymeshError, Procedure, SecurityToken, Sto } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker } from '~/utils/conversion';
 
-export interface CancelOfferingParams {
+export interface CancelStoParams {
   id: BigNumber;
-  ticker: string;
 }
 
 /**
  * @hidden
  */
-export async function prepareCancelOffering(
-  this: Procedure<CancelOfferingParams, void>,
-  args: CancelOfferingParams
-): Promise<void> {
+export type Params = CancelStoParams & {
+  ticker: string;
+};
+
+/**
+ * @hidden
+ */
+export async function prepareCancelSto(this: Procedure<Params, void>, args: Params): Promise<void> {
   const {
     context: {
       polymeshApi: {
-        tx: {
-          sto: { stop },
-        },
+        tx: { sto: txSto },
       },
     },
     context,
@@ -34,25 +35,25 @@ export async function prepareCancelOffering(
 
   const { status } = await sto.details();
 
-  if (status === FundraiserStatus.Closed) {
+  if (status === StoStatus.Closed) {
     throw new PolymeshError({
       code: ErrorCode.FatalError,
-      message: 'The offering is already closed',
+      message: 'The STO is already closed',
     });
   }
 
   const rawTicker = stringToTicker(ticker, context);
   const rawId = numberToU64(id, context);
 
-  this.addTransaction(stop, {}, rawTicker, rawId);
+  this.addTransaction(txSto.stop, {}, rawTicker, rawId);
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<CancelOfferingParams, void>,
-  { ticker }: CancelOfferingParams
+  this: Procedure<Params, void>,
+  { ticker }: Params
 ): ProcedureAuthorization {
   const { context } = this;
   return {
@@ -68,4 +69,4 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const cancelOffering = new Procedure(prepareCancelOffering, getAuthorization);
+export const cancelSto = new Procedure(prepareCancelSto, getAuthorization);

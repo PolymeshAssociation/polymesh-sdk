@@ -1,8 +1,18 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { FundraiserStatus, StoDetails } from '~/api/entities/Sto/types';
-import { Context, DefaultPortfolio, Entity, Identity, SecurityToken, Sto, Venue } from '~/internal';
+import { StoDetails, StoStatus } from '~/api/entities/Sto/types';
+import {
+  cancelSto,
+  Context,
+  DefaultPortfolio,
+  Entity,
+  Identity,
+  SecurityToken,
+  Sto,
+  TransactionQueue,
+  Venue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -55,10 +65,10 @@ describe('Sto class', () => {
     test('should assign ticker and id to instance', () => {
       const ticker = 'SOMETICKER';
       const id = new BigNumber(1);
-      const trustedClaimIssuer = new Sto({ id, ticker }, context);
+      const sto = new Sto({ id, ticker }, context);
 
-      expect(trustedClaimIssuer.ticker).toBe(ticker);
-      expect(trustedClaimIssuer.id).toEqual(id);
+      expect(sto.ticker).toBe(ticker);
+      expect(sto.id).toEqual(id);
     });
   });
 
@@ -124,10 +134,10 @@ describe('Sto class', () => {
         offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
         offeringAsset: new SecurityToken({ ticker }, context),
         raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
-        raisingAsset: new SecurityToken({ ticker: otherTicker }, context),
+        raisingCurrency: new SecurityToken({ ticker: otherTicker }, context),
         tiers: [
           {
-            total: tierNumber.div(Math.pow(10, 6)),
+            amount: tierNumber.div(Math.pow(10, 6)),
             price: tierNumber.div(Math.pow(10, 6)),
             remaining: tierNumber.div(Math.pow(10, 6)),
           },
@@ -135,7 +145,7 @@ describe('Sto class', () => {
         venue: new Venue({ id: new BigNumber(1) }, context),
         start: date,
         end: date,
-        status: FundraiserStatus.Live,
+        status: StoStatus.Live,
         minimumInvestment: minimumInvestmentValue.div(Math.pow(10, 6)),
       };
 
@@ -152,9 +162,7 @@ describe('Sto class', () => {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      return expect(sto.details()).rejects.toThrow(
-        `There is no Security Token Offering with ticker "${ticker}"`
-      );
+      return expect(sto.details()).rejects.toThrow('STO no longer exists');
     });
 
     test('should allow subscription', async () => {
@@ -172,6 +180,27 @@ describe('Sto class', () => {
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, sinon.match({}));
+    });
+  });
+
+  describe('method: close', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'SOMETICKER';
+      const id = new BigNumber(1);
+      const sto = new Sto({ id, ticker }, context);
+
+      const args = {
+        ticker,
+        id,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon.stub(cancelSto, 'prepare').withArgs(args, context).resolves(expectedQueue);
+
+      const queue = await sto.close(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

@@ -40,7 +40,6 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { FundraiserStatus } from '~/api/entities/Sto/types';
 import {
   Account,
   Context,
@@ -73,6 +72,7 @@ import {
   Scope,
   ScopeType,
   Signer,
+  StoStatus,
   TokenDocument,
   TokenIdentifierType,
   TransferStatus,
@@ -124,7 +124,7 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshClaimToClaim,
   meshClaimTypeToClaimType,
-  meshFundraiserStatusToFundraiserStatus,
+  meshFundraiserStatusToStoStatus,
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
   meshScopeToScope,
@@ -4373,26 +4373,26 @@ describe('fundraiserTierToTier', () => {
   });
 
   test('fundraiserTierToTier should convert a polkadot FundraiserTier object to a FundraiserTier', () => {
-    const total = new BigNumber(5);
+    const amount = new BigNumber(5);
     const price = new BigNumber(5);
     const remaining = new BigNumber(5);
 
     const fundraiserTier = dsMockUtils.createMockFundraiserTier({
-      total: dsMockUtils.createMockBalance(total.toNumber()),
+      total: dsMockUtils.createMockBalance(amount.toNumber()),
       price: dsMockUtils.createMockBalance(price.toNumber()),
       remaining: dsMockUtils.createMockBalance(remaining.toNumber()),
     });
 
     const result = fundraiserTierToTier(fundraiserTier);
     expect(result).toEqual({
-      total: total.div(Math.pow(10, 6)),
+      amount: amount.div(Math.pow(10, 6)),
       price: price.div(Math.pow(10, 6)),
       remaining: remaining.div(Math.pow(10, 6)),
     });
   });
 });
 
-describe('meshFundraiserStatusToFundraiserStatus', () => {
+describe('meshFundraiserStatusToStoStatus', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -4405,23 +4405,23 @@ describe('meshFundraiserStatusToFundraiserStatus', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshFundraiserStatusToFundraiserStatus should convert a polkadot FundraiserStatus object to a FundraiserStatus', () => {
-    let fakeResult = FundraiserStatus.Live;
-    let fundraiserStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
+  test('meshFundraiserStatusToStoStatus should convert a polkadot FundraiserStatus object to a StoStatus', () => {
+    let fakeResult = StoStatus.Live;
+    let stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
 
-    let result = meshFundraiserStatusToFundraiserStatus(fundraiserStatus);
+    let result = meshFundraiserStatusToStoStatus(stoStatus);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = FundraiserStatus.Closed;
-    fundraiserStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
+    fakeResult = StoStatus.Closed;
+    stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
 
-    result = meshFundraiserStatusToFundraiserStatus(fundraiserStatus);
+    result = meshFundraiserStatusToStoStatus(stoStatus);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = FundraiserStatus.Frozen;
-    fundraiserStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
+    fakeResult = StoStatus.Frozen;
+    stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
 
-    result = meshFundraiserStatusToFundraiserStatus(fundraiserStatus);
+    result = meshFundraiserStatusToStoStatus(stoStatus);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -4448,7 +4448,7 @@ describe('fundraiserToStoDetails', () => {
     const otherTicker = 'OTHERTICKER';
     const tierNumber = new BigNumber(10);
     const tier = {
-      total: tierNumber.div(Math.pow(10, 6)),
+      amount: tierNumber.div(Math.pow(10, 6)),
       price: tierNumber.div(Math.pow(10, 6)),
       remaining: tierNumber.div(Math.pow(10, 6)),
     };
@@ -4460,12 +4460,12 @@ describe('fundraiserToStoDetails', () => {
       offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
       offeringAsset: new SecurityToken({ ticker }, context),
       raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
-      raisingAsset: new SecurityToken({ ticker: otherTicker }, context),
+      raisingCurrency: new SecurityToken({ ticker: otherTicker }, context),
       tiers: [tier],
       venue: new Venue({ id: new BigNumber(1) }, context),
       start: date,
       end: date,
-      status: FundraiserStatus.Live,
+      status: StoStatus.Live,
       minimumInvestment: minimumInvestmentValue.div(Math.pow(10, 6)),
     };
 
@@ -4527,6 +4527,6 @@ describe('fundraiserToStoDetails', () => {
 
     result = fundraiserToStoDetails(fundraiser, context);
 
-    expect(result).toEqual({ ...fakeResult, end: undefined });
+    expect(result).toEqual({ ...fakeResult, end: null });
   });
 });

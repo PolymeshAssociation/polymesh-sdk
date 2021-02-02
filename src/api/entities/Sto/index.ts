@@ -1,11 +1,14 @@
 import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
-import { StoDetails } from '~/api/entities/Sto/types';
-import { Context, Entity, PolymeshError } from '~/internal';
+import { cancelSto, CancelStoParams, Context, Entity, PolymeshError } from '~/internal';
 import { Fundraiser } from '~/polkadot/polymesh/types';
 import { ErrorCode, SubCallback, UnsubCallback } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
+
+import { StoDetails } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -46,6 +49,8 @@ export class Sto extends Entity<UniqueIdentifiers> {
 
     this.id = id;
     this.ticker = ticker;
+
+    this.close = createProcedureMethod(args => [cancelSto, { ticker, ...args }], context);
   }
 
   /**
@@ -75,7 +80,7 @@ export class Sto extends Entity<UniqueIdentifiers> {
       } else {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
-          message: `STO no longer exists`,
+          message: 'STO no longer exists',
         });
       }
     };
@@ -93,4 +98,9 @@ export class Sto extends Entity<UniqueIdentifiers> {
 
     return assembleResult(fundraiser);
   }
+
+  /**
+   * Close the STO
+   */
+  public close: ProcedureMethod<CancelStoParams, void>;
 }

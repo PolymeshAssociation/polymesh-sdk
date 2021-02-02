@@ -5,7 +5,6 @@ import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
 import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
-import { StoDetails } from '~/api/entities/Sto/types';
 import {
   Account,
   AuthorizationRequest,
@@ -38,6 +37,7 @@ import {
   PortfolioBalance,
   SecondaryKey,
   SecurityTokenDetails,
+  StoDetails,
   TickerReservationDetails,
   TickerReservationStatus,
   TransferStatus,

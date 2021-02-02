@@ -66,7 +66,7 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { FundraiserStatus, StoDetails, Tier } from '~/api/entities/Sto/types';
+import { StoDetails, StoStatus, Tier } from '~/api/entities/Sto/types';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 // import { ProposalDetails } from '~/api/types';
 import {
@@ -2256,7 +2256,7 @@ export function middlewarePortfolioToPortfolio(
 export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
   const { total, price, remaining } = fundraiserTier;
   return {
-    total: balanceToBigNumber(total),
+    amount: balanceToBigNumber(total),
     price: balanceToBigNumber(price),
     remaining: balanceToBigNumber(remaining),
   };
@@ -2265,18 +2265,18 @@ export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
 /**
  * @hidden
  */
-export function meshFundraiserStatusToFundraiserStatus(
+export function meshFundraiserStatusToStoStatus(
   meshFundraiserStatus: MeshFundraiserStatus
-): FundraiserStatus {
+): StoStatus {
   if (meshFundraiserStatus.isLive) {
-    return FundraiserStatus.Live;
+    return StoStatus.Live;
   }
 
   if (meshFundraiserStatus.isFrozen) {
-    return FundraiserStatus.Frozen;
+    return StoStatus.Frozen;
   }
 
-  return FundraiserStatus.Closed;
+  return StoStatus.Closed;
 }
 
 /**
@@ -2302,12 +2302,12 @@ export function fundraiserToStoDetails(fundraiser: Fundraiser, context: Context)
     offeringPortfolio: meshPortfolioIdToPortfolio(offeringPortfolio, context),
     offeringAsset: new SecurityToken({ ticker: tickerToString(offeringAsset) }, context),
     raisingPortfolio: meshPortfolioIdToPortfolio(raisingPortfolio, context),
-    raisingAsset: new SecurityToken({ ticker: tickerToString(raisingAsset) }, context),
+    raisingCurrency: new SecurityToken({ ticker: tickerToString(raisingAsset) }, context),
     tiers: tiers.map(tier => fundraiserTierToTier(tier)),
     venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
     start: momentToDate(start),
-    end: !end.isEmpty ? momentToDate(end.unwrap()) : undefined,
-    status: meshFundraiserStatusToFundraiserStatus(status),
+    end: end.isSome ? momentToDate(end.unwrap()) : null,
+    status: meshFundraiserStatusToStoStatus(status),
     minimumInvestment: balanceToBigNumber(minimumInvestment),
   };
 }
