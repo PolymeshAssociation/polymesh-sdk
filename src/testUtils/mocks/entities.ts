@@ -38,8 +38,10 @@ import {
   ResultSet,
   SecondaryKey,
   SecurityTokenDetails,
+  StoDetails,
   TickerReservationDetails,
   TickerReservationStatus,
+  TokenIdentifier,
   TransferStatus,
   VenueDetails,
   VenueType,
@@ -107,6 +109,7 @@ interface SecurityTokenOptions {
   currentFundingRound?: string;
   isFrozen?: boolean;
   transfersCanTransfer?: TransferStatus;
+  getIdentifiers?: TokenIdentifier[];
   transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
 }
@@ -164,6 +167,10 @@ interface DefaultPortfolioOptions {
   isCustodiedBy?: boolean;
 }
 
+interface StoOptions {
+  details?: Partial<StoDetails>;
+}
+
 interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
@@ -193,6 +200,7 @@ let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
 let securityTokenIsFrozenStub: SinonStub;
 let securityTokenTransfersCanTransferStub: SinonStub;
+let securityTokenGetIdentifiersStub: SinonStub;
 let securityTokenTransferRestrictionsCountGetStub: SinonStub;
 let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
 let identityHasRolesStub: SinonStub;
@@ -228,6 +236,7 @@ let defaultPortfolioIsOwnedByStub: SinonStub;
 let defaultPortfolioGetTokenBalancesStub: SinonStub;
 let defaultPortfolioGetCustodianStub: SinonStub;
 let defaultPortfolioIsCustodiedByStub: SinonStub;
+let stoDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -470,6 +479,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   currentFundingRound: 'Series A',
   isFrozen: false,
   transfersCanTransfer: TransferStatus.Success,
+  getIdentifiers: [],
   transferRestrictionsCountGet: {
     restrictions: [],
     availableSlots: MAX_TRANSFER_MANAGERS,
@@ -541,6 +551,7 @@ const defaultInstructionOptions: InstructionOptions = {
 };
 let instructionOptions = defaultInstructionOptions;
 const defaultStoOptions: StoOptions = {
+  details: {} as StoDetails,
   ticker: 'SOME_TICKER',
   id: new BigNumber(1),
 };
@@ -760,6 +771,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     transfers: {
       canTransfer: securityTokenTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
     },
+    getIdentifiers: securityTokenGetIdentifiersStub.resolves(opts.getIdentifiers),
     transferRestrictions: {
       count: {
         get: securityTokenTransferRestrictionsCountGetStub.resolves(
@@ -792,6 +804,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenCurrentFundingRoundStub = sinon.stub();
   securityTokenIsFrozenStub = sinon.stub();
   securityTokenTransfersCanTransferStub = sinon.stub();
+  securityTokenGetIdentifiersStub = sinon.stub();
   securityTokenTransferRestrictionsCountGetStub = sinon.stub();
   securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
 
@@ -1057,10 +1070,12 @@ function initCurrentAccount(opts?: CurrentAccountOptions): void {
 
 /**
  * @hidden
- * Configure the Sto instance
+ * Configure the Security Token Offering instance
  */
 function configureSto(opts: StoOptions): void {
+  const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const sto = ({
+    details: stoDetailsStub.resolves(details),
     ticker: opts.ticker,
     id: opts.id,
   } as unknown) as MockSto;
@@ -1079,8 +1094,9 @@ function configureSto(opts: StoOptions): void {
  */
 function initSto(opts?: StoOptions): void {
   stoConstructorStub = sinon.stub();
+  stoDetailsStub = sinon.stub();
 
-  stoOptions = { ...defaultStoOptions, ...opts };
+  stoOptions = merge({}, defaultStoOptions, opts);
 
   configureSto(stoOptions);
 }
@@ -1183,7 +1199,7 @@ export function configureMocks(opts?: {
   configureInstruction(tempInstructionOptions);
 
   const tempStoOptions = {
-    ...defaultStoOptions,
+    ...stoOptions,
     ...opts?.stoOptions,
   };
   configureSto(tempStoOptions);
@@ -1602,7 +1618,19 @@ export function getSecurityTokenIsFrozenStub(frozen?: boolean): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.transfers.canTransfer` method
+ * Retrieve the stub of the `SecurityToken.getIdentifiers` method
+ */
+export function getSecurityTokenGetIdentifiersStub(identifiers?: TokenIdentifier): SinonStub {
+  if (identifiers !== undefined) {
+    return securityTokenGetIdentifiersStub.resolves(identifiers);
+  }
+
+  return securityTokenGetIdentifiersStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.Transfers.canTransfer` method
  */
 export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus): SinonStub {
   if (status) {
@@ -1770,6 +1798,20 @@ export function getStoInstance(opts?: StoOptions): MockSto {
   }
 
   return new MockStoClass() as MockSto;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Sto.details` method
+ */
+export function getStoDetailsStub(details?: Partial<StoDetails>): SinonStub {
+  if (details) {
+    return stoDetailsStub.resolves({
+      ...defaultStoOptions.details,
+      ...details,
+    });
+  }
+  return stoDetailsStub;
 }
 
 /**
