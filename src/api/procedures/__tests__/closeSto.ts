@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { getAuthorization, Params, prepareCancelSto } from '~/api/procedures/cancelSto';
+import { getAuthorization, Params, prepareCloseSto } from '~/api/procedures/closeSto';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -18,7 +18,7 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
 
-describe('cancelOffering procedure', () => {
+describe('closeSto procedure', () => {
   const ticker = 'SOMETICKER';
   const id = new BigNumber(1);
 
@@ -30,6 +30,13 @@ describe('cancelOffering procedure', () => {
   let stopStoTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
+    entityMockUtils.initMocks({
+      stoOptions: {
+        details: {
+          status: StoStatus.Live,
+        },
+      },
+    });
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
@@ -56,17 +63,9 @@ describe('cancelOffering procedure', () => {
   });
 
   test('should add a stop sto transaction to the queue', async () => {
-    entityMockUtils.initMocks({
-      stoOptions: {
-        details: {
-          status: StoStatus.Live,
-        },
-      },
-    });
-
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareCancelSto.call(proc, { ticker, id });
+    await prepareCloseSto.call(proc, { ticker, id });
 
     sinon.assert.calledWith(addTransactionStub, stopStoTransaction, {}, rawTicker, rawId);
   });
@@ -82,7 +81,7 @@ describe('cancelOffering procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    return expect(prepareCancelSto.call(proc, { ticker, id })).rejects.toThrow(
+    return expect(prepareCloseSto.call(proc, { ticker, id })).rejects.toThrow(
       'The STO is already closed'
     );
   });

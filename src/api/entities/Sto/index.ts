@@ -1,7 +1,14 @@
 import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
-import { cancelSto, CancelStoParams, Context, Entity, PolymeshError } from '~/internal';
+import {
+  closeSto,
+  Context,
+  Entity,
+  modifyStoTimes,
+  ModifyStoTimesParams,
+  PolymeshError,
+} from '~/internal';
 import { Fundraiser } from '~/polkadot/polymesh/types';
 import { ErrorCode, StoDetails, SubCallback, UnsubCallback } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
@@ -48,7 +55,11 @@ export class Sto extends Entity<UniqueIdentifiers> {
     this.id = id;
     this.ticker = ticker;
 
-    this.close = createProcedureMethod(args => [cancelSto, { ticker, ...args }], context);
+    this.close = createProcedureMethod(() => [closeSto, { ticker, id }], context);
+    this.modifyTimes = createProcedureMethod(
+      args => [modifyStoTimes, { ticker, id, ...args }],
+      context
+    );
   }
 
   /**
@@ -100,5 +111,18 @@ export class Sto extends Entity<UniqueIdentifiers> {
   /**
    * Close the STO
    */
-  public close: ProcedureMethod<CancelStoParams, void>;
+  public close: ProcedureMethod<void, void>;
+
+  /**
+   * Modify the start/end time of the STO
+   *
+   * @param args.start - new start time (optional, will be left the same if not passed)
+   * @param args.end - new end time (optional, will be left th same if not passed). A null value means the STO doesn't end
+   *
+   * @throws if:
+   *   - Trying to modify the start time on an STO that already started
+   *   - Trying to modify anything on an STO that already ended
+   *   - Trying to change start or end time to a past date
+   */
+  public modifyTimes: ProcedureMethod<ModifyStoTimesParams, void>;
 }
