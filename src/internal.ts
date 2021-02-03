@@ -100,6 +100,8 @@ export {
 } from '~/api/procedures/setTransferRestrictions';
 export { toggleFreezeSto, ToggleFreezeStoParams } from '~/api/procedures/toggleFreezeSto';
 export { cancelSto, CancelStoParams } from '~/api/procedures/cancelSto';
+export { closeSto } from '~/api/procedures/closeSto';
+export { modifyStoTimes, ModifyStoTimesParams } from '~/api/procedures/modifyStoTimes';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';

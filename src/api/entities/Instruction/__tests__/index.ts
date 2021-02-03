@@ -1,9 +1,6 @@
-import { u64 } from '@polkadot/types';
+import { StorageKey, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import {
-  AffirmationStatus as MeshAffirmationStatus,
-  PortfolioId as MeshPortfolioId,
-} from 'polymesh-types/types';
+import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
 import {
@@ -19,6 +16,7 @@ import { AffirmationStatus, InstructionStatus, InstructionType } from '~/types';
 import { InstructionAffirmationOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -152,7 +150,6 @@ describe('Instruction class', () => {
     const did = 'someDid';
     const status = AffirmationStatus.Affirmed;
     let rawStorageKey: [u64, MeshPortfolioId][];
-    let authsReceivedEntries: [[u64, MeshPortfolioId], MeshAffirmationStatus][];
 
     afterAll(() => {
       sinon.restore();
@@ -168,31 +165,39 @@ describe('Instruction class', () => {
           })
         ),
       ];
-      authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
+      const authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
         tuple(
-          [instructionId, portfolioId],
+          ({
+            args: [instructionId, portfolioId],
+          } as unknown) as StorageKey,
           dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
         )
       );
-      dsMockUtils.createQueryStub('settlement', 'affirmsReceived', {
-        entries: [authsReceivedEntries[0]],
-      });
+      dsMockUtils.createQueryStub('settlement', 'affirmsReceived');
+      sinon
+        .stub(utilsInternalModule, 'requestPaginated')
+        .resolves({ entries: authsReceivedEntries, lastKey: null });
+
       sinon.stub(utilsConversionModule, 'identityIdToString').returns(did);
       sinon.stub(utilsConversionModule, 'meshAffirmationStatusToAffirmationStatus').returns(status);
     });
 
     test('should return a list of Affirmation Statuses', async () => {
-      const result = await instruction.getAffirmations();
+      const { data } = await instruction.getAffirmations();
 
-      expect(result).toHaveLength(1);
-      expect(result[0].identity.did).toEqual(did);
-      expect(result[0].status).toEqual(status);
+      expect(data).toHaveLength(1);
+      expect(data[0].identity.did).toEqual(did);
+      expect(data[0].status).toEqual(status);
     });
   });
 
   describe('method: getLegs', () => {
     afterAll(() => {
       sinon.restore();
+    });
+
+    beforeAll(() => {
+      dsMockUtils.createQueryStub('settlement', 'instructionLegs');
     });
 
     test("should return the instruction's legs", async () => {
@@ -204,30 +209,31 @@ describe('Instruction class', () => {
 
       entityMockUtils.configureMocks({ securityTokenOptions: { ticker } });
       sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
-      dsMockUtils.createQueryStub('settlement', 'instructionLegs', {
-        entries: [
-          tuple(['instructionId', 'legId'], {
-            from: dsMockUtils.createMockPortfolioId({
-              did: dsMockUtils.createMockIdentityId(fromDid),
-              kind: dsMockUtils.createMockPortfolioKind('Default'),
-            }),
-            to: dsMockUtils.createMockPortfolioId({
-              did: dsMockUtils.createMockIdentityId(toDid),
-              kind: dsMockUtils.createMockPortfolioKind('Default'),
-            }),
-            asset: dsMockUtils.createMockTicker(ticker),
-            amount: dsMockUtils.createMockBalance(amount.times(Math.pow(10, 6)).toNumber()),
-          }),
-        ],
-      });
 
-      const [leg] = await instruction.getLegs();
+      const entries = [
+        tuple((['instructionId', 'legId'] as unknown) as StorageKey, {
+          from: dsMockUtils.createMockPortfolioId({
+            did: dsMockUtils.createMockIdentityId(fromDid),
+            kind: dsMockUtils.createMockPortfolioKind('Default'),
+          }),
+          to: dsMockUtils.createMockPortfolioId({
+            did: dsMockUtils.createMockIdentityId(toDid),
+            kind: dsMockUtils.createMockPortfolioKind('Default'),
+          }),
+          asset: dsMockUtils.createMockTicker(ticker),
+          amount: dsMockUtils.createMockBalance(amount.times(Math.pow(10, 6)).toNumber()),
+        }),
+      ];
+
+      sinon.stub(utilsInternalModule, 'requestPaginated').resolves({ entries, lastKey: null });
+
+      const { data: leg } = await instruction.getLegs();
 
       sinon.assert.calledTwice(identityConstructor);
       sinon.assert.calledWithExactly(identityConstructor.firstCall, { did: fromDid }, context);
       sinon.assert.calledWithExactly(identityConstructor.secondCall, { did: toDid }, context);
-      expect(leg.amount).toEqual(amount);
-      expect(leg.token).toEqual(entityMockUtils.getSecurityTokenInstance());
+      expect(leg[0].amount).toEqual(amount);
+      expect(leg[0].token).toEqual(entityMockUtils.getSecurityTokenInstance());
     });
   });
 

@@ -11,10 +11,10 @@ import {
   NumberedPortfolio,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, PaginationOptions, ResultSet } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import { identityIdToString, stringToIdentityId, u64ToBigNumber } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
@@ -70,8 +70,12 @@ export class Portfolios extends Namespace<Identity> {
    * Retrieve all Portfolios custodied by this Identity.
    *   This only includes portfolios owned by a different Identity but custodied by this one.
    *   To fetch Portfolios owned by this Identity, use [[getPortfolios]]
+   *
+   * @note supports pagination
    */
-  public async getCustodiedPortfolios(): Promise<(DefaultPortfolio | NumberedPortfolio)[]> {
+  public async getCustodiedPortfolios(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<DefaultPortfolio | NumberedPortfolio>> {
     const {
       context,
       context: {
@@ -83,9 +87,15 @@ export class Portfolios extends Namespace<Identity> {
     } = this;
 
     const custodian = stringToIdentityId(custodianDid, context);
-    const portfolioEntries = await portfolio.portfoliosInCustody.entries(custodian);
+    const { entries: portfolioEntries, lastKey: next } = await requestPaginated(
+      portfolio.portfoliosInCustody,
+      {
+        arg: custodian,
+        paginationOpts,
+      }
+    );
 
-    return portfolioEntries.map(([{ args }]) => {
+    const data = portfolioEntries.map(([{ args }]) => {
       const { did: ownerDid, kind } = args[1] as PortfolioId;
 
       const did = identityIdToString(ownerDid);
@@ -98,6 +108,11 @@ export class Portfolios extends Namespace<Identity> {
 
       return new NumberedPortfolio({ did, id }, context);
     });
+
+    return {
+      data,
+      next,
+    };
   }
 
   /**

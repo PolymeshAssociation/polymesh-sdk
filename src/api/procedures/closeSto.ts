@@ -5,21 +5,18 @@ import { ErrorCode, RoleType, StoStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker } from '~/utils/conversion';
 
-export interface CancelStoParams {
+/**
+ * @hidden
+ */
+export interface Params {
+  ticker: string;
   id: BigNumber;
 }
 
 /**
  * @hidden
  */
-export type Params = CancelStoParams & {
-  ticker: string;
-};
-
-/**
- * @hidden
- */
-export async function prepareCancelSto(this: Procedure<Params, void>, args: Params): Promise<void> {
+export async function prepareCloseSto(this: Procedure<Params, void>, args: Params): Promise<void> {
   const {
     context: {
       polymeshApi: {
@@ -36,7 +33,7 @@ export async function prepareCancelSto(this: Procedure<Params, void>, args: Para
 
   if (status === StoStatus.Closed) {
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
+      code: ErrorCode.ValidationError,
       message: 'The STO is already closed',
     });
   }
@@ -68,4 +65,4 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const cancelSto = new Procedure(prepareCancelSto, getAuthorization);
+export const closeSto = new Procedure(prepareCloseSto, getAuthorization);

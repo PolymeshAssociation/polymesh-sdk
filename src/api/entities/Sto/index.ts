@@ -4,8 +4,11 @@ import BigNumber from 'bignumber.js';
 import {
   cancelSto,
   CancelStoParams,
+  closeSto,
   Context,
   Entity,
+  modifyStoTimes,
+  ModifyStoTimesParams,
   PolymeshError,
   toggleFreezeSto,
 } from '~/internal';
@@ -62,6 +65,11 @@ export class Sto extends Entity<UniqueIdentifiers> {
     );
     this.unfreeze = createProcedureMethod(
       () => [toggleFreezeSto, { ticker, id, freeze: false }],
+      context
+    );
+    this.close = createProcedureMethod(() => [closeSto, { ticker, id }], context);
+    this.modifyTimes = createProcedureMethod(
+      args => [modifyStoTimes, { ticker, id, ...args }],
       context
     );
   }
@@ -126,4 +134,17 @@ export class Sto extends Entity<UniqueIdentifiers> {
    * Unfreeze the STO
    */
   public unfreeze: ProcedureMethod<void, Sto>;
+
+  /**
+   * Modify the start/end time of the STO
+   *
+   * @param args.start - new start time (optional, will be left the same if not passed)
+   * @param args.end - new end time (optional, will be left th same if not passed). A null value means the STO doesn't end
+   *
+   * @throws if:
+   *   - Trying to modify the start time on an STO that already started
+   *   - Trying to modify anything on an STO that already ended
+   *   - Trying to change start or end time to a past date
+   */
+  public modifyTimes: ProcedureMethod<ModifyStoTimesParams, void>;
 }
