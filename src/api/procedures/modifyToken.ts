@@ -1,12 +1,20 @@
+import { differenceWith, isEqual } from 'lodash';
+
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, RoleType, TokenIdentifier, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { stringToAssetName, stringToFundingRoundName, stringToTicker } from '~/utils/conversion';
+import {
+  stringToAssetName,
+  stringToFundingRoundName,
+  stringToTicker,
+  tokenIdentifierToAssetIdentifier,
+} from '~/utils/conversion';
 
 export type ModifyTokenParams =
-  | { makeDivisible?: true; name: string; fundingRound?: string }
-  | { makeDivisible: true; name?: string; fundingRound?: string }
-  | { makeDivisible?: true; name?: string; fundingRound: string };
+  | { makeDivisible?: true; name: string; fundingRound?: string; identifiers?: TokenIdentifier[] }
+  | { makeDivisible: true; name?: string; fundingRound?: string; identifiers?: TokenIdentifier[] }
+  | { makeDivisible?: true; name?: string; fundingRound: string; identifiers?: TokenIdentifier[] }
+  | { makeDivisible?: true; name?: string; fundingRound?: string; identifiers: TokenIdentifier[] };
 
 /**
  * @hidden
@@ -26,9 +34,20 @@ export async function prepareModifyToken(
     },
     context,
   } = this;
-  const { ticker, makeDivisible, name: newName, fundingRound: newFundingRound } = args;
+  const {
+    ticker,
+    makeDivisible,
+    name: newName,
+    fundingRound: newFundingRound,
+    identifiers: newIdentifiers,
+  } = args;
 
-  if (makeDivisible === undefined && newName === undefined && newFundingRound === undefined) {
+  if (
+    makeDivisible === undefined &&
+    newName === undefined &&
+    newFundingRound === undefined &&
+    newIdentifiers === undefined
+  ) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Nothing to modify',
@@ -40,9 +59,10 @@ export async function prepareModifyToken(
   const securityToken = new SecurityToken({ ticker }, context);
 
   // TODO: queryMulti
-  const [{ isDivisible, name }, fundingRound] = await Promise.all([
+  const [{ isDivisible, name }, fundingRound, identifiers] = await Promise.all([
     securityToken.details(),
     securityToken.currentFundingRound(),
+    securityToken.getIdentifiers(),
   ]);
 
   if (makeDivisible) {
@@ -88,6 +108,25 @@ export async function prepareModifyToken(
     );
   }
 
+  if (newIdentifiers) {
+    if (
+      !differenceWith(identifiers, newIdentifiers, isEqual).length &&
+      identifiers.length === newIdentifiers.length
+    ) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'New identifiers are the same as current identifiers',
+      });
+    }
+
+    this.addTransaction(
+      tx.asset.updateIdentifiers,
+      {},
+      rawTicker,
+      newIdentifiers.map(newIdentifier => tokenIdentifierToAssetIdentifier(newIdentifier, context))
+    );
+  }
+
   return securityToken;
 }
 
@@ -96,7 +135,7 @@ export async function prepareModifyToken(
  */
 export function getAuthorization(
   this: Procedure<Params, SecurityToken>,
-  { ticker, makeDivisible, name, fundingRound }: Params
+  { ticker, makeDivisible, name, fundingRound, identifiers }: Params
 ): ProcedureAuthorization {
   const transactions = [];
 
@@ -110,6 +149,10 @@ export function getAuthorization(
 
   if (fundingRound) {
     transactions.push(TxTags.asset.SetFundingRound);
+  }
+
+  if (identifiers) {
+    transactions.push(TxTags.asset.UpdateIdentifiers);
   }
 
   return {
