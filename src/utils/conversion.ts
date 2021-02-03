@@ -2311,7 +2311,6 @@ export function fundraiserToStoDetails(fundraiser: Fundraiser, context: Context)
   const {
     creator,
     offering_portfolio: offeringPortfolio,
-    offering_asset: offeringAsset,
     raising_portfolio: raisingPortfolio,
     raising_asset: raisingAsset,
     tiers,
@@ -2319,13 +2318,12 @@ export function fundraiserToStoDetails(fundraiser: Fundraiser, context: Context)
     start,
     end,
     status,
-    minimum_investment: minimumInvestment,
+    minimum_investment: minInvestment,
   } = fundraiser;
 
   return {
     creator: new Identity({ did: identityIdToString(creator) }, context),
     offeringPortfolio: meshPortfolioIdToPortfolio(offeringPortfolio, context),
-    offeringAsset: new SecurityToken({ ticker: tickerToString(offeringAsset) }, context),
     raisingPortfolio: meshPortfolioIdToPortfolio(raisingPortfolio, context),
     raisingCurrency: tickerToString(raisingAsset),
     tiers: tiers.map(tier => fundraiserTierToTier(tier)),
@@ -2333,6 +2331,6 @@ export function fundraiserToStoDetails(fundraiser: Fundraiser, context: Context)
     start: momentToDate(start),
     end: end.isSome ? momentToDate(end.unwrap()) : null,
     status: meshFundraiserStatusToStoStatus(status),
-    minimumInvestment: balanceToBigNumber(minimumInvestment),
+    minInvestment: balanceToBigNumber(minInvestment),
   };
 }

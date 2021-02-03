@@ -1,9 +1,11 @@
 import { Context, launchSto, LaunchStoParams, Namespace, SecurityToken, Sto } from '~/internal';
+import { StoStatus, StoWithDetails } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
+import { fundraiserToStoDetails, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
- * Handles all Security Token Offerings related functionality
+ * Handles all Security Token Offering related functionality
  */
 export class Offerings extends Namespace<SecurityToken> {
   /**
@@ -40,4 +42,34 @@ export class Offerings extends Namespace<SecurityToken> {
    *   - Raising Portfolio Custodian
    */
   public launch: ProcedureMethod<LaunchStoParams, Sto>;
+
+  /**
+   * Retrieve all of the Token's Offerings. Can be filtered using parameters
+   *
+   * @param opts.status - status of the offerings to fetch
+   */
+  public async get(opts: { status?: StoStatus } = {}): Promise<StoWithDetails[]> {
+    const {
+      parent: { ticker },
+      context: {
+        polymeshApi: { query },
+      },
+      context,
+    } = this;
+
+    const { status: statusFilter } = opts;
+
+    const entries = await query.sto.fundraisers.entries(stringToTicker(ticker, context));
+
+    const stos = entries.map(([key, fundraiser]) => ({
+      sto: new Sto({ id: u64ToBigNumber(key.args[1]), ticker }, context),
+      details: fundraiserToStoDetails(fundraiser.unwrap(), context),
+    }));
+
+    if (statusFilter) {
+      return stos.filter(({ details: { status } }) => status === statusFilter);
+    }
+
+    return stos;
+  }
 }
