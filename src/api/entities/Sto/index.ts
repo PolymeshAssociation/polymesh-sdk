@@ -2,8 +2,6 @@ import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
 import {
-  cancelSto,
-  CancelStoParams,
   closeSto,
   Context,
   Entity,
@@ -58,7 +56,7 @@ export class Sto extends Entity<UniqueIdentifiers> {
     this.id = id;
     this.ticker = ticker;
 
-    this.close = createProcedureMethod(args => [cancelSto, { ticker, ...args }], context);
+    this.close = createProcedureMethod(() => [closeSto, { ticker, id }], context);
     this.freeze = createProcedureMethod(
       () => [toggleFreezeSto, { ticker, id, freeze: true }],
       context
@@ -123,7 +121,7 @@ export class Sto extends Entity<UniqueIdentifiers> {
   /**
    * Close the STO
    */
-  public close: ProcedureMethod<CancelStoParams, void>;
+  public close: ProcedureMethod<void, void>;
 
   /**
    * Freeze the STO
