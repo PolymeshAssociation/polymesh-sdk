@@ -6,7 +6,6 @@ import P from 'bluebird';
 import { compact, flatten } from 'lodash';
 import { PortfolioId, Ticker, TxTag, TxTags } from 'polymesh-types/types';
 
-import { Venue } from '~/api/entities/Venue';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Context,
@@ -17,6 +16,7 @@ import {
   PostTransactionValue,
   Procedure,
   SecurityToken,
+  Venue,
 } from '~/internal';
 import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';

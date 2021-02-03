@@ -2,11 +2,12 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
-  cancelSto,
+  closeSto,
   Context,
   DefaultPortfolio,
   Entity,
   Identity,
+  modifyStoTimes,
   SecurityToken,
   Sto,
   TransactionQueue,
@@ -196,9 +197,39 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon.stub(cancelSto, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      sinon.stub(closeSto, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
-      const queue = await sto.close(args);
+      const queue = await sto.close();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: modifyTimes', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'SOMETICKER';
+      const id = new BigNumber(1);
+      const sto = new Sto({ id, ticker }, context);
+
+      const now = new Date();
+      const start = new Date(now.getTime() + 100000);
+      const end = new Date(start.getTime() + 100000);
+
+      const args = {
+        ticker,
+        id,
+        start,
+        end,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon.stub(modifyStoTimes, 'prepare').withArgs(args, context).resolves(expectedQueue);
+
+      const queue = await sto.modifyTimes({
+        start,
+        end,
+      });
 
       expect(queue).toBe(expectedQueue);
     });
