@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 
-import { Params } from '~/api/procedures/toggleFreezeSto';
 import {
   cancelSto,
   Context,
@@ -11,6 +10,7 @@ import {
   SecurityToken,
   Sto,
   toggleFreezeSto,
+  ToggleFreezeStoParams,
   TransactionQueue,
   Venue,
 } from '~/internal';
@@ -40,7 +40,7 @@ jest.mock(
 describe('Sto class', () => {
   let context: Context;
   let prepareToggleFreezeStoStub: SinonStub<
-    [Params, Context],
+    [ToggleFreezeStoParams, Context],
     Promise<TransactionQueue<Sto, unknown[][]>>
   >;
 

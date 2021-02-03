@@ -3,7 +3,11 @@ import BigNumber from 'bignumber.js';
 import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { getAuthorization, Params, prepareToggleFreezeSto } from '~/api/procedures/toggleFreezeSto';
+import {
+  getAuthorization,
+  prepareToggleFreezeSto,
+  ToggleFreezeStoParams,
+} from '~/api/procedures/toggleFreezeSto';
 import { Context, Sto } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -63,6 +67,26 @@ describe('toggleFreezeSto procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  test('should throw an error if the STO has reached its end date', () => {
+    entityMockUtils.configureMocks({
+      stoOptions: {
+        details: {
+          end: new Date(),
+        },
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
+
+    return expect(
+      prepareToggleFreezeSto.call(proc, {
+        ticker,
+        id,
+        freeze: true,
+      })
+    ).rejects.toThrow('The STO has already ended');
+  });
+
   test('should throw an error if freeze is set to true and the STO is already frozen', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
@@ -72,7 +96,7 @@ describe('toggleFreezeSto procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, Sto>(mockContext);
+    const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
 
     return expect(
       prepareToggleFreezeSto.call(proc, {
@@ -84,7 +108,7 @@ describe('toggleFreezeSto procedure', () => {
   });
 
   test('should throw an error if freeze is set to false and the STO status is live or close', () => {
-    const proc = procedureMockUtils.getInstance<Params, Sto>(mockContext);
+    const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
 
     entityMockUtils.configureMocks({
       stoOptions: {
@@ -120,7 +144,7 @@ describe('toggleFreezeSto procedure', () => {
   });
 
   test('should add a freeze transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Sto>(mockContext);
+    const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('sto', 'freezeFundraiser');
 
@@ -142,7 +166,7 @@ describe('toggleFreezeSto procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, Sto>(mockContext);
+    const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('sto', 'unfreezeFundraiser');
 
@@ -159,7 +183,7 @@ describe('toggleFreezeSto procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, Sto>(mockContext);
+      const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker });

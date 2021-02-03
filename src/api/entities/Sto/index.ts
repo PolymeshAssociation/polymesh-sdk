@@ -118,7 +118,7 @@ export class Sto extends Entity<UniqueIdentifiers> {
   public close: ProcedureMethod<CancelStoParams, void>;
 
   /**
-   * Freezes the STO
+   * Freeze the STO
    */
   public freeze: ProcedureMethod<void, Sto>;
 

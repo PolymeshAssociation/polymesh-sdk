@@ -8,21 +8,15 @@ import { numberToU64, stringToTicker } from '~/utils/conversion';
 export interface ToggleFreezeStoParams {
   id: BigNumber;
   freeze: boolean;
+  ticker: string;
 }
 
 /**
  * @hidden
  */
-export type Params = ToggleFreezeStoParams & {
-  ticker: string;
-};
-
-/**
- * @hidden
- */
 export async function prepareToggleFreezeSto(
-  this: Procedure<Params, Sto>,
-  args: Params
+  this: Procedure<ToggleFreezeStoParams, Sto>,
+  args: ToggleFreezeStoParams
 ): Promise<Sto> {
   const {
     context: {
@@ -39,7 +33,16 @@ export async function prepareToggleFreezeSto(
 
   const sto = new Sto({ ticker, id }, context);
 
-  const { status } = await sto.details();
+  const { status, end } = await sto.details();
+
+  const now = new Date();
+
+  if (end && end.getTime() < now.getTime()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The STO has already ended',
+    });
+  }
 
   if (freeze) {
     if (status === StoStatus.Frozen) {
@@ -75,8 +78,8 @@ export async function prepareToggleFreezeSto(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Sto>,
-  { ticker, freeze }: Params
+  this: Procedure<ToggleFreezeStoParams, Sto>,
+  { ticker, freeze }: ToggleFreezeStoParams
 ): ProcedureAuthorization {
   return {
     identityRoles: [{ type: RoleType.TokenPia, ticker }],
