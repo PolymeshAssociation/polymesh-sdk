@@ -1,7 +1,14 @@
 import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
-import { cancelSto, CancelStoParams, Context, Entity, PolymeshError } from '~/internal';
+import {
+  cancelSto,
+  CancelStoParams,
+  Context,
+  Entity,
+  PolymeshError,
+  toggleFreezeSto,
+} from '~/internal';
 import { Fundraiser } from '~/polkadot/polymesh/types';
 import { ErrorCode, StoDetails, SubCallback, UnsubCallback } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
@@ -49,6 +56,14 @@ export class Sto extends Entity<UniqueIdentifiers> {
     this.ticker = ticker;
 
     this.close = createProcedureMethod(args => [cancelSto, { ticker, ...args }], context);
+    this.freeze = createProcedureMethod(
+      () => [toggleFreezeSto, { ticker, id, freeze: true }],
+      context
+    );
+    this.unfreeze = createProcedureMethod(
+      () => [toggleFreezeSto, { ticker, id, freeze: false }],
+      context
+    );
   }
 
   /**
@@ -101,4 +116,14 @@ export class Sto extends Entity<UniqueIdentifiers> {
    * Close the STO
    */
   public close: ProcedureMethod<CancelStoParams, void>;
+
+  /**
+   * Freezes the STO
+   */
+  public freeze: ProcedureMethod<void, Sto>;
+
+  /**
+   * Unfreeze the STO
+   */
+  public unfreeze: ProcedureMethod<void, Sto>;
 }
