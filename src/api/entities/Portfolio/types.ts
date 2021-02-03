@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
 
-import { Leg } from '~/api/entities/Instruction/types';
 import { Account, SecurityToken } from '~/internal';
 import {
   SettlementDirectionEnum as SettlementDirection,
   SettlementResultEnum as SettlementResult,
 } from '~/middleware/types';
+import { Leg } from '~/types';
 
 export interface PortfolioBalance {
   token: SecurityToken;
