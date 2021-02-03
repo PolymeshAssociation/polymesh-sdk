@@ -56,7 +56,6 @@ export class Sto extends Entity<UniqueIdentifiers> {
     this.id = id;
     this.ticker = ticker;
 
-    this.close = createProcedureMethod(() => [closeSto, { ticker, id }], context);
     this.freeze = createProcedureMethod(
       () => [toggleFreezeSto, { ticker, id, freeze: true }],
       context
