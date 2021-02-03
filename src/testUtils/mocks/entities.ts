@@ -40,6 +40,7 @@ import {
   StoDetails,
   TickerReservationDetails,
   TickerReservationStatus,
+  TokenIdentifier,
   TransferStatus,
   VenueDetails,
   VenueType,
@@ -107,6 +108,7 @@ interface SecurityTokenOptions {
   currentFundingRound?: string;
   isFrozen?: boolean;
   transfersCanTransfer?: TransferStatus;
+  getIdentifiers?: TokenIdentifier[];
   transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
 }
@@ -197,6 +199,7 @@ let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
 let securityTokenIsFrozenStub: SinonStub;
 let securityTokenTransfersCanTransferStub: SinonStub;
+let securityTokenGetIdentifiersStub: SinonStub;
 let securityTokenTransferRestrictionsCountGetStub: SinonStub;
 let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
 let identityHasRolesStub: SinonStub;
@@ -475,6 +478,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   currentFundingRound: 'Series A',
   isFrozen: false,
   transfersCanTransfer: TransferStatus.Success,
+  getIdentifiers: [],
   transferRestrictionsCountGet: {
     restrictions: [],
     availableSlots: MAX_TRANSFER_MANAGERS,
@@ -766,6 +770,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     transfers: {
       canTransfer: securityTokenTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
     },
+    getIdentifiers: securityTokenGetIdentifiersStub.resolves(opts.getIdentifiers),
     transferRestrictions: {
       count: {
         get: securityTokenTransferRestrictionsCountGetStub.resolves(
@@ -798,6 +803,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenCurrentFundingRoundStub = sinon.stub();
   securityTokenIsFrozenStub = sinon.stub();
   securityTokenTransfersCanTransferStub = sinon.stub();
+  securityTokenGetIdentifiersStub = sinon.stub();
   securityTokenTransferRestrictionsCountGetStub = sinon.stub();
   securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
 
@@ -1608,7 +1614,19 @@ export function getSecurityTokenIsFrozenStub(frozen?: boolean): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.transfers.canTransfer` method
+ * Retrieve the stub of the `SecurityToken.getIdentifiers` method
+ */
+export function getSecurityTokenGetIdentifiersStub(identifiers?: TokenIdentifier): SinonStub {
+  if (identifiers !== undefined) {
+    return securityTokenGetIdentifiersStub.resolves(identifiers);
+  }
+
+  return securityTokenGetIdentifiersStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.Transfers.canTransfer` method
  */
 export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus): SinonStub {
   if (status) {
