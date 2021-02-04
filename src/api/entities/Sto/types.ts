@@ -30,3 +30,11 @@ export interface StoDetails {
   status: StoStatus;
   minimumInvestment: BigNumber;
 }
+
+export interface Investor {
+  investor: Identity;
+  offeringToken: SecurityToken;
+  raiseCurrency: string;
+  offeringTokenAmount: BigNumber;
+  raiseTokenAmount: BigNumber;
+}

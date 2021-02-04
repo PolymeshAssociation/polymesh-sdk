@@ -13,6 +13,8 @@ import {
   TransactionQueue,
   Venue,
 } from '~/internal';
+import { heartbeat, investments } from '~/middleware/queries';
+import { InvestmentResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { StoDetails, StoStatus } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -232,6 +234,84 @@ describe('Sto class', () => {
       });
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getInvestors', () => {
+    test('should return a list of investors', async () => {
+      const ticker = 'SOMETICKER';
+      const id = new BigNumber(1);
+      const sto = new Sto({ id, ticker }, context);
+
+      const did = 'someDid';
+      const offeringToken = 'TICKER';
+      const raiseToken = 'USD';
+      const offeringTokenAmount = 100;
+      const raiseTokenAmount = 1;
+
+      const items = [
+        {
+          investor: did,
+          offeringToken,
+          raiseToken,
+          offeringTokenAmount,
+          raiseTokenAmount,
+        },
+      ];
+
+      /* eslint-disable @typescript-eslint/camelcase */
+      const investmentQueryResponse: InvestmentResult = {
+        totalCount: 1,
+        items,
+      };
+      /* eslint-enabled @typescript-eslint/camelcase */
+
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
+      dsMockUtils.createApolloQueryStub(
+        investments({
+          stoId: id.toNumber(),
+          ticker,
+          count: 5,
+          skip: 0,
+        }),
+        {
+          investments: investmentQueryResponse,
+        }
+      );
+
+      let result = await sto.getInvestors({
+        size: 5,
+        start: 0,
+      });
+
+      const { data } = result;
+
+      expect(data[0].investor.did).toBe(did);
+      expect(data[0].offeringToken.ticker).toBe(offeringToken);
+      expect(data[0].raiseCurrency).toBe(raiseToken);
+      expect(data[0].offeringTokenAmount.toNumber()).toBe(offeringTokenAmount);
+      expect(data[0].raiseTokenAmount.toNumber()).toBe(raiseTokenAmount);
+
+      dsMockUtils.createApolloQueryStub(
+        investments({
+          stoId: id.toNumber(),
+          ticker,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          investments: {
+            totalCount: 0,
+            items: null,
+          },
+        }
+      );
+
+      result = await sto.getInvestors();
+
+      expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
     });
   });
 });

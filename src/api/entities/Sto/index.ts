@@ -1,6 +1,8 @@
 import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
+import { Identity } from '~/api/entities/Identity';
+import { SecurityToken } from '~/api/entities/SecurityToken';
 import {
   closeSto,
   Context,
@@ -9,11 +11,15 @@ import {
   ModifyStoTimesParams,
   PolymeshError,
 } from '~/internal';
+import { investments } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import { Fundraiser } from '~/polkadot/polymesh/types';
-import { ErrorCode, StoDetails, SubCallback, UnsubCallback } from '~/types';
+import { Ensured, ErrorCode, ResultSet, StoDetails, SubCallback, UnsubCallback } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
+
+import { Investor } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -125,4 +131,73 @@ export class Sto extends Entity<UniqueIdentifiers> {
    *   - Trying to change start or end time to a past date
    */
   public modifyTimes: ProcedureMethod<ModifyStoTimesParams, void>;
+
+  /**
+   * Retrieve all investors
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note supports pagination
+   * @note uses the middleware
+   */
+  public async getInvestors(
+    opts: {
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<Investor>> {
+    const { context, id, ticker } = this;
+
+    const { size, start } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'investments'>>(
+      investments({
+        stoId: id.toNumber(),
+        ticker: ticker,
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: { investments: investmentResult },
+    } = result;
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { items, totalCount: count } = investmentResult!;
+
+    const data: Investor[] = [];
+    let next = null;
+
+    if (items) {
+      items.forEach(item => {
+        /* eslint-disable @typescript-eslint/no-non-null-assertion */
+        const {
+          investor: did,
+          offeringToken,
+          raiseToken: raiseCurrency,
+          offeringTokenAmount,
+          raiseTokenAmount,
+        } = item!;
+        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+
+        data.push({
+          investor: new Identity({ did }, context),
+          offeringToken: new SecurityToken({ ticker: offeringToken }, context),
+          raiseCurrency,
+          offeringTokenAmount: new BigNumber(offeringTokenAmount),
+          raiseTokenAmount: new BigNumber(raiseTokenAmount),
+        });
+      });
+
+      next = calculateNextKey(count, size, start);
+    }
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
 }
