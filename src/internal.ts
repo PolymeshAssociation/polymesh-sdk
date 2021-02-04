@@ -98,6 +98,7 @@ export {
   SetPercentageTransferRestrictionsParams,
   Storage as SetTransferRestrictionsStorage,
 } from '~/api/procedures/setTransferRestrictions';
+export { toggleFreezeSto, ToggleFreezeStoParams } from '~/api/procedures/toggleFreezeSto';
 export { closeSto } from '~/api/procedures/closeSto';
 export { modifyStoTimes, ModifyStoTimesParams } from '~/api/procedures/modifyStoTimes';
 export { Identity } from '~/api/entities/Identity';
