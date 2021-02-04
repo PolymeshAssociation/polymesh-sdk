@@ -37,7 +37,7 @@ export async function prepareToggleFreezeSto(
 
   const now = new Date();
 
-  if (end && end.getTime() < now.getTime()) {
+  if (end && end < now) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The STO has already ended',
