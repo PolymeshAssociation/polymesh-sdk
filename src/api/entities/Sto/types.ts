@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { DefaultPortfolio, Identity, NumberedPortfolio, Venue } from '~/internal';
+import { DefaultPortfolio, Identity, NumberedPortfolio, SecurityToken, Venue } from '~/internal';
 
 export enum StoStatus {
   Live = 'Live',
