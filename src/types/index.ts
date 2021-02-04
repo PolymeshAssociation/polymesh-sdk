@@ -3,6 +3,7 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
+import { StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
@@ -13,6 +14,7 @@ import {
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,
+  Sto,
 } from '~/internal';
 import { PortfolioId } from '~/types/internal';
 
@@ -600,6 +602,11 @@ export type Signer = Identity | Account;
 //   proposal: Proposal;
 //   details: ProposalDetails;
 // }
+
+export interface StoWithDetails {
+  sto: Sto;
+  details: StoDetails;
+}
 
 export interface SecondaryKey {
   signer: Signer;

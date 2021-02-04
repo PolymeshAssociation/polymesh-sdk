@@ -4508,12 +4508,11 @@ describe('fundraiserToStoDetails', () => {
       remaining: tierNumber.div(Math.pow(10, 6)),
     };
     const date = new Date();
-    const minimumInvestmentValue = new BigNumber(1);
+    const minInvestmentValue = new BigNumber(1);
 
     const fakeResult = {
       creator: new Identity({ did: someDid }, context),
       offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
-      offeringAsset: new SecurityToken({ ticker }, context),
       raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
       raisingCurrency: raisingCurrency,
       tiers: [tier],
@@ -4521,7 +4520,7 @@ describe('fundraiserToStoDetails', () => {
       start: date,
       end: date,
       status: StoStatus.Live,
-      minimumInvestment: minimumInvestmentValue.div(Math.pow(10, 6)),
+      minInvestment: minInvestmentValue.div(Math.pow(10, 6)),
     };
 
     const creator = dsMockUtils.createMockIdentityId(someDid);
@@ -4546,7 +4545,7 @@ describe('fundraiserToStoDetails', () => {
     const start = dsMockUtils.createMockMoment(date.getTime());
     const end = dsMockUtils.createMockOption(dsMockUtils.createMockMoment(date.getTime()));
     const status = dsMockUtils.createMockFundraiserStatus('Live');
-    const minimumInvestment = dsMockUtils.createMockBalance(minimumInvestmentValue.toNumber());
+    const minInvestment = dsMockUtils.createMockBalance(minInvestmentValue.toNumber());
 
     let fundraiser = dsMockUtils.createMockFundraiser({
       creator,
@@ -4559,7 +4558,7 @@ describe('fundraiserToStoDetails', () => {
       start,
       end,
       status,
-      minimum_investment: minimumInvestment,
+      minimum_investment: minInvestment,
     });
 
     let result = fundraiserToStoDetails(fundraiser, context);
@@ -4577,7 +4576,7 @@ describe('fundraiserToStoDetails', () => {
       start,
       end: dsMockUtils.createMockOption(),
       status,
-      minimum_investment: minimumInvestment,
+      minimum_investment: minInvestment,
     });
 
     result = fundraiserToStoDetails(fundraiser, context);
