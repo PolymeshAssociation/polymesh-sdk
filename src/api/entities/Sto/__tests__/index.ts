@@ -8,7 +8,6 @@ import {
   Entity,
   Identity,
   modifyStoTimes,
-  SecurityToken,
   Sto,
   toggleFreezeSto,
   ToggleFreezeStoParams,
@@ -97,7 +96,7 @@ describe('Sto class', () => {
     const raisingCurrency = 'USD';
     const tierNumber = new BigNumber(10);
     const date = new Date();
-    const minimumInvestmentValue = new BigNumber(1);
+    const minInvestmentValue = new BigNumber(1);
 
     const rawFundraiser = dsMockUtils.createMockOption(
       dsMockUtils.createMockFundraiser({
@@ -124,7 +123,7 @@ describe('Sto class', () => {
         start: dsMockUtils.createMockMoment(date.getTime()),
         end: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(date.getTime())),
         status: dsMockUtils.createMockFundraiserStatus('Live'),
-        minimum_investment: dsMockUtils.createMockBalance(minimumInvestmentValue.toNumber()),
+        minimum_investment: dsMockUtils.createMockBalance(minInvestmentValue.toNumber()),
         /* eslint-enable @typescript-eslint/camelcase */
       })
     );
@@ -140,7 +139,6 @@ describe('Sto class', () => {
       const fakeResult = {
         creator: new Identity({ did: someDid }, context),
         offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
-        offeringAsset: new SecurityToken({ ticker }, context),
         raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
         raisingCurrency,
         tiers: [
@@ -154,7 +152,7 @@ describe('Sto class', () => {
         start: date,
         end: date,
         status: StoStatus.Live,
-        minimumInvestment: minimumInvestmentValue.div(Math.pow(10, 6)),
+        minInvestment: minInvestmentValue.div(Math.pow(10, 6)),
       };
 
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
