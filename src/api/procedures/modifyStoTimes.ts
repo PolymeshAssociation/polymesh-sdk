@@ -91,7 +91,6 @@ export async function prepareModifyStoTimes(
   if (newEnd === null) {
     rawEnd = null;
   } else if (!newEnd) {
-    console.log('END', end);
     rawEnd = end ? dateToMoment(end, context) : null;
   } else {
     rawEnd = dateToMoment(newEnd, context);

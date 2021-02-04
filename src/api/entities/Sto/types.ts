@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { DefaultPortfolio, Identity, NumberedPortfolio, SecurityToken, Venue } from '~/internal';
+import { DefaultPortfolio, Identity, NumberedPortfolio, Venue } from '~/internal';
 
 export enum StoStatus {
   Live = 'Live',
@@ -20,7 +20,6 @@ export interface Tier extends StoTier {
 export interface StoDetails {
   creator: Identity;
   offeringPortfolio: NumberedPortfolio | DefaultPortfolio;
-  offeringAsset: SecurityToken;
   raisingPortfolio: NumberedPortfolio | DefaultPortfolio;
   raisingCurrency: string;
   tiers: Tier[];
@@ -28,7 +27,7 @@ export interface StoDetails {
   start: Date;
   end: Date | null;
   status: StoStatus;
-  minimumInvestment: BigNumber;
+  minInvestment: BigNumber;
 }
 
 export interface Investor {

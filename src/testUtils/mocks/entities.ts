@@ -35,6 +35,7 @@ import {
   Leg,
   PercentageTransferRestriction,
   PortfolioBalance,
+  ResultSet,
   SecondaryKey,
   SecurityTokenDetails,
   StoDetails,
@@ -173,7 +174,7 @@ interface StoOptions {
 interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
-  getLegs?: Leg[];
+  getLegs?: ResultSet<Leg>;
 }
 
 interface StoOptions {
@@ -897,14 +898,17 @@ function initIdentity(opts?: IdentityOptions): void {
  */
 function configureInstruction(opts: InstructionOptions): void {
   const details = { venue: mockInstanceContainer.venue, ...opts.details };
-  const legs = opts.getLegs || [
-    {
-      from: mockInstanceContainer.numberedPortfolio,
-      to: mockInstanceContainer.numberedPortfolio,
-      token: mockInstanceContainer.securityToken,
-      amount: new BigNumber(100),
-    },
-  ];
+  const legs = opts.getLegs || {
+    data: [
+      {
+        from: mockInstanceContainer.numberedPortfolio,
+        to: mockInstanceContainer.numberedPortfolio,
+        token: mockInstanceContainer.securityToken,
+        amount: new BigNumber(100),
+      },
+    ],
+    next: null,
+  };
   const instruction = ({
     details: instructionDetailsStub.resolves(details),
     getLegs: instructionGetLegsStub.resolves(legs),
@@ -1774,7 +1778,7 @@ export function getInstructionDetailsStub(details?: Partial<InstructionDetails>)
  * @hidden
  * Retrieve the stub of the `Instruction.getLegs` method
  */
-export function getInstructionGetLegsStub(legs?: Leg[]): SinonStub {
+export function getInstructionGetLegsStub(legs?: ResultSet<Leg>): SinonStub {
   if (legs) {
     return instructionGetLegsStub.resolves({
       ...defaultInstructionOptions.getLegs,
