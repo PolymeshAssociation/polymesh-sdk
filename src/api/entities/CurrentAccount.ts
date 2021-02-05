@@ -1,7 +1,7 @@
-import { difference, differenceBy, differenceWith, isEqual } from 'lodash';
+import { difference, differenceBy, differenceWith, isEqual, union } from 'lodash';
 
 import { Account, CurrentIdentity } from '~/internal';
-import { Permissions } from '~/types';
+import { Permissions, TxTags } from '~/types';
 import { portfolioToPortfolioId, signerToString } from '~/utils/conversion';
 
 /**
@@ -65,6 +65,17 @@ export class CurrentAccount extends Account {
       hasTokens = tokens.length === 0 || !differenceBy(tokens, currentTokens, 'ticker').length;
     }
 
+    // these transactions are allowed to any account, independent of permissions
+    const exemptedTransactions = [
+      ...difference(Object.values(TxTags.balances), [
+        TxTags.balances.DepositBlockRewardReserveBalance,
+        TxTags.balances.BurnAccountBalance,
+      ]),
+      ...Object.values(TxTags.staking),
+      ...Object.values(TxTags.sudo),
+      ...Object.values(TxTags.session),
+    ];
+
     let hasTransactions;
     if (currentTransactions === null) {
       hasTransactions = true;
@@ -72,7 +83,8 @@ export class CurrentAccount extends Account {
       hasTransactions = false;
     } else {
       hasTransactions =
-        transactions.length === 0 || !difference(transactions, currentTransactions).length;
+        transactions.length === 0 ||
+        !difference(transactions, union(currentTransactions, exemptedTransactions)).length;
     }
 
     let hasPortfolios;
