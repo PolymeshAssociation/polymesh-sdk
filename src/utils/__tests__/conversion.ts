@@ -1013,7 +1013,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     entityMockUtils.cleanup();
   });
 
-  test('permissionsToMeshPermissions should convert a Permissions to a polkadot Permissions object', () => {
+  test('permissionsToMeshPermissions should convert a Permissions to a polkadot Permissions object (ordering tx alphabetically)', () => {
     let value: Permissions = {
       tokens: null,
       transactions: null,
@@ -1039,7 +1039,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const did = 'someDid';
     value = {
       tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
-      transactions: [TxTags.identity.AddClaim],
+      transactions: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
       portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
     };
 
@@ -1052,12 +1052,16 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       .withArgs('Permissions', {
         asset: [rawTicker],
         extrinsic: [
+          /* eslint-disable @typescript-eslint/camelcase */
           {
-            /* eslint-disable @typescript-eslint/camelcase */
             pallet_name: 'Identity',
             dispatchable_names: ['add_claim'],
-            /* eslint-enable @typescript-eslint/camelcase */
           },
+          {
+            pallet_name: 'Sto',
+            dispatchable_names: ['create_fundraiser', 'invest'],
+          },
+          /* eslint-enable @typescript-eslint/camelcase */
         ],
         portfolio: [rawPortfolioId],
       })
