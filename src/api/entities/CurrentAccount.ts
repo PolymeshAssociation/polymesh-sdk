@@ -74,6 +74,15 @@ export class CurrentAccount extends Account {
       ...Object.values(TxTags.staking),
       ...Object.values(TxTags.sudo),
       ...Object.values(TxTags.session),
+      ...Object.values(TxTags.authorship),
+      ...Object.values(TxTags.babe),
+      ...Object.values(TxTags.finalityTracker),
+      ...Object.values(TxTags.grandpa),
+      ...Object.values(TxTags.imOnline),
+      ...Object.values(TxTags.indices),
+      ...Object.values(TxTags.scheduler),
+      ...Object.values(TxTags.system),
+      ...Object.values(TxTags.timestamp),
     ];
 
     let hasTransactions;
