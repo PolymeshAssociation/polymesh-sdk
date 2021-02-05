@@ -136,6 +136,7 @@ import {
 import {
   AuthTarget,
   ExtrinsicIdentifier,
+  HardcodedProtocolOp,
   PolymeshTx,
   PortfolioId,
   SignerType,
@@ -1830,6 +1831,13 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
   const value = `${stringUpperFirst(moduleName)}${stringUpperFirst(
     extrinsicName.replace(new RegExp('Documents$'), 'Document') // `asset.addDocuments` and `asset.removeDocuments`
   )}`;
+
+  if (!(value in HardcodedProtocolOp)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `${value} does not match any ProtocolOp value`,
+    });
+  }
 
   return context.polymeshApi.createType('ProtocolOp', value);
 }
