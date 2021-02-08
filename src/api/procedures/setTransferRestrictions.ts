@@ -1,12 +1,12 @@
-import { difference, differenceWith, isEqual } from 'lodash';
+import P from 'bluebird';
+import { difference, differenceWith, isEqual, some, uniq } from 'lodash';
 
-import { PolymeshError } from '~/base/PolymeshError';
-import { Procedure, SecurityToken } from '~/internal';
+import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ScopeId, Ticker, TransferManager, TxTag } from '~/polkadot';
 import {
-  CountTransferRestriction,
+  CountTransferRestrictionInput,
   ErrorCode,
-  PercentageTransferRestriction,
+  PercentageTransferRestrictionInput,
   RoleType,
   TxTags,
 } from '~/types';
@@ -24,12 +24,12 @@ import {
 } from '~/utils/conversion';
 
 export interface SetCountTransferRestrictionsParams {
-  restrictions: CountTransferRestriction[];
+  restrictions: CountTransferRestrictionInput[];
   type: TransferRestrictionType.Count;
 }
 
 export interface SetPercentageTransferRestrictionsParams {
-  restrictions: PercentageTransferRestriction[];
+  restrictions: PercentageTransferRestrictionInput[];
   type: TransferRestrictionType.Percentage;
 }
 
@@ -47,6 +47,7 @@ export interface Storage {
   exemptionsToAdd: [Ticker, TransferManager, ScopeId[]][];
   exemptionsToRemove: [Ticker, TransferManager, ScopeId[]][];
   occupiedSlots: number;
+  exemptionsRepeated: boolean;
 }
 
 /**
@@ -68,11 +69,19 @@ export async function prepareSetTransferRestrictions(
       exemptionsToAdd,
       exemptionsToRemove,
       occupiedSlots,
+      exemptionsRepeated,
     },
   } = this;
   const {
     restrictions: { length: newRestrictionAmount },
   } = args;
+
+  if (exemptionsRepeated) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'One or more restrictions have repeated exempted Scope IDs/Identities',
+    });
+  }
 
   const restrictionsToAddAmount = restrictionsToAdd.length;
   const restrictionsToRemoveAmount = restrictionsToRemove.length;
@@ -185,32 +194,68 @@ export async function prepareStorage(
   const currentRestrictions: TransferRestriction[] = [];
   const currentExemptions: [TransferRestriction, string[]][] = [];
   const toAddRestrictions: TransferRestriction[] = [];
-  const toAddExemptions: [TransferRestriction, string[]][] = [];
+  const toAddExemptionPromises: [TransferRestriction, Promise<string[]>][] = [];
   let occupiedSlots = currentCountRestrictions.length + currentPercentageRestrictions.length;
 
-  if (args.type === TransferRestrictionType.Count) {
-    args.restrictions.forEach(({ exempted = [], count: value }) => {
-      const restriction = { type: TransferRestrictionType.Count, value };
-      toAddRestrictions.push(restriction);
-      toAddExemptions.push(tuple(restriction, exempted));
+  const getScopeIds = async (
+    identities: (string | Identity)[],
+    scopeIds: string[]
+  ): Promise<string[]> => {
+    const identityScopeIds = await P.map(identities, async value => {
+      let identity: Identity;
+
+      if (typeof value === 'string') {
+        identity = new Identity({ did: value }, context);
+      } else {
+        identity = value;
+      }
+
+      return identity.getScopeId({ token: ticker });
     });
-    currentCountRestrictions.forEach(({ exempted = [], count: value }) => {
+
+    return [...scopeIds, ...identityScopeIds];
+  };
+
+  if (args.type === TransferRestrictionType.Count) {
+    args.restrictions.forEach(
+      ({ exemptedScopeIds = [], exemptedIdentities = [], count: value }) => {
+        const restriction = { type: TransferRestrictionType.Count, value };
+        toAddRestrictions.push(restriction);
+        toAddExemptionPromises.push(
+          tuple(restriction, getScopeIds(exemptedIdentities, exemptedScopeIds))
+        );
+      }
+    );
+    currentCountRestrictions.forEach(({ exemptedScopeIds = [], count: value }) => {
       const restriction = { type: TransferRestrictionType.Count, value };
       currentRestrictions.push(restriction);
-      currentExemptions.push(tuple(restriction, exempted));
+      currentExemptions.push(tuple(restriction, exemptedScopeIds));
     });
   } else {
-    args.restrictions.forEach(({ exempted = [], percentage: value }) => {
-      const restriction = { type: TransferRestrictionType.Percentage, value };
-      toAddRestrictions.push(restriction);
-      toAddExemptions.push(tuple(restriction, exempted));
-    });
-    currentPercentageRestrictions.forEach(({ exempted = [], percentage: value }) => {
+    args.restrictions.forEach(
+      ({ exemptedIdentities = [], exemptedScopeIds = [], percentage: value }) => {
+        const restriction = { type: TransferRestrictionType.Percentage, value };
+        toAddRestrictions.push(restriction);
+        toAddExemptionPromises.push(
+          tuple(restriction, getScopeIds(exemptedIdentities, exemptedScopeIds))
+        );
+      }
+    );
+    currentPercentageRestrictions.forEach(({ exemptedScopeIds = [], percentage: value }) => {
       const restriction = { type: TransferRestrictionType.Percentage, value };
       currentRestrictions.push(restriction);
-      currentExemptions.push(tuple(restriction, exempted));
+      currentExemptions.push(tuple(restriction, exemptedScopeIds));
     });
   }
+
+  const toAddExemptions = await P.map(
+    toAddExemptionPromises,
+    async ([restriction, exemptedPromise]) => {
+      const exempted = await exemptedPromise;
+
+      return tuple(restriction, exempted);
+    }
+  );
 
   const newRestrictions = differenceWith(toAddRestrictions, currentRestrictions, isEqual);
   const toRemoveRestrictions = differenceWith(currentRestrictions, toAddRestrictions, isEqual);
@@ -248,6 +293,11 @@ export async function prepareStorage(
     }
   });
 
+  const exemptionsRepeated = some(
+    newExemptions,
+    ([, scopeIds]) => uniq(scopeIds).length !== scopeIds.length
+  );
+
   const transformExemptions = ([restriction, scopeIds]: [TransferRestriction, string[]]): [
     Ticker,
     TransferManager,
@@ -269,6 +319,7 @@ export async function prepareStorage(
     exemptionsToAdd,
     exemptionsToRemove,
     occupiedSlots,
+    exemptionsRepeated,
   };
 }
 
