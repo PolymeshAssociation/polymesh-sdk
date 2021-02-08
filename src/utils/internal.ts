@@ -4,6 +4,7 @@ import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
+import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
 import { TxTag } from 'polymesh-types/types';
@@ -400,4 +401,30 @@ export function createProcedureMethod<
   };
 
   return method;
+}
+
+/**
+ * @hidden
+ */
+export function assertIsInteger(value: number | BigNumber): void {
+  const rawValue = new BigNumber(value);
+  if (!rawValue.isInteger()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The number must be an integer',
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export function assertIsPositive(value: number | BigNumber): void {
+  const rawValue = new BigNumber(value);
+  if (rawValue.isNegative()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The number must be positive',
+    });
+  }
 }

@@ -1,4 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -11,6 +12,8 @@ import { tuple } from '~/types/utils';
 import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 import {
+  assertIsInteger,
+  assertIsPositive,
   batchArguments,
   calculateNextKey,
   createClaim,
@@ -473,5 +476,43 @@ describe('createProcedureMethod', () => {
     await method.checkAuthorization(procArgs);
 
     sinon.assert.calledWithExactly(checkAuthorization, procArgs, context);
+  });
+});
+
+describe('assertIsInteger', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('assertIsInteger should throw an error if the count is not an integer', async () => {
+    expect(() => assertIsInteger(('noInteger' as unknown) as BigNumber)).toThrow(
+      'The number must be an integer'
+    );
+  });
+});
+
+describe('assertIsPositive', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('assertIsInteger should throw an error if the count is not an integer', async () => {
+    expect(() => assertIsPositive(new BigNumber(-3))).toThrow('The number must be positive');
   });
 });

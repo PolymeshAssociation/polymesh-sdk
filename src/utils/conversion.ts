@@ -151,7 +151,14 @@ import {
   MAX_TICKER_LENGTH,
   SS58_FORMAT,
 } from '~/utils/constants';
-import { createClaim, isPrintableAscii, padString, removePadding } from '~/utils/internal';
+import {
+  assertIsInteger,
+  assertIsPositive,
+  createClaim,
+  isPrintableAscii,
+  padString,
+  removePadding,
+} from '~/utils/internal';
 
 export * from '~/generated/utils';
 
@@ -366,6 +373,8 @@ export function u64ToBigNumber(value: u64): BigNumber {
  * @hidden
  */
 export function numberToU64(value: number | BigNumber, context: Context): u64 {
+  assertIsInteger(value);
+  assertIsPositive(value);
   return context.polymeshApi.createType('u64', new BigNumber(value).toString());
 }
 
@@ -711,6 +720,8 @@ export function numberToBalance(
 ): Balance {
   const rawValue = new BigNumber(value);
 
+  assertIsPositive(value);
+
   divisible = divisible ?? true;
 
   if (rawValue.isGreaterThan(MAX_BALANCE)) {
@@ -768,6 +779,8 @@ export function stringToMemo(value: string, context: Context): Memo {
  * @hidden
  */
 export function numberToU32(value: number | BigNumber, context: Context): u32 {
+  assertIsInteger(value);
+  assertIsPositive(value);
   return context.polymeshApi.createType('u32', new BigNumber(value).toString());
 }
 
@@ -1863,6 +1876,8 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
  * @hidden
  */
 export function numberToPipId(id: number | BigNumber, context: Context): PipId {
+  assertIsInteger(id);
+  assertIsPositive(id);
   return context.polymeshApi.createType('PipId', new BigNumber(id).toString());
 }
 
@@ -2163,12 +2178,8 @@ export function transferRestrictionToTransferManager(
   if (type === TransferRestrictionType.Count) {
     tmType = 'CountTransferManager';
 
-    if (!value.isInteger() || value.isNegative()) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Count should be a positive integer',
-      });
-    }
+    assertIsInteger(value);
+    assertIsPositive(value);
 
     tmValue = numberToU64(value, context);
   } else {
