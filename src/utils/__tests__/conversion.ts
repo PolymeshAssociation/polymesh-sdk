@@ -1791,6 +1791,12 @@ describe('stringToDocumentHash and documentHashToString', () => {
     dsMockUtils.cleanup();
   });
 
+  test('stringToDocumentHash should throw if document hash is empty', () => {
+    expect(() => stringToDocumentHash('', dsMockUtils.getContextInstance())).toThrow(
+      'Document hash cannot be empty'
+    );
+  });
+
   test('stringToDocumentHash should convert a string to a polkadot DocumentHash object', () => {
     const value = 'someHash';
     const fakeResult = ('convertedHash' as unknown) as DocumentHash;
