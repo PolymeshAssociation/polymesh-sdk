@@ -135,7 +135,6 @@ import {
 import {
   AuthTarget,
   ExtrinsicIdentifier,
-  HardcodedProtocolOp,
   PolymeshTx,
   PortfolioId,
   SignerType,
@@ -1831,10 +1830,30 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
     extrinsicName.replace(new RegExp('Documents$'), 'Document') // `asset.addDocuments` and `asset.removeDocuments`
   )}`;
 
-  if (!(value in HardcodedProtocolOp)) {
+  const protocolOpTags = [
+    'AssetRegisterTicker',
+    'AssetIssue',
+    'AssetAddDocument',
+    'AssetCreateAsset',
+    'AssetCreateCheckpointSchedule',
+    'DividendNew',
+    'ComplianceManagerAddComplianceRequirement',
+    'IdentityRegisterDid',
+    'IdentityCddRegisterDid',
+    'IdentityAddClaim',
+    'IdentitySetPrimaryKey',
+    'IdentityAddSecondaryKeysWithAuthorization',
+    'PipsPropose',
+    'VotingAddBallot',
+    'ContractsPutCode',
+    'BallotAttachBallot',
+    'DistributionDistribute',
+  ];
+
+  if (!protocolOpTags.includes(value)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `${value} does not match any ProtocolOp value`,
+      message: `${value} does not match any ProtocolOp`,
     });
   }
 

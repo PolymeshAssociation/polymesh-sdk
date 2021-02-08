@@ -201,23 +201,3 @@ export interface ProcedureMethod<MethodArgs, ReturnValue> {
   (args: MethodArgs): Promise<TransactionQueue<ReturnValue>>;
   checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
 }
-
-export enum HardcodedProtocolOp {
-  AssetRegisterTicker = 'AssetRegisterTicker',
-  AssetIssue = 'AssetIssue',
-  AssetAddDocument = 'AssetAddDocument',
-  AssetCreateAsset = 'AssetCreateAsset',
-  AssetCreateCheckpointSchedule = 'AssetCreateCheckpointSchedule',
-  DividendNew = 'DividendNew',
-  ComplianceManagerAddComplianceRequirement = 'ComplianceManagerAddComplianceRequirement',
-  IdentityRegisterDid = 'IdentityRegisterDid',
-  IdentityCddRegisterDid = 'IdentityCddRegisterDid',
-  IdentityAddClaim = 'IdentityAddClaim',
-  IdentitySetPrimaryKey = 'IdentitySetPrimaryKey',
-  IdentityAddSecondaryKeysWithAuthorization = 'IdentityAddSecondaryKeysWithAuthorization',
-  PipsPropose = 'PipsPropose',
-  VotingAddBallot = 'VotingAddBallot',
-  ContractsPutCode = 'ContractsPutCode',
-  BallotAttachBallot = 'BallotAttachBallot',
-  DistributionDistribute = 'DistributionDistribute',
-}

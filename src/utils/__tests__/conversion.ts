@@ -2858,7 +2858,7 @@ describe('txTagToProtocolOp', () => {
     expect(result).toEqual(fakeResult);
   });
 
-  test('txTagToProtocolOp should throw an error if tag does not match any ProtocolOp value', () => {
+  test('txTagToProtocolOp should throw an error if tag does not match any ProtocolOp', () => {
     const value = TxTags.asset.SetTreasuryDid;
     const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
@@ -2867,7 +2867,7 @@ describe('txTagToProtocolOp', () => {
     dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', mockTag).returns(fakeResult);
 
     expect(() => txTagToProtocolOp(value, context)).toThrow(
-      `${mockTag} does not match any ProtocolOp value`
+      `${mockTag} does not match any ProtocolOp`
     );
   });
 });
