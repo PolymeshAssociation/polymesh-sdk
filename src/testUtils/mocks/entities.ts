@@ -92,6 +92,7 @@ interface IdentityOptions {
     getReceived: AuthorizationRequest[];
   };
   getVenues?: Venue[];
+  getScopeId?: string;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -209,12 +210,14 @@ let identityHasValidCddStub: SinonStub;
 let identityGetPrimaryKeyStub: SinonStub;
 let identityAuthorizationsGetReceivedStub: SinonStub;
 let identityGetVenuesStub: SinonStub;
+let identityGetScopeIdStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
 let currentIdentityGetPrimaryKeyStub: SinonStub;
 let currentIdentityAuthorizationsGetReceivedStub: SinonStub;
 let currentIdentityGetVenuesStub: SinonStub;
+let currentIdentityGetScopeIdStub: SinonStub;
 let currentIdentityGetSecondaryKeysStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
@@ -428,6 +431,7 @@ const defaultIdentityOptions: IdentityOptions = {
     getReceived: [],
   },
   getVenues: [],
+  getScopeId: 'someScopeId',
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -439,6 +443,7 @@ const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
     getReceived: [],
   },
   getVenues: [],
+  getScopeId: 'someScopeId',
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -864,6 +869,7 @@ function configureIdentity(opts: IdentityOptions): void {
       getReceived: identityAuthorizationsGetReceivedStub.resolves(opts.authorizations?.getReceived),
     },
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
+    getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -886,6 +892,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityGetPrimaryKeyStub = sinon.stub();
   identityAuthorizationsGetReceivedStub = sinon.stub();
   identityGetVenuesStub = sinon.stub();
+  identityGetScopeIdStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -955,6 +962,7 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
       ),
     },
     getVenues: currentIdentityGetVenuesStub.resolves(opts.getVenues),
+    getScopeId: currentIdentityGetScopeIdStub.resolves(opts.getScopeId),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
@@ -980,6 +988,7 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityGetPrimaryKeyStub = sinon.stub();
   currentIdentityAuthorizationsGetReceivedStub = sinon.stub();
   currentIdentityGetVenuesStub = sinon.stub();
+  currentIdentityGetScopeIdStub = sinon.stub();
   currentIdentityGetSecondaryKeysStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
@@ -1382,6 +1391,14 @@ export function getIdentityGetVenuesStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `Identity.getScopeId` method
+ */
+export function getIdentityGetScopeIdStub(): SinonStub {
+  return identityGetScopeIdStub;
+}
+
+/**
+ * @hidden
  * Retrieve a Current Identity instance
  */
 export function getCurrentIdentityInstance(opts?: CurrentIdentityOptions): MockCurrentIdentity {
@@ -1430,6 +1447,14 @@ export function getCurrentIdentityGetPrimaryKeyStub(): SinonStub {
  */
 export function getCurrentIdentityGetVenuesStub(): SinonStub {
   return currentIdentityGetVenuesStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.getScopeId` method
+ */
+export function getCurrentIdentityGetScopeIdStub(): SinonStub {
+  return currentIdentityGetScopeIdStub;
 }
 
 /**
