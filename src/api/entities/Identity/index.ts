@@ -33,6 +33,7 @@ import {
   cddStatusToBoolean,
   identityIdToString,
   portfolioIdToPortfolio,
+  scopeIdToString,
   stringToIdentityId,
   stringToTicker,
   u64ToBigNumber,
@@ -385,5 +386,24 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const venueIds = await settlement.userVenues(rawDid);
 
     return assembleResult(venueIds);
+  }
+
+  /**
+   * Retrieve the Scope ID associated to this Identity's Investor Uniqueness Claim for a specific Security Token
+   *
+   * @note more on Investor Uniqueness: https://developers.polymesh.live/confidential_identity
+   */
+  public async getScopeId(args: { token: SecurityToken | string }): Promise<string> {
+    const { context, did } = this;
+    const { token } = args;
+
+    const ticker = typeof token === 'string' ? token : token.ticker;
+
+    const scopeId = await context.polymeshApi.query.asset.scopeIdOf(
+      stringToTicker(ticker, context),
+      stringToIdentityId(did, context)
+    );
+
+    return scopeIdToString(scopeId);
   }
 }
