@@ -312,7 +312,6 @@ describe('Sto class', () => {
       );
 
       result = await sto.getInvestments();
-
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });
