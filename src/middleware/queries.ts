@@ -592,7 +592,7 @@ export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<Query
 /**
  * @hidden
  *
- * Get all investors for a given offering
+ * Get all investments for a given offering
  */
 export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<QueryInvestmentsArgs> {
   const query = gql`
@@ -602,7 +602,6 @@ export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<Query
         items {
           investor
           offeringToken
-          raiseToken
           offeringTokenAmount
           raiseTokenAmount
         }

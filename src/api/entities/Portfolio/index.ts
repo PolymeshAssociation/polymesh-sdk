@@ -26,7 +26,12 @@ import {
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, getDid } from '~/utils/internal';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  getDid,
+  moveDecimalPoint,
+} from '~/utils/internal';
 
 import { HistoricSettlement, PortfolioBalance } from './types';
 
@@ -287,7 +292,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
           legs: settlementLegs.map(leg => {
             return {
               token: new SecurityToken({ ticker: leg!.ticker }, context),
-              amount: new BigNumber(leg!.amount).div(Math.pow(10, 6)),
+              amount: moveDecimalPoint(new BigNumber(leg!.amount), -6),
               direction: leg!.direction,
               from: middlewarePortfolioToPortfolio(leg!.from, context),
               to: middlewarePortfolioToPortfolio(leg!.to, context),

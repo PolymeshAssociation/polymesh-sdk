@@ -4,6 +4,7 @@ import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
+import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
 import { TxTag } from 'polymesh-types/types';
@@ -365,6 +366,13 @@ export function batchArguments<Args>(
 export function calculateNextKey(totalCount: number, size?: number, start?: number): NextKey {
   const next = (start ?? 0) + (size ?? DEFAULT_GQL_PAGE_SIZE);
   return totalCount > next ? next : null;
+}
+
+/**
+ * @hidden
+ */
+export function moveDecimalPoint(value: BigNumber, places: number): BigNumber {
+  return value.shiftedBy(places);
 }
 
 /**

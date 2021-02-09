@@ -152,7 +152,13 @@ import {
   MAX_TICKER_LENGTH,
   SS58_FORMAT,
 } from '~/utils/constants';
-import { createClaim, isPrintableAscii, padString, removePadding } from '~/utils/internal';
+import {
+  createClaim,
+  isPrintableAscii,
+  moveDecimalPoint,
+  padString,
+  removePadding,
+} from '~/utils/internal';
 
 export * from '~/generated/utils';
 
@@ -376,7 +382,7 @@ export function numberToU64(value: number | BigNumber, context: Context): u64 {
 export function percentageToPermill(value: number | BigNumber, context: Context): Permill {
   return context.polymeshApi.createType(
     'Permill',
-    new BigNumber(value).multipliedBy(Math.pow(10, 4)).toString()
+    moveDecimalPoint(new BigNumber(value), 4).toString()
   ); // (value : 100) * 10^6
 }
 
@@ -386,7 +392,7 @@ export function percentageToPermill(value: number | BigNumber, context: Context)
  * @note returns a percentage value ([0, 100])
  */
 export function permillToBigNumber(value: Permill): BigNumber {
-  return new BigNumber(value.toString()).dividedBy(Math.pow(10, 4)); // (value : 10^6) * 100
+  return moveDecimalPoint(new BigNumber(value.toString()), -4); // (value : 10^6) * 100
 }
 
 /**
@@ -745,17 +751,14 @@ export function numberToBalance(
     }
   }
 
-  return context.polymeshApi.createType(
-    'Balance',
-    rawValue.multipliedBy(Math.pow(10, 6)).toString()
-  );
+  return context.polymeshApi.createType('Balance', moveDecimalPoint(rawValue, 6).toString());
 }
 
 /**
  * @hidden
  */
 export function balanceToBigNumber(balance: Balance): BigNumber {
-  return new BigNumber(balance.toString()).div(Math.pow(10, 6));
+  return moveDecimalPoint(new BigNumber(balance.toString()), -6);
 }
 
 /**

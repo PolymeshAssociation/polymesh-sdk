@@ -1,25 +1,25 @@
 import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
-import { Identity } from '~/api/entities/Identity';
-import { SecurityToken } from '~/api/entities/SecurityToken';
 import {
   closeSto,
   Context,
   Entity,
+  Identity,
   modifyStoTimes,
   ModifyStoTimesParams,
   PolymeshError,
+  SecurityToken,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Fundraiser } from '~/polkadot/polymesh/types';
-import { Ensured, ErrorCode, ResultSet, StoDetails, SubCallback, UnsubCallback } from '~/types';
+import { Ensured, ErrorCode, ResultSet, SubCallback, UnsubCallback } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, moveDecimalPoint } from '~/utils/internal';
 
-import { Investor } from './types';
+import { Investment, StoDetails } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -133,7 +133,7 @@ export class Sto extends Entity<UniqueIdentifiers> {
   public modifyTimes: ProcedureMethod<ModifyStoTimesParams, void>;
 
   /**
-   * Retrieve all investors
+   * Retrieve all investments made on this STO
    *
    * @param opts.size - page size
    * @param opts.start - page offset
@@ -141,12 +141,12 @@ export class Sto extends Entity<UniqueIdentifiers> {
    * @note supports pagination
    * @note uses the middleware
    */
-  public async getInvestors(
+  public async getInvestments(
     opts: {
       size?: number;
       start?: number;
     } = {}
-  ): Promise<ResultSet<Investor>> {
+  ): Promise<ResultSet<Investment>> {
     const { context, id, ticker } = this;
 
     const { size, start } = opts;
@@ -161,33 +161,26 @@ export class Sto extends Entity<UniqueIdentifiers> {
     );
 
     const {
-      data: { investments: investmentResult },
+      data: { investments: investmentsResult },
     } = result;
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { items, totalCount: count } = investmentResult!;
+    const { items, totalCount: count } = investmentsResult!;
 
-    const data: Investor[] = [];
+    const data: Investment[] = [];
     let next = null;
 
     if (items) {
       items.forEach(item => {
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        const {
-          investor: did,
-          offeringToken,
-          raiseToken: raiseCurrency,
-          offeringTokenAmount,
-          raiseTokenAmount,
-        } = item!;
+        const { investor: did, offeringToken, offeringTokenAmount, raiseTokenAmount } = item!;
         /* eslint-enabled @typescript-eslint/no-non-null-assertion */
 
         data.push({
           investor: new Identity({ did }, context),
           offeringToken: new SecurityToken({ ticker: offeringToken }, context),
-          raiseCurrency,
-          offeringTokenAmount: new BigNumber(offeringTokenAmount),
-          raiseTokenAmount: new BigNumber(raiseTokenAmount),
+          soldAmount: moveDecimalPoint(new BigNumber(offeringTokenAmount), -6),
+          investedAmount: moveDecimalPoint(new BigNumber(raiseTokenAmount), -6),
         });
       });
 

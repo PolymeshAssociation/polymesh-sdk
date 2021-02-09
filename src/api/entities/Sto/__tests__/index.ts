@@ -235,7 +235,7 @@ describe('Sto class', () => {
     });
   });
 
-  describe('method: getInvestors', () => {
+  describe('method: getInvestments', () => {
     test('should return a list of investors', async () => {
       const ticker = 'SOMETICKER';
       const id = new BigNumber(1);
@@ -244,16 +244,16 @@ describe('Sto class', () => {
       const did = 'someDid';
       const offeringToken = 'TICKER';
       const raiseToken = 'USD';
-      const offeringTokenAmount = 100;
-      const raiseTokenAmount = 1;
+      const offeringTokenAmount = new BigNumber(10000);
+      const raiseTokenAmount = new BigNumber(1000);
 
       const items = [
         {
           investor: did,
           offeringToken,
           raiseToken,
-          offeringTokenAmount,
-          raiseTokenAmount,
+          offeringTokenAmount: offeringTokenAmount.toNumber(),
+          raiseTokenAmount: raiseTokenAmount.toNumber(),
         },
       ];
 
@@ -278,7 +278,7 @@ describe('Sto class', () => {
         }
       );
 
-      let result = await sto.getInvestors({
+      let result = await sto.getInvestments({
         size: 5,
         start: 0,
       });
@@ -287,9 +287,8 @@ describe('Sto class', () => {
 
       expect(data[0].investor.did).toBe(did);
       expect(data[0].offeringToken.ticker).toBe(offeringToken);
-      expect(data[0].raiseCurrency).toBe(raiseToken);
-      expect(data[0].offeringTokenAmount.toNumber()).toBe(offeringTokenAmount);
-      expect(data[0].raiseTokenAmount.toNumber()).toBe(raiseTokenAmount);
+      expect(data[0].soldAmount).toEqual(offeringTokenAmount.div(Math.pow(10, 6)));
+      expect(data[0].investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
 
       dsMockUtils.createApolloQueryStub(
         investments({
@@ -306,7 +305,7 @@ describe('Sto class', () => {
         }
       );
 
-      result = await sto.getInvestors();
+      result = await sto.getInvestments();
 
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
