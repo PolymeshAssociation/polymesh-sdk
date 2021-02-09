@@ -1139,6 +1139,13 @@ export function documentUriToString(docUri: DocumentUri): string {
  * @hidden
  */
 export function stringToDocumentHash(docHash: string, context: Context): DocumentHash {
+  if (!docHash.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Document hash cannot be empty',
+    });
+  }
+
   return context.polymeshApi.createType('DocumentHash', docHash);
 }
 
