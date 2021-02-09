@@ -350,7 +350,7 @@ export class Polymesh {
    *
    * @param args.ticker - ticker symbol to reserve
    *
-   * @note required role if at least one claim is CDD type
+   * @note required role if at least one claim is CDD type:
    *   - Ticker Owner
    */
   public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
