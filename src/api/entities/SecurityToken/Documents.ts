@@ -30,6 +30,9 @@ export class Documents extends Namespace<SecurityToken> {
    * This requires two transactions
    *
    * @param args.documents - new list of documents
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
 
   public set: ProcedureMethod<SetTokenDocumentsParams, SecurityToken>;

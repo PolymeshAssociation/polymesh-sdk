@@ -20,6 +20,9 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    * @param args.exemptedIdentities - array of Identities (or DIDs) that are exempted from the Restriction
    *
    * @note the result is the total amount of restrictions after the procedure has run
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public addRestriction!: ProcedureMethod<
     Omit<AddPercentageTransferRestrictionParams, 'type'>,
@@ -32,6 +35,9 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    * @param args.restrictions - array of Percentage Transfer Restrictions with their corresponding exemptions (if applicable)
    *
    * @note the result is the total amount of restrictions after the procedure has run
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public setRestrictions!: ProcedureMethod<
     Omit<SetPercentageTransferRestrictionsParams, 'type'>,

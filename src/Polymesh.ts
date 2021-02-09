@@ -349,6 +349,9 @@ export class Polymesh {
    *   The ticker will expire after a set amount of time, after which other users can reserve it
    *
    * @param args.ticker - ticker symbol to reserve
+   *
+   * @note required role if at least one claim is CDD type
+   *   - Ticker Owner
    */
   public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
 
@@ -661,6 +664,9 @@ export class Polymesh {
    * @note this may create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @note required role:
+   *   - Customer Due Diligence Provider
    */
   public registerIdentity: ProcedureMethod<RegisterIdentityParams, Identity>;
 
