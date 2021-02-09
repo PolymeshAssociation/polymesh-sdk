@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 
 import {
   closeSto,
@@ -9,6 +9,8 @@ import {
   Identity,
   modifyStoTimes,
   Sto,
+  toggleFreezeSto,
+  ToggleFreezeStoParams,
   TransactionQueue,
   Venue,
 } from '~/internal';
@@ -39,10 +41,15 @@ jest.mock(
 
 describe('Sto class', () => {
   let context: Context;
+  let prepareToggleFreezeStoStub: SinonStub<
+    [ToggleFreezeStoParams, Context],
+    Promise<TransactionQueue<Sto, unknown[][]>>
+  >;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    prepareToggleFreezeStoStub = sinon.stub(toggleFreezeSto, 'prepare');
   });
 
   beforeEach(() => {
@@ -240,7 +247,6 @@ describe('Sto class', () => {
       const ticker = 'SOMETICKER';
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
-
       const did = 'someDid';
       const offeringToken = 'TICKER';
       const raiseToken = 'USD';
@@ -309,6 +315,42 @@ describe('Sto class', () => {
 
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
+    });
+  });
+
+  describe('method: freeze', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const ticker = 'SOMETICKER';
+      const id = new BigNumber(1);
+      const sto = new Sto({ id, ticker }, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
+
+      prepareToggleFreezeStoStub
+        .withArgs({ ticker, id, freeze: true }, context)
+        .resolves(expectedQueue);
+
+      const queue = await sto.freeze();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: unfreeze', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const ticker = 'SOMETICKER';
+      const id = new BigNumber(1);
+      const sto = new Sto({ id, ticker }, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
+
+      prepareToggleFreezeStoStub
+        .withArgs({ ticker, id, freeze: false }, context)
+        .resolves(expectedQueue);
+
+      const queue = await sto.unfreeze();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

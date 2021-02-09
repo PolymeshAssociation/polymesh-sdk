@@ -637,7 +637,12 @@ export interface ProcedureAuthorizationStatus {
 }
 
 interface TransferRestrictionBase {
-  exempted?: string[];
+  exemptedScopeIds?: string[];
+}
+
+interface TransferRestrictionInputBase {
+  exemptedScopeIds?: string[];
+  exemptedIdentities?: (Identity | string)[];
 }
 
 export interface CountTransferRestriction extends TransferRestrictionBase {
@@ -645,6 +650,14 @@ export interface CountTransferRestriction extends TransferRestrictionBase {
 }
 
 export interface PercentageTransferRestriction extends TransferRestrictionBase {
+  percentage: BigNumber;
+}
+
+export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
+  count: BigNumber;
+}
+
+export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   percentage: BigNumber;
 }
 

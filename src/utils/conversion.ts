@@ -11,7 +11,6 @@ import {
 } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
-import P from 'bluebird';
 import { computeWithoutCheck } from 'iso-7064';
 import { camelCase, isEqual, map, padEnd, range, rangeRight, snakeCase, values } from 'lodash';
 import {
@@ -520,7 +519,7 @@ export function permissionsToMeshPermissions(
   let extrinsic: { pallet_name: string; dispatchable_names: string[] }[] | null = null;
 
   if (transactions) {
-    transactions.forEach(tag => {
+    transactions.sort().forEach(tag => {
       const [modName, txName] = tag.split('.');
 
       const palletName = stringUpperFirst(modName);
@@ -1133,6 +1132,13 @@ export function documentUriToString(docUri: DocumentUri): string {
  * @hidden
  */
 export function stringToDocumentHash(docHash: string, context: Context): DocumentHash {
+  if (!docHash.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Document hash cannot be empty',
+    });
+  }
+
   return context.polymeshApi.createType('DocumentHash', docHash);
 }
 
@@ -2226,10 +2232,10 @@ export function stoTierToPriceTier(tier: StoTier, context: Context): PriceTier {
 /**
  * @hidden
  */
-export async function permissionsLikeToPermissions(
+export function permissionsLikeToPermissions(
   permissionsLike: PermissionsLike,
   context: Context
-): Promise<Permissions> {
+): Permissions {
   let tokenPermissions: SecurityToken[] | null = [];
   let transactionPermissions: TxTag[] | null = [];
   let portfolioPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null = [];
@@ -2251,7 +2257,7 @@ export async function permissionsLikeToPermissions(
   if (portfolios === null) {
     portfolioPermissions = null;
   } else if (portfolios) {
-    portfolioPermissions = await P.map(portfolios, portfolio =>
+    portfolioPermissions = portfolios.map(portfolio =>
       portfolioLikeToPortfolio(portfolio, context)
     );
   }

@@ -10,6 +10,7 @@ import {
   ModifyStoTimesParams,
   PolymeshError,
   SecurityToken,
+  toggleFreezeSto,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
@@ -61,6 +62,14 @@ export class Sto extends Entity<UniqueIdentifiers> {
     this.id = id;
     this.ticker = ticker;
 
+    this.freeze = createProcedureMethod(
+      () => [toggleFreezeSto, { ticker, id, freeze: true }],
+      context
+    );
+    this.unfreeze = createProcedureMethod(
+      () => [toggleFreezeSto, { ticker, id, freeze: false }],
+      context
+    );
     this.close = createProcedureMethod(() => [closeSto, { ticker, id }], context);
     this.modifyTimes = createProcedureMethod(
       args => [modifyStoTimes, { ticker, id, ...args }],
@@ -118,6 +127,16 @@ export class Sto extends Entity<UniqueIdentifiers> {
    * Close the STO
    */
   public close: ProcedureMethod<void, void>;
+
+  /**
+   * Freeze the STO
+   */
+  public freeze: ProcedureMethod<void, Sto>;
+
+  /**
+   * Unfreeze the STO
+   */
+  public unfreeze: ProcedureMethod<void, Sto>;
 
   /**
    * Modify the start/end time of the STO
