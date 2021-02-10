@@ -1,7 +1,8 @@
 import { Keyring } from '@polkadot/api';
 import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { TxTag } from 'polymesh-types/types';
+import { some, values } from 'lodash';
+import { TxTag, TxTags } from 'polymesh-types/types';
 
 import { StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
@@ -613,9 +614,27 @@ export interface SecondaryKey {
   permissions: Permissions;
 }
 
+export enum TxGroup {
+  PortfolioManagement = 'PortfolioManagement',
+  TokenManagement = 'TokenManagement',
+  AdvancedTokenManagement = 'AdvancedTokenManagement',
+  Distribution = 'Distribution',
+  Issuance = 'Issuance',
+  TrustedClaimIssuersManagement = 'TrustedClaimIssuersManagement',
+  ClaimsManagement = 'ClaimsManagement',
+  ComplianceRequirementsManagement = 'ComplianceRequirementsManagement',
+}
+
+/**
+ * @hidden
+ */
+export function isTxGroup(group: string): group is TxGroup {
+  return some(values(TxGroup), value => value === group);
+}
+
 export interface PermissionsLike {
   tokens?: (string | SecurityToken)[] | null;
-  transactions?: TxTag[] | null;
+  transactions?: (TxTag | TxGroup)[] | null;
   portfolios?: PortfolioLike[] | null;
 }
 
@@ -671,7 +690,7 @@ export interface ActiveTransferRestrictions<
   availableSlots: number;
 }
 
-export { TxTags } from 'polymesh-types/types';
+export { TxTags, TxTag };
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';
 export * from '~/api/entities/types';

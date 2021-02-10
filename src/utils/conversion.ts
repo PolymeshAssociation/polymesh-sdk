@@ -12,7 +12,17 @@ import {
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import { computeWithoutCheck } from 'iso-7064';
-import { camelCase, isEqual, map, padEnd, range, rangeRight, snakeCase, values } from 'lodash';
+import {
+  camelCase,
+  isEqual,
+  map,
+  padEnd,
+  range,
+  rangeRight,
+  snakeCase,
+  uniq,
+  values,
+} from 'lodash';
 import {
   AffirmationStatus as MeshAffirmationStatus,
   AssetComplianceResult,
@@ -106,6 +116,7 @@ import {
   InstructionType,
   isMultiClaimCondition,
   isSingleClaimCondition,
+  isTxGroup,
   KnownTokenType,
   MultiClaimCondition,
   Permissions,
@@ -130,6 +141,7 @@ import {
   TokenType,
   TransferStatus,
   TrustedClaimIssuer,
+  TxGroup,
   VenueType,
 } from '~/types';
 import {
@@ -513,16 +525,18 @@ export function permissionsToMeshPermissions(
   let extrinsic: { pallet_name: string; dispatchable_names: string[] }[] | null = null;
 
   if (transactions) {
-    transactions.sort().forEach(tag => {
-      const [modName, txName] = tag.split('.');
+    uniq(transactions)
+      .sort()
+      .forEach(tag => {
+        const [modName, txName] = tag.split('.');
 
-      const palletName = stringUpperFirst(modName);
-      const dispatchableName = snakeCase(txName);
+        const palletName = stringUpperFirst(modName);
+        const dispatchableName = snakeCase(txName);
 
-      const pallet = (extrinsicDict[palletName] = extrinsicDict[palletName] || []);
+        const pallet = (extrinsicDict[palletName] = extrinsicDict[palletName] || []);
 
-      pallet.push(dispatchableName);
-    });
+        pallet.push(dispatchableName);
+      });
 
     extrinsic = map(extrinsicDict, (val, key) => ({
       /* eslint-disable @typescript-eslint/camelcase */
@@ -2229,6 +2243,70 @@ export function stoTierToPriceTier(tier: StoTier, context: Context): PriceTier {
 /**
  * @hidden
  */
+export function txGroupToTxTags(group: TxGroup): TxTag[] {
+  switch (group) {
+    case TxGroup.PortfolioManagement: {
+      return [
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.portfolio.MovePortfolioFunds,
+        TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.RejectInstruction,
+        TxTags.settlement.CreateVenue,
+      ];
+    }
+    case TxGroup.TokenManagement: {
+      return [
+        TxTags.asset.MakeDivisible,
+        TxTags.asset.RenameAsset,
+        TxTags.asset.SetFundingRound,
+        TxTags.asset.AddDocuments,
+        TxTags.asset.RemoveDocuments,
+      ];
+    }
+    case TxGroup.AdvancedTokenManagement: {
+      return [
+        TxTags.asset.Freeze,
+        TxTags.asset.Unfreeze,
+        TxTags.identity.AddAuthorization,
+        TxTags.identity.RemoveAuthorization,
+      ];
+    }
+    case TxGroup.Distribution: {
+      return [
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.settlement.CreateVenue,
+        TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddAndAffirmInstruction,
+      ];
+    }
+    case TxGroup.Issuance: {
+      return [TxTags.asset.Issue];
+    }
+    case TxGroup.TrustedClaimIssuersManagement: {
+      return [
+        TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
+        TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
+      ];
+    }
+    case TxGroup.ClaimsManagement: {
+      return [TxTags.identity.AddClaim, TxTags.identity.RevokeClaim];
+    }
+    case TxGroup.ComplianceRequirementsManagement: {
+      return [
+        TxTags.complianceManager.AddComplianceRequirement,
+        TxTags.complianceManager.RemoveComplianceRequirement,
+        TxTags.complianceManager.PauseAssetCompliance,
+        TxTags.complianceManager.ResumeAssetCompliance,
+        TxTags.complianceManager.ResetAssetCompliance,
+      ];
+    }
+  }
+}
+
+/**
+ * @hidden
+ */
 export function permissionsLikeToPermissions(
   permissionsLike: PermissionsLike,
   context: Context
@@ -2248,7 +2326,17 @@ export function permissionsLikeToPermissions(
   }
 
   if (transactions !== undefined) {
-    transactionPermissions = transactions;
+    const tags =
+      transactions &&
+      transactions.reduce<TxTag[]>((prev, curr): TxTag[] => {
+        if (isTxGroup(curr)) {
+          return [...prev, ...txGroupToTxTags(curr)];
+        } else {
+          return [...prev, curr];
+        }
+      }, []);
+
+    transactionPermissions = tags && uniq(tags);
   }
 
   if (portfolios === null) {
