@@ -2841,14 +2841,11 @@ describe('txTagToProtocolOp', () => {
   });
 
   test('txTagToProtocolOp should convert a TxTag to a polkadot ProtocolOp object', () => {
-    const value = TxTags.identity.AcceptAuthorization;
+    const value = TxTags.identity.AddClaim;
     const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ProtocolOp', 'IdentityAcceptAuthorization')
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', 'IdentityAddClaim').returns(fakeResult);
 
     const result = txTagToProtocolOp(value, context);
 
@@ -2865,6 +2862,19 @@ describe('txTagToProtocolOp', () => {
     const result = txTagToProtocolOp(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+
+  test('txTagToProtocolOp should throw an error if tag does not match any ProtocolOp', () => {
+    const value = TxTags.asset.SetTreasuryDid;
+    const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
+    const context = dsMockUtils.getContextInstance();
+    const mockTag = 'AssetSetTreasuryDid';
+
+    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', mockTag).returns(fakeResult);
+
+    expect(() => txTagToProtocolOp(value, context)).toThrow(
+      `${mockTag} does not match any ProtocolOp`
+    );
   });
 });
 
