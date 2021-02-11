@@ -1,4 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -11,6 +12,8 @@ import { tuple } from '~/types/utils';
 import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 import {
+  assertIsInteger,
+  assertIsPositive,
   batchArguments,
   calculateNextKey,
   createClaim,
@@ -473,5 +476,61 @@ describe('createProcedureMethod', () => {
     await method.checkAuthorization(procArgs);
 
     sinon.assert.calledWithExactly(checkAuthorization, procArgs, context);
+  });
+});
+
+describe('assertIsInteger', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should not throw if the argument is an integer', async () => {
+    try {
+      assertIsInteger(new BigNumber(1));
+    } catch (_) {
+      expect(true).toBe(false);
+    }
+  });
+
+  test('assertIsInteger should throw an error if the argument is not an integer', async () => {
+    expect(() => assertIsInteger(('noInteger' as unknown) as BigNumber)).toThrow(
+      'The number must be an integer'
+    );
+
+    expect(() => assertIsInteger(new BigNumber(1.2))).toThrow('The number must be an integer');
+  });
+});
+
+describe('assertIsPositive', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should not throw if the argument is positive', async () => {
+    try {
+      assertIsPositive(new BigNumber(1));
+    } catch (_) {
+      expect(true).toBe(false);
+    }
+  });
+
+  test('assertIsPositive should throw an error if the argument is negative', async () => {
+    expect(() => assertIsPositive(new BigNumber(-3))).toThrow('The number must be positive');
   });
 });
