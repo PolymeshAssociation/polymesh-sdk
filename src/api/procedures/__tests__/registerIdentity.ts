@@ -61,7 +61,12 @@ describe('registerIdentity procedure', () => {
     const secondaryKeys = [
       {
         signer: new Identity({ did: 'someValue' }, mockContext),
-        permissions: { tokens: null, portfolios: null, transactions: null },
+        permissions: {
+          tokens: null,
+          portfolios: null,
+          transactions: null,
+          transactionGroups: null,
+        },
       },
     ];
     const args = {

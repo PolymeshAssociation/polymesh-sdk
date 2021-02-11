@@ -275,6 +275,7 @@ describe('assertSecondaryKeys', () => {
         permissions: {
           tokens: null,
           transactions: null,
+          transactionGroups: null,
           portfolios: null,
         },
       },
@@ -295,6 +296,7 @@ describe('assertSecondaryKeys', () => {
         permissions: {
           tokens: null,
           transactions: null,
+          transactionGroups: null,
           portfolios: null,
         },
       },

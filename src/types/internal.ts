@@ -193,7 +193,7 @@ export interface TransferRestriction {
 }
 
 export interface ProcedureAuthorization {
-  signerPermissions?: Permissions | boolean;
+  signerPermissions?: Omit<Permissions, 'transactionGroups'> | boolean;
   identityRoles?: Role[] | boolean;
 }
 

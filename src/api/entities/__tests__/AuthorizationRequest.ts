@@ -110,6 +110,7 @@ describe('AuthorizationRequest class', () => {
             value: {
               tokens: null,
               transactions: null,
+              transactionGroups: null,
               portfolios: null,
             },
           },
@@ -181,6 +182,7 @@ describe('AuthorizationRequest class', () => {
             value: {
               tokens: null,
               transactions: null,
+              transactionGroups: null,
               portfolios: null,
             },
           },

@@ -515,6 +515,86 @@ export function textToString(value: Text): string {
 /**
  * @hidden
  */
+export function txGroupToTxTags(group: TxGroup): TxTag[] {
+  switch (group) {
+    case TxGroup.PortfolioManagement: {
+      return [
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.portfolio.MovePortfolioFunds,
+        TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.RejectInstruction,
+        TxTags.settlement.CreateVenue,
+      ];
+    }
+    case TxGroup.TokenManagement: {
+      return [
+        TxTags.asset.MakeDivisible,
+        TxTags.asset.RenameAsset,
+        TxTags.asset.SetFundingRound,
+        TxTags.asset.AddDocuments,
+        TxTags.asset.RemoveDocuments,
+      ];
+    }
+    case TxGroup.AdvancedTokenManagement: {
+      return [
+        TxTags.asset.Freeze,
+        TxTags.asset.Unfreeze,
+        TxTags.identity.AddAuthorization,
+        TxTags.identity.RemoveAuthorization,
+      ];
+    }
+    case TxGroup.Distribution: {
+      return [
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.settlement.CreateVenue,
+        TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddAndAffirmInstruction,
+      ];
+    }
+    case TxGroup.Issuance: {
+      return [TxTags.asset.Issue];
+    }
+    case TxGroup.TrustedClaimIssuersManagement: {
+      return [
+        TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
+        TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
+      ];
+    }
+    case TxGroup.ClaimsManagement: {
+      return [TxTags.identity.AddClaim, TxTags.identity.RevokeClaim];
+    }
+    case TxGroup.ComplianceRequirementsManagement: {
+      return [
+        TxTags.complianceManager.AddComplianceRequirement,
+        TxTags.complianceManager.RemoveComplianceRequirement,
+        TxTags.complianceManager.PauseAssetCompliance,
+        TxTags.complianceManager.ResumeAssetCompliance,
+        TxTags.complianceManager.ResetAssetCompliance,
+      ];
+    }
+  }
+}
+
+/**
+ * @hidden
+ *
+ * @note tags that don't belong to any group will be ignored.
+ *   The same goes for tags that belong to a group that wasn't completed
+ */
+export function txTagsToTxGroups(tags: TxTag[]): TxGroup[] {
+  return values(TxGroup)
+    .sort()
+    .filter(group => {
+      const tagsInGroup = txGroupToTxTags(group);
+
+      return tagsInGroup.every(tag => tags.includes(tag));
+    });
+}
+
+/**
+ * @hidden
+ */
 export function permissionsToMeshPermissions(
   permissions: Permissions,
   context: Context
@@ -609,6 +689,7 @@ export function meshPermissionsToPermissions(
   return {
     tokens,
     transactions,
+    transactionGroups: transactions && txTagsToTxGroups(transactions),
     portfolios,
   };
 }
@@ -2243,76 +2324,13 @@ export function stoTierToPriceTier(tier: StoTier, context: Context): PriceTier {
 /**
  * @hidden
  */
-export function txGroupToTxTags(group: TxGroup): TxTag[] {
-  switch (group) {
-    case TxGroup.PortfolioManagement: {
-      return [
-        TxTags.identity.AddInvestorUniquenessClaim,
-        TxTags.portfolio.MovePortfolioFunds,
-        TxTags.settlement.AddInstruction,
-        TxTags.settlement.AddAndAffirmInstruction,
-        TxTags.settlement.RejectInstruction,
-        TxTags.settlement.CreateVenue,
-      ];
-    }
-    case TxGroup.TokenManagement: {
-      return [
-        TxTags.asset.MakeDivisible,
-        TxTags.asset.RenameAsset,
-        TxTags.asset.SetFundingRound,
-        TxTags.asset.AddDocuments,
-        TxTags.asset.RemoveDocuments,
-      ];
-    }
-    case TxGroup.AdvancedTokenManagement: {
-      return [
-        TxTags.asset.Freeze,
-        TxTags.asset.Unfreeze,
-        TxTags.identity.AddAuthorization,
-        TxTags.identity.RemoveAuthorization,
-      ];
-    }
-    case TxGroup.Distribution: {
-      return [
-        TxTags.identity.AddInvestorUniquenessClaim,
-        TxTags.settlement.CreateVenue,
-        TxTags.settlement.AddInstruction,
-        TxTags.settlement.AddAndAffirmInstruction,
-      ];
-    }
-    case TxGroup.Issuance: {
-      return [TxTags.asset.Issue];
-    }
-    case TxGroup.TrustedClaimIssuersManagement: {
-      return [
-        TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
-        TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
-      ];
-    }
-    case TxGroup.ClaimsManagement: {
-      return [TxTags.identity.AddClaim, TxTags.identity.RevokeClaim];
-    }
-    case TxGroup.ComplianceRequirementsManagement: {
-      return [
-        TxTags.complianceManager.AddComplianceRequirement,
-        TxTags.complianceManager.RemoveComplianceRequirement,
-        TxTags.complianceManager.PauseAssetCompliance,
-        TxTags.complianceManager.ResumeAssetCompliance,
-        TxTags.complianceManager.ResetAssetCompliance,
-      ];
-    }
-  }
-}
-
-/**
- * @hidden
- */
 export function permissionsLikeToPermissions(
   permissionsLike: PermissionsLike,
   context: Context
 ): Permissions {
   let tokenPermissions: SecurityToken[] | null = [];
   let transactionPermissions: TxTag[] | null = [];
+  let transactionGroupPermissions: TxGroup[] | null = [];
   let portfolioPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null = [];
 
   const { tokens, transactions, portfolios } = permissionsLike;
@@ -2326,17 +2344,29 @@ export function permissionsLikeToPermissions(
   }
 
   if (transactions !== undefined) {
-    const tags =
+    const separated =
       transactions &&
-      transactions.reduce<TxTag[]>((prev, curr): TxTag[] => {
-        if (isTxGroup(curr)) {
-          return [...prev, ...txGroupToTxTags(curr)];
-        } else {
-          return [...prev, curr];
-        }
-      }, []);
+      transactions.reduce<{ tags: TxTag[]; groups: TxGroup[] }>(
+        (prev, curr): { tags: TxTag[]; groups: TxGroup[] } => {
+          const { tags: prevTags, groups: prevGroups } = prev;
+          if (isTxGroup(curr)) {
+            return { tags: [...prevTags, ...txGroupToTxTags(curr)], groups: [...prevGroups, curr] };
+          } else {
+            return { tags: [...prevTags, curr], groups: prevGroups };
+          }
+        },
+        { tags: [], groups: [] }
+      );
 
-    transactionPermissions = tags && uniq(tags);
+    if (separated) {
+      const { tags, groups } = separated;
+
+      transactionPermissions = tags;
+      transactionGroupPermissions = groups;
+    } else {
+      transactionPermissions = null;
+      transactionGroupPermissions = null;
+    }
   }
 
   if (portfolios === null) {
@@ -2350,6 +2380,7 @@ export function permissionsLikeToPermissions(
   return {
     tokens: tokenPermissions,
     transactions: transactionPermissions,
+    transactionGroups: transactionGroupPermissions,
     portfolios: portfolioPermissions,
   };
 }

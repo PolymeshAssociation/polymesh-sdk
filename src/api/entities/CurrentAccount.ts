@@ -1,8 +1,12 @@
 import { difference, differenceBy, differenceWith, isEqual, union } from 'lodash';
 
 import { Account, CurrentIdentity } from '~/internal';
-import { Permissions, TxTags } from '~/types';
-import { portfolioToPortfolioId, signerToString } from '~/utils/conversion';
+import { Permissions, PermissionsLike, TxTags } from '~/types';
+import {
+  permissionsLikeToPermissions,
+  portfolioToPortfolioId,
+  signerToString,
+} from '~/utils/conversion';
 
 /**
  * Represents the current account that is bound to the SDK instance
@@ -34,6 +38,7 @@ export class CurrentAccount extends Account {
       return {
         tokens: null,
         transactions: null,
+        transactionGroups: null,
         portfolios: null,
       };
     }
@@ -47,8 +52,11 @@ export class CurrentAccount extends Account {
   /**
    * Check if this Account possesses certain Permissions for its corresponding Identity
    */
-  public async hasPermissions(permissions: Permissions): Promise<boolean> {
-    const { tokens, transactions, portfolios } = permissions;
+  public async hasPermissions(permissions: PermissionsLike): Promise<boolean> {
+    const { tokens, transactions, portfolios } = permissionsLikeToPermissions(
+      permissions,
+      this.context
+    );
 
     const {
       tokens: currentTokens,

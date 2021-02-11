@@ -531,10 +531,19 @@ export interface Fees {
  *   of the Identity's Security Tokens)
  */
 export interface Permissions {
-  /* list of Security Tokens over which this key has permissions */
+  /**
+   * list of Security Tokens over which this key has permissions
+   */
   tokens: SecurityToken[] | null;
-  /* list of Transactions this key can execute */
+  /**
+   * list of Transactions this key can execute
+   */
   transactions: TxTag[] | null;
+  /**
+   * list of Transaction Groups this key can execute. Having permissions over a TxGroup
+   *   means having permissions over every TxTag in said group
+   */
+  transactionGroups: TxGroup[] | null;
   /* list of Portfolios over which this key has permissions */
   portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
 }
@@ -614,14 +623,62 @@ export interface SecondaryKey {
   permissions: Permissions;
 }
 
+/**
+ * Transaction Groups (for permissions purposes)
+ */
 export enum TxGroup {
+  /**
+   * - TxTags.identity.AddInvestorUniquenessClaim
+   * - TxTags.portfolio.MovePortfolioFunds
+   * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.RejectInstruction
+   * - TxTags.settlement.CreateVenue
+   */
   PortfolioManagement = 'PortfolioManagement',
+  /**
+   * - TxTags.asset.MakeDivisible
+   * - TxTags.asset.RenameAsset
+   * - TxTags.asset.SetFundingRound
+   * - TxTags.asset.AddDocuments
+   * - TxTags.asset.RemoveDocuments
+   */
   TokenManagement = 'TokenManagement',
+  /**
+   * - TxTags.asset.Freeze
+   * - TxTags.asset.Unfreeze
+   * - TxTags.identity.AddAuthorization
+   * - TxTags.identity.RemoveAuthorization
+   */
   AdvancedTokenManagement = 'AdvancedTokenManagement',
+  /**
+   * - TxTags.identity.AddInvestorUniquenessClaim
+   * - TxTags.settlement.CreateVenue
+   * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddAndAffirmInstruction
+   */
   Distribution = 'Distribution',
+  /**
+   * - TxTags.asset.Issue
+   */
   Issuance = 'Issuance',
+  /**
+   * - TxTags.complianceManager.AddDefaultTrustedClaimIssuer
+   * - TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer
+   */
   TrustedClaimIssuersManagement = 'TrustedClaimIssuersManagement',
+  /**
+   * - TxTags.identity.AddClaim
+   * - TxTags.identity.RevokeClaim
+   */
   ClaimsManagement = 'ClaimsManagement',
+  /**
+   * - TxTags.complianceManager.AddComplianceRequirement
+   * - TxTags.complianceManager.RemoveComplianceRequirement
+   * - TxTags.complianceManager.PauseAssetCompliance
+   * - TxTags.complianceManager.ResumeAssetCompliance
+   * - TxTags.complianceManager.ResetAssetCompliance
+   */
   ComplianceRequirementsManagement = 'ComplianceRequirementsManagement',
 }
 
