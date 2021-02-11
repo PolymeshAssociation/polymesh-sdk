@@ -9,7 +9,6 @@ import {
   modifyStoTimes,
   ModifyStoTimesParams,
   PolymeshError,
-  SecurityToken,
   toggleFreezeSto,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
@@ -18,7 +17,7 @@ import { Fundraiser } from '~/polkadot/polymesh/types';
 import { Ensured, ErrorCode, ResultSet, SubCallback, UnsubCallback } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, moveDecimalPoint } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
 import { Investment, StoDetails } from './types';
 
@@ -192,14 +191,13 @@ export class Sto extends Entity<UniqueIdentifiers> {
     if (items) {
       items.forEach(item => {
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        const { investor: did, offeringToken, offeringTokenAmount, raiseTokenAmount } = item!;
+        const { investor: did, offeringTokenAmount, raiseTokenAmount } = item!;
         /* eslint-enabled @typescript-eslint/no-non-null-assertion */
 
         data.push({
           investor: new Identity({ did }, context),
-          offeringToken: new SecurityToken({ ticker: offeringToken }, context),
-          soldAmount: moveDecimalPoint(new BigNumber(offeringTokenAmount), -6),
-          investedAmount: moveDecimalPoint(new BigNumber(raiseTokenAmount), -6),
+          soldAmount: new BigNumber(offeringTokenAmount).shiftedBy(-6),
+          investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
         });
       });
 

@@ -601,7 +601,6 @@ export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<Query
         totalCount
         items {
           investor
-          offeringToken
           offeringTokenAmount
           raiseTokenAmount
         }
