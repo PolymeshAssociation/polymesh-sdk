@@ -1,11 +1,13 @@
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
+import { uniq } from 'lodash';
 
 import { PolymeshError } from '~/base/PolymeshError';
-import { Procedure, SecurityToken } from '~/internal';
+import { Identity, Procedure, SecurityToken } from '~/internal';
 import {
-  CountTransferRestriction,
+  CountTransferRestrictionInput,
   ErrorCode,
-  PercentageTransferRestriction,
+  PercentageTransferRestrictionInput,
   RoleType,
   TxTags,
 } from '~/types';
@@ -19,11 +21,11 @@ import {
 } from '~/utils/conversion';
 import { batchArguments } from '~/utils/internal';
 
-export type AddCountTransferRestrictionParams = CountTransferRestriction & {
+export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
   type: TransferRestrictionType.Count;
 };
 
-export type AddPercentageTransferRestrictionParams = PercentageTransferRestriction & {
+export type AddPercentageTransferRestrictionParams = PercentageTransferRestrictionInput & {
   type: TransferRestrictionType.Percentage;
 };
 
@@ -51,7 +53,7 @@ export async function prepareAddTransferRestriction(
     },
     context,
   } = this;
-  const { ticker, exempted = [] } = args;
+  const { ticker, exemptedScopeIds = [], exemptedIdentities = [] } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
@@ -95,8 +97,33 @@ export async function prepareAddTransferRestriction(
 
   this.addTransaction(statistics.addTransferManager, {}, rawTicker, rawTransferManager);
 
-  if (exempted.length) {
+  const identityScopes = await P.map(exemptedIdentities, identityValue => {
+    let identity: Identity;
+    if (typeof identityValue === 'string') {
+      identity = new Identity({ did: identityValue }, context);
+    } else {
+      identity = identityValue;
+    }
+
+    return identity.getScopeId({ token: ticker });
+  });
+
+  const exempted: string[] = [...exemptedScopeIds, ...identityScopes];
+
+  const exemptedLength = exempted.length;
+
+  if (exemptedLength) {
+    const hasDuplicates = uniq(exempted).length !== exemptedLength;
+
+    if (hasDuplicates) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'One or more of the passed exempted Scope IDs/Identities are repeated',
+      });
+    }
+
     const scopeIds = exempted.map(scopeId => stringToScopeId(scopeId, context));
+
     batchArguments(scopeIds, TxTags.statistics.AddExemptedEntities).forEach(scopeIdBatch => {
       this.addTransaction(
         statistics.addExemptedEntities,
@@ -116,9 +143,11 @@ export async function prepareAddTransferRestriction(
  */
 export function getAuthorization(
   this: Procedure<AddTransferRestrictionParams, number>,
-  { ticker, exempted = [] }: AddTransferRestrictionParams
+  { ticker, exemptedScopeIds = [], exemptedIdentities = [] }: AddTransferRestrictionParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.AddTransferManager];
+
+  const exempted = [...exemptedScopeIds, ...exemptedIdentities];
 
   if (exempted.length) {
     transactions.push(TxTags.statistics.AddExemptedEntities);

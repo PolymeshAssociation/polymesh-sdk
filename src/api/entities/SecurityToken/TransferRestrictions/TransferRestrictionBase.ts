@@ -157,7 +157,7 @@ export abstract class TransferRestrictionBase<
     );
 
     const restrictions = rawExemptedLists.map((list, index) => {
-      const exempted = list.map(([{ args: [, scopeId] }]) => scopeIdToString(scopeId));
+      const exemptedScopeIds = list.map(([{ args: [, scopeId] }]) => scopeIdToString(scopeId));
       const { value } = transferManagerToTransferRestriction(filteredTms[index]);
       let restriction;
 
@@ -171,10 +171,10 @@ export abstract class TransferRestrictionBase<
         };
       }
 
-      if (exempted.length) {
+      if (exemptedScopeIds.length) {
         return {
           ...restriction,
-          exempted,
+          exemptedScopeIds,
         };
       }
       return restriction;
