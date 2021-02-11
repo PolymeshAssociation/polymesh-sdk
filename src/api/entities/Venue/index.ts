@@ -160,9 +160,6 @@ export class Venue extends Entity<UniqueIdentifiers> {
    * @param args.tradeDate - date at which the trade was agreed upon (optional, for offchain trades)
    * @param args.valueDate - date at which the trade was executed (optional, for offchain trades)
    * @param args.endBlock - block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
-   *
-   * @note required role:
-   *   - Venue Owner
    */
 
   public addInstruction: ProcedureMethod<AddInstructionParams, Instruction>;
