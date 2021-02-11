@@ -492,7 +492,7 @@ describe('assertIsInteger', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should not throw', async () => {
+  test('should not throw if the argument is an integer', async () => {
     try {
       assertIsInteger(new BigNumber(1));
     } catch (_) {
@@ -500,7 +500,7 @@ describe('assertIsInteger', () => {
     }
   });
 
-  test('assertIsInteger should throw an error if the count is not an integer', async () => {
+  test('assertIsInteger should throw an error if the argument is not an integer', async () => {
     expect(() => assertIsInteger(('noInteger' as unknown) as BigNumber)).toThrow(
       'The number must be an integer'
     );
@@ -522,7 +522,7 @@ describe('assertIsPositive', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should not throw', async () => {
+  test('should not throw if the argument is positive', async () => {
     try {
       assertIsPositive(new BigNumber(1));
     } catch (_) {
@@ -530,7 +530,7 @@ describe('assertIsPositive', () => {
     }
   });
 
-  test('assertIsPositive should throw an error if the count is not an integer', async () => {
+  test('assertIsPositive should throw an error if the argument is negative', async () => {
     expect(() => assertIsPositive(new BigNumber(-3))).toThrow('The number must be positive');
   });
 });
