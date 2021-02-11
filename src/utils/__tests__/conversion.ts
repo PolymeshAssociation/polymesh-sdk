@@ -4313,27 +4313,6 @@ describe('transferRestrictionToTransferManager and signatoryToSignerValue', () =
     expect(result).toBe(fakeResult);
   });
 
-  test('transferRestrictionToTransferManager should throw an error if the count is negative', () => {
-    let value = {
-      type: TransferRestrictionType.Count,
-      value: new BigNumber(-3),
-    };
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
-      'Count should be a positive integer'
-    );
-
-    value = {
-      type: TransferRestrictionType.Count,
-      value: new BigNumber(2.5),
-    };
-
-    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
-      'Count should be a positive integer'
-    );
-  });
-
   test('transferRestrictionToTransferManager should throw an error if the percentage is out of range', () => {
     let value = {
       type: TransferRestrictionType.Percentage,
