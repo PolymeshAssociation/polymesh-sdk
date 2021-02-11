@@ -5,6 +5,8 @@ import {
   closeSto,
   Context,
   Entity,
+  investInSto,
+  InvestInStoParams,
   modifyStoTimes,
   ModifyStoTimesParams,
   PolymeshError,
@@ -69,6 +71,7 @@ export class Sto extends Entity<UniqueIdentifiers> {
       args => [modifyStoTimes, { ticker, id, ...args }],
       context
     );
+    this.invest = createProcedureMethod(args => [investInSto, { ticker, id, ...args }], context);
   }
 
   /**
@@ -144,4 +147,19 @@ export class Sto extends Entity<UniqueIdentifiers> {
    *   - Trying to change start or end time to a past date
    */
   public modifyTimes: ProcedureMethod<ModifyStoTimesParams, void>;
+
+  /**
+   * Invest in the STO
+   *
+   * @param args.investmentPortfolio -
+   * @param args.fundingPortfolio -
+   * @param args.offeringCurrency -
+   * @param args.investmentAmount -
+   * @param args.maxPrice -
+   * @param args.receipt -
+   *
+   * @note required roles:
+   *   -
+   */
+  public invest: ProcedureMethod<InvestInStoParams, void>;
 }
