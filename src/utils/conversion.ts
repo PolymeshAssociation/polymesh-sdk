@@ -12,7 +12,17 @@ import {
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import { computeWithoutCheck } from 'iso-7064';
-import { camelCase, isEqual, map, padEnd, range, rangeRight, snakeCase, values } from 'lodash';
+import {
+  camelCase,
+  includes,
+  isEqual,
+  map,
+  padEnd,
+  range,
+  rangeRight,
+  snakeCase,
+  values,
+} from 'lodash';
 import {
   AffirmationStatus as MeshAffirmationStatus,
   AssetComplianceResult,
@@ -1830,6 +1840,33 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
   const value = `${stringUpperFirst(moduleName)}${stringUpperFirst(
     extrinsicName.replace(new RegExp('Documents$'), 'Document') // `asset.addDocuments` and `asset.removeDocuments`
   )}`;
+
+  const protocolOpTags = [
+    TxTags.asset.RegisterTicker,
+    TxTags.asset.Issue,
+    TxTags.asset.AddDocuments,
+    TxTags.asset.CreateAsset,
+    TxTags.asset.CreateCheckpoint,
+    TxTags.dividend.New,
+    TxTags.complianceManager.AddComplianceRequirement,
+    TxTags.identity.RegisterDid,
+    TxTags.identity.CddRegisterDid,
+    TxTags.identity.AddClaim,
+    TxTags.identity.SetPrimaryKey,
+    TxTags.identity.AddSecondaryKeysWithAuthorization,
+    TxTags.pips.Propose,
+    TxTags.voting.AddBallot,
+    TxTags.contracts.PutCode,
+    TxTags.corporateBallot.AttachBallot,
+    TxTags.capitalDistribution.Distribute,
+  ];
+
+  if (!includes(protocolOpTags, tag)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `${value} does not match any ProtocolOp`,
+    });
+  }
 
   return context.polymeshApi.createType('ProtocolOp', value);
 }
