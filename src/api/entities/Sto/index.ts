@@ -153,10 +153,8 @@ export class Sto extends Entity<UniqueIdentifiers> {
    *
    * @param args.investmentPortfolio -
    * @param args.fundingPortfolio -
-   * @param args.offeringCurrency -
    * @param args.investmentAmount -
    * @param args.maxPrice -
-   * @param args.receipt -
    *
    * @note required roles:
    *   -

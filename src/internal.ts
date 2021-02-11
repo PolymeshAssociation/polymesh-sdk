@@ -101,6 +101,7 @@ export {
 export { toggleFreezeSto, ToggleFreezeStoParams } from '~/api/procedures/toggleFreezeSto';
 export { closeSto } from '~/api/procedures/closeSto';
 export { modifyStoTimes, ModifyStoTimesParams } from '~/api/procedures/modifyStoTimes';
+export { investInSto, InvestInStoParams } from '~/api/procedures/investInSto';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
