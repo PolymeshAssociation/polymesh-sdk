@@ -183,6 +183,9 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
    * @note this may create an AuthorizationRequest which has to be accepted by
    *   the corresponding Identity. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @note required role:
+   *   - Portfolio Custodian
    */
 
   public setCustodian: ProcedureMethod<SetCustodianParams, void>;
@@ -192,6 +195,9 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
    *
    * @param args.to - portfolio (or portfolio ID) that will receive the funds. Optional, if no value is passed, the funds will be moved to the default Portfolio of this Portfolio's owner
    * @param args.movements - list of tokens (and their corresponding amounts) that will be moved
+   *
+   * @note required role:
+   *   - Portfolio Custodian
    */
 
   public moveFunds: ProcedureMethod<MoveFundsParams, void>;
