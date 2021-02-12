@@ -151,6 +151,9 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
   /**
    * Extend the Reservation time period of the ticker for 60 days from now
    * to later use it in the creation of a Security Token.
+   *
+   * @note required role:
+   *   - Ticker Owner
    */
   public extend: ProcedureMethod<void, TickerReservation>;
 
@@ -164,6 +167,9 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
    * @param args.tokenType - type of security that the token represents (i.e. Equity, Debt, Commodity, etc)
    * @param args.tokenIdentifiers - domestic or international alphanumeric security identifiers for the token (ISIN, CUSIP, etc)
    * @param args.fundingRound - (optional) funding round in which the token currently is (Series A, Series B, etc)
+   *
+   * @note required role:
+   *   - Ticker Owner
    */
   public createToken: ProcedureMethod<CreateSecurityTokenParams, SecurityToken>;
 }

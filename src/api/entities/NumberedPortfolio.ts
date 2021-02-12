@@ -57,11 +57,17 @@ export class NumberedPortfolio extends Portfolio {
 
   /**
    * Delete this Portfolio
+   *
+   * @note required role:
+   *   - Portfolio Custodian
    */
   public delete: ProcedureMethod<void, void>;
 
   /**
    * Rename portfolio
+   *
+   * @note required role:
+   *   - Portfolio Custodian
    */
   public modifyName: ProcedureMethod<RenamePortfolioParams, NumberedPortfolio>;
 

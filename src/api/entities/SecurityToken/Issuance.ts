@@ -23,6 +23,9 @@ export class Issuance extends Namespace<SecurityToken> {
    * Issue a certain amount of tokens to the primary issuance agent
    *
    * @param args.amount - amount of tokens to be issued to primary issuance agent
+   *
+   * @note required role:
+   *   - Security Token Primary Issuance Agent
    */
   public issue: ProcedureMethod<{ amount: BigNumber }, SecurityToken>;
 }
