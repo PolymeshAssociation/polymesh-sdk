@@ -24,14 +24,17 @@ export class Documents extends Namespace<SecurityToken> {
 
     this.set = createProcedureMethod(args => [setTokenDocuments, { ticker, ...args }], context);
   }
+
   /**
    * Assign a new list of documents to the Security Token by replacing the existing list of documents with the one passed in the parameters
    *
    * This requires two transactions
    *
    * @param args.documents - new list of documents
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
-
   public set: ProcedureMethod<SetTokenDocumentsParams, SecurityToken>;
 
   /**

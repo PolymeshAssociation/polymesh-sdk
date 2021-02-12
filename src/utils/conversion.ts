@@ -14,6 +14,7 @@ import BigNumber from 'bignumber.js';
 import { computeWithoutCheck } from 'iso-7064';
 import {
   camelCase,
+  includes,
   isEqual,
   map,
   padEnd,
@@ -163,7 +164,14 @@ import {
   MAX_TICKER_LENGTH,
   SS58_FORMAT,
 } from '~/utils/constants';
-import { createClaim, isPrintableAscii, padString, removePadding } from '~/utils/internal';
+import {
+  assertIsInteger,
+  assertIsPositive,
+  createClaim,
+  isPrintableAscii,
+  padString,
+  removePadding,
+} from '~/utils/internal';
 
 export * from '~/generated/utils';
 
@@ -378,6 +386,8 @@ export function u64ToBigNumber(value: u64): BigNumber {
  * @hidden
  */
 export function numberToU64(value: number | BigNumber, context: Context): u64 {
+  assertIsInteger(value);
+  assertIsPositive(value);
   return context.polymeshApi.createType('u64', new BigNumber(value).toString());
 }
 
@@ -806,6 +816,8 @@ export function numberToBalance(
 ): Balance {
   const rawValue = new BigNumber(value);
 
+  assertIsPositive(value);
+
   divisible = divisible ?? true;
 
   if (rawValue.isGreaterThan(MAX_BALANCE)) {
@@ -863,6 +875,8 @@ export function stringToMemo(value: string, context: Context): Memo {
  * @hidden
  */
 export function numberToU32(value: number | BigNumber, context: Context): u32 {
+  assertIsInteger(value);
+  assertIsPositive(value);
   return context.polymeshApi.createType('u32', new BigNumber(value).toString());
 }
 
@@ -1932,6 +1946,33 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
     extrinsicName.replace(new RegExp('Documents$'), 'Document') // `asset.addDocuments` and `asset.removeDocuments`
   )}`;
 
+  const protocolOpTags = [
+    TxTags.asset.RegisterTicker,
+    TxTags.asset.Issue,
+    TxTags.asset.AddDocuments,
+    TxTags.asset.CreateAsset,
+    TxTags.asset.CreateCheckpoint,
+    TxTags.dividend.New,
+    TxTags.complianceManager.AddComplianceRequirement,
+    TxTags.identity.RegisterDid,
+    TxTags.identity.CddRegisterDid,
+    TxTags.identity.AddClaim,
+    TxTags.identity.SetPrimaryKey,
+    TxTags.identity.AddSecondaryKeysWithAuthorization,
+    TxTags.pips.Propose,
+    TxTags.voting.AddBallot,
+    TxTags.contracts.PutCode,
+    TxTags.corporateBallot.AttachBallot,
+    TxTags.capitalDistribution.Distribute,
+  ];
+
+  if (!includes(protocolOpTags, tag)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `${value} does not match any ProtocolOp`,
+    });
+  }
+
   return context.polymeshApi.createType('ProtocolOp', value);
 }
 
@@ -1965,6 +2006,8 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
  * @hidden
  */
 export function numberToPipId(id: number | BigNumber, context: Context): PipId {
+  assertIsInteger(id);
+  assertIsPositive(id);
   return context.polymeshApi.createType('PipId', new BigNumber(id).toString());
 }
 
@@ -2265,12 +2308,8 @@ export function transferRestrictionToTransferManager(
   if (type === TransferRestrictionType.Count) {
     tmType = 'CountTransferManager';
 
-    if (!value.isInteger() || value.isNegative()) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Count should be a positive integer',
-      });
-    }
+    assertIsInteger(value);
+    assertIsPositive(value);
 
     tmValue = numberToU64(value, context);
   } else {

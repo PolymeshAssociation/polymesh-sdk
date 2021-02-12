@@ -2848,14 +2848,11 @@ describe('txTagToProtocolOp', () => {
   });
 
   test('txTagToProtocolOp should convert a TxTag to a polkadot ProtocolOp object', () => {
-    const value = TxTags.identity.AcceptAuthorization;
+    const value = TxTags.identity.AddClaim;
     const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ProtocolOp', 'IdentityAcceptAuthorization')
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', 'IdentityAddClaim').returns(fakeResult);
 
     const result = txTagToProtocolOp(value, context);
 
@@ -2872,6 +2869,19 @@ describe('txTagToProtocolOp', () => {
     const result = txTagToProtocolOp(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+
+  test('txTagToProtocolOp should throw an error if tag does not match any ProtocolOp', () => {
+    const value = TxTags.asset.SetTreasuryDid;
+    const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
+    const context = dsMockUtils.getContextInstance();
+    const mockTag = 'AssetSetTreasuryDid';
+
+    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', mockTag).returns(fakeResult);
+
+    expect(() => txTagToProtocolOp(value, context)).toThrow(
+      `${mockTag} does not match any ProtocolOp`
+    );
   });
 });
 
@@ -4320,27 +4330,6 @@ describe('transferRestrictionToTransferManager and signatoryToSignerValue', () =
     result = transferRestrictionToTransferManager(value, context);
 
     expect(result).toBe(fakeResult);
-  });
-
-  test('transferRestrictionToTransferManager should throw an error if the count is negative', () => {
-    let value = {
-      type: TransferRestrictionType.Count,
-      value: new BigNumber(-3),
-    };
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
-      'Count should be a positive integer'
-    );
-
-    value = {
-      type: TransferRestrictionType.Count,
-      value: new BigNumber(2.5),
-    };
-
-    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
-      'Count should be a positive integer'
-    );
   });
 
   test('transferRestrictionToTransferManager should throw an error if the percentage is out of range', () => {
