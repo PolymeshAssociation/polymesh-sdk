@@ -168,10 +168,6 @@ interface DefaultPortfolioOptions {
   isCustodiedBy?: boolean;
 }
 
-interface StoOptions {
-  details?: Partial<StoDetails>;
-}
-
 interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
@@ -181,6 +177,7 @@ interface InstructionOptions {
 interface StoOptions {
   id?: BigNumber;
   ticker?: string;
+  details?: Partial<StoDetails>;
 }
 
 let identityConstructorStub: SinonStub;

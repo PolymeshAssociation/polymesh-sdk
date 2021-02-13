@@ -7,6 +7,7 @@ import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
   numberToBalance,
   numberToU64,
+  portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   stringToTicker,
@@ -31,8 +32,8 @@ export type Params = InvestInStoParams & {
  * @hidden
  */
 export interface Storage {
-  investmentPortfolio: PortfolioId;
-  fundingPortfolio: PortfolioId;
+  investmentPortfolioId: PortfolioId;
+  fundingPortfolioId: PortfolioId;
 }
 
 /**
@@ -49,7 +50,7 @@ export async function prepareInvestInSto(
       },
     },
     context,
-    storage: { investmentPortfolio, fundingPortfolio },
+    storage: { investmentPortfolioId, fundingPortfolioId },
   } = this;
   const { ticker, id, investmentAmount, maxPrice } = args;
 
@@ -80,13 +81,13 @@ export async function prepareInvestInSto(
     });
   }
 
-  const portfolio = portfolioIdToPortfolio(fundingPortfolio, context);
+  const portfolio = portfolioIdToPortfolio(fundingPortfolioId, context);
   const [{ total: totalTokenBalance }] = await portfolio.getTokenBalances({ tokens: [ticker] });
 
   if (totalTokenBalance.lt(investmentAmount)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: "The Portfolio's token balance is lower than the investment amout seted",
+      message: 'The Portfolio has not enough balance to affront the investment',
     });
   }
 
@@ -115,8 +116,8 @@ export async function prepareInvestInSto(
   this.addTransaction(
     txSto.invest,
     {},
-    investmentPortfolio,
-    fundingPortfolio,
+    portfolioIdToMeshPortfolioId(investmentPortfolioId, context),
+    portfolioIdToMeshPortfolioId(fundingPortfolioId, context),
     stringToTicker(ticker, context),
     numberToU64(id, context),
     numberToBalance(investmentAmount, context),
@@ -130,21 +131,21 @@ export async function prepareInvestInSto(
  */
 export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
   const {
-    storage: { investmentPortfolio, fundingPortfolio },
+    storage: { investmentPortfolioId, fundingPortfolioId },
     context,
   } = this;
 
   return {
     identityRoles: [
-      { type: RoleType.PortfolioCustodian, portfolioId: investmentPortfolio },
-      { type: RoleType.PortfolioCustodian, portfolioId: fundingPortfolio },
+      { type: RoleType.PortfolioCustodian, portfolioId: investmentPortfolioId },
+      { type: RoleType.PortfolioCustodian, portfolioId: fundingPortfolioId },
     ],
     signerPermissions: {
       transactions: [TxTags.sto.Invest],
       tokens: [],
       portfolios: [
-        portfolioIdToPortfolio(investmentPortfolio, context),
-        portfolioIdToPortfolio(fundingPortfolio, context),
+        portfolioIdToPortfolio(investmentPortfolioId, context),
+        portfolioIdToPortfolio(fundingPortfolioId, context),
       ],
     },
   };
@@ -158,8 +159,8 @@ export function prepareStorage(
   { investmentPortfolio, fundingPortfolio }: Params
 ): Storage {
   return {
-    investmentPortfolio: portfolioLikeToPortfolioId(investmentPortfolio),
-    fundingPortfolio: portfolioLikeToPortfolioId(fundingPortfolio),
+    investmentPortfolioId: portfolioLikeToPortfolioId(investmentPortfolio),
+    fundingPortfolioId: portfolioLikeToPortfolioId(fundingPortfolio),
   };
 }
 
