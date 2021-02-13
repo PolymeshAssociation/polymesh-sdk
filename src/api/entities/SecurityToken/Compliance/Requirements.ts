@@ -60,6 +60,9 @@ export class Requirements extends Namespace<SecurityToken> {
    *
    * @example Say A, B, C, D and E are requirements and we arrange them as `[[A, B], [C, D], [E]]`.
    * For a transfer to succeed, it must either comply with A AND B, C AND D, OR E.
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
 
   public set: ProcedureMethod<SetAssetRequirementsParams, SecurityToken>;
@@ -142,11 +145,17 @@ export class Requirements extends Namespace<SecurityToken> {
 
   /**
    * Detele all the current requirements for the Security Token.
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public reset: ProcedureMethod<void, SecurityToken>;
 
   /**
    * Pause all the Security Token's requirements. This means that all transfers will be allowed until requirements are unpaused
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public pause: ProcedureMethod<void, SecurityToken>;
 

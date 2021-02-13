@@ -127,11 +127,17 @@ export class Sto extends Entity<UniqueIdentifiers> {
 
   /**
    * Freeze the STO
+   *
+   * @note required role:
+   *   - Security Token Primary Issuance Agent
    */
   public freeze: ProcedureMethod<void, Sto>;
 
   /**
    * Unfreeze the STO
+   *
+   * @note required role:
+   *   - Security Token Primary Issuance Agent
    */
   public unfreeze: ProcedureMethod<void, Sto>;
 
@@ -145,6 +151,9 @@ export class Sto extends Entity<UniqueIdentifiers> {
    *   - Trying to modify the start time on an STO that already started
    *   - Trying to modify anything on an STO that already ended
    *   - Trying to change start or end time to a past date
+   *
+   * @note required role:
+   *   - Security Token Primary Issuance Agent
    */
   public modifyTimes: ProcedureMethod<ModifyStoTimesParams, void>;
 
