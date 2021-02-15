@@ -14,6 +14,7 @@ import {
   eventByAddedTrustedClaimIssuer,
   eventByIndexedArgs,
   eventsByIndexedArgs,
+  investments,
   issuerDidsWithClaimsByTarget,
   proposal,
   proposals,
@@ -230,6 +231,20 @@ describe('settlements', () => {
     };
 
     const result = settlements(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('investments', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      stoId: 1,
+      ticker: 'SOMETICKER',
+    };
+
+    const result = investments(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

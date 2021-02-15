@@ -81,6 +81,9 @@ export type Query = {
   proposals?: Maybe<ProposalResult>;
   /** Get the current voters list for given pipId */
   proposalVotes: Array<ProposalVote>;
+  /** Get investments related to sto id */
+  investments?: Maybe<InvestmentResult>;
+  investmentsAggregated?: Maybe<InvestmentResult>;
 };
 
 export type QueryBlocksArgs = {
@@ -268,6 +271,20 @@ export type QueryProposalVotesArgs = {
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
   orderBy?: Maybe<ProposalVotesOrderByInput>;
+};
+
+export type QueryInvestmentsArgs = {
+  stoId: Scalars['Int'];
+  ticker: Scalars['String'];
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryInvestmentsAggregatedArgs = {
+  stoId: Scalars['Int'];
+  ticker: Scalars['String'];
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
 };
 
 export type ChainInfo = {
@@ -1348,6 +1365,21 @@ export type ProposalVote = {
   account: Scalars['String'];
   vote: Scalars['CustomBoolean'];
   weight: Scalars['BigInt'];
+};
+
+export type InvestmentResult = {
+  __typename?: 'InvestmentResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<Investment>>>;
+};
+
+export type Investment = {
+  __typename?: 'Investment';
+  investor: Scalars['String'];
+  offeringToken: Scalars['String'];
+  raiseToken: Scalars['String'];
+  offeringTokenAmount: Scalars['BigInt'];
+  raiseTokenAmount: Scalars['BigInt'];
 };
 
 export enum CacheControlScope {
