@@ -139,6 +139,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * @note this will create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public transferOwnership: ProcedureMethod<TransferTokenOwnershipParams, SecurityToken>;
 
@@ -147,8 +150,10 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *
    * @param args.makeDivisible - makes an indivisible token divisible
    * @throws if the passed values result in no changes being made to the token
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
-
   public modify: ProcedureMethod<ModifyTokenParams, SecurityToken>;
 
   /**
@@ -310,12 +315,17 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
   /**
    * Freezes transfers and minting of the Security Token
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
-
   public freeze: ProcedureMethod<void, SecurityToken>;
 
   /**
    * Unfreeze transfers and minting of the Security Token
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public unfreeze: ProcedureMethod<void, SecurityToken>;
 
@@ -361,6 +371,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * @note this may create AuthorizationRequest which have to be accepted by
    *   the corresponding Account. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public modifyPrimaryIssuanceAgent: ProcedureMethod<ModifyPrimaryIssuanceAgentParams, void>;
 
@@ -368,6 +381,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * Remove the primary issuance agent of the Security Token
    *
    * @note if primary issuance agent is not set, Security Token owner would be used by default
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public removePrimaryIssuanceAgent: ProcedureMethod<void, void>;
 
@@ -377,6 +393,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * @note Tokens are removed from the Primary Issuance Agent's Default Portfolio.
    *   If the Security Token has no Primary Issuance Agent, funds are removed from the owner's
    *   Default Portfolio instead
+   *
+   * @note required role:
+   *   - Security Token Primary Issuance Agent
    */
   public redeem: ProcedureMethod<RedeemTokenParams, void>;
 

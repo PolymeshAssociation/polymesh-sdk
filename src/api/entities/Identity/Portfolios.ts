@@ -158,6 +158,9 @@ export class Portfolios extends Namespace<Identity> {
 
   /**
    * Delete a Portfolio by ID
+   *
+   * @note required role:
+   *   - Portfolio Custodian
    */
   public delete: ProcedureMethod<{ portfolio: BigNumber | NumberedPortfolio }, void>;
 }
