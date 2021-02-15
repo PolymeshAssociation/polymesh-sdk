@@ -1,7 +1,6 @@
 import { Keyring } from '@polkadot/api';
 import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { some, values } from 'lodash';
 import { TxTag, TxTags } from 'polymesh-types/types';
 
 import { StoDetails } from '~/api/entities/types';
@@ -541,9 +540,10 @@ export interface Permissions {
   transactions: TxTag[] | null;
   /**
    * list of Transaction Groups this key can execute. Having permissions over a TxGroup
-   *   means having permissions over every TxTag in said group
+   *   means having permissions over every TxTag in said group. Transaction permissions are the result of
+   *   combining these with the `transactions` array. If `transactions` is null, then this value is redundant
    */
-  transactionGroups: TxGroup[] | null;
+  transactionGroups: TxGroup[];
   /* list of Portfolios over which this key has permissions */
   portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
 }
@@ -683,15 +683,15 @@ export enum TxGroup {
 }
 
 /**
- * @hidden
+ * Permissions to grant to a Signer over an Identity
+ *
+ * @note TxGroups in the `transactionGroups` array will be transformed into their corresponding `TxTag`s
+ *   and appended to the `transactions` array. If `transactions` is null, then the value of `transactionGroups` is redundant
  */
-export function isTxGroup(group: string): group is TxGroup {
-  return some(values(TxGroup), value => value === group);
-}
-
 export interface PermissionsLike {
   tokens?: (string | SecurityToken)[] | null;
-  transactions?: (TxTag | TxGroup)[] | null;
+  transactions?: TxTag[] | null;
+  transactionGroups?: TxGroup[];
   portfolios?: PortfolioLike[] | null;
 }
 

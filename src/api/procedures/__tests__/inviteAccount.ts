@@ -94,7 +94,7 @@ describe('inviteAccount procedure', () => {
               value: {
                 tokens: null,
                 transactions: null,
-                transactionGroups: null,
+                transactionGroups: [],
                 portfolios: null,
               },
             },
@@ -236,7 +236,7 @@ describe('inviteAccount procedure', () => {
               value: {
                 tokens: null,
                 transactions: null,
-                transactionGroups: null,
+                transactionGroups: [],
                 portfolios: null,
               },
             },

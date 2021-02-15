@@ -65,7 +65,7 @@ describe('registerIdentity procedure', () => {
           tokens: null,
           portfolios: null,
           transactions: null,
-          transactionGroups: null,
+          transactionGroups: [],
         },
       },
     ];

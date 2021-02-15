@@ -14,6 +14,7 @@ import BigNumber from 'bignumber.js';
 import { computeWithoutCheck } from 'iso-7064';
 import {
   camelCase,
+  flatten,
   isEqual,
   map,
   padEnd,
@@ -116,7 +117,6 @@ import {
   InstructionType,
   isMultiClaimCondition,
   isSingleClaimCondition,
-  isTxGroup,
   KnownTokenType,
   MultiClaimCondition,
   Permissions,
@@ -513,7 +513,7 @@ export function textToString(value: Text): string {
 }
 
 /**
- * @hidden
+ * Retrieve every Transaction Tag associated to a Transaction Group
  */
 export function txGroupToTxTags(group: TxGroup): TxTag[] {
   switch (group) {
@@ -689,7 +689,7 @@ export function meshPermissionsToPermissions(
   return {
     tokens,
     transactions,
-    transactionGroups: transactions && txTagsToTxGroups(transactions),
+    transactionGroups: transactions ? txTagsToTxGroups(transactions) : [],
     portfolios,
   };
 }
@@ -2330,10 +2330,10 @@ export function permissionsLikeToPermissions(
 ): Permissions {
   let tokenPermissions: SecurityToken[] | null = [];
   let transactionPermissions: TxTag[] | null = [];
-  let transactionGroupPermissions: TxGroup[] | null = [];
+  let transactionGroupPermissions: TxGroup[] = [];
   let portfolioPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null = [];
 
-  const { tokens, transactions, portfolios } = permissionsLike;
+  const { tokens, transactions, transactionGroups, portfolios } = permissionsLike;
 
   if (tokens === null) {
     tokenPermissions = null;
@@ -2344,29 +2344,14 @@ export function permissionsLikeToPermissions(
   }
 
   if (transactions !== undefined) {
-    const separated =
-      transactions &&
-      transactions.reduce<{ tags: TxTag[]; groups: TxGroup[] }>(
-        (prev, curr): { tags: TxTag[]; groups: TxGroup[] } => {
-          const { tags: prevTags, groups: prevGroups } = prev;
-          if (isTxGroup(curr)) {
-            return { tags: [...prevTags, ...txGroupToTxTags(curr)], groups: [...prevGroups, curr] };
-          } else {
-            return { tags: [...prevTags, curr], groups: prevGroups };
-          }
-        },
-        { tags: [], groups: [] }
-      );
+    transactionPermissions = transactions;
+  }
 
-    if (separated) {
-      const { tags, groups } = separated;
-
-      transactionPermissions = tags;
-      transactionGroupPermissions = groups;
-    } else {
-      transactionPermissions = null;
-      transactionGroupPermissions = null;
-    }
+  if (transactionGroups !== undefined) {
+    transactionGroupPermissions = uniq(transactionGroups);
+    const groupTags = flatten(transactionGroups.map(txGroupToTxTags));
+    transactionPermissions =
+      transactionPermissions && uniq([...transactionPermissions, ...groupTags]);
   }
 
   if (portfolios === null) {

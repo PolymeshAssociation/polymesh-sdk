@@ -85,7 +85,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
             value: {
               tokens: null,
               transactions: null,
-              transactionGroups: null,
+              transactionGroups: [],
               portfolios: null,
             },
           },
@@ -119,7 +119,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
             value: {
               tokens: null,
               transactions: null,
-              transactionGroups: null,
+              transactionGroups: [],
               portfolios: null,
             },
           },
@@ -159,7 +159,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
             value: {
               tokens: null,
               transactions: null,
-              transactionGroups: null,
+              transactionGroups: [],
               portfolios: null,
             },
           },
@@ -192,7 +192,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
             value: {
               tokens: null,
               transactions: null,
-              transactionGroups: null,
+              transactionGroups: [],
               portfolios: null,
             },
           },

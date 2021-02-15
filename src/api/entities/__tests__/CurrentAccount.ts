@@ -60,7 +60,7 @@ describe('CurrentAccount class', () => {
       expect(result).toEqual({
         tokens: null,
         transactions: null,
-        transactionGroups: null,
+        transactionGroups: [],
         portfolios: null,
       });
     });

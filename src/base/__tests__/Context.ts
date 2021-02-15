@@ -775,7 +775,7 @@ describe('Context class', () => {
             tokens: null,
             portfolios: null,
             transactions: null,
-            transactionGroups: null,
+            transactionGroups: [],
           },
         },
       ];

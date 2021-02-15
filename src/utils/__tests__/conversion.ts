@@ -799,7 +799,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       value: {
         tokens: null,
         transactions: null,
-        transactionGroups: null,
+        transactionGroups: [],
         portfolios: null,
       },
     };
@@ -1020,7 +1020,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     let value: Permissions = {
       tokens: null,
       transactions: null,
-      transactionGroups: null,
+      transactionGroups: [],
       portfolios: null,
     };
     const fakeResult = ('convertedPermission' as unknown) as MeshPermissions;
@@ -1120,7 +1120,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     fakeResult = {
       tokens: null,
       transactions: null,
-      transactionGroups: null,
+      transactionGroups: [],
       portfolios: null,
     };
     permissions = dsMockUtils.createMockPermissions({
@@ -3682,7 +3682,7 @@ describe('secondaryKeyToMeshSecondaryKey', () => {
       permissions: {
         tokens: null,
         transactions: null,
-        transactionGroups: null,
+        transactionGroups: [],
         portfolios: null,
       },
     };
@@ -4203,7 +4203,7 @@ describe('permissionsLikeToPermissions', () => {
     expect(result).toEqual({
       tokens: null,
       transactions: null,
-      transactionGroups: null,
+      transactionGroups: [],
       portfolios: null,
     });
 
@@ -4214,7 +4214,8 @@ describe('permissionsLikeToPermissions', () => {
 
     args = {
       tokens: [firstToken, ticker],
-      transactions: [TxTags.asset.Transfer, TxGroup.TrustedClaimIssuersManagement],
+      transactions: [TxTags.asset.Transfer],
+      transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
       portfolios: [portfolio],
     };
     result = await permissionsLikeToPermissions(args, context);
