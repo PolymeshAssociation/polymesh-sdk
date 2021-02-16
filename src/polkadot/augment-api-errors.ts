@@ -91,10 +91,6 @@ declare module '@polkadot/api/types/errors' {
        **/
       NoSuchSmartExtension: AugmentedError<ApiType>;
       /**
-       * The account does not hold this token.
-       **/
-      NotAnAssetHolder: AugmentedError<ApiType>;
-      /**
        * Not an owner of the token.
        **/
       NotAnOwner: AugmentedError<ApiType>;
@@ -444,7 +440,7 @@ declare module '@polkadot/api/types/errors' {
        **/
       ScheduleDurationTooShort: AugmentedError<ApiType>;
       /**
-       * A checkpoint schedule is not removable.
+       * A checkpoint schedule is not removable as `ref_count(schedule_id) > 0`.
        **/
       ScheduleNotRemovable: AugmentedError<ApiType>;
       /**
@@ -571,10 +567,6 @@ declare module '@polkadot/api/types/errors' {
        * The chain refused to make a choice, and hence there was an error.
        **/
       DuplicateDidTax: AugmentedError<ApiType>;
-      /**
-       * An existing schedule was used for a new CA that was removable, and that is not allowed.
-       **/
-      ExistingScheduleRemovable: AugmentedError<ApiType>;
       /**
        * There have been too many CAs for this ticker and the ID would overflow.
        * This won't occur in practice.
@@ -956,6 +948,10 @@ declare module '@polkadot/api/types/errors' {
        * Signer is an account key that is already associated with a multisig.
        **/
       SignerAlreadyLinked: AugmentedError<ApiType>;
+      /**
+       * More signers than required.
+       **/
+      TooManySigners: AugmentedError<ApiType>;
     };
     permissions: {
       RecursionNotAllowed: AugmentedError<ApiType>;
@@ -1043,10 +1039,6 @@ declare module '@polkadot/api/types/errors' {
     };
     polymeshCommittee: {
       /**
-       * The close call is made too early, before the end of the voting.
-       **/
-      CloseBeforeVoteEnd: AugmentedError<ApiType>;
-      /**
        * Duplicate proposal.
        **/
       DuplicateProposal: AugmentedError<ApiType>;
@@ -1072,10 +1064,6 @@ declare module '@polkadot/api/types/errors' {
        * No such proposal.
        **/
       NoSuchProposal: AugmentedError<ApiType>;
-      /**
-       * When `MotionDuration` is set to 0.
-       **/
-      NotAllowed: AugmentedError<ApiType>;
       /**
        * A DID isn't part of the committee.
        * The DID may either be a caller or some other context.
@@ -1208,13 +1196,13 @@ declare module '@polkadot/api/types/errors' {
        **/
       InvalidVenue: AugmentedError<ApiType>;
       /**
+       * Legs count should matches with the total number of legs in which given portfolio act as `from_portfolio`.
+       **/
+      LegCountTooSmall: AugmentedError<ApiType>;
+      /**
        * Provided leg is not pending execution.
        **/
       LegNotPending: AugmentedError<ApiType>;
-      /**
-       * Maximum numbers of legs in a instruction > `MaxLegsInInstruction`.
-       **/
-      LegsCountExceededMaxLimit: AugmentedError<ApiType>;
       /**
        * No pending affirmation for the provided instruction.
        **/
@@ -1277,6 +1265,10 @@ declare module '@polkadot/api/types/errors' {
        * Controller is already paired.
        **/
       AlreadyPaired: AugmentedError<ApiType>;
+      /**
+       * When the amount to be bonded is less than `MinimumBond`
+       **/
+      BondTooSmall: AugmentedError<ApiType>;
       /**
        * The call is not allowed at the given time due to restrictions of election period.
        **/
@@ -1511,10 +1503,6 @@ declare module '@polkadot/api/types/errors' {
     };
     technicalCommittee: {
       /**
-       * The close call is made too early, before the end of the voting.
-       **/
-      CloseBeforeVoteEnd: AugmentedError<ApiType>;
-      /**
        * Duplicate proposal.
        **/
       DuplicateProposal: AugmentedError<ApiType>;
@@ -1540,10 +1528,6 @@ declare module '@polkadot/api/types/errors' {
        * No such proposal.
        **/
       NoSuchProposal: AugmentedError<ApiType>;
-      /**
-       * When `MotionDuration` is set to 0.
-       **/
-      NotAllowed: AugmentedError<ApiType>;
       /**
        * A DID isn't part of the committee.
        * The DID may either be a caller or some other context.
@@ -1588,10 +1572,6 @@ declare module '@polkadot/api/types/errors' {
     };
     upgradeCommittee: {
       /**
-       * The close call is made too early, before the end of the voting.
-       **/
-      CloseBeforeVoteEnd: AugmentedError<ApiType>;
-      /**
        * Duplicate proposal.
        **/
       DuplicateProposal: AugmentedError<ApiType>;
@@ -1617,10 +1597,6 @@ declare module '@polkadot/api/types/errors' {
        * No such proposal.
        **/
       NoSuchProposal: AugmentedError<ApiType>;
-      /**
-       * When `MotionDuration` is set to 0.
-       **/
-      NotAllowed: AugmentedError<ApiType>;
       /**
        * A DID isn't part of the committee.
        * The DID may either be a caller or some other context.
