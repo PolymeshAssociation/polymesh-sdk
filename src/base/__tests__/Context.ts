@@ -767,11 +767,16 @@ describe('Context class', () => {
       fakeResult = [
         {
           signer: identity,
-          permissions: { tokens: [], portfolios: [], transactions: [] },
+          permissions: { tokens: [], portfolios: [], transactions: [], transactionGroups: [] },
         },
         {
           signer: account,
-          permissions: { tokens: null, portfolios: null, transactions: null },
+          permissions: {
+            tokens: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
         },
       ];
     });

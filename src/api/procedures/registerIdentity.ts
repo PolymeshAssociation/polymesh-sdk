@@ -2,9 +2,10 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import { IdentityId, TxTags } from 'polymesh-types/types';
 
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
-import { RoleType, SecondaryKey } from '~/types';
+import { PermissionsLike, RoleType, SecondaryKey } from '~/types';
 import {
   identityIdToString,
+  permissionsLikeToPermissions,
   secondaryKeyToMeshSecondaryKey,
   signerToString,
   stringToAccountId,
@@ -13,7 +14,7 @@ import { findEventRecord } from '~/utils/internal';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;
-  secondaryKeys?: SecondaryKey[];
+  secondaryKeys?: (Omit<SecondaryKey, 'permissions'> & { permissions: PermissionsLike })[];
 }
 
 /**
@@ -47,8 +48,11 @@ export async function prepareRegisterIdentity(
   const { targetAccount, secondaryKeys = [] } = args;
 
   const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
-  const rawSecondaryKeys = secondaryKeys.map(secondaryKey =>
-    secondaryKeyToMeshSecondaryKey(secondaryKey, context)
+  const rawSecondaryKeys = secondaryKeys.map(({ permissions, ...rest }) =>
+    secondaryKeyToMeshSecondaryKey(
+      { ...rest, permissions: permissionsLikeToPermissions(permissions, context) },
+      context
+    )
   );
 
   const [newIdentity] = this.addTransaction(

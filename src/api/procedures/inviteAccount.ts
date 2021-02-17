@@ -95,6 +95,7 @@ export async function prepareInviteAccount(
   let authorizationValue: Permissions = {
     tokens: [],
     transactions: [],
+    transactionGroups: [],
     portfolios: [],
   };
 
