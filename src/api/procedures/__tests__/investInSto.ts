@@ -382,11 +382,11 @@ describe('investInSto procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the investment and funding portfolio ids', async () => {
+    test('should return the investment and funding portfolio ids', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      const result = await boundFunc(args);
+      const result = boundFunc(args);
 
       expect(result).toEqual({
         investmentPortfolioId,
