@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { DidRecord, IdentityId, Ticker } from 'polymesh-types/types';
+import { DidRecord, IdentityId, ScopeId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Entity, Identity } from '~/internal';
@@ -13,8 +13,8 @@ import {
   Role,
   RoleType,
   TickerOwnerRole,
-  TokenOwnerOrPiaRole,
   TokenOwnerRole,
+  TokenPiaRole,
   VenueOwnerRole,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -133,17 +133,11 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should check whether the Identity has the Token Owner role or the PIA role', async () => {
+    test('hasRole should check whether the Identity has the Token PIA role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      const role: TokenOwnerOrPiaRole = { type: RoleType.TokenOwnerOrPia, ticker: 'someTicker' };
+      const role: TokenPiaRole = { type: RoleType.TokenPia, ticker: 'someTicker' };
 
       let hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(true);
-
-      identity.did = 'otherDid';
-
-      hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
 
@@ -587,6 +581,55 @@ describe('Identity class', () => {
       const result = await identity.getVenues(callback);
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeResult);
+    });
+  });
+
+  describe('method: getScopeId', () => {
+    let did: string;
+    let ticker: string;
+    let scopeId: string;
+
+    let rawDid: IdentityId;
+    let rawTicker: Ticker;
+    let rawScopeId: ScopeId;
+
+    let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+
+    beforeAll(() => {
+      did = 'someDid';
+      ticker = 'SOME_TICKER';
+      scopeId = 'someScopeId';
+
+      rawDid = dsMockUtils.createMockIdentityId(did);
+      rawTicker = dsMockUtils.createMockTicker(ticker);
+      rawScopeId = dsMockUtils.createMockScopeId(scopeId);
+
+      stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    });
+
+    beforeEach(() => {
+      stringToIdentityIdStub.withArgs(did, context).returns(rawDid);
+      stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
+
+      dsMockUtils.createQueryStub('asset', 'scopeIdOf', {
+        returnValue: rawScopeId,
+      });
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test("should return the Identity's scopeId associated to the token", async () => {
+      const identity = new Identity({ did }, context);
+
+      let result = await identity.getScopeId({ token: ticker });
+      expect(result).toEqual(scopeId);
+
+      result = await identity.getScopeId({
+        token: entityMockUtils.getSecurityTokenInstance({ ticker }),
+      });
+      expect(result).toEqual(scopeId);
     });
   });
 });

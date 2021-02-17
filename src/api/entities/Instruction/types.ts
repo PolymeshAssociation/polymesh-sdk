@@ -16,9 +16,13 @@ export type InstructionDetails = {
   status: InstructionStatus;
   createdAt: Date;
   /**
-   * If null, the instruction is valid immediately
+   * Date at which the trade was agreed upon (optional, for offchain trades)
    */
-  validFrom: Date | null;
+  tradeDate: Date | null;
+  /**
+   * Date at which the trade was executed (optional, for offchain trades)
+   */
+  valueDate: Date | null;
   venue: Venue;
 } & (
   | {

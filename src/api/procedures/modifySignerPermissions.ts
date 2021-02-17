@@ -1,5 +1,3 @@
-import P from 'bluebird';
-
 import { assertSecondaryKeys } from '~/api/procedures/utils';
 import { Procedure } from '~/internal';
 import { PermissionsLike, Signer, TxTags } from '~/types';
@@ -47,16 +45,13 @@ export async function prepareModifySignerPermissions(
     secondaryKeys
   );
 
-  const signersList = await P.map(
-    signerValues,
-    async ({ signer, permissions: permissionsLike }) => {
-      const permissions = await permissionsLikeToPermissions(permissionsLike, context);
+  const signersList = signerValues.map(({ signer, permissions: permissionsLike }) => {
+    const permissions = permissionsLikeToPermissions(permissionsLike, context);
 
-      const rawPermissions = permissionsToMeshPermissions(permissions, context);
+    const rawPermissions = permissionsToMeshPermissions(permissions, context);
 
-      return tuple(signerValueToSignatory(signer, context), rawPermissions);
-    }
-  );
+    return tuple(signerValueToSignatory(signer, context), rawPermissions);
+  });
 
   this.addBatchTransaction(tx.identity.setPermissionToSigner, {}, signersList);
 }

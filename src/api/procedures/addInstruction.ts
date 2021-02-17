@@ -6,7 +6,6 @@ import P from 'bluebird';
 import { compact, flatten } from 'lodash';
 import { PortfolioId, Ticker, TxTag, TxTags } from 'polymesh-types/types';
 
-import { Venue } from '~/api/entities/Venue';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Context,
@@ -17,6 +16,7 @@ import {
   PostTransactionValue,
   Procedure,
   SecurityToken,
+  Venue,
 } from '~/internal';
 import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -40,14 +40,21 @@ export interface AddInstructionParams {
     to: PortfolioLike;
     token: string | SecurityToken;
   }[];
-  validFrom?: Date;
+  tradeDate?: Date;
+  valueDate?: Date;
   endBlock?: BigNumber;
 }
 
+/**
+ * @hidden
+ */
 export type Params = AddInstructionParams & {
   venueId: BigNumber;
 };
 
+/**
+ * @hidden
+ */
 export interface Storage {
   portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[];
 }
@@ -81,7 +88,7 @@ export async function prepareAddInstruction(
     context,
     storage: { portfoliosToAffirm },
   } = this;
-  const { legs, venueId, endBlock, validFrom } = args;
+  const { legs, venueId, endBlock, tradeDate, valueDate } = args;
 
   const venue = new Venue({ id: venueId }, context);
   const exists = await venue.exists();
@@ -117,9 +124,17 @@ export async function prepareAddInstruction(
     endCondition = { type: InstructionType.SettleOnAffirmation } as const;
   }
 
+  if (tradeDate && valueDate && tradeDate > valueDate) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Value date must be after trade date',
+    });
+  }
+
   const rawVenueId = numberToU64(venueId, context);
   const rawSettlementType = endConditionToSettlementType(endCondition, context);
-  const rawValidFrom = validFrom ? dateToMoment(validFrom, context) : null;
+  const rawTradeDate = tradeDate ? dateToMoment(tradeDate, context) : null;
+  const rawValueDate = valueDate ? dateToMoment(valueDate, context) : null;
   const rawLegs: {
     from: PortfolioId;
     to: PortfolioId;
@@ -159,7 +174,8 @@ export async function prepareAddInstruction(
       },
       rawVenueId,
       rawSettlementType,
-      rawValidFrom,
+      rawTradeDate,
+      rawValueDate,
       rawLegs,
       portfoliosToAffirm.map(portfolio =>
         portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
@@ -173,7 +189,8 @@ export async function prepareAddInstruction(
       },
       rawVenueId,
       rawSettlementType,
-      rawValidFrom,
+      rawTradeDate,
+      rawValueDate,
       rawLegs
     );
   }

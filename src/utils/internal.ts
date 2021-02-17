@@ -4,8 +4,9 @@ import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
+import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, groupBy, map, padEnd, range } from 'lodash';
+import { chunk, groupBy, map, padEnd } from 'lodash';
 import { TxTag } from 'polymesh-types/types';
 
 import { Procedure } from '~/base/Procedure';
@@ -221,12 +222,10 @@ export function removePadding(value: string): string {
 /**
  * @hidden
  *
- * Return whether the string is free of unreadable characters
+ * Return whether the string is fully printable ASCII
  */
-export function stringIsClean(value: string): boolean {
-  const forbiddenCharCodes = [65533]; // this should be extended as we find more offending characters
-
-  return !range(value.length).some(index => forbiddenCharCodes.includes(value.charCodeAt(index)));
+export function isPrintableAscii(value: string): boolean {
+  return new RegExp('^[\\\x00-\\\x7F]*$').test(value);
 }
 
 /**
@@ -402,4 +401,30 @@ export function createProcedureMethod<
   };
 
   return method;
+}
+
+/**
+ * @hidden
+ */
+export function assertIsInteger(value: number | BigNumber): void {
+  const rawValue = new BigNumber(value);
+  if (!rawValue.isInteger()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The number must be an integer',
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export function assertIsPositive(value: number | BigNumber): void {
+  const rawValue = new BigNumber(value);
+  if (rawValue.isNegative()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The number must be positive',
+    });
+  }
 }

@@ -17,7 +17,7 @@ import {
   u64,
   Vec,
 } from '@polkadot/types';
-import { CompactEncodable } from '@polkadot/types/codec/Compact';
+import { CompactEncodable } from '@polkadot/types/codec/types';
 import {
   AccountData,
   AccountId,
@@ -30,6 +30,7 @@ import {
   Hash,
   Index,
   Moment,
+  Permill,
   RefCount,
   RuntimeVersion,
 } from '@polkadot/types/interfaces';
@@ -72,6 +73,9 @@ import {
   DocumentType,
   DocumentUri,
   FundingRoundName,
+  Fundraiser,
+  FundraiserStatus,
+  FundraiserTier,
   IdentityClaim,
   IdentityId,
   IdentityRole,
@@ -89,6 +93,7 @@ import {
   PortfolioId,
   PortfolioKind,
   PosRatio,
+  PriceTier,
   ProposalState,
   Scope,
   ScopeId,
@@ -100,6 +105,7 @@ import {
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
+  TransferManager,
   TrustedFor,
   TrustedIssuer,
   Venue,
@@ -1176,7 +1182,7 @@ const createMockStringCodec = (value?: string): Codec =>
 /**
  * @hidden
  */
-const createMockU8ACodec = (value?: string): Codec =>
+const createMockU8aCodec = (value?: string): Codec =>
   createMockCodec(stringToU8a(value), value === undefined);
 
 /**
@@ -1203,7 +1209,7 @@ export const createMockIdentityId = (did?: string): IdentityId =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockTicker = (ticker?: string): Ticker => createMockU8ACodec(ticker) as Ticker;
+export const createMockTicker = (ticker?: string): Ticker => createMockU8aCodec(ticker) as Ticker;
 
 /**
  * @hidden
@@ -1327,7 +1333,14 @@ export const createMockU64 = (value?: number): u64 => createMockNumberCodec(valu
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockBytes = (value?: string): Bytes => createMockU8ACodec(value) as Bytes;
+export const createMockPermill = (value?: number): Permill =>
+  createMockNumberCodec(value) as Permill;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBytes = (value?: string): Bytes => createMockU8aCodec(value) as Bytes;
 
 /**
  * @hidden
@@ -1629,7 +1642,7 @@ export const createMockAuthorizationType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockU8aFixed = (value?: string): U8aFixed =>
-  createMockU8ACodec(value) as U8aFixed;
+  createMockU8aCodec(value) as U8aFixed;
 
 /**
  * @hidden
@@ -2280,7 +2293,7 @@ export const createMockInstruction = (instruction?: {
   status: InstructionStatus;
   settlement_type: SettlementType;
   created_at: Option<Moment>;
-  valid_from: Option<Moment>;
+  trade_date: Option<Moment>;
 }): Instruction => {
   const data = instruction || {
     instruction_id: createMockU64(),
@@ -2288,7 +2301,7 @@ export const createMockInstruction = (instruction?: {
     status: createMockInstructionStatus(),
     settlement_type: createMockSettlementType(),
     created_at: createMockOption(),
-    valid_from: createMockOption(),
+    trade_date: createMockOption(),
   };
 
   return createMockCodec(
@@ -2297,4 +2310,99 @@ export const createMockInstruction = (instruction?: {
     },
     !instruction
   ) as Instruction;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockTransferManager = (
+  transferManager?: { CountTransferManager: u64 } | { PercentageTransferManager: Permill }
+): TransferManager => createMockEnum(transferManager) as TransferManager;
+
+/**
+ * @hidden
+ */
+export const createMockFundraiserTier = (fundraiserTier?: {
+  total: Balance;
+  price: Balance;
+  remaining: Balance;
+}): FundraiserTier => {
+  const data = fundraiserTier || {
+    total: createMockBalance(),
+    price: createMockBalance(),
+    remaining: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !fundraiserTier
+  ) as FundraiserTier;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockFundraiserStatus = (
+  fundraiserStatus?: 'Live' | 'Frozen' | 'Closed'
+): FundraiserStatus => {
+  return createMockEnum(fundraiserStatus) as FundraiserStatus;
+};
+
+/**
+ * @hidden
+ */
+export const createMockFundraiser = (fundraiser?: {
+  creator: IdentityId;
+  offering_portfolio: PortfolioId;
+  offering_asset: Ticker;
+  raising_portfolio: PortfolioId;
+  raising_asset: Ticker;
+  tiers: FundraiserTier[];
+  venue_id: u64;
+  start: Moment;
+  end: Option<Moment>;
+  status: FundraiserStatus;
+  minimum_investment: Balance;
+}): Fundraiser => {
+  const data = fundraiser || {
+    creator: createMockIdentityId(),
+    offering_portfolio: createMockPortfolioId(),
+    offering_asset: createMockTicker(),
+    raising_portfolio: createMockPortfolioId(),
+    raising_asset: createMockTicker(),
+    tiers: [],
+    venue_id: createMockU64(),
+    start: createMockMoment(),
+    end: createMockOption(),
+    status: createMockFundraiserStatus(),
+    minimum_investment: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !fundraiser
+  ) as Fundraiser;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPriceTier = (priceTier?: { total: Balance; price: Balance }): PriceTier => {
+  const data = priceTier || {
+    total: createMockBalance(),
+    price: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !priceTier
+  ) as PriceTier;
 };

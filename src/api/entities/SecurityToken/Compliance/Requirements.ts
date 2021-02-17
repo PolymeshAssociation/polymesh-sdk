@@ -60,6 +60,9 @@ export class Requirements extends Namespace<SecurityToken> {
    *
    * @example Say A, B, C, D and E are requirements and we arrange them as `[[A, B], [C, D], [E]]`.
    * For a transfer to succeed, it must either comply with A AND B, C AND D, OR E.
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
 
   public set: ProcedureMethod<SetAssetRequirementsParams, SecurityToken>;
@@ -111,8 +114,14 @@ export class Requirements extends Namespace<SecurityToken> {
     if (callback) {
       return queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>(
         [
-          [complianceManager.assetCompliances as QueryableStorageEntry<'promise'>, rawTicker],
-          [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
+          [
+            (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
+            rawTicker,
+          ],
+          [
+            (complianceManager.trustedClaimIssuer as unknown) as QueryableStorageEntry<'promise'>,
+            rawTicker,
+          ],
         ],
         res => {
           callback(assembleResult(res));
@@ -121,8 +130,14 @@ export class Requirements extends Namespace<SecurityToken> {
     }
 
     const result = await queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>([
-      [complianceManager.assetCompliances as QueryableStorageEntry<'promise'>, rawTicker],
-      [complianceManager.trustedClaimIssuer as QueryableStorageEntry<'promise'>, rawTicker],
+      [
+        (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
+        rawTicker,
+      ],
+      [
+        (complianceManager.trustedClaimIssuer as unknown) as QueryableStorageEntry<'promise'>,
+        rawTicker,
+      ],
     ]);
 
     return assembleResult(result);
@@ -130,11 +145,17 @@ export class Requirements extends Namespace<SecurityToken> {
 
   /**
    * Detele all the current requirements for the Security Token.
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public reset: ProcedureMethod<void, SecurityToken>;
 
   /**
    * Pause all the Security Token's requirements. This means that all transfers will be allowed until requirements are unpaused
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public pause: ProcedureMethod<void, SecurityToken>;
 
@@ -168,8 +189,7 @@ export class Requirements extends Namespace<SecurityToken> {
     const fromDid = stringToIdentityId(signerToString(from), context);
     const toDid = signerToString(to);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res: AssetComplianceResult = await (rpc as any).compliance.canTransfer(
+    const res: AssetComplianceResult = await rpc.compliance.canTransfer(
       stringToTicker(ticker, context),
       fromDid,
       stringToIdentityId(toDid, context)

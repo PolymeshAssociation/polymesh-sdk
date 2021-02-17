@@ -139,7 +139,7 @@ export class CurrentIdentity extends Identity {
 
     const ownedPortfolios = await portfolios.getPortfolios();
 
-    const [ownedCustodiedPortfolios, custodiedPortfolios] = await Promise.all([
+    const [ownedCustodiedPortfolios, { data: custodiedPortfolios }] = await Promise.all([
       P.filter(ownedPortfolios, portfolio => portfolio.isCustodiedBy({ identity: did })),
       this.portfolios.getCustodiedPortfolios(),
     ]);

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 export default {
+  rpc: {},
   types: {
     IdentityId: '[u8; 32]',
     EventDid: 'IdentityId',
@@ -11,7 +12,19 @@ export default {
     DocumentId: 'u32',
     DocumentName: 'Text',
     DocumentUri: 'Text',
-    DocumentHash: 'Text',
+    DocumentHash: {
+      _enum: {
+        None: '',
+        H512: '[u8; 64]',
+        H384: '[u8; 48]',
+        H320: '[u8; 40]',
+        H256: '[u8; 32]',
+        H224: '[u8; 28]',
+        H192: '[u8; 24]',
+        H160: '[u8; 20]',
+        H128: '[u8; 16]',
+      },
+    },
     DocumentType: 'Text',
     Document: {
       uri: 'DocumentUri',
@@ -460,35 +473,12 @@ export default {
       condition: 'Condition',
       result: 'bool',
     },
-    STO: {
-      beneficiary_did: 'IdentityId',
-      cap: 'Balance',
-      sold: 'Balance',
-      rate: 'u64',
-      start_date: 'Moment',
-      end_date: 'Moment',
-      active: 'bool',
-    },
-    Investment: {
-      investor_did: 'IdentityId',
-      amount_paid: 'Balance',
-      assets_purchased: 'Balance',
-      last_purchase_date: 'Moment',
-    },
     SimpleTokenRecord: {
       ticker: 'Ticker',
       total_supply: 'Balance',
       owner_did: 'IdentityId',
     },
     FeeOf: 'Balance',
-    Dividend: {
-      amount: 'Balance',
-      active: 'bool',
-      matures_at: 'Option<Moment>',
-      expires_at: 'Option<Moment>',
-      payout_currency: 'Option<Ticker>',
-      checkpoint_id: 'u64',
-    },
     TargetIdAuthorization: {
       target_id: 'IdentityId',
       nonce: 'u64',
@@ -521,12 +511,6 @@ export default {
       title: 'MotionTitle',
       info_link: 'MotionInfoLink',
       choices: 'Vec<ChoiceTitle>',
-    },
-    Ballot: {
-      checkpoint_id: 'u64',
-      voting_start: 'Moment',
-      voting_end: 'Moment',
-      motions: 'Vec<Motion>',
     },
     BallotTitle: 'Text',
     BallotMeta: {
@@ -604,32 +588,19 @@ export default {
     },
     PipId: 'u32',
     ProposalState: {
-      _enum: ['Pending', 'Cancelled', 'Rejected', 'Scheduled', 'Failed', 'Executed', 'Expired'],
-    },
-    ReferendumState: {
-      _enum: ['Pending', 'Scheduled', 'Rejected', 'Failed', 'Executed'],
-    },
-    ReferendumType: {
-      _enum: ['FastTracked', 'Emergency', 'Community'],
+      _enum: ['Pending', 'Rejected', 'Scheduled', 'Failed', 'Executed', 'Expired'],
     },
     Pip: {
       id: 'PipId',
       proposal: 'Call',
       state: 'ProposalState',
       proposer: 'Proposer',
-      cool_off_until: 'u32',
     },
     ProposalData: {
       _enum: {
         Hash: 'Hash',
         Proposal: 'Vec<u8>',
       },
-    },
-    Referendum: {
-      id: 'PipId',
-      state: 'ReferendumState',
-      referendum_type: 'ReferendumType',
-      enactment_period: 'u32',
     },
     TickerTransferApproval: {
       authorized_by: 'IdentityId',
@@ -704,10 +675,11 @@ export default {
     },
     AuthorizationNonce: 'u64',
     Counter: 'u64',
-    Commission: {
+    Percentage: 'Permill',
+    TransferManager: {
       _enum: {
-        Individual: '',
-        Global: 'u32',
+        CountTransferManager: 'Counter',
+        PercentageTransferManager: 'Percentage',
       },
     },
     RestrictionResult: {
@@ -860,6 +832,18 @@ export default {
         Err: 'Vec<u8>',
       },
     },
+    GetPortfolioAssetsResult: {
+      _enum: {
+        Ok: 'Vec<(Ticker, Balance)>',
+        Err: 'Vec<u8>',
+      },
+    },
+    GetPortfoliosResult: {
+      _enum: {
+        Ok: 'Vec<(PortfolioNumber, PortfolioName)>',
+        Err: 'Vec<u8>',
+      },
+    },
     AuthorizationType: {
       _enum: {
         AttestPrimaryKeyRotation: '',
@@ -979,7 +963,8 @@ export default {
       status: 'InstructionStatus',
       settlement_type: 'SettlementType',
       created_at: 'Option<Moment>',
-      valid_from: 'Option<Moment>',
+      trade_date: 'Option<Moment>',
+      value_date: 'Option<Moment>',
     },
     Leg: {
       from: 'PortfolioId',
@@ -1028,6 +1013,10 @@ export default {
         Specific: 'IdentityId',
       },
     },
+    FundraiserName: 'Text',
+    FundraiserStatus: {
+      _enum: ['Live', 'Frozen', 'Closed'],
+    },
     FundraiserTier: {
       total: 'Balance',
       price: 'Balance',
@@ -1043,7 +1032,8 @@ export default {
       venue_id: 'u64',
       start: 'Moment',
       end: 'Option<Moment>',
-      frozen: 'bool',
+      status: 'FundraiserStatus',
+      minimum_investment: 'Balance',
     },
     VenueType: {
       _enum: ['Other', 'Distribution', 'Sto', 'Exchange'],
@@ -1068,7 +1058,7 @@ export default {
     CAKind: {
       _enum: [
         'PredictableBenefit',
-        'UnpredictableBenfit',
+        'UnpredictableBenefit',
         'IssuerNotice',
         'Reorganization',
         'Other',
@@ -1122,335 +1112,20 @@ export default {
       total: 'Balance',
       price: 'Balance',
     },
-  },
-  rpc: {
-    compliance: {
-      canTransfer: {
-        description:
-          'Checks whether a transaction with given parameters is compliant to the compliance manager conditions',
-        params: [
-          {
-            name: 'ticker',
-            type: 'Ticker',
-            isOptional: false,
-          },
-          {
-            name: 'from_did',
-            type: 'Option<IdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'to_did',
-            type: 'Option<IdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'AssetComplianceResult',
+    AssetMigrationError: {
+      _enum: {
+        AssetDocumentFail: '(Ticker, DocumentId)',
       },
     },
-    identity: {
-      isIdentityHasValidCdd: {
-        description: 'use to tell whether the given did has valid cdd claim or not',
-        params: [
-          {
-            name: 'did',
-            type: 'IdentityId',
-            isOptional: false,
-          },
-          {
-            name: 'buffer_time',
-            type: 'u64',
-            isOptional: true,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'CddStatus',
-      },
-      getAssetDid: {
-        description: 'function is used to query the given ticker DID',
-        params: [
-          {
-            name: 'ticker',
-            type: 'Ticker',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'AssetDidResult',
-      },
-      getDidRecords: {
-        description: 'Used to get the did record values for a given DID',
-        params: [
-          {
-            name: 'did',
-            type: 'IdentityId',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'DidRecords',
-      },
-      getDidStatus: {
-        description: 'Retrieve status of the DID',
-        params: [
-          {
-            name: 'did',
-            type: 'Vec<IdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'Vec<DidStatus>',
-      },
-      getFilteredAuthorizations: {
-        description:
-          'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
-        params: [
-          {
-            name: 'signatory',
-            type: 'Signatory',
-            isOptional: false,
-          },
-          {
-            name: 'allow_expired',
-            type: 'bool',
-            isOptional: false,
-          },
-          {
-            name: 'auth_type',
-            type: 'AuthorizationType',
-            isOptional: true,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'Vec<Authorization>',
-      },
-      getKeyIdentityData: {
-        description: 'Query relation between a signing key and a DID',
-        params: [
-          {
-            name: 'acc',
-            type: 'AccountId',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'Option<KeyIdentityData<IdentityId>>',
+    MigrationError: {
+      _enum: {
+        DecodeKey: 'Vec<u8>',
+        Map: 'AssetMigrationError',
       },
     },
-    pips: {
-      getVotes: {
-        description: 'Summary of votes of a proposal given by index',
-        params: [
-          {
-            name: 'index',
-            type: 'u32',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'VoteCount',
-      },
-      proposedBy: {
-        description: 'Retrieves proposal indices started by address',
-        params: [
-          {
-            name: 'address',
-            type: 'AccountId',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'Vec<u32>',
-      },
-      votedOn: {
-        description: 'Retrieves proposal address indices voted on',
-        params: [
-          {
-            name: 'address',
-            type: 'AccountId',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'Vec<u32>',
-      },
-      votingHistoryByAddress: {
-        description: 'Retrieves proposal `address` indices voted on',
-        params: [
-          {
-            name: 'address',
-            type: 'AccountId',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'HistoricalVoting',
-      },
-      votingHistoryById: {
-        description: 'Retrieve historical voting of `id` identity',
-        params: [
-          {
-            name: 'id',
-            type: 'IdentityId',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'HistoricalVotingByAddress',
-      },
-    },
-    protocolFee: {
-      computeFee: {
-        description: 'Gets the fee of a chargeable extrinsic operation',
-        params: [
-          {
-            name: 'op',
-            type: 'ProtocolOp',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'CappedFee',
-      },
-    },
-    staking: {
-      getCurve: {
-        description: 'Retrieves curves parameters',
-        params: [
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'Vec<(Perbill, Perbill)>',
-      },
-    },
-    asset: {
-      canTransfer: {
-        description: 'Checks whether a transaction with given parameters can take place or not',
-        params: [
-          {
-            name: 'sender',
-            type: 'AccountId',
-            isOptional: false,
-          },
-          {
-            name: 'from_custodian',
-            type: 'Option<IdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'from_portfolio',
-            type: 'PortfolioId',
-            isOptional: false,
-          },
-          {
-            name: 'to_custodian',
-            type: 'Option<IdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'to_portfolio',
-            type: 'PortfolioId',
-            isOptional: false,
-          },
-          {
-            name: 'ticker',
-            type: 'Ticker',
-            isOptional: false,
-          },
-          {
-            name: 'value',
-            type: 'Balance',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'CanTransferResult',
-      },
-    },
-    portfolio: {
-      getPortfolios: {
-        description: 'Gets all user-defined portfolio names of an identity',
-        params: [
-          {
-            name: 'did',
-            type: 'IdentityId',
-            isOptional: false,
-          },
-        ],
-        type: 'GetPortfoliosResult',
-      },
-      getPortfolioAssets: {
-        description: 'Gets the balances of all assets in a given portfolio',
-        params: [
-          {
-            name: 'portfolio_id',
-            type: 'PortfolioId',
-            isOptional: false,
-          },
-        ],
-        type: 'GetPortfolioAssetsResult',
-      },
+    PermissionedIdentityPrefs: {
+      intended_count: 'u32',
+      running_count: 'u32',
     },
   },
 };

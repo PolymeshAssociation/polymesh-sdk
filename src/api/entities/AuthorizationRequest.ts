@@ -8,7 +8,6 @@ import {
   Context,
   Entity,
   Identity,
-  TransactionQueue,
 } from '~/internal';
 import { Authorization, AuthorizationType, Signer } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
@@ -106,6 +105,18 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
 
       return [consumeAuthorizationRequests, { authRequests: [this], accept: true }];
     }, context);
+
+    this.remove = createProcedureMethod<
+      void,
+      ConsumeAuthorizationRequestsParams | ConsumeJoinIdentityAuthorizationParams,
+      void
+    >(() => {
+      if (this.data.type === AuthorizationType.JoinIdentity) {
+        return [consumeJoinIdentityAuthorization, { authRequest: this, accept: false }];
+      }
+
+      return [consumeAuthorizationRequests, { authRequests: [this], accept: false }];
+    }, context);
   }
 
   /**
@@ -119,24 +130,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
    * - If you are the request issuer, this will cancel the authorization
    * - If you are the request target, this will reject the authorization
    */
-  public remove(): Promise<TransactionQueue> {
-    const {
-      context,
-      data: { type },
-    } = this;
-
-    if (type === AuthorizationType.JoinIdentity) {
-      return consumeJoinIdentityAuthorization.prepare(
-        { authRequest: this, accept: false },
-        context
-      );
-    }
-
-    return consumeAuthorizationRequests.prepare(
-      { authRequests: [this], accept: false },
-      this.context
-    );
-  }
+  public remove: ProcedureMethod<void, void>;
 
   /**
    * Returns whether the Authorization Request has expired

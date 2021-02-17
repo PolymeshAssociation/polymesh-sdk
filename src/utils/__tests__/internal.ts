@@ -1,4 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -11,6 +12,8 @@ import { tuple } from '~/types/utils';
 import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 import {
+  assertIsInteger,
+  assertIsPositive,
   batchArguments,
   calculateNextKey,
   createClaim,
@@ -18,12 +21,12 @@ import {
   delay,
   findEventRecord,
   getDid,
+  isPrintableAscii,
   padString,
   removePadding,
   requestAtBlock,
   requestPaginated,
   serialize,
-  stringIsClean,
   unserialize,
   unwrapValue,
   unwrapValues,
@@ -257,7 +260,7 @@ describe('removePadding', () => {
 
 describe('requestPaginated', () => {
   test('should fetch and return entries and the hex value of the last key', async () => {
-    const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
+    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
       entries: [
         tuple(['ticker0'], dsMockUtils.createMockU32(0)),
         tuple(['ticker1'], dsMockUtils.createMockU32(1)),
@@ -298,7 +301,7 @@ describe('requestAtBlock', () => {
       isArchiveNode: true,
     });
     const returnValue = dsMockUtils.createMockU32(5);
-    const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
+    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue,
     });
 
@@ -334,7 +337,7 @@ describe('requestAtBlock', () => {
       isArchiveNode: false,
     });
 
-    const queryStub = dsMockUtils.createQueryStub('dividend', 'dividendCount', {
+    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue: dsMockUtils.createMockU32(5),
     });
 
@@ -424,15 +427,15 @@ describe('calculateNextKey', () => {
 
     expect(nextKey).toEqual(30);
   });
+});
 
-  describe('stringIsClean', () => {
-    test('should return false if the string contains charcode 65533', () => {
-      expect(stringIsClean(String.fromCharCode(65533))).toBe(false);
-    });
+describe('isPrintableAscii', () => {
+  test('should return true if the string only contains printable ASCII characters', () => {
+    expect(isPrintableAscii('TICKER')).toBe(true);
+  });
 
-    test("should return true if the string doesn't contain any forbidden characters", () => {
-      expect(stringIsClean('Clean String')).toBe(true);
-    });
+  test("should return false if the string doesn't contain only printable ASCII characters", () => {
+    expect(isPrintableAscii(String.fromCharCode(10000000))).toBe(false);
   });
 });
 
@@ -473,5 +476,61 @@ describe('createProcedureMethod', () => {
     await method.checkAuthorization(procArgs);
 
     sinon.assert.calledWithExactly(checkAuthorization, procArgs, context);
+  });
+});
+
+describe('assertIsInteger', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should not throw if the argument is an integer', async () => {
+    try {
+      assertIsInteger(new BigNumber(1));
+    } catch (_) {
+      expect(true).toBe(false);
+    }
+  });
+
+  test('assertIsInteger should throw an error if the argument is not an integer', async () => {
+    expect(() => assertIsInteger(('noInteger' as unknown) as BigNumber)).toThrow(
+      'The number must be an integer'
+    );
+
+    expect(() => assertIsInteger(new BigNumber(1.2))).toThrow('The number must be an integer');
+  });
+});
+
+describe('assertIsPositive', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should not throw if the argument is positive', async () => {
+    try {
+      assertIsPositive(new BigNumber(1));
+    } catch (_) {
+      expect(true).toBe(false);
+    }
+  });
+
+  test('assertIsPositive should throw an error if the argument is negative', async () => {
+    expect(() => assertIsPositive(new BigNumber(-3))).toThrow('The number must be positive');
   });
 });

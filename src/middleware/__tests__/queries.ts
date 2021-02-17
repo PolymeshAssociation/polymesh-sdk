@@ -5,7 +5,7 @@ import {
   ModuleIdEnum,
   Order,
   ProposalOrderFields,
-  ProposalState,
+  ProposalStateEnum,
   ProposalVotesOrderFields,
 } from '~/middleware/types';
 
@@ -14,11 +14,13 @@ import {
   eventByAddedTrustedClaimIssuer,
   eventByIndexedArgs,
   eventsByIndexedArgs,
+  investments,
   issuerDidsWithClaimsByTarget,
   proposal,
   proposals,
   proposalVotes,
   scopesByIdentity,
+  settlements,
   tokensByTrustedClaimIssuer,
   tokensHeldByDid,
   transactionByHash,
@@ -110,9 +112,9 @@ describe('proposals', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       proposers: ['someProposer'],
-      states: [ProposalState.Referendum],
+      states: [ProposalStateEnum.Scheduled],
       orderBy: {
-        field: ProposalOrderFields.CreatedAt,
+        field: ProposalOrderFields.VotesCount,
         order: Order.Desc,
       },
     };
@@ -216,6 +218,33 @@ describe('eventByAddedTrustedClaimIssuer', () => {
     };
 
     const result = eventByAddedTrustedClaimIssuer(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('settlements', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      identityId: 'someIdentityId',
+    };
+
+    const result = settlements(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('investments', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      stoId: 1,
+      ticker: 'SOMETICKER',
+    };
+
+    const result = investments(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

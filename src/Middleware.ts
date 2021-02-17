@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { Context } from '~/internal';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
-import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier, ExtrinsicData } from '~/types';
 import { extrinsicIdentifierToTxTag } from '~/utils/conversion';
 
@@ -24,13 +24,15 @@ export class Middleware {
    *
    * @param opts.moduleId - type of the module to fetch
    * @param opts.eventId - type of the event to fetch
-   * @param opts.eventArg0 - event value to filter in position 0
-   * @param opts.eventArg1 - event value to filter in position 1
-   * @param opts.eventArg2 - event value to filter in position 2
+   * @param opts.eventArg0 - event parameter value to filter by in position 0
+   * @param opts.eventArg1 - event parameter value to filter by in position 1
+   * @param opts.eventArg2 - event parameter value to filter by in position 2
+   *
+   * @note uses the middleware
    */
   public async getEventByIndexedArgs(opts: {
-    moduleId: ModuleIdEnum;
-    eventId: EventIdEnum;
+    moduleId: ModuleId;
+    eventId: EventId;
     eventArg0?: string;
     eventArg1?: string;
     eventArg2?: string;
@@ -67,15 +69,17 @@ export class Middleware {
    *
    * @param opts.moduleId - type of the module to fetch
    * @param opts.eventId - type of the event to fetch
-   * @param opts.eventArg0 - event value to filter in position 0
-   * @param opts.eventArg1 - event value to filter in position 1
-   * @param opts.eventArg2 - event value to filter in position 2
+   * @param opts.eventArg0 - event parameter value to filter by in position 0
+   * @param opts.eventArg1 - event parameter value to filter by in position 1
+   * @param opts.eventArg2 - event parameter value to filter by in position 2
    * @param opts.size - page size
    * @param opts.start - page offset
+   *
+   * @note uses the middleware
    */
   public async getEventsByIndexedArgs(opts: {
-    moduleId: ModuleIdEnum;
-    eventId: EventIdEnum;
+    moduleId: ModuleId;
+    eventId: EventId;
     eventArg0?: string;
     eventArg1?: string;
     eventArg2?: string;
@@ -119,6 +123,8 @@ export class Middleware {
    * Retrieve a transaction by hash
    *
    * @param opts.txHash - hash of the transaction
+   *
+   * @note uses the middleware
    */
   public async getTransactionByHash(opts: { txHash: string }): Promise<ExtrinsicData | null> {
     const { context } = this;

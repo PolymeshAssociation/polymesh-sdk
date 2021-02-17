@@ -1,8 +1,9 @@
 import { Moment } from '@polkadot/types/interfaces';
+import P from 'bluebird';
 import { cloneDeep, isEqual, uniq } from 'lodash';
 import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 
-import { PolymeshError, Procedure } from '~/internal';
+import { Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import {
@@ -13,6 +14,7 @@ import {
   ErrorCode,
   isScopedClaim,
   RoleType,
+  Scope,
 } from '~/types';
 import {
   ClaimOperation,
@@ -22,12 +24,15 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
+  balanceToBigNumber,
   claimToMeshClaim,
   dateToMoment,
   identityIdToString,
   middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
+  stringToScopeId,
+  stringToTicker,
 } from '~/utils/conversion';
 
 interface AddClaimsParams {
@@ -69,6 +74,7 @@ export async function prepareModifyClaims(
     context: {
       polymeshApi: {
         tx: { identity },
+        query: { asset },
       },
     },
     context,
@@ -163,12 +169,92 @@ export async function prepareModifyClaims(
   }
 
   if (operation === ClaimOperation.Revoke) {
+    const claimsWithBalance: Claim[] = [];
+
+    await P.each(
+      claims.filter(({ claim: { type } }) => type === ClaimType.InvestorUniqueness),
+      async ({ claim }) => {
+        const investorUniquenessClaim = claim as { scope: Scope; scopeId: string };
+        const {
+          scope: { value },
+          scopeId,
+        } = investorUniquenessClaim;
+
+        const balance = await asset.aggregateBalance(
+          stringToTicker(value, context),
+          stringToScopeId(scopeId, context)
+        );
+
+        if (!balanceToBigNumber(balance).isZero()) {
+          claimsWithBalance.push(claim);
+        }
+      }
+    );
+
+    if (claimsWithBalance.length) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Attempt to revoke Investor Uniqueness claims with positive balance',
+        data: {
+          claimsWithBalance,
+        },
+      });
+    }
+
     this.addBatchTransaction(
       identity.revokeClaim,
       { groupByFn: groupByDid },
       modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim))
     );
   } else {
+    if (operation === ClaimOperation.Add) {
+      const invalidCddClaims: { target: Identity; currentCddId: string; newCddId: string }[] = [];
+
+      const newCddClaims = claims.filter(
+        ({ claim: { type } }) => type === ClaimType.CustomerDueDiligence
+      );
+
+      if (newCddClaims.length) {
+        const issuedCddClaims = await context.issuedClaims({
+          targets: newCddClaims.map(({ target }) => target),
+          claimTypes: [ClaimType.CustomerDueDiligence],
+          includeExpired: false,
+        });
+
+        newCddClaims.forEach(({ target, claim }) => {
+          const did = signerToString(target);
+          const issuedClaimsForTarget = issuedCddClaims.data.filter(
+            ({ target: issuedTarget }) => issuedTarget.did === did
+          );
+
+          if (issuedClaimsForTarget.length) {
+            // we know the claim is a CDD claim, so it must have an id property
+            const { id: newCddId } = issuedClaimsForTarget[0].claim as { id: string };
+            const { id: currentCddId } = claim as { id: string };
+
+            if (newCddId !== currentCddId) {
+              invalidCddClaims.push({
+                target:
+                  typeof target === 'string' ? new Identity({ did: target }, context) : target,
+                currentCddId,
+                newCddId,
+              });
+            }
+          }
+        });
+
+        if (invalidCddClaims.length) {
+          throw new PolymeshError({
+            code: ErrorCode.ValidationError,
+            message: 'A target Identity cannot have CDD claims with different IDs',
+            data: {
+              invalidCddClaims,
+            },
+          });
+        }
+      }
+    }
+
     this.addBatchTransaction(identity.addClaim, { groupByFn: groupByDid }, modifyClaimArgs);
   }
 }

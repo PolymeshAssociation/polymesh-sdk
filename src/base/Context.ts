@@ -2,7 +2,7 @@ import { ApiPromise, Keyring } from '@polkadot/api';
 import { AddressOrPair } from '@polkadot/api/types';
 import { getTypeDef } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
-import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
+import { CallFunction, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import { hexToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
@@ -557,7 +557,7 @@ export class Context {
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return ((tx as any)[section][method] as CallBase).meta.args.map(({ name, type }) => {
+    return ((tx as any)[section][method] as CallFunction).meta.args.map(({ name, type }) => {
       const typeDef = getTypeDef(type.toString());
       const argName = textToString(name);
 
@@ -743,7 +743,7 @@ export class Context {
    * @param opts.size - page size
    * @param opts.start - page offset
    *
-   * @note uses the middleware
+   * @note uses the middleware (optional)
    */
   public async issuedClaims(
     opts: {
@@ -794,8 +794,7 @@ export class Context {
   /**
    * Retrieve the middleware client
    *
-   * @throws if cred
-   * entials are not set
+   * @throws if the middleware is not enabled
    */
   public get middlewareApi(): ApolloClient<NormalizedCacheObject> {
     const { _middlewareApi } = this;

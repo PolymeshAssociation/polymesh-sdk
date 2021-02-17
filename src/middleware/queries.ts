@@ -4,11 +4,13 @@ import {
   QueryDidsWithClaimsArgs,
   QueryEventByAddedTrustedClaimIssuerArgs,
   QueryEventsByIndexedArgsArgs,
+  QueryInvestmentsArgs,
   QueryIssuerDidsWithClaimsByTargetArgs,
   QueryProposalArgs,
   QueryProposalsArgs,
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
+  QuerySettlementsArgs,
   QueryTokensByTrustedClaimIssuerArgs,
   QueryTokensHeldByDidArgs,
   QueryTransactionByHashArgs,
@@ -524,6 +526,83 @@ export function eventByAddedTrustedClaimIssuer(
         extrinsic_idx
         block {
           datetime
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Settlements where a Portfolio is involved
+ */
+export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<QuerySettlementsArgs> {
+  const query = gql`
+    query SettlementsQuery(
+      $identityId: String!
+      $portfolioNumber: String
+      $addressFilter: String
+      $tickerFilter: String
+      $count: Int
+      $skip: Int
+    ) {
+      settlements(
+        identityId: $identityId
+        portfolioNumber: $portfolioNumber
+        addressFilter: $addressFilter
+        tickerFilter: $tickerFilter
+        count: $count
+        skip: $skip
+      ) {
+        totalCount
+        items {
+          block_id
+          result
+          addresses
+          legs {
+            ticker
+            amount
+            direction
+            from {
+              did
+              kind
+            }
+            to {
+              did
+              kind
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get all investments for a given offering
+ */
+export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<QueryInvestmentsArgs> {
+  const query = gql`
+    query InvestmentsQuery($stoId: Int!, $ticker: String!, $count: Int, $skip: Int) {
+      investments(stoId: $stoId, ticker: $ticker, count: $count, skip: $skip) {
+        totalCount
+        items {
+          investor
+          offeringTokenAmount
+          raiseTokenAmount
         }
       }
     }

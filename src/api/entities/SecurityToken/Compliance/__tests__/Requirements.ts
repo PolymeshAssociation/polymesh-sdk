@@ -143,7 +143,7 @@ describe('Requirements class', () => {
     });
 
     beforeEach(() => {
-      ticker = 'test';
+      ticker = 'FAKETICKER';
       context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance({ ticker });
       requirements = new Requirements(token, context);
@@ -364,10 +364,7 @@ describe('Requirements class', () => {
         .withArgs(token.ticker, context)
         .returns(rawTicker);
 
-      sinon
-        .stub(utilsConversionModule, 'boolToBoolean')
-        .withArgs(mockBool)
-        .returns(fakeResult);
+      sinon.stub(utilsConversionModule, 'boolToBoolean').withArgs(mockBool).returns(fakeResult);
 
       dsMockUtils
         .createQueryStub('complianceManager', 'assetCompliances')

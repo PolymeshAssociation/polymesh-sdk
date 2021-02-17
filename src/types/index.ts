@@ -3,6 +3,7 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
+import { StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
@@ -13,6 +14,7 @@ import {
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,
+  Sto,
 } from '~/internal';
 import { PortfolioId } from '~/types/internal';
 
@@ -77,7 +79,7 @@ export enum TransactionQueueStatus {
 export enum RoleType {
   TickerOwner = 'TickerOwner',
   TokenOwner = 'TokenOwner',
-  TokenOwnerOrPia = 'TokenOwnerOrPia',
+  TokenPia = 'TokenPia',
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
@@ -107,16 +109,16 @@ export function isTokenOwnerRole(role: Role): role is TokenOwnerRole {
   return role.type === RoleType.TokenOwner;
 }
 
-export interface TokenOwnerOrPiaRole {
-  type: RoleType.TokenOwnerOrPia;
+export interface TokenPiaRole {
+  type: RoleType.TokenPia;
   ticker: string;
 }
 
 /**
  * @hidden
  */
-export function isTokenOwnerOrPiaRole(role: Role): role is TokenOwnerOrPiaRole {
-  return role.type === RoleType.TokenOwnerOrPia;
+export function isTokenPiaRole(role: Role): role is TokenPiaRole {
+  return role.type === RoleType.TokenPia;
 }
 
 export interface CddProviderRole {
@@ -157,7 +159,7 @@ export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodian
 export type Role =
   | TickerOwnerRole
   | TokenOwnerRole
-  | TokenOwnerOrPiaRole
+  | TokenPiaRole
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole;
@@ -273,9 +275,18 @@ export enum ClaimType {
   NoData = 'NoData',
 }
 
+export type CddClaim = { type: ClaimType.CustomerDueDiligence; id: string };
+
+export type InvestorUniquenessClaim = {
+  type: ClaimType.InvestorUniqueness;
+  scope: Scope;
+  cddId: string;
+  scopeId: string;
+};
+
 export type ScopedClaim =
   | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
-  | { type: ClaimType.InvestorUniqueness; scope: Scope; cddId: string; scopeId: string }
+  | InvestorUniquenessClaim
   | {
       type: Exclude<
         ClaimType,
@@ -287,9 +298,7 @@ export type ScopedClaim =
       scope: Scope;
     };
 
-export type UnscopedClaim =
-  | { type: ClaimType.NoData }
-  | { type: ClaimType.CustomerDueDiligence; id: string };
+export type UnscopedClaim = { type: ClaimType.NoData } | CddClaim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -302,12 +311,12 @@ export function isScopedClaim(claim: Claim): claim is ScopedClaim {
   return ![ClaimType.NoData, ClaimType.CustomerDueDiligence].includes(type);
 }
 
-export interface ClaimData {
+export interface ClaimData<ClaimType = Claim> {
   target: Identity;
   issuer: Identity;
   issuedAt: Date;
   expiry: Date | null;
-  claim: Claim;
+  claim: ClaimType;
 }
 
 export interface IdentityWithClaims {
@@ -446,8 +455,9 @@ export enum TransferStatus {
   BlockedTransaction = 'BlockedTransaction', // 166
   FundsLimitReached = 'FundsLimitReached', // 168
   PortfolioFailure = 'PortfolioFailure', // 169
-  CustodianError = 'CustodianError', // 176
-  ScopeClaimMissing = 'MissingScopeClaimMissingScopedClaim', // 177
+  CustodianError = 'CustodianError', // 170
+  ScopeClaimMissing = 'ScopeClaimMissing', // 171
+  TransferRestrictionFailure = 'TransferRestrictionFailure', // 172
 }
 
 export interface ClaimTarget {
@@ -593,6 +603,11 @@ export type Signer = Identity | Account;
 //   details: ProposalDetails;
 // }
 
+export interface StoWithDetails {
+  sto: Sto;
+  details: StoDetails;
+}
+
 export interface SecondaryKey {
   signer: Signer;
   permissions: Permissions;
@@ -621,8 +636,44 @@ export interface ProcedureAuthorizationStatus {
   roles: boolean;
 }
 
+interface TransferRestrictionBase {
+  exemptedScopeIds?: string[];
+}
+
+interface TransferRestrictionInputBase {
+  exemptedScopeIds?: string[];
+  exemptedIdentities?: (Identity | string)[];
+}
+
+export interface CountTransferRestriction extends TransferRestrictionBase {
+  count: BigNumber;
+}
+
+export interface PercentageTransferRestriction extends TransferRestrictionBase {
+  percentage: BigNumber;
+}
+
+export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
+  count: BigNumber;
+}
+
+export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
+  percentage: BigNumber;
+}
+
+export interface ActiveTransferRestrictions<
+  Restriction extends CountTransferRestriction | PercentageTransferRestriction
+> {
+  restrictions: Restriction[];
+  /**
+   * amount of restrictions that can be added before reaching the shared limit
+   */
+  availableSlots: number;
+}
+
 export { TxTags } from 'polymesh-types/types';
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
+export { EventRecord } from '@polkadot/types/interfaces';
 export * from '~/api/entities/types';
 export * from '~/base/types';
 export { Order } from '~/middleware/types';

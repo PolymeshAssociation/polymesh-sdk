@@ -1,5 +1,5 @@
 import { Balance } from '@polkadot/types/interfaces';
-import { bool } from '@polkadot/types/primitive';
+import { bool, u64 } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
@@ -93,7 +93,7 @@ describe('SecurityToken class', () => {
     let securityToken: SecurityToken;
 
     beforeAll(() => {
-      ticker = 'test';
+      ticker = 'FAKETICKER';
       totalSupply = 1000;
       isDivisible = true;
       owner = '0x0wn3r';
@@ -123,7 +123,7 @@ describe('SecurityToken class', () => {
         returnValue: rawToken,
       });
 
-      const details = await securityToken.details();
+      let details = await securityToken.details();
 
       expect(details.name).toBe(ticker);
       expect(details.totalSupply).toEqual(
@@ -132,7 +132,24 @@ describe('SecurityToken class', () => {
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
-      expect(details.primaryIssuanceAgent?.did).toBe(primaryIssuanceAgent);
+      expect(details.primaryIssuanceAgent.did).toBe(primaryIssuanceAgent);
+
+      dsMockUtils.createQueryStub('asset', 'tokens', {
+        returnValue: dsMockUtils.createMockSecurityToken({
+          /* eslint-disable @typescript-eslint/camelcase */
+          owner_did: dsMockUtils.createMockIdentityId(owner),
+          name: dsMockUtils.createMockAssetName(ticker),
+          asset_type: dsMockUtils.createMockAssetType(assetType),
+          divisible: dsMockUtils.createMockBool(isDivisible),
+          total_supply: dsMockUtils.createMockBalance(totalSupply),
+          primary_issuance_agent: dsMockUtils.createMockOption(),
+          /* eslint-enable @typescript-eslint/camelcase */
+        }),
+      });
+
+      details = await securityToken.details();
+
+      expect(details.primaryIssuanceAgent.did).toBe(owner);
     });
 
     test('should allow subscription', async () => {
@@ -158,7 +175,7 @@ describe('SecurityToken class', () => {
           name: ticker,
           owner: sinon.match({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
-          primaryIssuanceAgent: null,
+          primaryIssuanceAgent: sinon.match({ did: owner }),
         })
       );
     });
@@ -223,7 +240,7 @@ describe('SecurityToken class', () => {
     let securityToken: SecurityToken;
 
     beforeAll(() => {
-      ticker = 'test';
+      ticker = 'FAKETICKER';
       fundingRound = 'Series A';
     });
 
@@ -531,6 +548,54 @@ describe('SecurityToken class', () => {
       const queue = await securityToken.redeem({ amount });
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: investorCount', () => {
+    let investorCountPerAssetStub: sinon.SinonStub;
+    let investorCount: number;
+    let rawInvestorCount: u64;
+
+    beforeAll(() => {
+      investorCount = 10;
+      rawInvestorCount = dsMockUtils.createMockU64(investorCount);
+    });
+
+    beforeEach(() => {
+      investorCountPerAssetStub = dsMockUtils.createQueryStub(
+        'statistics',
+        'investorCountPerAsset'
+      );
+    });
+
+    test('should return the amount of unique investors that hold the Security Token', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      investorCountPerAssetStub.resolves(rawInvestorCount);
+
+      const result = await securityToken.investorCount();
+
+      expect(result).toBe(investorCount);
+    });
+
+    test('should allow subscription', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+      const unsubCallback = 'unsubCallBack';
+
+      investorCountPerAssetStub.callsFake(async (_, cbFunc) => {
+        cbFunc(rawInvestorCount);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await securityToken.investorCount(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, investorCount);
     });
   });
 });

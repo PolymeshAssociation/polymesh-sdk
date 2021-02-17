@@ -136,5 +136,27 @@ describe('CurrentAccount class', () => {
 
       expect(result).toEqual(false);
     });
+
+    test('should exempt certain transactions from requiring permissions', async () => {
+      const address = 'someAddress';
+
+      context = dsMockUtils.getContextInstance({ primaryKey: address });
+
+      const account = new CurrentAccount({ address }, context);
+
+      const result = await account.hasPermissions({
+        tokens: [],
+        portfolios: [],
+        transactions: [
+          TxTags.balances.Transfer,
+          TxTags.balances.TransferWithMemo,
+          TxTags.staking.AddPermissionedValidator,
+          TxTags.sudo.SetKey,
+          TxTags.session.PurgeKeys,
+        ],
+      });
+
+      expect(result).toEqual(true);
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { Option } from '@polkadot/types';
-import { Moment } from '@polkadot/types/interfaces';
+import { Balance, Moment } from '@polkadot/types/interfaces';
+import BigNumber from 'bignumber.js';
 import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -9,7 +10,7 @@ import {
   ModifyClaimsParams,
   prepareModifyClaims,
 } from '~/api/procedures/modifyClaims';
-import { Context } from '~/internal';
+import { Context, Identity } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -26,16 +27,20 @@ describe('modifyClaims procedure', () => {
   let addBatchTransactionStub: sinon.SinonStub;
   let addClaimTransaction: PolymeshTx<[IdentityId, Claim, Option<Moment>]>;
   let revokeClaimTransaction: PolymeshTx<[IdentityId, Claim]>;
+  let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
 
   let someDid: string;
   let otherDid: string;
+  let cddId: string;
   let cddClaim: Claim;
   let buyLockupClaim: Claim;
+  let iuClaim: Claim;
   let expiry: Date;
   let args: ModifyClaimsParams;
 
   let rawCddClaim: MeshClaim;
   let rawBuyLockupClaim: MeshClaim;
+  let rawIuClaim: MeshClaim;
   let rawSomeDid: IdentityId;
   let rawOtherDid: IdentityId;
   let rawExpiry: Moment;
@@ -51,10 +56,24 @@ describe('modifyClaims procedure', () => {
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
     identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
+
+    sinon.stub(utilsConversionModule, 'stringToTicker');
+    sinon.stub(utilsConversionModule, 'stringToScopeId');
 
     someDid = 'someDid';
     otherDid = 'otherDid';
-    cddClaim = { type: ClaimType.CustomerDueDiligence, id: 'someId' };
+    cddId = 'cddId';
+    cddClaim = { type: ClaimType.CustomerDueDiligence, id: cddId };
+    iuClaim = {
+      type: ClaimType.InvestorUniqueness,
+      scope: {
+        type: ScopeType.Ticker,
+        value: 'SOMETICKER',
+      },
+      cddId: 'someCddId',
+      scopeId: 'someScopeId',
+    };
     buyLockupClaim = {
       type: ClaimType.BuyLockup,
       scope: { type: ScopeType.Identity, value: 'someIdentityId' },
@@ -75,6 +94,10 @@ describe('modifyClaims procedure', () => {
           claim: buyLockupClaim,
           expiry,
         },
+        {
+          target: someDid,
+          claim: iuClaim,
+        },
       ],
       operation: ClaimOperation.Add,
     };
@@ -84,6 +107,13 @@ describe('modifyClaims procedure', () => {
     });
     rawBuyLockupClaim = dsMockUtils.createMockClaim({
       BuyLockup: dsMockUtils.createMockScope(),
+    });
+    rawIuClaim = dsMockUtils.createMockClaim({
+      InvestorUniqueness: [
+        dsMockUtils.createMockScope(),
+        dsMockUtils.createMockScopeId(),
+        dsMockUtils.createMockCddId(),
+      ],
     });
     rawSomeDid = dsMockUtils.createMockIdentityId(someDid);
     rawOtherDid = dsMockUtils.createMockIdentityId(otherDid);
@@ -97,6 +127,7 @@ describe('modifyClaims procedure', () => {
     revokeClaimTransaction = dsMockUtils.createTxStub('identity', 'revokeClaim');
     claimToMeshClaimStub.withArgs(cddClaim, mockContext).returns(rawCddClaim);
     claimToMeshClaimStub.withArgs(buyLockupClaim, mockContext).returns(rawBuyLockupClaim);
+    claimToMeshClaimStub.withArgs(iuClaim, mockContext).returns(rawIuClaim);
     stringToIdentityIdStub.withArgs(someDid, mockContext).returns(rawSomeDid);
     stringToIdentityIdStub.withArgs(otherDid, mockContext).returns(rawOtherDid);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
@@ -140,8 +171,46 @@ describe('modifyClaims procedure', () => {
   });
 
   test('should add a batch of add claim transactions to the queue', async () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        issuedClaims: {
+          data: [
+            {
+              target: new Identity({ did: someDid }, mockContext),
+              issuer: ('issuerIdentity' as unknown) as Identity,
+              issuedAt: new Date(),
+              expiry: null,
+              claim: cddClaim,
+            },
+          ],
+          next: 1,
+          count: 1,
+        },
+      },
+    });
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getCurrentIdentity();
+
+    await prepareModifyClaims.call(
+      procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext),
+      {
+        claims: [
+          {
+            target: someDid,
+            claim: buyLockupClaim,
+            expiry,
+          },
+        ],
+        operation: ClaimOperation.Add,
+      }
+    );
+
+    sinon.assert.calledWith(
+      addBatchTransactionStub,
+      addClaimTransaction,
+      { groupByFn: sinon.match(sinon.match.func) },
+      [[rawSomeDid, rawBuyLockupClaim, rawExpiry]]
+    );
 
     await prepareModifyClaims.call(proc, args);
 
@@ -149,6 +218,7 @@ describe('modifyClaims procedure', () => {
       [rawSomeDid, rawCddClaim, null],
       [rawOtherDid, rawCddClaim, null],
       [rawSomeDid, rawBuyLockupClaim, rawExpiry],
+      [rawSomeDid, rawIuClaim, null],
     ];
 
     sinon.assert.calledWith(
@@ -159,6 +229,62 @@ describe('modifyClaims procedure', () => {
     );
 
     sinon.resetHistory();
+
+    dsMockUtils.createApolloQueryStub(
+      didsWithClaims({
+        trustedClaimIssuers: [did],
+        dids: [someDid, otherDid],
+        includeExpired,
+        count: 2,
+      }),
+      {
+        didsWithClaims: {
+          totalCount: 2,
+          items: [
+            {
+              did: someDid,
+              claims: [cddClaim, buyLockupClaim, iuClaim],
+            },
+            {
+              did: otherDid,
+              claims: [cddClaim],
+            },
+          ],
+        },
+      }
+    );
+
+    await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
+
+    sinon.assert.calledWith(
+      addBatchTransactionStub,
+      addClaimTransaction,
+      { groupByFn: sinon.match(sinon.match.func) },
+      rawAddClaimItems
+    );
+  });
+
+  test('should throw an error if any of the CDD IDs of the claims that will be added are not equal to the CDD ID of current CDD claims', async () => {
+    const otherId = 'otherId';
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        issuedClaims: {
+          data: [
+            {
+              target: new Identity({ did: someDid }, mockContext),
+              issuer: ('issuerIdentity' as unknown) as Identity,
+              issuedAt: new Date(),
+              expiry: null,
+              claim: { type: ClaimType.CustomerDueDiligence, id: otherId },
+            },
+          ],
+          next: 1,
+          count: 1,
+        },
+      },
+    });
+    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
+    const { did } = await mockContext.getCurrentIdentity();
 
     dsMockUtils.createApolloQueryStub(
       didsWithClaims({
@@ -184,14 +310,40 @@ describe('modifyClaims procedure', () => {
       }
     );
 
-    await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
+    let error;
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      addClaimTransaction,
-      { groupByFn: sinon.match(sinon.match.func) },
-      rawAddClaimItems
-    );
+    try {
+      await prepareModifyClaims.call(proc, {
+        claims: [
+          {
+            target: someDid,
+            claim: cddClaim,
+          },
+          {
+            target: otherDid,
+            claim: cddClaim,
+          },
+          {
+            target: new Identity({ did: someDid }, mockContext),
+            claim: cddClaim,
+          },
+        ],
+        operation: ClaimOperation.Add,
+      });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('A target Identity cannot have CDD claims with different IDs');
+
+    const {
+      target: { did: targetDid },
+      currentCddId,
+      newCddId,
+    } = error.data.invalidCddClaims[0];
+    expect(targetDid).toEqual(someDid);
+    expect(currentCddId).toEqual(cddId);
+    expect(newCddId).toEqual(otherId);
   });
 
   test("should throw an error if any of the claims that will be modified weren't issued by the current Identity", async () => {
@@ -226,6 +378,44 @@ describe('modifyClaims procedure', () => {
     );
   });
 
+  test('should throw an error if any Investor Uniqueness claim has balance in a revoke operation', async () => {
+    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
+    const { did } = await mockContext.getCurrentIdentity();
+
+    dsMockUtils.createApolloQueryStub(
+      didsWithClaims({
+        trustedClaimIssuers: [did],
+        dids: [someDid, otherDid],
+        includeExpired,
+        count: 2,
+      }),
+      {
+        didsWithClaims: {
+          totalCount: 2,
+          items: [
+            {
+              did: someDid,
+              claims: [cddClaim, buyLockupClaim, iuClaim],
+            },
+            {
+              did: otherDid,
+              claims: [cddClaim],
+            },
+          ],
+        },
+      }
+    );
+
+    dsMockUtils.createQueryStub('asset', 'aggregateBalance');
+    balanceToBigNumberStub.returns(new BigNumber(1));
+
+    await expect(
+      prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
+    ).rejects.toThrow(
+      new RegExp('Attempt to revoke Investor Uniqueness claims with positive balance')
+    );
+  });
+
   test('should add a batch of revoke claim transactions to the queue', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getCurrentIdentity();
@@ -243,7 +433,7 @@ describe('modifyClaims procedure', () => {
           items: [
             {
               did: someDid,
-              claims: [cddClaim, buyLockupClaim],
+              claims: [cddClaim, buyLockupClaim, iuClaim],
             },
             {
               did: otherDid,
@@ -254,12 +444,16 @@ describe('modifyClaims procedure', () => {
       }
     );
 
+    dsMockUtils.createQueryStub('asset', 'aggregateBalance');
+    balanceToBigNumberStub.returns(new BigNumber(0));
+
     await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke });
 
     const rawRevokeClaimItems = [
       [rawSomeDid, rawCddClaim],
       [rawOtherDid, rawCddClaim],
       [rawSomeDid, rawBuyLockupClaim],
+      [rawSomeDid, rawIuClaim],
     ];
 
     sinon.assert.calledWith(

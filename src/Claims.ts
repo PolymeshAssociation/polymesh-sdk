@@ -11,11 +11,13 @@ import {
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
+  CddClaim,
   ClaimData,
   ClaimScope,
   ClaimType,
   Ensured,
   IdentityWithClaims,
+  InvestorUniquenessClaim,
   ResultSet,
   Scope,
   ScopedClaim,
@@ -103,13 +105,19 @@ export class Claims {
    * Add claims to Identities
    *
    * @param args.claims - array of claims to be added
+   *
+   * @note required role if at least one claim is CDD type:
+   *   - Customer Due Diligence Provider
    */
   public addClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
   /**
    * Edit claims associated to Identities (only the expiry date can be modified)
    *
-   * * @param args.claims - array of claims to be edited
+   * @param args.claims - array of claims to be edited
+   *
+   * @note required role if at least one claim is CDD type:
+   *   - Customer Due Diligence Provider
    */
 
   public editClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
@@ -118,6 +126,9 @@ export class Claims {
    * Revoke claims from Identities
    *
    * @param args.claims - array of claims to be revoked
+   *
+   * @note required role if at least one claim is CDD type:
+   *   - Customer Due Diligence Provider
    */
   public revokeClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
@@ -281,7 +292,7 @@ export class Claims {
       target?: string | Identity;
       includeExpired?: boolean;
     } = {}
-  ): Promise<ClaimData[]> {
+  ): Promise<ClaimData<CddClaim>[]> {
     const { context } = this;
     const { target, includeExpired = true } = opts;
 
@@ -291,7 +302,7 @@ export class Claims {
       targets: [did],
       claimTypes: [ClaimType.CustomerDueDiligence],
       includeExpired,
-    });
+    }) as Promise<ClaimData<CddClaim>[]>;
   }
 
   /**
@@ -305,7 +316,7 @@ export class Claims {
       target?: string | Identity;
       includeExpired?: boolean;
     } = {}
-  ): Promise<ClaimData[]> {
+  ): Promise<ClaimData<InvestorUniquenessClaim>[]> {
     const { context } = this;
     const { target, includeExpired = true } = opts;
 
@@ -315,7 +326,7 @@ export class Claims {
       targets: [did],
       claimTypes: [ClaimType.InvestorUniqueness],
       includeExpired,
-    });
+    }) as Promise<ClaimData<InvestorUniquenessClaim>[]>;
   }
 
   /**
@@ -325,7 +336,7 @@ export class Claims {
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
-   * @note uses the middleware
+   * @note uses the middleware (optional)
    */
   public async getTargetingClaims(
     opts: {
@@ -391,7 +402,7 @@ export class Claims {
       identity => identity.did
     );
 
-    const identityWithClaims = issuers.map(identity => {
+    const identitiesWithClaims = issuers.map(identity => {
       return {
         identity,
         claims: filter(
@@ -402,9 +413,9 @@ export class Claims {
     });
 
     return {
-      data: identityWithClaims,
+      data: identitiesWithClaims,
       next: null,
-      count: undefined,
+      count: identitiesWithClaims.length,
     };
   }
 }

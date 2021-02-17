@@ -1,5 +1,5 @@
 import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Moment, Permill } from '@polkadot/types/interfaces';
 import {
   stringLowerFirst,
   stringToU8a,
@@ -11,9 +11,18 @@ import {
 } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
-import P from 'bluebird';
 import { computeWithoutCheck } from 'iso-7064';
-import { camelCase, isEqual, map, padEnd, range, rangeRight, snakeCase, values } from 'lodash';
+import {
+  camelCase,
+  includes,
+  isEqual,
+  map,
+  padEnd,
+  range,
+  rangeRight,
+  snakeCase,
+  values,
+} from 'lodash';
 import {
   AffirmationStatus as MeshAffirmationStatus,
   AssetComplianceResult,
@@ -38,6 +47,9 @@ import {
   DocumentType,
   DocumentUri,
   FundingRoundName,
+  Fundraiser,
+  FundraiserStatus as MeshFundraiserStatus,
+  FundraiserTier,
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
   InvestorZKProofData,
@@ -47,6 +59,7 @@ import {
   PipId,
   PortfolioId as MeshPortfolioId,
   PosRatio,
+  PriceTier,
   ProtocolOp,
   Scope as MeshScope,
   ScopeId,
@@ -55,6 +68,7 @@ import {
   Signatory,
   TargetIdentity,
   Ticker,
+  TransferManager,
   TrustedIssuer,
   TxTag,
   TxTags,
@@ -73,12 +87,14 @@ import {
   PolymeshError,
   Portfolio,
   SecurityToken,
+  Venue,
 } from '~/internal';
 import {
   CallIdEnum,
   ClaimScopeTypeEnum,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
+  Portfolio as MiddlewarePortfolio,
   // Proposal,
   Scope as MiddlewareScope,
 } from '~/middleware/types';
@@ -114,6 +130,10 @@ import {
   SecondaryKey,
   Signer,
   SingleClaimCondition,
+  StoDetails,
+  StoStatus,
+  StoTier,
+  Tier,
   TokenDocument,
   TokenIdentifier,
   TokenIdentifierType,
@@ -129,17 +149,26 @@ import {
   PortfolioId,
   SignerType,
   SignerValue,
+  TransferRestriction,
+  TransferRestrictionType,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   IGNORE_CHECKSUM,
+  MAX_BALANCE,
   MAX_DECIMALS,
   MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
-  MAX_TOKEN_AMOUNT,
   SS58_FORMAT,
 } from '~/utils/constants';
-import { createClaim, padString, removePadding, stringIsClean } from '~/utils/internal';
+import {
+  assertIsInteger,
+  assertIsPositive,
+  createClaim,
+  isPrintableAscii,
+  padString,
+  removePadding,
+} from '~/utils/internal';
 
 export * from '~/generated/utils';
 
@@ -198,17 +227,24 @@ export function bytesToString(bytes: Bytes): string {
  * @hidden
  */
 export function stringToTicker(ticker: string, context: Context): Ticker {
-  if (ticker.length > MAX_TICKER_LENGTH) {
+  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Ticker length cannot exceed ${MAX_TICKER_LENGTH} characters`,
+      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`,
     });
   }
 
-  if (!stringIsClean(ticker)) {
+  if (!isPrintableAscii(ticker)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Ticker contains unreadable characters',
+      message: 'Only printable ASCII is alowed as ticker name',
+    });
+  }
+
+  if (ticker !== ticker.toUpperCase()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Ticker cannot contain lower case letters',
     });
   }
 
@@ -347,7 +383,25 @@ export function u64ToBigNumber(value: u64): BigNumber {
  * @hidden
  */
 export function numberToU64(value: number | BigNumber, context: Context): u64 {
+  assertIsInteger(value);
+  assertIsPositive(value);
   return context.polymeshApi.createType('u64', new BigNumber(value).toString());
+}
+
+/**
+ * @hidden
+ */
+export function percentageToPermill(value: number | BigNumber, context: Context): Permill {
+  return context.polymeshApi.createType('Permill', new BigNumber(value).shiftedBy(4).toString()); // (value : 100) * 10^6
+}
+
+/**
+ * @hidden
+ *
+ * @note returns a percentage value ([0, 100])
+ */
+export function permillToBigNumber(value: Permill): BigNumber {
+  return new BigNumber(value.toString()).shiftedBy(-4); // (value : 10^6) * 100
 }
 
 /**
@@ -414,14 +468,24 @@ export function portfolioLikeToPortfolioId(value: PortfolioLike): PortfolioId {
 /**
  * @hidden
  */
+export function portfolioIdToPortfolio(
+  portfolioId: PortfolioId,
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, number } = portfolioId;
+  return number
+    ? new NumberedPortfolio({ did, id: number }, context)
+    : new DefaultPortfolio({ did }, context);
+}
+
+/**
+ * @hidden
+ */
 export function portfolioLikeToPortfolio(
   value: PortfolioLike,
   context: Context
 ): DefaultPortfolio | NumberedPortfolio {
-  const { did, number } = portfolioLikeToPortfolioId(value);
-  return number
-    ? new NumberedPortfolio({ did, id: number }, context)
-    : new DefaultPortfolio({ did }, context);
+  return portfolioIdToPortfolio(portfolioLikeToPortfolioId(value), context);
 }
 
 /**
@@ -465,7 +529,7 @@ export function permissionsToMeshPermissions(
   let extrinsic: { pallet_name: string; dispatchable_names: string[] }[] | null = null;
 
   if (transactions) {
-    transactions.forEach(tag => {
+    transactions.sort().forEach(tag => {
       const [modName, txName] = tag.split('.');
 
       const palletName = stringUpperFirst(modName);
@@ -663,15 +727,17 @@ export function numberToBalance(
 ): Balance {
   const rawValue = new BigNumber(value);
 
+  assertIsPositive(value);
+
   divisible = divisible ?? true;
 
-  if (rawValue.isGreaterThan(MAX_TOKEN_AMOUNT)) {
+  if (rawValue.isGreaterThan(MAX_BALANCE)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The value exceed the amount limit allowed',
+      message: 'The value exceeds the maximum possible balance',
       data: {
         currentValue: rawValue,
-        amountLimit: MAX_TOKEN_AMOUNT,
+        amountLimit: MAX_BALANCE,
       },
     });
   }
@@ -680,7 +746,7 @@ export function numberToBalance(
     if (rawValue.decimalPlaces() > MAX_DECIMALS) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'The value exceed the decimals limit allowed',
+        message: 'The value has more decimal places than allowed',
         data: {
           currentValue: rawValue,
           decimalsLimit: MAX_DECIMALS,
@@ -691,22 +757,19 @@ export function numberToBalance(
     if (rawValue.decimalPlaces()) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'The value cannot have decimals if the token is indivisible',
+        message: 'The value has decimals but the token is indivisible',
       });
     }
   }
 
-  return context.polymeshApi.createType(
-    'Balance',
-    rawValue.multipliedBy(Math.pow(10, 6)).toString()
-  );
+  return context.polymeshApi.createType('Balance', rawValue.shiftedBy(6).toString());
 }
 
 /**
  * @hidden
  */
 export function balanceToBigNumber(balance: Balance): BigNumber {
-  return new BigNumber(balance.toString()).div(Math.pow(10, 6));
+  return new BigNumber(balance.toString()).shiftedBy(-6);
 }
 
 /**
@@ -720,6 +783,8 @@ export function stringToMemo(value: string, context: Context): Memo {
  * @hidden
  */
 export function numberToU32(value: number | BigNumber, context: Context): u32 {
+  assertIsInteger(value);
+  assertIsPositive(value);
   return context.polymeshApi.createType('u32', new BigNumber(value).toString());
 }
 
@@ -788,11 +853,14 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     case 169: {
       return TransferStatus.PortfolioFailure;
     }
-    case 176: {
+    case 170: {
       return TransferStatus.CustodianError;
     }
-    case 177: {
+    case 171: {
       return TransferStatus.ScopeClaimMissing;
+    }
+    case 172: {
+      return TransferStatus.TransferRestrictionFailure;
     }
     case 80: {
       return TransferStatus.Failure;
@@ -1078,6 +1146,13 @@ export function documentUriToString(docUri: DocumentUri): string {
  * @hidden
  */
 export function stringToDocumentHash(docHash: string, context: Context): DocumentHash {
+  if (!docHash.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Document hash cannot be empty',
+    });
+  }
+
   return context.polymeshApi.createType('DocumentHash', docHash);
 }
 
@@ -1244,6 +1319,13 @@ export function stringToScopeId(scopeId: string, context: Context): ScopeId {
 /**
  * @hidden
  */
+export function scopeIdToString(scopeId: ScopeId): string {
+  return scopeId.toString();
+}
+
+/**
+ * @hidden
+ */
 export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
   let value;
 
@@ -1374,6 +1456,16 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
     return {
       type: ClaimType.Exempted,
       scope: meshScopeToScope(claim.asExempted),
+    };
+  }
+
+  if (claim.isInvestorUniqueness) {
+    const [scope, scopeId, cddId] = claim.asInvestorUniqueness;
+    return {
+      type: ClaimType.InvestorUniqueness,
+      scope: meshScopeToScope(scope),
+      scopeId: scopeIdToString(scopeId),
+      cddId: cddIdToString(cddId),
     };
   }
 
@@ -1762,6 +1854,33 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
     extrinsicName.replace(new RegExp('Documents$'), 'Document') // `asset.addDocuments` and `asset.removeDocuments`
   )}`;
 
+  const protocolOpTags = [
+    TxTags.asset.RegisterTicker,
+    TxTags.asset.Issue,
+    TxTags.asset.AddDocuments,
+    TxTags.asset.CreateAsset,
+    TxTags.asset.CreateCheckpoint,
+    TxTags.dividend.New,
+    TxTags.complianceManager.AddComplianceRequirement,
+    TxTags.identity.RegisterDid,
+    TxTags.identity.CddRegisterDid,
+    TxTags.identity.AddClaim,
+    TxTags.identity.SetPrimaryKey,
+    TxTags.identity.AddSecondaryKeysWithAuthorization,
+    TxTags.pips.Propose,
+    TxTags.voting.AddBallot,
+    TxTags.contracts.PutCode,
+    TxTags.corporateBallot.AttachBallot,
+    TxTags.capitalDistribution.Distribute,
+  ];
+
+  if (!includes(protocolOpTags, tag)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `${value} does not match any ProtocolOp`,
+    });
+  }
+
   return context.polymeshApi.createType('ProtocolOp', value);
 }
 
@@ -1795,6 +1914,8 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
  * @hidden
  */
 export function numberToPipId(id: number | BigNumber, context: Context): PipId {
+  assertIsInteger(id);
+  assertIsPositive(id);
   return context.polymeshApi.createType('PipId', new BigNumber(id).toString());
 }
 
@@ -1841,11 +1962,11 @@ export function addressToKey(address: string): string {
  * @hidden
  */
 export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
-  const { sectionName, methodName } = context.polymeshApi.createType('Proposal', bytes);
+  const { section, method } = context.polymeshApi.createType('Proposal', bytes);
 
   return extrinsicIdentifierToTxTag({
-    moduleId: sectionName.toLowerCase() as ModuleIdEnum,
-    callId: methodName as CallIdEnum,
+    moduleId: section.toLowerCase() as ModuleIdEnum,
+    callId: method as CallIdEnum,
   });
 }
 
@@ -2084,10 +2205,76 @@ export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context)
 /**
  * @hidden
  */
-export async function permissionsLikeToPermissions(
+export function transferRestrictionToTransferManager(
+  restriction: TransferRestriction,
+  context: Context
+): TransferManager {
+  const { type, value } = restriction;
+  let tmType;
+  let tmValue;
+
+  if (type === TransferRestrictionType.Count) {
+    tmType = 'CountTransferManager';
+
+    assertIsInteger(value);
+    assertIsPositive(value);
+
+    tmValue = numberToU64(value, context);
+  } else {
+    tmType = 'PercentageTransferManager';
+
+    if (value.lt(0) || value.gt(100)) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Percentage should be between 0 and 100',
+      });
+    }
+
+    tmValue = percentageToPermill(value, context);
+  }
+
+  return context.polymeshApi.createType('TransferManager', {
+    [tmType]: tmValue,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function transferManagerToTransferRestriction(
+  transferManager: TransferManager
+): TransferRestriction {
+  if (transferManager.isCountTransferManager) {
+    return {
+      type: TransferRestrictionType.Count,
+      value: u64ToBigNumber(transferManager.asCountTransferManager),
+    };
+  } else {
+    return {
+      type: TransferRestrictionType.Percentage,
+      value: permillToBigNumber(transferManager.asPercentageTransferManager),
+    };
+  }
+}
+
+/**
+ * @hidden
+ */
+export function stoTierToPriceTier(tier: StoTier, context: Context): PriceTier {
+  const { price, amount } = tier;
+  return context.polymeshApi.createType('PriceTier', {
+    total: numberToBalance(amount, context),
+    price: numberToBalance(price, context),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function permissionsLikeToPermissions(
   permissionsLike: PermissionsLike,
   context: Context
-): Promise<Permissions> {
+): Permissions {
   let tokenPermissions: SecurityToken[] | null = [];
   let transactionPermissions: TxTag[] | null = [];
   let portfolioPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null = [];
@@ -2109,7 +2296,7 @@ export async function permissionsLikeToPermissions(
   if (portfolios === null) {
     portfolioPermissions = null;
   } else if (portfolios) {
-    portfolioPermissions = await P.map(portfolios, portfolio =>
+    portfolioPermissions = portfolios.map(portfolio =>
       portfolioLikeToPortfolio(portfolio, context)
     );
   }
@@ -2118,5 +2305,80 @@ export async function permissionsLikeToPermissions(
     tokens: tokenPermissions,
     transactions: transactionPermissions,
     portfolios: portfolioPermissions,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function middlewarePortfolioToPortfolio(
+  portfolio: MiddlewarePortfolio,
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, kind } = portfolio;
+
+  if (kind.toLowerCase() === 'default' || kind === '0') {
+    return new DefaultPortfolio({ did }, context);
+  }
+  return new NumberedPortfolio({ did, id: new BigNumber(kind) }, context);
+}
+
+/**
+ * @hidden
+ */
+export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
+  const { total, price, remaining } = fundraiserTier;
+  return {
+    amount: balanceToBigNumber(total),
+    price: balanceToBigNumber(price),
+    remaining: balanceToBigNumber(remaining),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function meshFundraiserStatusToStoStatus(
+  meshFundraiserStatus: MeshFundraiserStatus
+): StoStatus {
+  if (meshFundraiserStatus.isLive) {
+    return StoStatus.Live;
+  }
+
+  if (meshFundraiserStatus.isFrozen) {
+    return StoStatus.Frozen;
+  }
+
+  return StoStatus.Closed;
+}
+
+/**
+ * @hidden
+ */
+export function fundraiserToStoDetails(fundraiser: Fundraiser, context: Context): StoDetails {
+  const {
+    creator,
+    offering_portfolio: offeringPortfolio,
+    raising_portfolio: raisingPortfolio,
+    raising_asset: raisingAsset,
+    tiers,
+    venue_id: venueId,
+    start,
+    end,
+    status,
+    minimum_investment: minInvestment,
+  } = fundraiser;
+
+  return {
+    creator: new Identity({ did: identityIdToString(creator) }, context),
+    offeringPortfolio: meshPortfolioIdToPortfolio(offeringPortfolio, context),
+    raisingPortfolio: meshPortfolioIdToPortfolio(raisingPortfolio, context),
+    raisingCurrency: tickerToString(raisingAsset),
+    tiers: tiers.map(tier => fundraiserTierToTier(tier)),
+    venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
+    start: momentToDate(start),
+    end: end.isSome ? momentToDate(end.unwrap()) : null,
+    status: meshFundraiserStatusToStoStatus(status),
+    minInvestment: balanceToBigNumber(minInvestment),
   };
 }

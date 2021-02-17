@@ -4,9 +4,7 @@ import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import {
   Context,
-  DefaultPortfolio,
   Entity,
-  NumberedPortfolio,
   PolymeshError,
   SecurityToken,
   TickerReservation,
@@ -20,8 +18,8 @@ import {
   isCddProviderRole,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
-  isTokenOwnerOrPiaRole,
   isTokenOwnerRole,
+  isTokenPiaRole,
   isVenueOwnerRole,
   Order,
   ResultSet,
@@ -34,6 +32,8 @@ import {
   balanceToBigNumber,
   cddStatusToBoolean,
   identityIdToString,
+  portfolioIdToPortfolio,
+  scopeIdToString,
   stringToIdentityId,
   stringToTicker,
   u64ToBigNumber,
@@ -106,13 +106,16 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const { owner } = await token.details();
 
       return owner.did === did;
-    } else if (isTokenOwnerOrPiaRole(role)) {
+    } else if (isTokenPiaRole(role)) {
       const { ticker } = role;
 
       const token = new SecurityToken({ ticker }, context);
-      const { owner, primaryIssuanceAgent } = await token.details();
+      const { primaryIssuanceAgent } = await token.details();
 
-      return (primaryIssuanceAgent && primaryIssuanceAgent.did === did) || owner.did === did;
+      if (primaryIssuanceAgent) {
+        return primaryIssuanceAgent.did === did;
+      }
+      return false;
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {
@@ -131,17 +134,9 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
       return owner.did === did;
     } else if (isPortfolioCustodianRole(role)) {
-      const {
-        portfolioId: { did: portfolioDid, number },
-      } = role;
+      const { portfolioId } = role;
 
-      let portfolio;
-
-      if (number) {
-        portfolio = new NumberedPortfolio({ did: portfolioDid, id: number }, context);
-      } else {
-        portfolio = new DefaultPortfolio({ did: portfolioDid }, context);
-      }
+      const portfolio = portfolioIdToPortfolio(portfolioId, context);
 
       return portfolio.isCustodiedBy();
     }
@@ -214,8 +209,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
       },
     } = this;
     const identityId = stringToIdentityId(did, context);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: CddStatus = await (rpc as any).identity.isIdentityHasValidCdd(identityId);
+    const result: CddStatus = await rpc.identity.isIdentityHasValidCdd(identityId);
     return cddStatusToBoolean(result);
   }
 
@@ -290,6 +284,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve a list of all tokens which were held at one point by this Identity
    *
+   * @note uses the middleware
    * @note supports pagination
    */
   public async getHeldTokens(
@@ -391,5 +386,24 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const venueIds = await settlement.userVenues(rawDid);
 
     return assembleResult(venueIds);
+  }
+
+  /**
+   * Retrieve the Scope ID associated to this Identity's Investor Uniqueness Claim for a specific Security Token
+   *
+   * @note more on Investor Uniqueness: https://developers.polymesh.live/confidential_identity
+   */
+  public async getScopeId(args: { token: SecurityToken | string }): Promise<string> {
+    const { context, did } = this;
+    const { token } = args;
+
+    const ticker = typeof token === 'string' ? token : token.ticker;
+
+    const scopeId = await context.polymeshApi.query.asset.scopeIdOf(
+      stringToTicker(ticker, context),
+      stringToIdentityId(did, context)
+    );
+
+    return scopeIdToString(scopeId);
   }
 }

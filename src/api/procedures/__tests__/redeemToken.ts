@@ -171,7 +171,7 @@ describe('redeemToken procedure', () => {
       let result = await boundFunc(params);
 
       expect(result).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwnerOrPia, ticker }],
+        identityRoles: [{ type: RoleType.TokenPia, ticker }],
         signerPermissions: {
           transactions: [TxTags.asset.Redeem],
           tokens: [new SecurityToken({ ticker }, mockContext)],
@@ -190,7 +190,7 @@ describe('redeemToken procedure', () => {
       result = await boundFunc(params);
 
       expect(result).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwnerOrPia, ticker }],
+        identityRoles: [{ type: RoleType.TokenPia, ticker }],
         signerPermissions: {
           transactions: [TxTags.asset.Redeem],
           tokens: [new SecurityToken({ ticker }, mockContext)],

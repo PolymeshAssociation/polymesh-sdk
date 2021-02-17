@@ -1,4 +1,4 @@
-import { u64 } from '@polkadot/types';
+import { StorageKey, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -17,6 +17,7 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 import { Portfolios } from '../Portfolios';
 
@@ -90,40 +91,46 @@ describe('Portfolios class', () => {
 
   describe('method: getCustodiedPortfolos', () => {
     test('should retrieve all the Portfolios custodied by the Identity', async () => {
-      dsMockUtils.createQueryStub('portfolio', 'portfoliosInCustody', {
-        entries: [
-          tuple(
-            [
+      dsMockUtils.createQueryStub('portfolio', 'portfoliosInCustody');
+
+      const entries = [
+        tuple(
+          ({
+            args: [
               rawIdentityId,
               dsMockUtils.createMockPortfolioId({
                 did: rawIdentityId,
                 kind: dsMockUtils.createMockPortfolioKind('Default'),
               }),
             ],
-            dsMockUtils.createMockBool(true)
-          ),
-          tuple(
-            [
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockBool(true)
+        ),
+        tuple(
+          ({
+            args: [
               rawIdentityId,
               dsMockUtils.createMockPortfolioId({
                 did: rawIdentityId,
                 kind: dsMockUtils.createMockPortfolioKind({ User: rawNumberedPortfolioId }),
               }),
             ],
-            dsMockUtils.createMockBool(true)
-          ),
-        ],
-      });
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockBool(true)
+        ),
+      ];
+
+      sinon.stub(utilsInternalModule, 'requestPaginated').resolves({ entries, lastKey: null });
 
       stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
       u64ToBigNumberStub.returns(numberedPortfolioId);
 
-      const result = await portfolios.getCustodiedPortfolios();
-      expect(result).toHaveLength(2);
-      expect(result[0] instanceof DefaultPortfolio).toBe(true);
-      expect(result[1] instanceof NumberedPortfolio).toBe(true);
-      expect(result[0].owner.did).toEqual(did);
-      expect((result[1] as NumberedPortfolio).id).toEqual(numberedPortfolioId);
+      const { data } = await portfolios.getCustodiedPortfolios();
+      expect(data).toHaveLength(2);
+      expect(data[0] instanceof DefaultPortfolio).toBe(true);
+      expect(data[1] instanceof NumberedPortfolio).toBe(true);
+      expect(data[0].owner.did).toEqual(did);
+      expect((data[1] as NumberedPortfolio).id).toEqual(numberedPortfolioId);
     });
   });
 
@@ -140,7 +147,7 @@ describe('Portfolios class', () => {
       const result = await portfolios.getPortfolio({ portfolioId });
 
       expect(result instanceof NumberedPortfolio).toBe(true);
-      expect((result as NumberedPortfolio).id).toEqual(portfolioId);
+      expect(result.id).toEqual(portfolioId);
     });
 
     test("should throw an error if a numbered portfolio doesn't exist", async () => {
