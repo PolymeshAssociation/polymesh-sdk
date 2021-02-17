@@ -4,6 +4,7 @@ import {
   QueryDidsWithClaimsArgs,
   QueryEventByAddedTrustedClaimIssuerArgs,
   QueryEventsByIndexedArgsArgs,
+  QueryInvestmentsArgs,
   QueryIssuerDidsWithClaimsByTargetArgs,
   QueryProposalArgs,
   QueryProposalsArgs,
@@ -577,6 +578,31 @@ export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<Query
               kind
             }
           }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get all investments for a given offering
+ */
+export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<QueryInvestmentsArgs> {
+  const query = gql`
+    query InvestmentsQuery($stoId: Int!, $ticker: String!, $count: Int, $skip: Int) {
+      investments(stoId: $stoId, ticker: $ticker, count: $count, skip: $skip) {
+        totalCount
+        items {
+          investor
+          offeringTokenAmount
+          raiseTokenAmount
         }
       }
     }
