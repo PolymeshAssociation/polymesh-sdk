@@ -54,6 +54,7 @@ describe('CurrentIdentity class', () => {
           permissions: {
             tokens: null,
             transactions: null,
+            transactionGroups: [],
             portfolios: null,
           },
         },

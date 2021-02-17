@@ -61,6 +61,7 @@ describe('modifySignerPermissions procedure', () => {
         permissions: {
           tokens: [],
           transactions: [],
+          transactionGroups: [],
           portfolios: [],
         },
       },
@@ -105,6 +106,7 @@ describe('modifySignerPermissions procedure', () => {
         permissions: {
           tokens: null,
           transactions: null,
+          transactionGroups: [],
           portfolios: null,
         },
       },

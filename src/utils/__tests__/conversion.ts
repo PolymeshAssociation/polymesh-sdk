@@ -19,7 +19,6 @@ import {
 import {
   AssetIdentifier,
   AssetName,
-  AssetTx,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
@@ -79,6 +78,7 @@ import {
   TokenIdentifierType,
   TransferStatus,
   TrustedClaimIssuer,
+  TxGroup,
   VenueType,
 } from '~/types';
 import { SignerType, SignerValue, TransferRestrictionType } from '~/types/internal';
@@ -189,6 +189,8 @@ import {
   transferRestrictionToTransferManager,
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
+  txGroupToTxTags,
+  txTagsToTxGroups,
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToTransferStatus,
@@ -797,6 +799,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       value: {
         tokens: null,
         transactions: null,
+        transactionGroups: [],
         portfolios: null,
       },
     };
@@ -941,7 +944,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     fakeResult = {
       type: AuthorizationType.JoinIdentity,
-      value: { tokens: [], portfolios: [], transactions: [] },
+      value: { tokens: [], portfolios: [], transactions: [], transactionGroups: [] },
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
       JoinIdentity: dsMockUtils.createMockPermissions({ asset: [], portfolio: [], extrinsic: [] }),
@@ -1017,6 +1020,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     let value: Permissions = {
       tokens: null,
       transactions: null,
+      transactionGroups: [],
       portfolios: null,
     };
     const fakeResult = ('convertedPermission' as unknown) as MeshPermissions;
@@ -1040,6 +1044,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     value = {
       tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
       transactions: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
+      transactionGroups: [],
       portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
     };
 
@@ -1084,6 +1089,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         TxTags.confidential.AddRangeProof,
         TxTags.confidential.AddVerifyRangeProof,
       ],
+      transactionGroups: [],
       portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
     };
     let permissions = dsMockUtils.createMockPermissions({
@@ -1114,6 +1120,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     fakeResult = {
       tokens: null,
       transactions: null,
+      transactionGroups: [],
       portfolios: null,
     };
     permissions = dsMockUtils.createMockPermissions({
@@ -3685,6 +3692,7 @@ describe('secondaryKeyToMeshSecondaryKey', () => {
       permissions: {
         tokens: null,
         transactions: null,
+        transactionGroups: [],
         portfolios: null,
       },
     };
@@ -4202,7 +4210,12 @@ describe('permissionsLikeToPermissions', () => {
     const context = dsMockUtils.getContextInstance();
     let args: PermissionsLike = { tokens: null, transactions: null, portfolios: null };
     let result = await permissionsLikeToPermissions(args, context);
-    expect(result).toEqual(args);
+    expect(result).toEqual({
+      tokens: null,
+      transactions: null,
+      transactionGroups: [],
+      portfolios: null,
+    });
 
     const firstToken = new SecurityToken({ ticker: 'TICKER' }, context);
     const ticker = 'OTHERTICKER';
@@ -4211,13 +4224,19 @@ describe('permissionsLikeToPermissions', () => {
 
     args = {
       tokens: [firstToken, ticker],
-      transactions: [AssetTx.Transfer],
+      transactions: [TxTags.asset.Transfer],
+      transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
       portfolios: [portfolio],
     };
     result = await permissionsLikeToPermissions(args, context);
     expect(result).toEqual({
       tokens: [firstToken, secondToken],
-      transactions: [AssetTx.Transfer],
+      transactions: [
+        TxTags.asset.Transfer,
+        TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
+        TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
+      ],
+      transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
       portfolios: [portfolio],
     });
 
@@ -4225,6 +4244,7 @@ describe('permissionsLikeToPermissions', () => {
     expect(result).toEqual({
       tokens: [],
       transactions: [],
+      transactionGroups: [],
       portfolios: [],
     });
   });
@@ -4410,6 +4430,116 @@ describe('stoTierToPriceTier', () => {
     const result = stoTierToPriceTier(stoTier, context);
 
     expect(result).toBe(fakeResult);
+  });
+});
+
+describe('txGroupToTxTags', () => {
+  test('should return the corresponding group of TxTags', () => {
+    let result = txGroupToTxTags(TxGroup.PortfolioManagement);
+
+    expect(result).toEqual([
+      TxTags.identity.AddInvestorUniquenessClaim,
+      TxTags.portfolio.MovePortfolioFunds,
+      TxTags.settlement.AddInstruction,
+      TxTags.settlement.AddAndAffirmInstruction,
+      TxTags.settlement.RejectInstruction,
+      TxTags.settlement.CreateVenue,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.TokenManagement);
+
+    expect(result).toEqual([
+      TxTags.asset.MakeDivisible,
+      TxTags.asset.RenameAsset,
+      TxTags.asset.SetFundingRound,
+      TxTags.asset.AddDocuments,
+      TxTags.asset.RemoveDocuments,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.AdvancedTokenManagement);
+
+    expect(result).toEqual([
+      TxTags.asset.Freeze,
+      TxTags.asset.Unfreeze,
+      TxTags.identity.AddAuthorization,
+      TxTags.identity.RemoveAuthorization,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.Distribution);
+
+    expect(result).toEqual([
+      TxTags.identity.AddInvestorUniquenessClaim,
+      TxTags.settlement.CreateVenue,
+      TxTags.settlement.AddInstruction,
+      TxTags.settlement.AddAndAffirmInstruction,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.Issuance);
+
+    expect(result).toEqual([TxTags.asset.Issue]);
+
+    result = txGroupToTxTags(TxGroup.TrustedClaimIssuersManagement);
+
+    expect(result).toEqual([
+      TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
+      TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.ClaimsManagement);
+
+    expect(result).toEqual([TxTags.identity.AddClaim, TxTags.identity.RevokeClaim]);
+
+    result = txGroupToTxTags(TxGroup.ComplianceRequirementsManagement);
+
+    expect(result).toEqual([
+      TxTags.complianceManager.AddComplianceRequirement,
+      TxTags.complianceManager.RemoveComplianceRequirement,
+      TxTags.complianceManager.PauseAssetCompliance,
+      TxTags.complianceManager.ResumeAssetCompliance,
+      TxTags.complianceManager.ResetAssetCompliance,
+    ]);
+  });
+});
+
+describe('txTagsToTxGroups', () => {
+  test('should return all completed groups in the tag array', () => {
+    expect(
+      txTagsToTxGroups([
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.portfolio.MovePortfolioFunds,
+        TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.RejectInstruction,
+        TxTags.settlement.CreateVenue,
+        TxTags.asset.MakeDivisible,
+        TxTags.asset.RenameAsset,
+        TxTags.asset.SetFundingRound,
+        TxTags.asset.AddDocuments,
+        TxTags.asset.RemoveDocuments,
+        TxTags.asset.Freeze,
+        TxTags.asset.Unfreeze,
+        TxTags.identity.AddAuthorization,
+        TxTags.identity.RemoveAuthorization,
+      ])
+    ).toEqual([
+      TxGroup.AdvancedTokenManagement,
+      TxGroup.Distribution,
+      TxGroup.PortfolioManagement,
+      TxGroup.TokenManagement,
+    ]);
+
+    expect(
+      txTagsToTxGroups([
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.portfolio.MovePortfolioFunds,
+        TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.RejectInstruction,
+        TxTags.settlement.CreateVenue,
+        TxTags.identity.AddAuthorization,
+        TxTags.identity.RemoveAuthorization,
+      ])
+    ).toEqual([TxGroup.Distribution, TxGroup.PortfolioManagement]);
   });
 });
 
