@@ -2,6 +2,12 @@
 export default {
   rpc: {},
   types: {
+    AccountInfo: 'AccountInfoWithRefCount',
+    Address: 'IndicesLookupSource',
+    LookupSource: 'IndicesLookupSource',
+    ValidatorPrefsWithBlocked: {
+      commission: 'Compact<Perbill>',
+    },
     IdentityId: '[u8; 32]',
     EventDid: 'IdentityId',
     InvestorUid: '[u8; 16]',
@@ -393,7 +399,7 @@ export default {
         Custom: 'Vec<u8>',
       },
     },
-    InvestorZKProofData: '[u8;64]',
+    InvestorZKProofData: 'Signature',
     Claim: {
       _enum: {
         Accredited: 'Scope',
@@ -832,18 +838,6 @@ export default {
         Err: 'Vec<u8>',
       },
     },
-    GetPortfolioAssetsResult: {
-      _enum: {
-        Ok: 'Vec<(Ticker, Balance)>',
-        Err: 'Vec<u8>',
-      },
-    },
-    GetPortfoliosResult: {
-      _enum: {
-        Ok: 'Vec<(PortfolioNumber, PortfolioName)>',
-        Err: 'Vec<u8>',
-      },
-    },
     AuthorizationType: {
       _enum: {
         AttestPrimaryKeyRotation: '',
@@ -881,10 +875,6 @@ export default {
         Exists: '',
         CddVerified: '',
       },
-    },
-    IssueAssetItem: {
-      identity_did: 'IdentityId',
-      value: 'Balance',
     },
     PortfolioName: 'Text',
     PortfolioNumber: 'u64',
@@ -925,10 +915,12 @@ export default {
       schedule: 'CheckpointSchedule',
       id: 'ScheduleId',
       at: 'Moment',
+      remaining: 'u32',
     },
     ScheduleSpec: {
       start: 'Option<Moment>',
       period: 'CalendarPeriod',
+      remaining: 'u32',
     },
     InstructionStatus: {
       _enum: {
@@ -1015,7 +1007,7 @@ export default {
     },
     FundraiserName: 'Text',
     FundraiserStatus: {
-      _enum: ['Live', 'Frozen', 'Closed'],
+      _enum: ['Live', 'Frozen', 'Closed', 'ClosedEarly'],
     },
     FundraiserTier: {
       total: 'Balance',
@@ -1067,7 +1059,7 @@ export default {
     CADetails: 'Text',
     CACheckpoint: {
       _enum: {
-        Scheduled: 'ScheduleId',
+        Scheduled: '(ScheduleId, u64)',
         Existing: 'CheckpointId',
       },
     },
