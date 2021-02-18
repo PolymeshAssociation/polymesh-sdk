@@ -362,14 +362,14 @@ describe('Sto class', () => {
 
       const investmentPortfolio = new DefaultPortfolio({ did }, context);
       const fundingPortfolio = new DefaultPortfolio({ did }, context);
-      const investmentAmount = new BigNumber(10);
+      const purchaseAmount = new BigNumber(10);
 
       const args = {
         ticker,
         id,
         investmentPortfolio,
         fundingPortfolio,
-        investmentAmount,
+        purchaseAmount,
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
@@ -379,7 +379,7 @@ describe('Sto class', () => {
       const queue = await sto.invest({
         investmentPortfolio,
         fundingPortfolio,
-        investmentAmount,
+        purchaseAmount,
       });
 
       expect(queue).toBe(expectedQueue);

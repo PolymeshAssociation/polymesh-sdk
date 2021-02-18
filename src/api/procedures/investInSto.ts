@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { sumBy } from 'lodash';
 
 import { PolymeshError, Procedure, Sto } from '~/internal';
 import { ErrorCode, PortfolioLike, RoleType, StoStatus, TxTags } from '~/types';
@@ -13,12 +12,12 @@ import {
   stringToTicker,
 } from '~/utils/conversion';
 
-export type InvestInStoParams = {
+export interface InvestInStoParams {
   investmentPortfolio: PortfolioLike;
   fundingPortfolio: PortfolioLike;
-  investmentAmount: BigNumber;
+  purchaseAmount: BigNumber;
   maxPrice?: BigNumber;
-};
+}
 
 /**
  * @hidden
@@ -52,11 +51,17 @@ export async function prepareInvestInSto(
     context,
     storage: { investmentPortfolioId, fundingPortfolioId },
   } = this;
-  const { ticker, id, investmentAmount, maxPrice } = args;
+  const { ticker, id, purchaseAmount, maxPrice } = args;
 
   const sto = new Sto({ ticker, id }, context);
 
-  const { status, end, minInvestment, tiers } = await sto.details();
+  const portfolio = portfolioIdToPortfolio(fundingPortfolioId, context);
+
+  const { status, end, minInvestment, tiers, raisingCurrency } = await sto.details();
+
+  const [{ total: totalTokenBalance }] = await portfolio.getTokenBalances({
+    tokens: [raisingCurrency],
+  });
 
   if (status !== StoStatus.Live) {
     throw new PolymeshError({
@@ -74,43 +79,58 @@ export async function prepareInvestInSto(
     });
   }
 
-  if (investmentAmount.lt(minInvestment)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Investment amount must be equals or greater than minimum investment',
-    });
-  }
+  let remainingAmount = purchaseAmount;
 
-  const portfolio = portfolioIdToPortfolio(fundingPortfolioId, context);
-  const [{ total: totalTokenBalance }] = await portfolio.getTokenBalances({ tokens: [ticker] });
-
-  if (totalTokenBalance.lt(investmentAmount)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The Portfolio has not enough balance to affront the investment',
-    });
-  }
-
-  const totalStoRemaining = new BigNumber(sumBy(tiers, ({ remaining }) => remaining.toNumber()));
-
-  if (totalStoRemaining.lt(investmentAmount)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The STO does not have enough remaining tokens to fulfill the investment',
-    });
-  }
-
-  if (maxPrice) {
-    const filterTiers = tiers.filter(({ price }) => price.lte(maxPrice));
-    const remainingAmount = new BigNumber(
-      sumBy(filterTiers, ({ remaining }) => remaining.toNumber())
-    );
-    if (remainingAmount.lt(investmentAmount)) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The STO does not have enough tiers that satisfy your constraint',
-      });
+  const { remaining: tiersRemaining, price: priceTotal } = tiers.reduce<{
+    remaining: BigNumber;
+    price: BigNumber;
+  }>(
+    (prev, { remaining, price }) => {
+      if (!maxPrice || price.lte(maxPrice)) {
+        if (remaining.gte(remainingAmount)) {
+          return {
+            remaining: prev.remaining.plus(remaining),
+            price: prev.price.plus(remainingAmount.multipliedBy(price)),
+          };
+        } else {
+          remainingAmount = remainingAmount.minus(remaining);
+          return {
+            remaining: prev.remaining.plus(remaining),
+            price: prev.price.plus(remaining.multipliedBy(price)),
+          };
+        }
+      }
+      return prev;
+    },
+    {
+      remaining: new BigNumber(0),
+      price: new BigNumber(0),
     }
+  );
+
+  if (priceTotal.lt(minInvestment)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Minimum investment not reached',
+      data: { priceTotal },
+    });
+  }
+
+  if (totalTokenBalance.lt(priceTotal)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The Portfolio does not have enough balance for this investment',
+      data: { priceTotal },
+    });
+  }
+
+  if (tiersRemaining.lt(purchaseAmount)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `The STO does not have enough remaining tokens${
+        maxPrice ? ' below the stipulated max price' : ''
+      }`,
+    });
   }
 
   this.addTransaction(
@@ -120,7 +140,7 @@ export async function prepareInvestInSto(
     portfolioIdToMeshPortfolioId(fundingPortfolioId, context),
     stringToTicker(ticker, context),
     numberToU64(id, context),
-    numberToBalance(investmentAmount, context),
+    numberToBalance(purchaseAmount, context),
     maxPrice ? numberToBalance(maxPrice, context) : null,
     null
   );

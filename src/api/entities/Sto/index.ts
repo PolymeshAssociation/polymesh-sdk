@@ -165,10 +165,10 @@ export class Sto extends Entity<UniqueIdentifiers> {
   /**
    * Invest in the STO
    *
-   * @param args.investmentPortfolio - portfolio in which the buyed Tokens will be deposited
-   * @param args.fundingPortfolio - portfolio that fund the investment
-   * @param args.investmentAmount - amount to invest in
-   * @param args.maxPrice - maximum price to pay per unit for each token (optional)
+   * @param args.investmentPortfolio - portfolio in which the purchased Tokens will be stored
+   * @param args.fundingPortfolio - portfolio from which funds will be withdrawn to pay for the Tokens
+   * @param args.purchaseAmount - amount of tokens to purchase
+   * @param args.maxPrice - maximum price to pay per Token (optional)
    *
    * @note required roles:
    *   - Investment Portfolio Custodian

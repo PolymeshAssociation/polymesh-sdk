@@ -44,13 +44,13 @@ describe('investInSto procedure', () => {
   let investmentPortfolioId: PortfolioId;
   let fundingPortfolio: PortfolioLike;
   let fundingPortfolioId: PortfolioId;
-  let investmentAmount: BigNumber;
+  let purchaseAmount: BigNumber;
   let maxPrice: BigNumber;
   let rawId: u64;
   let rawTicker: Ticker;
   let rawInvestmentPortfolio: MeshPortfolioId;
   let rawFundingPortfolio: MeshPortfolioId;
-  let rawInvestmentAmount: Balance;
+  let rawPurchaseAmount: Balance;
   let rawMaxPrice: Balance;
   let args: Params;
 
@@ -77,7 +77,7 @@ describe('investInSto procedure', () => {
     fundingPortfolio = 'fundingPortfolioDid';
     investmentPortfolioId = { did: investmentPortfolio };
     fundingPortfolioId = { did: fundingPortfolio };
-    investmentAmount = new BigNumber(50);
+    purchaseAmount = new BigNumber(50);
     maxPrice = new BigNumber(1);
     rawInvestmentPortfolio = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(investmentPortfolio),
@@ -87,7 +87,7 @@ describe('investInSto procedure', () => {
       did: dsMockUtils.createMockIdentityId(fundingPortfolio),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    rawInvestmentAmount = dsMockUtils.createMockBalance(investmentAmount.toNumber());
+    rawPurchaseAmount = dsMockUtils.createMockBalance(purchaseAmount.toNumber());
     rawMaxPrice = dsMockUtils.createMockBalance(maxPrice.toNumber());
   });
 
@@ -104,7 +104,7 @@ describe('investInSto procedure', () => {
       .withArgs(fundingPortfolioId, mockContext)
       .returns(rawFundingPortfolio);
     numberToU64Stub.withArgs(id, mockContext).returns(rawId);
-    numberToBalanceStub.withArgs(investmentAmount, mockContext).returns(rawInvestmentAmount);
+    numberToBalanceStub.withArgs(purchaseAmount, mockContext).returns(rawPurchaseAmount);
     numberToBalanceStub.withArgs(maxPrice, mockContext).returns(rawMaxPrice);
 
     args = {
@@ -112,7 +112,7 @@ describe('investInSto procedure', () => {
       ticker,
       investmentPortfolio,
       fundingPortfolio,
-      investmentAmount,
+      purchaseAmount,
     };
   });
 
@@ -161,24 +161,42 @@ describe('investInSto procedure', () => {
     return expect(prepareInvestInSto.call(proc, args)).rejects.toThrow('The STO has already ended');
   });
 
-  test('should throw an error if the investment amount is less than the STO minimum investment', async () => {
+  test('should throw an error if the minimum investment is not reached', async () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
           status: StoStatus.Live,
           end: new Date('12/12/2030'),
-          minInvestment: new BigNumber(1000),
+          minInvestment: new BigNumber(10),
+          tiers: [
+            {
+              remaining: new BigNumber(0),
+              amount: new BigNumber(100),
+              price: new BigNumber(1),
+            },
+          ],
         },
       },
+      defaultPortfolioOptions: {
+        tokenBalances: [{ total: new BigNumber(20) }] as PortfolioBalance[],
+      },
     });
+
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       investmentPortfolioId,
       fundingPortfolioId,
     });
 
-    return expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
-      'Investment amount must be equals or greater than minimum investment'
-    );
+    let error;
+
+    try {
+      await prepareInvestInSto.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Minimum investment not reached');
+    expect(error.data.priceTotal).toEqual(new BigNumber(0));
   });
 
   test('should throw an error if the investment Portfolio has not enough balance to affront the investment', async () => {
@@ -187,7 +205,14 @@ describe('investInSto procedure', () => {
         details: {
           status: StoStatus.Live,
           end: new Date('12/12/2030'),
-          minInvestment: new BigNumber(10),
+          minInvestment: new BigNumber(25),
+          tiers: [
+            {
+              remaining: new BigNumber(50),
+              amount: new BigNumber(100),
+              price: new BigNumber(1),
+            },
+          ],
         },
       },
       defaultPortfolioOptions: {
@@ -200,12 +225,19 @@ describe('investInSto procedure', () => {
       fundingPortfolioId,
     });
 
-    return expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
-      'The Portfolio has not enough balance to affront the investment'
-    );
+    let error;
+
+    try {
+      await prepareInvestInSto.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('The Portfolio does not have enough balance for this investment');
+    expect(error.data.priceTotal).toEqual(new BigNumber(50));
   });
 
-  test('should throw an error if the investment Portfolio has not enough balance to affront the investment', async () => {
+  test('should throw an error if the STO does not have enough remaining tokens', async () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
@@ -219,7 +251,7 @@ describe('investInSto procedure', () => {
               price: new BigNumber(1),
             },
             {
-              remaining: new BigNumber(20),
+              remaining: new BigNumber(30),
               amount: new BigNumber(100),
               price: new BigNumber(2),
             },
@@ -236,44 +268,12 @@ describe('investInSto procedure', () => {
       fundingPortfolioId,
     });
 
-    return expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
-      'The STO does not have enough remaining tokens to fulfill the investment'
+    expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
+      'The STO does not have enough remaining tokens'
     );
-  });
 
-  test('should throw an error if user set maxPrice and the STO cannot satisfy the buy', async () => {
-    entityMockUtils.configureMocks({
-      stoOptions: {
-        details: {
-          status: StoStatus.Live,
-          end: new Date('12/12/2030'),
-          minInvestment: new BigNumber(10),
-          tiers: [
-            {
-              remaining: new BigNumber(40),
-              amount: new BigNumber(100),
-              price: new BigNumber(1),
-            },
-            {
-              remaining: new BigNumber(100),
-              amount: new BigNumber(100),
-              price: new BigNumber(2),
-            },
-          ],
-        },
-      },
-      defaultPortfolioOptions: {
-        tokenBalances: [{ total: new BigNumber(200) }] as PortfolioBalance[],
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      investmentPortfolioId,
-      fundingPortfolioId,
-    });
-
-    return expect(prepareInvestInSto.call(proc, { ...args, maxPrice })).rejects.toThrow(
-      'The STO does not have enough tiers that satisfy your constraint'
+    expect(prepareInvestInSto.call(proc, { ...args, maxPrice })).rejects.toThrow(
+      'The STO does not have enough remaining tokens below the stipulated max price'
     );
   });
 
@@ -320,7 +320,7 @@ describe('investInSto procedure', () => {
       rawFundingPortfolio,
       rawTicker,
       rawId,
-      rawInvestmentAmount,
+      rawPurchaseAmount,
       null,
       null
     );
@@ -338,7 +338,7 @@ describe('investInSto procedure', () => {
       rawFundingPortfolio,
       rawTicker,
       rawId,
-      rawInvestmentAmount,
+      rawPurchaseAmount,
       rawMaxPrice,
       null
     );
