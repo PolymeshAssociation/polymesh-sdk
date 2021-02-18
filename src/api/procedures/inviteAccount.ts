@@ -100,7 +100,7 @@ export async function prepareInviteAccount(
   };
 
   if (permissionsLike) {
-    authorizationValue = await permissionsLikeToPermissions(permissionsLike, context);
+    authorizationValue = permissionsLikeToPermissions(permissionsLike, context);
   }
 
   const rawAuthorizationData = authorizationToAuthorizationData(

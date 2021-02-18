@@ -201,3 +201,5 @@ export interface ProcedureMethod<MethodArgs, ReturnValue> {
   (args: MethodArgs): Promise<TransactionQueue<ReturnValue>>;
   checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
 }
+
+export type Falsyable<T> = T | null | undefined;

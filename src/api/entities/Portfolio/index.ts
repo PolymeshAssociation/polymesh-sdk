@@ -1,6 +1,5 @@
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
-import { Ticker } from 'polymesh-types/types';
 
 import {
   Account,
@@ -137,7 +136,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     const assetBalances: Record<string, PortfolioBalance> = {};
 
     totalBalanceEntries.forEach(([key, balance]) => {
-      const ticker = tickerToString(key.args[1] as Ticker);
+      const ticker = tickerToString(key.args[1]);
       const total = balanceToBigNumber(balance);
 
       assetBalances[ticker] = {
@@ -148,7 +147,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     });
 
     lockedBalanceEntries.forEach(([key, balance]) => {
-      const ticker = tickerToString(key.args[1] as Ticker);
+      const ticker = tickerToString(key.args[1]);
       const locked = balanceToBigNumber(balance);
 
       assetBalances[ticker].locked = locked;

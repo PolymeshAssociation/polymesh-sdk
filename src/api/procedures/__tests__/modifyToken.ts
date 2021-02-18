@@ -84,17 +84,6 @@ describe('modifyToken procedure', () => {
     ).rejects.toThrow('The Security Token is already divisible');
   });
 
-  test('should throw an error if makeDivisible is set to false', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
-
-    return expect(
-      prepareModifyToken.call(proc, {
-        ticker,
-        makeDivisible: (false as unknown) as true,
-      })
-    ).rejects.toThrow('You cannot make the token indivisible');
-  });
-
   test('should throw an error if newName is the same name currently in the Security Token', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 

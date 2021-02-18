@@ -300,20 +300,20 @@ export class Procedure<
    *
    * @returns whichever value is returned by the passed Procedure
    */
-  public async addProcedure<ProcArgs extends unknown, ReturnValue extends unknown>(
-    procedure: Procedure<ProcArgs, ReturnValue>,
+  public async addProcedure<ProcArgs extends unknown, R extends unknown>(
+    procedure: Procedure<ProcArgs, R>,
     args: ProcArgs
-  ): Promise<MaybePostTransactionValue<ReturnValue>>;
+  ): Promise<MaybePostTransactionValue<R>>;
 
-  public async addProcedure<ReturnValue extends unknown>(
-    procedure: Procedure<void, ReturnValue>
-  ): Promise<MaybePostTransactionValue<ReturnValue>>;
+  public async addProcedure<R extends unknown>(
+    procedure: Procedure<void, R>
+  ): Promise<MaybePostTransactionValue<R>>;
 
   // eslint-disable-next-line require-jsdoc
-  public async addProcedure<ProcArgs extends unknown, ReturnValue extends unknown>(
-    procedure: Procedure<void | ProcArgs, ReturnValue>,
+  public async addProcedure<ProcArgs extends unknown, R extends unknown>(
+    procedure: Procedure<void | ProcArgs, R>,
     args: ProcArgs = {} as ProcArgs
-  ): Promise<MaybePostTransactionValue<ReturnValue>> {
+  ): Promise<MaybePostTransactionValue<R>> {
     try {
       procedure.context = this.context;
       const returnValue = await procedure.prepareTransactions(args);

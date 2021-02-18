@@ -42,7 +42,6 @@ export async function prepareTransferPolyX(
 
   const rawAccountId = stringToAccountId(signerToString(to), context);
 
-  // TODO: queryMulti
   const [{ free: freeBalance }, receiverIdentity] = await Promise.all<
     AccountBalance,
     Identity | null
@@ -67,7 +66,6 @@ export async function prepareTransferPolyX(
 
   const senderIdentity = await context.getCurrentIdentity();
 
-  // TODO: queryMulti
   const [senderCdd, receiverCdd] = await Promise.all([
     senderIdentity.hasValidCdd(),
     receiverIdentity.hasValidCdd(),

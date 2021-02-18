@@ -53,11 +53,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
       result = await rpc.identity.getFilteredAuthorizations(signatory, rawBoolean);
     }
 
-    const data = this.createAuthorizationRequests(
-      result.map(auth => ({ auth, target: signerValue }))
-    );
-
-    return data;
+    return this.createAuthorizationRequests(result.map(auth => ({ auth, target: signerValue })));
   }
 
   /**
@@ -69,6 +65,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
     auths: { auth: Authorization; target: SignerValue }[]
   ): AuthorizationRequest[] {
     const { context } = this;
+
     return auths
       .map(auth => {
         const {
