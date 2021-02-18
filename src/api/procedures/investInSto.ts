@@ -92,13 +92,12 @@ export async function prepareInvestInSto(
             remaining: prev.remaining.plus(remaining),
             price: prev.price.plus(remainingAmount.multipliedBy(price)),
           };
-        } else {
-          remainingAmount = remainingAmount.minus(remaining);
-          return {
-            remaining: prev.remaining.plus(remaining),
-            price: prev.price.plus(remaining.multipliedBy(price)),
-          };
         }
+        remainingAmount = remainingAmount.minus(remaining);
+        return {
+          remaining: prev.remaining.plus(remaining),
+          price: prev.price.plus(remaining.multipliedBy(price)),
+        };
       }
       return prev;
     },
