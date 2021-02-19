@@ -360,14 +360,14 @@ describe('Sto class', () => {
       const sto = new Sto({ id, ticker }, context);
       const did = 'someDid';
 
-      const investmentPortfolio = new DefaultPortfolio({ did }, context);
+      const purchasePortfolio = new DefaultPortfolio({ did }, context);
       const fundingPortfolio = new DefaultPortfolio({ did }, context);
       const purchaseAmount = new BigNumber(10);
 
       const args = {
         ticker,
         id,
-        investmentPortfolio,
+        purchasePortfolio,
         fundingPortfolio,
         purchaseAmount,
       };
@@ -377,7 +377,7 @@ describe('Sto class', () => {
       sinon.stub(investInSto, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await sto.invest({
-        investmentPortfolio,
+        purchasePortfolio,
         fundingPortfolio,
         purchaseAmount,
       });

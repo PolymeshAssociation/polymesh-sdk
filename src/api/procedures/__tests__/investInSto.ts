@@ -40,15 +40,15 @@ describe('investInSto procedure', () => {
 
   let id: BigNumber;
   let ticker: string;
-  let investmentPortfolio: PortfolioLike;
-  let investmentPortfolioId: PortfolioId;
+  let purchasePortfolio: PortfolioLike;
+  let purchasePortfolioId: PortfolioId;
   let fundingPortfolio: PortfolioLike;
   let fundingPortfolioId: PortfolioId;
   let purchaseAmount: BigNumber;
   let maxPrice: BigNumber;
   let rawId: u64;
   let rawTicker: Ticker;
-  let rawInvestmentPortfolio: MeshPortfolioId;
+  let rawPurchasePortfolio: MeshPortfolioId;
   let rawFundingPortfolio: MeshPortfolioId;
   let rawPurchaseAmount: Balance;
   let rawMaxPrice: Balance;
@@ -73,14 +73,14 @@ describe('investInSto procedure', () => {
     rawId = dsMockUtils.createMockU64(id.toNumber());
     ticker = 'tickerFrozen';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    investmentPortfolio = 'investmentPortfolioDid';
+    purchasePortfolio = 'purchasePortfolioDid';
     fundingPortfolio = 'fundingPortfolioDid';
-    investmentPortfolioId = { did: investmentPortfolio };
+    purchasePortfolioId = { did: purchasePortfolio };
     fundingPortfolioId = { did: fundingPortfolio };
     purchaseAmount = new BigNumber(50);
     maxPrice = new BigNumber(1);
-    rawInvestmentPortfolio = dsMockUtils.createMockPortfolioId({
-      did: dsMockUtils.createMockIdentityId(investmentPortfolio),
+    rawPurchasePortfolio = dsMockUtils.createMockPortfolioId({
+      did: dsMockUtils.createMockIdentityId(purchasePortfolio),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
     rawFundingPortfolio = dsMockUtils.createMockPortfolioId({
@@ -95,10 +95,10 @@ describe('investInSto procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    portfolioLikeToPortfolioIdStub.withArgs(investmentPortfolio).returns(investmentPortfolioId);
+    portfolioLikeToPortfolioIdStub.withArgs(purchasePortfolio).returns(purchasePortfolioId);
     portfolioIdToMeshPortfolioIdStub
-      .withArgs(investmentPortfolioId, mockContext)
-      .returns(rawInvestmentPortfolio);
+      .withArgs(purchasePortfolioId, mockContext)
+      .returns(rawPurchasePortfolio);
     portfolioLikeToPortfolioIdStub.withArgs(fundingPortfolio).returns(fundingPortfolioId);
     portfolioIdToMeshPortfolioIdStub
       .withArgs(fundingPortfolioId, mockContext)
@@ -110,7 +110,7 @@ describe('investInSto procedure', () => {
     args = {
       id,
       ticker,
-      investmentPortfolio,
+      purchasePortfolio,
       fundingPortfolio,
       purchaseAmount,
     };
@@ -137,7 +137,7 @@ describe('investInSto procedure', () => {
       },
     });
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      investmentPortfolioId,
+      purchasePortfolioId,
       fundingPortfolioId,
     });
 
@@ -154,7 +154,7 @@ describe('investInSto procedure', () => {
       },
     });
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      investmentPortfolioId,
+      purchasePortfolioId,
       fundingPortfolioId,
     });
 
@@ -183,7 +183,7 @@ describe('investInSto procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      investmentPortfolioId,
+      purchasePortfolioId,
       fundingPortfolioId,
     });
 
@@ -199,7 +199,7 @@ describe('investInSto procedure', () => {
     expect(error.data.priceTotal).toEqual(new BigNumber(0));
   });
 
-  test('should throw an error if the investment Portfolio has not enough balance to affront the investment', async () => {
+  test("should throw an error if the funding Portfolio doesn't have enough balance to purchase the tokens", async () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
@@ -221,7 +221,7 @@ describe('investInSto procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      investmentPortfolioId,
+      purchasePortfolioId,
       fundingPortfolioId,
     });
 
@@ -264,7 +264,7 @@ describe('investInSto procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      investmentPortfolioId,
+      purchasePortfolioId,
       fundingPortfolioId,
     });
 
@@ -295,6 +295,11 @@ describe('investInSto procedure', () => {
               amount: new BigNumber(100),
               price: new BigNumber(2),
             },
+            {
+              remaining: new BigNumber(200),
+              amount: new BigNumber(200),
+              price: new BigNumber(20),
+            },
           ],
         },
       },
@@ -304,7 +309,7 @@ describe('investInSto procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      investmentPortfolioId,
+      purchasePortfolioId,
       fundingPortfolioId,
     });
 
@@ -316,7 +321,7 @@ describe('investInSto procedure', () => {
       addTransactionStub,
       transaction,
       {},
-      rawInvestmentPortfolio,
+      rawPurchasePortfolio,
       rawFundingPortfolio,
       rawTicker,
       rawId,
@@ -334,7 +339,7 @@ describe('investInSto procedure', () => {
       addTransactionStub,
       transaction,
       {},
-      rawInvestmentPortfolio,
+      rawPurchasePortfolio,
       rawFundingPortfolio,
       rawTicker,
       rawId,
@@ -347,7 +352,7 @@ describe('investInSto procedure', () => {
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        investmentPortfolioId,
+        purchasePortfolioId,
         fundingPortfolioId,
       });
       const boundFunc = getAuthorization.bind(proc);
@@ -360,13 +365,11 @@ describe('investInSto procedure', () => {
         ('investment' as unknown) as DefaultPortfolio,
         ('funding' as unknown) as DefaultPortfolio,
       ];
-      portfolioIdToPortfolioStub
-        .withArgs(investmentPortfolioId, mockContext)
-        .returns(portfolios[0]);
+      portfolioIdToPortfolioStub.withArgs(purchasePortfolioId, mockContext).returns(portfolios[0]);
       portfolioIdToPortfolioStub.withArgs(fundingPortfolioId, mockContext).returns(portfolios[1]);
 
       const identityRoles = [
-        { type: RoleType.PortfolioCustodian, portfolioId: investmentPortfolioId },
+        { type: RoleType.PortfolioCustodian, portfolioId: purchasePortfolioId },
         { type: RoleType.PortfolioCustodian, portfolioId: fundingPortfolioId },
       ];
 
@@ -389,7 +392,7 @@ describe('investInSto procedure', () => {
       const result = boundFunc(args);
 
       expect(result).toEqual({
-        investmentPortfolioId,
+        purchasePortfolioId,
         fundingPortfolioId,
       });
     });

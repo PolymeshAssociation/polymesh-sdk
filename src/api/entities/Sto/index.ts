@@ -165,13 +165,13 @@ export class Sto extends Entity<UniqueIdentifiers> {
   /**
    * Invest in the STO
    *
-   * @param args.investmentPortfolio - portfolio in which the purchased Tokens will be stored
+   * @param args.purchasePortfolio - portfolio in which the purchased Tokens will be stored
    * @param args.fundingPortfolio - portfolio from which funds will be withdrawn to pay for the Tokens
    * @param args.purchaseAmount - amount of tokens to purchase
    * @param args.maxPrice - maximum price to pay per Token (optional)
    *
    * @note required roles:
-   *   - Investment Portfolio Custodian
+   *   - Purchase Portfolio Custodian
    *   - Funding Portfolio Custodian
    */
   public invest: ProcedureMethod<InvestInStoParams, void>;

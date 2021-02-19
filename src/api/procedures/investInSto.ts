@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, Sto } from '~/internal';
-import { ErrorCode, PortfolioLike, RoleType, StoStatus, TxTags } from '~/types';
+import { ErrorCode, PortfolioLike, RoleType, StoStatus, Tier, TxTags } from '~/types';
 import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
   numberToBalance,
@@ -13,7 +13,7 @@ import {
 } from '~/utils/conversion';
 
 export interface InvestInStoParams {
-  investmentPortfolio: PortfolioLike;
+  purchasePortfolio: PortfolioLike;
   fundingPortfolio: PortfolioLike;
   purchaseAmount: BigNumber;
   maxPrice?: BigNumber;
@@ -31,9 +31,52 @@ export type Params = InvestInStoParams & {
  * @hidden
  */
 export interface Storage {
-  investmentPortfolioId: PortfolioId;
+  purchasePortfolioId: PortfolioId;
   fundingPortfolioId: PortfolioId;
 }
+
+/**
+ * @hidden
+ */
+type TierStats = {
+  remaining: BigNumber;
+  price: BigNumber;
+  remainingAmount: BigNumber;
+};
+
+/**
+ * @hidden
+ */
+export const calculateTierStats = (
+  tiers: Tier[],
+  purchaseAmount: BigNumber,
+  maxPrice?: BigNumber
+): TierStats => {
+  return tiers.reduce<TierStats>(
+    (prev, { remaining, price }) => {
+      if ((!maxPrice || price.lte(maxPrice)) && !prev.remainingAmount.isZero()) {
+        if (remaining.gte(prev.remainingAmount)) {
+          return {
+            remaining: prev.remaining.plus(prev.remainingAmount),
+            price: prev.price.plus(prev.remainingAmount.multipliedBy(price)),
+            remainingAmount: new BigNumber(0),
+          };
+        }
+        return {
+          remaining: prev.remaining.plus(remaining),
+          price: prev.price.plus(remaining.multipliedBy(price)),
+          remainingAmount: prev.remainingAmount.minus(remaining),
+        };
+      }
+      return prev;
+    },
+    {
+      remaining: new BigNumber(0),
+      price: new BigNumber(0),
+      remainingAmount: purchaseAmount,
+    }
+  );
+};
 
 /**
  * @hidden
@@ -49,7 +92,7 @@ export async function prepareInvestInSto(
       },
     },
     context,
-    storage: { investmentPortfolioId, fundingPortfolioId },
+    storage: { purchasePortfolioId, fundingPortfolioId },
   } = this;
   const { ticker, id, purchaseAmount, maxPrice } = args;
 
@@ -79,32 +122,10 @@ export async function prepareInvestInSto(
     });
   }
 
-  let remainingAmount = purchaseAmount;
-
-  const { remaining: tiersRemaining, price: priceTotal } = tiers.reduce<{
-    remaining: BigNumber;
-    price: BigNumber;
-  }>(
-    (prev, { remaining, price }) => {
-      if (!maxPrice || price.lte(maxPrice)) {
-        if (remaining.gte(remainingAmount)) {
-          return {
-            remaining: prev.remaining.plus(remaining),
-            price: prev.price.plus(remainingAmount.multipliedBy(price)),
-          };
-        }
-        remainingAmount = remainingAmount.minus(remaining);
-        return {
-          remaining: prev.remaining.plus(remaining),
-          price: prev.price.plus(remaining.multipliedBy(price)),
-        };
-      }
-      return prev;
-    },
-    {
-      remaining: new BigNumber(0),
-      price: new BigNumber(0),
-    }
+  const { remaining: remainingTotal, price: priceTotal } = calculateTierStats(
+    tiers,
+    purchaseAmount,
+    maxPrice
   );
 
   if (priceTotal.lt(minInvestment)) {
@@ -123,7 +144,7 @@ export async function prepareInvestInSto(
     });
   }
 
-  if (tiersRemaining.lt(purchaseAmount)) {
+  if (remainingTotal.lt(purchaseAmount)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: `The STO does not have enough remaining tokens${
@@ -135,7 +156,7 @@ export async function prepareInvestInSto(
   this.addTransaction(
     txSto.invest,
     {},
-    portfolioIdToMeshPortfolioId(investmentPortfolioId, context),
+    portfolioIdToMeshPortfolioId(purchasePortfolioId, context),
     portfolioIdToMeshPortfolioId(fundingPortfolioId, context),
     stringToTicker(ticker, context),
     numberToU64(id, context),
@@ -150,20 +171,20 @@ export async function prepareInvestInSto(
  */
 export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
   const {
-    storage: { investmentPortfolioId, fundingPortfolioId },
+    storage: { purchasePortfolioId, fundingPortfolioId },
     context,
   } = this;
 
   return {
     identityRoles: [
-      { type: RoleType.PortfolioCustodian, portfolioId: investmentPortfolioId },
+      { type: RoleType.PortfolioCustodian, portfolioId: purchasePortfolioId },
       { type: RoleType.PortfolioCustodian, portfolioId: fundingPortfolioId },
     ],
     signerPermissions: {
       transactions: [TxTags.sto.Invest],
       tokens: [],
       portfolios: [
-        portfolioIdToPortfolio(investmentPortfolioId, context),
+        portfolioIdToPortfolio(purchasePortfolioId, context),
         portfolioIdToPortfolio(fundingPortfolioId, context),
       ],
     },
@@ -175,10 +196,10 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
  */
 export function prepareStorage(
   this: Procedure<Params, void, Storage>,
-  { investmentPortfolio, fundingPortfolio }: Params
+  { purchasePortfolio, fundingPortfolio }: Params
 ): Storage {
   return {
-    investmentPortfolioId: portfolioLikeToPortfolioId(investmentPortfolio),
+    purchasePortfolioId: portfolioLikeToPortfolioId(purchasePortfolio),
     fundingPortfolioId: portfolioLikeToPortfolioId(fundingPortfolio),
   };
 }
