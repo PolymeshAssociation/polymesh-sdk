@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 
 import {
   Context,
@@ -150,8 +149,8 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       paginationOpts,
     });
 
-    const data = entries.map(([key, meshAffirmationStatus]) => {
-      const { did } = key.args[1] as MeshPortfolioId;
+    const data = entries.map(([{ args }, meshAffirmationStatus]) => {
+      const [, { did }] = args;
       return {
         identity: new Identity({ did: identityIdToString(did) }, context),
         status: meshAffirmationStatusToAffirmationStatus(meshAffirmationStatus),

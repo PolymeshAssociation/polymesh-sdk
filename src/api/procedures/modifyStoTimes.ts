@@ -53,7 +53,10 @@ export async function prepareModifyStoTimes(
     });
   }
 
-  if ((!newStart || start === newStart) && (newEnd === undefined || end === newEnd)) {
+  const areSameTimes =
+    (!newStart || start === newStart) && (newEnd === undefined || end === newEnd);
+
+  if (areSameTimes) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Nothing to modify',
@@ -61,8 +64,9 @@ export async function prepareModifyStoTimes(
   }
 
   const now = new Date();
+  const stoEnded = end && now > end;
 
-  if (end && now > end) {
+  if (stoEnded) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The STO has already ended',
@@ -76,7 +80,9 @@ export async function prepareModifyStoTimes(
     });
   }
 
-  if ((newStart && now > newStart) || (newEnd && now > newEnd)) {
+  const datesAreInThePast = (newStart && now > newStart) || (newEnd && now > newEnd);
+
+  if (datesAreInThePast) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'New dates are in the past',
@@ -91,7 +97,7 @@ export async function prepareModifyStoTimes(
   if (newEnd === null) {
     rawEnd = null;
   } else if (!newEnd) {
-    rawEnd = end ? dateToMoment(end, context) : null;
+    rawEnd = end && dateToMoment(end, context);
   } else {
     rawEnd = dateToMoment(newEnd, context);
   }

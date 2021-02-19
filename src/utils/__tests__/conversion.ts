@@ -4206,10 +4206,10 @@ describe('permissionsLikeToPermissions', () => {
     entityMockUtils.cleanup();
   });
 
-  test('permissionsLikeToPermissions should convert a PermissionsLike into a Permissions', async () => {
+  test('permissionsLikeToPermissions should convert a PermissionsLike into a Permissions', () => {
     const context = dsMockUtils.getContextInstance();
     let args: PermissionsLike = { tokens: null, transactions: null, portfolios: null };
-    let result = await permissionsLikeToPermissions(args, context);
+    let result = permissionsLikeToPermissions(args, context);
     expect(result).toEqual({
       tokens: null,
       transactions: null,
@@ -4228,7 +4228,7 @@ describe('permissionsLikeToPermissions', () => {
       transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
       portfolios: [portfolio],
     };
-    result = await permissionsLikeToPermissions(args, context);
+    result = permissionsLikeToPermissions(args, context);
     expect(result).toEqual({
       tokens: [firstToken, secondToken],
       transactions: [
@@ -4240,7 +4240,7 @@ describe('permissionsLikeToPermissions', () => {
       portfolios: [portfolio],
     });
 
-    result = await permissionsLikeToPermissions({}, context);
+    result = permissionsLikeToPermissions({}, context);
     expect(result).toEqual({
       tokens: [],
       transactions: [],
