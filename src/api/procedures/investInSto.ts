@@ -62,9 +62,7 @@ export const calculateTierStats = (
       { remaining, price }
     ) => {
       if ((!maxPrice || price.lte(maxPrice)) && !prevRemainingToPurchase.isZero()) {
-        const tierPurchaseAmount = remaining.gte(prevRemainingToPurchase)
-          ? prevRemainingToPurchase
-          : remaining;
+        const tierPurchaseAmount = BigNumber.minimum(remaining, prevRemainingToPurchase);
         return {
           remainingTotal: prevRemainingTotal.plus(tierPurchaseAmount),
           price: prevPrice.plus(tierPurchaseAmount.multipliedBy(price)),
