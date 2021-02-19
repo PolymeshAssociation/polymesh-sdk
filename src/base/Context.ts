@@ -10,7 +10,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { flatMap, flatten } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import { Claim1stKey, DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
+import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
 import { Account, CurrentAccount, CurrentIdentity, Identity, PolymeshError } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
@@ -32,6 +32,7 @@ import {
   SubCallback,
   TransactionArgument,
   TransactionArgumentType,
+  UiKeyring,
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
@@ -53,7 +54,7 @@ import {
   txTagToProtocolOp,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createClaim } from '~/utils/internal';
+import { calculateNextKey, createClaim, getCommonKeyring } from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -115,68 +116,46 @@ export class Context {
     }
   }
 
-  static async create(params: {
-    polymeshApi: ApiPromise;
-    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-    seed: string;
-  }): Promise<Context>;
-
-  static async create(params: {
-    polymeshApi: ApiPromise;
-    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-    keyring: CommonKeyring;
-  }): Promise<Context>;
-
-  static async create(params: {
-    polymeshApi: ApiPromise;
-    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-    uri: string;
-  }): Promise<Context>;
-
-  static async create(params: {
-    polymeshApi: ApiPromise;
-    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-    mnemonic: string;
-  }): Promise<Context>;
-
-  static async create(params: {
-    polymeshApi: ApiPromise;
-    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-  }): Promise<Context>;
-
   /**
    * Create the Context instance
    */
   static async create(params: {
     polymeshApi: ApiPromise;
     middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-    seed?: string;
-    keyring?: CommonKeyring;
-    uri?: string;
-    mnemonic?: string;
+    accountSeed?: string;
+    keyring?: CommonKeyring | UiKeyring;
+    accountUri?: string;
+    accountMnemonic?: string;
   }): Promise<Context> {
-    const { polymeshApi, middlewareApi, seed, keyring: passedKeyring, uri, mnemonic } = params;
+    const {
+      polymeshApi,
+      middlewareApi,
+      accountSeed,
+      keyring: passedKeyring,
+      accountUri,
+      accountMnemonic,
+    } = params;
 
     let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
     let currentPair: KeyringPair | undefined;
     let context: Context;
 
     if (passedKeyring) {
-      keyring = passedKeyring;
+      keyring = getCommonKeyring(passedKeyring);
       currentPair = keyring.getPairs()[0];
-    } else if (seed) {
-      if (seed.length !== 66) {
+    } else if (accountSeed) {
+      if (accountSeed.length !== 66) {
         throw new PolymeshError({
           code: ErrorCode.ValidationError,
           message: 'Seed must be 66 characters in length',
         });
       }
 
-      currentPair = keyring.addFromSeed(hexToU8a(seed), undefined, 'sr25519');
-    } else if (uri) {
-      currentPair = keyring.addFromUri(uri);
-    } else if (mnemonic) {
-      currentPair = keyring.addFromMnemonic(mnemonic);
+      currentPair = keyring.addFromSeed(hexToU8a(accountSeed), undefined, 'sr25519');
+    } else if (accountUri) {
+      currentPair = keyring.addFromUri(accountUri);
+    } else if (accountMnemonic) {
+      currentPair = keyring.addFromMnemonic(accountMnemonic);
     }
 
     if (currentPair) {
@@ -191,7 +170,6 @@ export class Context {
     }
 
     context.isArchiveNode = await context.isCurrentNodeArchive();
-    // context.isArchiveNode = true;
 
     return context;
   }
@@ -646,7 +624,7 @@ export class Context {
           key,
           { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
         ]) => {
-          const { target } = key.args[0] as Claim1stKey;
+          const { target } = key.args[0];
           const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
           if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
             data.push({
