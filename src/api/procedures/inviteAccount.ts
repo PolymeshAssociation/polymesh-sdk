@@ -95,11 +95,12 @@ export async function prepareInviteAccount(
   let authorizationValue: Permissions = {
     tokens: [],
     transactions: [],
+    transactionGroups: [],
     portfolios: [],
   };
 
   if (permissionsLike) {
-    authorizationValue = await permissionsLikeToPermissions(permissionsLike, context);
+    authorizationValue = permissionsLikeToPermissions(permissionsLike, context);
   }
 
   const rawAuthorizationData = authorizationToAuthorizationData(

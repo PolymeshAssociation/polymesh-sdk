@@ -154,14 +154,12 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const result = await context.getIdentityClaimsFromMiddleware({
+    return context.getIdentityClaimsFromMiddleware({
       trustedClaimIssuers: [did],
       includeExpired,
       size,
       start,
     });
-
-    return result;
   }
 
   /**

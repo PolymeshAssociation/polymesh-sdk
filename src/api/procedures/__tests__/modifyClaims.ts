@@ -412,7 +412,9 @@ describe('modifyClaims procedure', () => {
     await expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
     ).rejects.toThrow(
-      new RegExp('Attempt to revoke Investor Uniqueness claims with positive balance')
+      new RegExp(
+        'Attempt to revoke Investor Uniqueness claims from investors with positive balance'
+      )
     );
   });
 
