@@ -8,7 +8,6 @@ export * from './pips/types';
 export * from './protocolFee/types';
 export * from './staking/types';
 export * from './asset/types';
-export * from './portfolio/types';
 
 export enum SystemTx {
   FillBlock = 'system.fillBlock',
@@ -424,6 +423,7 @@ export enum SettlementTx {
   WithdrawAffirmation = 'settlement.withdrawAffirmation',
   AffirmWithReceipts = 'settlement.affirmWithReceipts',
   ExecuteScheduledInstruction = 'settlement.executeScheduledInstruction',
+  ChangeReceiptValidity = 'settlement.changeReceiptValidity',
 }
 
 export enum StoTx {

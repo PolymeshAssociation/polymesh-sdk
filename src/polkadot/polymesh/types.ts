@@ -3,6 +3,7 @@
 
 import type {
   Bytes,
+  Compact,
   Enum,
   Option,
   Struct,
@@ -25,9 +26,17 @@ import type {
   H256,
   H512,
   Hash,
+  IndicesLookupSource,
   Perbill,
   Permill,
 } from '@polkadot/types/interfaces/runtime';
+import type { AccountInfoWithRefCount } from '@polkadot/types/interfaces/system';
+
+/** @name AccountInfo */
+export interface AccountInfo extends AccountInfoWithRefCount {}
+
+/** @name Address */
+export interface Address extends IndicesLookupSource {}
 
 /** @name AffirmationStatus */
 export interface AffirmationStatus extends Enum {
@@ -227,7 +236,7 @@ export interface BridgeTxStatus extends Enum {
 /** @name CACheckpoint */
 export interface CACheckpoint extends Enum {
   readonly isScheduled: boolean;
-  readonly asScheduled: ScheduleId;
+  readonly asScheduled: ITuple<[ScheduleId, u64]>;
   readonly isExisting: boolean;
   readonly asExisting: CheckpointId;
 }
@@ -815,6 +824,7 @@ export interface FundraiserStatus extends Enum {
   readonly isLive: boolean;
   readonly isFrozen: boolean;
   readonly isClosed: boolean;
+  readonly isClosedEarly: boolean;
 }
 
 /** @name FundraiserTier */
@@ -822,22 +832,6 @@ export interface FundraiserTier extends Struct {
   readonly total: Balance;
   readonly price: Balance;
   readonly remaining: Balance;
-}
-
-/** @name GetPortfolioAssetsResult */
-export interface GetPortfolioAssetsResult extends Enum {
-  readonly isOk: boolean;
-  readonly asOk: Vec<ITuple<[Ticker, Balance]>>;
-  readonly isErr: boolean;
-  readonly asErr: Bytes;
-}
-
-/** @name GetPortfoliosResult */
-export interface GetPortfoliosResult extends Enum {
-  readonly isOk: boolean;
-  readonly asOk: Vec<ITuple<[PortfolioNumber, PortfolioName]>>;
-  readonly isErr: boolean;
-  readonly asErr: Bytes;
 }
 
 /** @name HandledTxStatus */
@@ -913,13 +907,7 @@ export interface InstructionStatus extends Enum {
 export interface InvestorUid extends U8aFixed {}
 
 /** @name InvestorZKProofData */
-export interface InvestorZKProofData extends U8aFixed {}
-
-/** @name IssueAssetItem */
-export interface IssueAssetItem extends Struct {
-  readonly identity_did: IdentityId;
-  readonly value: Balance;
-}
+export interface InvestorZKProofData extends Signature {}
 
 /** @name IssueRecipient */
 export interface IssueRecipient extends Enum {
@@ -967,6 +955,9 @@ export interface LegStatus extends Enum {
 
 /** @name LocalCAId */
 export interface LocalCAId extends u32 {}
+
+/** @name LookupSource */
+export interface LookupSource extends IndicesLookupSource {}
 
 /** @name MaybeBlock */
 export interface MaybeBlock extends Enum {
@@ -1267,6 +1258,7 @@ export interface ScheduleId extends u64 {}
 export interface ScheduleSpec extends Struct {
   readonly start: Option<Moment>;
   readonly period: CalendarPeriod;
+  readonly remaining: u32;
 }
 
 /** @name Scope */
@@ -1384,6 +1376,7 @@ export interface StoredSchedule extends Struct {
   readonly schedule: CheckpointSchedule;
   readonly id: ScheduleId;
   readonly at: Moment;
+  readonly remaining: u32;
 }
 
 /** @name TargetIdAuthorization */
@@ -1489,6 +1482,11 @@ export interface UniqueCall extends Struct {
 
 /** @name Url */
 export interface Url extends Text {}
+
+/** @name ValidatorPrefsWithBlocked */
+export interface ValidatorPrefsWithBlocked extends Struct {
+  readonly commission: Compact<Perbill>;
+}
 
 /** @name Venue */
 export interface Venue extends Struct {

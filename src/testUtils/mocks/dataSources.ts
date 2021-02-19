@@ -82,7 +82,6 @@ import {
   Instruction,
   InstructionStatus,
   InvestorZKProofData,
-  IssueAssetItem,
   MovePortfolioItem,
   PalletName,
   PalletPermissions,
@@ -2106,27 +2105,6 @@ export const createMockText = (value: string): Text => createMockStringCodec(val
 export const createMockAssetOwnershipRelation = (
   assetOwnershipRelation?: 'NotOwned' | 'TickerOwned' | 'AssetOwned'
 ): AssetOwnershipRelation => createMockEnum(assetOwnershipRelation) as AssetOwnershipRelation;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockIssueAssetItem = (issueAssetItem?: {
-  identity_did: IdentityId;
-  value: Balance;
-}): IssueAssetItem => {
-  const item = issueAssetItem || {
-    identity_did: createMockIdentityId(),
-    value: createMockBalance(),
-  };
-
-  return createMockCodec(
-    {
-      ...item,
-    },
-    !issueAssetItem
-  ) as IssueAssetItem;
-};
 
 /**
  * @hidden
