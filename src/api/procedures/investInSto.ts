@@ -38,11 +38,11 @@ export interface Storage {
 /**
  * @hidden
  */
-type TierStats = {
-  remaining: BigNumber;
+interface TierStats {
+  remainingTotal: BigNumber;
   price: BigNumber;
-  remainingAmount: BigNumber;
-};
+  remainingToPurchase: BigNumber;
+}
 
 /**
  * @hidden
@@ -51,31 +51,43 @@ export const calculateTierStats = (
   tiers: Tier[],
   purchaseAmount: BigNumber,
   maxPrice?: BigNumber
-): TierStats => {
-  return tiers.reduce<TierStats>(
-    (prev, { remaining, price }) => {
-      if ((!maxPrice || price.lte(maxPrice)) && !prev.remainingAmount.isZero()) {
-        if (remaining.gte(prev.remainingAmount)) {
-          return {
-            remaining: prev.remaining.plus(prev.remainingAmount),
-            price: prev.price.plus(prev.remainingAmount.multipliedBy(price)),
-            remainingAmount: new BigNumber(0),
-          };
-        }
+): Omit<TierStats, 'remainingToPurchase'> => {
+  const { remainingTotal, price: calculatedPrice } = tiers.reduce<TierStats>(
+    (
+      {
+        remainingToPurchase: prevRemainingToPurchase,
+        remainingTotal: prevRemainingTotal,
+        price: prevPrice,
+      },
+      { remaining, price }
+    ) => {
+      if ((!maxPrice || price.lte(maxPrice)) && !prevRemainingToPurchase.isZero()) {
+        const tierPurchaseAmount = remaining.gte(prevRemainingToPurchase)
+          ? prevRemainingToPurchase
+          : remaining;
         return {
-          remaining: prev.remaining.plus(remaining),
-          price: prev.price.plus(remaining.multipliedBy(price)),
-          remainingAmount: prev.remainingAmount.minus(remaining),
+          remainingTotal: prevRemainingTotal.plus(tierPurchaseAmount),
+          price: prevPrice.plus(tierPurchaseAmount.multipliedBy(price)),
+          remainingToPurchase: new BigNumber(0),
         };
       }
-      return prev;
+      return {
+        remainingTotal: prevRemainingTotal,
+        price: prevPrice,
+        remainingToPurchase: prevRemainingToPurchase,
+      };
     },
     {
-      remaining: new BigNumber(0),
+      remainingTotal: new BigNumber(0),
       price: new BigNumber(0),
-      remainingAmount: purchaseAmount,
+      remainingToPurchase: purchaseAmount,
     }
   );
+
+  return {
+    remainingTotal,
+    price: calculatedPrice,
+  };
 };
 
 /**
@@ -122,11 +134,7 @@ export async function prepareInvestInSto(
     });
   }
 
-  const { remaining: remainingTotal, price: priceTotal } = calculateTierStats(
-    tiers,
-    purchaseAmount,
-    maxPrice
-  );
+  const { remainingTotal, price: priceTotal } = calculateTierStats(tiers, purchaseAmount, maxPrice);
 
   if (priceTotal.lt(minInvestment)) {
     throw new PolymeshError({
