@@ -68,7 +68,7 @@ export const calculateTierStats = (
         return {
           remainingTotal: prevRemainingTotal.plus(tierPurchaseAmount),
           price: prevPrice.plus(tierPurchaseAmount.multipliedBy(price)),
-          remainingToPurchase: new BigNumber(0),
+          remainingToPurchase: prevRemainingToPurchase.minus(tierPurchaseAmount),
         };
       }
       return {
