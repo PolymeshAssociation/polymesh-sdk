@@ -1,31 +1,35 @@
+import { filter, isEqual, uniqBy, uniqWith } from 'lodash';
+
 import {
   addInvestorUniquenessClaim,
   AddInvestorUniquenessClaimParams,
-} from '~/api/procedures/addInvestorUniquenessClaim';
-import { Context, Identity, modifyClaims, ModifyClaimsParams, TransactionQueue } from '~/internal';
-import {
-  didsWithClaims,
-  issuerDidsWithClaimsByTarget,
-  scopesByIdentity,
-} from '~/middleware/queries';
+  Context,
+  Identity,
+  modifyClaims,
+  ModifyClaimsParams,
+} from '~/internal';
+import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
+  CddClaim,
   ClaimData,
   ClaimScope,
   ClaimType,
   Ensured,
   IdentityWithClaims,
+  InvestorUniquenessClaim,
   ResultSet,
   Scope,
+  ScopedClaim,
+  ScopeType,
 } from '~/types';
-import { ClaimOperation } from '~/types/internal';
+import { ClaimOperation, ProcedureMethod } from '~/types/internal';
 import {
-  middlewareScopeToScope,
   scopeToMiddlewareScope,
   signerToString,
   toIdentityWithClaimsArray,
 } from '~/utils/conversion';
-import { calculateNextKey, getDid, removePadding } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
 
 /**
  * Handles all Claims related functionality
@@ -38,6 +42,56 @@ export class Claims {
    */
   constructor(context: Context) {
     this.context = context;
+
+    this.addClaims = createProcedureMethod<
+      Omit<ModifyClaimsParams, 'operation'>,
+      ModifyClaimsParams,
+      void
+    >(
+      args => [
+        modifyClaims,
+        {
+          ...args,
+          operation: ClaimOperation.Add,
+        } as ModifyClaimsParams,
+      ],
+      context
+    );
+
+    this.editClaims = createProcedureMethod<
+      Omit<ModifyClaimsParams, 'operation'>,
+      ModifyClaimsParams,
+      void
+    >(
+      args => [
+        modifyClaims,
+        {
+          ...args,
+          operation: ClaimOperation.Edit,
+        } as ModifyClaimsParams,
+      ],
+      context
+    );
+
+    this.revokeClaims = createProcedureMethod<
+      Omit<ModifyClaimsParams, 'operation'>,
+      ModifyClaimsParams,
+      void
+    >(
+      args => [
+        modifyClaims,
+        {
+          ...args,
+          operation: ClaimOperation.Revoke,
+        } as ModifyClaimsParams,
+      ],
+      context
+    );
+
+    this.addInvestorUniquenessClaim = createProcedureMethod(
+      args => [addInvestorUniquenessClaim, args],
+      context
+    );
   }
 
   /**
@@ -45,40 +99,38 @@ export class Claims {
    *
    * @param args
    */
-  public addInvestorUniquenessClaim(
-    args: AddInvestorUniquenessClaimParams
-  ): Promise<TransactionQueue<void>> {
-    return addInvestorUniquenessClaim.prepare(args, this.context);
-  }
+  public addInvestorUniquenessClaim: ProcedureMethod<AddInvestorUniquenessClaimParams, void>;
 
   /**
    * Add claims to Identities
    *
    * @param args.claims - array of claims to be added
+   *
+   * @note required role if at least one claim is CDD type:
+   *   - Customer Due Diligence Provider
    */
-  public addClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Add }, this.context);
-  }
+  public addClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
   /**
    * Edit claims associated to Identities (only the expiry date can be modified)
    *
-   * * @param args.claims - array of claims to be edited
+   * @param args.claims - array of claims to be edited
+   *
+   * @note required role if at least one claim is CDD type:
+   *   - Customer Due Diligence Provider
    */
-  public editClaims(args: Omit<ModifyClaimsParams, 'operation'>): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Edit }, this.context);
-  }
+
+  public editClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
   /**
    * Revoke claims from Identities
    *
    * @param args.claims - array of claims to be revoked
+   *
+   * @note required role if at least one claim is CDD type:
+   *   - Customer Due Diligence Provider
    */
-  public revokeClaims(
-    args: Omit<ModifyClaimsParams, 'operation'>
-  ): Promise<TransactionQueue<void>> {
-    return modifyClaims.prepare({ ...args, operation: ClaimOperation.Revoke }, this.context);
-  }
+  public revokeClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
   /**
    * Retrieve all claims issued by an Identity
@@ -102,14 +154,12 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const result = await context.issuedClaims({
+    return context.getIdentityClaimsFromMiddleware({
       trustedClaimIssuers: [did],
       includeExpired,
       size,
       start,
     });
-
-    return result;
   }
 
   /**
@@ -170,7 +220,6 @@ export class Claims {
     } = result;
 
     const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
-
     const next = calculateNextKey(count, size, start);
 
     return {
@@ -185,9 +234,6 @@ export class Claims {
    *   If the scope is an asset DID, the corresponding ticker is returned as well
    *
    * @param opts.target - identity for which to fetch claim scopes (optional, defaults to the current Identity)
-   *
-   * @note a null scope means the Identity has scopeless claims (like CDD for example)
-   * @note uses the middleware
    */
   public async getClaimScopes(opts: { target?: string | Identity } = {}): Promise<ClaimScope[]> {
     const { context } = this;
@@ -195,25 +241,42 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const {
-      data: { scopesByIdentity: scopes },
-    } = await context.queryMiddleware<Ensured<Query, 'scopesByIdentity'>>(
-      scopesByIdentity({ did })
-    );
+    const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
+      targets: [did],
+      claimTypes: [
+        ClaimType.Accredited,
+        ClaimType.Affiliate,
+        ClaimType.Blocked,
+        ClaimType.BuyLockup,
+        ClaimType.Exempted,
+        ClaimType.InvestorUniqueness,
+        ClaimType.Jurisdiction,
+        ClaimType.KnowYourCustomer,
+        ClaimType.SellLockup,
+      ],
+      trustedClaimIssuers: undefined,
+      includeExpired: true,
+    });
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return scopes.map(({ scope, ticker: symbol }) => {
+    const claimScopeList = identityClaimsFromChain.map(({ claim }) => {
+      // only Scoped Claims were fetched so this assertion is reasonable
+      const {
+        scope: { type, value },
+      } = claim as ScopedClaim;
+
       let ticker: string | undefined;
 
-      if (symbol) {
-        ticker = removePadding(symbol);
+      if (type === ScopeType.Ticker) {
+        ticker = removePadding(value);
       }
 
       return {
-        scope: scope ? middlewareScopeToScope(scope) : null,
+        scope: { type, value: ticker ?? value },
         ticker,
       };
     });
+
+    return uniqWith(claimScopeList, isEqual);
   }
 
   /**
@@ -221,34 +284,47 @@ export class Claims {
    *
    * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   *
-   * @note supports pagination
-   * @note uses the middleware
    */
   public async getCddClaims(
     opts: {
       target?: string | Identity;
       includeExpired?: boolean;
-      size?: number;
-      start?: number;
     } = {}
-  ): Promise<ResultSet<ClaimData>> {
+  ): Promise<ClaimData<CddClaim>[]> {
     const { context } = this;
-    const { target, includeExpired = true, size, start } = opts;
+    const { target, includeExpired = true } = opts;
 
     const did = await getDid(target, context);
 
-    const result = await context.issuedClaims({
+    return context.getIdentityClaimsFromChain({
       targets: [did],
       claimTypes: [ClaimType.CustomerDueDiligence],
       includeExpired,
-      size,
-      start,
-    });
+    }) as Promise<ClaimData<CddClaim>[]>;
+  }
 
-    return result;
+  /**
+   * Retrieve the list of InvestorUniqueness claims for a target Identity
+   *
+   * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current Identity)
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
+   */
+  public async getInvestorUniquenessClaims(
+    opts: {
+      target?: string | Identity;
+      includeExpired?: boolean;
+    } = {}
+  ): Promise<ClaimData<InvestorUniquenessClaim>[]> {
+    const { context } = this;
+    const { target, includeExpired = true } = opts;
+
+    const did = await getDid(target, context);
+
+    return context.getIdentityClaimsFromChain({
+      targets: [did],
+      claimTypes: [ClaimType.InvestorUniqueness],
+      includeExpired,
+    }) as Promise<ClaimData<InvestorUniquenessClaim>[]>;
   }
 
   /**
@@ -258,7 +334,7 @@ export class Claims {
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
-   * @note uses the middleware
+   * @note uses the middleware (optional)
    */
   public async getTargetingClaims(
     opts: {
@@ -276,36 +352,68 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
-      issuerDidsWithClaimsByTarget({
-        target: did,
-        scope: scope ? scopeToMiddlewareScope(scope) : undefined,
-        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          signerToString(trustedClaimIssuer)
-        ),
-        includeExpired,
-        count: size,
-        skip: start,
-      })
+    const isMiddlewareAvailable = await context.isMiddlewareAvailable();
+
+    if (isMiddlewareAvailable) {
+      const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
+        issuerDidsWithClaimsByTarget({
+          target: did,
+          scope: scope ? scopeToMiddlewareScope(scope) : undefined,
+          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+            signerToString(trustedClaimIssuer)
+          ),
+          includeExpired,
+          count: size,
+          skip: start,
+        })
+      );
+
+      const {
+        data: {
+          issuerDidsWithClaimsByTarget: {
+            items: issuerDidsWithClaimsByTargetList,
+            totalCount: count,
+          },
+        },
+      } = result;
+
+      const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
+      const next = calculateNextKey(count, size, start);
+
+      return {
+        data,
+        next,
+        count,
+      };
+    }
+
+    const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
+      targets: [did],
+      trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+        signerToString(trustedClaimIssuer)
+      ),
+      includeExpired,
+    });
+
+    const issuers = uniqBy(
+      identityClaimsFromChain.map(i => i.issuer),
+      identity => identity.did
     );
 
-    const {
-      data: {
-        issuerDidsWithClaimsByTarget: {
-          items: issuerDidsWithClaimsByTargetList,
-          totalCount: count,
-        },
-      },
-    } = result;
-
-    const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
-
-    const next = calculateNextKey(count, size, start);
+    const identitiesWithClaims = issuers.map(identity => {
+      return {
+        identity,
+        claims: filter(
+          identityClaimsFromChain,
+          ({ issuer: { did: issuerDid } }) => issuerDid === identity.did
+        ),
+      };
+    });
 
     return {
-      data,
-      next,
-      count,
+      data: identitiesWithClaims,
+      next: null,
+      count: identitiesWithClaims.length,
     };
   }
 }

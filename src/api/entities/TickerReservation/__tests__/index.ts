@@ -13,6 +13,8 @@ import { dsMockUtils } from '~/testUtils/mocks';
 import { KnownTokenType, TickerReservationStatus, TokenIdentifierType } from '~/types';
 
 describe('TickerReservation class', () => {
+  const ticker = 'FAKETICKER';
+
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -31,7 +33,6 @@ describe('TickerReservation class', () => {
 
   describe('constructor', () => {
     test('should assign ticker to instance', () => {
-      const ticker = 'abc';
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -57,7 +58,6 @@ describe('TickerReservation class', () => {
     });
 
     test('should return details for a free ticker', async () => {
-      const ticker = 'abc';
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -76,7 +76,6 @@ describe('TickerReservation class', () => {
     });
 
     test('should return details for a reserved ticker', async () => {
-      const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = new Date(new Date().getTime() + 100000);
       const context = dsMockUtils.getContextInstance();
@@ -100,7 +99,6 @@ describe('TickerReservation class', () => {
     });
 
     test('should return details for a permanently reserved ticker', async () => {
-      const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = null;
       const context = dsMockUtils.getContextInstance();
@@ -124,7 +122,6 @@ describe('TickerReservation class', () => {
     });
 
     test('should return details for a ticker for which a reservation expired', async () => {
-      const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = new Date(new Date().getTime() - 100000);
       const context = dsMockUtils.getContextInstance();
@@ -148,7 +145,6 @@ describe('TickerReservation class', () => {
     });
 
     test('should return details for a ticker for which a token has already been created', async () => {
-      const ticker = 'abc';
       const ownerDid = 'someDid';
       const expiryDate = null;
       const context = dsMockUtils.getContextInstance();
@@ -181,7 +177,6 @@ describe('TickerReservation class', () => {
     });
 
     test('should allow subscription', async () => {
-      const ticker = 'abc';
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -206,7 +201,6 @@ describe('TickerReservation class', () => {
 
   describe('method: extend', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const ticker = 'TEST';
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -217,10 +211,7 @@ describe('TickerReservation class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
 
-      sinon
-        .stub(reserveTicker, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(reserveTicker, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await tickerReservation.extend();
 
@@ -230,7 +221,6 @@ describe('TickerReservation class', () => {
 
   describe('method: createToken', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const ticker = 'TEST';
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -246,10 +236,7 @@ describe('TickerReservation class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(createSecurityToken, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(createSecurityToken, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await tickerReservation.createToken(args);
 

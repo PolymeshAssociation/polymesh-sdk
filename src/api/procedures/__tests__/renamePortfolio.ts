@@ -1,13 +1,13 @@
 import { Text, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
+import { IdentityId, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
-import { Context } from '~/internal';
+import { getAuthorization, Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
+import { Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { NumberedPortfolio } from '~/types';
+import { RoleType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -63,24 +63,6 @@ describe('renamePortfolio procedure', () => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-  });
-
-  test('should throw an error if the Current Identity is not the Portfolio owner', async () => {
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        isOwnedBy: false,
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
-
-    return expect(
-      prepareRenamePortfolio.call(proc, {
-        id,
-        did,
-        name: 'newName',
-      })
-    ).rejects.toThrow('You are not the owner of this Portfolio');
   });
 
   test('should throw an error if the new name is the same as the current one', async () => {
@@ -150,5 +132,26 @@ describe('renamePortfolio procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawPortfolioNumber, rawNewName);
     expect(result.id).toBe(id);
+  });
+
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const args = {
+        did,
+        id,
+      } as Params;
+      const portfolio = entityMockUtils.getNumberedPortfolioInstance({ did, id });
+
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did, number: id } }],
+        signerPermissions: {
+          tokens: [],
+          portfolios: [portfolio],
+          transactions: [TxTags.portfolio.RenamePortfolio],
+        },
+      });
+    });
   });
 });

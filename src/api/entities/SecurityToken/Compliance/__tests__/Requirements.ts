@@ -5,7 +5,6 @@ import sinon from 'sinon';
 import { Params } from '~/api/procedures/setAssetRequirements';
 import {
   Context,
-  Identity,
   Namespace,
   SecurityToken,
   setAssetRequirements,
@@ -25,6 +24,11 @@ import {
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Requirements } from '../Requirements';
+
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 describe('Requirements class', () => {
   beforeAll(() => {
@@ -139,7 +143,7 @@ describe('Requirements class', () => {
     });
 
     beforeEach(() => {
-      ticker = 'test';
+      ticker = 'FAKETICKER';
       context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance({ ticker });
       requirements = new Requirements(token, context);
@@ -147,7 +151,7 @@ describe('Requirements class', () => {
         { identity: entityMockUtils.getIdentityInstance({ did: 'defaultissuer' }) },
       ];
       notDefaultClaimIssuer = {
-        identity: new Identity({ did: 'notDefaultClaimIssuer' }, context),
+        identity: entityMockUtils.getIdentityInstance({ did: 'notDefaultClaimIssuer' }),
         trustedFor: undefined,
       };
       tokenDid = 'someTokenDid';
@@ -360,10 +364,7 @@ describe('Requirements class', () => {
         .withArgs(token.ticker, context)
         .returns(rawTicker);
 
-      sinon
-        .stub(utilsConversionModule, 'boolToBoolean')
-        .withArgs(mockBool)
-        .returns(fakeResult);
+      sinon.stub(utilsConversionModule, 'boolToBoolean').withArgs(mockBool).returns(fakeResult);
 
       dsMockUtils
         .createQueryStub('complianceManager', 'assetCompliances')

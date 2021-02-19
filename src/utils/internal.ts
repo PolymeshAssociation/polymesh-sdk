@@ -2,28 +2,42 @@ import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot
 import { StorageKey } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
-import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
+import { AnyFunction, AnyTuple, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
+import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, groupBy, map, padEnd, range } from 'lodash';
+import { chunk, groupBy, map, padEnd } from 'lodash';
 import { TxTag } from 'polymesh-types/types';
 
-import { Context, Identity, PolymeshError, PostTransactionValue } from '~/internal';
+import { Procedure } from '~/base/Procedure';
+import {
+  Context,
+  Identity,
+  PolymeshError,
+  PostTransactionValue,
+  TransactionQueue,
+} from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
   Claim,
   ClaimType,
+  CommonKeyring,
   CountryCode,
   ErrorCode,
   NextKey,
   PaginationOptions,
+  ProcedureAuthorizationStatus,
   Scope,
+  UiKeyring,
 } from '~/types';
 import {
   Extrinsics,
+  Falsyable,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
+  ProcedureMethod,
 } from '~/types/internal';
+import { UnionOfProcedures } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   DEFAULT_MAX_BATCH_ELEMENTS,
@@ -105,10 +119,10 @@ export async function getDid(
  */
 export function createClaim(
   claimType: string,
-  jurisdiction: string | null | undefined,
-  middlewareScope: MiddlewareScope | null | undefined,
-  cddId: string | null | undefined,
-  scopeId: string | null | undefined
+  jurisdiction: Falsyable<string>,
+  middlewareScope: Falsyable<MiddlewareScope>,
+  cddId: Falsyable<string>,
+  scopeId: Falsyable<string>
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
@@ -211,12 +225,10 @@ export function removePadding(value: string): string {
 /**
  * @hidden
  *
- * Return whether the string is free of unreadable characters
+ * Return whether the string is fully printable ASCII
  */
-export function stringIsClean(value: string): boolean {
-  const forbiddenCharCodes = [65533]; // this should be extended as we find more offending characters
-
-  return !range(value.length).some(index => forbiddenCharCodes.includes(value.charCodeAt(index)));
+export function isPrintableAscii(value: string): boolean {
+  return new RegExp('^[\\\x00-\\\x7F]*$').test(value);
 }
 
 /**
@@ -225,18 +237,18 @@ export function stringIsClean(value: string): boolean {
  * Makes an entries request to the chain. If pagination options are supplied,
  * the request will be paginated. Otherwise, all entries will be requested at once
  */
-export async function requestPaginated<F extends AnyFunction>(
-  query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,
+export async function requestPaginated<F extends AnyFunction, T extends AnyTuple>(
+  query: AugmentedQuery<'promise', F, T> | AugmentedQueryDoubleMap<'promise', F, T>,
   opts: {
     paginationOpts?: PaginationOptions;
     arg?: Parameters<F>[0];
   }
 ): Promise<{
-  entries: [StorageKey, ObsInnerType<ReturnType<F>>][];
+  entries: [StorageKey<T>, ObsInnerType<ReturnType<F>>][];
   lastKey: NextKey;
 }> {
   const { arg, paginationOpts } = opts;
-  let entries: [StorageKey, ObsInnerType<ReturnType<F>>][];
+  let entries: [StorageKey<T>, ObsInnerType<ReturnType<F>>][];
   let lastKey: NextKey = null;
 
   if (paginationOpts) {
@@ -357,4 +369,81 @@ export function batchArguments<Args>(
 export function calculateNextKey(totalCount: number, size?: number, start?: number): NextKey {
   const next = (start ?? 0) + (size ?? DEFAULT_GQL_PAGE_SIZE);
   return totalCount > next ? next : null;
+}
+
+/**
+ * Create a method that prepares a procedure
+ */
+export function createProcedureMethod<
+  MethodArgs,
+  ProcedureArgs extends unknown,
+  ReturnValue,
+  Storage = {}
+>(
+  getProcedureAndArgs: (
+    args: MethodArgs
+  ) => [
+    (
+      | UnionOfProcedures<ProcedureArgs, ReturnValue, Storage>
+      | Procedure<ProcedureArgs, ReturnValue, Storage>
+    ),
+    ProcedureArgs
+  ],
+  context: Context
+): ProcedureMethod<MethodArgs, ReturnValue> {
+  const method = (args: MethodArgs): Promise<TransactionQueue<ReturnValue>> => {
+    const [proc, procArgs] = getProcedureAndArgs(args);
+
+    return proc.prepare(procArgs, context);
+  };
+
+  method.checkAuthorization = async (args: MethodArgs): Promise<ProcedureAuthorizationStatus> => {
+    const [proc, procArgs] = getProcedureAndArgs(args);
+
+    return proc.checkAuthorization(procArgs, context);
+  };
+
+  return method;
+}
+
+/**
+ * @hidden
+ */
+export function assertIsInteger(value: number | BigNumber): void {
+  const rawValue = new BigNumber(value);
+  if (!rawValue.isInteger()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The number must be an integer',
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export function assertIsPositive(value: number | BigNumber): void {
+  const rawValue = new BigNumber(value);
+  if (rawValue.isNegative()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The number must be positive',
+    });
+  }
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * @hidden
+ */
+function isUiKeyring(keyring: any): keyring is UiKeyring {
+  return !!keyring.keyring;
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/**
+ * @hidden
+ */
+export function getCommonKeyring(keyring: CommonKeyring | UiKeyring): CommonKeyring {
+  return isUiKeyring(keyring) ? keyring.keyring : keyring;
 }

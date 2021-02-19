@@ -1,8 +1,8 @@
 // import BigNumber from 'bignumber.js';
 
-import { Context, Instruction, PolymeshError } from '~/internal';
+import { Context, Instruction, NumberedPortfolio, PolymeshError } from '~/internal';
 import { ErrorCode, InstructionStatus, InstructionType, SecondaryKey } from '~/types';
-import { SignerValue } from '~/types/internal';
+import { PortfolioId, SignerValue } from '~/types/internal';
 import { signerToSignerValue } from '~/utils/conversion';
 
 // import { Proposal } from '~/internal';
@@ -43,27 +43,13 @@ export async function assertInstructionValid(
   context: Context
 ): Promise<void> {
   const details = await instruction.details();
-  const { status, validFrom } = await instruction.details();
+  const { status } = await instruction.details();
 
   if (status !== InstructionStatus.Pending) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The Instruction must be in pending state',
     });
-  }
-
-  if (validFrom) {
-    const now = new Date();
-
-    if (now < validFrom) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The instruction has not reached its validity period',
-        data: {
-          validFrom,
-        },
-      });
-    }
   }
 
   if (details.type === InstructionType.SettleOnBlock) {
@@ -77,6 +63,32 @@ export async function assertInstructionValid(
         data: {
           currentBlock: latestBlock,
           endBlock,
+        },
+      });
+    }
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertPortfolioExists(
+  portfolioId: PortfolioId,
+  context: Context
+): Promise<void> {
+  const { did, number } = portfolioId;
+
+  if (number) {
+    const numberedPortfolio = new NumberedPortfolio({ did, id: number }, context);
+    const exists = await numberedPortfolio.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Portfolio doesn't exist",
+        data: {
+          did,
+          portfolioId: number,
         },
       });
     }

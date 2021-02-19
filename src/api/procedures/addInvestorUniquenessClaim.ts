@@ -1,6 +1,6 @@
 import { PolymeshError } from '~/base/PolymeshError';
 import { Procedure } from '~/internal';
-import { ClaimType, ErrorCode, Scope } from '~/types';
+import { ClaimType, ErrorCode, Scope, TxTags } from '~/types';
 import {
   claimToMeshClaim,
   dateToMoment,
@@ -8,9 +8,6 @@ import {
   stringToInvestorZKProofData,
 } from '~/utils/conversion';
 
-/**
- * @hidden
- */
 export interface AddInvestorUniquenessClaimParams {
   scope: Scope;
   cddId: string;
@@ -56,4 +53,10 @@ export async function prepareAddInvestorUniquenessClaim(
 /**
  * @hidden
  */
-export const addInvestorUniquenessClaim = new Procedure(prepareAddInvestorUniquenessClaim);
+export const addInvestorUniquenessClaim = new Procedure(prepareAddInvestorUniquenessClaim, {
+  signerPermissions: {
+    tokens: [],
+    portfolios: [],
+    transactions: [TxTags.identity.AddInvestorUniquenessClaim],
+  },
+});

@@ -1,77 +1,98 @@
 import { TrustedIssuer } from 'polymesh-types/types';
 
 import {
+  Context,
   DefaultTrustedClaimIssuer,
   modifyTokenTrustedClaimIssuers,
   ModifyTokenTrustedClaimIssuersAddSetParams,
+  ModifyTokenTrustedClaimIssuersParams,
   ModifyTokenTrustedClaimIssuersRemoveParams,
   Namespace,
   SecurityToken,
-  TransactionQueue,
 } from '~/internal';
 import { SubCallback, UnsubCallback } from '~/types';
-import { TrustedClaimIssuerOperation } from '~/types/internal';
+import { ProcedureMethod, TrustedClaimIssuerOperation } from '~/types/internal';
 import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Security Token Default Trusted Claim Issuers related functionality
  */
 export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   /**
+   * @hidden
+   */
+  constructor(parent: SecurityToken, context: Context) {
+    super(parent, context);
+
+    const { ticker } = parent;
+
+    this.set = createProcedureMethod<
+      ModifyTokenTrustedClaimIssuersAddSetParams,
+      ModifyTokenTrustedClaimIssuersParams,
+      SecurityToken
+    >(
+      args => [
+        modifyTokenTrustedClaimIssuers,
+        { ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
+      ],
+      context
+    );
+    this.add = createProcedureMethod<
+      ModifyTokenTrustedClaimIssuersAddSetParams,
+      ModifyTokenTrustedClaimIssuersParams,
+      SecurityToken
+    >(
+      args => [
+        modifyTokenTrustedClaimIssuers,
+        { ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
+      ],
+      context
+    );
+    this.remove = createProcedureMethod<
+      ModifyTokenTrustedClaimIssuersRemoveParams,
+      ModifyTokenTrustedClaimIssuersParams,
+      SecurityToken
+    >(
+      args => [
+        modifyTokenTrustedClaimIssuers,
+        { ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
+      ],
+      context
+    );
+  }
+
+  /**
    * Assign a new default list of trusted claim issuers to the Security Token by replacing the existing ones with the list passed as a parameter
    *
    * This requires two transactions
    *
    * @param args.claimIssuerDids - array of Identity IDs of the default Trusted Claim Issuers
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
-  public set(
-    args: ModifyTokenTrustedClaimIssuersAddSetParams
-  ): Promise<TransactionQueue<SecurityToken>> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
-    return modifyTokenTrustedClaimIssuers.prepare(
-      { ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
-      context
-    );
-  }
+  public set: ProcedureMethod<ModifyTokenTrustedClaimIssuersAddSetParams, SecurityToken>;
 
   /**
    * Add the supplied Identities to the Security Token's list of trusted claim issuers
    *
    * @param args.claimIssuers - array of [[TrustedClaimIssuer | Trusted Claim Issuers]]
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
-  public add(
-    args: ModifyTokenTrustedClaimIssuersAddSetParams
-  ): Promise<TransactionQueue<SecurityToken>> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
-    return modifyTokenTrustedClaimIssuers.prepare(
-      { ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
-      context
-    );
-  }
+  public add: ProcedureMethod<ModifyTokenTrustedClaimIssuersAddSetParams, SecurityToken>;
 
   /**
    * Remove the supplied Identities from the Security Token's list of trusted claim issuers   *
    *
    * @param args.claimIssuers - array of Identities (or DIDs) of the default claim issuers
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
-  public remove(
-    args: ModifyTokenTrustedClaimIssuersRemoveParams
-  ): Promise<TransactionQueue<SecurityToken>> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
-    return modifyTokenTrustedClaimIssuers.prepare(
-      { ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
-      context
-    );
-  }
+  public remove: ProcedureMethod<ModifyTokenTrustedClaimIssuersRemoveParams, SecurityToken>;
 
   /**
    * Retrieve the current default trusted claim issuers of the Security Token

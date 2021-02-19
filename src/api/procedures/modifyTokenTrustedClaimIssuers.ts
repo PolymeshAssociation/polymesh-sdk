@@ -1,9 +1,9 @@
 import { difference, differenceWith, intersection, isEqual, sortBy } from 'lodash';
-import { IdentityId, Ticker, TrustedIssuer } from 'polymesh-types/types';
+import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
 
-import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ClaimType, ErrorCode, Role, RoleType } from '~/types';
-import { TrustedClaimIssuerOperation } from '~/types/internal';
+import { Context, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { ClaimType, ErrorCode, RoleType, TrustedClaimIssuer } from '~/types';
+import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   signerToString,
@@ -32,6 +32,54 @@ export type Params = { ticker: string } & (
       operation: TrustedClaimIssuerOperation.Remove;
     })
 );
+
+const convertArgsToRaw = (
+  claimIssuers: ModifyTokenTrustedClaimIssuersAddSetParams['claimIssuers'],
+  rawTicker: Ticker,
+  context: Context
+): { claimIssuersToAdd: [Ticker, TrustedIssuer][]; inputDids: string[] } => {
+  const claimIssuersToAdd: [Ticker, TrustedIssuer][] = [];
+  const inputDids: string[] = [];
+  claimIssuers.forEach(({ identity, trustedFor }) => {
+    let issuerIdentity: Identity;
+    if (typeof identity === 'string') {
+      issuerIdentity = new Identity({ did: identity }, context);
+    } else {
+      issuerIdentity = identity;
+    }
+    claimIssuersToAdd.push(
+      tuple(
+        rawTicker,
+        trustedClaimIssuerToTrustedIssuer({ identity: issuerIdentity, trustedFor }, context)
+      )
+    );
+    inputDids.push(issuerIdentity.did);
+  });
+
+  return {
+    claimIssuersToAdd,
+    inputDids,
+  };
+};
+
+const areSameClaimIssuers = (
+  currentClaimIssuers: TrustedClaimIssuer[],
+  claimIssuers: ModifyTokenTrustedClaimIssuersAddSetParams['claimIssuers']
+): boolean =>
+  !differenceWith(
+    currentClaimIssuers,
+    claimIssuers,
+    (
+      { identity: { did: aDid }, trustedFor: aTrustedFor },
+      { identity: bIdentity, trustedFor: bTrustedFor }
+    ) => {
+      const sameClaimTypes =
+        (aTrustedFor === undefined && bTrustedFor === undefined) ||
+        (aTrustedFor && bTrustedFor && isEqual(sortBy(aTrustedFor), sortBy(bTrustedFor)));
+
+      return aDid === signerToString(bIdentity) && !!sameClaimTypes;
+    }
+  ).length && currentClaimIssuers.length === claimIssuers.length;
 
 /**
  * @hidden
@@ -81,44 +129,13 @@ export async function prepareModifyTokenTrustedClaimIssuers(
       .filter(({ identity: { did } }) => inputDids.includes(did))
       .map(({ identity: { did } }) => tuple(rawTicker, stringToIdentityId(did, context)));
   } else {
-    claimIssuersToAdd = [];
-    inputDids = [];
-    args.claimIssuers.forEach(({ identity, trustedFor }) => {
-      let issuerIdentity: Identity;
-      if (typeof identity === 'string') {
-        issuerIdentity = new Identity({ did: identity }, context);
-      } else {
-        issuerIdentity = identity;
-      }
-      claimIssuersToAdd.push(
-        tuple(
-          rawTicker,
-          trustedClaimIssuerToTrustedIssuer({ identity: issuerIdentity, trustedFor }, context)
-        )
-      );
-      inputDids.push(issuerIdentity.did);
-    });
+    ({ claimIssuersToAdd, inputDids } = convertArgsToRaw(args.claimIssuers, rawTicker, context));
   }
 
   if (args.operation === TrustedClaimIssuerOperation.Set) {
     claimIssuersToDelete = rawCurrentClaimIssuers.map(({ issuer }) => [rawTicker, issuer]);
 
-    if (
-      !differenceWith(
-        currentClaimIssuers,
-        args.claimIssuers,
-        (
-          { identity: { did: aDid }, trustedFor: aTrustedFor },
-          { identity: bIdentity, trustedFor: bTrustedFor }
-        ) => {
-          const sameClaimTypes =
-            (aTrustedFor === undefined && bTrustedFor === undefined) ||
-            (aTrustedFor && bTrustedFor && isEqual(sortBy(aTrustedFor), sortBy(bTrustedFor)));
-          return aDid === signerToString(bIdentity) && !!sameClaimTypes;
-        }
-      ).length &&
-      currentClaimIssuers.length === inputDids.length
-    ) {
+    if (areSameClaimIssuers(currentClaimIssuers, args.claimIssuers)) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The supplied claim issuer list is equal to the current one',
@@ -174,8 +191,26 @@ export async function prepareModifyTokenTrustedClaimIssuers(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+export function getAuthorization(
+  this: Procedure<Params, SecurityToken>,
+  { ticker, operation }: Params
+): ProcedureAuthorization {
+  const transactions = [];
+  if (operation !== TrustedClaimIssuerOperation.Add) {
+    transactions.push(TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer);
+  }
+  if (operation !== TrustedClaimIssuerOperation.Remove) {
+    transactions.push(TxTags.complianceManager.AddDefaultTrustedClaimIssuer);
+  }
+
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      transactions,
+      tokens: [new SecurityToken({ ticker }, this.context)],
+      portfolios: [],
+    },
+  };
 }
 
 /**
@@ -183,5 +218,5 @@ export function getRequiredRoles({ ticker }: Params): Role[] {
  */
 export const modifyTokenTrustedClaimIssuers = new Procedure(
   prepareModifyTokenTrustedClaimIssuers,
-  getRequiredRoles
+  getAuthorization
 );

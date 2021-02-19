@@ -1,7 +1,8 @@
 import { differenceWith, isEqual } from 'lodash';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { Condition, ErrorCode, Role, RoleType } from '~/types';
+import { Condition, ErrorCode, RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   complianceRequirementToRequirement,
   requirementToComplianceRequirement,
@@ -88,11 +89,24 @@ export async function prepareSetAssetRequirements(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+export function getAuthorization(
+  this: Procedure<Params, SecurityToken>,
+  { ticker }: Params
+): ProcedureAuthorization {
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      transactions: [
+        TxTags.complianceManager.ResetAssetCompliance,
+        TxTags.complianceManager.AddComplianceRequirement,
+      ],
+      tokens: [new SecurityToken({ ticker }, this.context)],
+      portfolios: [],
+    },
+  };
 }
 
 /**
  * @hidden
  */
-export const setAssetRequirements = new Procedure(prepareSetAssetRequirements, getRequiredRoles);
+export const setAssetRequirements = new Procedure(prepareSetAssetRequirements, getAuthorization);

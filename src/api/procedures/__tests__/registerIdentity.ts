@@ -5,13 +5,12 @@ import sinon from 'sinon';
 
 import {
   createRegisterIdentityResolver,
-  getRequiredRoles,
   prepareRegisterIdentity,
 } from '~/api/procedures/registerIdentity';
 import { Context, Identity, PostTransactionValue, RegisterIdentityParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, SecondaryKey } from '~/types';
+import { SecondaryKey } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -62,7 +61,12 @@ describe('registerIdentity procedure', () => {
     const secondaryKeys = [
       {
         signer: new Identity({ did: 'someValue' }, mockContext),
-        permissions: { tokens: null, portfolios: null, transactions: null },
+        permissions: {
+          tokens: null,
+          portfolios: null,
+          transactions: null,
+          transactionGroups: [],
+        },
       },
     ];
     const args = {
@@ -145,11 +149,5 @@ describe('createRegisterIdentityResolver', () => {
     const result = createRegisterIdentityResolver(fakeContext)({} as ISubmittableResult);
 
     expect(result.did).toEqual(did);
-  });
-});
-
-describe('getRequiredRoles', () => {
-  test('should return a cdd provider role if args has at least one customer due diligence claim type', () => {
-    expect(getRequiredRoles()).toEqual([{ type: RoleType.CddProvider }]);
   });
 });

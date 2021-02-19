@@ -2,23 +2,31 @@ import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { PortfolioId, Ticker } from 'polymesh-types/types';
+import P from 'bluebird';
+import { compact, flatten } from 'lodash';
+import { PortfolioId, Ticker, TxTag, TxTags } from 'polymesh-types/types';
 
+import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Context,
+  DefaultPortfolio,
   Instruction,
+  NumberedPortfolio,
   PolymeshError,
   PostTransactionValue,
   Procedure,
   SecurityToken,
+  Venue,
 } from '~/internal';
-import { ErrorCode, InstructionType, PortfolioLike, Role, RoleType } from '~/types';
+import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   dateToMoment,
   endConditionToSettlementType,
   numberToBalance,
   numberToU64,
   portfolioIdToMeshPortfolioId,
+  portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
   stringToTicker,
   u64ToBigNumber,
@@ -32,13 +40,24 @@ export interface AddInstructionParams {
     to: PortfolioLike;
     token: string | SecurityToken;
   }[];
-  validFrom?: Date;
+  tradeDate?: Date;
+  valueDate?: Date;
   endBlock?: BigNumber;
 }
 
+/**
+ * @hidden
+ */
 export type Params = AddInstructionParams & {
   venueId: BigNumber;
 };
+
+/**
+ * @hidden
+ */
+export interface Storage {
+  portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[];
+}
 
 /**
  * @hidden
@@ -57,7 +76,7 @@ export const createAddInstructionResolver = (context: Context) => (
  * @hidden
  */
 export async function prepareAddInstruction(
-  this: Procedure<Params, Instruction>,
+  this: Procedure<Params, Instruction, Storage>,
   args: Params
 ): Promise<PostTransactionValue<Instruction>> {
   const {
@@ -67,8 +86,19 @@ export async function prepareAddInstruction(
       },
     },
     context,
+    storage: { portfoliosToAffirm },
   } = this;
-  const { legs, venueId, endBlock, validFrom } = args;
+  const { legs, venueId, endBlock, tradeDate, valueDate } = args;
+
+  const venue = new Venue({ id: venueId }, context);
+  const exists = await venue.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: "The Venue doesn't exist",
+    });
+  }
 
   if (!legs.length) {
     throw new PolymeshError({
@@ -78,14 +108,9 @@ export async function prepareAddInstruction(
   }
 
   let endCondition;
-  let did: string;
 
   if (endBlock) {
-    let latestBlock;
-    [{ did }, latestBlock] = await Promise.all([
-      context.getCurrentIdentity(),
-      context.getLatestBlock(),
-    ]);
+    const latestBlock = await context.getLatestBlock();
 
     if (endBlock.lte(latestBlock)) {
       throw new PolymeshError({
@@ -96,43 +121,43 @@ export async function prepareAddInstruction(
 
     endCondition = { type: InstructionType.SettleOnBlock, value: endBlock } as const;
   } else {
-    ({ did } = await context.getCurrentIdentity());
-
     endCondition = { type: InstructionType.SettleOnAffirmation } as const;
+  }
+
+  if (tradeDate && valueDate && tradeDate > valueDate) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Value date must be after trade date',
+    });
   }
 
   const rawVenueId = numberToU64(venueId, context);
   const rawSettlementType = endConditionToSettlementType(endCondition, context);
-  const rawValidFrom = validFrom ? dateToMoment(validFrom, context) : null;
+  const rawTradeDate = tradeDate ? dateToMoment(tradeDate, context) : null;
+  const rawValueDate = valueDate ? dateToMoment(valueDate, context) : null;
   const rawLegs: {
     from: PortfolioId;
     to: PortfolioId;
     asset: Ticker;
     amount: Balance;
   }[] = [];
-  const rawPortfolios: PortfolioId[] = [];
 
   await Promise.all(
     legs.map(async ({ from, to, amount, token }) => {
-      const [
-        { did: fromDid, number: fromNumber },
-        { did: toDid, number: toNumber },
-      ] = await Promise.all([
-        portfolioLikeToPortfolioId(from, context),
-        portfolioLikeToPortfolioId(to, context),
-      ]);
-      const fromPortfolio = portfolioIdToMeshPortfolioId(
-        { did: fromDid, number: fromNumber },
-        context
-      );
+      const fromId = portfolioLikeToPortfolioId(from);
+      const toId = portfolioLikeToPortfolioId(to);
 
-      if (fromDid === did) {
-        rawPortfolios.push(fromPortfolio);
-      }
+      await Promise.all([
+        assertPortfolioExists(fromId, context),
+        assertPortfolioExists(toId, context),
+      ]);
+
+      const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
+      const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
       rawLegs.push({
-        from: fromPortfolio,
-        to: portfolioIdToMeshPortfolioId({ did: toDid, number: toNumber }, context),
+        from: rawFromPortfolio,
+        to: rawToPortfolio,
         asset: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
         amount: numberToBalance(amount, context),
       });
@@ -141,7 +166,7 @@ export async function prepareAddInstruction(
 
   let newInstruction;
 
-  if (rawPortfolios.length) {
+  if (portfoliosToAffirm.length) {
     [newInstruction] = this.addTransaction(
       settlement.addAndAffirmInstruction,
       {
@@ -149,9 +174,12 @@ export async function prepareAddInstruction(
       },
       rawVenueId,
       rawSettlementType,
-      rawValidFrom,
+      rawTradeDate,
+      rawValueDate,
       rawLegs,
-      rawPortfolios
+      portfoliosToAffirm.map(portfolio =>
+        portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
+      )
     );
   } else {
     [newInstruction] = this.addTransaction(
@@ -161,7 +189,8 @@ export async function prepareAddInstruction(
       },
       rawVenueId,
       rawSettlementType,
-      rawValidFrom,
+      rawTradeDate,
+      rawValueDate,
       rawLegs
     );
   }
@@ -172,11 +201,77 @@ export async function prepareAddInstruction(
 /**
  * @hidden
  */
-export function getRequiredRoles({ venueId }: Params): Role[] {
-  return [{ type: RoleType.VenueOwner, venueId }];
+export async function getAuthorization(
+  this: Procedure<Params, Instruction, Storage>,
+  { venueId }: Params
+): Promise<ProcedureAuthorization> {
+  const {
+    storage: { portfoliosToAffirm },
+  } = this;
+  let transactions: TxTag[];
+
+  if (portfoliosToAffirm.length) {
+    transactions = [TxTags.settlement.AddAndAffirmInstruction];
+  } else {
+    transactions = [TxTags.settlement.AddInstruction];
+  }
+
+  return {
+    identityRoles: [{ type: RoleType.VenueOwner, venueId }],
+    signerPermissions: {
+      tokens: [],
+      portfolios: portfoliosToAffirm,
+      transactions,
+    },
+  };
 }
 
 /**
  * @hidden
  */
-export const addInstruction = new Procedure(prepareAddInstruction, getRequiredRoles);
+export async function prepareStorage(
+  this: Procedure<Params, Instruction, Storage>,
+  { legs }: Params
+): Promise<Storage> {
+  const { context } = this;
+
+  const identity = await context.getCurrentIdentity();
+
+  const portfolios = await P.map(legs, async ({ from, to }) => {
+    const fromPortfolio = portfolioLikeToPortfolio(from, context);
+    const toPortfolio = portfolioLikeToPortfolio(to, context);
+
+    const result = [];
+    const [fromCustodied, toCustodied] = await Promise.all([
+      fromPortfolio.isCustodiedBy({ identity }),
+      toPortfolio.isCustodiedBy({ identity }),
+    ]);
+
+    if (fromCustodied) {
+      result.push(fromPortfolio);
+    }
+
+    if (toCustodied) {
+      result.push(toPortfolio);
+    }
+
+    if (result.length) {
+      return result;
+    }
+
+    return undefined;
+  });
+
+  return {
+    portfoliosToAffirm: flatten(compact(portfolios)),
+  };
+}
+
+/**
+ * @hidden
+ */
+export const addInstruction = new Procedure(
+  prepareAddInstruction,
+  getAuthorization,
+  prepareStorage
+);

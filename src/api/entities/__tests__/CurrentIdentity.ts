@@ -54,6 +54,7 @@ describe('CurrentIdentity class', () => {
           permissions: {
             tokens: null,
             transactions: null,
+            transactionGroups: [],
             portfolios: null,
           },
         },
@@ -163,10 +164,7 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(inviteAccount, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(inviteAccount, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await identity.inviteAccount(args);
 
@@ -186,10 +184,7 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
 
-      sinon
-        .stub(createVenue, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(createVenue, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await identity.createVenue(args);
 
@@ -226,7 +221,7 @@ describe('CurrentIdentity class', () => {
         .stub()
         .resolves([defaultPortfolio, numberedPortfolio]);
 
-      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves([]);
+      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves({ data: [], next: null });
 
       const portfolioLikeToPortfolioIdStub = sinon.stub(
         utilsConversionModule,
@@ -234,11 +229,11 @@ describe('CurrentIdentity class', () => {
       );
 
       portfolioLikeToPortfolioIdStub
-        .withArgs(defaultPortfolio, context)
-        .resolves({ did: defaultPortfolioDid, number: undefined });
+        .withArgs(defaultPortfolio)
+        .returns({ did: defaultPortfolioDid, number: undefined });
       portfolioLikeToPortfolioIdStub
-        .withArgs(numberedPortfolio, context)
-        .resolves({ did: numberedPortfolioDid, number: numberedPortfolioId });
+        .withArgs(numberedPortfolio)
+        .returns({ did: numberedPortfolioDid, number: numberedPortfolioId });
 
       const rawPortfolio = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),
@@ -298,7 +293,7 @@ describe('CurrentIdentity class', () => {
           status: dsMockUtils.createMockInstructionStatus('Pending'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
-          valid_from: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id2.toNumber()),
@@ -306,7 +301,7 @@ describe('CurrentIdentity class', () => {
           status: dsMockUtils.createMockInstructionStatus('Pending'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
-          valid_from: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id3.toNumber()),
@@ -314,7 +309,7 @@ describe('CurrentIdentity class', () => {
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
-          valid_from: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
@@ -322,7 +317,7 @@ describe('CurrentIdentity class', () => {
           status: dsMockUtils.createMockInstructionStatus('Pending'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
-          valid_from: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
         }),
       ]);
 

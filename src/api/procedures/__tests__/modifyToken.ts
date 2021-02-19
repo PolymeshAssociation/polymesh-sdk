@@ -1,11 +1,11 @@
-import { AssetName, FundingRoundName, Ticker } from 'polymesh-types/types';
+import { AssetName, FundingRoundName, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { getRequiredRoles, Params, prepareModifyToken } from '~/api/procedures/modifyToken';
+import { getAuthorization, Params, prepareModifyToken } from '~/api/procedures/modifyToken';
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
+import { RoleType, TokenIdentifier, TokenIdentifierType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -21,6 +21,7 @@ describe('modifyToken procedure', () => {
   let ticker: string;
   let rawTicker: Ticker;
   let fundingRound: string;
+  let identifiers: TokenIdentifier[];
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -32,6 +33,12 @@ describe('modifyToken procedure', () => {
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     fundingRound = 'Series A';
+    identifiers = [
+      {
+        type: TokenIdentifierType.Isin,
+        value: 'someValue',
+      },
+    ];
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -77,17 +84,6 @@ describe('modifyToken procedure', () => {
     ).rejects.toThrow('The Security Token is already divisible');
   });
 
-  test('should throw an error if makeDivisible is set to false', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
-
-    return expect(
-      prepareModifyToken.call(proc, {
-        ticker,
-        makeDivisible: (false as unknown) as true,
-      })
-    ).rejects.toThrow('You cannot make the token indivisible');
-  });
-
   test('should throw an error if newName is the same name currently in the Security Token', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
@@ -108,6 +104,23 @@ describe('modifyToken procedure', () => {
         fundingRound,
       })
     ).rejects.toThrow('New funding round name is the same as current funding round');
+  });
+
+  test('should throw an error if newIdentifiers are the same identifiers currently in the Security Token', () => {
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        getIdentifiers: identifiers,
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+
+    return expect(
+      prepareModifyToken.call(proc, {
+        ticker,
+        identifiers,
+      })
+    ).rejects.toThrow('New identifiers are the same as current identifiers');
   });
 
   test('should add a make divisible transaction to the queue', async () => {
@@ -159,15 +172,57 @@ describe('modifyToken procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawFundingRound);
     expect(result.ticker).toBe(ticker);
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
+  test('should add a update identifiers transaction to the queue', async () => {
+    const rawIdentifier = dsMockUtils.createMockAssetIdentifier({
+      Isin: dsMockUtils.createMockU8aFixed(identifiers[0].value),
+    });
+    sinon.stub(utilsConversionModule, 'tokenIdentifierToAssetIdentifier').returns(rawIdentifier);
+
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+
+    const transaction = dsMockUtils.createTxStub('asset', 'updateIdentifiers');
+
+    const result = await prepareModifyToken.call(proc, {
       ticker,
-    } as Params;
+      identifiers,
+    });
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, [rawIdentifier]);
+    expect(result.ticker).toBe(ticker);
+  });
+
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const name = 'NEW NAME';
+      const args = {
+        ticker,
+      } as Params;
+
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [],
+          portfolios: [],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+        },
+      });
+
+      expect(boundFunc({ ...args, makeDivisible: true, name, fundingRound, identifiers })).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [
+            TxTags.asset.MakeDivisible,
+            TxTags.asset.RenameAsset,
+            TxTags.asset.SetFundingRound,
+            TxTags.asset.UpdateIdentifiers,
+          ],
+          portfolios: [],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+        },
+      });
+    });
   });
 });

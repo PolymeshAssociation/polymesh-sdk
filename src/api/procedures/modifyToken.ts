@@ -1,11 +1,20 @@
+import { differenceWith, isEqual } from 'lodash';
+
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, Role, RoleType } from '~/types';
-import { stringToAssetName, stringToFundingRoundName, stringToTicker } from '~/utils/conversion';
+import { ErrorCode, RoleType, TokenIdentifier, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
+import {
+  stringToAssetName,
+  stringToFundingRoundName,
+  stringToTicker,
+  tokenIdentifierToAssetIdentifier,
+} from '~/utils/conversion';
 
 export type ModifyTokenParams =
-  | { makeDivisible?: true; name: string; fundingRound?: string }
-  | { makeDivisible: true; name?: string; fundingRound?: string }
-  | { makeDivisible?: true; name?: string; fundingRound: string };
+  | { makeDivisible?: true; name: string; fundingRound?: string; identifiers?: TokenIdentifier[] }
+  | { makeDivisible: true; name?: string; fundingRound?: string; identifiers?: TokenIdentifier[] }
+  | { makeDivisible?: true; name?: string; fundingRound: string; identifiers?: TokenIdentifier[] }
+  | { makeDivisible?: true; name?: string; fundingRound?: string; identifiers: TokenIdentifier[] };
 
 /**
  * @hidden
@@ -25,9 +34,21 @@ export async function prepareModifyToken(
     },
     context,
   } = this;
-  const { ticker, makeDivisible, name: newName, fundingRound: newFundingRound } = args;
+  const {
+    ticker,
+    makeDivisible,
+    name: newName,
+    fundingRound: newFundingRound,
+    identifiers: newIdentifiers,
+  } = args;
 
-  if (makeDivisible === undefined && newName === undefined && newFundingRound === undefined) {
+  const noArguments =
+    makeDivisible === undefined &&
+    newName === undefined &&
+    newFundingRound === undefined &&
+    newIdentifiers === undefined;
+
+  if (noArguments) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Nothing to modify',
@@ -38,10 +59,10 @@ export async function prepareModifyToken(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  // TODO: queryMulti
-  const [{ isDivisible, name }, fundingRound] = await Promise.all([
+  const [{ isDivisible, name }, fundingRound, identifiers] = await Promise.all([
     securityToken.details(),
     securityToken.currentFundingRound(),
+    securityToken.getIdentifiers(),
   ]);
 
   if (makeDivisible) {
@@ -53,11 +74,6 @@ export async function prepareModifyToken(
     }
 
     this.addTransaction(tx.asset.makeDivisible, {}, rawTicker);
-  } else if (makeDivisible === false) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You cannot make the token indivisible',
-    });
   }
 
   if (newName) {
@@ -87,17 +103,65 @@ export async function prepareModifyToken(
     );
   }
 
+  if (newIdentifiers) {
+    const identifiersAreEqual =
+      !differenceWith(identifiers, newIdentifiers, isEqual).length &&
+      identifiers.length === newIdentifiers.length;
+
+    if (identifiersAreEqual) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'New identifiers are the same as current identifiers',
+      });
+    }
+
+    this.addTransaction(
+      tx.asset.updateIdentifiers,
+      {},
+      rawTicker,
+      newIdentifiers.map(newIdentifier => tokenIdentifierToAssetIdentifier(newIdentifier, context))
+    );
+  }
+
   return securityToken;
 }
 
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+export function getAuthorization(
+  this: Procedure<Params, SecurityToken>,
+  { ticker, makeDivisible, name, fundingRound, identifiers }: Params
+): ProcedureAuthorization {
+  const transactions = [];
+
+  if (makeDivisible !== undefined) {
+    transactions.push(TxTags.asset.MakeDivisible);
+  }
+
+  if (name) {
+    transactions.push(TxTags.asset.RenameAsset);
+  }
+
+  if (fundingRound) {
+    transactions.push(TxTags.asset.SetFundingRound);
+  }
+
+  if (identifiers) {
+    transactions.push(TxTags.asset.UpdateIdentifiers);
+  }
+
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      transactions,
+      portfolios: [],
+      tokens: [new SecurityToken({ ticker }, this.context)],
+    },
+  };
 }
 
 /**
  * @hidden
  */
-export const modifyToken = new Procedure(prepareModifyToken, getRequiredRoles);
+export const modifyToken = new Procedure(prepareModifyToken, getAuthorization);

@@ -7,8 +7,8 @@ import sinon from 'sinon';
 
 import * as baseModule from '~/internal';
 import { dsMockUtils } from '~/testUtils/mocks';
-import { KeyringPair, Role } from '~/types';
-import { MaybePostTransactionValue } from '~/types/internal';
+import { KeyringPair, Role, RoleType } from '~/types';
+import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -16,6 +16,7 @@ const { Procedure } = baseModule;
 
 describe('Procedure class', () => {
   let context: baseModule.Context;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -30,6 +31,51 @@ describe('Procedure class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
+  });
+
+  describe('method: checkAuthorization', () => {
+    test('should return whether the current user has sufficient authorization to run the procedure', async () => {
+      const prepareFunc = sinon.stub();
+      const authFunc = sinon.stub();
+      const authorization: ProcedureAuthorization = {
+        identityRoles: true,
+        signerPermissions: true,
+      };
+      authFunc.resolves(authorization);
+      let procedure = new Procedure(prepareFunc, authFunc);
+
+      const args = 'args';
+
+      let result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        permissions: true,
+        roles: true,
+      });
+
+      context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
+      authFunc.resolves({
+        identityRoles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
+        signerPermissions: {
+          tokens: null,
+          portfolios: null,
+          transactions: null,
+        },
+      });
+
+      result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        permissions: false,
+        roles: false,
+      });
+
+      procedure = new Procedure(prepareFunc, { signerPermissions: true, identityRoles: true });
+
+      result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        permissions: true,
+        roles: true,
+      });
+    });
   });
 
   describe('method: prepare', () => {
@@ -92,7 +138,7 @@ describe('Procedure class', () => {
 
       const returnValue = 'good';
 
-      const func1 = async function(
+      const func1 = async function (
         this: baseModule.Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<string> {
@@ -120,7 +166,7 @@ describe('Procedure class', () => {
         context
       );
 
-      const func2 = async function(
+      const func2 = async function (
         this: baseModule.Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<MaybePostTransactionValue<string>> {
@@ -152,7 +198,7 @@ describe('Procedure class', () => {
       };
 
       const errorMsg = 'failed';
-      const func = async function(
+      const func = async function (
         this: baseModule.Procedure<typeof procArgs, string>
       ): Promise<string> {
         throw new Error(errorMsg);
@@ -170,23 +216,45 @@ describe('Procedure class', () => {
         ticker,
         secondaryKeys,
       };
-      const func = async function(
+      const func = async function (
         this: baseModule.Procedure<typeof procArgs, string>
       ): Promise<string> {
         return 'success';
       };
 
-      let proc = new Procedure(func, [({ type: 'FakeRole' } as unknown) as Role]);
-      context = dsMockUtils.getContextInstance({ hasRoles: false });
+      let proc = new Procedure(func, {
+        identityRoles: [({ type: 'FakeRole' } as unknown) as Role],
+      });
+      context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
 
       await expect(proc.prepare(procArgs, context)).rejects.toThrow(
-        'Current account is not authorized to execute this procedure'
+        "Current Identity doesn't have the required roles to execute this procedure"
       );
 
-      proc = new Procedure(func, async () => false);
+      proc = new Procedure(func, {
+        signerPermissions: {
+          tokens: [],
+          transactions: [],
+          portfolios: [],
+        },
+      });
 
       await expect(proc.prepare(procArgs, context)).rejects.toThrow(
-        'Current account is not authorized to execute this procedure'
+        "Current Account doesn't have the required permissions to execute this procedure"
+      );
+
+      proc = new Procedure(func, {
+        signerPermissions: false,
+      });
+
+      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+        "Current Account doesn't have the required permissions to execute this procedure"
+      );
+
+      proc = new Procedure(func, async () => ({ identityRoles: false }));
+
+      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+        "Current Identity doesn't have the required roles to execute this procedure"
       );
     });
   });
@@ -304,7 +372,6 @@ describe('Procedure class', () => {
 
       const proc1 = new Procedure(async () => returnValue);
       const proc2 = new Procedure(async () => undefined);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       proc2.context = context;
       const result = await proc2.addProcedure(proc1);
 
@@ -322,6 +389,28 @@ describe('Procedure class', () => {
       const result = proc2.addProcedure(proc1);
 
       return expect(result).rejects.toThrow(errorMsg);
+    });
+  });
+
+  describe('method: storage', () => {
+    let proc: baseModule.Procedure<void, undefined, { something: string }>;
+
+    beforeAll(() => {
+      proc = new Procedure(async () => undefined);
+    });
+
+    test('should return the storage', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc as any)._storage = { something: 'yeah' };
+
+      expect(proc.storage).toEqual({ something: 'yeah' });
+    });
+
+    test("should throw an error if the storage hasnt't been set", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc as any)._storage = null;
+
+      expect(() => proc.storage).toThrow('Attempt to access storage before it was set');
     });
   });
 });

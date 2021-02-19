@@ -1,9 +1,7 @@
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
 
-import { IdentityBalance } from '~/api/entities/types';
 import { Identity, Namespace, SecurityToken } from '~/internal';
-import { PaginationOptions, ResultSet } from '~/types';
+import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
 import { balanceToBigNumber, identityIdToString, stringToTicker } from '~/utils/conversion';
 import { requestPaginated } from '~/utils/internal';
 
@@ -32,16 +30,10 @@ export class TokenHolders extends Namespace<SecurityToken> {
     });
 
     const data: { identity: Identity; balance: BigNumber }[] = entries.map(
-      ([storageKey, balance]) => {
-        const entry = {
-          identity: new Identity(
-            { did: identityIdToString(storageKey.args[1] as IdentityId) },
-            context
-          ),
-          balance: balanceToBigNumber(balance),
-        };
-        return entry;
-      }
+      ([storageKey, balance]) => ({
+        identity: new Identity({ did: identityIdToString(storageKey.args[1]) }, context),
+        balance: balanceToBigNumber(balance),
+      })
     );
 
     return {

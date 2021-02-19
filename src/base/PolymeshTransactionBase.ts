@@ -92,9 +92,7 @@ export abstract class PolymeshTransactionBase<
    *
    * wrappers for values that will exist after this transaction has executed
    */
-  protected postValues: PostTransactionValueArray<
-    Values
-  > = ([] as unknown) as PostTransactionValueArray<Values>;
+  protected postValues: PostTransactionValueArray<Values> = ([] as unknown) as PostTransactionValueArray<Values>;
 
   /**
    * @hidden
@@ -197,7 +195,7 @@ export abstract class PolymeshTransactionBase<
 
     this.setTag();
 
-    const gettingReceipt: Promise<ISubmittableResult> = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const txWithArgs = this.composeTx();
       const gettingUnsub = txWithArgs.signAndSend(this.signer, receipt => {
         const { status } = receipt;
@@ -258,8 +256,6 @@ export abstract class PolymeshTransactionBase<
           reject(new PolymeshError(error));
         });
     });
-
-    return gettingReceipt;
   }
 
   /**

@@ -6,12 +6,13 @@ import {
   Portfolio,
   renamePortfolio,
   RenamePortfolioParams,
-  TransactionQueue,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import { numberToU64, stringToIdentityId, textToString } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -43,35 +44,32 @@ export class NumberedPortfolio extends Portfolio {
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { id } = identifiers;
+    const { id, did } = identifiers;
 
     this.id = id;
+
+    this.delete = createProcedureMethod(() => [deletePortfolio, { did, id }], context);
+    this.modifyName = createProcedureMethod(
+      args => [renamePortfolio, { ...args, did, id }],
+      context
+    );
   }
 
   /**
    * Delete this Portfolio
+   *
+   * @note required role:
+   *   - Portfolio Custodian
    */
-  public async delete(): Promise<TransactionQueue<void>> {
-    const {
-      id,
-      owner: { did },
-    } = this;
-    return deletePortfolio.prepare({ did, id }, this.context);
-  }
+  public delete: ProcedureMethod<void, void>;
 
   /**
    * Rename portfolio
+   *
+   * @note required role:
+   *   - Portfolio Custodian
    */
-  public async modifyName(
-    args: RenamePortfolioParams
-  ): Promise<TransactionQueue<NumberedPortfolio>> {
-    const {
-      id,
-      owner: { did },
-    } = this;
-    const { name } = args;
-    return renamePortfolio.prepare({ did, id, name }, this.context);
-  }
+  public modifyName: ProcedureMethod<RenamePortfolioParams, NumberedPortfolio>;
 
   /**
    * Return the Portfolio name

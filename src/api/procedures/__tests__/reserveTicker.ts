@@ -1,11 +1,11 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
+import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
   createTickerReservationResolver,
-  getRequiredRoles,
+  getAuthorization,
   prepareReserveTicker,
   ReserveTickerParams,
 } from '~/api/procedures/reserveTicker';
@@ -81,44 +81,6 @@ describe('reserveTicker procedure', () => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-  });
-
-  test('should throw if ticker symbol is invalid', async () => {
-    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
-      mockContext
-    );
-
-    let error;
-
-    try {
-      await prepareReserveTicker.call(proc, { ticker: '' });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe(
-      'The ticker must be between 1 and 12 characters long and cannot contain lower case letters'
-    );
-
-    try {
-      await prepareReserveTicker.call(proc, { ticker: 'ALONGLONGTICKERSYMBOL' });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe(
-      'The ticker must be between 1 and 12 characters long and cannot contain lower case letters'
-    );
-
-    try {
-      await prepareReserveTicker.call(proc, { ticker: 'test' });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe(
-      'The ticker must be between 1 and 12 characters long and cannot contain lower case letters'
-    );
   });
 
   test('should throw an error if the ticker is already reserved', async () => {
@@ -260,23 +222,29 @@ describe('tickerReservationResolver', () => {
   });
 });
 
-describe('getRequiredRoles', () => {
-  test('should return a ticker owner role if extending a reservation', () => {
+describe('getAuthorization', () => {
+  test('should return the appropriate roles and permissions', () => {
     const ticker = 'someTicker';
     const args = {
       ticker,
       extendPeriod: true,
     };
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TickerOwner, ticker }]);
-  });
-
-  test('should return an empty array if not extending a reservation', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
+    const signerPermissions = {
+      transactions: [TxTags.asset.RegisterTicker],
+      tokens: [],
+      portfolios: [],
     };
 
-    expect(getRequiredRoles(args)).toEqual([]);
+    expect(getAuthorization(args)).toEqual({
+      identityRoles: [{ type: RoleType.TickerOwner, ticker }],
+      signerPermissions,
+    });
+
+    args.extendPeriod = false;
+
+    expect(getAuthorization(args)).toEqual({
+      signerPermissions,
+    });
   });
 });

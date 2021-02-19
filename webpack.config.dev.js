@@ -29,6 +29,11 @@ const devConfig = {
           configFileName: 'tsconfig.dev.json',
         },
       },
+      {
+        test: /\.mjs$/,
+        include: /node_modules/,
+        type: 'javascript/auto',
+      },
     ],
   },
 

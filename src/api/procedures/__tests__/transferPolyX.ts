@@ -2,10 +2,15 @@ import BigNumber from 'bignumber.js';
 import { Memo } from 'polymesh-types/polymesh';
 import sinon from 'sinon';
 
-import { prepareTransferPolyX, TransferPolyXParams } from '~/api/procedures/transferPolyX';
+import {
+  getAuthorization,
+  prepareTransferPolyX,
+  TransferPolyXParams,
+} from '~/api/procedures/transferPolyX';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -149,5 +154,32 @@ describe('transferPolyX procedure', () => {
       rawAmount,
       rawMemo
     );
+  });
+
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const memo = 'something';
+      const args = {
+        memo,
+      } as TransferPolyXParams;
+
+      expect(getAuthorization(args)).toEqual({
+        signerPermissions: {
+          transactions: [TxTags.balances.TransferWithMemo],
+          tokens: [],
+          portfolios: [],
+        },
+      });
+
+      args.memo = undefined;
+
+      expect(getAuthorization(args)).toEqual({
+        signerPermissions: {
+          transactions: [TxTags.balances.Transfer],
+          tokens: [],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

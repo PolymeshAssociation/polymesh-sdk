@@ -1,18 +1,27 @@
 import { Vec } from '@polkadot/types';
-import { IdentityId, Ticker, TrustedIssuer } from 'polymesh-types/types';
+import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareModifyTokenTrustedClaimIssuers,
 } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
-import { Context, Identity, SecurityToken } from '~/internal';
+import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TrustedClaimIssuer } from '~/types';
 import { PolymeshTx, TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
 
 describe('modifyTokenTrustedClaimIssuers procedure', () => {
   let mockContext: Mocked<Context>;
@@ -45,7 +54,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
     ticker = 'someTicker';
     claimIssuerDids = ['aDid', 'otherDid', 'differentDid'];
     claimIssuers = claimIssuerDids.map(did => ({
-      identity: new Identity({ did }, mockContext),
+      identity: entityMockUtils.getIdentityInstance({ did }),
     }));
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawClaimIssuers = claimIssuerDids.map(did =>
@@ -182,7 +191,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       {},
       rawClaimIssuers.map(issuer => [rawTicker, issuer])
     );
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should not add a remove claim issuers transaction if there are no default claim issuers set on the token (set)', async () => {
@@ -204,7 +213,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       rawClaimIssuers.map(issuer => [rawTicker, issuer])
     );
     sinon.assert.calledOnce(addBatchTransactionStub);
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should not add an add claim issuers transaction if there are no claim issuers passed as arguments (set)', async () => {
@@ -225,7 +234,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       currentClaimIssuers.map(({ issuer }) => [rawTicker, issuer])
     );
     sinon.assert.calledOnce(addBatchTransactionStub);
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should throw an error if trying to remove an Identity that is not a trusted claim issuer', async () => {
@@ -268,7 +277,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       {},
       currentClaimIssuers.map(({ issuer }) => [rawTicker, issuer])
     );
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should throw an error if trying to add an Identity that is already a Trusted Claim Issuer', async () => {
@@ -311,17 +320,50 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       {},
       rawClaimIssuers.map(issuer => [rawTicker, issuer])
     );
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(
+        boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Add, claimIssuers: [] })
+      ).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [TxTags.complianceManager.AddDefaultTrustedClaimIssuer],
+          tokens: [token],
+          portfolios: [],
+        },
+      });
+
+      expect(
+        boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Remove, claimIssuers: [] })
+      ).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer],
+          tokens: [token],
+          portfolios: [],
+        },
+      });
+
+      expect(
+        boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Set, claimIssuers: [] })
+      ).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          transactions: [
+            TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
+            TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
+          ],
+          tokens: [token],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

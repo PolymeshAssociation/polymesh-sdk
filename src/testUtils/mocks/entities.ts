@@ -17,30 +17,38 @@ import {
   // NOTE uncomment in Governance v2 upgrade
   // Proposal,
   SecurityToken,
+  Sto,
   TickerReservation,
   Venue,
 } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
+  ActiveTransferRestrictions,
   Authorization,
   AuthorizationType,
+  CountTransferRestriction,
   ExtrinsicData,
   InstructionDetails,
   InstructionStatus,
   InstructionType,
   Leg,
+  PercentageTransferRestriction,
   PortfolioBalance,
+  ResultSet,
   SecondaryKey,
   SecurityTokenDetails,
+  StoDetails,
   TickerReservationDetails,
   TickerReservationStatus,
+  TokenIdentifier,
   TransferStatus,
   VenueDetails,
   VenueType,
   // NOTE uncomment in Governance v2 upgrade
   // TxTags,
 } from '~/types';
+import { MAX_TRANSFER_MANAGERS } from '~/utils/constants';
 
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
@@ -56,6 +64,7 @@ const mockInstanceContainer = {
   instruction: {} as MockInstruction,
   numberedPortfolio: {} as MockNumberedPortfolio,
   defaultPortfolio: {} as MockDefaultPortfolio,
+  sto: {} as MockSto,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -71,6 +80,7 @@ type MockVenue = Mocked<Venue>;
 type MockInstruction = Mocked<Instruction>;
 type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
 type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
+type MockSto = Mocked<Sto>;
 
 interface IdentityOptions {
   did?: string;
@@ -81,6 +91,8 @@ interface IdentityOptions {
   authorizations?: {
     getReceived: AuthorizationRequest[];
   };
+  getVenues?: Venue[];
+  getScopeId?: string;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -98,11 +110,15 @@ interface SecurityTokenOptions {
   currentFundingRound?: string;
   isFrozen?: boolean;
   transfersCanTransfer?: TransferStatus;
+  getIdentifiers?: TokenIdentifier[];
+  transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
+  transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
 }
 
 interface AuthorizationRequestOptions {
-  targetDid?: string;
-  issuerDid?: string;
+  authId?: BigNumber;
+  target?: Identity;
+  issuer?: Identity;
   expiry?: Date | null;
   data?: Authorization;
 }
@@ -129,6 +145,7 @@ interface CurrentAccountOptions extends AccountOptions {
 interface VenueOptions {
   id?: BigNumber;
   details?: Partial<VenueDetails>;
+  exists?: boolean;
 }
 
 interface NumberedPortfolioOptions {
@@ -151,10 +168,19 @@ interface DefaultPortfolioOptions {
   isCustodiedBy?: boolean;
 }
 
+interface StoOptions {
+  details?: Partial<StoDetails>;
+}
+
 interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
-  getLegs?: Leg[];
+  getLegs?: ResultSet<Leg>;
+}
+
+interface StoOptions {
+  id?: BigNumber;
+  ticker?: string;
 }
 
 let identityConstructorStub: SinonStub;
@@ -169,20 +195,29 @@ let venueConstructorStub: SinonStub;
 let instructionConstructorStub: SinonStub;
 let numberedPortfolioConstructorStub: SinonStub;
 let defaultPortfolioConstructorStub: SinonStub;
+let stoConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
 let securityTokenIsFrozenStub: SinonStub;
 let securityTokenTransfersCanTransferStub: SinonStub;
+let securityTokenGetIdentifiersStub: SinonStub;
+let securityTokenTransferRestrictionsCountGetStub: SinonStub;
+let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
 let identityGetPrimaryKeyStub: SinonStub;
-let identityGetReceivedStub: SinonStub;
+let identityAuthorizationsGetReceivedStub: SinonStub;
+let identityGetVenuesStub: SinonStub;
+let identityGetScopeIdStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
 let currentIdentityGetPrimaryKeyStub: SinonStub;
+let currentIdentityAuthorizationsGetReceivedStub: SinonStub;
+let currentIdentityGetVenuesStub: SinonStub;
+let currentIdentityGetScopeIdStub: SinonStub;
 let currentIdentityGetSecondaryKeysStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
@@ -192,6 +227,7 @@ let currentAccountGetIdentityStub: SinonStub;
 let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let venueDetailsStub: SinonStub;
+let venueExistsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
@@ -203,6 +239,7 @@ let defaultPortfolioIsOwnedByStub: SinonStub;
 let defaultPortfolioGetTokenBalancesStub: SinonStub;
 let defaultPortfolioGetCustodianStub: SinonStub;
 let defaultPortfolioIsCustodiedByStub: SinonStub;
+let stoDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -312,6 +349,15 @@ const MockInstructionClass = class {
   }
 };
 
+const MockStoClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return stoConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -372,6 +418,11 @@ export const mockDefaultPortfolioModule = (path: string) => (): object => ({
   DefaultPortfolio: MockDefaultPortfolioClass,
 });
 
+export const mockStoModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Sto: MockStoClass,
+});
+
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
@@ -379,6 +430,8 @@ const defaultIdentityOptions: IdentityOptions = {
   authorizations: {
     getReceived: [],
   },
+  getVenues: [],
+  getScopeId: 'someScopeId',
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -386,6 +439,11 @@ const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   hasValidCdd: true,
   getPrimaryKey: 'someAddress',
   getSecondaryKeys: [],
+  authorizations: {
+    getReceived: [],
+  },
+  getVenues: [],
+  getScopeId: 'someScopeId',
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -426,11 +484,21 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   currentFundingRound: 'Series A',
   isFrozen: false,
   transfersCanTransfer: TransferStatus.Success,
+  getIdentifiers: [],
+  transferRestrictionsCountGet: {
+    restrictions: [],
+    availableSlots: MAX_TRANSFER_MANAGERS,
+  },
+  transferRestrictionsPercentageGet: {
+    restrictions: [],
+    availableSlots: MAX_TRANSFER_MANAGERS,
+  },
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
-  targetDid: 'targetDid',
-  issuerDid: 'issuerDid',
+  authId: new BigNumber(1),
+  target: { did: 'targetDid' } as Identity,
+  issuer: { did: 'issuerDid' } as Identity,
   data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_TOKEN' },
   expiry: null,
 };
@@ -441,6 +509,7 @@ const defaultVenueOptions: VenueOptions = {
     type: VenueType.Distribution,
     description: 'someDescription',
   },
+  exists: true,
 };
 let venueOptions = defaultVenueOptions;
 const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
@@ -480,11 +549,18 @@ const defaultInstructionOptions: InstructionOptions = {
   details: {
     status: InstructionStatus.Pending,
     createdAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
-    validFrom: null,
+    tradeDate: null,
+    valueDate: null,
     type: InstructionType.SettleOnAffirmation,
   },
 };
 let instructionOptions = defaultInstructionOptions;
+const defaultStoOptions: StoOptions = {
+  details: {} as StoDetails,
+  ticker: 'SOME_TICKER',
+  id: new BigNumber(1),
+};
+let stoOptions = defaultStoOptions;
 // NOTE uncomment in Governance v2 upgrade
 // const defaultProposalOptions: ProposalOptions = {
 //   pipId: new BigNumber(1),
@@ -540,6 +616,7 @@ function configureVenue(opts: VenueOptions): void {
   const venue = ({
     id: opts.id,
     details: venueDetailsStub.resolves(details),
+    exists: venueExistsStub.resolves(opts.exists),
   } as unknown) as MockVenue;
 
   Object.assign(mockInstanceContainer.venue, venue);
@@ -557,6 +634,7 @@ function configureVenue(opts: VenueOptions): void {
 function initVenue(opts?: VenueOptions): void {
   venueConstructorStub = sinon.stub();
   venueDetailsStub = sinon.stub();
+  venueExistsStub = sinon.stub();
 
   venueOptions = { ...defaultVenueOptions, ...opts };
 
@@ -580,7 +658,8 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
   } as unknown) as MockNumberedPortfolio;
 
   Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
-  numberedPortfolioConstructorStub.callsFake(args => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  numberedPortfolioConstructorStub.callsFake(({ did, ...args } = {}) => {
     const value = merge({}, numberedPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
@@ -623,8 +702,9 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
   } as unknown) as MockDefaultPortfolio;
 
   Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
-  defaultPortfolioConstructorStub.callsFake(() => {
-    const value = merge({}, defaultPortfolio);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  defaultPortfolioConstructorStub.callsFake(({ did, ...args } = {}) => {
+    const value = merge({}, defaultPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
     Object.setPrototypeOf(entities.DefaultPortfolio.prototype, entities.Portfolio.prototype);
@@ -655,8 +735,9 @@ function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
  */
 function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void {
   const authorizationRequest = ({
-    targetDid: opts.targetDid,
-    issuerDid: opts.issuerDid,
+    authId: opts.authId,
+    issuer: opts.issuer,
+    target: opts.target,
     expiry: opts.expiry,
     data: opts.data,
   } as unknown) as MockAuthorizationRequest;
@@ -695,6 +776,19 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     transfers: {
       canTransfer: securityTokenTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
     },
+    getIdentifiers: securityTokenGetIdentifiersStub.resolves(opts.getIdentifiers),
+    transferRestrictions: {
+      count: {
+        get: securityTokenTransferRestrictionsCountGetStub.resolves(
+          opts.transferRestrictionsCountGet
+        ),
+      },
+      percentage: {
+        get: securityTokenTransferRestrictionsPercentageGetStub.resolves(
+          opts.transferRestrictionsPercentageGet
+        ),
+      },
+    },
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -715,6 +809,9 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenCurrentFundingRoundStub = sinon.stub();
   securityTokenIsFrozenStub = sinon.stub();
   securityTokenTransfersCanTransferStub = sinon.stub();
+  securityTokenGetIdentifiersStub = sinon.stub();
+  securityTokenTransferRestrictionsCountGetStub = sinon.stub();
+  securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -769,8 +866,10 @@ function configureIdentity(opts: IdentityOptions): void {
     getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
     portfolios: {},
     authorizations: {
-      getReceived: sinon.stub().resolves(opts.authorizations?.getReceived),
+      getReceived: identityAuthorizationsGetReceivedStub.resolves(opts.authorizations?.getReceived),
     },
+    getVenues: identityGetVenuesStub.resolves(opts.getVenues),
+    getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -791,7 +890,9 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRoleStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
   identityGetPrimaryKeyStub = sinon.stub();
-  identityGetReceivedStub = sinon.stub();
+  identityAuthorizationsGetReceivedStub = sinon.stub();
+  identityGetVenuesStub = sinon.stub();
+  identityGetScopeIdStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -804,14 +905,17 @@ function initIdentity(opts?: IdentityOptions): void {
  */
 function configureInstruction(opts: InstructionOptions): void {
   const details = { venue: mockInstanceContainer.venue, ...opts.details };
-  const legs = opts.getLegs || [
-    {
-      from: mockInstanceContainer.numberedPortfolio,
-      to: mockInstanceContainer.numberedPortfolio,
-      token: mockInstanceContainer.securityToken,
-      amount: new BigNumber(100),
-    },
-  ];
+  const legs = opts.getLegs || {
+    data: [
+      {
+        from: mockInstanceContainer.numberedPortfolio,
+        to: mockInstanceContainer.numberedPortfolio,
+        token: mockInstanceContainer.securityToken,
+        amount: new BigNumber(100),
+      },
+    ],
+    next: null,
+  };
   const instruction = ({
     details: instructionDetailsStub.resolves(details),
     getLegs: instructionGetLegsStub.resolves(legs),
@@ -851,6 +955,14 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
     hasValidCdd: currentIdentityHasValidCddStub.resolves(opts.hasValidCdd),
     getPrimaryKey: currentIdentityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
     getSecondaryKeys: currentIdentityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
+    portfolios: {},
+    authorizations: {
+      getReceived: currentIdentityAuthorizationsGetReceivedStub.resolves(
+        opts.authorizations?.getReceived
+      ),
+    },
+    getVenues: currentIdentityGetVenuesStub.resolves(opts.getVenues),
+    getScopeId: currentIdentityGetScopeIdStub.resolves(opts.getScopeId),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
@@ -874,6 +986,9 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityHasRoleStub = sinon.stub();
   currentIdentityHasValidCddStub = sinon.stub();
   currentIdentityGetPrimaryKeyStub = sinon.stub();
+  currentIdentityAuthorizationsGetReceivedStub = sinon.stub();
+  currentIdentityGetVenuesStub = sinon.stub();
+  currentIdentityGetScopeIdStub = sinon.stub();
   currentIdentityGetSecondaryKeysStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
@@ -964,6 +1079,39 @@ function initCurrentAccount(opts?: CurrentAccountOptions): void {
 
 /**
  * @hidden
+ * Configure the Security Token Offering instance
+ */
+function configureSto(opts: StoOptions): void {
+  const details = { owner: mockInstanceContainer.identity, ...opts.details };
+  const sto = ({
+    details: stoDetailsStub.resolves(details),
+    ticker: opts.ticker,
+    id: opts.id,
+  } as unknown) as MockSto;
+
+  Object.assign(mockInstanceContainer.sto, sto);
+  stoConstructorStub.callsFake(args => {
+    const value = merge({}, sto, args);
+    Object.setPrototypeOf(value, require('~/internal').Sto.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Sto instance
+ */
+function initSto(opts?: StoOptions): void {
+  stoConstructorStub = sinon.stub();
+  stoDetailsStub = sinon.stub();
+
+  stoOptions = merge({}, defaultStoOptions, opts);
+
+  configureSto(stoOptions);
+}
+
+/**
+ * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
@@ -980,6 +1128,7 @@ export function configureMocks(opts?: {
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
+  stoOptions?: StoOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -1057,6 +1206,12 @@ export function configureMocks(opts?: {
     ...opts?.instructionOptions,
   };
   configureInstruction(tempInstructionOptions);
+
+  const tempStoOptions = {
+    ...stoOptions,
+    ...opts?.stoOptions,
+  };
+  configureSto(tempStoOptions);
 }
 
 /**
@@ -1077,6 +1232,7 @@ export function initMocks(opts?: {
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
+  stoOptions?: StoOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -1117,6 +1273,9 @@ export function initMocks(opts?: {
 
   // Instruction
   initInstruction(opts?.instructionOptions);
+
+  // Sto
+  initSto(opts?.stoOptions);
 }
 
 /**
@@ -1135,6 +1294,7 @@ export function cleanup(): void {
   // mockInstanceContainer.proposal = {} as MockProposal;
   mockInstanceContainer.venue = {} as MockVenue;
   mockInstanceContainer.instruction = {} as MockInstruction;
+  mockInstanceContainer.sto = {} as MockSto;
 }
 
 /**
@@ -1157,6 +1317,7 @@ export function reset(): void {
     instructionOptions,
     numberedPortfolioOptions,
     defaultPortfolioOptions,
+    stoOptions,
   });
 }
 
@@ -1166,7 +1327,7 @@ export function reset(): void {
  */
 export function getIdentityInstance(opts?: IdentityOptions): MockIdentity {
   if (opts) {
-    configureIdentity(opts);
+    configureIdentity({ ...defaultIdentityOptions, ...opts });
   }
 
   return new MockIdentityClass() as MockIdentity;
@@ -1216,8 +1377,24 @@ export function getIdentityGetPrimaryKeyStub(): SinonStub {
  * @hidden
  * Retrieve the stub of the `Identity.authorizations.getReceived` method
  */
-export function getIdentityGetReceivedStub(): SinonStub {
-  return identityGetReceivedStub;
+export function getIdentityAuthorizationsGetReceivedStub(): SinonStub {
+  return identityAuthorizationsGetReceivedStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Identity.getVenues` method
+ */
+export function getIdentityGetVenuesStub(): SinonStub {
+  return identityGetVenuesStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Identity.getScopeId` method
+ */
+export function getIdentityGetScopeIdStub(): SinonStub {
+  return identityGetScopeIdStub;
 }
 
 /**
@@ -1226,7 +1403,7 @@ export function getIdentityGetReceivedStub(): SinonStub {
  */
 export function getCurrentIdentityInstance(opts?: CurrentIdentityOptions): MockCurrentIdentity {
   if (opts) {
-    configureCurrentIdentity(opts);
+    configureCurrentIdentity({ ...defaultCurrentIdentityOptions, ...opts });
   }
 
   return new MockCurrentIdentityClass() as MockCurrentIdentity;
@@ -1266,11 +1443,35 @@ export function getCurrentIdentityGetPrimaryKeyStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `CurrentIdentity.getVenues` method
+ */
+export function getCurrentIdentityGetVenuesStub(): SinonStub {
+  return currentIdentityGetVenuesStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.getScopeId` method
+ */
+export function getCurrentIdentityGetScopeIdStub(): SinonStub {
+  return currentIdentityGetScopeIdStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.authorizations.getReceived` method
+ */
+export function getCurrentIdentityAuthorizationsGetReceivedStub(): SinonStub {
+  return currentIdentityAuthorizationsGetReceivedStub;
+}
+
+/**
+ * @hidden
  * Retrieve an Account instance
  */
 export function getAccountInstance(opts?: AccountOptions): MockAccount {
   if (opts) {
-    configureAccount(opts);
+    configureAccount({ ...defaultAccountOptions, ...opts });
   }
 
   return new MockAccountClass() as MockAccount;
@@ -1306,7 +1507,7 @@ export function getAccountGetTransactionHistoryStub(): SinonStub {
  */
 export function getCurrentAccountInstance(opts?: CurrentAccountOptions): MockCurrentAccount {
   if (opts) {
-    configureCurrentAccount(opts);
+    configureCurrentAccount({ ...defaultCurrentAccountOptions, ...opts });
   }
 
   return new MockCurrentAccountClass() as MockCurrentAccount;
@@ -1346,6 +1547,14 @@ export function getNumberedPortfolioIsCustodiedByStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `NumberedPortfolio.getCustodian` method
+ */
+export function getNumberedPortfolioGetCustodianStub(): SinonStub {
+  return numberedPortfolioGetCustodianStub;
+}
+
+/**
+ * @hidden
  * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
  */
 export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
@@ -1360,7 +1569,7 @@ export function getTickerReservationInstance(
   opts?: TickerReservationOptions
 ): MockTickerReservation {
   if (opts) {
-    configureTickerReservation(opts);
+    configureTickerReservation({ ...defaultTickerReservationOptions, ...opts });
   }
 
   return new MockTickerReservationClass() as MockTickerReservation;
@@ -1388,7 +1597,7 @@ export function getTickerReservationDetailsStub(
  */
 export function getSecurityTokenInstance(opts?: SecurityTokenOptions): MockSecurityToken {
   if (opts) {
-    configureSecurityToken(opts);
+    configureSecurityToken({ ...defaultSecurityTokenOptions, ...opts });
   }
 
   return new MockSecurityTokenClass() as MockSecurityToken;
@@ -1434,6 +1643,18 @@ export function getSecurityTokenIsFrozenStub(frozen?: boolean): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `SecurityToken.getIdentifiers` method
+ */
+export function getSecurityTokenGetIdentifiersStub(identifiers?: TokenIdentifier): SinonStub {
+  if (identifiers !== undefined) {
+    return securityTokenGetIdentifiersStub.resolves(identifiers);
+  }
+
+  return securityTokenGetIdentifiersStub;
+}
+
+/**
+ * @hidden
  * Retrieve the stub of the `SecurityToken.Transfers.canTransfer` method
  */
 export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus): SinonStub {
@@ -1446,13 +1667,41 @@ export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus
 
 /**
  * @hidden
+ * Retrieve the stub of the `SecurityToken.transferRestictions.count.get` method
+ */
+export function getSecurityTokenTransferRestrictionsCountGetStub(
+  restrictions?: ActiveTransferRestrictions<CountTransferRestriction>
+): SinonStub {
+  if (restrictions) {
+    return securityTokenTransferRestrictionsCountGetStub.resolves(restrictions);
+  }
+
+  return securityTokenTransferRestrictionsCountGetStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.transferRestictions.pecentage.get` method
+ */
+export function getSecurityTokenTransferRestrictionsPercentageGetStub(
+  restrictions?: ActiveTransferRestrictions<PercentageTransferRestriction>
+): SinonStub {
+  if (restrictions) {
+    return securityTokenTransferRestrictionsPercentageGetStub.resolves(restrictions);
+  }
+
+  return securityTokenTransferRestrictionsPercentageGetStub;
+}
+
+/**
+ * @hidden
  * Retrieve an Authorization Request instance
  */
 export function getAuthorizationRequestInstance(
   opts?: AuthorizationRequestOptions
 ): MockAuthorizationRequest {
   if (opts) {
-    configureAuthorizationRequest(opts);
+    configureAuthorizationRequest({ ...defaultAuthorizationRequestOptions, ...opts });
   }
 
   return new MockAuthorizationRequestClass() as MockAuthorizationRequest;
@@ -1478,7 +1727,7 @@ export function getAuthorizationRequestInstance(
  */
 export function getVenueInstance(opts?: VenueOptions): MockVenue {
   if (opts) {
-    configureVenue(opts);
+    configureVenue({ ...defaultVenueOptions, ...opts });
   }
 
   return new MockVenueClass() as MockVenue;
@@ -1506,7 +1755,7 @@ export function getNumberedPortfolioInstance(
   opts?: NumberedPortfolioOptions
 ): MockNumberedPortfolio {
   if (opts) {
-    configureNumberedPortfolio(opts);
+    configureNumberedPortfolio({ ...defaultNumberedPortfolioOptions, ...opts });
   }
 
   return new MockNumberedPortfolioClass() as MockNumberedPortfolio;
@@ -1518,7 +1767,7 @@ export function getNumberedPortfolioInstance(
  */
 export function getDefaultPortfolioInstance(opts?: DefaultPortfolioOptions): MockDefaultPortfolio {
   if (opts) {
-    configureDefaultPortfolio(opts);
+    configureDefaultPortfolio({ ...defaultDefaultPortfolioOptions, ...opts });
   }
 
   return new MockDefaultPortfolioClass() as MockDefaultPortfolio;
@@ -1530,7 +1779,7 @@ export function getDefaultPortfolioInstance(opts?: DefaultPortfolioOptions): Moc
  */
 export function getInstructionInstance(opts?: InstructionOptions): MockInstruction {
   if (opts) {
-    configureInstruction(opts);
+    configureInstruction({ ...defaultInstructionOptions, ...opts });
   }
 
   return new MockInstructionClass() as MockInstruction;
@@ -1548,4 +1797,52 @@ export function getInstructionDetailsStub(details?: Partial<InstructionDetails>)
     });
   }
   return instructionDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Instruction.getLegs` method
+ */
+export function getInstructionGetLegsStub(legs?: ResultSet<Leg>): SinonStub {
+  if (legs) {
+    return instructionGetLegsStub.resolves({
+      ...defaultInstructionOptions.getLegs,
+      ...legs,
+    });
+  }
+  return instructionGetLegsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve an Sto instance
+ */
+export function getStoInstance(opts?: StoOptions): MockSto {
+  if (opts) {
+    configureSto({ ...defaultStoOptions, ...opts });
+  }
+
+  return new MockStoClass() as MockSto;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Sto.details` method
+ */
+export function getStoDetailsStub(details?: Partial<StoDetails>): SinonStub {
+  if (details) {
+    return stoDetailsStub.resolves({
+      ...defaultStoOptions.details,
+      ...details,
+    });
+  }
+  return stoDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the Sto constructor stub
+ */
+export function getStoConstructorStub(): SinonStub {
+  return stoConstructorStub;
 }

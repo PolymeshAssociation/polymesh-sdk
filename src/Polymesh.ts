@@ -7,8 +7,8 @@ import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
-import { polymesh } from 'polymesh-types/definitions';
-import { Ticker, TxTag } from 'polymesh-types/types';
+import schema from 'polymesh-types/schema';
+import { TxTag } from 'polymesh-types/types';
 
 import {
   Account,
@@ -21,7 +21,6 @@ import {
   ReserveTickerParams,
   SecurityToken,
   TickerReservation,
-  TransactionQueue,
   transferPolyX,
   TransferPolyXParams,
 } from '~/internal';
@@ -39,6 +38,7 @@ import {
   UiKeyring,
   UnsubCallback,
 } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import {
   moduleAddressToString,
   signerToString,
@@ -48,7 +48,7 @@ import {
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { getDid, stringIsClean } from '~/utils/internal';
+import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/internal';
 
 import { Claims } from './Claims';
 // import { Governance } from './Governance';
@@ -60,15 +60,6 @@ interface ConnectParamsBase {
   signer?: PolkadotSigner;
   middleware?: MiddlewareConfig;
 }
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/**
- * @hidden
- */
-function isUiKeyring(keyring: any): keyring is UiKeyring {
-  return !!keyring.keyring;
-}
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**
  * Main entry point of the Polymesh SDK
@@ -93,6 +84,12 @@ export class Polymesh {
     // this.governance = new Governance(context);
     this.claims = new Claims(context);
     this.middleware = new Middleware(context);
+
+    this.transferPolyX = createProcedureMethod(args => [transferPolyX, args], context);
+
+    this.reserveTicker = createProcedureMethod(args => [reserveTicker, args], context);
+
+    this.registerIdentity = createProcedureMethod(args => [registerIdentity, args], context);
   }
 
   /**
@@ -125,9 +122,19 @@ export class Polymesh {
    * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
    * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
    * @param params.middleware - middleware API URL and key (optional, used for historic queries)
-   * @param params.accountUri - account URI or mnemonic
+   * @param params.accountUri - account URI
    */
   static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
+
+  /**
+   * Create the instance and connect to the Polymesh node using an account mnemonic
+   *
+   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
+   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
+   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
+   * @param params.accountMnemonic - account mnemonic
+   */
+  static async connect(params: ConnectParamsBase & { accountMnemonic: string }): Promise<Polymesh>;
 
   /**
    * Create the instance and connect to the Polymesh node without an account
@@ -144,21 +151,27 @@ export class Polymesh {
       accountSeed?: string;
       keyring?: CommonKeyring | UiKeyring;
       accountUri?: string;
+      accountMnemonic?: string;
       middleware?: MiddlewareConfig;
     }
   ): Promise<Polymesh> {
-    const { nodeUrl, accountSeed, keyring, accountUri, signer, middleware } = params;
+    const {
+      nodeUrl,
+      accountSeed,
+      keyring,
+      accountUri,
+      accountMnemonic,
+      signer,
+      middleware,
+    } = params;
     let context: Context;
 
     try {
-      const { types, rpc } = polymesh;
+      const { types, rpc } = schema;
 
       const polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
-        // https://github.com/polkadot-js/api/releases/tag/v2.0.1 TODO @monitz87: remove once Polymesh is updated to substrate 2.0
-        types: {
-          ...types,
-        },
+        types,
         rpc,
       });
 
@@ -197,42 +210,21 @@ export class Polymesh {
         polymeshApi.setSigner(signer);
       }
 
-      if (accountSeed) {
-        context = await Context.create({
-          polymeshApi,
-          middlewareApi,
-          seed: accountSeed,
-        });
-      } else if (keyring) {
-        let keyringInstance: CommonKeyring;
-        if (isUiKeyring(keyring)) {
-          keyringInstance = keyring.keyring;
-        } else {
-          keyringInstance = keyring;
-        }
-        context = await Context.create({
-          polymeshApi,
-          middlewareApi,
-          keyring: keyringInstance,
-        });
-      } else if (accountUri) {
-        context = await Context.create({
-          polymeshApi,
-          middlewareApi,
-          uri: accountUri,
-        });
-      } else {
-        context = await Context.create({
-          polymeshApi,
-          middlewareApi,
-        });
-      }
+      context = await Context.create({
+        polymeshApi,
+        middlewareApi,
+        accountSeed,
+        accountUri,
+        accountMnemonic,
+        keyring,
+      });
     } catch (err) {
       const { message, code } = err;
       throw new PolymeshError({
         code,
-        message: `Error while connecting to "${nodeUrl}": "${message ||
-          'The node couldn’t be reached'}"`,
+        message: `Error while connecting to "${nodeUrl}": "${
+          message || 'The node couldn’t be reached'
+        }"`,
       });
     }
 
@@ -262,9 +254,8 @@ export class Polymesh {
    * @param args.amount - amount of POLYX to be transferred
    * @param args.memo - identifier string to help differentiate transfers
    */
-  public transferPolyX(args: TransferPolyXParams): Promise<TransactionQueue<void>> {
-    return transferPolyX.prepare(args, this.context);
-  }
+
+  public transferPolyX: ProcedureMethod<TransferPolyXParams, void>;
 
   /**
    * Get the free/locked POLYX balance of an Account
@@ -321,10 +312,11 @@ export class Polymesh {
    *   The ticker will expire after a set amount of time, after which other users can reserve it
    *
    * @param args.ticker - ticker symbol to reserve
+   *
+   * @note required role:
+   *   - Ticker Owner
    */
-  public reserveTicker(args: ReserveTickerParams): Promise<TransactionQueue<TickerReservation>> {
-    return reserveTicker.prepare(args, this.context);
-  }
+  public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
 
   /**
    * Check if a ticker hasn't been reserved
@@ -379,22 +371,17 @@ export class Polymesh {
       stringToIdentityId(did, context)
     );
 
-    const tickerReservations: TickerReservation[] = entries.reduce<TickerReservation[]>(
-      (result, [key, relation]) => {
-        if (relation.isTickerOwned) {
-          const ticker = tickerToString(key.args[1] as Ticker);
+    return entries.reduce<TickerReservation[]>((result, [key, relation]) => {
+      if (relation.isTickerOwned) {
+        const ticker = tickerToString(key.args[1]);
 
-          if (stringIsClean(ticker)) {
-            return [...result, new TickerReservation({ ticker }, context)];
-          }
+        if (isPrintableAscii(ticker)) {
+          return [...result, new TickerReservation({ ticker }, context)];
         }
+      }
 
-        return result;
-      },
-      []
-    );
-
-    return tickerReservations;
+      return result;
+    }, []);
   }
 
   /**
@@ -536,22 +523,17 @@ export class Polymesh {
       stringToIdentityId(did, context)
     );
 
-    const securityTokens: SecurityToken[] = entries.reduce<SecurityToken[]>(
-      (result, [key, relation]) => {
-        if (relation.isAssetOwned) {
-          const ticker = tickerToString(key.args[1] as Ticker);
+    return entries.reduce<SecurityToken[]>((result, [key, relation]) => {
+      if (relation.isAssetOwned) {
+        const ticker = tickerToString(key.args[1]);
 
-          if (stringIsClean(ticker)) {
-            return [...result, new SecurityToken({ ticker }, context)];
-          }
+        if (isPrintableAscii(ticker)) {
+          return [...result, new SecurityToken({ ticker }, context)];
         }
+      }
 
-        return result;
-      },
-      []
-    );
-
-    return securityTokens;
+      return result;
+    }, []);
   }
 
   /**
@@ -635,10 +617,11 @@ export class Polymesh {
    * @note this may create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @note required role:
+   *   - Customer Due Diligence Provider
    */
-  public registerIdentity(args: RegisterIdentityParams): Promise<TransactionQueue<Identity>> {
-    return registerIdentity.prepare(args, this.context);
-  }
+  public registerIdentity: ProcedureMethod<RegisterIdentityParams, Identity>;
 
   /**
    * Retrieve the number of the latest block in the chain

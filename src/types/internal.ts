@@ -9,8 +9,9 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
-import { PostTransactionValue } from '~/internal';
+import { PostTransactionValue, TransactionQueue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { Permissions, ProcedureAuthorizationStatus, Role } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -180,3 +181,25 @@ export enum InstructionAffirmationOperation {
   Withdraw = 'Withdraw',
   Reject = 'Reject',
 }
+
+export enum TransferRestrictionType {
+  Count = 'Count',
+  Percentage = 'Percentage',
+}
+
+export interface TransferRestriction {
+  type: TransferRestrictionType;
+  value: BigNumber;
+}
+
+export interface ProcedureAuthorization {
+  signerPermissions?: Omit<Permissions, 'transactionGroups'> | boolean;
+  identityRoles?: Role[] | boolean;
+}
+
+export interface ProcedureMethod<MethodArgs, ReturnValue> {
+  (args: MethodArgs): Promise<TransactionQueue<ReturnValue>>;
+  checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
+}
+
+export type Falsyable<T> = T | null | undefined;

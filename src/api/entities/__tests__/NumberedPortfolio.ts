@@ -5,21 +5,26 @@ import {
   Context,
   deletePortfolio,
   Entity,
-  Identity,
   NumberedPortfolio,
   renamePortfolio,
   TransactionQueue,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import * as utilsConversionModule from '~/utils/conversion';
 
-describe('Numberedortfolio class', () => {
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+
+describe('NumberedPortfolio class', () => {
   let context: Context;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -28,10 +33,12 @@ describe('Numberedortfolio class', () => {
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   test('should extend entity', () => {
@@ -42,7 +49,7 @@ describe('Numberedortfolio class', () => {
     test('should assign Identity and id to instance', () => {
       const did = 'someDid';
       const id = new BigNumber(1);
-      const identity = new Identity({ did }, context);
+      const identity = entityMockUtils.getIdentityInstance({ did });
       const portfolio = new NumberedPortfolio({ did, id }, context);
 
       expect(portfolio.owner).toEqual(identity);
@@ -69,10 +76,7 @@ describe('Numberedortfolio class', () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(deletePortfolio, 'prepare')
-        .withArgs({ id, did }, context)
-        .resolves(expectedQueue);
+      sinon.stub(deletePortfolio, 'prepare').withArgs({ id, did }, context).resolves(expectedQueue);
 
       const queue = await numberedPortfolio.delete();
 

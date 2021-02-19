@@ -2,13 +2,16 @@ import BigNumber from 'bignumber.js';
 
 import {
   consumeAuthorizationRequests,
+  ConsumeAuthorizationRequestsParams,
   consumeJoinIdentityAuthorization,
+  ConsumeJoinIdentityAuthorizationParams,
   Context,
   Entity,
   Identity,
-  TransactionQueue,
 } from '~/internal';
 import { Authorization, AuthorizationType, Signer } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
+import { createProcedureMethod } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   authId: BigNumber;
@@ -90,23 +93,36 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
     this.authId = authId;
     this.expiry = expiry;
     this.data = data;
+
+    this.accept = createProcedureMethod<
+      void,
+      ConsumeAuthorizationRequestsParams | ConsumeJoinIdentityAuthorizationParams,
+      void
+    >(() => {
+      if (this.data.type === AuthorizationType.JoinIdentity) {
+        return [consumeJoinIdentityAuthorization, { authRequest: this, accept: true }];
+      }
+
+      return [consumeAuthorizationRequests, { authRequests: [this], accept: true }];
+    }, context);
+
+    this.remove = createProcedureMethod<
+      void,
+      ConsumeAuthorizationRequestsParams | ConsumeJoinIdentityAuthorizationParams,
+      void
+    >(() => {
+      if (this.data.type === AuthorizationType.JoinIdentity) {
+        return [consumeJoinIdentityAuthorization, { authRequest: this, accept: false }];
+      }
+
+      return [consumeAuthorizationRequests, { authRequests: [this], accept: false }];
+    }, context);
   }
 
   /**
    * Accept the authorization request. You must be the target of the request to be able to accept it
    */
-  public accept(): Promise<TransactionQueue> {
-    const {
-      context,
-      data: { type },
-    } = this;
-
-    if (type === AuthorizationType.JoinIdentity) {
-      return consumeJoinIdentityAuthorization.prepare({ authRequest: this, accept: true }, context);
-    }
-
-    return consumeAuthorizationRequests.prepare({ authRequests: [this], accept: true }, context);
-  }
+  public accept: ProcedureMethod<void, void>;
 
   /**
    * Remove the authorization request
@@ -114,24 +130,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
    * - If you are the request issuer, this will cancel the authorization
    * - If you are the request target, this will reject the authorization
    */
-  public remove(): Promise<TransactionQueue> {
-    const {
-      context,
-      data: { type },
-    } = this;
-
-    if (type === AuthorizationType.JoinIdentity) {
-      return consumeJoinIdentityAuthorization.prepare(
-        { authRequest: this, accept: false },
-        context
-      );
-    }
-
-    return consumeAuthorizationRequests.prepare(
-      { authRequests: [this], accept: false },
-      this.context
-    );
-  }
+  public remove: ProcedureMethod<void, void>;
 
   /**
    * Returns whether the Authorization Request has expired

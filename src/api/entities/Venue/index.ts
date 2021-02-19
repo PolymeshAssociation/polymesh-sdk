@@ -8,9 +8,10 @@ import {
   Entity,
   Identity,
   Instruction,
-  TransactionQueue,
+  PolymeshError,
 } from '~/internal';
-import { InstructionStatus } from '~/types';
+import { ErrorCode, InstructionStatus } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import {
   identityIdToString,
   meshVenueTypeToVenueType,
@@ -18,6 +19,7 @@ import {
   u64ToBigNumber,
   venueDetailsToString,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 import { VenueDetails } from './types';
 
@@ -53,6 +55,30 @@ export class Venue extends Entity<UniqueIdentifiers> {
     const { id } = identifiers;
 
     this.id = id;
+
+    this.addInstruction = createProcedureMethod(
+      args => [addInstruction, { ...args, venueId: id }],
+      context
+    );
+  }
+
+  /**
+   * Retrieve whether the Venue exists
+   */
+  public async exists(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
+
+    return !venueInfo.isEmpty;
   }
 
   /**
@@ -68,6 +94,15 @@ export class Venue extends Entity<UniqueIdentifiers> {
       id,
       context,
     } = this;
+
+    const exists = await this.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Venue doesn't exist",
+      });
+    }
 
     const venueInfo = await settlement.venueInfo(numberToU64(id, context));
 
@@ -94,6 +129,15 @@ export class Venue extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
+    const exists = await this.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Venue doesn't exist",
+      });
+    }
+
     const venueInfo = await settlement.venueInfo(numberToU64(id, context));
 
     const { instructions: rawInstructions } = venueInfo.unwrap();
@@ -110,15 +154,15 @@ export class Venue extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Creates a settlement instruction in this Venue
+   * Creates a settlement Instruction in this Venue
    *
    * @param args.legs - array of token movements (amount, from, to, token)
-   * @param args.validFrom - date from which the instruction is valid and can be authorized by the participants (optional, instruction will be valid from the start if not supplied)
-   * @param args.endBlock - block at which the instruction will be executed automatically (optional, the instruction will be executed when all participants have authorized it if not supplied)
+   * @param args.tradeDate - date at which the trade was agreed upon (optional, for offchain trades)
+   * @param args.valueDate - date at which the trade was executed (optional, for offchain trades)
+   * @param args.endBlock - block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
+   *
+   * @note required role:
+   *   - Venue Owner
    */
-  public async addInstruction(args: AddInstructionParams): Promise<TransactionQueue<Instruction>> {
-    const { id, context } = this;
-
-    return addInstruction.prepare({ ...args, venueId: id }, context);
-  }
+  public addInstruction: ProcedureMethod<AddInstructionParams, Instruction>;
 }

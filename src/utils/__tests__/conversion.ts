@@ -1,5 +1,5 @@
 import { bool, Bytes, u64 } from '@polkadot/types';
-import { AccountId, Balance, Moment } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Moment, Permill } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import {
   CddId,
@@ -9,15 +9,16 @@ import {
   MovePortfolioItem,
   PipId,
   PortfolioId,
+  PriceTier,
   ScopeId,
   SettlementType,
+  TransferManager,
   TrustedIssuer,
   VenueDetails,
 } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
   AssetName,
-  AssetTx,
   AssetType,
   AuthIdentifier,
   AuthorizationData,
@@ -39,8 +40,15 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities/SecurityToken';
-import { Account, Context, DefaultPortfolio, Identity, NumberedPortfolio } from '~/internal';
+import {
+  Account,
+  Context,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  SecurityToken,
+  Venue,
+} from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
 import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -60,19 +68,21 @@ import {
   KnownTokenType,
   Permissions,
   PermissionsLike,
-  PortfolioLike,
   PortfolioMovement,
   Scope,
   ScopeType,
   Signer,
+  StoStatus,
+  StoTier,
   TokenDocument,
   TokenIdentifierType,
   TransferStatus,
   TrustedClaimIssuer,
+  TxGroup,
   VenueType,
 } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
-import { MAX_DECIMALS, MAX_TICKER_LENGTH, MAX_TOKEN_AMOUNT } from '~/utils/constants';
+import { SignerType, SignerValue, TransferRestrictionType } from '~/types/internal';
+import { MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
   accountIdToString,
@@ -94,6 +104,7 @@ import {
   cddIdToString,
   cddStatusToBoolean,
   claimToMeshClaim,
+  claimTypeToMeshClaimType,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
   dateToMoment,
@@ -105,6 +116,8 @@ import {
   endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
   fundingRoundNameToString,
+  fundraiserTierToTier,
+  fundraiserToStoDetails,
   identityIdToString,
   isCusipValid,
   isIsinValid,
@@ -113,10 +126,12 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshClaimToClaim,
   meshClaimTypeToClaimType,
+  meshFundraiserStatusToStoStatus,
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
   meshScopeToScope,
   meshVenueTypeToVenueType,
+  middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
   // middlewareProposalToProposalDetails,
   moduleAddressToString,
@@ -125,6 +140,8 @@ import {
   numberToPipId,
   numberToU32,
   numberToU64,
+  percentageToPermill,
+  permillToBigNumber,
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
   portfolioIdToMeshPortfolioId,
@@ -133,6 +150,7 @@ import {
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
+  scopeIdToString,
   scopeToMeshScope,
   scopeToMiddlewareScope,
   secondaryKeyToMeshSecondaryKey,
@@ -141,6 +159,7 @@ import {
   signerToString,
   signerValueToSignatory,
   signerValueToSigner,
+  stoTierToPriceTier,
   stringToAccountId,
   stringToAssetName,
   stringToBytes,
@@ -166,8 +185,12 @@ import {
   tokenTypeToAssetType,
   transactionHexToTxTag,
   transactionToTxTag,
+  transferManagerToTransferRestriction,
+  transferRestrictionToTransferManager,
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
+  txGroupToTxTags,
+  txTagsToTxGroups,
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToTransferStatus,
@@ -195,6 +218,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
     '~/api/entities/NumberedPortfolio'
   )
+);
+jest.mock(
+  '~/api/entities/Venue',
+  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
 
 describe('tickerToDid', () => {
@@ -234,10 +261,7 @@ describe('stringToAssetName and assetNameToString', () => {
     const fakeResult = ('convertedName' as unknown) as AssetName;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AssetName', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('AssetName', value).returns(fakeResult);
 
     const result = stringToAssetName(value, context);
 
@@ -271,10 +295,7 @@ describe('booleanToBool and boolToBoolean', () => {
     const fakeResult = ('true' as unknown) as bool;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('bool', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('bool', value).returns(fakeResult);
 
     const result = booleanToBool(value, context);
 
@@ -308,10 +329,7 @@ describe('stringToBytes and bytesToString', () => {
     const fakeResult = ('convertedBytes' as unknown) as Bytes;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Bytes', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Bytes', value).returns(fakeResult);
 
     const result = stringToBytes(value, context);
 
@@ -345,10 +363,7 @@ describe('stringToInvestorZKProofData', () => {
     const fakeResult = ('convertedProof' as unknown) as InvestorZKProofData;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('InvestorZKProofData', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('InvestorZKProofData', value).returns(fakeResult);
 
     const result = stringToInvestorZKProofData(value, context);
 
@@ -374,7 +389,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
   test('portfolioMovementToMovePortfolioItem should convert a portfolio item into a polkadot move portfolio item', () => {
     const context = dsMockUtils.getContextInstance();
-    const ticker = 'someToken';
+    const ticker = 'SOMETOKEN';
     const amount = new BigNumber(100);
     const token = entityMockUtils.getSecurityTokenInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -386,10 +401,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Ticker', ticker)
-      .returns(rawTicker);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', ticker).returns(rawTicker);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -433,18 +445,24 @@ describe('stringToTicker and tickerToString', () => {
   });
 
   test('stringToTicker should convert a string to a polkadot Ticker object', () => {
-    const value = 'someTicker';
+    const value = 'SOMETICKER';
     const fakeResult = ('convertedTicker' as unknown) as Ticker;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Ticker', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', value).returns(fakeResult);
 
     const result = stringToTicker(value, context);
 
     expect(result).toBe(fakeResult);
+  });
+
+  test('stringToTicker should throw an error if the string is empty', () => {
+    const value = '';
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => stringToTicker(value, context)).toThrow(
+      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
+    );
   });
 
   test('stringToTicker should throw an error if the string length exceeds the max ticker length', () => {
@@ -452,7 +470,7 @@ describe('stringToTicker and tickerToString', () => {
     const context = dsMockUtils.getContextInstance();
 
     expect(() => stringToTicker(value, context)).toThrow(
-      `Ticker length cannot exceed ${MAX_TICKER_LENGTH} characters`
+      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
     );
   });
 
@@ -460,7 +478,18 @@ describe('stringToTicker and tickerToString', () => {
     const value = `Illegal ${String.fromCharCode(65533)}`;
     const context = dsMockUtils.getContextInstance();
 
-    expect(() => stringToTicker(value, context)).toThrow('Ticker contains unreadable characters');
+    expect(() => stringToTicker(value, context)).toThrow(
+      'Only printable ASCII is alowed as ticker name'
+    );
+  });
+
+  test('stringToTicker should throw an error if the string is not in upper case', () => {
+    const value = 'FakeTicker';
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => stringToTicker(value, context)).toThrow(
+      'Ticker cannot contain lower case letters'
+    );
   });
 
   test('tickerToString should convert a polkadot Ticker object to a string', () => {
@@ -527,10 +556,7 @@ describe('stringToAccountId and accountIdToSting', () => {
     const fakeResult = ('convertedAccountId' as unknown) as AccountId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AccountId', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('AccountId', value).returns(fakeResult);
 
     const result = stringToAccountId(value, context);
 
@@ -564,10 +590,7 @@ describe('stringToIdentityId and identityIdToString', () => {
     const fakeResult = ('type' as unknown) as IdentityId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('IdentityId', identity)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('IdentityId', identity).returns(fakeResult);
 
     const result = stringToIdentityId(identity, context);
 
@@ -583,7 +606,7 @@ describe('stringToIdentityId and identityIdToString', () => {
   });
 });
 
-describe('signerValueToSignatory and signatoryToSigner', () => {
+describe('signerValueToSignatory and signatoryToSignerValue', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -597,7 +620,7 @@ describe('signerValueToSignatory and signatoryToSigner', () => {
     sinon.restore();
   });
 
-  test('signerValueToSignatory should convert a Signer to a polkadot Signatory object', () => {
+  test('signerValueToSignatory should convert a SignerValue to a polkadot Signatory object', () => {
     const value = {
       type: SignerType.Identity,
       value: 'someIdentity',
@@ -615,7 +638,7 @@ describe('signerValueToSignatory and signatoryToSigner', () => {
     expect(result).toBe(fakeResult);
   });
 
-  test('signatoryToSigner should convert a polkadot Signatory object to a Signer', () => {
+  test('signatoryToSignerValue should convert a polkadot Signatory object to a SignerValue', () => {
     let fakeResult = {
       type: SignerType.Identity,
       value: 'someIdentity',
@@ -776,6 +799,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       value: {
         tokens: null,
         transactions: null,
+        transactionGroups: [],
         portfolios: null,
       },
     };
@@ -920,7 +944,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     fakeResult = {
       type: AuthorizationType.JoinIdentity,
-      value: { tokens: [], portfolios: [], transactions: [] },
+      value: { tokens: [], portfolios: [], transactions: [], transactionGroups: [] },
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
       JoinIdentity: dsMockUtils.createMockPermissions({ asset: [], portfolio: [], extrinsic: [] }),
@@ -968,10 +992,7 @@ describe('authorizationTypeToMeshAuthorizationType', () => {
     const fakeResult = ('convertedAuthorizationType' as unknown) as MeshAuthorizationType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AuthorizationType', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('AuthorizationType', value).returns(fakeResult);
 
     const result = authorizationTypeToMeshAuthorizationType(value, context);
 
@@ -995,10 +1016,11 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     entityMockUtils.cleanup();
   });
 
-  test('permissionsToMeshPermissions should convert a Permissions to a polkadot Permissions object', () => {
+  test('permissionsToMeshPermissions should convert a Permissions to a polkadot Permissions object (ordering tx alphabetically)', () => {
     let value: Permissions = {
       tokens: null,
       transactions: null,
+      transactionGroups: [],
       portfolios: null,
     };
     const fakeResult = ('convertedPermission' as unknown) as MeshPermissions;
@@ -1017,11 +1039,12 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     let result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
 
-    const ticker = 'someTicker';
+    const ticker = 'SOMETICKER';
     const did = 'someDid';
     value = {
       tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
-      transactions: [TxTags.identity.AddClaim],
+      transactions: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
+      transactionGroups: [],
       portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
     };
 
@@ -1034,12 +1057,16 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       .withArgs('Permissions', {
         asset: [rawTicker],
         extrinsic: [
+          /* eslint-disable @typescript-eslint/camelcase */
           {
-            /* eslint-disable @typescript-eslint/camelcase */
             pallet_name: 'Identity',
             dispatchable_names: ['add_claim'],
-            /* eslint-enable @typescript-eslint/camelcase */
           },
+          {
+            pallet_name: 'Sto',
+            dispatchable_names: ['create_fundraiser', 'invest'],
+          },
+          /* eslint-enable @typescript-eslint/camelcase */
         ],
         portfolio: [rawPortfolioId],
       })
@@ -1062,6 +1089,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         TxTags.confidential.AddRangeProof,
         TxTags.confidential.AddVerifyRangeProof,
       ],
+      transactionGroups: [],
       portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
     };
     let permissions = dsMockUtils.createMockPermissions({
@@ -1092,6 +1120,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     fakeResult = {
       tokens: null,
       transactions: null,
+      transactionGroups: [],
       portfolios: null,
     };
     permissions = dsMockUtils.createMockPermissions({
@@ -1123,10 +1152,7 @@ describe('numberToU64 and u64ToBigNumber', () => {
     const fakeResult = ('100' as unknown) as u64;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('u64', value.toString())
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('u64', value.toString()).returns(fakeResult);
 
     const result = numberToU64(value, context);
 
@@ -1135,10 +1161,47 @@ describe('numberToU64 and u64ToBigNumber', () => {
 
   test('u64ToBigNumber should convert a polkadot u64 object to a BigNumber', () => {
     const fakeResult = 100;
-    const balance = dsMockUtils.createMockBalance(fakeResult);
+    const num = dsMockUtils.createMockU64(fakeResult);
 
-    const result = u64ToBigNumber(balance);
+    const result = u64ToBigNumber(num);
     expect(result).toEqual(new BigNumber(fakeResult));
+  });
+});
+
+describe('percentageToPermill and permillToBigNumber', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('percentageToPermill should convert a number to a polkadot Permill object', () => {
+    const value = new BigNumber(49);
+    const fakeResult = ('100' as unknown) as Permill;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Permill', value.multipliedBy(Math.pow(10, 4)).toString())
+      .returns(fakeResult);
+
+    const result = percentageToPermill(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('permillToBigNumber should convert a polkadot Permill object to a BigNumber', () => {
+    const fakeResult = 490000;
+    const permill = dsMockUtils.createMockPermill(fakeResult);
+
+    const result = permillToBigNumber(permill);
+    expect(result).toEqual(new BigNumber(49));
   });
 });
 
@@ -1181,7 +1244,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
     expect(result).toBe(fakeResult);
   });
 
-  test('numberToBalance should throw an error if the value exceeds the max token amount constant', () => {
+  test('numberToBalance should throw an error if the value exceeds the max balance', () => {
     const value = new BigNumber(Math.pow(20, 15));
     const context = dsMockUtils.getContextInstance();
 
@@ -1193,11 +1256,11 @@ describe('numberToBalance and balanceToBigNumber', () => {
       error = err;
     }
 
-    expect(error.message).toBe('The value exceed the amount limit allowed');
-    expect(error.data).toMatchObject({ currentValue: value, amountLimit: MAX_TOKEN_AMOUNT });
+    expect(error.message).toBe('The value exceeds the maximum possible balance');
+    expect(error.data).toMatchObject({ currentValue: value, amountLimit: MAX_BALANCE });
   });
 
-  test('numberToBalance should throw an error if security token is divisible and the value exceeds the max decimals constant', () => {
+  test('numberToBalance should throw an error if the value has more decimal places than allowed', () => {
     const value = new BigNumber(50.1234567);
     const context = dsMockUtils.getContextInstance();
 
@@ -1209,16 +1272,16 @@ describe('numberToBalance and balanceToBigNumber', () => {
       error = err;
     }
 
-    expect(error.message).toBe('The value exceed the decimals limit allowed');
+    expect(error.message).toBe('The value has more decimal places than allowed');
     expect(error.data).toMatchObject({ currentValue: value, decimalsLimit: MAX_DECIMALS });
   });
 
-  test('numberToBalance should throw an error if security token is not divisible and the value has decimals', () => {
+  test('numberToBalance should throw an error if the value has decimals and the token is indivisible', () => {
     const value = new BigNumber(50.1234567);
     const context = dsMockUtils.getContextInstance();
 
     expect(() => numberToBalance(value, context, false)).toThrow(
-      'The value cannot have decimals if the token is indivisible'
+      'The value has decimals but the token is indivisible'
     );
   });
 
@@ -1289,10 +1352,7 @@ describe('stringToMemo', () => {
     const fakeResult = ('memoDescription' as unknown) as Memo;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Memo', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', value).returns(fakeResult);
 
     const result = stringToMemo(value, context);
 
@@ -1374,13 +1434,17 @@ describe('u8ToTransferStatus', () => {
 
     expect(result).toBe(TransferStatus.PortfolioFailure);
 
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(176));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(170));
 
     expect(result).toBe(TransferStatus.CustodianError);
 
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(177));
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(171));
 
     expect(result).toBe(TransferStatus.ScopeClaimMissing);
+
+    result = u8ToTransferStatus(dsMockUtils.createMockU8(172));
+
+    expect(result).toBe(TransferStatus.TransferRestrictionFailure);
 
     const fakeStatusCode = 1;
     expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
@@ -1407,10 +1471,7 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
     const fakeResult = ('CommodityEnum' as unknown) as AssetType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AssetType', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('AssetType', value).returns(fakeResult);
 
     const result = tokenTypeToAssetType(value, context);
 
@@ -1640,10 +1701,7 @@ describe('stringToFundingRoundName and fundingRoundNameToString', () => {
     const fakeResult = ('convertedName' as unknown) as FundingRoundName;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('FundingRoundName', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('FundingRoundName', value).returns(fakeResult);
 
     const result = stringToFundingRoundName(value, context);
 
@@ -1677,10 +1735,7 @@ describe('stringToDocumentName and documentNameToString', () => {
     const fakeResult = ('convertedName' as unknown) as DocumentName;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('DocumentName', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('DocumentName', value).returns(fakeResult);
 
     const result = stringToDocumentName(value, context);
 
@@ -1714,10 +1769,7 @@ describe('stringToDocumentUri and documentUriToString', () => {
     const fakeResult = ('convertedUri' as unknown) as DocumentUri;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('DocumentUri', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('DocumentUri', value).returns(fakeResult);
 
     const result = stringToDocumentUri(value, context);
 
@@ -1746,15 +1798,18 @@ describe('stringToDocumentHash and documentHashToString', () => {
     dsMockUtils.cleanup();
   });
 
+  test('stringToDocumentHash should throw if document hash is empty', () => {
+    expect(() => stringToDocumentHash('', dsMockUtils.getContextInstance())).toThrow(
+      'Document hash cannot be empty'
+    );
+  });
+
   test('stringToDocumentHash should convert a string to a polkadot DocumentHash object', () => {
     const value = 'someHash';
     const fakeResult = ('convertedHash' as unknown) as DocumentHash;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('DocumentHash', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('DocumentHash', value).returns(fakeResult);
 
     const result = stringToDocumentHash(value, context);
 
@@ -1788,10 +1843,7 @@ describe('stringToDocumentType and documentTypeToString', () => {
     const fakeResult = ('convertedType' as unknown) as DocumentType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('DocumentType', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('DocumentType', value).returns(fakeResult);
 
     const result = stringToDocumentType(value, context);
 
@@ -2297,10 +2349,27 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
     result = meshClaimToClaim(claim);
     expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.InvestorUniqueness,
+      scope,
+      scopeId: 'scopeId',
+      cddId: 'cddId',
+    };
+    claim = dsMockUtils.createMockClaim({
+      InvestorUniqueness: [
+        dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) }),
+        dsMockUtils.createMockScopeId(fakeResult.scopeId),
+        dsMockUtils.createMockCddId(fakeResult.cddId),
+      ],
+    });
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
   });
 });
 
-describe('meshClaimTypeToClaimType', () => {
+describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2384,6 +2453,16 @@ describe('meshClaimTypeToClaimType', () => {
     result = meshClaimTypeToClaimType(claimType);
     expect(result).toEqual(fakeResult);
   });
+
+  test('claimTypeToMeshClaimType should convert a ClaimType to a polkadot ClaimType object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fakeResult = ('meshClaim' as unknown) as MeshClaim;
+
+    dsMockUtils.getCreateTypeStub().returns(fakeResult);
+
+    const result = claimTypeToMeshClaimType(ClaimType.SellLockup, context);
+    expect(result).toEqual(fakeResult);
+  });
 });
 
 describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
@@ -2437,10 +2516,7 @@ describe('stringToCddId and cddIdToString', () => {
     const fakeResult = ('type' as unknown) as CddId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('CddId', cddId)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('CddId', cddId).returns(fakeResult);
 
     const result = stringToCddId(cddId, context);
 
@@ -2456,7 +2532,7 @@ describe('stringToCddId and cddIdToString', () => {
   });
 });
 
-describe('stringToCddId', () => {
+describe('stringToScopeId and scopeIdToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2474,13 +2550,18 @@ describe('stringToCddId', () => {
     const fakeResult = ('type' as unknown) as ScopeId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ScopeId', scopeId)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('ScopeId', scopeId).returns(fakeResult);
 
     const result = stringToScopeId(scopeId, context);
 
+    expect(result).toBe(fakeResult);
+  });
+
+  test('scopeIdToString should convert a ScopeId to a scopeId string', () => {
+    const fakeResult = 'scopeId';
+    const scopeId = dsMockUtils.createMockScopeId(fakeResult);
+
+    const result = scopeIdToString(scopeId);
     expect(result).toBe(fakeResult);
   });
 });
@@ -2767,14 +2848,11 @@ describe('txTagToProtocolOp', () => {
   });
 
   test('txTagToProtocolOp should convert a TxTag to a polkadot ProtocolOp object', () => {
-    const value = TxTags.identity.AcceptAuthorization;
+    const value = TxTags.identity.AddClaim;
     const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ProtocolOp', 'IdentityAcceptAuthorization')
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', 'IdentityAddClaim').returns(fakeResult);
 
     const result = txTagToProtocolOp(value, context);
 
@@ -2786,14 +2864,24 @@ describe('txTagToProtocolOp', () => {
     const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ProtocolOp', 'AssetAddDocument')
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', 'AssetAddDocument').returns(fakeResult);
 
     const result = txTagToProtocolOp(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+
+  test('txTagToProtocolOp should throw an error if tag does not match any ProtocolOp', () => {
+    const value = TxTags.asset.SetTreasuryDid;
+    const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
+    const context = dsMockUtils.getContextInstance();
+    const mockTag = 'AssetSetTreasuryDid';
+
+    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', mockTag).returns(fakeResult);
+
+    expect(() => txTagToProtocolOp(value, context)).toThrow(
+      `${mockTag} does not match any ProtocolOp`
+    );
   });
 });
 
@@ -2849,10 +2937,7 @@ describe('numberToPipId', () => {
     const fakeResult = ('100' as unknown) as PipId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('PipId', value.toString())
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('PipId', value.toString()).returns(fakeResult);
 
     const result = numberToPipId(value, context);
 
@@ -2878,10 +2963,7 @@ describe('stringToText and textToString', () => {
     const fakeResult = ('convertedText' as unknown) as Text;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Text', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Text', value).returns(fakeResult);
 
     const result = stringToText(value, context);
 
@@ -2920,10 +3002,7 @@ describe('portfolioIdToMeshPortfolioId', () => {
     const fakeResult = ('PortfolioId' as unknown) as PortfolioId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('IdentityId', portfolioId.did)
-      .returns(rawIdentityId);
+    dsMockUtils.getCreateTypeStub().withArgs('IdentityId', portfolioId.did).returns(rawIdentityId);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -2937,10 +3016,7 @@ describe('portfolioIdToMeshPortfolioId', () => {
 
     expect(result).toBe(fakeResult);
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('u64', number.toString())
-      .returns(rawU64);
+    dsMockUtils.getCreateTypeStub().withArgs('u64', number.toString()).returns(rawU64);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -3389,16 +3465,13 @@ describe('transactionHexToTxTag', () => {
     const hex = '0x110000';
     const fakeResult = TxTags.treasury.Disbursement;
     const mockResult = {
-      methodName: 'disbursement',
-      sectionName: 'treasury',
+      method: 'disbursement',
+      section: 'treasury',
     };
 
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Proposal', hex)
-      .returns(mockResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Proposal', hex).returns(mockResult);
 
     const result = transactionHexToTxTag(hex, context);
     expect(result).toEqual(fakeResult);
@@ -3619,6 +3692,7 @@ describe('secondaryKeyToMeshSecondaryKey', () => {
       permissions: {
         tokens: null,
         transactions: null,
+        transactionGroups: [],
         portfolios: null,
       },
     };
@@ -3666,10 +3740,7 @@ describe('venueTypeToMeshVenueType and meshVenueTypeToVenueType', () => {
     const fakeResult = ('Other' as unknown) as MeshVenueType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('VenueType', value)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('VenueType', value).returns(fakeResult);
 
     const result = venueTypeToMeshVenueType(value, context);
 
@@ -3721,10 +3792,7 @@ describe('stringToVenueDetails and venueDetailsToString', () => {
     const fakeResult = ('type' as unknown) as VenueDetails;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('VenueDetails', details)
-      .returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('VenueDetails', details).returns(fakeResult);
 
     const result = stringToVenueDetails(details, context);
 
@@ -3840,10 +3908,7 @@ describe('endConditionToSettlementType', () => {
     const blockNumber = new BigNumber(10);
     const rawBlockNumber = dsMockUtils.createMockU32(blockNumber.toNumber());
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('u32', blockNumber.toString())
-      .returns(rawBlockNumber);
+    dsMockUtils.getCreateTypeStub().withArgs('u32', blockNumber.toString()).returns(rawBlockNumber);
     dsMockUtils
       .getCreateTypeStub()
       .withArgs('SettlementType', { [InstructionType.SettleOnBlock]: rawBlockNumber })
@@ -3886,7 +3951,7 @@ describe('portfolioLikeToPortfolioId', () => {
   });
 
   test('should convert a DID string to a PortfolioId', async () => {
-    const result = await portfolioLikeToPortfolioId(did, context);
+    const result = portfolioLikeToPortfolioId(did);
 
     expect(result).toEqual({ did, number: undefined });
   });
@@ -3894,7 +3959,7 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert an Identity to a PortfolioId', async () => {
     const identity = entityMockUtils.getIdentityInstance({ did });
 
-    const result = await portfolioLikeToPortfolioId(identity, context);
+    const result = portfolioLikeToPortfolioId(identity);
 
     expect(result).toEqual({ did, number: undefined });
   });
@@ -3902,7 +3967,7 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert a NumberedPortfolio to a PortfolioId', async () => {
     const portfolio = new NumberedPortfolio({ did, id: number }, context);
 
-    const result = await portfolioLikeToPortfolioId(portfolio, context);
+    const result = portfolioLikeToPortfolioId(portfolio);
 
     expect(result).toEqual({ did, number });
   });
@@ -3910,43 +3975,20 @@ describe('portfolioLikeToPortfolioId', () => {
   test('should convert a DefaultPortfolio to a PortfolioId', async () => {
     const portfolio = new DefaultPortfolio({ did }, context);
 
-    const result = await portfolioLikeToPortfolioId(portfolio, context);
+    const result = portfolioLikeToPortfolioId(portfolio);
 
     expect(result).toEqual({ did, number: undefined });
   });
 
   test('should convert a Portfolio identifier object to a PortfolioId', async () => {
-    const result = await portfolioLikeToPortfolioId({ identity: did, id: number }, context);
+    let result = portfolioLikeToPortfolioId({ identity: did, id: number });
     expect(result).toEqual({ did, number });
-  });
 
-  test("should throw an error if the Portfolio identifier object refers to a Portfolio that doesn't exist", async () => {
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        exists: false,
-      },
-    });
-
-    const portfolioIdentifier: PortfolioLike = {
-      identity: entityMockUtils.getIdentityInstance({
-        did,
-      }),
+    result = portfolioLikeToPortfolioId({
+      identity: entityMockUtils.getIdentityInstance({ did }),
       id: number,
-    };
-
-    let err;
-
-    try {
-      await portfolioLikeToPortfolioId(portfolioIdentifier, context);
-    } catch (e) {
-      err = e;
-    }
-
-    expect(err.message).toBe("The Portfolio doesn't exist");
-    expect(err.data).toEqual({
-      did,
-      portfolioId: number,
     });
+    expect(result).toEqual({ did, number });
   });
 });
 
@@ -3978,12 +4020,12 @@ describe('portfolioLikeToPortfolio', () => {
   });
 
   test('should convert a PortfolioLike to a DefaultPortfolio instance', async () => {
-    const result = await portfolioLikeToPortfolio(did, context);
+    const result = portfolioLikeToPortfolio(did, context);
     expect(result instanceof DefaultPortfolio).toBe(true);
   });
 
   test('should convert a PortfolioLike to a NumberedPortfolio instance', async () => {
-    const result = await portfolioLikeToPortfolio({ identity: did, id }, context);
+    const result = portfolioLikeToPortfolio({ identity: did, id }, context);
     expect(result instanceof NumberedPortfolio).toBe(true);
   });
 });
@@ -4164,11 +4206,16 @@ describe('permissionsLikeToPermissions', () => {
     entityMockUtils.cleanup();
   });
 
-  test('permissionsLikeToPermissions should convert a PermissionsLike into a Permissions', async () => {
+  test('permissionsLikeToPermissions should convert a PermissionsLike into a Permissions', () => {
     const context = dsMockUtils.getContextInstance();
     let args: PermissionsLike = { tokens: null, transactions: null, portfolios: null };
-    let result = await permissionsLikeToPermissions(args, context);
-    expect(result).toEqual(args);
+    let result = permissionsLikeToPermissions(args, context);
+    expect(result).toEqual({
+      tokens: null,
+      transactions: null,
+      transactionGroups: [],
+      portfolios: null,
+    });
 
     const firstToken = new SecurityToken({ ticker: 'TICKER' }, context);
     const ticker = 'OTHERTICKER';
@@ -4177,21 +4224,492 @@ describe('permissionsLikeToPermissions', () => {
 
     args = {
       tokens: [firstToken, ticker],
-      transactions: [AssetTx.Transfer],
+      transactions: [TxTags.asset.Transfer],
+      transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
       portfolios: [portfolio],
     };
-    result = await permissionsLikeToPermissions(args, context);
+    result = permissionsLikeToPermissions(args, context);
     expect(result).toEqual({
       tokens: [firstToken, secondToken],
-      transactions: [AssetTx.Transfer],
+      transactions: [
+        TxTags.asset.Transfer,
+        TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
+        TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
+      ],
+      transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
       portfolios: [portfolio],
     });
 
-    result = await permissionsLikeToPermissions({}, context);
+    result = permissionsLikeToPermissions({}, context);
     expect(result).toEqual({
       tokens: [],
       transactions: [],
+      transactionGroups: [],
       portfolios: [],
     });
+  });
+});
+
+describe('middlewarePortfolioToPortfolio', () => {
+  test('middlewarePortfolioToPortfolio should convert a MiddlewarePortfolio into a Portfolio', async () => {
+    const context = dsMockUtils.getContextInstance();
+    let middlewarePortfolio = {
+      kind: 'Default',
+      did: 'someDid',
+    };
+
+    let result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+
+    middlewarePortfolio = {
+      kind: '0',
+      did: 'someDid',
+    };
+
+    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+
+    middlewarePortfolio = {
+      kind: '10',
+      did: 'someDid',
+    };
+
+    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
+    expect(result instanceof NumberedPortfolio).toBe(true);
+  });
+});
+
+describe('transferRestrictionToTransferManager and signatoryToSignerValue', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    sinon.restore();
+  });
+
+  test('transferRestrictionToTransferManager should convert a Transfer Restriction to a polkadot TransferManager object', () => {
+    const count = 10;
+    let value = {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(count),
+    };
+    const fakeResult = ('TransferManagerEnum' as unknown) as TransferManager;
+    const context = dsMockUtils.getContextInstance();
+
+    const rawCount = dsMockUtils.createMockU64(count);
+
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    createTypeStub
+      .withArgs('TransferManager', { CountTransferManager: rawCount })
+      .returns(fakeResult);
+
+    createTypeStub.withArgs('u64', count.toString()).returns(rawCount);
+
+    let result = transferRestrictionToTransferManager(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    const percentage = 49;
+    const rawPercentage = dsMockUtils.createMockPermill(percentage * 10000);
+    value = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(percentage),
+    };
+
+    createTypeStub
+      .withArgs('TransferManager', { PercentageTransferManager: rawPercentage })
+      .returns(fakeResult);
+
+    createTypeStub.withArgs('Permill', (percentage * 10000).toString()).returns(rawPercentage);
+
+    result = transferRestrictionToTransferManager(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('transferRestrictionToTransferManager should throw an error if the percentage is out of range', () => {
+    let value = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(105),
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
+      'Percentage should be between 0 and 100'
+    );
+
+    value = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(-30),
+    };
+
+    expect(() => transferRestrictionToTransferManager(value, context)).toThrow(
+      'Percentage should be between 0 and 100'
+    );
+  });
+
+  test('transferManagerToTransferRestriction should convert a polkadot Signatory object to a SignerValue', () => {
+    const count = 10;
+    let fakeResult = {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(count),
+    };
+    let transferManager = dsMockUtils.createMockTransferManager({
+      CountTransferManager: dsMockUtils.createMockU64(count),
+    });
+
+    let result = transferManagerToTransferRestriction(transferManager);
+    expect(result).toEqual(fakeResult);
+
+    const percentage = 49;
+    fakeResult = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(percentage),
+    };
+    transferManager = dsMockUtils.createMockTransferManager({
+      PercentageTransferManager: dsMockUtils.createMockPermill(percentage * 10000),
+    });
+
+    result = transferManagerToTransferRestriction(transferManager);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stoTierToPriceTier', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('stoTierToPriceTier should convert an Sto Tier into a polkadot PriceTier object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const total = new BigNumber(100);
+    const price = new BigNumber(1000);
+    const rawTotal = dsMockUtils.createMockBalance(total.toNumber());
+    const rawPrice = dsMockUtils.createMockBalance(price.toNumber());
+    const fakeResult = ('PriceTier' as unknown) as PriceTier;
+
+    const stoTier: StoTier = {
+      price,
+      amount: total,
+    };
+
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
+
+    createTypeStub
+      .withArgs('Balance', total.multipliedBy(Math.pow(10, 6)).toString())
+      .returns(rawTotal);
+    createTypeStub
+      .withArgs('Balance', price.multipliedBy(Math.pow(10, 6)).toString())
+      .returns(rawPrice);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('PriceTier', {
+        total: rawTotal,
+        price: rawPrice,
+      })
+      .returns(fakeResult);
+
+    const result = stoTierToPriceTier(stoTier, context);
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('txGroupToTxTags', () => {
+  test('should return the corresponding group of TxTags', () => {
+    let result = txGroupToTxTags(TxGroup.PortfolioManagement);
+
+    expect(result).toEqual([
+      TxTags.identity.AddInvestorUniquenessClaim,
+      TxTags.portfolio.MovePortfolioFunds,
+      TxTags.settlement.AddInstruction,
+      TxTags.settlement.AddAndAffirmInstruction,
+      TxTags.settlement.RejectInstruction,
+      TxTags.settlement.CreateVenue,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.TokenManagement);
+
+    expect(result).toEqual([
+      TxTags.asset.MakeDivisible,
+      TxTags.asset.RenameAsset,
+      TxTags.asset.SetFundingRound,
+      TxTags.asset.AddDocuments,
+      TxTags.asset.RemoveDocuments,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.AdvancedTokenManagement);
+
+    expect(result).toEqual([
+      TxTags.asset.Freeze,
+      TxTags.asset.Unfreeze,
+      TxTags.identity.AddAuthorization,
+      TxTags.identity.RemoveAuthorization,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.Distribution);
+
+    expect(result).toEqual([
+      TxTags.identity.AddInvestorUniquenessClaim,
+      TxTags.settlement.CreateVenue,
+      TxTags.settlement.AddInstruction,
+      TxTags.settlement.AddAndAffirmInstruction,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.Issuance);
+
+    expect(result).toEqual([TxTags.asset.Issue]);
+
+    result = txGroupToTxTags(TxGroup.TrustedClaimIssuersManagement);
+
+    expect(result).toEqual([
+      TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
+      TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.ClaimsManagement);
+
+    expect(result).toEqual([TxTags.identity.AddClaim, TxTags.identity.RevokeClaim]);
+
+    result = txGroupToTxTags(TxGroup.ComplianceRequirementsManagement);
+
+    expect(result).toEqual([
+      TxTags.complianceManager.AddComplianceRequirement,
+      TxTags.complianceManager.RemoveComplianceRequirement,
+      TxTags.complianceManager.PauseAssetCompliance,
+      TxTags.complianceManager.ResumeAssetCompliance,
+      TxTags.complianceManager.ResetAssetCompliance,
+    ]);
+  });
+});
+
+describe('txTagsToTxGroups', () => {
+  test('should return all completed groups in the tag array', () => {
+    expect(
+      txTagsToTxGroups([
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.portfolio.MovePortfolioFunds,
+        TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.RejectInstruction,
+        TxTags.settlement.CreateVenue,
+        TxTags.asset.MakeDivisible,
+        TxTags.asset.RenameAsset,
+        TxTags.asset.SetFundingRound,
+        TxTags.asset.AddDocuments,
+        TxTags.asset.RemoveDocuments,
+        TxTags.asset.Freeze,
+        TxTags.asset.Unfreeze,
+        TxTags.identity.AddAuthorization,
+        TxTags.identity.RemoveAuthorization,
+      ])
+    ).toEqual([
+      TxGroup.AdvancedTokenManagement,
+      TxGroup.Distribution,
+      TxGroup.PortfolioManagement,
+      TxGroup.TokenManagement,
+    ]);
+
+    expect(
+      txTagsToTxGroups([
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.portfolio.MovePortfolioFunds,
+        TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.RejectInstruction,
+        TxTags.settlement.CreateVenue,
+        TxTags.identity.AddAuthorization,
+        TxTags.identity.RemoveAuthorization,
+      ])
+    ).toEqual([TxGroup.Distribution, TxGroup.PortfolioManagement]);
+  });
+});
+
+describe('fundraiserTierToTier', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('fundraiserTierToTier should convert a polkadot FundraiserTier object to a FundraiserTier', () => {
+    const amount = new BigNumber(5);
+    const price = new BigNumber(5);
+    const remaining = new BigNumber(5);
+
+    const fundraiserTier = dsMockUtils.createMockFundraiserTier({
+      total: dsMockUtils.createMockBalance(amount.toNumber()),
+      price: dsMockUtils.createMockBalance(price.toNumber()),
+      remaining: dsMockUtils.createMockBalance(remaining.toNumber()),
+    });
+
+    const result = fundraiserTierToTier(fundraiserTier);
+    expect(result).toEqual({
+      amount: amount.div(Math.pow(10, 6)),
+      price: price.div(Math.pow(10, 6)),
+      remaining: remaining.div(Math.pow(10, 6)),
+    });
+  });
+});
+
+describe('meshFundraiserStatusToStoStatus', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('meshFundraiserStatusToStoStatus should convert a polkadot FundraiserStatus object to a StoStatus', () => {
+    let fakeResult = StoStatus.Live;
+    let stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
+
+    let result = meshFundraiserStatusToStoStatus(stoStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = StoStatus.Closed;
+    stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
+
+    result = meshFundraiserStatusToStoStatus(stoStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = StoStatus.Frozen;
+    stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
+
+    result = meshFundraiserStatusToStoStatus(stoStatus);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('fundraiserToStoDetails', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('fundraiserToStoDetails should convert a polkadot Fundraiser object to a StoDetails', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const someDid = 'someDid';
+    const ticker = 'TICKER';
+    const otherDid = 'otherDid';
+    const raisingCurrency = 'USD';
+    const tierNumber = new BigNumber(10);
+    const tier = {
+      amount: tierNumber.div(Math.pow(10, 6)),
+      price: tierNumber.div(Math.pow(10, 6)),
+      remaining: tierNumber.div(Math.pow(10, 6)),
+    };
+    const date = new Date();
+    const minInvestmentValue = new BigNumber(1);
+
+    const fakeResult = {
+      creator: new Identity({ did: someDid }, context),
+      offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
+      raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
+      raisingCurrency: raisingCurrency,
+      tiers: [tier],
+      venue: new Venue({ id: new BigNumber(1) }, context),
+      start: date,
+      end: date,
+      status: StoStatus.Live,
+      minInvestment: minInvestmentValue.div(Math.pow(10, 6)),
+    };
+
+    const creator = dsMockUtils.createMockIdentityId(someDid);
+    const offeringPortfolio = dsMockUtils.createMockPortfolioId({
+      did: creator,
+      kind: dsMockUtils.createMockPortfolioKind('Default'),
+    });
+    const offeringAsset = dsMockUtils.createMockTicker(ticker);
+    const raisingPortfolio = dsMockUtils.createMockPortfolioId({
+      did: dsMockUtils.createMockIdentityId(otherDid),
+      kind: dsMockUtils.createMockPortfolioKind('Default'),
+    });
+    const raisingAsset = dsMockUtils.createMockTicker(raisingCurrency);
+    const tiers = [
+      dsMockUtils.createMockFundraiserTier({
+        total: dsMockUtils.createMockBalance(tierNumber.toNumber()),
+        price: dsMockUtils.createMockBalance(tierNumber.toNumber()),
+        remaining: dsMockUtils.createMockBalance(tierNumber.toNumber()),
+      }),
+    ];
+    const venueId = dsMockUtils.createMockU64(1);
+    const start = dsMockUtils.createMockMoment(date.getTime());
+    const end = dsMockUtils.createMockOption(dsMockUtils.createMockMoment(date.getTime()));
+    const status = dsMockUtils.createMockFundraiserStatus('Live');
+    const minInvestment = dsMockUtils.createMockBalance(minInvestmentValue.toNumber());
+
+    let fundraiser = dsMockUtils.createMockFundraiser({
+      creator,
+      offering_portfolio: offeringPortfolio,
+      offering_asset: offeringAsset,
+      raising_portfolio: raisingPortfolio,
+      raising_asset: raisingAsset,
+      tiers,
+      venue_id: venueId,
+      start,
+      end,
+      status,
+      minimum_investment: minInvestment,
+    });
+
+    let result = fundraiserToStoDetails(fundraiser, context);
+
+    expect(result).toEqual(fakeResult);
+
+    fundraiser = dsMockUtils.createMockFundraiser({
+      creator,
+      offering_portfolio: offeringPortfolio,
+      offering_asset: offeringAsset,
+      raising_portfolio: raisingPortfolio,
+      raising_asset: raisingAsset,
+      tiers,
+      venue_id: venueId,
+      start,
+      end: dsMockUtils.createMockOption(),
+      status,
+      minimum_investment: minInvestment,
+    });
+
+    result = fundraiserToStoDetails(fundraiser, context);
+
+    expect(result).toEqual({ ...fakeResult, end: null });
   });
 });

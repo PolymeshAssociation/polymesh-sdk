@@ -1,19 +1,37 @@
 import { Moment } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory } from 'polymesh-types/types';
+import { AuthorizationData, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { getRequiredRoles, Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
-import { Account, AuthorizationRequest, Context, DefaultPortfolio, Identity } from '~/internal';
+import { getAuthorization, Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
+import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, RoleType } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
+import { PortfolioId, SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/DefaultPortfolio',
+  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+    '~/api/entities/DefaultPortfolio'
+  )
+);
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
+);
+jest.mock(
+  '~/api/entities/AuthorizationRequest',
+  require('~/testUtils/mocks/entities').mockAuthorizationRequestModule(
+    '~/api/entities/AuthorizationRequest'
+  )
 );
 
 describe('setCustodian procedure', () => {
@@ -62,20 +80,17 @@ describe('setCustodian procedure', () => {
     const did = 'someDid';
     const args = { targetIdentity: 'targetIdentity', did };
 
-    const target = new Identity({ did: args.targetIdentity }, mockContext);
+    const target = entityMockUtils.getIdentityInstance({ did: args.targetIdentity });
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
-    const fakePortfolio = new DefaultPortfolio({ did }, mockContext);
+    const fakePortfolio = entityMockUtils.getDefaultPortfolioInstance({ did });
     const receivedAuthorizations: AuthorizationRequest[] = [
-      new AuthorizationRequest(
-        {
-          target,
-          issuer: entityMockUtils.getIdentityInstance({ did }),
-          authId: new BigNumber(1),
-          expiry: null,
-          data: { type: AuthorizationType.PortfolioCustody, value: fakePortfolio },
-        },
-        mockContext
-      ),
+      entityMockUtils.getAuthorizationRequestInstance({
+        target,
+        issuer: entityMockUtils.getIdentityInstance({ did }),
+        authId: new BigNumber(1),
+        expiry: null,
+        data: { type: AuthorizationType.PortfolioCustody, value: fakePortfolio },
+      }),
     ];
 
     entityMockUtils.configureMocks({
@@ -109,7 +124,7 @@ describe('setCustodian procedure', () => {
     const id = new BigNumber(1);
     const expiry = new Date('1/1/2040');
     const args = { targetIdentity: 'targetIdentity', did };
-    const target = new Identity({ did: args.targetIdentity }, mockContext);
+    const target = entityMockUtils.getIdentityInstance({ did: args.targetIdentity });
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
     const rawSignatory = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId('someAccountId'),
@@ -124,16 +139,13 @@ describe('setCustodian procedure', () => {
     const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
     const fakePortfolio = entityMockUtils.getNumberedPortfolioInstance({ uuid: 'otherUuid' });
     const receivedAuthorizations: AuthorizationRequest[] = [
-      new AuthorizationRequest(
-        {
-          target,
-          issuer: entityMockUtils.getIdentityInstance(),
-          authId: new BigNumber(1),
-          expiry: null,
-          data: { type: AuthorizationType.PortfolioCustody, value: fakePortfolio },
-        },
-        mockContext
-      ),
+      entityMockUtils.getAuthorizationRequestInstance({
+        target,
+        issuer: entityMockUtils.getIdentityInstance(),
+        authId: new BigNumber(1),
+        expiry: null,
+        data: { type: AuthorizationType.PortfolioCustody, value: fakePortfolio },
+      }),
     ];
 
     entityMockUtils.configureMocks({
@@ -186,17 +198,43 @@ describe('setCustodian procedure', () => {
       rawExpiry
     );
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a portfolio custodian role', () => {
-    const args = {
-      id: new BigNumber(1),
-      did: 'someDid',
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const id = new BigNumber(1);
+      const did = 'someDid';
+      let args = {
+        id,
+        did,
+      } as Params;
 
-    const portfolioId = { did: args.did, id: args.id };
+      let portfolioId: PortfolioId = { did: args.did, number: args.id };
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.PortfolioCustodian, portfolioId }]);
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        signerPermissions: {
+          transactions: [TxTags.identity.AddAuthorization],
+          portfolios: [entityMockUtils.getNumberedPortfolioInstance({ did, id })],
+          tokens: [],
+        },
+      });
+
+      args = {
+        did,
+      } as Params;
+
+      portfolioId = { did: args.did };
+
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        signerPermissions: {
+          transactions: [TxTags.identity.AddAuthorization],
+          portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+          tokens: [],
+        },
+      });
+    });
   });
 });

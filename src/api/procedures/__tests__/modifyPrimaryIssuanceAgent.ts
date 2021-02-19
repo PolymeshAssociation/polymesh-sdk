@@ -1,9 +1,9 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { AuthorizationData, Signatory, Ticker } from 'polymesh-types/types';
+import { AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareModifyPrimaryIssuanceAgent,
 } from '~/api/procedures/modifyPrimaryIssuanceAgent';
@@ -123,7 +123,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
         details: {
-          primaryIssuanceAgent: null,
+          primaryIssuanceAgent: new Identity({ did: 'otherDid' }, mockContext),
         },
       },
     });
@@ -148,7 +148,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
         details: {
-          primaryIssuanceAgent: null,
+          primaryIssuanceAgent: new Identity({ did: 'otherDid' }, mockContext),
         },
       },
     });
@@ -200,15 +200,23 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
       rawExpiry
     );
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const args = {
+        ticker,
+      } as Params;
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          portfolios: [],
+          transactions: [TxTags.identity.AddAuthorization],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+        },
+      });
+    });
   });
 });

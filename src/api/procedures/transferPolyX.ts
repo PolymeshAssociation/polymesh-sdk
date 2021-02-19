@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { Account, Identity, PolymeshError, Procedure } from '~/internal';
-import { AccountBalance, ErrorCode } from '~/types';
+import { AccountBalance, ErrorCode, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   numberToBalance,
   signerToString,
@@ -41,7 +42,6 @@ export async function prepareTransferPolyX(
 
   const rawAccountId = stringToAccountId(signerToString(to), context);
 
-  // TODO: queryMulti
   const [{ free: freeBalance }, receiverIdentity] = await Promise.all<
     AccountBalance,
     Identity | null
@@ -66,7 +66,6 @@ export async function prepareTransferPolyX(
 
   const senderIdentity = await context.getCurrentIdentity();
 
-  // TODO: queryMulti
   const [senderCdd, receiverCdd] = await Promise.all([
     senderIdentity.hasValidCdd(),
     receiverIdentity.hasValidCdd(),
@@ -104,4 +103,17 @@ export async function prepareTransferPolyX(
 /**
  * @hidden
  */
-export const transferPolyX = new Procedure(prepareTransferPolyX);
+export function getAuthorization({ memo }: TransferPolyXParams): ProcedureAuthorization {
+  return {
+    signerPermissions: {
+      transactions: [memo ? TxTags.balances.TransferWithMemo : TxTags.balances.Transfer],
+      tokens: [],
+      portfolios: [],
+    },
+  };
+}
+
+/**
+ * @hidden
+ */
+export const transferPolyX = new Procedure(prepareTransferPolyX, getAuthorization);

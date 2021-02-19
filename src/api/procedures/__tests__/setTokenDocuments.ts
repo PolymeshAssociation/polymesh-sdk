@@ -1,12 +1,14 @@
 import { Vec } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Document, DocumentId, Ticker } from 'polymesh-types/types';
+import { Document, DocumentId, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getRequiredRoles,
+  getAuthorization,
   Params,
   prepareSetTokenDocuments,
+  prepareStorage,
+  Storage,
 } from '~/api/procedures/setTokenDocuments';
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -15,6 +17,11 @@ import { RoleType, TokenDocument } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
 
 describe('setTokenDocuments procedure', () => {
   let mockContext: Mocked<Context>;
@@ -110,8 +117,10 @@ describe('setTokenDocuments procedure', () => {
   });
 
   test('should throw an error if the new list is the same as the current one', () => {
-    dsMockUtils.createQueryStub('asset', 'assetDocuments', { entries: documentEntries });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      currentDocs: documents,
+      currentDocIds: [],
+    });
 
     return expect(prepareSetTokenDocuments.call(proc, args)).rejects.toThrow(
       'The supplied document list is equal to the current one'
@@ -119,7 +128,11 @@ describe('setTokenDocuments procedure', () => {
   });
 
   test('should add a remove documents transaction and an add documents transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const docIds = [documentEntries[0][0][1]];
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      currentDocIds: docIds,
+      currentDocs: [],
+    });
 
     const result = await prepareSetTokenDocuments.call(proc, args);
 
@@ -127,7 +140,7 @@ describe('setTokenDocuments procedure', () => {
       addTransactionStub.firstCall,
       removeDocumentsTransaction,
       { batchSize: 1 },
-      [documentEntries[0][0][1]],
+      docIds,
       rawTicker
     );
     sinon.assert.calledWith(
@@ -137,14 +150,14 @@ describe('setTokenDocuments procedure', () => {
       rawDocuments,
       rawTicker
     );
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should not add a remove documents transaction if there are no documents linked to the token', async () => {
-    dsMockUtils.createQueryStub('asset', 'assetDocuments', {
-      entries: [],
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      currentDocIds: [],
+      currentDocs: [],
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetTokenDocuments.call(proc, args);
 
@@ -156,11 +169,15 @@ describe('setTokenDocuments procedure', () => {
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should not add an add documents transaction if there are no documents passed as arguments', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const docIds = [documentEntries[0][0][1]];
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      currentDocs: [documents[0]],
+      currentDocIds: docIds,
+    });
 
     const result = await prepareSetTokenDocuments.call(proc, { ...args, documents: [] });
 
@@ -168,21 +185,62 @@ describe('setTokenDocuments procedure', () => {
       addTransactionStub.firstCall,
       removeDocumentsTransaction,
       { batchSize: 1 },
-      [documentEntries[0][0][1]],
+      docIds,
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(new SecurityToken({ ticker }, mockContext));
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
-});
 
-describe('getRequiredRoles', () => {
-  test('should return a token owner role', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      let proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+        currentDocIds: [documentEntries[0][0][1]],
+        currentDocs: [],
+      });
+      let boundFunc = getAuthorization.bind(proc);
 
-    expect(getRequiredRoles(args)).toEqual([{ type: RoleType.TokenOwner, ticker }]);
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          transactions: [TxTags.asset.AddDocuments, TxTags.asset.RemoveDocuments],
+          portfolios: [],
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+        currentDocIds: [],
+        currentDocs: [],
+      });
+      boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc({ ...args, documents: [] })).toEqual({
+        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        signerPermissions: {
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          transactions: [],
+          portfolios: [],
+        },
+      });
+    });
+  });
+
+  describe('prepareStorage', () => {
+    test('should return the current documents and their ids', async () => {
+      const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+        entries: documentEntries,
+      });
+
+      const result = await boundFunc(args);
+
+      expect(result).toEqual({
+        currentDocs: documents,
+        currentDocIds: documentEntries.map(([[, id]]) => id),
+      });
+    });
   });
 });

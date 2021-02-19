@@ -8,7 +8,7 @@ export interface SecurityTokenDetails {
   name: string;
   owner: Identity;
   totalSupply: BigNumber;
-  primaryIssuanceAgent: Identity | null;
+  primaryIssuanceAgent: Identity;
 }
 
 /**

@@ -1,8 +1,9 @@
 import { Keyring } from '@polkadot/api';
 import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { TxTag } from 'polymesh-types/types';
+import { TxTag, TxTags } from 'polymesh-types/types';
 
+import { StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
@@ -13,6 +14,7 @@ import {
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,
+  Sto,
 } from '~/internal';
 import { PortfolioId } from '~/types/internal';
 
@@ -77,6 +79,7 @@ export enum TransactionQueueStatus {
 export enum RoleType {
   TickerOwner = 'TickerOwner',
   TokenOwner = 'TokenOwner',
+  TokenPia = 'TokenPia',
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
@@ -104,6 +107,18 @@ export interface TokenOwnerRole {
  */
 export function isTokenOwnerRole(role: Role): role is TokenOwnerRole {
   return role.type === RoleType.TokenOwner;
+}
+
+export interface TokenPiaRole {
+  type: RoleType.TokenPia;
+  ticker: string;
+}
+
+/**
+ * @hidden
+ */
+export function isTokenPiaRole(role: Role): role is TokenPiaRole {
+  return role.type === RoleType.TokenPia;
 }
 
 export interface CddProviderRole {
@@ -144,6 +159,7 @@ export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodian
 export type Role =
   | TickerOwnerRole
   | TokenOwnerRole
+  | TokenPiaRole
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole;
@@ -259,9 +275,18 @@ export enum ClaimType {
   NoData = 'NoData',
 }
 
+export type CddClaim = { type: ClaimType.CustomerDueDiligence; id: string };
+
+export type InvestorUniquenessClaim = {
+  type: ClaimType.InvestorUniqueness;
+  scope: Scope;
+  cddId: string;
+  scopeId: string;
+};
+
 export type ScopedClaim =
   | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
-  | { type: ClaimType.InvestorUniqueness; scope: Scope; cddId: string; scopeId: string }
+  | InvestorUniquenessClaim
   | {
       type: Exclude<
         ClaimType,
@@ -273,9 +298,7 @@ export type ScopedClaim =
       scope: Scope;
     };
 
-export type UnscopedClaim =
-  | { type: ClaimType.NoData }
-  | { type: ClaimType.CustomerDueDiligence; id: string };
+export type UnscopedClaim = { type: ClaimType.NoData } | CddClaim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -288,12 +311,19 @@ export function isScopedClaim(claim: Claim): claim is ScopedClaim {
   return ![ClaimType.NoData, ClaimType.CustomerDueDiligence].includes(type);
 }
 
-export interface ClaimData {
+/**
+ * @hidden
+ */
+export function isInvestorUniquenessClaim(claim: Claim): claim is InvestorUniquenessClaim {
+  return claim.type === ClaimType.InvestorUniqueness;
+}
+
+export interface ClaimData<ClaimType = Claim> {
   target: Identity;
   issuer: Identity;
   issuedAt: Date;
   expiry: Date | null;
-  claim: Claim;
+  claim: ClaimType;
 }
 
 export interface IdentityWithClaims {
@@ -432,8 +462,9 @@ export enum TransferStatus {
   BlockedTransaction = 'BlockedTransaction', // 166
   FundsLimitReached = 'FundsLimitReached', // 168
   PortfolioFailure = 'PortfolioFailure', // 169
-  CustodianError = 'CustodianError', // 176
-  ScopeClaimMissing = 'MissingScopeClaimMissingScopedClaim', // 177
+  CustodianError = 'CustodianError', // 170
+  ScopeClaimMissing = 'ScopeClaimMissing', // 171
+  TransferRestrictionFailure = 'TransferRestrictionFailure', // 172
 }
 
 export interface ClaimTarget {
@@ -453,7 +484,10 @@ export interface MiddlewareConfig {
   key: string;
 }
 
-export type CommonKeyring = Pick<Keyring, 'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri'>;
+export type CommonKeyring = Pick<
+  Keyring,
+  'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri' | 'addFromMnemonic'
+>;
 
 export interface UiKeyring {
   keyring: CommonKeyring;
@@ -503,10 +537,20 @@ export interface Fees {
  *   of the Identity's Security Tokens)
  */
 export interface Permissions {
-  /* list of Security Tokens over which this key has permissions */
+  /**
+   * list of Security Tokens over which this key has permissions
+   */
   tokens: SecurityToken[] | null;
-  /* list of Transactions this key can execute */
+  /**
+   * list of Transactions this key can execute
+   */
   transactions: TxTag[] | null;
+  /**
+   * list of Transaction Groups this key can execute. Having permissions over a TxGroup
+   *   means having permissions over every TxTag in said group. Transaction permissions are the result of
+   *   combining these with the `transactions` array. If `transactions` is null, then this value is redundant
+   */
+  transactionGroups: TxGroup[];
   /* list of Portfolios over which this key has permissions */
   portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
 }
@@ -576,14 +620,85 @@ export type Signer = Identity | Account;
 //   details: ProposalDetails;
 // }
 
+export interface StoWithDetails {
+  sto: Sto;
+  details: StoDetails;
+}
+
 export interface SecondaryKey {
   signer: Signer;
   permissions: Permissions;
 }
 
+/**
+ * Transaction Groups (for permissions purposes)
+ */
+export enum TxGroup {
+  /**
+   * - TxTags.identity.AddInvestorUniquenessClaim
+   * - TxTags.portfolio.MovePortfolioFunds
+   * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.RejectInstruction
+   * - TxTags.settlement.CreateVenue
+   */
+  PortfolioManagement = 'PortfolioManagement',
+  /**
+   * - TxTags.asset.MakeDivisible
+   * - TxTags.asset.RenameAsset
+   * - TxTags.asset.SetFundingRound
+   * - TxTags.asset.AddDocuments
+   * - TxTags.asset.RemoveDocuments
+   */
+  TokenManagement = 'TokenManagement',
+  /**
+   * - TxTags.asset.Freeze
+   * - TxTags.asset.Unfreeze
+   * - TxTags.identity.AddAuthorization
+   * - TxTags.identity.RemoveAuthorization
+   */
+  AdvancedTokenManagement = 'AdvancedTokenManagement',
+  /**
+   * - TxTags.identity.AddInvestorUniquenessClaim
+   * - TxTags.settlement.CreateVenue
+   * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddAndAffirmInstruction
+   */
+  Distribution = 'Distribution',
+  /**
+   * - TxTags.asset.Issue
+   */
+  Issuance = 'Issuance',
+  /**
+   * - TxTags.complianceManager.AddDefaultTrustedClaimIssuer
+   * - TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer
+   */
+  TrustedClaimIssuersManagement = 'TrustedClaimIssuersManagement',
+  /**
+   * - TxTags.identity.AddClaim
+   * - TxTags.identity.RevokeClaim
+   */
+  ClaimsManagement = 'ClaimsManagement',
+  /**
+   * - TxTags.complianceManager.AddComplianceRequirement
+   * - TxTags.complianceManager.RemoveComplianceRequirement
+   * - TxTags.complianceManager.PauseAssetCompliance
+   * - TxTags.complianceManager.ResumeAssetCompliance
+   * - TxTags.complianceManager.ResetAssetCompliance
+   */
+  ComplianceRequirementsManagement = 'ComplianceRequirementsManagement',
+}
+
+/**
+ * Permissions to grant to a Signer over an Identity
+ *
+ * @note TxGroups in the `transactionGroups` array will be transformed into their corresponding `TxTag`s
+ *   and appended to the `transactions` array. If `transactions` is null, then the value of `transactionGroups` is redundant
+ */
 export interface PermissionsLike {
   tokens?: (string | SecurityToken)[] | null;
   transactions?: TxTag[] | null;
+  transactionGroups?: TxGroup[];
   portfolios?: PortfolioLike[] | null;
 }
 
@@ -599,8 +714,49 @@ export interface PortfolioMovement {
   amount: BigNumber;
 }
 
-export { TxTags } from 'polymesh-types/types';
+export interface ProcedureAuthorizationStatus {
+  permissions: boolean;
+  roles: boolean;
+}
+
+interface TransferRestrictionBase {
+  exemptedScopeIds?: string[];
+}
+
+interface TransferRestrictionInputBase {
+  exemptedScopeIds?: string[];
+  exemptedIdentities?: (Identity | string)[];
+}
+
+export interface CountTransferRestriction extends TransferRestrictionBase {
+  count: BigNumber;
+}
+
+export interface PercentageTransferRestriction extends TransferRestrictionBase {
+  percentage: BigNumber;
+}
+
+export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
+  count: BigNumber;
+}
+
+export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
+  percentage: BigNumber;
+}
+
+export interface ActiveTransferRestrictions<
+  Restriction extends CountTransferRestriction | PercentageTransferRestriction
+> {
+  restrictions: Restriction[];
+  /**
+   * amount of restrictions that can be added before reaching the shared limit
+   */
+  availableSlots: number;
+}
+
+export { TxTags, TxTag };
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
+export { EventRecord } from '@polkadot/types/interfaces';
 export * from '~/api/entities/types';
 export * from '~/base/types';
 export { Order } from '~/middleware/types';

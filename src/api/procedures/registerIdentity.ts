@@ -1,10 +1,11 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { IdentityId } from 'polymesh-types/types';
+import { IdentityId, TxTags } from 'polymesh-types/types';
 
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
-import { Role, RoleType, SecondaryKey } from '~/types';
+import { PermissionsLike, RoleType, SecondaryKey } from '~/types';
 import {
   identityIdToString,
+  permissionsLikeToPermissions,
   secondaryKeyToMeshSecondaryKey,
   signerToString,
   stringToAccountId,
@@ -13,7 +14,7 @@ import { findEventRecord } from '~/utils/internal';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;
-  secondaryKeys?: SecondaryKey[];
+  secondaryKeys?: (Omit<SecondaryKey, 'permissions'> & { permissions: PermissionsLike })[];
 }
 
 /**
@@ -47,8 +48,11 @@ export async function prepareRegisterIdentity(
   const { targetAccount, secondaryKeys = [] } = args;
 
   const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
-  const rawSecondaryKeys = secondaryKeys.map(secondaryKey =>
-    secondaryKeyToMeshSecondaryKey(secondaryKey, context)
+  const rawSecondaryKeys = secondaryKeys.map(({ permissions, ...rest }) =>
+    secondaryKeyToMeshSecondaryKey(
+      { ...rest, permissions: permissionsLikeToPermissions(permissions, context) },
+      context
+    )
   );
 
   const [newIdentity] = this.addTransaction(
@@ -66,11 +70,11 @@ export async function prepareRegisterIdentity(
 /**
  * @hidden
  */
-export function getRequiredRoles(): Role[] {
-  return [{ type: RoleType.CddProvider }];
-}
-
-/**
- * @hidden
- */
-export const registerIdentity = new Procedure(prepareRegisterIdentity, getRequiredRoles);
+export const registerIdentity = new Procedure(prepareRegisterIdentity, {
+  identityRoles: [{ type: RoleType.CddProvider }],
+  signerPermissions: {
+    tokens: [],
+    portfolios: [],
+    transactions: [TxTags.identity.CddRegisterDid],
+  },
+});

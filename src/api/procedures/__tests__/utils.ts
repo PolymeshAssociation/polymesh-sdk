@@ -1,7 +1,11 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { assertInstructionValid, assertSecondaryKeys } from '~/api/procedures/utils';
+import {
+  assertInstructionValid,
+  assertPortfolioExists,
+  assertSecondaryKeys,
+} from '~/api/procedures/utils';
 import { Context, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getInstructionInstance } from '~/testUtils/mocks/entities';
@@ -9,6 +13,13 @@ import { Mocked } from '~/testUtils/types';
 import { InstructionDetails, InstructionStatus, InstructionType, Signer } from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
+);
 
 // NOTE uncomment in Governance v2 upgrade
 
@@ -151,32 +162,6 @@ describe('assertInstructionValid', () => {
     );
   });
 
-  test('should throw an error if instruction is blocked', async () => {
-    const validFrom = new Date('12/12/2050');
-
-    entityMockUtils.configureMocks({
-      instructionOptions: {
-        details: {
-          status: InstructionStatus.Pending,
-          validFrom,
-        } as InstructionDetails,
-      },
-    });
-
-    instruction = getInstructionInstance();
-
-    let error;
-
-    try {
-      await assertInstructionValid(instruction, mockContext);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('The instruction has not reached its validity period');
-    expect(error.data.validFrom).toEqual(validFrom);
-  });
-
   test('should throw an error if the instruction can not be modified', async () => {
     const endBlock = new BigNumber(10);
 
@@ -185,7 +170,7 @@ describe('assertInstructionValid', () => {
         details: {
           status: InstructionStatus.Pending,
           type: InstructionType.SettleOnBlock,
-          validFrom: new Date('10/10/2010'),
+          tradeDate: new Date('10/10/2010'),
           endBlock,
         } as InstructionDetails,
       },
@@ -242,6 +227,39 @@ describe('assertInstructionValid', () => {
   });
 });
 
+describe('assertPortfolioExists', () => {
+  test("should throw an error if the portfolio doesn't exist", async () => {
+    entityMockUtils.configureMocks({ numberedPortfolioOptions: { exists: false } });
+
+    const context = dsMockUtils.getContextInstance();
+
+    let error;
+    try {
+      await assertPortfolioExists({ did: 'someDid', number: new BigNumber(10) }, context);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe("The Portfolio doesn't exist");
+  });
+
+  test('should not throw an error if the portfolio exists', async () => {
+    entityMockUtils.configureMocks({ numberedPortfolioOptions: { exists: true } });
+
+    const context = dsMockUtils.getContextInstance();
+
+    let error;
+    try {
+      await assertPortfolioExists({ did: 'someDid', number: new BigNumber(10) }, context);
+      await assertPortfolioExists({ did: 'someDid' }, context);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error).toBeUndefined();
+  });
+});
+
 describe('assertSecondaryKeys', () => {
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
 
@@ -257,6 +275,7 @@ describe('assertSecondaryKeys', () => {
         permissions: {
           tokens: null,
           transactions: null,
+          transactionGroups: [],
           portfolios: null,
         },
       },
@@ -277,6 +296,7 @@ describe('assertSecondaryKeys', () => {
         permissions: {
           tokens: null,
           transactions: null,
+          transactionGroups: [],
           portfolios: null,
         },
       },

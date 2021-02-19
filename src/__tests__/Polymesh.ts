@@ -93,7 +93,10 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        seed: accountSeed,
+        accountSeed,
+        accountUri: undefined,
+        accountMnemonic: undefined,
+        keyring: undefined,
       });
     });
 
@@ -111,6 +114,9 @@ describe('Polymesh Class', () => {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
         keyring,
+        accountSeed: undefined,
+        accountUri: undefined,
+        accountMnemonic: undefined,
       });
     });
 
@@ -127,7 +133,10 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        keyring,
+        keyring: { keyring },
+        accountSeed: undefined,
+        accountUri: undefined,
+        accountMnemonic: undefined,
       });
     });
 
@@ -144,7 +153,31 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        uri: accountUri,
+        accountUri,
+        accountSeed: undefined,
+        accountMnemonic: undefined,
+        keyring: undefined,
+      });
+    });
+
+    test('should instantiate Context with a mnemonic and return a Polymesh instance', async () => {
+      const accountMnemonic =
+        'lorem ipsum dolor sit amet consectetur adipiscing elit nam hendrerit consectetur sagittis';
+      const createStub = dsMockUtils.getContextCreateStub();
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountMnemonic,
+      });
+
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledWith(createStub, {
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        accountMnemonic,
+        accountSeed: undefined,
+        accountUri: undefined,
+        keyring: undefined,
       });
     });
 
@@ -168,7 +201,10 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        uri: accountUri,
+        accountUri,
+        accountSeed: undefined,
+        accountMnemonic: undefined,
+        keyring: undefined,
       });
     });
 
@@ -241,7 +277,10 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        seed: accountSeed,
+        accountSeed,
+        accountUri: undefined,
+        accountMnemonic: undefined,
+        keyring: undefined,
       });
       sinon.assert.calledWith(dsMockUtils.getApiInstance().setSigner, signer);
     });
@@ -363,10 +402,7 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
 
-      sinon
-        .stub(reserveTicker, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(reserveTicker, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await polymesh.reserveTicker(args);
 
@@ -816,10 +852,7 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(transferPolyX, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(transferPolyX, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await polymesh.transferPolyX(args);
 
@@ -980,10 +1013,7 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Identity>;
 
-      sinon
-        .stub(registerIdentity, 'prepare')
-        .withArgs(args, context)
-        .resolves(expectedQueue);
+      sinon.stub(registerIdentity, 'prepare').withArgs(args, context).resolves(expectedQueue);
 
       const queue = await polymesh.registerIdentity(args);
 

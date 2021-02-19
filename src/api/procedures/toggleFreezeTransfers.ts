@@ -1,5 +1,6 @@
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, Role, RoleType } from '~/types';
+import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
 
 export interface ToggleFreezeTransfersParams {
@@ -22,7 +23,9 @@ export async function prepareToggleFreezeTransfers(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { tx },
+      polymeshApi: {
+        tx: { asset },
+      },
     },
     context,
   } = this;
@@ -42,7 +45,7 @@ export async function prepareToggleFreezeTransfers(
       });
     }
 
-    this.addTransaction(tx.asset.freeze, {}, rawTicker);
+    this.addTransaction(asset.freeze, {}, rawTicker);
   } else {
     if (!isFrozen) {
       throw new PolymeshError({
@@ -51,7 +54,7 @@ export async function prepareToggleFreezeTransfers(
       });
     }
 
-    this.addTransaction(tx.asset.unfreeze, {}, rawTicker);
+    this.addTransaction(asset.unfreeze, {}, rawTicker);
   }
 
   return securityToken;
@@ -60,11 +63,21 @@ export async function prepareToggleFreezeTransfers(
 /**
  * @hidden
  */
-export function getRequiredRoles({ ticker }: Params): Role[] {
-  return [{ type: RoleType.TokenOwner, ticker }];
+export function getAuthorization(
+  this: Procedure<Params, SecurityToken>,
+  { ticker, freeze }: Params
+): ProcedureAuthorization {
+  return {
+    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+    signerPermissions: {
+      transactions: [freeze ? TxTags.asset.Freeze : TxTags.asset.Unfreeze],
+      tokens: [new SecurityToken({ ticker }, this.context)],
+      portfolios: [],
+    },
+  };
 }
 
 /**
  * @hidden
  */
-export const toggleFreezeTransfers = new Procedure(prepareToggleFreezeTransfers, getRequiredRoles);
+export const toggleFreezeTransfers = new Procedure(prepareToggleFreezeTransfers, getAuthorization);

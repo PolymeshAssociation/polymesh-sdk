@@ -2,11 +2,13 @@ import { ApiPromise, Keyring } from '@polkadot/api';
 import { AddressOrPair } from '@polkadot/api/types';
 import { getTypeDef } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
-import { CallBase, TypeDef, TypeDefInfo } from '@polkadot/types/types';
+import { CallFunction, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import { hexToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
+import { flatMap, flatten } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
 
@@ -30,13 +32,18 @@ import {
   SubCallback,
   TransactionArgument,
   TransactionArgumentType,
+  UiKeyring,
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
 import { ROOT_TYPES } from '~/utils/constants';
 import {
   balanceToBigNumber,
+  claimTypeToMeshClaimType,
+  identityIdToString,
+  meshClaimToClaim,
   meshPermissionsToPermissions,
+  momentToDate,
   numberToU32,
   posRatioToBigNumber,
   signatoryToSignerValue,
@@ -47,7 +54,7 @@ import {
   txTagToProtocolOp,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createClaim } from '~/utils/internal';
+import { calculateNextKey, createClaim, getCommonKeyring } from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -109,59 +116,46 @@ export class Context {
     }
   }
 
-  static async create(params: {
-    polymeshApi: ApiPromise;
-    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-    seed: string;
-  }): Promise<Context>;
-
-  static async create(params: {
-    polymeshApi: ApiPromise;
-    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-    keyring: CommonKeyring;
-  }): Promise<Context>;
-
-  static async create(params: {
-    polymeshApi: ApiPromise;
-    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-    uri: string;
-  }): Promise<Context>;
-
-  static async create(params: {
-    polymeshApi: ApiPromise;
-    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-  }): Promise<Context>;
-
   /**
    * Create the Context instance
    */
   static async create(params: {
     polymeshApi: ApiPromise;
     middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-    seed?: string;
-    keyring?: CommonKeyring;
-    uri?: string;
+    accountSeed?: string;
+    keyring?: CommonKeyring | UiKeyring;
+    accountUri?: string;
+    accountMnemonic?: string;
   }): Promise<Context> {
-    const { polymeshApi, middlewareApi, seed, keyring: passedKeyring, uri } = params;
+    const {
+      polymeshApi,
+      middlewareApi,
+      accountSeed,
+      keyring: passedKeyring,
+      accountUri,
+      accountMnemonic,
+    } = params;
 
     let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
     let currentPair: KeyringPair | undefined;
     let context: Context;
 
     if (passedKeyring) {
-      keyring = passedKeyring;
+      keyring = getCommonKeyring(passedKeyring);
       currentPair = keyring.getPairs()[0];
-    } else if (seed) {
-      if (seed.length !== 66) {
+    } else if (accountSeed) {
+      if (accountSeed.length !== 66) {
         throw new PolymeshError({
           code: ErrorCode.ValidationError,
           message: 'Seed must be 66 characters in length',
         });
       }
 
-      currentPair = keyring.addFromSeed(hexToU8a(seed), undefined, 'sr25519');
-    } else if (uri) {
-      currentPair = keyring.addFromUri(uri);
+      currentPair = keyring.addFromSeed(hexToU8a(accountSeed), undefined, 'sr25519');
+    } else if (accountUri) {
+      currentPair = keyring.addFromUri(accountUri);
+    } else if (accountMnemonic) {
+      currentPair = keyring.addFromMnemonic(accountMnemonic);
     }
 
     if (currentPair) {
@@ -176,7 +170,6 @@ export class Context {
     }
 
     context.isArchiveNode = await context.isCurrentNodeArchive();
-    // context.isArchiveNode = true;
 
     return context;
   }
@@ -542,7 +535,7 @@ export class Context {
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return ((tx as any)[section][method] as CallBase).meta.args.map(({ name, type }) => {
+    return ((tx as any)[section][method] as CallFunction).meta.args.map(({ name, type }) => {
       const typeDef = getTypeDef(type.toString());
       const argName = textToString(name);
 
@@ -586,28 +579,86 @@ export class Context {
   }
 
   /**
-   * Retrieve a list of claims. Can be filtered using parameters
+   * @hidden
    *
-   * @param opts.targets - identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
-   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
-   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
-   * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   *
-   * @note uses the middleware
+   * @note no claimTypes value means ALL claim types
    */
-  public async issuedClaims(
-    opts: {
-      targets?: (string | Identity)[];
-      trustedClaimIssuers?: (string | Identity)[];
-      claimTypes?: ClaimType[];
-      includeExpired?: boolean;
-      size?: number;
-      start?: number;
-    } = {}
-  ): Promise<ResultSet<ClaimData>> {
-    const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
+  public async getIdentityClaimsFromChain(args: {
+    targets: (string | Identity)[];
+    claimTypes?: ClaimType[];
+    trustedClaimIssuers?: (string | Identity)[];
+    includeExpired: boolean;
+  }): Promise<ClaimData[]> {
+    const {
+      polymeshApi: {
+        query: { identity },
+      },
+    } = this;
+
+    const {
+      targets,
+      claimTypes = Object.values(ClaimType),
+      trustedClaimIssuers,
+      includeExpired,
+    } = args;
+
+    const claim1stKeys = flatMap(targets, target =>
+      claimTypes.map(claimType => {
+        return {
+          target: signerToString(target),
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          claim_type: claimTypeToMeshClaimType(claimType, this),
+        };
+      })
+    );
+
+    const claimIssuerDids = trustedClaimIssuers?.map(trustedClaimIssuer =>
+      signerToString(trustedClaimIssuer)
+    );
+
+    const claimData = await P.map(claim1stKeys, async claim1stKey => {
+      const entries = await identity.claims.entries(claim1stKey);
+      const data: ClaimData[] = [];
+      entries.forEach(
+        ([
+          key,
+          { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
+        ]) => {
+          const { target } = key.args[0];
+          const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
+          if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
+            data.push({
+              target: new Identity({ did: identityIdToString(target) }, this),
+              issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
+              issuedAt: momentToDate(issuanceDate),
+              expiry,
+              claim: meshClaimToClaim(claim),
+            });
+          }
+        }
+      );
+      return data;
+    });
+
+    return flatten(claimData).filter(({ issuer }) =>
+      claimIssuerDids ? claimIssuerDids.includes(issuer.did) : true
+    );
+  }
+
+  /**
+   * @hidden
+   */
+  public async getIdentityClaimsFromMiddleware(args: {
+    targets?: (string | Identity)[];
+    trustedClaimIssuers?: (string | Identity)[];
+    claimTypes?: ClaimType[];
+    includeExpired?: boolean;
+    size?: number;
+    start?: number;
+  }): Promise<ResultSet<ClaimData>> {
+    const { targets, claimTypes, trustedClaimIssuers, includeExpired, size, start } = args;
+
+    const data: ClaimData[] = [];
 
     const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
       didsWithClaims({
@@ -627,7 +678,6 @@ export class Context {
         didsWithClaims: { items: didsWithClaimsList, totalCount: count },
       },
     } = result;
-    const data: ClaimData[] = [];
 
     didsWithClaimsList.forEach(({ claims }) => {
       claims.forEach(
@@ -662,10 +712,67 @@ export class Context {
   }
 
   /**
+   * Retrieve a list of claims. Can be filtered using parameters
+   *
+   * @param opts.targets - identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
+   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middleware (optional)
+   */
+  public async issuedClaims(
+    opts: {
+      targets?: (string | Identity)[];
+      trustedClaimIssuers?: (string | Identity)[];
+      claimTypes?: ClaimType[];
+      includeExpired?: boolean;
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<ClaimData>> {
+    const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
+
+    const isMiddlewareAvailable = await this.isMiddlewareAvailable();
+
+    if (isMiddlewareAvailable) {
+      return this.getIdentityClaimsFromMiddleware({
+        targets,
+        trustedClaimIssuers,
+        claimTypes,
+        includeExpired,
+        size,
+        start,
+      });
+    }
+
+    if (!targets) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Cannot perform this action without an active middleware connection',
+      });
+    }
+
+    const identityClaimsFromChain = await this.getIdentityClaimsFromChain({
+      targets,
+      claimTypes,
+      trustedClaimIssuers,
+      includeExpired,
+    });
+
+    return {
+      data: identityClaimsFromChain,
+      next: null,
+      count: undefined,
+    };
+  }
+
+  /**
    * Retrieve the middleware client
    *
-   * @throws if cred
-   * entials are not set
+   * @throws if the middleware is not enabled
    */
   public get middlewareApi(): ApolloClient<NormalizedCacheObject> {
     const { _middlewareApi } = this;

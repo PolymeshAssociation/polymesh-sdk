@@ -17,7 +17,7 @@ import {
   u64,
   Vec,
 } from '@polkadot/types';
-import { CompactEncodable } from '@polkadot/types/codec/Compact';
+import { CompactEncodable } from '@polkadot/types/codec/types';
 import {
   AccountData,
   AccountId,
@@ -30,6 +30,7 @@ import {
   Hash,
   Index,
   Moment,
+  Permill,
   RefCount,
   RuntimeVersion,
 } from '@polkadot/types/interfaces';
@@ -56,6 +57,7 @@ import {
   CddId,
   CddStatus,
   Claim,
+  Claim1stKey,
   ClaimType as MeshClaimType,
   ComplianceRequirement,
   ComplianceRequirementResult,
@@ -71,6 +73,10 @@ import {
   DocumentType,
   DocumentUri,
   FundingRoundName,
+  Fundraiser,
+  FundraiserStatus,
+  FundraiserTier,
+  IdentityClaim,
   IdentityId,
   IdentityRole,
   Instruction,
@@ -87,6 +93,7 @@ import {
   PortfolioId,
   PortfolioKind,
   PosRatio,
+  PriceTier,
   ProposalState,
   Scope,
   ScopeId,
@@ -98,6 +105,7 @@ import {
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
+  TransferManager,
   TrustedFor,
   TrustedIssuer,
   Venue,
@@ -205,6 +213,7 @@ interface ContextOptions {
   withSeed?: boolean;
   balance?: AccountBalance;
   hasRoles?: boolean;
+  hasPermissions?: boolean;
   validCdd?: boolean;
   tokenBalance?: BigNumber;
   invalidDids?: string[];
@@ -212,6 +221,8 @@ interface ContextOptions {
   currentPairAddress?: string;
   currentPairIsLocked?: boolean;
   issuedClaims?: ResultSet<ClaimData>;
+  getIdentityClaimsFromChain?: ClaimData[];
+  getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   primaryKey?: string;
   secondaryKeys?: SecondaryKey[];
   transactionHistory?: ResultSet<ExtrinsicData>;
@@ -234,6 +245,7 @@ interface KeyringOptions {
   getPairs?: Pair[];
   addFromUri?: Pair;
   addFromSeed?: Pair;
+  addFromMnemonic?: Pair;
   /**
    * @hidden
    * Whether keyring functions should throw
@@ -351,26 +363,31 @@ const finalizedErrorReceipt = createFailReceipt({}, successReceipt);
 /**
  * @hidden
  */
+const failReasonToReceipt = (failReason?: TxFailReason): ISubmittableResult => {
+  if (!failReason || failReason === TxFailReason.Module) {
+    return moduleFailReceipt;
+  }
+
+  if (failReason === TxFailReason.BadOrigin) {
+    return badOriginFailReceipt;
+  }
+
+  if (failReason === TxFailReason.CannotLookup) {
+    return cannotLookupFailReceipt;
+  }
+
+  return otherFailReceipt;
+};
+
+/**
+ * @hidden
+ */
 const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubmittableResult => {
   if (status === MockTxStatus.Aborted) {
     return abortReceipt;
   }
   if (status === MockTxStatus.Failed) {
-    if (!failReason || failReason === TxFailReason.Module) {
-      return moduleFailReceipt;
-    }
-
-    if (failReason === TxFailReason.BadOrigin) {
-      return badOriginFailReceipt;
-    }
-
-    if (failReason === TxFailReason.CannotLookup) {
-      return cannotLookupFailReceipt;
-    }
-
-    if (failReason === TxFailReason.Other) {
-      return otherFailReceipt;
-    }
+    return failReasonToReceipt(failReason);
   }
   if (status === MockTxStatus.Succeeded) {
     return successReceipt;
@@ -428,6 +445,7 @@ const defaultContextOptions: ContextOptions = {
     locked: new BigNumber(10),
   },
   hasRoles: true,
+  hasPermissions: true,
   validCdd: true,
   tokenBalance: new BigNumber(1000),
   invalidDids: [],
@@ -435,6 +453,28 @@ const defaultContextOptions: ContextOptions = {
   currentPairAddress: '0xdummy',
   currentPairIsLocked: false,
   issuedClaims: {
+    data: [
+      {
+        target: ('targetIdentity' as unknown) as Identity,
+        issuer: ('issuerIdentity' as unknown) as Identity,
+        issuedAt: new Date(),
+        expiry: null,
+        claim: { type: ClaimType.NoData },
+      },
+    ],
+    next: 1,
+    count: 1,
+  },
+  getIdentityClaimsFromChain: [
+    {
+      target: ('targetIdentity' as unknown) as Identity,
+      issuer: ('issuerIdentity' as unknown) as Identity,
+      issuedAt: new Date(),
+      expiry: null,
+      claim: { type: ClaimType.NoData },
+    },
+  ],
+  getIdentityClaimsFromMiddleware: {
     data: [
       {
         target: ('targetIdentity' as unknown) as Identity,
@@ -470,6 +510,7 @@ const defaultKeyringOptions: KeyringOptions = {
   getPairs: [{ address: 'address', meta: {}, publicKey: 'publicKey2' }],
   addFromSeed: { address: 'address', meta: {}, publicKey: 'publicKey3' },
   addFromUri: { address: 'address', meta: {}, publicKey: 'publicKey4' },
+  addFromMnemonic: { address: 'address', meta: {}, publicKey: 'publicKey5' },
 };
 let keyringOptions: KeyringOptions = defaultKeyringOptions;
 
@@ -501,6 +542,7 @@ function configureContext(opts: ContextOptions): void {
         getBalance: sinon.stub().resolves(opts.balance),
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
+        hasPermissions: sinon.stub().resolves(opts.hasPermissions),
       })
     : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
   const currentPair = opts.withSeed
@@ -537,6 +579,8 @@ function configureContext(opts: ContextOptions): void {
     getTransactionArguments: sinon.stub().returns([]),
     getSecondaryKeys: sinon.stub().returns(opts.secondaryKeys),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
+    getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),
+    getIdentityClaimsFromMiddleware: sinon.stub().resolves(opts.getIdentityClaimsFromMiddleware),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
     isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
@@ -668,7 +712,7 @@ function initApi(): void {
  * @hidden
  */
 function configureKeyring(opts: KeyringOptions): void {
-  const { error, getPair, getPairs, addFromUri, addFromSeed } = opts;
+  const { error, getPair, getPairs, addFromUri, addFromSeed, addFromMnemonic } = opts;
 
   const err = new Error('Error');
 
@@ -677,6 +721,7 @@ function configureKeyring(opts: KeyringOptions): void {
     getPairs: sinon.stub().returns(getPairs),
     addFromSeed: sinon.stub().returns(addFromSeed),
     addFromUri: sinon.stub().returns(addFromUri),
+    addFromMnemonic: sinon.stub().returns(addFromMnemonic),
   };
 
   if (error) {
@@ -684,6 +729,7 @@ function configureKeyring(opts: KeyringOptions): void {
     keyringInstance.getPairs.throws(err);
     keyringInstance.addFromSeed.throws(err);
     keyringInstance.addFromUri.throws(err);
+    keyringInstance.addFromMnemonic.throws(err);
   }
 
   Object.assign(mockInstanceContainer.keyringInstance, (keyringInstance as unknown) as Keyring);
@@ -844,12 +890,10 @@ export function createTxStub<
 
   const instance = mockInstanceContainer.apiInstance;
 
-  const transactionMock = (instance.tx[mod][tx] as unknown) as PolymeshTx<
+  return (instance.tx[mod][tx] as unknown) as PolymeshTx<
     ArgsType<Extrinsics[ModuleName][TransactionName]>
   > &
     SinonStub;
-
-  return transactionMock;
 }
 
 /**
@@ -899,10 +943,12 @@ export function createQueryStub<
     queryModule[mod] = runtimeModule;
   }
 
-  let stub: Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+  type QueryStub = Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+
+  let stub: QueryStub;
 
   if (!runtimeModule[query]) {
-    stub = (sinon.stub() as unknown) as Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+    stub = (sinon.stub() as unknown) as QueryStub;
     stub.entries = sinon.stub();
     stub.entriesPaged = sinon.stub();
     stub.at = sinon.stub();
@@ -913,7 +959,7 @@ export function createQueryStub<
     updateQuery();
   } else {
     const instance = mockInstanceContainer.apiInstance;
-    stub = instance.query[mod][query] as Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+    stub = instance.query[mod][query] as QueryStub;
   }
 
   const entries = opts?.entries ?? [];
@@ -1116,8 +1162,6 @@ export function getKeyringInstance(opts?: KeyringOptions): Keyring {
   return mockInstanceContainer.keyringInstance as Keyring;
 }
 
-// TODO @monitz87: make struct making functions behave like `createMockDidRecord`
-
 /**
  * @hidden
  */
@@ -1141,7 +1185,7 @@ const createMockStringCodec = (value?: string): Codec =>
 /**
  * @hidden
  */
-const createMockU8ACodec = (value?: string): Codec =>
+const createMockU8aCodec = (value?: string): Codec =>
   createMockCodec(stringToU8a(value), value === undefined);
 
 /**
@@ -1168,7 +1212,7 @@ export const createMockIdentityId = (did?: string): IdentityId =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockTicker = (ticker?: string): Ticker => createMockU8ACodec(ticker) as Ticker;
+export const createMockTicker = (ticker?: string): Ticker => createMockU8aCodec(ticker) as Ticker;
 
 /**
  * @hidden
@@ -1292,7 +1336,14 @@ export const createMockU64 = (value?: number): u64 => createMockNumberCodec(valu
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockBytes = (value?: string): Bytes => createMockU8ACodec(value) as Bytes;
+export const createMockPermill = (value?: number): Permill =>
+  createMockNumberCodec(value) as Permill;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBytes = (value?: string): Bytes => createMockU8aCodec(value) as Bytes;
 
 /**
  * @hidden
@@ -1594,7 +1645,7 @@ export const createMockAuthorizationType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockU8aFixed = (value?: string): U8aFixed =>
-  createMockU8ACodec(value) as U8aFixed;
+  createMockU8aCodec(value) as U8aFixed;
 
 /**
  * @hidden
@@ -1801,6 +1852,32 @@ export const createMockClaim = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockIdentityClaim = (identityClaim?: {
+  claim_issuer: IdentityId;
+  issuance_date: Moment;
+  last_update_date: Moment;
+  expiry: Option<Moment>;
+  claim: Claim;
+}): IdentityClaim => {
+  const identityClaimMock = identityClaim || {
+    claim_issuer: createMockIdentityId(),
+    issuance_date: createMockMoment(),
+    last_update_date: createMockMoment(),
+    expiry: createMockOption(),
+    claim: createMockClaim(),
+  };
+  return createMockCodec(
+    {
+      ...identityClaimMock,
+    },
+    !identityClaimMock
+  ) as IdentityClaim;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockTargetIdentity = (
   targetIdentity?: { Specific: IdentityId } | 'PrimaryIssuanceAgent'
 ): TargetIdentity => createMockEnum(targetIdentity) as TargetIdentity;
@@ -1824,6 +1901,26 @@ export const createMockConditionType = (
  */
 export const createMockClaimType = (claimType?: ClaimType): MeshClaimType =>
   createMockEnum(claimType) as MeshClaimType;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockClaim1stKey = (claim1stKey?: {
+  target: IdentityId;
+  claim_type: MeshClaimType;
+}): Claim1stKey => {
+  const claimTypeMock = claim1stKey || {
+    target: createMockIdentityId(),
+    claim_type: createMockClaimType(),
+  };
+  return createMockCodec(
+    {
+      ...claimTypeMock,
+    },
+    !claimTypeMock
+  ) as Claim1stKey;
+};
 
 /**
  * @hidden
@@ -2199,7 +2296,7 @@ export const createMockInstruction = (instruction?: {
   status: InstructionStatus;
   settlement_type: SettlementType;
   created_at: Option<Moment>;
-  valid_from: Option<Moment>;
+  trade_date: Option<Moment>;
 }): Instruction => {
   const data = instruction || {
     instruction_id: createMockU64(),
@@ -2207,7 +2304,7 @@ export const createMockInstruction = (instruction?: {
     status: createMockInstructionStatus(),
     settlement_type: createMockSettlementType(),
     created_at: createMockOption(),
-    valid_from: createMockOption(),
+    trade_date: createMockOption(),
   };
 
   return createMockCodec(
@@ -2216,4 +2313,99 @@ export const createMockInstruction = (instruction?: {
     },
     !instruction
   ) as Instruction;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockTransferManager = (
+  transferManager?: { CountTransferManager: u64 } | { PercentageTransferManager: Permill }
+): TransferManager => createMockEnum(transferManager) as TransferManager;
+
+/**
+ * @hidden
+ */
+export const createMockFundraiserTier = (fundraiserTier?: {
+  total: Balance;
+  price: Balance;
+  remaining: Balance;
+}): FundraiserTier => {
+  const data = fundraiserTier || {
+    total: createMockBalance(),
+    price: createMockBalance(),
+    remaining: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !fundraiserTier
+  ) as FundraiserTier;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockFundraiserStatus = (
+  fundraiserStatus?: 'Live' | 'Frozen' | 'Closed'
+): FundraiserStatus => {
+  return createMockEnum(fundraiserStatus) as FundraiserStatus;
+};
+
+/**
+ * @hidden
+ */
+export const createMockFundraiser = (fundraiser?: {
+  creator: IdentityId;
+  offering_portfolio: PortfolioId;
+  offering_asset: Ticker;
+  raising_portfolio: PortfolioId;
+  raising_asset: Ticker;
+  tiers: FundraiserTier[];
+  venue_id: u64;
+  start: Moment;
+  end: Option<Moment>;
+  status: FundraiserStatus;
+  minimum_investment: Balance;
+}): Fundraiser => {
+  const data = fundraiser || {
+    creator: createMockIdentityId(),
+    offering_portfolio: createMockPortfolioId(),
+    offering_asset: createMockTicker(),
+    raising_portfolio: createMockPortfolioId(),
+    raising_asset: createMockTicker(),
+    tiers: [],
+    venue_id: createMockU64(),
+    start: createMockMoment(),
+    end: createMockOption(),
+    status: createMockFundraiserStatus(),
+    minimum_investment: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !fundraiser
+  ) as Fundraiser;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPriceTier = (priceTier?: { total: Balance; price: Balance }): PriceTier => {
+  const data = priceTier || {
+    total: createMockBalance(),
+    price: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !priceTier
+  ) as PriceTier;
 };
