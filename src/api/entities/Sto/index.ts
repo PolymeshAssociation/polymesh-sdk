@@ -6,6 +6,8 @@ import {
   Context,
   Entity,
   Identity,
+  investInSto,
+  InvestInStoParams,
   modifyStoTimes,
   ModifyStoTimesParams,
   PolymeshError,
@@ -74,6 +76,7 @@ export class Sto extends Entity<UniqueIdentifiers> {
       args => [modifyStoTimes, { ticker, id, ...args }],
       context
     );
+    this.invest = createProcedureMethod(args => [investInSto, { ticker, id, ...args }], context);
   }
 
   /**
@@ -158,6 +161,20 @@ export class Sto extends Entity<UniqueIdentifiers> {
    *   - Security Token Primary Issuance Agent
    */
   public modifyTimes: ProcedureMethod<ModifyStoTimesParams, void>;
+
+  /**
+   * Invest in the STO
+   *
+   * @param args.purchasePortfolio - portfolio in which the purchased Tokens will be stored
+   * @param args.fundingPortfolio - portfolio from which funds will be withdrawn to pay for the Tokens
+   * @param args.purchaseAmount - amount of tokens to purchase
+   * @param args.maxPrice - maximum price to pay per Token (optional)
+   *
+   * @note required roles:
+   *   - Purchase Portfolio Custodian
+   *   - Funding Portfolio Custodian
+   */
+  public invest: ProcedureMethod<InvestInStoParams, void>;
 
   /**
    * Retrieve all investments made on this STO
