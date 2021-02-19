@@ -18,6 +18,16 @@ This document assumes you are already familiar with [Security Tokens](https://th
 
 In order to use the Polymath SDK, you must install [node](https://nodejs.org/) \(version 10\) and [npm](https://www.npmjs.com/). The library is written in [typescript](https://www.typescriptlang.org/), but can also be used in plain javascript. This document will assume you are using typescript, but the translation to javascript is very simple.
 
+### Documentation
+
+Token Studio SDK Walkthrough:
+
+https://developers.polymath.network/token-studio-api-walkthrough/
+
+Polymesh SDK API Reference:
+
+https://developers.polymath.network/polymesh-sdk-api-reference/
+
 ### How to use
 
 #### Installation

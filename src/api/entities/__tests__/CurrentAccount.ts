@@ -60,13 +60,14 @@ describe('CurrentAccount class', () => {
       expect(result).toEqual({
         tokens: null,
         transactions: null,
+        transactionGroups: [],
         portfolios: null,
       });
     });
 
     test("should return the account's permissions if it is a secondary key", async () => {
       const address = 'someAddress';
-      const permissions = { tokens: [], transactions: [], portfolios: [] };
+      const permissions = { tokens: [], transactions: [], transactionGroups: [], portfolios: [] };
       context = dsMockUtils.getContextInstance({
         secondaryKeys: [
           { signer: entityMockUtils.getAccountInstance({ address }), permissions },
@@ -75,6 +76,7 @@ describe('CurrentAccount class', () => {
             permissions: {
               tokens: [],
               transactions: [TxTags.identity.AcceptAuthorization],
+              transactionGroups: [],
               portfolios: [],
             },
           },
@@ -101,7 +103,12 @@ describe('CurrentAccount class', () => {
 
       expect(result).toEqual(true);
 
-      let permissions: Permissions = { tokens: [], transactions: [], portfolios: [] };
+      let permissions: Permissions = {
+        tokens: [],
+        transactions: [],
+        transactionGroups: [],
+        portfolios: [],
+      };
       context = dsMockUtils.getContextInstance({
         secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
       });
@@ -120,6 +127,7 @@ describe('CurrentAccount class', () => {
       permissions = {
         tokens: [token],
         transactions: [TxTags.asset.CreateAsset],
+        transactionGroups: [],
         portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' })],
       };
       context = dsMockUtils.getContextInstance({

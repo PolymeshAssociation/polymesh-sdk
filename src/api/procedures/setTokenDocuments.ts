@@ -144,7 +144,7 @@ export async function prepareStorage(
   const currentDocs: TokenDocument[] = [];
 
   currentDocEntries.forEach(([key, doc]) => {
-    const id = key.args[1] as DocumentId;
+    const [, id] = key.args;
     currentDocIds.push(id);
     currentDocs.push(documentToTokenDocument(doc));
   });
