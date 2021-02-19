@@ -214,9 +214,7 @@ export class Procedure<
 
       const returnValue = await this.prepareTransactions(args);
 
-      const transactionQueue = new TransactionQueue(this.transactions, returnValue, context);
-
-      return transactionQueue;
+      return new TransactionQueue(this.transactions, returnValue, context);
     } finally {
       this.cleanup();
     }
