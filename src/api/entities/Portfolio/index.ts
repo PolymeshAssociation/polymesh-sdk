@@ -1,6 +1,5 @@
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
-import { Ticker } from 'polymesh-types/types';
 
 import {
   Account,
@@ -137,7 +136,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     const assetBalances: Record<string, PortfolioBalance> = {};
 
     totalBalanceEntries.forEach(([key, balance]) => {
-      const ticker = tickerToString(key.args[1] as Ticker);
+      const ticker = tickerToString(key.args[1]);
       const total = balanceToBigNumber(balance);
 
       assetBalances[ticker] = {
@@ -148,7 +147,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     });
 
     lockedBalanceEntries.forEach(([key, balance]) => {
-      const ticker = tickerToString(key.args[1] as Ticker);
+      const ticker = tickerToString(key.args[1]);
       const locked = balanceToBigNumber(balance);
 
       assetBalances[ticker].locked = locked;
@@ -183,6 +182,9 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
    * @note this may create an AuthorizationRequest which has to be accepted by
    *   the corresponding Identity. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @note required role:
+   *   - Portfolio Custodian
    */
 
   public setCustodian: ProcedureMethod<SetCustodianParams, void>;
@@ -192,6 +194,9 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
    *
    * @param args.to - portfolio (or portfolio ID) that will receive the funds. Optional, if no value is passed, the funds will be moved to the default Portfolio of this Portfolio's owner
    * @param args.movements - list of tokens (and their corresponding amounts) that will be moved
+   *
+   * @note required role:
+   *   - Portfolio Custodian
    */
 
   public moveFunds: ProcedureMethod<MoveFundsParams, void>;
@@ -287,7 +292,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
           legs: settlementLegs.map(leg => {
             return {
               token: new SecurityToken({ ticker: leg!.ticker }, context),
-              amount: new BigNumber(leg!.amount).div(Math.pow(10, 6)),
+              amount: new BigNumber(leg!.amount).shiftedBy(-6),
               direction: leg!.direction,
               from: middlewarePortfolioToPortfolio(leg!.from, context),
               to: middlewarePortfolioToPortfolio(leg!.to, context),

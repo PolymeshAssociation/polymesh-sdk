@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { PortfolioId, PortfolioNumber } from 'polymesh-types/types';
 
 import {
   Context,
@@ -58,9 +57,7 @@ export class Portfolios extends Namespace<Identity> {
       new DefaultPortfolio({ did }, context),
     ];
     rawPortfolios.forEach(([key]) => {
-      portfolios.push(
-        new NumberedPortfolio({ id: u64ToBigNumber(key.args[1] as PortfolioNumber), did }, context)
-      );
+      portfolios.push(new NumberedPortfolio({ id: u64ToBigNumber(key.args[1]), did }, context));
     });
 
     return portfolios;
@@ -96,7 +93,7 @@ export class Portfolios extends Namespace<Identity> {
     );
 
     const data = portfolioEntries.map(([{ args }]) => {
-      const { did: ownerDid, kind } = args[1] as PortfolioId;
+      const { did: ownerDid, kind } = args[1];
 
       const did = identityIdToString(ownerDid);
 
@@ -158,6 +155,9 @@ export class Portfolios extends Namespace<Identity> {
 
   /**
    * Delete a Portfolio by ID
+   *
+   * @note required role:
+   *   - Portfolio Custodian
    */
   public delete: ProcedureMethod<{ portfolio: BigNumber | NumberedPortfolio }, void>;
 }

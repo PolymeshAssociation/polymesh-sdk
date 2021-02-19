@@ -82,7 +82,6 @@ import {
   Instruction,
   InstructionStatus,
   InvestorZKProofData,
-  IssueAssetItem,
   MovePortfolioItem,
   PalletName,
   PalletPermissions,
@@ -363,26 +362,31 @@ const finalizedErrorReceipt = createFailReceipt({}, successReceipt);
 /**
  * @hidden
  */
+const failReasonToReceipt = (failReason?: TxFailReason): ISubmittableResult => {
+  if (!failReason || failReason === TxFailReason.Module) {
+    return moduleFailReceipt;
+  }
+
+  if (failReason === TxFailReason.BadOrigin) {
+    return badOriginFailReceipt;
+  }
+
+  if (failReason === TxFailReason.CannotLookup) {
+    return cannotLookupFailReceipt;
+  }
+
+  return otherFailReceipt;
+};
+
+/**
+ * @hidden
+ */
 const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubmittableResult => {
   if (status === MockTxStatus.Aborted) {
     return abortReceipt;
   }
   if (status === MockTxStatus.Failed) {
-    if (!failReason || failReason === TxFailReason.Module) {
-      return moduleFailReceipt;
-    }
-
-    if (failReason === TxFailReason.BadOrigin) {
-      return badOriginFailReceipt;
-    }
-
-    if (failReason === TxFailReason.CannotLookup) {
-      return cannotLookupFailReceipt;
-    }
-
-    if (failReason === TxFailReason.Other) {
-      return otherFailReceipt;
-    }
+    return failReasonToReceipt(failReason);
   }
   if (status === MockTxStatus.Succeeded) {
     return successReceipt;
@@ -885,12 +889,10 @@ export function createTxStub<
 
   const instance = mockInstanceContainer.apiInstance;
 
-  const transactionMock = (instance.tx[mod][tx] as unknown) as PolymeshTx<
+  return (instance.tx[mod][tx] as unknown) as PolymeshTx<
     ArgsType<Extrinsics[ModuleName][TransactionName]>
   > &
     SinonStub;
-
-  return transactionMock;
 }
 
 /**
@@ -940,10 +942,12 @@ export function createQueryStub<
     queryModule[mod] = runtimeModule;
   }
 
-  let stub: Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+  type QueryStub = Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+
+  let stub: QueryStub;
 
   if (!runtimeModule[query]) {
-    stub = (sinon.stub() as unknown) as Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+    stub = (sinon.stub() as unknown) as QueryStub;
     stub.entries = sinon.stub();
     stub.entriesPaged = sinon.stub();
     stub.at = sinon.stub();
@@ -954,7 +958,7 @@ export function createQueryStub<
     updateQuery();
   } else {
     const instance = mockInstanceContainer.apiInstance;
-    stub = instance.query[mod][query] as Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+    stub = instance.query[mod][query] as QueryStub;
   }
 
   const entries = opts?.entries ?? [];
@@ -1156,8 +1160,6 @@ export function getKeyringInstance(opts?: KeyringOptions): Keyring {
   }
   return mockInstanceContainer.keyringInstance as Keyring;
 }
-
-// TODO @monitz87: make struct making functions behave like `createMockDidRecord`
 
 /**
  * @hidden
@@ -2103,27 +2105,6 @@ export const createMockText = (value: string): Text => createMockStringCodec(val
 export const createMockAssetOwnershipRelation = (
   assetOwnershipRelation?: 'NotOwned' | 'TickerOwned' | 'AssetOwned'
 ): AssetOwnershipRelation => createMockEnum(assetOwnershipRelation) as AssetOwnershipRelation;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockIssueAssetItem = (issueAssetItem?: {
-  identity_did: IdentityId;
-  value: Balance;
-}): IssueAssetItem => {
-  const item = issueAssetItem || {
-    identity_did: createMockIdentityId(),
-    value: createMockBalance(),
-  };
-
-  return createMockCodec(
-    {
-      ...item,
-    },
-    !issueAssetItem
-  ) as IssueAssetItem;
-};
 
 /**
  * @hidden

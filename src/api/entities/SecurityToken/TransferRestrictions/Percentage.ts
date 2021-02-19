@@ -16,9 +16,13 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    * Add a Percentage Transfer Restriction to this Security Token
    *
    * @param args.percentage - limit on the proportion of the total supply of this Security Token that can be held by a single investor at once
-   * @param args.exempted - array of Scope IDs that are exempted from the Restriction
+   * @param args.exemptedScopeIds - array of Scope IDs that are exempted from the Restriction
+   * @param args.exemptedIdentities - array of Identities (or DIDs) that are exempted from the Restriction
    *
    * @note the result is the total amount of restrictions after the procedure has run
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public addRestriction!: ProcedureMethod<
     Omit<AddPercentageTransferRestrictionParams, 'type'>,
@@ -26,11 +30,14 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
   >;
 
   /**
-   * Sets all Percentage Transfer Restrictions type on this Security Token
+   * Sets all Percentage Transfer Restrictions on this Security Token
    *
    * @param args.restrictions - array of Percentage Transfer Restrictions with their corresponding exemptions (if applicable)
    *
    * @note the result is the total amount of restrictions after the procedure has run
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public setRestrictions!: ProcedureMethod<
     Omit<SetPercentageTransferRestrictionsParams, 'type'>,

@@ -1,7 +1,7 @@
 import { Keyring } from '@polkadot/api';
 import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { TxTag } from 'polymesh-types/types';
+import { TxTag, TxTags } from 'polymesh-types/types';
 
 import { StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
@@ -311,6 +311,13 @@ export function isScopedClaim(claim: Claim): claim is ScopedClaim {
   return ![ClaimType.NoData, ClaimType.CustomerDueDiligence].includes(type);
 }
 
+/**
+ * @hidden
+ */
+export function isInvestorUniquenessClaim(claim: Claim): claim is InvestorUniquenessClaim {
+  return claim.type === ClaimType.InvestorUniqueness;
+}
+
 export interface ClaimData<ClaimType = Claim> {
   target: Identity;
   issuer: Identity;
@@ -530,10 +537,20 @@ export interface Fees {
  *   of the Identity's Security Tokens)
  */
 export interface Permissions {
-  /* list of Security Tokens over which this key has permissions */
+  /**
+   * list of Security Tokens over which this key has permissions
+   */
   tokens: SecurityToken[] | null;
-  /* list of Transactions this key can execute */
+  /**
+   * list of Transactions this key can execute
+   */
   transactions: TxTag[] | null;
+  /**
+   * list of Transaction Groups this key can execute. Having permissions over a TxGroup
+   *   means having permissions over every TxTag in said group. Transaction permissions are the result of
+   *   combining these with the `transactions` array. If `transactions` is null, then this value is redundant
+   */
+  transactionGroups: TxGroup[];
   /* list of Portfolios over which this key has permissions */
   portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
 }
@@ -613,9 +630,75 @@ export interface SecondaryKey {
   permissions: Permissions;
 }
 
+/**
+ * Transaction Groups (for permissions purposes)
+ */
+export enum TxGroup {
+  /**
+   * - TxTags.identity.AddInvestorUniquenessClaim
+   * - TxTags.portfolio.MovePortfolioFunds
+   * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.RejectInstruction
+   * - TxTags.settlement.CreateVenue
+   */
+  PortfolioManagement = 'PortfolioManagement',
+  /**
+   * - TxTags.asset.MakeDivisible
+   * - TxTags.asset.RenameAsset
+   * - TxTags.asset.SetFundingRound
+   * - TxTags.asset.AddDocuments
+   * - TxTags.asset.RemoveDocuments
+   */
+  TokenManagement = 'TokenManagement',
+  /**
+   * - TxTags.asset.Freeze
+   * - TxTags.asset.Unfreeze
+   * - TxTags.identity.AddAuthorization
+   * - TxTags.identity.RemoveAuthorization
+   */
+  AdvancedTokenManagement = 'AdvancedTokenManagement',
+  /**
+   * - TxTags.identity.AddInvestorUniquenessClaim
+   * - TxTags.settlement.CreateVenue
+   * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddAndAffirmInstruction
+   */
+  Distribution = 'Distribution',
+  /**
+   * - TxTags.asset.Issue
+   */
+  Issuance = 'Issuance',
+  /**
+   * - TxTags.complianceManager.AddDefaultTrustedClaimIssuer
+   * - TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer
+   */
+  TrustedClaimIssuersManagement = 'TrustedClaimIssuersManagement',
+  /**
+   * - TxTags.identity.AddClaim
+   * - TxTags.identity.RevokeClaim
+   */
+  ClaimsManagement = 'ClaimsManagement',
+  /**
+   * - TxTags.complianceManager.AddComplianceRequirement
+   * - TxTags.complianceManager.RemoveComplianceRequirement
+   * - TxTags.complianceManager.PauseAssetCompliance
+   * - TxTags.complianceManager.ResumeAssetCompliance
+   * - TxTags.complianceManager.ResetAssetCompliance
+   */
+  ComplianceRequirementsManagement = 'ComplianceRequirementsManagement',
+}
+
+/**
+ * Permissions to grant to a Signer over an Identity
+ *
+ * @note TxGroups in the `transactionGroups` array will be transformed into their corresponding `TxTag`s
+ *   and appended to the `transactions` array. If `transactions` is null, then the value of `transactionGroups` is redundant
+ */
 export interface PermissionsLike {
   tokens?: (string | SecurityToken)[] | null;
   transactions?: TxTag[] | null;
+  transactionGroups?: TxGroup[];
   portfolios?: PortfolioLike[] | null;
 }
 
@@ -637,7 +720,12 @@ export interface ProcedureAuthorizationStatus {
 }
 
 interface TransferRestrictionBase {
-  exempted?: string[];
+  exemptedScopeIds?: string[];
+}
+
+interface TransferRestrictionInputBase {
+  exemptedScopeIds?: string[];
+  exemptedIdentities?: (Identity | string)[];
 }
 
 export interface CountTransferRestriction extends TransferRestrictionBase {
@@ -645,6 +733,14 @@ export interface CountTransferRestriction extends TransferRestrictionBase {
 }
 
 export interface PercentageTransferRestriction extends TransferRestrictionBase {
+  percentage: BigNumber;
+}
+
+export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
+  count: BigNumber;
+}
+
+export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   percentage: BigNumber;
 }
 
@@ -658,7 +754,7 @@ export interface ActiveTransferRestrictions<
   availableSlots: number;
 }
 
-export { TxTags } from 'polymesh-types/types';
+export { TxTags, TxTag };
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';
 export * from '~/api/entities/types';

@@ -105,6 +105,9 @@ export abstract class TransferRestrictionBase<
    * @param args.exempted - array of Scope IDs that are exempted from the Restriction
    *
    * @note the result is the total amount of restrictions after the procedure has run
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public addRestriction: ProcedureMethod<AddRestrictionParams<T>, number>;
 
@@ -114,6 +117,9 @@ export abstract class TransferRestrictionBase<
    * @param args.restrictions - array of Transfer Restrictions with their corresponding exemptions (if applicable)
    *
    * @note the result is the total amount of restrictions after the procedure has run
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public setRestrictions: ProcedureMethod<SetRestrictionsParams<T>, number>;
 
@@ -121,6 +127,9 @@ export abstract class TransferRestrictionBase<
    * Removes all Transfer Restrictions of the corresponding type from this Security Token
    *
    * @note the result is the total amount of restrictions after the procedure has run
+   *
+   * @note required role:
+   *   - Security Token Owner
    */
   public removeRestrictions: ProcedureMethod<void, number>;
 
@@ -157,7 +166,7 @@ export abstract class TransferRestrictionBase<
     );
 
     const restrictions = rawExemptedLists.map((list, index) => {
-      const exempted = list.map(([{ args: [, scopeId] }]) => scopeIdToString(scopeId));
+      const exemptedScopeIds = list.map(([{ args: [, scopeId] }]) => scopeIdToString(scopeId));
       const { value } = transferManagerToTransferRestriction(filteredTms[index]);
       let restriction;
 
@@ -171,10 +180,10 @@ export abstract class TransferRestrictionBase<
         };
       }
 
-      if (exempted.length) {
+      if (exemptedScopeIds.length) {
         return {
           ...restriction,
-          exempted,
+          exemptedScopeIds,
         };
       }
       return restriction;

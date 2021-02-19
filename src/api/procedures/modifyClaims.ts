@@ -3,18 +3,19 @@ import P from 'bluebird';
 import { cloneDeep, isEqual, uniq } from 'lodash';
 import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 
-import { Identity, PolymeshError, Procedure } from '~/internal';
+import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import {
+  CddClaim,
   Claim,
   ClaimTarget,
   ClaimType,
   Ensured,
   ErrorCode,
+  isInvestorUniquenessClaim,
   isScopedClaim,
   RoleType,
-  Scope,
 } from '~/types';
 import {
   ClaimOperation,
@@ -61,6 +62,103 @@ export function groupByDid([target]: MapMaybePostTransactionValue<
   return identityIdToString(target as IdentityId);
 }
 
+const areSameClaims = (claim: Claim, { scope, type }: MiddlewareClaim): boolean => {
+  let isSameScope = true;
+
+  if (isScopedClaim(claim)) {
+    isSameScope = scope ? isEqual(middlewareScopeToScope(scope), claim.scope) : false;
+  }
+
+  return isSameScope && ClaimType[type] === claim.type;
+};
+
+const findClaimsByOtherIssuers = (
+  claims: ClaimTarget[],
+  claimsByDid: Record<string, MiddlewareClaim[]>
+): Claim[] =>
+  claims.reduce<Claim[]>((prev, { target, claim }) => {
+    const targetClaims = claimsByDid[signerToString(target)] ?? [];
+
+    const claimExists = !!targetClaims.find(targetClaim => areSameClaims(claim, targetClaim));
+
+    if (!claimExists) {
+      return [...prev, claim];
+    }
+
+    return [...prev];
+  }, []);
+
+const findPositiveBalanceIuClaims = (claims: ClaimTarget[], context: Context): Promise<Claim[]> =>
+  P.reduce<ClaimTarget, Claim[]>(
+    claims,
+    async (prev, { claim }) => {
+      if (isInvestorUniquenessClaim(claim)) {
+        const {
+          scope: { value },
+          scopeId,
+        } = claim;
+
+        const balance = await context.polymeshApi.query.asset.aggregateBalance(
+          stringToTicker(value, context),
+          stringToScopeId(scopeId, context)
+        );
+
+        if (!balanceToBigNumber(balance).isZero()) {
+          return [...prev, claim];
+        }
+      }
+      return [...prev];
+    },
+    []
+  );
+
+/**
+ * @hidden
+ *
+ * Return all new CDD claims for identities that have an existing CDD claim with a different ID
+ */
+const findInvalidCddClaims = async (
+  claims: ClaimTarget[],
+  context: Context
+): Promise<{ target: Identity; currentCddId: string; newCddId: string }[]> => {
+  const invalidCddClaims: { target: Identity; currentCddId: string; newCddId: string }[] = [];
+
+  const newCddClaims = claims.filter(
+    ({ claim: { type } }) => type === ClaimType.CustomerDueDiligence
+  );
+
+  if (newCddClaims.length) {
+    const issuedCddClaims = await context.issuedClaims({
+      targets: newCddClaims.map(({ target }) => target),
+      claimTypes: [ClaimType.CustomerDueDiligence],
+      includeExpired: false,
+    });
+
+    newCddClaims.forEach(({ target, claim }) => {
+      const did = signerToString(target);
+      const issuedClaimsForTarget = issuedCddClaims.data.filter(
+        ({ target: issuedTarget }) => issuedTarget.did === did
+      );
+
+      if (issuedClaimsForTarget.length) {
+        // we know both claims are CDD claims
+        const { id: newCddId } = issuedClaimsForTarget[0].claim as CddClaim;
+        const { id: currentCddId } = claim as CddClaim;
+
+        if (newCddId !== currentCddId) {
+          invalidCddClaims.push({
+            target: typeof target === 'string' ? new Identity({ did: target }, context) : target,
+            currentCddId,
+            newCddId,
+          });
+        }
+      }
+    });
+  }
+
+  return invalidCddClaims;
+};
+
 /**
  * @hidden
  */
@@ -74,7 +172,6 @@ export async function prepareModifyClaims(
     context: {
       polymeshApi: {
         tx: { identity },
-        query: { asset },
       },
     },
     context,
@@ -84,12 +181,14 @@ export async function prepareModifyClaims(
   let allTargets: string[] = [];
 
   claims.forEach(({ target, expiry, claim }: ClaimTarget) => {
+    const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
+
     allTargets.push(signerToString(target));
     modifyClaimArgs.push(
       tuple(
         stringToIdentityId(signerToString(target), context),
         claimToMeshClaim(claim, context),
-        expiry ? dateToMoment(expiry, context) : null
+        rawExpiry
       )
     );
   });
@@ -111,8 +210,10 @@ export async function prepareModifyClaims(
     });
   }
 
+  const shouldValidateWithMiddleware = operation !== ClaimOperation.Add && middlewareAvailable;
+
   // skip validation if the middleware is unavailable
-  if (operation !== ClaimOperation.Add && middlewareAvailable) {
+  if (shouldValidateWithMiddleware) {
     const { did: currentDid } = await context.getCurrentIdentity();
     const {
       data: {
@@ -136,65 +237,27 @@ export async function prepareModifyClaims(
       {}
     );
 
-    const nonExistentClaims: Claim[] = [];
-    claims.forEach(({ target, claim }) => {
-      const targetClaims = claimsByDid[signerToString(target)] ?? [];
+    const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid);
 
-      const claimExists = !!targetClaims.find(({ scope, type }) => {
-        let isSameScope = true;
-
-        if (isScopedClaim(claim)) {
-          isSameScope = scope ? isEqual(middlewareScopeToScope(scope), claim.scope) : false;
-        }
-
-        return isSameScope && ClaimType[type] === claim.type;
-      });
-
-      if (!claimExists) {
-        nonExistentClaims.push(claim);
-      }
-    });
-
-    if (nonExistentClaims.length) {
+    if (claimsByOtherIssuers.length) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: `Attempt to ${
-          operation === ClaimOperation.Edit ? 'edit' : 'revoke'
-        } claims that weren't issued by the current Identity`,
+        message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the current Identity`,
         data: {
-          nonExistentClaims,
+          claimsByOtherIssuers,
         },
       });
     }
   }
 
   if (operation === ClaimOperation.Revoke) {
-    const claimsWithBalance: Claim[] = [];
-
-    await P.each(
-      claims.filter(({ claim: { type } }) => type === ClaimType.InvestorUniqueness),
-      async ({ claim }) => {
-        const investorUniquenessClaim = claim as { scope: Scope; scopeId: string };
-        const {
-          scope: { value },
-          scopeId,
-        } = investorUniquenessClaim;
-
-        const balance = await asset.aggregateBalance(
-          stringToTicker(value, context),
-          stringToScopeId(scopeId, context)
-        );
-
-        if (!balanceToBigNumber(balance).isZero()) {
-          claimsWithBalance.push(claim);
-        }
-      }
-    );
+    const claimsWithBalance: Claim[] = await findPositiveBalanceIuClaims(claims, context);
 
     if (claimsWithBalance.length) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'Attempt to revoke Investor Uniqueness claims with positive balance',
+        message:
+          'Attempt to revoke Investor Uniqueness claims from investors with positive balance',
         data: {
           claimsWithBalance,
         },
@@ -206,57 +269,25 @@ export async function prepareModifyClaims(
       { groupByFn: groupByDid },
       modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim))
     );
-  } else {
-    if (operation === ClaimOperation.Add) {
-      const invalidCddClaims: { target: Identity; currentCddId: string; newCddId: string }[] = [];
 
-      const newCddClaims = claims.filter(
-        ({ claim: { type } }) => type === ClaimType.CustomerDueDiligence
-      );
-
-      if (newCddClaims.length) {
-        const issuedCddClaims = await context.issuedClaims({
-          targets: newCddClaims.map(({ target }) => target),
-          claimTypes: [ClaimType.CustomerDueDiligence],
-          includeExpired: false,
-        });
-
-        newCddClaims.forEach(({ target, claim }) => {
-          const did = signerToString(target);
-          const issuedClaimsForTarget = issuedCddClaims.data.filter(
-            ({ target: issuedTarget }) => issuedTarget.did === did
-          );
-
-          if (issuedClaimsForTarget.length) {
-            // we know the claim is a CDD claim, so it must have an id property
-            const { id: newCddId } = issuedClaimsForTarget[0].claim as { id: string };
-            const { id: currentCddId } = claim as { id: string };
-
-            if (newCddId !== currentCddId) {
-              invalidCddClaims.push({
-                target:
-                  typeof target === 'string' ? new Identity({ did: target }, context) : target,
-                currentCddId,
-                newCddId,
-              });
-            }
-          }
-        });
-
-        if (invalidCddClaims.length) {
-          throw new PolymeshError({
-            code: ErrorCode.ValidationError,
-            message: 'A target Identity cannot have CDD claims with different IDs',
-            data: {
-              invalidCddClaims,
-            },
-          });
-        }
-      }
-    }
-
-    this.addBatchTransaction(identity.addClaim, { groupByFn: groupByDid }, modifyClaimArgs);
+    return;
   }
+
+  if (operation === ClaimOperation.Add) {
+    const invalidCddClaims = await findInvalidCddClaims(claims, context);
+
+    if (invalidCddClaims.length) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'A target Identity cannot have CDD claims with different IDs',
+        data: {
+          invalidCddClaims,
+        },
+      });
+    }
+  }
+
+  this.addBatchTransaction(identity.addClaim, { groupByFn: groupByDid }, modifyClaimArgs);
 }
 
 /**

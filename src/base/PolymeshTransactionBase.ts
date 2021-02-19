@@ -195,7 +195,7 @@ export abstract class PolymeshTransactionBase<
 
     this.setTag();
 
-    const gettingReceipt: Promise<ISubmittableResult> = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const txWithArgs = this.composeTx();
       const gettingUnsub = txWithArgs.signAndSend(this.signer, receipt => {
         const { status } = receipt;
@@ -256,8 +256,6 @@ export abstract class PolymeshTransactionBase<
           reject(new PolymeshError(error));
         });
     });
-
-    return gettingReceipt;
   }
 
   /**

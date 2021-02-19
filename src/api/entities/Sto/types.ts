@@ -29,3 +29,9 @@ export interface StoDetails {
   status: StoStatus;
   minInvestment: BigNumber;
 }
+
+export interface Investment {
+  investor: Identity;
+  soldAmount: BigNumber;
+  investedAmount: BigNumber;
+}

@@ -1,4 +1,3 @@
-import { u64 } from '@polkadot/types';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
 import { Instruction as MeshInstruction } from 'polymesh-types/types';
@@ -158,7 +157,7 @@ export class CurrentIdentity extends Identity {
       );
 
       const instructionIds = uniqBy(
-        flatten(auths).map(([key]) => key.args[1] as u64),
+        flatten(auths).map(([key]) => key.args[1]),
         id => id.toNumber()
       );
       return settlement.instructionDetails.multi<MeshInstruction>(instructionIds);

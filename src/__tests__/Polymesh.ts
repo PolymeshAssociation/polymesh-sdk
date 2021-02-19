@@ -93,7 +93,10 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        seed: accountSeed,
+        accountSeed,
+        accountUri: undefined,
+        accountMnemonic: undefined,
+        keyring: undefined,
       });
     });
 
@@ -111,6 +114,9 @@ describe('Polymesh Class', () => {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
         keyring,
+        accountSeed: undefined,
+        accountUri: undefined,
+        accountMnemonic: undefined,
       });
     });
 
@@ -127,7 +133,10 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        keyring,
+        keyring: { keyring },
+        accountSeed: undefined,
+        accountUri: undefined,
+        accountMnemonic: undefined,
       });
     });
 
@@ -144,7 +153,10 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        uri: accountUri,
+        accountUri,
+        accountSeed: undefined,
+        accountMnemonic: undefined,
+        keyring: undefined,
       });
     });
 
@@ -162,7 +174,10 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        mnemonic: accountMnemonic,
+        accountMnemonic,
+        accountSeed: undefined,
+        accountUri: undefined,
+        keyring: undefined,
       });
     });
 
@@ -186,7 +201,10 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        uri: accountUri,
+        accountUri,
+        accountSeed: undefined,
+        accountMnemonic: undefined,
+        keyring: undefined,
       });
     });
 
@@ -259,7 +277,10 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        seed: accountSeed,
+        accountSeed,
+        accountUri: undefined,
+        accountMnemonic: undefined,
+        keyring: undefined,
       });
       sinon.assert.calledWith(dsMockUtils.getApiInstance().setSigner, signer);
     });

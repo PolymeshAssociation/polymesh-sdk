@@ -105,13 +105,19 @@ export class Claims {
    * Add claims to Identities
    *
    * @param args.claims - array of claims to be added
+   *
+   * @note required role if at least one claim is CDD type:
+   *   - Customer Due Diligence Provider
    */
   public addClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
   /**
    * Edit claims associated to Identities (only the expiry date can be modified)
    *
-   * * @param args.claims - array of claims to be edited
+   * @param args.claims - array of claims to be edited
+   *
+   * @note required role if at least one claim is CDD type:
+   *   - Customer Due Diligence Provider
    */
 
   public editClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
@@ -120,6 +126,9 @@ export class Claims {
    * Revoke claims from Identities
    *
    * @param args.claims - array of claims to be revoked
+   *
+   * @note required role if at least one claim is CDD type:
+   *   - Customer Due Diligence Provider
    */
   public revokeClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
@@ -145,14 +154,12 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const result = await context.getIdentityClaimsFromMiddleware({
+    return context.getIdentityClaimsFromMiddleware({
       trustedClaimIssuers: [did],
       includeExpired,
       size,
       start,
     });
-
-    return result;
   }
 
   /**

@@ -12,7 +12,19 @@ import {
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import { computeWithoutCheck } from 'iso-7064';
-import { camelCase, isEqual, map, padEnd, range, rangeRight, snakeCase, values } from 'lodash';
+import {
+  camelCase,
+  flatten,
+  includes,
+  isEqual,
+  map,
+  padEnd,
+  range,
+  rangeRight,
+  snakeCase,
+  uniq,
+  values,
+} from 'lodash';
 import {
   AffirmationStatus as MeshAffirmationStatus,
   AssetComplianceResult,
@@ -130,6 +142,7 @@ import {
   TokenType,
   TransferStatus,
   TrustedClaimIssuer,
+  TxGroup,
   VenueType,
 } from '~/types';
 import {
@@ -151,7 +164,14 @@ import {
   MAX_TICKER_LENGTH,
   SS58_FORMAT,
 } from '~/utils/constants';
-import { createClaim, isPrintableAscii, padString, removePadding } from '~/utils/internal';
+import {
+  assertIsInteger,
+  assertIsPositive,
+  createClaim,
+  isPrintableAscii,
+  padString,
+  removePadding,
+} from '~/utils/internal';
 
 export * from '~/generated/utils';
 
@@ -366,6 +386,8 @@ export function u64ToBigNumber(value: u64): BigNumber {
  * @hidden
  */
 export function numberToU64(value: number | BigNumber, context: Context): u64 {
+  assertIsInteger(value);
+  assertIsPositive(value);
   return context.polymeshApi.createType('u64', new BigNumber(value).toString());
 }
 
@@ -373,10 +395,7 @@ export function numberToU64(value: number | BigNumber, context: Context): u64 {
  * @hidden
  */
 export function percentageToPermill(value: number | BigNumber, context: Context): Permill {
-  return context.polymeshApi.createType(
-    'Permill',
-    new BigNumber(value).multipliedBy(Math.pow(10, 4)).toString()
-  ); // (value : 100) * 10^6
+  return context.polymeshApi.createType('Permill', new BigNumber(value).shiftedBy(4).toString()); // (value : 100) * 10^6
 }
 
 /**
@@ -385,7 +404,7 @@ export function percentageToPermill(value: number | BigNumber, context: Context)
  * @note returns a percentage value ([0, 100])
  */
 export function permillToBigNumber(value: Permill): BigNumber {
-  return new BigNumber(value.toString()).dividedBy(Math.pow(10, 4)); // (value : 10^6) * 100
+  return new BigNumber(value.toString()).shiftedBy(-4); // (value : 10^6) * 100
 }
 
 /**
@@ -501,6 +520,86 @@ export function textToString(value: Text): string {
 }
 
 /**
+ * Retrieve every Transaction Tag associated to a Transaction Group
+ */
+export function txGroupToTxTags(group: TxGroup): TxTag[] {
+  switch (group) {
+    case TxGroup.PortfolioManagement: {
+      return [
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.portfolio.MovePortfolioFunds,
+        TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.RejectInstruction,
+        TxTags.settlement.CreateVenue,
+      ];
+    }
+    case TxGroup.TokenManagement: {
+      return [
+        TxTags.asset.MakeDivisible,
+        TxTags.asset.RenameAsset,
+        TxTags.asset.SetFundingRound,
+        TxTags.asset.AddDocuments,
+        TxTags.asset.RemoveDocuments,
+      ];
+    }
+    case TxGroup.AdvancedTokenManagement: {
+      return [
+        TxTags.asset.Freeze,
+        TxTags.asset.Unfreeze,
+        TxTags.identity.AddAuthorization,
+        TxTags.identity.RemoveAuthorization,
+      ];
+    }
+    case TxGroup.Distribution: {
+      return [
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.settlement.CreateVenue,
+        TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddAndAffirmInstruction,
+      ];
+    }
+    case TxGroup.Issuance: {
+      return [TxTags.asset.Issue];
+    }
+    case TxGroup.TrustedClaimIssuersManagement: {
+      return [
+        TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
+        TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
+      ];
+    }
+    case TxGroup.ClaimsManagement: {
+      return [TxTags.identity.AddClaim, TxTags.identity.RevokeClaim];
+    }
+    case TxGroup.ComplianceRequirementsManagement: {
+      return [
+        TxTags.complianceManager.AddComplianceRequirement,
+        TxTags.complianceManager.RemoveComplianceRequirement,
+        TxTags.complianceManager.PauseAssetCompliance,
+        TxTags.complianceManager.ResumeAssetCompliance,
+        TxTags.complianceManager.ResetAssetCompliance,
+      ];
+    }
+  }
+}
+
+/**
+ * @hidden
+ *
+ * @note tags that don't belong to any group will be ignored.
+ *   The same goes for tags that belong to a group that wasn't completed
+ */
+export function txTagsToTxGroups(tags: TxTag[]): TxGroup[] {
+  return values(TxGroup)
+    .sort()
+    .filter(group => {
+      const tagsInGroup = txGroupToTxTags(group);
+
+      return tagsInGroup.every(tag => tags.includes(tag));
+    });
+}
+
+/**
  * @hidden
  */
 export function permissionsToMeshPermissions(
@@ -513,16 +612,18 @@ export function permissionsToMeshPermissions(
   let extrinsic: { pallet_name: string; dispatchable_names: string[] }[] | null = null;
 
   if (transactions) {
-    transactions.sort().forEach(tag => {
-      const [modName, txName] = tag.split('.');
+    uniq(transactions)
+      .sort()
+      .forEach(tag => {
+        const [modName, txName] = tag.split('.');
 
-      const palletName = stringUpperFirst(modName);
-      const dispatchableName = snakeCase(txName);
+        const palletName = stringUpperFirst(modName);
+        const dispatchableName = snakeCase(txName);
 
-      const pallet = (extrinsicDict[palletName] = extrinsicDict[palletName] || []);
+        const pallet = (extrinsicDict[palletName] = extrinsicDict[palletName] || []);
 
-      pallet.push(dispatchableName);
-    });
+        pallet.push(dispatchableName);
+      });
 
     extrinsic = map(extrinsicDict, (val, key) => ({
       /* eslint-disable @typescript-eslint/camelcase */
@@ -595,6 +696,7 @@ export function meshPermissionsToPermissions(
   return {
     tokens,
     transactions,
+    transactionGroups: transactions ? txTagsToTxGroups(transactions) : [],
     portfolios,
   };
 }
@@ -711,6 +813,8 @@ export function numberToBalance(
 ): Balance {
   const rawValue = new BigNumber(value);
 
+  assertIsPositive(value);
+
   divisible = divisible ?? true;
 
   if (rawValue.isGreaterThan(MAX_BALANCE)) {
@@ -744,17 +848,14 @@ export function numberToBalance(
     }
   }
 
-  return context.polymeshApi.createType(
-    'Balance',
-    rawValue.multipliedBy(Math.pow(10, 6)).toString()
-  );
+  return context.polymeshApi.createType('Balance', rawValue.shiftedBy(6).toString());
 }
 
 /**
  * @hidden
  */
 export function balanceToBigNumber(balance: Balance): BigNumber {
-  return new BigNumber(balance.toString()).div(Math.pow(10, 6));
+  return new BigNumber(balance.toString()).shiftedBy(-6);
 }
 
 /**
@@ -768,6 +869,8 @@ export function stringToMemo(value: string, context: Context): Memo {
  * @hidden
  */
 export function numberToU32(value: number | BigNumber, context: Context): u32 {
+  assertIsInteger(value);
+  assertIsPositive(value);
   return context.polymeshApi.createType('u32', new BigNumber(value).toString());
 }
 
@@ -1129,6 +1232,13 @@ export function documentUriToString(docUri: DocumentUri): string {
  * @hidden
  */
 export function stringToDocumentHash(docHash: string, context: Context): DocumentHash {
+  if (!docHash.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Document hash cannot be empty',
+    });
+  }
+
   return context.polymeshApi.createType('DocumentHash', docHash);
 }
 
@@ -1830,6 +1940,33 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
     extrinsicName.replace(new RegExp('Documents$'), 'Document') // `asset.addDocuments` and `asset.removeDocuments`
   )}`;
 
+  const protocolOpTags = [
+    TxTags.asset.RegisterTicker,
+    TxTags.asset.Issue,
+    TxTags.asset.AddDocuments,
+    TxTags.asset.CreateAsset,
+    TxTags.asset.CreateCheckpoint,
+    TxTags.dividend.New,
+    TxTags.complianceManager.AddComplianceRequirement,
+    TxTags.identity.RegisterDid,
+    TxTags.identity.CddRegisterDid,
+    TxTags.identity.AddClaim,
+    TxTags.identity.SetPrimaryKey,
+    TxTags.identity.AddSecondaryKeysWithAuthorization,
+    TxTags.pips.Propose,
+    TxTags.voting.AddBallot,
+    TxTags.contracts.PutCode,
+    TxTags.corporateBallot.AttachBallot,
+    TxTags.capitalDistribution.Distribute,
+  ];
+
+  if (!includes(protocolOpTags, tag)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `${value} does not match any ProtocolOp`,
+    });
+  }
+
   return context.polymeshApi.createType('ProtocolOp', value);
 }
 
@@ -1863,6 +2000,8 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
  * @hidden
  */
 export function numberToPipId(id: number | BigNumber, context: Context): PipId {
+  assertIsInteger(id);
+  assertIsPositive(id);
   return context.polymeshApi.createType('PipId', new BigNumber(id).toString());
 }
 
@@ -2163,12 +2302,8 @@ export function transferRestrictionToTransferManager(
   if (type === TransferRestrictionType.Count) {
     tmType = 'CountTransferManager';
 
-    if (!value.isInteger() || value.isNegative()) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Count should be a positive integer',
-      });
-    }
+    assertIsInteger(value);
+    assertIsPositive(value);
 
     tmValue = numberToU64(value, context);
   } else {
@@ -2228,9 +2363,10 @@ export function permissionsLikeToPermissions(
 ): Permissions {
   let tokenPermissions: SecurityToken[] | null = [];
   let transactionPermissions: TxTag[] | null = [];
+  let transactionGroupPermissions: TxGroup[] = [];
   let portfolioPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null = [];
 
-  const { tokens, transactions, portfolios } = permissionsLike;
+  const { tokens, transactions, transactionGroups, portfolios } = permissionsLike;
 
   if (tokens === null) {
     tokenPermissions = null;
@@ -2244,6 +2380,13 @@ export function permissionsLikeToPermissions(
     transactionPermissions = transactions;
   }
 
+  if (transactionGroups !== undefined) {
+    transactionGroupPermissions = uniq(transactionGroups);
+    const groupTags = flatten(transactionGroups.map(txGroupToTxTags));
+    transactionPermissions =
+      transactionPermissions && uniq([...transactionPermissions, ...groupTags]);
+  }
+
   if (portfolios === null) {
     portfolioPermissions = null;
   } else if (portfolios) {
@@ -2255,6 +2398,7 @@ export function permissionsLikeToPermissions(
   return {
     tokens: tokenPermissions,
     transactions: transactionPermissions,
+    transactionGroups: transactionGroupPermissions,
     portfolios: portfolioPermissions,
   };
 }

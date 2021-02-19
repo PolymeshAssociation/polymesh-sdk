@@ -42,12 +42,13 @@ export async function prepareModifyToken(
     identifiers: newIdentifiers,
   } = args;
 
-  if (
+  const noArguments =
     makeDivisible === undefined &&
     newName === undefined &&
     newFundingRound === undefined &&
-    newIdentifiers === undefined
-  ) {
+    newIdentifiers === undefined;
+
+  if (noArguments) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Nothing to modify',
@@ -58,7 +59,6 @@ export async function prepareModifyToken(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  // TODO: queryMulti
   const [{ isDivisible, name }, fundingRound, identifiers] = await Promise.all([
     securityToken.details(),
     securityToken.currentFundingRound(),
@@ -74,11 +74,6 @@ export async function prepareModifyToken(
     }
 
     this.addTransaction(tx.asset.makeDivisible, {}, rawTicker);
-  } else if (makeDivisible === false) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You cannot make the token indivisible',
-    });
   }
 
   if (newName) {
@@ -109,10 +104,11 @@ export async function prepareModifyToken(
   }
 
   if (newIdentifiers) {
-    if (
+    const identifiersAreEqual =
       !differenceWith(identifiers, newIdentifiers, isEqual).length &&
-      identifiers.length === newIdentifiers.length
-    ) {
+      identifiers.length === newIdentifiers.length;
+
+    if (identifiersAreEqual) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'New identifiers are the same as current identifiers',

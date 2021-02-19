@@ -8,7 +8,7 @@ import { HttpLink } from 'apollo-link-http';
 import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
-import { Ticker, TxTag } from 'polymesh-types/types';
+import { TxTag } from 'polymesh-types/types';
 
 import {
   Account,
@@ -60,15 +60,6 @@ interface ConnectParamsBase {
   signer?: PolkadotSigner;
   middleware?: MiddlewareConfig;
 }
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/**
- * @hidden
- */
-function isUiKeyring(keyring: any): keyring is UiKeyring {
-  return !!keyring.keyring;
-}
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**
  * Main entry point of the Polymesh SDK
@@ -219,42 +210,14 @@ export class Polymesh {
         polymeshApi.setSigner(signer);
       }
 
-      if (accountSeed) {
-        context = await Context.create({
-          polymeshApi,
-          middlewareApi,
-          seed: accountSeed,
-        });
-      } else if (keyring) {
-        let keyringInstance: CommonKeyring;
-        if (isUiKeyring(keyring)) {
-          keyringInstance = keyring.keyring;
-        } else {
-          keyringInstance = keyring;
-        }
-        context = await Context.create({
-          polymeshApi,
-          middlewareApi,
-          keyring: keyringInstance,
-        });
-      } else if (accountUri) {
-        context = await Context.create({
-          polymeshApi,
-          middlewareApi,
-          uri: accountUri,
-        });
-      } else if (accountMnemonic) {
-        context = await Context.create({
-          polymeshApi,
-          middlewareApi,
-          mnemonic: accountMnemonic,
-        });
-      } else {
-        context = await Context.create({
-          polymeshApi,
-          middlewareApi,
-        });
-      }
+      context = await Context.create({
+        polymeshApi,
+        middlewareApi,
+        accountSeed,
+        accountUri,
+        accountMnemonic,
+        keyring,
+      });
     } catch (err) {
       const { message, code } = err;
       throw new PolymeshError({
@@ -349,6 +312,9 @@ export class Polymesh {
    *   The ticker will expire after a set amount of time, after which other users can reserve it
    *
    * @param args.ticker - ticker symbol to reserve
+   *
+   * @note required role:
+   *   - Ticker Owner
    */
   public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
 
@@ -405,22 +371,17 @@ export class Polymesh {
       stringToIdentityId(did, context)
     );
 
-    const tickerReservations: TickerReservation[] = entries.reduce<TickerReservation[]>(
-      (result, [key, relation]) => {
-        if (relation.isTickerOwned) {
-          const ticker = tickerToString(key.args[1] as Ticker);
+    return entries.reduce<TickerReservation[]>((result, [key, relation]) => {
+      if (relation.isTickerOwned) {
+        const ticker = tickerToString(key.args[1]);
 
-          if (isPrintableAscii(ticker)) {
-            return [...result, new TickerReservation({ ticker }, context)];
-          }
+        if (isPrintableAscii(ticker)) {
+          return [...result, new TickerReservation({ ticker }, context)];
         }
+      }
 
-        return result;
-      },
-      []
-    );
-
-    return tickerReservations;
+      return result;
+    }, []);
   }
 
   /**
@@ -562,22 +523,17 @@ export class Polymesh {
       stringToIdentityId(did, context)
     );
 
-    const securityTokens: SecurityToken[] = entries.reduce<SecurityToken[]>(
-      (result, [key, relation]) => {
-        if (relation.isAssetOwned) {
-          const ticker = tickerToString(key.args[1] as Ticker);
+    return entries.reduce<SecurityToken[]>((result, [key, relation]) => {
+      if (relation.isAssetOwned) {
+        const ticker = tickerToString(key.args[1]);
 
-          if (isPrintableAscii(ticker)) {
-            return [...result, new SecurityToken({ ticker }, context)];
-          }
+        if (isPrintableAscii(ticker)) {
+          return [...result, new SecurityToken({ ticker }, context)];
         }
+      }
 
-        return result;
-      },
-      []
-    );
-
-    return securityTokens;
+      return result;
+    }, []);
   }
 
   /**
@@ -661,6 +617,9 @@ export class Polymesh {
    * @note this may create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @note required role:
+   *   - Customer Due Diligence Provider
    */
   public registerIdentity: ProcedureMethod<RegisterIdentityParams, Identity>;
 

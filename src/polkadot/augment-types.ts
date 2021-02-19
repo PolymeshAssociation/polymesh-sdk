@@ -782,8 +782,6 @@ import type {
   FundraiserName,
   FundraiserStatus,
   FundraiserTier,
-  GetPortfolioAssetsResult,
-  GetPortfoliosResult,
   HandledTxStatus,
   HistoricalVotingByAddress,
   HistoricalVotingById,
@@ -796,7 +794,6 @@ import type {
   InstructionStatus,
   InvestorUid,
   InvestorZKProofData,
-  IssueAssetItem,
   IssueRecipient,
   KeyIdentityData,
   Leg,
@@ -886,6 +883,7 @@ import type {
   TrustedIssuer,
   UniqueCall,
   Url,
+  ValidatorPrefsWithBlocked,
   Venue,
   VenueDetails,
   VenueType,
@@ -1321,8 +1319,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<FundraiserStatus>': Option<FundraiserStatus>;
     'Option<FundraiserTier>': Option<FundraiserTier>;
     'Option<Gas>': Option<Gas>;
-    'Option<GetPortfolioAssetsResult>': Option<GetPortfolioAssetsResult>;
-    'Option<GetPortfoliosResult>': Option<GetPortfoliosResult>;
     'Option<GlobalValidationSchedule>': Option<GlobalValidationSchedule>;
     'Option<GrandpaEquivocation>': Option<GrandpaEquivocation>;
     'Option<GrandpaEquivocationProof>': Option<GrandpaEquivocationProof>;
@@ -1388,7 +1384,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<InvalidTransaction>': Option<InvalidTransaction>;
     'Option<InvestorUid>': Option<InvestorUid>;
     'Option<InvestorZKProofData>': Option<InvestorZKProofData>;
-    'Option<IssueAssetItem>': Option<IssueAssetItem>;
     'Option<IssueRecipient>': Option<IssueRecipient>;
     'Option<Json>': Option<Json>;
     'Option<Junction>': Option<Junction>;
@@ -1783,6 +1778,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<ValidatorCount>': Option<ValidatorCount>;
     'Option<ValidatorId>': Option<ValidatorId>;
     'Option<ValidatorIdOf>': Option<ValidatorIdOf>;
+    'Option<ValidatorPrefsWithBlocked>': Option<ValidatorPrefsWithBlocked>;
     'Option<ValidatorSignature>': Option<ValidatorSignature>;
     'Option<ValidityAttestation>': Option<ValidityAttestation>;
     'Option<Venue>': Option<Venue>;
@@ -2160,8 +2156,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<FundraiserStatus>': Vec<FundraiserStatus>;
     'Vec<FundraiserTier>': Vec<FundraiserTier>;
     'Vec<Gas>': Vec<Gas>;
-    'Vec<GetPortfolioAssetsResult>': Vec<GetPortfolioAssetsResult>;
-    'Vec<GetPortfoliosResult>': Vec<GetPortfoliosResult>;
     'Vec<GlobalValidationSchedule>': Vec<GlobalValidationSchedule>;
     'Vec<GrandpaEquivocation>': Vec<GrandpaEquivocation>;
     'Vec<GrandpaEquivocationProof>': Vec<GrandpaEquivocationProof>;
@@ -2227,7 +2221,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<InvalidTransaction>': Vec<InvalidTransaction>;
     'Vec<InvestorUid>': Vec<InvestorUid>;
     'Vec<InvestorZKProofData>': Vec<InvestorZKProofData>;
-    'Vec<IssueAssetItem>': Vec<IssueAssetItem>;
     'Vec<IssueRecipient>': Vec<IssueRecipient>;
     'Vec<Json>': Vec<Json>;
     'Vec<Junction>': Vec<Junction>;
@@ -2622,6 +2615,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ValidatorCount>': Vec<ValidatorCount>;
     'Vec<ValidatorId>': Vec<ValidatorId>;
     'Vec<ValidatorIdOf>': Vec<ValidatorIdOf>;
+    'Vec<ValidatorPrefsWithBlocked>': Vec<ValidatorPrefsWithBlocked>;
     'Vec<ValidatorSignature>': Vec<ValidatorSignature>;
     'Vec<ValidityAttestation>': Vec<ValidityAttestation>;
     'Vec<Venue>': Vec<Venue>;
@@ -2999,8 +2993,6 @@ declare module '@polkadot/types/types/registry' {
     FundraiserStatus: FundraiserStatus;
     FundraiserTier: FundraiserTier;
     Gas: Gas;
-    GetPortfolioAssetsResult: GetPortfolioAssetsResult;
-    GetPortfoliosResult: GetPortfoliosResult;
     GlobalValidationSchedule: GlobalValidationSchedule;
     GrandpaEquivocation: GrandpaEquivocation;
     GrandpaEquivocationProof: GrandpaEquivocationProof;
@@ -3066,7 +3058,6 @@ declare module '@polkadot/types/types/registry' {
     InvalidTransaction: InvalidTransaction;
     InvestorUid: InvestorUid;
     InvestorZKProofData: InvestorZKProofData;
-    IssueAssetItem: IssueAssetItem;
     IssueRecipient: IssueRecipient;
     Json: Json;
     Junction: Junction;
@@ -3461,6 +3452,7 @@ declare module '@polkadot/types/types/registry' {
     ValidatorCount: ValidatorCount;
     ValidatorId: ValidatorId;
     ValidatorIdOf: ValidatorIdOf;
+    ValidatorPrefsWithBlocked: ValidatorPrefsWithBlocked;
     ValidatorSignature: ValidatorSignature;
     ValidityAttestation: ValidityAttestation;
     Venue: Venue;

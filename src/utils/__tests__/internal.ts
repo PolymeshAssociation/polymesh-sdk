@@ -1,4 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -6,17 +7,20 @@ import sinon from 'sinon';
 import { Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { ClaimType, CountryCode } from '~/types';
+import { ClaimType, CommonKeyring, CountryCode } from '~/types';
 import { tuple } from '~/types/utils';
 import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 import {
+  assertIsInteger,
+  assertIsPositive,
   batchArguments,
   calculateNextKey,
   createClaim,
   createProcedureMethod,
   delay,
   findEventRecord,
+  getCommonKeyring,
   getDid,
   isPrintableAscii,
   padString,
@@ -473,5 +477,41 @@ describe('createProcedureMethod', () => {
     await method.checkAuthorization(procArgs);
 
     sinon.assert.calledWithExactly(checkAuthorization, procArgs, context);
+  });
+});
+
+describe('assertIsInteger', () => {
+  test('should not throw if the argument is an integer', async () => {
+    try {
+      assertIsInteger(new BigNumber(1));
+    } catch (_) {
+      expect(true).toBe(false);
+    }
+  });
+
+  test('assertIsInteger should throw an error if the argument is not an integer', async () => {
+    expect(() => assertIsInteger(('noInteger' as unknown) as BigNumber)).toThrow(
+      'The number must be an integer'
+    );
+
+    expect(() => assertIsInteger(new BigNumber(1.2))).toThrow('The number must be an integer');
+  });
+});
+
+describe('assertIsPositive', () => {
+  test('assertIsPositive should throw an error if the argument is negative', async () => {
+    expect(() => assertIsPositive(new BigNumber(-3))).toThrow('The number must be positive');
+  });
+});
+
+describe('getCommonKeyring', () => {
+  test('should return a common keyring', async () => {
+    const fakeKeyring = ('keyring' as unknown) as CommonKeyring;
+    let result = getCommonKeyring(fakeKeyring);
+
+    expect(result).toBe(fakeKeyring);
+
+    result = getCommonKeyring({ keyring: fakeKeyring });
+    expect(result).toBe(fakeKeyring);
   });
 });
