@@ -2,7 +2,7 @@ import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot
 import { StorageKey } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
-import { AnyFunction, ISubmittableResult } from '@polkadot/types/types';
+import { AnyFunction, AnyTuple, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
@@ -21,15 +21,18 @@ import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
   Claim,
   ClaimType,
+  CommonKeyring,
   CountryCode,
   ErrorCode,
   NextKey,
   PaginationOptions,
   ProcedureAuthorizationStatus,
   Scope,
+  UiKeyring,
 } from '~/types';
 import {
   Extrinsics,
+  Falsyable,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
   ProcedureMethod,
@@ -116,10 +119,10 @@ export async function getDid(
  */
 export function createClaim(
   claimType: string,
-  jurisdiction: string | null | undefined,
-  middlewareScope: MiddlewareScope | null | undefined,
-  cddId: string | null | undefined,
-  scopeId: string | null | undefined
+  jurisdiction: Falsyable<string>,
+  middlewareScope: Falsyable<MiddlewareScope>,
+  cddId: Falsyable<string>,
+  scopeId: Falsyable<string>
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
@@ -234,18 +237,18 @@ export function isPrintableAscii(value: string): boolean {
  * Makes an entries request to the chain. If pagination options are supplied,
  * the request will be paginated. Otherwise, all entries will be requested at once
  */
-export async function requestPaginated<F extends AnyFunction>(
-  query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,
+export async function requestPaginated<F extends AnyFunction, T extends AnyTuple>(
+  query: AugmentedQuery<'promise', F, T> | AugmentedQueryDoubleMap<'promise', F, T>,
   opts: {
     paginationOpts?: PaginationOptions;
     arg?: Parameters<F>[0];
   }
 ): Promise<{
-  entries: [StorageKey, ObsInnerType<ReturnType<F>>][];
+  entries: [StorageKey<T>, ObsInnerType<ReturnType<F>>][];
   lastKey: NextKey;
 }> {
   const { arg, paginationOpts } = opts;
-  let entries: [StorageKey, ObsInnerType<ReturnType<F>>][];
+  let entries: [StorageKey<T>, ObsInnerType<ReturnType<F>>][];
   let lastKey: NextKey = null;
 
   if (paginationOpts) {
@@ -427,4 +430,20 @@ export function assertIsPositive(value: number | BigNumber): void {
       message: 'The number must be positive',
     });
   }
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * @hidden
+ */
+function isUiKeyring(keyring: any): keyring is UiKeyring {
+  return !!keyring.keyring;
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/**
+ * @hidden
+ */
+export function getCommonKeyring(keyring: CommonKeyring | UiKeyring): CommonKeyring {
+  return isUiKeyring(keyring) ? keyring.keyring : keyring;
 }

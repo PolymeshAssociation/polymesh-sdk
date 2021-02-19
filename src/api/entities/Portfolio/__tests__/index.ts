@@ -300,58 +300,32 @@ describe('Portfolio class', () => {
     });
   });
 
-  describe('method: getCustodian', () => {
+  describe('method: setCustodian', () => {
     let did: string;
     let id: BigNumber;
 
     beforeAll(() => {
       did = 'someDid';
       id = new BigNumber(1);
-      sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
     });
 
     afterAll(() => {
       sinon.restore();
     });
 
-    test('should return the custodian of the portfolio', async () => {
-      const custodianDid = 'custodianDid';
-      const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const portfolio = new Portfolio({ id, did }, context);
+      const targetIdentity = 'someTarget';
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      dsMockUtils
-        .createQueryStub('portfolio', 'portfolioCustodian')
-        .returns(dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(custodianDid)));
+      sinon
+        .stub(setCustodian, 'prepare')
+        .withArgs({ id, did, targetIdentity }, context)
+        .resolves(expectedQueue);
 
-      identityIdToStringStub.returns(custodianDid);
+      const queue = await portfolio.setCustodian({ targetIdentity });
 
-      const portfolio = new Portfolio({ did, id }, context);
-
-      let result = await portfolio.getCustodian();
-      expect(result.did).toEqual(custodianDid);
-
-      dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian').returns({});
-
-      identityIdToStringStub.returns(did);
-
-      result = await portfolio.getCustodian();
-      expect(result.did).toEqual(did);
-    });
-
-    describe('method: setCustodian', () => {
-      test('should prepare the procedure and return the resulting transaction queue', async () => {
-        const portfolio = new Portfolio({ id, did }, context);
-        const targetIdentity = 'someTarget';
-        const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
-
-        sinon
-          .stub(setCustodian, 'prepare')
-          .withArgs({ id, did, targetIdentity }, context)
-          .resolves(expectedQueue);
-
-        const queue = await portfolio.setCustodian({ targetIdentity });
-
-        expect(queue).toBe(expectedQueue);
-      });
+      expect(queue).toBe(expectedQueue);
     });
   });
 
