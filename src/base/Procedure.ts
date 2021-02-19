@@ -176,11 +176,13 @@ export class Procedure<
     args: Args,
     context: Context
   ): Promise<ProcedureAuthorizationStatus> {
-    const status = await this._checkAuthorization(args, context);
+    try {
+      const status = await this._checkAuthorization(args, context);
 
-    this.cleanup();
-
-    return status;
+      return status;
+    } finally {
+      this.cleanup();
+    }
   }
 
   /**
@@ -190,31 +192,34 @@ export class Procedure<
    * @param context - context in which the resulting queue will run
    */
   public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
-    await this.setup(args, context);
+    try {
+      await this.setup(args, context);
 
-    const { roles, permissions } = await this._checkAuthorization(args, context);
+      const { roles, permissions } = await this._checkAuthorization(args, context);
 
-    if (!permissions) {
-      throw new PolymeshError({
-        code: ErrorCode.NotAuthorized,
-        message: "Current Account doesn't have the required permissions to execute this procedure",
-      });
+      if (!permissions) {
+        throw new PolymeshError({
+          code: ErrorCode.NotAuthorized,
+          message:
+            "Current Account doesn't have the required permissions to execute this procedure",
+        });
+      }
+
+      if (!roles) {
+        throw new PolymeshError({
+          code: ErrorCode.NotAuthorized,
+          message: "Current Identity doesn't have the required roles to execute this procedure",
+        });
+      }
+
+      const returnValue = await this.prepareTransactions(args);
+
+      const transactionQueue = new TransactionQueue(this.transactions, returnValue, context);
+
+      return transactionQueue;
+    } finally {
+      this.cleanup();
     }
-
-    if (!roles) {
-      throw new PolymeshError({
-        code: ErrorCode.NotAuthorized,
-        message: "Current Identity doesn't have the required roles to execute this procedure",
-      });
-    }
-
-    const returnValue = await this.prepareTransactions(args);
-
-    const transactionQueue = new TransactionQueue(this.transactions, returnValue, context);
-
-    this.cleanup();
-
-    return transactionQueue;
   }
 
   /**
