@@ -176,11 +176,13 @@ export class Procedure<
     args: Args,
     context: Context
   ): Promise<ProcedureAuthorizationStatus> {
-    const status = await this._checkAuthorization(args, context);
+    try {
+      const status = await this._checkAuthorization(args, context);
 
-    this.cleanup();
-
-    return status;
+      return status;
+    } finally {
+      this.cleanup();
+    }
   }
 
   /**
@@ -190,31 +192,32 @@ export class Procedure<
    * @param context - context in which the resulting queue will run
    */
   public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
-    await this.setup(args, context);
+    try {
+      await this.setup(args, context);
 
-    const { roles, permissions } = await this._checkAuthorization(args, context);
+      const { roles, permissions } = await this._checkAuthorization(args, context);
 
-    if (!permissions) {
-      throw new PolymeshError({
-        code: ErrorCode.NotAuthorized,
-        message: "Current Account doesn't have the required permissions to execute this procedure",
-      });
+      if (!permissions) {
+        throw new PolymeshError({
+          code: ErrorCode.NotAuthorized,
+          message:
+            "Current Account doesn't have the required permissions to execute this procedure",
+        });
+      }
+
+      if (!roles) {
+        throw new PolymeshError({
+          code: ErrorCode.NotAuthorized,
+          message: "Current Identity doesn't have the required roles to execute this procedure",
+        });
+      }
+
+      const returnValue = await this.prepareTransactions(args);
+
+      return new TransactionQueue(this.transactions, returnValue, context);
+    } finally {
+      this.cleanup();
     }
-
-    if (!roles) {
-      throw new PolymeshError({
-        code: ErrorCode.NotAuthorized,
-        message: "Current Identity doesn't have the required roles to execute this procedure",
-      });
-    }
-
-    const returnValue = await this.prepareTransactions(args);
-
-    const transactionQueue = new TransactionQueue(this.transactions, returnValue, context);
-
-    this.cleanup();
-
-    return transactionQueue;
   }
 
   /**
@@ -300,20 +303,20 @@ export class Procedure<
    *
    * @returns whichever value is returned by the passed Procedure
    */
-  public async addProcedure<ProcArgs extends unknown, ReturnValue extends unknown>(
-    procedure: Procedure<ProcArgs, ReturnValue>,
+  public async addProcedure<ProcArgs extends unknown, R extends unknown>(
+    procedure: Procedure<ProcArgs, R>,
     args: ProcArgs
-  ): Promise<MaybePostTransactionValue<ReturnValue>>;
+  ): Promise<MaybePostTransactionValue<R>>;
 
-  public async addProcedure<ReturnValue extends unknown>(
-    procedure: Procedure<void, ReturnValue>
-  ): Promise<MaybePostTransactionValue<ReturnValue>>;
+  public async addProcedure<R extends unknown>(
+    procedure: Procedure<void, R>
+  ): Promise<MaybePostTransactionValue<R>>;
 
   // eslint-disable-next-line require-jsdoc
-  public async addProcedure<ProcArgs extends unknown, ReturnValue extends unknown>(
-    procedure: Procedure<void | ProcArgs, ReturnValue>,
+  public async addProcedure<ProcArgs extends unknown, R extends unknown>(
+    procedure: Procedure<void | ProcArgs, R>,
     args: ProcArgs = {} as ProcArgs
-  ): Promise<MaybePostTransactionValue<ReturnValue>> {
+  ): Promise<MaybePostTransactionValue<R>> {
     try {
       procedure.context = this.context;
       const returnValue = await procedure.prepareTransactions(args);

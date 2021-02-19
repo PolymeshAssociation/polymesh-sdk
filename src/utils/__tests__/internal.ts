@@ -7,7 +7,7 @@ import sinon from 'sinon';
 import { Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { ClaimType, CountryCode } from '~/types';
+import { ClaimType, CommonKeyring, CountryCode } from '~/types';
 import { tuple } from '~/types/utils';
 import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
@@ -20,6 +20,7 @@ import {
   createProcedureMethod,
   delay,
   findEventRecord,
+  getCommonKeyring,
   getDid,
   isPrintableAscii,
   padString,
@@ -480,18 +481,6 @@ describe('createProcedureMethod', () => {
 });
 
 describe('assertIsInteger', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
   test('should not throw if the argument is an integer', async () => {
     try {
       assertIsInteger(new BigNumber(1));
@@ -510,27 +499,19 @@ describe('assertIsInteger', () => {
 });
 
 describe('assertIsPositive', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  test('should not throw if the argument is positive', async () => {
-    try {
-      assertIsPositive(new BigNumber(1));
-    } catch (_) {
-      expect(true).toBe(false);
-    }
-  });
-
   test('assertIsPositive should throw an error if the argument is negative', async () => {
     expect(() => assertIsPositive(new BigNumber(-3))).toThrow('The number must be positive');
+  });
+});
+
+describe('getCommonKeyring', () => {
+  test('should return a common keyring', async () => {
+    const fakeKeyring = ('keyring' as unknown) as CommonKeyring;
+    let result = getCommonKeyring(fakeKeyring);
+
+    expect(result).toBe(fakeKeyring);
+
+    result = getCommonKeyring({ keyring: fakeKeyring });
+    expect(result).toBe(fakeKeyring);
   });
 });

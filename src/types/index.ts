@@ -311,6 +311,13 @@ export function isScopedClaim(claim: Claim): claim is ScopedClaim {
   return ![ClaimType.NoData, ClaimType.CustomerDueDiligence].includes(type);
 }
 
+/**
+ * @hidden
+ */
+export function isInvestorUniquenessClaim(claim: Claim): claim is InvestorUniquenessClaim {
+  return claim.type === ClaimType.InvestorUniqueness;
+}
+
 export interface ClaimData<ClaimType = Claim> {
   target: Identity;
   issuer: Identity;
