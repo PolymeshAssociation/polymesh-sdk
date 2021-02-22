@@ -7,6 +7,7 @@ import {
   DefaultPortfolio,
   Entity,
   Identity,
+  investInSto,
   modifyStoTimes,
   Sto,
   toggleFreezeSto,
@@ -347,6 +348,39 @@ describe('Sto class', () => {
         .resolves(expectedQueue);
 
       const queue = await sto.unfreeze();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: invest', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'SOMETICKER';
+      const id = new BigNumber(1);
+      const sto = new Sto({ id, ticker }, context);
+      const did = 'someDid';
+
+      const purchasePortfolio = new DefaultPortfolio({ did }, context);
+      const fundingPortfolio = new DefaultPortfolio({ did }, context);
+      const purchaseAmount = new BigNumber(10);
+
+      const args = {
+        ticker,
+        id,
+        purchasePortfolio,
+        fundingPortfolio,
+        purchaseAmount,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon.stub(investInSto, 'prepare').withArgs(args, context).resolves(expectedQueue);
+
+      const queue = await sto.invest({
+        purchasePortfolio,
+        fundingPortfolio,
+        purchaseAmount,
+      });
 
       expect(queue).toBe(expectedQueue);
     });
