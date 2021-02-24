@@ -120,3 +120,4 @@ export { Portfolio } from '~/api/entities/Portfolio';
 export { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 export { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
 export { TransactionQueue } from '~/base/TransactionQueue';
+export { Checkpoint } from '~/api/entities/Checkpoint';
