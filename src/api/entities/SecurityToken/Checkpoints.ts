@@ -53,6 +53,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
         checkpoint: new Checkpoint({ id: u64ToBigNumber(id), ticker }, context),
         createdAt: momentToDate(timestamp),
       }))
+      // the query also returns the next scheduled checkpoint (which hasn't been created yet)
       .filter(({ createdAt }) => createdAt <= now);
 
     return {
