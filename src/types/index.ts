@@ -9,6 +9,7 @@ import { CountryCode } from '~/generated/types';
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import {
   Account,
+  Checkpoint,
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
@@ -623,6 +624,11 @@ export type Signer = Identity | Account;
 export interface StoWithDetails {
   sto: Sto;
   details: StoDetails;
+}
+
+export interface CheckpointWithCreationDate {
+  checkpoint: Checkpoint;
+  createdAt: Date;
 }
 
 export interface SecondaryKey {

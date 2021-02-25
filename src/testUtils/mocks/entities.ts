@@ -8,6 +8,7 @@ import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entit
 import {
   Account,
   AuthorizationRequest,
+  Checkpoint,
   CurrentAccount,
   CurrentIdentity,
   DefaultPortfolio,
@@ -65,6 +66,7 @@ const mockInstanceContainer = {
   numberedPortfolio: {} as MockNumberedPortfolio,
   defaultPortfolio: {} as MockDefaultPortfolio,
   sto: {} as MockSto,
+  checkpoint: {} as MockCheckpoint,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -81,6 +83,7 @@ type MockInstruction = Mocked<Instruction>;
 type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
 type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
 type MockSto = Mocked<Sto>;
+type MockCheckpoint = Mocked<Checkpoint>;
 
 interface IdentityOptions {
   did?: string;
@@ -180,6 +183,13 @@ interface StoOptions {
   details?: Partial<StoDetails>;
 }
 
+interface CheckpointOptions {
+  id?: BigNumber;
+  ticker?: string;
+  createdAt?: Date;
+  totalSupply?: BigNumber;
+}
+
 let identityConstructorStub: SinonStub;
 let currentIdentityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
@@ -193,6 +203,7 @@ let instructionConstructorStub: SinonStub;
 let numberedPortfolioConstructorStub: SinonStub;
 let defaultPortfolioConstructorStub: SinonStub;
 let stoConstructorStub: SinonStub;
+let checkpointConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
@@ -237,6 +248,8 @@ let defaultPortfolioGetTokenBalancesStub: SinonStub;
 let defaultPortfolioGetCustodianStub: SinonStub;
 let defaultPortfolioIsCustodiedByStub: SinonStub;
 let stoDetailsStub: SinonStub;
+let checkpointCreatedAtStub: SinonStub;
+let checkpointTotalSupplyStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -355,6 +368,15 @@ const MockStoClass = class {
   }
 };
 
+const MockCheckpointClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return checkpointConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -418,6 +440,11 @@ export const mockDefaultPortfolioModule = (path: string) => (): object => ({
 export const mockStoModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Sto: MockStoClass,
+});
+
+export const mockCheckpointModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Checkpoint: MockCheckpointClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -558,6 +585,13 @@ const defaultStoOptions: StoOptions = {
   id: new BigNumber(1),
 };
 let stoOptions = defaultStoOptions;
+const defaultCheckpointOptions: CheckpointOptions = {
+  totalSupply: new BigNumber(10000),
+  createdAt: new Date('10/14/1987'),
+  ticker: 'SOME_TICKER',
+  id: new BigNumber(1),
+};
+let checkpointOptions = defaultCheckpointOptions;
 // NOTE uncomment in Governance v2 upgrade
 // const defaultProposalOptions: ProposalOptions = {
 //   pipId: new BigNumber(1),
@@ -1109,6 +1143,40 @@ function initSto(opts?: StoOptions): void {
 
 /**
  * @hidden
+ * Configure the Checkpoint instance
+ */
+function configureCheckpoint(opts: CheckpointOptions): void {
+  const checkpoint = ({
+    createdAt: checkpointCreatedAtStub.returns(opts.createdAt),
+    totalSupply: checkpointTotalSupplyStub.returns(opts.totalSupply),
+    ticker: opts.ticker,
+    id: opts.id,
+  } as unknown) as MockCheckpoint;
+
+  Object.assign(mockInstanceContainer.checkpoint, checkpoint);
+  checkpointConstructorStub.callsFake(args => {
+    const value = merge({}, checkpoint, args);
+    Object.setPrototypeOf(value, require('~/internal').Checkpoint.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Checkpoint instance
+ */
+function initCheckpoint(opts?: CheckpointOptions): void {
+  checkpointConstructorStub = sinon.stub();
+  checkpointCreatedAtStub = sinon.stub();
+  checkpointTotalSupplyStub = sinon.stub();
+
+  checkpointOptions = merge({}, defaultCheckpointOptions, opts);
+
+  configureCheckpoint(checkpointOptions);
+}
+
+/**
+ * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
@@ -1126,6 +1194,7 @@ export function configureMocks(opts?: {
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
   stoOptions?: StoOptions;
+  checkpointOptions?: CheckpointOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -1209,6 +1278,12 @@ export function configureMocks(opts?: {
     ...opts?.stoOptions,
   };
   configureSto(tempStoOptions);
+
+  const tempCheckpointOptions = {
+    ...checkpointOptions,
+    ...opts?.checkpointOptions,
+  };
+  configureCheckpoint(tempCheckpointOptions);
 }
 
 /**
@@ -1230,6 +1305,7 @@ export function initMocks(opts?: {
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
   stoOptions?: StoOptions;
+  checkpointOptions?: CheckpointOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -1273,6 +1349,9 @@ export function initMocks(opts?: {
 
   // Sto
   initSto(opts?.stoOptions);
+
+  // Checkpoint
+  initCheckpoint(opts?.checkpointOptions);
 }
 
 /**
@@ -1292,6 +1371,7 @@ export function cleanup(): void {
   mockInstanceContainer.venue = {} as MockVenue;
   mockInstanceContainer.instruction = {} as MockInstruction;
   mockInstanceContainer.sto = {} as MockSto;
+  mockInstanceContainer.checkpoint = {} as MockCheckpoint;
 }
 
 /**
@@ -1315,6 +1395,7 @@ export function reset(): void {
     numberedPortfolioOptions,
     defaultPortfolioOptions,
     stoOptions,
+    checkpointOptions,
   });
 }
 
@@ -1841,5 +1922,47 @@ export function getStoDetailsStub(details?: Partial<StoDetails>): SinonStub {
  * Retrieve the Sto constructor stub
  */
 export function getStoConstructorStub(): SinonStub {
+  return stoConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a Checkpoint instance
+ */
+export function getCheckpointInstance(opts?: CheckpointOptions): MockCheckpoint {
+  if (opts) {
+    configureCheckpoint({ ...defaultCheckpointOptions, ...opts });
+  }
+
+  return new MockCheckpointClass() as MockCheckpoint;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Checkpoint.createdAt` method
+ */
+export function getCheckpointCreatedAtStub(createdAt?: Date): SinonStub {
+  if (createdAt) {
+    return checkpointCreatedAtStub.resolves(createdAt);
+  }
+  return checkpointCreatedAtStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Checkpoint.createdAt` method
+ */
+export function getCheckpointTotalSupplyStub(totalSupply?: BigNumber): SinonStub {
+  if (totalSupply) {
+    return checkpointTotalSupplyStub.resolves(totalSupply);
+  }
+  return checkpointTotalSupplyStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the Checkpoint constructor stub
+ */
+export function getCheckpointConstructorStub(): SinonStub {
   return stoConstructorStub;
 }
