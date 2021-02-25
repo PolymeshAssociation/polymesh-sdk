@@ -38,7 +38,10 @@ import {
   ResultSet,
   SecondaryKey,
   SecurityTokenDetails,
+  StoBalanceStatus,
   StoDetails,
+  StoSaleStatus,
+  StoTimingStatus,
   TickerReservationDetails,
   TickerReservationStatus,
   TokenIdentifier,
@@ -553,7 +556,26 @@ const defaultInstructionOptions: InstructionOptions = {
 };
 let instructionOptions = defaultInstructionOptions;
 const defaultStoOptions: StoOptions = {
-  details: {} as StoDetails,
+  details: {
+    end: null,
+    start: new Date('10/14/1987'),
+    status: {
+      timing: StoTimingStatus.Started,
+      balance: StoBalanceStatus.Available,
+      sale: StoSaleStatus.Live,
+    },
+    tiers: [
+      {
+        price: new BigNumber(100000000),
+        remaining: new BigNumber(700000000),
+        amount: new BigNumber(1000000000),
+      },
+    ],
+    totalAmount: new BigNumber(1000000000),
+    totalRemaining: new BigNumber(700000000),
+    raisingCurrency: 'USD',
+    minInvestment: new BigNumber(100000000),
+  },
   ticker: 'SOME_TICKER',
   id: new BigNumber(1),
 };
@@ -1079,7 +1101,13 @@ function initCurrentAccount(opts?: CurrentAccountOptions): void {
  * Configure the Security Token Offering instance
  */
 function configureSto(opts: StoOptions): void {
-  const details = { owner: mockInstanceContainer.identity, ...opts.details };
+  const details = {
+    creator: mockInstanceContainer.identity,
+    venue: mockInstanceContainer.venue,
+    offeringPortfolio: mockInstanceContainer.defaultPortfolio,
+    raisingPorfolio: mockInstanceContainer.numberedPortfolio,
+    ...opts.details,
+  };
   const sto = ({
     details: stoDetailsStub.resolves(details),
     ticker: opts.ticker,

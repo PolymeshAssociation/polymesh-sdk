@@ -5,7 +5,7 @@ import { getAuthorization, Params, prepareCloseSto } from '~/api/procedures/clos
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, StoStatus, TxTags } from '~/types';
+import { RoleType, StoBalanceStatus, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -33,7 +33,11 @@ describe('closeSto procedure', () => {
     entityMockUtils.initMocks({
       stoOptions: {
         details: {
-          status: StoStatus.Live,
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
         },
       },
     });
@@ -70,11 +74,15 @@ describe('closeSto procedure', () => {
     sinon.assert.calledWith(addTransactionStub, stopStoTransaction, {}, rawTicker, rawId);
   });
 
-  test('should throw an error if the sto is already closed', async () => {
+  test('should throw an error if the STO is already closed', async () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          status: StoStatus.Closed,
+          status: {
+            sale: StoSaleStatus.Closed,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
         },
       },
     });

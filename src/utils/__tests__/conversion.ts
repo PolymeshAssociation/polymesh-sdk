@@ -72,8 +72,10 @@ import {
   Scope,
   ScopeType,
   Signer,
-  StoStatus,
+  StoBalanceStatus,
+  StoSaleStatus,
   StoTier,
+  StoTimingStatus,
   TokenDocument,
   TokenIdentifierType,
   TransferStatus,
@@ -126,7 +128,6 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshClaimToClaim,
   meshClaimTypeToClaimType,
-  meshFundraiserStatusToStoStatus,
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
   meshScopeToScope,
@@ -1290,7 +1291,7 @@ describe('numberToBalance and balanceToBigNumber', () => {
     const balance = dsMockUtils.createMockBalance(fakeResult);
 
     const result = balanceToBigNumber(balance);
-    expect(result).toEqual(new BigNumber(fakeResult).div(Math.pow(10, 6)));
+    expect(result).toEqual(new BigNumber(fakeResult).shiftedBy(-6));
   });
 });
 
@@ -4442,6 +4443,7 @@ describe('txGroupToTxTags', () => {
       TxTags.portfolio.MovePortfolioFunds,
       TxTags.settlement.AddInstruction,
       TxTags.settlement.AddAndAffirmInstruction,
+      TxTags.settlement.AffirmInstruction,
       TxTags.settlement.RejectInstruction,
       TxTags.settlement.CreateVenue,
     ]);
@@ -4509,6 +4511,7 @@ describe('txTagsToTxGroups', () => {
         TxTags.portfolio.MovePortfolioFunds,
         TxTags.settlement.AddInstruction,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AffirmInstruction,
         TxTags.settlement.RejectInstruction,
         TxTags.settlement.CreateVenue,
         TxTags.asset.MakeDivisible,
@@ -4534,6 +4537,7 @@ describe('txTagsToTxGroups', () => {
         TxTags.portfolio.MovePortfolioFunds,
         TxTags.settlement.AddInstruction,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AffirmInstruction,
         TxTags.settlement.RejectInstruction,
         TxTags.settlement.CreateVenue,
         TxTags.identity.AddAuthorization,
@@ -4569,44 +4573,10 @@ describe('fundraiserTierToTier', () => {
 
     const result = fundraiserTierToTier(fundraiserTier);
     expect(result).toEqual({
-      amount: amount.div(Math.pow(10, 6)),
-      price: price.div(Math.pow(10, 6)),
-      remaining: remaining.div(Math.pow(10, 6)),
+      amount: amount.shiftedBy(-6),
+      price: price.shiftedBy(-6),
+      remaining: remaining.shiftedBy(-6),
     });
-  });
-});
-
-describe('meshFundraiserStatusToStoStatus', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  test('meshFundraiserStatusToStoStatus should convert a polkadot FundraiserStatus object to a StoStatus', () => {
-    let fakeResult = StoStatus.Live;
-    let stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
-
-    let result = meshFundraiserStatusToStoStatus(stoStatus);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = StoStatus.Closed;
-    stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
-
-    result = meshFundraiserStatusToStoStatus(stoStatus);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = StoStatus.Frozen;
-    stoStatus = dsMockUtils.createMockFundraiserStatus(fakeResult);
-
-    result = meshFundraiserStatusToStoStatus(stoStatus);
-    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -4630,13 +4600,16 @@ describe('fundraiserToStoDetails', () => {
     const ticker = 'TICKER';
     const otherDid = 'otherDid';
     const raisingCurrency = 'USD';
-    const tierNumber = new BigNumber(10);
+    const amount = new BigNumber(10000);
+    const price = new BigNumber(1000);
+    const remaining = new BigNumber(7000);
     const tier = {
-      amount: tierNumber.div(Math.pow(10, 6)),
-      price: tierNumber.div(Math.pow(10, 6)),
-      remaining: tierNumber.div(Math.pow(10, 6)),
+      amount: amount.shiftedBy(-6),
+      price: price.shiftedBy(-6),
+      remaining: remaining.shiftedBy(-6),
     };
-    const date = new Date();
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + 100000);
     const minInvestmentValue = new BigNumber(1);
 
     const fakeResult = {
@@ -4646,10 +4619,16 @@ describe('fundraiserToStoDetails', () => {
       raisingCurrency: raisingCurrency,
       tiers: [tier],
       venue: new Venue({ id: new BigNumber(1) }, context),
-      start: date,
-      end: date,
-      status: StoStatus.Live,
-      minInvestment: minInvestmentValue.div(Math.pow(10, 6)),
+      start: startDate,
+      end: endDate,
+      status: {
+        timing: StoTimingStatus.Started,
+        balance: StoBalanceStatus.Available,
+        sale: StoSaleStatus.Live,
+      },
+      minInvestment: minInvestmentValue.shiftedBy(-6),
+      totalAmount: amount.shiftedBy(-6),
+      totalRemaining: remaining.shiftedBy(-6),
     };
 
     const creator = dsMockUtils.createMockIdentityId(someDid);
@@ -4665,14 +4644,14 @@ describe('fundraiserToStoDetails', () => {
     const raisingAsset = dsMockUtils.createMockTicker(raisingCurrency);
     const tiers = [
       dsMockUtils.createMockFundraiserTier({
-        total: dsMockUtils.createMockBalance(tierNumber.toNumber()),
-        price: dsMockUtils.createMockBalance(tierNumber.toNumber()),
-        remaining: dsMockUtils.createMockBalance(tierNumber.toNumber()),
+        total: dsMockUtils.createMockBalance(amount.toNumber()),
+        price: dsMockUtils.createMockBalance(price.toNumber()),
+        remaining: dsMockUtils.createMockBalance(remaining.toNumber()),
       }),
     ];
     const venueId = dsMockUtils.createMockU64(1);
-    const start = dsMockUtils.createMockMoment(date.getTime());
-    const end = dsMockUtils.createMockOption(dsMockUtils.createMockMoment(date.getTime()));
+    const start = dsMockUtils.createMockMoment(startDate.getTime());
+    const end = dsMockUtils.createMockOption(dsMockUtils.createMockMoment(endDate.getTime()));
     const status = dsMockUtils.createMockFundraiserStatus('Live');
     const minInvestment = dsMockUtils.createMockBalance(minInvestmentValue.toNumber());
 
@@ -4694,6 +4673,35 @@ describe('fundraiserToStoDetails', () => {
 
     expect(result).toEqual(fakeResult);
 
+    const futureStart = new Date(startDate.getTime() + 50000);
+
+    fundraiser = dsMockUtils.createMockFundraiser({
+      creator,
+      offering_portfolio: offeringPortfolio,
+      offering_asset: offeringAsset,
+      raising_portfolio: raisingPortfolio,
+      raising_asset: raisingAsset,
+      tiers,
+      venue_id: venueId,
+      start: dsMockUtils.createMockMoment(futureStart.getTime()),
+      end: dsMockUtils.createMockOption(),
+      status: dsMockUtils.createMockFundraiserStatus('Closed'),
+      minimum_investment: minInvestment,
+    });
+
+    result = fundraiserToStoDetails(fundraiser, context);
+
+    expect(result).toEqual({
+      ...fakeResult,
+      status: {
+        ...fakeResult.status,
+        timing: StoTimingStatus.NotStarted,
+        sale: StoSaleStatus.Closed,
+      },
+      start: futureStart,
+      end: null,
+    });
+
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
       offering_portfolio: offeringPortfolio,
@@ -4704,12 +4712,92 @@ describe('fundraiserToStoDetails', () => {
       venue_id: venueId,
       start,
       end: dsMockUtils.createMockOption(),
-      status,
+      status: dsMockUtils.createMockFundraiserStatus('ClosedEarly'),
       minimum_investment: minInvestment,
     });
 
     result = fundraiserToStoDetails(fundraiser, context);
 
-    expect(result).toEqual({ ...fakeResult, end: null });
+    expect(result).toEqual({
+      ...fakeResult,
+      status: {
+        ...fakeResult.status,
+        timing: StoTimingStatus.Started,
+        sale: StoSaleStatus.ClosedEarly,
+      },
+      end: null,
+    });
+
+    fundraiser = dsMockUtils.createMockFundraiser({
+      creator,
+      offering_portfolio: offeringPortfolio,
+      offering_asset: offeringAsset,
+      raising_portfolio: raisingPortfolio,
+      raising_asset: raisingAsset,
+      tiers: [
+        dsMockUtils.createMockFundraiserTier({
+          total: dsMockUtils.createMockBalance(amount.toNumber()),
+          price: dsMockUtils.createMockBalance(price.toNumber()),
+          remaining: dsMockUtils.createMockBalance(0),
+        }),
+      ],
+      venue_id: venueId,
+      start,
+      end: dsMockUtils.createMockOption(),
+      status: dsMockUtils.createMockFundraiserStatus('Frozen'),
+      minimum_investment: minInvestment,
+    });
+
+    result = fundraiserToStoDetails(fundraiser, context);
+
+    expect(result).toEqual({
+      ...fakeResult,
+      tiers: [{ ...tier, remaining: new BigNumber(0) }],
+      status: {
+        balance: StoBalanceStatus.SoldOut,
+        timing: StoTimingStatus.Started,
+        sale: StoSaleStatus.Frozen,
+      },
+      end: null,
+      totalRemaining: new BigNumber(0),
+    });
+
+    const pastEnd = new Date(startDate.getTime() - 50000);
+    const pastStart = new Date(startDate.getTime() - 100000);
+
+    fundraiser = dsMockUtils.createMockFundraiser({
+      creator,
+      offering_portfolio: offeringPortfolio,
+      offering_asset: offeringAsset,
+      raising_portfolio: raisingPortfolio,
+      raising_asset: raisingAsset,
+      tiers: [
+        dsMockUtils.createMockFundraiserTier({
+          total: dsMockUtils.createMockBalance(amount.toNumber()),
+          price: dsMockUtils.createMockBalance(price.toNumber()),
+          remaining: dsMockUtils.createMockBalance(1),
+        }),
+      ],
+      venue_id: venueId,
+      start: dsMockUtils.createMockMoment(pastStart.getTime()),
+      end: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(pastEnd.getTime())),
+      status: dsMockUtils.createMockFundraiserStatus('Frozen'),
+      minimum_investment: minInvestment,
+    });
+
+    result = fundraiserToStoDetails(fundraiser, context);
+
+    expect(result).toEqual({
+      ...fakeResult,
+      tiers: [{ ...tier, remaining: new BigNumber(1).shiftedBy(-6) }],
+      status: {
+        balance: StoBalanceStatus.Residual,
+        timing: StoTimingStatus.Expired,
+        sale: StoSaleStatus.Frozen,
+      },
+      start: pastStart,
+      end: pastEnd,
+      totalRemaining: new BigNumber(1).shiftedBy(-6),
+    });
   });
 });

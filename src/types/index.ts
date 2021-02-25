@@ -639,6 +639,7 @@ export enum TxGroup {
    * - TxTags.portfolio.MovePortfolioFunds
    * - TxTags.settlement.AddInstruction
    * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AffirmInstruction
    * - TxTags.settlement.RejectInstruction
    * - TxTags.settlement.CreateVenue
    */

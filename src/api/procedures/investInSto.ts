@@ -1,7 +1,15 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, Sto } from '~/internal';
-import { ErrorCode, PortfolioLike, RoleType, StoStatus, Tier, TxTags } from '~/types';
+import {
+  ErrorCode,
+  PortfolioLike,
+  RoleType,
+  StoSaleStatus,
+  StoTimingStatus,
+  Tier,
+  TxTags,
+} from '~/types';
 import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
   numberToBalance,
@@ -110,25 +118,21 @@ export async function prepareInvestInSto(
 
   const portfolio = portfolioIdToPortfolio(fundingPortfolioId, context);
 
-  const { status, end, minInvestment, tiers, raisingCurrency } = await sto.details();
+  const {
+    status: { sale, timing },
+    minInvestment,
+    tiers,
+    raisingCurrency,
+  } = await sto.details();
 
   const [{ total: totalTokenBalance }] = await portfolio.getTokenBalances({
     tokens: [raisingCurrency],
   });
 
-  if (status !== StoStatus.Live) {
+  if (sale !== StoSaleStatus.Live || timing !== StoTimingStatus.Started) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The STO is not live',
-    });
-  }
-
-  const now = new Date();
-
-  if (end && now > end) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The STO has already ended',
+      message: 'The STO is not accepting investments at the moment',
     });
   }
 

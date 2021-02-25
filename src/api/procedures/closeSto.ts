@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, SecurityToken, Sto } from '~/internal';
-import { ErrorCode, RoleType, StoStatus, TxTags } from '~/types';
+import { ErrorCode, RoleType, StoSaleStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker } from '~/utils/conversion';
 
@@ -29,9 +29,11 @@ export async function prepareCloseSto(this: Procedure<Params, void>, args: Param
 
   const sto = new Sto({ ticker, id }, context);
 
-  const { status } = await sto.details();
+  const {
+    status: { sale },
+  } = await sto.details();
 
-  if (status === StoStatus.Closed) {
+  if ([StoSaleStatus.Closed, StoSaleStatus.ClosedEarly].includes(sale)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The STO is already closed',
