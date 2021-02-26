@@ -6,7 +6,7 @@ import { Context } from '~/internal';
 import { Moment } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, StoStatus, TxTags } from '~/types';
+import { RoleType, StoBalanceStatus, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -51,15 +51,7 @@ describe('modifyStoTimes procedure', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    entityMockUtils.initMocks({
-      stoOptions: {
-        details: {
-          status: StoStatus.Live,
-          start,
-          end,
-        },
-      },
-    });
+    entityMockUtils.initMocks();
 
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
     sinon.stub(utilsConversionModule, 'numberToU64').returns(rawId);
@@ -67,6 +59,19 @@ describe('modifyStoTimes procedure', () => {
   });
 
   beforeEach(() => {
+    entityMockUtils.configureMocks({
+      stoOptions: {
+        details: {
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.NotStarted,
+            balance: StoBalanceStatus.Available,
+          },
+          start,
+          end,
+        },
+      },
+    });
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
 
@@ -145,7 +150,11 @@ describe('modifyStoTimes procedure', () => {
         details: {
           start,
           end: null,
-          status: StoStatus.Live,
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.NotStarted,
+            balance: StoBalanceStatus.Available,
+          },
         },
       },
     });
@@ -201,7 +210,11 @@ describe('modifyStoTimes procedure', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          status: StoStatus.Closed,
+          status: {
+            sale: StoSaleStatus.Closed,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
         },
       },
     });
@@ -221,7 +234,11 @@ describe('modifyStoTimes procedure', () => {
         details: {
           start: now,
           end: now,
-          status: StoStatus.Live,
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.Expired,
+            balance: StoBalanceStatus.Available,
+          },
         },
       },
     });
@@ -245,7 +262,11 @@ describe('modifyStoTimes procedure', () => {
         details: {
           start: new Date(now.getTime() - 1000),
           end,
-          status: StoStatus.Live,
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
         },
       },
     });
@@ -262,6 +283,18 @@ describe('modifyStoTimes procedure', () => {
   });
 
   test('should throw an error if the new times are in the past', async () => {
+    entityMockUtils.configureMocks({
+      stoOptions: {
+        details: {
+          status: {
+            timing: StoTimingStatus.NotStarted,
+            balance: StoBalanceStatus.Available,
+            sale: StoSaleStatus.Live,
+          },
+        },
+      },
+    });
+
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let err: Error | undefined;

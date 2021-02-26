@@ -2328,7 +2328,7 @@ export const createMockFundraiserTier = (fundraiserTier?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockFundraiserStatus = (
-  fundraiserStatus?: 'Live' | 'Frozen' | 'Closed'
+  fundraiserStatus?: 'Live' | 'Frozen' | 'Closed' | 'ClosedEarly'
 ): FundraiserStatus => {
   return createMockEnum(fundraiserStatus) as FundraiserStatus;
 };

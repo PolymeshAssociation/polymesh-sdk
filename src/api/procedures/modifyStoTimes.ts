@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, SecurityToken, Sto } from '~/internal';
 import { Moment } from '~/polkadot';
-import { ErrorCode, RoleType, StoStatus, TxTags } from '~/types';
+import { ErrorCode, RoleType, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { dateToMoment, numberToU64, stringToTicker } from '~/utils/conversion';
 
@@ -44,9 +44,13 @@ export async function prepareModifyStoTimes(
 
   const sto = new Sto({ ticker, id }, context);
 
-  const { status, end, start } = await sto.details();
+  const {
+    status: { sale, timing },
+    end,
+    start,
+  } = await sto.details();
 
-  if (status === StoStatus.Closed) {
+  if ([StoSaleStatus.Closed, StoSaleStatus.ClosedEarly].includes(sale)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The STO is already closed',
@@ -64,16 +68,15 @@ export async function prepareModifyStoTimes(
   }
 
   const now = new Date();
-  const stoEnded = end && now > end;
 
-  if (stoEnded) {
+  if (timing === StoTimingStatus.Expired) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The STO has already ended',
     });
   }
 
-  if (now > start && newStart) {
+  if (timing !== StoTimingStatus.NotStarted && newStart) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Cannot modify the start time of an STO that already started',

@@ -46,9 +46,9 @@ export class Offerings extends Namespace<SecurityToken> {
   /**
    * Retrieve all of the Token's Offerings. Can be filtered using parameters
    *
-   * @param opts.status - status of the offerings to fetch
+   * @param opts.status - status of the offerings to fetch. If defined, only STOs that have all passed statuses will be returned
    */
-  public async get(opts: { status?: StoStatus } = {}): Promise<StoWithDetails[]> {
+  public async get(opts: { status?: Partial<StoStatus> } = {}): Promise<StoWithDetails[]> {
     const {
       parent: { ticker },
       context: {
@@ -57,7 +57,9 @@ export class Offerings extends Namespace<SecurityToken> {
       context,
     } = this;
 
-    const { status: statusFilter } = opts;
+    const {
+      status: { timing: timingFilter, balance: balanceFilter, sale: saleFilter } = {},
+    } = opts;
 
     const entries = await query.sto.fundraisers.entries(stringToTicker(ticker, context));
 
@@ -66,10 +68,15 @@ export class Offerings extends Namespace<SecurityToken> {
       details: fundraiserToStoDetails(fundraiser.unwrap(), context),
     }));
 
-    if (statusFilter) {
-      return stos.filter(({ details: { status } }) => status === statusFilter);
-    }
-
-    return stos;
+    return stos.filter(
+      ({
+        details: {
+          status: { timing, sale, balance },
+        },
+      }) =>
+        (!timingFilter || timingFilter === timing) &&
+        (!saleFilter || saleFilter === sale) &&
+        (!balanceFilter || balanceFilter === balance)
+    );
   }
 }

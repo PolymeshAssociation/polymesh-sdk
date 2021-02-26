@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { Context, launchSto, Namespace, SecurityToken, Sto, TransactionQueue } from '~/internal';
 import { Fundraiser, Ticker } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { StoDetails, StoStatus } from '~/types';
+import { StoBalanceStatus, StoDetails, StoSaleStatus, StoTimingStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -121,7 +121,13 @@ describe('Offerings class', () => {
           tiers,
           minInvestment,
           venue,
-          status: StoStatus.Closed,
+          status: {
+            sale: StoSaleStatus.Closed,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
+          totalAmount: tiers[0].amount,
+          totalRemaining: tiers[0].remaining,
         },
         {
           creator,
@@ -133,7 +139,13 @@ describe('Offerings class', () => {
           tiers,
           minInvestment,
           venue,
-          status: StoStatus.Live,
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
+          totalAmount: tiers[0].amount,
+          totalRemaining: tiers[0].remaining,
         },
       ];
       fundraisers = [
@@ -227,7 +239,13 @@ describe('Offerings class', () => {
     });
 
     test('should return offerings associated to the token filtered by status', async () => {
-      const result = await offerings.get({ status: StoStatus.Live });
+      const result = await offerings.get({
+        status: {
+          sale: StoSaleStatus.Live,
+          timing: StoTimingStatus.Started,
+          balance: StoBalanceStatus.Available,
+        },
+      });
 
       expect(result[0].sto.id).toEqual(new BigNumber(2));
       expect(result[0].details).toEqual(details[1]);

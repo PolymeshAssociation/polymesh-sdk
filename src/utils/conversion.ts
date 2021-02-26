@@ -50,7 +50,6 @@ import {
   DocumentUri,
   FundingRoundName,
   Fundraiser,
-  FundraiserStatus as MeshFundraiserStatus,
   FundraiserTier,
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
@@ -132,9 +131,11 @@ import {
   SecondaryKey,
   Signer,
   SingleClaimCondition,
+  StoBalanceStatus,
   StoDetails,
-  StoStatus,
+  StoSaleStatus,
   StoTier,
+  StoTimingStatus,
   Tier,
   TokenDocument,
   TokenIdentifier,
@@ -530,6 +531,7 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.portfolio.MovePortfolioFunds,
         TxTags.settlement.AddInstruction,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AffirmInstruction,
         TxTags.settlement.RejectInstruction,
         TxTags.settlement.CreateVenue,
       ];
@@ -2433,47 +2435,85 @@ export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
 /**
  * @hidden
  */
-export function meshFundraiserStatusToStoStatus(
-  meshFundraiserStatus: MeshFundraiserStatus
-): StoStatus {
-  if (meshFundraiserStatus.isLive) {
-    return StoStatus.Live;
-  }
-
-  if (meshFundraiserStatus.isFrozen) {
-    return StoStatus.Frozen;
-  }
-
-  return StoStatus.Closed;
-}
-
-/**
- * @hidden
- */
 export function fundraiserToStoDetails(fundraiser: Fundraiser, context: Context): StoDetails {
   const {
     creator,
     offering_portfolio: offeringPortfolio,
     raising_portfolio: raisingPortfolio,
     raising_asset: raisingAsset,
-    tiers,
+    tiers: rawTiers,
     venue_id: venueId,
-    start,
-    end,
-    status,
-    minimum_investment: minInvestment,
+    start: rawStart,
+    end: rawEnd,
+    status: rawStatus,
+    minimum_investment: rawMinInvestment,
   } = fundraiser;
+
+  const tiers: Tier[] = [];
+  let totalRemaining = new BigNumber(0);
+  let totalAmount = new BigNumber(0);
+  let totalRemainingValue = new BigNumber(0);
+
+  rawTiers.forEach(rawTier => {
+    const tier = fundraiserTierToTier(rawTier);
+
+    tiers.push(tier);
+    const { amount, remaining, price } = tier;
+
+    totalAmount = totalAmount.plus(amount);
+    totalRemaining = totalRemaining.plus(remaining);
+    totalRemainingValue = totalRemainingValue.plus(price.multipliedBy(remaining));
+  });
+
+  const start = momentToDate(rawStart);
+  const end = rawEnd.isSome ? momentToDate(rawEnd.unwrap()) : null;
+  const now = new Date();
+
+  const isStarted = now > start;
+  const isExpired = end && now > end;
+
+  const minInvestment = balanceToBigNumber(rawMinInvestment);
+
+  let timing: StoTimingStatus = StoTimingStatus.NotStarted;
+  let balance: StoBalanceStatus = StoBalanceStatus.Available;
+  let sale: StoSaleStatus = StoSaleStatus.Live;
+
+  if (isExpired) {
+    timing = StoTimingStatus.Expired;
+  } else if (isStarted) {
+    timing = StoTimingStatus.Started;
+  }
+
+  if (totalRemainingValue.isZero()) {
+    balance = StoBalanceStatus.SoldOut;
+  } else if (totalRemainingValue.lt(minInvestment)) {
+    balance = StoBalanceStatus.Residual;
+  }
+
+  if (rawStatus.isClosedEarly) {
+    sale = StoSaleStatus.ClosedEarly;
+  } else if (rawStatus.isClosed) {
+    sale = StoSaleStatus.Closed;
+  } else if (rawStatus.isFrozen) {
+    sale = StoSaleStatus.Frozen;
+  }
 
   return {
     creator: new Identity({ did: identityIdToString(creator) }, context),
     offeringPortfolio: meshPortfolioIdToPortfolio(offeringPortfolio, context),
     raisingPortfolio: meshPortfolioIdToPortfolio(raisingPortfolio, context),
     raisingCurrency: tickerToString(raisingAsset),
-    tiers: tiers.map(tier => fundraiserTierToTier(tier)),
+    tiers,
     venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
-    start: momentToDate(start),
-    end: end.isSome ? momentToDate(end.unwrap()) : null,
-    status: meshFundraiserStatusToStoStatus(status),
-    minInvestment: balanceToBigNumber(minInvestment),
+    start,
+    end,
+    status: {
+      timing,
+      balance,
+      sale,
+    },
+    minInvestment,
+    totalAmount,
+    totalRemaining,
   };
 }

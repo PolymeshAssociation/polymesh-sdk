@@ -2,10 +2,61 @@ import BigNumber from 'bignumber.js';
 
 import { DefaultPortfolio, Identity, NumberedPortfolio, Venue } from '~/internal';
 
-export enum StoStatus {
-  Live = 'Live',
+export enum StoTimingStatus {
+  /**
+   * Start date not reached yet
+   */
+  NotStarted = 'NotStarted',
+  /**
+   * Between start and end date
+   */
+  Started = 'Started',
+  /**
+   * End date reached
+   */
+  Expired = 'Expired',
+}
+
+export enum StoBalanceStatus {
+  /**
+   * There still are Security Tokens available for purchase
+   */
+  Available = 'Available',
+  /**
+   * All Security Tokens in the offering have been sold
+   */
+  SoldOut = 'SoldOut',
+  /**
+   * There are remaining tokens, but their added value is lower than the Offering's
+   *   minimum investment, so they cannot be purchased. The offering should be manually closed
+   *   to retrieve them
+   */
+  Residual = 'Residual',
+}
+
+export enum StoSaleStatus {
+  /**
+   * Sale temporarily paused, can be resumed (unfrozen) by the PIA
+   */
   Frozen = 'Frozen',
+  /**
+   * Investments can be made
+   */
+  Live = 'Live',
+  /**
+   * Sale was manually closed before the end date was reached
+   */
+  ClosedEarly = 'ClosedEarly',
+  /**
+   * Sale was manually closed after the end date was reached
+   */
   Closed = 'Closed',
+}
+
+export interface StoStatus {
+  timing: StoTimingStatus;
+  balance: StoBalanceStatus;
+  sale: StoSaleStatus;
 }
 
 export interface StoTier {
@@ -28,6 +79,8 @@ export interface StoDetails {
   end: Date | null;
   status: StoStatus;
   minInvestment: BigNumber;
+  totalAmount: BigNumber;
+  totalRemaining: BigNumber;
 }
 
 export interface Investment {

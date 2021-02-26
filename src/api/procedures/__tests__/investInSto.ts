@@ -14,7 +14,14 @@ import {
 import { Context, DefaultPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, PortfolioLike, RoleType, StoStatus } from '~/types';
+import {
+  PortfolioBalance,
+  PortfolioLike,
+  RoleType,
+  StoBalanceStatus,
+  StoSaleStatus,
+  StoTimingStatus,
+} from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -128,11 +135,15 @@ describe('investInSto procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the STO is not live', async () => {
+  test('should throw an error if the STO is not accepting investments', async () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          status: StoStatus.Closed,
+          status: {
+            sale: StoSaleStatus.Frozen,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
         },
       },
     });
@@ -141,31 +152,20 @@ describe('investInSto procedure', () => {
       fundingPortfolioId,
     });
 
-    return expect(prepareInvestInSto.call(proc, args)).rejects.toThrow('The STO is not live');
-  });
-
-  test('should throw an error if the STO has already ended', async () => {
-    entityMockUtils.configureMocks({
-      stoOptions: {
-        details: {
-          status: StoStatus.Live,
-          end: new Date('1/1/2020'),
-        },
-      },
-    });
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      purchasePortfolioId,
-      fundingPortfolioId,
-    });
-
-    return expect(prepareInvestInSto.call(proc, args)).rejects.toThrow('The STO has already ended');
+    return expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
+      'The STO is not accepting investments at the moment'
+    );
   });
 
   test('should throw an error if the minimum investment is not reached', async () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          status: StoStatus.Live,
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
           end: new Date('12/12/2030'),
           minInvestment: new BigNumber(10),
           tiers: [
@@ -203,7 +203,11 @@ describe('investInSto procedure', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          status: StoStatus.Live,
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
           end: new Date('12/12/2030'),
           minInvestment: new BigNumber(25),
           tiers: [
@@ -241,7 +245,11 @@ describe('investInSto procedure', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          status: StoStatus.Live,
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
           end: new Date('12/12/2030'),
           minInvestment: new BigNumber(10),
           tiers: [
@@ -281,7 +289,11 @@ describe('investInSto procedure', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          status: StoStatus.Live,
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
           end: new Date('12/12/2030'),
           minInvestment: new BigNumber(10),
           tiers: [
