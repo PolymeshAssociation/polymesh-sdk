@@ -13,6 +13,7 @@ import { TxTag } from 'polymesh-types/types';
 import {
   Account,
   Context,
+  CurrentAccount,
   Identity,
   PolymeshError,
   registerIdentity,
@@ -28,7 +29,6 @@ import { heartbeat } from '~/middleware/queries';
 import {
   AccountBalance,
   CommonKeyring,
-  CurrentAccount,
   CurrentIdentity,
   ErrorCode,
   MiddlewareConfig,
