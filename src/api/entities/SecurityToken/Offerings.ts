@@ -46,7 +46,7 @@ export class Offerings extends Namespace<SecurityToken> {
   /**
    * Retrieve all of the Token's Offerings. Can be filtered using parameters
    *
-   * @param opts.status - status of the offerings to fetch. As long as the STO has one of the passed statuses, it will be returned
+   * @param opts.status - status of the offerings to fetch. If defined, only STOs that have all passed statuses will be returned
    */
   public async get(opts: { status?: Partial<StoStatus> } = {}): Promise<StoWithDetails[]> {
     const {
