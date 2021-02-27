@@ -393,4 +393,21 @@ describe('Sto class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: name', () => {
+    test("should return the offering's name", async () => {
+      const name = 'someName';
+      const ticker = 'SOMETICKER';
+      const id = new BigNumber(1);
+      const sto = new Sto({ id, ticker }, context);
+
+      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+        returnValue: dsMockUtils.createMockFundraiserName(name),
+      });
+
+      const result = await sto.name();
+
+      expect(result).toBe(name);
+    });
+  });
 });

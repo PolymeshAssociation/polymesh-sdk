@@ -18,7 +18,12 @@ import { Query } from '~/middleware/types';
 import { Fundraiser } from '~/polkadot/polymesh/types';
 import { Ensured, ErrorCode, ResultSet, SubCallback, UnsubCallback } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
-import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
+import {
+  fundraiserToStoDetails,
+  numberToU64,
+  stringToTicker,
+  textToString,
+} from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
 import { Investment, StoDetails } from './types';
@@ -235,5 +240,19 @@ export class Sto extends Entity<UniqueIdentifiers> {
       next,
       count,
     };
+  }
+
+  /**
+   * Retrieve the Offering's name
+   */
+  public async name(): Promise<string> {
+    const { context, id, ticker } = this;
+
+    const name = await context.polymeshApi.query.sto.fundraiserNames(
+      stringToTicker(ticker, context),
+      numberToU64(id, context)
+    );
+
+    return textToString(name);
   }
 }
