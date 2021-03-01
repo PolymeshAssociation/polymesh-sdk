@@ -4597,6 +4597,7 @@ describe('fundraiserToStoDetails', () => {
     const context = dsMockUtils.getContextInstance();
 
     const someDid = 'someDid';
+    const name = 'someSto';
     const ticker = 'TICKER';
     const otherDid = 'otherDid';
     const raisingCurrency = 'USD';
@@ -4614,6 +4615,7 @@ describe('fundraiserToStoDetails', () => {
 
     const fakeResult = {
       creator: new Identity({ did: someDid }, context),
+      name,
       offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
       raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
       raisingCurrency: raisingCurrency,
@@ -4632,6 +4634,7 @@ describe('fundraiserToStoDetails', () => {
     };
 
     const creator = dsMockUtils.createMockIdentityId(someDid);
+    const rawName = dsMockUtils.createMockFundraiserName(name);
     const offeringPortfolio = dsMockUtils.createMockPortfolioId({
       did: creator,
       kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -4669,7 +4672,7 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    let result = fundraiserToStoDetails(fundraiser, context);
+    let result = fundraiserToStoDetails(fundraiser, rawName, context);
 
     expect(result).toEqual(fakeResult);
 
@@ -4689,10 +4692,11 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, context);
+    result = fundraiserToStoDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
+      name,
       status: {
         ...fakeResult.status,
         timing: StoTimingStatus.NotStarted,
@@ -4716,10 +4720,11 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, context);
+    result = fundraiserToStoDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
+      name,
       status: {
         ...fakeResult.status,
         timing: StoTimingStatus.Started,
@@ -4748,10 +4753,11 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, context);
+    result = fundraiserToStoDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
+      name,
       tiers: [{ ...tier, remaining: new BigNumber(0) }],
       status: {
         balance: StoBalanceStatus.SoldOut,
@@ -4785,10 +4791,11 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, context);
+    result = fundraiserToStoDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
+      name,
       tiers: [{ ...tier, remaining: new BigNumber(1).shiftedBy(-6) }],
       status: {
         balance: StoBalanceStatus.Residual,

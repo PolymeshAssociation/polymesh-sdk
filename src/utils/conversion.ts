@@ -50,6 +50,7 @@ import {
   DocumentUri,
   FundingRoundName,
   Fundraiser,
+  FundraiserName,
   FundraiserTier,
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
@@ -2435,7 +2436,11 @@ export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
 /**
  * @hidden
  */
-export function fundraiserToStoDetails(fundraiser: Fundraiser, context: Context): StoDetails {
+export function fundraiserToStoDetails(
+  fundraiser: Fundraiser,
+  name: FundraiserName,
+  context: Context
+): StoDetails {
   const {
     creator,
     offering_portfolio: offeringPortfolio,
@@ -2500,6 +2505,7 @@ export function fundraiserToStoDetails(fundraiser: Fundraiser, context: Context)
 
   return {
     creator: new Identity({ did: identityIdToString(creator) }, context),
+    name: textToString(name),
     offeringPortfolio: meshPortfolioIdToPortfolio(offeringPortfolio, context),
     raisingPortfolio: meshPortfolioIdToPortfolio(raisingPortfolio, context),
     raisingCurrency: tickerToString(raisingAsset),

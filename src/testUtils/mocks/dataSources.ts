@@ -74,6 +74,7 @@ import {
   DocumentUri,
   FundingRoundName,
   Fundraiser,
+  FundraiserName,
   FundraiserStatus,
   FundraiserTier,
   IdentityClaim,
@@ -1674,6 +1675,13 @@ export const createMockPalletName = (name?: string): PalletName =>
  */
 export const createMockDispatchableName = (name?: string): DispatchableName =>
   createMockStringCodec(name) as DispatchableName;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockFundraiserName = (name?: string): FundraiserName =>
+  createMockStringCodec(name) as FundraiserName;
 
 /**
  * @hidden

@@ -15,7 +15,7 @@ import {
 } from '~/internal';
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Fundraiser } from '~/polkadot/polymesh/types';
+import { Fundraiser, FundraiserName } from '~/polkadot/polymesh/types';
 import { Ensured, ErrorCode, ResultSet, SubCallback, UnsubCallback } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
@@ -100,9 +100,12 @@ export class Sto extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const assembleResult = (rawFundraiser: Option<Fundraiser>): StoDetails => {
+    const assembleResult = (
+      rawFundraiser: Option<Fundraiser>,
+      rawName: FundraiserName
+    ): StoDetails => {
       if (rawFundraiser.isSome) {
-        return fundraiserToStoDetails(rawFundraiser.unwrap(), context);
+        return fundraiserToStoDetails(rawFundraiser.unwrap(), rawName, context);
       } else {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
@@ -114,15 +117,18 @@ export class Sto extends Entity<UniqueIdentifiers> {
     const rawTicker = stringToTicker(ticker, context);
     const rawU64 = numberToU64(id, context);
 
+    const fetchName = (): Promise<FundraiserName> => sto.fundraiserNames(rawTicker, rawU64);
+
     if (callback) {
+      const fundraiserName = await fetchName();
       return sto.fundraisers(rawTicker, rawU64, fundraiserData => {
-        callback(assembleResult(fundraiserData));
+        callback(assembleResult(fundraiserData, fundraiserName));
       });
     }
 
-    const fundraiser = await sto.fundraisers(rawTicker, rawU64);
+    const [fundraiser, name] = await Promise.all([sto.fundraisers(rawTicker, rawU64), fetchName()]);
 
-    return assembleResult(fundraiser);
+    return assembleResult(fundraiser, name);
   }
 
   /**
