@@ -95,6 +95,7 @@ describe('Sto class', () => {
     const ticker = 'FAKETICKER';
     const id = new BigNumber(1);
     const someDid = 'someDid';
+    const name = 'someSto';
     const otherDid = 'otherDid';
     const raisingCurrency = 'USD';
     const amount = new BigNumber(1000);
@@ -133,6 +134,8 @@ describe('Sto class', () => {
       })
     );
 
+    const rawName = dsMockUtils.createMockFundraiserName(name);
+
     let sto: Sto;
 
     beforeEach(() => {
@@ -143,6 +146,7 @@ describe('Sto class', () => {
     test('should return details for a security token offering', async () => {
       const fakeResult = {
         creator: new Identity({ did: someDid }, context),
+        name,
         offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
         raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
         raisingCurrency,
@@ -170,11 +174,18 @@ describe('Sto class', () => {
         returnValue: rawFundraiser,
       });
 
+      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+        returnValue: rawName,
+      });
+
       const details = await sto.details();
       expect(details).toEqual(fakeResult);
     });
 
     test('should throw if security token offering does not exist', async () => {
+      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+        returnValue: dsMockUtils.createMockFundraiserName(),
+      });
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -185,8 +196,12 @@ describe('Sto class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
+      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+        returnValue: rawName,
+      });
+
       dsMockUtils.createQueryStub('sto', 'fundraisers').callsFake(async (_a, _b, cbFunc) => {
-        cbFunc(rawFundraiser);
+        cbFunc(rawFundraiser, rawName);
         return unsubCallback;
       });
 
