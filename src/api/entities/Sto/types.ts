@@ -70,6 +70,7 @@ export interface Tier extends StoTier {
 
 export interface StoDetails {
   creator: Identity;
+  name: string;
   offeringPortfolio: NumberedPortfolio | DefaultPortfolio;
   raisingPortfolio: NumberedPortfolio | DefaultPortfolio;
   raisingCurrency: string;

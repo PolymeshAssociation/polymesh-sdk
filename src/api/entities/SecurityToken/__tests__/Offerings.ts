@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Context, launchSto, Namespace, SecurityToken, Sto, TransactionQueue } from '~/internal';
-import { Fundraiser, Ticker } from '~/polkadot';
+import { Fundraiser, FundraiserName, Ticker } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { StoBalanceStatus, StoDetails, StoSaleStatus, StoTimingStatus } from '~/types';
 import { tuple } from '~/types/utils';
@@ -82,9 +82,13 @@ describe('Offerings class', () => {
 
   describe('method: get', () => {
     let rawTicker: Ticker;
+    let rawName: FundraiserName;
 
     let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-    let fundraiserToStoDetailsStub: sinon.SinonStub<[Fundraiser, Context], StoDetails>;
+    let fundraiserToStoDetailsStub: sinon.SinonStub<
+      [Fundraiser, FundraiserName, Context],
+      StoDetails
+    >;
 
     let details: StoDetails[];
     let fundraisers: Fundraiser[];
@@ -95,6 +99,8 @@ describe('Offerings class', () => {
       fundraiserToStoDetailsStub = sinon.stub(utilsConversionModule, 'fundraiserToStoDetails');
 
       const creator = entityMockUtils.getIdentityInstance();
+      const name = 'someSto';
+      rawName = dsMockUtils.createMockFundraiserName(name);
       const offeringPortfolio = entityMockUtils.getDefaultPortfolioInstance();
       const raisingPortfolio = entityMockUtils.getDefaultPortfolioInstance();
       const venue = entityMockUtils.getVenueInstance();
@@ -113,6 +119,7 @@ describe('Offerings class', () => {
       details = [
         {
           creator,
+          name,
           offeringPortfolio,
           raisingPortfolio,
           raisingCurrency,
@@ -131,6 +138,7 @@ describe('Offerings class', () => {
         },
         {
           creator,
+          name,
           offeringPortfolio,
           raisingPortfolio,
           raisingCurrency,
@@ -206,8 +214,8 @@ describe('Offerings class', () => {
 
     beforeEach(() => {
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
-      fundraiserToStoDetailsStub.withArgs(fundraisers[0], context).returns(details[0]);
-      fundraiserToStoDetailsStub.withArgs(fundraisers[1], context).returns(details[1]);
+      fundraiserToStoDetailsStub.withArgs(fundraisers[0], rawName, context).returns(details[0]);
+      fundraiserToStoDetailsStub.withArgs(fundraisers[1], rawName, context).returns(details[1]);
 
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
         entries: [
@@ -219,6 +227,12 @@ describe('Offerings class', () => {
             [rawTicker, dsMockUtils.createMockU64(2)],
             dsMockUtils.createMockOption(fundraisers[1])
           ),
+        ],
+      });
+      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+        entries: [
+          tuple([rawTicker, dsMockUtils.createMockU64(1)], rawName),
+          tuple([rawTicker, dsMockUtils.createMockU64(2)], rawName),
         ],
       });
     });
