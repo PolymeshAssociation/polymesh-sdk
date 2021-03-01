@@ -89,9 +89,16 @@ export async function prepareLaunchSto(
   } = this;
   const { ticker, raisingCurrency, venue, name, tiers, start, end, minInvestment } = args;
 
-  await Promise.all([
+  const token = new SecurityToken({ ticker }, context);
+
+  const portfolio = portfolioIdToPortfolio(offeringPortfolioId, context);
+
+  const [, , [{ total: totalTokenBalance }]] = await Promise.all([
     assertPortfolioExists(offeringPortfolioId, context),
     assertPortfolioExists(raisingPortfolioId, context),
+    portfolio.getTokenBalances({
+      tokens: [token],
+    }),
   ]);
 
   let venueId: BigNumber | undefined;
@@ -121,6 +128,17 @@ export async function prepareLaunchSto(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'A valid Venue for the Offering was neither supplied nor found',
+    });
+  }
+
+  const totalTierBalance = tiers
+    .map(({ amount }) => amount)
+    .reduce<BigNumber>((total, currentAmount) => total.plus(currentAmount), new BigNumber(0));
+
+  if (totalTierBalance.gt(totalTokenBalance)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: "The total amount of tokens offered exceed the Portfolio's balance",
     });
   }
 
