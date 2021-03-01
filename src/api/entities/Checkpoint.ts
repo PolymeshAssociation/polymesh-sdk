@@ -1,7 +1,17 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity } from '~/internal';
-import { balanceToBigNumber, momentToDate, numberToU64, stringToTicker } from '~/utils/conversion';
+import { Context, Entity, Identity } from '~/internal';
+import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
+import { tuple } from '~/types/utils';
+import {
+  balanceToBigNumber,
+  identityIdToString,
+  momentToDate,
+  numberToU64,
+  stringToIdentityId,
+  stringToTicker,
+} from '~/utils/conversion';
+import { getDid, requestPaginated } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -71,5 +81,52 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
     );
 
     return momentToDate(creationTime);
+  }
+
+  /**
+   * Retrieve all Tokenholder balances at this Checkpoint
+   *
+   * @note supports pagination
+   */
+  public async allBalances(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<IdentityBalance>> {
+    const { context, ticker, id } = this;
+
+    const { entries, lastKey: next } = await requestPaginated(
+      context.polymeshApi.query.checkpoint.balance,
+      {
+        arg: tuple(stringToTicker(ticker, context), numberToU64(id, context)),
+        paginationOpts,
+      }
+    );
+
+    const data = entries.map(([{ args: [, identityId] }, balance]) => ({
+      identity: new Identity({ did: identityIdToString(identityId) }, context),
+      balance: balanceToBigNumber(balance),
+    }));
+
+    return {
+      data,
+      next,
+    };
+  }
+
+  /**
+   * Retrieve the balance of a specific Tokenholder Identity at this Checkpoint
+   *
+   * @param args.identity - defaults to the current Identity
+   */
+  public async balance(args?: { identity: string | Identity }): Promise<BigNumber> {
+    const { context, ticker, id } = this;
+
+    const did = await getDid(args?.identity, context);
+
+    const balance = await context.polymeshApi.query.checkpoint.balance(
+      [stringToTicker(ticker, context), numberToU64(id, context)],
+      stringToIdentityId(did, context)
+    );
+
+    return balanceToBigNumber(balance);
   }
 }
