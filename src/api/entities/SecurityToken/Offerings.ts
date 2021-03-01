@@ -1,3 +1,5 @@
+import { remove } from 'lodash';
+
 import { Context, launchSto, LaunchStoParams, Namespace, SecurityToken, Sto } from '~/internal';
 import { StoStatus, StoWithDetails } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
@@ -79,7 +81,9 @@ export class Offerings extends Namespace<SecurityToken> {
       ]) => {
         const id = u64ToBigNumber(rawFundraiserId);
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const [, name] = nameEntries.find(([{ args: [, rawId] }]) => u64ToBigNumber(rawId).eq(id))!;
+        const [[, name]] = remove(nameEntries, ([{ args: [, rawId] }]) =>
+          u64ToBigNumber(rawId).eq(id)
+        );
         return {
           sto: new Sto({ id, ticker }, context),
           details: fundraiserToStoDetails(fundraiser.unwrap(), name, context),

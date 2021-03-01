@@ -120,9 +120,9 @@ export class Sto extends Entity<UniqueIdentifiers> {
     const fetchName = (): Promise<FundraiserName> => sto.fundraiserNames(rawTicker, rawU64);
 
     if (callback) {
-      const name = await fetchName();
+      const fundraiserName = await fetchName();
       return sto.fundraisers(rawTicker, rawU64, fundraiserData => {
-        callback(assembleResult(fundraiserData, name));
+        callback(assembleResult(fundraiserData, fundraiserName));
       });
     }
 
