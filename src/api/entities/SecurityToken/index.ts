@@ -448,7 +448,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Forces a transfer from a given Portfolio to PIA’s default Portfolio
+   * Force a transfer from a given Portfolio to the PIA’s default Portfolio
    *
    * @param args.portfolio - portfolio (or portfolio ID) that will send the funds
    * @param args.amount - amount of tokens to transfer
