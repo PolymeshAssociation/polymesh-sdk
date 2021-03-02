@@ -450,10 +450,11 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   /**
    * Forces a transfer from a given Portfolio to PIA’s default Portfolio
    *
-   * @param args. -
+   * @param args.portfolio - portfolio (or portfolio ID) that will send the funds
+   * @param args.amount - amount of tokens to transfer
    *
    * @note required role:
-   *   -
+   *   - Security Token Primary Issuance Agent
    */
   public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
 }

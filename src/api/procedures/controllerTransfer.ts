@@ -1,23 +1,14 @@
 import BigNumber from 'bignumber.js';
 
-import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { ErrorCode, PortfolioLike, RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
-  AuthorizationType,
-  DefaultPortfolio,
-  ErrorCode,
-  NumberedPortfolio,
-  PortfolioLike,
-  RoleType,
-  TxTags,
-} from '~/types';
-import { ProcedureAuthorization, SignerType } from '~/types/internal';
-import {
-  authorizationToAuthorizationData,
-  dateToMoment,
+  numberToBalance,
+  portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  signerToString,
-  signerValueToSignatory,
+  stringToTicker,
 } from '~/utils/conversion';
 
 export interface ControllerTransferParams {
@@ -51,11 +42,11 @@ export async function prepareControllerTransfer(
 
   const fromPortfolio = portfolioIdToPortfolio(portfolioId, context);
 
-  const [{ total: totalTokenBalance }] = await fromPortfolio.getTokenBalances({
+  const [{ total: totalTokenBalance, locked }] = await fromPortfolio.getTokenBalances({
     tokens: [token],
   });
 
-  if (totalTokenBalance.lt(amount)) {
+  if (totalTokenBalance.minus(locked).lt(amount)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The Portfolio does not have enough balance for this transfer',
@@ -63,25 +54,13 @@ export async function prepareControllerTransfer(
     });
   }
 
-  // const rawSignatory = signerValueToSignatory(
-  //   { type: SignerType.Identity, value: signerToString(target) },
-  //   context
-  // );
-  // const rawAuthorizationData = authorizationToAuthorizationData(
-  //   { type: AuthorizationType.TransferAssetOwnership, value: ticker },
-  //   context
-  // );
-  // const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
-
-  // this.addTransaction(
-  //   tx.identity.addAuthorization,
-  //   {},
-  //   rawSignatory,
-  //   rawAuthorizationData,
-  //   rawExpiry
-  // );
-
-  // return new SecurityToken({ ticker }, context);
+  this.addTransaction(
+    tx.asset.controllerTransfer,
+    {},
+    stringToTicker(ticker, context),
+    numberToBalance(amount, context),
+    portfolioIdToMeshPortfolioId(portfolioId, context)
+  );
 }
 
 /**

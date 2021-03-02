@@ -103,6 +103,7 @@ export { closeSto } from '~/api/procedures/closeSto';
 export { modifyStoTimes, ModifyStoTimesParams } from '~/api/procedures/modifyStoTimes';
 export { investInSto, InvestInStoParams } from '~/api/procedures/investInSto';
 export { createCheckpoint } from '~/api/procedures/createCheckpoint';
+export { controllerTransfer, ControllerTransferParams } from '~/api/procedures/controllerTransfer';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
