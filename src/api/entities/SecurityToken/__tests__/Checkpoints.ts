@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, createCheckpoint, Namespace, SecurityToken, TransactionQueue } from '~/internal';
+import { Checkpoint, Context, createCheckpoint, Namespace, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -51,7 +51,7 @@ describe('Checkpoints class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Checkpoint>;
 
       sinon.stub(createCheckpoint, 'prepare').withArgs({ ticker }, context).resolves(expectedQueue);
 

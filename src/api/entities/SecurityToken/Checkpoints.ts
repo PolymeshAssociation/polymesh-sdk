@@ -25,7 +25,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
    * @note required role:
    *   - Security Token Owner
    */
-  public create: ProcedureMethod<void, SecurityToken>;
+  public create: ProcedureMethod<void, Checkpoint>;
 
   /**
    * Retrieve all Checkpoints created on this Security Token, together with their corresponding creation Date
