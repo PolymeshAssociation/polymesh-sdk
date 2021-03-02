@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, PortfolioLike, RoleType, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
   numberToBalance,
   portfolioIdToMeshPortfolioId,
@@ -12,7 +12,7 @@ import {
 } from '~/utils/conversion';
 
 export interface ControllerTransferParams {
-  portfolio: PortfolioLike;
+  originPortfolio: PortfolioLike;
   amount: BigNumber;
 }
 
@@ -24,8 +24,15 @@ export type Params = { ticker: string } & ControllerTransferParams;
 /**
  * @hidden
  */
+export interface Storage {
+  originPortfolioId: PortfolioId;
+}
+
+/**
+ * @hidden
+ */
 export async function prepareControllerTransfer(
-  this: Procedure<Params, void>,
+  this: Procedure<Params, void, Storage>,
   args: Params
 ): Promise<void> {
   const {
@@ -33,24 +40,23 @@ export async function prepareControllerTransfer(
       polymeshApi: { tx },
     },
     context,
+    storage: { originPortfolioId },
   } = this;
-  const { ticker, portfolio, amount } = args;
+  const { ticker, amount } = args;
 
   const token = new SecurityToken({ ticker }, context);
 
-  const portfolioId = portfolioLikeToPortfolioId(portfolio);
+  const fromPortfolio = portfolioIdToPortfolio(originPortfolioId, context);
 
-  const fromPortfolio = portfolioIdToPortfolio(portfolioId, context);
-
-  const [{ total: totalTokenBalance, locked }] = await fromPortfolio.getTokenBalances({
+  const [{ total: portfolioBalance, locked }] = await fromPortfolio.getTokenBalances({
     tokens: [token],
   });
 
-  if (totalTokenBalance.minus(locked).lt(amount)) {
+  if (portfolioBalance.minus(locked).lt(amount)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The Portfolio does not have enough balance for this transfer',
-      data: { totalTokenBalance },
+      message: 'The Portfolio does not have enough free balance for this transfer',
+      data: { portfolioBalance },
     });
   }
 
@@ -59,7 +65,7 @@ export async function prepareControllerTransfer(
     {},
     stringToTicker(ticker, context),
     numberToBalance(amount, context),
-    portfolioIdToMeshPortfolioId(portfolioId, context)
+    portfolioIdToMeshPortfolioId(originPortfolioId, context)
   );
 }
 
@@ -67,15 +73,22 @@ export async function prepareControllerTransfer(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, void>,
+  this: Procedure<Params, void, Storage>,
   { ticker }: Params
 ): ProcedureAuthorization {
+  const {
+    storage: { originPortfolioId },
+    context,
+  } = this;
   return {
-    identityRoles: [{ type: RoleType.TokenPia, ticker }],
+    identityRoles: [
+      { type: RoleType.TokenPia, ticker },
+      { type: RoleType.PortfolioCustodian, portfolioId: originPortfolioId },
+    ],
     signerPermissions: {
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      tokens: [new SecurityToken({ ticker }, context)],
       transactions: [TxTags.asset.ControllerTransfer],
-      portfolios: [],
+      portfolios: [portfolioIdToPortfolio(originPortfolioId, context)],
     },
   };
 }
@@ -83,4 +96,20 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const controllerTransfer = new Procedure(prepareControllerTransfer, getAuthorization);
+export function prepareStorage(
+  this: Procedure<Params, void, Storage>,
+  { originPortfolio }: Params
+): Storage {
+  return {
+    originPortfolioId: portfolioLikeToPortfolioId(originPortfolio),
+  };
+}
+
+/**
+ * @hidden
+ */
+export const controllerTransfer = new Procedure(
+  prepareControllerTransfer,
+  getAuthorization,
+  prepareStorage
+);

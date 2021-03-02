@@ -603,7 +603,7 @@ describe('SecurityToken class', () => {
   describe('method: controllerTransfer', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'TICKER';
-      const portfolio = 'portfolio';
+      const originPortfolio = 'portfolio';
       const amount = new BigNumber(1);
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
@@ -612,10 +612,10 @@ describe('SecurityToken class', () => {
 
       sinon
         .stub(controllerTransfer, 'prepare')
-        .withArgs({ ticker, portfolio, amount }, context)
+        .withArgs({ ticker, originPortfolio, amount }, context)
         .resolves(expectedQueue);
 
-      const queue = await securityToken.controllerTransfer({ portfolio, amount });
+      const queue = await securityToken.controllerTransfer({ originPortfolio, amount });
 
       expect(queue).toBe(expectedQueue);
     });

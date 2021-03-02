@@ -7,6 +7,8 @@ import {
   getAuthorization,
   Params,
   prepareControllerTransfer,
+  prepareStorage,
+  Storage,
 } from '~/api/procedures/controllerTransfer';
 import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -28,7 +30,6 @@ jest.mock(
 
 describe('controllerTransfer procedure', () => {
   let mockContext: Mocked<Context>;
-  let portfolioLikeToPortfolioIdStub: sinon.SinonStub;
   let portfolioIdToPortfolioStub: sinon.SinonStub<
     [PortfolioId, Context],
     DefaultPortfolio | NumberedPortfolio
@@ -43,24 +44,15 @@ describe('controllerTransfer procedure', () => {
   let rawTicker: Ticker;
   let did: string;
   let rawPortfolioId: MeshPortfolioId;
-  let portfolio: DefaultPortfolio;
+  let originPortfolio: DefaultPortfolio;
   let rawAmount: Balance;
   let amount: BigNumber;
+  let originPortfolioId: PortfolioId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    entityMockUtils.initMocks({
-      defaultPortfolioOptions: {
-        tokenBalances: [
-          { total: new BigNumber(100), locked: new BigNumber(10) },
-        ] as PortfolioBalance[],
-      },
-    });
-    portfolioLikeToPortfolioIdStub = sinon.stub(
-      utilsConversionModule,
-      'portfolioLikeToPortfolioId'
-    );
+    entityMockUtils.initMocks();
     portfolioIdToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioIdToPortfolio');
     numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
     portfolioIdToMeshPortfolioIdStub = sinon.stub(
@@ -75,9 +67,15 @@ describe('controllerTransfer procedure', () => {
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    portfolio = new DefaultPortfolio({ did }, mockContext);
+    originPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+      did,
+      tokenBalances: [
+        { total: new BigNumber(100), locked: new BigNumber(10) },
+      ] as PortfolioBalance[],
+    });
     amount = new BigNumber(50);
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    originPortfolioId = { did };
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -86,8 +84,7 @@ describe('controllerTransfer procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.returns(rawTicker);
-    portfolioLikeToPortfolioIdStub.returns({ did });
-    portfolioIdToPortfolioStub.returns(portfolio);
+    portfolioIdToPortfolioStub.returns(originPortfolio);
     numberToBalanceStub.returns(rawAmount);
     portfolioIdToMeshPortfolioIdStub.returns(rawPortfolioId);
   });
@@ -105,25 +102,29 @@ describe('controllerTransfer procedure', () => {
   });
 
   test('should throw an error if the Portfolio does not have enough balance to transfer', () => {
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      originPortfolioId,
+    });
 
     return expect(
       prepareControllerTransfer.call(proc, {
         ticker,
-        portfolio,
+        originPortfolio,
         amount: new BigNumber(1000),
       })
-    ).rejects.toThrow('The Portfolio does not have enough balance for this transfer');
+    ).rejects.toThrow('The Portfolio does not have enough free balance for this transfer');
   });
 
   test('should add a controller transfer transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      originPortfolioId,
+    });
 
     const transaction = dsMockUtils.createTxStub('asset', 'controllerTransfer');
 
     await prepareControllerTransfer.call(proc, {
       ticker,
-      portfolio,
+      originPortfolio,
       amount,
     });
 
@@ -139,19 +140,41 @@ describe('controllerTransfer procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        originPortfolioId,
+      });
       const boundFunc = getAuthorization.bind(proc);
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker });
-      const identityRoles = [{ type: RoleType.TokenPia, ticker }];
+      const identityRoles = [
+        { type: RoleType.TokenPia, ticker },
+        { type: RoleType.PortfolioCustodian, portfolioId: originPortfolioId },
+      ];
 
-      expect(boundFunc({ ticker, portfolio, amount })).toEqual({
+      expect(boundFunc({ ticker, originPortfolio, amount })).toEqual({
         identityRoles,
         signerPermissions: {
           transactions: [TxTags.asset.ControllerTransfer],
           tokens: [token],
-          portfolios: [],
+          portfolios: [originPortfolio],
         },
+      });
+    });
+  });
+
+  describe('prepareStorage', () => {
+    test('should return the origin portfolio id', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = boundFunc({
+        ticker,
+        originPortfolio,
+        amount,
+      });
+
+      expect(result).toEqual({
+        originPortfolioId,
       });
     });
   });
