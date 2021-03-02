@@ -351,9 +351,9 @@ export class Polymesh {
    * Retrieve all the ticker reservations currently owned by an Identity. This doesn't include tokens that
    *   have already been launched
    *
-   * @param args.owner - identity representation or Identity ID as stored in the blockchain
+   * @param args.owner - defaults to the current Identity
    *
-   * * @note reservations with unreadable characters in their tickers will be left out
+   * @note reservations with unreadable characters in their tickers will be left out
    */
   public async getTickerReservations(args?: {
     owner: string | Identity;
