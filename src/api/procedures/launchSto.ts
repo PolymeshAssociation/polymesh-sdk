@@ -89,15 +89,13 @@ export async function prepareLaunchSto(
   } = this;
   const { ticker, raisingCurrency, venue, name, tiers, start, end, minInvestment } = args;
 
-  const token = new SecurityToken({ ticker }, context);
-
   const portfolio = portfolioIdToPortfolio(offeringPortfolioId, context);
 
-  const [, , [{ total: totalTokenBalance }]] = await Promise.all([
+  const [, , [{ total: totalTokenBalance, locked }]] = await Promise.all([
     assertPortfolioExists(offeringPortfolioId, context),
     assertPortfolioExists(raisingPortfolioId, context),
     portfolio.getTokenBalances({
-      tokens: [token],
+      tokens: [ticker],
     }),
   ]);
 
@@ -131,14 +129,15 @@ export async function prepareLaunchSto(
     });
   }
 
-  const totalTierBalance = tiers
-    .map(({ amount }) => amount)
-    .reduce<BigNumber>((total, currentAmount) => total.plus(currentAmount), new BigNumber(0));
+  const totalTierBalance = tiers.reduce<BigNumber>(
+    (total, { amount }) => total.plus(amount),
+    new BigNumber(0)
+  );
 
-  if (totalTierBalance.gt(totalTokenBalance)) {
+  if (totalTierBalance.gt(totalTokenBalance.minus(locked))) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: "The total amount of tokens offered exceed the Portfolio's balance",
+      message: "There isn't enough balance in the offering Portfolio",
     });
   }
 
