@@ -1,3 +1,5 @@
+import { remove } from 'lodash';
+
 import { Context, launchSto, LaunchStoParams, Namespace, SecurityToken, Sto } from '~/internal';
 import { StoStatus, StoWithDetails } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
@@ -46,30 +48,58 @@ export class Offerings extends Namespace<SecurityToken> {
   /**
    * Retrieve all of the Token's Offerings. Can be filtered using parameters
    *
-   * @param opts.status - status of the offerings to fetch
+   * @param opts.status - status of the offerings to fetch. If defined, only STOs that have all passed statuses will be returned
    */
-  public async get(opts: { status?: StoStatus } = {}): Promise<StoWithDetails[]> {
+  public async get(opts: { status?: Partial<StoStatus> } = {}): Promise<StoWithDetails[]> {
     const {
       parent: { ticker },
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { sto },
+        },
       },
       context,
     } = this;
 
-    const { status: statusFilter } = opts;
+    const {
+      status: { timing: timingFilter, balance: balanceFilter, sale: saleFilter } = {},
+    } = opts;
 
-    const entries = await query.sto.fundraisers.entries(stringToTicker(ticker, context));
+    const rawTicker = stringToTicker(ticker, context);
 
-    const stos = entries.map(([key, fundraiser]) => ({
-      sto: new Sto({ id: u64ToBigNumber(key.args[1]), ticker }, context),
-      details: fundraiserToStoDetails(fundraiser.unwrap(), context),
-    }));
+    const [fundraiserEntries, nameEntries] = await Promise.all([
+      sto.fundraisers.entries(rawTicker),
+      sto.fundraiserNames.entries(rawTicker),
+    ]);
 
-    if (statusFilter) {
-      return stos.filter(({ details: { status } }) => status === statusFilter);
-    }
+    const stos = fundraiserEntries.map(
+      ([
+        {
+          args: [, rawFundraiserId],
+        },
+        fundraiser,
+      ]) => {
+        const id = u64ToBigNumber(rawFundraiserId);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const [[, name]] = remove(nameEntries, ([{ args: [, rawId] }]) =>
+          u64ToBigNumber(rawId).eq(id)
+        );
+        return {
+          sto: new Sto({ id, ticker }, context),
+          details: fundraiserToStoDetails(fundraiser.unwrap(), name, context),
+        };
+      }
+    );
 
-    return stos;
+    return stos.filter(
+      ({
+        details: {
+          status: { timing, sale, balance },
+        },
+      }) =>
+        (!timingFilter || timingFilter === timing) &&
+        (!saleFilter || saleFilter === sale) &&
+        (!balanceFilter || balanceFilter === balance)
+    );
   }
 }

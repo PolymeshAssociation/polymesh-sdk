@@ -74,6 +74,7 @@ import {
   DocumentUri,
   FundingRoundName,
   Fundraiser,
+  FundraiserName,
   FundraiserStatus,
   FundraiserTier,
   IdentityClaim,
@@ -82,7 +83,6 @@ import {
   Instruction,
   InstructionStatus,
   InvestorZKProofData,
-  IssueAssetItem,
   MovePortfolioItem,
   PalletName,
   PalletPermissions,
@@ -1680,6 +1680,13 @@ export const createMockDispatchableName = (name?: string): DispatchableName =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockFundraiserName = (name?: string): FundraiserName =>
+  createMockStringCodec(name) as FundraiserName;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockPalletPermissions = (permissions?: {
   pallet_name: PalletName;
   dispatchable_names: DispatchableName[] | null;
@@ -2109,27 +2116,6 @@ export const createMockAssetOwnershipRelation = (
 
 /**
  * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockIssueAssetItem = (issueAssetItem?: {
-  identity_did: IdentityId;
-  value: Balance;
-}): IssueAssetItem => {
-  const item = issueAssetItem || {
-    identity_did: createMockIdentityId(),
-    value: createMockBalance(),
-  };
-
-  return createMockCodec(
-    {
-      ...item,
-    },
-    !issueAssetItem
-  ) as IssueAssetItem;
-};
-
-/**
- * @hidden
  */
 export const setRuntimeVersion = (args: unknown): void => {
   mockInstanceContainer.apiInstance.runtimeVersion = args as RuntimeVersion;
@@ -2350,7 +2336,7 @@ export const createMockFundraiserTier = (fundraiserTier?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockFundraiserStatus = (
-  fundraiserStatus?: 'Live' | 'Frozen' | 'Closed'
+  fundraiserStatus?: 'Live' | 'Frozen' | 'Closed' | 'ClosedEarly'
 ): FundraiserStatus => {
   return createMockEnum(fundraiserStatus) as FundraiserStatus;
 };

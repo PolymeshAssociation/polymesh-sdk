@@ -382,7 +382,8 @@
     "affirm_instruction": "affirm_instruction",
     "withdraw_affirmation": "withdraw_affirmation",
     "affirm_with_receipts": "affirm_with_receipts",
-    "execute_scheduled_instruction": "execute_scheduled_instruction"
+    "execute_scheduled_instruction": "execute_scheduled_instruction",
+    "change_receipt_validity": "change_receipt_validity"
   },
   "Sto": {
     "create_fundraiser": "create_fundraiser",

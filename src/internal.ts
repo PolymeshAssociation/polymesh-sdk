@@ -101,6 +101,8 @@ export {
 export { toggleFreezeSto, ToggleFreezeStoParams } from '~/api/procedures/toggleFreezeSto';
 export { closeSto } from '~/api/procedures/closeSto';
 export { modifyStoTimes, ModifyStoTimesParams } from '~/api/procedures/modifyStoTimes';
+export { investInSto, InvestInStoParams } from '~/api/procedures/investInSto';
+export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
@@ -118,3 +120,4 @@ export { Portfolio } from '~/api/entities/Portfolio';
 export { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 export { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
 export { TransactionQueue } from '~/base/TransactionQueue';
+export { Checkpoint } from '~/api/entities/Checkpoint';

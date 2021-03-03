@@ -156,8 +156,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `ticker` Ticker of the token.
        * * `docs` Documents to be attached to `ticker`.
        *
-       * # Weight
-       * `500_000_000 + 600_000 * docs.len()`
+       * # Permissions
+       * * Asset
        **/
       addDocuments: AugmentedSubmittable<
         (
@@ -180,6 +180,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `origin` - Signatory who owns to ticker/asset.
        * * `ticker` - ticker for whom extension get added.
        * * `extension_details` - Details of the smart extension.
+       *
+       * # Permissions
+       * * Asset
        **/
       addExtension: AugmentedSubmittable<
         (
@@ -199,6 +202,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `origin` - Signatory who owns the ticker/asset.
        * * `ticker` - Ticker symbol of the asset.
        * * `extension_id` - AccountId of the extension that need to be archived.
+       *
+       * # Permissions
+       * * Asset
        **/
       archiveExtension: AugmentedSubmittable<
         (
@@ -231,6 +237,24 @@ declare module '@polkadot/api/types/submittable' {
         [Ticker, EcdsaSignature]
       >;
       /**
+       * Forces a transfer of token from `from_portfolio` to the PIA's default portfolio.
+       * Only PIA is allowed to execute this.
+       *
+       * # Arguments
+       * * `origin` Must be a PIA for a given ticker.
+       * * `ticker` Ticker symbol of the asset.
+       * * `value`  Amount of tokens need to force transfer.
+       * * `from_portfolio` From whom portfolio tokens gets transferred.
+       **/
+      controllerTransfer: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          value: Balance | AnyNumber | Uint8Array,
+          fromPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Ticker, Balance, PortfolioId]
+      >;
+      /**
        * Initializes a new security token
        * makes the initiating account the owner of the security token
        * & the balance of the owner is set to total supply.
@@ -245,8 +269,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `identifiers` - a vector of asset identifiers.
        * * `funding_round` - name of the funding round.
        *
-       * # Weight
-       * `3_000_000_000 + 20_000 * identifiers.len()`
+       * # Permissions
+       * * Portfolio
        **/
       createAsset: AugmentedSubmittable<
         (
@@ -297,6 +321,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `origin` - the secondary key of the sender.
        * * `ticker` - the ticker of the token.
+       *
+       * # Permissions
+       * * Asset
        **/
       freeze: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -310,6 +337,10 @@ declare module '@polkadot/api/types/submittable' {
        * * `origin` Secondary key of token owner.
        * * `ticker` Ticker of the token.
        * * `value` Amount of tokens that get issued.
+       *
+       * # Permissions
+       * * Asset
+       * * Portfolio
        **/
       issue: AugmentedSubmittable<
         (
@@ -324,6 +355,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `origin` Secondary key of the token owner.
        * * `ticker` Ticker of the token.
+       *
+       * # Permissions
+       * * Asset
        **/
       makeDivisible: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -341,6 +375,10 @@ declare module '@polkadot/api/types/submittable' {
        * - `Unauthorized` If called by someone other than the token owner or the PIA
        * - `InvalidGranularity` If the amount is not divisible by 10^6 for non-divisible tokens
        * - `InsufficientPortfolioBalance` If the PIA's default portfolio doesn't have enough free balance
+       *
+       * # Permissions
+       * * Asset
+       * * Portfolio
        **/
       redeem: AugmentedSubmittable<
         (
@@ -356,6 +394,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `origin` It contains the secondary key of the caller (i.e who signed the transaction to execute this function).
        * * `ticker` ticker to register.
+       *
+       * # Permissions
+       * * Asset
        **/
       registerTicker: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -369,8 +410,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `ticker` Ticker of the token.
        * * `ids` Documents ids to be removed from `ticker`.
        *
-       * # Weight
-       * `500_000_000 + 600_000 * ids.len()`
+       * # Permissions
+       * * Asset
        **/
       removeDocuments: AugmentedSubmittable<
         (
@@ -386,6 +427,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `origin` - The asset issuer.
        * * `ticker` - Ticker symbol of the asset.
+       *
+       * # Permissions
+       * * Asset
        **/
       removePrimaryIssuanceAgent: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -397,6 +441,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `origin` - The asset issuer.
        * * `ticker` - Ticker symbol of the asset.
+       *
+       * # Permissions
+       * * Asset
        **/
       removeSmartExtension: AugmentedSubmittable<
         (
@@ -412,6 +459,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `origin` - the secondary key of the sender.
        * * `ticker` - the ticker of the token.
        * * `name` - the new name of the token.
+       *
+       * # Permissions
+       * * Asset
        **/
       renameAsset: AugmentedSubmittable<
         (
@@ -458,6 +508,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `origin` - the secondary key of the token owner DID.
        * * `ticker` - the ticker of the token.
        * * `name` - the desired name of the current funding round.
+       *
+       * # Permissions
+       * * Asset
        **/
       setFundingRound: AugmentedSubmittable<
         (
@@ -473,6 +526,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `origin` - Signatory who owns the ticker/asset.
        * * `ticker` - Ticker symbol of the asset.
        * * `extension_id` - AccountId of the extension that need to be un-archived.
+       *
+       * # Permissions
+       * * Asset
        **/
       unarchiveExtension: AugmentedSubmittable<
         (
@@ -487,6 +543,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `origin` - the secondary key of the sender.
        * * `ticker` - the ticker of the frozen token.
+       *
+       * # Permissions
+       * * Asset
        **/
       unfreeze: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -501,8 +560,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `identifiers` - the asset identifiers to be updated in the form of a vector of pairs
        * of `IdentifierType` and `AssetIdentifier` value.
        *
-       * # Weight
-       * `150_000 + 20_000 * identifiers.len()`
+       * # Permissions
+       * * Asset
        **/
       updateIdentifiers: AugmentedSubmittable<
         (
@@ -918,6 +977,10 @@ declare module '@polkadot/api/types/submittable' {
        * - `UnauthorizedCustodian` if CAA is not the custodian of `portfolio`.
        * - `InsufficientPortfolioBalance` if `portfolio` has less than `amount` of `currency`.
        * - `InsufficientBalance` if the protocol fee couldn't be charged.
+       *
+       * # Permissions
+       * * Asset
+       * * Portfolio
        **/
       distribute: AugmentedSubmittable<
         (
@@ -1130,6 +1193,8 @@ declare module '@polkadot/api/types/submittable' {
        * Creates a schedule generating checkpoints
        * in the future at either a fixed time or at intervals.
        *
+       * The schedule starts out with `strong_ref_count(schedule_id) <- 0`.
+       *
        * # Arguments
        * - `origin` is a signer that has permissions to act as owner of `ticker`.
        * - `ticker` to create the schedule for.
@@ -1142,11 +1207,18 @@ declare module '@polkadot/api/types/submittable' {
        * - `ScheduleOverflow` if the schedule ID counter would overflow.
        * - `CheckpointOverflow` if the total checkpoint counter would overflow.
        * - `FailedToComputeNextCheckpoint` if the next checkpoint for `schedule` is in the past.
+       *
+       * # Permissions
+       * * Asset
        **/
       createSchedule: AugmentedSubmittable<
         (
           ticker: Ticker | string | Uint8Array,
-          schedule: ScheduleSpec | { start?: any; period?: any } | string | Uint8Array
+          schedule:
+            | ScheduleSpec
+            | { start?: any; period?: any; remaining?: any }
+            | string
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Ticker, ScheduleSpec]
       >;
@@ -1162,6 +1234,9 @@ declare module '@polkadot/api/types/submittable' {
        * - `Unauthorized` if the caller doesn't own the asset.
        * - `NoCheckpointSchedule` if `id` does not identify a schedule for this `ticker`.
        * - `ScheduleNotRemovable` if `id` exists but is not removable.
+       *
+       * # Permissions
+       * * Asset
        **/
       removeSchedule: AugmentedSubmittable<
         (
@@ -1305,6 +1380,9 @@ declare module '@polkadot/api/types/submittable' {
        * * ticker - Symbol of the asset
        * * sender_conditions - Sender transfer conditions.
        * * receiver_conditions - Receiver transfer conditions.
+       *
+       * # Permissions
+       * * Asset
        **/
       addComplianceRequirement: AugmentedSubmittable<
         (
@@ -1325,6 +1403,9 @@ declare module '@polkadot/api/types/submittable' {
        * * origin - Signer of the dispatchable. It should be the owner of the ticker.
        * * ticker - Symbol of the asset.
        * * issuer - IdentityId of the trusted claim issuer.
+       *
+       * # Permissions
+       * * Asset
        **/
       addDefaultTrustedClaimIssuer: AugmentedSubmittable<
         (
@@ -1340,6 +1421,9 @@ declare module '@polkadot/api/types/submittable' {
        * * origin - Signer of the dispatchable. It should be the owner of the ticker.
        * * ticker - Symbol of the asset.
        * * new_req - Compliance requirement.
+       *
+       * # Permissions
+       * * Asset
        **/
       changeComplianceRequirement: AugmentedSubmittable<
         (
@@ -1358,6 +1442,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
        * * ticker - Symbol of the asset
+       *
+       * # Permissions
+       * * Asset
        **/
       pauseAssetCompliance: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -1370,6 +1457,9 @@ declare module '@polkadot/api/types/submittable' {
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
        * * ticker - Symbol of the asset
        * * id - Compliance requirement id which is need to be removed
+       *
+       * # Permissions
+       * * Asset
        **/
       removeComplianceRequirement: AugmentedSubmittable<
         (
@@ -1385,6 +1475,9 @@ declare module '@polkadot/api/types/submittable' {
        * * origin - Signer of the dispatchable. It should be the owner of the ticker.
        * * ticker - Symbol of the asset.
        * * issuer - IdentityId of the trusted claim issuer.
+       *
+       * # Permissions
+       * * Asset
        **/
       removeDefaultTrustedClaimIssuer: AugmentedSubmittable<
         (
@@ -1404,6 +1497,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `Unauthorized` if `origin` is not the owner of the ticker.
        * * `DuplicateAssetCompliance` if `asset_compliance` contains multiple entries with the same `requirement_id`.
        *
+       * # Permissions
+       * * Asset
        **/
       replaceAssetCompliance: AugmentedSubmittable<
         (
@@ -1425,6 +1520,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
        * * ticker - Symbol of the asset
+       *
+       * # Permissions
+       * * Asset
        **/
       resetAssetCompliance: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -1436,6 +1534,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
        * * ticker - Symbol of the asset
+       *
+       * # Permissions
+       * * Asset
        **/
       resumeAssetCompliance: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -1611,6 +1712,9 @@ declare module '@polkadot/api/types/submittable' {
        * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
        * - `NoSuchCA` if `id` does not identify an existing CA.
        * - When `record_date.is_some()`, other errors due to checkpoint scheduling may occur.
+       *
+       * # Permissions
+       * * Asset
        **/
       changeRecordDate: AugmentedSubmittable<
         (
@@ -1647,6 +1751,9 @@ declare module '@polkadot/api/types/submittable' {
        * - `TooManyTargetIds` if `targets.unwrap().identities.len() > T::MaxTargetIds::get()`.
        * - `DeclDateInFuture` if the declaration date is not in the past.
        * - When `record_date.is_some()`, other errors due to checkpoint scheduling may occur.
+       *
+       * # Permissions
+       * * Asset
        **/
       initiateCorporateAction: AugmentedSubmittable<
         (
@@ -1699,6 +1806,9 @@ declare module '@polkadot/api/types/submittable' {
        * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
        * - `NoSuchCA` if `id` does not identify an existing CA.
        * - `NoSuchDoc` if any of `docs` does not identify an existing document.
+       *
+       * # Permissions
+       * * Asset
        **/
       linkCaDoc: AugmentedSubmittable<
         (
@@ -1709,8 +1819,12 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Removes the CA identified by `ca_id`.
+       *
        * Associated data, such as document links, ballots,
        * and capital distributions are also removed.
+       *
+       * Any schedule associated with the record date will see
+       * `strong_ref_count(schedule_id)` decremented.
        *
        * ## Arguments
        * - `origin` which must be a signer for the CAA of `ca_id`.
@@ -1719,6 +1833,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Errors
        * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
        * - `NoSuchCA` if `id` does not identify an existing CA.
+       *
+       * # Permissions
+       * * Asset
        **/
       removeCa: AugmentedSubmittable<
         (
@@ -1735,6 +1852,9 @@ declare module '@polkadot/api/types/submittable' {
        *
        * ## Errors
        * - `Unauthorized` if `origin` isn't `ticker`'s owner.
+       *
+       * # Permissions
+       * * Asset
        **/
       resetCaa: AugmentedSubmittable<
         (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -1751,6 +1871,9 @@ declare module '@polkadot/api/types/submittable' {
        * ## Errors
        * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
        * - `TooManyTargetIds` if `targets.identities.len() > T::MaxTargetIds::get()`.
+       *
+       * # Permissions
+       * * Asset
        **/
       setDefaultTargets: AugmentedSubmittable<
         (
@@ -1769,6 +1892,9 @@ declare module '@polkadot/api/types/submittable' {
        *
        * ## Errors
        * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       *
+       * # Permissions
+       * * Asset
        **/
       setDefaultWithholdingTax: AugmentedSubmittable<
         (
@@ -1791,6 +1917,9 @@ declare module '@polkadot/api/types/submittable' {
        * ## Errors
        * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
        * - `TooManyDidTaxes` if `Some(tax)` and adding the override would go over the limit `MaxDidWhts`.
+       *
+       * # Permissions
+       * * Asset
        **/
       setDidWithholdingTax: AugmentedSubmittable<
         (
@@ -2815,7 +2944,7 @@ declare module '@polkadot/api/types/submittable' {
         [AccountId, u64, IdentityId, Weight]
       >;
       /**
-       * Adds a multisig as the primary key of the current did if the current did is the creator
+       * Adds a multisig as the primary key of the current did if the current DID is the creator
        * of the multisig.
        *
        * # Arguments
@@ -3145,32 +3274,6 @@ declare module '@polkadot/api/types/submittable' {
     };
     polymeshCommittee: {
       /**
-       * May be called by any signed account after the voting duration has ended in order to
-       * finish voting and close the proposal.
-       *
-       * Abstentions are counted as rejections.
-       *
-       * # Arguments
-       * * `proposal` - A hash of the proposal to be closed.
-       * * `index` - The proposal index.
-       *
-       * # Complexity
-       * - the weight of `proposal` preimage.
-       * - up to three events deposited.
-       * - one read, two removals, one mutation. (plus three static reads.)
-       * - computation and i/o `O(P + L + M)` where:
-       * - `M` is number of members,
-       * - `P` is number of active proposals,
-       * - `L` is the encoded length of `proposal` preimage.
-       **/
-      close: AugmentedSubmittable<
-        (
-          proposal: Hash | string | Uint8Array,
-          index: Compact<ProposalIndex> | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Hash, Compact<ProposalIndex>]
-      >;
-      /**
        * Changes the time after which a proposal expires.
        *
        * # Arguments
@@ -3196,11 +3299,10 @@ declare module '@polkadot/api/types/submittable' {
         [IdentityId]
       >;
       /**
-       * Change the vote threshold the determines the winning proposal. For e.g., for a simple
-       * majority use (1, 2) which represents the in-equation ">= 1/2"
+       * Change the vote threshold the determines the winning proposal.
+       * For e.g., for a simple majority use (1, 2) which represents the in-equation ">= 1/2".
        *
        * # Arguments
-       * * `match_criteria` - One of {AtLeast, MoreThan}.
        * * `n` - Numerator of the fraction representing vote threshold.
        * * `d` - Denominator of the fraction representing vote threshold.
        **/
@@ -3272,6 +3374,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Errors
        * * `PortfolioDoesNotExist` if `num` doesn't reference a valid portfolio.
        * * `PortfolioNotEmpty` if the portfolio still holds any asset
+       *
+       * # Permissions
+       * * Portfolio
        **/
       deletePortfolio: AugmentedSubmittable<
         (num: PortfolioNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -3288,6 +3393,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `DifferentIdentityPortfolios` if the sender and receiver portfolios belong to different identities
        * * `UnauthorizedCustodian` if the caller is not the custodian of the from portfolio
        * * `InsufficientPortfolioBalance` if the sender does not have enough free balance
+       *
+       * # Permissions
+       * * Portfolio
        **/
       movePortfolioFunds: AugmentedSubmittable<
         (
@@ -3304,6 +3412,9 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # Errors
        * * `PortfolioDoesNotExist` if `num` doesn't reference a valid portfolio.
+       *
+       * # Permissions
+       * * Portfolio
        **/
       renamePortfolio: AugmentedSubmittable<
         (
@@ -3520,6 +3631,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `value_date` - Optional date after which the instruction should be settled (not enforced)
        * * `legs` - Legs included in this instruction.
        * * `portfolios` - Portfolios that the sender controls and wants to use in this affirmations.
+       *
+       * # Permissions
+       * * Portfolio
        **/
       addAndAffirmInstruction: AugmentedSubmittable<
         (
@@ -3577,16 +3691,21 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # Arguments
        * * `instruction_id` - Instruction id to affirm.
-       * * `portfolios` - Portfolios that the sender controls and wants to affirm this instruction
+       * * `portfolios` - Portfolios that the sender controls and wants to affirm this instruction.
+       * * `legs` - List of legs needs to affirmed.
+       *
+       * # Permissions
+       * * Portfolio
        **/
       affirmInstruction: AugmentedSubmittable<
         (
           instructionId: u64 | AnyNumber | Uint8Array,
           portfolios:
             | Vec<PortfolioId>
-            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[]
+            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[],
+          maxLegsCount: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [u64, Vec<PortfolioId>]
+        [u64, Vec<PortfolioId>, u32]
       >;
       /**
        * Accepts an instruction and claims a signed receipt.
@@ -3598,6 +3717,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `signer` - Signer of the receipt.
        * * `signed_data` - Signed receipt.
        * * `portfolios` - Portfolios that the sender controls and wants to accept this instruction with
+       *
+       * # Permissions
+       * * Portfolio
        **/
       affirmWithReceipts: AugmentedSubmittable<
         (
@@ -3612,9 +3734,10 @@ declare module '@polkadot/api/types/submittable' {
               )[],
           portfolios:
             | Vec<PortfolioId>
-            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[]
+            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[],
+          maxLegsCount: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [u64, Vec<ReceiptDetails>, Vec<PortfolioId>]
+        [u64, Vec<ReceiptDetails>, Vec<PortfolioId>, u32]
       >;
       /**
        * Allows additional venues to create instructions involving an asset.
@@ -3622,8 +3745,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `ticker` - Ticker of the token in question.
        * * `venues` - Array of venues that are allowed to create instructions for the token in question.
        *
-       * # Weight
-       * `200_000_000 + 500_000 * venues.len()`
+       * # Permissions
+       * * Asset
        **/
       allowVenues: AugmentedSubmittable<
         (
@@ -3631,6 +3754,20 @@ declare module '@polkadot/api/types/submittable' {
           venues: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
         [Ticker, Vec<u64>]
+      >;
+      /**
+       * Marks a receipt issued by the caller as claimed or not claimed.
+       * This allows the receipt issuer to invalidate an already issued receipt or revalidate an already claimed receipt.
+       *
+       * * `receipt_uid` - Unique ID of the receipt.
+       * * `validity` - New validity of the receipt.
+       **/
+      changeReceiptValidity: AugmentedSubmittable<
+        (
+          receiptUid: u64 | AnyNumber | Uint8Array,
+          validity: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, bool]
       >;
       /**
        * Claims a signed receipt.
@@ -3641,6 +3778,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `receipt_uid` - Receipt ID generated by the signer.
        * * `signer` - Signer of the receipt.
        * * `signed_data` - Signed receipt.
+       *
+       * # Permissions
+       * * Portfolio
        **/
       claimReceipt: AugmentedSubmittable<
         (
@@ -3677,8 +3817,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `ticker` - Ticker of the token in question.
        * * `venues` - Array of venues that are no longer allowed to create instructions for the token in question.
        *
-       * # Weight
-       * `200_000_000 + 500_000 * venues.len()`
+       * # Permissions
+       * * Asset
        **/
       disallowVenues: AugmentedSubmittable<
         (
@@ -3691,8 +3831,11 @@ declare module '@polkadot/api/types/submittable' {
        * Root callable extrinsic, used as an internal call to execute a scheduled settlement instruction.
        **/
       executeScheduledInstruction: AugmentedSubmittable<
-        (instructionId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [u64]
+        (
+          instructionId: u64 | AnyNumber | Uint8Array,
+          legsCount: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, u32]
       >;
       /**
        * Rejects an existing instruction.
@@ -3700,15 +3843,19 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `instruction_id` - Instruction id to reject.
        * * `portfolios` - Portfolios that the sender controls and wants them to reject this instruction
+       *
+       * # Permissions
+       * * Portfolio
        **/
       rejectInstruction: AugmentedSubmittable<
         (
           instructionId: u64 | AnyNumber | Uint8Array,
           portfolios:
             | Vec<PortfolioId>
-            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[]
+            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[],
+          maxLegsCount: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [u64, Vec<PortfolioId>]
+        [u64, Vec<PortfolioId>, u32]
       >;
       /**
        * Enables or disabled venue filtering for a token.
@@ -3716,6 +3863,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `ticker` - Ticker of the token in question.
        * * `enabled` - Boolean that decides if the filtering should be enabled.
+       *
+       * # Permissions
+       * * Asset
        **/
       setVenueFiltering: AugmentedSubmittable<
         (
@@ -3730,6 +3880,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `instruction_id` - Target instruction id for the receipt.
        * * `leg_id` - Target leg id for the receipt
+       *
+       * # Permissions
+       * * Portfolio
        **/
       unclaimReceipt: AugmentedSubmittable<
         (
@@ -3763,15 +3916,19 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `instruction_id` - Instruction id for that affirmation get withdrawn.
        * * `portfolios` - Portfolios that the sender controls and wants to withdraw affirmation.
+       *
+       * # Permissions
+       * * Portfolio
        **/
       withdrawAffirmation: AugmentedSubmittable<
         (
           instructionId: u64 | AnyNumber | Uint8Array,
           portfolios:
             | Vec<PortfolioId>
-            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[]
+            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[],
+          maxLegsCount: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [u64, Vec<PortfolioId>]
+        [u64, Vec<PortfolioId>, u32]
       >;
     };
     staking: {
@@ -4560,6 +4717,8 @@ declare module '@polkadot/api/types/submittable' {
        * # Errors
        * * `Unauthorized` if `origin` is not the owner of the ticker.
        *
+       * # Permissions
+       * * Asset
        **/
       addExemptedEntities: AugmentedSubmittable<
         (
@@ -4587,6 +4746,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `DuplicateTransferManager` if `new_transfer_manager` is already enabled for the ticker.
        * * `TransferManagersLimitReached` if the `ticker` already has max TMs attached
        *
+       * # Permissions
+       * * Asset
        **/
       addTransferManager: AugmentedSubmittable<
         (
@@ -4612,6 +4773,8 @@ declare module '@polkadot/api/types/submittable' {
        * # Errors
        * * `Unauthorized` if `origin` is not the owner of the ticker.
        *
+       * # Permissions
+       * * Asset
        **/
       removeExemptedEntities: AugmentedSubmittable<
         (
@@ -4638,6 +4801,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `Unauthorized` if `origin` is not the owner of the ticker.
        * * `TransferManagerMissing` if `asset_compliance` contains multiple entries with the same `requirement_id`.
        *
+       * # Permissions
+       * * Asset
        **/
       removeTransferManager: AugmentedSubmittable<
         (
@@ -4664,9 +4829,12 @@ declare module '@polkadot/api/types/submittable' {
        * * `venue_id` - Venue to handle settlement.
        * * `start` - Fundraiser start time, if `None` the fundraiser will start immediately.
        * * `end` - Fundraiser end time, if `None` the fundraiser will never expire.
+       * * `minimum_investment` - Minimum amount of `raising_asset` that an investor needs to spend to invest in this raise.
+       * * `fundraiser_name` - Fundraiser name, only used in the UIs.
        *
-       * # Weight
-       * `800_000_000` placeholder
+       * # Permissions
+       * * Asset
+       * * Portfolio
        **/
       createFundraiser: AugmentedSubmittable<
         (
@@ -4702,8 +4870,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `offering_asset` - Asset to freeze.
        * * `fundraiser_id` - ID of the fundraiser to freeze.
        *
-       * # Weight
-       * `1_000` placeholder
+       * # Permissions
+       * * Asset
        **/
       freezeFundraiser: AugmentedSubmittable<
         (
@@ -4719,12 +4887,12 @@ declare module '@polkadot/api/types/submittable' {
        * * `funding_portfolio` - Portfolio that will fund the investment.
        * * `offering_asset` - Asset to invest in.
        * * `fundraiser_id` - ID of the fundraiser to invest in.
-       * * `investment_amount` - Amount of `offering_asset` to invest in.
+       * * `purchase_amount` - Amount of `offering_asset` to purchase.
        * * `max_price` - Maximum price to pay per unit of `offering_asset`, If `None`there are no constraints on price.
        * * `receipt` - Off-chain receipt to use instead of on-chain balance in `funding_portfolio`.
        *
-       * # Weight
-       * `2_000_000_000` placeholder
+       * # Permissions
+       * * Portfolio
        **/
       invest: AugmentedSubmittable<
         (
@@ -4732,7 +4900,7 @@ declare module '@polkadot/api/types/submittable' {
           fundingPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           offeringAsset: Ticker | string | Uint8Array,
           fundraiserId: u64 | AnyNumber | Uint8Array,
-          investmentAmount: Balance | AnyNumber | Uint8Array,
+          purchaseAmount: Balance | AnyNumber | Uint8Array,
           maxPrice: Option<Balance> | null | object | string | Uint8Array,
           receipt: Option<ReceiptDetails> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -4746,8 +4914,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `start` - New start of the fundraiser.
        * * `end` - New end of the fundraiser to modify.
        *
-       * # Weight
-       * `1_000` placeholder
+       * # Permissions
+       * * Asset
        **/
       modifyFundraiserWindow: AugmentedSubmittable<
         (
@@ -4764,8 +4932,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `offering_asset` - Asset to stop.
        * * `fundraiser_id` - ID of the fundraiser to stop.
        *
-       * # Weight
-       * `1_000` placeholder
+       * # Permissions
+       * * Asset
        **/
       stop: AugmentedSubmittable<
         (
@@ -4780,8 +4948,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `offering_asset` - Asset to unfreeze.
        * * `fundraiser_id` - ID of the fundraiser to unfreeze.
        *
-       * # Weight
-       * `1_000` placeholder
+       * # Permissions
+       * * Asset
        **/
       unfreezeFundraiser: AugmentedSubmittable<
         (
@@ -5014,32 +5182,6 @@ declare module '@polkadot/api/types/submittable' {
     };
     technicalCommittee: {
       /**
-       * May be called by any signed account after the voting duration has ended in order to
-       * finish voting and close the proposal.
-       *
-       * Abstentions are counted as rejections.
-       *
-       * # Arguments
-       * * `proposal` - A hash of the proposal to be closed.
-       * * `index` - The proposal index.
-       *
-       * # Complexity
-       * - the weight of `proposal` preimage.
-       * - up to three events deposited.
-       * - one read, two removals, one mutation. (plus three static reads.)
-       * - computation and i/o `O(P + L + M)` where:
-       * - `M` is number of members,
-       * - `P` is number of active proposals,
-       * - `L` is the encoded length of `proposal` preimage.
-       **/
-      close: AugmentedSubmittable<
-        (
-          proposal: Hash | string | Uint8Array,
-          index: Compact<ProposalIndex> | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Hash, Compact<ProposalIndex>]
-      >;
-      /**
        * Changes the time after which a proposal expires.
        *
        * # Arguments
@@ -5065,11 +5207,10 @@ declare module '@polkadot/api/types/submittable' {
         [IdentityId]
       >;
       /**
-       * Change the vote threshold the determines the winning proposal. For e.g., for a simple
-       * majority use (1, 2) which represents the in-equation ">= 1/2"
+       * Change the vote threshold the determines the winning proposal.
+       * For e.g., for a simple majority use (1, 2) which represents the in-equation ">= 1/2".
        *
        * # Arguments
-       * * `match_criteria` - One of {AtLeast, MoreThan}.
        * * `n` - Numerator of the fraction representing vote threshold.
        * * `d` - Denominator of the fraction representing vote threshold.
        **/
@@ -5288,32 +5429,6 @@ declare module '@polkadot/api/types/submittable' {
     };
     upgradeCommittee: {
       /**
-       * May be called by any signed account after the voting duration has ended in order to
-       * finish voting and close the proposal.
-       *
-       * Abstentions are counted as rejections.
-       *
-       * # Arguments
-       * * `proposal` - A hash of the proposal to be closed.
-       * * `index` - The proposal index.
-       *
-       * # Complexity
-       * - the weight of `proposal` preimage.
-       * - up to three events deposited.
-       * - one read, two removals, one mutation. (plus three static reads.)
-       * - computation and i/o `O(P + L + M)` where:
-       * - `M` is number of members,
-       * - `P` is number of active proposals,
-       * - `L` is the encoded length of `proposal` preimage.
-       **/
-      close: AugmentedSubmittable<
-        (
-          proposal: Hash | string | Uint8Array,
-          index: Compact<ProposalIndex> | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Hash, Compact<ProposalIndex>]
-      >;
-      /**
        * Changes the time after which a proposal expires.
        *
        * # Arguments
@@ -5339,11 +5454,10 @@ declare module '@polkadot/api/types/submittable' {
         [IdentityId]
       >;
       /**
-       * Change the vote threshold the determines the winning proposal. For e.g., for a simple
-       * majority use (1, 2) which represents the in-equation ">= 1/2"
+       * Change the vote threshold the determines the winning proposal.
+       * For e.g., for a simple majority use (1, 2) which represents the in-equation ">= 1/2".
        *
        * # Arguments
-       * * `match_criteria` - One of {AtLeast, MoreThan}.
        * * `n` - Numerator of the fraction representing vote threshold.
        * * `d` - Denominator of the fraction representing vote threshold.
        **/

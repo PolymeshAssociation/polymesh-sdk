@@ -85,8 +85,6 @@ import type {
   CddStatus,
   DidRecords,
   DidStatus,
-  GetPortfolioAssetsResult,
-  GetPortfoliosResult,
   HistoricalVotingByAddress,
   HistoricalVotingById,
   IdentityId,
@@ -786,22 +784,6 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
           id: IdentityId | string | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<HistoricalVotingById>
-      >;
-    };
-    portfolio: {
-      /**
-       * Gets the balances of all assets in a given portfolio
-       **/
-      getPortfolioAssets: AugmentedRpc<
-        (
-          portfolio_id: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
-        ) => Observable<GetPortfolioAssetsResult>
-      >;
-      /**
-       * Gets all user-defined portfolio names of an identity
-       **/
-      getPortfolios: AugmentedRpc<
-        (did: IdentityId | string | Uint8Array) => Observable<GetPortfoliosResult>
       >;
     };
     protocolFee: {

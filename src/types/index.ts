@@ -9,6 +9,7 @@ import { CountryCode } from '~/generated/types';
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import {
   Account,
+  Checkpoint,
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
@@ -625,6 +626,11 @@ export interface StoWithDetails {
   details: StoDetails;
 }
 
+export interface CheckpointWithCreationDate {
+  checkpoint: Checkpoint;
+  createdAt: Date;
+}
+
 export interface SecondaryKey {
   signer: Signer;
   permissions: Permissions;
@@ -639,6 +645,7 @@ export enum TxGroup {
    * - TxTags.portfolio.MovePortfolioFunds
    * - TxTags.settlement.AddInstruction
    * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AffirmInstruction
    * - TxTags.settlement.RejectInstruction
    * - TxTags.settlement.CreateVenue
    */

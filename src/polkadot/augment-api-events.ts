@@ -130,13 +130,10 @@ declare module '@polkadot/api/types/events' {
        **/
       ClassicTickerClaimed: AugmentedEvent<ApiType, [IdentityId, Ticker, EthereumAddress]>;
       /**
-       * Event for when a forced redemption takes place.
-       * caller DID/ controller DID, ticker, token holder DID, value, data, operator data
+       * Event for when a forced transfer takes place.
+       * caller DID/ controller DID, ticker, Portfolio of token holder, value.
        **/
-      ControllerRedemption: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, IdentityId, Balance, Bytes, Bytes]
-      >;
+      ControllerTransfer: AugmentedEvent<ApiType, [IdentityId, Ticker, PortfolioId, Balance]>;
       /**
        * Event for change in divisibility.
        * caller DID, ticker, divisibility
@@ -1037,11 +1034,6 @@ declare module '@polkadot/api/types/events' {
        **/
       Approved: AugmentedEvent<ApiType, [IdentityId, Hash, MemberCount, MemberCount, MemberCount]>;
       /**
-       * A proposal was closed after its duration was up.
-       * Parameters: caller DID, proposal hash, yay vote count, nay vote count.
-       **/
-      Closed: AugmentedEvent<ApiType, [IdentityId, Hash, MemberCount, MemberCount]>;
-      /**
        * A motion was executed; `DispatchResult` is `Ok(())` if returned without error.
        * Parameters: caller DID, proposal hash, result of proposal dispatch.
        **/
@@ -1237,6 +1229,10 @@ declare module '@polkadot/api/types/events' {
        **/
       ReceiptUnclaimed: AugmentedEvent<ApiType, [IdentityId, u64, u64, u64, AccountId]>;
       /**
+       * A receipt has been invalidated (did, signer, receipt_uid, validity)
+       **/
+      ReceiptValidityChanged: AugmentedEvent<ApiType, [IdentityId, AccountId, u64, bool]>;
+      /**
        * Scheduling of instruction fails.
        **/
       SchedulingFailed: AugmentedEvent<ApiType, [DispatchError]>;
@@ -1373,7 +1369,7 @@ declare module '@polkadot/api/types/events' {
     };
     sto: {
       /**
-       * An fundraiser has been stopped.
+       * A fundraiser has been stopped.
        * (primary issuance agent, fundraiser id)
        **/
       FundraiserClosed: AugmentedEvent<ApiType, [IdentityId, u64]>;
@@ -1383,15 +1379,23 @@ declare module '@polkadot/api/types/events' {
        **/
       FundraiserCreated: AugmentedEvent<ApiType, [IdentityId, u64, FundraiserName, Fundraiser]>;
       /**
-       * An fundraiser has been frozen.
+       * A fundraiser has been frozen.
        * (primary issuance agent, fundraiser id)
        **/
       FundraiserFrozen: AugmentedEvent<ApiType, [IdentityId, u64]>;
       /**
-       * An fundraiser has been unfrozen.
+       * A fundraiser has been unfrozen.
        * (primary issuance agent, fundraiser id)
        **/
       FundraiserUnfrozen: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      /**
+       * A fundraiser window has been modified.
+       * (primary issuance agent, fundraiser id, old_start, old_end, new_start, new_end)
+       **/
+      FundraiserWindowModified: AugmentedEvent<
+        ApiType,
+        [EventDid, u64, Moment, Option<Moment>, Moment, Option<Moment>]
+      >;
       /**
        * An investor invested in the fundraiser.
        * (Investor, fundraiser_id, offering token, raise token, offering_token_amount, raise_token_amount)
@@ -1410,7 +1414,7 @@ declare module '@polkadot/api/types/events' {
       /**
        * A sudo just took place. \[result\]
        **/
-      SudoAsDone: AugmentedEvent<ApiType, [bool]>;
+      SudoAsDone: AugmentedEvent<ApiType, [DispatchResult]>;
     };
     system: {
       /**
@@ -1441,11 +1445,6 @@ declare module '@polkadot/api/types/events' {
        * Parameters: caller DID, proposal hash, yay vote count, nay vote count, total seats.
        **/
       Approved: AugmentedEvent<ApiType, [IdentityId, Hash, MemberCount, MemberCount, MemberCount]>;
-      /**
-       * A proposal was closed after its duration was up.
-       * Parameters: caller DID, proposal hash, yay vote count, nay vote count.
-       **/
-      Closed: AugmentedEvent<ApiType, [IdentityId, Hash, MemberCount, MemberCount]>;
       /**
        * A motion was executed; `DispatchResult` is `Ok(())` if returned without error.
        * Parameters: caller DID, proposal hash, result of proposal dispatch.
@@ -1553,11 +1552,6 @@ declare module '@polkadot/api/types/events' {
        * Parameters: caller DID, proposal hash, yay vote count, nay vote count, total seats.
        **/
       Approved: AugmentedEvent<ApiType, [IdentityId, Hash, MemberCount, MemberCount, MemberCount]>;
-      /**
-       * A proposal was closed after its duration was up.
-       * Parameters: caller DID, proposal hash, yay vote count, nay vote count.
-       **/
-      Closed: AugmentedEvent<ApiType, [IdentityId, Hash, MemberCount, MemberCount]>;
       /**
        * A motion was executed; `DispatchResult` is `Ok(())` if returned without error.
        * Parameters: caller DID, proposal hash, result of proposal dispatch.

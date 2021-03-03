@@ -10,7 +10,7 @@ import { requestPaginated } from '~/utils/internal';
  */
 export class TokenHolders extends Namespace<SecurityToken> {
   /**
-   * Retrieve all the token holders with balance
+   * Retrieve all the token holders with their respective balance
    *
    * @note supports pagination
    */

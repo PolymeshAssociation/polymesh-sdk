@@ -106,8 +106,8 @@ export class Claims {
    *
    * @param args.claims - array of claims to be added
    *
-   * @note required role if at least one claim is CDD type:
-   *   - Customer Due Diligence Provider
+   * @note required roles:
+   *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments
    */
   public addClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
@@ -116,8 +116,8 @@ export class Claims {
    *
    * @param args.claims - array of claims to be edited
    *
-   * @note required role if at least one claim is CDD type:
-   *   - Customer Due Diligence Provider
+   * @note required roles:
+   *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments
    */
 
   public editClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
@@ -127,8 +127,8 @@ export class Claims {
    *
    * @param args.claims - array of claims to be revoked
    *
-   * @note required role if at least one claim is CDD type:
-   *   - Customer Due Diligence Provider
+   * @note required roles:
+   *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments
    */
   public revokeClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
