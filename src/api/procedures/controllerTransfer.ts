@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { DefaultPortfolio, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, PortfolioLike, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -77,7 +77,7 @@ export async function getAuthorization(
     primaryIssuanceAgent: { did },
   } = await token.details();
 
-  const portfolioId = portfolioLikeToPortfolioId(did);
+  const portfolioId = { did };
 
   return {
     identityRoles: [
@@ -85,9 +85,9 @@ export async function getAuthorization(
       { type: RoleType.PortfolioCustodian, portfolioId },
     ],
     signerPermissions: {
-      tokens: [new SecurityToken({ ticker }, context)],
+      tokens: [token],
       transactions: [TxTags.asset.ControllerTransfer],
-      portfolios: [portfolioIdToPortfolio(portfolioId, context)],
+      portfolios: [new DefaultPortfolio({ did }, context)],
     },
   };
 }

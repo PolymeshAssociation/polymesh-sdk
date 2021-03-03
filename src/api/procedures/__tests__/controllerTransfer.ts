@@ -158,7 +158,7 @@ describe('controllerTransfer procedure', () => {
         signerPermissions: {
           transactions: [TxTags.asset.ControllerTransfer],
           tokens: [token],
-          portfolios: [originPortfolio],
+          portfolios: [entityMockUtils.getDefaultPortfolioInstance()],
         },
       });
     });
