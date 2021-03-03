@@ -341,13 +341,9 @@ declare module '@polkadot/api/types/errors' {
        **/
       AlreadyReclaimed: AugmentedError<ApiType>;
       /**
-       * Multiplication of the balance with the total payout amount overflowed.
+       * Multiplication of the balance with the per share payout amount overflowed.
        **/
-      BalanceAmountProductOverflowed: AugmentedError<ApiType>;
-      /**
-       * A failed division of the balance amount product by the total supply.
-       **/
-      BalanceAmountProductSupplyDivisionFailed: AugmentedError<ApiType>;
+      BalancePerShareProductOverflowed: AugmentedError<ApiType>;
       /**
        * Distribution's expiry has passed. DID cannot claim anymore and has forfeited the benefits.
        **/
