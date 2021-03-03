@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, PortfolioLike, RoleType, TxTags } from '~/types';
-import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   numberToBalance,
   portfolioIdToMeshPortfolioId,
@@ -24,15 +24,8 @@ export type Params = { ticker: string } & ControllerTransferParams;
 /**
  * @hidden
  */
-export interface Storage {
-  originPortfolioId: PortfolioId;
-}
-
-/**
- * @hidden
- */
 export async function prepareControllerTransfer(
-  this: Procedure<Params, void, Storage>,
+  this: Procedure<Params, void>,
   args: Params
 ): Promise<void> {
   const {
@@ -40,11 +33,12 @@ export async function prepareControllerTransfer(
       polymeshApi: { tx },
     },
     context,
-    storage: { originPortfolioId },
   } = this;
-  const { ticker, amount } = args;
+  const { ticker, originPortfolio, amount } = args;
 
   const token = new SecurityToken({ ticker }, context);
+
+  const originPortfolioId = portfolioLikeToPortfolioId(originPortfolio);
 
   const fromPortfolio = portfolioIdToPortfolio(originPortfolioId, context);
 
@@ -72,23 +66,28 @@ export async function prepareControllerTransfer(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<Params, void, Storage>,
+export async function getAuthorization(
+  this: Procedure<Params, void>,
   { ticker }: Params
-): ProcedureAuthorization {
+): Promise<ProcedureAuthorization> {
+  const { context } = this;
+
+  const token = new SecurityToken({ ticker }, context);
   const {
-    storage: { originPortfolioId },
-    context,
-  } = this;
+    primaryIssuanceAgent: { did },
+  } = await token.details();
+
+  const portfolioId = portfolioLikeToPortfolioId(did);
+
   return {
     identityRoles: [
       { type: RoleType.TokenPia, ticker },
-      { type: RoleType.PortfolioCustodian, portfolioId: originPortfolioId },
+      { type: RoleType.PortfolioCustodian, portfolioId },
     ],
     signerPermissions: {
       tokens: [new SecurityToken({ ticker }, context)],
       transactions: [TxTags.asset.ControllerTransfer],
-      portfolios: [portfolioIdToPortfolio(originPortfolioId, context)],
+      portfolios: [portfolioIdToPortfolio(portfolioId, context)],
     },
   };
 }
@@ -96,20 +95,4 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export function prepareStorage(
-  this: Procedure<Params, void, Storage>,
-  { originPortfolio }: Params
-): Storage {
-  return {
-    originPortfolioId: portfolioLikeToPortfolioId(originPortfolio),
-  };
-}
-
-/**
- * @hidden
- */
-export const controllerTransfer = new Procedure(
-  prepareControllerTransfer,
-  getAuthorization,
-  prepareStorage
-);
+export const controllerTransfer = new Procedure(prepareControllerTransfer, getAuthorization);
