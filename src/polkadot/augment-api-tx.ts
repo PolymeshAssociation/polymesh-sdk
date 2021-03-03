@@ -961,7 +961,9 @@ declare module '@polkadot/api/types/submittable' {
        * - `ca_id` identifies the CA to start a capital distribution for.
        * - `portfolio` specifies the portfolio number of the CAA to distribute `amount` from.
        * - `currency` to withdraw and distribute from the `portfolio`.
-       * - `amount` of `currency` to withdraw and distribute.
+       * - `per_share` amount of `currency` to withdraw and distribute.
+       * Specified as a per-million, i.e. `1 / 10^6`th of one `currency` token.
+       * - `amount` of `currency` to withdraw and distribute at most.
        * - `payment_at` specifies when benefits may first be pushed or claimed.
        * - `expires_at` specifies, if provided, when remaining benefits are forfeit
        * and may be reclaimed by `origin`.
@@ -987,11 +989,12 @@ declare module '@polkadot/api/types/submittable' {
           caId: CAId | { ticker?: any; local_id?: any } | string | Uint8Array,
           portfolio: Option<PortfolioNumber> | null | object | string | Uint8Array,
           currency: Ticker | string | Uint8Array,
+          perShare: Balance | AnyNumber | Uint8Array,
           amount: Balance | AnyNumber | Uint8Array,
           paymentAt: Moment | AnyNumber | Uint8Array,
           expiresAt: Option<Moment> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [CAId, Option<PortfolioNumber>, Ticker, Balance, Moment, Option<Moment>]
+        [CAId, Option<PortfolioNumber>, Ticker, Balance, Balance, Moment, Option<Moment>]
       >;
       /**
        * Push benefit of an ongoing distribution to the given `holder`.

@@ -728,6 +728,7 @@ export interface DispatchableName extends Text {}
 export interface Distribution extends Struct {
   readonly from: PortfolioId;
   readonly currency: Ticker;
+  readonly per_share: Balance;
   readonly amount: Balance;
   readonly remaining: Balance;
   readonly reclaimed: bool;
