@@ -596,6 +596,10 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<bool>,
         [ITuple<[CAId, IdentityId]>]
       >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>, []>;
     };
     cddServiceProviders: {
       /**
@@ -2145,10 +2149,9 @@ declare module '@polkadot/api/types/storage' {
         [ITuple<[AccountId, SpanIndex]>]
       >;
       /**
-       * True if network has been upgraded to this version.
        * Storage version of the pallet.
        *
-       * This is set to v6.0.0 for new networks.
+       * This is set to v6.0.1 for new networks.
        **/
       storageVersion: AugmentedQuery<ApiType, () => Observable<Releases>, []>;
       /**

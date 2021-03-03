@@ -1091,6 +1091,7 @@ export default {
     Distribution: {
       from: 'PortfolioId',
       currency: 'Ticker',
+      per_share: 'Balance',
       amount: 'Balance',
       remaining: 'Balance',
       reclaimed: 'bool',
