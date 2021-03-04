@@ -174,7 +174,7 @@ export class Context {
 
     context.isArchiveNode = await context.isCurrentNodeArchive();
 
-    const { ss58Format: rawSs58Format } = await context.polymeshApi.rpc.system.properties();
+    const { ss58Format: rawSs58Format } = await polymeshApi.rpc.system.properties();
     if (rawSs58Format.isSome) {
       context.ss58Format = u8ToBigNumber(rawSs58Format.unwrap()).toNumber();
     }
