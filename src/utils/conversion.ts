@@ -164,7 +164,6 @@ import {
   MAX_DECIMALS,
   MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
-  SS58_FORMAT,
 } from '~/utils/constants';
 import {
   assertIsInteger,
@@ -881,6 +880,13 @@ export function numberToU32(value: number | BigNumber, context: Context): u32 {
  * @hidden
  */
 export function u32ToBigNumber(value: u32): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function u8ToBigNumber(value: u8): BigNumber {
   return new BigNumber(value.toString());
 }
 
@@ -2029,22 +2035,25 @@ export function assetComplianceResultToCompliance(
 /**
  * @hidden
  */
-export function moduleAddressToString(moduleAddress: string): string {
-  return encodeAddress(stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)), SS58_FORMAT);
+export function moduleAddressToString(moduleAddress: string, context: Context): string {
+  return encodeAddress(
+    stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)),
+    context.ss58Format
+  );
 }
 
 /**
  * @hidden
  */
-export function keyToAddress(key: string): string {
-  return encodeAddress(key, SS58_FORMAT);
+export function keyToAddress(key: string, context: Context): string {
+  return encodeAddress(key, context.ss58Format);
 }
 
 /**
  * @hidden
  */
-export function addressToKey(address: string): string {
-  return u8aToHex(decodeAddress(address, IGNORE_CHECKSUM, SS58_FORMAT));
+export function addressToKey(address: string, context: Context): string {
+  return u8aToHex(decodeAddress(address, IGNORE_CHECKSUM, context.ss58Format));
 }
 
 /**

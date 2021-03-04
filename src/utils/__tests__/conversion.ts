@@ -3424,10 +3424,12 @@ describe('assetComplianceResultToCompliance', () => {
 });
 
 describe('moduleAddressToString', () => {
+  const context = dsMockUtils.getContextInstance();
+
   test('should convert a module address to a string', () => {
     const moduleAddress = 'someModuleName';
 
-    const result = moduleAddressToString(moduleAddress);
+    const result = moduleAddressToString(moduleAddress, context);
     expect(result).toBe('5Eg4TucMsdiyc9LjA3BT7VXioUqMoQ4vLn1VSUDsYsiJMdbN');
   });
 });
@@ -3435,15 +3437,16 @@ describe('moduleAddressToString', () => {
 describe('keyToAddress and addressToKey', () => {
   const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
   const publicKey = '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
+  const context = dsMockUtils.getContextInstance();
 
   test('addressToKey should decode an address into a public key', () => {
-    const result = addressToKey(address);
+    const result = addressToKey(address, context);
 
     expect(result).toBe(publicKey);
   });
 
   test('keyToAddress should encode a public key into an address', () => {
-    const result = keyToAddress(publicKey);
+    const result = keyToAddress(publicKey, context);
 
     expect(result).toBe(address);
   });

@@ -411,7 +411,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account).returns(key);
+      sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account, context).returns(key);
 
       dsMockUtils.createApolloQueryStub(
         settlements({
