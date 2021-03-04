@@ -96,7 +96,9 @@ export async function prepareSetTransferRestrictions(
   ) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The supplied restrictions are already in place',
+      message: newRestrictionAmount
+        ? 'The supplied restrictions are already in place'
+        : 'There are no restrictions to remove',
     });
   }
 
