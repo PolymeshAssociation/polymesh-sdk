@@ -2,6 +2,7 @@ import { bool, Bytes, u64 } from '@polkadot/types';
 import { AccountId, Balance, Moment, Permill } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import {
+  CalendarPeriod as MeshCalendarPeriod,
   CddId,
   ComplianceRequirement,
   InvestorZKProofData,
@@ -10,6 +11,7 @@ import {
   PipId,
   PortfolioId,
   PriceTier,
+  ScheduleSpec,
   ScopeId,
   SettlementType,
   TransferManager,
@@ -56,6 +58,7 @@ import {
   AffirmationStatus,
   Authorization,
   AuthorizationType,
+  CalendarUnit,
   Claim,
   ClaimType,
   Condition,
@@ -102,6 +105,7 @@ import {
   booleanToBool,
   boolToBoolean,
   bytesToString,
+  calendarPeriodToMeshCalendarPeriod,
   canTransferResultToTransferStatus,
   cddIdToString,
   cddStatusToBoolean,
@@ -126,6 +130,7 @@ import {
   isLeiValid,
   keyToAddress,
   meshAffirmationStatusToAffirmationStatus,
+  meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
   meshClaimTypeToClaimType,
   meshInstructionStatusToInstructionStatus,
@@ -151,6 +156,7 @@ import {
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
+  scheduleDetailsToScheduleSpec,
   scopeIdToString,
   scopeToMeshScope,
   scopeToMiddlewareScope,
@@ -4806,5 +4812,184 @@ describe('fundraiserToStoDetails', () => {
       end: pastEnd,
       totalRemaining: new BigNumber(1).shiftedBy(-6),
     });
+  });
+});
+
+describe('calendarPeriodToMeshCalendarPeriod and meshCalendarPeriodToCalendarPeriod', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('calendarPeriodToMeshCalendarPeriod should throw an error if amount is negative', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() =>
+      calendarPeriodToMeshCalendarPeriod({ unit: CalendarUnit.Month, amount: -3 }, context)
+    ).toThrow('Calendar period cannot have a negative amount');
+  });
+
+  test('calendarPeriodToMeshCalendarPeriod should convert a CalendarPeriod to a polkadot CalendarPeriod object', () => {
+    const amount = 1;
+    const value = { unit: CalendarUnit.Month, amount };
+    const fakeResult = ('Period' as unknown) as MeshCalendarPeriod;
+    const context = dsMockUtils.getContextInstance();
+
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const rawAmount = dsMockUtils.createMockU64(amount);
+
+    createTypeStub.withArgs('u64', `${amount}`).returns(rawAmount);
+    createTypeStub
+      .withArgs('CalendarPeriod', { unit: 'Month', amount: rawAmount })
+      .returns(fakeResult);
+
+    const result = calendarPeriodToMeshCalendarPeriod(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('meshCalendarPeriodToCalendarPeriod should convert a polkadot CalendarPeriod object to a CalendarPeriod', () => {
+    let fakeResult = { unit: CalendarUnit.Second, amount: 1 };
+    let calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+      unit: dsMockUtils.createMockCalendarUnit('Second'),
+      amount: dsMockUtils.createMockU64(fakeResult.amount),
+    });
+
+    let result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = { unit: CalendarUnit.Minute, amount: 1 };
+    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+      unit: dsMockUtils.createMockCalendarUnit('Minute'),
+      amount: dsMockUtils.createMockU64(fakeResult.amount),
+    });
+
+    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = { unit: CalendarUnit.Hour, amount: 1 };
+    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+      unit: dsMockUtils.createMockCalendarUnit('Hour'),
+      amount: dsMockUtils.createMockU64(fakeResult.amount),
+    });
+
+    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = { unit: CalendarUnit.Day, amount: 1 };
+    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+      unit: dsMockUtils.createMockCalendarUnit('Day'),
+      amount: dsMockUtils.createMockU64(fakeResult.amount),
+    });
+
+    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = { unit: CalendarUnit.Week, amount: 1 };
+    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+      unit: dsMockUtils.createMockCalendarUnit('Week'),
+      amount: dsMockUtils.createMockU64(fakeResult.amount),
+    });
+
+    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = { unit: CalendarUnit.Month, amount: 1 };
+    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+      unit: dsMockUtils.createMockCalendarUnit('Month'),
+      amount: dsMockUtils.createMockU64(fakeResult.amount),
+    });
+
+    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = { unit: CalendarUnit.Year, amount: 1 };
+    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+      unit: dsMockUtils.createMockCalendarUnit('Year'),
+      amount: dsMockUtils.createMockU64(fakeResult.amount),
+    });
+
+    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('scheduleDetailsToScheduleSpec', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('scheduleDetailsToScheduleSpec should convert a ScheduleDetails object to a polkadot ScheduleSpec object', () => {
+    const start = new Date('10/14/1987');
+    const amount = 1;
+    const period = { unit: CalendarUnit.Month, amount };
+    const repetitions = 10;
+
+    const value = { start, period, repetitions };
+    const fakeResult = ('Spec' as unknown) as ScheduleSpec;
+    const context = dsMockUtils.getContextInstance();
+
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const rawStart = dsMockUtils.createMockMoment(start.getTime());
+    const rawAmount = dsMockUtils.createMockU64(amount);
+    const rawZero = dsMockUtils.createMockU64(0);
+    const rawPeriod = dsMockUtils.createMockCalendarPeriod({
+      unit: dsMockUtils.createMockCalendarUnit('Month'),
+      amount: rawAmount,
+    });
+    const rawZeroPeriod = dsMockUtils.createMockCalendarPeriod({
+      unit: dsMockUtils.createMockCalendarUnit('Month'),
+      amount: rawZero,
+    });
+    const rawRepetitions = dsMockUtils.createMockU64(repetitions);
+
+    createTypeStub.withArgs('u64', `${amount}`).returns(rawAmount);
+    createTypeStub.withArgs('u64', '0').returns(rawZero);
+    createTypeStub.withArgs('u64', `${repetitions}`).returns(rawRepetitions);
+    createTypeStub.withArgs('Moment', start.getTime()).returns(rawStart);
+    createTypeStub
+      .withArgs('CalendarPeriod', { unit: 'Month', amount: rawAmount })
+      .returns(rawPeriod);
+    createTypeStub
+      .withArgs('CalendarPeriod', { unit: 'Month', amount: rawZero })
+      .returns(rawZeroPeriod);
+    createTypeStub
+      .withArgs('ScheduleSpec', {
+        start: rawStart,
+        period: rawPeriod,
+        remaining: rawRepetitions,
+      })
+      .returns(fakeResult);
+    createTypeStub
+      .withArgs('ScheduleSpec', {
+        start: null,
+        period: rawZeroPeriod,
+        remaining: rawZero,
+      })
+      .returns(fakeResult);
+
+    let result = scheduleDetailsToScheduleSpec(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    result = scheduleDetailsToScheduleSpec(
+      { start: null, period: null, repetitions: null },
+      context
+    );
   });
 });

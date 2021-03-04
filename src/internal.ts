@@ -121,3 +121,8 @@ export { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 export { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
 export { TransactionQueue } from '~/base/TransactionQueue';
 export { Checkpoint } from '~/api/entities/Checkpoint';
+export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
+export {
+  createCheckpointSchedule,
+  CreateCheckpointScheduleParams,
+} from '~/api/procedures/createCheckpointSchedule';
