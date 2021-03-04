@@ -98,7 +98,7 @@ export async function prepareSetTransferRestrictions(
       code: ErrorCode.ValidationError,
       message: newRestrictionAmount
         ? 'The supplied restrictions are already in place'
-        : 'There are not restrictions to remove',
+        : 'There are no restrictions to remove',
     });
   }
 
