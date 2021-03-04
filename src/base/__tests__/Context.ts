@@ -43,6 +43,9 @@ describe('Context class', () => {
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
       returnValue: dsMockUtils.createMockIdentityId('someDid'),
     });
+    dsMockUtils.createRpcStub('system', 'properties', {
+      returnValue: { ss58Format: dsMockUtils.createMockOption(dsMockUtils.createMockU8(42)) },
+    });
   });
 
   afterEach(() => {

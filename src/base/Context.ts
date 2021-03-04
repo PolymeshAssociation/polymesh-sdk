@@ -36,7 +36,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { ROOT_TYPES } from '~/utils/constants';
+import { DEFAULT_SS58_FORMAT, ROOT_TYPES } from '~/utils/constants';
 import {
   balanceToBigNumber,
   claimTypeToMeshClaimType,
@@ -52,6 +52,7 @@ import {
   stringToIdentityId,
   textToString,
   txTagToProtocolOp,
+  u8ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { calculateNextKey, createClaim, getCommonKeyring } from '~/utils/internal';
@@ -86,6 +87,8 @@ export class Context {
    * Whether the current node is an archive node (contains a full history from genesis onward) or not
    */
   public isArchiveNode = false;
+
+  public ss58Format = DEFAULT_SS58_FORMAT;
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
@@ -170,6 +173,11 @@ export class Context {
     }
 
     context.isArchiveNode = await context.isCurrentNodeArchive();
+
+    const { ss58Format: rawSs58Format } = await context.polymeshApi.rpc.system.properties();
+    try {
+      context.ss58Format = u8ToBigNumber(rawSs58Format.unwrap()).toNumber();
+    } catch (_) {}
 
     return context;
   }
