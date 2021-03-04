@@ -273,7 +273,7 @@ describe('setTransferRestrictions procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('There are not restrictions to remove');
+    expect(err.message).toBe('There are no restrictions to remove');
   });
 
   test('should throw an error if attempting to add more restrictions than there are slots available', async () => {
