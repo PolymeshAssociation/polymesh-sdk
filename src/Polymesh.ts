@@ -465,7 +465,11 @@ export class Polymesh {
    * Get the treasury wallet address
    */
   public getTreasuryAccount(): Account {
-    return new Account({ address: moduleAddressToString(TREASURY_MODULE_ADDRESS) }, this.context);
+    const { context } = this;
+    return new Account(
+      { address: moduleAddressToString(TREASURY_MODULE_ADDRESS, context) },
+      context
+    );
   }
 
   /**

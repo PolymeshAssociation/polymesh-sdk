@@ -261,7 +261,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       settlements({
         identityId: did,
         portfolioNumber: _id ? _id.toString() : null,
-        addressFilter: account ? addressToKey(account) : undefined,
+        addressFilter: account ? addressToKey(account, context) : undefined,
         tickerFilter: ticker,
         count: size,
         skip: start,
@@ -287,7 +287,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
           blockNumber: new BigNumber(blockId),
           status,
           accounts: addresses!.map(
-            address => new Account({ address: keyToAddress('0x' + address) }, context)
+            address => new Account({ address: keyToAddress('0x' + address, context) }, context)
           ),
           legs: settlementLegs.map(leg => {
             return {
