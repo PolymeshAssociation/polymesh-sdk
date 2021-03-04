@@ -217,6 +217,10 @@ describe('Context class', () => {
     });
 
     test('should create a Context object without Pair attached', async () => {
+      dsMockUtils.createRpcStub('system', 'properties', {
+        returnValue: { ss58Format: dsMockUtils.createMockOption() },
+      });
+
       const newPair = {
         address: 'someAddress',
         meta: {},
