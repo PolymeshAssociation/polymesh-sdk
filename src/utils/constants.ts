@@ -25,6 +25,7 @@ export const MAX_CONCURRENT_REQUESTS = 200;
 export const TREASURY_MODULE_ADDRESS = 'modlpm/trsry';
 export const DEFAULT_GQL_PAGE_SIZE = 25;
 export const MAX_TRANSFER_MANAGERS = 3;
+export const MAX_COMPLIANCE_REQUIREMENTS_CONDITIONS = 50;
 
 const didTypes = ['IdentityId'];
 
