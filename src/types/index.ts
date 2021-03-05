@@ -694,6 +694,16 @@ export enum TxGroup {
    * - TxTags.complianceManager.ResetAssetCompliance
    */
   ComplianceRequirementsManagement = 'ComplianceRequirementsManagement',
+  /**
+   * - TxTags.checkpoint.CreateSchedule,
+   * - TxTags.checkpoint.RemoveSchedule,
+   * - TxTags.checkpoint.CreateCheckpoint,
+   * - TxTags.corporateAction.InitiateCorporateAction,
+   * - TxTags.capitalDistribution.Distribute,
+   * - TxTags.capitalDistribution.Claim,
+   * - TxTags.identity.AddInvestorUniquenessClaim,
+   */
+  CorporateActionsManagement = 'CorporateActionsManagement',
 }
 
 /**

@@ -587,6 +587,17 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.complianceManager.ResetAssetCompliance,
       ];
     }
+    case TxGroup.CorporateActionsManagement: {
+      return [
+        TxTags.checkpoint.CreateSchedule,
+        TxTags.checkpoint.RemoveSchedule,
+        TxTags.checkpoint.CreateCheckpoint,
+        TxTags.corporateAction.InitiateCorporateAction,
+        TxTags.capitalDistribution.Distribute,
+        TxTags.capitalDistribution.Claim,
+        TxTags.identity.AddInvestorUniquenessClaim,
+      ];
+    }
   }
 }
 
