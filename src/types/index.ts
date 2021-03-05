@@ -761,6 +761,24 @@ export interface ActiveTransferRestrictions<
   availableSlots: number;
 }
 
+export enum CalendarUnit {
+  Second = 'second',
+  Minute = 'minute',
+  Hour = 'hour',
+  Day = 'day',
+  Week = 'week',
+  Month = 'month',
+  Year = 'year',
+}
+
+/**
+ * Represents a period of time measured in a specific unit (i.e. 20 days)
+ */
+export interface CalendarPeriod {
+  unit: CalendarUnit;
+  amount: number;
+}
+
 export { TxTags, TxTag };
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';

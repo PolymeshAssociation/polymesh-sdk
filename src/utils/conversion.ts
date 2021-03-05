@@ -34,6 +34,7 @@ import {
   AuthIdentifier,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
+  CalendarPeriod as MeshCalendarPeriod,
   CanTransferResult,
   CddId,
   CddStatus,
@@ -63,6 +64,7 @@ import {
   PosRatio,
   PriceTier,
   ProtocolOp,
+  ScheduleSpec,
   Scope as MeshScope,
   ScopeId,
   SecondaryKey as MeshSecondaryKey,
@@ -104,6 +106,8 @@ import {
   AffirmationStatus,
   Authorization,
   AuthorizationType,
+  CalendarPeriod,
+  CalendarUnit,
   Claim,
   ClaimType,
   Compliance,
@@ -152,6 +156,7 @@ import {
   ExtrinsicIdentifier,
   PolymeshTx,
   PortfolioId,
+  ScheduleDetails,
   SignerType,
   SignerValue,
   TransferRestriction,
@@ -2531,4 +2536,75 @@ export function fundraiserToStoDetails(
     totalAmount,
     totalRemaining,
   };
+}
+
+/**
+ * @hidden
+ */
+export function calendarPeriodToMeshCalendarPeriod(
+  period: CalendarPeriod,
+  context: Context
+): MeshCalendarPeriod {
+  const { unit, amount } = period;
+
+  if (amount < 0) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Calendar period cannot have a negative amount',
+    });
+  }
+
+  return context.polymeshApi.createType('CalendarPeriod', {
+    unit: stringUpperFirst(unit),
+    amount: numberToU64(amount, context),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function meshCalendarPeriodToCalendarPeriod(period: MeshCalendarPeriod): CalendarPeriod {
+  const { unit: rawUnit, amount } = period;
+
+  let unit: CalendarUnit;
+
+  if (rawUnit.isSecond) {
+    unit = CalendarUnit.Second;
+  } else if (rawUnit.isMinute) {
+    unit = CalendarUnit.Minute;
+  } else if (rawUnit.isHour) {
+    unit = CalendarUnit.Hour;
+  } else if (rawUnit.isDay) {
+    unit = CalendarUnit.Day;
+  } else if (rawUnit.isWeek) {
+    unit = CalendarUnit.Week;
+  } else if (rawUnit.isMonth) {
+    unit = CalendarUnit.Month;
+  } else {
+    unit = CalendarUnit.Year;
+  }
+
+  return {
+    unit,
+    amount: u64ToBigNumber(amount).toNumber(),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function scheduleDetailsToScheduleSpec(
+  details: ScheduleDetails,
+  context: Context
+): ScheduleSpec {
+  const { start, period, repetitions } = details;
+
+  return context.polymeshApi.createType('ScheduleSpec', {
+    start: start && dateToMoment(start, context),
+    period: calendarPeriodToMeshCalendarPeriod(
+      period || { unit: CalendarUnit.Month, amount: 0 },
+      context
+    ),
+    remaining: numberToU64(repetitions || 0, context),
+  });
 }
