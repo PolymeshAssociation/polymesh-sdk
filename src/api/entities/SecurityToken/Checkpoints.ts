@@ -8,7 +8,7 @@ import {
   Namespace,
   SecurityToken,
 } from '~/internal';
-import { CheckpointWithCreationDate, PaginationOptions, ResultSet } from '~/types';
+import { CheckpointWithCreationDate } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import { momentToDate, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -66,14 +66,14 @@ export class Checkpoints extends Namespace<SecurityToken> {
     );
 
     const now = new Date();
-    const checkpointsWithCreationDate = entries
-      .map(([{ args: [, id] }, timestamp]) => ({
-        checkpoint: new Checkpoint({ id: u64ToBigNumber(id), ticker }, context),
-        createdAt: momentToDate(timestamp),
-      }))
-      // the query also returns the next scheduled checkpoint (which hasn't been created yet)
-      .filter(({ createdAt }) => createdAt <= now);
-
-    return checkpointsWithCreationDate;
+    return (
+      entries
+        .map(([{ args: [, id] }, timestamp]) => ({
+          checkpoint: new Checkpoint({ id: u64ToBigNumber(id), ticker }, context),
+          createdAt: momentToDate(timestamp),
+        }))
+        // the query also returns the next scheduled checkpoint (which hasn't been created yet)
+        .filter(({ createdAt }) => createdAt <= now)
+    );
   }
 }
