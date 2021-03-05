@@ -53,9 +53,12 @@ import {
   Authorization,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
+  CalendarPeriod,
+  CalendarUnit,
   CanTransferResult,
   CddId,
   CddStatus,
+  CheckpointSchedule,
   Claim,
   Claim1stKey,
   ClaimType as MeshClaimType,
@@ -95,12 +98,14 @@ import {
   PosRatio,
   PriceTier,
   ProposalState,
+  ScheduleSpec,
   Scope,
   ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SecurityToken,
   SettlementType,
   Signatory,
+  StoredSchedule,
   TargetIdentity,
   Ticker,
   TickerRegistration,
@@ -231,6 +236,7 @@ interface ContextOptions {
   middlewareAvailable?: boolean;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
+  ss58Format?: number;
 }
 
 interface Pair {
@@ -503,6 +509,7 @@ const defaultContextOptions: ContextOptions = {
     count: 1,
   },
   isArchiveNode: true,
+  ss58Format: 42,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -585,6 +592,7 @@ function configureContext(opts: ContextOptions): void {
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
     isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
     isArchiveNode: opts.isArchiveNode,
+    ss58Format: opts.ss58Format,
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
@@ -2394,4 +2402,100 @@ export const createMockPriceTier = (priceTier?: { total: Balance; price: Balance
     },
     !priceTier
   ) as PriceTier;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCalendarUnit = (
+  calendarUnit?: 'Second' | 'Minute' | 'Hour' | 'Day' | 'Week' | 'Month' | 'Year'
+): CalendarUnit => {
+  return createMockEnum(calendarUnit) as CalendarUnit;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCalendarPeriod = (calendarPeriod?: {
+  unit: CalendarUnit;
+  amount: u64;
+}): CalendarPeriod => {
+  const data = calendarPeriod || {
+    unit: createMockCalendarUnit(),
+    amount: createMockU64(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !calendarPeriod
+  ) as CalendarPeriod;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCheckpointSchedule = (checkpointSchedule?: {
+  start: Moment;
+  period: CalendarPeriod;
+}): CheckpointSchedule => {
+  const data = checkpointSchedule || {
+    start: createMockMoment(),
+    period: createMockCalendarPeriod(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !checkpointSchedule
+  ) as CheckpointSchedule;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockStoredSchedule = (storedSchedule?: {
+  schedule: CheckpointSchedule;
+  id: u64;
+  at: Moment;
+  remaining: u32;
+}): StoredSchedule => {
+  const data = storedSchedule || {
+    schedule: createMockCheckpointSchedule(),
+    id: createMockU64(),
+    at: createMockMoment(),
+    remaining: createMockU32(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !storedSchedule
+  ) as StoredSchedule;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockScheduleSpec = (scheduleSpec?: {
+  start: Option<Moment>;
+  period: CalendarPeriod;
+  remaining: u32;
+}): ScheduleSpec => {
+  const data = scheduleSpec || {
+    start: createMockOption(),
+    period: createMockCalendarPeriod(),
+    remaining: createMockU32(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !scheduleSpec
+  ) as ScheduleSpec;
 };

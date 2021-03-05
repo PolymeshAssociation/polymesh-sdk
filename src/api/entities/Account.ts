@@ -61,7 +61,7 @@ export class Account extends Entity<UniqueIdentifiers> {
     const { address } = identifiers;
 
     this.address = address;
-    this.key = addressToKey(address);
+    this.key = addressToKey(address, context);
     this.authorizations = new Authorizations(this, context);
   }
 
@@ -145,7 +145,7 @@ export class Account extends Entity<UniqueIdentifiers> {
     const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
       transactions({
         block_id: blockNumber ? blockNumber.toNumber() : undefined,
-        address: addressToKey(address),
+        address: addressToKey(address, context),
         module_id: moduleId,
         call_id: callId,
         success,

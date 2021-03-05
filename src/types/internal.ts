@@ -11,7 +11,7 @@ import { DocumentNode } from 'graphql';
 
 import { PostTransactionValue, TransactionQueue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { Permissions, ProcedureAuthorizationStatus, Role } from '~/types';
+import { CalendarPeriod, Permissions, ProcedureAuthorizationStatus, Role } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -190,6 +190,12 @@ export enum TransferRestrictionType {
 export interface TransferRestriction {
   type: TransferRestrictionType;
   value: BigNumber;
+}
+
+export interface ScheduleDetails {
+  start: Date | null;
+  period: CalendarPeriod | null;
+  repetitions: number | null;
 }
 
 export interface ProcedureAuthorization {
