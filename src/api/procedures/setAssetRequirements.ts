@@ -3,7 +3,7 @@ import { differenceWith, isEqual } from 'lodash';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { Condition, ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { MAX_COMPLIANCE_REQUIREMENTS_CONDITIONS } from '~/utils/constants';
+import { MAX_COMPLIANCE_REQUIREMENT_CONDITIONS } from '~/utils/constants';
 import {
   complianceRequirementToRequirement,
   requirementToComplianceRequirement,
@@ -38,11 +38,11 @@ export async function prepareSetAssetRequirements(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  if (requirements.length >= MAX_COMPLIANCE_REQUIREMENTS_CONDITIONS) {
+  if (requirements.length >= MAX_COMPLIANCE_REQUIREMENT_CONDITIONS) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Compliance Requirements Conditions limit reached',
-      data: { limit: MAX_COMPLIANCE_REQUIREMENTS_CONDITIONS },
+      message: 'Condition limit reached',
+      data: { limit: MAX_COMPLIANCE_REQUIREMENT_CONDITIONS },
     });
   }
 

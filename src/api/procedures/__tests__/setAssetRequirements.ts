@@ -153,7 +153,7 @@ describe('setAssetRequirements procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if compliance requirements conditions limit is reached', () => {
+  test('should throw an error if condition limit is reached', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(
@@ -161,7 +161,7 @@ describe('setAssetRequirements procedure', () => {
         ticker,
         requirements: (new Array(50) as unknown) as Condition[][],
       })
-    ).rejects.toThrow('Compliance Requirements Conditions limit reached');
+    ).rejects.toThrow('Condition limit reached');
   });
 
   test('should throw an error if the new list is the same as the current one', () => {
