@@ -694,6 +694,16 @@ export enum TxGroup {
    * - TxTags.complianceManager.ResetAssetCompliance
    */
   ComplianceRequirementsManagement = 'ComplianceRequirementsManagement',
+  /**
+   * - TxTags.checkpoint.CreateSchedule,
+   * - TxTags.checkpoint.RemoveSchedule,
+   * - TxTags.checkpoint.CreateCheckpoint,
+   * - TxTags.corporateAction.InitiateCorporateAction,
+   * - TxTags.capitalDistribution.Distribute,
+   * - TxTags.capitalDistribution.Claim,
+   * - TxTags.identity.AddInvestorUniquenessClaim,
+   */
+  CorporateActionsManagement = 'CorporateActionsManagement',
 }
 
 /**
@@ -759,6 +769,24 @@ export interface ActiveTransferRestrictions<
    * amount of restrictions that can be added before reaching the shared limit
    */
   availableSlots: number;
+}
+
+export enum CalendarUnit {
+  Second = 'second',
+  Minute = 'minute',
+  Hour = 'hour',
+  Day = 'day',
+  Week = 'week',
+  Month = 'month',
+  Year = 'year',
+}
+
+/**
+ * Represents a period of time measured in a specific unit (i.e. 20 days)
+ */
+export interface CalendarPeriod {
+  unit: CalendarUnit;
+  amount: number;
 }
 
 export { TxTags, TxTag };

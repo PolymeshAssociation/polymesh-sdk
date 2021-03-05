@@ -1,8 +1,17 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, createCheckpoint, Namespace, SecurityToken, TransactionQueue } from '~/internal';
+import {
+  Checkpoint,
+  CheckpointSchedule,
+  Context,
+  createCheckpoint,
+  createCheckpointSchedule,
+  Namespace,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { CalendarUnit } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -51,11 +60,38 @@ describe('Checkpoints class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Checkpoint>;
 
       sinon.stub(createCheckpoint, 'prepare').withArgs({ ticker }, context).resolves(expectedQueue);
 
       const queue = await checkpoints.create();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: createSchedule', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<CheckpointSchedule>;
+      const args = {
+        start: null,
+        period: {
+          unit: CalendarUnit.Month,
+          amount: 1,
+        },
+        repetitions: null,
+      };
+
+      sinon
+        .stub(createCheckpointSchedule, 'prepare')
+        .withArgs({ ticker, ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await checkpoints.createSchedule(args);
 
       expect(queue).toBe(expectedQueue);
     });

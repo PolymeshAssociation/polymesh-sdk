@@ -9,6 +9,7 @@ import {
   Account,
   AuthorizationRequest,
   Checkpoint,
+  CheckpointSchedule,
   CurrentAccount,
   CurrentIdentity,
   DefaultPortfolio,
@@ -28,6 +29,8 @@ import {
   ActiveTransferRestrictions,
   Authorization,
   AuthorizationType,
+  CalendarPeriod,
+  CalendarUnit,
   CountTransferRestriction,
   ExtrinsicData,
   InstructionDetails,
@@ -70,6 +73,7 @@ const mockInstanceContainer = {
   defaultPortfolio: {} as MockDefaultPortfolio,
   sto: {} as MockSto,
   checkpoint: {} as MockCheckpoint,
+  checkpointSchedule: {} as MockCheckpointSchedule,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -87,6 +91,7 @@ type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
 type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
 type MockSto = Mocked<Sto>;
 type MockCheckpoint = Mocked<Checkpoint>;
+type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
 
 interface IdentityOptions {
   did?: string;
@@ -193,6 +198,15 @@ interface CheckpointOptions {
   totalSupply?: BigNumber;
 }
 
+interface CheckpointScheduleOptions {
+  id?: BigNumber;
+  ticker?: string;
+  start?: Date;
+  period?: CalendarPeriod | null;
+  isInfinite?: boolean;
+  expiryDate?: Date | null;
+}
+
 let identityConstructorStub: SinonStub;
 let currentIdentityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
@@ -207,6 +221,7 @@ let numberedPortfolioConstructorStub: SinonStub;
 let defaultPortfolioConstructorStub: SinonStub;
 let stoConstructorStub: SinonStub;
 let checkpointConstructorStub: SinonStub;
+let checkpointScheduleConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
@@ -253,6 +268,7 @@ let defaultPortfolioIsCustodiedByStub: SinonStub;
 let stoDetailsStub: SinonStub;
 let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
+let checkpointScheduleExpiryDateStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -380,6 +396,15 @@ const MockCheckpointClass = class {
   }
 };
 
+const MockCheckpointScheduleClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return checkpointScheduleConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -448,6 +473,11 @@ export const mockStoModule = (path: string) => (): object => ({
 export const mockCheckpointModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Checkpoint: MockCheckpointClass,
+});
+
+export const mockCheckpointScheduleModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  CheckpointSchedule: MockCheckpointScheduleClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -614,6 +644,18 @@ const defaultCheckpointOptions: CheckpointOptions = {
   id: new BigNumber(1),
 };
 let checkpointOptions = defaultCheckpointOptions;
+const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
+  id: new BigNumber(1),
+  ticker: 'SOME_TICKER',
+  start: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
+  period: {
+    unit: CalendarUnit.Month,
+    amount: 1,
+  },
+  isInfinite: false,
+  expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+};
+let checkpointScheduleOptions = defaultCheckpointScheduleOptions;
 // NOTE uncomment in Governance v2 upgrade
 // const defaultProposalOptions: ProposalOptions = {
 //   pipId: new BigNumber(1),
@@ -1205,6 +1247,41 @@ function initCheckpoint(opts?: CheckpointOptions): void {
 
 /**
  * @hidden
+ * Configure the Checkpoint instance
+ */
+function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
+  const checkpointSchedule = ({
+    id: opts.id,
+    ticker: opts.ticker,
+    start: opts.start,
+    period: opts.period,
+    isInfinite: opts.isInfinite,
+    expiryDate: checkpointScheduleExpiryDateStub.resolves(opts.expiryDate),
+  } as unknown) as MockCheckpointSchedule;
+
+  Object.assign(mockInstanceContainer.checkpointSchedule, checkpointSchedule);
+  checkpointScheduleConstructorStub.callsFake(args => {
+    const value = merge({}, checkpointSchedule, args);
+    Object.setPrototypeOf(value, require('~/internal').CheckpointSchedule.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the CheckpointSchedule instance
+ */
+function initCheckpointSchedule(opts?: CheckpointScheduleOptions): void {
+  checkpointScheduleConstructorStub = sinon.stub();
+  checkpointScheduleExpiryDateStub = sinon.stub();
+
+  checkpointScheduleOptions = merge({}, defaultCheckpointScheduleOptions, opts);
+
+  configureCheckpointSchedule(checkpointScheduleOptions);
+}
+
+/**
+ * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
@@ -1223,6 +1300,7 @@ export function configureMocks(opts?: {
   defaultPortfolioOptions?: DefaultPortfolioOptions;
   stoOptions?: StoOptions;
   checkpointOptions?: CheckpointOptions;
+  checkpointScheduleOptions?: CheckpointScheduleOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -1312,6 +1390,12 @@ export function configureMocks(opts?: {
     ...opts?.checkpointOptions,
   };
   configureCheckpoint(tempCheckpointOptions);
+
+  const tempCheckpointScheduleOptions = {
+    ...checkpointScheduleOptions,
+    ...opts?.checkpointScheduleOptions,
+  };
+  configureCheckpointSchedule(tempCheckpointScheduleOptions);
 }
 
 /**
@@ -1334,6 +1418,7 @@ export function initMocks(opts?: {
   defaultPortfolioOptions?: DefaultPortfolioOptions;
   stoOptions?: StoOptions;
   checkpointOptions?: CheckpointOptions;
+  checkpointScheduleOptions?: CheckpointScheduleOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -1380,6 +1465,9 @@ export function initMocks(opts?: {
 
   // Checkpoint
   initCheckpoint(opts?.checkpointOptions);
+
+  // CheckpointSchedule
+  initCheckpointSchedule(opts?.checkpointScheduleOptions);
 }
 
 /**
@@ -1400,6 +1488,7 @@ export function cleanup(): void {
   mockInstanceContainer.instruction = {} as MockInstruction;
   mockInstanceContainer.sto = {} as MockSto;
   mockInstanceContainer.checkpoint = {} as MockCheckpoint;
+  mockInstanceContainer.checkpointSchedule = {} as MockCheckpointSchedule;
 }
 
 /**
@@ -1424,6 +1513,7 @@ export function reset(): void {
     defaultPortfolioOptions,
     stoOptions,
     checkpointOptions,
+    checkpointScheduleOptions,
   });
 }
 
@@ -1992,5 +2082,38 @@ export function getCheckpointTotalSupplyStub(totalSupply?: BigNumber): SinonStub
  * Retrieve the Checkpoint constructor stub
  */
 export function getCheckpointConstructorStub(): SinonStub {
-  return stoConstructorStub;
+  return checkpointConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a CheckpointSchedule instance
+ */
+export function getCheckpointScheduleInstance(
+  opts?: CheckpointScheduleOptions
+): MockCheckpointSchedule {
+  if (opts) {
+    configureCheckpointSchedule({ ...defaultCheckpointScheduleOptions, ...opts });
+  }
+
+  return new MockCheckpointScheduleClass() as MockCheckpointSchedule;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CheckpointSchedule.expiryDate` method
+ */
+export function getCheckpointScheduleExpiryDateStub(expiryDate?: Date): SinonStub {
+  if (expiryDate) {
+    return checkpointScheduleExpiryDateStub.resolves(expiryDate);
+  }
+  return checkpointScheduleExpiryDateStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the CheckpointSchedule constructor stub
+ */
+export function getCheckpointScheduleConstructorStub(): SinonStub {
+  return checkpointScheduleConstructorStub;
 }
