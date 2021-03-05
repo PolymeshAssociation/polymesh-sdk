@@ -1,7 +1,11 @@
-import { Procedure, SecurityToken } from '~/internal';
+import { u64 } from '@polkadot/types';
+import { ISubmittableResult } from '@polkadot/types/types';
+
+import { Checkpoint, Context, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
 import { RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { stringToTicker } from '~/utils/conversion';
+import { stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import { findEventRecord } from '~/utils/internal';
 
 /**
  * @hidden
@@ -13,34 +17,44 @@ export interface Params {
 /**
  * @hidden
  */
+export const createCheckpointResolver = (ticker: string, context: Context) => (
+  receipt: ISubmittableResult
+): Checkpoint => {
+  const eventRecord = findEventRecord(receipt, 'checkpoint', 'CheckpointCreated');
+  const data = eventRecord.event.data;
+  const id = u64ToBigNumber(data[2] as u64);
+
+  return new Checkpoint({ ticker, id }, context);
+};
+
+/**
+ * @hidden
+ */
 export async function prepareCreateCheckpoint(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, Checkpoint>,
   args: Params
-): Promise<SecurityToken> {
-  const {
-    context: {
-      polymeshApi: {
-        tx: { checkpoint },
-      },
-    },
-    context,
-  } = this;
+): Promise<PostTransactionValue<Checkpoint>> {
+  const { context } = this;
   const { ticker } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const securityToken = new SecurityToken({ ticker }, context);
+  const [checkpoint] = this.addTransaction(
+    context.polymeshApi.tx.checkpoint.createCheckpoint,
+    {
+      resolvers: [createCheckpointResolver(ticker, context)],
+    },
+    rawTicker
+  );
 
-  this.addTransaction(checkpoint.createCheckpoint, {}, rawTicker);
-
-  return securityToken;
+  return checkpoint;
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, Checkpoint>,
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
