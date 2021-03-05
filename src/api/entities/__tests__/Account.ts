@@ -23,7 +23,7 @@ describe('Account class', () => {
     address = 'someAddress';
     key = 'someKey';
 
-    sinon.stub(utilsConversionModule, 'addressToKey').withArgs(address).returns(key);
+    sinon.stub(utilsConversionModule, 'addressToKey').returns(key);
   });
 
   beforeEach(() => {

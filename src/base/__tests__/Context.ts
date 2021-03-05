@@ -43,6 +43,9 @@ describe('Context class', () => {
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
       returnValue: dsMockUtils.createMockIdentityId('someDid'),
     });
+    dsMockUtils.createRpcStub('system', 'properties', {
+      returnValue: { ss58Format: dsMockUtils.createMockOption(dsMockUtils.createMockU8(42)) },
+    });
   });
 
   afterEach(() => {
@@ -214,6 +217,10 @@ describe('Context class', () => {
     });
 
     test('should create a Context object without Pair attached', async () => {
+      dsMockUtils.createRpcStub('system', 'properties', {
+        returnValue: { ss58Format: dsMockUtils.createMockOption() },
+      });
+
       const newPair = {
         address: 'someAddress',
         meta: {},
