@@ -703,7 +703,7 @@ export enum TxGroup {
    * - TxTags.capitalDistribution.Claim,
    * - TxTags.identity.AddInvestorUniquenessClaim,
    */
-  CorporateActions = 'CorporateActions',
+  CorporateActionsManagement = 'CorporateActionsManagement',
 }
 
 /**

@@ -583,7 +583,7 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.complianceManager.ResetAssetCompliance,
       ];
     }
-    case TxGroup.CorporateActions: {
+    case TxGroup.CorporateActionsManagement: {
       return [
         TxTags.checkpoint.CreateSchedule,
         TxTags.checkpoint.RemoveSchedule,
