@@ -17,6 +17,7 @@ describe('CheckpointSchedule class', () => {
   let period: CalendarPeriod;
   let start: Date;
   let remaining: number;
+  let nextCheckpointDate: Date;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -30,6 +31,7 @@ describe('CheckpointSchedule class', () => {
     };
     start = new Date('10/14/1987');
     remaining = 11;
+    nextCheckpointDate = new Date('10/14/2030');
   });
 
   beforeEach(() => {
@@ -52,16 +54,27 @@ describe('CheckpointSchedule class', () => {
 
   describe('constructor', () => {
     test('should assign ticker and id to instance', () => {
-      let schedule = new CheckpointSchedule({ id, ticker, start, period, remaining: 0 }, context);
+      let schedule = new CheckpointSchedule(
+        { id, ticker, start, period, remaining: 0, nextCheckpointDate },
+        context
+      );
 
       expect(schedule.ticker).toBe(ticker);
       expect(schedule.id).toEqual(id);
       expect(schedule.period).toEqual(period);
       expect(schedule.start).toEqual(start);
       expect(schedule.isInfinite).toEqual(true);
+      expect(schedule.expiryDate).toBeNull();
 
       schedule = new CheckpointSchedule(
-        { id, ticker, start, period: { unit: CalendarUnit.Month, amount: 0 }, remaining },
+        {
+          id,
+          ticker,
+          start,
+          period: { unit: CalendarUnit.Month, amount: 0 },
+          remaining,
+          nextCheckpointDate,
+        },
         context
       );
 
@@ -69,6 +82,21 @@ describe('CheckpointSchedule class', () => {
       expect(schedule.id).toEqual(id);
       expect(schedule.period).toEqual(null);
       expect(schedule.start).toEqual(start);
+      expect(schedule.expiryDate).toEqual(start);
+
+      schedule = new CheckpointSchedule(
+        {
+          id,
+          ticker,
+          start,
+          period: { unit: CalendarUnit.Month, amount: 1 },
+          remaining,
+          nextCheckpointDate,
+        },
+        context
+      );
+
+      expect(schedule.expiryDate).toEqual(new Date('8/14/2031'));
     });
   });
 
@@ -80,46 +108,6 @@ describe('CheckpointSchedule class', () => {
       expect(CheckpointSchedule.isUniqueIdentifiers({})).toBe(false);
       expect(CheckpointSchedule.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
       expect(CheckpointSchedule.isUniqueIdentifiers({ id: 'id' })).toBe(false);
-    });
-  });
-
-  describe('method: expiryDate', () => {
-    test("should return the Schedule's expiry date", async () => {
-      const schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
-      const nextCheckpointDate = new Date('10/14/2021');
-
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
-        returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            schedule: dsMockUtils.createMockCheckpointSchedule({
-              start: dsMockUtils.createMockMoment(start.getTime()),
-              period: dsMockUtils.createMockCalendarPeriod({
-                unit: dsMockUtils.createMockCalendarUnit('Month'),
-                amount: dsMockUtils.createMockU64(1),
-              }),
-            }),
-            id: dsMockUtils.createMockU64(id.toNumber()),
-            at: dsMockUtils.createMockMoment(nextCheckpointDate.getTime()),
-            remaining: dsMockUtils.createMockU32(2),
-          }),
-        ],
-      });
-
-      let result = await schedule.expiryDate();
-
-      expect(result).toEqual(new Date('11/14/2021'));
-
-      schedule.period = null;
-
-      result = await schedule.expiryDate();
-
-      expect(result).toEqual(start);
-
-      schedule.isInfinite = true;
-
-      result = await schedule.expiryDate();
-
-      expect(result).toBeNull();
     });
   });
 });

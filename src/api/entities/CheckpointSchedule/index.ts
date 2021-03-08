@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
+import { ScheduleDetails } from '~/api/entities/CheckpointSchedule/types';
 import { Context, Entity } from '~/internal';
 import { CalendarPeriod } from '~/types';
-import { momentToDate, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -14,6 +14,7 @@ export interface Params {
   period: CalendarPeriod;
   start: Date;
   remaining: number;
+  nextCheckpointDate: Date;
 }
 
 /**
@@ -58,10 +59,16 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
   public isInfinite: boolean;
 
   /**
+   * date at which the last Checkpoint will be created with this Schedule.
+   *   A null value means that this Schedule never expires
+   */
+  public expiryDate: Date | null;
+
+  /**
    * @hidden
    */
   public constructor(args: UniqueIdentifiers & Params, context: Context) {
-    const { period, start, remaining, ...identifiers } = args;
+    const { period, start, remaining, nextCheckpointDate, ...identifiers } = args;
 
     super(identifiers, context);
 
@@ -79,39 +86,33 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
       is treated as a one-shot
     */
     this.isInfinite = remaining === 0 && !noPeriod;
+
+    if (this.isInfinite) {
+      this.expiryDate = null;
+    } else if (!this.period) {
+      this.expiryDate = start;
+    } else {
+      const { amount, unit } = period;
+
+      this.expiryDate = dayjs(nextCheckpointDate)
+        .add(amount * (remaining - 1), unit)
+        .toDate();
+    }
   }
 
   /**
-   * Retrieve the date at which the last Checkpoint will be created with this Schedule.
-   *   A null value means that this Schedule never expires
+   * Retrieve information specific to this Schedule
    */
-  public async expiryDate(): Promise<Date | null> {
-    const { isInfinite, context, ticker, id, period, start } = this;
+  // public async details(): Promise<ScheduleDetails> {
+  //   const {
+  //     context: {
+  //       polymeshApi: {
+  //         query: { settlement },
+  //       },
+  //     },
+  //     id,
+  //     context,
+  //   } = this;
 
-    if (isInfinite) {
-      return null;
-    }
-
-    if (!period) {
-      return start;
-    }
-
-    const schedules = await context.polymeshApi.query.checkpoint.schedules(
-      stringToTicker(ticker, context)
-    );
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { remaining: rawRemaining, at } = schedules.find(({ id: scheduleId }) =>
-      u64ToBigNumber(scheduleId).eq(id)
-    )!;
-
-    const remaining = u32ToBigNumber(rawRemaining).toNumber();
-    const nextCheckpointDate = momentToDate(at);
-
-    const { amount, unit } = period;
-
-    return dayjs(nextCheckpointDate)
-      .add(amount * (remaining - 1), unit)
-      .toDate();
-  }
+  // }
 }

@@ -268,7 +268,6 @@ let defaultPortfolioIsCustodiedByStub: SinonStub;
 let stoDetailsStub: SinonStub;
 let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
-let checkpointScheduleExpiryDateStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -1256,7 +1255,7 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
     start: opts.start,
     period: opts.period,
     isInfinite: opts.isInfinite,
-    expiryDate: checkpointScheduleExpiryDateStub.resolves(opts.expiryDate),
+    expiryDate: opts.expiryDate,
   } as unknown) as MockCheckpointSchedule;
 
   Object.assign(mockInstanceContainer.checkpointSchedule, checkpointSchedule);
@@ -1273,7 +1272,6 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
  */
 function initCheckpointSchedule(opts?: CheckpointScheduleOptions): void {
   checkpointScheduleConstructorStub = sinon.stub();
-  checkpointScheduleExpiryDateStub = sinon.stub();
 
   checkpointScheduleOptions = merge({}, defaultCheckpointScheduleOptions, opts);
 
@@ -2097,17 +2095,6 @@ export function getCheckpointScheduleInstance(
   }
 
   return new MockCheckpointScheduleClass() as MockCheckpointSchedule;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CheckpointSchedule.expiryDate` method
- */
-export function getCheckpointScheduleExpiryDateStub(expiryDate?: Date): SinonStub {
-  if (expiryDate) {
-    return checkpointScheduleExpiryDateStub.resolves(expiryDate);
-  }
-  return checkpointScheduleExpiryDateStub;
 }
 
 /**

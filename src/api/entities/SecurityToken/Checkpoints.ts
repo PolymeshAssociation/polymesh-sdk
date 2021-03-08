@@ -8,7 +8,7 @@ import {
   Namespace,
   SecurityToken,
 } from '~/internal';
-import { CheckpointWithCreationDate, PaginationOptions, ResultSet } from '~/types';
+import { CalendarPeriod, CheckpointWithCreationDate, PaginationOptions, ResultSet } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import { momentToDate, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
@@ -86,4 +86,26 @@ export class Checkpoints extends Namespace<SecurityToken> {
       next,
     };
   }
+
+  /**
+   * Retrieve the current checkpoint schedules
+   */
+  // public async getSchedules(): Promise<any> {
+  //   const {
+  //     parent: { ticker },
+  //     context: {
+  //       polymeshApi: {
+  //         query: {
+  //           checkpoint
+  //         }
+  //       }
+  //     },
+  //     context,
+  //   } = this;
+
+  //   const rawTicker = stringToTicker(ticker, context);
+
+  //   const schedules = await checkpoint.schedules(rawTicker);
+
+  // }
 }

@@ -14,7 +14,7 @@ import { ProcedureAuthorization } from '~/types/internal';
 import {
   meshCalendarPeriodToCalendarPeriod,
   momentToDate,
-  scheduleDetailsToScheduleSpec,
+  scheduleSpecToMeshScheduleSpec,
   stringToTicker,
   u32ToBigNumber,
   u64ToBigNumber,
@@ -46,6 +46,7 @@ export const createCheckpointScheduleResolver = (ticker: string, context: Contex
     id,
     schedule: { start, period },
     remaining,
+    at,
   } = data[2] as StoredSchedule;
 
   return new CheckpointSchedule(
@@ -55,6 +56,7 @@ export const createCheckpointScheduleResolver = (ticker: string, context: Contex
       start: momentToDate(start),
       period: meshCalendarPeriodToCalendarPeriod(period),
       remaining: u32ToBigNumber(remaining).toNumber(),
+      nextCheckpointDate: momentToDate(at),
     },
     context
   );
@@ -79,7 +81,7 @@ export async function prepareCreateCheckpointSchedule(
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawSchedule = scheduleDetailsToScheduleSpec({ start, period, repetitions }, context);
+  const rawSchedule = scheduleSpecToMeshScheduleSpec({ start, period, repetitions }, context);
 
   const [schedule] = this.addTransaction(
     context.polymeshApi.tx.checkpoint.createSchedule,

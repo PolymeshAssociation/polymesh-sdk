@@ -64,7 +64,7 @@ import {
   PosRatio,
   PriceTier,
   ProtocolOp,
-  ScheduleSpec,
+  ScheduleSpec as MeshScheduleSpec,
   Scope as MeshScope,
   ScopeId,
   SecondaryKey as MeshSecondaryKey,
@@ -156,7 +156,7 @@ import {
   ExtrinsicIdentifier,
   PolymeshTx,
   PortfolioId,
-  ScheduleDetails,
+  ScheduleSpec,
   SignerType,
   SignerValue,
   TransferRestriction,
@@ -2604,10 +2604,10 @@ export function meshCalendarPeriodToCalendarPeriod(period: MeshCalendarPeriod): 
 /**
  * @hidden
  */
-export function scheduleDetailsToScheduleSpec(
-  details: ScheduleDetails,
+export function scheduleSpecToMeshScheduleSpec(
+  details: ScheduleSpec,
   context: Context
-): ScheduleSpec {
+): MeshScheduleSpec {
   const { start, period, repetitions } = details;
 
   return context.polymeshApi.createType('ScheduleSpec', {
