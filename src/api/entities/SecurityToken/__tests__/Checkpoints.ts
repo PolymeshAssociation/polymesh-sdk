@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { Ticker } from 'polymesh-types/types';
+import sinon, { SinonStub } from 'sinon';
 
 import {
   Checkpoint,
@@ -21,6 +22,12 @@ jest.mock(
   '~/api/entities/Checkpoint',
   require('~/testUtils/mocks/entities').mockCheckpointModule('~/api/entities/Checkpoint')
 );
+jest.mock(
+  '~/api/entities/CheckpointSchedule',
+  require('~/testUtils/mocks/entities').mockCheckpointScheduleModule(
+    '~/api/entities/CheckpointSchedule'
+  )
+);
 
 describe('Checkpoints class', () => {
   let context: Context;
@@ -28,11 +35,15 @@ describe('Checkpoints class', () => {
 
   let ticker: string;
 
+  let stringToTickerStub: SinonStub<[string, Context], Ticker>;
+
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
 
     ticker = 'SOME_TICKER';
+
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
   });
 
   afterEach(() => {
@@ -116,10 +127,7 @@ describe('Checkpoints class', () => {
         ),
       });
 
-      sinon
-        .stub(utilsConversionModule, 'stringToTicker')
-        .withArgs(ticker, context)
-        .returns(rawTicker);
+      stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
 
       const { data } = await checkpoints.get();
 
@@ -129,6 +137,70 @@ describe('Checkpoints class', () => {
           createdAt: new Date(timestamp),
         }))
       );
+    });
+  });
+
+  describe('method: getSchedules', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the current checkpoint schedules', async () => {
+      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      const id = new BigNumber(1);
+      const start = new Date('10/14/1987');
+      const nextCheckpointDate = new Date('10/14/2030');
+      const remaining = new BigNumber(2);
+      const period = {
+        unit: CalendarUnit.Month,
+        amount: 1,
+      };
+
+      stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
+      sinon.stub(utilsConversionModule, 'storedScheduleToScheduleParams').returns({
+        id,
+        period,
+        start,
+        remaining: remaining.toNumber(),
+        nextCheckpointDate,
+      });
+
+      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+        returnValue: [
+          dsMockUtils.createMockStoredSchedule({
+            schedule: dsMockUtils.createMockCheckpointSchedule({
+              start: dsMockUtils.createMockMoment(start.getTime()),
+              period: dsMockUtils.createMockCalendarPeriod({
+                unit: dsMockUtils.createMockCalendarUnit('Month'),
+                amount: dsMockUtils.createMockU64(1),
+              }),
+            }),
+            id: dsMockUtils.createMockU64(id.toNumber()),
+            at: dsMockUtils.createMockMoment(nextCheckpointDate.getTime()),
+            remaining: dsMockUtils.createMockU32(remaining.toNumber()),
+          }),
+        ],
+      });
+
+      entityMockUtils.configureMocks({
+        checkpointScheduleOptions: {
+          details: {
+            remainingCheckpoints: remaining,
+            nextCheckpointDate,
+          },
+        },
+      });
+
+      const result = await checkpoints.getSchedules();
+
+      expect(result[0].details).toEqual({
+        remainingCheckpoints: remaining,
+        nextCheckpointDate,
+      });
+      expect(result[0].schedule.id).toEqual(id);
+      expect(result[0].schedule.ticker).toEqual(ticker);
+      expect(result[0].schedule.start).toEqual(start);
+      expect(result[0].schedule.period).toEqual(period);
     });
   });
 });

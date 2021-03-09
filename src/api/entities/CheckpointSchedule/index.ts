@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { ScheduleDetails } from '~/api/entities/CheckpointSchedule/types';
 import { Context, Entity } from '~/internal';
 import { CalendarPeriod } from '~/types';
+import { momentToDate, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -103,16 +104,28 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve information specific to this Schedule
    */
-  // public async details(): Promise<ScheduleDetails> {
-  //   const {
-  //     context: {
-  //       polymeshApi: {
-  //         query: { settlement },
-  //       },
-  //     },
-  //     id,
-  //     context,
-  //   } = this;
+  public async details(): Promise<ScheduleDetails> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { checkpoint },
+        },
+      },
+      id,
+      context,
+      ticker,
+    } = this;
 
-  // }
+    const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
+
+    const schedule = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { at, remaining } = schedule!;
+
+    return {
+      remainingCheckpoints: u32ToBigNumber(remaining),
+      nextCheckpointDate: momentToDate(at),
+    };
+  }
 }

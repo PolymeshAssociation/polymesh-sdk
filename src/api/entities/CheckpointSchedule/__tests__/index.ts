@@ -1,8 +1,10 @@
 import BigNumber from 'bignumber.js';
+import sinon from 'sinon';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { CalendarPeriod, CalendarUnit } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -11,6 +13,7 @@ jest.mock(
 
 describe('CheckpointSchedule class', () => {
   let context: Context;
+  let checkpointSchedule: CheckpointSchedule;
 
   let id: BigNumber;
   let ticker: string;
@@ -36,6 +39,10 @@ describe('CheckpointSchedule class', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
+    checkpointSchedule = new CheckpointSchedule(
+      { id, ticker, period, start, remaining, nextCheckpointDate },
+      context
+    );
   });
 
   afterEach(() => {
@@ -108,6 +115,41 @@ describe('CheckpointSchedule class', () => {
       expect(CheckpointSchedule.isUniqueIdentifiers({})).toBe(false);
       expect(CheckpointSchedule.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
       expect(CheckpointSchedule.isUniqueIdentifiers({ id: 'id' })).toBe(false);
+    });
+  });
+
+  describe('method: details', () => {
+    test('should return the Schedule details ', async () => {
+      const rawRemaining = new BigNumber(2);
+
+      sinon
+        .stub(utilsConversionModule, 'stringToTicker')
+        .returns(dsMockUtils.createMockTicker(ticker));
+      sinon.stub(utilsConversionModule, 'u64ToBigNumber').returns(id);
+      sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(rawRemaining);
+      sinon.stub(utilsConversionModule, 'momentToDate').returns(nextCheckpointDate);
+
+      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+        returnValue: [
+          dsMockUtils.createMockStoredSchedule({
+            schedule: dsMockUtils.createMockCheckpointSchedule({
+              start: dsMockUtils.createMockMoment(start.getTime()),
+              period: dsMockUtils.createMockCalendarPeriod({
+                unit: dsMockUtils.createMockCalendarUnit('Month'),
+                amount: dsMockUtils.createMockU64(1),
+              }),
+            }),
+            id: dsMockUtils.createMockU64(id.toNumber()),
+            at: dsMockUtils.createMockMoment(nextCheckpointDate.getTime()),
+            remaining: dsMockUtils.createMockU32(rawRemaining.toNumber()),
+          }),
+        ],
+      });
+
+      const result = await checkpointSchedule.details();
+
+      expect(result.remainingCheckpoints).toEqual(rawRemaining);
+      expect(result.nextCheckpointDate).toEqual(nextCheckpointDate);
     });
   });
 });

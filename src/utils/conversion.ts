@@ -70,6 +70,7 @@ import {
   SecondaryKey as MeshSecondaryKey,
   SettlementType,
   Signatory,
+  StoredSchedule,
   TargetIdentity,
   Ticker,
   TransferManager,
@@ -80,6 +81,7 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
+import { ScheduleParams } from '~/api/entities/CheckpointSchedule/types';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 // import { ProposalDetails } from '~/api/types';
 import {
@@ -2618,4 +2620,23 @@ export function scheduleSpecToMeshScheduleSpec(
     ),
     remaining: numberToU64(repetitions || 0, context),
   });
+}
+
+/**
+ * @hidden
+ */
+export function storedScheduleToScheduleParams(storedSchedule: StoredSchedule): ScheduleParams {
+  const {
+    schedule: { start, period },
+    id,
+    at,
+    remaining,
+  } = storedSchedule;
+  return {
+    id: u64ToBigNumber(id),
+    period: meshCalendarPeriodToCalendarPeriod(period),
+    start: momentToDate(start),
+    remaining: u32ToBigNumber(remaining).toNumber(),
+    nextCheckpointDate: momentToDate(at),
+  };
 }

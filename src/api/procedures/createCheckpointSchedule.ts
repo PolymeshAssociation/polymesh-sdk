@@ -12,12 +12,9 @@ import {
 import { CalendarPeriod, ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
-  meshCalendarPeriodToCalendarPeriod,
-  momentToDate,
   scheduleSpecToMeshScheduleSpec,
+  storedScheduleToScheduleParams,
   stringToTicker,
-  u32ToBigNumber,
-  u64ToBigNumber,
 } from '~/utils/conversion';
 import { findEventRecord } from '~/utils/internal';
 
@@ -42,21 +39,19 @@ export const createCheckpointScheduleResolver = (ticker: string, context: Contex
 ): CheckpointSchedule => {
   const eventRecord = findEventRecord(receipt, 'checkpoint', 'CheckpointCreated');
   const data = eventRecord.event.data;
-  const {
-    id,
-    schedule: { start, period },
-    remaining,
-    at,
-  } = data[2] as StoredSchedule;
+
+  const { id, start, period, remaining, nextCheckpointDate } = storedScheduleToScheduleParams(
+    data[2] as StoredSchedule
+  );
 
   return new CheckpointSchedule(
     {
       ticker,
-      id: u64ToBigNumber(id),
-      start: momentToDate(start),
-      period: meshCalendarPeriodToCalendarPeriod(period),
-      remaining: u32ToBigNumber(remaining).toNumber(),
-      nextCheckpointDate: momentToDate(at),
+      id,
+      start,
+      period,
+      remaining,
+      nextCheckpointDate,
     },
     context
   );
