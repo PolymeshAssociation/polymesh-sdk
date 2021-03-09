@@ -159,7 +159,7 @@ describe('Venue class', () => {
       const owner = 'someDid';
       const instructionId = new BigNumber(1);
 
-      entityMockUtils.configureMocks({ instructionOptions: { id: instructionId } });
+      entityMockUtils.configureMocks({ instructionOptions: { id: instructionId, exists: true } });
       sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
 
       dsMockUtils
@@ -177,9 +177,14 @@ describe('Venue class', () => {
           )
         );
 
-      const result = await venue.getPendingInstructions();
+      let result = await venue.getPendingInstructions();
 
       expect(result[0].id).toEqual(instructionId);
+
+      entityMockUtils.configureMocks({ instructionOptions: { id: instructionId, exists: false } });
+
+      result = await venue.getPendingInstructions();
+      expect(result.length).toBe(0);
     });
   });
 
