@@ -294,6 +294,7 @@ describe('CurrentIdentity class', () => {
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
           trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id2.toNumber()),
@@ -302,6 +303,7 @@ describe('CurrentIdentity class', () => {
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
           trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id3.toNumber()),
@@ -310,6 +312,7 @@ describe('CurrentIdentity class', () => {
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
           trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
@@ -318,6 +321,7 @@ describe('CurrentIdentity class', () => {
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
           trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
         }),
       ]);
 
