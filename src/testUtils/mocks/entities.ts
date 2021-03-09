@@ -184,6 +184,7 @@ interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
   getLegs?: ResultSet<Leg>;
+  exists?: boolean;
 }
 
 interface StoOptions {
@@ -258,6 +259,7 @@ let venueDetailsStub: SinonStub;
 let venueExistsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
+let instructionExistsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
 let numberedPortfolioExistsStub: SinonStub;
@@ -612,6 +614,7 @@ const defaultInstructionOptions: InstructionOptions = {
     valueDate: null,
     type: InstructionType.SettleOnAffirmation,
   },
+  exists: false,
 };
 let instructionOptions = defaultInstructionOptions;
 const defaultStoOptions: StoOptions = {
@@ -1018,8 +1021,10 @@ function configureInstruction(opts: InstructionOptions): void {
     next: null,
   };
   const instruction = ({
+    id: opts.id,
     details: instructionDetailsStub.resolves(details),
     getLegs: instructionGetLegsStub.resolves(legs),
+    exists: instructionExistsStub.resolves(opts.exists),
   } as unknown) as MockInstruction;
 
   Object.assign(mockInstanceContainer.instruction, instruction);
@@ -1038,6 +1043,7 @@ function initInstruction(opts?: InstructionOptions): void {
   instructionConstructorStub = sinon.stub();
   instructionDetailsStub = sinon.stub();
   instructionGetLegsStub = sinon.stub();
+  instructionExistsStub = sinon.stub();
 
   instructionOptions = { ...defaultInstructionOptions, ...opts };
 

@@ -147,6 +147,12 @@ export class Venue extends Entity<UniqueIdentifiers> {
     );
 
     return P.filter(instructions, async instruction => {
+      const instructionExists = await instruction.exists();
+
+      if (!instructionExists) {
+        return false;
+      }
+
       const { status } = await instruction.details();
 
       return status === InstructionStatus.Pending;

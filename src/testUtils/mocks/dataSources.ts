@@ -2291,6 +2291,7 @@ export const createMockInstruction = (instruction?: {
   settlement_type: SettlementType;
   created_at: Option<Moment>;
   trade_date: Option<Moment>;
+  value_date: Option<Moment>;
 }): Instruction => {
   const data = instruction || {
     instruction_id: createMockU64(),
