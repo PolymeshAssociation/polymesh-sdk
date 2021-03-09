@@ -112,7 +112,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
 
     const rawSchedules = await checkpoint.schedules(rawTicker);
 
-    const result = await P.map(rawSchedules, async rawSchedule => {
+    return P.map(rawSchedules, async rawSchedule => {
       const schedule = new CheckpointSchedule(
         { ...storedScheduleToScheduleParams(rawSchedule), ticker },
         context
@@ -123,7 +123,5 @@ export class Checkpoints extends Namespace<SecurityToken> {
         details,
       };
     });
-
-    return result;
   }
 }
