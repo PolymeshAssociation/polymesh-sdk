@@ -1,4 +1,5 @@
 import { CreateCheckpointScheduleParams } from '~/api/procedures/createCheckpointSchedule';
+import { RemoveCheckpointScheduleParams } from '~/api/procedures/removeCheckpointSchedule';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -6,6 +7,7 @@ import {
   createCheckpoint,
   createCheckpointSchedule,
   Namespace,
+  removeCheckpointSchedule,
   SecurityToken,
 } from '~/internal';
 import { CheckpointWithCreationDate } from '~/types';
@@ -30,6 +32,10 @@ export class Checkpoints extends Namespace<SecurityToken> {
       args => [createCheckpointSchedule, { ticker, ...args }],
       context
     );
+    this.removeSchedule = createProcedureMethod(
+      args => [removeCheckpointSchedule, { ticker, ...args }],
+      context
+    );
   }
 
   /**
@@ -51,6 +57,16 @@ export class Checkpoints extends Namespace<SecurityToken> {
    *   - Security Token Owner
    */
   public createSchedule: ProcedureMethod<CreateCheckpointScheduleParams, CheckpointSchedule>;
+
+  /**
+   * Remove the supplied Checkpoint Schedule for a given Security Token
+   *
+   * @param args.schedule - Schedule (or ID) of the schedule to be removed
+   *
+   * @note required role:
+   *   - Security Token Owner
+   */
+  public removeSchedule: ProcedureMethod<RemoveCheckpointScheduleParams, void>;
 
   /**
    * Retrieve all Checkpoints created on this Security Token, together with their corresponding creation Date

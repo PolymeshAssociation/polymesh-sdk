@@ -8,6 +8,7 @@ import {
   createCheckpoint,
   createCheckpointSchedule,
   Namespace,
+  removeCheckpointSchedule,
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -92,6 +93,28 @@ describe('Checkpoints class', () => {
         .resolves(expectedQueue);
 
       const queue = await checkpoints.createSchedule(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: removeSchedule', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const args = {
+        schedule: new BigNumber(1),
+      };
+
+      sinon
+        .stub(removeCheckpointSchedule, 'prepare')
+        .withArgs({ ticker, ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await checkpoints.removeSchedule(args);
 
       expect(queue).toBe(expectedQueue);
     });
