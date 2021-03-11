@@ -121,9 +121,9 @@ describe('Checkpoints class', () => {
         .withArgs(ticker, context)
         .returns(rawTicker);
 
-      const { data } = await checkpoints.get();
+      const result = await checkpoints.get();
 
-      expect(data).toEqual(
+      expect(result).toEqual(
         timestamps.slice(0, -1).map((timestamp, index) => ({
           checkpoint: entityMockUtils.getCheckpointInstance({ id: new BigNumber(ids[index]) }),
           createdAt: new Date(timestamp),
