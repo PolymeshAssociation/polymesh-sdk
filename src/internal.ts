@@ -127,3 +127,7 @@ export {
   createCheckpointSchedule,
   CreateCheckpointScheduleParams,
 } from '~/api/procedures/createCheckpointSchedule';
+export {
+  removeCheckpointSchedule,
+  RemoveCheckpointScheduleParams,
+} from '~/api/procedures/removeCheckpointSchedule';
