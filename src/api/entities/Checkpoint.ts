@@ -1,8 +1,10 @@
+import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
+import { IdentityId } from 'polymesh-types/types';
 
 import { Context, Entity, Identity } from '~/internal';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
-import { tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -91,20 +93,63 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
   public async allBalances(
     paginationOpts?: PaginationOptions
   ): Promise<ResultSet<IdentityBalance>> {
-    const { context, ticker, id } = this;
+    const {
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+      ticker,
+      id,
+    } = this;
 
-    const { entries, lastKey: next } = await requestPaginated(
-      context.polymeshApi.query.checkpoint.balance,
-      {
-        arg: tuple(stringToTicker(ticker, context), numberToU64(id, context)),
-        paginationOpts,
+    const rawTicker = stringToTicker(ticker, context);
+    const rawU64 = numberToU64(id, context);
+
+    // getting all the identities holders for the security token
+    const { entries, lastKey: next } = await requestPaginated(query.asset.balanceOf, {
+      arg: rawTicker,
+      paginationOpts,
+    });
+
+    const rawIdentitiesId: IdentityId[] = [];
+
+    // composing the data to be returned before checking checkout balance
+    const identitiesBalance: { identity: Identity; balance: BigNumber }[] = entries.map(
+      ([storageKey, balance]) => {
+        rawIdentitiesId.push(storageKey.args[1]);
+        return {
+          identity: new Identity({ did: identityIdToString(storageKey.args[1]) }, context),
+          balance: balanceToBigNumber(balance),
+        };
       }
     );
 
-    const data = entries.map(([{ args: [, identityId] }, balance]) => ({
-      identity: new Identity({ did: identityIdToString(identityId) }, context),
-      balance: balanceToBigNumber(balance),
-    }));
+    // getting all the checkpoint balances of the security token holders
+    const checkpointsBalance = await query.checkpoint.balance.multi<Balance>(
+      rawIdentitiesId.map(identityId => [[rawTicker, rawU64], identityId])
+    );
+
+    const data = await P.map(checkpointsBalance, async (rawCheckpointBalance, i) => {
+      const { balance, identity } = identitiesBalance[i];
+
+      let checkpointBalance = balanceToBigNumber(rawCheckpointBalance);
+
+      if (checkpointBalance.isZero()) {
+        const sizeBalance = await query.checkpoint.balance.size(
+          [rawTicker, rawU64],
+          stringToIdentityId(identity.did, context)
+        );
+
+        if (sizeBalance.isZero()) {
+          checkpointBalance = balance;
+        }
+      }
+
+      return {
+        identity,
+        balance: checkpointBalance,
+      };
+    });
 
     return {
       data,
@@ -118,15 +163,37 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
    * @param args.identity - defaults to the current Identity
    */
   public async balance(args?: { identity: string | Identity }): Promise<BigNumber> {
-    const { context, ticker, id } = this;
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { checkpoint },
+        },
+      },
+      ticker,
+      id,
+    } = this;
 
     const did = await getDid(args?.identity, context);
 
-    const balance = await context.polymeshApi.query.checkpoint.balance(
-      [stringToTicker(ticker, context), numberToU64(id, context)],
-      stringToIdentityId(did, context)
-    );
+    const identity = new Identity({ did }, context);
 
-    return balanceToBigNumber(balance);
+    const rawTicker = stringToTicker(ticker, context);
+    const rawU64 = numberToU64(id, context);
+    const rawIdentityId = stringToIdentityId(did, context);
+
+    const [rawBalance, sizeBalance, tokenBalance] = await Promise.all([
+      checkpoint.balance([rawTicker, rawU64], rawIdentityId),
+      checkpoint.balance.size([rawTicker, rawU64], rawIdentityId),
+      identity.getTokenBalance({ ticker }),
+    ]);
+
+    const balance = balanceToBigNumber(rawBalance);
+
+    if (balance.isZero() && sizeBalance.isZero()) {
+      return tokenBalance;
+    }
+
+    return balance;
   }
 }
