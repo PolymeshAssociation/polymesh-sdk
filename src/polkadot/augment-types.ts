@@ -782,6 +782,7 @@ import type {
   FundraiserName,
   FundraiserStatus,
   FundraiserTier,
+  GranularCanTransferResult,
   HandledTxStatus,
   HistoricalVotingByAddress,
   HistoricalVotingById,
@@ -812,7 +813,6 @@ import type {
   MotionTitle,
   MovePortfolioItem,
   OffChainSignature,
-  OfflineSlashingParams,
   PalletName,
   PalletPermissions,
   Payload,
@@ -829,6 +829,7 @@ import type {
   PortfolioKind,
   PortfolioName,
   PortfolioNumber,
+  PortfolioValidityResult,
   PosRatio,
   PreAuthorizedKeyInfo,
   PriceTier,
@@ -879,6 +880,7 @@ import type {
   TickerRegistrationConfig,
   TickerTransferApproval,
   TransferManager,
+  TransferManagerResult,
   TrustedFor,
   TrustedIssuer,
   UniqueCall,
@@ -1324,6 +1326,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<GrandpaEquivocationProof>': Option<GrandpaEquivocationProof>;
     'Option<GrandpaEquivocationValue>': Option<GrandpaEquivocationValue>;
     'Option<GrandpaPrevote>': Option<GrandpaPrevote>;
+    'Option<GranularCanTransferResult>': Option<GranularCanTransferResult>;
     'Option<GroupIndex>': Option<GroupIndex>;
     'Option<H1024>': Option<H1024>;
     'Option<H128>': Option<H128>;
@@ -1473,7 +1476,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<OffChainSignature>': Option<OffChainSignature>;
     'Option<OffenceDetails>': Option<OffenceDetails>;
     'Option<Offender>': Option<Offender>;
-    'Option<OfflineSlashingParams>': Option<OfflineSlashingParams>;
     'Option<OpaqueCall>': Option<OpaqueCall>;
     'Option<OpaqueMultiaddr>': Option<OpaqueMultiaddr>;
     'Option<OpaqueNetworkState>': Option<OpaqueNetworkState>;
@@ -1539,6 +1541,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<PortfolioKind>': Option<PortfolioKind>;
     'Option<PortfolioName>': Option<PortfolioName>;
     'Option<PortfolioNumber>': Option<PortfolioNumber>;
+    'Option<PortfolioValidityResult>': Option<PortfolioValidityResult>;
     'Option<PosRatio>': Option<PosRatio>;
     'Option<PreAuthorizedKeyInfo>': Option<PreAuthorizedKeyInfo>;
     'Option<Precommits>': Option<Precommits>;
@@ -1745,6 +1748,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<TransactionPriority>': Option<TransactionPriority>;
     'Option<TransactionValidityError>': Option<TransactionValidityError>;
     'Option<TransferManager>': Option<TransferManager>;
+    'Option<TransferManagerResult>': Option<TransferManagerResult>;
     'Option<TransientValidationData>': Option<TransientValidationData>;
     'Option<TreasuryProposal>': Option<TreasuryProposal>;
     'Option<TrieId>': Option<TrieId>;
@@ -2161,6 +2165,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<GrandpaEquivocationProof>': Vec<GrandpaEquivocationProof>;
     'Vec<GrandpaEquivocationValue>': Vec<GrandpaEquivocationValue>;
     'Vec<GrandpaPrevote>': Vec<GrandpaPrevote>;
+    'Vec<GranularCanTransferResult>': Vec<GranularCanTransferResult>;
     'Vec<GroupIndex>': Vec<GroupIndex>;
     'Vec<H1024>': Vec<H1024>;
     'Vec<H128>': Vec<H128>;
@@ -2310,7 +2315,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<OffChainSignature>': Vec<OffChainSignature>;
     'Vec<OffenceDetails>': Vec<OffenceDetails>;
     'Vec<Offender>': Vec<Offender>;
-    'Vec<OfflineSlashingParams>': Vec<OfflineSlashingParams>;
     'Vec<OpaqueCall>': Vec<OpaqueCall>;
     'Vec<OpaqueMultiaddr>': Vec<OpaqueMultiaddr>;
     'Vec<OpaqueNetworkState>': Vec<OpaqueNetworkState>;
@@ -2376,6 +2380,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<PortfolioKind>': Vec<PortfolioKind>;
     'Vec<PortfolioName>': Vec<PortfolioName>;
     'Vec<PortfolioNumber>': Vec<PortfolioNumber>;
+    'Vec<PortfolioValidityResult>': Vec<PortfolioValidityResult>;
     'Vec<PosRatio>': Vec<PosRatio>;
     'Vec<PreAuthorizedKeyInfo>': Vec<PreAuthorizedKeyInfo>;
     'Vec<Precommits>': Vec<Precommits>;
@@ -2582,6 +2587,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<TransactionPriority>': Vec<TransactionPriority>;
     'Vec<TransactionValidityError>': Vec<TransactionValidityError>;
     'Vec<TransferManager>': Vec<TransferManager>;
+    'Vec<TransferManagerResult>': Vec<TransferManagerResult>;
     'Vec<TransientValidationData>': Vec<TransientValidationData>;
     'Vec<TreasuryProposal>': Vec<TreasuryProposal>;
     'Vec<TrieId>': Vec<TrieId>;
@@ -2998,6 +3004,7 @@ declare module '@polkadot/types/types/registry' {
     GrandpaEquivocationProof: GrandpaEquivocationProof;
     GrandpaEquivocationValue: GrandpaEquivocationValue;
     GrandpaPrevote: GrandpaPrevote;
+    GranularCanTransferResult: GranularCanTransferResult;
     GroupIndex: GroupIndex;
     H1024: H1024;
     H128: H128;
@@ -3147,7 +3154,6 @@ declare module '@polkadot/types/types/registry' {
     OffChainSignature: OffChainSignature;
     OffenceDetails: OffenceDetails;
     Offender: Offender;
-    OfflineSlashingParams: OfflineSlashingParams;
     OpaqueCall: OpaqueCall;
     OpaqueMultiaddr: OpaqueMultiaddr;
     OpaqueNetworkState: OpaqueNetworkState;
@@ -3213,6 +3219,7 @@ declare module '@polkadot/types/types/registry' {
     PortfolioKind: PortfolioKind;
     PortfolioName: PortfolioName;
     PortfolioNumber: PortfolioNumber;
+    PortfolioValidityResult: PortfolioValidityResult;
     PosRatio: PosRatio;
     PreAuthorizedKeyInfo: PreAuthorizedKeyInfo;
     Precommits: Precommits;
@@ -3419,6 +3426,7 @@ declare module '@polkadot/types/types/registry' {
     TransactionPriority: TransactionPriority;
     TransactionValidityError: TransactionValidityError;
     TransferManager: TransferManager;
+    TransferManagerResult: TransferManagerResult;
     TransientValidationData: TransientValidationData;
     TreasuryProposal: TreasuryProposal;
     TrieId: TrieId;

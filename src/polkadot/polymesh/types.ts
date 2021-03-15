@@ -686,6 +686,9 @@ export interface CountryCode extends Enum {
   readonly isYe: boolean;
   readonly isZm: boolean;
   readonly isZw: boolean;
+  readonly isBq: boolean;
+  readonly isCw: boolean;
+  readonly isSx: boolean;
 }
 
 /** @name DepositInfo */
@@ -833,6 +836,23 @@ export interface FundraiserTier extends Struct {
   readonly total: Balance;
   readonly price: Balance;
   readonly remaining: Balance;
+}
+
+/** @name GranularCanTransferResult */
+export interface GranularCanTransferResult extends Struct {
+  readonly invalid_granularity: bool;
+  readonly self_transfer: bool;
+  readonly invalid_receiver_cdd: bool;
+  readonly invalid_sender_cdd: bool;
+  readonly missing_scope_claim: bool;
+  readonly receiver_custodian_error: bool;
+  readonly sender_custodian_error: bool;
+  readonly sender_insufficient_balance: bool;
+  readonly portfolio_validity_result: PortfolioValidityResult;
+  readonly asset_frozen: bool;
+  readonly statistics_result: Vec<TransferManagerResult>;
+  readonly compliance_result: AssetComplianceResult;
+  readonly result: bool;
 }
 
 /** @name HandledTxStatus */
@@ -1019,13 +1039,6 @@ export interface OffChainSignature extends Enum {
   readonly asEcdsa: H512;
 }
 
-/** @name OfflineSlashingParams */
-export interface OfflineSlashingParams extends Struct {
-  readonly max_offline_percent: u32;
-  readonly constant: u32;
-  readonly max_slash_percent: u32;
-}
-
 /** @name PalletName */
 export interface PalletName extends Text {}
 
@@ -1115,6 +1128,15 @@ export interface PortfolioName extends Text {}
 
 /** @name PortfolioNumber */
 export interface PortfolioNumber extends u64 {}
+
+/** @name PortfolioValidityResult */
+export interface PortfolioValidityResult extends Struct {
+  readonly receiver_is_same_portfolio: bool;
+  readonly sender_portfolio_does_not_exist: bool;
+  readonly receiver_portfolio_does_not_exist: bool;
+  readonly sender_insufficient_balance: bool;
+  readonly result: bool;
+}
 
 /** @name PosRatio */
 export interface PosRatio extends ITuple<[u32, u32]> {}
@@ -1460,6 +1482,12 @@ export interface TransferManager extends Enum {
   readonly asCountTransferManager: Counter;
   readonly isPercentageTransferManager: boolean;
   readonly asPercentageTransferManager: Percentage;
+}
+
+/** @name TransferManagerResult */
+export interface TransferManagerResult extends Struct {
+  readonly tm: TransferManager;
+  readonly result: bool;
 }
 
 /** @name TrustedFor */
