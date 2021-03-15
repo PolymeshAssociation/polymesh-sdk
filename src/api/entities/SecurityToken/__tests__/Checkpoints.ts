@@ -9,6 +9,7 @@ import {
   createCheckpoint,
   createCheckpointSchedule,
   Namespace,
+  removeCheckpointSchedule,
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -108,6 +109,28 @@ describe('Checkpoints class', () => {
     });
   });
 
+  describe('method: removeSchedule', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const args = {
+        schedule: new BigNumber(1),
+      };
+
+      sinon
+        .stub(removeCheckpointSchedule, 'prepare')
+        .withArgs({ ticker, ...args }, context)
+        .resolves(expectedQueue);
+
+      const queue = await checkpoints.removeSchedule(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: get', () => {
     afterAll(() => {
       sinon.restore();
@@ -129,9 +152,9 @@ describe('Checkpoints class', () => {
 
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
 
-      const { data } = await checkpoints.get();
+      const result = await checkpoints.get();
 
-      expect(data).toEqual(
+      expect(result).toEqual(
         timestamps.slice(0, -1).map((timestamp, index) => ({
           checkpoint: entityMockUtils.getCheckpointInstance({ id: new BigNumber(ids[index]) }),
           createdAt: new Date(timestamp),
