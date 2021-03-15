@@ -47,6 +47,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       InsufficientBalance: AugmentedError<ApiType>;
       /**
+       * Some `AssetIdentifier` was invalid.
+       **/
+      InvalidAssetIdentifier: AugmentedError<ApiType>;
+      /**
        * An invalid Ethereum `EcdsaSignature`.
        **/
       InvalidEthereumSignature: AugmentedError<ApiType>;
@@ -386,10 +390,6 @@ declare module '@polkadot/api/types/errors' {
        * Distribution had not expired yet, or there's no expiry date.
        **/
       NotExpired: AugmentedError<ApiType>;
-      /**
-       * Start-of-payment date is in the past, since it is strictly before now.
-       **/
-      NowAfterPayment: AugmentedError<ApiType>;
     };
     cddServiceProviders: {
       /**
@@ -501,16 +501,6 @@ declare module '@polkadot/api/types/errors' {
        **/
       Unauthorized: AugmentedError<ApiType>;
     };
-    confidential: {
-      /**
-       *
-       **/
-      InvalidRangeProof: AugmentedError<ApiType>;
-      /**
-       *
-       **/
-      MissingRangeProof: AugmentedError<ApiType>;
-    };
     contracts: {
       /**
        * When instantiation of the template is already frozen.
@@ -532,6 +522,10 @@ declare module '@polkadot/api/types/errors' {
        * Given identityId is not CDD.
        **/
       NewOwnerIsNotCDD: AugmentedError<ApiType>;
+      /**
+       * `put_code` extrinsic is disabled. See `set_put_code_flag` extrinsic.
+       **/
+      PutCodeIsNotAllowed: AugmentedError<ApiType>;
       /**
        * Smart extension template not exist in the storage.
        **/
@@ -842,14 +836,6 @@ declare module '@polkadot/api/types/errors' {
        * Non existent public key.
        **/
       InvalidKey: AugmentedError<ApiType>;
-      /**
-       * Invalid slashing params
-       **/
-      InvalidSlashingParam: AugmentedError<ApiType>;
-      /**
-       * Unauthorized origin
-       **/
-      NotAuthorised: AugmentedError<ApiType>;
     };
     multiSig: {
       /**

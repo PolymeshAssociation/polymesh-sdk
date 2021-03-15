@@ -85,6 +85,7 @@ import type {
   CddStatus,
   DidRecords,
   DidStatus,
+  GranularCanTransferResult,
   HistoricalVotingByAddress,
   HistoricalVotingById,
   IdentityId,
@@ -113,6 +114,20 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
           value: Balance | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<CanTransferResult>
+      >;
+      /**
+       * Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.
+       **/
+      canTransferGranular: AugmentedRpc<
+        (
+          from_custodian: Option<IdentityId> | null | object | string | Uint8Array,
+          from_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          to_custodian: Option<IdentityId> | null | object | string | Uint8Array,
+          to_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          ticker: Ticker | string | Uint8Array,
+          value: Balance | AnyNumber | Uint8Array,
+          blockHash?: Hash | string | Uint8Array
+        ) => Observable<GranularCanTransferResult>
       >;
     };
     author: {
