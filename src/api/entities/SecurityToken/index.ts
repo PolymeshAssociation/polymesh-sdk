@@ -3,6 +3,8 @@ import { Counter, SecurityToken as MeshSecurityToken } from 'polymesh-types/type
 
 import {
   Context,
+  controllerTransfer,
+  ControllerTransferParams,
   Entity,
   Identity,
   modifyPrimaryIssuanceAgent,
@@ -131,6 +133,10 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       context
     );
     this.redeem = createProcedureMethod(args => [redeemToken, { ticker, ...args }], context);
+    this.controllerTransfer = createProcedureMethod(
+      args => [controllerTransfer, { ticker, ...args }],
+      context
+    );
   }
 
   /**
@@ -440,4 +446,15 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
     return u64ToBigNumber(result).toNumber();
   }
+
+  /**
+   * Force a transfer from a given Portfolio to the PIA’s default Portfolio
+   *
+   * @param args.originPortfolio - portfolio (or portfolio ID) from which tokens will be transferred
+   * @param args.amount - amount of tokens to transfer
+   *
+   * @note required role:
+   *   - Security Token Primary Issuance Agent
+   */
+  public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
 }

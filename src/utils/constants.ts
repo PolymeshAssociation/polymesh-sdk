@@ -20,11 +20,12 @@ export const MAX_BATCH_ELEMENTS: Record<string, number> = {
 };
 export const DEFAULT_MAX_BATCH_ELEMENTS = 20;
 export const IGNORE_CHECKSUM = true;
-export const SS58_FORMAT = 42;
+export const DEFAULT_SS58_FORMAT = 42;
 export const MAX_CONCURRENT_REQUESTS = 200;
 export const TREASURY_MODULE_ADDRESS = 'modlpm/trsry';
 export const DEFAULT_GQL_PAGE_SIZE = 25;
 export const MAX_TRANSFER_MANAGERS = 3;
+export const MAX_COMPLIANCE_REQUIREMENT_CONDITIONS = 50;
 
 const didTypes = ['IdentityId'];
 

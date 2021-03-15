@@ -1,17 +1,25 @@
+import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
+  createCheckpointResolver,
   getAuthorization,
   Params,
   prepareCreateCheckpoint,
 } from '~/api/procedures/createCheckpoint';
-import { Context, SecurityToken } from '~/internal';
+import { Checkpoint, Context, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
+jest.mock(
+  '~/api/entities/Checkpoint',
+  require('~/testUtils/mocks/entities').mockCheckpointModule('~/api/entities/Checkpoint')
+);
 jest.mock(
   '~/api/entities/SecurityToken',
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
@@ -22,6 +30,7 @@ describe('createCheckpoint procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let ticker: string;
   let rawTicker: Ticker;
+  let checkpoint: PostTransactionValue<Checkpoint>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -30,12 +39,13 @@ describe('createCheckpoint procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
+    checkpoint = ('checkpoint' as unknown) as PostTransactionValue<Checkpoint>;
   });
 
   let addTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([checkpoint]);
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
@@ -53,7 +63,7 @@ describe('createCheckpoint procedure', () => {
   });
 
   test('should add a create checkpoint transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('checkpoint', 'createCheckpoint');
 
@@ -61,14 +71,43 @@ describe('createCheckpoint procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      sinon.match({ resolvers: sinon.match.array }),
+      rawTicker
+    );
 
-    expect(ticker).toBe(result.ticker);
+    expect(result).toBe(checkpoint);
+  });
+
+  describe('createCheckpointResolver', () => {
+    const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
+    const id = new BigNumber(1);
+
+    beforeAll(() => {
+      entityMockUtils.initMocks({ checkpointOptions: { ticker, id } });
+    });
+
+    beforeEach(() => {
+      findEventRecordStub.returns(dsMockUtils.createMockEventRecord(['someDid', ticker, id]));
+    });
+
+    afterEach(() => {
+      findEventRecordStub.reset();
+    });
+
+    test('should return the new Checkpoint', () => {
+      const result = createCheckpointResolver(ticker, mockContext)({} as ISubmittableResult);
+
+      expect(result.ticker).toBe(ticker);
+      expect(result.id).toEqual(id);
+    });
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker });
