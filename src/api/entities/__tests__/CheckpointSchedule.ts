@@ -128,7 +128,7 @@ describe('CheckpointSchedule class', () => {
 
   describe('method: exists', () => {
     test('should return whether the schedule exists', async () => {
-      const schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
+      let schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
 
       dsMockUtils.createQueryStub('checkpoint', 'schedules', {
         returnValue: [
@@ -140,9 +140,18 @@ describe('CheckpointSchedule class', () => {
 
       sinon.stub(utilsConversionModule, 'u64ToBigNumber').returns(id);
 
-      const result = await schedule.exists();
+      let result = await schedule.exists();
 
       expect(result).toBe(true);
+
+      schedule = new CheckpointSchedule(
+        { id: new BigNumber(2), ticker, start, period, remaining },
+        context
+      );
+
+      result = await schedule.exists();
+
+      expect(result).toBe(false);
     });
   });
 });
