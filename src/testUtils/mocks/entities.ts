@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
-import { ScheduleDetails } from '~/api/entities/CheckpointSchedule/types';
+import { ScheduleWithDetails } from '~/api/entities/CheckpointSchedule/types';
 import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
 import {
   Account,
@@ -207,7 +207,7 @@ interface CheckpointScheduleOptions {
   period?: CalendarPeriod | null;
   isInfinite?: boolean;
   expiryDate?: Date | null;
-  details?: Partial<ScheduleDetails>;
+  details?: Partial<ScheduleWithDetails>;
 }
 
 let identityConstructorStub: SinonStub;
@@ -2124,7 +2124,9 @@ export function getCheckpointScheduleConstructorStub(): SinonStub {
  * @hidden
  * Retrieve the stub of the `CheckpointSchedule.details` method
  */
-export function getCheckpointScheduleDetailsStub(details?: Partial<ScheduleDetails>): SinonStub {
+export function getCheckpointScheduleDetailsStub(
+  details?: Partial<ScheduleWithDetails>
+): SinonStub {
   if (details) {
     return checkpointScheduleDetailsStub.resolves({
       ...defaultCheckpointScheduleOptions.details,

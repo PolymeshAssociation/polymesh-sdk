@@ -81,7 +81,6 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { ScheduleParams } from '~/api/entities/CheckpointSchedule/types';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 // import { ProposalDetails } from '~/api/types';
 import {
@@ -133,6 +132,7 @@ import {
   PrimaryIssuanceAgentCondition,
   Requirement,
   RequirementCompliance,
+  ScheduleParams,
   Scope,
   ScopeType,
   SecondaryKey,

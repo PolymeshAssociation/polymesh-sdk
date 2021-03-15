@@ -205,15 +205,6 @@ describe('Checkpoints class', () => {
         ],
       });
 
-      entityMockUtils.configureMocks({
-        checkpointScheduleOptions: {
-          details: {
-            remainingCheckpoints: remaining,
-            nextCheckpointDate,
-          },
-        },
-      });
-
       const result = await checkpoints.getSchedules();
 
       expect(result[0].details).toEqual({

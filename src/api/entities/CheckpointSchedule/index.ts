@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
-import { ScheduleDetails } from '~/api/entities/CheckpointSchedule/types';
+import { ScheduleWithDetails } from '~/api/entities/CheckpointSchedule/types';
 import { Context, Entity } from '~/internal';
 import { CalendarPeriod } from '~/types';
 import { momentToDate, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
@@ -55,11 +55,6 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
   public start: Date;
 
   /**
-   * if true, the Schedule never expires
-   */
-  public isInfinite: boolean;
-
-  /**
    * date at which the last Checkpoint will be created with this Schedule.
    *   A null value means that this Schedule never expires
    */
@@ -82,13 +77,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
     this.period = noPeriod ? null : period;
     this.start = start;
 
-    /*
-      if both remaining and period.amount are 0, remaining is ignored and the Schedule
-      is treated as a one-shot
-    */
-    this.isInfinite = remaining === 0 && !noPeriod;
-
-    if (this.isInfinite) {
+    if (remaining === 0 && !noPeriod) {
       this.expiryDate = null;
     } else if (!this.period) {
       this.expiryDate = start;
@@ -104,7 +93,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve information specific to this Schedule
    */
-  public async details(): Promise<ScheduleDetails> {
+  public async details(): Promise<ScheduleWithDetails> {
     const {
       context: {
         polymeshApi: {

@@ -187,7 +187,6 @@ describe('createCheckpointSchedule procedure', () => {
       expect(result.id).toEqual(id);
       expect(result.start).toEqual(start);
       expect(result.period).toEqual(period);
-      expect(result.isInfinite).toBe(false);
     });
   });
 

@@ -13,7 +13,6 @@ jest.mock(
 
 describe('CheckpointSchedule class', () => {
   let context: Context;
-  let checkpointSchedule: CheckpointSchedule;
 
   let id: BigNumber;
   let ticker: string;
@@ -39,10 +38,6 @@ describe('CheckpointSchedule class', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    checkpointSchedule = new CheckpointSchedule(
-      { id, ticker, period, start, remaining, nextCheckpointDate },
-      context
-    );
   });
 
   afterEach(() => {
@@ -70,7 +65,6 @@ describe('CheckpointSchedule class', () => {
       expect(schedule.id).toEqual(id);
       expect(schedule.period).toEqual(period);
       expect(schedule.start).toEqual(start);
-      expect(schedule.isInfinite).toEqual(true);
       expect(schedule.expiryDate).toBeNull();
 
       schedule = new CheckpointSchedule(
@@ -121,6 +115,10 @@ describe('CheckpointSchedule class', () => {
   describe('method: details', () => {
     test('should return the Schedule details ', async () => {
       const rawRemaining = new BigNumber(2);
+      const checkpointSchedule = new CheckpointSchedule(
+        { id, ticker, period, start, remaining, nextCheckpointDate },
+        context
+      );
 
       sinon
         .stub(utilsConversionModule, 'stringToTicker')

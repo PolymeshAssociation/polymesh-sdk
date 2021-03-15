@@ -40,18 +40,12 @@ export const createCheckpointScheduleResolver = (ticker: string, context: Contex
   const eventRecord = findEventRecord(receipt, 'checkpoint', 'CheckpointCreated');
   const data = eventRecord.event.data;
 
-  const { id, start, period, remaining, nextCheckpointDate } = storedScheduleToScheduleParams(
-    data[2] as StoredSchedule
-  );
+  const scheduleParams = storedScheduleToScheduleParams(data[2] as StoredSchedule);
 
   return new CheckpointSchedule(
     {
       ticker,
-      id,
-      start,
-      period,
-      remaining,
-      nextCheckpointDate,
+      ...scheduleParams,
     },
     context
   );
