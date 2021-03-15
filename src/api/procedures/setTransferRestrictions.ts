@@ -199,6 +199,13 @@ export async function prepareStorage(
   const toAddExemptionPromises: [TransferRestriction, Promise<string[]>][] = [];
   let occupiedSlots = currentCountRestrictions.length + currentPercentageRestrictions.length;
 
+  /**
+   * @hidden
+   *
+   * Merge an array of Identity IDs and Scope IDs into an array of only Scope IDs
+   *
+   * @note fetches missing scope IDs from the chain
+   */
   const getScopeIds = async (
     identities: (string | Identity)[],
     scopeIds: string[]
@@ -284,14 +291,26 @@ export async function prepareStorage(
     const currentExemption = currentExemptions.find(([res]) => isEqual(res, restriction));
     const currentExempted = currentExemption?.[1] || [];
 
+    // scope IDs that weren't exempted before for that restriction
     const newExempted = difference(exempted, currentExempted);
     if (newExempted.length) {
       newExemptions.push(tuple(restriction, newExempted));
     }
 
+    // scope IDs that will no longer be exempted for that restriction
     const toRemoveExempted = difference(currentExempted, exempted);
     if (toRemoveExempted.length) {
       toRemoveExemptions.push(tuple(restriction, toRemoveExempted));
+    }
+  });
+
+  // also remove all exemptions of the restrictions that will be removed
+  toRemoveRestrictions.forEach(restriction => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const [, currentExempted] = currentExemptions.find(([res]) => isEqual(res, restriction))!;
+
+    if (currentExempted.length) {
+      toRemoveExemptions.push(tuple(restriction, currentExempted));
     }
   });
 

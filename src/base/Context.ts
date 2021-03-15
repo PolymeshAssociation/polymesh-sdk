@@ -139,7 +139,15 @@ export class Context {
       accountMnemonic,
     } = params;
 
-    let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
+    let ss58Format: number;
+    const { ss58Format: rawSs58Format } = await polymeshApi.rpc.system.properties();
+    if (rawSs58Format.isSome) {
+      ss58Format = u8ToBigNumber(rawSs58Format.unwrap()).toNumber();
+    } else {
+      ss58Format = DEFAULT_SS58_FORMAT;
+    }
+
+    let keyring: CommonKeyring = new Keyring({ type: 'sr25519', ss58Format });
     let currentPair: KeyringPair | undefined;
     let context: Context;
 
@@ -174,10 +182,7 @@ export class Context {
 
     context.isArchiveNode = await context.isCurrentNodeArchive();
 
-    const { ss58Format: rawSs58Format } = await polymeshApi.rpc.system.properties();
-    if (rawSs58Format.isSome) {
-      context.ss58Format = u8ToBigNumber(rawSs58Format.unwrap()).toNumber();
-    }
+    context.ss58Format = ss58Format;
 
     return context;
   }
