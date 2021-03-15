@@ -1,8 +1,11 @@
 import BigNumber from 'bignumber.js';
+import { StoredSchedule } from 'polymesh-types/types';
+import sinon from 'sinon';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { CalendarPeriod, CalendarUnit } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -120,6 +123,26 @@ describe('CheckpointSchedule class', () => {
       result = await schedule.expiryDate();
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('method: exists', () => {
+    test('should return whether the schedule exists', async () => {
+      const schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
+
+      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+        returnValue: [
+          dsMockUtils.createMockStoredSchedule({
+            id: dsMockUtils.createMockU64(id.toNumber()),
+          } as StoredSchedule),
+        ],
+      });
+
+      sinon.stub(utilsConversionModule, 'u64ToBigNumber').returns(id);
+
+      const result = await schedule.exists();
+
+      expect(result).toBe(true);
     });
   });
 });
