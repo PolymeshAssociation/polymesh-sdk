@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
-import { Checkpoint, Context, Entity } from '~/internal';
-import { CalendarPeriod } from '~/types';
+import { Checkpoint, Context, Entity, PolymeshError } from '~/internal';
+import { CalendarPeriod, ErrorCode } from '~/types';
 import {
   momentToDate,
   numberToU64,
@@ -135,6 +135,15 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
       ticker,
       id,
     } = this;
+
+    const exists = await this.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Schedule doesn't exist",
+      });
+    }
 
     const result = await checkpoint.schedulePoints(
       stringToTicker(ticker, context),
