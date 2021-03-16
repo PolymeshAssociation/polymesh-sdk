@@ -1,8 +1,10 @@
 import BigNumber from 'bignumber.js';
+import sinon from 'sinon';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { CalendarPeriod, CalendarUnit } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -120,6 +122,37 @@ describe('CheckpointSchedule class', () => {
       result = await schedule.expiryDate();
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('method: getCheckpoints', () => {
+    let u64ToBigNumberStub: sinon.SinonStub;
+
+    beforeAll(() => {
+      u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
+    });
+
+    test('should return all the checkpoints created by the schedule', async () => {
+      const schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
+      const firstId = new BigNumber(1);
+      const secondId = new BigNumber(2);
+      const rawFirstId = dsMockUtils.createMockU64(firstId.toNumber());
+      const rawSecondId = dsMockUtils.createMockU64(secondId.toNumber());
+
+      sinon.stub(utilsConversionModule, 'stringToTicker');
+      sinon.stub(utilsConversionModule, 'numberToU64');
+
+      dsMockUtils.createQueryStub('checkpoint', 'schedulePoints', {
+        returnValue: [rawFirstId, rawSecondId],
+      });
+
+      u64ToBigNumberStub.withArgs(rawFirstId).returns(firstId);
+      u64ToBigNumberStub.withArgs(rawSecondId).returns(secondId);
+
+      const result = await schedule.getCheckpoints();
+
+      expect(result[0].id).toEqual(firstId);
+      expect(result[1].id).toEqual(secondId);
     });
   });
 });

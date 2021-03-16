@@ -1,9 +1,15 @@
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
-import { Context, Entity } from '~/internal';
+import { Checkpoint, Context, Entity } from '~/internal';
 import { CalendarPeriod } from '~/types';
-import { momentToDate, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import {
+  momentToDate,
+  numberToU64,
+  stringToTicker,
+  u32ToBigNumber,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -113,5 +119,28 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
     return dayjs(nextCheckpointDate)
       .add(amount * (remaining - 1), unit)
       .toDate();
+  }
+
+  /**
+   * Retrieve all checkpoints created by this schedule
+   */
+  public async getCheckpoints(): Promise<Checkpoint[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { checkpoint },
+        },
+      },
+      context,
+      ticker,
+      id,
+    } = this;
+
+    const result = await checkpoint.schedulePoints(
+      stringToTicker(ticker, context),
+      numberToU64(id, context)
+    );
+
+    return result.map(rawId => new Checkpoint({ id: u64ToBigNumber(rawId), ticker }, context));
   }
 }
