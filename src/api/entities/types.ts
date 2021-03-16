@@ -3,6 +3,7 @@
 import {
   Account as AccountClass,
   AuthorizationRequest as AuthorizationRequestClass,
+  CheckpointSchedule as CheckpointScheduleClass,
   CurrentAccount as CurrentAccountClass,
   CurrentIdentity as CurrentIdentityClass,
   DefaultPortfolio as DefaultPortfolioClass,
@@ -32,6 +33,7 @@ export type DefaultPortfolio = InstanceType<typeof DefaultPortfolioClass>;
 export type NumberedPortfolio = InstanceType<typeof NumberedPortfolioClass>;
 export type DefaultTrustedClaimIssuer = InstanceType<typeof DefaultTrustedClaimIssuerClass>;
 export type Sto = InstanceType<typeof StoClass>;
+export type CheckpointSchedule = InstanceType<typeof CheckpointScheduleClass>;
 // export type Proposal = InstanceType<typeof ProposalClass>;
 
 export * from './TickerReservation/types';
@@ -40,4 +42,5 @@ export * from './Venue/types';
 export * from './Instruction/types';
 export * from './Portfolio/types';
 export * from './Sto/types';
+export * from './CheckpointSchedule/types';
 // export * from './Proposal/types';

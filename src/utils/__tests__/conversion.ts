@@ -156,7 +156,7 @@ import {
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
-  scheduleDetailsToScheduleSpec,
+  scheduleSpecToMeshScheduleSpec,
   scopeIdToString,
   scopeToMeshScope,
   scopeToMiddlewareScope,
@@ -4924,7 +4924,7 @@ describe('calendarPeriodToMeshCalendarPeriod and meshCalendarPeriodToCalendarPer
   });
 });
 
-describe('scheduleDetailsToScheduleSpec', () => {
+describe('scheduleSpecToMeshScheduleSpec', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -4937,7 +4937,7 @@ describe('scheduleDetailsToScheduleSpec', () => {
     dsMockUtils.cleanup();
   });
 
-  test('scheduleDetailsToScheduleSpec should convert a ScheduleDetails object to a polkadot ScheduleSpec object', () => {
+  test('scheduleSpecToMeshScheduleSpec should convert a ScheduleDetails object to a polkadot ScheduleSpec object', () => {
     const start = new Date('10/14/1987');
     const amount = 1;
     const period = { unit: CalendarUnit.Month, amount };
@@ -4986,11 +4986,11 @@ describe('scheduleDetailsToScheduleSpec', () => {
       })
       .returns(fakeResult);
 
-    let result = scheduleDetailsToScheduleSpec(value, context);
+    let result = scheduleSpecToMeshScheduleSpec(value, context);
 
     expect(result).toBe(fakeResult);
 
-    result = scheduleDetailsToScheduleSpec(
+    result = scheduleSpecToMeshScheduleSpec(
       { start: null, period: null, repetitions: null },
       context
     );

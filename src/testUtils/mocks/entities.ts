@@ -40,6 +40,7 @@ import {
   PercentageTransferRestriction,
   PortfolioBalance,
   ResultSet,
+  ScheduleDetails,
   SecondaryKey,
   SecurityTokenDetails,
   StoBalanceStatus,
@@ -206,6 +207,7 @@ interface CheckpointScheduleOptions {
   period?: CalendarPeriod | null;
   isInfinite?: boolean;
   expiryDate?: Date | null;
+  details?: Partial<ScheduleDetails>;
 }
 
 let identityConstructorStub: SinonStub;
@@ -270,7 +272,7 @@ let defaultPortfolioIsCustodiedByStub: SinonStub;
 let stoDetailsStub: SinonStub;
 let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
-let checkpointScheduleExpiryDateStub: SinonStub;
+let checkpointScheduleDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -657,6 +659,10 @@ const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
   },
   isInfinite: false,
   expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+  details: {
+    remainingCheckpoints: 1,
+    nextCheckpointDate: new Date('10/10/2030'),
+  },
 };
 let checkpointScheduleOptions = defaultCheckpointScheduleOptions;
 // NOTE uncomment in Governance v2 upgrade
@@ -1262,7 +1268,8 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
     start: opts.start,
     period: opts.period,
     isInfinite: opts.isInfinite,
-    expiryDate: checkpointScheduleExpiryDateStub.resolves(opts.expiryDate),
+    expiryDate: opts.expiryDate,
+    details: checkpointScheduleDetailsStub.resolves(opts.details),
   } as unknown) as MockCheckpointSchedule;
 
   Object.assign(mockInstanceContainer.checkpointSchedule, checkpointSchedule);
@@ -1279,7 +1286,7 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
  */
 function initCheckpointSchedule(opts?: CheckpointScheduleOptions): void {
   checkpointScheduleConstructorStub = sinon.stub();
-  checkpointScheduleExpiryDateStub = sinon.stub();
+  checkpointScheduleDetailsStub = sinon.stub();
 
   checkpointScheduleOptions = merge({}, defaultCheckpointScheduleOptions, opts);
 
@@ -2107,19 +2114,22 @@ export function getCheckpointScheduleInstance(
 
 /**
  * @hidden
- * Retrieve the stub of the `CheckpointSchedule.expiryDate` method
- */
-export function getCheckpointScheduleExpiryDateStub(expiryDate?: Date): SinonStub {
-  if (expiryDate) {
-    return checkpointScheduleExpiryDateStub.resolves(expiryDate);
-  }
-  return checkpointScheduleExpiryDateStub;
-}
-
-/**
- * @hidden
  * Retrieve the CheckpointSchedule constructor stub
  */
 export function getCheckpointScheduleConstructorStub(): SinonStub {
   return checkpointScheduleConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CheckpointSchedule.details` method
+ */
+export function getCheckpointScheduleDetailsStub(details?: Partial<ScheduleDetails>): SinonStub {
+  if (details) {
+    return checkpointScheduleDetailsStub.resolves({
+      ...defaultCheckpointScheduleOptions.details,
+      ...details,
+    });
+  }
+  return checkpointScheduleDetailsStub;
 }
