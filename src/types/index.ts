@@ -487,7 +487,7 @@ export interface MiddlewareConfig {
 
 export type CommonKeyring = Pick<
   Keyring,
-  'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri' | 'addFromMnemonic'
+  'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri' | 'addFromMnemonic' | 'setSS58Format'
 >;
 
 export interface UiKeyring {

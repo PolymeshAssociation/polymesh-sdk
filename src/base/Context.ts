@@ -153,6 +153,7 @@ export class Context {
 
     if (passedKeyring) {
       keyring = getCommonKeyring(passedKeyring);
+      keyring.setSS58Format(ss58Format);
       currentPair = keyring.getPairs()[0];
     } else if (accountSeed) {
       if (accountSeed.length !== 66) {
