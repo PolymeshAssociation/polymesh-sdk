@@ -22,6 +22,7 @@ describe('CheckpointSchedule class', () => {
   let remaining: number;
   let nextCheckpointDate: Date;
   let u64ToBigNumberStub: sinon.SinonStub;
+  let stringToTickerStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -37,6 +38,7 @@ describe('CheckpointSchedule class', () => {
     remaining = 11;
     nextCheckpointDate = new Date('10/14/2030');
     u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
   });
 
   beforeEach(() => {
@@ -125,9 +127,7 @@ describe('CheckpointSchedule class', () => {
       const rawScheduleId = dsMockUtils.createMockU64(id.toNumber());
 
       u64ToBigNumberStub.returns(id);
-      sinon
-        .stub(utilsConversionModule, 'stringToTicker')
-        .returns(dsMockUtils.createMockTicker(ticker));
+      stringToTickerStub.returns(dsMockUtils.createMockTicker(ticker));
       sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(rawRemaining);
       sinon.stub(utilsConversionModule, 'momentToDate').returns(nextCheckpointDate);
 
@@ -166,7 +166,6 @@ describe('CheckpointSchedule class', () => {
       const rawFirstId = dsMockUtils.createMockU64(firstId.toNumber());
       const rawSecondId = dsMockUtils.createMockU64(secondId.toNumber());
 
-      sinon.stub(utilsConversionModule, 'stringToTicker');
       sinon.stub(utilsConversionModule, 'numberToU64');
 
       dsMockUtils.createQueryStub('checkpoint', 'schedulePoints', {
