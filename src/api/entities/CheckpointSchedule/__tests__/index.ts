@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { StoredSchedule } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
@@ -20,6 +21,7 @@ describe('CheckpointSchedule class', () => {
   let start: Date;
   let remaining: number;
   let nextCheckpointDate: Date;
+  let u64ToBigNumberStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -34,6 +36,7 @@ describe('CheckpointSchedule class', () => {
     start = new Date('10/14/1987');
     remaining = 11;
     nextCheckpointDate = new Date('10/14/2030');
+    u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
   });
 
   beforeEach(() => {
@@ -120,10 +123,10 @@ describe('CheckpointSchedule class', () => {
         context
       );
 
+      u64ToBigNumberStub.returns(id);
       sinon
         .stub(utilsConversionModule, 'stringToTicker')
         .returns(dsMockUtils.createMockTicker(ticker));
-      sinon.stub(utilsConversionModule, 'u64ToBigNumber').returns(id);
       sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(rawRemaining);
       sinon.stub(utilsConversionModule, 'momentToDate').returns(nextCheckpointDate);
 
@@ -148,6 +151,38 @@ describe('CheckpointSchedule class', () => {
 
       expect(result.remainingCheckpoints).toEqual(rawRemaining.toNumber());
       expect(result.nextCheckpointDate).toEqual(nextCheckpointDate);
+    });
+  });
+
+  describe('method: exists', () => {
+    test('should return whether the schedule exists', async () => {
+      let schedule = new CheckpointSchedule(
+        { id, ticker, start, period, remaining, nextCheckpointDate },
+        context
+      );
+
+      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+        returnValue: [
+          dsMockUtils.createMockStoredSchedule({
+            id: dsMockUtils.createMockU64(id.toNumber()),
+          } as StoredSchedule),
+        ],
+      });
+
+      u64ToBigNumberStub.returns(id);
+
+      let result = await schedule.exists();
+
+      expect(result).toBe(true);
+
+      schedule = new CheckpointSchedule(
+        { id: new BigNumber(2), ticker, start, period, remaining, nextCheckpointDate },
+        context
+      );
+
+      result = await schedule.exists();
+
+      expect(result).toBe(false);
     });
   });
 });
