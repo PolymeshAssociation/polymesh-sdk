@@ -9,6 +9,7 @@ import {
   CurrentIdentity as CurrentIdentityClass,
   DefaultPortfolio as DefaultPortfolioClass,
   DefaultTrustedClaimIssuer as DefaultTrustedClaimIssuerClass,
+  DividendDistribution as DividendDistributionClass,
   Identity as IdentityClass,
   Instruction as InstructionClass,
   NumberedPortfolio as NumberedPortfolioClass,
@@ -36,6 +37,7 @@ export type DefaultTrustedClaimIssuer = InstanceType<typeof DefaultTrustedClaimI
 export type Sto = InstanceType<typeof StoClass>;
 export type CheckpointSchedule = InstanceType<typeof CheckpointScheduleClass>;
 export type CorporateAction = InstanceType<typeof CorporateActionClass>;
+export type DividendDistribution = InstanceType<typeof DividendDistributionClass>;
 // export type Proposal = InstanceType<typeof ProposalClass>;
 
 export * from './TickerReservation/types';
@@ -46,4 +48,5 @@ export * from './Portfolio/types';
 export * from './Sto/types';
 export * from './CheckpointSchedule/types';
 export * from './CorporateAction/types';
+export * from './DividendDistribution/types';
 // export * from './Proposal/types';
