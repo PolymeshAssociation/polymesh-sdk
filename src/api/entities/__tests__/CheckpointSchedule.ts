@@ -20,6 +20,7 @@ describe('CheckpointSchedule class', () => {
   let period: CalendarPeriod;
   let start: Date;
   let remaining: number;
+  let u64ToBigNumberStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -33,6 +34,7 @@ describe('CheckpointSchedule class', () => {
     };
     start = new Date('10/14/1987');
     remaining = 11;
+    u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
   });
 
   beforeEach(() => {
@@ -90,6 +92,9 @@ describe('CheckpointSchedule class', () => {
     test("should return the Schedule's expiry date", async () => {
       const schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
       const nextCheckpointDate = new Date('10/14/2021');
+      const rawScheduleId = dsMockUtils.createMockU64(id.toNumber());
+
+      u64ToBigNumberStub.withArgs(rawScheduleId).returns(id);
 
       dsMockUtils.createQueryStub('checkpoint', 'schedules', {
         returnValue: [
@@ -101,7 +106,7 @@ describe('CheckpointSchedule class', () => {
                 amount: dsMockUtils.createMockU64(1),
               }),
             }),
-            id: dsMockUtils.createMockU64(id.toNumber()),
+            id: rawScheduleId,
             at: dsMockUtils.createMockMoment(nextCheckpointDate.getTime()),
             remaining: dsMockUtils.createMockU32(2),
           }),
@@ -127,12 +132,6 @@ describe('CheckpointSchedule class', () => {
   });
 
   describe('method: getCheckpoints', () => {
-    let u64ToBigNumberStub: sinon.SinonStub;
-
-    beforeAll(() => {
-      u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
-    });
-
     test('should return all the checkpoints created by the schedule', async () => {
       const schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
       const firstId = new BigNumber(1);
@@ -169,7 +168,7 @@ describe('CheckpointSchedule class', () => {
         ],
       });
 
-      sinon.stub(utilsConversionModule, 'u64ToBigNumber').returns(id);
+      u64ToBigNumberStub.returns(id);
 
       let result = await schedule.exists();
 
