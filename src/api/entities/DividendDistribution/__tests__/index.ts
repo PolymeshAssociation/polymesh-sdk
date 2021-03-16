@@ -26,7 +26,7 @@ describe('DividendDistribution class', () => {
     entityMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(DividendDistribution.prototype instanceof Entity).toBe(true);
   });
 

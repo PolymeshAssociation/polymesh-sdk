@@ -65,7 +65,7 @@ describe('Portfolio class', () => {
     entityMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(Portfolio.prototype instanceof Entity).toBe(true);
   });
 

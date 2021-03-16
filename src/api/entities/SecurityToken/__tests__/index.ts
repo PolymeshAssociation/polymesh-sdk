@@ -57,7 +57,7 @@ describe('SecurityToken class', () => {
     entityMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(SecurityToken.prototype instanceof Entity).toBe(true);
   });
 
