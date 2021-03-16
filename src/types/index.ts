@@ -10,6 +10,7 @@ import { CountryCode } from '~/generated/types';
 import {
   Account,
   Checkpoint,
+  CheckpointSchedule,
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
@@ -17,6 +18,7 @@ import {
   SecurityToken,
   Sto,
 } from '~/internal';
+import { ScheduleDetails } from '~/types';
 import { PortfolioId } from '~/types/internal';
 
 export * from '~/generated/types';
@@ -787,6 +789,11 @@ export enum CalendarUnit {
 export interface CalendarPeriod {
   unit: CalendarUnit;
   amount: number;
+}
+
+export interface ScheduleWithDetails {
+  schedule: CheckpointSchedule;
+  details: ScheduleDetails;
 }
 
 export { TxTags, TxTag };

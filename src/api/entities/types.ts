@@ -44,5 +44,6 @@ export * from './Venue/types';
 export * from './Instruction/types';
 export * from './Portfolio/types';
 export * from './Sto/types';
+export * from './CheckpointSchedule/types';
 export * from './CorporateAction/types';
 // export * from './Proposal/types';

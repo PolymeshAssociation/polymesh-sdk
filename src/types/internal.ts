@@ -192,7 +192,7 @@ export interface TransferRestriction {
   value: BigNumber;
 }
 
-export interface ScheduleDetails {
+export interface ScheduleSpec {
   start: Date | null;
   period: CalendarPeriod | null;
   repetitions: number | null;
