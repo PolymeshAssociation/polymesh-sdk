@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { StoredSchedule } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
@@ -153,6 +154,35 @@ describe('CheckpointSchedule class', () => {
 
       expect(result[0].id).toEqual(firstId);
       expect(result[1].id).toEqual(secondId);
+    });
+  });
+
+  describe('method: exists', () => {
+    test('should return whether the schedule exists', async () => {
+      let schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
+
+      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+        returnValue: [
+          dsMockUtils.createMockStoredSchedule({
+            id: dsMockUtils.createMockU64(id.toNumber()),
+          } as StoredSchedule),
+        ],
+      });
+
+      sinon.stub(utilsConversionModule, 'u64ToBigNumber').returns(id);
+
+      let result = await schedule.exists();
+
+      expect(result).toBe(true);
+
+      schedule = new CheckpointSchedule(
+        { id: new BigNumber(2), ticker, start, period, remaining },
+        context
+      );
+
+      result = await schedule.exists();
+
+      expect(result).toBe(false);
     });
   });
 });

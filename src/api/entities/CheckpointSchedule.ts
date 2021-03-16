@@ -143,4 +143,26 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
 
     return result.map(rawId => new Checkpoint({ id: u64ToBigNumber(rawId), ticker }, context));
   }
+
+  /**
+   * Retrieve whether the Checkpoint Schedule still exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { checkpoint },
+        },
+      },
+      context,
+      ticker,
+      id,
+    } = this;
+
+    const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
+
+    const scheduleIds = rawSchedules.map(({ id: scheduleId }) => u64ToBigNumber(scheduleId));
+
+    return scheduleIds.includes(id);
+  }
 }
