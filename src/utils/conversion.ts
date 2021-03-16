@@ -64,12 +64,13 @@ import {
   PosRatio,
   PriceTier,
   ProtocolOp,
-  ScheduleSpec,
+  ScheduleSpec as MeshScheduleSpec,
   Scope as MeshScope,
   ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SettlementType,
   Signatory,
+  StoredSchedule,
   TargetIdentity,
   Ticker,
   TransferManager,
@@ -131,6 +132,7 @@ import {
   PrimaryIssuanceAgentCondition,
   Requirement,
   RequirementCompliance,
+  ScheduleParams,
   Scope,
   ScopeType,
   SecondaryKey,
@@ -156,7 +158,7 @@ import {
   ExtrinsicIdentifier,
   PolymeshTx,
   PortfolioId,
-  ScheduleDetails,
+  ScheduleSpec,
   SignerType,
   SignerValue,
   TransferRestriction,
@@ -2604,10 +2606,10 @@ export function meshCalendarPeriodToCalendarPeriod(period: MeshCalendarPeriod): 
 /**
  * @hidden
  */
-export function scheduleDetailsToScheduleSpec(
-  details: ScheduleDetails,
+export function scheduleSpecToMeshScheduleSpec(
+  details: ScheduleSpec,
   context: Context
-): ScheduleSpec {
+): MeshScheduleSpec {
   const { start, period, repetitions } = details;
 
   return context.polymeshApi.createType('ScheduleSpec', {
@@ -2618,4 +2620,23 @@ export function scheduleDetailsToScheduleSpec(
     ),
     remaining: numberToU64(repetitions || 0, context),
   });
+}
+
+/**
+ * @hidden
+ */
+export function storedScheduleToScheduleParams(storedSchedule: StoredSchedule): ScheduleParams {
+  const {
+    schedule: { start, period },
+    id,
+    at,
+    remaining,
+  } = storedSchedule;
+  return {
+    id: u64ToBigNumber(id),
+    period: meshCalendarPeriodToCalendarPeriod(period),
+    start: momentToDate(start),
+    remaining: u32ToBigNumber(remaining).toNumber(),
+    nextCheckpointDate: momentToDate(at),
+  };
 }

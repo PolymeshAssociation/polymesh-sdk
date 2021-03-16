@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { ScheduleSpec, Ticker, TxTags } from 'polymesh-types/types';
+import { ScheduleSpec as MeshScheduleSpec, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -13,7 +13,7 @@ import { CheckpointSchedule, Context, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { CalendarUnit, RoleType } from '~/types';
-import { ScheduleDetails } from '~/types/internal';
+import { ScheduleSpec } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -31,7 +31,10 @@ jest.mock(
 describe('createCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let scheduleDetailsToScheduleSpecStub: sinon.SinonStub<[ScheduleDetails, Context], ScheduleSpec>;
+  let scheduleSpecToMeshScheduleSpecStub: sinon.SinonStub<
+    [ScheduleSpec, Context],
+    MeshScheduleSpec
+  >;
   let ticker: string;
   let rawTicker: Ticker;
   let schedule: PostTransactionValue<CheckpointSchedule>;
@@ -41,9 +44,9 @@ describe('createCheckpointSchedule procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    scheduleDetailsToScheduleSpecStub = sinon.stub(
+    scheduleSpecToMeshScheduleSpecStub = sinon.stub(
       utilsConversionModule,
-      'scheduleDetailsToScheduleSpec'
+      'scheduleSpecToMeshScheduleSpec'
     );
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -104,7 +107,7 @@ describe('createCheckpointSchedule procedure', () => {
       remaining: dsMockUtils.createMockU32(repetitions),
     });
 
-    scheduleDetailsToScheduleSpecStub
+    scheduleSpecToMeshScheduleSpecStub
       .withArgs({ start, period, repetitions }, mockContext)
       .returns(rawSpec);
 
@@ -135,6 +138,7 @@ describe('createCheckpointSchedule procedure', () => {
       amount: 1,
     };
     const remaining = 10;
+    const at = new Date('10/10/2030');
 
     beforeAll(() => {
       entityMockUtils.initMocks({
@@ -163,7 +167,7 @@ describe('createCheckpointSchedule procedure', () => {
               }),
             }),
             remaining: dsMockUtils.createMockU32(remaining),
-            at: dsMockUtils.createMockMoment(),
+            at: dsMockUtils.createMockMoment(at.getTime()),
           }),
         ])
       );
@@ -183,7 +187,6 @@ describe('createCheckpointSchedule procedure', () => {
       expect(result.id).toEqual(id);
       expect(result.start).toEqual(start);
       expect(result.period).toEqual(period);
-      expect(result.isInfinite).toBe(false);
     });
   });
 

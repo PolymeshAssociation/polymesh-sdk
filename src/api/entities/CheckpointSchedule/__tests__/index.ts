@@ -20,6 +20,8 @@ describe('CheckpointSchedule class', () => {
   let period: CalendarPeriod;
   let start: Date;
   let remaining: number;
+  let nextCheckpointDate: Date;
+  let u64ToBigNumberStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -33,6 +35,8 @@ describe('CheckpointSchedule class', () => {
     };
     start = new Date('10/14/1987');
     remaining = 11;
+    nextCheckpointDate = new Date('10/14/2030');
+    u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
   });
 
   beforeEach(() => {
@@ -55,16 +59,26 @@ describe('CheckpointSchedule class', () => {
 
   describe('constructor', () => {
     test('should assign ticker and id to instance', () => {
-      let schedule = new CheckpointSchedule({ id, ticker, start, period, remaining: 0 }, context);
+      let schedule = new CheckpointSchedule(
+        { id, ticker, start, period, remaining: 0, nextCheckpointDate },
+        context
+      );
 
       expect(schedule.ticker).toBe(ticker);
       expect(schedule.id).toEqual(id);
       expect(schedule.period).toEqual(period);
       expect(schedule.start).toEqual(start);
-      expect(schedule.isInfinite).toEqual(true);
+      expect(schedule.expiryDate).toBeNull();
 
       schedule = new CheckpointSchedule(
-        { id, ticker, start, period: { unit: CalendarUnit.Month, amount: 0 }, remaining },
+        {
+          id,
+          ticker,
+          start,
+          period: { unit: CalendarUnit.Month, amount: 0 },
+          remaining,
+          nextCheckpointDate,
+        },
         context
       );
 
@@ -72,6 +86,21 @@ describe('CheckpointSchedule class', () => {
       expect(schedule.id).toEqual(id);
       expect(schedule.period).toEqual(null);
       expect(schedule.start).toEqual(start);
+      expect(schedule.expiryDate).toEqual(start);
+
+      schedule = new CheckpointSchedule(
+        {
+          id,
+          ticker,
+          start,
+          period: { unit: CalendarUnit.Month, amount: 1 },
+          remaining,
+          nextCheckpointDate,
+        },
+        context
+      );
+
+      expect(schedule.expiryDate).toEqual(new Date('8/14/2031'));
     });
   });
 
@@ -86,10 +115,20 @@ describe('CheckpointSchedule class', () => {
     });
   });
 
-  describe('method: expiryDate', () => {
-    test("should return the Schedule's expiry date", async () => {
-      const schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
-      const nextCheckpointDate = new Date('10/14/2021');
+  describe('method: details', () => {
+    test('should return the Schedule details ', async () => {
+      const rawRemaining = new BigNumber(2);
+      const checkpointSchedule = new CheckpointSchedule(
+        { id, ticker, period, start, remaining, nextCheckpointDate },
+        context
+      );
+
+      u64ToBigNumberStub.returns(id);
+      sinon
+        .stub(utilsConversionModule, 'stringToTicker')
+        .returns(dsMockUtils.createMockTicker(ticker));
+      sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(rawRemaining);
+      sinon.stub(utilsConversionModule, 'momentToDate').returns(nextCheckpointDate);
 
       dsMockUtils.createQueryStub('checkpoint', 'schedules', {
         returnValue: [
@@ -103,32 +142,24 @@ describe('CheckpointSchedule class', () => {
             }),
             id: dsMockUtils.createMockU64(id.toNumber()),
             at: dsMockUtils.createMockMoment(nextCheckpointDate.getTime()),
-            remaining: dsMockUtils.createMockU32(2),
+            remaining: dsMockUtils.createMockU32(rawRemaining.toNumber()),
           }),
         ],
       });
 
-      let result = await schedule.expiryDate();
+      const result = await checkpointSchedule.details();
 
-      expect(result).toEqual(new Date('11/14/2021'));
-
-      schedule.period = null;
-
-      result = await schedule.expiryDate();
-
-      expect(result).toEqual(start);
-
-      schedule.isInfinite = true;
-
-      result = await schedule.expiryDate();
-
-      expect(result).toBeNull();
+      expect(result.remainingCheckpoints).toEqual(rawRemaining.toNumber());
+      expect(result.nextCheckpointDate).toEqual(nextCheckpointDate);
     });
   });
 
   describe('method: exists', () => {
     test('should return whether the schedule exists', async () => {
-      let schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
+      let schedule = new CheckpointSchedule(
+        { id, ticker, start, period, remaining, nextCheckpointDate },
+        context
+      );
 
       dsMockUtils.createQueryStub('checkpoint', 'schedules', {
         returnValue: [
@@ -138,14 +169,14 @@ describe('CheckpointSchedule class', () => {
         ],
       });
 
-      sinon.stub(utilsConversionModule, 'u64ToBigNumber').returns(id);
+      u64ToBigNumberStub.returns(id);
 
       let result = await schedule.exists();
 
       expect(result).toBe(true);
 
       schedule = new CheckpointSchedule(
-        { id: new BigNumber(2), ticker, start, period, remaining },
+        { id: new BigNumber(2), ticker, start, period, remaining, nextCheckpointDate },
         context
       );
 
