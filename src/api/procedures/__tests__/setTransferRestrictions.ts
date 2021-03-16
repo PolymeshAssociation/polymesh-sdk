@@ -505,6 +505,22 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsRepeated: false,
       });
 
+      getCountStub.resolves({
+        restrictions: [{ count, exemptedScopeIds: [scopeId] }],
+        avaliableSlots: 1,
+      });
+
+      result = await boundFunc(args);
+
+      expect(result).toEqual({
+        restrictionsToAdd: [],
+        restrictionsToRemove: [[rawTicker, rawCountTm]],
+        exemptionsToAdd: [],
+        exemptionsToRemove: [[rawTicker, rawCountTm, [rawScopeId]]],
+        occupiedSlots: 1,
+        exemptionsRepeated: false,
+      });
+
       getPercentageStub.resolves({
         restrictions: [{ percentage }],
         avaliableSlots: 1,
