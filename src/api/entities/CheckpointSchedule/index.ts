@@ -124,7 +124,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve all checkpoints created by this schedule
+   * Retrieve all Checkpoints created by this Schedule
    */
   public async getCheckpoints(): Promise<Checkpoint[]> {
     const {
@@ -163,8 +163,10 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
 
     const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
 
-    const scheduleIds = rawSchedules.map(({ id: scheduleId }) => u64ToBigNumber(scheduleId));
+    const scheduleIds = rawSchedules.map(({ id: scheduleId }) =>
+      u64ToBigNumber(scheduleId).toNumber()
+    );
 
-    return scheduleIds.includes(id);
+    return scheduleIds.includes(id.toNumber());
   }
 }

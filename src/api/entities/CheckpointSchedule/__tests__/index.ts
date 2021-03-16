@@ -21,8 +21,8 @@ describe('CheckpointSchedule class', () => {
   let start: Date;
   let remaining: number;
   let nextCheckpointDate: Date;
-  let u64ToBigNumberStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub;
+  let numberToU64Stub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -37,8 +37,8 @@ describe('CheckpointSchedule class', () => {
     start = new Date('10/14/1987');
     remaining = 11;
     nextCheckpointDate = new Date('10/14/2030');
-    u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
   });
 
   beforeEach(() => {
@@ -126,7 +126,6 @@ describe('CheckpointSchedule class', () => {
       );
       const rawScheduleId = dsMockUtils.createMockU64(id.toNumber());
 
-      u64ToBigNumberStub.returns(id);
       stringToTickerStub.returns(dsMockUtils.createMockTicker(ticker));
       sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(rawRemaining);
       sinon.stub(utilsConversionModule, 'momentToDate').returns(nextCheckpointDate);
@@ -166,14 +165,12 @@ describe('CheckpointSchedule class', () => {
       const rawFirstId = dsMockUtils.createMockU64(firstId.toNumber());
       const rawSecondId = dsMockUtils.createMockU64(secondId.toNumber());
 
-      sinon.stub(utilsConversionModule, 'numberToU64');
-
       dsMockUtils.createQueryStub('checkpoint', 'schedulePoints', {
         returnValue: [rawFirstId, rawSecondId],
       });
 
-      u64ToBigNumberStub.withArgs(rawFirstId).returns(firstId);
-      u64ToBigNumberStub.withArgs(rawSecondId).returns(secondId);
+      numberToU64Stub.withArgs(firstId).returns(rawFirstId);
+      numberToU64Stub.withArgs(secondId).returns(rawSecondId);
 
       const result = await schedule.getCheckpoints();
 
@@ -196,8 +193,6 @@ describe('CheckpointSchedule class', () => {
           } as StoredSchedule),
         ],
       });
-
-      u64ToBigNumberStub.returns(id);
 
       let result = await schedule.exists();
 
