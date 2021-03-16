@@ -146,7 +146,7 @@ describe('CheckpointSchedule class', () => {
 
       const result = await checkpointSchedule.details();
 
-      expect(result.remainingCheckpoints).toEqual(rawRemaining);
+      expect(result.remainingCheckpoints).toEqual(rawRemaining.toNumber());
       expect(result.nextCheckpointDate).toEqual(nextCheckpointDate);
     });
   });

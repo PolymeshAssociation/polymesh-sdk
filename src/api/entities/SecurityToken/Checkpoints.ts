@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { CreateCheckpointScheduleParams } from '~/api/procedures/createCheckpointSchedule';
@@ -13,7 +12,7 @@ import {
   removeCheckpointSchedule,
   SecurityToken,
 } from '~/internal';
-import { CheckpointWithCreationDate, ScheduleDetail } from '~/types';
+import { CheckpointWithCreationDate, ScheduleWithDetail } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import {
   momentToDate,
@@ -104,7 +103,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
   /**
    * Retrieve all active Checkpoint Schedules
    */
-  public async getSchedules(): Promise<ScheduleDetail[]> {
+  public async getSchedules(): Promise<ScheduleWithDetail[]> {
     const {
       parent: { ticker },
       context: {
@@ -123,12 +122,12 @@ export class Checkpoints extends Namespace<SecurityToken> {
       const scheduleParams = storedScheduleToScheduleParams(rawSchedule);
       const schedule = new CheckpointSchedule({ ...scheduleParams, ticker }, context);
 
-      const { remaining, nextCheckpointDate } = scheduleParams;
+      const { remaining: remainingCheckpoints, nextCheckpointDate } = scheduleParams;
       return {
         schedule,
         details: {
-          remainingCheckpoints: new BigNumber(remaining),
-          nextCheckpointDate: nextCheckpointDate,
+          remainingCheckpoints,
+          nextCheckpointDate,
         },
       };
     });

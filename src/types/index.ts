@@ -3,7 +3,7 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag, TxTags } from 'polymesh-types/types';
 
-import { ScheduleWithDetails } from '~/api/entities/CheckpointSchedule/types';
+import { ScheduleDetails } from '~/api/entities/CheckpointSchedule/types';
 import { StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
@@ -791,17 +791,9 @@ export interface CalendarPeriod {
   amount: number;
 }
 
-export interface ScheduleDetail {
+export interface ScheduleWithDetail {
   schedule: CheckpointSchedule;
-  details: ScheduleWithDetails;
-}
-
-export interface ScheduleParams {
-  id: BigNumber;
-  period: CalendarPeriod;
-  start: Date;
-  remaining: number;
-  nextCheckpointDate: Date;
+  details: ScheduleDetails;
 }
 
 export { TxTags, TxTag };

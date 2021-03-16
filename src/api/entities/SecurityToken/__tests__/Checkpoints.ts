@@ -208,7 +208,7 @@ describe('Checkpoints class', () => {
       const result = await checkpoints.getSchedules();
 
       expect(result[0].details).toEqual({
-        remainingCheckpoints: remaining,
+        remainingCheckpoints: remaining.toNumber(),
         nextCheckpointDate,
       });
       expect(result[0].schedule.id).toEqual(id);

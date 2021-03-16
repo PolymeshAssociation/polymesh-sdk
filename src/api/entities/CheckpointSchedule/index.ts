@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
-import { ScheduleWithDetails } from '~/api/entities/CheckpointSchedule/types';
+import { ScheduleDetails } from '~/api/entities/CheckpointSchedule/types';
 import { Context, Entity } from '~/internal';
 import { CalendarPeriod } from '~/types';
 import { momentToDate, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
@@ -93,7 +93,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
   /**
    * Retrieve information specific to this Schedule
    */
-  public async details(): Promise<ScheduleWithDetails> {
+  public async details(): Promise<ScheduleDetails> {
     const {
       context: {
         polymeshApi: {
@@ -113,7 +113,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
     const { at, remaining } = schedule!;
 
     return {
-      remainingCheckpoints: u32ToBigNumber(remaining),
+      remainingCheckpoints: u32ToBigNumber(remaining).toNumber(),
       nextCheckpointDate: momentToDate(at),
     };
   }
