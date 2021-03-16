@@ -128,3 +128,7 @@ export {
   CreateCheckpointScheduleParams,
 } from '~/api/procedures/createCheckpointSchedule';
 export { CorporateAction } from '~/api/entities/CorporateAction';
+export {
+  removeCheckpointSchedule,
+  RemoveCheckpointScheduleParams,
+} from '~/api/procedures/removeCheckpointSchedule';

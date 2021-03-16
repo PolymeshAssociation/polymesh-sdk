@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { PolymeshError } from '~/base/PolymeshError';
 import {
   Context,
   Entity,
@@ -8,7 +9,7 @@ import {
   SecurityToken,
   Venue,
 } from '~/internal';
-import { PaginationOptions, ResultSet } from '~/types';
+import { ErrorCode, PaginationOptions, ResultSet } from '~/types';
 import { InstructionAffirmationOperation, ProcedureMethod } from '~/types/internal';
 import {
   balanceToBigNumber,
@@ -24,11 +25,20 @@ import {
 } from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 
-import { InstructionAffirmation, InstructionDetails, InstructionType, Leg } from './types';
+import {
+  InstructionAffirmation,
+  InstructionDetails,
+  InstructionStatus,
+  InstructionType,
+  Leg,
+} from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
 }
+
+const notExistsMessage =
+  'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)';
 
 /**
  * Represents a settlement Instruction to be executed on a certain Venue
@@ -82,6 +92,28 @@ export class Instruction extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Retrieve whether the Instruction still exists on chain. Executed/rejected instructions
+   *   are pruned from the storage
+   */
+  public async exists(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const { status: rawStatus } = await settlement.instructionDetails(numberToU64(id, context));
+
+    const status = meshInstructionStatusToInstructionStatus(rawStatus);
+
+    return status !== InstructionStatus.Unknown;
+  }
+
+  /**
    * Retrieve information specific to this Instruction
    */
   public async details(): Promise<InstructionDetails> {
@@ -96,7 +128,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
     } = this;
 
     const {
-      status,
+      status: rawStatus,
       created_at: createdAt,
       trade_date: tradeDate,
       value_date: valueDate,
@@ -104,8 +136,17 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       venue_id: venueId,
     } = await settlement.instructionDetails(numberToU64(id, context));
 
+    const status = meshInstructionStatusToInstructionStatus(rawStatus);
+
+    if (status === InstructionStatus.Unknown) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: notExistsMessage,
+      });
+    }
+
     const details = {
-      status: meshInstructionStatusToInstructionStatus(status),
+      status,
       createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
@@ -144,6 +185,15 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
+    const exists = await this.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: notExistsMessage,
+      });
+    }
+
     const { entries, lastKey: next } = await requestPaginated(settlement.affirmsReceived, {
       arg: numberToU64(id, context),
       paginationOpts,
@@ -178,6 +228,15 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       id,
       context,
     } = this;
+
+    const exists = await this.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: notExistsMessage,
+      });
+    }
 
     const { entries: legs, lastKey: next } = await requestPaginated(settlement.instructionLegs, {
       arg: numberToU64(id, context),
