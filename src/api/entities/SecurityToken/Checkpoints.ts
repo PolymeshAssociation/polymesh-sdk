@@ -12,7 +12,7 @@ import {
   removeCheckpointSchedule,
   SecurityToken,
 } from '~/internal';
-import { CheckpointWithCreationDate, ScheduleWithDetail } from '~/types';
+import { CheckpointWithCreationDate, ScheduleWithDetails } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import {
   momentToDate,
@@ -103,7 +103,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
   /**
    * Retrieve all active Checkpoint Schedules
    */
-  public async getSchedules(): Promise<ScheduleWithDetail[]> {
+  public async getSchedules(): Promise<ScheduleWithDetails[]> {
     const {
       parent: { ticker },
       context: {

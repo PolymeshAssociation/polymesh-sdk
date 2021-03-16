@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
-import { ScheduleDetails } from '~/api/entities/CheckpointSchedule/types';
 import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
 import {
   Account,
@@ -41,6 +40,7 @@ import {
   PercentageTransferRestriction,
   PortfolioBalance,
   ResultSet,
+  ScheduleDetails,
   SecondaryKey,
   SecurityTokenDetails,
   StoBalanceStatus,

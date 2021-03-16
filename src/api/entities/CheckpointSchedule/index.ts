@@ -1,9 +1,8 @@
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
-import { ScheduleDetails } from '~/api/entities/CheckpointSchedule/types';
 import { Context, Entity } from '~/internal';
-import { CalendarPeriod } from '~/types';
+import { CalendarPeriod, ScheduleDetails } from '~/types';
 import { momentToDate, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
 export interface UniqueIdentifiers {
