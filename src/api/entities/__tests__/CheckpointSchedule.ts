@@ -132,39 +132,12 @@ describe('CheckpointSchedule class', () => {
   });
 
   describe('method: getCheckpoints', () => {
-    test("should throw an error if the schedule doesn't exist", async () => {
-      const schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
-      const otherId = new BigNumber(2);
-      const rawId = dsMockUtils.createMockU64(otherId.toNumber());
-
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
-        returnValue: [({ id: rawId } as unknown) as StoredSchedule],
-      });
-      u64ToBigNumberStub.withArgs(rawId).returns(otherId);
-
-      let err;
-
-      try {
-        await schedule.getCheckpoints();
-      } catch (error) {
-        err = error;
-      }
-
-      expect(err.message).toBe("The Schedule doesn't exist");
-    });
-
     test('should return all the checkpoints created by the schedule', async () => {
       const schedule = new CheckpointSchedule({ id, ticker, start, period, remaining }, context);
       const firstId = new BigNumber(1);
       const secondId = new BigNumber(2);
       const rawFirstId = dsMockUtils.createMockU64(firstId.toNumber());
       const rawSecondId = dsMockUtils.createMockU64(secondId.toNumber());
-      const rawId = dsMockUtils.createMockU64(id.toNumber());
-
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
-        returnValue: [({ id: rawId } as unknown) as StoredSchedule],
-      });
-      u64ToBigNumberStub.withArgs(rawId).returns(id);
 
       sinon.stub(utilsConversionModule, 'stringToTicker');
       sinon.stub(utilsConversionModule, 'numberToU64');

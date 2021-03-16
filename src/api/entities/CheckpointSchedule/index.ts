@@ -1,15 +1,9 @@
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
-import { Checkpoint, Context, Entity } from '~/internal';
-import { CalendarPeriod } from '~/types';
-import {
-  momentToDate,
-  numberToU64,
-  stringToTicker,
-  u32ToBigNumber,
-  u64ToBigNumber,
-} from '~/utils/conversion';
+import { Context, Entity } from '~/internal';
+import { CalendarPeriod, ScheduleDetails } from '~/types';
+import { momentToDate, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -20,6 +14,7 @@ export interface Params {
   period: CalendarPeriod;
   start: Date;
   remaining: number;
+  nextCheckpointDate: Date;
 }
 
 /**
@@ -59,15 +54,16 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
   public start: Date;
 
   /**
-   * if true, the Schedule never expires
+   * date at which the last Checkpoint will be created with this Schedule.
+   *   A null value means that this Schedule never expires
    */
-  public isInfinite: boolean;
+  public expiryDate: Date | null;
 
   /**
    * @hidden
    */
   public constructor(args: UniqueIdentifiers & Params, context: Context) {
-    const { period, start, remaining, ...identifiers } = args;
+    const { period, start, remaining, nextCheckpointDate, ...identifiers } = args;
 
     super(identifiers, context);
 
@@ -80,68 +76,45 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
     this.period = noPeriod ? null : period;
     this.start = start;
 
-    /*
-      if both remaining and period.amount are 0, remaining is ignored and the Schedule
-      is treated as a one-shot
-    */
-    this.isInfinite = remaining === 0 && !noPeriod;
+    if (remaining === 0 && !noPeriod) {
+      this.expiryDate = null;
+    } else if (!this.period) {
+      this.expiryDate = start;
+    } else {
+      const { amount, unit } = period;
+
+      this.expiryDate = dayjs(nextCheckpointDate)
+        .add(amount * (remaining - 1), unit)
+        .toDate();
+    }
   }
 
   /**
-   * Retrieve the date at which the last Checkpoint will be created with this Schedule.
-   *   A null value means that this Schedule never expires
+   * Retrieve information specific to this Schedule
    */
-  public async expiryDate(): Promise<Date | null> {
-    const { isInfinite, context, ticker, id, period, start } = this;
-
-    if (isInfinite) {
-      return null;
-    }
-
-    if (!period) {
-      return start;
-    }
-
-    const schedules = await context.polymeshApi.query.checkpoint.schedules(
-      stringToTicker(ticker, context)
-    );
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { remaining: rawRemaining, at } = schedules.find(({ id: scheduleId }) =>
-      u64ToBigNumber(scheduleId).eq(id)
-    )!;
-
-    const remaining = u32ToBigNumber(rawRemaining).toNumber();
-    const nextCheckpointDate = momentToDate(at);
-
-    const { amount, unit } = period;
-
-    return dayjs(nextCheckpointDate)
-      .add(amount * (remaining - 1), unit)
-      .toDate();
-  }
-
-  /**
-   * Retrieve all checkpoints created by this schedule
-   */
-  public async getCheckpoints(): Promise<Checkpoint[]> {
+  public async details(): Promise<ScheduleDetails> {
     const {
       context: {
         polymeshApi: {
           query: { checkpoint },
         },
       },
+      id,
       context,
       ticker,
-      id,
     } = this;
 
-    const result = await checkpoint.schedulePoints(
-      stringToTicker(ticker, context),
-      numberToU64(id, context)
-    );
+    const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
 
-    return result.map(rawId => new Checkpoint({ id: u64ToBigNumber(rawId), ticker }, context));
+    const schedule = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { at, remaining } = schedule!;
+
+    return {
+      remainingCheckpoints: u32ToBigNumber(remaining).toNumber(),
+      nextCheckpointDate: momentToDate(at),
+    };
   }
 
   /**
