@@ -1,6 +1,10 @@
+import { Vec } from '@polkadot/types/codec';
+import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 
 import { Context, Entity, Identity } from '~/internal';
+import { CheckpointId } from '~/polkadot';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
 import { tuple } from '~/types/utils';
 import {
@@ -10,6 +14,7 @@ import {
   numberToU64,
   stringToIdentityId,
   stringToTicker,
+  u64ToBigNumber,
 } from '~/utils/conversion';
 import { getDid, requestPaginated } from '~/utils/internal';
 
@@ -91,23 +96,80 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
   public async allBalances(
     paginationOpts?: PaginationOptions
   ): Promise<ResultSet<IdentityBalance>> {
-    const { context, ticker, id } = this;
+    const {
+      context: {
+        polymeshApi: { query },
+      },
+      context,
+      ticker,
+      id,
+    } = this;
 
-    const { entries, lastKey: next } = await requestPaginated(
-      context.polymeshApi.query.checkpoint.balance,
-      {
-        arg: tuple(stringToTicker(ticker, context), numberToU64(id, context)),
-        paginationOpts,
-      }
+    const rawTicker = stringToTicker(ticker, context);
+
+    const { entries, lastKey: next } = await requestPaginated(query.asset.balanceOf, {
+      arg: rawTicker,
+      paginationOpts,
+    });
+
+    const identityBalancesOf: { did: string; balance: BigNumber }[] = [];
+    const balanceUpdatesMultiParams: [Ticker, IdentityId][] = [];
+
+    entries.forEach(([storageKey, balance]) => {
+      const {
+        args: [, identityId],
+      } = storageKey;
+      identityBalancesOf.push({
+        did: identityIdToString(identityId),
+        balance: balanceToBigNumber(balance),
+      });
+      balanceUpdatesMultiParams.push(tuple(rawTicker, identityId));
+    });
+
+    const rawBalanceUpdates = await query.checkpoint.balanceUpdates.multi<Vec<CheckpointId>>(
+      balanceUpdatesMultiParams
     );
 
-    const data = entries.map(([{ args: [, identityId] }, balance]) => ({
-      identity: new Identity({ did: identityIdToString(identityId) }, context),
-      balance: balanceToBigNumber(balance),
-    }));
+    const balanceMulti: {
+      identityId: string;
+      param: [(Ticker | CheckpointId)[], IdentityId];
+    }[] = [];
+    const balanceOf: { identity: Identity; balance: BigNumber }[] = [];
+
+    rawBalanceUpdates.forEach((rawCheckpointIds, index) => {
+      const firstUpdatedCheckpoint = rawCheckpointIds.find(checkpointId =>
+        u64ToBigNumber(checkpointId).gte(id)
+      );
+      const { did: identityId, balance } = identityBalancesOf[index];
+      if (firstUpdatedCheckpoint) {
+        balanceMulti.push({
+          identityId,
+          param: tuple(
+            [rawTicker, firstUpdatedCheckpoint],
+            stringToIdentityId(identityId, context)
+          ),
+        });
+      }
+      balanceOf.push({
+        identity: new Identity({ did: identityId }, context),
+        balance,
+      });
+    });
+
+    const rawBalanceMulti = await query.checkpoint.balance.multi<Balance>(
+      balanceMulti.map(({ param }) => param)
+    );
 
     return {
-      data,
+      data: [
+        ...balanceMulti.map(({ identityId: did }, index) => {
+          return {
+            identity: new Identity({ did }, context),
+            balance: balanceToBigNumber(rawBalanceMulti[index]),
+          };
+        }),
+        ...balanceOf,
+      ],
       next,
     };
   }
