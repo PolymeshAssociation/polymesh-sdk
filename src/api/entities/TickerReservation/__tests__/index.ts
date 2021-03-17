@@ -27,7 +27,7 @@ describe('TickerReservation class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(TickerReservation.prototype instanceof Entity).toBe(true);
   });
 
