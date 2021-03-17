@@ -53,7 +53,7 @@ describe('CheckpointSchedule class', () => {
     entityMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(CheckpointSchedule.prototype instanceof Entity).toBe(true);
   });
 
