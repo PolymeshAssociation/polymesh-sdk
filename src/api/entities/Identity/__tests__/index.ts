@@ -69,7 +69,7 @@ describe('Identity class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(Identity.prototype instanceof Entity).toBe(true);
   });
 

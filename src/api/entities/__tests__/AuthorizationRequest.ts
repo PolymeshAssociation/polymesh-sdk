@@ -32,7 +32,7 @@ describe('AuthorizationRequest class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(AuthorizationRequest.prototype instanceof Entity).toBe(true);
   });
 

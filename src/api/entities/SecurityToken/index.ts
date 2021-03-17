@@ -39,6 +39,7 @@ import { createProcedureMethod, padString } from '~/utils/internal';
 
 import { Checkpoints } from './Checkpoints';
 import { Compliance } from './Compliance';
+import { CorporateActions } from './CorporateActions';
 import { Documents } from './Documents';
 import { Issuance } from './Issuance';
 import { Offerings } from './Offerings';
@@ -90,6 +91,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public transferRestrictions: TransferRestrictions;
   public offerings: Offerings;
   public checkpoints: Checkpoints;
+  public corporateActions: CorporateActions;
 
   /**
    * @hidden
@@ -110,6 +112,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.transferRestrictions = new TransferRestrictions(this, context);
     this.offerings = new Offerings(this, context);
     this.checkpoints = new Checkpoints(this, context);
+    this.corporateActions = new CorporateActions(this, context);
 
     this.transferOwnership = createProcedureMethod(
       args => [transferTokenOwnership, { ticker, ...args }],
