@@ -21,7 +21,8 @@ describe('CheckpointSchedule class', () => {
   let start: Date;
   let remaining: number;
   let nextCheckpointDate: Date;
-  let u64ToBigNumberStub: sinon.SinonStub;
+  let stringToTickerStub: sinon.SinonStub;
+  let numberToU64Stub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -36,7 +37,8 @@ describe('CheckpointSchedule class', () => {
     start = new Date('10/14/1987');
     remaining = 11;
     nextCheckpointDate = new Date('10/14/2030');
-    u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
+    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
   });
 
   beforeEach(() => {
@@ -122,11 +124,9 @@ describe('CheckpointSchedule class', () => {
         { id, ticker, period, start, remaining, nextCheckpointDate },
         context
       );
+      const rawScheduleId = dsMockUtils.createMockU64(id.toNumber());
 
-      u64ToBigNumberStub.returns(id);
-      sinon
-        .stub(utilsConversionModule, 'stringToTicker')
-        .returns(dsMockUtils.createMockTicker(ticker));
+      stringToTickerStub.returns(dsMockUtils.createMockTicker(ticker));
       sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(rawRemaining);
       sinon.stub(utilsConversionModule, 'momentToDate').returns(nextCheckpointDate);
 
@@ -140,7 +140,7 @@ describe('CheckpointSchedule class', () => {
                 amount: dsMockUtils.createMockU64(1),
               }),
             }),
-            id: dsMockUtils.createMockU64(id.toNumber()),
+            id: rawScheduleId,
             at: dsMockUtils.createMockMoment(nextCheckpointDate.getTime()),
             remaining: dsMockUtils.createMockU32(rawRemaining.toNumber()),
           }),
@@ -151,6 +151,31 @@ describe('CheckpointSchedule class', () => {
 
       expect(result.remainingCheckpoints).toEqual(rawRemaining.toNumber());
       expect(result.nextCheckpointDate).toEqual(nextCheckpointDate);
+    });
+  });
+
+  describe('method: getCheckpoints', () => {
+    test('should return all the checkpoints created by the schedule', async () => {
+      const schedule = new CheckpointSchedule(
+        { id, ticker, start, period, remaining, nextCheckpointDate },
+        context
+      );
+      const firstId = new BigNumber(1);
+      const secondId = new BigNumber(2);
+      const rawFirstId = dsMockUtils.createMockU64(firstId.toNumber());
+      const rawSecondId = dsMockUtils.createMockU64(secondId.toNumber());
+
+      dsMockUtils.createQueryStub('checkpoint', 'schedulePoints', {
+        returnValue: [rawFirstId, rawSecondId],
+      });
+
+      numberToU64Stub.withArgs(firstId).returns(rawFirstId);
+      numberToU64Stub.withArgs(secondId).returns(rawSecondId);
+
+      const result = await schedule.getCheckpoints();
+
+      expect(result[0].id).toEqual(firstId);
+      expect(result[1].id).toEqual(secondId);
     });
   });
 
@@ -168,8 +193,6 @@ describe('CheckpointSchedule class', () => {
           } as StoredSchedule),
         ],
       });
-
-      u64ToBigNumberStub.returns(id);
 
       let result = await schedule.exists();
 
