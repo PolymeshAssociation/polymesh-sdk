@@ -5,6 +5,7 @@ import sinon from 'sinon';
 import { Checkpoint, Context, Entity } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
@@ -18,12 +19,16 @@ describe('Checkpoint class', () => {
   let id: BigNumber;
   let ticker: string;
 
+  let balanceToBigNumberStub: sinon.SinonStub;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
 
     id = new BigNumber(1);
     ticker = 'SOME_TICKER';
+
+    balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
   });
 
   beforeEach(() => {
@@ -81,62 +86,99 @@ describe('Checkpoint class', () => {
     test("should return the Checkpoint's total supply", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
       const balance = 10000000000;
+      const expected = new BigNumber(balance).shiftedBy(-6);
 
       dsMockUtils.createQueryStub('checkpoint', 'totalSupply', {
         returnValue: dsMockUtils.createMockBalance(balance),
       });
 
-      const result = await checkpoint.totalSupply();
+      balanceToBigNumberStub.returns(expected);
 
-      expect(result).toEqual(new BigNumber(balance).shiftedBy(-6));
+      const result = await checkpoint.totalSupply();
+      expect(result).toEqual(expected);
     });
   });
 
   describe('method: allBalances', () => {
+    let identityIdToStringStub: sinon.SinonStub;
+    let stringToIdentityIdStub: sinon.SinonStub;
+
+    beforeAll(() => {
+      identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+      stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    });
+
     test("should return the Checkpoint's tokenholder balances", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
-      dsMockUtils.createQueryStub('checkpoint', 'balance');
-
-      const fakeResult = [
+      const balanceOf = [
         {
-          identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
-          balance: new BigNumber(1000),
+          identity: 'did1',
+          balance: new BigNumber(100),
         },
         {
-          identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
-          balance: new BigNumber(2000),
+          identity: 'did2',
+          balance: new BigNumber(200),
+        },
+        {
+          identity: 'did3',
+          balance: new BigNumber(10),
         },
       ];
 
       const rawTicker = dsMockUtils.createMockTicker(ticker);
-      const rawId = dsMockUtils.createMockU64(id.toNumber());
-      const entries = [
-        tuple(
-          ({
-            args: [
-              tuple(rawTicker, rawId),
-              dsMockUtils.createMockIdentityId(fakeResult[0].identity.did),
-            ],
-          } as unknown) as StorageKey,
-          dsMockUtils.createMockBalance(fakeResult[0].balance.shiftedBy(6).toNumber())
-        ),
-        tuple(
-          ({
-            args: [
-              tuple(rawTicker, rawId),
-              dsMockUtils.createMockIdentityId(fakeResult[1].identity.did),
-            ],
-          } as unknown) as StorageKey,
-          dsMockUtils.createMockBalance(fakeResult[1].balance.shiftedBy(6).toNumber())
-        ),
-      ];
+      const rawBalanceOf = balanceOf.map(({ identity, balance }) => ({
+        identityId: dsMockUtils.createMockIdentityId(identity),
+        balance: dsMockUtils.createMockBalance(balance.toNumber()),
+      }));
 
-      sinon.stub(utilsInternalModule, 'requestPaginated').resolves({ entries, lastKey: null });
+      rawBalanceOf.forEach(({ identityId, balance: rawBalance }, index) => {
+        const { identity, balance } = balanceOf[index];
+        identityIdToStringStub.withArgs(identityId).returns(identity);
+        balanceToBigNumberStub.withArgs(rawBalance).returns(balance);
+        stringToIdentityIdStub.withArgs(identity).returns(identityId);
+      });
+
+      const balanceOfEntries = rawBalanceOf.map(({ identityId, balance }) =>
+        tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, balance)
+      );
+
+      dsMockUtils.createQueryStub('asset', 'balanceOf');
+
+      sinon
+        .stub(utilsInternalModule, 'requestPaginated')
+        .resolves({ entries: balanceOfEntries, lastKey: null });
+
+      dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
+        multi: [
+          [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(2)],
+          [dsMockUtils.createMockU64(2)],
+          [],
+        ],
+      });
+
+      const balanceMulti = [new BigNumber(10000), new BigNumber(20000)];
+
+      const rawBalanceMulti = balanceMulti.map(balance =>
+        dsMockUtils.createMockBalance(balance.toNumber())
+      );
+
+      dsMockUtils.createQueryStub('checkpoint', 'balance', {
+        multi: rawBalanceMulti,
+      });
+
+      rawBalanceMulti.forEach((rawBlance, index) => {
+        balanceToBigNumberStub.withArgs(rawBlance).returns(balanceMulti[index]);
+      });
 
       const { data } = await checkpoint.allBalances();
 
-      expect(data).toEqual(fakeResult);
+      expect(data[0].identity.did).toEqual(balanceOf[0].identity);
+      expect(data[1].identity.did).toEqual(balanceOf[1].identity);
+      expect(data[2].identity.did).toEqual(balanceOf[2].identity);
+      expect(data[0].balance).toEqual(balanceMulti[0]);
+      expect(data[1].balance).toEqual(balanceMulti[1]);
+      expect(data[2].balance).toEqual(balanceOf[2].balance);
     });
   });
 
@@ -145,11 +187,14 @@ describe('Checkpoint class', () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
       const balance = 10000000000;
 
+      const expected = new BigNumber(balance).shiftedBy(-6);
+
+      balanceToBigNumberStub.returns(expected);
+
       dsMockUtils.createQueryStub('checkpoint', 'balance', {
+        size: 1,
         returnValue: dsMockUtils.createMockBalance(balance),
       });
-
-      const expected = new BigNumber(balance).shiftedBy(-6);
 
       let result = await checkpoint.balance({ identity: 'someDid' });
 
@@ -158,6 +203,27 @@ describe('Checkpoint class', () => {
       result = await checkpoint.balance();
 
       expect(result).toEqual(expected);
+
+      const zeroBalance = dsMockUtils.createMockBalance(0);
+
+      dsMockUtils.createQueryStub('checkpoint', 'balance', {
+        size: 0,
+        returnValue: zeroBalance,
+      });
+
+      balanceToBigNumberStub.withArgs(zeroBalance).returns(new BigNumber(0));
+
+      const tokenBalance = new BigNumber(10);
+
+      entityMockUtils.configureMocks({
+        identityOptions: {
+          getTokenBalance: tokenBalance,
+        },
+      });
+
+      result = await checkpoint.balance();
+
+      expect(result).toEqual(tokenBalance);
     });
   });
 });
