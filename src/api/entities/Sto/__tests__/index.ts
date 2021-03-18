@@ -67,7 +67,7 @@ describe('Sto class', () => {
     entityMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(Sto.prototype instanceof Entity).toBe(true);
   });
 

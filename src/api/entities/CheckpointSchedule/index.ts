@@ -1,9 +1,15 @@
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
-import { Context, Entity } from '~/internal';
+import { Checkpoint, Context, Entity } from '~/internal';
 import { CalendarPeriod, ScheduleDetails } from '~/types';
-import { momentToDate, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import {
+  momentToDate,
+  numberToU64,
+  stringToTicker,
+  u32ToBigNumber,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -118,6 +124,29 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Retrieve all Checkpoints created by this Schedule
+   */
+  public async getCheckpoints(): Promise<Checkpoint[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { checkpoint },
+        },
+      },
+      context,
+      ticker,
+      id,
+    } = this;
+
+    const result = await checkpoint.schedulePoints(
+      stringToTicker(ticker, context),
+      numberToU64(id, context)
+    );
+
+    return result.map(rawId => new Checkpoint({ id: u64ToBigNumber(rawId), ticker }, context));
+  }
+
+  /**
    * Retrieve whether the Checkpoint Schedule still exists on chain
    */
   public async exists(): Promise<boolean> {
@@ -134,8 +163,10 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
 
     const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
 
-    const scheduleIds = rawSchedules.map(({ id: scheduleId }) => u64ToBigNumber(scheduleId));
+    const scheduleIds = rawSchedules.map(({ id: scheduleId }) =>
+      u64ToBigNumber(scheduleId).toNumber()
+    );
 
-    return scheduleIds.includes(id);
+    return scheduleIds.includes(id.toNumber());
   }
 }

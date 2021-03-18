@@ -57,7 +57,7 @@ describe('Proposal class', () => {
 //     entityMockUtils.cleanup();
 //   });
 
-//   test('should extend entity', () => {
+//   test('should extend Entity', () => {
 //     expect(Proposal.prototype instanceof Entity).toBe(true);
 //   });
 
