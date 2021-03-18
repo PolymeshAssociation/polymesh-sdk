@@ -208,8 +208,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
     const balance = balanceToBigNumber(rawBalance);
 
     if (balance.isZero() && sizeBalance.isZero()) {
-      const tokenBalance = await identity.getTokenBalance({ ticker });
-      return tokenBalance;
+      return identity.getTokenBalance({ ticker });
     }
 
     return balance;
