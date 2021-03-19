@@ -1,9 +1,11 @@
+import { Keyring } from '@polkadot/api';
 import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot/api/types';
 import { StorageKey } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { AnyFunction, AnyTuple, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
+import { decodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
@@ -446,4 +448,21 @@ function isUiKeyring(keyring: any): keyring is UiKeyring {
  */
 export function getCommonKeyring(keyring: CommonKeyring | UiKeyring): CommonKeyring {
   return isUiKeyring(keyring) ? keyring.keyring : keyring;
+}
+
+/**
+ * @hidden
+ */
+export function isPrefixValid(address: string, ss58Format: number): void {
+  const encodedAddress = new Keyring({ type: 'sr25519', ss58Format }).encodeAddress(
+    decodeAddress(address),
+    ss58Format
+  );
+
+  if (address !== encodedAddress) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'The supplied address is not encoding with the current SS58 prefix',
+    });
+  }
 }

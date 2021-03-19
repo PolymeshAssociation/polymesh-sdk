@@ -21,6 +21,7 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AccountBalance, SubCallback, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '@polkadot/api',
@@ -660,6 +661,8 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
       });
+
+      sinon.stub(utilsInternalModule, 'isPrefixValid');
 
       const params = { address: 'testAddress' };
 

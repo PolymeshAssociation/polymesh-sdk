@@ -11,6 +11,7 @@ import { ClaimType, SecondaryKey, Signer, TransactionArgumentType } from '~/type
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '@polkadot/api',
@@ -163,6 +164,8 @@ describe('Context class', () => {
           getPairs: pairs,
         },
       });
+
+      sinon.stub(utilsInternalModule, 'isPrefixValid');
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),

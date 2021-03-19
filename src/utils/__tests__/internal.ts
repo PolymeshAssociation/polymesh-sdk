@@ -22,6 +22,7 @@ import {
   findEventRecord,
   getCommonKeyring,
   getDid,
+  isPrefixValid,
   isPrintableAscii,
   padString,
   removePadding,
@@ -513,5 +514,23 @@ describe('getCommonKeyring', () => {
 
     result = getCommonKeyring({ keyring: fakeKeyring });
     expect(result).toBe(fakeKeyring);
+  });
+});
+
+describe('isPrefixValid', () => {
+  const ss58Format = 42;
+
+  test('should throw an error if the address is prefixed with an invalid ss58', async () => {
+    expect(() =>
+      isPrefixValid('ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8', ss58Format)
+    ).toThrow('The supplied address is not encoding with the current SS58 prefix');
+  });
+
+  test('should not throw if the address is prefixed with valid ss58', async () => {
+    try {
+      isPrefixValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format);
+    } catch (_) {
+      expect(true).toBe(false);
+    }
   });
 });
