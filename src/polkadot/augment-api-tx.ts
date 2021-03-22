@@ -84,6 +84,7 @@ import type {
   RecordDateSpec,
   ScheduleId,
   ScheduleSpec,
+  ScopeClaimProof,
   ScopeId,
   SecondaryKey,
   SecondaryKeyWithAuth,
@@ -116,7 +117,7 @@ declare module '@polkadot/api/types/submittable' {
        * NB: To reject the transfer, call remove auth function in identity module.
        *
        * # Arguments
-       * * `origin` It contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `origin` It contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
        * * `auth_id` Authorization ID of the token ownership transfer authorization.
        **/
       acceptAssetOwnershipTransfer: AugmentedSubmittable<
@@ -128,20 +129,30 @@ declare module '@polkadot/api/types/submittable' {
        * NB: To reject the transfer, call remove auth function in identity module.
        *
        * # Arguments
-       * * `origin` It contains the signing key of the caller (i.e who signed the transaction to execute this function).
+       * * `origin` It contains the signing key of the caller (i.e. who signed the transaction to execute this function).
        * * `auth_id` Authorization ID of primary issuance agent transfer authorization.
+       *
+       * ## Errors
+       * - `NoPrimaryIssuanceAgentTransferAuth` if `auth_id` is not an authorization to transfer
+       * the primary issuance agent.
        **/
       acceptPrimaryIssuanceAgentTransfer: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u64]
       >;
       /**
-       * This function is used to accept a ticker transfer.
+       * Accepts a ticker transfer.
+       *
+       * Consumes the authorization `auth_id` (see `pallet_identity::consume_auth`).
        * NB: To reject the transfer, call remove auth function in identity module.
        *
        * # Arguments
-       * * `origin` It contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `origin` It contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
        * * `auth_id` Authorization ID of ticker transfer authorization.
+       *
+       * ## Errors
+       * - `NoTickerTransferAuth` if `auth_id` is not a valid ticket transfer authorization.
+       *
        **/
       acceptTickerTransfer: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -180,6 +191,10 @@ declare module '@polkadot/api/types/submittable' {
        * * `ticker` - ticker for whom extension get added.
        * * `extension_details` - Details of the smart extension.
        *
+       * ## Errors
+       * - `ExtensionAlreadyPresent` if `extension_details` is already linked to `ticker`.
+       * - `IncompatibleExtensionVersion` if `extension_details` is not compatible.
+       *
        * # Permissions
        * * Asset
        **/
@@ -195,12 +210,15 @@ declare module '@polkadot/api/types/submittable' {
         [Ticker, SmartExtension]
       >;
       /**
-       * Archived the extension. Extension is use to verify the compliance or any smart logic it posses.
+       * Archived the extension, which was used to verify compliance according to any smart logic it possesses.
        *
        * # Arguments
        * * `origin` - Signatory who owns the ticker/asset.
        * * `ticker` - Ticker symbol of the asset.
        * * `extension_id` - AccountId of the extension that need to be archived.
+       *
+       * ## Errors
+       * -  `AlreadyArchived` if `extension_id` of `ticker` is already archived.
        *
        * # Permissions
        * * Asset
@@ -259,7 +277,7 @@ declare module '@polkadot/api/types/submittable' {
        * & the balance of the owner is set to total supply.
        *
        * # Arguments
-       * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `origin` - contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
        * * `name` - the name of the token.
        * * `ticker` - the ticker symbol of the token.
        * * `total_supply` - the total supply of the token.
@@ -268,7 +286,18 @@ declare module '@polkadot/api/types/submittable' {
        * * `identifiers` - a vector of asset identifiers.
        * * `funding_round` - name of the funding round.
        *
-       * # Permissions
+       * ## Errors
+       * - `InvalidAssetIdentifier` if any of `identifiers` are invalid.
+       * - `MaxLengthOfAssetNameExceeded` if `name`'s length exceeds `T::AssetNameMaxLength`.
+       * - `FundingRoundNameMaxLengthExceeded` if the name of the funding round is longer that
+       * `T::FundingRoundNameMaxLength`.
+       * - `AssetAlreadyCreated` if asset was already created.
+       * - `TotalSupplyAboveLimit` if `total_supply > MAX_SUPPLY`.
+       * - `TickerTooLong` if `ticker`'s length is greater than `config.max_ticker_length` chain
+       * parameter.
+       * - `TickerNotAscii` if `ticker` is not yet registered, and contains non-ascii printable characters (from code 32 to 126) or any character after first occurrence of `\0`.
+       *
+       * ## Permissions
        * * Portfolio
        **/
       createAsset: AugmentedSubmittable<
@@ -289,6 +318,7 @@ declare module '@polkadot/api/types/submittable' {
             | { StructuredProduct: any }
             | { Derivative: any }
             | { Custom: any }
+            | { StableCoin: any }
             | string
             | Uint8Array,
           identifiers:
@@ -320,6 +350,9 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `origin` - the secondary key of the sender.
        * * `ticker` - the ticker of the token.
+       *
+       * ## Errors
+       * - `AlreadyFrozen` if `ticker` is already frozen.
        *
        * # Permissions
        * * Asset
@@ -355,6 +388,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `origin` Secondary key of the token owner.
        * * `ticker` Ticker of the token.
        *
+       * ## Errors
+       * - `AssetAlreadyDivisible` if `ticker` is already divisible.
+       *
        * # Permissions
        * * Asset
        **/
@@ -387,11 +423,11 @@ declare module '@polkadot/api/types/submittable' {
         [Ticker, Balance]
       >;
       /**
-       * This function is used to either register a new ticker or extend validity of an existing ticker.
+       * Registers a new ticker or extends validity of an existing ticker.
        * NB: Ticker validity does not get carry forward when renewing ticker.
        *
        * # Arguments
-       * * `origin` It contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `origin` It contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
        * * `ticker` ticker to register.
        *
        * # Permissions
@@ -441,6 +477,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `origin` - The asset issuer.
        * * `ticker` - Ticker symbol of the asset.
        *
+       * ## Errors
+       * - `MissingExtensionDetails` if `ticker` is not linked to `extension_id`.
+       *
        * # Permissions
        * * Asset
        **/
@@ -458,6 +497,10 @@ declare module '@polkadot/api/types/submittable' {
        * * `origin` - the secondary key of the sender.
        * * `ticker` - the ticker of the token.
        * * `name` - the new name of the token.
+       *
+       * ## Errors
+       * - `MaxLengthOfAssetNameExceeded` if length of `name` is greater than
+       * `T::AssetNameMaxLength`.
        *
        * # Permissions
        * * Asset
@@ -508,6 +551,10 @@ declare module '@polkadot/api/types/submittable' {
        * * `ticker` - the ticker of the token.
        * * `name` - the desired name of the current funding round.
        *
+       * ## Errors
+       * - `FundingRoundNameMaxLengthExceeded` if length of `name` is greater than
+       * `T::FundingRoundNameMaxLength`.
+       *
        * # Permissions
        * * Asset
        **/
@@ -519,12 +566,15 @@ declare module '@polkadot/api/types/submittable' {
         [Ticker, FundingRoundName]
       >;
       /**
-       * Un-archived the extension. Extension is use to verify the compliance or any smart logic it posses.
+       * Unarchived the extension. Extension is used to verify the compliance or any smart logic it possesses.
        *
        * # Arguments
        * * `origin` - Signatory who owns the ticker/asset.
        * * `ticker` - Ticker symbol of the asset.
-       * * `extension_id` - AccountId of the extension that need to be un-archived.
+       * * `extension_id` - AccountId of the extension that need to be unarchived.
+       *
+       * ## Errors
+       * -  `AlreadyArchived` if `extension_id` of `ticker` is already archived.
        *
        * # Permissions
        * * Asset
@@ -543,6 +593,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `origin` - the secondary key of the sender.
        * * `ticker` - the ticker of the frozen token.
        *
+       * ## Errors
+       * - `NotFrozen` if `ticker` is not frozen yet.
+       *
        * # Permissions
        * * Asset
        **/
@@ -558,6 +611,9 @@ declare module '@polkadot/api/types/submittable' {
        * * `ticker` - the ticker of the token.
        * * `identifiers` - the asset identifiers to be updated in the form of a vector of pairs
        * of `IdentifierType` and `AssetIdentifier` value.
+       *
+       * ## Errors
+       * - `InvalidAssetIdentifier` if `identifiers` contains any invalid identifier.
        *
        * # Permissions
        * * Asset
@@ -1630,6 +1686,7 @@ declare module '@polkadot/api/types/submittable' {
        * - `frame_system::BadOrigin` if `origin` is not signed.
        * - `pallet_permission::Error::<T>::UnAutorizedCaller` if `origin` does not have a valid
        * IdentityId.
+       * - `TooLong` if the strings embedded in `meta_info` are too long.
        * - `pallet_contrats::Error::<T>::CodeTooLarge` if `code` length is grater than the chain
        * setting for `pallet_contrats::max_code_size`.
        * - Before `code` is inserted, some checks are performed on it, and them could raise up
@@ -1974,6 +2031,7 @@ declare module '@polkadot/api/types/submittable' {
        * - `RecordDateAfterStart` if `date > range.start` where `date` is the CA's record date.
        * - `AlreadyExists` if there's a ballot already.
        * - `NumberOfChoicesOverflow` if the total choice in `meta` overflows `usize`.
+       * - `TooLong` if any of the embedded strings in `meta` are too long.
        * - `InsufficientBalance` if the protocol fee couldn't be charged.
        **/
       attachBallot: AugmentedSubmittable<
@@ -2019,6 +2077,7 @@ declare module '@polkadot/api/types/submittable' {
        * - `NoSuchBallot` if `ca_id` does not identify a ballot.
        * - `VotingAlreadyStarted` if `start >= now`, where `now` is the current time.
        * - `NumberOfChoicesOverflow` if the total choice in `meta` overflows `usize`.
+       * - `TooLong` if any of the embedded strings in `meta` are too long.
        **/
       changeMeta: AugmentedSubmittable<
         (
@@ -2290,6 +2349,33 @@ declare module '@polkadot/api/types/submittable' {
           expiry: Option<Moment> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [IdentityId, Claim, InvestorZKProofData, Option<Moment>]
+      >;
+      addInvestorUniquenessClaimV2: AugmentedSubmittable<
+        (
+          target: IdentityId | string | Uint8Array,
+          claim:
+            | Claim
+            | { Accredited: any }
+            | { Affiliate: any }
+            | { BuyLockup: any }
+            | { SellLockup: any }
+            | { CustomerDueDiligence: any }
+            | { KnowYourCustomer: any }
+            | { Jurisdiction: any }
+            | { Exempted: any }
+            | { Blocked: any }
+            | { InvestorUniqueness: any }
+            | { NoData: any }
+            | string
+            | Uint8Array,
+          proof:
+            | ScopeClaimProof
+            | { proof_scope_id_wellformed?: any; proof_scope_id_cdd_id_match?: any; scope_id?: any }
+            | string
+            | Uint8Array,
+          expiry: Option<Moment> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [IdentityId, Claim, ScopeClaimProof, Option<Moment>]
       >;
       /**
        * It adds secondary keys to target identity `id`.

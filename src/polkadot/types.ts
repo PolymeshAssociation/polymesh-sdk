@@ -342,6 +342,7 @@ export enum IdentityTx {
   AddInvestorUniquenessClaim = 'identity.addInvestorUniquenessClaim',
   GcAddCddClaim = 'identity.gcAddCddClaim',
   GcRevokeCddClaim = 'identity.gcRevokeCddClaim',
+  AddInvestorUniquenessClaimV2 = 'identity.addInvestorUniquenessClaimV2',
 }
 
 export enum BridgeTx {

@@ -1025,6 +1025,9 @@ export function assetTypeToString(assetType: AssetType): string {
   if (assetType.isDerivative) {
     return KnownTokenType.Derivative;
   }
+  if (assetType.isStableCoin) {
+    return KnownTokenType.StableCoin;
+  }
 
   return u8aToString(assetType.asCustom);
 }

@@ -1546,6 +1546,12 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
+    fakeResult = KnownTokenType.StableCoin;
+    assetType = dsMockUtils.createMockAssetType(fakeResult);
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
     const fakeType = 'otherType';
     assetType = dsMockUtils.createMockAssetType({
       Custom: dsMockUtils.createMockBytes(fakeType),

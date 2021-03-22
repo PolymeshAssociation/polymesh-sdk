@@ -89,6 +89,27 @@ export default {
       ],
       type: 'GranularCanTransferResult',
     },
+    balanceAt: {
+      description: 'Returns the ticker balances of identities at a checkpoint.',
+      params: [
+        {
+          name: 'ticker',
+          type: 'Ticker',
+          isOptional: false,
+        },
+        {
+          name: 'checkpoint',
+          type: 'CheckpointId',
+          isOptional: false,
+        },
+        {
+          name: 'dids',
+          type: 'Vec<IdentityId>',
+          isOptional: false,
+        },
+      ],
+      type: 'BalanceAtResult',
+    },
   },
   types: {},
 };

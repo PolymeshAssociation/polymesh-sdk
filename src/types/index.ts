@@ -177,6 +177,7 @@ export enum KnownTokenType {
   RevenueShareAgreement = 'RevenueShareAgreement',
   StructuredProduct = 'StructuredProduct',
   Derivative = 'Derivative',
+  StableCoin = 'StableCoin',
 }
 
 /**

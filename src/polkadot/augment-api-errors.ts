@@ -199,6 +199,13 @@ declare module '@polkadot/api/types/errors' {
        **/
       ReceiverCddMissing: AugmentedError<ApiType>;
     };
+    base: {
+      /**
+       * Exceeded a generic length limit.
+       * The limit could be for any sort of lists of things, including a string.
+       **/
+      TooLong: AugmentedError<ApiType>;
+    };
     baseContracts: {
       /**
        * Performing the requested transfer would have brought the contract below

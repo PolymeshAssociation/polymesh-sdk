@@ -108,6 +108,7 @@ export interface AssetType extends Enum {
   readonly isDerivative: boolean;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
+  readonly isStableCoin: boolean;
 }
 
 /** @name AuthIdentifier */
@@ -165,6 +166,14 @@ export interface AuthorizationType extends Enum {
   readonly isCustom: boolean;
   readonly isNoData: boolean;
   readonly isTransferCorporateActionAgent: boolean;
+}
+
+/** @name BalanceAtResult */
+export interface BalanceAtResult extends Enum {
+  readonly isOk: boolean;
+  readonly asOk: Vec<Balance>;
+  readonly isErr: boolean;
+  readonly asErr: Bytes;
 }
 
 /** @name BallotMeta */
@@ -1274,6 +1283,12 @@ export interface RestrictionResult extends Enum {
   readonly isForceValid: boolean;
 }
 
+/** @name RistrettoPoint */
+export interface RistrettoPoint extends U8aFixed {}
+
+/** @name Scalar */
+export interface Scalar extends U8aFixed {}
+
 /** @name ScheduleId */
 export interface ScheduleId extends u64 {}
 
@@ -1292,6 +1307,13 @@ export interface Scope extends Enum {
   readonly asTicker: Ticker;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
+}
+
+/** @name ScopeClaimProof */
+export interface ScopeClaimProof extends Struct {
+  readonly proof_scope_id_wellformed: Signature;
+  readonly proof_scope_id_cdd_id_match: ZkProofData;
+  readonly scope_id: RistrettoPoint;
 }
 
 /** @name ScopeId */
@@ -1576,6 +1598,13 @@ export interface WeightToFeeCoefficient extends Struct {
   readonly coeffFrac: Perbill;
   readonly negative: bool;
   readonly degree: u8;
+}
+
+/** @name ZkProofData */
+export interface ZkProofData extends Struct {
+  readonly challenge_responses: Vec<Scalar>;
+  readonly subtract_expressions_res: RistrettoPoint;
+  readonly blinded_scope_did_hash: RistrettoPoint;
 }
 
 export type PHANTOM_POLYMESH = 'polymesh';

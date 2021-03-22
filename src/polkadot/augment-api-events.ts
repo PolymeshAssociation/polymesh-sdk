@@ -174,7 +174,7 @@ declare module '@polkadot/api/types/events' {
        **/
       FundingRoundSet: AugmentedEvent<ApiType, [IdentityId, Ticker, FundingRoundName]>;
       /**
-       * Event emitted when a token identifiers are updated.
+       * Event emitted when any token identifiers are updated.
        * caller DID, ticker, a vector of (identifier type, identifier value)
        **/
       IdentifiersUpdated: AugmentedEvent<ApiType, [IdentityId, Ticker, Vec<AssetIdentifier>]>;
@@ -224,7 +224,7 @@ declare module '@polkadot/api/types/events' {
        **/
       Transfer: AugmentedEvent<ApiType, [IdentityId, Ticker, PortfolioId, PortfolioId, Balance]>;
       /**
-       * An additional event to Transfer; emitted when transfer_with_data is called.
+       * An additional event to Transfer; emitted when `transfer_with_data` is called.
        * caller DID , ticker, from DID, to DID, value, data
        **/
       TransferWithData: AugmentedEvent<
@@ -267,6 +267,12 @@ declare module '@polkadot/api/types/events' {
        * Some balance was unreserved (moved from reserved to free). \[who, value]
        **/
       Unreserved: AugmentedEvent<ApiType, [AccountId, Balance]>;
+    };
+    base: {
+      /**
+       * An unexpected error happened that should be investigated.
+       **/
+      UnexpectedError: AugmentedEvent<ApiType, [Option<DispatchError>]>;
     };
     baseContracts: {
       /**
@@ -795,10 +801,6 @@ declare module '@polkadot/api/types/events' {
        * A signer left their identity. (did, signer)
        **/
       SignerLeft: AugmentedEvent<ApiType, [IdentityId, Signatory]>;
-      /**
-       * An unexpected error happened that should be investigated.
-       **/
-      UnexpectedError: AugmentedEvent<ApiType, [Option<DispatchError>]>;
     };
     imOnline: {
       /**
@@ -1295,9 +1297,9 @@ declare module '@polkadot/api/types/events' {
        **/
       PermissionedIdentityRemoved: AugmentedEvent<ApiType, [IdentityId, IdentityId]>;
       /**
-       * The staker has been rewarded by this amount. [stash, amount]
+       * The staker has been rewarded by this amount. [stash_identity, stash, amount]
        **/
-      Reward: AugmentedEvent<ApiType, [AccountId, Balance]>;
+      Reward: AugmentedEvent<ApiType, [IdentityId, AccountId, Balance]>;
       /**
        * When scheduling of reward payments get interrupted.
        **/

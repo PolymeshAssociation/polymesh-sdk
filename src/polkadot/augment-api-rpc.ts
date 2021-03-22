@@ -80,9 +80,11 @@ import type {
   AssetDidResult,
   Authorization,
   AuthorizationType,
+  BalanceAtResult,
   CanTransferResult,
   CappedFee,
   CddStatus,
+  CheckpointId,
   DidRecords,
   DidStatus,
   GranularCanTransferResult,
@@ -100,6 +102,16 @@ import type {
 declare module '@polkadot/rpc-core/types.jsonrpc' {
   export interface RpcInterface {
     asset: {
+      /**
+       * Returns the ticker balances of identities at a checkpoint.
+       **/
+      balanceAt: AugmentedRpc<
+        (
+          ticker: Ticker | string | Uint8Array,
+          checkpoint: CheckpointId | AnyNumber | Uint8Array,
+          dids: Vec<IdentityId> | (IdentityId | string | Uint8Array)[]
+        ) => Observable<BalanceAtResult>
+      >;
       /**
        * Checks whether a transaction with given parameters can take place or not
        **/
