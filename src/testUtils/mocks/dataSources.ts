@@ -1469,6 +1469,7 @@ export const createMockAssetType = (
     | 'RevenueShareAgreement'
     | 'StructuredProduct'
     | 'Derivative'
+    | 'StableCoin'
     | { Custom: Bytes }
 ): AssetType => {
   return createMockEnum(assetType) as AssetType;
