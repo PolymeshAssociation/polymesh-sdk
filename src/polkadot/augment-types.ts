@@ -722,6 +722,7 @@ import type {
   AuthorizationData,
   AuthorizationNonce,
   AuthorizationType,
+  BalanceAtResult,
   BallotMeta,
   BallotTimeRange,
   BallotTitle,
@@ -847,9 +848,12 @@ import type {
   RecordDate,
   RecordDateSpec,
   RestrictionResult,
+  RistrettoPoint,
+  Scalar,
   ScheduleId,
   ScheduleSpec,
   Scope,
+  ScopeClaimProof,
   ScopeId,
   SecondaryKey,
   SecondaryKeyWithAuth,
@@ -894,6 +898,7 @@ import type {
   VoteCount,
   VoteCountProposalFound,
   VotingResult,
+  ZkProofData,
 } from 'polymesh-types/polymesh';
 
 declare module '@polkadot/types/types/registry' {
@@ -1053,6 +1058,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<BabeWeight>': Option<BabeWeight>;
     'Option<BackedCandidate>': Option<BackedCandidate>;
     'Option<Balance>': Option<Balance>;
+    'Option<BalanceAtResult>': Option<BalanceAtResult>;
     'Option<BalanceLock>': Option<BalanceLock>;
     'Option<BalanceLockTo212>': Option<BalanceLockTo212>;
     'Option<BalanceOf>': Option<BalanceOf>;
@@ -1613,12 +1619,14 @@ declare module '@polkadot/types/types/registry' {
     'Option<ReserveAssetDeposit>': Option<ReserveAssetDeposit>;
     'Option<RestrictionResult>': Option<RestrictionResult>;
     'Option<Retriable>': Option<Retriable>;
+    'Option<RistrettoPoint>': Option<RistrettoPoint>;
     'Option<RoundState>': Option<RoundState>;
     'Option<RpcMethods>': Option<RpcMethods>;
     'Option<RuntimeDbWeight>': Option<RuntimeDbWeight>;
     'Option<RuntimeDispatchInfo>': Option<RuntimeDispatchInfo>;
     'Option<RuntimeVersion>': Option<RuntimeVersion>;
     'Option<RuntimeVersionApi>': Option<RuntimeVersionApi>;
+    'Option<Scalar>': Option<Scalar>;
     'Option<Schedule>': Option<Schedule>;
     'Option<Scheduled>': Option<Scheduled>;
     'Option<ScheduledTo254>': Option<ScheduledTo254>;
@@ -1630,6 +1638,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<ScheduleTo258>': Option<ScheduleTo258>;
     'Option<Scheduling>': Option<Scheduling>;
     'Option<Scope>': Option<Scope>;
+    'Option<ScopeClaimProof>': Option<ScopeClaimProof>;
     'Option<ScopeId>': Option<ScopeId>;
     'Option<Seal>': Option<Seal>;
     'Option<SealV0>': Option<SealV0>;
@@ -1825,6 +1834,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<Xcm>': Option<Xcm>;
     'Option<XcmError>': Option<XcmError>;
     'Option<XcmResult>': Option<XcmResult>;
+    'Option<ZkProofData>': Option<ZkProofData>;
     'Vec<AbridgedCandidateReceipt>': Vec<AbridgedCandidateReceipt>;
     'Vec<AbridgedHostConfiguration>': Vec<AbridgedHostConfiguration>;
     'Vec<AbridgedHrmpChannel>': Vec<AbridgedHrmpChannel>;
@@ -1892,6 +1902,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<BabeWeight>': Vec<BabeWeight>;
     'Vec<BackedCandidate>': Vec<BackedCandidate>;
     'Vec<Balance>': Vec<Balance>;
+    'Vec<BalanceAtResult>': Vec<BalanceAtResult>;
     'Vec<BalanceLock>': Vec<BalanceLock>;
     'Vec<BalanceLockTo212>': Vec<BalanceLockTo212>;
     'Vec<BalanceOf>': Vec<BalanceOf>;
@@ -2452,12 +2463,14 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ReserveAssetDeposit>': Vec<ReserveAssetDeposit>;
     'Vec<RestrictionResult>': Vec<RestrictionResult>;
     'Vec<Retriable>': Vec<Retriable>;
+    'Vec<RistrettoPoint>': Vec<RistrettoPoint>;
     'Vec<RoundState>': Vec<RoundState>;
     'Vec<RpcMethods>': Vec<RpcMethods>;
     'Vec<RuntimeDbWeight>': Vec<RuntimeDbWeight>;
     'Vec<RuntimeDispatchInfo>': Vec<RuntimeDispatchInfo>;
     'Vec<RuntimeVersion>': Vec<RuntimeVersion>;
     'Vec<RuntimeVersionApi>': Vec<RuntimeVersionApi>;
+    'Vec<Scalar>': Vec<Scalar>;
     'Vec<Schedule>': Vec<Schedule>;
     'Vec<Scheduled>': Vec<Scheduled>;
     'Vec<ScheduledTo254>': Vec<ScheduledTo254>;
@@ -2469,6 +2482,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ScheduleTo258>': Vec<ScheduleTo258>;
     'Vec<Scheduling>': Vec<Scheduling>;
     'Vec<Scope>': Vec<Scope>;
+    'Vec<ScopeClaimProof>': Vec<ScopeClaimProof>;
     'Vec<ScopeId>': Vec<ScopeId>;
     'Vec<Seal>': Vec<Seal>;
     'Vec<SealV0>': Vec<SealV0>;
@@ -2664,6 +2678,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<Xcm>': Vec<Xcm>;
     'Vec<XcmError>': Vec<XcmError>;
     'Vec<XcmResult>': Vec<XcmResult>;
+    'Vec<ZkProofData>': Vec<ZkProofData>;
     AbridgedCandidateReceipt: AbridgedCandidateReceipt;
     AbridgedHostConfiguration: AbridgedHostConfiguration;
     AbridgedHrmpChannel: AbridgedHrmpChannel;
@@ -2731,6 +2746,7 @@ declare module '@polkadot/types/types/registry' {
     BabeWeight: BabeWeight;
     BackedCandidate: BackedCandidate;
     Balance: Balance;
+    BalanceAtResult: BalanceAtResult;
     BalanceLock: BalanceLock;
     BalanceLockTo212: BalanceLockTo212;
     BalanceOf: BalanceOf;
@@ -3291,12 +3307,14 @@ declare module '@polkadot/types/types/registry' {
     ReserveAssetDeposit: ReserveAssetDeposit;
     RestrictionResult: RestrictionResult;
     Retriable: Retriable;
+    RistrettoPoint: RistrettoPoint;
     RoundState: RoundState;
     RpcMethods: RpcMethods;
     RuntimeDbWeight: RuntimeDbWeight;
     RuntimeDispatchInfo: RuntimeDispatchInfo;
     RuntimeVersion: RuntimeVersion;
     RuntimeVersionApi: RuntimeVersionApi;
+    Scalar: Scalar;
     Schedule: Schedule;
     Scheduled: Scheduled;
     ScheduledTo254: ScheduledTo254;
@@ -3308,6 +3326,7 @@ declare module '@polkadot/types/types/registry' {
     ScheduleTo258: ScheduleTo258;
     Scheduling: Scheduling;
     Scope: Scope;
+    ScopeClaimProof: ScopeClaimProof;
     ScopeId: ScopeId;
     Seal: Seal;
     SealV0: SealV0;
@@ -3503,5 +3522,6 @@ declare module '@polkadot/types/types/registry' {
     Xcm: Xcm;
     XcmError: XcmError;
     XcmResult: XcmResult;
+    ZkProofData: ZkProofData;
   }
 }

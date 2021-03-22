@@ -52,6 +52,7 @@ export default {
         StructuredProduct: '',
         Derivative: '',
         Custom: 'Vec<u8>',
+        StableCoin: '',
       },
     },
     AssetIdentifier: {
@@ -403,6 +404,18 @@ export default {
       },
     },
     InvestorZKProofData: 'Signature',
+    Scalar: '[u8; 32]',
+    RistrettoPoint: '[u8; 32]',
+    ZkProofData: {
+      challenge_responses: '[Scalar; 2]',
+      subtract_expressions_res: 'RistrettoPoint',
+      blinded_scope_did_hash: 'RistrettoPoint',
+    },
+    ScopeClaimProof: {
+      proof_scope_id_wellformed: 'Signature',
+      proof_scope_id_cdd_id_match: 'ZkProofData',
+      scope_id: 'RistrettoPoint',
+    },
     Claim: {
       _enum: {
         Accredited: 'Scope',
@@ -1143,6 +1156,12 @@ export default {
     TransferManagerResult: {
       tm: 'TransferManager',
       result: 'bool',
+    },
+    BalanceAtResult: {
+      _enum: {
+        Ok: 'Vec<Balance>',
+        Err: 'Vec<u8>',
+      },
     },
   },
 };
