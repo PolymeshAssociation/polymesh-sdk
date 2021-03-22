@@ -1,3 +1,5 @@
+import P from 'bluebird';
+
 import { CreateCheckpointScheduleParams } from '~/api/procedures/createCheckpointSchedule';
 import { RemoveCheckpointScheduleParams } from '~/api/procedures/removeCheckpointSchedule';
 import {
@@ -10,9 +12,14 @@ import {
   removeCheckpointSchedule,
   SecurityToken,
 } from '~/internal';
-import { CheckpointWithCreationDate } from '~/types';
+import { CheckpointWithCreationDate, ScheduleWithDetails } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
-import { momentToDate, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import {
+  momentToDate,
+  storedScheduleToScheduleParams,
+  stringToTicker,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -91,5 +98,38 @@ export class Checkpoints extends Namespace<SecurityToken> {
         // the query also returns the next scheduled checkpoint for every schedule (which haven't been created yet)
         .filter(({ createdAt }) => createdAt <= now)
     );
+  }
+
+  /**
+   * Retrieve all active Checkpoint Schedules
+   */
+  public async getSchedules(): Promise<ScheduleWithDetails[]> {
+    const {
+      parent: { ticker },
+      context: {
+        polymeshApi: {
+          query: { checkpoint },
+        },
+      },
+      context,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const rawSchedules = await checkpoint.schedules(rawTicker);
+
+    return P.map(rawSchedules, async rawSchedule => {
+      const scheduleParams = storedScheduleToScheduleParams(rawSchedule);
+      const schedule = new CheckpointSchedule({ ...scheduleParams, ticker }, context);
+
+      const { remaining: remainingCheckpoints, nextCheckpointDate } = scheduleParams;
+      return {
+        schedule,
+        details: {
+          remainingCheckpoints,
+          nextCheckpointDate,
+        },
+      };
+    });
   }
 }
