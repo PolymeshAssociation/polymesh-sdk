@@ -33,6 +33,7 @@ import {
   Permill,
   RefCount,
   RuntimeVersion,
+  Signature,
 } from '@polkadot/types/interfaces';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import { Codec, ISubmittableResult, Registry } from '@polkadot/types/types';
@@ -98,8 +99,11 @@ import {
   PosRatio,
   PriceTier,
   ProposalState,
+  RistrettoPoint,
+  Scalar,
   ScheduleSpec,
   Scope,
+  ScopeClaimProof as MeshScopeClaimProof,
   ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SecurityToken,
@@ -116,6 +120,7 @@ import {
   Venue,
   VenueDetails,
   VenueType,
+  ZkProofData,
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
@@ -2500,4 +2505,53 @@ export const createMockScheduleSpec = (scheduleSpec?: {
     },
     !scheduleSpec
   ) as ScheduleSpec;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockScalar = (scalar?: string): Scalar =>
+  createMockStringCodec(scalar) as Scalar;
+
+export const createMockRistrettoPoint = (ristrettoPoint?: string): RistrettoPoint =>
+  createMockStringCodec(ristrettoPoint) as RistrettoPoint;
+
+export const createMockSignature = (signature?: string): Signature =>
+  createMockStringCodec(signature) as Signature;
+
+export const createMockZkProofData = (
+  challengeResponses: string[],
+  subtractExpressionsRes: string,
+  blindedScopeDidHash: string
+): ZkProofData => {
+  return createMockCodec(
+    {
+      challenge_responses: challengeResponses.map(cr => createMockScalar(cr)),
+      subtract_expressions_res: createMockRistrettoPoint(subtractExpressionsRes),
+      blinded_scope_did_hash: createMockRistrettoPoint(blindedScopeDidHash),
+    },
+    false
+  ) as ZkProofData;
+};
+
+export const createMockScopeClaimProof = (
+  proofScopeIdWellformed: string,
+  challengeResponses: string[],
+  subtractExpressionsRes: string,
+  blindedScopeDidHash: string,
+  scopeId: string
+): MeshScopeClaimProof => {
+  return createMockCodec(
+    {
+      proof_scope_id_wellformed: createMockSignature(proofScopeIdWellformed),
+      proof_scope_id_cdd_id_match: createMockZkProofData(
+        challengeResponses,
+        subtractExpressionsRes,
+        blindedScopeDidHash
+      ),
+      scope_id: createMockRistrettoPoint(scopeId),
+    },
+    false
+  ) as MeshScopeClaimProof;
 };

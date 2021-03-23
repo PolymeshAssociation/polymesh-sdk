@@ -2665,7 +2665,7 @@ export function stringToRistrettoPoint(ristrettoPoint: string, context: Context)
 /**
  * @hidden
  */
-function stringToScalar(scalar: string, context: Context): Scalar {
+export function stringToScalar(scalar: string, context: Context): Scalar {
   return context.polymeshApi.createType('Scalar', scalar);
 }
 
