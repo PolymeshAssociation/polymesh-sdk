@@ -1,9 +1,11 @@
 import { PolymeshError } from '~/base/PolymeshError';
 import { Procedure } from '~/internal';
 import { ClaimType, ErrorCode, Scope, TxTags } from '~/types';
+import { ScopeClaimProof } from '~/types/internal';
 import {
   claimToMeshClaim,
   dateToMoment,
+  scopeClaimProofToMeshScopeClaimProof,
   stringToIdentityId,
   stringToInvestorZKProofData,
 } from '~/utils/conversion';
@@ -11,7 +13,7 @@ import {
 export interface AddInvestorUniquenessClaimParams {
   scope: Scope;
   cddId: string;
-  proof: string;
+  proof: string | ScopeClaimProof;
   scopeId: string;
   expiry?: Date;
 }
@@ -40,14 +42,25 @@ export async function prepareAddInvestorUniquenessClaim(
     });
   }
 
-  this.addTransaction(
-    tx.identity.addInvestorUniquenessClaim,
-    {},
-    stringToIdentityId(did, context),
-    claimToMeshClaim({ type: ClaimType.InvestorUniqueness, scope, cddId, scopeId }, context),
-    stringToInvestorZKProofData(proof, context),
-    expiry ? dateToMoment(expiry, context) : null
-  );
+  if (typeof proof === 'string') {
+    this.addTransaction(
+      tx.identity.addInvestorUniquenessClaim,
+      {},
+      stringToIdentityId(did, context),
+      claimToMeshClaim({ type: ClaimType.InvestorUniqueness, scope, cddId, scopeId }, context),
+      stringToInvestorZKProofData(proof, context),
+      expiry ? dateToMoment(expiry, context) : null
+    );
+  } else {
+    this.addTransaction(
+      tx.identity.addInvestorUniquenessClaimV2,
+      {},
+      stringToIdentityId(did, context),
+      claimToMeshClaim({ type: ClaimType.InvestorUniqueness, scope, cddId, scopeId }, context),
+      scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context),
+      expiry ? dateToMoment(expiry, context) : null
+    );
+  }
 }
 
 /**
@@ -57,6 +70,9 @@ export const addInvestorUniquenessClaim = new Procedure(prepareAddInvestorUnique
   signerPermissions: {
     tokens: [],
     portfolios: [],
-    transactions: [TxTags.identity.AddInvestorUniquenessClaim],
+    transactions: [
+      TxTags.identity.AddInvestorUniquenessClaim,
+      TxTags.identity.AddInvestorUniquenessClaimV2,
+    ],
   },
 });

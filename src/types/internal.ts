@@ -198,6 +198,16 @@ export interface ScheduleSpec {
   repetitions: number | null;
 }
 
+export interface ScopeClaimProof {
+  proofScopeIdWellformed: string;
+  proofScopeIdCddIdMatch: {
+    firstChallengeResponse: string;
+    secondChallengeResponse: string;
+    subtractExpressionsRes: string;
+    blindedScopeDidHash: string;
+  };
+}
+
 export interface ProcedureAuthorization {
   signerPermissions?: Omit<Permissions, 'transactionGroups'> | boolean;
   identityRoles?: Role[] | boolean;
