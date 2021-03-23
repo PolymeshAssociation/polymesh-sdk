@@ -1,7 +1,7 @@
 import { PolymeshError } from '~/base/PolymeshError';
 import { Procedure } from '~/internal';
-import { ClaimType, ErrorCode, Scope, TxTags } from '~/types';
-import { ScopeClaimProof } from '~/types/internal';
+import { ClaimType, ErrorCode, Scope, TxTag, TxTags } from '~/types';
+import { ProcedureAuthorization, ScopeClaimProof } from '~/types/internal';
 import {
   claimToMeshClaim,
   dateToMoment,
@@ -66,13 +66,31 @@ export async function prepareAddInvestorUniquenessClaim(
 /**
  * @hidden
  */
-export const addInvestorUniquenessClaim = new Procedure(prepareAddInvestorUniquenessClaim, {
-  signerPermissions: {
-    tokens: [],
-    portfolios: [],
-    transactions: [
-      TxTags.identity.AddInvestorUniquenessClaim,
-      TxTags.identity.AddInvestorUniquenessClaimV2,
-    ],
-  },
-});
+export function getAuthorization(
+  this: Procedure<AddInvestorUniquenessClaimParams>,
+  { proof }: AddInvestorUniquenessClaimParams
+): ProcedureAuthorization {
+  let transactions: TxTag[];
+
+  if (typeof proof === 'string') {
+    transactions = [TxTags.identity.AddInvestorUniquenessClaim];
+  } else {
+    transactions = [TxTags.identity.AddInvestorUniquenessClaimV2];
+  }
+
+  return {
+    signerPermissions: {
+      tokens: [],
+      portfolios: [],
+      transactions,
+    },
+  };
+}
+
+/**
+ * @hidden
+ */
+export const addInvestorUniquenessClaim = new Procedure(
+  prepareAddInvestorUniquenessClaim,
+  getAuthorization
+);
