@@ -2677,6 +2677,7 @@ export function scopeClaimProofToMeshScopeClaimProof(
   scopeId: string,
   context: Context
 ): MeshScopeClaimProof {
+  const { polymeshApi } = context;
   const {
     proofScopeIdWellformed,
     proofScopeIdCddIdMatch: {
@@ -2687,7 +2688,7 @@ export function scopeClaimProofToMeshScopeClaimProof(
     },
   } = proof;
 
-  const zkProofData = context.polymeshApi.createType('ZkProofData', {
+  const zkProofData = polymeshApi.createType('ZkProofData', {
     /* eslint-disable @typescript-eslint/camelcase */
     challenge_responses: [
       stringToScalar(firstChallengeResponse, context),
@@ -2698,7 +2699,7 @@ export function scopeClaimProofToMeshScopeClaimProof(
     /* eslint-enable @typescript-eslint/camelcase */
   });
 
-  return context.polymeshApi.createType('ScopeClaimProof', {
+  return polymeshApi.createType('ScopeClaimProof', {
     /* eslint-disable @typescript-eslint/camelcase */
     proof_scope_id_wellformed: stringToSignature(proofScopeIdWellformed, context),
     proof_scope_id_cdd_id_match: zkProofData,

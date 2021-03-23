@@ -42,23 +42,29 @@ export async function prepareAddInvestorUniquenessClaim(
     });
   }
 
+  const meshIdentityId = stringToIdentityId(did, context);
+  const meshClaim = claimToMeshClaim(
+    { type: ClaimType.InvestorUniqueness, scope, cddId, scopeId },
+    context
+  );
+  const meshExpiry = expiry ? dateToMoment(expiry, context) : null;
   if (typeof proof === 'string') {
     this.addTransaction(
       tx.identity.addInvestorUniquenessClaim,
       {},
-      stringToIdentityId(did, context),
-      claimToMeshClaim({ type: ClaimType.InvestorUniqueness, scope, cddId, scopeId }, context),
+      meshIdentityId,
+      meshClaim,
       stringToInvestorZKProofData(proof, context),
-      expiry ? dateToMoment(expiry, context) : null
+      meshExpiry
     );
   } else {
     this.addTransaction(
       tx.identity.addInvestorUniquenessClaimV2,
       {},
-      stringToIdentityId(did, context),
-      claimToMeshClaim({ type: ClaimType.InvestorUniqueness, scope, cddId, scopeId }, context),
+      meshIdentityId,
+      meshClaim,
       scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context),
-      expiry ? dateToMoment(expiry, context) : null
+      meshExpiry
     );
   }
 }
