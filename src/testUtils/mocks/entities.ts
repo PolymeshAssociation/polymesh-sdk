@@ -125,6 +125,7 @@ interface SecurityTokenOptions {
   getIdentifiers?: TokenIdentifier[];
   transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
+  corporateActionsGetAgent?: Identity;
 }
 
 interface AuthorizationRequestOptions {
@@ -233,6 +234,7 @@ let securityTokenTransfersCanTransferStub: SinonStub;
 let securityTokenGetIdentifiersStub: SinonStub;
 let securityTokenTransferRestrictionsCountGetStub: SinonStub;
 let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
+let securityTokenCorporateActionsGetAgentStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -554,6 +556,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     restrictions: [],
     availableSlots: MAX_TRANSFER_MANAGERS,
   },
+  corporateActionsGetAgent: { did: 'someDid' } as Identity,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -893,6 +896,9 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
         ),
       },
     },
+    corporateActions: {
+      getAgent: securityTokenCorporateActionsGetAgentStub.resolves(opts.corporateActionsGetAgent),
+    },
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -916,6 +922,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenGetIdentifiersStub = sinon.stub();
   securityTokenTransferRestrictionsCountGetStub = sinon.stub();
   securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
+  securityTokenCorporateActionsGetAgentStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -1900,6 +1907,18 @@ export function getSecurityTokenTransferRestrictionsPercentageGetStub(
   }
 
   return securityTokenTransferRestrictionsPercentageGetStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.corporateActions.getAgent` method
+ */
+export function getSecurityTokenCorporateActionsGetAgentStub(agent?: Identity): SinonStub {
+  if (agent) {
+    return securityTokenCorporateActionsGetAgentStub.resolves(agent);
+  }
+
+  return securityTokenCorporateActionsGetAgentStub;
 }
 
 /**

@@ -25,6 +25,7 @@ import {
   AuthIdentifier,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
+  CAId,
   Claim as MeshClaim,
   DocumentHash,
   DocumentName,
@@ -113,6 +114,7 @@ import {
   claimTypeToMeshClaimType,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
+  corporateActionIdentifierToCaId,
   dateToMoment,
   documentHashToString,
   documentNameToString,
@@ -4994,5 +4996,44 @@ describe('scheduleSpecToMeshScheduleSpec', () => {
       { start: null, period: null, repetitions: null },
       context
     );
+  });
+});
+
+describe('fundraiserTierToTier', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('corporateActionIdentifierToCaId should convert a CorporateActionIdentifier object to a polkadot CAId object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const args = {
+      ticker: 'SOMETICKER',
+      localId: new BigNumber(1),
+    };
+    const ticker = dsMockUtils.createMockTicker(args.ticker);
+    const localId = dsMockUtils.createMockU32(args.localId.toNumber());
+    const fakeResult = ('CAId' as unknown) as CAId;
+
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', args.ticker).returns(ticker);
+    dsMockUtils.getCreateTypeStub().withArgs('u32', args.localId.toString()).returns(localId);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('CAId', {
+        ticker,
+        local_id: localId,
+      })
+      .returns(fakeResult);
+
+    const result = corporateActionIdentifierToCaId(args, context);
+    expect(result).toEqual(fakeResult);
   });
 });
