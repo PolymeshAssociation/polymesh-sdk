@@ -241,18 +241,23 @@ describe('addInvestorUniquenessClaim procedure', () => {
   });
 
   test('should throw an error if the expiry date is in the past', async () => {
+    const commonArgs = {
+      scope: { type: ScopeType.Ticker, value: ticker },
+      cddId,
+      scopeId,
+      expiry: new Date('10/14/1987'),
+    };
+
     const proc = procedureMockUtils.getInstance<AddInvestorUniquenessClaimParams, void>(
       mockContext
     );
 
+    expect(prepareAddInvestorUniquenessClaim.call(proc, { ...commonArgs, proof })).rejects.toThrow(
+      'Expiry date must be in the future'
+    );
+
     expect(
-      prepareAddInvestorUniquenessClaim.call(proc, {
-        scope: { type: ScopeType.Ticker, value: ticker },
-        proof: scopeClaimProof,
-        cddId,
-        scopeId,
-        expiry: new Date('10/14/1987'),
-      })
+      prepareAddInvestorUniquenessClaim.call(proc, { ...commonArgs, proof: scopeClaimProof })
     ).rejects.toThrow('Expiry date must be in the future');
   });
 

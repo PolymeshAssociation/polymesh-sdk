@@ -88,12 +88,7 @@ import {
   TxGroup,
   VenueType,
 } from '~/types';
-import {
-  ScopeClaimProof,
-  SignerType,
-  SignerValue,
-  TransferRestrictionType,
-} from '~/types/internal';
+import { SignerType, SignerValue, TransferRestrictionType } from '~/types/internal';
 import { MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
