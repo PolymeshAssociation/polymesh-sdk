@@ -5130,20 +5130,22 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
     const rawSecondChallengeResponse = dsMockUtils.createMockScalar(secondChallengeResponse);
     const rawSubtractExpressionsRes = dsMockUtils.createMockRistrettoPoint(subtractExpressionsRes);
     const rawBlindedScopeDidHash = dsMockUtils.createMockRistrettoPoint(blindedScopeDidHash);
-    const rawZkProofData = dsMockUtils.createMockZkProofData(
-      [firstChallengeResponse, secondChallengeResponse],
-      subtractExpressionsRes,
-      blindedScopeDidHash
-    );
+    const rawZkProofData = dsMockUtils.createMockZkProofData({
+      subtract_expressions_res: subtractExpressionsRes,
+      challenge_responses: [firstChallengeResponse, secondChallengeResponse],
+      blinded_scope_did_hash: blindedScopeDidHash,
+    });
     const rawProofScopeIdWellformed = dsMockUtils.createMockSignature(proofScopeIdWellformed);
     const rawScopeId = dsMockUtils.createMockRistrettoPoint(scopeId);
-    const fakeResult = dsMockUtils.createMockScopeClaimProof(
-      proofScopeIdWellformed,
-      [firstChallengeResponse, secondChallengeResponse],
-      subtractExpressionsRes,
-      blindedScopeDidHash,
-      scopeId
-    );
+    const fakeResult = dsMockUtils.createMockScopeClaimProof({
+      proof_scope_id_wellformed: proofScopeIdWellformed,
+      proof_scope_id_cdd_id_match: {
+        subtract_expressions_res: subtractExpressionsRes,
+        challenge_responses: [firstChallengeResponse, secondChallengeResponse],
+        blinded_scope_did_hash: blindedScopeDidHash,
+      },
+      scope_id: scopeId,
+    });
 
     const zkProofData = {
       challenge_responses: [rawFirstChallengeResponse, rawSecondChallengeResponse],

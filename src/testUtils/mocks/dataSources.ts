@@ -104,6 +104,7 @@ import {
   ScheduleSpec,
   Scope,
   ScopeClaimProof as MeshScopeClaimProof,
+  ScopeClaimProof,
   ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SecurityToken,
@@ -2511,47 +2512,100 @@ export const createMockScheduleSpec = (scheduleSpec?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockScalar = (scalar?: string): Scalar =>
-  createMockStringCodec(scalar) as Scalar;
+export const createMockScalar = (scalar?: string | Scalar): Scalar => {
+  if (!scalar || typeof scalar === 'string') {
+    return createMockStringCodec(scalar) as Scalar;
+  } else {
+    return scalar;
+  }
+};
 
-export const createMockRistrettoPoint = (ristrettoPoint?: string): RistrettoPoint =>
-  createMockStringCodec(ristrettoPoint) as RistrettoPoint;
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRistrettoPoint = (
+  ristrettoPoint?: string | RistrettoPoint
+): RistrettoPoint => {
+  if (!ristrettoPoint || typeof ristrettoPoint === 'string') {
+    return createMockStringCodec(ristrettoPoint) as RistrettoPoint;
+  } else {
+    return ristrettoPoint;
+  }
+};
 
-export const createMockSignature = (signature?: string): Signature =>
-  createMockStringCodec(signature) as Signature;
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSignature = (signature?: string | Signature): Signature => {
+  if (!signature || typeof signature === 'string') {
+    return createMockStringCodec(signature) as Signature;
+  } else {
+    return signature;
+  }
+};
 
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockZkProofData = (
-  challengeResponses: string[],
-  subtractExpressionsRes: string,
-  blindedScopeDidHash: string
+  zkProofData?:
+    | ZkProofData
+    | {
+        challenge_responses: [Scalar, Scalar] | [string, string];
+        subtract_expressions_res: RistrettoPoint | string;
+        blinded_scope_did_hash: RistrettoPoint | string;
+      }
 ): ZkProofData => {
+  const { challenge_responses, subtract_expressions_res, blinded_scope_did_hash } = zkProofData || {
+    challenge_responses: [createMockScalar(), createMockScalar()],
+    subtract_expressions_res: createMockRistrettoPoint(),
+    blinded_scope_did_hash: createMockRistrettoPoint(),
+  };
+
   return createMockCodec(
     {
-      challenge_responses: challengeResponses.map(cr => createMockScalar(cr)),
-      subtract_expressions_res: createMockRistrettoPoint(subtractExpressionsRes),
-      blinded_scope_did_hash: createMockRistrettoPoint(blindedScopeDidHash),
+      challenge_responses: challenge_responses.map((cr: string | Scalar) => createMockScalar(cr)),
+      subtract_expressions_res: createMockRistrettoPoint(subtract_expressions_res),
+      blinded_scope_did_hash: createMockRistrettoPoint(blinded_scope_did_hash),
     },
-    false
+    !zkProofData
   ) as ZkProofData;
 };
 
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockScopeClaimProof = (
-  proofScopeIdWellformed: string,
-  challengeResponses: string[],
-  subtractExpressionsRes: string,
-  blindedScopeDidHash: string,
-  scopeId: string
+  scopeClaimProof?:
+    | ScopeClaimProof
+    | {
+        proof_scope_id_wellformed: Signature | string;
+        proof_scope_id_cdd_id_match:
+          | ZkProofData
+          | {
+              challenge_responses: [string, string];
+              subtract_expressions_res: string;
+              blinded_scope_did_hash: string;
+            };
+        scope_id: RistrettoPoint | string;
+      }
 ): MeshScopeClaimProof => {
+  const { proof_scope_id_wellformed, proof_scope_id_cdd_id_match, scope_id } = scopeClaimProof || {
+    proof_scope_id_wellformed: createMockSignature(),
+    proof_scope_id_cdd_id_match: createMockZkProofData(),
+    scope_id: createMockRistrettoPoint(),
+  };
+
   return createMockCodec(
     {
-      proof_scope_id_wellformed: createMockSignature(proofScopeIdWellformed),
-      proof_scope_id_cdd_id_match: createMockZkProofData(
-        challengeResponses,
-        subtractExpressionsRes,
-        blindedScopeDidHash
-      ),
-      scope_id: createMockRistrettoPoint(scopeId),
+      proof_scope_id_wellformed: createMockSignature(proof_scope_id_wellformed),
+      proof_scope_id_cdd_id_match: createMockZkProofData(proof_scope_id_cdd_id_match),
+      scope_id: createMockRistrettoPoint(scope_id),
     },
-    false
+    !scopeClaimProof
   ) as MeshScopeClaimProof;
 };
