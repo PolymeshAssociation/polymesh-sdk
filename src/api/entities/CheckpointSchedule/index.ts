@@ -123,8 +123,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
       });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { at, remaining } = schedule!;
+    const { at, remaining } = schedule;
 
     return {
       remainingCheckpoints: u32ToBigNumber(remaining).toNumber(),
