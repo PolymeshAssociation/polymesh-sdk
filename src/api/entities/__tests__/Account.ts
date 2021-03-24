@@ -8,6 +8,7 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('Account class', () => {
   let context: Mocked<Context>;
@@ -24,6 +25,7 @@ describe('Account class', () => {
     key = 'someKey';
 
     sinon.stub(utilsConversionModule, 'addressToKey').returns(key);
+    sinon.stub(utilsInternalModule, 'assertFormatValid');
   });
 
   beforeEach(() => {

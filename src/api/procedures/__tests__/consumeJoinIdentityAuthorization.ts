@@ -12,6 +12,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, Signer, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('consumeJoinIdentityAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
@@ -40,6 +41,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
     rawFalse = dsMockUtils.createMockBool(false);
 
     sinon.stub(utilsConversionModule, 'addressToKey');
+    sinon.stub(utilsInternalModule, 'assertFormatValid');
   });
 
   let addTransactionStub: sinon.SinonStub;

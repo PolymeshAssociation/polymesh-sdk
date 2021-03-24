@@ -14,6 +14,7 @@ import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType } from '~/types';
 import { SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
@@ -40,6 +41,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     sinon.stub(utilsConversionModule, 'addressToKey');
+    sinon.stub(utilsInternalModule, 'assertFormatValid');
   });
 
   let addBatchTransactionStub: sinon.SinonStub;

@@ -4,6 +4,7 @@ import { Account, Context, CurrentAccount, CurrentIdentity, Identity } from '~/i
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Permissions, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('CurrentAccount class', () => {
   let context: Context;
@@ -13,6 +14,7 @@ describe('CurrentAccount class', () => {
     entityMockUtils.initMocks();
 
     sinon.stub(utilsConversionModule, 'addressToKey');
+    sinon.stub(utilsInternalModule, 'assertFormatValid');
   });
 
   beforeEach(() => {

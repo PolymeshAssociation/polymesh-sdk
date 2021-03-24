@@ -165,7 +165,7 @@ describe('Context class', () => {
         },
       });
 
-      sinon.stub(utilsInternalModule, 'isPrefixValid');
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),

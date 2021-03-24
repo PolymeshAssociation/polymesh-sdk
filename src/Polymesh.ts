@@ -48,7 +48,7 @@ import {
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, getDid, isPrefixValid, isPrintableAscii } from '~/utils/internal';
+import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/internal';
 
 import { Claims } from './Claims';
 // import { Governance } from './Governance';
@@ -437,10 +437,6 @@ export class Polymesh {
     const { context } = this;
 
     if (args) {
-      const { ss58Format } = context;
-      const { address } = args;
-
-      isPrefixValid(address, ss58Format);
       return new Account(args, context);
     }
 
