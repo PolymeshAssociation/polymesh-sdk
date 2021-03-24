@@ -181,10 +181,8 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
 
     const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
 
-    const scheduleIds = rawSchedules.map(({ id: scheduleId }) =>
-      u64ToBigNumber(scheduleId).toNumber()
-    );
+    const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
 
-    return scheduleIds.includes(id.toNumber());
+    return typeof exists !== 'undefined';
   }
 }

@@ -1,6 +1,6 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Ticker, TxTags } from 'polymesh-types/types';
+import { StoredSchedule, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -64,11 +64,40 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  test('should throw an error if the Schedule is no longer exist', async () => {
+    const args = {
+      ticker,
+      schedule: id,
+    };
+
+    dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      returnValue: [
+        dsMockUtils.createMockStoredSchedule({
+          id: dsMockUtils.createMockU64(5),
+        } as StoredSchedule),
+      ],
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    return expect(prepareRemoveCheckpointSchedule.call(proc, args)).rejects.toThrow(
+      'Schedule no longer exists. It was either removed or it expired'
+    );
+  });
+
   test('should throw an error if Schedule Ref Count is not zero', async () => {
     const args = {
       ticker,
       schedule: id,
     };
+
+    dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      returnValue: [
+        dsMockUtils.createMockStoredSchedule({
+          id: dsMockUtils.createMockU64(id.toNumber()),
+        } as StoredSchedule),
+      ],
+    });
 
     u32ToBigNumberStub.returns(new BigNumber(1));
 
@@ -84,6 +113,14 @@ describe('removeCheckpointSchedule procedure', () => {
       ticker,
       schedule: id,
     };
+
+    dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      returnValue: [
+        dsMockUtils.createMockStoredSchedule({
+          id: dsMockUtils.createMockU64(id.toNumber()),
+        } as StoredSchedule),
+      ],
+    });
 
     u32ToBigNumberStub.returns(new BigNumber(0));
 
