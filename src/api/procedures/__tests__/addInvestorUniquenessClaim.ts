@@ -72,8 +72,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     scopeClaimProof = {
       proofScopeIdWellformed,
       proofScopeIdCddIdMatch: {
-        firstChallengeResponse,
-        secondChallengeResponse,
+        challengeResponses: [firstChallengeResponse, secondChallengeResponse],
         subtractExpressionsRes,
         blindedScopeDidHash,
       },
@@ -104,13 +103,17 @@ describe('addInvestorUniquenessClaim procedure', () => {
     });
     rawScopeId = dsMockUtils.createMockScopeId(scopeId);
     rawProof = dsMockUtils.createMockInvestorZKProofData(proof);
-    rawScopeClaimProof = dsMockUtils.createMockScopeClaimProof(
-      proofScopeIdWellformed,
-      [firstChallengeResponse, secondChallengeResponse],
-      subtractExpressionsRes,
-      blindedScopeDidHash,
-      scopeId
-    );
+    rawScopeClaimProof = dsMockUtils.createMockScopeClaimProof({
+      /* eslint-disable @typescript-eslint/camelcase */
+      proof_scope_id_wellformed: proofScopeIdWellformed,
+      proof_scope_id_cdd_id_match: {
+        subtract_expressions_res: subtractExpressionsRes,
+        challenge_responses: [firstChallengeResponse, secondChallengeResponse],
+        blinded_scope_did_hash: blindedScopeDidHash,
+      },
+      scope_id: scopeId,
+      /* eslint-enable @typescript-eslint/camelcase */
+    });
     rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
   });
 

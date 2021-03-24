@@ -88,7 +88,12 @@ import {
   TxGroup,
   VenueType,
 } from '~/types';
-import { SignerType, SignerValue, TransferRestrictionType } from '~/types/internal';
+import {
+  ScopeClaimProof,
+  SignerType,
+  SignerValue,
+  TransferRestrictionType,
+} from '~/types/internal';
 import { MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
@@ -5116,15 +5121,13 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
       'someSubtractExpressionsRes',
       'someBlindedScopeDidHash',
     ];
-    const proof = {
+    const proof: ScopeClaimProof = {
       proofScopeIdWellformed,
       proofScopeIdCddIdMatch: {
-        firstChallengeResponse,
-        secondChallengeResponse,
+        challengeResponses: [firstChallengeResponse, secondChallengeResponse],
         subtractExpressionsRes,
         blindedScopeDidHash,
       },
-      scope_id: scopeId,
     };
     const rawFirstChallengeResponse = dsMockUtils.createMockScalar(firstChallengeResponse);
     const rawSecondChallengeResponse = dsMockUtils.createMockScalar(secondChallengeResponse);

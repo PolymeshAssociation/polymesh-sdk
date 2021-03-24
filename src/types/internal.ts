@@ -201,8 +201,7 @@ export interface ScheduleSpec {
 export interface ScopeClaimProof {
   proofScopeIdWellformed: string;
   proofScopeIdCddIdMatch: {
-    firstChallengeResponse: string;
-    secondChallengeResponse: string;
+    challengeResponses: [string, string];
     subtractExpressionsRes: string;
     blindedScopeDidHash: string;
   };

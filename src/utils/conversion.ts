@@ -2680,20 +2680,12 @@ export function scopeClaimProofToMeshScopeClaimProof(
   const { polymeshApi } = context;
   const {
     proofScopeIdWellformed,
-    proofScopeIdCddIdMatch: {
-      firstChallengeResponse,
-      secondChallengeResponse,
-      subtractExpressionsRes,
-      blindedScopeDidHash,
-    },
+    proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
   } = proof;
 
   const zkProofData = polymeshApi.createType('ZkProofData', {
     /* eslint-disable @typescript-eslint/camelcase */
-    challenge_responses: [
-      stringToScalar(firstChallengeResponse, context),
-      stringToScalar(secondChallengeResponse, context),
-    ],
+    challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
     subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
     blinded_scope_did_hash: stringToRistrettoPoint(blindedScopeDidHash, context),
     /* eslint-enable @typescript-eslint/camelcase */

@@ -2567,7 +2567,10 @@ export const createMockZkProofData = (
 
   return createMockCodec(
     {
-      challenge_responses: challenge_responses.map((cr: string | Scalar) => createMockScalar(cr)),
+      challenge_responses: [
+        createMockScalar(challenge_responses[0]),
+        createMockScalar(challenge_responses[1]),
+      ],
       subtract_expressions_res: createMockRistrettoPoint(subtract_expressions_res),
       blinded_scope_did_hash: createMockRistrettoPoint(blinded_scope_did_hash),
     },
