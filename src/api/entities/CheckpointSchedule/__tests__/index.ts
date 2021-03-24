@@ -143,7 +143,7 @@ describe('CheckpointSchedule class', () => {
         error = err;
       }
 
-      expect(error.message).toBe('Schedule no longer exists. This means it was already finished');
+      expect(error.message).toBe('Schedule no longer exists. It was either removed or it expired');
     });
 
     test('should return the Schedule details ', async () => {
@@ -206,7 +206,7 @@ describe('CheckpointSchedule class', () => {
         err = error;
       }
 
-      expect(err.message).toBe('Schedule no longer exists. This means it was already finished');
+      expect(err.message).toBe('Schedule no longer exists. It was either removed or it expired');
     });
 
     test('should return all the checkpoints created by the schedule', async () => {

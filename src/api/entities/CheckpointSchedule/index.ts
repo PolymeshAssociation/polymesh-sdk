@@ -23,7 +23,7 @@ export interface Params {
   nextCheckpointDate: Date;
 }
 
-const notExistsMessage = 'Schedule no longer exists. This means it was already finished';
+const notExistsMessage = 'Schedule no longer exists. It was either removed or it expired';
 
 /**
  * Represents a Schedule in which Checkpoints are created for a specific
@@ -114,18 +114,14 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
 
     const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
 
-    const scheduleIds = rawSchedules.map(({ id: scheduleId }) =>
-      u64ToBigNumber(scheduleId).toNumber()
-    );
+    const schedule = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
 
-    if (!scheduleIds.includes(id.toNumber())) {
+    if (!schedule) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: notExistsMessage,
       });
     }
-
-    const schedule = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const { at, remaining } = schedule!;
