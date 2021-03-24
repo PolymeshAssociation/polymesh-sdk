@@ -33,6 +33,7 @@ import {
   Permill,
   RefCount,
   RuntimeVersion,
+  Signature,
 } from '@polkadot/types/interfaces';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import { Codec, ISubmittableResult, Registry } from '@polkadot/types/types';
@@ -98,8 +99,12 @@ import {
   PosRatio,
   PriceTier,
   ProposalState,
+  RistrettoPoint,
+  Scalar,
   ScheduleSpec,
   Scope,
+  ScopeClaimProof as MeshScopeClaimProof,
+  ScopeClaimProof,
   ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SecurityToken,
@@ -116,6 +121,7 @@ import {
   Venue,
   VenueDetails,
   VenueType,
+  ZkProofData,
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
@@ -2500,4 +2506,109 @@ export const createMockScheduleSpec = (scheduleSpec?: {
     },
     !scheduleSpec
   ) as ScheduleSpec;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockScalar = (scalar?: string | Scalar): Scalar => {
+  if (!scalar || typeof scalar === 'string') {
+    return createMockStringCodec(scalar) as Scalar;
+  } else {
+    return scalar;
+  }
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRistrettoPoint = (
+  ristrettoPoint?: string | RistrettoPoint
+): RistrettoPoint => {
+  if (!ristrettoPoint || typeof ristrettoPoint === 'string') {
+    return createMockStringCodec(ristrettoPoint) as RistrettoPoint;
+  } else {
+    return ristrettoPoint;
+  }
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSignature = (signature?: string | Signature): Signature => {
+  if (!signature || typeof signature === 'string') {
+    return createMockStringCodec(signature) as Signature;
+  } else {
+    return signature;
+  }
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockZkProofData = (
+  zkProofData?:
+    | ZkProofData
+    | {
+        challenge_responses: [Scalar, Scalar] | [string, string];
+        subtract_expressions_res: RistrettoPoint | string;
+        blinded_scope_did_hash: RistrettoPoint | string;
+      }
+): ZkProofData => {
+  const { challenge_responses, subtract_expressions_res, blinded_scope_did_hash } = zkProofData || {
+    challenge_responses: [createMockScalar(), createMockScalar()],
+    subtract_expressions_res: createMockRistrettoPoint(),
+    blinded_scope_did_hash: createMockRistrettoPoint(),
+  };
+
+  return createMockCodec(
+    {
+      challenge_responses: [
+        createMockScalar(challenge_responses[0]),
+        createMockScalar(challenge_responses[1]),
+      ],
+      subtract_expressions_res: createMockRistrettoPoint(subtract_expressions_res),
+      blinded_scope_did_hash: createMockRistrettoPoint(blinded_scope_did_hash),
+    },
+    !zkProofData
+  ) as ZkProofData;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockScopeClaimProof = (
+  scopeClaimProof?:
+    | ScopeClaimProof
+    | {
+        proof_scope_id_wellformed: Signature | string;
+        proof_scope_id_cdd_id_match:
+          | ZkProofData
+          | {
+              challenge_responses: [string, string];
+              subtract_expressions_res: string;
+              blinded_scope_did_hash: string;
+            };
+        scope_id: RistrettoPoint | string;
+      }
+): MeshScopeClaimProof => {
+  const { proof_scope_id_wellformed, proof_scope_id_cdd_id_match, scope_id } = scopeClaimProof || {
+    proof_scope_id_wellformed: createMockSignature(),
+    proof_scope_id_cdd_id_match: createMockZkProofData(),
+    scope_id: createMockRistrettoPoint(),
+  };
+
+  return createMockCodec(
+    {
+      proof_scope_id_wellformed: createMockSignature(proof_scope_id_wellformed),
+      proof_scope_id_cdd_id_match: createMockZkProofData(proof_scope_id_cdd_id_match),
+      scope_id: createMockRistrettoPoint(scope_id),
+    },
+    !scopeClaimProof
+  ) as MeshScopeClaimProof;
 };

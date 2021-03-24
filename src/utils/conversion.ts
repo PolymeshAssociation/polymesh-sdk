@@ -1,5 +1,5 @@
 import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Moment, Permill } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import {
   stringLowerFirst,
   stringToU8a,
@@ -64,8 +64,11 @@ import {
   PosRatio,
   PriceTier,
   ProtocolOp,
+  RistrettoPoint,
+  Scalar,
   ScheduleSpec as MeshScheduleSpec,
   Scope as MeshScope,
+  ScopeClaimProof as MeshScopeClaimProof,
   ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SettlementType,
@@ -159,6 +162,7 @@ import {
   PolymeshTx,
   PortfolioId,
   ScheduleSpec,
+  ScopeClaimProof,
   SignerType,
   SignerValue,
   TransferRestriction,
@@ -2642,4 +2646,56 @@ export function storedScheduleToScheduleParams(storedSchedule: StoredSchedule): 
     remaining: u32ToBigNumber(remaining).toNumber(),
     nextCheckpointDate: momentToDate(at),
   };
+}
+
+/**
+ * @hidden
+ */
+export function stringToSignature(signature: string, context: Context): Signature {
+  return context.polymeshApi.createType('Signature', signature);
+}
+
+/**
+ * @hidden
+ */
+export function stringToRistrettoPoint(ristrettoPoint: string, context: Context): RistrettoPoint {
+  return context.polymeshApi.createType('RistrettoPoint', ristrettoPoint);
+}
+
+/**
+ * @hidden
+ */
+export function stringToScalar(scalar: string, context: Context): Scalar {
+  return context.polymeshApi.createType('Scalar', scalar);
+}
+
+/**
+ * @hidden
+ */
+export function scopeClaimProofToMeshScopeClaimProof(
+  proof: ScopeClaimProof,
+  scopeId: string,
+  context: Context
+): MeshScopeClaimProof {
+  const { polymeshApi } = context;
+  const {
+    proofScopeIdWellformed,
+    proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
+  } = proof;
+
+  const zkProofData = polymeshApi.createType('ZkProofData', {
+    /* eslint-disable @typescript-eslint/camelcase */
+    challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
+    subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
+    blinded_scope_did_hash: stringToRistrettoPoint(blindedScopeDidHash, context),
+    /* eslint-enable @typescript-eslint/camelcase */
+  });
+
+  return polymeshApi.createType('ScopeClaimProof', {
+    /* eslint-disable @typescript-eslint/camelcase */
+    proof_scope_id_wellformed: stringToSignature(proofScopeIdWellformed, context),
+    proof_scope_id_cdd_id_match: zkProofData,
+    scope_id: stringToRistrettoPoint(scopeId, context),
+    /* eslint-enable @typescript-eslint/camelcase */
+  });
 }
