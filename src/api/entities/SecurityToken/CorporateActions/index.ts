@@ -19,7 +19,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
   }
 
   /**
-   * Retrive the Security Token's Corporate Actions agent
+   * Retrieve the Security Token's Corporate Actions agent
    */
   public async getAgent(): Promise<Identity> {
     const {
