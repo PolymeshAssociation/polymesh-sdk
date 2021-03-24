@@ -60,8 +60,6 @@ describe('CorporateActions class', () => {
       const identityId = dsMockUtils.createMockIdentityId(did);
       const identity = entityMockUtils.getIdentityInstance({ did });
 
-      sinon.stub(utilsConversionModule, 'identityIdToString').withArgs(identityId).returns(did);
-
       dsMockUtils.createQueryStub('corporateAction', 'agent', {
         returnValue: dsMockUtils.createMockOption(identityId),
       });
