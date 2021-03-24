@@ -100,11 +100,9 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: allBalances', () => {
-    let identityIdToStringStub: sinon.SinonStub;
     let stringToIdentityIdStub: sinon.SinonStub;
 
     beforeAll(() => {
-      identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
       stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     });
 
@@ -113,7 +111,7 @@ describe('Checkpoint class', () => {
 
       const balanceOf = [
         {
-          identity: 'did1',
+          identity: 'did',
           balance: new BigNumber(100),
         },
         {
@@ -134,7 +132,6 @@ describe('Checkpoint class', () => {
 
       rawBalanceOf.forEach(({ identityId, balance: rawBalance }, index) => {
         const { identity, balance } = balanceOf[index];
-        identityIdToStringStub.withArgs(identityId).returns(identity);
         balanceToBigNumberStub.withArgs(rawBalance).returns(balance);
         stringToIdentityIdStub.withArgs(identity).returns(identityId);
       });
