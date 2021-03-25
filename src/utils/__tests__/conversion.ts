@@ -4996,6 +4996,8 @@ describe('scheduleSpecToMeshScheduleSpec', () => {
       { start: null, period: null, repetitions: null },
       context
     );
+
+    expect(result).toBe(fakeResult);
   });
 });
 
