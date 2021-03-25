@@ -1,20 +1,14 @@
-import BigNumber from 'bignumber.js';
-
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { corporateActionIdentifierToCaId } from '~/utils/conversion';
-
-export interface RemoveCorporateActionsAgentParams {
-  id: BigNumber;
-}
+import { stringToTicker } from '~/utils/conversion';
 
 /**
  * @hidden
  */
-export type Params = {
+export interface Params {
   ticker: string;
-} & RemoveCorporateActionsAgentParams;
+}
 
 /**
  * @hidden
@@ -32,7 +26,7 @@ export async function prepareRemoveCorporateActionsAgent(
     context,
   } = this;
 
-  const { ticker, id: localId } = args;
+  const { ticker } = args;
 
   const securityToken = new SecurityToken({ ticker }, context);
 
@@ -48,11 +42,7 @@ export async function prepareRemoveCorporateActionsAgent(
     });
   }
 
-  this.addTransaction(
-    corporateAction.removeCa,
-    {},
-    corporateActionIdentifierToCaId({ ticker, localId }, context)
-  );
+  this.addTransaction(corporateAction.resetCaa, {}, stringToTicker(ticker, context));
 }
 
 /**
@@ -65,7 +55,7 @@ export function getAuthorization(
   return {
     identityRoles: [{ type: RoleType.TokenOwner, ticker }],
     signerPermissions: {
-      transactions: [TxTags.corporateAction.RemoveCa],
+      transactions: [TxTags.corporateAction.ResetCaa],
       tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],
     },

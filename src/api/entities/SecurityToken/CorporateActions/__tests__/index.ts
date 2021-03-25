@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -64,17 +63,13 @@ describe('CorporateActions class', () => {
   describe('method: removeAgent', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
-      const id = new BigNumber(1);
-      const args = {
-        id,
-      };
 
       sinon
         .stub(removeCorporateActionsAgent, 'prepare')
-        .withArgs({ ticker: 'SOME_TICKER', ...args }, context)
+        .withArgs({ ticker: 'SOME_TICKER' }, context)
         .resolves(expectedQueue);
 
-      const queue = await corporateActions.removeAgent(args);
+      const queue = await corporateActions.removeAgent();
 
       expect(queue).toBe(expectedQueue);
     });

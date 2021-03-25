@@ -29,7 +29,6 @@ describe('removeCorporateActionsAgent procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     ticker = 'someTicker';
-    id = new BigNumber(1);
   });
 
   beforeEach(() => {
@@ -50,11 +49,6 @@ describe('removeCorporateActionsAgent procedure', () => {
   });
 
   test('should add a remove corporate agent transaction to the queue', async () => {
-    const args = {
-      id,
-      ticker,
-    };
-
     entityMockUtils.configureMocks({
       securityTokenOptions: {
         corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
@@ -64,19 +58,16 @@ describe('removeCorporateActionsAgent procedure', () => {
       },
     });
 
-    const rawCAId = dsMockUtils.createMockCAId({
-      ticker: dsMockUtils.createMockTicker(ticker),
-      localId: dsMockUtils.createMockU32(id.toNumber()),
-    });
+    const rawTicker = dsMockUtils.createMockTicker(ticker);
 
-    const transaction = dsMockUtils.createTxStub('corporateAction', 'removeCa');
+    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
+
+    const transaction = dsMockUtils.createTxStub('corporateAction', 'resetCaa');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCAId);
+    await prepareRemoveCorporateActionsAgent.call(proc, { ticker });
 
-    await prepareRemoveCorporateActionsAgent.call(proc, args);
-
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawCAId);
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
   });
 
   test('should throw an error if attempting to remove the asset owner', async () => {
@@ -114,7 +105,7 @@ describe('removeCorporateActionsAgent procedure', () => {
       expect(boundFunc(args)).toEqual({
         identityRoles: [{ type: RoleType.TokenOwner, ticker }],
         signerPermissions: {
-          transactions: [TxTags.corporateAction.RemoveCa],
+          transactions: [TxTags.corporateAction.ResetCaa],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],
         },
