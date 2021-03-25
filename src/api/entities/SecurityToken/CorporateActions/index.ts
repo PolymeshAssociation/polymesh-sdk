@@ -1,5 +1,14 @@
-import { Context, Identity, Namespace, SecurityToken } from '~/internal';
+import {
+  Context,
+  Identity,
+  modifyCorporateActionAgent,
+  ModifyCorporateActionAgentParams,
+  Namespace,
+  SecurityToken,
+} from '~/internal';
+import { ProcedureMethod } from '~/types/internal';
 import { identityIdToString, stringToTicker } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 import { Distributions } from './Distributions';
 
@@ -15,8 +24,30 @@ export class CorporateActions extends Namespace<SecurityToken> {
   constructor(parent: SecurityToken, context: Context) {
     super(parent, context);
 
+    const { ticker } = parent;
+
     this.distributions = new Distributions(parent, context);
+
+    this.modifyCorporateActionAgent = createProcedureMethod(
+      args => [modifyCorporateActionAgent, { ticker, ...args }],
+      context
+    );
   }
+
+  /**
+   * Assign a new corporate action agent for the Security Token
+   *
+   * @param args.target - identity to be set as corporate action agent
+   * @param args.requestExpiry - date at which the authorization request to modify the corporate action agent expires (optional, never expires if a date is not provided)
+   *
+   * @note this may create AuthorizationRequest which have to be accepted by
+   *   the corresponding Account. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @note required role:
+   *   - Security Token Owner
+   */
+  public modifyCorporateActionAgent: ProcedureMethod<ModifyCorporateActionAgentParams, void>;
 
   /**
    * Retrieve the Security Token's Corporate Actions agent
