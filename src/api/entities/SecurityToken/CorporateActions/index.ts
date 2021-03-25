@@ -45,7 +45,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
   public removeAgent: ProcedureMethod<RemoveCorporateActionsAgentParams, void>;
 
   /**
-   * Retrive the Security Token's Corporate Actions agent
+   * Retrieve the Security Token's Corporate Actions agent
    */
   public async getAgent(): Promise<Identity> {
     const {
@@ -62,7 +62,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
 
     const agent = await corporateAction.agent(rawTicker);
 
-    if (agent.isEmpty) {
+    if (agent.isNone) {
       const token = new SecurityToken({ ticker }, context);
       const { owner } = await token.details();
       return owner;

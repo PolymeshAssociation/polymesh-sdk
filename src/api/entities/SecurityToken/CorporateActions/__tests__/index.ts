@@ -81,12 +81,10 @@ describe('CorporateActions class', () => {
   });
 
   describe('method: getAgent', () => {
-    test("should retrive the Security Token's Corporate Actions agent", async () => {
+    test("should retrieve the Security Token's Corporate Actions agent", async () => {
       const did = 'someDid';
       const identityId = dsMockUtils.createMockIdentityId(did);
       const identity = entityMockUtils.getIdentityInstance({ did });
-
-      sinon.stub(utilsConversionModule, 'identityIdToString').withArgs(identityId).returns(did);
 
       dsMockUtils.createQueryStub('corporateAction', 'agent', {
         returnValue: dsMockUtils.createMockOption(identityId),
