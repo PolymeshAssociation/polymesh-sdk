@@ -1,4 +1,3 @@
-import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -66,9 +65,8 @@ export interface Storage {
 export const createStoResolver = (ticker: string, context: Context) => (
   receipt: ISubmittableResult
 ): Sto => {
-  const eventRecord = findEventRecord(receipt, 'sto', 'FundraiserCreated');
-  const data = eventRecord.event.data;
-  const newFundraiserId = u64ToBigNumber(data[1] as u64);
+  const { data } = findEventRecord(receipt, 'sto', 'FundraiserCreated');
+  const newFundraiserId = u64ToBigNumber(data[1]);
 
   return new Sto({ id: newFundraiserId, ticker }, context);
 };

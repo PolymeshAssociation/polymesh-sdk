@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
+import { Fundraiser, FundraiserName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, launchSto, Namespace, SecurityToken, Sto, TransactionQueue } from '~/internal';
-import { Fundraiser, FundraiserName, Ticker } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { StoBalanceStatus, StoDetails, StoSaleStatus, StoTimingStatus } from '~/types';
 import { tuple } from '~/types/utils';

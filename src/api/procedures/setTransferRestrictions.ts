@@ -1,8 +1,8 @@
 import P from 'bluebird';
 import { difference, differenceWith, isEqual, some, uniq } from 'lodash';
+import { ScopeId, Ticker, TransferManager, TxTag } from 'polymesh-types/types';
 
 import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ScopeId, Ticker, TransferManager, TxTag } from '~/polkadot';
 import {
   CountTransferRestrictionInput,
   ErrorCode,
