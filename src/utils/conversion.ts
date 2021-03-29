@@ -34,6 +34,7 @@ import {
   AuthIdentifier,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
+  CAId,
   CAKind,
   CalendarPeriod as MeshCalendarPeriod,
   CanTransferResult,
@@ -167,6 +168,7 @@ import {
 } from '~/types';
 import {
   AuthTarget,
+  CorporateActionIdentifier,
   ExtrinsicIdentifier,
   PolymeshTx,
   PortfolioId,
@@ -2775,4 +2777,19 @@ export function distributionToDividendDistributionParams(
     expiryDate: expiryDate.isNone ? null : momentToDate(expiryDate.unwrap()),
     paymentDate: momentToDate(paymentDate),
   };
+}
+
+/**
+ * @hidden
+ */
+export function corporateActionIdentifierToCaId(
+  corporateActionIdentifier: CorporateActionIdentifier,
+  context: Context
+): CAId {
+  const { ticker, localId } = corporateActionIdentifier;
+  return context.polymeshApi.createType('CAId', {
+    ticker: stringToTicker(ticker, context),
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    local_id: numberToU32(localId, context),
+  });
 }

@@ -141,3 +141,4 @@ export {
   configureDividendDistribution,
   ConfigureDividendDistributionParams,
 } from '~/api/procedures/configureDividendDistribution';
+export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';

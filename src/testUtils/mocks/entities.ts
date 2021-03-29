@@ -626,6 +626,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     restrictions: [],
     availableSlots: MAX_TRANSFER_MANAGERS,
   },
+  corporateActionsGetAgent: { did: 'someDid' } as Identity,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -2114,6 +2115,18 @@ export function getSecurityTokenTransferRestrictionsPercentageGetStub(
   }
 
   return securityTokenTransferRestrictionsPercentageGetStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.corporateActions.getAgent` method
+ */
+export function getSecurityTokenCorporateActionsGetAgentStub(agent?: Identity): SinonStub {
+  if (agent) {
+    return securityTokenCorporateActionsGetAgentStub.resolves(agent);
+  }
+
+  return securityTokenCorporateActionsGetAgentStub;
 }
 
 /**

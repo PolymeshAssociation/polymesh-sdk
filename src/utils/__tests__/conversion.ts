@@ -28,6 +28,7 @@ import {
   AuthIdentifier,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
+  CAId,
   Claim as MeshClaim,
   DocumentHash,
   DocumentName,
@@ -122,6 +123,7 @@ import {
   claimTypeToMeshClaimType,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
+  corporateActionIdentifierToCaId,
   corporateActionKindToCaKind,
   dateToMoment,
   distributionToDividendDistributionParams,
@@ -5263,7 +5265,7 @@ describe('distributionToDividendDistributionParams', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a polkadot CorporateAction object to a CorporateActionParams object', () => {
+  test('should convert a polkadot Distribution object to a DividendDistributionParams object', () => {
     const from = new BigNumber(1);
     const did = 'someDid';
     const currency = 'USD';
@@ -5433,6 +5435,45 @@ describe('targetsToTargetIdentities', () => {
 
     const result = targetsToTargetIdentities(value, context);
 
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('corporateActionIdentifierToCaId', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('corporateActionIdentifierToCaId should convert a CorporateActionIdentifier object to a polkadot CAId object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const args = {
+      ticker: 'SOMETICKER',
+      localId: new BigNumber(1),
+    };
+    const ticker = dsMockUtils.createMockTicker(args.ticker);
+    const localId = dsMockUtils.createMockU32(args.localId.toNumber());
+    const fakeResult = ('CAId' as unknown) as CAId;
+
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', args.ticker).returns(ticker);
+    dsMockUtils.getCreateTypeStub().withArgs('u32', args.localId.toString()).returns(localId);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('CAId', {
+        ticker,
+        local_id: localId,
+      })
+      .returns(fakeResult);
+
+    const result = corporateActionIdentifierToCaId(args, context);
     expect(result).toEqual(fakeResult);
   });
 });
