@@ -115,6 +115,7 @@ interface IdentityOptions {
   };
   getVenues?: Venue[];
   getScopeId?: string;
+  getTokenBalance?: BigNumber;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -281,6 +282,7 @@ let identityGetPrimaryKeyStub: SinonStub;
 let identityAuthorizationsGetReceivedStub: SinonStub;
 let identityGetVenuesStub: SinonStub;
 let identityGetScopeIdStub: SinonStub;
+let identityGetTokenBalanceStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
@@ -562,6 +564,7 @@ const defaultIdentityOptions: IdentityOptions = {
   },
   getVenues: [],
   getScopeId: 'someScopeId',
+  getTokenBalance: new BigNumber(100),
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -1079,6 +1082,7 @@ function configureIdentity(opts: IdentityOptions): void {
     },
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
+    getTokenBalance: identityGetTokenBalanceStub.resolves(opts.getTokenBalance),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -1102,6 +1106,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityAuthorizationsGetReceivedStub = sinon.stub();
   identityGetVenuesStub = sinon.stub();
   identityGetScopeIdStub = sinon.stub();
+  identityGetTokenBalanceStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
