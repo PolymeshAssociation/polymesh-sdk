@@ -34,7 +34,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
   }
 
   /**
-   * Remove the corporate actions agent of the Security Token
+   * Remove the Corporate Actions Agent of the Security Token
    *
    * @note this action will leave the Security Token owner as the Corporate Actions Agent
    *
