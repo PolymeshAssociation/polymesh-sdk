@@ -994,7 +994,7 @@ export function createQueryStub<
   if (opts?.multi) {
     stub.multi.resolves(opts.multi);
   }
-  if (opts?.size) {
+  if (typeof opts?.size !== 'undefined') {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     stub.size.resolves(createMockU64(opts.size));
   }
