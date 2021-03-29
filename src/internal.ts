@@ -133,3 +133,4 @@ export {
   RemoveCheckpointScheduleParams,
 } from '~/api/procedures/removeCheckpointSchedule';
 export { DividendDistribution } from '~/api/entities/DividendDistribution';
+export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';

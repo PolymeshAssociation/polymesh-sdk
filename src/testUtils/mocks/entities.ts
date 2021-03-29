@@ -105,6 +105,7 @@ interface IdentityOptions {
   };
   getVenues?: Venue[];
   getScopeId?: string;
+  getTokenBalance?: BigNumber;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -125,6 +126,7 @@ interface SecurityTokenOptions {
   getIdentifiers?: TokenIdentifier[];
   transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
+  corporateActionsGetAgent?: Identity;
 }
 
 interface AuthorizationRequestOptions {
@@ -233,6 +235,7 @@ let securityTokenTransfersCanTransferStub: SinonStub;
 let securityTokenGetIdentifiersStub: SinonStub;
 let securityTokenTransferRestrictionsCountGetStub: SinonStub;
 let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
+let securityTokenCorporateActionsGetAgentStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -240,6 +243,7 @@ let identityGetPrimaryKeyStub: SinonStub;
 let identityAuthorizationsGetReceivedStub: SinonStub;
 let identityGetVenuesStub: SinonStub;
 let identityGetScopeIdStub: SinonStub;
+let identityGetTokenBalanceStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
@@ -493,6 +497,7 @@ const defaultIdentityOptions: IdentityOptions = {
   },
   getVenues: [],
   getScopeId: 'someScopeId',
+  getTokenBalance: new BigNumber(100),
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -554,6 +559,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     restrictions: [],
     availableSlots: MAX_TRANSFER_MANAGERS,
   },
+  corporateActionsGetAgent: { did: 'someDid' } as Identity,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -893,6 +899,9 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
         ),
       },
     },
+    corporateActions: {
+      getAgent: securityTokenCorporateActionsGetAgentStub.resolves(opts.corporateActionsGetAgent),
+    },
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -916,6 +925,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenGetIdentifiersStub = sinon.stub();
   securityTokenTransferRestrictionsCountGetStub = sinon.stub();
   securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
+  securityTokenCorporateActionsGetAgentStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -974,6 +984,7 @@ function configureIdentity(opts: IdentityOptions): void {
     },
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
+    getTokenBalance: identityGetTokenBalanceStub.resolves(opts.getTokenBalance),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -997,6 +1008,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityAuthorizationsGetReceivedStub = sinon.stub();
   identityGetVenuesStub = sinon.stub();
   identityGetScopeIdStub = sinon.stub();
+  identityGetTokenBalanceStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -1900,6 +1912,18 @@ export function getSecurityTokenTransferRestrictionsPercentageGetStub(
   }
 
   return securityTokenTransferRestrictionsPercentageGetStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.corporateActions.getAgent` method
+ */
+export function getSecurityTokenCorporateActionsGetAgentStub(agent?: Identity): SinonStub {
+  if (agent) {
+    return securityTokenCorporateActionsGetAgentStub.resolves(agent);
+  }
+
+  return securityTokenCorporateActionsGetAgentStub;
 }
 
 /**
