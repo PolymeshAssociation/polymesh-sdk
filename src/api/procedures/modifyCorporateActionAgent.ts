@@ -53,17 +53,15 @@ export async function prepareModifyCorporateActionAgent(
   );
 
   let rawExpiry;
-  if (requestExpiry) {
-    if (requestExpiry <= new Date()) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The request expiry must be a future date',
-      });
-    } else {
-      rawExpiry = dateToMoment(requestExpiry, context);
-    }
-  } else {
+ if (!requestExpiry) {
     rawExpiry = null;
+  } else if (requestExpiry <= new Date()){
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The request expiry must be a future date',
+    });
+  } else {
+    rawExpiry = dateToMoment(requestExpiry, context);
   }
 
   this.addTransaction(
