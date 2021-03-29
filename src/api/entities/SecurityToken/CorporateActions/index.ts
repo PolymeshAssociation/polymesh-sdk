@@ -1,8 +1,8 @@
 import {
   Context,
   Identity,
-  modifyCorporateActionAgent,
-  ModifyCorporateActionAgentParams,
+  modifyCorporateActionsAgent,
+  ModifyCorporateActionsAgentParams,
   Namespace,
   SecurityToken,
 } from '~/internal';
@@ -28,8 +28,8 @@ export class CorporateActions extends Namespace<SecurityToken> {
 
     this.distributions = new Distributions(parent, context);
 
-    this.modifyCorporateActionAgent = createProcedureMethod(
-      args => [modifyCorporateActionAgent, { ticker, ...args }],
+    this.modifyCorporateActionsAgent = createProcedureMethod(
+      args => [modifyCorporateActionsAgent, { ticker, ...args }],
       context
     );
   }
@@ -47,7 +47,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
    * @note required role:
    *   - Security Token Owner
    */
-  public modifyCorporateActionAgent: ProcedureMethod<ModifyCorporateActionAgentParams, void>;
+  public modifyCorporateActionsAgent: ProcedureMethod<ModifyCorporateActionsAgentParams, void>;
 
   /**
    * Retrieve the Security Token's Corporate Actions agent

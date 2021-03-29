@@ -8,7 +8,7 @@ import {
   signerValueToSignatory,
 } from '~/utils/conversion';
 
-export interface ModifyCorporateActionAgentParams {
+export interface ModifyCorporateActionsAgentParams {
   target: string | Identity;
   requestExpiry?: Date;
 }
@@ -16,12 +16,12 @@ export interface ModifyCorporateActionAgentParams {
 /**
  * @hidden
  */
-export type Params = { ticker: string } & ModifyCorporateActionAgentParams;
+export type Params = { ticker: string } & ModifyCorporateActionsAgentParams;
 
 /**
  * @hidden
  */
-export async function prepareModifyCorporateActionAgent(
+export async function prepareModifyCorporateActionsAgent(
   this: Procedure<Params, void>,
   args: Params
 ): Promise<void> {
@@ -33,12 +33,24 @@ export async function prepareModifyCorporateActionAgent(
   } = this;
   const { ticker, target, requestExpiry } = args;
 
-  const invalidDids = await context.getInvalidDids([target]);
+  const securityToken = new SecurityToken({ ticker }, context);
+
+  const [invalidDids, agent] = await Promise.all([
+    context.getInvalidDids([target]),
+    securityToken.corporateActions.getAgent(),
+  ]);
 
   if (invalidDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The supplied Identity does not exist',
+    });
+  }
+
+  if (agent.did === signerToString(target)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The supplied Identity is currently the corporate actions agent',
     });
   }
 
@@ -53,9 +65,9 @@ export async function prepareModifyCorporateActionAgent(
   );
 
   let rawExpiry;
- if (!requestExpiry) {
+  if (!requestExpiry) {
     rawExpiry = null;
-  } else if (requestExpiry <= new Date()){
+  } else if (requestExpiry <= new Date()) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The request expiry must be a future date',
@@ -93,7 +105,7 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyCorporateActionAgent = new Procedure(
-  prepareModifyCorporateActionAgent,
+export const modifyCorporateActionsAgent = new Procedure(
+  prepareModifyCorporateActionsAgent,
   getAuthorization
 );

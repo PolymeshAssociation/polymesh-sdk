@@ -5,8 +5,8 @@ import sinon from 'sinon';
 import {
   getAuthorization,
   Params,
-  prepareModifyCorporateActionAgent,
-} from '~/api/procedures/modifyCorporateActionAgent';
+  prepareModifyCorporateActionsAgent,
+} from '~/api/procedures/modifyCorporateActionsAgent';
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -87,7 +87,7 @@ describe('modifyCorporateActionAgent procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    return expect(prepareModifyCorporateActionAgent.call(proc, args)).rejects.toThrow(
+    return expect(prepareModifyCorporateActionsAgent.call(proc, args)).rejects.toThrow(
       'The supplied Identity does not exist'
     );
   });
@@ -101,7 +101,7 @@ describe('modifyCorporateActionAgent procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    return expect(prepareModifyCorporateActionAgent.call(proc, args)).rejects.toThrow(
+    return expect(prepareModifyCorporateActionsAgent.call(proc, args)).rejects.toThrow(
       'The request expiry must be a future date'
     );
   });
@@ -119,7 +119,7 @@ describe('modifyCorporateActionAgent procedure', () => {
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareModifyCorporateActionAgent.call(proc, args);
+    await prepareModifyCorporateActionsAgent.call(proc, args);
 
     sinon.assert.calledWith(
       addTransactionStub,
@@ -130,7 +130,7 @@ describe('modifyCorporateActionAgent procedure', () => {
       null
     );
 
-    await prepareModifyCorporateActionAgent.call(proc, {
+    await prepareModifyCorporateActionsAgent.call(proc, {
       ...args,
       requestExpiry,
     });

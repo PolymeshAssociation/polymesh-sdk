@@ -3,7 +3,7 @@ import sinon from 'sinon';
 
 import {
   Context,
-  modifyCorporateActionAgent,
+  modifyCorporateActionsAgent,
   Namespace,
   SecurityToken,
   TransactionQueue,
@@ -67,11 +67,11 @@ describe('CorporateActions class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       sinon
-        .stub(modifyCorporateActionAgent, 'prepare')
+        .stub(modifyCorporateActionsAgent, 'prepare')
         .withArgs({ ticker, target }, context)
         .resolves(expectedQueue);
 
-      const queue = await corporateActions.modifyCorporateActionAgent({ target });
+      const queue = await corporateActions.modifyCorporateActionsAgent({ target });
 
       expect(queue).toBe(expectedQueue);
     });
