@@ -90,7 +90,7 @@ describe('removeCorporateActionsAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await expect(prepareRemoveCorporateActionsAgent.call(proc, args)).rejects.toThrow(
-      'You cannot remove the corporate actions agent'
+      'There is no set Corporate Actions Agent'
     );
   });
 

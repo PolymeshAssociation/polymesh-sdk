@@ -38,7 +38,7 @@ export async function prepareRemoveCorporateActionsAgent(
   if (owner.did === agent.did) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'You cannot remove the corporate actions agent',
+      message: 'There is no set Corporate Actions Agent',
     });
   }
 
