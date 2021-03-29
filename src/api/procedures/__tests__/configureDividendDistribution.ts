@@ -57,6 +57,10 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
 
 describe('configureDividendDistribution procedure', () => {
   let ticker: string;
@@ -522,7 +526,7 @@ describe('configureDividendDistribution procedure', () => {
         ],
         signerPermissions: {
           transactions: [TxTags.capitalDistribution.Distribute],
-          tokens: [],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [originPortfolio],
         },
       });

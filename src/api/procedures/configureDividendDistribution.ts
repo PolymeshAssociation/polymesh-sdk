@@ -1,6 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
+import { SecurityToken } from '~/api/entities/SecurityToken';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -198,6 +199,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const {
     storage: { portfolio },
+    context,
   } = this;
 
   return {
@@ -207,7 +209,7 @@ export function getAuthorization(
     ],
     signerPermissions: {
       transactions: [TxTags.capitalDistribution.Distribute],
-      tokens: [],
+      tokens: [new SecurityToken({ ticker }, context)],
       portfolios: [portfolio],
     },
   };

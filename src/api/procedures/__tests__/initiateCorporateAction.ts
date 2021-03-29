@@ -92,7 +92,7 @@ describe('initiateCorporateAction procedure', () => {
     rawKind = dsMockUtils.createMockCAKind(kind);
     rawDeclDate = dsMockUtils.createMockMoment(declarationDate.getTime());
     rawRecordDate = dsMockUtils.createMockRecordDateSpec({
-      Scheduled: dsMockUtils.createMockMoment((checkpoint as Date).getTime()),
+      Scheduled: dsMockUtils.createMockMoment(checkpoint.getTime()),
     });
     rawDetails = dsMockUtils.createMockText(description);
     rawTargets = dsMockUtils.createMockTargetIdentities({
