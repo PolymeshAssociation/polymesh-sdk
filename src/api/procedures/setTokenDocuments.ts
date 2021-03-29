@@ -9,7 +9,7 @@ import {
   stringToTicker,
   tokenDocumentToDocument,
 } from '~/utils/conversion';
-import { batchArguments } from '~/utils/internal';
+import { batchArguments, documentComparator } from '~/utils/internal';
 
 export interface SetTokenDocumentsParams {
   documents: TokenDocument[];
@@ -43,18 +43,8 @@ export async function prepareSetTokenDocuments(
   } = this;
   const { ticker, documents } = args;
 
-  const comparator = (a: TokenDocument, b: TokenDocument): boolean => {
-    return (
-      a.name === b.name &&
-      a.uri === b.uri &&
-      a.contentHash === b.contentHash &&
-      a.type === b.type &&
-      a.filedAt === b.filedAt
-    );
-  };
-
   if (
-    !differenceWith(currentDocs, documents, comparator).length &&
+    !differenceWith(currentDocs, documents, documentComparator).length &&
     currentDocs.length === documents.length
   ) {
     throw new PolymeshError({

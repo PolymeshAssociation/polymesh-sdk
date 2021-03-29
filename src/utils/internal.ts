@@ -28,6 +28,7 @@ import {
   PaginationOptions,
   ProcedureAuthorizationStatus,
   Scope,
+  TokenDocument,
   UiKeyring,
 } from '~/types';
 import {
@@ -446,4 +447,17 @@ function isUiKeyring(keyring: any): keyring is UiKeyring {
  */
 export function getCommonKeyring(keyring: CommonKeyring | UiKeyring): CommonKeyring {
   return isUiKeyring(keyring) ? keyring.keyring : keyring;
+}
+
+/**
+ * @hidden
+ */
+export function documentComparator(a: TokenDocument, b: TokenDocument): boolean {
+  return (
+    a.name === b.name &&
+    a.uri === b.uri &&
+    a.contentHash === b.contentHash &&
+    a.type === b.type &&
+    a.filedAt === b.filedAt
+  );
 }

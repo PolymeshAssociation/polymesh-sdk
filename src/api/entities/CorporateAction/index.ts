@@ -1,6 +1,8 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity } from '~/internal';
+import { Context, Entity, linkCaDocs, LinkCaDocsParams } from '~/internal';
+import { ProcedureMethod } from '~/types/internal';
+import { createProcedureMethod } from '~/utils/internal';
 
 import { CorporateActionKind, CorporateActionTargets, TaxWithholding } from './types';
 
@@ -98,5 +100,21 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
     this.targets = targets;
     this.defaultTaxWithholding = defaultTaxWithholding;
     this.taxWithholdings = taxWithholdings;
+
+    this.linkCaDocs = createProcedureMethod(
+      procedureArgs => [linkCaDocs, { id, ticker, ...procedureArgs }],
+      context
+    );
   }
+
+  /**
+   * Link a list of documents to this corporate action
+   *
+   * @param args.documents - list of documents
+   *
+   * @note any previous links are removed in favor of the new list
+   * @note required role:
+   *   - Corporate Actions Agent
+   */
+  public linkCaDocs: ProcedureMethod<LinkCaDocsParams, void>;
 }
