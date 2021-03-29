@@ -53,6 +53,7 @@ import {
   Authorization,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
+  CAId,
   CalendarPeriod,
   CalendarUnit,
   CanTransferResult,
@@ -2499,4 +2500,22 @@ export const createMockScheduleSpec = (scheduleSpec?: {
     },
     !scheduleSpec
   ) as ScheduleSpec;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCAId = (caId?: { ticker: Ticker; localId: u32 }): CAId => {
+  const data = caId || {
+    ticker: createMockTicker(),
+    localId: createMockU32(),
+  };
+
+  return createMockCodec(
+    {
+      ...data,
+    },
+    !caId
+  ) as CAId;
 };

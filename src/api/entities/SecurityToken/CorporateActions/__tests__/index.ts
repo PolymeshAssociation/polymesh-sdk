@@ -1,7 +1,13 @@
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, Namespace, SecurityToken } from '~/internal';
+import {
+  Context,
+  Namespace,
+  removeCorporateActionsAgent,
+  SecurityToken,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -52,6 +58,21 @@ describe('CorporateActions class', () => {
 
   test('should extend namespace', () => {
     expect(CorporateActions.prototype instanceof Namespace).toBe(true);
+  });
+
+  describe('method: removeAgent', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(removeCorporateActionsAgent, 'prepare')
+        .withArgs({ ticker: 'SOME_TICKER' }, context)
+        .resolves(expectedQueue);
+
+      const queue = await corporateActions.removeAgent();
+
+      expect(queue).toBe(expectedQueue);
+    });
   });
 
   describe('method: getAgent', () => {

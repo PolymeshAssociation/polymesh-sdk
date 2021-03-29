@@ -198,6 +198,11 @@ export interface ScheduleSpec {
   repetitions: number | null;
 }
 
+export interface CorporateActionIdentifier {
+  ticker: string;
+  localId: BigNumber;
+}
+
 export interface ProcedureAuthorization {
   signerPermissions?: Omit<Permissions, 'transactionGroups'> | boolean;
   identityRoles?: Role[] | boolean;
