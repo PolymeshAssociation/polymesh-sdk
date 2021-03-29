@@ -35,12 +35,12 @@ export class CorporateActions extends Namespace<SecurityToken> {
   }
 
   /**
-   * Assign a new corporate action agent for the Security Token
+   * Assign a new Corporate Actions Agent for the Security Token
    *
-   * @param args.target - identity to be set as corporate action agent
-   * @param args.requestExpiry - date at which the authorization request to modify the corporate action agent expires (optional, never expires if a date is not provided)
+   * @param args.target - identity to be set as Corporate Actions Agent
+   * @param args.requestExpiry - date at which the authorization request to modify the Corporate Actions Agent expires (optional, never expires if a date is not provided)
    *
-   * @note this may create AuthorizationRequest which have to be accepted by
+   * @note this may create AuthorizationRequests which have to be accepted by
    *   the corresponding Account. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    *
