@@ -1,4 +1,7 @@
+import { Vec } from '@polkadot/types/codec';
+import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import { CheckpointId, IdentityId, Ticker } from 'polymesh-types/types';
 
 import { Context, Entity, Identity } from '~/internal';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
@@ -10,6 +13,7 @@ import {
   numberToU64,
   stringToIdentityId,
   stringToTicker,
+  u64ToBigNumber,
 } from '~/utils/conversion';
 import { getDid, requestPaginated } from '~/utils/internal';
 
@@ -91,23 +95,76 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
   public async allBalances(
     paginationOpts?: PaginationOptions
   ): Promise<ResultSet<IdentityBalance>> {
-    const { context, ticker, id } = this;
+    const {
+      context: {
+        polymeshApi: { query },
+      },
+      context,
+      ticker,
+      id,
+    } = this;
 
-    const { entries, lastKey: next } = await requestPaginated(
-      context.polymeshApi.query.checkpoint.balance,
-      {
-        arg: tuple(stringToTicker(ticker, context), numberToU64(id, context)),
-        paginationOpts,
-      }
+    const rawTicker = stringToTicker(ticker, context);
+
+    const { entries, lastKey: next } = await requestPaginated(query.asset.balanceOf, {
+      arg: rawTicker,
+      paginationOpts,
+    });
+
+    const currentDidBalances: { did: string; balance: BigNumber }[] = [];
+    const balanceUpdatesMultiParams: [Ticker, IdentityId][] = [];
+
+    entries.forEach(([storageKey, balance]) => {
+      const {
+        args: [, identityId],
+      } = storageKey;
+      currentDidBalances.push({
+        did: identityIdToString(identityId),
+        balance: balanceToBigNumber(balance),
+      });
+      balanceUpdatesMultiParams.push(tuple(rawTicker, identityId));
+    });
+
+    const rawBalanceUpdates = await query.checkpoint.balanceUpdates.multi<Vec<CheckpointId>>(
+      balanceUpdatesMultiParams
     );
 
-    const data = entries.map(([{ args: [, identityId] }, balance]) => ({
-      identity: new Identity({ did: identityIdToString(identityId) }, context),
-      balance: balanceToBigNumber(balance),
-    }));
+    const checkpointBalanceMultiParams: {
+      did: string;
+      params: [(Ticker | CheckpointId)[], IdentityId];
+    }[] = [];
+    const currentIdentityBalances: IdentityBalance[] = [];
+
+    rawBalanceUpdates.forEach((rawCheckpointIds, index) => {
+      const firstUpdatedCheckpoint = rawCheckpointIds.find(checkpointId =>
+        u64ToBigNumber(checkpointId).gte(id)
+      );
+      const { did, balance } = currentDidBalances[index];
+      if (firstUpdatedCheckpoint) {
+        checkpointBalanceMultiParams.push({
+          did,
+          params: tuple([rawTicker, firstUpdatedCheckpoint], stringToIdentityId(did, context)),
+        });
+      } else {
+        currentIdentityBalances.push({
+          identity: new Identity({ did }, context),
+          balance,
+        });
+      }
+    });
+
+    const checkpointBalances = await query.checkpoint.balance.multi<Balance>(
+      checkpointBalanceMultiParams.map(({ params }) => params)
+    );
 
     return {
-      data,
+      data: [
+        ...checkpointBalanceMultiParams.map(({ did }, index) => ({
+          identity: new Identity({ did }, context),
+          balance: balanceToBigNumber(checkpointBalances[index]),
+        })),
+        ...currentIdentityBalances,
+      ],
       next,
     };
   }
@@ -118,15 +175,36 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
    * @param args.identity - defaults to the current Identity
    */
   public async balance(args?: { identity: string | Identity }): Promise<BigNumber> {
-    const { context, ticker, id } = this;
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { checkpoint },
+        },
+      },
+      ticker,
+      id,
+    } = this;
 
     const did = await getDid(args?.identity, context);
 
-    const balance = await context.polymeshApi.query.checkpoint.balance(
-      [stringToTicker(ticker, context), numberToU64(id, context)],
-      stringToIdentityId(did, context)
-    );
+    const identity = new Identity({ did }, context);
 
-    return balanceToBigNumber(balance);
+    const rawTicker = stringToTicker(ticker, context);
+    const rawU64 = numberToU64(id, context);
+    const rawIdentityId = stringToIdentityId(did, context);
+
+    const [rawBalance, sizeBalance] = await Promise.all([
+      checkpoint.balance([rawTicker, rawU64], rawIdentityId),
+      checkpoint.balance.size([rawTicker, rawU64], rawIdentityId),
+    ]);
+
+    const balance = balanceToBigNumber(rawBalance);
+
+    if (balance.isZero() && sizeBalance.isZero()) {
+      return identity.getTokenBalance({ ticker });
+    }
+
+    return balance;
   }
 }
