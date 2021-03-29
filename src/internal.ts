@@ -137,3 +137,4 @@ export {
   modifyCorporateActionsAgent,
   ModifyCorporateActionsAgentParams,
 } from '~/api/procedures/modifyCorporateActionsAgent';
+export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';

@@ -34,6 +34,7 @@ import {
   AuthIdentifier,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
+  CAId,
   CalendarPeriod as MeshCalendarPeriod,
   CanTransferResult,
   CddId,
@@ -155,6 +156,7 @@ import {
 } from '~/types';
 import {
   AuthTarget,
+  CorporateActionIdentifier,
   ExtrinsicIdentifier,
   PolymeshTx,
   PortfolioId,
@@ -2646,4 +2648,19 @@ export function storedScheduleToScheduleParams(storedSchedule: StoredSchedule): 
     remaining: u32ToBigNumber(remaining).toNumber(),
     nextCheckpointDate: momentToDate(at),
   };
+}
+
+/**
+ * @hidden
+ */
+export function corporateActionIdentifierToCaId(
+  corporateActionIdentifier: CorporateActionIdentifier,
+  context: Context
+): CAId {
+  const { ticker, localId } = corporateActionIdentifier;
+  return context.polymeshApi.createType('CAId', {
+    ticker: stringToTicker(ticker, context),
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    local_id: numberToU32(localId, context),
+  });
 }

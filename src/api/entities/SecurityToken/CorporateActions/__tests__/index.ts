@@ -5,6 +5,7 @@ import {
   Context,
   modifyCorporateActionsAgent,
   Namespace,
+  removeCorporateActionsAgent,
   SecurityToken,
   TransactionQueue,
 } from '~/internal';
@@ -72,6 +73,21 @@ describe('CorporateActions class', () => {
         .resolves(expectedQueue);
 
       const queue = await corporateActions.modifyCorporateActionsAgent({ target });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: removeAgent', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(removeCorporateActionsAgent, 'prepare')
+        .withArgs({ ticker: 'SOME_TICKER' }, context)
+        .resolves(expectedQueue);
+
+      const queue = await corporateActions.removeAgent();
 
       expect(queue).toBe(expectedQueue);
     });

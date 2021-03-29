@@ -58,6 +58,11 @@ describe('modifyCorporateActionAgent procedure', () => {
   });
 
   beforeEach(() => {
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did: 'agentDid' }),
+      },
+    });
     mockContext = dsMockUtils.getContextInstance();
     authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
     signerToStringStub.returns(target);
@@ -89,6 +94,26 @@ describe('modifyCorporateActionAgent procedure', () => {
 
     return expect(prepareModifyCorporateActionsAgent.call(proc, args)).rejects.toThrow(
       'The supplied Identity does not exist'
+    );
+  });
+
+  test('should throw an error if the supplied Identity is currently the corporate actions agent', () => {
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did: target }),
+      },
+    });
+
+    const args = {
+      target,
+      ticker,
+      requestExpiry: new Date(),
+    };
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    return expect(prepareModifyCorporateActionsAgent.call(proc, args)).rejects.toThrow(
+      'The supplied Identity is currently the corporate actions agent'
     );
   });
 

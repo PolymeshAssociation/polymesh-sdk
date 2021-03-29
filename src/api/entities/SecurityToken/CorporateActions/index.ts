@@ -4,6 +4,7 @@ import {
   modifyCorporateActionsAgent,
   ModifyCorporateActionsAgentParams,
   Namespace,
+  removeCorporateActionsAgent,
   SecurityToken,
 } from '~/internal';
 import { ProcedureMethod } from '~/types/internal';
@@ -32,6 +33,11 @@ export class CorporateActions extends Namespace<SecurityToken> {
       args => [modifyCorporateActionsAgent, { ticker, ...args }],
       context
     );
+
+    this.removeAgent = createProcedureMethod(
+      () => [removeCorporateActionsAgent, { ticker }],
+      context
+    );
   }
 
   /**
@@ -48,6 +54,16 @@ export class CorporateActions extends Namespace<SecurityToken> {
    *   - Security Token Owner
    */
   public modifyCorporateActionsAgent: ProcedureMethod<ModifyCorporateActionsAgentParams, void>;
+
+  /**
+   * Remove the Corporate Actions Agent of the Security Token
+   *
+   * @note this action will leave the Security Token owner as the Corporate Actions Agent
+   *
+   * @note required role:
+   *   - Security Token Owner
+   */
+  public removeAgent: ProcedureMethod<void, void>;
 
   /**
    * Retrieve the Security Token's Corporate Actions agent
