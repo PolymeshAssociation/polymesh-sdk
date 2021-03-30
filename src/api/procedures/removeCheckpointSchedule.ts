@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { CheckpointSchedule, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
+import { numberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
 export interface RemoveCheckpointScheduleParams {
   schedule: CheckpointSchedule | BigNumber;
@@ -31,12 +31,20 @@ export async function prepareRemoveCheckpointSchedule(
   } = this;
   const { ticker, schedule } = args;
 
+  const id = schedule instanceof BigNumber ? schedule : schedule.id;
   const rawTicker = stringToTicker(ticker, context);
 
-  const rawScheduleId = numberToU64(
-    schedule instanceof BigNumber ? schedule : schedule.id,
-    context
-  );
+  const rawSchedules = await query.checkpoint.schedules(rawTicker);
+  const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Schedule no longer exists. It was either removed or it expired',
+    });
+  }
+
+  const rawScheduleId = numberToU64(id, context);
 
   const scheduleRefCount = await query.checkpoint.scheduleRefCount(rawTicker, rawScheduleId);
 
