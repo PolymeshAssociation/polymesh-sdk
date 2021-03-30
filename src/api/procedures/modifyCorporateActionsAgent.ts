@@ -50,7 +50,7 @@ export async function prepareModifyCorporateActionsAgent(
   if (agent.did === signerToString(target)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The supplied Identity is currently the corporate actions agent',
+      message: 'The supplied Identity is already the Corporate Actions Agent',
     });
   }
 
