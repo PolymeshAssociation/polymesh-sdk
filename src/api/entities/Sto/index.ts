@@ -1,5 +1,6 @@
 import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { Fundraiser, FundraiserName } from 'polymesh-types/types';
 
 import {
   closeSto,
@@ -15,7 +16,6 @@ import {
 } from '~/internal';
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Fundraiser, FundraiserName } from '~/polkadot/polymesh/types';
 import { Ensured, ErrorCode, ResultSet, SubCallback, UnsubCallback } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';

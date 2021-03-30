@@ -1,16 +1,8 @@
-import BigNumber from 'bignumber.js';
-
-import { CalendarPeriod } from '~/types';
+import { Params, UniqueIdentifiers } from '.';
 
 export interface ScheduleDetails {
   remainingCheckpoints: number;
   nextCheckpointDate: Date;
 }
 
-export interface ScheduleParams {
-  id: BigNumber;
-  period: CalendarPeriod;
-  start: Date;
-  remaining: number;
-  nextCheckpointDate: Date;
-}
+export type CheckpointScheduleParams = Omit<UniqueIdentifiers & Params, 'ticker'>;

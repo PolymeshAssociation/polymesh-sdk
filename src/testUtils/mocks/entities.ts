@@ -10,9 +10,11 @@ import {
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
+  CorporateAction,
   CurrentAccount,
   CurrentIdentity,
   DefaultPortfolio,
+  DividendDistribution,
   Identity,
   Instruction,
   NumberedPortfolio,
@@ -31,6 +33,8 @@ import {
   AuthorizationType,
   CalendarPeriod,
   CalendarUnit,
+  CorporateActionKind,
+  CorporateActionTargets,
   CountTransferRestriction,
   ExtrinsicData,
   InstructionDetails,
@@ -47,6 +51,8 @@ import {
   StoDetails,
   StoSaleStatus,
   StoTimingStatus,
+  TargetTreatment,
+  TaxWithholding,
   TickerReservationDetails,
   TickerReservationStatus,
   TokenIdentifier,
@@ -75,6 +81,8 @@ const mockInstanceContainer = {
   sto: {} as MockSto,
   checkpoint: {} as MockCheckpoint,
   checkpointSchedule: {} as MockCheckpointSchedule,
+  corporateAction: {} as MockCorporateAction,
+  dividendDistribution: {} as MockDividendDistribution,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -93,6 +101,8 @@ type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
 type MockSto = Mocked<Sto>;
 type MockCheckpoint = Mocked<Checkpoint>;
 type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
+type MockCorporateAction = Mocked<CorporateAction>;
+type MockDividendDistribution = Mocked<DividendDistribution>;
 
 interface IdentityOptions {
   did?: string;
@@ -212,6 +222,33 @@ interface CheckpointScheduleOptions {
   details?: Partial<ScheduleDetails>;
 }
 
+interface CorporateActionOptions {
+  id?: BigNumber;
+  ticker?: string;
+  kind?: CorporateActionKind;
+  declarationDate?: Date;
+  description?: string;
+  targets?: CorporateActionTargets;
+  defaultTaxWithholding?: BigNumber;
+  taxWithholdings?: TaxWithholding[];
+}
+
+interface DividendDistributionOptions {
+  id?: BigNumber;
+  ticker?: string;
+  declarationDate?: Date;
+  description?: string;
+  targets?: CorporateActionTargets;
+  defaultTaxWithholding?: BigNumber;
+  taxWithholdings?: TaxWithholding[];
+  origin?: DefaultPortfolio | NumberedPortfolio;
+  currency?: string;
+  perShare?: BigNumber;
+  maxAmount?: BigNumber;
+  expiryDate?: null | Date;
+  paymentDate?: Date;
+}
+
 let identityConstructorStub: SinonStub;
 let currentIdentityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
@@ -227,6 +264,8 @@ let defaultPortfolioConstructorStub: SinonStub;
 let stoConstructorStub: SinonStub;
 let checkpointConstructorStub: SinonStub;
 let checkpointScheduleConstructorStub: SinonStub;
+let corporateActionConstructorStub: SinonStub;
+let dividendDistributionConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
@@ -413,6 +452,24 @@ const MockCheckpointScheduleClass = class {
   }
 };
 
+const MockCorporateActionClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return corporateActionConstructorStub(...args);
+  }
+};
+
+const MockDividendDistributionClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return dividendDistributionConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -486,6 +543,16 @@ export const mockCheckpointModule = (path: string) => (): object => ({
 export const mockCheckpointScheduleModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   CheckpointSchedule: MockCheckpointScheduleClass,
+});
+
+export const mockCorporateActionModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  CorporateAction: MockCorporateActionClass,
+});
+
+export const mockDividendDistributionModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  DividendDistribution: MockDividendDistributionClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -671,6 +738,38 @@ const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
   },
 };
 let checkpointScheduleOptions = defaultCheckpointScheduleOptions;
+const defaultCorporateActionOptions: CorporateActionOptions = {
+  id: new BigNumber(1),
+  ticker: 'SOME_TICKER',
+  kind: CorporateActionKind.UnpredictableBenefit,
+  declarationDate: new Date('10/14/1987'),
+  description: 'someDescription',
+  targets: {
+    identities: [],
+    treatment: TargetTreatment.Include,
+  },
+  defaultTaxWithholding: new BigNumber(10),
+  taxWithholdings: [],
+};
+let corporateActionOptions = defaultCorporateActionOptions;
+const defaultDividendDistributionOptions: DividendDistributionOptions = {
+  id: new BigNumber(1),
+  ticker: 'SOME_TICKER',
+  declarationDate: new Date('10/14/1987'),
+  description: 'someDescription',
+  targets: {
+    identities: [],
+    treatment: TargetTreatment.Include,
+  },
+  defaultTaxWithholding: new BigNumber(10),
+  taxWithholdings: [],
+  currency: 'USD',
+  perShare: new BigNumber(100),
+  maxAmount: new BigNumber(1000000),
+  expiryDate: null,
+  paymentDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+};
+let dividendDistributionOptions = defaultDividendDistributionOptions;
 // NOTE uncomment in Governance v2 upgrade
 // const defaultProposalOptions: ProposalOptions = {
 //   pipId: new BigNumber(1),
@@ -1271,7 +1370,7 @@ function initCheckpoint(opts?: CheckpointOptions): void {
 
 /**
  * @hidden
- * Configure the Checkpoint instance
+ * Configure the CheckpointSchedule instance
  */
 function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
   const checkpointSchedule = ({
@@ -1307,6 +1406,84 @@ function initCheckpointSchedule(opts?: CheckpointScheduleOptions): void {
 
 /**
  * @hidden
+ * Configure the CorporateAction instance
+ */
+function configureCorporateAction(opts: CorporateActionOptions): void {
+  const corporateAction = ({
+    id: opts.id,
+    ticker: opts.ticker,
+    kind: opts.kind,
+    declarationDate: opts.declarationDate,
+    description: opts.description,
+    targets: opts.targets,
+    defaultTaxWithholding: opts.defaultTaxWithholding,
+    taxWithholdings: opts.taxWithholdings,
+  } as unknown) as MockCorporateAction;
+
+  Object.assign(mockInstanceContainer.corporateAction, corporateAction);
+  corporateActionConstructorStub.callsFake(args => {
+    const value = merge({}, corporateAction, args);
+    Object.setPrototypeOf(value, require('~/internal').CorporateAction.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the CorporateAction instance
+ */
+function initCorporateAction(opts?: CorporateActionOptions): void {
+  corporateActionConstructorStub = sinon.stub();
+
+  corporateActionOptions = merge({}, defaultCorporateActionOptions, opts);
+
+  configureCorporateAction(corporateActionOptions);
+}
+
+/**
+ * @hidden
+ * Configure the CorporateAction instance
+ */
+function configureDividendDistribution(opts: DividendDistributionOptions): void {
+  const dividendDistribution = ({
+    id: opts.id,
+    ticker: opts.ticker,
+    kind: CorporateActionKind.UnpredictableBenefit,
+    declarationDate: opts.declarationDate,
+    description: opts.description,
+    targets: opts.targets,
+    defaultTaxWithholding: opts.defaultTaxWithholding,
+    taxWithholdings: opts.taxWithholdings,
+    origin: mockInstanceContainer.defaultPortfolio,
+    currency: opts.currency,
+    perShare: opts.perShare,
+    maxAmount: opts.maxAmount,
+    expiryDate: opts.expiryDate,
+    paymentDate: opts.paymentDate,
+  } as unknown) as MockDividendDistribution;
+
+  Object.assign(mockInstanceContainer.dividendDistribution, dividendDistribution);
+  dividendDistributionConstructorStub.callsFake(args => {
+    const value = merge({}, dividendDistribution, args);
+    Object.setPrototypeOf(value, require('~/internal').DividendDistribution.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the DividendDistribution instance
+ */
+function initDividendDistribution(opts?: DividendDistributionOptions): void {
+  dividendDistributionConstructorStub = sinon.stub();
+
+  dividendDistributionOptions = merge({}, defaultDividendDistributionOptions, opts);
+
+  configureDividendDistribution(dividendDistributionOptions);
+}
+
+/**
+ * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
@@ -1326,6 +1503,8 @@ export function configureMocks(opts?: {
   stoOptions?: StoOptions;
   checkpointOptions?: CheckpointOptions;
   checkpointScheduleOptions?: CheckpointScheduleOptions;
+  corporateActionOptions?: CorporateActionOptions;
+  dividendDistributionOptions?: DividendDistributionOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -1421,6 +1600,18 @@ export function configureMocks(opts?: {
     ...opts?.checkpointScheduleOptions,
   };
   configureCheckpointSchedule(tempCheckpointScheduleOptions);
+
+  const tempCorporateActionOptions = {
+    ...corporateActionOptions,
+    ...opts?.corporateActionOptions,
+  };
+  configureCorporateAction(tempCorporateActionOptions);
+
+  const tempDividendDistributionOptions = {
+    ...dividendDistributionOptions,
+    ...opts?.dividendDistributionOptions,
+  };
+  configureDividendDistribution(tempDividendDistributionOptions);
 }
 
 /**
@@ -1444,6 +1635,8 @@ export function initMocks(opts?: {
   stoOptions?: StoOptions;
   checkpointOptions?: CheckpointOptions;
   checkpointScheduleOptions?: CheckpointScheduleOptions;
+  corporateActionOptions?: CorporateActionOptions;
+  dividendDistributionOptions?: DividendDistributionOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -1493,6 +1686,12 @@ export function initMocks(opts?: {
 
   // CheckpointSchedule
   initCheckpointSchedule(opts?.checkpointScheduleOptions);
+
+  // CorporateAction
+  initCorporateAction(opts?.corporateActionOptions);
+
+  // DividendDistribution
+  initDividendDistribution(opts?.dividendDistributionOptions);
 }
 
 /**
@@ -1514,6 +1713,8 @@ export function cleanup(): void {
   mockInstanceContainer.sto = {} as MockSto;
   mockInstanceContainer.checkpoint = {} as MockCheckpoint;
   mockInstanceContainer.checkpointSchedule = {} as MockCheckpointSchedule;
+  mockInstanceContainer.corporateAction = {} as MockCorporateAction;
+  mockInstanceContainer.dividendDistribution = {} as MockDividendDistribution;
 }
 
 /**
@@ -1539,6 +1740,8 @@ export function reset(): void {
     stoOptions,
     checkpointOptions,
     checkpointScheduleOptions,
+    corporateActionOptions,
+    dividendDistributionOptions,
   });
 }
 
@@ -2156,4 +2359,46 @@ export function getCheckpointScheduleDetailsStub(details?: Partial<ScheduleDetai
     });
   }
   return checkpointScheduleDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a CorporateAction instance
+ */
+export function getCorporateActionInstance(opts?: CorporateActionOptions): MockCorporateAction {
+  if (opts) {
+    configureCorporateAction({ ...defaultCorporateActionOptions, ...opts });
+  }
+
+  return new MockCorporateActionClass() as MockCorporateAction;
+}
+
+/**
+ * @hidden
+ * Retrieve the CorporateAction constructor stub
+ */
+export function getCorporateActionConstructorStub(): SinonStub {
+  return corporateActionConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a DividendDistribution instance
+ */
+export function getDividendDistributionInstance(
+  opts?: DividendDistributionOptions
+): MockDividendDistribution {
+  if (opts) {
+    configureDividendDistribution({ ...defaultDividendDistributionOptions, ...opts });
+  }
+
+  return new MockDividendDistributionClass() as MockDividendDistribution;
+}
+
+/**
+ * @hidden
+ * Retrieve the DividendDistribution constructor stub
+ */
+export function getDividendDistributionConstructorStub(): SinonStub {
+  return dividendDistributionConstructorStub;
 }

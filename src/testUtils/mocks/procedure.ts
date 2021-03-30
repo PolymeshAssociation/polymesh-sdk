@@ -14,6 +14,7 @@ type MockProcedure = Mocked<Procedure>;
 let procedureConstructorStub: SinonStub;
 let addTransactionStub: SinonStub;
 let addBatchTransactionStub: SinonStub;
+let addProcedureStub: SinonStub;
 
 export const MockProcedureClass = class {
   /**
@@ -36,10 +37,12 @@ export const mockProcedureModule = (path: string) => (): object => ({
 function initProcedure(): void {
   procedureConstructorStub = sinon.stub();
   addTransactionStub = sinon.stub();
+  addProcedureStub = sinon.stub();
   addBatchTransactionStub = sinon.stub();
   const procedure = ({
     addTransaction: addTransactionStub.returns([]),
     addBatchTransaction: addBatchTransactionStub.returns([]),
+    addProcedure: addProcedureStub.returns([]),
   } as unknown) as MockProcedure;
 
   mockInstanceContainer.procedure = procedure;
@@ -100,4 +103,12 @@ export function getAddTransactionStub(): SinonStub {
  */
 export function getAddBatchTransactionStub(): SinonStub {
   return addBatchTransactionStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `addProcedure` method
+ */
+export function getAddProcedureStub(): SinonStub {
+  return addProcedureStub;
 }
