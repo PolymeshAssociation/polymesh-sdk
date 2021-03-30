@@ -72,7 +72,7 @@ describe('CorporateActions class', () => {
         .withArgs({ ticker, target }, context)
         .resolves(expectedQueue);
 
-      const queue = await corporateActions.modifyCorporateActionsAgent({ target });
+      const queue = await corporateActions.setAgent({ target });
 
       expect(queue).toBe(expectedQueue);
     });

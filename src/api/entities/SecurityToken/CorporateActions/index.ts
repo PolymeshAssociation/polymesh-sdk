@@ -29,7 +29,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
 
     this.distributions = new Distributions(parent, context);
 
-    this.modifyCorporateActionsAgent = createProcedureMethod(
+    this.setAgent = createProcedureMethod(
       args => [modifyCorporateActionsAgent, { ticker, ...args }],
       context
     );
@@ -53,7 +53,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
    * @note required role:
    *   - Security Token Owner
    */
-  public modifyCorporateActionsAgent: ProcedureMethod<ModifyCorporateActionsAgentParams, void>;
+  public setAgent: ProcedureMethod<ModifyCorporateActionsAgentParams, void>;
 
   /**
    * Remove the Corporate Actions Agent of the Security Token
