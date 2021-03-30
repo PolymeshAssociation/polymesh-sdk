@@ -1,5 +1,4 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { StoredSchedule } from 'polymesh-types/types';
 
 import {
   CheckpointSchedule,
@@ -13,7 +12,7 @@ import { CalendarPeriod, ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   scheduleSpecToMeshScheduleSpec,
-  storedScheduleToScheduleParams,
+  storedScheduleToCheckpointScheduleParams,
   stringToTicker,
 } from '~/utils/conversion';
 import { findEventRecord } from '~/utils/internal';
@@ -37,10 +36,9 @@ export type Params = CreateCheckpointScheduleParams & {
 export const createCheckpointScheduleResolver = (ticker: string, context: Context) => (
   receipt: ISubmittableResult
 ): CheckpointSchedule => {
-  const eventRecord = findEventRecord(receipt, 'checkpoint', 'CheckpointCreated');
-  const data = eventRecord.event.data;
+  const { data } = findEventRecord(receipt, 'checkpoint', 'ScheduleCreated');
 
-  const scheduleParams = storedScheduleToScheduleParams(data[2] as StoredSchedule);
+  const scheduleParams = storedScheduleToCheckpointScheduleParams(data[2]);
 
   return new CheckpointSchedule(
     {

@@ -137,4 +137,11 @@ export {
   modifyCorporateActionsAgent,
   ModifyCorporateActionsAgentParams,
 } from '~/api/procedures/modifyCorporateActionsAgent';
+  initiateCorporateAction,
+  InitiateCorporateActionParams,
+} from '~/api/procedures/initiateCorporateAction';
+export {
+  configureDividendDistribution,
+  ConfigureDividendDistributionParams,
+} from '~/api/procedures/configureDividendDistribution';
 export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';

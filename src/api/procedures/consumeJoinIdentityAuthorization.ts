@@ -1,5 +1,6 @@
+import { TxTag, TxTags } from 'polymesh-types/types';
+
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
-import { TxTag, TxTags } from '~/polkadot';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   booleanToBool,

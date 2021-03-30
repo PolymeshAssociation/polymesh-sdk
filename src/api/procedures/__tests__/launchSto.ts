@@ -354,7 +354,7 @@ describe('launchSto procedure', () => {
 
     beforeEach(() => {
       findEventRecordStub.returns(
-        dsMockUtils.createMockEventRecord(['filler', dsMockUtils.createMockU64(stoId.toNumber())])
+        dsMockUtils.createMockIEvent(['filler', dsMockUtils.createMockU64(stoId.toNumber())])
       );
     });
 

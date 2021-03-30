@@ -479,7 +479,7 @@ describe('createAddInstructionResolver', () => {
   });
 
   beforeEach(() => {
-    findEventRecordStub.returns(dsMockUtils.createMockEventRecord(['did', 'venueId', rawId]));
+    findEventRecordStub.returns(dsMockUtils.createMockIEvent(['did', 'venueId', rawId]));
   });
 
   afterEach(() => {

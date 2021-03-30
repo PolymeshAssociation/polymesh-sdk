@@ -1,4 +1,3 @@
-import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Checkpoint, Context, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
@@ -20,9 +19,8 @@ export interface Params {
 export const createCheckpointResolver = (ticker: string, context: Context) => (
   receipt: ISubmittableResult
 ): Checkpoint => {
-  const eventRecord = findEventRecord(receipt, 'checkpoint', 'CheckpointCreated');
-  const data = eventRecord.event.data;
-  const id = u64ToBigNumber(data[2] as u64);
+  const { data } = findEventRecord(receipt, 'checkpoint', 'CheckpointCreated');
+  const id = u64ToBigNumber(data[2]);
 
   return new Checkpoint({ ticker, id }, context);
 };
