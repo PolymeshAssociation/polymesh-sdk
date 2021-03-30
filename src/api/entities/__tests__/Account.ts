@@ -16,16 +16,17 @@ describe('Account class', () => {
   let address: string;
   let key: string;
   let account: Account;
+  let assertFormatValidStub: sinon.SinonStub;
+  let addressToKeyStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    assertFormatValidStub = sinon.stub(utilsInternalModule, 'assertFormatValid');
+    addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
 
     address = 'someAddress';
     key = 'someKey';
-
-    sinon.stub(utilsConversionModule, 'addressToKey').returns(key);
-    sinon.stub(utilsInternalModule, 'assertFormatValid');
   });
 
   beforeEach(() => {
@@ -36,6 +37,7 @@ describe('Account class', () => {
   afterEach(() => {
     entityMockUtils.reset();
     dsMockUtils.reset();
+    sinon.reset();
   });
 
   afterAll(() => {
@@ -46,6 +48,15 @@ describe('Account class', () => {
 
   test('should extend Entity', () => {
     expect(Account.prototype instanceof Entity).toBe(true);
+  });
+
+  test('should throw an error if the supplied address is not encoded with the correct SS58 format', () => {
+    assertFormatValidStub.throws();
+
+    expect(() => {
+      // eslint-disable-next-line no-new
+      new Account({ address: 'ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8' }, context);
+    }).toThrow();
   });
 
   describe('method: isUniqueIdentifiers', () => {
@@ -122,6 +133,8 @@ describe('Account class', () => {
       const callId = CallIdEnum.CddRegisterDid;
       const blockNumber1 = new BigNumber(1);
       const blockNumber2 = new BigNumber(2);
+
+      addressToKeyStub.returns(key);
 
       sinon.stub(utilsConversionModule, 'txTagToExtrinsicIdentifier').withArgs(tag).returns({
         moduleId,

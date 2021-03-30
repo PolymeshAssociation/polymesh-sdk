@@ -14,7 +14,6 @@ import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType } from '~/types';
 import { SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
@@ -41,7 +40,6 @@ describe('consumeAuthorizationRequests procedure', () => {
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     sinon.stub(utilsConversionModule, 'addressToKey');
-    sinon.stub(utilsInternalModule, 'assertFormatValid');
   });
 
   let addBatchTransactionStub: sinon.SinonStub;
@@ -64,7 +62,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       {
         authId: new BigNumber(2),
         expiry: null,
-        target: new Account({ address: 'targetAddress2' }, mockContext),
+        target: entityMockUtils.getAccountInstance({ address: 'targetAddress2' }),
         issuer: new Identity({ did: 'issuerDid2' }, mockContext),
         data: {
           type: AuthorizationType.TransferAssetOwnership,
@@ -208,7 +206,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         },
       });
 
-      args.authRequests[0].target = new Account({ address: 'someAddress' }, mockContext);
+      args.authRequests[0].target = entityMockUtils.getAccountInstance({ address: 'someAddress' });
 
       result = await boundFunc(args);
       expect(result).toEqual({

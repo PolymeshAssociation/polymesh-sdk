@@ -527,10 +527,8 @@ describe('assertFormatValid', () => {
   });
 
   test('should not throw if the address is prefixed with valid ss58', async () => {
-    try {
-      assertFormatValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format);
-    } catch (_) {
-      expect(true).toBe(false);
-    }
+    expect(() =>
+      assertFormatValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
+    ).not.toThrow();
   });
 });

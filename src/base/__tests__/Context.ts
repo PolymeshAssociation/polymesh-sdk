@@ -10,6 +10,7 @@ import { createMockAccountId } from '~/testUtils/mocks/dataSources';
 import { ClaimType, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -331,7 +332,7 @@ describe('Context class', () => {
         .withArgs(newAddress, context)
         .returns(accountId);
 
-      await context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY');
+      await context.setPair(DUMMY_ACCOUNT_ID);
 
       expect(context.currentPair).toEqual(newCurrentPair);
     });
