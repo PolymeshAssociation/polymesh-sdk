@@ -113,7 +113,7 @@ describe('modifyCorporateActionAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareModifyCorporateActionsAgent.call(proc, args)).rejects.toThrow(
-      'The supplied Identity is currently the corporate actions agent'
+      'The supplied Identity is already the Corporate Actions Agent'
     );
   });
 
