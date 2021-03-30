@@ -137,6 +137,7 @@ export {
   modifyCorporateActionsAgent,
   ModifyCorporateActionsAgentParams,
 } from '~/api/procedures/modifyCorporateActionsAgent';
+export {
   initiateCorporateAction,
   InitiateCorporateActionParams,
 } from '~/api/procedures/initiateCorporateAction';
