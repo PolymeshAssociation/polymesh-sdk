@@ -182,6 +182,6 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
 
     const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
 
-    return typeof exists !== 'undefined';
+    return !!exists;
   }
 }
