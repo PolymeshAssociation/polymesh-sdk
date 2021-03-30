@@ -64,7 +64,7 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Schedule is no longer exist', async () => {
+  test('should throw an error if the Schedule no longer exists', async () => {
     const args = {
       ticker,
       schedule: id,
