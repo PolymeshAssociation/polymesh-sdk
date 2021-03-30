@@ -1,5 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { IdentityId, TxTags } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
 import { PermissionsLike, RoleType, SecondaryKey } from '~/types';
@@ -23,9 +23,8 @@ export interface RegisterIdentityParams {
 export const createRegisterIdentityResolver = (context: Context) => (
   receipt: ISubmittableResult
 ): Identity => {
-  const eventRecord = findEventRecord(receipt, 'identity', 'DidCreated');
-  const data = eventRecord.event.data;
-  const did = identityIdToString(data[0] as IdentityId);
+  const { data } = findEventRecord(receipt, 'identity', 'DidCreated');
+  const did = identityIdToString(data[0]);
 
   return new Identity({ did }, context);
 };

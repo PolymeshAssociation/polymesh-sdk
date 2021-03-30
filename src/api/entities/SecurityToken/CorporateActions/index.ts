@@ -1,5 +1,13 @@
-import { Context, Identity, Namespace, SecurityToken } from '~/internal';
+import {
+  Context,
+  Identity,
+  Namespace,
+  removeCorporateActionsAgent,
+  SecurityToken,
+} from '~/internal';
+import { ProcedureMethod } from '~/types/internal';
 import { identityIdToString, stringToTicker } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 import { Distributions } from './Distributions';
 
@@ -15,8 +23,25 @@ export class CorporateActions extends Namespace<SecurityToken> {
   constructor(parent: SecurityToken, context: Context) {
     super(parent, context);
 
+    const { ticker } = parent;
+
     this.distributions = new Distributions(parent, context);
+
+    this.removeAgent = createProcedureMethod(
+      () => [removeCorporateActionsAgent, { ticker }],
+      context
+    );
   }
+
+  /**
+   * Remove the Corporate Actions Agent of the Security Token
+   *
+   * @note this action will leave the Security Token owner as the Corporate Actions Agent
+   *
+   * @note required role:
+   *   - Security Token Owner
+   */
+  public removeAgent: ProcedureMethod<void, void>;
 
   /**
    * Retrieve the Security Token's Corporate Actions agent

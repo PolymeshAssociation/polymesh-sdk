@@ -206,7 +206,7 @@ describe('tickerReservationResolver', () => {
   });
 
   beforeEach(() => {
-    findEventRecordStub.returns(dsMockUtils.createMockEventRecord(['someDid', ticker]));
+    findEventRecordStub.returns(dsMockUtils.createMockIEvent(['someDid', ticker]));
   });
 
   afterEach(() => {

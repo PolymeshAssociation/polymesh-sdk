@@ -38,7 +38,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
   let claimIssuers: TrustedClaimIssuer[];
   let rawTicker: Ticker;
   let rawClaimIssuers: TrustedIssuer[];
-  let args: Omit<Omit<Params, 'operation'>, 'claimIssuers'>;
+  let args: Omit<Params, 'operation' | 'claimIssuers'>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
