@@ -181,7 +181,7 @@ describe('Checkpoints class', () => {
 
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
 
-      sinon.stub(utilsConversionModule, 'storedScheduleToScheduleParams').returns({
+      sinon.stub(utilsConversionModule, 'storedScheduleToCheckpointScheduleParams').returns({
         id,
         period,
         start,

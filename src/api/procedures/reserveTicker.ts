@@ -1,5 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { Ticker, TxTags } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 
 import {
   Context,
@@ -25,9 +25,8 @@ export interface ReserveTickerParams {
 export const createTickerReservationResolver = (context: Context) => (
   receipt: ISubmittableResult
 ): TickerReservation => {
-  const eventRecord = findEventRecord(receipt, 'asset', 'TickerRegistered');
-  const data = eventRecord.event.data;
-  const newTicker = tickerToString(data[1] as Ticker);
+  const { data } = findEventRecord(receipt, 'asset', 'TickerRegistered');
+  const newTicker = tickerToString(data[1]);
 
   return new TickerReservation({ ticker: newTicker }, context);
 };

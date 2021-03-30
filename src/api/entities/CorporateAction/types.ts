@@ -24,3 +24,5 @@ export enum CorporateActionKind {
   Reorganization = 'Reorganization',
   Other = 'Other',
 }
+
+export { Params as CorporateActionParams } from '.';

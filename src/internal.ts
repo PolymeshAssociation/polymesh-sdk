@@ -133,4 +133,12 @@ export {
   RemoveCheckpointScheduleParams,
 } from '~/api/procedures/removeCheckpointSchedule';
 export { DividendDistribution } from '~/api/entities/DividendDistribution';
+export {
+  initiateCorporateAction,
+  InitiateCorporateActionParams,
+} from '~/api/procedures/initiateCorporateAction';
+export {
+  configureDividendDistribution,
+  ConfigureDividendDistributionParams,
+} from '~/api/procedures/configureDividendDistribution';
 export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';

@@ -35,6 +35,7 @@ import {
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
   CAId,
+  CAKind,
   CalendarPeriod as MeshCalendarPeriod,
   CanTransferResult,
   CddId,
@@ -45,6 +46,8 @@ import {
   ComplianceRequirementResult,
   Condition as MeshCondition,
   ConditionType as MeshConditionType,
+  CorporateAction as MeshCorporateAction,
+  Distribution,
   Document,
   DocumentHash,
   DocumentName,
@@ -65,6 +68,7 @@ import {
   PosRatio,
   PriceTier,
   ProtocolOp,
+  RecordDateSpec,
   ScheduleSpec as MeshScheduleSpec,
   Scope as MeshScope,
   ScopeId,
@@ -72,6 +76,7 @@ import {
   SettlementType,
   Signatory,
   StoredSchedule,
+  TargetIdentities,
   TargetIdentity,
   Ticker,
   TransferManager,
@@ -86,6 +91,8 @@ import { meshCountryCodeToCountryCode } from '~/generated/utils';
 // import { ProposalDetails } from '~/api/types';
 import {
   Account,
+  Checkpoint,
+  CheckpointSchedule,
   Context,
   DefaultPortfolio,
   Identity,
@@ -110,6 +117,7 @@ import {
   AuthorizationType,
   CalendarPeriod,
   CalendarUnit,
+  CheckpointScheduleParams,
   Claim,
   ClaimType,
   Compliance,
@@ -117,6 +125,10 @@ import {
   ConditionCompliance,
   ConditionTarget,
   ConditionType,
+  CorporateActionKind,
+  CorporateActionParams,
+  CorporateActionTargets,
+  DividendDistributionParams,
   ErrorCode,
   IdentityCondition,
   IdentityWithClaims,
@@ -133,7 +145,6 @@ import {
   PrimaryIssuanceAgentCondition,
   Requirement,
   RequirementCompliance,
-  ScheduleParams,
   Scope,
   ScopeType,
   SecondaryKey,
@@ -144,6 +155,7 @@ import {
   StoSaleStatus,
   StoTier,
   StoTimingStatus,
+  TargetTreatment,
   Tier,
   TokenDocument,
   TokenIdentifier,
@@ -405,7 +417,18 @@ export function numberToU64(value: number | BigNumber, context: Context): u64 {
  * @hidden
  */
 export function percentageToPermill(value: number | BigNumber, context: Context): Permill {
-  return context.polymeshApi.createType('Permill', new BigNumber(value).shiftedBy(4).toString()); // (value : 100) * 10^6
+  assertIsPositive(value);
+
+  const val = new BigNumber(value);
+
+  if (val.gt(100)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: "Percentage shouldn't exceed 100",
+    });
+  }
+
+  return context.polymeshApi.createType('Permill', val.shiftedBy(4).toString()); // (value : 100) * 10^6
 }
 
 /**
@@ -2333,21 +2356,9 @@ export function transferRestrictionToTransferManager(
 
   if (type === TransferRestrictionType.Count) {
     tmType = 'CountTransferManager';
-
-    assertIsInteger(value);
-    assertIsPositive(value);
-
     tmValue = numberToU64(value, context);
   } else {
     tmType = 'PercentageTransferManager';
-
-    if (value.lt(0) || value.gt(100)) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Percentage should be between 0 and 100',
-      });
-    }
-
     tmValue = percentageToPermill(value, context);
   }
 
@@ -2627,7 +2638,9 @@ export function scheduleSpecToMeshScheduleSpec(
 /**
  * @hidden
  */
-export function storedScheduleToScheduleParams(storedSchedule: StoredSchedule): ScheduleParams {
+export function storedScheduleToCheckpointScheduleParams(
+  storedSchedule: StoredSchedule
+): CheckpointScheduleParams {
   const {
     schedule: { start, period },
     id,
@@ -2640,6 +2653,129 @@ export function storedScheduleToScheduleParams(storedSchedule: StoredSchedule): 
     start: momentToDate(start),
     remaining: u32ToBigNumber(remaining).toNumber(),
     nextCheckpointDate: momentToDate(at),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function meshCorporateActionToCorporateActionParams(
+  corporateAction: MeshCorporateAction,
+  context: Context
+): CorporateActionParams {
+  const {
+    kind: rawKind,
+    decl_date: declDate,
+    details,
+    targets: { identities, treatment },
+    default_withholding_tax: defaultWithholdingTax,
+    withholding_tax: withholdingTax,
+  } = corporateAction;
+
+  let kind: CorporateActionKind;
+
+  if (rawKind.isIssuerNotice) {
+    kind = CorporateActionKind.IssuerNotice;
+  } else if (rawKind.isPredictableBenefit) {
+    kind = CorporateActionKind.PredictableBenefit;
+  } else if (rawKind.isUnpredictableBenefit) {
+    kind = CorporateActionKind.UnpredictableBenefit;
+  } else if (rawKind.isReorganization) {
+    kind = CorporateActionKind.Reorganization;
+  } else {
+    kind = CorporateActionKind.Other;
+  }
+
+  const targets = {
+    identities: identities.map(
+      identityId => new Identity({ did: identityIdToString(identityId) }, context)
+    ),
+    treatment: treatment.isExclude ? TargetTreatment.Exclude : TargetTreatment.Include,
+  };
+
+  const taxWithholdings = withholdingTax.map(([identityId, tax]) => ({
+    identity: new Identity({ did: identityIdToString(identityId) }, context),
+    percentage: permillToBigNumber(tax),
+  }));
+
+  return {
+    kind,
+    declarationDate: momentToDate(declDate),
+    description: textToString(details),
+    targets,
+    defaultTaxWithholding: permillToBigNumber(defaultWithholdingTax),
+    taxWithholdings,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function corporateActionKindToCaKind(kind: CorporateActionKind, context: Context): CAKind {
+  return context.polymeshApi.createType('CAKind', kind);
+}
+
+/**
+ * @hidden
+ */
+export function checkpointToRecordDateSpec(
+  checkpoint: Checkpoint | Date | CheckpointSchedule,
+  context: Context
+): RecordDateSpec {
+  let value;
+
+  if (checkpoint instanceof Checkpoint) {
+    value = { Existing: numberToU64(checkpoint.id, context) };
+  } else if (checkpoint instanceof Date) {
+    value = { Scheduled: dateToMoment(checkpoint, context) };
+  } else {
+    value = { ExistingSchedule: numberToU64(checkpoint.id, context) };
+  }
+
+  return context.polymeshApi.createType('RecordDateSpec', value);
+}
+
+/**
+ * @hidden
+ */
+export function targetsToTargetIdentities(
+  targets: Omit<CorporateActionTargets, 'identities'> & {
+    identities: (string | Identity)[];
+  },
+  context: Context
+): TargetIdentities {
+  const { polymeshApi } = context;
+  const { treatment, identities } = targets;
+
+  return polymeshApi.createType('TargetIdentities', {
+    identities: identities.map(identity => stringToIdentityId(signerToString(identity), context)),
+    treatment: polymeshApi.createType('TargetTreatment', treatment),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function distributionToDividendDistributionParams(
+  distribution: Distribution,
+  context: Context
+): DividendDistributionParams {
+  const {
+    from,
+    currency,
+    per_share: perShare,
+    amount,
+    expires_at: expiryDate,
+    payment_at: paymentDate,
+  } = distribution;
+
+  return {
+    origin: meshPortfolioIdToPortfolio(from, context),
+    currency: tickerToString(currency),
+    perShare: balanceToBigNumber(perShare),
+    maxAmount: balanceToBigNumber(amount),
+    expiryDate: expiryDate.isNone ? null : momentToDate(expiryDate.unwrap()),
+    paymentDate: momentToDate(paymentDate),
   };
 }
 

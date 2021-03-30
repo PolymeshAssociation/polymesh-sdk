@@ -16,7 +16,7 @@ import { CheckpointWithCreationDate, ScheduleWithDetails } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import {
   momentToDate,
-  storedScheduleToScheduleParams,
+  storedScheduleToCheckpointScheduleParams,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -119,7 +119,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
     const rawSchedules = await checkpoint.schedules(rawTicker);
 
     return P.map(rawSchedules, async rawSchedule => {
-      const scheduleParams = storedScheduleToScheduleParams(rawSchedule);
+      const scheduleParams = storedScheduleToCheckpointScheduleParams(rawSchedule);
       const schedule = new CheckpointSchedule({ ...scheduleParams, ticker }, context);
 
       const { remaining: remainingCheckpoints, nextCheckpointDate } = scheduleParams;
