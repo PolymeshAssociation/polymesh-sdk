@@ -8,6 +8,7 @@ import {
   PolymeshError,
   PostTransactionValue,
   Procedure,
+  SecurityToken,
 } from '~/internal';
 import {
   CorporateActionKind,
@@ -175,7 +176,7 @@ export function getAuthorization(
     identityRoles: [{ type: RoleType.TokenCaa, ticker }],
     signerPermissions: {
       transactions: [TxTags.corporateAction.InitiateCorporateAction],
-      tokens: [],
+      tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],
     },
   };

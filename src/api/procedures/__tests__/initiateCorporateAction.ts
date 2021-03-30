@@ -35,6 +35,11 @@ import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+
 describe('initiateCorporateAction procedure', () => {
   let ticker: string;
   let kind: CorporateActionKind;
@@ -328,7 +333,7 @@ describe('initiateCorporateAction procedure', () => {
         identityRoles: [{ type: RoleType.TokenCaa, ticker }],
         signerPermissions: {
           transactions: [TxTags.corporateAction.InitiateCorporateAction],
-          tokens: [],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],
         },
       });
