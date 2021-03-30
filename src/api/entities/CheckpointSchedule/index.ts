@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
-import { Checkpoint, Context, Entity } from '~/internal';
-import { CalendarPeriod, ScheduleDetails } from '~/types';
+import { Checkpoint, Context, Entity, PolymeshError } from '~/internal';
+import { CalendarPeriod, ErrorCode, ScheduleDetails } from '~/types';
 import {
   momentToDate,
   numberToU64,
@@ -22,6 +22,8 @@ export interface Params {
   remaining: number;
   nextCheckpointDate: Date;
 }
+
+const notExistsMessage = 'Schedule no longer exists. It was either removed or it expired';
 
 /**
  * Represents a Schedule in which Checkpoints are created for a specific
@@ -114,8 +116,14 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
 
     const schedule = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { at, remaining } = schedule!;
+    if (!schedule) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: notExistsMessage,
+      });
+    }
+
+    const { at, remaining } = schedule;
 
     return {
       remainingCheckpoints: u32ToBigNumber(remaining).toNumber(),
@@ -137,6 +145,15 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
       ticker,
       id,
     } = this;
+
+    const exists = await this.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: notExistsMessage,
+      });
+    }
 
     const result = await checkpoint.schedulePoints(
       stringToTicker(ticker, context),
@@ -163,10 +180,8 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
 
     const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
 
-    const scheduleIds = rawSchedules.map(({ id: scheduleId }) =>
-      u64ToBigNumber(scheduleId).toNumber()
-    );
+    const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
 
-    return scheduleIds.includes(id.toNumber());
+    return !!exists;
   }
 }
