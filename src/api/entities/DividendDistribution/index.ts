@@ -4,14 +4,16 @@ import { Params as CorporateActionParams, UniqueIdentifiers } from '~/api/entiti
 import { Context, CorporateAction, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { CorporateActionKind } from '~/types';
 
-export type Params = Omit<CorporateActionParams, 'kind'> & {
+export interface DividendDistributionParams {
   origin: DefaultPortfolio | NumberedPortfolio;
   currency: string;
   perShare: BigNumber;
   maxAmount: BigNumber;
   expiryDate: null | Date;
   paymentDate: Date;
-};
+}
+
+export type Params = Omit<CorporateActionParams, 'kind'> & DividendDistributionParams;
 
 /**
  * Represents a Corporate Action via which a Security Token issuer wishes to distribute dividends

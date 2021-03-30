@@ -83,6 +83,7 @@ export enum RoleType {
   TickerOwner = 'TickerOwner',
   TokenOwner = 'TokenOwner',
   TokenPia = 'TokenPia',
+  TokenCaa = 'TokenCaa',
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
@@ -123,6 +124,18 @@ export interface TokenPiaRole {
  */
 export function isTokenPiaRole(role: Role): role is TokenPiaRole {
   return role.type === RoleType.TokenPia;
+}
+
+export interface TokenCaaRole {
+  type: RoleType.TokenCaa;
+  ticker: string;
+}
+
+/**
+ * @hidden
+ */
+export function isTokenCaaRole(role: Role): role is TokenCaaRole {
+  return role.type === RoleType.TokenCaa;
 }
 
 export interface CddProviderRole {
@@ -176,6 +189,7 @@ export type Role =
   | TickerOwnerRole
   | TokenOwnerRole
   | TokenPiaRole
+  | TokenCaaRole
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole

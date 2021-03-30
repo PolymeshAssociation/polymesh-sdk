@@ -19,6 +19,7 @@ import {
   isCorporateActionsAgent,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
+  isTokenCaaRole,
   isTokenOwnerRole,
   isTokenPiaRole,
   isVenueOwnerRole,
@@ -117,6 +118,13 @@ export class Identity extends Entity<UniqueIdentifiers> {
         return primaryIssuanceAgent.did === did;
       }
       return false;
+    } else if (isTokenCaaRole(role)) {
+      const { ticker } = role;
+
+      const token = new SecurityToken({ ticker }, context);
+      const agent = await token.corporateActions.getAgent();
+
+      return agent.did === did;
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {

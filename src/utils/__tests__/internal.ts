@@ -170,7 +170,7 @@ describe('findEventRecord', () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
     const fakeResult = 'event';
-    findRecordStub.withArgs(mod, eventName).returns(fakeResult);
+    findRecordStub.withArgs(mod, eventName).returns({ event: fakeResult });
 
     const eventRecord = findEventRecord(mockReceipt, mod, eventName);
 

@@ -1,8 +1,12 @@
-import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot/api/types';
+import {
+  AugmentedEvent,
+  AugmentedQuery,
+  AugmentedQueryDoubleMap,
+  ObsInnerType,
+} from '@polkadot/api/types';
 import { StorageKey } from '@polkadot/types';
-import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
-import { AnyFunction, AnyTuple, ISubmittableResult } from '@polkadot/types/types';
+import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
@@ -32,7 +36,7 @@ import {
   UiKeyring,
 } from '~/types';
 import {
-  Extrinsics,
+  Events,
   Falsyable,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -184,6 +188,11 @@ export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactio
   return values.map(unwrapValue) as T;
 }
 
+/**
+ * @hidden
+ */
+type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Data : never;
+
 // TODO @monitz87: use event enum instead of string when it exists
 /**
  * @hidden
@@ -191,12 +200,15 @@ export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactio
  *
  * @throws If the event is not found
  */
-export function findEventRecord(
+export function findEventRecord<
+  ModuleName extends keyof Events,
+  EventName extends keyof Events[ModuleName]
+>(
   receipt: ISubmittableResult,
-  mod: keyof Extrinsics,
-  eventName: string
-): EventRecord {
-  const eventRecord = receipt.findRecord(mod, eventName);
+  mod: ModuleName,
+  eventName: EventName
+): IEvent<EventData<Events[ModuleName][EventName]>> {
+  const eventRecord = receipt.findRecord(mod, eventName as string);
 
   if (!eventRecord) {
     throw new PolymeshError({
@@ -205,7 +217,7 @@ export function findEventRecord(
     });
   }
 
-  return eventRecord;
+  return (eventRecord.event as unknown) as IEvent<EventData<Events[ModuleName][EventName]>>;
 }
 
 /**
