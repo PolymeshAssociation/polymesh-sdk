@@ -979,6 +979,17 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
+      type: AuthorizationType.TransferCorporateActionAgent,
+      value: 'someTicker',
+    };
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      TransferCorporateActionAgent: dsMockUtils.createMockTicker(fakeResult.value),
+    });
+
+    result = authorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
       type: AuthorizationType.Custom,
       value: 'someBytes',
     };
