@@ -3,6 +3,7 @@ import sinon from 'sinon';
 
 import {
   Context,
+  modifyCorporateActionsAgent,
   Namespace,
   removeCorporateActionsAgent,
   SecurityToken,
@@ -33,7 +34,7 @@ describe('CorporateActions class', () => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    ticker = 'TESTTOKEN';
+    ticker = 'SOME_TICKER';
 
     sinon
       .stub(utilsConversionModule, 'stringToTicker')
@@ -58,6 +59,23 @@ describe('CorporateActions class', () => {
 
   test('should extend namespace', () => {
     expect(CorporateActions.prototype instanceof Namespace).toBe(true);
+  });
+
+  describe('method: modifyCorporateActionAgent', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const target = 'someDid';
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(modifyCorporateActionsAgent, 'prepare')
+        .withArgs({ ticker, target }, context)
+        .resolves(expectedQueue);
+
+      const queue = await corporateActions.setAgent({ target });
+
+      expect(queue).toBe(expectedQueue);
+    });
   });
 
   describe('method: removeAgent', () => {
