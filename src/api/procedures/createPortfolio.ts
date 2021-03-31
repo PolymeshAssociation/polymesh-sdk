@@ -1,6 +1,5 @@
-import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
-import { IdentityId, TxTags } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 
 import {
   Context,
@@ -32,10 +31,9 @@ export interface Params {
 export const createPortfolioResolver = (context: Context) => (
   receipt: ISubmittableResult
 ): NumberedPortfolio => {
-  const eventRecord = findEventRecord(receipt, 'portfolio', 'PortfolioCreated');
-  const data = eventRecord.event.data;
-  const did = identityIdToString(data[0] as IdentityId);
-  const id = u64ToBigNumber(data[1] as u64);
+  const { data } = findEventRecord(receipt, 'portfolio', 'PortfolioCreated');
+  const did = identityIdToString(data[0]);
+  const id = u64ToBigNumber(data[1]);
 
   return new NumberedPortfolio({ did, id }, context);
 };

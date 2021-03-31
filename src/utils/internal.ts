@@ -1,9 +1,14 @@
-import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot/api/types';
+import {
+  AugmentedEvent,
+  AugmentedQuery,
+  AugmentedQueryDoubleMap,
+  ObsInnerType,
+} from '@polkadot/api/types';
 import { StorageKey } from '@polkadot/types';
-import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
-import { AnyFunction, AnyTuple, ISubmittableResult } from '@polkadot/types/types';
+import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
+import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
@@ -31,7 +36,7 @@ import {
   UiKeyring,
 } from '~/types';
 import {
-  Extrinsics,
+  Events,
   Falsyable,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -183,6 +188,11 @@ export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactio
   return values.map(unwrapValue) as T;
 }
 
+/**
+ * @hidden
+ */
+type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Data : never;
+
 // TODO @monitz87: use event enum instead of string when it exists
 /**
  * @hidden
@@ -190,12 +200,15 @@ export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactio
  *
  * @throws If the event is not found
  */
-export function findEventRecord(
+export function findEventRecord<
+  ModuleName extends keyof Events,
+  EventName extends keyof Events[ModuleName]
+>(
   receipt: ISubmittableResult,
-  mod: keyof Extrinsics,
-  eventName: string
-): EventRecord {
-  const eventRecord = receipt.findRecord(mod, eventName);
+  mod: ModuleName,
+  eventName: EventName
+): IEvent<EventData<Events[ModuleName][EventName]>> {
+  const eventRecord = receipt.findRecord(mod, eventName as string);
 
   if (!eventRecord) {
     throw new PolymeshError({
@@ -204,7 +217,7 @@ export function findEventRecord(
     });
   }
 
-  return eventRecord;
+  return (eventRecord.event as unknown) as IEvent<EventData<Events[ModuleName][EventName]>>;
 }
 
 /**
@@ -446,4 +459,21 @@ function isUiKeyring(keyring: any): keyring is UiKeyring {
  */
 export function getCommonKeyring(keyring: CommonKeyring | UiKeyring): CommonKeyring {
   return isUiKeyring(keyring) ? keyring.keyring : keyring;
+}
+
+/**
+ * @hidden
+ */
+export function assertFormatValid(address: string, ss58Format: number): void {
+  const encodedAddress = encodeAddress(decodeAddress(address), ss58Format);
+
+  if (address !== encodedAddress) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: "The supplied address is not encoded with the chain's SS58 format",
+      data: {
+        ss58Format,
+      },
+    });
+  }
 }

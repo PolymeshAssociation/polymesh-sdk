@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
+import { Moment } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyStoTimes } from '~/api/procedures/modifyStoTimes';
 import { Context } from '~/internal';
-import { Moment } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, StoBalanceStatus, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';

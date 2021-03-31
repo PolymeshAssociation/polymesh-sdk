@@ -92,7 +92,7 @@ describe('createCreateVenueResolver', () => {
   });
 
   beforeEach(() => {
-    findEventRecordStub.returns(dsMockUtils.createMockEventRecord(['did', rawId]));
+    findEventRecordStub.returns(dsMockUtils.createMockIEvent(['did', rawId]));
   });
 
   afterEach(() => {

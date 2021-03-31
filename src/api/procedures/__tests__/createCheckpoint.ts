@@ -90,7 +90,7 @@ describe('createCheckpoint procedure', () => {
     });
 
     beforeEach(() => {
-      findEventRecordStub.returns(dsMockUtils.createMockEventRecord(['someDid', ticker, id]));
+      findEventRecordStub.returns(dsMockUtils.createMockIEvent(['someDid', ticker, id]));
     });
 
     afterEach(() => {

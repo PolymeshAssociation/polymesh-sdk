@@ -154,7 +154,7 @@ describe('createCheckpointSchedule procedure', () => {
 
     beforeEach(() => {
       findEventRecordStub.returns(
-        dsMockUtils.createMockEventRecord([
+        dsMockUtils.createMockIEvent([
           dsMockUtils.createMockIdentityId('someDid'),
           dsMockUtils.createMockTicker(ticker),
           dsMockUtils.createMockStoredSchedule({

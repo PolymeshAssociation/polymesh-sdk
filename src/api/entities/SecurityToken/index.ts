@@ -261,7 +261,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrive the Security Token's asset identifiers list
+   * Retrieve the Security Token's asset identifiers list
    *
    * @note can be subscribed to
    */

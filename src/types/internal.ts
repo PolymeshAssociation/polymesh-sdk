@@ -1,5 +1,6 @@
 import {
   AddressOrPair,
+  AugmentedEvents,
   AugmentedSubmittable,
   QueryableStorage,
   SubmittableExtrinsic,
@@ -17,6 +18,11 @@ import { CalendarPeriod, Permissions, ProcedureAuthorizationStatus, Role } from 
  * Polkadot's `tx` submodule
  */
 export type Extrinsics = SubmittableExtrinsics<'promise'>;
+
+/**
+ * Polkadot's events
+ */
+export type Events = AugmentedEvents<'promise'>;
 
 /**
  * Polkadot's `query` submodule
@@ -205,6 +211,11 @@ export interface ScopeClaimProof {
     subtractExpressionsRes: string;
     blindedScopeDidHash: string;
   };
+}
+
+export interface CorporateActionIdentifier {
+  ticker: string;
+  localId: BigNumber;
 }
 
 export interface ProcedureAuthorization {
