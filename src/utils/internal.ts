@@ -8,6 +8,7 @@ import { StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
+import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
@@ -458,4 +459,21 @@ function isUiKeyring(keyring: any): keyring is UiKeyring {
  */
 export function getCommonKeyring(keyring: CommonKeyring | UiKeyring): CommonKeyring {
   return isUiKeyring(keyring) ? keyring.keyring : keyring;
+}
+
+/**
+ * @hidden
+ */
+export function assertFormatValid(address: string, ss58Format: number): void {
+  const encodedAddress = encodeAddress(decodeAddress(address), ss58Format);
+
+  if (address !== encodedAddress) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: "The supplied address is not encoded with the chain's SS58 format",
+      data: {
+        ss58Format,
+      },
+    });
+  }
 }

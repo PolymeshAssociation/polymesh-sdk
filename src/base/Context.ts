@@ -55,7 +55,12 @@ import {
   u8ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createClaim, getCommonKeyring } from '~/utils/internal';
+import {
+  assertFormatValid,
+  calculateNextKey,
+  createClaim,
+  getCommonKeyring,
+} from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -154,6 +159,8 @@ export class Context {
     if (passedKeyring) {
       keyring = getCommonKeyring(passedKeyring);
       currentPair = keyring.getPairs()[0];
+
+      assertFormatValid(currentPair.address, ss58Format);
     } else if (accountSeed) {
       if (accountSeed.length !== 66) {
         throw new PolymeshError({
@@ -225,6 +232,7 @@ export class Context {
     let newCurrentPair;
 
     try {
+      assertFormatValid(address, this.ss58Format);
       newCurrentPair = keyring.getPair(address);
     } catch (e) {
       throw new PolymeshError({

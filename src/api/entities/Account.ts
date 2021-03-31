@@ -19,7 +19,7 @@ import {
   stringToAccountId,
   txTagToExtrinsicIdentifier,
 } from '~/utils/conversion';
-import { calculateNextKey } from '~/utils/internal';
+import { assertFormatValid, calculateNextKey } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   address: string;
@@ -59,6 +59,8 @@ export class Account extends Entity<UniqueIdentifiers> {
     super(identifiers, context);
 
     const { address } = identifiers;
+
+    assertFormatValid(address, context.ss58Format);
 
     this.address = address;
     this.key = addressToKey(address, context);
