@@ -96,7 +96,7 @@ import {
 } from '~/types';
 import { SignerType, SignerValue, TransferRestrictionType } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
+import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
   accountIdToString,
@@ -712,7 +712,7 @@ describe('signerToSignerValue and signerValueToSigner', () => {
   });
 
   test('signerToSignerValue should convert a Signer to a SignerValue', () => {
-    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const address = DUMMY_ACCOUNT_ID;
     let signer: Signer = new Account({ address }, context);
 
     let result = signerToSignerValue(signer);
@@ -731,7 +731,7 @@ describe('signerToSignerValue and signerValueToSigner', () => {
   });
 
   test('signerValueToSigner should convert a SignerValue to a Signer', () => {
-    let value = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    let value = DUMMY_ACCOUNT_ID;
     let signerValue: SignerValue = { type: SignerType.Account, value };
 
     let result = signerValueToSigner(signerValue, context);
@@ -774,7 +774,7 @@ describe('signerToString', () => {
   });
 
   test('signerToStrings should return the Account address string', () => {
-    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const address = DUMMY_ACCOUNT_ID;
     const context = dsMockUtils.getContextInstance();
 
     const account = new Account({ address }, context);
@@ -785,7 +785,7 @@ describe('signerToString', () => {
   });
 
   test('signerToStrings should return the same address string that it receives', () => {
-    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const address = DUMMY_ACCOUNT_ID;
     const result = signerToString(address);
 
     expect(result).toBe(address);
@@ -3568,7 +3568,7 @@ describe('moduleAddressToString', () => {
 });
 
 describe('keyToAddress and addressToKey', () => {
-  const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+  const address = DUMMY_ACCOUNT_ID;
   const publicKey = '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
   const context = dsMockUtils.getContextInstance();
 
