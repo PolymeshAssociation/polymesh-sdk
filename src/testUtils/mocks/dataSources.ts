@@ -2519,18 +2519,23 @@ export const createMockCalendarUnit = (
 /**
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockCalendarPeriod = (calendarPeriod?: {
-  unit: CalendarUnit;
-  amount: u64;
-}): CalendarPeriod => {
-  const data = calendarPeriod || {
+export const createMockCalendarPeriod = (
+  calendarPeriod?:
+    | CalendarPeriod
+    | {
+        unit: CalendarUnit | Parameters<typeof createMockCalendarUnit>[0];
+        amount: u64 | Parameters<typeof createMockU64>[0];
+      }
+): CalendarPeriod => {
+  const { unit, amount } = calendarPeriod || {
     unit: createMockCalendarUnit(),
     amount: createMockU64(),
   };
 
   return createMockCodec(
     {
-      ...data,
+      unit: createMockCalendarUnit(unit),
+      amount: createMockU64(amount),
     },
     !calendarPeriod
   ) as CalendarPeriod;
@@ -2539,18 +2544,23 @@ export const createMockCalendarPeriod = (calendarPeriod?: {
 /**
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockCheckpointSchedule = (checkpointSchedule?: {
-  start: Moment;
-  period: CalendarPeriod;
-}): CheckpointSchedule => {
-  const data = checkpointSchedule || {
+export const createMockCheckpointSchedule = (
+  checkpointSchedule?:
+    | CheckpointSchedule
+    | {
+        start: Moment | Parameters<typeof createMockMoment>[0];
+        period: CalendarPeriod | Parameters<typeof createMockCalendarPeriod>[0];
+      }
+): CheckpointSchedule => {
+  const { start, period } = checkpointSchedule || {
     start: createMockMoment(),
     period: createMockCalendarPeriod(),
   };
 
   return createMockCodec(
     {
-      ...data,
+      start: createMockMoment(start),
+      period: createMockCalendarPeriod(period),
     },
     !checkpointSchedule
   ) as CheckpointSchedule;
@@ -2559,13 +2569,17 @@ export const createMockCheckpointSchedule = (checkpointSchedule?: {
 /**
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockStoredSchedule = (storedSchedule?: {
-  schedule: CheckpointSchedule;
-  id: u64;
-  at: Moment;
-  remaining: u32;
-}): StoredSchedule => {
-  const data = storedSchedule || {
+export const createMockStoredSchedule = (
+  storedSchedule?:
+    | StoredSchedule
+    | {
+        schedule: CheckpointSchedule | Parameters<typeof createMockCheckpointSchedule>[0];
+        id: u64 | Parameters<typeof createMockU64>[0];
+        at: Moment | Parameters<typeof createMockMoment>[0];
+        remaining: u32 | Parameters<typeof createMockU32>[0];
+      }
+): StoredSchedule => {
+  const { schedule, id, at, remaining } = storedSchedule || {
     schedule: createMockCheckpointSchedule(),
     id: createMockU64(),
     at: createMockMoment(),
@@ -2574,7 +2588,10 @@ export const createMockStoredSchedule = (storedSchedule?: {
 
   return createMockCodec(
     {
-      ...data,
+      schedule: createMockCheckpointSchedule(schedule),
+      id: createMockU64(id),
+      at: createMockMoment(at),
+      remaining: createMockU32(remaining),
     },
     !storedSchedule
   ) as StoredSchedule;

@@ -3,7 +3,7 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag, TxTags } from 'polymesh-types/types';
 
-import { StoDetails } from '~/api/entities/types';
+import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
@@ -12,13 +12,13 @@ import {
   Checkpoint,
   CheckpointSchedule,
   DefaultPortfolio,
+  DividendDistribution,
   Identity,
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,
   Sto,
 } from '~/internal';
-import { ScheduleDetails } from '~/types';
 import { PortfolioId } from '~/types/internal';
 
 export * from '~/generated/types';
@@ -808,6 +808,11 @@ export interface CalendarPeriod {
 export interface ScheduleWithDetails {
   schedule: CheckpointSchedule;
   details: ScheduleDetails;
+}
+
+export interface DistributionWithDetails {
+  distribution: DividendDistribution;
+  details: DividendDistributionDetails;
 }
 
 export { TxTags, TxTag };
