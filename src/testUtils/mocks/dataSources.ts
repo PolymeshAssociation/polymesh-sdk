@@ -1851,6 +1851,7 @@ export const createMockAuthorizationData = (
     | { TransferPrimaryIssuanceAgent: Ticker }
     | { PortfolioCustody: PortfolioId }
     | { custom: Bytes }
+    | { TransferCorporateActionAgent: Ticker }
     | 'NoData'
 ): AuthorizationData => {
   return createMockEnum(authorizationData) as AuthorizationData;

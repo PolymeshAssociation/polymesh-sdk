@@ -7,7 +7,7 @@ import {
   getAuthorization,
   prepareConsumeJoinIdentityAuthorization,
 } from '~/api/procedures/consumeJoinIdentityAuthorization';
-import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
+import { AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, Signer, TxTags } from '~/types';
@@ -71,7 +71,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('identity', 'joinIdentityAsKey');
 
-    const target = new Account({ address: 'someAddress' }, mockContext);
+    const target = entityMockUtils.getAccountInstance({ address: 'someAddress' });
 
     await prepareConsumeJoinIdentityAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
@@ -178,7 +178,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
       rawFalse
     );
 
-    target = new Account({ address: targetAddress }, mockContext);
+    target = entityMockUtils.getAccountInstance({ address: targetAddress });
 
     await prepareConsumeJoinIdentityAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
@@ -221,7 +221,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
       const constructorParams = {
         authId,
         expiry: null,
-        target: new Account({ address }, mockContext),
+        target: entityMockUtils.getAccountInstance({ address }),
         issuer: new Identity({ did: 'issuerDid1' }, mockContext),
         data: {
           type: AuthorizationType.NoData,

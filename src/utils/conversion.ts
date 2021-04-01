@@ -836,6 +836,13 @@ export function authorizationDataToAuthorization(
     };
   }
 
+  if (auth.isTransferCorporateActionAgent) {
+    return {
+      type: AuthorizationType.TransferCorporateActionAgent,
+      value: tickerToString(auth.asTransferCorporateActionAgent),
+    };
+  }
+
   if (auth.isCustom) {
     return {
       type: AuthorizationType.Custom,
