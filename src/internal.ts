@@ -101,6 +101,9 @@ export {
 export { toggleFreezeSto, ToggleFreezeStoParams } from '~/api/procedures/toggleFreezeSto';
 export { closeSto } from '~/api/procedures/closeSto';
 export { modifyStoTimes, ModifyStoTimesParams } from '~/api/procedures/modifyStoTimes';
+export { investInSto, InvestInStoParams } from '~/api/procedures/investInSto';
+export { createCheckpoint } from '~/api/procedures/createCheckpoint';
+export { controllerTransfer, ControllerTransferParams } from '~/api/procedures/controllerTransfer';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
@@ -118,3 +121,28 @@ export { Portfolio } from '~/api/entities/Portfolio';
 export { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 export { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
 export { TransactionQueue } from '~/base/TransactionQueue';
+export { Checkpoint } from '~/api/entities/Checkpoint';
+export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
+export {
+  createCheckpointSchedule,
+  CreateCheckpointScheduleParams,
+} from '~/api/procedures/createCheckpointSchedule';
+export { CorporateAction } from '~/api/entities/CorporateAction';
+export {
+  removeCheckpointSchedule,
+  RemoveCheckpointScheduleParams,
+} from '~/api/procedures/removeCheckpointSchedule';
+export { DividendDistribution } from '~/api/entities/DividendDistribution';
+export {
+  modifyCorporateActionsAgent,
+  ModifyCorporateActionsAgentParams,
+} from '~/api/procedures/modifyCorporateActionsAgent';
+export {
+  initiateCorporateAction,
+  InitiateCorporateActionParams,
+} from '~/api/procedures/initiateCorporateAction';
+export {
+  configureDividendDistribution,
+  ConfigureDividendDistributionParams,
+} from '~/api/procedures/configureDividendDistribution';
+export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';

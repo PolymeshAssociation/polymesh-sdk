@@ -116,9 +116,6 @@ declare module '@polkadot/api/types/consts' {
        **/
       deposit: BalanceOf & AugmentedConst<ApiType>;
     };
-    settlement: {
-      maxLegsInInstruction: u32 & AugmentedConst<ApiType>;
-    };
     staking: {
       /**
        * Number of eras that staked funds must remain bonded for.

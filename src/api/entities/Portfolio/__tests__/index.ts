@@ -65,7 +65,7 @@ describe('Portfolio class', () => {
     entityMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(Portfolio.prototype instanceof Entity).toBe(true);
   });
 
@@ -411,7 +411,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account).returns(key);
+      sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account, context).returns(key);
 
       dsMockUtils.createApolloQueryStub(
         settlements({

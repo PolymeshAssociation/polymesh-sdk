@@ -1,5 +1,6 @@
 import {
   AddressOrPair,
+  AugmentedEvents,
   AugmentedSubmittable,
   QueryableStorage,
   SubmittableExtrinsic,
@@ -11,12 +12,17 @@ import { DocumentNode } from 'graphql';
 
 import { PostTransactionValue, TransactionQueue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { Permissions, ProcedureAuthorizationStatus, Role } from '~/types';
+import { CalendarPeriod, Permissions, ProcedureAuthorizationStatus, Role } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
  */
 export type Extrinsics = SubmittableExtrinsics<'promise'>;
+
+/**
+ * Polkadot's events
+ */
+export type Events = AugmentedEvents<'promise'>;
 
 /**
  * Polkadot's `query` submodule
@@ -190,6 +196,17 @@ export enum TransferRestrictionType {
 export interface TransferRestriction {
   type: TransferRestrictionType;
   value: BigNumber;
+}
+
+export interface ScheduleSpec {
+  start: Date | null;
+  period: CalendarPeriod | null;
+  repetitions: number | null;
+}
+
+export interface CorporateActionIdentifier {
+  ticker: string;
+  localId: BigNumber;
 }
 
 export interface ProcedureAuthorization {

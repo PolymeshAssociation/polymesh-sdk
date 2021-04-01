@@ -3,6 +3,8 @@ import { Counter, SecurityToken as MeshSecurityToken } from 'polymesh-types/type
 
 import {
   Context,
+  controllerTransfer,
+  ControllerTransferParams,
   Entity,
   Identity,
   modifyPrimaryIssuanceAgent,
@@ -35,7 +37,9 @@ import {
 } from '~/utils/conversion';
 import { createProcedureMethod, padString } from '~/utils/internal';
 
+import { Checkpoints } from './Checkpoints';
 import { Compliance } from './Compliance';
+import { CorporateActions } from './CorporateActions';
 import { Documents } from './Documents';
 import { Issuance } from './Issuance';
 import { Offerings } from './Offerings';
@@ -86,6 +90,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public compliance: Compliance;
   public transferRestrictions: TransferRestrictions;
   public offerings: Offerings;
+  public checkpoints: Checkpoints;
+  public corporateActions: CorporateActions;
 
   /**
    * @hidden
@@ -105,6 +111,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.compliance = new Compliance(this, context);
     this.transferRestrictions = new TransferRestrictions(this, context);
     this.offerings = new Offerings(this, context);
+    this.checkpoints = new Checkpoints(this, context);
+    this.corporateActions = new CorporateActions(this, context);
 
     this.transferOwnership = createProcedureMethod(
       args => [transferTokenOwnership, { ticker, ...args }],
@@ -128,6 +136,10 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       context
     );
     this.redeem = createProcedureMethod(args => [redeemToken, { ticker, ...args }], context);
+    this.controllerTransfer = createProcedureMethod(
+      args => [controllerTransfer, { ticker, ...args }],
+      context
+    );
   }
 
   /**
@@ -249,7 +261,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrive the Security Token's asset identifiers list
+   * Retrieve the Security Token's asset identifiers list
    *
    * @note can be subscribed to
    */
@@ -437,4 +449,15 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
     return u64ToBigNumber(result).toNumber();
   }
+
+  /**
+   * Force a transfer from a given Portfolio to the PIA’s default Portfolio
+   *
+   * @param args.originPortfolio - portfolio (or portfolio ID) from which tokens will be transferred
+   * @param args.amount - amount of tokens to transfer
+   *
+   * @note required role:
+   *   - Security Token Primary Issuance Agent
+   */
+  public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
 }

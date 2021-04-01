@@ -134,9 +134,7 @@ describe('createRegisterIdentityResolver', () => {
   });
 
   beforeEach(() => {
-    findEventRecordStub.returns(
-      dsMockUtils.createMockEventRecord([rawDid, 'accountId', 'signingItem'])
-    );
+    findEventRecordStub.returns(dsMockUtils.createMockIEvent([rawDid, 'accountId', 'signingItem']));
   });
 
   afterEach(() => {

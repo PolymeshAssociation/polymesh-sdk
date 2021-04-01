@@ -73,9 +73,79 @@ describe('Instruction class', () => {
     });
   });
 
+  describe('method: exists', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    let numberToU64Stub: sinon.SinonStub;
+
+    beforeAll(() => {
+      numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    });
+
+    beforeEach(() => {
+      numberToU64Stub.withArgs(id, context).returns(rawId);
+    });
+
+    test('should return whether the instruction exists', async () => {
+      const status = InstructionStatus.Pending;
+      const createdAt = new Date('10/14/1987');
+      const tradeDate = new Date('11/17/1987');
+      const valueDate = new Date('11/17/1987');
+      const venueId = new BigNumber(1);
+      const type = InstructionType.SettleOnAffirmation;
+      const owner = 'someDid';
+
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      const queryResult = dsMockUtils.createMockInstruction({
+        /* eslint-disable @typescript-eslint/camelcase */
+        instruction_id: dsMockUtils.createMockU64(1),
+        status: dsMockUtils.createMockInstructionStatus(status),
+        venue_id: dsMockUtils.createMockU64(venueId.toNumber()),
+        created_at: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(createdAt.getTime())),
+        trade_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(tradeDate.getTime())),
+        value_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(valueDate.getTime())),
+        settlement_type: dsMockUtils.createMockSettlementType(type),
+        /* eslint-enable @typescript-eslint/camelcase */
+      });
+
+      const instructionDetailsStub = dsMockUtils
+        .createQueryStub('settlement', 'instructionDetails')
+        .withArgs(rawId)
+        .resolves(queryResult);
+
+      let result = await instruction.exists();
+
+      expect(result).toBe(true);
+
+      instructionDetailsStub.resolves(
+        dsMockUtils.createMockInstruction({
+          ...queryResult,
+          status: dsMockUtils.createMockInstructionStatus('Unknown'),
+        })
+      );
+
+      result = await instruction.exists();
+
+      expect(result).toBe(false);
+    });
+  });
+
   describe('method: details', () => {
     afterAll(() => {
       sinon.restore();
+    });
+
+    let numberToU64Stub: sinon.SinonStub;
+
+    beforeAll(() => {
+      numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    });
+
+    beforeEach(() => {
+      numberToU64Stub.withArgs(id, context).returns(rawId);
     });
 
     test('should return the Instruction details', async () => {
@@ -89,22 +159,22 @@ describe('Instruction class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
 
-      const queryResult = {
-        status: dsMockUtils.createMockInstructionStatus(status),
+      const queryResult = dsMockUtils.createMockInstruction({
         /* eslint-disable @typescript-eslint/camelcase */
+        instruction_id: dsMockUtils.createMockU64(1),
+        status: dsMockUtils.createMockInstructionStatus(status),
         venue_id: dsMockUtils.createMockU64(venueId.toNumber()),
         created_at: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(createdAt.getTime())),
         trade_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(tradeDate.getTime())),
         value_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(valueDate.getTime())),
         settlement_type: dsMockUtils.createMockSettlementType(type),
         /* eslint-enable @typescript-eslint/camelcase */
-      };
+      });
 
       const instructionDetailsStub = dsMockUtils
         .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
+        // .withArgs(rawId)
         .resolves(queryResult);
 
       let result = await instruction.details();
@@ -121,16 +191,18 @@ describe('Instruction class', () => {
       type = InstructionType.SettleOnBlock;
       const endBlock = new BigNumber(100);
 
-      instructionDetailsStub.resolves({
-        ...queryResult,
-        /* eslint-disable @typescript-eslint/camelcase */
-        trade_date: dsMockUtils.createMockOption(),
-        value_date: dsMockUtils.createMockOption(),
-        settlement_type: dsMockUtils.createMockSettlementType({
-          SettleOnBlock: dsMockUtils.createMockU32(endBlock.toNumber()),
-        }),
-        /* eslint-enable @typescript-eslint/camelcase */
-      });
+      instructionDetailsStub.resolves(
+        dsMockUtils.createMockInstruction({
+          ...queryResult,
+          /* eslint-disable @typescript-eslint/camelcase */
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+          settlement_type: dsMockUtils.createMockSettlementType({
+            SettleOnBlock: dsMockUtils.createMockU32(endBlock.toNumber()),
+          }),
+          /* eslint-enable @typescript-eslint/camelcase */
+        })
+      );
 
       result = await instruction.details();
 
@@ -144,12 +216,37 @@ describe('Instruction class', () => {
         venue,
       });
     });
+
+    test('should throw an error if the Instruction does not exist', () => {
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionDetails')
+        .withArgs(rawId)
+        .resolves(
+          dsMockUtils.createMockInstruction({
+            /* eslint-disable @typescript-eslint/camelcase */
+            instruction_id: dsMockUtils.createMockU64(),
+            status: dsMockUtils.createMockInstructionStatus('Unknown'),
+            venue_id: dsMockUtils.createMockU64(),
+            created_at: dsMockUtils.createMockOption(),
+            trade_date: dsMockUtils.createMockOption(),
+            value_date: dsMockUtils.createMockOption(),
+            settlement_type: dsMockUtils.createMockSettlementType(),
+            /* eslint-enable @typescript-eslint/camelcase */
+          })
+        );
+
+      return expect(instruction.details()).rejects.toThrow(
+        'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)'
+      );
+    });
   });
 
   describe('method: getAffirmations', () => {
     const did = 'someDid';
     const status = AffirmationStatus.Affirmed;
     let rawStorageKey: [u64, MeshPortfolioId][];
+
+    let instructionDetailsStub: sinon.SinonStub;
 
     afterAll(() => {
       sinon.restore();
@@ -173,13 +270,50 @@ describe('Instruction class', () => {
           dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
         )
       );
-      dsMockUtils.createQueryStub('settlement', 'affirmsReceived');
       sinon
         .stub(utilsInternalModule, 'requestPaginated')
         .resolves({ entries: authsReceivedEntries, lastKey: null });
 
       sinon.stub(utilsConversionModule, 'identityIdToString').returns(did);
       sinon.stub(utilsConversionModule, 'meshAffirmationStatusToAffirmationStatus').returns(status);
+    });
+
+    beforeEach(() => {
+      instructionDetailsStub = dsMockUtils.createQueryStub('settlement', 'instructionDetails', {
+        returnValue: dsMockUtils.createMockInstruction({
+          /* eslint-disable @typescript-eslint/camelcase */
+          instruction_id: dsMockUtils.createMockU64(1),
+          venue_id: dsMockUtils.createMockU64(1),
+          status: dsMockUtils.createMockInstructionStatus('Pending'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(
+            dsMockUtils.createMockMoment(new Date('10/14/1987').getTime())
+          ),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+          /* eslint-enable @typescript-eslint/camelcase */
+        }),
+      });
+      dsMockUtils.createQueryStub('settlement', 'affirmsReceived');
+    });
+
+    test('should throw an error if the instruction does not exist', () => {
+      instructionDetailsStub.resolves(
+        dsMockUtils.createMockInstruction({
+          /* eslint-disable @typescript-eslint/camelcase */
+          instruction_id: dsMockUtils.createMockU64(),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Unknown'),
+          settlement_type: dsMockUtils.createMockSettlementType(),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+          /* eslint-enable @typescript-eslint/camelcase */
+        })
+      );
+      return expect(instruction.getAffirmations()).rejects.toThrow(
+        'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)'
+      );
     });
 
     test('should return a list of Affirmation Statuses', async () => {
@@ -192,12 +326,36 @@ describe('Instruction class', () => {
   });
 
   describe('method: getLegs', () => {
+    let instructionDetailsStub: sinon.SinonStub;
+
     afterAll(() => {
       sinon.restore();
     });
 
+    let numberToU64Stub: sinon.SinonStub;
+
     beforeAll(() => {
+      numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    });
+
+    beforeEach(() => {
+      numberToU64Stub.withArgs(id, context).returns(rawId);
       dsMockUtils.createQueryStub('settlement', 'instructionLegs');
+      instructionDetailsStub = dsMockUtils.createQueryStub('settlement', 'instructionDetails', {
+        returnValue: dsMockUtils.createMockInstruction({
+          /* eslint-disable @typescript-eslint/camelcase */
+          instruction_id: dsMockUtils.createMockU64(1),
+          venue_id: dsMockUtils.createMockU64(1),
+          status: dsMockUtils.createMockInstructionStatus('Pending'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(
+            dsMockUtils.createMockMoment(new Date('10/14/1987').getTime())
+          ),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+          /* eslint-enable @typescript-eslint/camelcase */
+        }),
+      });
     });
 
     test("should return the instruction's legs", async () => {
@@ -208,7 +366,6 @@ describe('Instruction class', () => {
       const amount = new BigNumber(1000);
 
       entityMockUtils.configureMocks({ securityTokenOptions: { ticker } });
-      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
 
       const entries = [
         tuple((['instructionId', 'legId'] as unknown) as StorageKey, {
@@ -234,6 +391,25 @@ describe('Instruction class', () => {
       sinon.assert.calledWithExactly(identityConstructor.secondCall, { did: toDid }, context);
       expect(leg[0].amount).toEqual(amount);
       expect(leg[0].token).toEqual(entityMockUtils.getSecurityTokenInstance());
+    });
+
+    test('should throw an error if the instruction does not exist', () => {
+      instructionDetailsStub.resolves(
+        dsMockUtils.createMockInstruction({
+          /* eslint-disable @typescript-eslint/camelcase */
+          instruction_id: dsMockUtils.createMockU64(),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Unknown'),
+          settlement_type: dsMockUtils.createMockSettlementType(),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+          /* eslint-enable @typescript-eslint/camelcase */
+        })
+      );
+      return expect(instruction.getLegs()).rejects.toThrow(
+        'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)'
+      );
     });
   });
 

@@ -1,8 +1,8 @@
 import P from 'bluebird';
 import { difference, differenceWith, isEqual, some, uniq } from 'lodash';
+import { ScopeId, Ticker, TransferManager, TxTag } from 'polymesh-types/types';
 
-import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ScopeId, Ticker, TransferManager, TxTag } from '~/polkadot';
+import { Context, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import {
   CountTransferRestrictionInput,
   ErrorCode,
@@ -96,7 +96,9 @@ export async function prepareSetTransferRestrictions(
   ) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The supplied restrictions are already in place',
+      message: newRestrictionAmount
+        ? 'The supplied restrictions are already in place'
+        : 'There are no restrictions to remove',
     });
   }
 
@@ -172,6 +174,34 @@ export function getAuthorization(
 
 /**
  * @hidden
+ *
+ * Merge an array of Identity IDs and Scope IDs into an array of only Scope IDs
+ *
+ * @note fetches missing scope IDs from the chain
+ */
+const getScopeIds = async (
+  identities: (string | Identity)[],
+  scopeIds: string[],
+  context: Context,
+  ticker: string
+): Promise<string[]> => {
+  const identityScopeIds = await P.map(identities, async value => {
+    let identity: Identity;
+
+    if (typeof value === 'string') {
+      identity = new Identity({ did: value }, context);
+    } else {
+      identity = value;
+    }
+
+    return identity.getScopeId({ token: ticker });
+  });
+
+  return [...scopeIds, ...identityScopeIds];
+};
+
+/**
+ * @hidden
  */
 export async function prepareStorage(
   this: Procedure<SetTransferRestrictionsParams, number, Storage>,
@@ -197,32 +227,13 @@ export async function prepareStorage(
   const toAddExemptionPromises: [TransferRestriction, Promise<string[]>][] = [];
   let occupiedSlots = currentCountRestrictions.length + currentPercentageRestrictions.length;
 
-  const getScopeIds = async (
-    identities: (string | Identity)[],
-    scopeIds: string[]
-  ): Promise<string[]> => {
-    const identityScopeIds = await P.map(identities, async value => {
-      let identity: Identity;
-
-      if (typeof value === 'string') {
-        identity = new Identity({ did: value }, context);
-      } else {
-        identity = value;
-      }
-
-      return identity.getScopeId({ token: ticker });
-    });
-
-    return [...scopeIds, ...identityScopeIds];
-  };
-
   if (args.type === TransferRestrictionType.Count) {
     args.restrictions.forEach(
       ({ exemptedScopeIds = [], exemptedIdentities = [], count: value }) => {
         const restriction = { type: TransferRestrictionType.Count, value };
         toAddRestrictions.push(restriction);
         toAddExemptionPromises.push(
-          tuple(restriction, getScopeIds(exemptedIdentities, exemptedScopeIds))
+          tuple(restriction, getScopeIds(exemptedIdentities, exemptedScopeIds, context, ticker))
         );
       }
     );
@@ -237,7 +248,7 @@ export async function prepareStorage(
         const restriction = { type: TransferRestrictionType.Percentage, value };
         toAddRestrictions.push(restriction);
         toAddExemptionPromises.push(
-          tuple(restriction, getScopeIds(exemptedIdentities, exemptedScopeIds))
+          tuple(restriction, getScopeIds(exemptedIdentities, exemptedScopeIds, context, ticker))
         );
       }
     );
@@ -282,14 +293,26 @@ export async function prepareStorage(
     const currentExemption = currentExemptions.find(([res]) => isEqual(res, restriction));
     const currentExempted = currentExemption?.[1] || [];
 
+    // scope IDs that weren't exempted before for that restriction
     const newExempted = difference(exempted, currentExempted);
     if (newExempted.length) {
       newExemptions.push(tuple(restriction, newExempted));
     }
 
+    // scope IDs that will no longer be exempted for that restriction
     const toRemoveExempted = difference(currentExempted, exempted);
     if (toRemoveExempted.length) {
       toRemoveExemptions.push(tuple(restriction, toRemoveExempted));
+    }
+  });
+
+  // also remove all exemptions of the restrictions that will be removed
+  toRemoveRestrictions.forEach(restriction => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const [, currentExempted] = currentExemptions.find(([res]) => isEqual(res, restriction))!;
+
+    if (currentExempted.length) {
+      toRemoveExemptions.push(tuple(restriction, currentExempted));
     }
   });
 

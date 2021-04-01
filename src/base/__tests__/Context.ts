@@ -10,7 +10,9 @@ import { createMockAccountId } from '~/testUtils/mocks/dataSources';
 import { ClaimType, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '@polkadot/api',
@@ -42,6 +44,9 @@ describe('Context class', () => {
   beforeEach(() => {
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
       returnValue: dsMockUtils.createMockIdentityId('someDid'),
+    });
+    dsMockUtils.createRpcStub('system', 'properties', {
+      returnValue: { ss58Format: dsMockUtils.createMockOption(dsMockUtils.createMockU8(42)) },
     });
   });
 
@@ -161,6 +166,8 @@ describe('Context class', () => {
         },
       });
 
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -214,6 +221,10 @@ describe('Context class', () => {
     });
 
     test('should create a Context object without Pair attached', async () => {
+      dsMockUtils.createRpcStub('system', 'properties', {
+        returnValue: { ss58Format: dsMockUtils.createMockOption() },
+      });
+
       const newPair = {
         address: 'someAddress',
         meta: {},
@@ -321,7 +332,7 @@ describe('Context class', () => {
         .withArgs(newAddress, context)
         .returns(accountId);
 
-      await context.setPair('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY');
+      await context.setPair(DUMMY_ACCOUNT_ID);
 
       expect(context.currentPair).toEqual(newCurrentPair);
     });

@@ -9,6 +9,8 @@ import { CountryCode } from '~/generated/types';
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import {
   Account,
+  Checkpoint,
+  CheckpointSchedule,
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
@@ -16,6 +18,7 @@ import {
   SecurityToken,
   Sto,
 } from '~/internal';
+import { ScheduleDetails } from '~/types';
 import { PortfolioId } from '~/types/internal';
 
 export * from '~/generated/types';
@@ -80,6 +83,7 @@ export enum RoleType {
   TickerOwner = 'TickerOwner',
   TokenOwner = 'TokenOwner',
   TokenPia = 'TokenPia',
+  TokenCaa = 'TokenCaa',
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
@@ -121,6 +125,18 @@ export function isTokenPiaRole(role: Role): role is TokenPiaRole {
   return role.type === RoleType.TokenPia;
 }
 
+export interface TokenCaaRole {
+  type: RoleType.TokenCaa;
+  ticker: string;
+}
+
+/**
+ * @hidden
+ */
+export function isTokenCaaRole(role: Role): role is TokenCaaRole {
+  return role.type === RoleType.TokenCaa;
+}
+
 export interface CddProviderRole {
   type: RoleType.CddProvider;
 }
@@ -160,6 +176,7 @@ export type Role =
   | TickerOwnerRole
   | TokenOwnerRole
   | TokenPiaRole
+  | TokenCaaRole
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole;
@@ -222,6 +239,7 @@ export enum AuthorizationType {
   TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
+  TransferCorporateActionAgent = 'TransferCorporateActionAgent',
   Custom = 'Custom',
   NoData = 'NoData',
 }
@@ -625,6 +643,11 @@ export interface StoWithDetails {
   details: StoDetails;
 }
 
+export interface CheckpointWithCreationDate {
+  checkpoint: Checkpoint;
+  createdAt: Date;
+}
+
 export interface SecondaryKey {
   signer: Signer;
   permissions: Permissions;
@@ -639,6 +662,7 @@ export enum TxGroup {
    * - TxTags.portfolio.MovePortfolioFunds
    * - TxTags.settlement.AddInstruction
    * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AffirmInstruction
    * - TxTags.settlement.RejectInstruction
    * - TxTags.settlement.CreateVenue
    */
@@ -687,6 +711,16 @@ export enum TxGroup {
    * - TxTags.complianceManager.ResetAssetCompliance
    */
   ComplianceRequirementsManagement = 'ComplianceRequirementsManagement',
+  /**
+   * - TxTags.checkpoint.CreateSchedule,
+   * - TxTags.checkpoint.RemoveSchedule,
+   * - TxTags.checkpoint.CreateCheckpoint,
+   * - TxTags.corporateAction.InitiateCorporateAction,
+   * - TxTags.capitalDistribution.Distribute,
+   * - TxTags.capitalDistribution.Claim,
+   * - TxTags.identity.AddInvestorUniquenessClaim,
+   */
+  CorporateActionsManagement = 'CorporateActionsManagement',
 }
 
 /**
@@ -752,6 +786,29 @@ export interface ActiveTransferRestrictions<
    * amount of restrictions that can be added before reaching the shared limit
    */
   availableSlots: number;
+}
+
+export enum CalendarUnit {
+  Second = 'second',
+  Minute = 'minute',
+  Hour = 'hour',
+  Day = 'day',
+  Week = 'week',
+  Month = 'month',
+  Year = 'year',
+}
+
+/**
+ * Represents a period of time measured in a specific unit (i.e. 20 days)
+ */
+export interface CalendarPeriod {
+  unit: CalendarUnit;
+  amount: number;
+}
+
+export interface ScheduleWithDetails {
+  schedule: CheckpointSchedule;
+  details: ScheduleDetails;
 }
 
 export { TxTags, TxTag };

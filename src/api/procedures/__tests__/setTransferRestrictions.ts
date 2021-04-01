@@ -240,12 +240,40 @@ describe('setTransferRestrictions procedure', () => {
     let err;
 
     try {
-      await prepareSetTransferRestrictions.call(proc, args);
+      await prepareSetTransferRestrictions.call(proc, {
+        ticker,
+        restrictions: [{ count }],
+        type: TransferRestrictionType.Count,
+      });
     } catch (error) {
       err = error;
     }
 
     expect(err.message).toBe('The supplied restrictions are already in place');
+  });
+
+  test('should throw an error if attempting to remove an empty restriction list', async () => {
+    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+      mockContext,
+      {
+        restrictionsToRemove: [],
+        restrictionsToAdd: [],
+        exemptionsToAdd: [],
+        exemptionsToRemove: [],
+        occupiedSlots: 0,
+        exemptionsRepeated: false,
+      }
+    );
+
+    let err;
+
+    try {
+      await prepareSetTransferRestrictions.call(proc, args);
+    } catch (error) {
+      err = error;
+    }
+
+    expect(err.message).toBe('There are no restrictions to remove');
   });
 
   test('should throw an error if attempting to add more restrictions than there are slots available', async () => {
@@ -473,6 +501,22 @@ describe('setTransferRestrictions procedure', () => {
         restrictionsToRemove: [[rawTicker, rawCountTm]],
         exemptionsToAdd: [],
         exemptionsToRemove: [],
+        occupiedSlots: 1,
+        exemptionsRepeated: false,
+      });
+
+      getCountStub.resolves({
+        restrictions: [{ count, exemptedScopeIds: [scopeId] }],
+        avaliableSlots: 1,
+      });
+
+      result = await boundFunc(args);
+
+      expect(result).toEqual({
+        restrictionsToAdd: [],
+        restrictionsToRemove: [[rawTicker, rawCountTm]],
+        exemptionsToAdd: [],
+        exemptionsToRemove: [[rawTicker, rawCountTm, [rawScopeId]]],
         occupiedSlots: 1,
         exemptionsRepeated: false,
       });

@@ -11,6 +11,7 @@ import sinon, { SinonStub } from 'sinon';
 import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import {
   Context,
+  controllerTransfer,
   Entity,
   modifyPrimaryIssuanceAgent,
   modifyToken,
@@ -56,7 +57,7 @@ describe('SecurityToken class', () => {
     entityMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(SecurityToken.prototype instanceof Entity).toBe(true);
   });
 
@@ -596,6 +597,27 @@ describe('SecurityToken class', () => {
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, investorCount);
+    });
+  });
+
+  describe('method: controllerTransfer', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const ticker = 'TICKER';
+      const originPortfolio = 'portfolio';
+      const amount = new BigNumber(1);
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(controllerTransfer, 'prepare')
+        .withArgs({ ticker, originPortfolio, amount }, context)
+        .resolves(expectedQueue);
+
+      const queue = await securityToken.controllerTransfer({ originPortfolio, amount });
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

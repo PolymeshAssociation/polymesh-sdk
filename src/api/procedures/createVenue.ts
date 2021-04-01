@@ -1,4 +1,3 @@
-import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, PostTransactionValue, Procedure, Venue } from '~/internal';
@@ -17,9 +16,8 @@ export interface CreateVenueParams {
 export const createCreateVenueResolver = (context: Context) => (
   receipt: ISubmittableResult
 ): Venue => {
-  const eventRecord = findEventRecord(receipt, 'settlement', 'VenueCreated');
-  const data = eventRecord.event.data;
-  const id = u64ToBigNumber(data[1] as u64);
+  const { data } = findEventRecord(receipt, 'settlement', 'VenueCreated');
+  const id = u64ToBigNumber(data[1]);
 
   return new Venue({ id }, context);
 };

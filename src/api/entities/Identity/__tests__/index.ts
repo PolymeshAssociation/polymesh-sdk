@@ -13,6 +13,7 @@ import {
   Role,
   RoleType,
   TickerOwnerRole,
+  TokenCaaRole,
   TokenOwnerRole,
   TokenPiaRole,
   VenueOwnerRole,
@@ -69,7 +70,7 @@ describe('Identity class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(Identity.prototype instanceof Entity).toBe(true);
   });
 
@@ -159,6 +160,31 @@ describe('Identity class', () => {
           details: {
             primaryIssuanceAgent: new Identity({ did: 'anotherDid' }, context),
           },
+        },
+      });
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+    });
+
+    test('hasRole should check whether the Identity has the Token CAA role', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      const role: TokenCaaRole = { type: RoleType.TokenCaa, ticker: 'someTicker' };
+
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          corporateActionsGetAgent: identity,
+        },
+      });
+
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          corporateActionsGetAgent: new Identity({ did: 'otherdid' }, context),
         },
       });
 

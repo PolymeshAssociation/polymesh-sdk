@@ -596,6 +596,10 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<bool>,
         [ITuple<[CAId, IdentityId]>]
       >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>, []>;
     };
     cddServiceProviders: {
       /**
@@ -617,31 +621,27 @@ declare module '@polkadot/api/types/storage' {
        *
        * (ticker, did, checkpoint ID) -> Balance of a DID at a checkpoint
        **/
-      balance: AugmentedQuery<
+      balance: AugmentedQueryDoubleMap<
         ApiType,
         (
-          arg:
-            | ITuple<[Ticker, IdentityId, CheckpointId]>
-            | [
-                Ticker | string | Uint8Array,
-                IdentityId | string | Uint8Array,
-                CheckpointId | AnyNumber | Uint8Array
-              ]
+          key1:
+            | ITuple<[Ticker, CheckpointId]>
+            | [Ticker | string | Uint8Array, CheckpointId | AnyNumber | Uint8Array],
+          key2: IdentityId | string | Uint8Array
         ) => Observable<Balance>,
-        [ITuple<[Ticker, IdentityId, CheckpointId]>]
+        [ITuple<[Ticker, CheckpointId]>, IdentityId]
       >;
       /**
        * Checkpoints where a DID's balance was updated.
        * (ticker, did) -> [checkpoint ID where user balance changed]
        **/
-      balanceUpdates: AugmentedQuery<
+      balanceUpdates: AugmentedQueryDoubleMap<
         ApiType,
         (
-          arg:
-            | ITuple<[Ticker, IdentityId]>
-            | [Ticker | string | Uint8Array, IdentityId | string | Uint8Array]
+          key1: Ticker | string | Uint8Array,
+          key2: IdentityId | string | Uint8Array
         ) => Observable<Vec<CheckpointId>>,
-        [ITuple<[Ticker, IdentityId]>]
+        [Ticker, IdentityId]
       >;
       /**
        * Checkpoints ID generator sequence.
@@ -669,28 +669,31 @@ declare module '@polkadot/api/types/storage' {
        *
        * (ticker, schedule ID) -> [checkpoint ID]
        **/
-      schedulePoints: AugmentedQuery<
+      schedulePoints: AugmentedQueryDoubleMap<
         ApiType,
         (
-          arg:
-            | ITuple<[Ticker, ScheduleId]>
-            | [Ticker | string | Uint8Array, ScheduleId | AnyNumber | Uint8Array]
+          key1: Ticker | string | Uint8Array,
+          key2: ScheduleId | AnyNumber | Uint8Array
         ) => Observable<Vec<CheckpointId>>,
-        [ITuple<[Ticker, ScheduleId]>]
+        [Ticker, ScheduleId]
       >;
       /**
-       * Is the schedule removable?
+       * How many "strong" references are there to a given `ScheduleId`?
        *
-       * (ticker, schedule ID) -> removable?
+       * The presence of a "strong" reference, in the sense of `Rc<T>`,
+       * entails that the referenced schedule cannot be removed.
+       * Thus, as long as `strong_ref_count(schedule_id) > 0`,
+       * `remove_schedule(schedule_id)` will error.
+       *
+       * (ticker, schedule ID) -> strong ref count
        **/
-      scheduleRemovable: AugmentedQuery<
+      scheduleRefCount: AugmentedQueryDoubleMap<
         ApiType,
         (
-          arg:
-            | ITuple<[Ticker, ScheduleId]>
-            | [Ticker | string | Uint8Array, ScheduleId | AnyNumber | Uint8Array]
-        ) => Observable<bool>,
-        [ITuple<[Ticker, ScheduleId]>]
+          key1: Ticker | string | Uint8Array,
+          key2: ScheduleId | AnyNumber | Uint8Array
+        ) => Observable<u32>,
+        [Ticker, ScheduleId]
       >;
       /**
        * Checkpoint schedules for tickers.
@@ -708,31 +711,37 @@ declare module '@polkadot/api/types/storage' {
        **/
       schedulesMaxComplexity: AugmentedQuery<ApiType, () => Observable<u64>, []>;
       /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>, []>;
+      /**
        * Checkpoint timestamps.
        *
        * Every schedule-originated checkpoint maps its ID to its due time.
        * Every checkpoint manually created maps its ID to the time of recording.
        *
-       * (checkpoint ID) -> checkpoint timestamp
+       * (ticker) -> (checkpoint ID) -> checkpoint timestamp
        **/
-      timestamps: AugmentedQuery<
+      timestamps: AugmentedQueryDoubleMap<
         ApiType,
-        (arg: CheckpointId | AnyNumber | Uint8Array) => Observable<Moment>,
-        [CheckpointId]
+        (
+          key1: Ticker | string | Uint8Array,
+          key2: CheckpointId | AnyNumber | Uint8Array
+        ) => Observable<Moment>,
+        [Ticker, CheckpointId]
       >;
       /**
        * Total supply of the token at the checkpoint.
        *
        * (ticker, checkpointId) -> total supply at given checkpoint
        **/
-      totalSupply: AugmentedQuery<
+      totalSupply: AugmentedQueryDoubleMap<
         ApiType,
         (
-          arg:
-            | ITuple<[Ticker, CheckpointId]>
-            | [Ticker | string | Uint8Array, CheckpointId | AnyNumber | Uint8Array]
+          key1: Ticker | string | Uint8Array,
+          key2: CheckpointId | AnyNumber | Uint8Array
         ) => Observable<Balance>,
-        [ITuple<[Ticker, CheckpointId]>]
+        [Ticker, CheckpointId]
       >;
     };
     committeeMembership: {
@@ -926,6 +935,10 @@ declare module '@polkadot/api/types/storage' {
        * [graphemes]: https://en.wikipedia.org/wiki/Grapheme
        **/
       maxDetailsLength: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>, []>;
     };
     corporateBallot: {
       /**
@@ -1542,6 +1555,10 @@ declare module '@polkadot/api/types/storage' {
        **/
       releaseCoordinator: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>, []>;
       /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>, []>;
+      /**
        * Vote threshold for an approval.
        **/
       voteThreshold: AugmentedQuery<ApiType, () => Observable<ITuple<[u32, u32]>>, []>;
@@ -2132,10 +2149,9 @@ declare module '@polkadot/api/types/storage' {
         [ITuple<[AccountId, SpanIndex]>]
       >;
       /**
-       * True if network has been upgraded to this version.
        * Storage version of the pallet.
        *
-       * This is set to v6.0.0 for new networks.
+       * This is set to v6.0.1 for new networks.
        **/
       storageVersion: AugmentedQuery<ApiType, () => Observable<Releases>, []>;
       /**
@@ -2382,6 +2398,10 @@ declare module '@polkadot/api/types/storage' {
        **/
       releaseCoordinator: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>, []>;
       /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>, []>;
+      /**
        * Vote threshold for an approval.
        **/
       voteThreshold: AugmentedQuery<ApiType, () => Observable<ITuple<[u32, u32]>>, []>;
@@ -2450,6 +2470,10 @@ declare module '@polkadot/api/types/storage' {
        * Release coordinator.
        **/
       releaseCoordinator: AugmentedQuery<ApiType, () => Observable<Option<IdentityId>>, []>;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>, []>;
       /**
        * Vote threshold for an approval.
        **/

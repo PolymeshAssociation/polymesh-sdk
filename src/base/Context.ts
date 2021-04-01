@@ -36,7 +36,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { ROOT_TYPES } from '~/utils/constants';
+import { DEFAULT_SS58_FORMAT, ROOT_TYPES } from '~/utils/constants';
 import {
   balanceToBigNumber,
   claimTypeToMeshClaimType,
@@ -52,9 +52,15 @@ import {
   stringToIdentityId,
   textToString,
   txTagToProtocolOp,
+  u8ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createClaim, getCommonKeyring } from '~/utils/internal';
+import {
+  assertFormatValid,
+  calculateNextKey,
+  createClaim,
+  getCommonKeyring,
+} from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -86,6 +92,8 @@ export class Context {
    * Whether the current node is an archive node (contains a full history from genesis onward) or not
    */
   public isArchiveNode = false;
+
+  public ss58Format = DEFAULT_SS58_FORMAT;
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
@@ -136,13 +144,23 @@ export class Context {
       accountMnemonic,
     } = params;
 
-    let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
+    let ss58Format: number;
+    const { ss58Format: rawSs58Format } = await polymeshApi.rpc.system.properties();
+    if (rawSs58Format.isSome) {
+      ss58Format = u8ToBigNumber(rawSs58Format.unwrap()).toNumber();
+    } else {
+      ss58Format = DEFAULT_SS58_FORMAT;
+    }
+
+    let keyring: CommonKeyring = new Keyring({ type: 'sr25519', ss58Format });
     let currentPair: KeyringPair | undefined;
     let context: Context;
 
     if (passedKeyring) {
       keyring = getCommonKeyring(passedKeyring);
       currentPair = keyring.getPairs()[0];
+
+      assertFormatValid(currentPair.address, ss58Format);
     } else if (accountSeed) {
       if (accountSeed.length !== 66) {
         throw new PolymeshError({
@@ -170,6 +188,8 @@ export class Context {
     }
 
     context.isArchiveNode = await context.isCurrentNodeArchive();
+
+    context.ss58Format = ss58Format;
 
     return context;
   }
@@ -212,6 +232,7 @@ export class Context {
     let newCurrentPair;
 
     try {
+      assertFormatValid(address, this.ss58Format);
       newCurrentPair = keyring.getPair(address);
     } catch (e) {
       throw new PolymeshError({

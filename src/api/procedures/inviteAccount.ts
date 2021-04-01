@@ -1,5 +1,6 @@
+import { TxTags } from 'polymesh-types/types';
+
 import { Account, PolymeshError, Procedure } from '~/internal';
-import { TxTags } from '~/polkadot/types';
 import { AuthorizationType, ErrorCode, Permissions, PermissionsLike } from '~/types';
 import { SignerType } from '~/types/internal';
 import {
