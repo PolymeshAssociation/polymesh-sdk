@@ -187,9 +187,8 @@ export class Context {
       context = new Context({ polymeshApi, middlewareApi, keyring });
     }
 
-    context.isArchiveNode = await context.isCurrentNodeArchive();
-
     context.ss58Format = ss58Format;
+    context.isArchiveNode = await context.isCurrentNodeArchive();
 
     return context;
   }

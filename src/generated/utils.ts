@@ -1003,5 +1003,17 @@ export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): 
     return CountryCode.Zm;
   }
 
-  return CountryCode.Zw;
+  if (meshCountryCode.isZw) {
+    return CountryCode.Zw;
+  }
+
+  if (meshCountryCode.isBq) {
+    return CountryCode.Bq;
+  }
+
+  if (meshCountryCode.isCw) {
+    return CountryCode.Cw;
+  }
+
+  return CountryCode.Sx;
 }

@@ -204,6 +204,15 @@ export interface ScheduleSpec {
   repetitions: number | null;
 }
 
+export interface ScopeClaimProof {
+  proofScopeIdWellformed: string;
+  proofScopeIdCddIdMatch: {
+    challengeResponses: [string, string];
+    subtractExpressionsRes: string;
+    blindedScopeDidHash: string;
+  };
+}
+
 export interface CorporateActionIdentifier {
   ticker: string;
   localId: BigNumber;

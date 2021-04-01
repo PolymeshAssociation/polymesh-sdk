@@ -108,6 +108,7 @@ export interface AssetType extends Enum {
   readonly isDerivative: boolean;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
+  readonly isStableCoin: boolean;
 }
 
 /** @name AuthIdentifier */
@@ -165,6 +166,14 @@ export interface AuthorizationType extends Enum {
   readonly isCustom: boolean;
   readonly isNoData: boolean;
   readonly isTransferCorporateActionAgent: boolean;
+}
+
+/** @name BalanceAtResult */
+export interface BalanceAtResult extends Enum {
+  readonly isOk: boolean;
+  readonly asOk: Vec<Balance>;
+  readonly isErr: boolean;
+  readonly asErr: Bytes;
 }
 
 /** @name BallotMeta */
@@ -686,6 +695,9 @@ export interface CountryCode extends Enum {
   readonly isYe: boolean;
   readonly isZm: boolean;
   readonly isZw: boolean;
+  readonly isBq: boolean;
+  readonly isCw: boolean;
+  readonly isSx: boolean;
 }
 
 /** @name DepositInfo */
@@ -833,6 +845,23 @@ export interface FundraiserTier extends Struct {
   readonly total: Balance;
   readonly price: Balance;
   readonly remaining: Balance;
+}
+
+/** @name GranularCanTransferResult */
+export interface GranularCanTransferResult extends Struct {
+  readonly invalid_granularity: bool;
+  readonly self_transfer: bool;
+  readonly invalid_receiver_cdd: bool;
+  readonly invalid_sender_cdd: bool;
+  readonly missing_scope_claim: bool;
+  readonly receiver_custodian_error: bool;
+  readonly sender_custodian_error: bool;
+  readonly sender_insufficient_balance: bool;
+  readonly portfolio_validity_result: PortfolioValidityResult;
+  readonly asset_frozen: bool;
+  readonly statistics_result: Vec<TransferManagerResult>;
+  readonly compliance_result: AssetComplianceResult;
+  readonly result: bool;
 }
 
 /** @name HandledTxStatus */
@@ -1019,13 +1048,6 @@ export interface OffChainSignature extends Enum {
   readonly asEcdsa: H512;
 }
 
-/** @name OfflineSlashingParams */
-export interface OfflineSlashingParams extends Struct {
-  readonly max_offline_percent: u32;
-  readonly constant: u32;
-  readonly max_slash_percent: u32;
-}
-
 /** @name PalletName */
 export interface PalletName extends Text {}
 
@@ -1115,6 +1137,15 @@ export interface PortfolioName extends Text {}
 
 /** @name PortfolioNumber */
 export interface PortfolioNumber extends u64 {}
+
+/** @name PortfolioValidityResult */
+export interface PortfolioValidityResult extends Struct {
+  readonly receiver_is_same_portfolio: bool;
+  readonly sender_portfolio_does_not_exist: bool;
+  readonly receiver_portfolio_does_not_exist: bool;
+  readonly sender_insufficient_balance: bool;
+  readonly result: bool;
+}
 
 /** @name PosRatio */
 export interface PosRatio extends ITuple<[u32, u32]> {}
@@ -1252,6 +1283,12 @@ export interface RestrictionResult extends Enum {
   readonly isForceValid: boolean;
 }
 
+/** @name RistrettoPoint */
+export interface RistrettoPoint extends U8aFixed {}
+
+/** @name Scalar */
+export interface Scalar extends U8aFixed {}
+
 /** @name ScheduleId */
 export interface ScheduleId extends u64 {}
 
@@ -1270,6 +1307,13 @@ export interface Scope extends Enum {
   readonly asTicker: Ticker;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
+}
+
+/** @name ScopeClaimProof */
+export interface ScopeClaimProof extends Struct {
+  readonly proof_scope_id_wellformed: Signature;
+  readonly proof_scope_id_cdd_id_match: ZkProofData;
+  readonly scope_id: RistrettoPoint;
 }
 
 /** @name ScopeId */
@@ -1462,6 +1506,12 @@ export interface TransferManager extends Enum {
   readonly asPercentageTransferManager: Percentage;
 }
 
+/** @name TransferManagerResult */
+export interface TransferManagerResult extends Struct {
+  readonly tm: TransferManager;
+  readonly result: bool;
+}
+
 /** @name TrustedFor */
 export interface TrustedFor extends Enum {
   readonly isAny: boolean;
@@ -1548,6 +1598,13 @@ export interface WeightToFeeCoefficient extends Struct {
   readonly coeffFrac: Perbill;
   readonly negative: bool;
   readonly degree: u8;
+}
+
+/** @name ZkProofData */
+export interface ZkProofData extends Struct {
+  readonly challenge_responses: Vec<Scalar>;
+  readonly subtract_expressions_res: RistrettoPoint;
+  readonly blinded_scope_did_hash: RistrettoPoint;
 }
 
 export type PHANTOM_POLYMESH = 'polymesh';

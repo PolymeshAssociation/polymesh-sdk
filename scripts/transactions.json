@@ -127,7 +127,8 @@
     "unfreeze_instantiation": "unfreeze_instantiation",
     "transfer_template_ownership": "transfer_template_ownership",
     "change_template_fees": "change_template_fees",
-    "change_template_meta_url": "change_template_meta_url"
+    "change_template_meta_url": "change_template_meta_url",
+    "set_put_code_flag": "set_put_code_flag"
   },
   "Treasury": {
     "disbursement": "disbursement",
@@ -306,7 +307,8 @@
     "add_secondary_keys_with_authorization": "add_secondary_keys_with_authorization",
     "add_investor_uniqueness_claim": "add_investor_uniqueness_claim",
     "gc_add_cdd_claim": "gc_add_cdd_claim",
-    "gc_revoke_cdd_claim": "gc_revoke_cdd_claim"
+    "gc_revoke_cdd_claim": "gc_revoke_cdd_claim",
+    "add_investor_uniqueness_claim_v2": "add_investor_uniqueness_claim_v2"
   },
   "Bridge": {
     "change_controller": "change_controller",
@@ -468,5 +470,11 @@
     "remove_transfer_manager": "remove_transfer_manager",
     "add_exempted_entities": "add_exempted_entities",
     "remove_exempted_entities": "remove_exempted_entities"
+  },
+  "TestUtils": {
+    "register_did": "register_did",
+    "mock_cdd_register_did": "mock_cdd_register_did",
+    "get_my_did": "get_my_did",
+    "get_cdd_of": "get_cdd_of"
   }
 }
