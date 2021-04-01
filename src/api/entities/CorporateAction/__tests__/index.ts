@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Checkpoint } from '~/api/entities/Checkpoint';
-import { CheckpointSchedule,Context, CorporateAction, Entity } from '~/internal';
+import { CheckpointSchedule, Context, CorporateAction, Entity } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   CalendarUnit,
@@ -147,11 +147,10 @@ describe('CorporateAction class', () => {
   });
 
   describe('method: checkpoint', () => {
-    let schedulesQueryStub: sinon.SinonStub;
     let schedulePointsQueryStub: sinon.SinonStub;
 
     beforeEach(() => {
-      schedulesQueryStub = dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             schedule: {

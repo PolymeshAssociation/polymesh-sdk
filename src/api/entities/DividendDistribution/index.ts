@@ -1,3 +1,4 @@
+import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
 import { Checkpoint } from '~/api/entities/Checkpoint';
@@ -10,6 +11,7 @@ import {
   NumberedPortfolio,
   PolymeshError,
 } from '~/internal';
+import { Distribution } from '~/polkadot';
 import { CorporateActionKind, DividendDistributionDetails, ErrorCode } from '~/types';
 import {
   balanceToBigNumber,
@@ -105,11 +107,7 @@ export class DividendDistribution extends CorporateAction {
    * Retrieve whether the Distribution exists
    */
   public async exists(): Promise<boolean> {
-    const { ticker, id, context } = this;
-
-    const distribution = await context.polymeshApi.query.capitalDistribution.distributions(
-      corporateActionIdentifierToCaId({ ticker, localId: id }, context)
-    );
+    const distribution = await this.fetchDistribution();
 
     return distribution.isSome;
   }
@@ -118,11 +116,7 @@ export class DividendDistribution extends CorporateAction {
    * Retrieve details associated with this Dividend Distribution
    */
   public async details(): Promise<DividendDistributionDetails> {
-    const { ticker, id, context } = this;
-
-    const distribution = await context.polymeshApi.query.capitalDistribution.distributions(
-      corporateActionIdentifierToCaId({ ticker, localId: id }, context)
-    );
+    const distribution = await this.fetchDistribution();
 
     if (distribution.isNone) {
       throw new PolymeshError({
@@ -137,5 +131,16 @@ export class DividendDistribution extends CorporateAction {
       remainingFunds: balanceToBigNumber(remaining),
       fundsReclaimed: boolToBoolean(reclaimed),
     };
+  }
+
+  /**
+   * @hidden
+   */
+  private fetchDistribution(): Promise<Option<Distribution>> {
+    const { ticker, id, context } = this;
+
+    return context.polymeshApi.query.capitalDistribution.distributions(
+      corporateActionIdentifierToCaId({ ticker, localId: id }, context)
+    );
   }
 }

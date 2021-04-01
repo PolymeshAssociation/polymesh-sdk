@@ -1,7 +1,8 @@
+import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { CorporateAction as MeshCorporateAction } from 'polymesh-types/types';
 
-import { PolymeshError } from '~/base/PolymeshError';
-import { Checkpoint, CheckpointSchedule, Context, Entity } from '~/internal';
+import { Checkpoint, CheckpointSchedule, Context, Entity, PolymeshError } from '~/internal';
 import { ErrorCode } from '~/types';
 import {
   numberToU32,
@@ -112,12 +113,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
    * Retrieve whether the Corporate Action exists
    */
   public async exists(): Promise<boolean> {
-    const { context, id, ticker } = this;
-
-    const corporateAction = await context.polymeshApi.query.corporateAction.corporateActions(
-      stringToTicker(ticker, context),
-      numberToU32(id, context)
-    );
+    const corporateAction = await this.fetchCorporateAction();
 
     return corporateAction.isSome;
   }
@@ -133,16 +129,12 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
         polymeshApi: { query },
       },
       context,
-      id,
       ticker,
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const corporateAction = await query.corporateAction.corporateActions(
-      rawTicker,
-      numberToU32(id, context)
-    );
+    const corporateAction = await this.fetchCorporateAction();
 
     if (corporateAction.isNone) {
       throw new PolymeshError({
@@ -187,5 +179,23 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
       { ticker, id: u64ToBigNumber(schedulePoints[createdCheckpointIndex]) },
       context
     );
+  }
+
+  /**
+   * @hidden
+   */
+  private fetchCorporateAction(): Promise<Option<MeshCorporateAction>> {
+    const {
+      context: {
+        polymeshApi: { query },
+      },
+      context,
+      id,
+      ticker,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    return query.corporateAction.corporateActions(rawTicker, numberToU32(id, context));
   }
 }
