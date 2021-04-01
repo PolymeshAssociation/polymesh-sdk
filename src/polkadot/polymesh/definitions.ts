@@ -52,6 +52,7 @@ export default {
         StructuredProduct: '',
         Derivative: '',
         Custom: 'Vec<u8>',
+        StableCoin: '',
       },
     },
     AssetIdentifier: {
@@ -390,6 +391,9 @@ export default {
         'YE',
         'ZM',
         'ZW',
+        'BQ',
+        'CW',
+        'SX',
       ],
     },
     Scope: {
@@ -400,6 +404,18 @@ export default {
       },
     },
     InvestorZKProofData: 'Signature',
+    Scalar: '[u8; 32]',
+    RistrettoPoint: '[u8; 32]',
+    ZkProofData: {
+      challenge_responses: '[Scalar; 2]',
+      subtract_expressions_res: 'RistrettoPoint',
+      blinded_scope_did_hash: 'RistrettoPoint',
+    },
+    ScopeClaimProof: {
+      proof_scope_id_wellformed: 'Signature',
+      proof_scope_id_cdd_id_match: 'ZkProofData',
+      scope_id: 'RistrettoPoint',
+    },
     Claim: {
       _enum: {
         Accredited: 'Scope',
@@ -707,11 +723,6 @@ export default {
     PendingTx: {
       did: 'IdentityId',
       bridge_tx: 'BridgeTx',
-    },
-    OfflineSlashingParams: {
-      max_offline_percent: 'u32',
-      constant: 'u32',
-      max_slash_percent: 'u32',
     },
     AssetCompliance: {
       is_paused: 'bool',
@@ -1119,6 +1130,38 @@ export default {
     PermissionedIdentityPrefs: {
       intended_count: 'u32',
       running_count: 'u32',
+    },
+    GranularCanTransferResult: {
+      invalid_granularity: 'bool',
+      self_transfer: 'bool',
+      invalid_receiver_cdd: 'bool',
+      invalid_sender_cdd: 'bool',
+      missing_scope_claim: 'bool',
+      receiver_custodian_error: 'bool',
+      sender_custodian_error: 'bool',
+      sender_insufficient_balance: 'bool',
+      portfolio_validity_result: 'PortfolioValidityResult',
+      asset_frozen: 'bool',
+      statistics_result: 'Vec<TransferManagerResult>',
+      compliance_result: 'AssetComplianceResult',
+      result: 'bool',
+    },
+    PortfolioValidityResult: {
+      receiver_is_same_portfolio: 'bool',
+      sender_portfolio_does_not_exist: 'bool',
+      receiver_portfolio_does_not_exist: 'bool',
+      sender_insufficient_balance: 'bool',
+      result: 'bool',
+    },
+    TransferManagerResult: {
+      tm: 'TransferManager',
+      result: 'bool',
+    },
+    BalanceAtResult: {
+      _enum: {
+        Ok: 'Vec<Balance>',
+        Err: 'Vec<u8>',
+      },
     },
   },
 };
