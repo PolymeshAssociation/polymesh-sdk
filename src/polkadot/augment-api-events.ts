@@ -58,7 +58,6 @@ import type {
   Memo,
   MetaUrl,
   MigrationError,
-  OfflineSlashingParams,
   PalletName,
   Permissions,
   PipDescription,
@@ -85,7 +84,6 @@ import type {
   TargetIdentities,
   Tax,
   Ticker,
-  TickerRangeProof,
   TransferManager,
   TrustedIssuer,
   Url,
@@ -176,7 +174,7 @@ declare module '@polkadot/api/types/events' {
        **/
       FundingRoundSet: AugmentedEvent<ApiType, [IdentityId, Ticker, FundingRoundName]>;
       /**
-       * Event emitted when a token identifiers are updated.
+       * Event emitted when any token identifiers are updated.
        * caller DID, ticker, a vector of (identifier type, identifier value)
        **/
       IdentifiersUpdated: AugmentedEvent<ApiType, [IdentityId, Ticker, Vec<AssetIdentifier>]>;
@@ -226,7 +224,7 @@ declare module '@polkadot/api/types/events' {
        **/
       Transfer: AugmentedEvent<ApiType, [IdentityId, Ticker, PortfolioId, PortfolioId, Balance]>;
       /**
-       * An additional event to Transfer; emitted when transfer_with_data is called.
+       * An additional event to Transfer; emitted when `transfer_with_data` is called.
        * caller DID , ticker, from DID, to DID, value, data
        **/
       TransferWithData: AugmentedEvent<
@@ -269,6 +267,12 @@ declare module '@polkadot/api/types/events' {
        * Some balance was unreserved (moved from reserved to free). \[who, value]
        **/
       Unreserved: AugmentedEvent<ApiType, [AccountId, Balance]>;
+    };
+    base: {
+      /**
+       * An unexpected error happened that should be investigated.
+       **/
+      UnexpectedError: AugmentedEvent<ApiType, [Option<DispatchError>]>;
     };
     baseContracts: {
       /**
@@ -549,10 +553,6 @@ declare module '@polkadot/api/types/events' {
        **/
       TrustedDefaultClaimIssuerRemoved: AugmentedEvent<ApiType, [IdentityId, Ticker, IdentityId]>;
     };
-    confidential: {
-      RangeProofAdded: AugmentedEvent<ApiType, [IdentityId, Ticker, TickerRangeProof]>;
-      RangeProofVerified: AugmentedEvent<ApiType, [IdentityId, IdentityId, Ticker]>;
-    };
     contracts: {
       /**
        * Emitted when instantiation fee of a template get changed.
@@ -569,6 +569,11 @@ declare module '@polkadot/api/types/events' {
        * IdentityId of the owner, Code hash of the template.
        **/
       InstantiationUnFreezed: AugmentedEvent<ApiType, [IdentityId, CodeHash]>;
+      /**
+       * Executing `put_code` has been enabled or disabled.
+       * (new flag state)
+       **/
+      PutCodeFlagChanged: AugmentedEvent<ApiType, [bool]>;
       /**
        * Emitted when the template instantiation fees gets changed.
        * IdentityId of the owner, Code hash of the template, Old instantiation fee, New instantiation fee.
@@ -738,10 +743,6 @@ declare module '@polkadot/api/types/events' {
        **/
       CddRequirementForPrimaryKeyUpdated: AugmentedEvent<ApiType, [bool]>;
       /**
-       * CDD queried
-       **/
-      CddStatus: AugmentedEvent<ApiType, [Option<IdentityId>, AccountId, bool]>;
-      /**
        * DID, claims
        **/
       ClaimAdded: AugmentedEvent<ApiType, [IdentityId, IdentityClaim]>;
@@ -753,10 +754,6 @@ declare module '@polkadot/api/types/events' {
        * DID, primary key account ID, secondary keys
        **/
       DidCreated: AugmentedEvent<ApiType, [IdentityId, AccountId, Vec<SecondaryKey>]>;
-      /**
-       * DID queried
-       **/
-      DidStatus: AugmentedEvent<ApiType, [IdentityId, AccountId]>;
       /**
        * Forwarded Call - (calling DID, target DID, pallet name, function name)
        **/
@@ -804,10 +801,6 @@ declare module '@polkadot/api/types/events' {
        * A signer left their identity. (did, signer)
        **/
       SignerLeft: AugmentedEvent<ApiType, [IdentityId, Signatory]>;
-      /**
-       * An unexpected error happened that should be investigated.
-       **/
-      UnexpectedError: AugmentedEvent<ApiType, [Option<DispatchError>]>;
     };
     imOnline: {
       /**
@@ -815,16 +808,11 @@ declare module '@polkadot/api/types/events' {
        **/
       AllGood: AugmentedEvent<ApiType, []>;
       /**
-       * A new heartbeat was received from `AuthorityId`
+       * A new heartbeat was received from `AuthorityId` \[authority_id\]
        **/
       HeartbeatReceived: AugmentedEvent<ApiType, [AuthorityId]>;
       /**
-       * Newly updated slashing params.
-       * OfflineSlashingParams
-       **/
-      SlashingParamsUpdated: AugmentedEvent<ApiType, [OfflineSlashingParams]>;
-      /**
-       * At the end of the session, at least once validator was found to be offline.
+       * At the end of the session, at least one validator was found to be \[offline\].
        **/
       SomeOffline: AugmentedEvent<ApiType, [Vec<IdentificationTuple>]>;
     };
@@ -1309,9 +1297,9 @@ declare module '@polkadot/api/types/events' {
        **/
       PermissionedIdentityRemoved: AugmentedEvent<ApiType, [IdentityId, IdentityId]>;
       /**
-       * The staker has been rewarded by this amount. [stash, amount]
+       * The staker has been rewarded by this amount. [stash_identity, stash, amount]
        **/
-      Reward: AugmentedEvent<ApiType, [AccountId, Balance]>;
+      Reward: AugmentedEvent<ApiType, [IdentityId, AccountId, Balance]>;
       /**
        * When scheduling of reward payments get interrupted.
        **/
@@ -1533,6 +1521,24 @@ declare module '@polkadot/api/types/events' {
        * caller DID, Removed DID, New add DID.
        **/
       MembersSwapped: AugmentedEvent<ApiType, [IdentityId, IdentityId, IdentityId]>;
+    };
+    testUtils: {
+      /**
+       * Shows the `DID` associated to the `AccountId`, and a flag indicates if that DID has a
+       * valid CDD claim.
+       * (Target DID, Target Account, a valid CDD claim exists)
+       **/
+      CddStatus: AugmentedEvent<ApiType, [Option<IdentityId>, AccountId, bool]>;
+      /**
+       * Emits the `IdentityId` and the `AccountId` of the caller.
+       * (Caller DID, Caller account)
+       **/
+      DidStatus: AugmentedEvent<ApiType, [IdentityId, AccountId]>;
+      /**
+       * A new mocked `InvestorUid` has been created for the given Identity.
+       * (Target DID, New InvestorUid)
+       **/
+      MockInvestorUIDCreated: AugmentedEvent<ApiType, [IdentityId, InvestorUid]>;
     };
     treasury: {
       /**

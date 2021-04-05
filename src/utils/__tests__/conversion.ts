@@ -1,5 +1,5 @@
 import { bool, Bytes, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Moment, Permill } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import {
   CAKind,
@@ -13,6 +13,8 @@ import {
   PortfolioId,
   PriceTier,
   RecordDateSpec,
+  RistrettoPoint,
+  Scalar,
   ScheduleSpec,
   ScopeId,
   SettlementType,
@@ -94,9 +96,14 @@ import {
   TxGroup,
   VenueType,
 } from '~/types';
-import { SignerType, SignerValue, TransferRestrictionType } from '~/types/internal';
+import {
+  ScopeClaimProof,
+  SignerType,
+  SignerValue,
+  TransferRestrictionType,
+} from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
+import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
   accountIdToString,
@@ -171,6 +178,7 @@ import {
   posRatioToBigNumber,
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
+  scopeClaimProofToMeshScopeClaimProof,
   scopeIdToString,
   scopeToMeshScope,
   scopeToMiddlewareScope,
@@ -194,7 +202,10 @@ import {
   stringToIdentityId,
   stringToInvestorZKProofData,
   stringToMemo,
+  stringToRistrettoPoint,
+  stringToScalar,
   stringToScopeId,
+  stringToSignature,
   stringToText,
   stringToTicker,
   stringToVenueDetails,
@@ -712,7 +723,7 @@ describe('signerToSignerValue and signerValueToSigner', () => {
   });
 
   test('signerToSignerValue should convert a Signer to a SignerValue', () => {
-    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const address = DUMMY_ACCOUNT_ID;
     let signer: Signer = new Account({ address }, context);
 
     let result = signerToSignerValue(signer);
@@ -731,7 +742,7 @@ describe('signerToSignerValue and signerValueToSigner', () => {
   });
 
   test('signerValueToSigner should convert a SignerValue to a Signer', () => {
-    let value = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    let value = DUMMY_ACCOUNT_ID;
     let signerValue: SignerValue = { type: SignerType.Account, value };
 
     let result = signerValueToSigner(signerValue, context);
@@ -774,7 +785,7 @@ describe('signerToString', () => {
   });
 
   test('signerToStrings should return the Account address string', () => {
-    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const address = DUMMY_ACCOUNT_ID;
     const context = dsMockUtils.getContextInstance();
 
     const account = new Account({ address }, context);
@@ -785,7 +796,7 @@ describe('signerToString', () => {
   });
 
   test('signerToStrings should return the same address string that it receives', () => {
-    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const address = DUMMY_ACCOUNT_ID;
     const result = signerToString(address);
 
     expect(result).toBe(address);
@@ -973,6 +984,17 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
       JoinIdentity: dsMockUtils.createMockPermissions({ asset: [], portfolio: [], extrinsic: [] }),
+    });
+
+    result = authorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.TransferCorporateActionAgent,
+      value: 'someTicker',
+    };
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      TransferCorporateActionAgent: dsMockUtils.createMockTicker(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData, context);
@@ -1657,6 +1679,12 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.Derivative;
+    assetType = dsMockUtils.createMockAssetType(fakeResult);
+
+    result = assetTypeToString(assetType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = KnownTokenType.StableCoin;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToString(assetType);
@@ -3557,7 +3585,7 @@ describe('moduleAddressToString', () => {
 });
 
 describe('keyToAddress and addressToKey', () => {
-  const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+  const address = DUMMY_ACCOUNT_ID;
   const publicKey = '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
   const context = dsMockUtils.getContextInstance();
 
@@ -5474,6 +5502,189 @@ describe('corporateActionIdentifierToCaId', () => {
       .returns(fakeResult);
 
     const result = corporateActionIdentifierToCaId(args, context);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToSignature', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToSignature should convert a string to a polkadot Signature object', () => {
+    const value = 'someValue';
+    const fakeResult = ('convertedSignature' as unknown) as Signature;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.getCreateTypeStub().withArgs('Signature', value).returns(fakeResult);
+
+    const result = stringToSignature(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToRistrettoPoint', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToRistrettoPoint should convert a string to a polkadot RistrettoPoint object', () => {
+    const value = 'someValue';
+    const fakeResult = ('convertedRistrettoPoint' as unknown) as RistrettoPoint;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.getCreateTypeStub().withArgs('RistrettoPoint', value).returns(fakeResult);
+
+    const result = stringToRistrettoPoint(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToScalar', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToScalar should convert a string to a polkadot Scalar object', () => {
+    const value = 'someValue';
+    const fakeResult = ('convertedScalar' as unknown) as Scalar;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.getCreateTypeStub().withArgs('Scalar', value).returns(fakeResult);
+
+    const result = stringToScalar(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('scopeClaimProofToMeshScopeClaimProof', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('scopeClaimProofToMeshScopeClaimProof should convert a proof and a scopeId to a polkadot ScopeClaimProof object', () => {
+    const [
+      scopeId,
+      proofScopeIdWellformed,
+      firstChallengeResponse,
+      secondChallengeResponse,
+      subtractExpressionsRes,
+      blindedScopeDidHash,
+    ] = [
+      'someScopeId',
+      'someProofScopeIdWellformed',
+      'someFirstChallengeResponse',
+      'someSecondChallengeResponse',
+      'someSubtractExpressionsRes',
+      'someBlindedScopeDidHash',
+    ];
+    const proof: ScopeClaimProof = {
+      proofScopeIdWellformed,
+      proofScopeIdCddIdMatch: {
+        challengeResponses: [firstChallengeResponse, secondChallengeResponse],
+        subtractExpressionsRes,
+        blindedScopeDidHash,
+      },
+    };
+    const rawFirstChallengeResponse = dsMockUtils.createMockScalar(firstChallengeResponse);
+    const rawSecondChallengeResponse = dsMockUtils.createMockScalar(secondChallengeResponse);
+    const rawSubtractExpressionsRes = dsMockUtils.createMockRistrettoPoint(subtractExpressionsRes);
+    const rawBlindedScopeDidHash = dsMockUtils.createMockRistrettoPoint(blindedScopeDidHash);
+    const rawZkProofData = dsMockUtils.createMockZkProofData({
+      subtract_expressions_res: subtractExpressionsRes,
+      challenge_responses: [firstChallengeResponse, secondChallengeResponse],
+      blinded_scope_did_hash: blindedScopeDidHash,
+    });
+    const rawProofScopeIdWellformed = dsMockUtils.createMockSignature(proofScopeIdWellformed);
+    const rawScopeId = dsMockUtils.createMockRistrettoPoint(scopeId);
+    const fakeResult = dsMockUtils.createMockScopeClaimProof({
+      proof_scope_id_wellformed: proofScopeIdWellformed,
+      proof_scope_id_cdd_id_match: {
+        subtract_expressions_res: subtractExpressionsRes,
+        challenge_responses: [firstChallengeResponse, secondChallengeResponse],
+        blinded_scope_did_hash: blindedScopeDidHash,
+      },
+      scope_id: scopeId,
+    });
+
+    const zkProofData = {
+      challenge_responses: [rawFirstChallengeResponse, rawSecondChallengeResponse],
+      subtract_expressions_res: rawSubtractExpressionsRes,
+      blinded_scope_did_hash: rawBlindedScopeDidHash,
+    };
+    const scopeClaimProof = {
+      proof_scope_id_wellformed: rawProofScopeIdWellformed,
+      proof_scope_id_cdd_id_match: rawZkProofData,
+      scope_id: rawScopeId,
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Scalar', firstChallengeResponse)
+      .returns(rawFirstChallengeResponse);
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Scalar', secondChallengeResponse)
+      .returns(rawSecondChallengeResponse);
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('RistrettoPoint', subtractExpressionsRes)
+      .returns(rawSubtractExpressionsRes);
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('RistrettoPoint', blindedScopeDidHash)
+      .returns(rawBlindedScopeDidHash);
+    dsMockUtils.getCreateTypeStub().withArgs('ZkProofData', zkProofData).returns(rawZkProofData);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Signature', proofScopeIdWellformed)
+      .returns(rawProofScopeIdWellformed);
+    dsMockUtils.getCreateTypeStub().withArgs('RistrettoPoint', scopeId).returns(rawScopeId);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ScopeClaimProof', scopeClaimProof)
+      .returns(fakeResult);
+
+    const result = scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context);
+
     expect(result).toEqual(fakeResult);
   });
 });

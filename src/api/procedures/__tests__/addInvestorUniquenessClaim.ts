@@ -3,19 +3,23 @@ import {
   IdentityId,
   InvestorZKProofData,
   Moment,
+  ScopeClaimProof as MeshScopeClaimProof,
   ScopeId,
   Ticker,
+  TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
   AddInvestorUniquenessClaimParams,
+  getAuthorization,
   prepareAddInvestorUniquenessClaim,
 } from '~/api/procedures/addInvestorUniquenessClaim';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Claim, ClaimType, ScopeType } from '~/types';
+import { ScopeClaimProof } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('addInvestorUniquenessClaim procedure', () => {
@@ -25,10 +29,20 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let cddId: string;
   let scopeId: string;
   let proof: string;
+  let proofScopeIdWellformed: string;
+  let firstChallengeResponse: string;
+  let secondChallengeResponse: string;
+  let subtractExpressionsRes: string;
+  let blindedScopeDidHash: string;
+  let scopeClaimProof: ScopeClaimProof;
   let expiry: Date;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let claimToMeshClaimStub: sinon.SinonStub<[Claim, Context], MeshClaim>;
   let stringToInvestorZKProofDataStub: sinon.SinonStub<[string, Context], InvestorZKProofData>;
+  let scopeClaimProofToMeshScopeClaimProofStub: sinon.SinonStub<
+    [ScopeClaimProof, string, Context],
+    MeshScopeClaimProof
+  >;
   let stringToScopeIdStub: sinon.SinonStub<[string, Context], ScopeId>;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let rawDid: IdentityId;
@@ -36,6 +50,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let rawScopeId: ScopeId;
   let rawClaim: MeshClaim;
   let rawProof: InvestorZKProofData;
+  let rawScopeClaimProof: MeshScopeClaimProof;
   let rawExpiry: Moment;
   let addTransactionStub: sinon.SinonStub;
 
@@ -49,6 +64,19 @@ describe('addInvestorUniquenessClaim procedure', () => {
     cddId = 'someCddId';
     scopeId = 'someScopeId';
     proof = 'someProof';
+    proofScopeIdWellformed = 'someProofScopeIdWellformed';
+    firstChallengeResponse = 'someFirstChallengeResponse';
+    secondChallengeResponse = 'someSecondChallengeResponse';
+    subtractExpressionsRes = 'someSubtractExpressionsRes';
+    blindedScopeDidHash = 'someBlindedScopeDidHash';
+    scopeClaimProof = {
+      proofScopeIdWellformed,
+      proofScopeIdCddIdMatch: {
+        challengeResponses: [firstChallengeResponse, secondChallengeResponse],
+        subtractExpressionsRes,
+        blindedScopeDidHash,
+      },
+    };
     expiry = new Date(new Date().getTime() + 10000);
 
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
@@ -56,6 +84,10 @@ describe('addInvestorUniquenessClaim procedure', () => {
     stringToInvestorZKProofDataStub = sinon.stub(
       utilsConversionModule,
       'stringToInvestorZKProofData'
+    );
+    scopeClaimProofToMeshScopeClaimProofStub = sinon.stub(
+      utilsConversionModule,
+      'scopeClaimProofToMeshScopeClaimProof'
     );
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
     stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
@@ -71,6 +103,17 @@ describe('addInvestorUniquenessClaim procedure', () => {
     });
     rawScopeId = dsMockUtils.createMockScopeId(scopeId);
     rawProof = dsMockUtils.createMockInvestorZKProofData(proof);
+    rawScopeClaimProof = dsMockUtils.createMockScopeClaimProof({
+      /* eslint-disable @typescript-eslint/camelcase */
+      proof_scope_id_wellformed: proofScopeIdWellformed,
+      proof_scope_id_cdd_id_match: {
+        subtract_expressions_res: subtractExpressionsRes,
+        challenge_responses: [firstChallengeResponse, secondChallengeResponse],
+        blinded_scope_did_hash: blindedScopeDidHash,
+      },
+      scope_id: scopeId,
+      /* eslint-enable @typescript-eslint/camelcase */
+    });
     rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
   });
 
@@ -91,6 +134,9 @@ describe('addInvestorUniquenessClaim procedure', () => {
       )
       .returns(rawClaim);
     stringToInvestorZKProofDataStub.withArgs(proof, mockContext).returns(rawProof);
+    scopeClaimProofToMeshScopeClaimProofStub
+      .withArgs(scopeClaimProof, scopeId, mockContext)
+      .returns(rawScopeClaimProof);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
     stringToScopeIdStub.withArgs(scopeId, mockContext).returns(rawScopeId);
   });
@@ -152,19 +198,99 @@ describe('addInvestorUniquenessClaim procedure', () => {
     );
   });
 
+  test('should add an add investor uniqueness claim v2 transaction to the queue', async () => {
+    const proc = procedureMockUtils.getInstance<AddInvestorUniquenessClaimParams, void>(
+      mockContext
+    );
+    const addInvestorUniquenessClaimV2Transaction = dsMockUtils.createTxStub(
+      'identity',
+      'addInvestorUniquenessClaimV2'
+    );
+
+    await prepareAddInvestorUniquenessClaim.call(proc, {
+      scope: { type: ScopeType.Ticker, value: ticker },
+      proof: scopeClaimProof,
+      cddId,
+      scopeId,
+      expiry,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      addInvestorUniquenessClaimV2Transaction,
+      {},
+      rawDid,
+      rawClaim,
+      rawScopeClaimProof,
+      rawExpiry
+    );
+
+    await prepareAddInvestorUniquenessClaim.call(proc, {
+      scope: { type: ScopeType.Ticker, value: ticker },
+      proof: scopeClaimProof,
+      cddId,
+      scopeId,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      addInvestorUniquenessClaimV2Transaction,
+      {},
+      rawDid,
+      rawClaim,
+      rawScopeClaimProof,
+      null
+    );
+  });
+
   test('should throw an error if the expiry date is in the past', async () => {
+    const commonArgs = {
+      scope: { type: ScopeType.Ticker, value: ticker },
+      cddId,
+      scopeId,
+      expiry: new Date('10/14/1987'),
+    };
+
     const proc = procedureMockUtils.getInstance<AddInvestorUniquenessClaimParams, void>(
       mockContext
     );
 
+    expect(prepareAddInvestorUniquenessClaim.call(proc, { ...commonArgs, proof })).rejects.toThrow(
+      'Expiry date must be in the future'
+    );
+
     expect(
-      prepareAddInvestorUniquenessClaim.call(proc, {
+      prepareAddInvestorUniquenessClaim.call(proc, { ...commonArgs, proof: scopeClaimProof })
+    ).rejects.toThrow('Expiry date must be in the future');
+  });
+
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      const commonArgs = {
         scope: { type: ScopeType.Ticker, value: ticker },
-        proof,
         cddId,
         scopeId,
-        expiry: new Date('10/14/1987'),
-      })
-    ).rejects.toThrow('Expiry date must be in the future');
+      };
+      const proc = procedureMockUtils.getInstance<AddInvestorUniquenessClaimParams, void>(
+        mockContext
+      );
+      const boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc({ ...commonArgs, proof })).toEqual({
+        signerPermissions: {
+          tokens: [],
+          transactions: [TxTags.identity.AddInvestorUniquenessClaim],
+          portfolios: [],
+        },
+      });
+
+      expect(boundFunc({ ...commonArgs, proof: scopeClaimProof })).toEqual({
+        signerPermissions: {
+          tokens: [],
+          transactions: [TxTags.identity.AddInvestorUniquenessClaimV2],
+          portfolios: [],
+        },
+      });
+    });
   });
 });

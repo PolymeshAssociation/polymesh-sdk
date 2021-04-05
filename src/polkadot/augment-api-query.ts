@@ -35,6 +35,7 @@ import type {
   Balance,
   BalanceOf,
   BlockNumber,
+  Call,
   ExtrinsicsWeight,
   Hash,
   KeyTypeId,
@@ -109,7 +110,6 @@ import type {
   LegStatus,
   LocalCAId,
   MaybeBlock,
-  OfflineSlashingParams,
   PalletName,
   PermissionedIdentityPrefs,
   Pip,
@@ -122,7 +122,6 @@ import type {
   PosRatio,
   ProposalDetails,
   ProtocolOp,
-  ProverTickerKey,
   ScheduleId,
   ScopeId,
   SecurityToken,
@@ -140,7 +139,6 @@ import type {
   TemplateDetails,
   TemplateMetadata,
   Ticker,
-  TickerRangeProof,
   TickerRegistration,
   TickerRegistrationConfig,
   TransferManager,
@@ -780,30 +778,11 @@ declare module '@polkadot/api/types/storage' {
         [Ticker]
       >;
     };
-    confidential: {
-      /**
-       * Number of investor per asset.
-       **/
-      rangeProofs: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1: IdentityId | string | Uint8Array,
-          key2: ProverTickerKey | { prover?: any; ticker?: any } | string | Uint8Array
-        ) => Observable<Option<TickerRangeProof>>,
-        [IdentityId, ProverTickerKey]
-      >;
-      rangeProofVerifications: AugmentedQueryDoubleMap<
-        ApiType,
-        (
-          key1:
-            | ITuple<[IdentityId, Ticker]>
-            | [IdentityId | string | Uint8Array, Ticker | string | Uint8Array],
-          key2: IdentityId | string | Uint8Array
-        ) => Observable<bool>,
-        [ITuple<[IdentityId, Ticker]>, IdentityId]
-      >;
-    };
     contracts: {
+      /**
+       * Store if `put_code` extrinsic is enabled or disabled.
+       **/
+      enablePutCode: AugmentedQuery<ApiType, () => Observable<bool>, []>;
       /**
        * Details of extension get updated.
        **/
@@ -1203,8 +1182,8 @@ declare module '@polkadot/api/types/storage' {
        **/
       keys: AugmentedQuery<ApiType, () => Observable<Vec<AuthorityId>>, []>;
       /**
-       * For each session index, we keep a mapping of `AuthIndex`
-       * to `offchain::OpaqueNetworkState`.
+       * For each session index, we keep a mapping of `AuthIndex` to
+       * `offchain::OpaqueNetworkState`.
        **/
       receivedHeartbeats: AugmentedQueryDoubleMap<
         ApiType,
@@ -1214,10 +1193,6 @@ declare module '@polkadot/api/types/storage' {
         ) => Observable<Option<Bytes>>,
         [SessionIndex, AuthIndex]
       >;
-      /**
-       * Config parameters for slash fraction
-       **/
-      slashingParams: AugmentedQuery<ApiType, () => Observable<OfflineSlashingParams>, []>;
     };
     indices: {
       /**
@@ -1543,7 +1518,7 @@ declare module '@polkadot/api/types/storage' {
        **/
       proposalOf: AugmentedQuery<
         ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>,
+        (arg: Hash | string | Uint8Array) => Observable<Option<Call>>,
         [Hash]
       >;
       /**
@@ -2386,7 +2361,7 @@ declare module '@polkadot/api/types/storage' {
        **/
       proposalOf: AugmentedQuery<
         ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>,
+        (arg: Hash | string | Uint8Array) => Observable<Option<Call>>,
         [Hash]
       >;
       /**
@@ -2428,6 +2403,7 @@ declare module '@polkadot/api/types/storage' {
        **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>, []>;
     };
+    testUtils: {};
     timestamp: {
       /**
        * Did the timestamp get updated in this block?
@@ -2459,7 +2435,7 @@ declare module '@polkadot/api/types/storage' {
        **/
       proposalOf: AugmentedQuery<
         ApiType,
-        (arg: Hash | string | Uint8Array) => Observable<Option<Proposal>>,
+        (arg: Hash | string | Uint8Array) => Observable<Option<Call>>,
         [Hash]
       >;
       /**

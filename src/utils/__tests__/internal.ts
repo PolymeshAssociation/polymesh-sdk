@@ -12,6 +12,7 @@ import { tuple } from '~/types/utils';
 import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 import {
+  assertFormatValid,
   assertIsInteger,
   assertIsPositive,
   batchArguments,
@@ -513,5 +514,21 @@ describe('getCommonKeyring', () => {
 
     result = getCommonKeyring({ keyring: fakeKeyring });
     expect(result).toBe(fakeKeyring);
+  });
+});
+
+describe('assertFormatValid', () => {
+  const ss58Format = 42;
+
+  test('should throw an error if the address is prefixed with an invalid ss58', async () => {
+    expect(() =>
+      assertFormatValid('ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8', ss58Format)
+    ).toThrow("The supplied address is not encoded with the chain's SS58 format");
+  });
+
+  test('should not throw if the address is prefixed with valid ss58', async () => {
+    expect(() =>
+      assertFormatValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
+    ).not.toThrow();
   });
 });
