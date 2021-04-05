@@ -217,7 +217,6 @@ interface CheckpointScheduleOptions {
   ticker?: string;
   start?: Date;
   period?: CalendarPeriod | null;
-  isInfinite?: boolean;
   expiryDate?: Date | null;
   details?: Partial<ScheduleDetails>;
 }
@@ -730,7 +729,6 @@ const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
     unit: CalendarUnit.Month,
     amount: 1,
   },
-  isInfinite: false,
   expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
   details: {
     remainingCheckpoints: 1,
@@ -1378,7 +1376,6 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
     ticker: opts.ticker,
     start: opts.start,
     period: opts.period,
-    isInfinite: opts.isInfinite,
     expiryDate: opts.expiryDate,
     details: checkpointScheduleDetailsStub.resolves(opts.details),
   } as unknown) as MockCheckpointSchedule;
