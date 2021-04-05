@@ -1,9 +1,11 @@
 import { PolymeshError } from '~/base/PolymeshError';
 import { Procedure } from '~/internal';
-import { ClaimType, ErrorCode, Scope, TxTags } from '~/types';
+import { ClaimType, ErrorCode, Scope, TxTag, TxTags } from '~/types';
+import { ProcedureAuthorization, ScopeClaimProof } from '~/types/internal';
 import {
   claimToMeshClaim,
   dateToMoment,
+  scopeClaimProofToMeshScopeClaimProof,
   stringToIdentityId,
   stringToInvestorZKProofData,
 } from '~/utils/conversion';
@@ -11,7 +13,7 @@ import {
 export interface AddInvestorUniquenessClaimParams {
   scope: Scope;
   cddId: string;
-  proof: string;
+  proof: string | ScopeClaimProof;
   scopeId: string;
   expiry?: Date;
 }
@@ -40,23 +42,61 @@ export async function prepareAddInvestorUniquenessClaim(
     });
   }
 
-  this.addTransaction(
-    tx.identity.addInvestorUniquenessClaim,
-    {},
-    stringToIdentityId(did, context),
-    claimToMeshClaim({ type: ClaimType.InvestorUniqueness, scope, cddId, scopeId }, context),
-    stringToInvestorZKProofData(proof, context),
-    expiry ? dateToMoment(expiry, context) : null
+  const meshIdentityId = stringToIdentityId(did, context);
+  const meshClaim = claimToMeshClaim(
+    { type: ClaimType.InvestorUniqueness, scope, cddId, scopeId },
+    context
   );
+  const meshExpiry = expiry ? dateToMoment(expiry, context) : null;
+  if (typeof proof === 'string') {
+    this.addTransaction(
+      tx.identity.addInvestorUniquenessClaim,
+      {},
+      meshIdentityId,
+      meshClaim,
+      stringToInvestorZKProofData(proof, context),
+      meshExpiry
+    );
+  } else {
+    this.addTransaction(
+      tx.identity.addInvestorUniquenessClaimV2,
+      {},
+      meshIdentityId,
+      meshClaim,
+      scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context),
+      meshExpiry
+    );
+  }
 }
 
 /**
  * @hidden
  */
-export const addInvestorUniquenessClaim = new Procedure(prepareAddInvestorUniquenessClaim, {
-  signerPermissions: {
-    tokens: [],
-    portfolios: [],
-    transactions: [TxTags.identity.AddInvestorUniquenessClaim],
-  },
-});
+export function getAuthorization(
+  this: Procedure<AddInvestorUniquenessClaimParams>,
+  { proof }: AddInvestorUniquenessClaimParams
+): ProcedureAuthorization {
+  let transactions: TxTag[];
+
+  if (typeof proof === 'string') {
+    transactions = [TxTags.identity.AddInvestorUniquenessClaim];
+  } else {
+    transactions = [TxTags.identity.AddInvestorUniquenessClaimV2];
+  }
+
+  return {
+    signerPermissions: {
+      tokens: [],
+      portfolios: [],
+      transactions,
+    },
+  };
+}
+
+/**
+ * @hidden
+ */
+export const addInvestorUniquenessClaim = new Procedure(
+  prepareAddInvestorUniquenessClaim,
+  getAuthorization
+);

@@ -94,7 +94,7 @@ describe('Procedure class', () => {
       posRatioToBigNumberStub = sinon.stub(utilsConversionModule, 'posRatioToBigNumber');
       balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
       txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
-      txTags = [TxTags.asset.RegisterTicker, TxTags.identity.RegisterDid];
+      txTags = [TxTags.asset.RegisterTicker, TxTags.identity.CddRegisterDid];
       fees = [250, 0];
       numerator = 7;
       denominator = 3;
@@ -134,7 +134,7 @@ describe('Procedure class', () => {
         secondaryKeys,
       };
       const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const tx2 = dsMockUtils.createTxStub('identity', 'registerDid');
+      const tx2 = dsMockUtils.createTxStub('identity', 'cddRegisterDid');
 
       const returnValue = 'good';
 

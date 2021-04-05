@@ -151,6 +151,7 @@ export enum ContractsTx {
   TransferTemplateOwnership = 'contracts.transferTemplateOwnership',
   ChangeTemplateFees = 'contracts.changeTemplateFees',
   ChangeTemplateMetaUrl = 'contracts.changeTemplateMetaUrl',
+  SetPutCodeFlag = 'contracts.setPutCodeFlag',
 }
 
 export enum TreasuryTx {
@@ -341,6 +342,7 @@ export enum IdentityTx {
   AddInvestorUniquenessClaim = 'identity.addInvestorUniquenessClaim',
   GcAddCddClaim = 'identity.gcAddCddClaim',
   GcRevokeCddClaim = 'identity.gcRevokeCddClaim',
+  AddInvestorUniquenessClaimV2 = 'identity.addInvestorUniquenessClaimV2',
 }
 
 export enum BridgeTx {
@@ -522,6 +524,13 @@ export enum StatisticsTx {
   RemoveExemptedEntities = 'statistics.removeExemptedEntities',
 }
 
+export enum TestUtilsTx {
+  RegisterDid = 'testUtils.registerDid',
+  MockCddRegisterDid = 'testUtils.mockCddRegisterDid',
+  GetMyDid = 'testUtils.getMyDid',
+  GetCddOf = 'testUtils.getCddOf',
+}
+
 export type TxTag =
   | SystemTx
   | BabeTx
@@ -565,7 +574,8 @@ export type TxTag =
   | CorporateBallotTx
   | CapitalDistributionTx
   | CheckpointTx
-  | StatisticsTx;
+  | StatisticsTx
+  | TestUtilsTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -611,4 +621,5 @@ export const TxTags = {
   capitalDistribution: CapitalDistributionTx,
   checkpoint: CheckpointTx,
   statistics: StatisticsTx,
+  testUtils: TestUtilsTx,
 };
