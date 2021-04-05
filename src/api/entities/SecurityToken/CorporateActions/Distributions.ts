@@ -9,9 +9,11 @@ import {
   Namespace,
   SecurityToken,
 } from '~/internal';
-import { CorporateActionParams } from '~/types';
+import { CorporateActionParams, DistributionWithDetails } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import {
+  balanceToBigNumber,
+  boolToBoolean,
   corporateActionIdentifierToCaId,
   distributionToDividendDistributionParams,
   meshCorporateActionToCorporateActionParams,
@@ -68,7 +70,7 @@ export class Distributions extends Namespace<SecurityToken> {
   /**
    * Retrieve all Dividend Distributions associated to this Security Token
    */
-  public async get(): Promise<DividendDistribution[]> {
+  public async get(): Promise<DistributionWithDetails[]> {
     const {
       parent: { ticker },
       context: {
@@ -98,9 +100,8 @@ export class Distributions extends Namespace<SecurityToken> {
         distributionsMultiParams.push(
           corporateActionIdentifierToCaId({ ticker, localId }, context)
         );
-        corporateActionParams.push(
-          meshCorporateActionToCorporateActionParams(corporateAction.unwrap(), context)
-        );
+        const action = corporateAction.unwrap();
+        corporateActionParams.push(meshCorporateActionToCorporateActionParams(action, context));
       }
     );
 
@@ -108,9 +109,10 @@ export class Distributions extends Namespace<SecurityToken> {
       distributionsMultiParams
     );
 
-    return distributions.map(
-      (distribution, index) =>
-        new DividendDistribution(
+    return distributions.map((distribution, index) => {
+      const { reclaimed, remaining } = distribution;
+      return {
+        distribution: new DividendDistribution(
           {
             ticker,
             id: corporateActionIds[index],
@@ -118,7 +120,12 @@ export class Distributions extends Namespace<SecurityToken> {
             ...distributionToDividendDistributionParams(distribution, context),
           },
           context
-        )
-    );
+        ),
+        details: {
+          remainingFunds: balanceToBigNumber(remaining),
+          fundsReclaimed: boolToBoolean(reclaimed),
+        },
+      };
+    });
   }
 }
