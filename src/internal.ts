@@ -12,7 +12,11 @@ export {
   consumeJoinIdentityAuthorization,
   ConsumeJoinIdentityAuthorizationParams,
 } from '~/api/procedures/consumeJoinIdentityAuthorization';
-export { addInstruction, AddInstructionParams } from '~/api/procedures/addInstruction';
+export {
+  addInstruction,
+  AddInstructionParams,
+  AddInstructionsParams,
+} from '~/api/procedures/addInstruction';
 // export { cancelProposal } from '~/api/procedures/cancelProposal';
 export {
   consumeAuthorizationRequests,

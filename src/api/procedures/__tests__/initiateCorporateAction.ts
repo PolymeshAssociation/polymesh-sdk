@@ -303,15 +303,15 @@ describe('initiateCorporateAction procedure', () => {
   });
 
   describe('caIdResolver', () => {
-    const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
+    const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
     const id = ('caId' as unknown) as CAId;
 
     beforeEach(() => {
-      findEventRecordStub.returns(dsMockUtils.createMockIEvent(['data', id]));
+      filterEventRecordsStub.returns([dsMockUtils.createMockIEvent(['data', id])]);
     });
 
     afterEach(() => {
-      findEventRecordStub.reset();
+      filterEventRecordsStub.reset();
     });
 
     test('should return the CAId ', () => {

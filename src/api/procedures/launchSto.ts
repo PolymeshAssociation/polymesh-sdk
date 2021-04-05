@@ -27,7 +27,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -65,7 +65,7 @@ export interface Storage {
 export const createStoResolver = (ticker: string, context: Context) => (
   receipt: ISubmittableResult
 ): Sto => {
-  const { data } = findEventRecord(receipt, 'sto', 'FundraiserCreated');
+  const [{ data }] = filterEventRecords(receipt, 'sto', 'FundraiserCreated');
   const newFundraiserId = u64ToBigNumber(data[1]);
 
   return new Sto({ id: newFundraiserId, ticker }, context);

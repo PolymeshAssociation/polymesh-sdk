@@ -4,6 +4,7 @@ import P from 'bluebird';
 import {
   addInstruction,
   AddInstructionParams,
+  AddInstructionsParams,
   Context,
   Entity,
   Identity,
@@ -57,6 +58,11 @@ export class Venue extends Entity<UniqueIdentifiers> {
     this.id = id;
 
     this.addInstruction = createProcedureMethod(
+      args => [addInstruction, { instructions: [args], venueId: id }],
+      context
+    );
+
+    this.addInstructions = createProcedureMethod(
       args => [addInstruction, { ...args, venueId: id }],
       context
     );
@@ -170,5 +176,19 @@ export class Venue extends Entity<UniqueIdentifiers> {
    * @note required role:
    *   - Venue Owner
    */
-  public addInstruction: ProcedureMethod<AddInstructionParams, Instruction>;
+  public addInstruction: ProcedureMethod<AddInstructionParams, Instruction[]>;
+
+  /**
+   * Creates a batch of settlement Instructions in this Venue
+   *
+   * @param args.instructions - array of Instructions
+   * @param args.instructions.legs - array of token movements (amount, from, to, token)
+   * @param args.instructions.tradeDate - date at which the trade was agreed upon (optional, for offchain trades)
+   * @param args.instructions.valueDate - date at which the trade was executed (optional, for offchain trades)
+   * @param args.instructions.endBlock - block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
+   *
+   * @note required role:
+   *   - Venue Owner
+   */
+  public addInstructions: ProcedureMethod<AddInstructionsParams, Instruction[]>;
 }

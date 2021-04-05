@@ -10,7 +10,7 @@ import {
   signerToString,
   stringToAccountId,
 } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;
@@ -23,7 +23,7 @@ export interface RegisterIdentityParams {
 export const createRegisterIdentityResolver = (context: Context) => (
   receipt: ISubmittableResult
 ): Identity => {
-  const { data } = findEventRecord(receipt, 'identity', 'DidCreated');
+  const [{ data }] = filterEventRecords(receipt, 'identity', 'DidCreated');
   const did = identityIdToString(data[0]);
 
   return new Identity({ did }, context);

@@ -19,7 +19,7 @@ import {
   createClaim,
   createProcedureMethod,
   delay,
-  findEventRecord,
+  filterEventRecords,
   getCommonKeyring,
   getDid,
   isPrintableAscii,
@@ -156,33 +156,33 @@ describe('unwrapValues', () => {
   });
 });
 
-describe('findEventRecord', () => {
-  const findRecordStub = sinon.stub();
+describe('filterEventRecords', () => {
+  const filterRecordsStub = sinon.stub();
   const mockReceipt = ({
-    findRecord: findRecordStub,
+    filterRecords: filterRecordsStub,
   } as unknown) as ISubmittableResult;
 
   afterEach(() => {
-    findRecordStub.reset();
+    filterRecordsStub.reset();
   });
 
   test('returns the corresponding Event Record', () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
     const fakeResult = 'event';
-    findRecordStub.withArgs(mod, eventName).returns({ event: fakeResult });
+    filterRecordsStub.withArgs(mod, eventName).returns([{ event: fakeResult }]);
 
-    const eventRecord = findEventRecord(mockReceipt, mod, eventName);
+    const eventRecord = filterEventRecords(mockReceipt, mod, eventName);
 
-    expect(eventRecord).toBe(fakeResult);
+    expect(eventRecord[0]).toBe(fakeResult);
   });
 
   test("throws if the Event wasn't fired", () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
-    findRecordStub.withArgs(mod, eventName).returns(undefined);
+    filterRecordsStub.withArgs(mod, eventName).returns([]);
 
-    expect(() => findEventRecord(mockReceipt, mod, eventName)).toThrow(
+    expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
       `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`
     );
   });

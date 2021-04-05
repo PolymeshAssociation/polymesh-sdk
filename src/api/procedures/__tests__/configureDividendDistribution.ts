@@ -406,7 +406,7 @@ describe('configureDividendDistribution procedure', () => {
   });
 
   describe('dividendDistributionResolver', () => {
-    const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
+    const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
     const portfolioNumber = 3;
     const did = 'someDid';
@@ -455,7 +455,7 @@ describe('configureDividendDistribution procedure', () => {
 
     beforeEach(() => {
       /* eslint-disable @typescript-eslint/camelcase */
-      findEventRecordStub.returns(
+      filterEventRecordsStub.returns([
         dsMockUtils.createMockIEvent([
           'data',
           dsMockUtils.createMockCAId({
@@ -463,13 +463,13 @@ describe('configureDividendDistribution procedure', () => {
             local_id: id.toNumber(),
           }),
           rawDistribution,
-        ])
-      );
+        ]),
+      ]);
       /* eslint-enable @typescript-eslint/camelcase */
     });
 
     afterEach(() => {
-      findEventRecordStub.reset();
+      filterEventRecordsStub.reset();
     });
 
     test('should return the new DividendDistribution', async () => {

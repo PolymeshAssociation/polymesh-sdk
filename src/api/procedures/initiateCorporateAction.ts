@@ -33,13 +33,13 @@ import {
   targetsToTargetIdentities,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export const createCaIdResolver = () => (receipt: ISubmittableResult): CAId => {
-  const { data } = findEventRecord(receipt, 'corporateAction', 'CAInitiated');
+  const [{ data }] = filterEventRecords(receipt, 'corporateAction', 'CAInitiated');
 
   return data[1];
 };

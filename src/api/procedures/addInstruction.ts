@@ -1,9 +1,17 @@
+import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { compact, flatten } from 'lodash';
-import { PortfolioId, Ticker, TxTag, TxTags } from 'polymesh-types/types';
+import { flatten, uniq } from 'lodash';
+import {
+  Moment,
+  PortfolioId,
+  SettlementTx,
+  SettlementType,
+  Ticker,
+  TxTags,
+} from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -30,7 +38,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 export interface AddInstructionParams {
   legs: {
@@ -44,10 +52,14 @@ export interface AddInstructionParams {
   endBlock?: BigNumber;
 }
 
+export interface AddInstructionsParams {
+  instructions: AddInstructionParams[];
+}
+
 /**
  * @hidden
  */
-export type Params = AddInstructionParams & {
+export type Params = AddInstructionsParams & {
   venueId: BigNumber;
 };
 
@@ -55,28 +67,36 @@ export type Params = AddInstructionParams & {
  * @hidden
  */
 export interface Storage {
-  portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[];
+  portfoliosToAffirm: Array<(DefaultPortfolio | NumberedPortfolio)[]>;
 }
 
 /**
  * @hidden
  */
-export const createAddInstructionResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): Instruction => {
-  const { data } = findEventRecord(receipt, 'settlement', 'InstructionCreated');
-  const id = u64ToBigNumber(data[2]);
+export const createAddInstructionResolver = (
+  context: Context,
+  previousInstructions?: PostTransactionValue<Instruction[]>
+) => (receipt: ISubmittableResult): Instruction[] => {
+  const events = filterEventRecords(receipt, 'settlement', 'InstructionCreated');
 
-  return new Instruction({ id }, context);
+  const result = events.map(
+    ({ data }) => new Instruction({ id: u64ToBigNumber(data[2]) }, context)
+  );
+
+  if (previousInstructions) {
+    return previousInstructions.value.concat(result);
+  }
+
+  return result;
 };
 
 /**
  * @hidden
  */
 export async function prepareAddInstruction(
-  this: Procedure<Params, Instruction, Storage>,
+  this: Procedure<Params, Instruction[], Storage>,
   args: Params
-): Promise<PostTransactionValue<Instruction>> {
+): Promise<PostTransactionValue<Instruction[]>> {
   const {
     context: {
       polymeshApi: {
@@ -86,7 +106,7 @@ export async function prepareAddInstruction(
     context,
     storage: { portfoliosToAffirm },
   } = this;
-  const { legs, venueId, endBlock, tradeDate, valueDate } = args;
+  const { instructions, venueId } = args;
 
   const venue = new Venue({ id: venueId }, context);
   const exists = await venue.exists();
@@ -98,128 +118,198 @@ export async function prepareAddInstruction(
     });
   }
 
-  if (!legs.length) {
+  const addAndAffirmInstructions: [
+    u64,
+    SettlementType,
+    Moment | null,
+    Moment | null,
+    {
+      from: PortfolioId;
+      to: PortfolioId;
+      asset: Ticker;
+      amount: Balance;
+    }[],
+    PortfolioId[]
+  ][] = [];
+  const addInstruction: [
+    u64,
+    SettlementType,
+    Moment | null,
+    Moment | null,
+    {
+      from: PortfolioId;
+      to: PortfolioId;
+      asset: Ticker;
+      amount: Balance;
+    }[]
+  ][] = [];
+
+  const noLegs: number[] = [];
+  const noFutureBlock: number[] = [];
+  const noFutureDate: number[] = [];
+
+  await P.each(instructions, async ({ legs, endBlock, tradeDate, valueDate }, i) => {
+    if (!legs.length) {
+      noLegs.push(i + 1);
+    }
+
+    let endCondition;
+
+    if (endBlock) {
+      const latestBlock = await context.getLatestBlock();
+
+      if (endBlock.lte(latestBlock)) {
+        noFutureBlock.push(i + 1);
+      }
+
+      endCondition = { type: InstructionType.SettleOnBlock, value: endBlock } as const;
+    } else {
+      endCondition = { type: InstructionType.SettleOnAffirmation } as const;
+    }
+
+    if (tradeDate && valueDate && tradeDate > valueDate) {
+      noFutureDate.push(i + 1);
+    }
+
+    if (!noLegs.length && !noFutureBlock.length && !noFutureDate.length) {
+      const rawVenueId = numberToU64(venueId, context);
+      const rawSettlementType = endConditionToSettlementType(endCondition, context);
+      const rawTradeDate = tradeDate ? dateToMoment(tradeDate, context) : null;
+      const rawValueDate = valueDate ? dateToMoment(valueDate, context) : null;
+      const rawLegs: {
+        from: PortfolioId;
+        to: PortfolioId;
+        asset: Ticker;
+        amount: Balance;
+      }[] = [];
+
+      await Promise.all(
+        legs.map(async ({ from, to, amount, token }) => {
+          const fromId = portfolioLikeToPortfolioId(from);
+          const toId = portfolioLikeToPortfolioId(to);
+
+          await Promise.all([
+            assertPortfolioExists(fromId, context),
+            assertPortfolioExists(toId, context),
+          ]);
+
+          const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
+          const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
+
+          rawLegs.push({
+            from: rawFromPortfolio,
+            to: rawToPortfolio,
+            asset: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
+            amount: numberToBalance(amount, context),
+          });
+        })
+      );
+
+      if (portfoliosToAffirm[i].length) {
+        addAndAffirmInstructions.push([
+          rawVenueId,
+          rawSettlementType,
+          rawTradeDate,
+          rawValueDate,
+          rawLegs,
+          portfoliosToAffirm[i].map(portfolio =>
+            portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
+          ),
+        ]);
+      } else {
+        addInstruction.push([rawVenueId, rawSettlementType, rawTradeDate, rawValueDate, rawLegs]);
+      }
+    }
+  });
+
+  if (noLegs.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: "The legs array can't be empty",
+      data: {
+        instructionNumber: noLegs,
+      },
     });
   }
 
-  let endCondition;
-
-  if (endBlock) {
-    const latestBlock = await context.getLatestBlock();
-
-    if (endBlock.lte(latestBlock)) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'End block must be a future block',
-      });
-    }
-
-    endCondition = { type: InstructionType.SettleOnBlock, value: endBlock } as const;
-  } else {
-    endCondition = { type: InstructionType.SettleOnAffirmation } as const;
+  if (noFutureBlock.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'End block must be a future block',
+      data: {
+        instructionNumber: noFutureBlock,
+      },
+    });
   }
 
-  if (tradeDate && valueDate && tradeDate > valueDate) {
+  if (noFutureDate.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Value date must be after trade date',
+      data: {
+        instructionNumber: noFutureDate,
+      },
     });
   }
 
-  const rawVenueId = numberToU64(venueId, context);
-  const rawSettlementType = endConditionToSettlementType(endCondition, context);
-  const rawTradeDate = tradeDate ? dateToMoment(tradeDate, context) : null;
-  const rawValueDate = valueDate ? dateToMoment(valueDate, context) : null;
-  const rawLegs: {
-    from: PortfolioId;
-    to: PortfolioId;
-    asset: Ticker;
-    amount: Balance;
-  }[] = [];
+  let affirmedInstructions: PostTransactionValue<Instruction[]> | undefined;
+  let addedInstructions: PostTransactionValue<Instruction[]>;
 
-  await Promise.all(
-    legs.map(async ({ from, to, amount, token }) => {
-      const fromId = portfolioLikeToPortfolioId(from);
-      const toId = portfolioLikeToPortfolioId(to);
-
-      await Promise.all([
-        assertPortfolioExists(fromId, context),
-        assertPortfolioExists(toId, context),
-      ]);
-
-      const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
-      const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
-
-      rawLegs.push({
-        from: rawFromPortfolio,
-        to: rawToPortfolio,
-        asset: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
-        amount: numberToBalance(amount, context),
-      });
-    })
-  );
-
-  let newInstruction;
-
-  if (portfoliosToAffirm.length) {
-    [newInstruction] = this.addTransaction(
+  if (addAndAffirmInstructions.length) {
+    [affirmedInstructions] = this.addBatchTransaction(
       settlement.addAndAffirmInstruction,
       {
         resolvers: [createAddInstructionResolver(context)],
       },
-      rawVenueId,
-      rawSettlementType,
-      rawTradeDate,
-      rawValueDate,
-      rawLegs,
-      portfoliosToAffirm.map(portfolio =>
-        portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
-      )
-    );
-  } else {
-    [newInstruction] = this.addTransaction(
-      settlement.addInstruction,
-      {
-        resolvers: [createAddInstructionResolver(context)],
-      },
-      rawVenueId,
-      rawSettlementType,
-      rawTradeDate,
-      rawValueDate,
-      rawLegs
+      addAndAffirmInstructions
     );
   }
 
-  return newInstruction;
+  if (addInstruction.length) {
+    [addedInstructions] = this.addBatchTransaction(
+      settlement.addInstruction,
+      {
+        resolvers: [createAddInstructionResolver(context, affirmedInstructions)],
+      },
+      addInstruction
+    );
+
+    affirmedInstructions = addedInstructions;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return affirmedInstructions!;
 }
 
 /**
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<Params, Instruction, Storage>,
+  this: Procedure<Params, Instruction[], Storage>,
   { venueId }: Params
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { portfoliosToAffirm },
   } = this;
-  let transactions: TxTag[];
 
-  if (portfoliosToAffirm.length) {
-    transactions = [TxTags.settlement.AddAndAffirmInstruction];
-  } else {
-    transactions = [TxTags.settlement.AddInstruction];
-  }
+  const portfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
+  const transactions: SettlementTx[] = [];
+
+  portfoliosToAffirm.forEach(portfoliosList => {
+    transactions.push(
+      portfoliosList.length
+        ? TxTags.settlement.AddAndAffirmInstruction
+        : TxTags.settlement.AddInstruction
+    );
+    portfolios.push(...portfoliosList);
+  });
 
   return {
     identityRoles: [{ type: RoleType.VenueOwner, venueId }],
     signerPermissions: {
       tokens: [],
-      portfolios: portfoliosToAffirm,
-      transactions,
+      portfolios: uniq(portfolios),
+      transactions: uniq(transactions),
     },
   };
 }
@@ -228,40 +318,43 @@ export async function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<Params, Instruction, Storage>,
-  { legs }: Params
+  this: Procedure<Params, Instruction[], Storage>,
+  { instructions }: Params
 ): Promise<Storage> {
   const { context } = this;
 
   const identity = await context.getCurrentIdentity();
 
-  const portfolios = await P.map(legs, async ({ from, to }) => {
-    const fromPortfolio = portfolioLikeToPortfolio(from, context);
-    const toPortfolio = portfolioLikeToPortfolio(to, context);
+  const portfoliosToAffirm = await P.map(instructions, async ({ legs }) => {
+    const portfolios = await P.map(legs, async ({ from, to }) => {
+      const fromPortfolio = portfolioLikeToPortfolio(from, context);
+      const toPortfolio = portfolioLikeToPortfolio(to, context);
 
-    const result = [];
-    const [fromCustodied, toCustodied] = await Promise.all([
-      fromPortfolio.isCustodiedBy({ identity }),
-      toPortfolio.isCustodiedBy({ identity }),
-    ]);
+      const result = [];
+      const [fromCustodied, toCustodied] = await Promise.all([
+        fromPortfolio.isCustodiedBy({ identity }),
+        toPortfolio.isCustodiedBy({ identity }),
+      ]);
 
-    if (fromCustodied) {
-      result.push(fromPortfolio);
-    }
+      if (fromCustodied) {
+        result.push(fromPortfolio);
+      }
 
-    if (toCustodied) {
-      result.push(toPortfolio);
-    }
+      if (toCustodied) {
+        result.push(toPortfolio);
+      }
 
-    if (result.length) {
-      return result;
-    }
+      if (result.length) {
+        return result;
+      }
 
-    return undefined;
+      return [];
+    });
+    return flatten(portfolios);
   });
 
   return {
-    portfoliosToAffirm: flatten(compact(portfolios)),
+    portfoliosToAffirm,
   };
 }
 

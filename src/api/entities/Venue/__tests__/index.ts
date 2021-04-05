@@ -221,10 +221,60 @@ describe('Venue class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
       prepareAddInstructionStub
-        .withArgs({ venueId: id, legs, tradeDate, endBlock }, context)
+        .withArgs({ venueId: id, instructions: [{ legs, tradeDate, endBlock }] }, context)
         .resolves(expectedQueue);
 
       const queue = await venue.addInstruction({ legs, tradeDate, endBlock });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: addInstructions', () => {
+    let prepareAddInstructionStub: sinon.SinonStub;
+
+    beforeAll(() => {
+      prepareAddInstructionStub = sinon.stub(addInstruction, 'prepare');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const legs = [
+        {
+          from: 'someDid',
+          to: 'anotherDid',
+          amount: new BigNumber(1000),
+          token: 'SOME_TOKEN',
+        },
+        {
+          from: 'anotherDid',
+          to: 'aThirdDid',
+          amount: new BigNumber(100),
+          token: 'ANOTHER_TOKEN',
+        },
+      ];
+
+      const tradeDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+      const endBlock = new BigNumber(10000);
+
+      const instructions = [
+        {
+          legs,
+          tradeDate,
+          endBlock,
+        },
+      ];
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+
+      prepareAddInstructionStub
+        .withArgs({ venueId: id, instructions }, context)
+        .resolves(expectedQueue);
+
+      const queue = await venue.addInstructions({ instructions });
 
       expect(queue).toBe(expectedQueue);
     });

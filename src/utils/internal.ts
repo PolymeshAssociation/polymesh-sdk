@@ -195,28 +195,31 @@ type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Da
 // TODO @monitz87: use event enum instead of string when it exists
 /**
  * @hidden
- * Find a specific event inside a receipt
+ * Find an specific event inside a receipt
  *
  * @throws If the event is not found
  */
-export function findEventRecord<
+export function filterEventRecords<
   ModuleName extends keyof Events,
   EventName extends keyof Events[ModuleName]
 >(
   receipt: ISubmittableResult,
   mod: ModuleName,
   eventName: EventName
-): IEvent<EventData<Events[ModuleName][EventName]>> {
-  const eventRecord = receipt.findRecord(mod, eventName as string);
+): IEvent<EventData<Events[ModuleName][EventName]>>[] {
+  const eventRecords = receipt.filterRecords(mod, eventName as string);
 
-  if (!eventRecord) {
+  if (!eventRecords.length) {
     throw new PolymeshError({
       code: ErrorCode.FatalError,
       message: `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
     });
   }
 
-  return (eventRecord.event as unknown) as IEvent<EventData<Events[ModuleName][EventName]>>;
+  return eventRecords.map(
+    eventRecord =>
+      (eventRecord.event as unknown) as IEvent<EventData<Events[ModuleName][EventName]>>
+  );
 }
 
 /**
