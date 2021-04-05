@@ -1,8 +1,16 @@
 import BigNumber from 'bignumber.js';
 
 import { Params as CorporateActionParams, UniqueIdentifiers } from '~/api/entities/CorporateAction';
-import { Context, CorporateAction, DefaultPortfolio, NumberedPortfolio } from '~/internal';
+import {
+  claimDividends,
+  Context,
+  CorporateAction,
+  DefaultPortfolio,
+  NumberedPortfolio,
+} from '~/internal';
 import { CorporateActionKind } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
+import { createProcedureMethod } from '~/utils/internal';
 
 export interface DividendDistributionParams {
   origin: DefaultPortfolio | NumberedPortfolio;
@@ -75,5 +83,12 @@ export class DividendDistribution extends CorporateAction {
     this.maxAmount = maxAmount;
     this.expiryDate = expiryDate;
     this.paymentDate = paymentDate;
+
+    this.claim = createProcedureMethod(() => [claimDividends, { distribution: this }], context);
   }
+
+  /**
+   * Claim the dividends corresponding to the current Identity
+   */
+  public claim: ProcedureMethod<void, void>;
 }
