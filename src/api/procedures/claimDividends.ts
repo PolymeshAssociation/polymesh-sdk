@@ -60,7 +60,7 @@ export async function prepareClaimDividends(
   const found = !!identities.find(({ did }) => did === currentDid);
 
   // NOTE @monitz87: this is an XOR
-  if (found !== (treatment === TargetTreatment.Exclude)) {
+  if (found !== (treatment === TargetTreatment.Include)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The current Identity is not included in this Distribution',
@@ -74,7 +74,7 @@ export async function prepareClaimDividends(
   if (boolToBoolean(alreadyClaimed)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The current Identity is not included in this Distribution',
+      message: 'The current Identity has already claimed dividends',
     });
   }
 
