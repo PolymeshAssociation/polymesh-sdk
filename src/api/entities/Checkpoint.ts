@@ -187,22 +187,25 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
     } = this;
 
     const did = await getDid(args?.identity, context);
-
     const identity = new Identity({ did }, context);
 
     const rawTicker = stringToTicker(ticker, context);
-    const rawU64 = numberToU64(id, context);
     const rawIdentityId = stringToIdentityId(did, context);
 
-    const [rawBalance, sizeBalance] = await Promise.all([
-      checkpoint.balance([rawTicker, rawU64], rawIdentityId),
-      checkpoint.balance.size([rawTicker, rawU64], rawIdentityId),
-    ]);
+    const balanceUpdate = await checkpoint.balanceUpdates(rawTicker, rawIdentityId);
+    const firstUpdatedCheckpoint = balanceUpdate.find(checkpointId =>
+      u64ToBigNumber(checkpointId).gte(id)
+    );
 
-    const balance = balanceToBigNumber(rawBalance);
-
-    if (balance.isZero() && sizeBalance.isZero()) {
-      return identity.getTokenBalance({ ticker });
+    let balance: BigNumber;
+    if (firstUpdatedCheckpoint) {
+      const rawBalance = await checkpoint.balance(
+        tuple(rawTicker, firstUpdatedCheckpoint),
+        rawIdentityId
+      );
+      balance = balanceToBigNumber(rawBalance);
+    } else {
+      balance = await identity.getTokenBalance({ ticker });
     }
 
     return balance;
