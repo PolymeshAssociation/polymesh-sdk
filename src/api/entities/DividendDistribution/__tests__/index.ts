@@ -3,11 +3,13 @@ import sinon from 'sinon';
 
 import {
   Checkpoint,
+  claimDividends,
   Context,
   CorporateAction,
   DefaultPortfolio,
   DividendDistribution,
   Entity,
+  TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { CorporateActionTargets, TargetTreatment, TaxWithholding } from '~/types';
@@ -144,6 +146,21 @@ describe('DividendDistribution class', () => {
       result = await dividendDistribution.exists();
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('method: claim', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(claimDividends, 'prepare')
+        .withArgs({ distribution: dividendDistribution }, context)
+        .resolves(expectedQueue);
+
+      const queue = await dividendDistribution.claim();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 
