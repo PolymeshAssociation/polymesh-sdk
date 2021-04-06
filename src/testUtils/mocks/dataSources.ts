@@ -54,6 +54,7 @@ import {
   Authorization,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
+  BalanceAtResult,
   CACheckpoint,
   CAId,
   CAKind,
@@ -2957,4 +2958,18 @@ export const createMockDistribution = (distribution?: {
     },
     !distribution
   ) as Distribution;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBalanceAtResult = (
+  balanceAtResult?: { Ok: Balance[] } | { Err: Bytes } | BalanceAtResult
+): BalanceAtResult => {
+  if (isCodec<BalanceAtResult>(balanceAtResult)) {
+    return balanceAtResult;
+  }
+
+  return createMockEnum(balanceAtResult) as BalanceAtResult;
 };

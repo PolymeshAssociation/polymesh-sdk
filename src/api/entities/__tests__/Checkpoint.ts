@@ -188,10 +188,11 @@ describe('Checkpoint class', () => {
 
       balanceToBigNumberStub.returns(expected);
 
-      dsMockUtils.createQueryStub('checkpoint', 'balance', {
-        size: 1,
-        returnValue: dsMockUtils.createMockBalance(balance),
-      });
+      dsMockUtils
+        .createRpcStub('asset', 'balanceAt')
+        .resolves(
+          dsMockUtils.createMockBalanceAtResult({ Ok: [dsMockUtils.createMockBalance(balance)] })
+        );
 
       let result = await checkpoint.balance({ identity: 'someDid' });
 
@@ -200,27 +201,6 @@ describe('Checkpoint class', () => {
       result = await checkpoint.balance();
 
       expect(result).toEqual(expected);
-
-      const zeroBalance = dsMockUtils.createMockBalance(0);
-
-      dsMockUtils.createQueryStub('checkpoint', 'balance', {
-        size: 0,
-        returnValue: zeroBalance,
-      });
-
-      balanceToBigNumberStub.withArgs(zeroBalance).returns(new BigNumber(0));
-
-      const tokenBalance = new BigNumber(10);
-
-      entityMockUtils.configureMocks({
-        identityOptions: {
-          getTokenBalance: tokenBalance,
-        },
-      });
-
-      result = await checkpoint.balance();
-
-      expect(result).toEqual(tokenBalance);
     });
   });
 });

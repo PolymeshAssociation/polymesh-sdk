@@ -117,6 +117,7 @@ import {
   authorizationToAuthorizationData,
   authorizationTypeToMeshAuthorizationType,
   authTargetToAuthIdentifier,
+  balanceAtResultToBalanceArray,
   balanceToBigNumber,
   booleanToBool,
   boolToBoolean,
@@ -5686,5 +5687,26 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
     const result = scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('balanceAtResultToBalanceArray', () => {
+  test('balanceAtResultToBalanceArray should convert a polkadot balanceAtResult object to a BalanceArray', () => {
+    const errorMsg = 'someError';
+    expect(() =>
+      balanceAtResultToBalanceArray(
+        dsMockUtils.createMockBalanceAtResult({
+          Err: dsMockUtils.createMockBytes(errorMsg),
+        })
+      )
+    ).toThrow(`Error while fetching balance at checkpoint: ${errorMsg}`);
+
+    const balance = dsMockUtils.createMockBalance(82);
+    const result = balanceAtResultToBalanceArray(
+      dsMockUtils.createMockBalanceAtResult({ Ok: [balance] })
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual(balance);
   });
 });

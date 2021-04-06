@@ -34,6 +34,7 @@ import {
   AuthIdentifier,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
+  BalanceAtResult,
   CAId,
   CAKind,
   CalendarPeriod as MeshCalendarPeriod,
@@ -2858,4 +2859,20 @@ export function corporateActionIdentifierToCaId(
     // eslint-disable-next-line @typescript-eslint/camelcase
     local_id: numberToU32(localId, context),
   });
+}
+
+/**
+ * @hidden
+ */
+export function balanceAtResultToBalanceArray(balanceAtResult: BalanceAtResult): Balance[] {
+  if (balanceAtResult.isErr) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: `Error while fetching balance at checkpoint: ${bytesToString(
+        balanceAtResult.asErr
+      )}`,
+    });
+  }
+
+  return balanceAtResult.asOk;
 }

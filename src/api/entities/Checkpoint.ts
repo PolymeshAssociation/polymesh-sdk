@@ -1,3 +1,4 @@
+import { ApiBase } from '@polkadot/api/base';
 import { Vec } from '@polkadot/types/codec';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
@@ -7,6 +8,7 @@ import { Context, Entity, Identity } from '~/internal';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
 import { tuple } from '~/types/utils';
 import {
+  balanceAtResultToBalanceArray,
   balanceToBigNumber,
   identityIdToString,
   momentToDate,
@@ -178,9 +180,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
     const {
       context,
       context: {
-        polymeshApi: {
-          query: { checkpoint },
-        },
+        polymeshApi: { rpc },
       },
       ticker,
       id,
@@ -188,23 +188,13 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
 
     const did = await getDid(args?.identity, context);
 
-    const identity = new Identity({ did }, context);
-
     const rawTicker = stringToTicker(ticker, context);
     const rawU64 = numberToU64(id, context);
     const rawIdentityId = stringToIdentityId(did, context);
 
-    const [rawBalance, sizeBalance] = await Promise.all([
-      checkpoint.balance([rawTicker, rawU64], rawIdentityId),
-      checkpoint.balance.size([rawTicker, rawU64], rawIdentityId),
-    ]);
+    const rawBalance = await rpc.asset.balanceAt(rawTicker, rawU64, [rawIdentityId]);
+    const balances = balanceAtResultToBalanceArray(rawBalance);
 
-    const balance = balanceToBigNumber(rawBalance);
-
-    if (balance.isZero() && sizeBalance.isZero()) {
-      return identity.getTokenBalance({ ticker });
-    }
-
-    return balance;
+    return balanceToBigNumber(balances[0]);
   }
 }
