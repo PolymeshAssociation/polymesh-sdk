@@ -5,6 +5,7 @@ import { Checkpoint } from '~/api/entities/Checkpoint';
 import { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
 import { Params as CorporateActionParams, UniqueIdentifiers } from '~/api/entities/CorporateAction';
 import {
+  claimDividends,
   Context,
   CorporateAction,
   DefaultPortfolio,
@@ -13,11 +14,13 @@ import {
 } from '~/internal';
 import { Distribution } from '~/polkadot';
 import { CorporateActionKind, DividendDistributionDetails, ErrorCode } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import {
   balanceToBigNumber,
   boolToBoolean,
   corporateActionIdentifierToCaId,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 export interface DividendDistributionParams {
   origin: DefaultPortfolio | NumberedPortfolio;
@@ -90,7 +93,14 @@ export class DividendDistribution extends CorporateAction {
     this.maxAmount = maxAmount;
     this.expiryDate = expiryDate;
     this.paymentDate = paymentDate;
+
+    this.claim = createProcedureMethod(() => [claimDividends, { distribution: this }], context);
   }
+
+  /**
+   * Claim the dividends corresponding to the current Identity
+   */
+  public claim: ProcedureMethod<void, void>;
 
   /**
    * Retrieve the Checkpoint associated with this Dividend Distribution. If the Checkpoint is scheduled and has not been created yet,
