@@ -125,7 +125,7 @@ export async function prepareInvestInSto(
     raisingCurrency,
   } = await sto.details();
 
-  const [{ total: totalTokenBalance }] = await portfolio.getTokenBalances({
+  const [{ free: freeTokenBalance }] = await portfolio.getTokenBalances({
     tokens: [raisingCurrency],
   });
 
@@ -146,10 +146,10 @@ export async function prepareInvestInSto(
     });
   }
 
-  if (totalTokenBalance.lt(priceTotal)) {
+  if (freeTokenBalance.lt(priceTotal)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The Portfolio does not have enough balance for this investment',
+      message: 'The Portfolio does not have enough free balance for this investment',
       data: { priceTotal },
     });
   }
