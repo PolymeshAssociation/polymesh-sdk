@@ -188,24 +188,4 @@ describe('claimDividends procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, claimDividendsTransaction, {}, rawCaId);
   });
-
-  // test('should throw an error if the STO is already closed', async () => {
-  //   entityMockUtils.configureMocks({
-  //     stoOptions: {
-  //       details: {
-  //         status: {
-  //           sale: StoSaleStatus.Closed,
-  //           timing: StoTimingStatus.Started,
-  //           balance: StoBalanceStatus.Available,
-  //         },
-  //       },
-  //     },
-  //   });
-
-  //   const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-  //   return expect(prepareClaimDividends.call(proc, { ticker, id })).rejects.toThrow(
-  //     'The STO is already closed'
-  //   );
-  // });
 });
