@@ -54,4 +54,11 @@ export class Entity<UniqueIdentifiers extends object> {
     this.uuid = (this.constructor as typeof Entity).generateUuid(identifiers);
     this.context = context;
   }
+
+  /**
+   * Whether this Entity is the same as another one
+   */
+  public isEqual(entity: Entity<object>): boolean {
+    return this.uuid === entity.uuid;
+  }
 }
