@@ -116,7 +116,7 @@ describe('createPortfolioResolver', () => {
   beforeEach(() => {
     identityIdToStringStub.withArgs(rawIdentityId).returns(did);
     u64ToBigNumberStub.withArgs(rawId).returns(id);
-    findEventRecordStub.returns(dsMockUtils.createMockEventRecord([rawIdentityId, rawId]));
+    findEventRecordStub.returns(dsMockUtils.createMockIEvent([rawIdentityId, rawId]));
   });
 
   afterEach(() => {

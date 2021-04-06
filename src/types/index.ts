@@ -3,7 +3,7 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag, TxTags } from 'polymesh-types/types';
 
-import { StoDetails } from '~/api/entities/types';
+import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
@@ -12,13 +12,13 @@ import {
   Checkpoint,
   CheckpointSchedule,
   DefaultPortfolio,
+  DividendDistribution,
   Identity,
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,
   Sto,
 } from '~/internal';
-import { ScheduleDetails } from '~/types';
 import { PortfolioId } from '~/types/internal';
 
 export * from '~/generated/types';
@@ -83,6 +83,7 @@ export enum RoleType {
   TickerOwner = 'TickerOwner',
   TokenOwner = 'TokenOwner',
   TokenPia = 'TokenPia',
+  TokenCaa = 'TokenCaa',
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
@@ -123,6 +124,18 @@ export interface TokenPiaRole {
  */
 export function isTokenPiaRole(role: Role): role is TokenPiaRole {
   return role.type === RoleType.TokenPia;
+}
+
+export interface TokenCaaRole {
+  type: RoleType.TokenCaa;
+  ticker: string;
+}
+
+/**
+ * @hidden
+ */
+export function isTokenCaaRole(role: Role): role is TokenCaaRole {
+  return role.type === RoleType.TokenCaa;
 }
 
 export interface CddProviderRole {
@@ -176,6 +189,7 @@ export type Role =
   | TickerOwnerRole
   | TokenOwnerRole
   | TokenPiaRole
+  | TokenCaaRole
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole
@@ -191,6 +205,7 @@ export enum KnownTokenType {
   RevenueShareAgreement = 'RevenueShareAgreement',
   StructuredProduct = 'StructuredProduct',
   Derivative = 'Derivative',
+  StableCoin = 'StableCoin',
 }
 
 /**
@@ -239,6 +254,7 @@ export enum AuthorizationType {
   TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
+  TransferCorporateActionAgent = 'TransferCorporateActionAgent',
   Custom = 'Custom',
   NoData = 'NoData',
 }
@@ -808,6 +824,11 @@ export interface CalendarPeriod {
 export interface ScheduleWithDetails {
   schedule: CheckpointSchedule;
   details: ScheduleDetails;
+}
+
+export interface DistributionWithDetails {
+  distribution: DividendDistribution;
+  details: DividendDistributionDetails;
 }
 
 export { TxTags, TxTag };

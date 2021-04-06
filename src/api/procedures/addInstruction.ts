@@ -1,4 +1,3 @@
-import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -65,9 +64,8 @@ export interface Storage {
 export const createAddInstructionResolver = (context: Context) => (
   receipt: ISubmittableResult
 ): Instruction => {
-  const eventRecord = findEventRecord(receipt, 'settlement', 'InstructionCreated');
-  const data = eventRecord.event.data;
-  const id = u64ToBigNumber(data[2] as u64);
+  const { data } = findEventRecord(receipt, 'settlement', 'InstructionCreated');
+  const id = u64ToBigNumber(data[2]);
 
   return new Instruction({ id }, context);
 };

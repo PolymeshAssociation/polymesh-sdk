@@ -1,5 +1,15 @@
-import { Context, Identity, Namespace, SecurityToken } from '~/internal';
+import {
+  Context,
+  Identity,
+  modifyCorporateActionsAgent,
+  ModifyCorporateActionsAgentParams,
+  Namespace,
+  removeCorporateActionsAgent,
+  SecurityToken,
+} from '~/internal';
+import { ProcedureMethod } from '~/types/internal';
 import { identityIdToString, stringToTicker } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 import { Distributions } from './Distributions';
 
@@ -15,8 +25,45 @@ export class CorporateActions extends Namespace<SecurityToken> {
   constructor(parent: SecurityToken, context: Context) {
     super(parent, context);
 
+    const { ticker } = parent;
+
     this.distributions = new Distributions(parent, context);
+
+    this.setAgent = createProcedureMethod(
+      args => [modifyCorporateActionsAgent, { ticker, ...args }],
+      context
+    );
+
+    this.removeAgent = createProcedureMethod(
+      () => [removeCorporateActionsAgent, { ticker }],
+      context
+    );
   }
+
+  /**
+   * Assign a new Corporate Actions Agent for the Security Token
+   *
+   * @param args.target - identity to be set as Corporate Actions Agent
+   * @param args.requestExpiry - date at which the authorization request to modify the Corporate Actions Agent expires (optional, never expires if a date is not provided)
+   *
+   * @note this may create AuthorizationRequests which have to be accepted by
+   *   the corresponding Account. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @note required role:
+   *   - Security Token Owner
+   */
+  public setAgent: ProcedureMethod<ModifyCorporateActionsAgentParams, void>;
+
+  /**
+   * Remove the Corporate Actions Agent of the Security Token
+   *
+   * @note this action will leave the Security Token owner as the Corporate Actions Agent
+   *
+   * @note required role:
+   *   - Security Token Owner
+   */
+  public removeAgent: ProcedureMethod<void, void>;
 
   /**
    * Retrieve the Security Token's Corporate Actions agent

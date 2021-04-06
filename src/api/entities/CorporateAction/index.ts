@@ -1,7 +1,24 @@
+import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { CorporateAction as MeshCorporateAction } from 'polymesh-types/types';
 
-import { Context, Entity, linkCaDocs, LinkCaDocsParams } from '~/internal';
+import {
+  Checkpoint,
+  CheckpointSchedule,
+  Context,
+  Entity,
+  linkCaDocs,
+  LinkCaDocsParams,
+  PolymeshError,
+} from '~/internal';
+import { ErrorCode } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
+import {
+  numberToU32,
+  storedScheduleToCheckpointScheduleParams,
+  stringToTicker,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 import { CorporateActionKind, CorporateActionTargets, TaxWithholding } from './types';
@@ -117,4 +134,94 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
    *   - Corporate Actions Agent
    */
   public linkCaDocs: ProcedureMethod<LinkCaDocsParams, void>;
+
+  /**
+   * Retrieve whether the Corporate Action exists
+   */
+  public async exists(): Promise<boolean> {
+    const corporateAction = await this.fetchCorporateAction();
+
+    return corporateAction.isSome;
+  }
+
+  /**
+   * Retrieve the Checkpoint associated with this Corporate Action. If the Checkpoint is scheduled and has
+   *   not been created yet, the corresponding CheckpointSchedule is returned instead. A null value means
+   *   the Corporate Action was created without an associated Checkpoint
+   */
+  public async checkpoint(): Promise<Checkpoint | CheckpointSchedule | null> {
+    const {
+      context: {
+        polymeshApi: { query },
+      },
+      context,
+      ticker,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const corporateAction = await this.fetchCorporateAction();
+
+    if (corporateAction.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Corporate Action no longer exists',
+      });
+    }
+
+    const { record_date: recordDate } = corporateAction.unwrap();
+
+    if (recordDate.isNone) {
+      return null;
+    }
+
+    const { checkpoint } = recordDate.unwrap();
+
+    if (checkpoint.isExisting) {
+      return new Checkpoint({ ticker, id: u64ToBigNumber(checkpoint.asExisting) }, context);
+    }
+
+    const [scheduleId, amount] = checkpoint.asScheduled;
+
+    const [schedules, schedulePoints] = await Promise.all([
+      query.checkpoint.schedules(rawTicker),
+      query.checkpoint.schedulePoints(rawTicker, scheduleId),
+    ]);
+
+    const createdCheckpointIndex = u64ToBigNumber(amount).toNumber();
+    if (createdCheckpointIndex >= schedulePoints.length) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const schedule = schedules.find(({ id: schedId }) =>
+        u64ToBigNumber(schedId).eq(u64ToBigNumber(scheduleId))
+      )!;
+
+      return new CheckpointSchedule(
+        { ticker, ...storedScheduleToCheckpointScheduleParams(schedule) },
+        context
+      );
+    }
+
+    return new Checkpoint(
+      { ticker, id: u64ToBigNumber(schedulePoints[createdCheckpointIndex]) },
+      context
+    );
+  }
+
+  /**
+   * @hidden
+   */
+  private fetchCorporateAction(): Promise<Option<MeshCorporateAction>> {
+    const {
+      context: {
+        polymeshApi: { query },
+      },
+      context,
+      id,
+      ticker,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    return query.corporateAction.corporateActions(rawTicker, numberToU32(id, context));
+  }
 }
