@@ -131,7 +131,7 @@ export async function prepareAddInstruction(
     }[],
     PortfolioId[]
   ][] = [];
-  const addInstruction: [
+  const addInstructions: [
     u64,
     SettlementType,
     Moment | null,
@@ -217,7 +217,7 @@ export async function prepareAddInstruction(
           ),
         ]);
       } else {
-        addInstruction.push([rawVenueId, rawSettlementType, rawTradeDate, rawValueDate, rawLegs]);
+        addInstructions.push([rawVenueId, rawSettlementType, rawTradeDate, rawValueDate, rawLegs]);
       }
     }
   });
@@ -265,13 +265,13 @@ export async function prepareAddInstruction(
     );
   }
 
-  if (addInstruction.length) {
+  if (addInstructions.length) {
     [addedInstructions] = this.addBatchTransaction(
       settlement.addInstruction,
       {
         resolvers: [createAddInstructionResolver(context, affirmedInstructions)],
       },
-      addInstruction
+      addInstructions
     );
 
     affirmedInstructions = addedInstructions;
