@@ -1,13 +1,13 @@
 import sinon from 'sinon';
 
-import { Entity } from '~/internal';
+import { Context, Entity } from '~/internal';
 import * as utilsInternalModule from '~/utils/internal';
 
 describe('Entity class', () => {
+  const serializeStub = sinon.stub(utilsInternalModule, 'serialize');
   describe('method: generateUuid', () => {
     test("should generate the Entity's UUID", async () => {
-      sinon
-        .stub(utilsInternalModule, 'serialize')
+      serializeStub
         .withArgs('Entity', {
           did: 'abc',
         })
@@ -35,6 +35,20 @@ describe('Entity class', () => {
       const fakeReturn = { someIdentifier: 'abc' };
       unserializeStub.returns(fakeReturn);
       expect(Entity.unserialize('def')).toEqual(fakeReturn);
+    });
+  });
+
+  describe('method: isEqual', () => {
+    test('should return whether the entities are the same', () => {
+      serializeStub.withArgs('Entity', { foo: 'bar' }).returns('first');
+      serializeStub.withArgs('Entity', { bar: 'baz' }).returns('second');
+
+      const first = new Entity({ foo: 'bar' }, {} as Context);
+      const second = new Entity({ bar: 'baz' }, {} as Context);
+
+      expect(first.isEqual(first)).toBe(true);
+      expect(first.isEqual(second)).toBe(false);
+      expect(second.isEqual(first)).toBe(false);
     });
   });
 });
