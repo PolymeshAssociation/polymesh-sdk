@@ -85,7 +85,9 @@ describe('addInstruction procedure', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks({
-      contextOptions: { balance: { free: new BigNumber(500), locked: new BigNumber(0) } },
+      contextOptions: {
+        balance: { free: new BigNumber(500), locked: new BigNumber(0), total: new BigNumber(500) },
+      },
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
