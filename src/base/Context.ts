@@ -671,7 +671,7 @@ export class Context {
   public async getIdentityClaimsFromMiddleware(args: {
     targets?: (string | Identity)[];
     trustedClaimIssuers?: (string | Identity)[];
-    claimTypes?: ClaimType[];
+    claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
     includeExpired?: boolean;
     size?: number;
     start?: number;
@@ -747,7 +747,7 @@ export class Context {
     opts: {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
-      claimTypes?: ClaimType[];
+      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
       includeExpired?: boolean;
       size?: number;
       start?: number;
