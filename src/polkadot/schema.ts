@@ -428,6 +428,7 @@ export default {
         Blocked: 'Scope',
         InvestorUniqueness: '(Scope, ScopeId, CddId)',
         NoData: '',
+        InvestorUniquenessV2: '(CddId)',
       },
     },
     ClaimType: {
@@ -443,6 +444,7 @@ export default {
         Blocked: '',
         InvestorUniqueness: '',
         NoData: '',
+        InvestorUniquenessV2: '',
       },
     },
     IdentityClaim: {
@@ -818,8 +820,6 @@ export default {
       pip: 'PipId',
       vote: 'Vote',
     },
-    HistoricalVotingByAddress: 'Vec<VoteByPip>',
-    HistoricalVotingById: 'Vec<(AccountId, HistoricalVotingByAddress)>',
     BridgeTxDetail: {
       amount: 'Balance',
       status: 'BridgeTxStatus',
@@ -1156,18 +1156,13 @@ export default {
       tm: 'TransferManager',
       result: 'bool',
     },
-    BalanceAtResult: {
-      _enum: {
-        Ok: 'Vec<Balance>',
-        Err: 'Vec<u8>',
-      },
-    },
   },
   rpc: {
     compliance: {
       canTransfer: {
         description:
-          'Checks whether a transaction with given parameters is compliant to the compliance manager conditions',
+          'Checks whether a transaction with given parameters ' +
+          'is compliant to the compliance manager conditions',
         params: [
           {
             name: 'ticker',
@@ -1195,7 +1190,7 @@ export default {
     },
     identity: {
       isIdentityHasValidCdd: {
-        description: 'use to tell whether the given did has valid cdd claim or not',
+        description: 'use to tell whether the given ' + 'did has valid cdd claim or not',
         params: [
           {
             name: 'did',
@@ -1265,7 +1260,9 @@ export default {
       },
       getFilteredAuthorizations: {
         description:
-          'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
+          'Retrieve authorizations data for a given ' +
+          'signatory and filtered using the given ' +
+          'authorization type',
         params: [
           {
             name: 'signatory',
@@ -1304,7 +1301,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'Option<KeyIdentityData<IdentityId>>',
+        type: 'Option<KeyIdentityData>',
       },
     },
     pips: {
@@ -1356,38 +1353,6 @@ export default {
         ],
         type: 'Vec<u32>',
       },
-      votingHistoryByAddress: {
-        description: 'Retrieves proposal `address` indices voted on',
-        params: [
-          {
-            name: 'address',
-            type: 'AccountId',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'HistoricalVotingByAddress',
-      },
-      votingHistoryById: {
-        description: 'Retrieve historical voting of `id` identity',
-        params: [
-          {
-            name: 'id',
-            type: 'IdentityId',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'HistoricalVotingById',
-      },
     },
     protocolFee: {
       computeFee: {
@@ -1422,7 +1387,8 @@ export default {
     },
     asset: {
       canTransfer: {
-        description: 'Checks whether a transaction with given parameters can take place or not',
+        description:
+          'Checks whether a transaction with ' + 'given parameters can take place or ' + 'not',
         params: [
           {
             name: 'sender',
@@ -1469,7 +1435,10 @@ export default {
       },
       canTransferGranular: {
         description:
-          'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
+          'Checks whether a transaction with given ' +
+          'parameters can take place or not. The ' +
+          'result is granular meaning each check is ' +
+          'run and returned regardless of outcome.',
         params: [
           {
             name: 'from_custodian',
@@ -1508,27 +1477,6 @@ export default {
           },
         ],
         type: 'GranularCanTransferResult',
-      },
-      balanceAt: {
-        description: 'Returns the ticker balances of identities at a checkpoint.',
-        params: [
-          {
-            name: 'ticker',
-            type: 'Ticker',
-            isOptional: false,
-          },
-          {
-            name: 'checkpoint',
-            type: 'CheckpointId',
-            isOptional: false,
-          },
-          {
-            name: 'dids',
-            type: 'Vec<IdentityId>',
-            isOptional: false,
-          },
-        ],
-        type: 'BalanceAtResult',
       },
     },
   },
