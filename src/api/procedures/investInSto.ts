@@ -150,7 +150,7 @@ export async function prepareInvestInSto(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The Portfolio does not have enough free balance for this investment',
-      data: { freeTokenBalance, priceTotal },
+      data: { free: freeTokenBalance, priceTotal },
     });
   }
 

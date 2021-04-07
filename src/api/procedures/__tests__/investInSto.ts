@@ -240,7 +240,7 @@ describe('investInSto procedure', () => {
     expect(error.message).toBe(
       'The Portfolio does not have enough free balance for this investment'
     );
-    expect(error.data.freeTokenBalance).toEqual(new BigNumber(1));
+    expect(error.data.free).toEqual(new BigNumber(1));
     expect(error.data.priceTotal).toEqual(new BigNumber(50));
   });
 
