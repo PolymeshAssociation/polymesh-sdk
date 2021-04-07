@@ -1,3 +1,6 @@
+import BigNumber from 'bignumber.js';
+import { CAId, Distribution } from 'polymesh-types/types';
+
 import {
   configureDividendDistribution,
   ConfigureDividendDistributionParams,
@@ -6,7 +9,17 @@ import {
   Namespace,
   SecurityToken,
 } from '~/internal';
+import { CorporateActionParams, DistributionWithDetails } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
+import {
+  balanceToBigNumber,
+  boolToBoolean,
+  corporateActionIdentifierToCaId,
+  distributionToDividendDistributionParams,
+  meshCorporateActionToCorporateActionParams,
+  stringToTicker,
+  u32ToBigNumber,
+} from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -52,5 +65,67 @@ export class Distributions extends Namespace<SecurityToken> {
       args => [configureDividendDistribution, { ticker, ...args }],
       context
     );
+  }
+
+  /**
+   * Retrieve all Dividend Distributions associated to this Security Token
+   */
+  public async get(): Promise<DistributionWithDetails[]> {
+    const {
+      parent: { ticker },
+      context: {
+        polymeshApi: { query },
+      },
+      context,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+    const corporateActions = await query.corporateAction.corporateActions.entries(rawTicker);
+    const unpredictableCas = corporateActions.filter(
+      ([, action]) => action.unwrap().kind.isUnpredictableBenefit
+    );
+    const distributionsMultiParams: CAId[] = [];
+    const corporateActionParams: CorporateActionParams[] = [];
+    const corporateActionIds: BigNumber[] = [];
+
+    unpredictableCas.forEach(
+      ([
+        {
+          args: [, rawId],
+        },
+        corporateAction,
+      ]) => {
+        const localId = u32ToBigNumber(rawId);
+        corporateActionIds.push(localId);
+        distributionsMultiParams.push(
+          corporateActionIdentifierToCaId({ ticker, localId }, context)
+        );
+        const action = corporateAction.unwrap();
+        corporateActionParams.push(meshCorporateActionToCorporateActionParams(action, context));
+      }
+    );
+
+    const distributions = await query.capitalDistribution.distributions.multi<Distribution>(
+      distributionsMultiParams
+    );
+
+    return distributions.map((distribution, index) => {
+      const { reclaimed, remaining } = distribution;
+      return {
+        distribution: new DividendDistribution(
+          {
+            ticker,
+            id: corporateActionIds[index],
+            ...corporateActionParams[index],
+            ...distributionToDividendDistributionParams(distribution, context),
+          },
+          context
+        ),
+        details: {
+          remainingFunds: balanceToBigNumber(remaining),
+          fundsReclaimed: boolToBoolean(reclaimed),
+        },
+      };
+    });
   }
 }
