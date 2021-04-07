@@ -584,6 +584,7 @@ const defaultAccountOptions: AccountOptions = {
   getBalance: {
     free: new BigNumber(100),
     locked: new BigNumber(10),
+    total: new BigNumber(110),
   },
   getTransactionHistory: [],
 };
@@ -594,6 +595,7 @@ const defaultCurrentAccountOptions: CurrentAccountOptions = {
   getBalance: {
     free: new BigNumber(100),
     locked: new BigNumber(10),
+    total: new BigNumber(110),
   },
   getTransactionHistory: [],
 };
@@ -653,6 +655,7 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
       token: ('someToken' as unknown) as SecurityToken,
       total: new BigNumber(1),
       locked: new BigNumber(0),
+      free: new BigNumber(1),
     },
   ],
   did: 'someDid',
@@ -669,6 +672,7 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
       token: ('someToken' as unknown) as SecurityToken,
       total: new BigNumber(1),
       locked: new BigNumber(0),
+      free: new BigNumber(1),
     },
   ],
   did: 'someDid',
