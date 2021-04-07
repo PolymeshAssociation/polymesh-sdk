@@ -192,8 +192,8 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
     const rawTicker = stringToTicker(ticker, context);
     const rawIdentityId = stringToIdentityId(did, context);
 
-    const balanceUpdate = await checkpoint.balanceUpdates(rawTicker, rawIdentityId);
-    const firstUpdatedCheckpoint = balanceUpdate.find(checkpointId =>
+    const balanceUpdates = await checkpoint.balanceUpdates(rawTicker, rawIdentityId);
+    const firstUpdatedCheckpoint = balanceUpdates.find(checkpointId =>
       u64ToBigNumber(checkpointId).gte(id)
     );
 
