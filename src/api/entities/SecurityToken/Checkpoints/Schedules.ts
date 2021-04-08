@@ -1,31 +1,24 @@
 import P from 'bluebird';
 
-import { CreateCheckpointScheduleParams } from '~/api/procedures/createCheckpointSchedule';
-import { RemoveCheckpointScheduleParams } from '~/api/procedures/removeCheckpointSchedule';
 import {
-  Checkpoint,
   CheckpointSchedule,
   Context,
-  createCheckpoint,
   createCheckpointSchedule,
+  CreateCheckpointScheduleParams,
   Namespace,
   removeCheckpointSchedule,
+  RemoveCheckpointScheduleParams,
   SecurityToken,
 } from '~/internal';
-import { CheckpointWithCreationDate, ScheduleWithDetails } from '~/types';
+import { ScheduleWithDetails } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
-import {
-  momentToDate,
-  storedScheduleToCheckpointScheduleParams,
-  stringToTicker,
-  u64ToBigNumber,
-} from '~/utils/conversion';
+import { storedScheduleToCheckpointScheduleParams, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
- * Handles all Security Token Checkpoints related functionality
+ * Handles all Security Token Checkpoint Schedules related functionality
  */
-export class Checkpoints extends Namespace<SecurityToken> {
+export class Schedules extends Namespace<SecurityToken> {
   /**
    * @hidden
    */
@@ -34,24 +27,15 @@ export class Checkpoints extends Namespace<SecurityToken> {
 
     const { ticker } = parent;
 
-    this.create = createProcedureMethod(() => [createCheckpoint, { ticker }], context);
-    this.createSchedule = createProcedureMethod(
+    this.create = createProcedureMethod(
       args => [createCheckpointSchedule, { ticker, ...args }],
       context
     );
-    this.removeSchedule = createProcedureMethod(
+    this.remove = createProcedureMethod(
       args => [removeCheckpointSchedule, { ticker, ...args }],
       context
     );
   }
-
-  /**
-   * Create a snapshot of Security Token holders and their respective balances at this moment
-   *
-   * @note required role:
-   *   - Security Token Owner
-   */
-  public create: ProcedureMethod<void, Checkpoint>;
 
   /**
    * Create a schedule for Checkpoint creation (i.e. "Create a checkpoint every week for 5 weeks, starting next tuesday")
@@ -63,7 +47,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
    * @note required role:
    *   - Security Token Owner
    */
-  public createSchedule: ProcedureMethod<CreateCheckpointScheduleParams, CheckpointSchedule>;
+  public create: ProcedureMethod<CreateCheckpointScheduleParams, CheckpointSchedule>;
 
   /**
    * Remove the supplied Checkpoint Schedule for a given Security Token
@@ -73,37 +57,12 @@ export class Checkpoints extends Namespace<SecurityToken> {
    * @note required role:
    *   - Security Token Owner
    */
-  public removeSchedule: ProcedureMethod<RemoveCheckpointScheduleParams, void>;
-
-  /**
-   * Retrieve all Checkpoints created on this Security Token, together with their corresponding creation Date
-   */
-  public async get(): Promise<CheckpointWithCreationDate[]> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
-
-    const entries = await context.polymeshApi.query.checkpoint.timestamps.entries(
-      stringToTicker(ticker, context)
-    );
-
-    const now = new Date();
-    return (
-      entries
-        .map(([{ args: [, id] }, timestamp]) => ({
-          checkpoint: new Checkpoint({ id: u64ToBigNumber(id), ticker }, context),
-          createdAt: momentToDate(timestamp),
-        }))
-        // the query also returns the next scheduled checkpoint for every schedule (which haven't been created yet)
-        .filter(({ createdAt }) => createdAt <= now)
-    );
-  }
+  public remove: ProcedureMethod<RemoveCheckpointScheduleParams, void>;
 
   /**
    * Retrieve all active Checkpoint Schedules
    */
-  public async getSchedules(): Promise<ScheduleWithDetails[]> {
+  public async get(): Promise<ScheduleWithDetails[]> {
     const {
       parent: { ticker },
       context: {
