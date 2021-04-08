@@ -87,6 +87,7 @@ export enum RoleType {
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
+  CorporateActionsAgent = 'CorporateActionsAgent',
 }
 
 export interface TickerOwnerRole {
