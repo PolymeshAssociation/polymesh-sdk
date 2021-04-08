@@ -33,7 +33,6 @@ import {
   PaginationOptions,
   ProcedureAuthorizationStatus,
   Scope,
-  TokenDocument,
   UiKeyring,
 } from '~/types';
 import {
