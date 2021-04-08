@@ -70,7 +70,7 @@ describe('Distributions class', () => {
 
       sinon
         .stub(configureDividendDistribution, 'prepare')
-        .withArgs({ ticker: token.ticker, ...args }, context)
+        .withArgs({ args: { ticker: token.ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await distributions.configureDividendDistribution(args);

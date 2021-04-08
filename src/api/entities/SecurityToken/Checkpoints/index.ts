@@ -20,7 +20,10 @@ export class Checkpoints extends Namespace<SecurityToken> {
 
     const { ticker } = parent;
 
-    this.create = createProcedureMethod(() => [createCheckpoint, { ticker }], context);
+    this.create = createProcedureMethod(
+      { getProcedureAndArgs: () => [createCheckpoint, { ticker }] },
+      context
+    );
 
     this.schedules = new Schedules(parent, context);
   }

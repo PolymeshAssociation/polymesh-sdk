@@ -70,10 +70,13 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     this._id = id;
 
     this.setCustodian = createProcedureMethod(
-      args => [setCustodian, { ...args, did, id }],
+      { getProcedureAndArgs: args => [setCustodian, { ...args, did, id }] },
       context
     );
-    this.moveFunds = createProcedureMethod(args => [moveFunds, { ...args, from: this }], context);
+    this.moveFunds = createProcedureMethod(
+      { getProcedureAndArgs: args => [moveFunds, { ...args, from: this }] },
+      context
+    );
   }
 
   /**

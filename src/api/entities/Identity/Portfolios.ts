@@ -27,13 +27,21 @@ export class Portfolios extends Namespace<Identity> {
 
     const { did } = parent;
 
-    this.create = createProcedureMethod(args => [createPortfolio, args], context);
-    this.delete = createProcedureMethod(args => {
-      const { portfolio } = args;
-      const id = portfolio instanceof BigNumber ? portfolio : portfolio.id;
+    this.create = createProcedureMethod(
+      { getProcedureAndArgs: args => [createPortfolio, args] },
+      context
+    );
+    this.delete = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => {
+          const { portfolio } = args;
+          const id = portfolio instanceof BigNumber ? portfolio : portfolio.id;
 
-      return [deletePortfolio, { id, did }];
-    }, context);
+          return [deletePortfolio, { id, did }];
+        },
+      },
+      context
+    );
   }
 
   /**

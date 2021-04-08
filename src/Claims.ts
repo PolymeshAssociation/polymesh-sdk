@@ -48,13 +48,15 @@ export class Claims {
       ModifyClaimsParams,
       void
     >(
-      args => [
-        modifyClaims,
-        {
-          ...args,
-          operation: ClaimOperation.Add,
-        } as ModifyClaimsParams,
-      ],
+      {
+        getProcedureAndArgs: args => [
+          modifyClaims,
+          {
+            ...args,
+            operation: ClaimOperation.Add,
+          } as ModifyClaimsParams,
+        ],
+      },
       context
     );
 
@@ -63,13 +65,15 @@ export class Claims {
       ModifyClaimsParams,
       void
     >(
-      args => [
-        modifyClaims,
-        {
-          ...args,
-          operation: ClaimOperation.Edit,
-        } as ModifyClaimsParams,
-      ],
+      {
+        getProcedureAndArgs: args => [
+          modifyClaims,
+          {
+            ...args,
+            operation: ClaimOperation.Edit,
+          } as ModifyClaimsParams,
+        ],
+      },
       context
     );
 
@@ -78,18 +82,20 @@ export class Claims {
       ModifyClaimsParams,
       void
     >(
-      args => [
-        modifyClaims,
-        {
-          ...args,
-          operation: ClaimOperation.Revoke,
-        } as ModifyClaimsParams,
-      ],
+      {
+        getProcedureAndArgs: args => [
+          modifyClaims,
+          {
+            ...args,
+            operation: ClaimOperation.Revoke,
+          } as ModifyClaimsParams,
+        ],
+      },
       context
     );
 
     this.addInvestorUniquenessClaim = createProcedureMethod(
-      args => [addInvestorUniquenessClaim, args],
+      { getProcedureAndArgs: args => [addInvestorUniquenessClaim, args] },
       context
     );
   }

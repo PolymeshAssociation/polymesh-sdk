@@ -189,10 +189,10 @@ describe('Venue class', () => {
   });
 
   describe('method: addInstruction', () => {
-    let prepareAddInstructionStub: sinon.SinonStub;
+    let addInstructionPrepareStub: sinon.SinonStub;
 
     beforeAll(() => {
-      prepareAddInstructionStub = sinon.stub(addInstruction, 'prepare');
+      addInstructionPrepareStub = sinon.stub(addInstruction, 'prepare');
     });
 
     afterAll(() => {
@@ -220,8 +220,11 @@ describe('Venue class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
-      prepareAddInstructionStub
-        .withArgs({ venueId: id, legs, tradeDate, endBlock }, context)
+      addInstructionPrepareStub
+        .withArgs(
+          { args: { venueId: id, legs, tradeDate, endBlock }, transformer: undefined },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await venue.addInstruction({ legs, tradeDate, endBlock });
