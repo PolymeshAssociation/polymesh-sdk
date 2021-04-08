@@ -107,22 +107,34 @@ describe('linkCaDocs procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if some of the provided documents are not from the same asset', () => {
+  test('should throw an error if some of the provided documents are not associated to the Security Token', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const name = 'customName';
 
-    return expect(
-      prepareLinkCaDocs.call(proc, {
+    let error;
+
+    try {
+      await prepareLinkCaDocs.call(proc, {
         id,
         ticker,
         documents: [
+          documents[0],
           {
-            name: 'someName',
+            name,
             uri: 'someUri',
             contentHash: 'someHash',
           },
         ],
-      })
-    ).rejects.toThrow('Some of the provided documents are not from the same asset');
+      });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe(
+      'Some of the provided documents are not associated with the Security Token'
+    );
+    expect(error.data.documents.length).toEqual(1);
+    expect(error.data.documents[0].name).toEqual(name);
   });
 
   test('should add a link ca doc transaction to the queue', async () => {
@@ -145,7 +157,7 @@ describe('linkCaDocs procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.CorporateActionsAgent, ticker }],
+        identityRoles: [{ type: RoleType.TokenCaa, ticker }],
         signerPermissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.corporateAction.LinkCaDoc],

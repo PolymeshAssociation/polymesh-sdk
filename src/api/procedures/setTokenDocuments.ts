@@ -1,4 +1,4 @@
-import { differenceWith } from 'lodash';
+import { differenceWith, isEqual } from 'lodash';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
@@ -9,7 +9,7 @@ import {
   stringToTicker,
   tokenDocumentToDocument,
 } from '~/utils/conversion';
-import { batchArguments, documentComparator } from '~/utils/internal';
+import { batchArguments } from '~/utils/internal';
 
 export interface SetTokenDocumentsParams {
   documents: TokenDocument[];
@@ -44,7 +44,7 @@ export async function prepareSetTokenDocuments(
   const { ticker, documents } = args;
 
   if (
-    !differenceWith(currentDocs, documents, documentComparator).length &&
+    !differenceWith(currentDocs, documents, isEqual).length &&
     currentDocs.length === documents.length
   ) {
     throw new PolymeshError({

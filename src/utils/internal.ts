@@ -465,19 +465,6 @@ export function getCommonKeyring(keyring: CommonKeyring | UiKeyring): CommonKeyr
 /**
  * @hidden
  */
-export function documentComparator(a: TokenDocument, b: TokenDocument): boolean {
-  return (
-    a.name === b.name &&
-    a.uri === b.uri &&
-    a.contentHash === b.contentHash &&
-    a.type === b.type &&
-    a.filedAt === b.filedAt
-  );
-}
-
-/**
- * @hidden
- */
 export function assertFormatValid(address: string, ss58Format: number): void {
   const encodedAddress = encodeAddress(decodeAddress(address), ss58Format);
 

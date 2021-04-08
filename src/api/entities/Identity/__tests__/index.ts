@@ -8,7 +8,6 @@ import { Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
-  CorporateActionsAgentRole,
   Order,
   PortfolioCustodianRole,
   Role,
@@ -296,36 +295,6 @@ describe('Identity class', () => {
       });
 
       const hasRole = await identity.hasRoles(roles);
-
-      expect(hasRole).toBe(false);
-    });
-
-    test('hasRole should check whether the Identity has the CAA role', async () => {
-      const did = 'someDid';
-      const identity = new Identity({ did }, context);
-      const role: CorporateActionsAgentRole = {
-        type: RoleType.CorporateActionsAgent,
-        ticker: 'someTicker',
-      };
-
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did }),
-        },
-      });
-
-      let hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(true);
-
-      entityMockUtils.reset();
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
-        },
-      });
-
-      hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
     });

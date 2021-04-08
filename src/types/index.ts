@@ -173,18 +173,6 @@ export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodian
   return role.type === RoleType.PortfolioCustodian;
 }
 
-export interface CorporateActionsAgentRole {
-  type: RoleType.CorporateActionsAgent;
-  ticker: string;
-}
-
-/**
- * @hidden
- */
-export function isCorporateActionsAgent(role: Role): role is CorporateActionsAgentRole {
-  return role.type === RoleType.CorporateActionsAgent;
-}
-
 export type Role =
   | TickerOwnerRole
   | TokenOwnerRole
@@ -192,8 +180,7 @@ export type Role =
   | TokenCaaRole
   | CddProviderRole
   | VenueOwnerRole
-  | PortfolioCustodianRole
-  | CorporateActionsAgentRole;
+  | PortfolioCustodianRole;
 
 export enum KnownTokenType {
   EquityCommon = 'EquityCommon',

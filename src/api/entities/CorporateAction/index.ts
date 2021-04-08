@@ -118,7 +118,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
     this.defaultTaxWithholding = defaultTaxWithholding;
     this.taxWithholdings = taxWithholdings;
 
-    this.linkCaDocs = createProcedureMethod(
+    this.linkDocuments = createProcedureMethod(
       procedureArgs => [linkCaDocs, { id, ticker, ...procedureArgs }],
       context
     );
@@ -133,7 +133,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
    * @note required role:
    *   - Corporate Actions Agent
    */
-  public linkCaDocs: ProcedureMethod<LinkCaDocsParams, void>;
+  public linkDocuments: ProcedureMethod<LinkCaDocsParams, void>;
 
   /**
    * Retrieve whether the Corporate Action exists

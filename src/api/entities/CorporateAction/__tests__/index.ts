@@ -139,7 +139,7 @@ describe('CorporateAction class', () => {
     });
   });
 
-  describe('method: linkCaDocs', () => {
+  describe('method: linkDocuments', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         documents: [
@@ -158,7 +158,7 @@ describe('CorporateAction class', () => {
         .withArgs({ id, ticker, ...args }, context)
         .resolves(expectedQueue);
 
-      const queue = await corporateAction.linkCaDocs(args);
+      const queue = await corporateAction.linkDocuments(args);
 
       expect(queue).toBe(expectedQueue);
     });

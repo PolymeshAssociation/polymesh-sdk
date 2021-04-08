@@ -16,7 +16,6 @@ import {
   Ensured,
   ErrorCode,
   isCddProviderRole,
-  isCorporateActionsAgent,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
   isTokenCaaRole,
@@ -148,13 +147,6 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const portfolio = portfolioIdToPortfolio(portfolioId, context);
 
       return portfolio.isCustodiedBy();
-    } else if (isCorporateActionsAgent(role)) {
-      const { ticker } = role;
-
-      const token = new SecurityToken({ ticker }, context);
-      const { did: corporateActionsAgentDid } = await token.corporateActions.getAgent();
-
-      return corporateActionsAgentDid === did;
     }
 
     throw new PolymeshError({

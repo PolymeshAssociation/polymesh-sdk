@@ -1,12 +1,11 @@
 import BigNumber from 'bignumber.js';
-import { differenceWith } from 'lodash';
+import { isEqual, remove } from 'lodash';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TokenDocument } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { documentToTokenDocument, stringToTicker } from '~/utils/conversion';
-import { documentComparator } from '~/utils/internal';
 
 export interface LinkCaDocsParams {
   documents: TokenDocument[];
@@ -42,26 +41,32 @@ export async function prepareLinkCaDocs(
 
   const rawAssetDocuments = await assetDocuments.entries(stringToTicker(ticker, context));
 
-  const currentAssetDocIds: DocumentId[] = [];
-  const currentAssetDocs: TokenDocument[] = [];
+  const docIdsToLink: DocumentId[] = [];
 
   rawAssetDocuments.forEach(([key, doc]) => {
     const [, id] = key.args;
-    currentAssetDocIds.push(id);
-    currentAssetDocs.push(documentToTokenDocument(doc));
+    const removedList = remove(documents, document =>
+      isEqual(document, documentToTokenDocument(doc))
+    );
+    if (removedList.length) {
+      docIdsToLink.push(id);
+    }
   });
 
-  if (differenceWith(documents, currentAssetDocs, documentComparator).length) {
+  if (documents.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Some of the provided documents are not from the same asset',
+      message: 'Some of the provided documents are not associated with the Security Token',
+      data: {
+        documents,
+      },
     });
   }
 
   // eslint-disable-next-line @typescript-eslint/camelcase
   const rawCAId = { ticker, local_id: caId };
 
-  this.addTransaction(corporateAction.linkCaDoc, {}, rawCAId, currentAssetDocIds);
+  this.addTransaction(corporateAction.linkCaDoc, {}, rawCAId, docIdsToLink);
 }
 
 /**
@@ -72,7 +77,7 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    identityRoles: [{ type: RoleType.CorporateActionsAgent, ticker }],
+    identityRoles: [{ type: RoleType.TokenCaa, ticker }],
     signerPermissions: {
       tokens: [new SecurityToken({ ticker }, this.context)],
       transactions: [TxTags.corporateAction.LinkCaDoc],
