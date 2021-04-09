@@ -328,6 +328,7 @@ describe('Polymesh Class', () => {
       const fakeBalance = {
         free: new BigNumber(100),
         locked: new BigNumber(0),
+        total: new BigNumber(100),
       };
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
@@ -343,6 +344,7 @@ describe('Polymesh Class', () => {
       const fakeBalance = {
         free: new BigNumber(100),
         locked: new BigNumber(0),
+        total: new BigNumber(100),
       };
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
@@ -363,6 +365,7 @@ describe('Polymesh Class', () => {
       const fakeBalance = {
         free: new BigNumber(100),
         locked: new BigNumber(0),
+        total: new BigNumber(100),
       };
       const unsubCallback = 'unsubCallback';
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
@@ -948,6 +951,7 @@ describe('Polymesh Class', () => {
       fakeBalance = {
         free: new BigNumber(500000),
         locked: new BigNumber(0),
+        total: new BigNumber(500000),
       };
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
     });

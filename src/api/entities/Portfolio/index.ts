@@ -146,6 +146,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
         token: new SecurityToken({ ticker }, context),
         total,
         locked: new BigNumber(0),
+        free: total,
       };
     });
 
@@ -154,6 +155,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       const locked = balanceToBigNumber(balance);
 
       assetBalances[ticker].locked = locked;
+      assetBalances[ticker].free = assetBalances[ticker].total.minus(locked);
     });
 
     const mask: PortfolioBalance[] | undefined = args?.tokens.map(ticker => {
@@ -162,6 +164,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       return {
         total: new BigNumber(0),
         locked: new BigNumber(0),
+        free: new BigNumber(0),
         token,
       };
     });
