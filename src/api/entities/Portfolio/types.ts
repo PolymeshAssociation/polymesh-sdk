@@ -5,12 +5,10 @@ import {
   SettlementDirectionEnum as SettlementDirection,
   SettlementResultEnum as SettlementResult,
 } from '~/middleware/types';
-import { Leg } from '~/types';
+import { Balance, Leg } from '~/types';
 
-export interface PortfolioBalance {
+export interface PortfolioBalance extends Balance {
   token: SecurityToken;
-  total: BigNumber;
-  locked: BigNumber;
 }
 
 export interface SettlementLeg extends Leg {

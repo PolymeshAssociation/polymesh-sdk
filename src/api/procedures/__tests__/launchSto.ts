@@ -207,9 +207,7 @@ describe('launchSto procedure', () => {
         getVenues: [entityMockUtils.getVenueInstance({ details: { type: VenueType.Exchange } })],
       },
       defaultPortfolioOptions: {
-        tokenBalances: [
-          { total: new BigNumber(20), locked: new BigNumber(0) },
-        ] as PortfolioBalance[],
+        tokenBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
       },
     });
     const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext, {
@@ -244,9 +242,7 @@ describe('launchSto procedure', () => {
   test("should throw an error if tokens offered exceed the Portfolio's balance", async () => {
     entityMockUtils.configureMocks({
       defaultPortfolioOptions: {
-        tokenBalances: [
-          { total: new BigNumber(1), locked: new BigNumber(0) },
-        ] as PortfolioBalance[],
+        tokenBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
       },
     });
 
@@ -263,15 +259,13 @@ describe('launchSto procedure', () => {
       err = error;
     }
 
-    expect(err?.message).toBe("There isn't enough balance in the offering Portfolio");
+    expect(err?.message).toBe("There isn't enough free balance in the offering Portfolio");
   });
 
   test('should add a create fundraiser transaction to the queue', async () => {
     entityMockUtils.configureMocks({
       defaultPortfolioOptions: {
-        tokenBalances: [
-          { total: new BigNumber(1000), locked: new BigNumber(0) },
-        ] as PortfolioBalance[],
+        tokenBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
       },
     });
 
@@ -312,9 +306,7 @@ describe('launchSto procedure', () => {
         getVenues: [venue],
       },
       defaultPortfolioOptions: {
-        tokenBalances: [
-          { total: new BigNumber(1000), locked: new BigNumber(0) },
-        ] as PortfolioBalance[],
+        tokenBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
       },
     });
 

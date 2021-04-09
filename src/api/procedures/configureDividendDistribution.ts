@@ -146,15 +146,14 @@ export async function prepareConfigureDividendDistribution(
     }
   }
 
-  const [{ total, locked }] = await portfolio.getTokenBalances({ tokens: [currency] });
-  const freeBalance = total.minus(locked);
+  const [{ free }] = await portfolio.getTokenBalances({ tokens: [currency] });
 
-  if (freeBalance.lt(maxAmount)) {
+  if (free.lt(maxAmount)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Origin Portfolio free balance is not enough to cover the distribution amount',
       data: {
-        freeBalance,
+        free,
       },
     });
   }

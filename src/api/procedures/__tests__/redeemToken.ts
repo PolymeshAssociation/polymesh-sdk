@@ -8,7 +8,7 @@ import { getAuthorization, Params, prepareRedeemToken } from '~/api/procedures/r
 import { Context, Identity, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TxTags } from '~/types';
+import { PortfolioBalance, RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -81,9 +81,8 @@ describe('redeemToken procedure', () => {
         tokenBalances: [
           {
             token: new SecurityToken({ ticker }, mockContext),
-            total: new BigNumber(1000),
-            locked: new BigNumber(500),
-          },
+            free: new BigNumber(500),
+          } as PortfolioBalance,
         ],
       },
     });
@@ -108,9 +107,8 @@ describe('redeemToken procedure', () => {
         tokenBalances: [
           {
             token: new SecurityToken({ ticker }, mockContext),
-            total: new BigNumber(20),
-            locked: new BigNumber(20),
-          },
+            free: new BigNumber(0),
+          } as PortfolioBalance,
         ],
       },
     });
@@ -122,7 +120,7 @@ describe('redeemToken procedure', () => {
         ticker,
         amount,
       })
-    ).rejects.toThrow('Insufficient balance');
+    ).rejects.toThrow('Insufficient free balance');
   });
 
   test('should throw an error if the security token is not divisible', () => {
@@ -131,9 +129,8 @@ describe('redeemToken procedure', () => {
         tokenBalances: [
           {
             token: new SecurityToken({ ticker }, mockContext),
-            total: new BigNumber(1000),
-            locked: new BigNumber(500),
-          },
+            free: new BigNumber(500),
+          } as PortfolioBalance,
         ],
       },
     });

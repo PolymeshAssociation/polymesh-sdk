@@ -278,11 +278,14 @@ export class Context {
     }
 
     const assembleResult = ({
-      data: { free, miscFrozen, feeFrozen },
+      data: { free: rawFree, miscFrozen, feeFrozen },
     }: AccountInfo): AccountBalance => {
+      const free = balanceToBigNumber(rawFree);
+      const locked = BigNumber.max(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen));
       return {
-        free: balanceToBigNumber(free),
-        locked: BigNumber.max(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen)),
+        free,
+        locked,
+        total: free.plus(locked),
       };
     };
 

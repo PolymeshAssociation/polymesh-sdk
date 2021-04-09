@@ -188,8 +188,15 @@ describe('Checkpoint class', () => {
 
       balanceToBigNumberStub.returns(expected);
 
+      dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
+        returnValue: [
+          dsMockUtils.createMockU64(1),
+          dsMockUtils.createMockU64(2),
+          dsMockUtils.createMockU64(5),
+        ],
+      });
+
       dsMockUtils.createQueryStub('checkpoint', 'balance', {
-        size: 1,
         returnValue: dsMockUtils.createMockBalance(balance),
       });
 
@@ -201,14 +208,9 @@ describe('Checkpoint class', () => {
 
       expect(result).toEqual(expected);
 
-      const zeroBalance = dsMockUtils.createMockBalance(0);
-
-      dsMockUtils.createQueryStub('checkpoint', 'balance', {
-        size: 0,
-        returnValue: zeroBalance,
+      dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
+        returnValue: [],
       });
-
-      balanceToBigNumberStub.withArgs(zeroBalance).returns(new BigNumber(0));
 
       const tokenBalance = new BigNumber(10);
 
