@@ -155,7 +155,7 @@ describe('CorporateAction class', () => {
 
       sinon
         .stub(linkCaDocs, 'prepare')
-        .withArgs({ id, ticker, ...args }, context)
+        .withArgs({ args: { id, ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await corporateAction.linkDocuments(args);
