@@ -145,8 +145,8 @@ describe('moveFunds procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         tokenBalances: [
-          { token: securityToken01, total: new BigNumber(50), locked: new BigNumber(0) },
-          { token: securityToken02, total: new BigNumber(10), locked: new BigNumber(0) },
+          { token: securityToken01, free: new BigNumber(50) },
+          { token: securityToken02, free: new BigNumber(10) },
         ] as PortfolioBalance[],
       },
     });

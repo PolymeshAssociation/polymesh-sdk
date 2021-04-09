@@ -197,6 +197,7 @@ describe('Transaction Queue class', () => {
       dsMockUtils.setContextAccountBalance({
         free: new BigNumber(100),
         locked: new BigNumber(0),
+        total: new BigNumber(100),
       });
 
       const procedureResult = 3;

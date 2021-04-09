@@ -81,13 +81,12 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
   });
   const balanceExceeded: (PortfolioMovement & { free: BigNumber })[] = [];
 
-  portfolioBalances.forEach(({ token: { ticker }, total, locked }) => {
+  portfolioBalances.forEach(({ token: { ticker }, free }) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const transferItem = items.find(
       ({ token: t }) => (typeof t === 'string' ? t : t.ticker) === ticker
     )!;
 
-    const free = total.minus(locked);
     if (transferItem.amount.gt(free)) {
       balanceExceeded.push({ ...transferItem, free });
     }
