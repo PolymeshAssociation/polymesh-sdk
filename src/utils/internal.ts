@@ -12,7 +12,7 @@ import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
-import { TxTag } from 'polymesh-types/types';
+import { Moment, TxTag } from 'polymesh-types/types';
 
 import { Procedure } from '~/base/Procedure';
 import {
@@ -49,7 +49,7 @@ import {
   DEFAULT_MAX_BATCH_ELEMENTS,
   MAX_BATCH_ELEMENTS,
 } from '~/utils/constants';
-import { middlewareScopeToScope, signerToString } from '~/utils/conversion';
+import { dateToMoment, middlewareScopeToScope, signerToString } from '~/utils/conversion';
 
 export * from '~/generated/utils';
 
@@ -487,4 +487,11 @@ export function assertFormatValid(address: string, ss58Format: number): void {
  */
 export function getTicker(token: string | SecurityToken): string {
   return typeof token === 'string' ? token : token.ticker;
+}
+
+/**
+ * @hidden
+ */
+export function calculateMoment(date: Date | undefined, context: Context): Moment | null {
+  return (date && dateToMoment(date, context)) ?? null;
 }

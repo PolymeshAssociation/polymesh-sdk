@@ -28,7 +28,6 @@ import {
 import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
-  dateToMoment,
   endConditionToSettlementType,
   numberToBalance,
   numberToU64,
@@ -38,7 +37,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords, getTicker } from '~/utils/internal';
+import { calculateMoment, filterEventRecords, getTicker } from '~/utils/internal';
 
 export interface AddInstructionParams {
   legs: {
@@ -164,8 +163,8 @@ async function getTxArgsAndErrors(
     if (!legErrIndexes.length && !endBlockErrIndexes.length && !datesErrIndexes.length) {
       const rawVenueId = numberToU64(venueId, context);
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
-      const rawTradeDate = (tradeDate && dateToMoment(tradeDate, context)) ?? null;
-      const rawValueDate = (valueDate && dateToMoment(valueDate, context)) ?? null;
+      const rawTradeDate = calculateMoment(tradeDate, context);
+      const rawValueDate = calculateMoment(valueDate, context);
       const rawLegs: {
         from: PortfolioId;
         to: PortfolioId;
