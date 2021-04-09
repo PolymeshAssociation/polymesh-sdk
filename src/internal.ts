@@ -148,4 +148,4 @@ export {
 } from '~/api/procedures/configureDividendDistribution';
 export { claimDividends } from '~/api/procedures/claimDividends';
 export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';
-export { pushBenefit, PushBenefitParams } from '~/api/procedures/pushBenefit';
+export { payDividends, PayDividendsParams } from '~/api/procedures/payDividends';

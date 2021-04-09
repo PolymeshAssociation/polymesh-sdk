@@ -9,7 +9,7 @@ import {
   DefaultPortfolio,
   DividendDistribution,
   Entity,
-  pushBenefit,
+  payDividends,
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -165,17 +165,17 @@ describe('DividendDistribution class', () => {
     });
   });
 
-  describe('method: push', () => {
+  describe('method: pay', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
-      const idenityTargets = ['identityDid'];
+      const identityTargets = ['identityDid'];
 
       sinon
-        .stub(pushBenefit, 'prepare')
-        .withArgs({ targets: idenityTargets, distribution: dividendDistribution }, context)
+        .stub(payDividends, 'prepare')
+        .withArgs({ targets: identityTargets, distribution: dividendDistribution }, context)
         .resolves(expectedQueue);
 
-      const queue = await dividendDistribution.push({ targets: idenityTargets });
+      const queue = await dividendDistribution.pay({ targets: identityTargets });
 
       expect(queue).toBe(expectedQueue);
     });

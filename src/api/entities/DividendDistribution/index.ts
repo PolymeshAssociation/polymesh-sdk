@@ -10,9 +10,9 @@ import {
   CorporateAction,
   DefaultPortfolio,
   NumberedPortfolio,
+  payDividends,
+  PayDividendsParams,
   PolymeshError,
-  pushBenefit,
-  PushBenefitParams,
 } from '~/internal';
 import { Distribution } from '~/polkadot';
 import { CorporateActionKind, DividendDistributionDetails, ErrorCode } from '~/types';
@@ -98,8 +98,8 @@ export class DividendDistribution extends CorporateAction {
 
     this.claim = createProcedureMethod(() => [claimDividends, { distribution: this }], context);
 
-    this.push = createProcedureMethod(
-      pushBenefitArgs => [pushBenefit, { ...pushBenefitArgs, distribution: this }],
+    this.pay = createProcedureMethod(
+      payDividendsArgs => [payDividends, { ...payDividendsArgs, distribution: this }],
       context
     );
   }
@@ -110,9 +110,9 @@ export class DividendDistribution extends CorporateAction {
   public claim: ProcedureMethod<void, void>;
 
   /**
-   * Push the capital distribution benefit to a list of Identities
+   * Transfer the corresponding share of the dividends to a list of Identities
    */
-  public push: ProcedureMethod<PushBenefitParams, void>;
+  public pay: ProcedureMethod<PayDividendsParams, void>;
 
   /**
    * Retrieve the Checkpoint associated with this Dividend Distribution. If the Checkpoint is scheduled and has not been created yet,

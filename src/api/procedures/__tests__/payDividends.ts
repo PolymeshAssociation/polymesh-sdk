@@ -1,15 +1,15 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { getAuthorization, Params, preparePushBenefit } from '~/api/procedures/pushBenefit';
+import { getAuthorization, Params, preparePayDividends } from '~/api/procedures/payDividends';
 import { Context, DividendDistribution } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TxTags } from '~/types';
+import { RoleType, TargetTreatment, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
-describe('pushBenefit procedure', () => {
+describe('payDividends procedure', () => {
   const ticker = 'SOMETICKER';
   const did = 'someDid';
   const id = new BigNumber(1);
@@ -24,9 +24,7 @@ describe('pushBenefit procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToIdentityIdStub: sinon.SinonStub;
   let addBatchTransactionStub: sinon.SinonStub;
-  let pushBenefitTransaction: PolymeshTx<unknown[]>;
-
-  let holderPaidStub: sinon.SinonStub;
+  let payDividendsTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
     entityMockUtils.initMocks({
@@ -46,17 +44,10 @@ describe('pushBenefit procedure', () => {
 
   beforeEach(() => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
-    pushBenefitTransaction = dsMockUtils.createTxStub('capitalDistribution', 'pushBenefit');
+    payDividendsTransaction = dsMockUtils.createTxStub('capitalDistribution', 'pushBenefit');
     mockContext = dsMockUtils.getContextInstance();
-    distribution = entityMockUtils.getDividendDistributionInstance({
-      ticker,
-      id,
-      paymentDate,
-      expiryDate,
-    });
-
-    holderPaidStub = dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
-      returnValue: true,
+    dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+      multi: [true],
     });
   });
 
@@ -76,12 +67,25 @@ describe('pushBenefit procedure', () => {
     const targets = ['someDid'];
     const identityId = dsMockUtils.createMockIdentityId(targets[0]);
 
+    distribution = entityMockUtils.getDividendDistributionInstance({
+      targets: {
+        identities: targets.map(identityDid =>
+          entityMockUtils.getIdentityInstance({ did: identityDid })
+        ),
+        treatment: TargetTreatment.Include,
+      },
+      ticker,
+      id,
+      paymentDate,
+      expiryDate,
+    });
+
     stringToIdentityIdStub.returns(identityId);
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await preparePushBenefit.call(proc, { targets, distribution });
-    sinon.assert.calledWith(addBatchTransactionStub, pushBenefitTransaction, {}, [
+    await preparePayDividends.call(proc, { targets, distribution });
+    sinon.assert.calledWith(addBatchTransactionStub, payDividendsTransaction, {}, [
       [rawCaId, identityId],
     ]);
   });
@@ -99,12 +103,12 @@ describe('pushBenefit procedure', () => {
     let err;
 
     try {
-      await preparePushBenefit.call(proc, { targets, distribution });
+      await preparePayDividends.call(proc, { targets, distribution });
     } catch (error) {
       err = error;
     }
 
-    expect(err.message).toBe("The Distribution's benefits date hasn't been reached");
+    expect(err.message).toBe("The Distribution's payment date hasn't been reached");
     expect(err.data).toEqual({
       paymentDate: date,
     });
@@ -123,7 +127,7 @@ describe('pushBenefit procedure', () => {
     let err;
 
     try {
-      await preparePushBenefit.call(proc, { targets, distribution });
+      await preparePayDividends.call(proc, { targets, distribution });
     } catch (error) {
       err = error;
     }
@@ -132,6 +136,34 @@ describe('pushBenefit procedure', () => {
     expect(err.data).toEqual({
       expiryDate: date,
     });
+  });
+
+  test('should throw an error if some of the supplied targets are not included in the Distribution', async () => {
+    const excludedDid = 'someDid';
+
+    distribution = entityMockUtils.getDividendDistributionInstance({
+      targets: {
+        identities: [entityMockUtils.getIdentityInstance({ did: 'otherDid' })],
+        treatment: TargetTreatment.Include,
+      },
+      paymentDate,
+      expiryDate,
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    let err;
+
+    try {
+      await preparePayDividends.call(proc, { targets: [excludedDid], distribution });
+    } catch (error) {
+      err = error;
+    }
+
+    expect(err.message).toBe(
+      'Some of the supplied Identities are not included in this Distribution'
+    );
+    expect(err.data.excluded[0].did).toBe(excludedDid);
   });
 
   test('should throw an error if some of the supplied targets has already claimed their benefits', async () => {
@@ -145,30 +177,42 @@ describe('pushBenefit procedure', () => {
     );
 
     distribution = entityMockUtils.getDividendDistributionInstance({
+      targets: {
+        identities: dids.map(identityDid =>
+          entityMockUtils.getIdentityInstance({ did: identityDid })
+        ),
+        treatment: TargetTreatment.Include,
+      },
       expiryDate,
       paymentDate,
     });
-    holderPaidStub.resolves(dsMockUtils.createMockBool(true));
+
+    sinon.stub(utilsConversionModule, 'boolToBoolean').returns(true);
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let err;
 
     try {
-      await preparePushBenefit.call(proc, { targets, distribution });
+      await preparePayDividends.call(proc, { targets, distribution });
     } catch (error) {
       err = error;
     }
 
-    expect(err.message).toBe('Some of the supplied targets has already claimed their benefits');
+    expect(err.message).toBe(
+      'Some of the supplied Identities have already either been paid or claimed their share of the Distribution'
+    );
     expect(err.data.targets[0].did).toEqual(dids[0]);
-    expect(err.data.targets[1].did).toEqual(dids[1]);
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
+
+      distribution = entityMockUtils.getDividendDistributionInstance({
+        ticker,
+      });
 
       const result = await boundFunc({
         targets: ['someDid'],
