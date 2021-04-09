@@ -89,7 +89,7 @@ export async function prepareLaunchSto(
 
   const portfolio = portfolioIdToPortfolio(offeringPortfolioId, context);
 
-  const [, , [{ total: totalTokenBalance, locked }]] = await Promise.all([
+  const [, , [{ free }]] = await Promise.all([
     assertPortfolioExists(offeringPortfolioId, context),
     assertPortfolioExists(raisingPortfolioId, context),
     portfolio.getTokenBalances({
@@ -132,10 +132,13 @@ export async function prepareLaunchSto(
     new BigNumber(0)
   );
 
-  if (totalTierBalance.gt(totalTokenBalance.minus(locked))) {
+  if (totalTierBalance.gt(free)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: "There isn't enough balance in the offering Portfolio",
+      message: "There isn't enough free balance in the offering Portfolio",
+      data: {
+        free,
+      },
     });
   }
 
