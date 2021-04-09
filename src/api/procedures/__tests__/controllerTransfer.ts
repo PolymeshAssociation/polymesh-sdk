@@ -66,9 +66,7 @@ describe('controllerTransfer procedure', () => {
     });
     originPortfolio = entityMockUtils.getDefaultPortfolioInstance({
       did,
-      tokenBalances: [
-        { total: new BigNumber(100), locked: new BigNumber(10) },
-      ] as PortfolioBalance[],
+      tokenBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
     });
     amount = new BigNumber(50);
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());

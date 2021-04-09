@@ -432,9 +432,12 @@ describe('Context class', () => {
       const result = await context.accountBalance('accountId', callback);
 
       expect(result).toEqual(unsubCallback);
+      const freeBalance = utilsConversionModule.balanceToBigNumber(free);
+      const feeFrozenBalance = utilsConversionModule.balanceToBigNumber(feeFrozen);
       sinon.assert.calledWithExactly(callback, {
-        free: utilsConversionModule.balanceToBigNumber(free),
-        locked: utilsConversionModule.balanceToBigNumber(feeFrozen),
+        free: freeBalance,
+        locked: feeFrozenBalance,
+        total: freeBalance.plus(feeFrozenBalance),
       });
     });
   });

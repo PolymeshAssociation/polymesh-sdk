@@ -41,12 +41,15 @@ export async function prepareRedeemToken(
 
   const portfolioBalance = await defaultPortfolio.getTokenBalances({ tokens: [ticker] });
 
-  const { total, locked } = portfolioBalance[0];
+  const { free } = portfolioBalance[0];
 
-  if (total.minus(locked).lt(amount)) {
+  if (free.lt(amount)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Insufficient balance',
+      message: 'Insufficient free balance',
+      data: {
+        free,
+      },
     });
   }
 

@@ -118,6 +118,7 @@ describe('configureDividendDistribution procedure', () => {
           token: entityMockUtils.getSecurityTokenInstance({ ticker: currency }),
           total: new BigNumber(1000001),
           locked: new BigNumber(0),
+          free: new BigNumber(1000001),
         },
       ],
     });
@@ -329,6 +330,7 @@ describe('configureDividendDistribution procedure', () => {
               token: entityMockUtils.getSecurityTokenInstance({ ticker: currency }),
               total: new BigNumber(1),
               locked: new BigNumber(0),
+              free: new BigNumber(1),
             },
           ],
         }),
@@ -361,7 +363,7 @@ describe('configureDividendDistribution procedure', () => {
       'Origin Portfolio free balance is not enough to cover the distribution amount'
     );
     expect(err.data).toEqual({
-      freeBalance: new BigNumber(1),
+      free: new BigNumber(1),
     });
   });
 

@@ -108,6 +108,7 @@ export { modifyStoTimes, ModifyStoTimesParams } from '~/api/procedures/modifySto
 export { investInSto, InvestInStoParams } from '~/api/procedures/investInSto';
 export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer, ControllerTransferParams } from '~/api/procedures/controllerTransfer';
+export { linkCaDocs, LinkCaDocsParams } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
