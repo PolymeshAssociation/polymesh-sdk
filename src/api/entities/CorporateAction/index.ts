@@ -2,14 +2,24 @@ import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { CorporateAction as MeshCorporateAction } from 'polymesh-types/types';
 
-import { Checkpoint, CheckpointSchedule, Context, Entity, PolymeshError } from '~/internal';
+import {
+  Checkpoint,
+  CheckpointSchedule,
+  Context,
+  Entity,
+  linkCaDocs,
+  LinkCaDocsParams,
+  PolymeshError,
+} from '~/internal';
 import { ErrorCode } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import {
   numberToU32,
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 import { CorporateActionKind, CorporateActionTargets, TaxWithholding } from './types';
 
@@ -107,7 +117,23 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
     this.targets = targets;
     this.defaultTaxWithholding = defaultTaxWithholding;
     this.taxWithholdings = taxWithholdings;
+
+    this.linkDocuments = createProcedureMethod(
+      procedureArgs => [linkCaDocs, { id, ticker, ...procedureArgs }],
+      context
+    );
   }
+
+  /**
+   * Link a list of documents to this corporate action
+   *
+   * @param args.documents - list of documents
+   *
+   * @note any previous links are removed in favor of the new list
+   * @note required role:
+   *   - Corporate Actions Agent
+   */
+  public linkDocuments: ProcedureMethod<LinkCaDocsParams, void>;
 
   /**
    * Retrieve whether the Corporate Action exists

@@ -74,6 +74,7 @@ describe('Account class', () => {
       fakeResult = {
         free: new BigNumber(100),
         locked: new BigNumber(10),
+        total: new BigNumber(110),
       };
     });
 

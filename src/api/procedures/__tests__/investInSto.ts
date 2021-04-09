@@ -178,7 +178,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ total: new BigNumber(20) }] as PortfolioBalance[],
+        tokenBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
       },
     });
 
@@ -220,7 +220,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ total: new BigNumber(1) }] as PortfolioBalance[],
+        tokenBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
       },
     });
 
@@ -237,7 +237,10 @@ describe('investInSto procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('The Portfolio does not have enough balance for this investment');
+    expect(error.message).toBe(
+      'The Portfolio does not have enough free balance for this investment'
+    );
+    expect(error.data.free).toEqual(new BigNumber(1));
     expect(error.data.priceTotal).toEqual(new BigNumber(50));
   });
 
@@ -267,7 +270,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ total: new BigNumber(200) }] as PortfolioBalance[],
+        tokenBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
       },
     });
 
@@ -316,7 +319,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ total: new BigNumber(200) }] as PortfolioBalance[],
+        tokenBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
       },
     });
 
