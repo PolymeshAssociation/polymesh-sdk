@@ -3,7 +3,7 @@ import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { flatten, uniq } from 'lodash';
+import { flatten, isEqual, union, unionWith } from 'lodash';
 import {
   Moment,
   PortfolioId,
@@ -38,7 +38,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, getTicker } from '~/utils/internal';
 
 export interface AddInstructionParams {
   legs: {
@@ -67,7 +67,7 @@ export type Params = AddInstructionsParams & {
  * @hidden
  */
 export interface Storage {
-  portfoliosToAffirm: Array<(DefaultPortfolio | NumberedPortfolio)[]>;
+  portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][];
 }
 
 /**
@@ -93,32 +93,24 @@ export const createAddInstructionResolver = (
 /**
  * @hidden
  */
-export async function prepareAddInstruction(
-  this: Procedure<Params, Instruction[], Storage>,
-  args: Params
-): Promise<PostTransactionValue<Instruction[]>> {
-  const {
-    context: {
-      polymeshApi: {
-        tx: { settlement },
-      },
-    },
-    context,
-    storage: { portfoliosToAffirm },
-  } = this;
-  const { instructions, venueId } = args;
-
-  const venue = new Venue({ id: venueId }, context);
-  const exists = await venue.exists();
-
-  if (!exists) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: "The Venue doesn't exist",
-    });
-  }
-
-  const addAndAffirmInstructions: [
+async function getTxArgsAndErrors(
+  instructions: AddInstructionParams[],
+  portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][],
+  latestBlock: BigNumber,
+  venueId: BigNumber,
+  context: Context
+): Promise<{
+  errIndexes: {
+    legErrIndexes: number[];
+    endBlockErrIndexes: number[];
+    datesErrIndexes: number[];
+  };
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  addAndAffirmInstructionParams: any;
+  addInstructionParams: any;
+  /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+}> {
+  const addAndAffirmInstructionParams: [
     u64,
     SettlementType,
     Moment | null,
@@ -131,7 +123,7 @@ export async function prepareAddInstruction(
     }[],
     PortfolioId[]
   ][] = [];
-  const addInstructions: [
+  const addInstructionParams: [
     u64,
     SettlementType,
     Moment | null,
@@ -144,22 +136,20 @@ export async function prepareAddInstruction(
     }[]
   ][] = [];
 
-  const noLegs: number[] = [];
-  const noFutureBlock: number[] = [];
-  const noFutureDate: number[] = [];
+  const legErrIndexes: number[] = [];
+  const endBlockErrIndexes: number[] = [];
+  const datesErrIndexes: number[] = [];
 
   await P.each(instructions, async ({ legs, endBlock, tradeDate, valueDate }, i) => {
     if (!legs.length) {
-      noLegs.push(i + 1);
+      legErrIndexes.push(i);
     }
 
     let endCondition;
 
     if (endBlock) {
-      const latestBlock = await context.getLatestBlock();
-
       if (endBlock.lte(latestBlock)) {
-        noFutureBlock.push(i + 1);
+        endBlockErrIndexes.push(i);
       }
 
       endCondition = { type: InstructionType.SettleOnBlock, value: endBlock } as const;
@@ -168,14 +158,14 @@ export async function prepareAddInstruction(
     }
 
     if (tradeDate && valueDate && tradeDate > valueDate) {
-      noFutureDate.push(i + 1);
+      datesErrIndexes.push(i);
     }
 
-    if (!noLegs.length && !noFutureBlock.length && !noFutureDate.length) {
+    if (!legErrIndexes.length && !endBlockErrIndexes.length && !datesErrIndexes.length) {
       const rawVenueId = numberToU64(venueId, context);
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
-      const rawTradeDate = tradeDate ? dateToMoment(tradeDate, context) : null;
-      const rawValueDate = valueDate ? dateToMoment(valueDate, context) : null;
+      const rawTradeDate = (tradeDate && dateToMoment(tradeDate, context)) ?? null;
+      const rawValueDate = (valueDate && dateToMoment(valueDate, context)) ?? null;
       const rawLegs: {
         from: PortfolioId;
         to: PortfolioId;
@@ -199,14 +189,14 @@ export async function prepareAddInstruction(
           rawLegs.push({
             from: rawFromPortfolio,
             to: rawToPortfolio,
-            asset: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
+            asset: stringToTicker(getTicker(token), context),
             amount: numberToBalance(amount, context),
           });
         })
       );
 
       if (portfoliosToAffirm[i].length) {
-        addAndAffirmInstructions.push([
+        addAndAffirmInstructionParams.push([
           rawVenueId,
           rawSettlementType,
           rawTradeDate,
@@ -217,68 +207,117 @@ export async function prepareAddInstruction(
           ),
         ]);
       } else {
-        addInstructions.push([rawVenueId, rawSettlementType, rawTradeDate, rawValueDate, rawLegs]);
+        addInstructionParams.push([
+          rawVenueId,
+          rawSettlementType,
+          rawTradeDate,
+          rawValueDate,
+          rawLegs,
+        ]);
       }
     }
   });
 
-  if (noLegs.length) {
+  return {
+    errIndexes: {
+      legErrIndexes,
+      endBlockErrIndexes,
+      datesErrIndexes,
+    },
+    addAndAffirmInstructionParams,
+    addInstructionParams,
+  };
+}
+
+/**
+ * @hidden
+ */
+export async function prepareAddInstruction(
+  this: Procedure<Params, Instruction[], Storage>,
+  args: Params
+): Promise<PostTransactionValue<Instruction[]>> {
+  const {
+    context: {
+      polymeshApi: {
+        tx: { settlement },
+      },
+    },
+    context,
+    storage: { portfoliosToAffirm },
+  } = this;
+  const { instructions, venueId } = args;
+
+  const venue = new Venue({ id: venueId }, context);
+
+  const [exists, latestBlock] = await Promise.all([venue.exists(), context.getLatestBlock()]);
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: "The Venue doesn't exist",
+    });
+  }
+
+  const {
+    errIndexes: { legErrIndexes, endBlockErrIndexes, datesErrIndexes },
+    addAndAffirmInstructionParams,
+    addInstructionParams,
+  } = await getTxArgsAndErrors(instructions, portfoliosToAffirm, latestBlock, venueId, context);
+
+  if (legErrIndexes.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: "The legs array can't be empty",
       data: {
-        instructionNumber: noLegs,
+        failedInstructionIndexes: legErrIndexes,
       },
     });
   }
 
-  if (noFutureBlock.length) {
+  if (endBlockErrIndexes.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'End block must be a future block',
       data: {
-        instructionNumber: noFutureBlock,
+        failedInstructionIndexes: endBlockErrIndexes,
       },
     });
   }
 
-  if (noFutureDate.length) {
+  if (datesErrIndexes.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Value date must be after trade date',
       data: {
-        instructionNumber: noFutureDate,
+        failedInstructionIndexes: datesErrIndexes,
       },
     });
   }
 
-  let affirmedInstructions: PostTransactionValue<Instruction[]> | undefined;
-  let addedInstructions: PostTransactionValue<Instruction[]>;
+  let resultInstructions: PostTransactionValue<Instruction[]> | undefined;
 
-  if (addAndAffirmInstructions.length) {
-    [affirmedInstructions] = this.addBatchTransaction(
+  if (addAndAffirmInstructionParams.length) {
+    [resultInstructions] = this.addBatchTransaction(
       settlement.addAndAffirmInstruction,
       {
         resolvers: [createAddInstructionResolver(context)],
       },
-      addAndAffirmInstructions
+      addAndAffirmInstructionParams
     );
   }
 
-  if (addInstructions.length) {
-    [addedInstructions] = this.addBatchTransaction(
+  if (addInstructionParams.length) {
+    [resultInstructions] = this.addBatchTransaction(
       settlement.addInstruction,
       {
-        resolvers: [createAddInstructionResolver(context, affirmedInstructions)],
+        resolvers: [createAddInstructionResolver(context, resultInstructions)],
       },
-      addInstructions
+      addInstructionParams
     );
-
-    affirmedInstructions = addedInstructions;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return affirmedInstructions!;
+  return resultInstructions!;
 }
 
 /**
@@ -292,7 +331,7 @@ export async function getAuthorization(
     storage: { portfoliosToAffirm },
   } = this;
 
-  const portfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
+  let portfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
   const transactions: SettlementTx[] = [];
 
   portfoliosToAffirm.forEach(portfoliosList => {
@@ -301,15 +340,15 @@ export async function getAuthorization(
         ? TxTags.settlement.AddAndAffirmInstruction
         : TxTags.settlement.AddInstruction
     );
-    portfolios.push(...portfoliosList);
+    portfolios = unionWith(portfolios, portfoliosList, isEqual);
   });
 
   return {
     identityRoles: [{ type: RoleType.VenueOwner, venueId }],
     signerPermissions: {
       tokens: [],
-      portfolios: uniq(portfolios),
-      transactions: uniq(transactions),
+      portfolios,
+      transactions: union(transactions),
     },
   };
 }
@@ -344,11 +383,7 @@ export async function prepareStorage(
         result.push(toPortfolio);
       }
 
-      if (result.length) {
-        return result;
-      }
-
-      return [];
+      return result;
     });
     return flatten(portfolios);
   });

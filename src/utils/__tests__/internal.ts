@@ -4,6 +4,7 @@ import { range } from 'lodash';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { SecurityToken } from '~/api/entities/SecurityToken';
 import { Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -23,6 +24,7 @@ import {
   filterEventRecords,
   getCommonKeyring,
   getDid,
+  getTicker,
   isPrintableAscii,
   padString,
   removePadding,
@@ -530,5 +532,17 @@ describe('assertFormatValid', () => {
     expect(() =>
       assertFormatValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
     ).not.toThrow();
+  });
+});
+
+describe('getTicker', () => {
+  test('should return a token symbol', async () => {
+    const symbol = 'TOKEN';
+    let result = getTicker(symbol);
+
+    expect(result).toBe(symbol);
+
+    result = getTicker(new SecurityToken({ ticker: symbol }, dsMockUtils.getContextInstance()));
+    expect(result).toBe(symbol);
   });
 });

@@ -255,7 +255,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe("The legs array can't be empty");
-    expect(error.data.instructionNumber[0]).toBe(1);
+    expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
   test('should throw an error if the end block is in the past', async () => {
@@ -295,7 +295,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('End block must be a future block');
-    expect(error.data.instructionNumber[0]).toBe(1);
+    expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
   test('should throw an error if the value date is before the trade date', async () => {
@@ -334,7 +334,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('Value date must be after trade date');
-    expect(error.data.instructionNumber[0]).toBe(1);
+    expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
   test('should add an add and authorize instruction transaction to the queue', async () => {

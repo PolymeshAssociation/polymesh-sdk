@@ -20,6 +20,7 @@ import {
   Identity,
   PolymeshError,
   PostTransactionValue,
+  SecurityToken,
   TransactionQueue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
@@ -196,7 +197,7 @@ type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Da
 // TODO @monitz87: use event enum instead of string when it exists
 /**
  * @hidden
- * Find an specific event inside a receipt
+ * Find every occurrence of a specific event inside a receipt
  *
  * @throws If the event is not found
  */
@@ -479,4 +480,11 @@ export function assertFormatValid(address: string, ss58Format: number): void {
       },
     });
   }
+}
+
+/**
+ * @hidden
+ */
+export function getTicker(token: string | SecurityToken): string {
+  return typeof token === 'string' ? token : token.ticker;
 }

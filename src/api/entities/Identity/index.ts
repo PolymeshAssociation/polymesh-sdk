@@ -39,7 +39,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, removePadding } from '~/utils/internal';
+import { calculateNextKey, getTicker, removePadding } from '~/utils/internal';
 
 import { IdentityAuthorizations } from './IdentityAuthorizations';
 import { Portfolios } from './Portfolios';
@@ -405,7 +405,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const { context, did } = this;
     const { token } = args;
 
-    const ticker = typeof token === 'string' ? token : token.ticker;
+    const ticker = getTicker(token);
 
     const scopeId = await context.polymeshApi.query.asset.scopeIdOf(
       stringToTicker(ticker, context),

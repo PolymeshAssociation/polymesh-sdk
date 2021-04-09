@@ -194,6 +194,7 @@ import {
   assertIsInteger,
   assertIsPositive,
   createClaim,
+  getTicker,
   isPrintableAscii,
   padString,
   removePadding,
@@ -2345,7 +2346,7 @@ export function portfolioMovementToMovePortfolioItem(
 ): MovePortfolioItem {
   const { token, amount } = portfolioItem;
   return context.polymeshApi.createType('MovePortfolioItem', {
-    ticker: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
+    ticker: stringToTicker(getTicker(token), context),
     amount: numberToBalance(amount, context),
   });
 }
