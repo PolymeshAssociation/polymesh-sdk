@@ -19,13 +19,13 @@ import * as utilsConversionModule from '~/utils/conversion';
 
 describe('CurrentIdentity class', () => {
   let context: Context;
-  let modifySignerPermissionsStub: sinon.SinonStub;
+  let modifySignerPermissionsPrepareStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
 
-    modifySignerPermissionsStub = sinon.stub(modifySignerPermissions, 'prepare');
+    modifySignerPermissionsPrepareStub = sinon.stub(modifySignerPermissions, 'prepare');
   });
 
   beforeEach(() => {
@@ -99,7 +99,7 @@ describe('CurrentIdentity class', () => {
 
       sinon
         .stub(removeSecondaryKeys, 'prepare')
-        .withArgs({ signers }, context)
+        .withArgs({ args: { signers }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await identity.removeSecondaryKeys({ signers });
@@ -123,7 +123,9 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      modifySignerPermissionsStub.withArgs({ secondaryKeys }, context).resolves(expectedQueue);
+      modifySignerPermissionsPrepareStub
+        .withArgs({ args: { secondaryKeys }, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await identity.revokePermissions({ secondaryKeys: signers });
 
@@ -145,7 +147,9 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      modifySignerPermissionsStub.withArgs({ secondaryKeys }, context).resolves(expectedQueue);
+      modifySignerPermissionsPrepareStub
+        .withArgs({ args: { secondaryKeys }, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await identity.modifyPermissions({ secondaryKeys });
 
@@ -164,7 +168,10 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon.stub(inviteAccount, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      sinon
+        .stub(inviteAccount, 'prepare')
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await identity.inviteAccount(args);
 
@@ -184,7 +191,10 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
 
-      sinon.stub(createVenue, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      sinon
+        .stub(createVenue, 'prepare')
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await identity.createVenue(args);
 

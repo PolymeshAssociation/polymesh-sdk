@@ -119,7 +119,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
     this.taxWithholdings = taxWithholdings;
 
     this.linkDocuments = createProcedureMethod(
-      procedureArgs => [linkCaDocs, { id, ticker, ...procedureArgs }],
+      { getProcedureAndArgs: procedureArgs => [linkCaDocs, { id, ticker, ...procedureArgs }] },
       context
     );
   }

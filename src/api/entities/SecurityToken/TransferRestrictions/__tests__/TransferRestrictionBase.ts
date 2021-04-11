@@ -70,7 +70,13 @@ describe('TransferRestrictionBase class', () => {
 
       sinon
         .stub(addTransferRestriction, 'prepare')
-        .withArgs({ ticker: token.ticker, ...args, type: TransferRestrictionType.Count }, context)
+        .withArgs(
+          {
+            args: { ticker: token.ticker, ...args, type: TransferRestrictionType.Count },
+            transformer: undefined,
+          },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await count.addRestriction({
@@ -93,7 +99,10 @@ describe('TransferRestrictionBase class', () => {
       sinon
         .stub(addTransferRestriction, 'prepare')
         .withArgs(
-          { ticker: token.ticker, ...args, type: TransferRestrictionType.Percentage },
+          {
+            args: { ticker: token.ticker, ...args, type: TransferRestrictionType.Percentage },
+            transformer: undefined,
+          },
           context
         )
         .resolves(expectedQueue);
@@ -130,7 +139,13 @@ describe('TransferRestrictionBase class', () => {
 
       sinon
         .stub(setTransferRestrictions, 'prepare')
-        .withArgs({ ticker: token.ticker, ...args, type: TransferRestrictionType.Count }, context)
+        .withArgs(
+          {
+            args: { ticker: token.ticker, ...args, type: TransferRestrictionType.Count },
+            transformer: undefined,
+          },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await count.setRestrictions({
@@ -152,7 +167,10 @@ describe('TransferRestrictionBase class', () => {
       sinon
         .stub(setTransferRestrictions, 'prepare')
         .withArgs(
-          { ticker: token.ticker, ...args, type: TransferRestrictionType.Percentage },
+          {
+            args: { ticker: token.ticker, ...args, type: TransferRestrictionType.Percentage },
+            transformer: undefined,
+          },
           context
         )
         .resolves(expectedQueue);
@@ -186,7 +204,10 @@ describe('TransferRestrictionBase class', () => {
       sinon
         .stub(setTransferRestrictions, 'prepare')
         .withArgs(
-          { ticker: token.ticker, restrictions: [], type: TransferRestrictionType.Count },
+          {
+            args: { ticker: token.ticker, restrictions: [], type: TransferRestrictionType.Count },
+            transformer: undefined,
+          },
           context
         )
         .resolves(expectedQueue);
@@ -204,7 +225,14 @@ describe('TransferRestrictionBase class', () => {
       sinon
         .stub(setTransferRestrictions, 'prepare')
         .withArgs(
-          { ticker: token.ticker, restrictions: [], type: TransferRestrictionType.Percentage },
+          {
+            args: {
+              ticker: token.ticker,
+              restrictions: [],
+              type: TransferRestrictionType.Percentage,
+            },
+            transformer: undefined,
+          },
           context
         )
         .resolves(expectedQueue);

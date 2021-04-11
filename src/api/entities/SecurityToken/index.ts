@@ -115,29 +115,35 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.corporateActions = new CorporateActions(this, context);
 
     this.transferOwnership = createProcedureMethod(
-      args => [transferTokenOwnership, { ticker, ...args }],
+      { getProcedureAndArgs: args => [transferTokenOwnership, { ticker, ...args }] },
       context
     );
-    this.modify = createProcedureMethod(args => [modifyToken, { ticker, ...args }], context);
+    this.modify = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifyToken, { ticker, ...args }] },
+      context
+    );
     this.freeze = createProcedureMethod(
-      () => [toggleFreezeTransfers, { ticker, freeze: true }],
+      { getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: true }] },
       context
     );
     this.unfreeze = createProcedureMethod(
-      () => [toggleFreezeTransfers, { ticker, freeze: false }],
+      { getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: false }] },
       context
     );
     this.modifyPrimaryIssuanceAgent = createProcedureMethod(
-      args => [modifyPrimaryIssuanceAgent, { ticker, ...args }],
+      { getProcedureAndArgs: args => [modifyPrimaryIssuanceAgent, { ticker, ...args }] },
       context
     );
     this.removePrimaryIssuanceAgent = createProcedureMethod(
-      () => [removePrimaryIssuanceAgent, { ticker }],
+      { getProcedureAndArgs: () => [removePrimaryIssuanceAgent, { ticker }] },
       context
     );
-    this.redeem = createProcedureMethod(args => [redeemToken, { ticker, ...args }], context);
+    this.redeem = createProcedureMethod(
+      { getProcedureAndArgs: args => [redeemToken, { ticker, ...args }] },
+      context
+    );
     this.controllerTransfer = createProcedureMethod(
-      args => [controllerTransfer, { ticker, ...args }],
+      { getProcedureAndArgs: args => [controllerTransfer, { ticker, ...args }] },
       context
     );
   }

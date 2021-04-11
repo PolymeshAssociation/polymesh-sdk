@@ -56,12 +56,12 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
     this.ticker = ticker;
 
     this.extend = createProcedureMethod(
-      () => [reserveTicker, { ticker, extendPeriod: true }],
+      { getProcedureAndArgs: () => [reserveTicker, { ticker, extendPeriod: true }] },
       context
     );
 
     this.createToken = createProcedureMethod(
-      args => [createSecurityToken, { ...args, ticker }],
+      { getProcedureAndArgs: args => [createSecurityToken, { ...args, ticker }] },
       context
     );
   }

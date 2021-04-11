@@ -57,7 +57,7 @@ export class Venue extends Entity<UniqueIdentifiers> {
     this.id = id;
 
     this.addInstruction = createProcedureMethod(
-      args => [addInstruction, { ...args, venueId: id }],
+      { getProcedureAndArgs: args => [addInstruction, { ...args, venueId: id }] },
       context
     );
   }

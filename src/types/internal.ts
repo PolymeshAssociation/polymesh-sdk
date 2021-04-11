@@ -223,8 +223,12 @@ export interface ProcedureAuthorization {
   identityRoles?: Role[] | boolean;
 }
 
-export interface ProcedureMethod<MethodArgs, ReturnValue> {
-  (args: MethodArgs): Promise<TransactionQueue<ReturnValue>>;
+export interface ProcedureMethod<
+  MethodArgs,
+  ProcedureReturnValue,
+  ReturnValue = ProcedureReturnValue
+> {
+  (args: MethodArgs): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
   checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
 }
 

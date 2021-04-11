@@ -32,10 +32,12 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
       ModifyTokenTrustedClaimIssuersParams,
       SecurityToken
     >(
-      args => [
-        modifyTokenTrustedClaimIssuers,
-        { ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
-      ],
+      {
+        getProcedureAndArgs: args => [
+          modifyTokenTrustedClaimIssuers,
+          { ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
+        ],
+      },
       context
     );
     this.add = createProcedureMethod<
@@ -43,10 +45,12 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
       ModifyTokenTrustedClaimIssuersParams,
       SecurityToken
     >(
-      args => [
-        modifyTokenTrustedClaimIssuers,
-        { ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
-      ],
+      {
+        getProcedureAndArgs: args => [
+          modifyTokenTrustedClaimIssuers,
+          { ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
+        ],
+      },
       context
     );
     this.remove = createProcedureMethod<
@@ -54,10 +58,12 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
       ModifyTokenTrustedClaimIssuersParams,
       SecurityToken
     >(
-      args => [
-        modifyTokenTrustedClaimIssuers,
-        { ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
-      ],
+      {
+        getProcedureAndArgs: args => [
+          modifyTokenTrustedClaimIssuers,
+          { ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
+        ],
+      },
       context
     );
   }
