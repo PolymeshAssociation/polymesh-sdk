@@ -69,26 +69,35 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
     this.id = id;
 
-    this.reject = createProcedureMethod(() => {
-      return [
-        modifyInstructionAffirmation,
-        { id, operation: InstructionAffirmationOperation.Reject },
-      ];
-    }, context);
+    this.reject = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          modifyInstructionAffirmation,
+          { id, operation: InstructionAffirmationOperation.Reject },
+        ],
+      },
+      context
+    );
 
-    this.affirm = createProcedureMethod(() => {
-      return [
-        modifyInstructionAffirmation,
-        { id, operation: InstructionAffirmationOperation.Affirm },
-      ];
-    }, context);
+    this.affirm = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          modifyInstructionAffirmation,
+          { id, operation: InstructionAffirmationOperation.Affirm },
+        ],
+      },
+      context
+    );
 
-    this.withdraw = createProcedureMethod(() => {
-      return [
-        modifyInstructionAffirmation,
-        { id, operation: InstructionAffirmationOperation.Withdraw },
-      ];
-    }, context);
+    this.withdraw = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          modifyInstructionAffirmation,
+          { id, operation: InstructionAffirmationOperation.Withdraw },
+        ],
+      },
+      context
+    );
   }
 
   /**

@@ -38,27 +38,41 @@ export class CurrentIdentity extends Identity {
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    this.removeSecondaryKeys = createProcedureMethod(args => [removeSecondaryKeys, args], context);
+    this.removeSecondaryKeys = createProcedureMethod(
+      { getProcedureAndArgs: args => [removeSecondaryKeys, args] },
+      context
+    );
     this.revokePermissions = createProcedureMethod<
       { secondaryKeys: Signer[] },
       ModifySignerPermissionsParams,
       void
-    >(args => {
-      const { secondaryKeys } = args;
-      const signers = secondaryKeys.map(signer => {
-        return {
-          signer,
-          permissions: { tokens: [], transactions: [], portfolios: [] },
-        };
-      });
-      return [modifySignerPermissions, { secondaryKeys: signers }];
-    }, context);
-    this.modifyPermissions = createProcedureMethod(
-      args => [modifySignerPermissions, args],
+    >(
+      {
+        getProcedureAndArgs: args => {
+          const { secondaryKeys } = args;
+          const signers = secondaryKeys.map(signer => {
+            return {
+              signer,
+              permissions: { tokens: [], transactions: [], portfolios: [] },
+            };
+          });
+          return [modifySignerPermissions, { secondaryKeys: signers }];
+        },
+      },
       context
     );
-    this.inviteAccount = createProcedureMethod(args => [inviteAccount, args], context);
-    this.createVenue = createProcedureMethod(args => [createVenue, args], context);
+    this.modifyPermissions = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifySignerPermissions, args] },
+      context
+    );
+    this.inviteAccount = createProcedureMethod(
+      { getProcedureAndArgs: args => [inviteAccount, args] },
+      context
+    );
+    this.createVenue = createProcedureMethod(
+      { getProcedureAndArgs: args => [createVenue, args] },
+      context
+    );
   }
 
   /**

@@ -8,7 +8,6 @@ import {
 } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
-import { Params } from '~/api/procedures/toggleFreezeTransfers';
 import {
   Context,
   controllerTransfer,
@@ -36,10 +35,7 @@ jest.mock(
 );
 
 describe('SecurityToken class', () => {
-  let prepareToggleFreezeTransfersStub: SinonStub<
-    [Params, Context],
-    Promise<TransactionQueue<SecurityToken, unknown[][]>>
-  >;
+  let prepareToggleFreezeTransfersStub: SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -199,7 +195,7 @@ describe('SecurityToken class', () => {
 
       sinon
         .stub(transferTokenOwnership, 'prepare')
-        .withArgs({ ticker, ...args }, context)
+        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.transferOwnership(args);
@@ -223,7 +219,7 @@ describe('SecurityToken class', () => {
 
       sinon
         .stub(modifyToken, 'prepare')
-        .withArgs({ ticker, ...args }, context)
+        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.modify(args);
@@ -421,7 +417,7 @@ describe('SecurityToken class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
       prepareToggleFreezeTransfersStub
-        .withArgs({ ticker, freeze: true }, context)
+        .withArgs({ args: { ticker, freeze: true }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.freeze();
@@ -439,7 +435,7 @@ describe('SecurityToken class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
       prepareToggleFreezeTransfersStub
-        .withArgs({ ticker, freeze: false }, context)
+        .withArgs({ args: { ticker, freeze: false }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.unfreeze();
@@ -504,7 +500,7 @@ describe('SecurityToken class', () => {
 
       sinon
         .stub(modifyPrimaryIssuanceAgent, 'prepare')
-        .withArgs({ ticker, target }, context)
+        .withArgs({ args: { ticker, target }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.modifyPrimaryIssuanceAgent({ target });
@@ -523,7 +519,7 @@ describe('SecurityToken class', () => {
 
       sinon
         .stub(removePrimaryIssuanceAgent, 'prepare')
-        .withArgs({ ticker }, context)
+        .withArgs({ args: { ticker }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.removePrimaryIssuanceAgent();
@@ -543,7 +539,7 @@ describe('SecurityToken class', () => {
 
       sinon
         .stub(redeemToken, 'prepare')
-        .withArgs({ amount, ticker }, context)
+        .withArgs({ args: { amount, ticker }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.redeem({ amount });
@@ -612,7 +608,7 @@ describe('SecurityToken class', () => {
 
       sinon
         .stub(controllerTransfer, 'prepare')
-        .withArgs({ ticker, originPortfolio, amount }, context)
+        .withArgs({ args: { ticker, originPortfolio, amount }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.controllerTransfer({ originPortfolio, amount });

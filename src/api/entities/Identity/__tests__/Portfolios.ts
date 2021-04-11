@@ -172,7 +172,7 @@ describe('Portfolios class', () => {
 
       sinon
         .stub(createPortfolio, 'prepare')
-        .withArgs({ name }, mockContext)
+        .withArgs({ args: { name }, transformer: undefined }, mockContext)
         .resolves(expectedQueue);
 
       const queue = await portfolios.create({ name });
@@ -188,7 +188,7 @@ describe('Portfolios class', () => {
 
       sinon
         .stub(deletePortfolio, 'prepare')
-        .withArgs({ id: portfolioId, did }, mockContext)
+        .withArgs({ args: { id: portfolioId, did }, transformer: undefined }, mockContext)
         .resolves(expectedQueue);
 
       let queue = await portfolios.delete({ portfolio: portfolioId });

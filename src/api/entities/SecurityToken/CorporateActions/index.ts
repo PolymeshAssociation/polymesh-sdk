@@ -30,12 +30,12 @@ export class CorporateActions extends Namespace<SecurityToken> {
     this.distributions = new Distributions(parent, context);
 
     this.setAgent = createProcedureMethod(
-      args => [modifyCorporateActionsAgent, { ticker, ...args }],
+      { getProcedureAndArgs: args => [modifyCorporateActionsAgent, { ticker, ...args }] },
       context
     );
 
     this.removeAgent = createProcedureMethod(
-      () => [removeCorporateActionsAgent, { ticker }],
+      { getProcedureAndArgs: () => [removeCorporateActionsAgent, { ticker }] },
       context
     );
   }

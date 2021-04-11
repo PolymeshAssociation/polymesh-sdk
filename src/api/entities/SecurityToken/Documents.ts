@@ -22,7 +22,10 @@ export class Documents extends Namespace<SecurityToken> {
 
     const { ticker } = parent;
 
-    this.set = createProcedureMethod(args => [setTokenDocuments, { ticker, ...args }], context);
+    this.set = createProcedureMethod(
+      { getProcedureAndArgs: args => [setTokenDocuments, { ticker, ...args }] },
+      context
+    );
   }
 
   /**

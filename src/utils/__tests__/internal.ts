@@ -9,7 +9,7 @@ import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { ClaimType, CommonKeyring, CountryCode } from '~/types';
 import { tuple } from '~/types/utils';
-import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
+import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 import {
   assertFormatValid,
@@ -373,8 +373,8 @@ describe('batchArguments', () => {
   });
 
   test('should use a custom batching function to group elements', () => {
-    const tag = TxTags.asset.BatchAddDocument;
-    const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
+    const tag = TxTags.corporateAction.InitiateCorporateAction;
+    const expectedBatchLength = DEFAULT_MAX_BATCH_ELEMENTS;
 
     const elements = range(0, 2 * expectedBatchLength);
 
@@ -463,17 +463,21 @@ describe('createProcedureMethod', () => {
   test('should return a ProcedureMethod object', async () => {
     const prepare = sinon.stub();
     const checkAuthorization = sinon.stub();
+    const transformer = sinon.stub();
     const fakeProcedure = ({
       prepare,
       checkAuthorization,
     } as unknown) as Procedure<number, void>;
 
-    const method = createProcedureMethod((args: number) => [fakeProcedure, args], context);
+    const method = createProcedureMethod(
+      { getProcedureAndArgs: (args: number) => [fakeProcedure, args], transformer },
+      context
+    );
 
     const procArgs = 1;
     await method(procArgs);
 
-    sinon.assert.calledWithExactly(prepare, procArgs, context);
+    sinon.assert.calledWithExactly(prepare, { args: procArgs, transformer }, context);
 
     await method.checkAuthorization(procArgs);
 
@@ -500,7 +504,10 @@ describe('assertIsInteger', () => {
 });
 
 describe('assertIsPositive', () => {
-  test('assertIsPositive should throw an error if the argument is negative', async () => {
+  test('should not throw an error if the argument is positive', () => {
+    expect(() => assertIsPositive(new BigNumber(43))).not.toThrow();
+  });
+  test('should throw an error if the argument is negative', async () => {
     expect(() => assertIsPositive(new BigNumber(-3))).toThrow('The number must be positive');
   });
 });
