@@ -2,7 +2,15 @@ import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { addInstruction, Context, Entity, Instruction, TransactionQueue, Venue } from '~/internal';
+import {
+  addInstruction,
+  addInstructionTransformer,
+  Context,
+  Entity,
+  Instruction,
+  TransactionQueue,
+  Venue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { VenueType } from '~/types';
@@ -223,8 +231,8 @@ describe('Venue class', () => {
       addInstructionPrepareStub
         .withArgs(
           {
-            args: { venueId: id, instructions: [{ legs, tradeDate, endBlock }] },
-            transformer: undefined,
+            args: { instructions: [{ legs, tradeDate, endBlock }], venueId: id },
+            transformer: addInstructionTransformer,
           },
           context
         )
@@ -237,10 +245,10 @@ describe('Venue class', () => {
   });
 
   describe('method: addInstructions', () => {
-    let prepareAddInstructionStub: sinon.SinonStub;
+    let addInstructionPrepareStub: sinon.SinonStub;
 
     beforeAll(() => {
-      prepareAddInstructionStub = sinon.stub(addInstruction, 'prepare');
+      addInstructionPrepareStub = sinon.stub(addInstruction, 'prepare');
     });
 
     afterAll(() => {
@@ -276,13 +284,30 @@ describe('Venue class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
-      prepareAddInstructionStub
-        .withArgs({ venueId: id, instructions }, context)
+      addInstructionPrepareStub
+        .withArgs(
+          {
+            args: { venueId: id, instructions },
+            transformer: undefined,
+          },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await venue.addInstructions({ instructions });
 
       expect(queue).toBe(expectedQueue);
     });
+  });
+});
+
+describe('addInstructionTransformer', () => {
+  test('should return a single Instruction', () => {
+    const fakeContext = {} as Context;
+    const id = new BigNumber(1);
+
+    const result = addInstructionTransformer([new Instruction({ id }, fakeContext)]);
+
+    expect(result.id).toEqual(id);
   });
 });

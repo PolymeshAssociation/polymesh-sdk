@@ -29,6 +29,13 @@ export interface UniqueIdentifiers {
 }
 
 /**
+ * @hidden
+ */
+export function addInstructionTransformer([instruction]: Instruction[]): Instruction {
+  return instruction;
+}
+
+/**
  * Represents a Venue through which settlements are handled
  */
 export class Venue extends Entity<UniqueIdentifiers> {
@@ -58,12 +65,15 @@ export class Venue extends Entity<UniqueIdentifiers> {
     this.id = id;
 
     this.addInstruction = createProcedureMethod(
-      { getProcedureAndArgs: args => [addInstruction, { instructions: [args], venueId: id }] },
+      {
+        getProcedureAndArgs: args => [addInstruction, { instructions: [args], venueId: id }],
+        transformer: addInstructionTransformer,
+      },
       context
     );
 
     this.addInstructions = createProcedureMethod(
-      args => [addInstruction, { ...args, venueId: id }],
+      { getProcedureAndArgs: args => [addInstruction, { ...args, venueId: id }] },
       context
     );
   }
@@ -176,7 +186,7 @@ export class Venue extends Entity<UniqueIdentifiers> {
    * @note required role:
    *   - Venue Owner
    */
-  public addInstruction: ProcedureMethod<AddInstructionParams, Instruction[]>;
+  public addInstruction: ProcedureMethod<AddInstructionParams, Instruction[], Instruction>;
 
   /**
    * Creates a batch of settlement Instructions in this Venue
