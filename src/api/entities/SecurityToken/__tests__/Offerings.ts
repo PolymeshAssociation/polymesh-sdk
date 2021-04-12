@@ -71,7 +71,7 @@ describe('Offerings class', () => {
 
       sinon
         .stub(launchSto, 'prepare')
-        .withArgs({ ticker, ...args }, context)
+        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await offerings.launch(args);

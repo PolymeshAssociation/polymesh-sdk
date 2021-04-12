@@ -4,7 +4,7 @@ export type Mutable<Immutable> = {
   -readonly [K in keyof Immutable]: Immutable[K];
 };
 
-export type UnionOfProcedures<Args extends unknown, ReturnValue, Storage> = Args extends unknown
+export type UnionOfProcedures<Args extends unknown, ReturnValue, Storage> = Args extends object
   ? Procedure<Args, ReturnValue, Storage>
   : never;
 

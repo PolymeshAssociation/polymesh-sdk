@@ -69,7 +69,7 @@ describe('CorporateActions class', () => {
 
       sinon
         .stub(modifyCorporateActionsAgent, 'prepare')
-        .withArgs({ ticker, target }, context)
+        .withArgs({ args: { ticker, target }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await corporateActions.setAgent({ target });
@@ -84,7 +84,7 @@ describe('CorporateActions class', () => {
 
       sinon
         .stub(removeCorporateActionsAgent, 'prepare')
-        .withArgs({ ticker: 'SOME_TICKER' }, context)
+        .withArgs({ args: { ticker: 'SOME_TICKER' }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await corporateActions.removeAgent();

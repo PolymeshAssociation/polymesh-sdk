@@ -188,14 +188,23 @@ export class Procedure<
   /**
    * Build a [[TransactionQueue]] that can be run
    *
-   * @param args - arguments required to prepare the queue
+   * @param args.args - arguments required to prepare the queue
+   * @param args.transformer - optional function that transforms the Procedure result
    * @param context - context in which the resulting queue will run
    */
-  public async prepare(args: Args, context: Context): Promise<TransactionQueue<ReturnValue>> {
+  public async prepare<QueueReturnType>(
+    args: {
+      args: Args;
+      transformer?: (value: ReturnValue) => QueueReturnType | Promise<QueueReturnType>;
+    },
+    context: Context
+  ): Promise<TransactionQueue<ReturnValue, QueueReturnType>> {
     try {
-      await this.setup(args, context);
+      const { args: procArgs, transformer } = args;
 
-      const { roles, permissions } = await this._checkAuthorization(args, context);
+      await this.setup(procArgs, context);
+
+      const { roles, permissions } = await this._checkAuthorization(procArgs, context);
 
       if (!permissions) {
         throw new PolymeshError({
@@ -212,9 +221,12 @@ export class Procedure<
         });
       }
 
-      const returnValue = await this.prepareTransactions(args);
+      const procedureResult = await this.prepareTransactions(procArgs);
 
-      return new TransactionQueue(this.transactions, returnValue, context);
+      return new TransactionQueue(
+        { transactions: this.transactions, procedureResult, transformer },
+        context
+      );
     } finally {
       this.cleanup();
     }

@@ -77,7 +77,7 @@ describe('Schedules class', () => {
 
       sinon
         .stub(createCheckpointSchedule, 'prepare')
-        .withArgs({ ticker, ...args }, context)
+        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await schedules.create(args);
@@ -99,7 +99,7 @@ describe('Schedules class', () => {
 
       sinon
         .stub(removeCheckpointSchedule, 'prepare')
-        .withArgs({ ticker, ...args }, context)
+        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await schedules.remove(args);

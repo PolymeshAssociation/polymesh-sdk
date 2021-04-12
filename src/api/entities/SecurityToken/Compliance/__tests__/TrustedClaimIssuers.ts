@@ -61,7 +61,10 @@ describe('TrustedClaimIssuers class', () => {
       sinon
         .stub(modifyTokenTrustedClaimIssuers, 'prepare')
         .withArgs(
-          { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
+          {
+            args: { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
+            transformer: undefined,
+          },
           context
         )
         .resolves(expectedQueue);
@@ -96,7 +99,10 @@ describe('TrustedClaimIssuers class', () => {
       sinon
         .stub(modifyTokenTrustedClaimIssuers, 'prepare')
         .withArgs(
-          { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
+          {
+            args: { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
+            transformer: undefined,
+          },
           context
         )
         .resolves(expectedQueue);
@@ -128,7 +134,10 @@ describe('TrustedClaimIssuers class', () => {
       sinon
         .stub(modifyTokenTrustedClaimIssuers, 'prepare')
         .withArgs(
-          { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
+          {
+            args: { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
+            transformer: undefined,
+          },
           context
         )
         .resolves(expectedQueue);
