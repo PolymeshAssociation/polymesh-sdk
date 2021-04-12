@@ -59,6 +59,13 @@ export async function prepareModifyInstructionAffirmation(
 
   await assertInstructionValid(instruction, context);
 
+  if (!portfolios.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Current Identity is not involved in this Instruction',
+    });
+  }
+
   const rawInstructionId = numberToU64(id, context);
   const rawPortfolioIds: PortfolioId[] = portfolios.map(portfolio =>
     portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
@@ -93,13 +100,13 @@ export async function prepareModifyInstructionAffirmation(
   }
 
   const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
-
+  console.log(multiArgs);
   const rawAffirmationStatuses = await settlement.userAffirmations.multi<MeshAffirmationStatus>(
     multiArgs
   );
 
   const affirmationStatuses = rawAffirmationStatuses.map(meshAffirmationStatusToAffirmationStatus);
-
+  console.log(affirmationStatuses);
   const validPortfolioIds = rawPortfolioIds.filter(
     (_, index) => !excludeCriteria.includes(affirmationStatuses[index])
   );
