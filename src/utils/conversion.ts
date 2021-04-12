@@ -2563,8 +2563,7 @@ export function fundraiserToStoDetails(
     offeringPortfolio: meshPortfolioIdToPortfolio(offeringPortfolio, context),
     raisingPortfolio: meshPortfolioIdToPortfolio(raisingPortfolio, context),
     raisingCurrency: tickerToString(raisingAsset),
-    // NOTE @monitz87: the chain doesn't guarantee tiers to be sorted
-    tiers: tiers.sort(({ price: aPrice }, { price: bPrice }) => aPrice.minus(bPrice).toNumber()),
+    tiers,
     venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
     start,
     end,
