@@ -172,7 +172,13 @@ describe('DividendDistribution class', () => {
 
       sinon
         .stub(payDividends, 'prepare')
-        .withArgs({ targets: identityTargets, distribution: dividendDistribution }, context)
+        .withArgs(
+          {
+            args: { targets: identityTargets, distribution: dividendDistribution },
+            transformer: undefined,
+          },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await dividendDistribution.pay({ targets: identityTargets });

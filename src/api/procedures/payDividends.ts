@@ -1,5 +1,6 @@
 import { bool } from '@polkadot/types';
 
+import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TargetTreatment, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -10,7 +11,7 @@ import {
   signerToString,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { assertDistributionOpen, xor } from '~/utils/internal';
+import { xor } from '~/utils/internal';
 
 export interface PayDividendsParams {
   targets: (string | Identity)[];
@@ -49,10 +50,10 @@ export async function preparePayDividends(
 
   const excluded: Identity[] = [];
   targets.forEach(target => {
-    const targetdDid = signerToString(target);
-    const found = !!identities.find(({ did }) => did === targetdDid);
+    const targetassertDistributionOpenDid = signerToString(target);
+    const found = !!identities.find(({ did }) => did === targetassertDistributionOpenDid);
     if (xor(found, treatment === TargetTreatment.Include)) {
-      excluded.push(new Identity({ did: targetdDid }, context));
+      excluded.push(new Identity({ did: targetassertDistributionOpenDid }, context));
     }
   });
 

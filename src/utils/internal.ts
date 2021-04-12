@@ -535,31 +535,6 @@ export function assertFormatValid(address: string, ss58Format: number): void {
 /**
  * @hidden
  */
-export function assertDistributionOpen(paymentDate: Date, expiryDate: Date | null): void {
-  const now = new Date();
-
-  if (paymentDate > now) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: "The Distribution's payment date hasn't been reached",
-      data: { paymentDate },
-    });
-  }
-
-  if (expiryDate && expiryDate < now) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The Distribution has already expired',
-      data: {
-        expiryDate,
-      },
-    });
-  }
-}
-
-/**
- * @hidden
- */
 export function xor(a: boolean, b: boolean): boolean {
   return a !== b;
 }

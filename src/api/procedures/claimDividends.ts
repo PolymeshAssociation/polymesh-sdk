@@ -1,3 +1,4 @@
+import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TargetTreatment, TxTags } from '~/types';
 import {
@@ -5,7 +6,7 @@ import {
   corporateActionIdentifierToCaId,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { assertDistributionOpen, xor } from '~/utils/internal';
+import { xor } from '~/utils/internal';
 
 /**
  * @hidden

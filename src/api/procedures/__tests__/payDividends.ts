@@ -170,6 +170,8 @@ describe('payDividends procedure', () => {
     const dids = ['someDid', 'otherDid'];
     const targets = [dids[0], entityMockUtils.getIdentityInstance({ did: dids[1] })];
 
+    sinon.stub(utilsConversionModule, 'boolToBoolean').returns(true);
+
     dids.forEach(targetDid =>
       stringToIdentityIdStub
         .withArgs(targetDid)
@@ -186,8 +188,6 @@ describe('payDividends procedure', () => {
       expiryDate,
       paymentDate,
     });
-
-    sinon.stub(utilsConversionModule, 'boolToBoolean').returns(true);
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
