@@ -87,7 +87,7 @@ describe('Requirements class', () => {
 
       sinon
         .stub(setAssetRequirements, 'prepare')
-        .withArgs({ ticker: token.ticker, ...args }, context)
+        .withArgs({ args: { ticker: token.ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await requirements.set(args);
@@ -110,7 +110,10 @@ describe('Requirements class', () => {
 
       sinon
         .stub(setAssetRequirements, 'prepare')
-        .withArgs({ ticker: token.ticker, requirements: [] }, context)
+        .withArgs(
+          { args: { ticker: token.ticker, requirements: [] }, transformer: undefined },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await requirements.reset();
@@ -313,7 +316,7 @@ describe('Requirements class', () => {
 
       sinon
         .stub(togglePauseRequirements, 'prepare')
-        .withArgs({ ticker: token.ticker, pause: true }, context)
+        .withArgs({ args: { ticker: token.ticker, pause: true }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await requirements.pause();
@@ -336,7 +339,7 @@ describe('Requirements class', () => {
 
       sinon
         .stub(togglePauseRequirements, 'prepare')
-        .withArgs({ ticker: token.ticker, pause: false }, context)
+        .withArgs({ args: { ticker: token.ticker, pause: false }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await requirements.unpause();

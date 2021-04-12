@@ -64,19 +64,25 @@ export class Sto extends Entity<UniqueIdentifiers> {
     this.ticker = ticker;
 
     this.freeze = createProcedureMethod(
-      () => [toggleFreezeSto, { ticker, id, freeze: true }],
+      { getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: true }] },
       context
     );
     this.unfreeze = createProcedureMethod(
-      () => [toggleFreezeSto, { ticker, id, freeze: false }],
+      { getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: false }] },
       context
     );
-    this.close = createProcedureMethod(() => [closeSto, { ticker, id }], context);
+    this.close = createProcedureMethod(
+      { getProcedureAndArgs: () => [closeSto, { ticker, id }] },
+      context
+    );
     this.modifyTimes = createProcedureMethod(
-      args => [modifyStoTimes, { ticker, id, ...args }],
+      { getProcedureAndArgs: args => [modifyStoTimes, { ticker, id, ...args }] },
       context
     );
-    this.invest = createProcedureMethod(args => [investInSto, { ticker, id, ...args }], context);
+    this.invest = createProcedureMethod(
+      { getProcedureAndArgs: args => [investInSto, { ticker, id, ...args }] },
+      context
+    );
   }
 
   /**

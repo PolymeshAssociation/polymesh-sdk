@@ -62,7 +62,7 @@ export class Distributions extends Namespace<SecurityToken> {
     const { ticker } = parent;
 
     this.configureDividendDistribution = createProcedureMethod(
-      args => [configureDividendDistribution, { ticker, ...args }],
+      { getProcedureAndArgs: args => [configureDividendDistribution, { ticker, ...args }] },
       context
     );
   }

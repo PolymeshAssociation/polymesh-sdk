@@ -11,7 +11,6 @@ import {
   modifyStoTimes,
   Sto,
   toggleFreezeSto,
-  ToggleFreezeStoParams,
   TransactionQueue,
   Venue,
 } from '~/internal';
@@ -42,10 +41,7 @@ jest.mock(
 
 describe('Sto class', () => {
   let context: Context;
-  let prepareToggleFreezeStoStub: SinonStub<
-    [ToggleFreezeStoParams, Context],
-    Promise<TransactionQueue<Sto, unknown[][]>>
-  >;
+  let prepareToggleFreezeStoStub: SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -228,7 +224,10 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon.stub(closeSto, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      sinon
+        .stub(closeSto, 'prepare')
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await sto.close();
 
@@ -255,7 +254,10 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon.stub(modifyStoTimes, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      sinon
+        .stub(modifyStoTimes, 'prepare')
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await sto.modifyTimes({
         start,
@@ -349,7 +351,7 @@ describe('Sto class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
 
       prepareToggleFreezeStoStub
-        .withArgs({ ticker, id, freeze: true }, context)
+        .withArgs({ args: { ticker, id, freeze: true }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await sto.freeze();
@@ -367,7 +369,7 @@ describe('Sto class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
 
       prepareToggleFreezeStoStub
-        .withArgs({ ticker, id, freeze: false }, context)
+        .withArgs({ args: { ticker, id, freeze: false }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await sto.unfreeze();
@@ -397,7 +399,10 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon.stub(investInSto, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      sinon
+        .stub(investInSto, 'prepare')
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await sto.invest({
         purchasePortfolio,

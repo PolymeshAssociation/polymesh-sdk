@@ -28,11 +28,11 @@ export class Schedules extends Namespace<SecurityToken> {
     const { ticker } = parent;
 
     this.create = createProcedureMethod(
-      args => [createCheckpointSchedule, { ticker, ...args }],
+      { getProcedureAndArgs: args => [createCheckpointSchedule, { ticker, ...args }] },
       context
     );
     this.remove = createProcedureMethod(
-      args => [removeCheckpointSchedule, { ticker, ...args }],
+      { getProcedureAndArgs: args => [removeCheckpointSchedule, { ticker, ...args }] },
       context
     );
   }

@@ -18,7 +18,10 @@ export class Offerings extends Namespace<SecurityToken> {
 
     const { ticker } = parent;
 
-    this.launch = createProcedureMethod(args => [launchSto, { ticker, ...args }], context);
+    this.launch = createProcedureMethod(
+      { getProcedureAndArgs: args => [launchSto, { ticker, ...args }] },
+      context
+    );
   }
 
   /**
