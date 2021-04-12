@@ -96,10 +96,18 @@ export class DividendDistribution extends CorporateAction {
     this.expiryDate = expiryDate;
     this.paymentDate = paymentDate;
 
-    this.claim = createProcedureMethod(() => [claimDividends, { distribution: this }], context);
-
     this.pay = createProcedureMethod(
-      payDividendsArgs => [payDividends, { ...payDividendsArgs, distribution: this }],
+      {
+        getProcedureAndArgs: payDividendsArgs => [
+          payDividends,
+          { ...payDividendsArgs, distribution: this },
+        ],
+      },
+      context
+    );
+
+    this.claim = createProcedureMethod(
+      { getProcedureAndArgs: () => [claimDividends, { distribution: this }] },
       context
     );
   }

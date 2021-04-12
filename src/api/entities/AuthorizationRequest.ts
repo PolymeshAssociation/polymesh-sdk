@@ -98,25 +98,35 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
       void,
       ConsumeAuthorizationRequestsParams | ConsumeJoinIdentityAuthorizationParams,
       void
-    >(() => {
-      if (this.data.type === AuthorizationType.JoinIdentity) {
-        return [consumeJoinIdentityAuthorization, { authRequest: this, accept: true }];
-      }
+    >(
+      {
+        getProcedureAndArgs: () => {
+          if (this.data.type === AuthorizationType.JoinIdentity) {
+            return [consumeJoinIdentityAuthorization, { authRequest: this, accept: true }];
+          }
 
-      return [consumeAuthorizationRequests, { authRequests: [this], accept: true }];
-    }, context);
+          return [consumeAuthorizationRequests, { authRequests: [this], accept: true }];
+        },
+      },
+      context
+    );
 
     this.remove = createProcedureMethod<
       void,
       ConsumeAuthorizationRequestsParams | ConsumeJoinIdentityAuthorizationParams,
       void
-    >(() => {
-      if (this.data.type === AuthorizationType.JoinIdentity) {
-        return [consumeJoinIdentityAuthorization, { authRequest: this, accept: false }];
-      }
+    >(
+      {
+        getProcedureAndArgs: () => {
+          if (this.data.type === AuthorizationType.JoinIdentity) {
+            return [consumeJoinIdentityAuthorization, { authRequest: this, accept: false }];
+          }
 
-      return [consumeAuthorizationRequests, { authRequests: [this], accept: false }];
-    }, context);
+          return [consumeAuthorizationRequests, { authRequests: [this], accept: false }];
+        },
+      },
+      context
+    );
   }
 
   /**

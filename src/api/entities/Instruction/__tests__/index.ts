@@ -426,7 +426,13 @@ describe('Instruction class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       prepareModifyInstructionAffirmationStub
-        .withArgs({ id, operation: InstructionAffirmationOperation.Reject }, context)
+        .withArgs(
+          {
+            args: { id, operation: InstructionAffirmationOperation.Reject },
+            transformer: undefined,
+          },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await instruction.reject();
@@ -447,7 +453,13 @@ describe('Instruction class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
       prepareModifyInstructionAffirmationStub
-        .withArgs({ id, operation: InstructionAffirmationOperation.Affirm }, context)
+        .withArgs(
+          {
+            args: { id, operation: InstructionAffirmationOperation.Affirm },
+            transformer: undefined,
+          },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await instruction.affirm();
@@ -469,7 +481,13 @@ describe('Instruction class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
       prepareModifyInstructionAffirmationStub
-        .withArgs({ id, operation: InstructionAffirmationOperation.Withdraw }, context)
+        .withArgs(
+          {
+            args: { id, operation: InstructionAffirmationOperation.Withdraw },
+            transformer: undefined,
+          },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await instruction.withdraw();

@@ -156,7 +156,7 @@ describe('DividendDistribution class', () => {
 
       sinon
         .stub(claimDividends, 'prepare')
-        .withArgs({ distribution: dividendDistribution }, context)
+        .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await dividendDistribution.claim();

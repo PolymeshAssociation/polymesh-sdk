@@ -90,7 +90,7 @@ describe('AuthorizationRequest class', () => {
 
       sinon
         .stub(consumeAuthorizationRequests, 'prepare')
-        .withArgs({ ...args }, context)
+        .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await authorizationRequest.accept();
@@ -127,7 +127,7 @@ describe('AuthorizationRequest class', () => {
 
       sinon
         .stub(consumeJoinIdentityAuthorization, 'prepare')
-        .withArgs({ ...args }, context)
+        .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await authorizationRequest.accept();
@@ -162,7 +162,7 @@ describe('AuthorizationRequest class', () => {
 
       sinon
         .stub(consumeAuthorizationRequests, 'prepare')
-        .withArgs({ ...args }, context)
+        .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await authorizationRequest.remove();
@@ -199,7 +199,7 @@ describe('AuthorizationRequest class', () => {
 
       sinon
         .stub(consumeJoinIdentityAuthorization, 'prepare')
-        .withArgs({ ...args }, context)
+        .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await authorizationRequest.remove();
