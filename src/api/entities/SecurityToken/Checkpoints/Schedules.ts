@@ -10,10 +10,14 @@ import {
   RemoveCheckpointScheduleParams,
   SecurityToken,
 } from '~/internal';
-import { ScheduleWithDetails } from '~/types';
+import { CalendarPeriod, ScheduleWithDetails } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
-import { storedScheduleToCheckpointScheduleParams, stringToTicker } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import {
+  storedScheduleToCheckpointScheduleParams,
+  stringToTicker,
+  u64ToBigNumber,
+} from '~/utils/conversion';
+import { createProcedureMethod, periodComplexity } from '~/utils/internal';
 
 /**
  * Handles all Security Token Checkpoint Schedules related functionality
@@ -90,5 +94,33 @@ export class Schedules extends Namespace<SecurityToken> {
         },
       };
     });
+  }
+
+  /**
+   * Calculate an abstract measure of the complexity of a given Calendar Period
+   */
+  public complexityOf(period: CalendarPeriod): number {
+    return periodComplexity(period);
+  }
+
+  /**
+   * Calculate the sum of the complexity of all current Checkpoint Schedules for this Security Token.
+   *   The number cannot exceed the Token's maximum complexity (obtained via [[maxComplexity]])
+   */
+  public async currentComplexity(): Promise<number> {
+    const schedules = await this.get();
+
+    return schedules.reduce((prev, next) => prev + next.schedule.complexity, 0);
+  }
+
+  /**
+   * Retrieve the maximum allowed Schedule complexity for this Security Token
+   */
+  public async maxComplexity(): Promise<number> {
+    const { context } = this;
+
+    const complexity = await context.polymeshApi.query.checkpoint.schedulesMaxComplexity();
+
+    return u64ToBigNumber(complexity).toNumber();
   }
 }

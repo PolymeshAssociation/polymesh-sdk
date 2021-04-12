@@ -11,8 +11,9 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { CalendarUnit } from '~/types';
+import { CalendarUnit, ScheduleWithDetails } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 import { Schedules } from '../Schedules';
 
@@ -161,6 +162,64 @@ describe('Schedules class', () => {
       expect(result[0].schedule.ticker).toEqual(ticker);
       expect(result[0].schedule.start).toEqual(start);
       expect(result[0].schedule.period).toEqual(period);
+    });
+  });
+
+  describe('method: complexityOf', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the complexity of the passed period', () => {
+      const period = {
+        unit: CalendarUnit.Month,
+        amount: 7,
+      };
+      const expected = 2;
+      sinon.stub(utilsInternalModule, 'periodComplexity').withArgs(period).returns(expected);
+
+      expect(schedules.complexityOf(period)).toBe(expected);
+    });
+  });
+
+  describe('method: currentComplexity', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the sum of the complexity of all schedules', async () => {
+      const getStub = sinon.stub(schedules, 'get');
+      getStub.resolves(([
+        { schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: 1 }) },
+        { schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: 2 }) },
+        { schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: 2.5 }) },
+      ] as unknown) as ScheduleWithDetails[]);
+
+      let result = await schedules.currentComplexity();
+
+      expect(result).toBe(5.5);
+
+      getStub.resolves([]);
+
+      result = await schedules.currentComplexity();
+
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('method: maxComplexity', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the maximum complexity from the chain', async () => {
+      dsMockUtils.createQueryStub('checkpoint', 'schedulesMaxComplexity', {
+        returnValue: dsMockUtils.createMockU64(20),
+      });
+
+      const result = await schedules.maxComplexity();
+
+      expect(result).toBe(20);
     });
   });
 });
