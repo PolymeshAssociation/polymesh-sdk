@@ -100,13 +100,13 @@ export async function prepareModifyInstructionAffirmation(
   }
 
   const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
-  console.log(multiArgs);
+
   const rawAffirmationStatuses = await settlement.userAffirmations.multi<MeshAffirmationStatus>(
     multiArgs
   );
 
   const affirmationStatuses = rawAffirmationStatuses.map(meshAffirmationStatusToAffirmationStatus);
-  console.log(affirmationStatuses);
+
   const validPortfolioIds = rawPortfolioIds.filter(
     (_, index) => !excludeCriteria.includes(affirmationStatuses[index])
   );
