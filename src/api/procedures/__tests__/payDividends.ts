@@ -47,7 +47,7 @@ describe('payDividends procedure', () => {
     payDividendsTransaction = dsMockUtils.createTxStub('capitalDistribution', 'pushBenefit');
     mockContext = dsMockUtils.getContextInstance();
     dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
-      multi: [true],
+      multi: [dsMockUtils.createMockBool(true)],
     });
   });
 
@@ -169,8 +169,6 @@ describe('payDividends procedure', () => {
   test('should throw an error if some of the supplied targets has already claimed their benefits', async () => {
     const dids = ['someDid', 'otherDid'];
     const targets = [dids[0], entityMockUtils.getIdentityInstance({ did: dids[1] })];
-
-    sinon.stub(utilsConversionModule, 'boolToBoolean').returns(true);
 
     dids.forEach(targetDid =>
       stringToIdentityIdStub
