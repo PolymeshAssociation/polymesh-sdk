@@ -305,7 +305,7 @@ describe('addInstructionTransformer', () => {
   test('should return a single Instruction', () => {
     const id = new BigNumber(1);
 
-    const result = addInstructionTransformer([entityMockUtils.getInstructionInstance()]);
+    const result = addInstructionTransformer([entityMockUtils.getInstructionInstance({ id })]);
 
     expect(result.id).toEqual(id);
   });
