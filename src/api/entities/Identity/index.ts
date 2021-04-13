@@ -423,7 +423,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve all pending Instructions involving the Current Identity
+   * Retrieve all pending Instructions involving this Identity
    */
   public async getPendingInstructions(): Promise<Instruction[]> {
     const {
