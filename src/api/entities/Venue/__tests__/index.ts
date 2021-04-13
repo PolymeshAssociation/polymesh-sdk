@@ -303,10 +303,9 @@ describe('Venue class', () => {
 
 describe('addInstructionTransformer', () => {
   test('should return a single Instruction', () => {
-    const fakeContext = {} as Context;
     const id = new BigNumber(1);
 
-    const result = addInstructionTransformer([new Instruction({ id }, fakeContext)]);
+    const result = addInstructionTransformer([entityMockUtils.getInstructionInstance()]);
 
     expect(result.id).toEqual(id);
   });

@@ -28,6 +28,7 @@ import {
 import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
+  dateToMoment,
   endConditionToSettlementType,
   numberToBalance,
   numberToU64,
@@ -37,7 +38,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateMoment, filterEventRecords, getTicker } from '~/utils/internal';
+import { filterEventRecords, getTicker, optionize } from '~/utils/internal';
 
 export interface AddInstructionParams {
   legs: {
@@ -104,10 +105,31 @@ async function getTxArgsAndErrors(
     endBlockErrIndexes: number[];
     datesErrIndexes: number[];
   };
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  addAndAffirmInstructionParams: any;
-  addInstructionParams: any;
-  /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+  addAndAffirmInstructionParams: [
+    u64,
+    SettlementType,
+    Moment | null,
+    Moment | null,
+    {
+      from: PortfolioId;
+      to: PortfolioId;
+      asset: Ticker;
+      amount: Balance;
+    }[],
+    PortfolioId[]
+  ][];
+  addInstructionParams: [
+    u64,
+    SettlementType,
+    Moment | null,
+    Moment | null,
+    {
+      from: PortfolioId;
+      to: PortfolioId;
+      asset: Ticker;
+      amount: Balance;
+    }[]
+  ][];
 }> {
   const addAndAffirmInstructionParams: [
     u64,
@@ -163,8 +185,8 @@ async function getTxArgsAndErrors(
     if (!legErrIndexes.length && !endBlockErrIndexes.length && !datesErrIndexes.length) {
       const rawVenueId = numberToU64(venueId, context);
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
-      const rawTradeDate = calculateMoment(tradeDate, context);
-      const rawValueDate = calculateMoment(valueDate, context);
+      const rawTradeDate = optionize(dateToMoment)(tradeDate, context);
+      const rawValueDate = optionize(dateToMoment)(valueDate, context);
       const rawLegs: {
         from: PortfolioId;
         to: PortfolioId;
@@ -330,15 +352,15 @@ export async function getAuthorization(
     storage: { portfoliosToAffirm },
   } = this;
 
+  let transactions: SettlementTx[] = [];
   let portfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
-  const transactions: SettlementTx[] = [];
 
   portfoliosToAffirm.forEach(portfoliosList => {
-    transactions.push(
+    transactions = union(transactions, [
       portfoliosList.length
         ? TxTags.settlement.AddAndAffirmInstruction
-        : TxTags.settlement.AddInstruction
-    );
+        : TxTags.settlement.AddInstruction,
+    ]);
     portfolios = unionWith(portfolios, portfoliosList, isEqual);
   });
 
@@ -347,7 +369,7 @@ export async function getAuthorization(
     signerPermissions: {
       tokens: [],
       portfolios,
-      transactions: union(transactions),
+      transactions,
     },
   };
 }

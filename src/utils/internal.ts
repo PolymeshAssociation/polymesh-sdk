@@ -12,7 +12,7 @@ import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
-import { Moment, TxTag } from 'polymesh-types/types';
+import { TxTag } from 'polymesh-types/types';
 
 import { Procedure } from '~/base/Procedure';
 import {
@@ -49,7 +49,7 @@ import {
   DEFAULT_MAX_BATCH_ELEMENTS,
   MAX_BATCH_ELEMENTS,
 } from '~/utils/constants';
-import { dateToMoment, middlewareScopeToScope, signerToString } from '~/utils/conversion';
+import { middlewareScopeToScope, signerToString } from '~/utils/conversion';
 
 export * from '~/generated/utils';
 
@@ -545,7 +545,11 @@ export function getTicker(token: string | SecurityToken): string {
 
 /**
  * @hidden
+ * Transform a conversion util into a version that returns null if the input is falsy
  */
-export function calculateMoment(date: Date | undefined, context: Context): Moment | null {
-  return (date && dateToMoment(date, context)) ?? null;
+export function optionize<InputType, OutputType>(
+  converter: (input: InputType, context: Context) => OutputType
+): (val: InputType | null | undefined, context: Context) => OutputType | null {
+  return (value: InputType | null = null, context: Context): OutputType | null =>
+    value && converter(value, context);
 }

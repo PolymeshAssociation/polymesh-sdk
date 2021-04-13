@@ -11,14 +11,12 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { ClaimType, CommonKeyring, CountryCode } from '~/types';
 import { tuple } from '~/types/utils';
 import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
-import * as utilsConversionModule from '~/utils/conversion';
 
 import {
   assertFormatValid,
   assertIsInteger,
   assertIsPositive,
   batchArguments,
-  calculateMoment,
   calculateNextKey,
   createClaim,
   createProcedureMethod,
@@ -553,22 +551,5 @@ describe('getTicker', () => {
 
     result = getTicker(new SecurityToken({ ticker: symbol }, dsMockUtils.getContextInstance()));
     expect(result).toBe(symbol);
-  });
-});
-
-describe('calculateMoment', () => {
-  test('should return a moment object or null', async () => {
-    const context = dsMockUtils.getContextInstance();
-    const timestamp = 12000;
-    const date = new Date(timestamp);
-    const fakeResult = dsMockUtils.createMockMoment(timestamp);
-
-    sinon.stub(utilsConversionModule, 'dateToMoment').returns(fakeResult);
-
-    let result = calculateMoment(date, context);
-    expect(result).toBe(fakeResult);
-
-    result = calculateMoment(undefined, context);
-    expect(result).toBeNull();
   });
 });
