@@ -9,6 +9,8 @@ import {
   Context,
   CorporateAction,
   DefaultPortfolio,
+  modifyRecordDate,
+  ModifyRecordDateParams,
   NumberedPortfolio,
   PolymeshError,
 } from '~/internal';
@@ -98,12 +100,27 @@ export class DividendDistribution extends CorporateAction {
       { getProcedureAndArgs: () => [claimDividends, { distribution: this }] },
       context
     );
+
+    this.modifyRecordDate = createProcedureMethod(
+      {
+        getProcedureAndArgs: modifyRecordDateArgs => [
+          modifyRecordDate,
+          { distribution: this, ...modifyRecordDateArgs },
+        ],
+      },
+      context
+    );
   }
 
   /**
    * Claim the dividends corresponding to the current Identity
    */
   public claim: ProcedureMethod<void, void>;
+
+  /**
+   * Modify the distribution's record date
+   */
+  public modifyRecordDate: ProcedureMethod<ModifyRecordDateParams, void>;
 
   /**
    * Retrieve the Checkpoint associated with this Dividend Distribution. If the Checkpoint is scheduled and has not been created yet,

@@ -148,3 +148,4 @@ export {
 } from '~/api/procedures/configureDividendDistribution';
 export { claimDividends } from '~/api/procedures/claimDividends';
 export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';
+export { modifyRecordDate, ModifyRecordDateParams } from '~/api/procedures/modifyRecordDate';

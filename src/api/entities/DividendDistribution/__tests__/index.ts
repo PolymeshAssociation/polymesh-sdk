@@ -9,6 +9,7 @@ import {
   DefaultPortfolio,
   DividendDistribution,
   Entity,
+  modifyRecordDate,
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -187,6 +188,27 @@ describe('DividendDistribution class', () => {
       }
 
       expect(err.message).toBe('The Dividend Distribution no longer exists');
+    });
+  });
+
+  describe('method: modifyRecordDate', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const args = {
+        recordDate: new Date(),
+      };
+
+      sinon
+        .stub(modifyRecordDate, 'prepare')
+        .withArgs(
+          { args: { distribution: dividendDistribution, ...args }, transformer: undefined },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await dividendDistribution.modifyRecordDate(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });
