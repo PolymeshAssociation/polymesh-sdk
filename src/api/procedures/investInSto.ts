@@ -69,14 +69,22 @@ export const calculateTierStats = (
       },
       { remaining, price }
     ) => {
-      if ((!maxPrice || price.lte(maxPrice)) && !prevRemainingToPurchase.isZero()) {
+      if (!prevRemainingToPurchase.isZero()) {
         const tierPurchaseAmount = BigNumber.minimum(remaining, prevRemainingToPurchase);
-        return {
-          remainingTotal: prevRemainingTotal.plus(tierPurchaseAmount),
-          price: prevPrice.plus(tierPurchaseAmount.multipliedBy(price)),
-          remainingToPurchase: prevRemainingToPurchase.minus(tierPurchaseAmount),
-        };
+        const newRemainingTotal = prevRemainingTotal.plus(tierPurchaseAmount);
+        const newPrice = prevPrice.plus(tierPurchaseAmount.multipliedBy(price));
+        const newRemainingToPurchase = prevRemainingToPurchase.minus(tierPurchaseAmount);
+        const newAvgPrice = newPrice.dividedBy(purchaseAmount.minus(newRemainingToPurchase));
+
+        if (!maxPrice || newAvgPrice.lte(maxPrice)) {
+          return {
+            remainingTotal: newRemainingTotal,
+            price: newPrice,
+            remainingToPurchase: newRemainingToPurchase,
+          };
+        }
       }
+
       return {
         remainingTotal: prevRemainingTotal,
         price: prevPrice,
@@ -125,7 +133,7 @@ export async function prepareInvestInSto(
     raisingCurrency,
   } = await sto.details();
 
-  const [{ total: totalTokenBalance }] = await portfolio.getTokenBalances({
+  const [{ free: freeTokenBalance }] = await portfolio.getTokenBalances({
     tokens: [raisingCurrency],
   });
 
@@ -146,11 +154,11 @@ export async function prepareInvestInSto(
     });
   }
 
-  if (totalTokenBalance.lt(priceTotal)) {
+  if (freeTokenBalance.lt(priceTotal)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The Portfolio does not have enough balance for this investment',
-      data: { priceTotal },
+      message: 'The Portfolio does not have enough free balance for this investment',
+      data: { free: freeTokenBalance, priceTotal },
     });
   }
 

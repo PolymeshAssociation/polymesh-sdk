@@ -24,6 +24,8 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
+  CalendarPeriod,
+  CalendarUnit,
   Claim,
   ClaimType,
   CommonKeyring,
@@ -396,28 +398,82 @@ export function calculateNextKey(totalCount: number, size?: number, start?: numb
 export function createProcedureMethod<
   MethodArgs,
   ProcedureArgs extends unknown,
+  ProcedureReturnValue,
+  Storage = {}
+>(
+  args: {
+    getProcedureAndArgs: (
+      methodArgs: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedures<ProcedureArgs, ProcedureReturnValue, Storage>
+        | Procedure<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+  },
+  context: Context
+): ProcedureMethod<MethodArgs, ProcedureReturnValue, ProcedureReturnValue>;
+export function createProcedureMethod<
+  MethodArgs,
+  ProcedureArgs extends unknown,
+  ProcedureReturnValue,
   ReturnValue,
   Storage = {}
 >(
-  getProcedureAndArgs: (
-    args: MethodArgs
-  ) => [
-    (
-      | UnionOfProcedures<ProcedureArgs, ReturnValue, Storage>
-      | Procedure<ProcedureArgs, ReturnValue, Storage>
-    ),
-    ProcedureArgs
-  ],
+  args: {
+    getProcedureAndArgs: (
+      methodArgs: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedures<ProcedureArgs, ProcedureReturnValue, Storage>
+        | Procedure<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    transformer: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
+  },
   context: Context
-): ProcedureMethod<MethodArgs, ReturnValue> {
-  const method = (args: MethodArgs): Promise<TransactionQueue<ReturnValue>> => {
-    const [proc, procArgs] = getProcedureAndArgs(args);
+): ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>;
+// eslint-disable-next-line require-jsdoc
+export function createProcedureMethod<
+  MethodArgs,
+  ProcedureArgs extends unknown,
+  ProcedureReturnValue,
+  ReturnValue = ProcedureReturnValue,
+  Storage = {}
+>(
+  args: {
+    getProcedureAndArgs: (
+      methodArgs: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedures<ProcedureArgs, ProcedureReturnValue, Storage>
+        | Procedure<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    transformer?: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
+  },
+  context: Context
+): ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue> {
+  const { getProcedureAndArgs, transformer } = args;
 
-    return proc.prepare(procArgs, context);
+  const method = (
+    methodArgs: MethodArgs
+  ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
+    const [proc, procArgs] = getProcedureAndArgs(methodArgs);
+
+    return (proc as Procedure<ProcedureArgs, ProcedureReturnValue, Storage>).prepare(
+      { args: procArgs, transformer },
+      context
+    );
   };
 
-  method.checkAuthorization = async (args: MethodArgs): Promise<ProcedureAuthorizationStatus> => {
-    const [proc, procArgs] = getProcedureAndArgs(args);
+  method.checkAuthorization = async (
+    methodArgs: MethodArgs
+  ): Promise<ProcedureAuthorizationStatus> => {
+    const [proc, procArgs] = getProcedureAndArgs(methodArgs);
 
     return proc.checkAuthorization(procArgs, context);
   };
@@ -482,4 +538,64 @@ export function assertFormatValid(address: string, ss58Format: number): void {
       },
     });
   }
+}
+
+/**
+ * @hidden
+ */
+export function xor(a: boolean, b: boolean): boolean {
+  return a !== b;
+}
+
+/**
+ * @hidden
+ */                                                   
+function secondsInUnit(unit: CalendarUnit): number {
+  const SECOND = 1;
+  const MINUTE = SECOND * 60;
+  const HOUR = MINUTE * 60;
+  const DAY = HOUR * 24;
+  const WEEK = DAY * 7;
+  const MONTH = DAY * 30;
+  const YEAR = DAY * 365;
+
+  switch (unit) {
+    case CalendarUnit.Second: {
+      return SECOND;
+    }
+    case CalendarUnit.Minute: {
+      return MINUTE;
+    }
+    case CalendarUnit.Hour: {
+      return HOUR;
+    }
+    case CalendarUnit.Day: {
+      return DAY;
+    }
+    case CalendarUnit.Week: {
+      return WEEK;
+    }
+    case CalendarUnit.Month: {
+      return MONTH;
+    }
+    case CalendarUnit.Year: {
+      return YEAR;
+    }
+  }
+}
+
+/**
+ * @hidden
+ */
+export function periodComplexity(period: CalendarPeriod): number {
+  const secsInYear = secondsInUnit(CalendarUnit.Year);
+  const { amount, unit } = period;
+
+  if (amount === 0) {
+    return 1;
+  }
+
+  const secsInUnit = secondsInUnit(unit);
+
+  return Math.max(2, Math.floor(secsInYear / (secsInUnit * amount)));
 }

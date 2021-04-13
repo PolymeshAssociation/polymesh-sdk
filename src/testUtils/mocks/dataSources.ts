@@ -467,6 +467,7 @@ const defaultContextOptions: ContextOptions = {
   balance: {
     free: new BigNumber(100),
     locked: new BigNumber(10),
+    total: new BigNumber(110),
   },
   hasRoles: true,
   hasPermissions: true,

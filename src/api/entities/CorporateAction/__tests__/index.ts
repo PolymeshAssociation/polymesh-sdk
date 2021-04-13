@@ -1,7 +1,15 @@
 import BigNumber from 'bignumber.js';
+import sinon from 'sinon';
 
 import { Checkpoint } from '~/api/entities/Checkpoint';
-import { CheckpointSchedule, Context, CorporateAction, Entity } from '~/internal';
+import {
+  CheckpointSchedule,
+  Context,
+  CorporateAction,
+  Entity,
+  linkCaDocs,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   CalendarUnit,
@@ -24,7 +32,6 @@ jest.mock(
 
 describe('CorporateAction class', () => {
   let context: Context;
-
   let id: BigNumber;
   let ticker: string;
   let declarationDate: Date;
@@ -129,6 +136,31 @@ describe('CorporateAction class', () => {
       expect(CorporateAction.isUniqueIdentifiers({})).toBe(false);
       expect(CorporateAction.isUniqueIdentifiers({ ticker: 'SYMBOL' })).toBe(false);
       expect(CorporateAction.isUniqueIdentifiers({ id: 1 })).toBe(false);
+    });
+  });
+
+  describe('method: linkDocuments', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = {
+        documents: [
+          {
+            name: 'someName',
+            uri: 'someUri',
+            contentHash: 'someHash',
+          },
+        ],
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      sinon
+        .stub(linkCaDocs, 'prepare')
+        .withArgs({ args: { id, ticker, ...args }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await corporateAction.linkDocuments(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 

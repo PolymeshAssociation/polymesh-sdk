@@ -42,15 +42,15 @@ export async function prepareControllerTransfer(
 
   const fromPortfolio = portfolioIdToPortfolio(originPortfolioId, context);
 
-  const [{ total: portfolioBalance, locked }] = await fromPortfolio.getTokenBalances({
+  const [{ free }] = await fromPortfolio.getTokenBalances({
     tokens: [token],
   });
 
-  if (portfolioBalance.minus(locked).lt(amount)) {
+  if (free.lt(amount)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The Portfolio does not have enough free balance for this transfer',
-      data: { portfolioBalance },
+      data: { free },
     });
   }
 

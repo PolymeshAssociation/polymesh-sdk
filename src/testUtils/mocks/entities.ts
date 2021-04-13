@@ -218,6 +218,7 @@ interface CheckpointScheduleOptions {
   start?: Date;
   period?: CalendarPeriod | null;
   expiryDate?: Date | null;
+  complexity?: number;
   details?: Partial<ScheduleDetails>;
 }
 
@@ -584,6 +585,7 @@ const defaultAccountOptions: AccountOptions = {
   getBalance: {
     free: new BigNumber(100),
     locked: new BigNumber(10),
+    total: new BigNumber(110),
   },
   getTransactionHistory: [],
 };
@@ -594,6 +596,7 @@ const defaultCurrentAccountOptions: CurrentAccountOptions = {
   getBalance: {
     free: new BigNumber(100),
     locked: new BigNumber(10),
+    total: new BigNumber(110),
   },
   getTransactionHistory: [],
 };
@@ -653,6 +656,7 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
       token: ('someToken' as unknown) as SecurityToken,
       total: new BigNumber(1),
       locked: new BigNumber(0),
+      free: new BigNumber(1),
     },
   ],
   did: 'someDid',
@@ -669,6 +673,7 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
       token: ('someToken' as unknown) as SecurityToken,
       total: new BigNumber(1),
       locked: new BigNumber(0),
+      free: new BigNumber(1),
     },
   ],
   did: 'someDid',
@@ -730,6 +735,7 @@ const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
     amount: 1,
   },
   expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+  complexity: 2,
   details: {
     remainingCheckpoints: 1,
     nextCheckpointDate: new Date('10/10/2030'),
@@ -1377,6 +1383,7 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
     start: opts.start,
     period: opts.period,
     expiryDate: opts.expiryDate,
+    complexity: opts.complexity,
     details: checkpointScheduleDetailsStub.resolves(opts.details),
   } as unknown) as MockCheckpointSchedule;
 

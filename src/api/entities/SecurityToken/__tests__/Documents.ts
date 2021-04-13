@@ -51,7 +51,7 @@ describe('Documents class', () => {
 
       sinon
         .stub(setTokenDocuments, 'prepare')
-        .withArgs({ ticker: token.ticker, ...args }, context)
+        .withArgs({ args: { ticker: token.ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await documents.set(args);

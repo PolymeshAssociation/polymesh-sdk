@@ -87,6 +87,7 @@ export enum RoleType {
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
+  CorporateActionsAgent = 'CorporateActionsAgent',
 }
 
 export interface TickerOwnerRole {
@@ -533,10 +534,13 @@ export interface KeyringPair extends IKeyringPair {
   isLocked: boolean;
 }
 
-export interface AccountBalance {
+export interface Balance {
   free: BigNumber;
   locked: BigNumber;
+  total: BigNumber;
 }
+
+export type AccountBalance = Balance;
 
 export interface PaginationOptions {
   size: number;

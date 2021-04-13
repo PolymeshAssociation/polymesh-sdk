@@ -1,15 +1,9 @@
-import P from 'bluebird';
-import { chunk, flatten, uniqBy } from 'lodash';
-import { Instruction as MeshInstruction } from 'polymesh-types/types';
-
 import { UniqueIdentifiers } from '~/api/entities/Identity';
-import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Context,
   createVenue,
   CreateVenueParams,
   Identity,
-  Instruction,
   inviteAccount,
   InviteAccountParams,
   modifySignerPermissions,
@@ -20,12 +14,6 @@ import {
 } from '~/internal';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
-import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
-import {
-  portfolioIdToMeshPortfolioId,
-  portfolioLikeToPortfolioId,
-  u64ToBigNumber,
-} from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -38,27 +26,41 @@ export class CurrentIdentity extends Identity {
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    this.removeSecondaryKeys = createProcedureMethod(args => [removeSecondaryKeys, args], context);
+    this.removeSecondaryKeys = createProcedureMethod(
+      { getProcedureAndArgs: args => [removeSecondaryKeys, args] },
+      context
+    );
     this.revokePermissions = createProcedureMethod<
       { secondaryKeys: Signer[] },
       ModifySignerPermissionsParams,
       void
-    >(args => {
-      const { secondaryKeys } = args;
-      const signers = secondaryKeys.map(signer => {
-        return {
-          signer,
-          permissions: { tokens: [], transactions: [], portfolios: [] },
-        };
-      });
-      return [modifySignerPermissions, { secondaryKeys: signers }];
-    }, context);
-    this.modifyPermissions = createProcedureMethod(
-      args => [modifySignerPermissions, args],
+    >(
+      {
+        getProcedureAndArgs: args => {
+          const { secondaryKeys } = args;
+          const signers = secondaryKeys.map(signer => {
+            return {
+              signer,
+              permissions: { tokens: [], transactions: [], portfolios: [] },
+            };
+          });
+          return [modifySignerPermissions, { secondaryKeys: signers }];
+        },
+      },
       context
     );
-    this.inviteAccount = createProcedureMethod(args => [inviteAccount, args], context);
-    this.createVenue = createProcedureMethod(args => [createVenue, args], context);
+    this.modifyPermissions = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifySignerPermissions, args] },
+      context
+    );
+    this.inviteAccount = createProcedureMethod(
+      { getProcedureAndArgs: args => [inviteAccount, args] },
+      context
+    );
+    this.createVenue = createProcedureMethod(
+      { getProcedureAndArgs: args => [createVenue, args] },
+      context
+    );
   }
 
   /**
@@ -120,53 +122,4 @@ export class CurrentIdentity extends Identity {
    * Create a Venue
    */
   public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
-
-  /**
-   * Retrieve all pending Instructions involving the Current Identity
-   */
-  public async getPendingInstructions(): Promise<Instruction[]> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { settlement },
-        },
-      },
-      did,
-      portfolios,
-      context,
-    } = this;
-
-    const ownedPortfolios = await portfolios.getPortfolios();
-
-    const [ownedCustodiedPortfolios, { data: custodiedPortfolios }] = await Promise.all([
-      P.filter(ownedPortfolios, portfolio => portfolio.isCustodiedBy({ identity: did })),
-      this.portfolios.getCustodiedPortfolios(),
-    ]);
-
-    const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
-
-    const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
-
-    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
-
-    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
-
-    const chunkedInstructions = await P.mapSeries(portfolioIdChunks, async portfolioIdChunk => {
-      const auths = await P.map(portfolioIdChunk, portfolioId =>
-        settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
-      );
-
-      const instructionIds = uniqBy(
-        flatten(auths).map(([key]) => key.args[1]),
-        id => id.toNumber()
-      );
-      return settlement.instructionDetails.multi<MeshInstruction>(instructionIds);
-    });
-
-    const rawInstructions = flatten(chunkedInstructions);
-
-    return rawInstructions
-      .filter(({ status }) => status.isPending)
-      .map(({ instruction_id: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
-  }
 }

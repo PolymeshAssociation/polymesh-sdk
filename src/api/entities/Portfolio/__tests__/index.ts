@@ -219,9 +219,11 @@ describe('Portfolio class', () => {
       expect(result[0].token.ticker).toBe(ticker0);
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
+      expect(result[0].free).toEqual(total0.minus(locked0));
       expect(result[1].token.ticker).toBe(ticker1);
       expect(result[1].total).toEqual(total1);
       expect(result[1].locked).toEqual(locked1);
+      expect(result[1].free).toEqual(total1.minus(locked1));
     });
 
     test('should return the requested portfolio assets and their balances', async () => {
@@ -236,9 +238,11 @@ describe('Portfolio class', () => {
       expect(result[0].token.ticker).toBe(ticker0);
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
+      expect(result[0].free).toEqual(total0.minus(locked0));
       expect(result[1].token.ticker).toBe(otherTicker);
       expect(result[1].total).toEqual(new BigNumber(0));
       expect(result[1].locked).toEqual(new BigNumber(0));
+      expect(result[1].free).toEqual(new BigNumber(0));
     });
   });
 
@@ -291,7 +295,7 @@ describe('Portfolio class', () => {
 
       sinon
         .stub(moveFunds, 'prepare')
-        .withArgs({ ...args, from: portfolio }, context)
+        .withArgs({ args: { ...args, from: portfolio }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await portfolio.moveFunds(args);
@@ -320,7 +324,7 @@ describe('Portfolio class', () => {
 
       sinon
         .stub(setCustodian, 'prepare')
-        .withArgs({ id, did, targetIdentity }, context)
+        .withArgs({ args: { id, did, targetIdentity }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await portfolio.setCustodian({ targetIdentity });

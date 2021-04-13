@@ -320,7 +320,10 @@ describe('Claims Class', () => {
 
       sinon
         .stub(modifyClaims, 'prepare')
-        .withArgs({ ...args, operation: ClaimOperation.Add }, context)
+        .withArgs(
+          { args: { ...args, operation: ClaimOperation.Add }, transformer: undefined },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await claims.addClaims(args);
@@ -353,7 +356,7 @@ describe('Claims Class', () => {
 
       sinon
         .stub(addInvestorUniquenessClaim, 'prepare')
-        .withArgs(args, context)
+        .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await claims.addInvestorUniquenessClaim(args);
@@ -384,7 +387,10 @@ describe('Claims Class', () => {
 
       sinon
         .stub(modifyClaims, 'prepare')
-        .withArgs({ ...args, operation: ClaimOperation.Edit }, context)
+        .withArgs(
+          { args: { ...args, operation: ClaimOperation.Edit }, transformer: undefined },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await claims.editClaims(args);
@@ -415,7 +421,10 @@ describe('Claims Class', () => {
 
       sinon
         .stub(modifyClaims, 'prepare')
-        .withArgs({ ...args, operation: ClaimOperation.Revoke }, context)
+        .withArgs(
+          { args: { ...args, operation: ClaimOperation.Revoke }, transformer: undefined },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await claims.revokeClaims(args);

@@ -76,7 +76,10 @@ describe('NumberedPortfolio class', () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon.stub(deletePortfolio, 'prepare').withArgs({ id, did }, context).resolves(expectedQueue);
+      sinon
+        .stub(deletePortfolio, 'prepare')
+        .withArgs({ args: { id, did }, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await numberedPortfolio.delete();
 
@@ -94,7 +97,7 @@ describe('NumberedPortfolio class', () => {
 
       sinon
         .stub(renamePortfolio, 'prepare')
-        .withArgs({ id, did, name }, context)
+        .withArgs({ args: { id, did, name }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await numberedPortfolio.modifyName({ name });

@@ -65,10 +65,12 @@ export abstract class TransferRestrictionBase<
       AddTransferRestrictionParams,
       number
     >(
-      args => [
-        addTransferRestriction,
-        ({ ...args, type: this.type, ticker } as unknown) as AddTransferRestrictionParams,
-      ],
+      {
+        getProcedureAndArgs: args => [
+          addTransferRestriction,
+          ({ ...args, type: this.type, ticker } as unknown) as AddTransferRestrictionParams,
+        ],
+      },
       context
     );
 
@@ -78,10 +80,12 @@ export abstract class TransferRestrictionBase<
       number,
       SetTransferRestrictionsStorage
     >(
-      args => [
-        setTransferRestrictions,
-        ({ ...args, type: this.type, ticker } as unknown) as SetTransferRestrictionsParams,
-      ],
+      {
+        getProcedureAndArgs: args => [
+          setTransferRestrictions,
+          ({ ...args, type: this.type, ticker } as unknown) as SetTransferRestrictionsParams,
+        ],
+      },
       context
     );
 
@@ -91,10 +95,16 @@ export abstract class TransferRestrictionBase<
       number,
       SetTransferRestrictionsStorage
     >(
-      () => [
-        setTransferRestrictions,
-        ({ restrictions: [], type: this.type, ticker } as unknown) as SetTransferRestrictionsParams,
-      ],
+      {
+        getProcedureAndArgs: () => [
+          setTransferRestrictions,
+          ({
+            restrictions: [],
+            type: this.type,
+            ticker,
+          } as unknown) as SetTransferRestrictionsParams,
+        ],
+      },
       context
     );
   }
