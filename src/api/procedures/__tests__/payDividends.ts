@@ -46,9 +46,6 @@ describe('payDividends procedure', () => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     payDividendsTransaction = dsMockUtils.createTxStub('capitalDistribution', 'pushBenefit');
     mockContext = dsMockUtils.getContextInstance();
-    dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
-      multi: [dsMockUtils.createMockBool(true)],
-    });
   });
 
   afterEach(() => {
@@ -66,6 +63,10 @@ describe('payDividends procedure', () => {
   test('should add a stop sto transaction to the queue', async () => {
     const targets = ['someDid'];
     const identityId = dsMockUtils.createMockIdentityId(targets[0]);
+
+    dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+      multi: [dsMockUtils.createMockBool(false)],
+    });
 
     distribution = entityMockUtils.getDividendDistributionInstance({
       targets: {
@@ -141,6 +142,10 @@ describe('payDividends procedure', () => {
   test('should throw an error if some of the supplied targets are not included in the Distribution', async () => {
     const excludedDid = 'someDid';
 
+    dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+      multi: [dsMockUtils.createMockBool(true)],
+    });
+
     distribution = entityMockUtils.getDividendDistributionInstance({
       targets: {
         identities: [entityMockUtils.getIdentityInstance({ did: 'otherDid' })],
@@ -169,6 +174,10 @@ describe('payDividends procedure', () => {
   test('should throw an error if some of the supplied targets has already claimed their benefits', async () => {
     const dids = ['someDid', 'otherDid'];
     const targets = [dids[0], entityMockUtils.getIdentityInstance({ did: dids[1] })];
+
+    dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+      multi: [dsMockUtils.createMockBool(true)],
+    });
 
     dids.forEach(targetDid =>
       stringToIdentityIdStub
