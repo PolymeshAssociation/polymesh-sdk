@@ -589,8 +589,10 @@ function secondsInUnit(unit: CalendarUnit): number {
 export function optionize<InputType, OutputType>(
   converter: (input: InputType, context: Context) => OutputType
 ): (val: InputType | null | undefined, context: Context) => OutputType | null {
-  return (value: InputType | null = null, context: Context): OutputType | null =>
-    value && converter(value, context);
+  return (value: InputType | null | undefined, context: Context): OutputType | null => {
+    value = value ?? null;
+    return value && converter(value, context);
+  };
 }
 
 /**
