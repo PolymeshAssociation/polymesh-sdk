@@ -548,6 +548,13 @@ export function getTicker(token: string | SecurityToken): string {
 /**
  * @hidden
  */
+export function xor(a: boolean, b: boolean): boolean {
+  return a !== b;
+}
+
+/**
+ * @hidden
+ */
 function secondsInUnit(unit: CalendarUnit): number {
   const SECOND = 1;
   const MINUTE = SECOND * 60;

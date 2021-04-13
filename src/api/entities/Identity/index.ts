@@ -1,10 +1,14 @@
 import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
-import { CddStatus, DidRecord } from 'polymesh-types/types';
+import P from 'bluebird';
+import { chunk, flatten, uniqBy } from 'lodash';
+import { CddStatus, DidRecord, Instruction as MeshInstruction } from 'polymesh-types/types';
 
+import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Context,
   Entity,
+  Instruction,
   PolymeshError,
   SecurityToken,
   TickerReservation,
@@ -28,12 +32,15 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
+import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
 import {
   accountIdToString,
   balanceToBigNumber,
   cddStatusToBoolean,
   identityIdToString,
+  portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
+  portfolioLikeToPortfolioId,
   scopeIdToString,
   stringToIdentityId,
   stringToTicker,
@@ -413,5 +420,54 @@ export class Identity extends Entity<UniqueIdentifiers> {
     );
 
     return scopeIdToString(scopeId);
+  }
+
+  /**
+   * Retrieve all pending Instructions involving this Identity
+   */
+  public async getPendingInstructions(): Promise<Instruction[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      did,
+      portfolios,
+      context,
+    } = this;
+
+    const ownedPortfolios = await portfolios.getPortfolios();
+
+    const [ownedCustodiedPortfolios, { data: custodiedPortfolios }] = await Promise.all([
+      P.filter(ownedPortfolios, portfolio => portfolio.isCustodiedBy({ identity: did })),
+      this.portfolios.getCustodiedPortfolios(),
+    ]);
+
+    const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
+
+    const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
+
+    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
+
+    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
+
+    const chunkedInstructions = await P.mapSeries(portfolioIdChunks, async portfolioIdChunk => {
+      const auths = await P.map(portfolioIdChunk, portfolioId =>
+        settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
+      );
+
+      const instructionIds = uniqBy(
+        flatten(auths).map(([key]) => key.args[1]),
+        id => id.toNumber()
+      );
+      return settlement.instructionDetails.multi<MeshInstruction>(instructionIds);
+    });
+
+    const rawInstructions = flatten(chunkedInstructions);
+
+    return rawInstructions
+      .filter(({ status }) => status.isPending)
+      .map(({ instruction_id: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
   }
 }

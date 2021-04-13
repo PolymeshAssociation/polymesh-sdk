@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
@@ -14,8 +13,6 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { SecondaryKey, SubCallback, VenueType } from '~/types';
-import { tuple } from '~/types/utils';
-import * as utilsConversionModule from '~/utils/conversion';
 
 describe('CurrentIdentity class', () => {
   let context: Context;
@@ -199,151 +196,6 @@ describe('CurrentIdentity class', () => {
       const queue = await identity.createVenue(args);
 
       expect(queue).toBe(expectedQueue);
-    });
-  });
-
-  describe('method: getPendingInstructions', () => {
-    test('should return all pending instructions in which the identity is involved', async () => {
-      const id1 = new BigNumber(1);
-      const id2 = new BigNumber(2);
-      const id3 = new BigNumber(3);
-      const id4 = new BigNumber(4);
-
-      const did = 'someDid';
-      const identity = new CurrentIdentity({ did }, context);
-
-      const defaultPortfolioDid = 'someDid';
-      const numberedPortfolioDid = 'someDid';
-      const numberedPortfolioId = new BigNumber(1);
-
-      const defaultPortfolio = entityMockUtils.getDefaultPortfolioInstance({
-        did: defaultPortfolioDid,
-        isCustodiedBy: true,
-      });
-
-      const numberedPortfolio = entityMockUtils.getNumberedPortfolioInstance({
-        did: numberedPortfolioDid,
-        id: numberedPortfolioId,
-        isCustodiedBy: false,
-      });
-
-      identity.portfolios.getPortfolios = sinon
-        .stub()
-        .resolves([defaultPortfolio, numberedPortfolio]);
-
-      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves({ data: [], next: null });
-
-      const portfolioLikeToPortfolioIdStub = sinon.stub(
-        utilsConversionModule,
-        'portfolioLikeToPortfolioId'
-      );
-
-      portfolioLikeToPortfolioIdStub
-        .withArgs(defaultPortfolio)
-        .returns({ did: defaultPortfolioDid, number: undefined });
-      portfolioLikeToPortfolioIdStub
-        .withArgs(numberedPortfolio)
-        .returns({ did: numberedPortfolioDid, number: numberedPortfolioId });
-
-      const rawPortfolio = dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId(did),
-        kind: dsMockUtils.createMockPortfolioKind('Default'),
-      });
-
-      const portfolioIdToMeshPortfolioIdStub = sinon.stub(
-        utilsConversionModule,
-        'portfolioIdToMeshPortfolioId'
-      );
-
-      portfolioIdToMeshPortfolioIdStub
-        .withArgs({ did, number: undefined }, context)
-        .returns(rawPortfolio);
-
-      const userAuthsStub = dsMockUtils.createQueryStub('settlement', 'userAffirmations');
-
-      const rawId1 = dsMockUtils.createMockU64(id1.toNumber());
-      const rawId2 = dsMockUtils.createMockU64(id2.toNumber());
-      const rawId3 = dsMockUtils.createMockU64(id3.toNumber());
-
-      const entriesStub = sinon.stub();
-      entriesStub
-        .withArgs(rawPortfolio)
-        .resolves([
-          tuple(
-            { args: [rawPortfolio, rawId1] },
-            dsMockUtils.createMockAffirmationStatus('Pending')
-          ),
-          tuple(
-            { args: [rawPortfolio, rawId2] },
-            dsMockUtils.createMockAffirmationStatus('Pending')
-          ),
-          tuple(
-            { args: [rawPortfolio, rawId3] },
-            dsMockUtils.createMockAffirmationStatus('Pending')
-          ),
-        ]);
-
-      userAuthsStub.entries = entriesStub;
-
-      /* eslint-disable @typescript-eslint/camelcase */
-      const instructionDetailsStub = dsMockUtils.createQueryStub(
-        'settlement',
-        'instructionDetails',
-        {
-          multi: [],
-        }
-      );
-
-      const multiStub = sinon.stub();
-
-      multiStub.withArgs([rawId1, rawId2, rawId3]).resolves([
-        dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id1.toNumber()),
-          venue_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id2.toNumber()),
-          venue_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id3.toNumber()),
-          venue_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Unknown'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
-          venue_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
-        }),
-      ]);
-
-      instructionDetailsStub.multi = multiStub;
-      /* eslint-enable @typescript-eslint/camelcase */
-
-      const result = await identity.getPendingInstructions();
-
-      expect(result.length).toBe(3);
-      expect(result[0].id).toEqual(id1);
-      expect(result[1].id).toEqual(id2);
-      expect(result[2].id).toEqual(id4);
     });
   });
 });

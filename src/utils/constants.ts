@@ -19,6 +19,7 @@ export const MAX_BATCH_ELEMENTS: Record<string, number> = {
   [TxTags.complianceManager.AddDefaultTrustedClaimIssuer]: 200,
   [TxTags.settlement.AddInstruction]: 50,
   [TxTags.settlement.AddAndAffirmInstruction]: 50,
+  [TxTags.capitalDistribution.PushBenefit]: 1000,
 };
 export const DEFAULT_MAX_BATCH_ELEMENTS = 20;
 export const IGNORE_CHECKSUM = true;
