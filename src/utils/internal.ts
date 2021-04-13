@@ -24,6 +24,8 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
+  CalendarPeriod,
+  CalendarUnit,
   Claim,
   ClaimType,
   CommonKeyring,
@@ -530,4 +532,57 @@ export function assertFormatValid(address: string, ss58Format: number): void {
       },
     });
   }
+}
+
+/**
+ * @hidden
+ */
+function secondsInUnit(unit: CalendarUnit): number {
+  const SECOND = 1;
+  const MINUTE = SECOND * 60;
+  const HOUR = MINUTE * 60;
+  const DAY = HOUR * 24;
+  const WEEK = DAY * 7;
+  const MONTH = DAY * 30;
+  const YEAR = DAY * 365;
+
+  switch (unit) {
+    case CalendarUnit.Second: {
+      return SECOND;
+    }
+    case CalendarUnit.Minute: {
+      return MINUTE;
+    }
+    case CalendarUnit.Hour: {
+      return HOUR;
+    }
+    case CalendarUnit.Day: {
+      return DAY;
+    }
+    case CalendarUnit.Week: {
+      return WEEK;
+    }
+    case CalendarUnit.Month: {
+      return MONTH;
+    }
+    case CalendarUnit.Year: {
+      return YEAR;
+    }
+  }
+}
+
+/**
+ * @hidden
+ */
+export function periodComplexity(period: CalendarPeriod): number {
+  const secsInYear = secondsInUnit(CalendarUnit.Year);
+  const { amount, unit } = period;
+
+  if (amount === 0) {
+    return 1;
+  }
+
+  const secsInUnit = secondsInUnit(unit);
+
+  return Math.max(2, Math.floor(secsInYear / (secsInUnit * amount)));
 }
