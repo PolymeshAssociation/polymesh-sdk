@@ -181,7 +181,7 @@ export class Claims {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
       scope?: Scope;
-      claimTypes?: ClaimType[];
+      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
       includeExpired?: boolean;
       size?: number;
       start?: number;

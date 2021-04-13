@@ -429,6 +429,7 @@ export default {
         Blocked: 'Scope',
         InvestorUniqueness: '(Scope, ScopeId, CddId)',
         NoData: '',
+        InvestorUniquenessV2: '(CddId)',
       },
     },
     ClaimType: {
@@ -444,6 +445,7 @@ export default {
         Blocked: '',
         InvestorUniqueness: '',
         NoData: '',
+        InvestorUniquenessV2: '',
       },
     },
     IdentityClaim: {
@@ -819,8 +821,6 @@ export default {
       pip: 'PipId',
       vote: 'Vote',
     },
-    HistoricalVotingByAddress: 'Vec<VoteByPip>',
-    HistoricalVotingById: 'Vec<(AccountId, HistoricalVotingByAddress)>',
     BridgeTxDetail: {
       amount: 'Balance',
       status: 'BridgeTxStatus',
@@ -1156,12 +1156,6 @@ export default {
     TransferManagerResult: {
       tm: 'TransferManager',
       result: 'bool',
-    },
-    BalanceAtResult: {
-      _enum: {
-        Ok: 'Vec<Balance>',
-        Err: 'Vec<u8>',
-      },
     },
   },
 };

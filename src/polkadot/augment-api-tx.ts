@@ -54,6 +54,7 @@ import type {
   CAId,
   CAKind,
   Claim,
+  ClaimType,
   ClassicTickerImport,
   ComplianceRequirement,
   Condition,
@@ -84,6 +85,7 @@ import type {
   RecordDateSpec,
   ScheduleId,
   ScheduleSpec,
+  Scope,
   ScopeClaimProof,
   ScopeId,
   SecondaryKey,
@@ -2300,6 +2302,7 @@ declare module '@polkadot/api/types/submittable' {
             | { Blocked: any }
             | { InvestorUniqueness: any }
             | { NoData: any }
+            | { InvestorUniquenessV2: any }
             | string
             | Uint8Array,
           expiry: Option<Moment> | null | object | string | Uint8Array
@@ -2343,6 +2346,7 @@ declare module '@polkadot/api/types/submittable' {
             | { Blocked: any }
             | { InvestorUniqueness: any }
             | { NoData: any }
+            | { InvestorUniquenessV2: any }
             | string
             | Uint8Array,
           proof: InvestorZKProofData | string | Uint8Array,
@@ -2353,6 +2357,13 @@ declare module '@polkadot/api/types/submittable' {
       addInvestorUniquenessClaimV2: AugmentedSubmittable<
         (
           target: IdentityId | string | Uint8Array,
+          scope:
+            | Scope
+            | { Identity: any }
+            | { Ticker: any }
+            | { Custom: any }
+            | string
+            | Uint8Array,
           claim:
             | Claim
             | { Accredited: any }
@@ -2366,6 +2377,7 @@ declare module '@polkadot/api/types/submittable' {
             | { Blocked: any }
             | { InvestorUniqueness: any }
             | { NoData: any }
+            | { InvestorUniquenessV2: any }
             | string
             | Uint8Array,
           proof:
@@ -2375,7 +2387,7 @@ declare module '@polkadot/api/types/submittable' {
             | Uint8Array,
           expiry: Option<Moment> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [IdentityId, Claim, ScopeClaimProof, Option<Moment>]
+        [IdentityId, Scope, Claim, ScopeClaimProof, Option<Moment>]
       >;
       /**
        * It adds secondary keys to target identity `id`.
@@ -2461,11 +2473,8 @@ declare module '@polkadot/api/types/submittable' {
        * Assuming this is executed by the GC voting majority, adds a new cdd claim record.
        **/
       gcAddCddClaim: AugmentedSubmittable<
-        (
-          target: IdentityId | string | Uint8Array,
-          expiry: Option<Moment> | null | object | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [IdentityId, Option<Moment>]
+        (target: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [IdentityId]
       >;
       /**
        * Assuming this is executed by the GC voting majority, removes an existing cdd claim record.
@@ -2576,10 +2585,44 @@ declare module '@polkadot/api/types/submittable' {
             | { Blocked: any }
             | { InvestorUniqueness: any }
             | { NoData: any }
+            | { InvestorUniquenessV2: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [IdentityId, Claim]
+      >;
+      /**
+       * Revokes a specific claim using its [Claim Unique Index](/pallet_identity/index.html#claim-unique-index) composed by `target`,
+       * `claim_type`, and `scope`.
+       *
+       * Please note that `origin` must be the issuer of the target claim.
+       *
+       * # Errors
+       * - `TargetHasNonZeroBalanceAtScopeId` when you try to revoke a `InvestorUniqueness*`
+       * claim, and `target` identity still have any balance on the given `scope`.
+       **/
+      revokeClaimByIndex: AugmentedSubmittable<
+        (
+          target: IdentityId | string | Uint8Array,
+          claimType:
+            | ClaimType
+            | 'Accredited'
+            | 'Affiliate'
+            | 'BuyLockup'
+            | 'SellLockup'
+            | 'CustomerDueDiligence'
+            | 'KnowYourCustomer'
+            | 'Jurisdiction'
+            | 'Exempted'
+            | 'Blocked'
+            | 'InvestorUniqueness'
+            | 'NoData'
+            | 'InvestorUniquenessV2'
+            | number
+            | Uint8Array,
+          scope: Option<Scope> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [IdentityId, ClaimType, Option<Scope>]
       >;
       /**
        * It revokes the `auth` off-chain authorization of `signer`. It only takes effect if
