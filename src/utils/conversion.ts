@@ -1505,7 +1505,7 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
       break;
     }
     case ClaimType.InvestorUniquenessV2: {
-      value = tuple(stringToCddId(claim.cddId, context));
+      value = stringToCddId(claim.cddId, context);
       break;
     }
     default: {

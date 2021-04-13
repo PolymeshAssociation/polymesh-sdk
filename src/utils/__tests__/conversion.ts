@@ -2375,7 +2375,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
     createTypeStub
       .withArgs('Claim', {
-        [value.type]: [stringToCddId(value.cddId, context)],
+        [value.type]: stringToCddId(value.cddId, context),
       })
       .returns(fakeResult);
 
