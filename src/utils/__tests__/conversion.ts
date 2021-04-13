@@ -4734,13 +4734,21 @@ describe('fundraiserToStoDetails', () => {
     const otherDid = 'otherDid';
     const raisingCurrency = 'USD';
     const amount = new BigNumber(10000);
-    const price = new BigNumber(1000);
+    const priceA = new BigNumber(1000);
+    const priceB = new BigNumber(2000);
     const remaining = new BigNumber(7000);
-    const tier = {
-      amount: amount.shiftedBy(-6),
-      price: price.shiftedBy(-6),
-      remaining: remaining.shiftedBy(-6),
-    };
+    const tiers = [
+      {
+        amount: amount.shiftedBy(-6),
+        price: priceA.shiftedBy(-6),
+        remaining: remaining.shiftedBy(-6),
+      },
+      {
+        amount: amount.shiftedBy(-6),
+        price: priceB.shiftedBy(-6),
+        remaining: remaining.shiftedBy(-6),
+      },
+    ];
     const startDate = new Date();
     const endDate = new Date(startDate.getTime() + 100000);
     const minInvestmentValue = new BigNumber(1);
@@ -4751,7 +4759,7 @@ describe('fundraiserToStoDetails', () => {
       offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
       raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
       raisingCurrency: raisingCurrency,
-      tiers: [tier],
+      tiers,
       venue: new Venue({ id: new BigNumber(1) }, context),
       start: startDate,
       end: endDate,
@@ -4761,8 +4769,8 @@ describe('fundraiserToStoDetails', () => {
         sale: StoSaleStatus.Live,
       },
       minInvestment: minInvestmentValue.shiftedBy(-6),
-      totalAmount: amount.shiftedBy(-6),
-      totalRemaining: remaining.shiftedBy(-6),
+      totalAmount: amount.times(2).shiftedBy(-6),
+      totalRemaining: remaining.times(2).shiftedBy(-6),
     };
 
     const creator = dsMockUtils.createMockIdentityId(someDid);
@@ -4777,10 +4785,15 @@ describe('fundraiserToStoDetails', () => {
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
     const raisingAsset = dsMockUtils.createMockTicker(raisingCurrency);
-    const tiers = [
+    const rawTiers = [
       dsMockUtils.createMockFundraiserTier({
         total: dsMockUtils.createMockBalance(amount.toNumber()),
-        price: dsMockUtils.createMockBalance(price.toNumber()),
+        price: dsMockUtils.createMockBalance(priceA.toNumber()),
+        remaining: dsMockUtils.createMockBalance(remaining.toNumber()),
+      }),
+      dsMockUtils.createMockFundraiserTier({
+        total: dsMockUtils.createMockBalance(amount.toNumber()),
+        price: dsMockUtils.createMockBalance(priceB.toNumber()),
         remaining: dsMockUtils.createMockBalance(remaining.toNumber()),
       }),
     ];
@@ -4796,7 +4809,7 @@ describe('fundraiserToStoDetails', () => {
       offering_asset: offeringAsset,
       raising_portfolio: raisingPortfolio,
       raising_asset: raisingAsset,
-      tiers,
+      tiers: rawTiers,
       venue_id: venueId,
       start,
       end,
@@ -4816,7 +4829,7 @@ describe('fundraiserToStoDetails', () => {
       offering_asset: offeringAsset,
       raising_portfolio: raisingPortfolio,
       raising_asset: raisingAsset,
-      tiers,
+      tiers: rawTiers,
       venue_id: venueId,
       start: dsMockUtils.createMockMoment(futureStart.getTime()),
       end: dsMockUtils.createMockOption(),
@@ -4844,7 +4857,7 @@ describe('fundraiserToStoDetails', () => {
       offering_asset: offeringAsset,
       raising_portfolio: raisingPortfolio,
       raising_asset: raisingAsset,
-      tiers,
+      tiers: rawTiers,
       venue_id: venueId,
       start,
       end: dsMockUtils.createMockOption(),
@@ -4874,7 +4887,7 @@ describe('fundraiserToStoDetails', () => {
       tiers: [
         dsMockUtils.createMockFundraiserTier({
           total: dsMockUtils.createMockBalance(amount.toNumber()),
-          price: dsMockUtils.createMockBalance(price.toNumber()),
+          price: dsMockUtils.createMockBalance(priceA.toNumber()),
           remaining: dsMockUtils.createMockBalance(0),
         }),
       ],
@@ -4890,7 +4903,7 @@ describe('fundraiserToStoDetails', () => {
     expect(result).toEqual({
       ...fakeResult,
       name,
-      tiers: [{ ...tier, remaining: new BigNumber(0) }],
+      tiers: [{ ...tiers[0], remaining: new BigNumber(0) }],
       status: {
         balance: StoBalanceStatus.SoldOut,
         timing: StoTimingStatus.Started,
@@ -4898,6 +4911,7 @@ describe('fundraiserToStoDetails', () => {
       },
       end: null,
       totalRemaining: new BigNumber(0),
+      totalAmount: amount.shiftedBy(-6),
     });
 
     const pastEnd = new Date(startDate.getTime() - 50000);
@@ -4912,7 +4926,7 @@ describe('fundraiserToStoDetails', () => {
       tiers: [
         dsMockUtils.createMockFundraiserTier({
           total: dsMockUtils.createMockBalance(amount.toNumber()),
-          price: dsMockUtils.createMockBalance(price.toNumber()),
+          price: dsMockUtils.createMockBalance(priceA.toNumber()),
           remaining: dsMockUtils.createMockBalance(1),
         }),
       ],
@@ -4928,7 +4942,7 @@ describe('fundraiserToStoDetails', () => {
     expect(result).toEqual({
       ...fakeResult,
       name,
-      tiers: [{ ...tier, remaining: new BigNumber(1).shiftedBy(-6) }],
+      tiers: [{ ...tiers[0], remaining: new BigNumber(1).shiftedBy(-6) }],
       status: {
         balance: StoBalanceStatus.Residual,
         timing: StoTimingStatus.Expired,
@@ -4937,6 +4951,7 @@ describe('fundraiserToStoDetails', () => {
       start: pastStart,
       end: pastEnd,
       totalRemaining: new BigNumber(1).shiftedBy(-6),
+      totalAmount: amount.shiftedBy(-6),
     });
   });
 });
