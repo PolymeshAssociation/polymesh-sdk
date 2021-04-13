@@ -537,6 +537,13 @@ export function assertFormatValid(address: string, ss58Format: number): void {
 /**
  * @hidden
  */
+export function xor(a: boolean, b: boolean): boolean {
+  return a !== b;
+}
+
+/**
+ * @hidden
+ */                                                   
 function secondsInUnit(unit: CalendarUnit): number {
   const SECOND = 1;
   const MINUTE = SECOND * 60;

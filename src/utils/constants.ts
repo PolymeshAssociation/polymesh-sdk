@@ -17,6 +17,7 @@ export const MAX_BATCH_ELEMENTS: Record<string, number> = {
   [TxTags.identity.RevokeClaim]: 200,
   [TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer]: 200,
   [TxTags.complianceManager.AddDefaultTrustedClaimIssuer]: 200,
+  [TxTags.capitalDistribution.PushBenefit]: 1000,
 };
 export const DEFAULT_MAX_BATCH_ELEMENTS = 20;
 export const IGNORE_CHECKSUM = true;
