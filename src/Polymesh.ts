@@ -85,11 +85,22 @@ export class Polymesh {
     this.claims = new Claims(context);
     this.middleware = new Middleware(context);
 
-    this.transferPolyX = createProcedureMethod(args => [transferPolyX, args], context);
+    this.transferPolyX = createProcedureMethod(
+      { getProcedureAndArgs: args => [transferPolyX, args] },
+      context
+    );
 
-    this.reserveTicker = createProcedureMethod(args => [reserveTicker, args], context);
+    this.reserveTicker = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [reserveTicker, args],
+      },
+      context
+    );
 
-    this.registerIdentity = createProcedureMethod(args => [registerIdentity, args], context);
+    this.registerIdentity = createProcedureMethod(
+      { getProcedureAndArgs: args => [registerIdentity, args] },
+      context
+    );
   }
 
   /**

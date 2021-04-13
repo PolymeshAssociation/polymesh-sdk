@@ -295,7 +295,7 @@ describe('Portfolio class', () => {
 
       sinon
         .stub(moveFunds, 'prepare')
-        .withArgs({ ...args, from: portfolio }, context)
+        .withArgs({ args: { ...args, from: portfolio }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await portfolio.moveFunds(args);
@@ -324,7 +324,7 @@ describe('Portfolio class', () => {
 
       sinon
         .stub(setCustodian, 'prepare')
-        .withArgs({ id, did, targetIdentity }, context)
+        .withArgs({ args: { id, did, targetIdentity }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await portfolio.setCustodian({ targetIdentity });

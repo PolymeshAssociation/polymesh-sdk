@@ -64,7 +64,10 @@ describe('Checkpoints class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Checkpoint>;
 
-      sinon.stub(createCheckpoint, 'prepare').withArgs({ ticker }, context).resolves(expectedQueue);
+      sinon
+        .stub(createCheckpoint, 'prepare')
+        .withArgs({ args: { ticker }, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await checkpoints.create();
 

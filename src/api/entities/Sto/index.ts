@@ -64,19 +64,25 @@ export class Sto extends Entity<UniqueIdentifiers> {
     this.ticker = ticker;
 
     this.freeze = createProcedureMethod(
-      () => [toggleFreezeSto, { ticker, id, freeze: true }],
+      { getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: true }] },
       context
     );
     this.unfreeze = createProcedureMethod(
-      () => [toggleFreezeSto, { ticker, id, freeze: false }],
+      { getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: false }] },
       context
     );
-    this.close = createProcedureMethod(() => [closeSto, { ticker, id }], context);
+    this.close = createProcedureMethod(
+      { getProcedureAndArgs: () => [closeSto, { ticker, id }] },
+      context
+    );
     this.modifyTimes = createProcedureMethod(
-      args => [modifyStoTimes, { ticker, id, ...args }],
+      { getProcedureAndArgs: args => [modifyStoTimes, { ticker, id, ...args }] },
       context
     );
-    this.invest = createProcedureMethod(args => [investInSto, { ticker, id, ...args }], context);
+    this.invest = createProcedureMethod(
+      { getProcedureAndArgs: args => [investInSto, { ticker, id, ...args }] },
+      context
+    );
   }
 
   /**
@@ -174,7 +180,7 @@ export class Sto extends Entity<UniqueIdentifiers> {
    * @param args.purchasePortfolio - portfolio in which the purchased Tokens will be stored
    * @param args.fundingPortfolio - portfolio from which funds will be withdrawn to pay for the Tokens
    * @param args.purchaseAmount - amount of tokens to purchase
-   * @param args.maxPrice - maximum price to pay per Token (optional)
+   * @param args.maxPrice - maximum average price to pay per Token (optional)
    *
    * @note required roles:
    *   - Purchase Portfolio Custodian

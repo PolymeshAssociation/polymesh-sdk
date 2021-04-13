@@ -16,7 +16,10 @@ export class Issuance extends Namespace<SecurityToken> {
 
     const { ticker } = parent;
 
-    this.issue = createProcedureMethod(args => [issueTokens, { ticker, ...args }], context);
+    this.issue = createProcedureMethod(
+      { getProcedureAndArgs: args => [issueTokens, { ticker, ...args }] },
+      context
+    );
   }
 
   /**
