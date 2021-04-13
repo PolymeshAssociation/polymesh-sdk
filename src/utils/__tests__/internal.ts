@@ -8,7 +8,7 @@ import { SecurityToken } from '~/api/entities/SecurityToken';
 import { Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { ClaimType, CommonKeyring, CountryCode } from '~/types';
+import { CalendarPeriod, CalendarUnit, ClaimType, CommonKeyring, CountryCode } from '~/types';
 import { tuple } from '~/types/utils';
 import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
@@ -27,6 +27,7 @@ import {
   getTicker,
   isPrintableAscii,
   padString,
+  periodComplexity,
   removePadding,
   requestAtBlock,
   requestPaginated,
@@ -551,5 +552,44 @@ describe('getTicker', () => {
 
     result = getTicker(new SecurityToken({ ticker: symbol }, dsMockUtils.getContextInstance()));
     expect(result).toBe(symbol);
+  });
+});
+
+describe('periodComplexity', () => {
+  test('should calculate complexity for any period', () => {
+    const period: CalendarPeriod = {
+      unit: CalendarUnit.Second,
+      amount: 1,
+    };
+    let result = periodComplexity(period);
+    expect(result).toBe(31536000);
+
+    period.unit = CalendarUnit.Minute;
+    result = periodComplexity(period);
+    expect(result).toBe(525600);
+
+    period.unit = CalendarUnit.Hour;
+    result = periodComplexity(period);
+    expect(result).toBe(8760);
+
+    period.unit = CalendarUnit.Day;
+    result = periodComplexity(period);
+    expect(result).toBe(365);
+
+    period.unit = CalendarUnit.Week;
+    result = periodComplexity(period);
+    expect(result).toBe(52);
+
+    period.unit = CalendarUnit.Month;
+    result = periodComplexity(period);
+    expect(result).toBe(12);
+
+    period.unit = CalendarUnit.Year;
+    result = periodComplexity(period);
+    expect(result).toBe(2);
+
+    period.amount = 0;
+    result = periodComplexity(period);
+    expect(result).toBe(1);
   });
 });
