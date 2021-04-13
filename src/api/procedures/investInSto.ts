@@ -69,14 +69,22 @@ export const calculateTierStats = (
       },
       { remaining, price }
     ) => {
-      if ((!maxPrice || price.lte(maxPrice)) && !prevRemainingToPurchase.isZero()) {
+      if (!prevRemainingToPurchase.isZero()) {
         const tierPurchaseAmount = BigNumber.minimum(remaining, prevRemainingToPurchase);
-        return {
-          remainingTotal: prevRemainingTotal.plus(tierPurchaseAmount),
-          price: prevPrice.plus(tierPurchaseAmount.multipliedBy(price)),
-          remainingToPurchase: prevRemainingToPurchase.minus(tierPurchaseAmount),
-        };
+        const newRemainingTotal = prevRemainingTotal.plus(tierPurchaseAmount);
+        const newPrice = prevPrice.plus(tierPurchaseAmount.multipliedBy(price));
+        const newRemainingToPurchase = prevRemainingToPurchase.minus(tierPurchaseAmount);
+        const newAvgPrice = newPrice.dividedBy(purchaseAmount.minus(newRemainingToPurchase));
+
+        if (!maxPrice || newAvgPrice.lte(maxPrice)) {
+          return {
+            remainingTotal: newRemainingTotal,
+            price: newPrice,
+            remainingToPurchase: newRemainingToPurchase,
+          };
+        }
       }
+
       return {
         remainingTotal: prevRemainingTotal,
         price: prevPrice,
