@@ -73,6 +73,39 @@ export interface Storage {
 /**
  * @hidden
  */
+export type AddAndAffirmInstructionParams = [
+  u64,
+  SettlementType,
+  Moment | null,
+  Moment | null,
+  {
+    from: PortfolioId;
+    to: PortfolioId;
+    asset: Ticker;
+    amount: Balance;
+  }[],
+  PortfolioId[]
+][];
+
+/**
+ * @hidden
+ */
+export type InternalAddInstructionParams = [
+  u64,
+  SettlementType,
+  Moment | null,
+  Moment | null,
+  {
+    from: PortfolioId;
+    to: PortfolioId;
+    asset: Ticker;
+    amount: Balance;
+  }[]
+][];
+
+/**
+ * @hidden
+ */
 export const createAddInstructionResolver = (
   context: Context,
   previousInstructions?: PostTransactionValue<Instruction[]>
@@ -105,57 +138,11 @@ async function getTxArgsAndErrors(
     endBlockErrIndexes: number[];
     datesErrIndexes: number[];
   };
-  addAndAffirmInstructionParams: [
-    u64,
-    SettlementType,
-    Moment | null,
-    Moment | null,
-    {
-      from: PortfolioId;
-      to: PortfolioId;
-      asset: Ticker;
-      amount: Balance;
-    }[],
-    PortfolioId[]
-  ][];
-  addInstructionParams: [
-    u64,
-    SettlementType,
-    Moment | null,
-    Moment | null,
-    {
-      from: PortfolioId;
-      to: PortfolioId;
-      asset: Ticker;
-      amount: Balance;
-    }[]
-  ][];
+  addAndAffirmInstructionParams: AddAndAffirmInstructionParams;
+  addInstructionParams: InternalAddInstructionParams;
 }> {
-  const addAndAffirmInstructionParams: [
-    u64,
-    SettlementType,
-    Moment | null,
-    Moment | null,
-    {
-      from: PortfolioId;
-      to: PortfolioId;
-      asset: Ticker;
-      amount: Balance;
-    }[],
-    PortfolioId[]
-  ][] = [];
-  const addInstructionParams: [
-    u64,
-    SettlementType,
-    Moment | null,
-    Moment | null,
-    {
-      from: PortfolioId;
-      to: PortfolioId;
-      asset: Ticker;
-      amount: Balance;
-    }[]
-  ][] = [];
+  const addAndAffirmInstructionParams: AddAndAffirmInstructionParams = [];
+  const addInstructionParams: InternalAddInstructionParams = [];
 
   const legErrIndexes: number[] = [];
   const endBlockErrIndexes: number[] = [];

@@ -26,6 +26,7 @@ import {
   getDid,
   getTicker,
   isPrintableAscii,
+  optionize,
   padString,
   periodComplexity,
   removePadding,
@@ -591,5 +592,21 @@ describe('periodComplexity', () => {
     period.amount = 0;
     result = periodComplexity(period);
     expect(result).toBe(1);
+  });
+});
+
+describe('optionize', () => {
+  const context = dsMockUtils.getContextInstance();
+
+  test('should transform a conversion util into a version that returns null if the input is falsy', () => {
+    const number = 1;
+
+    const toString = (value: number): string => value.toString();
+
+    let result = optionize(toString)(number, context);
+    expect(result).toBe(number.toString());
+
+    result = optionize(toString)(null, context);
+    expect(result).toBeNull();
   });
 });

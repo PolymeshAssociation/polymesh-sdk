@@ -586,19 +586,6 @@ function secondsInUnit(unit: CalendarUnit): number {
  * @hidden
  * Transform a conversion util into a version that returns null if the input is falsy
  */
-export function optionize<InputType, OutputType>(
-  converter: (input: InputType, context: Context) => OutputType
-): (val: InputType | null | undefined, context: Context) => OutputType | null {
-  return (value: InputType | null | undefined, context: Context): OutputType | null => {
-    value = value ?? null;
-    return value && converter(value, context);
-  };
-}
-
-/**
- * @hidden
- * Transform a conversion util into a version that returns null if the input is falsy
- */
 export function periodComplexity(period: CalendarPeriod): number {
   const secsInYear = secondsInUnit(CalendarUnit.Year);
   const { amount, unit } = period;
@@ -610,4 +597,17 @@ export function periodComplexity(period: CalendarPeriod): number {
   const secsInUnit = secondsInUnit(unit);
 
   return Math.max(2, Math.floor(secsInYear / (secsInUnit * amount)));
+}
+
+/**
+ * @hidden
+ * Transform a conversion util into a version that returns null if the input is falsy
+ */
+export function optionize<InputType, OutputType>(
+  converter: (input: InputType, context: Context) => OutputType
+): (val: InputType | null | undefined, context: Context) => OutputType | null {
+  return (value: InputType | null | undefined, context: Context): OutputType | null => {
+    const data = value ?? null;
+    return data && converter(data, context);
+  };
 }
