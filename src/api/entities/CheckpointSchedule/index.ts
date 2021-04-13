@@ -10,6 +10,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { periodComplexity } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -68,6 +69,11 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
   public expiryDate: Date | null;
 
   /**
+   * abstract measure of the complexity of this Schedule. Shorter periods translate into more complexity
+   */
+  public complexity: number;
+
+  /**
    * @hidden
    */
   public constructor(args: UniqueIdentifiers & Params, context: Context) {
@@ -83,6 +89,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
     this.ticker = ticker;
     this.period = noPeriod ? null : period;
     this.start = start;
+    this.complexity = periodComplexity(period);
 
     if (remaining === 0 && !noPeriod) {
       this.expiryDate = null;

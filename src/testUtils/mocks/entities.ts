@@ -218,6 +218,7 @@ interface CheckpointScheduleOptions {
   start?: Date;
   period?: CalendarPeriod | null;
   expiryDate?: Date | null;
+  complexity?: number;
   details?: Partial<ScheduleDetails>;
 }
 
@@ -734,6 +735,7 @@ const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
     amount: 1,
   },
   expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+  complexity: 2,
   details: {
     remainingCheckpoints: 1,
     nextCheckpointDate: new Date('10/10/2030'),
@@ -1381,6 +1383,7 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
     start: opts.start,
     period: opts.period,
     expiryDate: opts.expiryDate,
+    complexity: opts.complexity,
     details: checkpointScheduleDetailsStub.resolves(opts.details),
   } as unknown) as MockCheckpointSchedule;
 
