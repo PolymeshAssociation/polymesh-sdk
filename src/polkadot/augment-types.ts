@@ -722,7 +722,6 @@ import type {
   AuthorizationData,
   AuthorizationNonce,
   AuthorizationType,
-  BalanceAtResult,
   BallotMeta,
   BallotTimeRange,
   BallotTitle,
@@ -785,8 +784,6 @@ import type {
   FundraiserTier,
   GranularCanTransferResult,
   HandledTxStatus,
-  HistoricalVotingByAddress,
-  HistoricalVotingById,
   IdentityClaim,
   IdentityClaimKey,
   IdentityId,
@@ -1058,7 +1055,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<BabeWeight>': Option<BabeWeight>;
     'Option<BackedCandidate>': Option<BackedCandidate>;
     'Option<Balance>': Option<Balance>;
-    'Option<BalanceAtResult>': Option<BalanceAtResult>;
     'Option<BalanceLock>': Option<BalanceLock>;
     'Option<BalanceLockTo212>': Option<BalanceLockTo212>;
     'Option<BalanceOf>': Option<BalanceOf>;
@@ -1348,8 +1344,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<Health>': Option<Health>;
     'Option<Heartbeat>': Option<Heartbeat>;
     'Option<HeartbeatTo244>': Option<HeartbeatTo244>;
-    'Option<HistoricalVotingByAddress>': Option<HistoricalVotingByAddress>;
-    'Option<HistoricalVotingById>': Option<HistoricalVotingById>;
     'Option<HostConfiguration>': Option<HostConfiguration>;
     'Option<HostFnWeights>': Option<HostFnWeights>;
     'Option<HrmpChannel>': Option<HrmpChannel>;
@@ -1902,7 +1896,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<BabeWeight>': Vec<BabeWeight>;
     'Vec<BackedCandidate>': Vec<BackedCandidate>;
     'Vec<Balance>': Vec<Balance>;
-    'Vec<BalanceAtResult>': Vec<BalanceAtResult>;
     'Vec<BalanceLock>': Vec<BalanceLock>;
     'Vec<BalanceLockTo212>': Vec<BalanceLockTo212>;
     'Vec<BalanceOf>': Vec<BalanceOf>;
@@ -2192,8 +2185,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<Health>': Vec<Health>;
     'Vec<Heartbeat>': Vec<Heartbeat>;
     'Vec<HeartbeatTo244>': Vec<HeartbeatTo244>;
-    'Vec<HistoricalVotingByAddress>': Vec<HistoricalVotingByAddress>;
-    'Vec<HistoricalVotingById>': Vec<HistoricalVotingById>;
     'Vec<HostConfiguration>': Vec<HostConfiguration>;
     'Vec<HostFnWeights>': Vec<HostFnWeights>;
     'Vec<HrmpChannel>': Vec<HrmpChannel>;
@@ -2746,7 +2737,6 @@ declare module '@polkadot/types/types/registry' {
     BabeWeight: BabeWeight;
     BackedCandidate: BackedCandidate;
     Balance: Balance;
-    BalanceAtResult: BalanceAtResult;
     BalanceLock: BalanceLock;
     BalanceLockTo212: BalanceLockTo212;
     BalanceOf: BalanceOf;
@@ -3036,8 +3026,6 @@ declare module '@polkadot/types/types/registry' {
     Health: Health;
     Heartbeat: Heartbeat;
     HeartbeatTo244: HeartbeatTo244;
-    HistoricalVotingByAddress: HistoricalVotingByAddress;
-    HistoricalVotingById: HistoricalVotingById;
     HostConfiguration: HostConfiguration;
     HostFnWeights: HostFnWeights;
     HrmpChannel: HrmpChannel;

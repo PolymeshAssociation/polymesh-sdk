@@ -1,3 +1,4 @@
+import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TargetTreatment, TxTags } from '~/types';
 import {
@@ -5,6 +6,7 @@ import {
   corporateActionIdentifierToCaId,
   stringToIdentityId,
 } from '~/utils/conversion';
+import { xor } from '~/utils/internal';
 
 /**
  * @hidden
@@ -36,31 +38,13 @@ export async function prepareClaimDividends(
     },
   } = args;
 
-  const now = new Date();
+  assertDistributionOpen(paymentDate, expiryDate);
 
-  if (paymentDate > now) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: "The Distribution's payment date hasn't been reached",
-      data: { paymentDate },
-    });
-  }
-
-  if (expiryDate && expiryDate < now) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The Distribution has already expired',
-      data: {
-        expiryDate,
-      },
-    });
-  }
   const { did: currentDid } = await context.getCurrentIdentity();
 
   const found = !!identities.find(({ did }) => did === currentDid);
 
-  // NOTE @monitz87: this is an XOR
-  if (found !== (treatment === TargetTreatment.Include)) {
+  if (xor(found, treatment === TargetTreatment.Include)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The current Identity is not included in this Distribution',

@@ -2367,6 +2367,21 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
     result = claimToMeshClaim(value, context);
 
     expect(result).toBe(fakeResult);
+
+    value = {
+      type: ClaimType.InvestorUniquenessV2,
+      cddId: 'someCddId',
+    };
+
+    createTypeStub
+      .withArgs('Claim', {
+        [value.type]: stringToCddId(value.cddId, context),
+      })
+      .returns(fakeResult);
+
+    result = claimToMeshClaim(value, context);
+
+    expect(result).toBe(fakeResult);
   });
 
   test('meshClaimToClaim should convert a polkadot Claim object to a Claim', () => {
@@ -2513,6 +2528,17 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         dsMockUtils.createMockScopeId(fakeResult.scopeId),
         dsMockUtils.createMockCddId(fakeResult.cddId),
       ],
+    });
+
+    result = meshClaimToClaim(claim);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: ClaimType.InvestorUniquenessV2,
+      cddId: 'cddId',
+    };
+    claim = dsMockUtils.createMockClaim({
+      InvestorUniquenessV2: dsMockUtils.createMockCddId(fakeResult.cddId),
     });
 
     result = meshClaimToClaim(claim);

@@ -293,6 +293,7 @@ export enum ClaimType {
   Blocked = 'Blocked',
   InvestorUniqueness = 'InvestorUniqueness',
   NoData = 'NoData',
+  InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
 
 export type CddClaim = { type: ClaimType.CustomerDueDiligence; id: string };
@@ -302,6 +303,11 @@ export type InvestorUniquenessClaim = {
   scope: Scope;
   cddId: string;
   scopeId: string;
+};
+
+export type InvestorUniquenessV2Claim = {
+  type: ClaimType.InvestorUniquenessV2;
+  cddId: string;
 };
 
 export type ScopedClaim =
@@ -314,11 +320,12 @@ export type ScopedClaim =
         | ClaimType.Jurisdiction
         | ClaimType.CustomerDueDiligence
         | ClaimType.InvestorUniqueness
+        | ClaimType.InvestorUniquenessV2
       >;
       scope: Scope;
     };
 
-export type UnscopedClaim = { type: ClaimType.NoData } | CddClaim;
+export type UnscopedClaim = { type: ClaimType.NoData } | CddClaim | InvestorUniquenessV2Claim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -328,7 +335,11 @@ export type Claim = ScopedClaim | UnscopedClaim;
 export function isScopedClaim(claim: Claim): claim is ScopedClaim {
   const { type } = claim;
 
-  return ![ClaimType.NoData, ClaimType.CustomerDueDiligence].includes(type);
+  return ![
+    ClaimType.NoData,
+    ClaimType.CustomerDueDiligence,
+    ClaimType.InvestorUniquenessV2,
+  ].includes(type);
 }
 
 /**

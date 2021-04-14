@@ -163,6 +163,12 @@ export function createClaim(
         cddId: cddId as string,
       };
     }
+    case ClaimType.InvestorUniquenessV2: {
+      return {
+        type,
+        cddId: cddId as string,
+      };
+    }
   }
 
   return { type, scope };
@@ -532,6 +538,13 @@ export function assertFormatValid(address: string, ss58Format: number): void {
       },
     });
   }
+}
+
+/**
+ * @hidden
+ */
+export function xor(a: boolean, b: boolean): boolean {
+  return a !== b;
 }
 
 /**

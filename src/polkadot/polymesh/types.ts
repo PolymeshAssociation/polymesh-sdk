@@ -168,14 +168,6 @@ export interface AuthorizationType extends Enum {
   readonly isTransferCorporateActionAgent: boolean;
 }
 
-/** @name BalanceAtResult */
-export interface BalanceAtResult extends Enum {
-  readonly isOk: boolean;
-  readonly asOk: Vec<Balance>;
-  readonly isErr: boolean;
-  readonly asErr: Bytes;
-}
-
 /** @name BallotMeta */
 export interface BallotMeta extends Struct {
   readonly title: BallotTitle;
@@ -342,6 +334,8 @@ export interface Claim extends Enum {
   readonly isInvestorUniqueness: boolean;
   readonly asInvestorUniqueness: ITuple<[Scope, ScopeId, CddId]>;
   readonly isNoData: boolean;
+  readonly isInvestorUniquenessV2: boolean;
+  readonly asInvestorUniquenessV2: CddId;
 }
 
 /** @name Claim1stKey */
@@ -369,6 +363,7 @@ export interface ClaimType extends Enum {
   readonly isBlocked: boolean;
   readonly isInvestorUniqueness: boolean;
   readonly isNoData: boolean;
+  readonly isInvestorUniquenessV2: boolean;
 }
 
 /** @name ClassicTickerImport */
@@ -870,12 +865,6 @@ export interface HandledTxStatus extends Enum {
   readonly isError: boolean;
   readonly asError: Text;
 }
-
-/** @name HistoricalVotingByAddress */
-export interface HistoricalVotingByAddress extends Vec<VoteByPip> {}
-
-/** @name HistoricalVotingById */
-export interface HistoricalVotingById extends Vec<ITuple<[AccountId, HistoricalVotingByAddress]>> {}
 
 /** @name IdentityClaim */
 export interface IdentityClaim extends Struct {

@@ -7,7 +7,7 @@ import sinon from 'sinon';
 import { Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { CalendarPeriod, CalendarUnit,ClaimType, CommonKeyring, CountryCode } from '~/types';
+import { CalendarPeriod, CalendarUnit, ClaimType, CommonKeyring, CountryCode } from '~/types';
 import { tuple } from '~/types/utils';
 import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
@@ -235,6 +235,14 @@ describe('createClaim', () => {
     expect(result).toEqual({
       type: ClaimType.InvestorUniqueness,
       scope: scope,
+      cddId: id,
+    });
+
+    type = 'InvestorUniquenessV2';
+
+    result = createClaim(type, null, null, id, undefined);
+    expect(result).toEqual({
+      type: ClaimType.InvestorUniquenessV2,
       cddId: id,
     });
   });

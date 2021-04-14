@@ -112,6 +112,32 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  test('should throw an error if the current identity is not the custodian of any of the involved portfolios', () => {
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
+    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
+      multi: [rawAffirmationStatus, rawAffirmationStatus],
+    });
+    meshAffirmationStatusToAffirmationStatusStub
+      .withArgs(rawAffirmationStatus)
+      .returns(AffirmationStatus.Affirmed);
+
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [],
+      senderLegAmount: legAmount,
+    });
+
+    return expect(
+      prepareModifyInstructionAffirmation.call(proc, {
+        id,
+        operation: InstructionAffirmationOperation.Affirm,
+      })
+    ).rejects.toThrow('Current Identity is not involved in this Instruction');
+  });
+
   test("should throw an error if the operation is Affirm and all of the current Identity's Portfolios are affirmed", () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {

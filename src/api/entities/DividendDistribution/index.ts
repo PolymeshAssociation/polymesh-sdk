@@ -12,6 +12,8 @@ import {
   modifyRecordDate,
   ModifyRecordDateParams,
   NumberedPortfolio,
+  payDividends,
+  PayDividendsParams,
   PolymeshError,
 } from '~/internal';
 import { Distribution } from '~/polkadot';
@@ -96,6 +98,16 @@ export class DividendDistribution extends CorporateAction {
     this.expiryDate = expiryDate;
     this.paymentDate = paymentDate;
 
+    this.pay = createProcedureMethod(
+      {
+        getProcedureAndArgs: payDividendsArgs => [
+          payDividends,
+          { ...payDividendsArgs, distribution: this },
+        ],
+      },
+      context
+    );
+
     this.claim = createProcedureMethod(
       { getProcedureAndArgs: () => [claimDividends, { distribution: this }] },
       context
@@ -121,6 +133,11 @@ export class DividendDistribution extends CorporateAction {
    * Modify the distribution's record date
    */
   public modifyRecordDate: ProcedureMethod<ModifyRecordDateParams, void>;
+
+  /**
+   * Transfer the corresponding share of the dividends to a list of Identities
+   */
+  public pay: ProcedureMethod<PayDividendsParams, void>;
 
   /**
    * Retrieve the Checkpoint associated with this Dividend Distribution. If the Checkpoint is scheduled and has not been created yet,

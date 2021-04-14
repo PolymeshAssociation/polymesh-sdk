@@ -20,7 +20,9 @@ import type { ApiTypes } from '@polkadot/api/types';
 declare module '@polkadot/api/types/consts' {
   export interface AugmentedConsts<ApiType> {
     asset: {
-      allowedGasLimit: u64 & AugmentedConst<ApiType>;
+      assetNameMaxLength: u32 & AugmentedConst<ApiType>;
+      fundingRoundNameMaxLength: u32 & AugmentedConst<ApiType>;
+      maxNumberOfTmExtensionForAsset: u32 & AugmentedConst<ApiType>;
     };
     babe: {
       /**
@@ -39,10 +41,12 @@ declare module '@polkadot/api/types/consts' {
     };
     balances: {
       /**
-       * This is no longer needed but kept for compatibility reasons
        * The minimum amount required to keep an account open.
        **/
       existentialDeposit: Balance & AugmentedConst<ApiType>;
+    };
+    base: {
+      maxLen: u32 & AugmentedConst<ApiType>;
     };
     baseContracts: {
       /**
@@ -94,11 +98,18 @@ declare module '@polkadot/api/types/consts' {
        **/
       tombstoneDeposit: BalanceOf & AugmentedConst<ApiType>;
     };
+    complianceManager: {
+      maxConditionComplexity: u32 & AugmentedConst<ApiType>;
+    };
     contracts: {
       /**
        * The minimum amount required to generate a tombstone.
        **/
       networkShareInInstantiationFee: Perbill & AugmentedConst<ApiType>;
+    };
+    corporateAction: {
+      maxDidWhts: u32 & AugmentedConst<ApiType>;
+      maxTargetIds: u32 & AugmentedConst<ApiType>;
     };
     finalityTracker: {
       /**
@@ -109,6 +120,9 @@ declare module '@polkadot/api/types/consts' {
        * The number of recent samples to keep from this chain. Default is 101.
        **/
       windowSize: BlockNumber & AugmentedConst<ApiType>;
+    };
+    identity: {
+      initialPolyx: Balance & AugmentedConst<ApiType>;
     };
     indices: {
       /**
@@ -159,6 +173,10 @@ declare module '@polkadot/api/types/consts' {
        **/
       maxVariableInflationTotalIssuance: BalanceOf & AugmentedConst<ApiType>;
       /**
+       * Minimum amount of POLYX that must be bonded for a new bond.
+       **/
+      minimumBond: BalanceOf & AugmentedConst<ApiType>;
+      /**
        * The threshold of improvement that should be provided for a new solution to be accepted.
        **/
       minSolutionScoreBump: Perbill & AugmentedConst<ApiType>;
@@ -174,6 +192,9 @@ declare module '@polkadot/api/types/consts' {
        * intervention.
        **/
       slashDeferDuration: EraIndex & AugmentedConst<ApiType>;
+    };
+    statistics: {
+      maxTransferManagersPerAsset: u32 & AugmentedConst<ApiType>;
     };
     system: {
       /**
