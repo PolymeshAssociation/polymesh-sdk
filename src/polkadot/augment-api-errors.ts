@@ -386,6 +386,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       HolderAlreadyPaid: AugmentedError<ApiType>;
       /**
+       * A distribution has insufficient remaining amount of currency to distribute.
+       **/
+      InsufficientRemainingAmount: AugmentedError<ApiType>;
+      /**
        * A capital distribution doesn't exist for this CA.
        **/
       NoSuchDistribution: AugmentedError<ApiType>;
@@ -729,6 +733,10 @@ declare module '@polkadot/api/types/errors' {
        * CDDId should be unique & same within all cdd claims possessed by a DID.
        **/
       CDDIdNotUniqueForIdentity: AugmentedError<ApiType>;
+      /**
+       * Claim and Proof versions are different.
+       **/
+      ClaimAndProofVersionsDoNotMatch: AugmentedError<ApiType>;
       /**
        * Try to add a claim variant using un-designated extrinsic.
        **/

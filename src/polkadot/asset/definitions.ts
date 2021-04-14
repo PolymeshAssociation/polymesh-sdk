@@ -2,7 +2,8 @@
 export default {
   rpc: {
     canTransfer: {
-      description: 'Checks whether a transaction with given parameters can take place or not',
+      description:
+        'Checks whether a transaction with ' + 'given parameters can take place or ' + 'not',
       params: [
         {
           name: 'sender',
@@ -49,7 +50,9 @@ export default {
     },
     canTransferGranular: {
       description:
-        'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
+        'Checks whether a transaction with given parameters ' +
+        'can take place or not. The result is granular meaning ' +
+        'each check is run and returned regardless of outcome.',
       params: [
         {
           name: 'from_custodian',
@@ -88,27 +91,6 @@ export default {
         },
       ],
       type: 'GranularCanTransferResult',
-    },
-    balanceAt: {
-      description: 'Returns the ticker balances of identities at a checkpoint.',
-      params: [
-        {
-          name: 'ticker',
-          type: 'Ticker',
-          isOptional: false,
-        },
-        {
-          name: 'checkpoint',
-          type: 'CheckpointId',
-          isOptional: false,
-        },
-        {
-          name: 'dids',
-          type: 'Vec<IdentityId>',
-          isOptional: false,
-        },
-      ],
-      type: 'BalanceAtResult',
     },
   },
   types: {},

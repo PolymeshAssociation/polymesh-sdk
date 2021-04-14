@@ -308,7 +308,8 @@
     "add_investor_uniqueness_claim": "add_investor_uniqueness_claim",
     "gc_add_cdd_claim": "gc_add_cdd_claim",
     "gc_revoke_cdd_claim": "gc_revoke_cdd_claim",
-    "add_investor_uniqueness_claim_v2": "add_investor_uniqueness_claim_v2"
+    "add_investor_uniqueness_claim_v2": "add_investor_uniqueness_claim_v2",
+    "revoke_claim_by_index": "revoke_claim_by_index"
   },
   "Bridge": {
     "change_controller": "change_controller",

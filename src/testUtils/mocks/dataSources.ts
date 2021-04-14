@@ -1967,6 +1967,7 @@ export const createMockClaim = (
     | { Exempted: Scope }
     | { Blocked: Scope }
     | { InvestorUniqueness: [Scope, ScopeId, CddId] }
+    | { InvestorUniquenessV2: CddId }
     | 'NoData'
 ): Claim => createMockEnum(claim) as Claim;
 

@@ -80,16 +80,12 @@ import type {
   AssetDidResult,
   Authorization,
   AuthorizationType,
-  BalanceAtResult,
   CanTransferResult,
   CappedFee,
   CddStatus,
-  CheckpointId,
   DidRecords,
   DidStatus,
   GranularCanTransferResult,
-  HistoricalVotingByAddress,
-  HistoricalVotingById,
   IdentityId,
   KeyIdentityData,
   PortfolioId,
@@ -102,16 +98,6 @@ import type {
 declare module '@polkadot/rpc-core/types.jsonrpc' {
   export interface RpcInterface {
     asset: {
-      /**
-       * Returns the ticker balances of identities at a checkpoint.
-       **/
-      balanceAt: AugmentedRpc<
-        (
-          ticker: Ticker | string | Uint8Array,
-          checkpoint: CheckpointId | AnyNumber | Uint8Array,
-          dids: Vec<IdentityId> | (IdentityId | string | Uint8Array)[]
-        ) => Observable<BalanceAtResult>
-      >;
       /**
        * Checks whether a transaction with given parameters can take place or not
        **/
@@ -793,24 +779,6 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
           address: AccountId | string | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<Vec<u32>>
-      >;
-      /**
-       * Retrieves proposal `address` indices voted on
-       **/
-      votingHistoryByAddress: AugmentedRpc<
-        (
-          address: AccountId | string | Uint8Array,
-          blockHash?: Hash | string | Uint8Array
-        ) => Observable<HistoricalVotingByAddress>
-      >;
-      /**
-       * Retrieve historical voting of `id` identity
-       **/
-      votingHistoryById: AugmentedRpc<
-        (
-          id: IdentityId | string | Uint8Array,
-          blockHash?: Hash | string | Uint8Array
-        ) => Observable<HistoricalVotingById>
       >;
     };
     protocolFee: {

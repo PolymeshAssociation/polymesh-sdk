@@ -163,6 +163,12 @@ export function createClaim(
         cddId: cddId as string,
       };
     }
+    case ClaimType.InvestorUniquenessV2: {
+      return {
+        type,
+        cddId: cddId as string,
+      };
+    }
   }
 
   return { type, scope };
