@@ -1505,6 +1505,10 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
       );
       break;
     }
+    case ClaimType.InvestorUniquenessV2: {
+      value = stringToCddId(claim.cddId, context);
+      break;
+    }
     default: {
       value = scopeToMeshScope(claim.scope, context);
     }
@@ -1619,6 +1623,13 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
       scope: meshScopeToScope(scope),
       scopeId: scopeIdToString(scopeId),
       cddId: cddIdToString(cddId),
+    };
+  }
+
+  if (claim.isInvestorUniquenessV2) {
+    return {
+      type: ClaimType.InvestorUniquenessV2,
+      cddId: cddIdToString(claim.asInvestorUniquenessV2),
     };
   }
 

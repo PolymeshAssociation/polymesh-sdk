@@ -240,6 +240,14 @@ describe('createClaim', () => {
       scope: scope,
       cddId: id,
     });
+
+    type = 'InvestorUniquenessV2';
+
+    result = createClaim(type, null, null, id, undefined);
+    expect(result).toEqual({
+      type: ClaimType.InvestorUniquenessV2,
+      cddId: id,
+    });
   });
 });
 

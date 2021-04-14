@@ -6,6 +6,7 @@ import {
   claimToMeshClaim,
   dateToMoment,
   scopeClaimProofToMeshScopeClaimProof,
+  scopeToMeshScope,
   stringToIdentityId,
   stringToInvestorZKProofData,
 } from '~/utils/conversion';
@@ -43,12 +44,12 @@ export async function prepareAddInvestorUniquenessClaim(
   }
 
   const meshIdentityId = stringToIdentityId(did, context);
-  const meshClaim = claimToMeshClaim(
-    { type: ClaimType.InvestorUniqueness, scope, cddId, scopeId },
-    context
-  );
   const meshExpiry = expiry ? dateToMoment(expiry, context) : null;
   if (typeof proof === 'string') {
+    const meshClaim = claimToMeshClaim(
+      { type: ClaimType.InvestorUniqueness, scope, cddId, scopeId },
+      context
+    );
     this.addTransaction(
       tx.identity.addInvestorUniquenessClaim,
       {},
@@ -58,10 +59,12 @@ export async function prepareAddInvestorUniquenessClaim(
       meshExpiry
     );
   } else {
+    const meshClaim = claimToMeshClaim({ type: ClaimType.InvestorUniquenessV2, cddId }, context);
     this.addTransaction(
       tx.identity.addInvestorUniquenessClaimV2,
       {},
       meshIdentityId,
+      scopeToMeshScope(scope, context),
       meshClaim,
       scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context),
       meshExpiry
