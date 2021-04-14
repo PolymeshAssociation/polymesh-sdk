@@ -9,7 +9,7 @@ import {
   DefaultPortfolio,
   DividendDistribution,
   Entity,
-  modifyRecordDate,
+  modifyDistributionCheckpoint,
   payDividends,
   TransactionQueue,
 } from '~/internal';
@@ -214,22 +214,22 @@ describe('DividendDistribution class', () => {
     });
   });
 
-  describe('method: modifyRecordDate', () => {
+  describe('method: modifyCheckpoint', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
       const args = {
-        recordDate: new Date(),
+        checkpoint: new Date(),
       };
 
       sinon
-        .stub(modifyRecordDate, 'prepare')
+        .stub(modifyDistributionCheckpoint, 'prepare')
         .withArgs(
           { args: { distribution: dividendDistribution, ...args }, transformer: undefined },
           context
         )
         .resolves(expectedQueue);
 
-      const queue = await dividendDistribution.modifyRecordDate(args);
+      const queue = await dividendDistribution.modifyCheckpoint(args);
 
       expect(queue).toBe(expectedQueue);
     });

@@ -225,4 +225,28 @@ describe('Checkpoint class', () => {
       expect(result).toEqual(tokenBalance);
     });
   });
+
+  describe('method: exists', () => {
+    test('should return whether the checkpoint exists', async () => {
+      sinon.stub(utilsConversionModule, 'stringToTicker');
+
+      const checkpoint = new Checkpoint({ id, ticker }, context);
+
+      dsMockUtils.createQueryStub('checkpoint', 'checkpointIdSequence', {
+        returnValue: [dsMockUtils.createMockU64(5)],
+      });
+
+      let result = await checkpoint.exists();
+
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('checkpoint', 'checkpointIdSequence', {
+        returnValue: [dsMockUtils.createMockU64(0)],
+      });
+
+      result = await checkpoint.exists();
+
+      expect(result).toBe(false);
+    });
+  });
 });

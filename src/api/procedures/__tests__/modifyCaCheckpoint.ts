@@ -5,8 +5,8 @@ import sinon from 'sinon';
 import {
   getAuthorization,
   Params,
-  prepareModifyRecordDate,
-} from '~/api/procedures/modifyRecordDate';
+  prepareModifyCaCheckpoint,
+} from '~/api/procedures/modifyCaCheckpoint';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -14,7 +14,7 @@ import { RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
-describe('modifyRecordDate procedure', () => {
+describe('modifyCaCheckpoint procedure', () => {
   const ticker = 'SOMETICKER';
 
   let mockContext: Mocked<Context>;
@@ -45,12 +45,12 @@ describe('modifyRecordDate procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the distribution payment has started', async () => {
+  test('should throw an error if the checkpoint no longer exists', async () => {
     const args = {
-      distribution: entityMockUtils.getDividendDistributionInstance({
-        paymentDate: new Date('10/14/1987'),
+      corporateAction: entityMockUtils.getCorporateActionInstance(),
+      checkpoint: entityMockUtils.getCheckpointInstance({
+        exists: false,
       }),
-      recordDate: new Date(),
     };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -58,25 +58,20 @@ describe('modifyRecordDate procedure', () => {
     let err;
 
     try {
-      await prepareModifyRecordDate.call(proc, args);
+      await prepareModifyCaCheckpoint.call(proc, args);
     } catch (error) {
       err = error;
     }
 
-    expect(err.message).toBe('The Distribution payment has started');
-    expect(err.data).toEqual({
-      paymentDate: new Date('10/14/1987'),
-    });
+    expect(err.message).toBe('Checkpoint no longer exists');
   });
 
-  test('should throw an error if the distribution record date must be before the Payment date', async () => {
-    const paymentDate = new Date('11/11/2021');
-
+  test('should throw an error if checkpoint schedule no longer exists', async () => {
     const args = {
-      distribution: entityMockUtils.getDividendDistributionInstance({
-        paymentDate,
+      corporateAction: entityMockUtils.getCorporateActionInstance(),
+      checkpoint: entityMockUtils.getCheckpointScheduleInstance({
+        exists: false,
       }),
-      recordDate: new Date('12/12/2021'),
     };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -84,27 +79,18 @@ describe('modifyRecordDate procedure', () => {
     let err;
 
     try {
-      await prepareModifyRecordDate.call(proc, args);
+      await prepareModifyCaCheckpoint.call(proc, args);
     } catch (error) {
       err = error;
     }
 
-    expect(err.message).toBe('The Distribution record date must be before the Payment date');
-    expect(err.data).toEqual({
-      paymentDate,
-    });
+    expect(err.message).toBe('Checkpoint Schedule no longer exists');
   });
 
-  test('should throw an error if the distribution has already expired', async () => {
-    const expiryDate = new Date('1/1/2020');
-    const paymentDate = new Date('11/11/2021');
-
+  test('should throw an error if date is in the past', async () => {
     const args = {
-      distribution: entityMockUtils.getDividendDistributionInstance({
-        expiryDate,
-        paymentDate,
-      }),
-      recordDate: new Date('10/10/2021'),
+      corporateAction: entityMockUtils.getCorporateActionInstance(),
+      checkpoint: new Date('10/10/2020'),
     };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -112,29 +98,17 @@ describe('modifyRecordDate procedure', () => {
     let err;
 
     try {
-      await prepareModifyRecordDate.call(proc, args);
+      await prepareModifyCaCheckpoint.call(proc, args);
     } catch (error) {
       err = error;
     }
 
-    expect(err.message).toBe('The Distribution has already expired');
-    expect(err.data).toEqual({
-      expiryDate,
-    });
+    expect(err.message).toBe('Checkpoint date must be in the future');
   });
 
   test('should add a change record date transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const id = new BigNumber(1);
-
-    const args = {
-      distribution: entityMockUtils.getDividendDistributionInstance({
-        id,
-        paymentDate: new Date('10/10/2021'),
-        expiryDate: new Date('10/10/2022'),
-      }),
-      recordDate: new Date('2/2/2021'),
-    };
 
     // eslint-disable-next-line @typescript-eslint/camelcase
     const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
@@ -147,7 +121,14 @@ describe('modifyRecordDate procedure', () => {
 
     sinon.stub(utilsConversionModule, 'checkpointToRecordDateSpec').returns(rawRecordDateSpec);
 
-    await prepareModifyRecordDate.call(proc, args);
+    await prepareModifyCaCheckpoint.call(proc, {
+      corporateAction: entityMockUtils.getCorporateActionInstance({
+        id,
+      }),
+      checkpoint: entityMockUtils.getCheckpointInstance({
+        exists: true,
+      }),
+    });
 
     sinon.assert.calledWith(
       addTransactionStub,
@@ -156,6 +137,46 @@ describe('modifyRecordDate procedure', () => {
       rawCaId,
       rawRecordDateSpec
     );
+
+    await prepareModifyCaCheckpoint.call(proc, {
+      corporateAction: entityMockUtils.getCorporateActionInstance({
+        id,
+      }),
+      checkpoint: entityMockUtils.getCheckpointScheduleInstance({
+        exists: true,
+      }),
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      changeRecordDateTransaction,
+      {},
+      rawCaId,
+      rawRecordDateSpec
+    );
+
+    await prepareModifyCaCheckpoint.call(proc, {
+      corporateAction: entityMockUtils.getCorporateActionInstance({
+        id,
+      }),
+      checkpoint: new Date('10/10/2030'),
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      changeRecordDateTransaction,
+      {},
+      rawCaId,
+      rawRecordDateSpec
+    );
+
+    await prepareModifyCaCheckpoint.call(proc, {
+      corporateAction: entityMockUtils.getCorporateActionInstance({
+        id,
+      }),
+    });
+
+    sinon.assert.calledWith(addTransactionStub, changeRecordDateTransaction, {}, rawCaId, null);
   });
 
   describe('getAuthorization', () => {
@@ -163,7 +184,7 @@ describe('modifyRecordDate procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
-        distribution: {
+        corporateAction: {
           ticker,
         },
       } as Params;

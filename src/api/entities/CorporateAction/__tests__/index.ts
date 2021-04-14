@@ -8,6 +8,7 @@ import {
   CorporateAction,
   Entity,
   linkCaDocs,
+  modifyCaCheckpoint,
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -282,6 +283,24 @@ describe('CorporateAction class', () => {
 
       expect(result.id).toEqual(new BigNumber(1));
       expect(result instanceof Checkpoint);
+    });
+  });
+
+  describe('method: modifyCaCheckpoint', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const args = {
+        checkpoint: new Date(),
+      };
+
+      sinon
+        .stub(modifyCaCheckpoint, 'prepare')
+        .withArgs({ args: { corporateAction, ...args }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await corporateAction.modifyCaCheckpoint(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

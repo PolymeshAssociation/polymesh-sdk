@@ -9,8 +9,8 @@ import {
   Context,
   CorporateAction,
   DefaultPortfolio,
-  modifyRecordDate,
-  ModifyRecordDateParams,
+  modifyDistributionCheckpoint,
+  ModifyDistributionCheckpointParams,
   NumberedPortfolio,
   payDividends,
   PayDividendsParams,
@@ -113,11 +113,11 @@ export class DividendDistribution extends CorporateAction {
       context
     );
 
-    this.modifyRecordDate = createProcedureMethod(
+    this.modifyCheckpoint = createProcedureMethod(
       {
-        getProcedureAndArgs: modifyRecordDateArgs => [
-          modifyRecordDate,
-          { distribution: this, ...modifyRecordDateArgs },
+        getProcedureAndArgs: modifyCheckpointArgs => [
+          modifyDistributionCheckpoint,
+          { distribution: this as DividendDistribution, ...modifyCheckpointArgs },
         ],
       },
       context
@@ -130,9 +130,9 @@ export class DividendDistribution extends CorporateAction {
   public claim: ProcedureMethod<void, void>;
 
   /**
-   * Modify the distribution's record date
+   * Modify the distribution's checkpoint
    */
-  public modifyRecordDate: ProcedureMethod<ModifyRecordDateParams, void>;
+  public modifyCheckpoint: ProcedureMethod<ModifyDistributionCheckpointParams, void>;
 
   /**
    * Transfer the corresponding share of the dividends to a list of Identities
