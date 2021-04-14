@@ -2,8 +2,8 @@ import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { addInstruction, Context, Entity, Instruction, TransactionQueue, Venue } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Context, Entity, Instruction, TransactionQueue, Venue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { VenueType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -15,6 +15,10 @@ jest.mock(
 jest.mock(
   '~/api/entities/Instruction',
   require('~/testUtils/mocks/entities').mockInstructionModule('~/api/entities/Instruction')
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('Venue class', () => {
@@ -28,6 +32,7 @@ describe('Venue class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
 
     id = new BigNumber(1);
     rawId = dsMockUtils.createMockU64(id.toNumber());
@@ -41,11 +46,13 @@ describe('Venue class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -189,12 +196,6 @@ describe('Venue class', () => {
   });
 
   describe('method: addInstruction', () => {
-    let addInstructionPrepareStub: sinon.SinonStub;
-
-    beforeAll(() => {
-      addInstructionPrepareStub = sinon.stub(addInstruction, 'prepare');
-    });
-
     afterAll(() => {
       sinon.restore();
     });
@@ -220,7 +221,8 @@ describe('Venue class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
-      addInstructionPrepareStub
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           { args: { venueId: id, legs, tradeDate, endBlock }, transformer: undefined },
           context

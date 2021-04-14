@@ -118,4 +118,5 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const payDividends = new Procedure(preparePayDividends, getAuthorization);
+export const payDividends = (): Procedure<Params, void> =>
+  new Procedure(preparePayDividends, getAuthorization);

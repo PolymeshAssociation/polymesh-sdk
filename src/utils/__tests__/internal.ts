@@ -7,7 +7,7 @@ import sinon from 'sinon';
 import { Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { CalendarPeriod, CalendarUnit,ClaimType, CommonKeyring, CountryCode } from '~/types';
+import { CalendarPeriod, CalendarUnit, ClaimType, CommonKeyring, CountryCode } from '~/types';
 import { tuple } from '~/types/utils';
 import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
@@ -473,10 +473,11 @@ describe('createProcedureMethod', () => {
     const prepare = sinon.stub();
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
-    const fakeProcedure = ({
-      prepare,
-      checkAuthorization,
-    } as unknown) as Procedure<number, void>;
+    const fakeProcedure = (): Procedure<number, void> =>
+      (({
+        prepare,
+        checkAuthorization,
+      } as unknown) as Procedure<number, void>);
 
     const method = createProcedureMethod(
       { getProcedureAndArgs: (args: number) => [fakeProcedure, args], transformer },

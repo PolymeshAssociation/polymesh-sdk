@@ -158,7 +158,7 @@ export async function prepareConfigureDividendDistribution(
     });
   }
 
-  const caId = await this.addProcedure(initiateCorporateAction, {
+  const caId = await this.addProcedure(initiateCorporateAction(), {
     ticker,
     kind: CorporateActionKind.UnpredictableBenefit,
     checkpoint,
@@ -233,8 +233,5 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const configureDividendDistribution = new Procedure(
-  prepareConfigureDividendDistribution,
-  getAuthorization,
-  prepareStorage
-);
+export const configureDividendDistribution = (): Procedure<Params, DividendDistribution, Storage> =>
+  new Procedure(prepareConfigureDividendDistribution, getAuthorization, prepareStorage);

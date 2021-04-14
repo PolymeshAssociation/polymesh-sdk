@@ -79,7 +79,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const removeCheckpointSchedule = new Procedure(
-  prepareRemoveCheckpointSchedule,
-  getAuthorization
-);
+export const removeCheckpointSchedule = (): Procedure<Params, void> =>
+  new Procedure(prepareRemoveCheckpointSchedule, getAuthorization);

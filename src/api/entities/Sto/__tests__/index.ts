@@ -1,22 +1,18 @@
 import BigNumber from 'bignumber.js';
-import sinon, { SinonStub } from 'sinon';
+import sinon from 'sinon';
 
 import {
-  closeSto,
   Context,
   DefaultPortfolio,
   Entity,
   Identity,
-  investInSto,
-  modifyStoTimes,
   Sto,
-  toggleFreezeSto,
   TransactionQueue,
   Venue,
 } from '~/internal';
 import { heartbeat, investments } from '~/middleware/queries';
 import { InvestmentResult } from '~/middleware/types';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { StoBalanceStatus, StoDetails, StoSaleStatus, StoTimingStatus } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -38,15 +34,18 @@ jest.mock(
   '~/api/entities/Venue',
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Sto class', () => {
   let context: Context;
-  let prepareToggleFreezeStoStub: SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
-    prepareToggleFreezeStoStub = sinon.stub(toggleFreezeSto, 'prepare');
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -56,11 +55,13 @@ describe('Sto class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -224,8 +225,8 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(closeSto, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -254,8 +255,8 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(modifyStoTimes, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -350,7 +351,8 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
 
-      prepareToggleFreezeStoStub
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker, id, freeze: true }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -368,7 +370,8 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
 
-      prepareToggleFreezeStoStub
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker, id, freeze: false }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -399,8 +402,8 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(investInSto, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 

@@ -101,7 +101,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const createCheckpointSchedule = new Procedure(
-  prepareCreateCheckpointSchedule,
-  getAuthorization
-);
+export const createCheckpointSchedule = (): Procedure<Params, CheckpointSchedule> =>
+  new Procedure(prepareCreateCheckpointSchedule, getAuthorization);

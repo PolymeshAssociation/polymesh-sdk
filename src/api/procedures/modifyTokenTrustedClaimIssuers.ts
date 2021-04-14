@@ -216,7 +216,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyTokenTrustedClaimIssuers = new Procedure(
-  prepareModifyTokenTrustedClaimIssuers,
-  getAuthorization
-);
+export const modifyTokenTrustedClaimIssuers = (): Procedure<Params, SecurityToken> =>
+  new Procedure(prepareModifyTokenTrustedClaimIssuers, getAuthorization);

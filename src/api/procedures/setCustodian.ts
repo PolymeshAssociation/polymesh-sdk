@@ -106,4 +106,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const setCustodian = new Procedure(prepareSetCustodian, getAuthorization);
+export const setCustodian = (): Procedure<Params, void> =>
+  new Procedure(prepareSetCustodian, getAuthorization);

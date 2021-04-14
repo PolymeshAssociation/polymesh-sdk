@@ -221,4 +221,5 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const launchSto = new Procedure(prepareLaunchSto, getAuthorization, prepareStorage);
+export const launchSto = (): Procedure<Params, Sto, Storage> =>
+  new Procedure(prepareLaunchSto, getAuthorization, prepareStorage);

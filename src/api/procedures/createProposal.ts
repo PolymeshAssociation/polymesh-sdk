@@ -124,4 +124,4 @@
 // /**
 //  * @hidden
 //  */
-// export const createProposal = new Procedure(prepareCreateProposal, getRequiredRoles);
+// export const createProposal = (): Procedure => new Procedure(prepareCreateProposal, getRequiredRoles);

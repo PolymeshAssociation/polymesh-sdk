@@ -1,23 +1,21 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  AuthorizationRequest,
-  consumeAuthorizationRequests,
-  consumeJoinIdentityAuthorization,
-  Context,
-  Entity,
-  Identity,
-  TransactionQueue,
-} from '~/internal';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { AuthorizationRequest, Context, Entity, Identity, TransactionQueue } from '~/internal';
+import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Authorization, AuthorizationType } from '~/types';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('AuthorizationRequest class', () => {
   let context: Context;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -26,10 +24,12 @@ describe('AuthorizationRequest class', () => {
 
   afterEach(() => {
     dsMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -88,8 +88,8 @@ describe('AuthorizationRequest class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(consumeAuthorizationRequests, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -125,8 +125,8 @@ describe('AuthorizationRequest class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(consumeJoinIdentityAuthorization, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -160,8 +160,8 @@ describe('AuthorizationRequest class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(consumeAuthorizationRequests, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -197,8 +197,8 @@ describe('AuthorizationRequest class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(consumeJoinIdentityAuthorization, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
