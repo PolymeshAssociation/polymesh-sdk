@@ -31,7 +31,7 @@ export type Events = AugmentedEvents<'promise'>;
 export type Queries = QueryableStorage<'promise'>;
 
 /**
- * Polkadot's `query` submodule
+ * Polkadot's `consts` submodule
  */
 export type Consts = QueryableConsts<'promise'>;
 
