@@ -100,7 +100,7 @@ describe('createPortfolio procedure', () => {
 });
 
 describe('createPortfolioResolver', () => {
-  const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
+  const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
   const did = 'someDid';
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const id = new BigNumber(1);
@@ -116,12 +116,12 @@ describe('createPortfolioResolver', () => {
   beforeEach(() => {
     identityIdToStringStub.withArgs(rawIdentityId).returns(did);
     u64ToBigNumberStub.withArgs(rawId).returns(id);
-    findEventRecordStub.returns(dsMockUtils.createMockIEvent([rawIdentityId, rawId]));
+    filterEventRecordsStub.returns([dsMockUtils.createMockIEvent([rawIdentityId, rawId])]);
   });
 
   afterEach(() => {
     sinon.reset();
-    findEventRecordStub.reset();
+    filterEventRecordsStub.reset();
   });
 
   test('should return the new Numbered Portfolio', () => {

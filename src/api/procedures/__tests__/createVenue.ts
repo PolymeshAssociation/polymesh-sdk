@@ -79,7 +79,7 @@ describe('createVenue procedure', () => {
 });
 
 describe('createCreateVenueResolver', () => {
-  const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
+  const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
   const id = new BigNumber(10);
   const rawId = dsMockUtils.createMockU64(id.toNumber());
 
@@ -92,11 +92,11 @@ describe('createCreateVenueResolver', () => {
   });
 
   beforeEach(() => {
-    findEventRecordStub.returns(dsMockUtils.createMockIEvent(['did', rawId]));
+    filterEventRecordsStub.returns([dsMockUtils.createMockIEvent(['did', rawId])]);
   });
 
   afterEach(() => {
-    findEventRecordStub.reset();
+    filterEventRecordsStub.reset();
   });
 
   test('should return the new Venue', () => {

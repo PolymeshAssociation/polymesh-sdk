@@ -82,7 +82,7 @@ describe('createCheckpoint procedure', () => {
   });
 
   describe('createCheckpointResolver', () => {
-    const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
+    const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
 
     beforeAll(() => {
@@ -90,11 +90,11 @@ describe('createCheckpoint procedure', () => {
     });
 
     beforeEach(() => {
-      findEventRecordStub.returns(dsMockUtils.createMockIEvent(['someDid', ticker, id]));
+      filterEventRecordsStub.returns([dsMockUtils.createMockIEvent(['someDid', ticker, id])]);
     });
 
     afterEach(() => {
-      findEventRecordStub.reset();
+      filterEventRecordsStub.reset();
     });
 
     test('should return the new Checkpoint', () => {

@@ -2,7 +2,14 @@ import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, Entity, Instruction, TransactionQueue, Venue } from '~/internal';
+import {
+  addInstructionTransformer,
+  Context,
+  Entity,
+  Instruction,
+  TransactionQueue,
+  Venue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { VenueType } from '~/types';
@@ -224,7 +231,10 @@ describe('Venue class', () => {
       procedureMockUtils
         .getPrepareStub()
         .withArgs(
-          { args: { venueId: id, legs, tradeDate, endBlock }, transformer: undefined },
+          {
+            args: { instructions: [{ legs, tradeDate, endBlock }], venueId: id },
+            transformer: addInstructionTransformer,
+          },
           context
         )
         .resolves(expectedQueue);
@@ -233,5 +243,66 @@ describe('Venue class', () => {
 
       expect(queue).toBe(expectedQueue);
     });
+  });
+
+  describe('method: addInstructions', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const legs = [
+        {
+          from: 'someDid',
+          to: 'anotherDid',
+          amount: new BigNumber(1000),
+          token: 'SOME_TOKEN',
+        },
+        {
+          from: 'anotherDid',
+          to: 'aThirdDid',
+          amount: new BigNumber(100),
+          token: 'ANOTHER_TOKEN',
+        },
+      ];
+
+      const tradeDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+      const endBlock = new BigNumber(10000);
+
+      const instructions = [
+        {
+          legs,
+          tradeDate,
+          endBlock,
+        },
+      ];
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { venueId: id, instructions },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await venue.addInstructions({ instructions });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+});
+
+describe('addInstructionTransformer', () => {
+  test('should return a single Instruction', () => {
+    const id = new BigNumber(1);
+
+    const result = addInstructionTransformer([entityMockUtils.getInstructionInstance({ id })]);
+
+    expect(result.id).toEqual(id);
   });
 });

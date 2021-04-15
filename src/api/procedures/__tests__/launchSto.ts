@@ -337,7 +337,7 @@ describe('launchSto procedure', () => {
   });
 
   describe('stoResolver', () => {
-    const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
+    const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
     const stoId = new BigNumber(15);
 
     beforeAll(() => {
@@ -345,13 +345,13 @@ describe('launchSto procedure', () => {
     });
 
     beforeEach(() => {
-      findEventRecordStub.returns(
-        dsMockUtils.createMockIEvent(['filler', dsMockUtils.createMockU64(stoId.toNumber())])
-      );
+      filterEventRecordsStub.returns([
+        dsMockUtils.createMockIEvent(['filler', dsMockUtils.createMockU64(stoId.toNumber())]),
+      ]);
     });
 
     afterEach(() => {
-      findEventRecordStub.reset();
+      filterEventRecordsStub.reset();
     });
 
     test('should return the new Sto', () => {
