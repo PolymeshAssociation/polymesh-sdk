@@ -463,10 +463,7 @@ export function createProcedureMethod<
     methodArgs: MethodArgs
   ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
-    return (proc() as Procedure<ProcedureArgs, ProcedureReturnValue, Storage>).prepare(
-      { args: procArgs, transformer },
-      context
-    );
+    return proc().prepare({ args: procArgs, transformer }, context);
   };
 
   method.checkAuthorization = async (

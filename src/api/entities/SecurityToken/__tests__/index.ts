@@ -6,7 +6,7 @@ import {
   FundingRoundName,
   SecurityToken as MeshSecurityToken,
 } from 'polymesh-types/types';
-import sinon, { SinonStub } from 'sinon';
+import sinon from 'sinon';
 
 import { Context, Entity, SecurityToken, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
