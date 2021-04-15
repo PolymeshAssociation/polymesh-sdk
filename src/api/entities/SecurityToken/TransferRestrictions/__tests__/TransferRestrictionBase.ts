@@ -275,6 +275,9 @@ describe('TransferRestrictionBase class', () => {
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
       token = entityMockUtils.getSecurityTokenInstance();
+      dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
+        returnValue: dsMockUtils.createMockU32(3),
+      });
       dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
         returnValue: [rawCountRestriction, rawPercentageRestriction],
       });

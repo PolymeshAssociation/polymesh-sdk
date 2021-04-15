@@ -74,7 +74,7 @@ export async function prepareInitiateCorporateAction(
 ): Promise<PostTransactionValue<CAId>> {
   const {
     context: {
-      polymeshApi: { tx, query },
+      polymeshApi: { tx, query, consts },
     },
     context,
   } = this;
@@ -89,26 +89,25 @@ export async function prepareInitiateCorporateAction(
     taxWithholdings,
   } = args;
 
-  // TODO @monitz87: remove these when they can be fetched from the chain
-  const MAX_WITHHOLDING_ENTRIES = 1000;
-  const MAX_TARGETS = 1000;
+  const maxWithholdingEntries = u32ToBigNumber(consts.corporateAction.maxDidWhts).toNumber();
+  const maxTargets = u32ToBigNumber(consts.corporateAction.maxTargetIds).toNumber();
 
-  if (targets && targets.identities.length > MAX_TARGETS) {
+  if (targets && targets.identities.length > maxTargets) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Too many target Identities',
       data: {
-        maxTargets: MAX_TARGETS,
+        maxTargets: maxTargets,
       },
     });
   }
 
-  if (taxWithholdings.length > MAX_WITHHOLDING_ENTRIES) {
+  if (taxWithholdings.length > maxWithholdingEntries) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Too many tax withholding entries',
       data: {
-        maxWithholdingEntries: MAX_WITHHOLDING_ENTRIES,
+        maxWithholdingEntries: maxWithholdingEntries,
       },
     });
   }

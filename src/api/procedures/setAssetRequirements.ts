@@ -3,11 +3,11 @@ import { differenceWith, isEqual } from 'lodash';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { Condition, ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { MAX_COMPLIANCE_REQUIREMENT_CONDITIONS } from '~/utils/constants';
 import {
   complianceRequirementToRequirement,
   requirementToComplianceRequirement,
   stringToTicker,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 
 export interface SetAssetRequirementsParams {
@@ -30,7 +30,7 @@ export async function prepareSetAssetRequirements(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { query, tx },
+      polymeshApi: { query, tx, consts },
     },
     context,
   } = this;
@@ -38,11 +38,15 @@ export async function prepareSetAssetRequirements(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  if (requirements.length >= MAX_COMPLIANCE_REQUIREMENT_CONDITIONS) {
+  const maxConditionComplexity = u32ToBigNumber(
+    consts.complianceManager.maxConditionComplexity
+  ).toNumber();
+
+  if (requirements.length >= maxConditionComplexity) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Condition limit reached',
-      data: { limit: MAX_COMPLIANCE_REQUIREMENT_CONDITIONS },
+      data: { limit: maxConditionComplexity },
     });
   }
 

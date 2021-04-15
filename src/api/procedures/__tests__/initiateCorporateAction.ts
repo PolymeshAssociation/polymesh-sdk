@@ -134,6 +134,12 @@ describe('initiateCorporateAction procedure', () => {
       'initiateCorporateAction'
     );
 
+    dsMockUtils.setConstMock('corporateAction', 'maxDidWhts', {
+      returnValue: dsMockUtils.createMockU32(1000),
+    });
+    dsMockUtils.setConstMock('corporateAction', 'maxTargetIds', {
+      returnValue: dsMockUtils.createMockU32(1000),
+    });
     maxDetailsLengthQueryStub = dsMockUtils.createQueryStub('corporateAction', 'maxDetailsLength', {
       returnValue: dsMockUtils.createMockU32(100),
     });

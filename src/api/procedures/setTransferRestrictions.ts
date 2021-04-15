@@ -16,11 +16,11 @@ import {
   TransferRestrictionType,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { MAX_TRANSFER_MANAGERS } from '~/utils/constants';
 import {
   stringToScopeId,
   stringToTicker,
   transferRestrictionToTransferManager,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 
 export interface SetCountTransferRestrictionsParams {
@@ -61,6 +61,7 @@ export async function prepareSetTransferRestrictions(
     context: {
       polymeshApi: {
         tx: { statistics },
+        consts,
       },
     },
     storage: {
@@ -102,13 +103,16 @@ export async function prepareSetTransferRestrictions(
     });
   }
 
+  const maxTransferManagers = u32ToBigNumber(
+    consts.statistics.maxTransferManagersPerAsset
+  ).toNumber();
   const finalCount = occupiedSlots + newRestrictionAmount;
-  if (finalCount >= MAX_TRANSFER_MANAGERS) {
+  if (finalCount >= maxTransferManagers) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Cannot set more Transfer Restrictions than there are slots available',
       data: {
-        availableSlots: MAX_TRANSFER_MANAGERS - occupiedSlots,
+        availableSlots: maxTransferManagers - occupiedSlots,
       },
     });
   }
