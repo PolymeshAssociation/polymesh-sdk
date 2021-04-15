@@ -1075,7 +1075,7 @@ export function createRpcStub(
  * Set a consts mock
  *
  * @param mod - name of the module
- * @param constName - name of the consts function
+ * @param constName - name of the constant
  */
 export function setConstMock<
   ModuleName extends keyof Consts,
