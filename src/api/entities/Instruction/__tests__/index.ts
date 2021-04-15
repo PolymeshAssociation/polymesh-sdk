@@ -1,16 +1,10 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
-import sinon, { SinonStub } from 'sinon';
+import sinon from 'sinon';
 
-import {
-  Context,
-  Entity,
-  Instruction,
-  modifyInstructionAffirmation,
-  TransactionQueue,
-} from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Context, Entity, Instruction, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AffirmationStatus, InstructionStatus, InstructionType } from '~/types';
 import { InstructionAffirmationOperation } from '~/types/internal';
@@ -30,17 +24,21 @@ jest.mock(
   '~/api/entities/Venue',
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Instruction class', () => {
   let context: Mocked<Context>;
   let instruction: Instruction;
-  let prepareModifyInstructionAffirmationStub: SinonStub;
   let id: BigNumber;
   let rawId: u64;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
 
     id = new BigNumber(1);
     rawId = dsMockUtils.createMockU64(id.toNumber());
@@ -54,11 +52,13 @@ describe('Instruction class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -414,10 +414,6 @@ describe('Instruction class', () => {
   });
 
   describe('method: reject', () => {
-    beforeAll(() => {
-      prepareModifyInstructionAffirmationStub = sinon.stub(modifyInstructionAffirmation, 'prepare');
-    });
-
     afterAll(() => {
       sinon.restore();
     });
@@ -425,7 +421,8 @@ describe('Instruction class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      prepareModifyInstructionAffirmationStub
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           {
             args: { id, operation: InstructionAffirmationOperation.Reject },
@@ -441,10 +438,6 @@ describe('Instruction class', () => {
   });
 
   describe('method: affirm', () => {
-    beforeAll(() => {
-      prepareModifyInstructionAffirmationStub = sinon.stub(modifyInstructionAffirmation, 'prepare');
-    });
-
     afterAll(() => {
       sinon.restore();
     });
@@ -452,7 +445,8 @@ describe('Instruction class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
-      prepareModifyInstructionAffirmationStub
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           {
             args: { id, operation: InstructionAffirmationOperation.Affirm },
@@ -469,10 +463,6 @@ describe('Instruction class', () => {
   });
 
   describe('method: withdraw', () => {
-    beforeAll(() => {
-      prepareModifyInstructionAffirmationStub = sinon.stub(modifyInstructionAffirmation, 'prepare');
-    });
-
     afterAll(() => {
       sinon.restore();
     });
@@ -480,7 +470,8 @@ describe('Instruction class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
-      prepareModifyInstructionAffirmationStub
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           {
             args: { id, operation: InstructionAffirmationOperation.Withdraw },

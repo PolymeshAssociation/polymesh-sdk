@@ -349,8 +349,8 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const setTransferRestrictions = new Procedure(
-  prepareSetTransferRestrictions,
-  getAuthorization,
-  prepareStorage
-);
+export const setTransferRestrictions = (): Procedure<
+  SetTransferRestrictionsParams,
+  number,
+  Storage
+> => new Procedure(prepareSetTransferRestrictions, getAuthorization, prepareStorage);

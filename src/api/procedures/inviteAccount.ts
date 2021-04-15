@@ -119,10 +119,11 @@ export async function prepareInviteAccount(
 /**
  * @hidden
  */
-export const inviteAccount = new Procedure(prepareInviteAccount, {
-  signerPermissions: {
-    tokens: [],
-    portfolios: [],
-    transactions: [TxTags.identity.AddAuthorization],
-  },
-});
+export const inviteAccount = (): Procedure<InviteAccountParams, void> =>
+  new Procedure(prepareInviteAccount, {
+    signerPermissions: {
+      tokens: [],
+      portfolios: [],
+      transactions: [TxTags.identity.AddAuthorization],
+    },
+  });

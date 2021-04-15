@@ -2,13 +2,12 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
-  configureDividendDistribution,
   ConfigureDividendDistributionParams,
   DividendDistribution,
   Namespace,
   TransactionQueue,
 } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CorporateActionKind, TargetTreatment } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -33,21 +32,28 @@ jest.mock(
     '~/api/entities/NumberedPortfolio'
   )
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Distributions class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -68,8 +74,8 @@ describe('Distributions class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<DividendDistribution>;
 
-      sinon
-        .stub(configureDividendDistribution, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker: token.ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 

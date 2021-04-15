@@ -93,4 +93,5 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const redeemToken = new Procedure(prepareRedeemToken, getAuthorization);
+export const redeemToken = (): Procedure<Params, void> =>
+  new Procedure(prepareRedeemToken, getAuthorization);

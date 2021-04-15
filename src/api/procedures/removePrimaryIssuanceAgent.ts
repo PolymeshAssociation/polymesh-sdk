@@ -53,7 +53,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const removePrimaryIssuanceAgent = new Procedure(
-  prepareRemovePrimaryIssuanceAgent,
-  getAuthorization
-);
+export const removePrimaryIssuanceAgent = (): Procedure<Params, void> =>
+  new Procedure(prepareRemovePrimaryIssuanceAgent, getAuthorization);

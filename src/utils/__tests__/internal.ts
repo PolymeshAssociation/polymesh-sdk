@@ -476,10 +476,11 @@ describe('createProcedureMethod', () => {
     const prepare = sinon.stub();
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
-    const fakeProcedure = ({
-      prepare,
-      checkAuthorization,
-    } as unknown) as Procedure<number, void>;
+    const fakeProcedure = (): Procedure<number, void> =>
+      (({
+        prepare,
+        checkAuthorization,
+      } as unknown) as Procedure<number, void>);
 
     const method = createProcedureMethod(
       { getProcedureAndArgs: (args: number) => [fakeProcedure, args], transformer },
