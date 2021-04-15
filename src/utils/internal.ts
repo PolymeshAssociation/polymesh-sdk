@@ -14,7 +14,6 @@ import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
 import { TxTag } from 'polymesh-types/types';
 
-import { Procedure } from '~/base/Procedure';
 import {
   Context,
   Identity,
