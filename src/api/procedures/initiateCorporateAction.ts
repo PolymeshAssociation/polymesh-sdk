@@ -107,7 +107,7 @@ export async function prepareInitiateCorporateAction(
       code: ErrorCode.ValidationError,
       message: 'Too many tax withholding entries',
       data: {
-        maxWithholdingEntries: maxWithholdingEntries,
+        maxWithholdingEntries,
       },
     });
   }
