@@ -203,7 +203,7 @@ describe('reserveTicker procedure', () => {
 });
 
 describe('tickerReservationResolver', () => {
-  const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
+  const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
   const tickerString = 'someTicker';
   const ticker = dsMockUtils.createMockTicker(tickerString);
 
@@ -212,11 +212,11 @@ describe('tickerReservationResolver', () => {
   });
 
   beforeEach(() => {
-    findEventRecordStub.returns(dsMockUtils.createMockIEvent(['someDid', ticker]));
+    filterEventRecordsStub.returns([dsMockUtils.createMockIEvent(['someDid', ticker])]);
   });
 
   afterEach(() => {
-    findEventRecordStub.reset();
+    filterEventRecordsStub.reset();
   });
 
   test('should return the new Ticker Reservation', () => {
