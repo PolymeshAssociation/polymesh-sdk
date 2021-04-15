@@ -1094,7 +1094,7 @@ export function setConstMock<
     constsModule[mod] = runtimeModule;
   }
 
-  const returnValue = (opts.returnValue as unknown) as Consts[ModuleName][ConstName];
+  const returnValue = opts.returnValue as Consts[ModuleName][ConstName];
   if (!runtimeModule[constName]) {
     runtimeModule[constName] = returnValue;
 
