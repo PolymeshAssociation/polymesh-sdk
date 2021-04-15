@@ -97,7 +97,7 @@ export async function prepareInitiateCorporateAction(
       code: ErrorCode.ValidationError,
       message: 'Too many target Identities',
       data: {
-        maxTargets: maxTargets,
+        maxTargets,
       },
     });
   }
