@@ -1,7 +1,6 @@
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { modifyCaCheckpoint } from '~/api/procedures/modifyCaCheckpoint';
 import {
   getAuthorization,
   Params,
@@ -17,6 +16,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockCheckpointScheduleModule(
     '~/api/entities/CheckpointSchedule'
   )
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('modifyDistributionCheckpoint procedure', () => {
@@ -157,7 +160,7 @@ describe('modifyDistributionCheckpoint procedure', () => {
 
     await prepareModifyDistributionCheckpoint.call(proc, args);
 
-    sinon.assert.calledWith(addProcedureStub, modifyCaCheckpoint, {
+    sinon.assert.calledWith(addProcedureStub, proc, {
       checkpoint,
       corporateAction: distribution,
     });

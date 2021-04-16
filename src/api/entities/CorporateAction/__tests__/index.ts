@@ -2,15 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Checkpoint } from '~/api/entities/Checkpoint';
-import {
-  CheckpointSchedule,
-  Context,
-  CorporateAction,
-  Entity,
-  linkCaDocs,
-  modifyCaCheckpoint,
-  TransactionQueue,
-} from '~/internal';
+import { CheckpointSchedule, Context, CorporateAction, Entity, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   CalendarUnit,
@@ -300,8 +292,8 @@ describe('CorporateAction class', () => {
         checkpoint: new Date(),
       };
 
-      sinon
-        .stub(modifyCaCheckpoint, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { corporateAction, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 

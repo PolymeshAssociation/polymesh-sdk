@@ -76,7 +76,7 @@ export async function prepareModifyDistributionCheckpoint(
     });
   }
 
-  await this.addProcedure(modifyCaCheckpoint, {
+  await this.addProcedure(modifyCaCheckpoint(), {
     checkpoint,
     corporateAction: distribution,
   });
@@ -99,7 +99,5 @@ export function getAuthorization({ distribution: { ticker } }: Params): Procedur
 /**
  * @hidden
  */
-export const modifyDistributionCheckpoint = new Procedure(
-  prepareModifyDistributionCheckpoint,
-  getAuthorization
-);
+export const modifyDistributionCheckpoint = (): Procedure<Params, void> =>
+  new Procedure(prepareModifyDistributionCheckpoint, getAuthorization);

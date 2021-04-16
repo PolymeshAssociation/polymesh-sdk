@@ -88,4 +88,5 @@ export function getAuthorization({ corporateAction: { ticker } }: Params): Proce
 /**
  * @hidden
  */
-export const modifyCaCheckpoint = new Procedure(prepareModifyCaCheckpoint, getAuthorization);
+export const modifyCaCheckpoint = (): Procedure<Params, void> =>
+  new Procedure(prepareModifyCaCheckpoint, getAuthorization);

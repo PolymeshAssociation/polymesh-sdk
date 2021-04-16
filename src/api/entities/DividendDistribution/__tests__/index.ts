@@ -8,8 +8,6 @@ import {
   DefaultPortfolio,
   DividendDistribution,
   Entity,
-  modifyDistributionCheckpoint,
-  payDividends,
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -228,8 +226,8 @@ describe('DividendDistribution class', () => {
         checkpoint: new Date(),
       };
 
-      sinon
-        .stub(modifyDistributionCheckpoint, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           { args: { distribution: dividendDistribution, ...args }, transformer: undefined },
           context
