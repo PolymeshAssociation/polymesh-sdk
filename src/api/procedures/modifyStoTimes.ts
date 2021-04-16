@@ -129,4 +129,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyStoTimes = new Procedure(prepareModifyStoTimes, getAuthorization);
+export const modifyStoTimes = (): Procedure<Params, void> =>
+  new Procedure(prepareModifyStoTimes, getAuthorization);

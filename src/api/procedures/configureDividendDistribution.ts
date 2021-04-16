@@ -28,7 +28,7 @@ import {
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -36,7 +36,7 @@ import { findEventRecord } from '~/utils/internal';
 export const createDividendDistributionResolver = (context: Context) => async (
   receipt: ISubmittableResult
 ): Promise<DividendDistribution> => {
-  const { data } = findEventRecord(receipt, 'capitalDistribution', 'Created');
+  const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
   const [, { ticker, local_id: localId }, distribution] = data;
 
   const corporateAction = await context.polymeshApi.query.corporateAction.corporateActions(
@@ -158,7 +158,7 @@ export async function prepareConfigureDividendDistribution(
     });
   }
 
-  const caId = await this.addProcedure(initiateCorporateAction, {
+  const caId = await this.addProcedure(initiateCorporateAction(), {
     ticker,
     kind: CorporateActionKind.UnpredictableBenefit,
     checkpoint,
@@ -233,8 +233,5 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const configureDividendDistribution = new Procedure(
-  prepareConfigureDividendDistribution,
-  getAuthorization,
-  prepareStorage
-);
+export const configureDividendDistribution = (): Procedure<Params, DividendDistribution, Storage> =>
+  new Procedure(prepareConfigureDividendDistribution, getAuthorization, prepareStorage);

@@ -11,7 +11,7 @@ import {
   modifyCaCheckpoint,
   TransactionQueue,
 } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   CalendarUnit,
   CorporateActionKind,
@@ -29,6 +29,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockCheckpointScheduleModule(
     '~/api/entities/CheckpointSchedule'
   )
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('CorporateAction class', () => {
@@ -49,6 +53,7 @@ describe('CorporateAction class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -106,11 +111,13 @@ describe('CorporateAction class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -154,8 +161,8 @@ describe('CorporateAction class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(linkCaDocs, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { id, ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 

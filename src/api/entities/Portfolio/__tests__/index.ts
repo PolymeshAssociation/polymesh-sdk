@@ -7,11 +7,9 @@ import { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 import {
   Context,
   Entity,
-  moveFunds,
   NumberedPortfolio,
   Portfolio,
   SecurityToken,
-  setCustodian,
   TransactionQueue,
 } from '~/internal';
 import { heartbeat, settlements } from '~/middleware/queries';
@@ -20,7 +18,7 @@ import {
   SettlementResult,
   SettlementResultEnum,
 } from '~/middleware/types';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -28,19 +26,21 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
-
 jest.mock(
   '~/api/entities/NumberedPortfolio',
   require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
     '~/api/entities/NumberedPortfolio'
   )
 );
-
 jest.mock(
   '~/api/entities/DefaultPortfolio',
   require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
     '~/api/entities/DefaultPortfolio'
   )
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('Portfolio class', () => {
@@ -49,6 +49,7 @@ describe('Portfolio class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -58,11 +59,13 @@ describe('Portfolio class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -293,8 +296,8 @@ describe('Portfolio class', () => {
       const portfolio = new Portfolio({ did: 'someDid' }, context);
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(moveFunds, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ...args, from: portfolio }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -322,8 +325,8 @@ describe('Portfolio class', () => {
       const targetIdentity = 'someTarget';
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(setCustodian, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { id, did, targetIdentity }, transformer: undefined }, context)
         .resolves(expectedQueue);
 

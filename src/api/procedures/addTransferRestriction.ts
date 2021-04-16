@@ -166,7 +166,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const addTransferRestriction = new Procedure(
-  prepareAddTransferRestriction,
-  getAuthorization
-);
+export const addTransferRestriction = (): Procedure<AddTransferRestrictionParams, number> =>
+  new Procedure(prepareAddTransferRestriction, getAuthorization);

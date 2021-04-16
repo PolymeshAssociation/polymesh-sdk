@@ -77,4 +77,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const deletePortfolio = new Procedure(prepareDeletePortfolio, getAuthorization);
+export const deletePortfolio = (): Procedure<DeletePortfolioParams> =>
+  new Procedure(prepareDeletePortfolio, getAuthorization);

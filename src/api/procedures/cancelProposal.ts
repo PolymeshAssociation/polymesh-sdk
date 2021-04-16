@@ -54,4 +54,4 @@
 // /**
 //  * @hidden
 //  */
-// export const cancelProposal = new Procedure(prepareCancelProposal, isAuthorized);
+// export const cancelProposal = (): Procedure => new Procedure(prepareCancelProposal, isAuthorized);
