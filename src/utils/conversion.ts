@@ -2816,6 +2816,23 @@ export function scopeClaimProofToMeshScopeClaimProof(
 /**
  * @hidden
  */
+export function targetIdentitiesToCorporateActionTargets(
+  targetIdentities: TargetIdentities,
+  context: Context
+): CorporateActionTargets {
+  const { identities, treatment } = targetIdentities;
+
+  return {
+    identities: identities.map(
+      identity => new Identity({ did: identityIdToString(identity) }, context)
+    ),
+    treatment: treatment.isInclude ? TargetTreatment.Include : TargetTreatment.Exclude,
+  };
+}
+
+/**
+ * @hidden
+ */
 export function targetsToTargetIdentities(
   targets: Omit<CorporateActionTargets, 'identities'> & {
     identities: (string | Identity)[];
