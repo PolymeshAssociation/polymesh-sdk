@@ -118,4 +118,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const setAssetRequirements = new Procedure(prepareSetAssetRequirements, getAuthorization);
+export const setAssetRequirements = (): Procedure<Params, SecurityToken> =>
+  new Procedure(prepareSetAssetRequirements, getAuthorization);

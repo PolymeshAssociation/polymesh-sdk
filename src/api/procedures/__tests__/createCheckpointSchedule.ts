@@ -130,7 +130,7 @@ describe('createCheckpointSchedule procedure', () => {
   });
 
   describe('createCheckpointScheduleResolver', () => {
-    const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
+    const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
     const start = new Date('10/14/1987');
     const period = {
@@ -153,7 +153,7 @@ describe('createCheckpointSchedule procedure', () => {
     });
 
     beforeEach(() => {
-      findEventRecordStub.returns(
+      filterEventRecordsStub.returns([
         dsMockUtils.createMockIEvent([
           dsMockUtils.createMockIdentityId('someDid'),
           dsMockUtils.createMockTicker(ticker),
@@ -169,12 +169,12 @@ describe('createCheckpointSchedule procedure', () => {
             remaining: dsMockUtils.createMockU32(remaining),
             at: dsMockUtils.createMockMoment(at.getTime()),
           }),
-        ])
-      );
+        ]),
+      ]);
     });
 
     afterEach(() => {
-      findEventRecordStub.reset();
+      filterEventRecordsStub.reset();
     });
 
     test('should return the new CheckpointSchedule', () => {

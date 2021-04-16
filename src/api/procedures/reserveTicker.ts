@@ -11,7 +11,7 @@ import {
 import { ErrorCode, RoleType, TickerReservationStatus } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker, tickerToString } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 export interface ReserveTickerParams {
   ticker: string;
@@ -25,7 +25,7 @@ export interface ReserveTickerParams {
 export const createTickerReservationResolver = (context: Context) => (
   receipt: ISubmittableResult
 ): TickerReservation => {
-  const { data } = findEventRecord(receipt, 'asset', 'TickerRegistered');
+  const [{ data }] = filterEventRecords(receipt, 'asset', 'TickerRegistered');
   const newTicker = tickerToString(data[1]);
 
   return new TickerReservation({ ticker: newTicker }, context);
@@ -113,4 +113,5 @@ export function getAuthorization({
 /**
  * @hidden
  */
-export const reserveTicker = new Procedure(prepareReserveTicker, getAuthorization);
+export const reserveTicker = (): Procedure<ReserveTickerParams, TickerReservation> =>
+  new Procedure(prepareReserveTicker, getAuthorization);

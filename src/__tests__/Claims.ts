@@ -1,10 +1,10 @@
 import sinon from 'sinon';
 
 import { Claims } from '~/Claims';
-import { addInvestorUniquenessClaim, Context, modifyClaims, TransactionQueue } from '~/internal';
+import { Context, TransactionQueue } from '~/internal';
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimScopeTypeEnum, ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   ClaimData,
@@ -22,6 +22,10 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Claims Class', () => {
   let context: Mocked<Context>;
@@ -30,6 +34,7 @@ describe('Claims Class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -40,11 +45,13 @@ describe('Claims Class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   describe('method: getIssuedClaims', () => {
@@ -318,8 +325,8 @@ describe('Claims Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(modifyClaims, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           { args: { ...args, operation: ClaimOperation.Add }, transformer: undefined },
           context
@@ -354,8 +361,8 @@ describe('Claims Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(addInvestorUniquenessClaim, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -385,8 +392,8 @@ describe('Claims Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(modifyClaims, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           { args: { ...args, operation: ClaimOperation.Edit }, transformer: undefined },
           context
@@ -419,8 +426,8 @@ describe('Claims Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(modifyClaims, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           { args: { ...args, operation: ClaimOperation.Revoke }, transformer: undefined },
           context

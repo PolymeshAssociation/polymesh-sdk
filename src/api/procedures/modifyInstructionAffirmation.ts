@@ -219,8 +219,8 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const modifyInstructionAffirmation = new Procedure(
-  prepareModifyInstructionAffirmation,
-  getAuthorization,
-  prepareStorage
-);
+export const modifyInstructionAffirmation = (): Procedure<
+  ModifyInstructionAffirmationParams,
+  Instruction,
+  Storage
+> => new Procedure(prepareModifyInstructionAffirmation, getAuthorization, prepareStorage);

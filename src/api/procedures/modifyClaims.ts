@@ -318,4 +318,5 @@ export function getAuthorization({
 /**
  * @hidden
  */
-export const modifyClaims = new Procedure(prepareModifyClaims, getAuthorization);
+export const modifyClaims = (): Procedure<ModifyClaimsParams, void> =>
+  new Procedure(prepareModifyClaims, getAuthorization);

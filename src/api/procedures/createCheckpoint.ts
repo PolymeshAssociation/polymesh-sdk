@@ -4,7 +4,7 @@ import { Checkpoint, Context, PostTransactionValue, Procedure, SecurityToken } f
 import { RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker, u64ToBigNumber } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -19,7 +19,7 @@ export interface Params {
 export const createCheckpointResolver = (ticker: string, context: Context) => (
   receipt: ISubmittableResult
 ): Checkpoint => {
-  const { data } = findEventRecord(receipt, 'checkpoint', 'CheckpointCreated');
+  const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'CheckpointCreated');
   const id = u64ToBigNumber(data[2]);
 
   return new Checkpoint({ ticker, id }, context);
@@ -68,4 +68,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const createCheckpoint = new Procedure(prepareCreateCheckpoint, getAuthorization);
+export const createCheckpoint = (): Procedure<Params, Checkpoint> =>
+  new Procedure(prepareCreateCheckpoint, getAuthorization);

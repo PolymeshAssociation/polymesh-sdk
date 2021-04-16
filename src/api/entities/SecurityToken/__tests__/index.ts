@@ -6,24 +6,12 @@ import {
   FundingRoundName,
   SecurityToken as MeshSecurityToken,
 } from 'polymesh-types/types';
-import sinon, { SinonStub } from 'sinon';
+import sinon from 'sinon';
 
-import {
-  Context,
-  controllerTransfer,
-  Entity,
-  modifyPrimaryIssuanceAgent,
-  modifyToken,
-  redeemToken,
-  removePrimaryIssuanceAgent,
-  SecurityToken,
-  toggleFreezeTransfers,
-  TransactionQueue,
-  transferTokenOwnership,
-} from '~/internal';
+import { Context, Entity, SecurityToken, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -33,24 +21,28 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('SecurityToken class', () => {
-  let prepareToggleFreezeTransfersStub: SinonStub;
-
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
-    prepareToggleFreezeTransfersStub = sinon.stub(toggleFreezeTransfers, 'prepare');
+    procedureMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -193,8 +185,8 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(transferTokenOwnership, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -217,8 +209,8 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(modifyToken, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -416,7 +408,8 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      prepareToggleFreezeTransfersStub
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker, freeze: true }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -434,7 +427,8 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      prepareToggleFreezeTransfersStub
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker, freeze: false }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -498,8 +492,8 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(modifyPrimaryIssuanceAgent, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker, target }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -517,8 +511,8 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(removePrimaryIssuanceAgent, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -537,8 +531,8 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(redeemToken, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { amount, ticker }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -606,8 +600,8 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(controllerTransfer, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker, originPortfolio, amount }, transformer: undefined }, context)
         .resolves(expectedQueue);
 

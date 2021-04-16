@@ -225,4 +225,5 @@ export function prepareStorage(
 /**
  * @hidden
  */
-export const investInSto = new Procedure(prepareInvestInSto, getAuthorization, prepareStorage);
+export const investInSto = (): Procedure<Params, void, Storage> =>
+  new Procedure(prepareInvestInSto, getAuthorization, prepareStorage);
